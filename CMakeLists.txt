@@ -588,6 +588,7 @@ add_executable(EliteGame
     src/render/cockpit/GuidanceCorridorRenderer.cpp
     src/render/cockpit/GalacticCompassRenderer.cpp
     src/render/HUD/HudPrimitiveBatch.cpp
+    src/render/JumpScreenEffect.cpp
     src/render/bitmap/TextureLoader.cpp
     src/render/camera/RenderCameraViewport.cpp
 

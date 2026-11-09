@@ -182,6 +182,14 @@ struct DynamicMotionState
     std::uint8_t jumpRefusal = 0;
     std::uint16_t jumpRefusalSerial = 0;
     std::uint16_t jumpSerial = 0;
+    // the exit, once placed (state 3 -> 0): jumpExitSerial counts the exits (the client's "jump
+    // complete" report); the deviation of the real exit from the calculated point and the planned
+    // one-sigma error (JumpRules.h exitSigmaM), the exit body and the altitude above it
+    std::uint16_t jumpExitSerial = 0;
+    std::string jumpExitBodyName;
+    double jumpExitDeviationM = 0.0;
+    double jumpExitSigmaM = 0.0;
+    double jumpExitAltitudeM = 0.0;
     // the client's route (display only, not on the wire): 0 none, 1 flying, 2 paused (manual flight
     // until RESUME), 3 a service stay, 4 landing (the landing autopilot); legIndex / legCount of it
     std::uint8_t routeState = 0;

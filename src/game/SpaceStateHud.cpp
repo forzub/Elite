@@ -151,6 +151,10 @@ m_systemMapRenderer.render(
             renderHudGuidanceAndCompass(vp, playerShip);
         }
 
+        // the jump's star rays: on the glass, under the cockpit frame (like the guidance)
+        if (m_activeCameraMode != ShipCameraMode::Drone && m_activeMainCamera)
+            renderJumpStarRays(vp);
+
         // The recon drone is an external camera: no cockpit frame.
         if (debug::get().render.shouldRenderCockpit() &&
             m_activeCameraMode != ShipCameraMode::Drone)
@@ -182,6 +186,9 @@ m_systemMapRenderer.render(
         uiRoot->render(vp);
 
         TextRenderer::instance().endFrame();
+
+        // the jump: the cockpit and its instruments shake / swell / are flung forward
+        applyJumpScreenEffect();
 
 
 
@@ -830,6 +837,10 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
         terminal.pilotNotice = m_pilotNotice;
         terminal.visible = true;
     }
+    terminal.jumpLines = m_jumpTerminalLines;
+    terminal.live = m_jumpTerminalLive;
+    if (!m_jumpTerminalLive.empty())
+        terminal.visible = true;
     {
         using namespace game::ship::plant;
         const auto model = playerShip.physicalControlModel;
@@ -1122,70 +1133,110 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
     const float screenH =
         static_cast<float>(vp.height);
 
+    // larger, to be read (author 2026-11-09): ~21 px at 1080 lines (was ~15)
     const int fontPx =
         std::clamp(
-            static_cast<int>(screenH * 0.0145f),
-            11,
-            17
+            static_cast<int>(screenH * 0.0195f),
+            14,
+            26
         );
 
     const float terminalLeft =
         screenW * 0.06f;
+    // below the flight banner (the larger font reached under it)
     const float terminalTop =
-        screenH * 0.175f;
+        screenH * 0.205f;
     const float terminalWidth =
-        screenW * 0.25f;
+        screenW * 0.30f;
     const float terminalBottom =
-        screenH * 0.56f;
+        screenH * 0.60f;
     const float lineStep =
         static_cast<float>(fontPx) * 1.28f;
 
-    float y = terminalTop;
-
+    // long lines wrap at word boundaries (they used to be cut at the column's edge); the newest
+    // rows are the ones that fit
+    struct TerminalRow
+    {
+        std::string text;
+        game::presentation::DockingTerminalSeverity severity;
+    };
+    std::vector<TerminalRow> rows;
     for (const auto& line : terminalOutput.lines)
     {
-        if (y + lineStep > terminalBottom)
-            break;
-
-        std::string visibleText = line.text;
+        std::string rest = line.text;
         if (line.cursor)
-            visibleText += "_";
-
-        // Hard visual width budget: no frame, no clipping rectangle,
-        // simply trim the text to the requested quarter-screen column.
-        while (!visibleText.empty() &&
-               text.measureTextPx(
-                   visibleText,
-                   fontPx
-               ) > terminalWidth)
+            rest += "_";
+        bool first = true;
+        while (!rest.empty())
         {
-            visibleText.pop_back();
+            const std::string indent = first ? "" : "  ";
+            std::string row = indent + rest;
+            if (text.measureTextPx(row, fontPx) > terminalWidth)
+            {
+                // the longest word-boundary prefix that fits, else the longest prefix (UTF-8 safe)
+                std::size_t cut = 0;
+                std::size_t lastSpace = std::string::npos;
+                for (std::size_t i = 0; i < rest.size();)
+                {
+                    std::size_t next = i + 1;
+                    while (next < rest.size() && (static_cast<unsigned char>(rest[next]) & 0xC0u) == 0x80u)
+                        ++next;
+                    if (text.measureTextPx(indent + rest.substr(0, next), fontPx) > terminalWidth)
+                        break;
+                    if (rest[i] == ' ')
+                        lastSpace = i;
+                    cut = next;
+                    i = next;
+                }
+                if (lastSpace != std::string::npos && lastSpace > 0 && cut < rest.size())
+                    cut = lastSpace;
+                if (cut == 0)
+                    cut = std::min<std::size_t>(rest.size(), 1);
+                row = indent + rest.substr(0, cut);
+                rest = rest.substr(cut);
+                while (!rest.empty() && rest.front() == ' ')
+                    rest.erase(rest.begin());
+            }
+            else
+                rest.clear();
+            rows.push_back({row, line.severity});
+            first = false;
         }
+    }
+    const std::size_t fitRows = static_cast<std::size_t>(std::max(1.0f, (terminalBottom - terminalTop) / lineStep));
+    if (rows.size() > fitRows)
+        rows.erase(rows.begin(), rows.begin() + static_cast<std::ptrdiff_t>(rows.size() - fitRows));
+
+    float y = terminalTop;
+
+    for (const auto& line : rows)
+    {
+        const std::string& visibleText = line.text;
 
         const glm::vec4 color =
             line.severity ==
                     game::presentation::
                         DockingTerminalSeverity::Error
                 ? glm::vec4(
-                      0.74f,
-                      0.53f,
-                      0.58f,
-                      0.39f
+                      0.80f,
+                      0.50f,
+                      0.55f,
+                      0.62f
                   )
                 : line.severity ==
                         game::presentation::
                             DockingTerminalSeverity::Warning
                     ? glm::vec4(
-                          0.68f,
-                          0.56f,
-                          0.60f,
-                          0.36f
+                          0.80f,
+                          0.66f,
+                          0.50f,
+                          0.58f
                       )
                     : glm::vec4(
-                          0.53f,
-                          0.66f,
-                          0.72f,
-                          0.36f
+                          0.58f,
+                          0.74f,
+                          0.80f,
+                          0.55f
                       );
 
         text.textDrawPx(

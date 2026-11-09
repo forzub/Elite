@@ -245,6 +245,11 @@ public:
         m_starfieldRenderer.setGameSystemDisplayNames(names);
     }
 
+    // the jump presentation (SpaceStateJump.cpp): the stars' brightness while the rays run from the
+    // old sky to the new one, and the catalogue the rays are drawn from
+    void setStarfieldBrightness(float k) { m_starfieldBrightness = k; }
+    const GalaxyStarfieldRenderer& starfield() const { return m_starfieldRenderer; }
+
 
     PreparedScene prepareScene(
         const ClientWorldState& world,
@@ -381,6 +386,7 @@ private:
     MeshRenderer                        m_meshRenderer;
     DebugRenderer                       m_debugRenderer;
     GalaxyStarfieldRenderer             m_starfieldRenderer;
+    float                               m_starfieldBrightness = 1.0f;
     
     // --- DEBUG ---
     std::function<void(const DebugFrameData&)> m_debugCallback;

@@ -2052,7 +2052,7 @@ profileAfterSetupMs = renderProfileNowMs();
             )
         );
 
-        m_starfieldRenderer.render(renderView, proj);
+        m_starfieldRenderer.render(renderView, proj, 1.0f, m_starfieldBrightness);
     }
 
     if (cameraName == "mainCam") core::hitch::mark("r_starfield");

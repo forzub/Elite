@@ -691,6 +691,7 @@ private:
     struct ActiveJump
     {
         int targetSystemId = -1;
+        int fromSystemId = -1;   // the exit error's beacon lock (JumpRules.h exitLockFactor)
         std::string targetName;
         std::string exitBodyId;
         double distanceLy = 0.0;

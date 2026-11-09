@@ -38,6 +38,8 @@
 #include "src/render/cockpit/EngineThrustIndicatorRenderer.h"
 #include "src/render/cockpit/GuidanceCorridorRenderer.h"
 #include "src/render/cockpit/GalacticCompassRenderer.h"
+#include "src/render/JumpScreenEffect.h"
+#include "src/render/HUD/HudPrimitiveBatch.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
 #include "src/ui/presentation/InSessionPresentationRenderer.h"
 
@@ -338,15 +340,40 @@ private:
     void renderNavigationStressOverlay(const Viewport& viewport);
     // Ctrl+J free flight: the banner at the top of the HUD (speed no longer local, keys, capture)
     void renderFreeFlightBanner(const Viewport& viewport);
-    // the interstellar jump (navigation/rules/JumpRules.h): the map's calculate / START / cancel,
-    // the charge-up panel, the ripple of the jump itself
+    // the interstellar jump (navigation/rules/JumpRules.h): the map's calculate / START / cancel;
+    // the presentation (author 2026-11-09, SpaceStateJump.cpp): the terminal's lines and charge bar,
+    // the cockpit's shake and fish-eye swell while charging, the fling forward at the jump, the
+    // star rays from the old sky to the new one, the report of the exit
     void handleJumpRequest(int kind, int systemId);
+    void updateJumpPresentation();                       // renderUI, before the scene: events, the effect's frame
+    void renderJumpStarRays(const Viewport& viewport);   // on the glass, under the cockpit frame
+    void applyJumpScreenEffect();                        // over the cockpit and its instruments
     void renderHudJump(const Viewport& viewport);
+    void addJumpTerminalLine(const std::string& text, bool warning = false);
     int m_jumpCalculatedSystemId = -1;
     std::uint16_t m_jumpSeenSerial = 0;
     std::uint16_t m_jumpSeenRefusalSerial = 0;
+    std::uint16_t m_jumpSeenExitSerial = 0;
+    std::uint8_t m_jumpSeenState = 0;
     bool m_jumpSerialsKnown = false;
-    double m_jumpRippleStart = -1.0e9;
+    double m_jumpFxStart = -1.0e9;                       // the jump moment (client clock)
+    struct JumpStarRay
+    {
+        glm::vec3 from {0.0f};   // the star's direction in the old sky
+        glm::vec3 to {0.0f};     // and in the new one
+        glm::vec3 color {1.0f};
+        float weight = 1.0f;     // brightness 0..1
+    };
+    std::vector<JumpStarRay> m_jumpRays;
+    bool m_jumpObserverValid = false;
+    glm::dvec3 m_jumpObserverLy {0.0};
+    glm::dvec3 m_jumpObserverPrevLy {0.0};
+    render::JumpScreenParams m_jumpScreen;
+    float m_jumpRays01 = -1.0f;                          // the rays' progress, < 0 none
+    render::JumpScreenEffect m_jumpScreenEffect;
+    render::hud::HudPrimitiveBatch m_jumpRayBatch;
+    std::vector<std::pair<std::string, game::presentation::DockingTerminalSeverity>> m_jumpTerminalLines;
+    std::string m_jumpTerminalLive;
     // renderHUD sections (SpaceStateHud.cpp)
     void renderHudWorldLabels(const Viewport& vp);
     void renderHudGuidanceAndCompass(const Viewport& vp, const ClientShipState& playerShip);

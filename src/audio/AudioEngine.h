@@ -22,6 +22,17 @@ public:
     // Short non-critical UI sound. Failure to play is always non-fatal.
     void playTerminalTick() noexcept;
 
+    // The jump core's hum (author 2026-11-09): 0 silent .. 1 the moment of the jump; it rises with
+    // the charge. Sound effects are off for now - the level is kept for the future backend.
+    void setJumpHum(float level01) noexcept
+    {
+        m_jumpHum01 = level01 < 0.0f ? 0.0f : level01 > 1.0f ? 1.0f : level01;
+    }
+    [[nodiscard]] float jumpHum() const noexcept
+    {
+        return m_jumpHum01;
+    }
+
     [[nodiscard]] bool available() const noexcept
     {
         return m_available;
@@ -33,6 +44,7 @@ private:
 private:
     bool m_initialized = false;
     bool m_available = false;
+    float m_jumpHum01 = 0.0f;
 };
 
 } // namespace audio

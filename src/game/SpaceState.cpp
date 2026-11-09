@@ -2637,7 +2637,7 @@ m_playerView->updateCockpitStateFromSnapshot(
             // previous system's ships never show in the new one)
             {
                 const auto& m = ship.transform.motion;
-                const double sinceJump = glfwGetTime() - m_jumpRippleStart;
+                const double sinceJump = glfwGetTime() - m_jumpFxStart;
                 float jam = 0.0f;
                 if (m.jumpState == 2 || m.jumpState == 3 || (sinceJump >= 0.0 && sinceJump < 3.0))
                     jam = 1.0f;
@@ -2781,6 +2781,7 @@ void SpaceState::renderUI()
     const double renderUiStartMs = nowMs();
     if (m_client)
         devTraceRenderedAttitude(m_client->world(), m_playerId.value);
+    updateJumpPresentation();
 
 
         if (context().app &&

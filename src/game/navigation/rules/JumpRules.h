@@ -60,6 +60,24 @@ inline Refusal check(double distanceLy, double massT, double coreRatingT, double
     return Refusal::None;
 }
 
+// The exit error (tools/colonization_lab/out/world_3126/beacons_3126.json jump_error_model, PROPOSAL):
+// sigma_r = d * base_fraction * drive * computer * (1 + age * f_age) * damage / lock - one sigma,
+// 3 sigma is the planning box, deterministic as a range. Version 1: standard drive / computer, a
+// fresh map, no damage; the beacon lock is approximated by "the system has world sites" (no beacon
+// runtime yet): both ends x200, destination only x6, origin only x12, none x1.
+constexpr double ExitErrorBaseFraction = 1.0e-9;
+constexpr double MetersPerLy = 9.4607304725808e15;
+inline double exitLockFactor(bool originBeacon, bool destinationBeacon)
+{
+    return originBeacon && destinationBeacon ? 200.0 : destinationBeacon ? 6.0 : originBeacon ? 12.0 : 1.0;
+}
+inline double exitSigmaM(double distanceLy, double lockFactor)
+{
+    return distanceLy * MetersPerLy * ExitErrorBaseFraction / std::max(1.0, lockFactor);
+}
+// the exit is "far off" when it lies outside the 3 sigma planning box (a sump later)
+constexpr double ExitFarOffSigmas = 3.0;
+
 inline const char* refusalText(Refusal r)
 {
     switch (r)

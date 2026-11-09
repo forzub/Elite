@@ -42,6 +42,11 @@ struct DockingTerminalSnapshot
     // Generic ship diagnostics (BITE, later other read-only diagnostics).
     // The terminal remains presentation-only; producers provide ready lines.
     std::vector<std::pair<std::string, DockingTerminalSeverity>> diagnostics;
+
+    // The interstellar jump (author 2026-11-09): its event / report lines, each printed once, and
+    // the live line under the history (the charge bar) - rewritten in place, never kept.
+    std::vector<std::pair<std::string, DockingTerminalSeverity>> jumpLines;
+    std::string live;
 };
 
 struct DockingTerminalLine
@@ -114,6 +119,8 @@ public:
             enqueue(snapshot.activity, DockingTerminalSeverity::Info);
             for (const auto& line : snapshot.plannerDetails)
                 enqueue(line, DockingTerminalSeverity::Info);
+            for (const auto& line : snapshot.jumpLines)
+                enqueue(line.first, line.second);
             m_last = snapshot;
             m_lastReminderSeconds = nowSeconds;
         }
@@ -183,6 +190,12 @@ public:
                 for (const auto& line : snapshot.plannerDetails)
                     enqueue(line, DockingTerminalSeverity::Info);
             }
+            if (snapshot.jumpLines != m_last.jumpLines)
+            {
+                for (const auto& line : snapshot.jumpLines)
+                    if (std::find(m_last.jumpLines.begin(), m_last.jumpLines.end(), line) == m_last.jumpLines.end())
+                        enqueue(line.first, line.second);
+            }
             m_last = snapshot;
         }
 
@@ -243,6 +256,13 @@ public:
                         out.lines.size() - MaxVisibleLines
                     )
             );
+        }
+
+        if (!snapshot.live.empty())
+        {
+            if (out.lines.size() >= MaxVisibleLines)
+                out.lines.erase(out.lines.begin());
+            out.lines.push_back({snapshot.live, DockingTerminalSeverity::Info, false});
         }
 
         return out;

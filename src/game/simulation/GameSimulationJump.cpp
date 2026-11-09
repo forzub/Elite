@@ -11,6 +11,7 @@
 #include <cmath>
 #include <iostream>
 #include <map>
+#include <random>
 
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/JumpRules.h"
@@ -20,6 +21,15 @@ namespace
 {
 namespace jr = game::navigation::jump;
 constexpr double PlaceholderOrbitM = 4.5e11;   // ~3 AU from the new star until its bodies are loaded
+
+// "the system has a beacon" for the exit error's lock (version 1: any world site in it - no beacon
+// runtime yet, JumpRules.h exitLockFactor)
+bool systemHasSites(int systemId)
+{
+    static world::celestial::WorldSitesCatalog sites;
+    static const bool loaded = sites.loadFromRuntimeOrSource();
+    return loaded && systemId >= 0 && !sites.sitesInSystem(systemId).empty();
+}
 }
 
 bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy,
@@ -151,6 +161,7 @@ void GameSimulation::updateJumps(double dt)
             // ---- the jump: instant
             motion.jChargeT = std::max(0.0, motion.jChargeT - j.costT);
             const int from = motion.systemId;
+            j.fromSystemId = from;
             motion.systemId = j.targetSystemId;
             frame.systemId = j.targetSystemId;   // the replicated frame identity carries the system (the client's)
             motion.hubId.clear();
@@ -269,8 +280,40 @@ void GameSimulation::updateJumps(double dt)
             radial = glm::normalize(std::cos(a) * radial + std::sin(a) * tangent);
             tangent = glm::normalize(glm::cross(normal, radial));
         }
-        frame.originMeters = exit->centerMeters + radial * r;
-        frame.linearVelocityMps = bodyVel + (star ? glm::dvec3(0.0) : tangent * std::sqrt(exit->gravitationalParameterM3s2 / r));
+        // the exit error (author 2026-11-09: the report tells how far from the calculated point the
+        // ship came out): a deterministic draw per ship and jump around the calculated point, one
+        // sigma of JumpRules.h exitSigmaM; the ship then holds a circular orbit at the radius it
+        // came out at (kept above the floor and well inside the body's Hill sphere)
+        const glm::dvec3 planned = exit->centerMeters + radial * r;
+        const double sigma = jr::exitSigmaM(j.distanceLy, jr::exitLockFactor(systemHasSites(j.fromSystemId), systemHasSites(j.targetSystemId)));
+        glm::dvec3 offset(0.0);
+        {
+            std::mt19937_64 rng(static_cast<std::uint64_t>(id.value) * 0x9E3779B97F4A7C15ull + motion.jumpSerial * 7919ull + 17ull);
+            std::normal_distribution<double> n(0.0, sigma / std::sqrt(3.0));
+            offset = glm::dvec3(n(rng), n(rng), n(rng));
+        }
+        glm::dvec3 actual = planned + offset;
+        double rActual = r;
+        if (!star)
+        {
+            const double hill = glm::length(toStar) * std::cbrt(exit->gravitationalParameterM3s2 / std::max(1.0, 3.0 * starMu));
+            const double rMin = exit->radiusMeters + floor + jr::ExitOrbitAboveFloorM;
+            const double rMax = std::max(rMin * 1.5, 0.3 * hill);
+            glm::dvec3 rel = actual - exit->centerMeters;
+            rActual = std::clamp(glm::length(rel), rMin, rMax);
+            radial = glm::length(rel) > 1.0 ? glm::normalize(rel) : radial;
+            actual = exit->centerMeters + radial * rActual;
+            glm::dvec3 t = glm::cross(normal, radial);
+            if (glm::length(t) < 1.0e-6)
+                t = glm::cross(glm::dvec3(0.0, 0.0, 1.0), radial);
+            tangent = glm::normalize(t);
+        }
+        motion.jumpExitDeviationM = glm::length(actual - planned);
+        motion.jumpExitSigmaM = sigma;
+        motion.jumpExitAltitudeM = star ? rActual : rActual - exit->radiusMeters;
+        motion.jumpExitBodyName = exit->id;   // the client shows the body's name from its snapshot
+        frame.originMeters = actual;
+        frame.linearVelocityMps = bodyVel + (star ? glm::dvec3(0.0) : tangent * std::sqrt(exit->gravitationalParameterM3s2 / rActual));
         motion.localPositionMeters = glm::dvec3(0.0);
         motion.localVelocityMps = glm::dvec3(0.0);
         tr.setWorldPositionMeters(frame.originMeters);
@@ -284,12 +327,13 @@ void GameSimulation::updateJumps(double dt)
             tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
         }
         motion.jumpState = 0;
+        ++motion.jumpExitSerial;
         auto& f = m_freeFlights[id];
         f.lastPrimaryId.clear();
         f.autoStabilizeArmed = true;   // a closed orbit: the automatic stabilization may take it
         std::cerr << "[Jump] ship " << id.value << ": EXIT in system " << j.targetSystemId << " - "
-                  << (star ? "in space, 1 AU from the star" : "orbit of " + exit->id + " at " + std::to_string(static_cast<int>((r - exit->radiusMeters) / 1000.0)) + " km")
-                  << std::endl;
+                  << (star ? "in space, 1 AU from the star" : "orbit of " + exit->id + " at " + std::to_string(static_cast<int>((rActual - exit->radiusMeters) / 1000.0)) + " km")
+                  << ", " << motion.jumpExitDeviationM / 1000.0 << " km off the calculated point (sigma " << sigma / 1000.0 << " km)" << std::endl;
         it = m_jumps.erase(it);
     }
 }

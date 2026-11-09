@@ -4446,3 +4446,29 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   for all 53 reference ships; layouts: all 1 578 units classed, 5 141 part designations. The gate now requires
   every ship's equipment to be covered.
 - Gates 211: 205 pass / 6 known red / 0 new.
+
+### Jump presentation rework (author 2026-11-09) - IMPLEMENTED, live DEV checked, NOT yet accepted by the author
+- Removed the cartoon ripple (flash + dotted rings) and the charge-up panel. Now (SpaceStateJump.cpp
+  updateJumpPresentation, render/JumpScreenEffect): the HUD terminal prints the procedure (target, ly, charge-up,
+  cost, cancel hint) and a live font progress bar `ЗАРЯД ЯДРА [####----] 45% m:ss / m:ss` (DockingTerminalSnapshot
+  `jumpLines` printed once each + `live` line rewritten in place); the cockpit view shakes along screen x/y (no
+  rotation), amplitude growing with the charge; from 60 % a fish-eye swell (corners fixed, centre magnified); at the
+  jump (jumpSerial) a sharp 0.14 s fling - corners stay, centre drawn away like rubber; the old sky goes dark, 220
+  brightest stars send rays from their old direction to the new one that collapse into the new points (0.2..1.8 s);
+  the new sky fades up; the lens springs back with ~2.5 damped swings (1.9..2.8 s). Author corrections applied the
+  same day: no whole-view shrink, half the lens strength, sharper fling / return, no colour fringes ("the cockpit must
+  feel whole"). Whole-frame capture (glCopyTexSubImage2D of FB 0 after the cockpit + instruments) + distort shader;
+  neutral params = no pass. Rays drawn under the cockpit frame.
+- Hum: AudioEngine::setJumpHum(level) - semantic level only (sounds are off), rises with the charge.
+- Terminal: font ~21 px at 1080 (was ~15), column 30 % wide, word wrap instead of cutting, top below the flight
+  banner, brighter colours.
+- Exit error (server, PROPOSAL model of beacons_3126 jump_error_model): sigma = d * 1e-9 / lock (lock proxy: system
+  has world sites; both x200, destination x6, origin x12, none x1), deterministic 3D gaussian draw per ship + jump;
+  circular orbit at the radius reached (clamped above floor, <= 0.3 Hill). Replicated jumpExitSerial / body /
+  deviation / sigma / altitude. Exit report in the terminal: system, orbit + altitude, coordinates (AU from the
+  star), deviation vs the 3 sigma box; outside it a warning "корабль снесло".
+- DEV: ELITE_DEV_JUMP_FX_CAPTURE=<dir> - frames at fixed times after the jump. Live runs D:/tmp/elite_jfx1..4
+  (Высокий -> Fomalhaut, 20 s charge): 220 rays, exit 25 752 km off the point (sigma 19 809 km, box 59 427 km);
+  a false "ПРЫЖОК ПРЕРВАН" (2 -> 0 between snapshots) found and fixed.
+- Gates 211: 205 pass / 6 known red / 0 new.
+- Next: author's look review in a live flight; real audio backend for the hum; beacon runtime to replace the lock proxy.

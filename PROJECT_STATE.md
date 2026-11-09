@@ -4522,3 +4522,15 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Checks: check_fault_catalog 0 problems, check_ship_layout 0, render_check 53 ships / 103 parts / 0;
   gates 211: 205 pass / 6 known red / 0 new. No C++ change (no runtime code referenced the removed codes or argon).
 
+
+### Equipment 3D models from passports: Cobretty CR-1 Vector v1 (author 2026-11-09) - PROPOSAL (awaiting author review)
+- Author: no textures; a very detailed model seen from 20-30 m, simplified LODs further. 6 GB GPU rules out local
+  image-to-3D with textures; chosen path: procedural geometry from the passport (no GPU), Blender 5.0 only for previews.
+- Tool: tools/models/build_equipment_models.py (+ --check, idempotent) -> src/assets/models/equipment/cobretty_cr1_vector/
+  LOD0..2/<part>.obj + .mtl (SOURCE_LAYOUT.md: one OBJ per part, shared material ids eq_*). Parts: cr1_flange,
+  cr1_housing, cr1_coil_ring, engine_hot_emitter_annulus (the passport meshPartId), cr1_service_module, cr1_mounts.
+  Frame: unit axis OBJ +Z, Y up, flange at z = 0, pad at z = 6.5; envelope 5 x 5 x 6.5 m, pad 5.0 m the widest.
+  Triangles: LOD0 47 020, LOD1 4 872, LOD2 1 096.
+- Preview: tools/models/render_preview.py (blender -b ... -- <asset dir> <LOD> <png> [pad|flange|side], 1.8 m figure);
+  renders added to the CR-1 workshop sketches with a review card.
+- Not done yet: import into the model asset editor (semantic parts, sockets, LOD distances), runtime package; ER-5.

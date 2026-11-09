@@ -75,6 +75,13 @@
       "es": "Carpetas de naves",
       "ja": "艦船フォルダー"
     },
+    "model_editor.catalog.group.equipment": {
+      "en": "Equipment",
+      "ru": "Оборудование",
+      "zh-Hans": "设备",
+      "es": "Equipos",
+      "ja": "装備"
+    },
     "model_editor.catalog.group.hub": {
       "en": "Hub modules",
       "ru": "Модули хаба",

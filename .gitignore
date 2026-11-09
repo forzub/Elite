@@ -53,6 +53,7 @@ src/assets/generated/**/*.TGA
 !/assets/models/
 /assets/models/*
 !/assets/models/hub/
+!/assets/models/equipment/
 /build/assets/generated/
 
 __pycache__/

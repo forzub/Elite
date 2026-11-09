@@ -4534,3 +4534,23 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Preview: tools/models/render_preview.py (blender -b ... -- <asset dir> <LOD> <png> [pad|flange|side], 1.8 m figure);
   renders added to the CR-1 workshop sketches with a review card.
 - Not done yet: import into the model asset editor (semantic parts, sockets, LOD distances), runtime package; ER-5.
+- Author 2026-11-09: CR-1 v1 accepted visually ("сделано шикарно"); parts stay separate (game binds hot pad heat,
+  hit regions, module hiding and damage variants by part name; the editor compiles them into one .elmodel).
+
+### Equipment models: Cobretty ER-5 propulsion reactor v1 + editor "Equipment" catalog group (2026-11-09) - PROPOSAL
+- Sources moved to the editor SOURCE root: assets/models/equipment/<unit>/ (src/assets/models holds docs only; the editor
+  settings point sourceAssetsRoot at assets/models). .gitignore unignores assets/models/equipment/; README there.
+- ER-5 v1 (generator er5_parts): flat torus dia 3.9 m x 2 m (axis OBJ +Y), flanges at z = -/+2.5 (flange to flange 5 m)
+  mating the CR-1 flange exactly (dia 4.5 m, 24 bolts, spigot groove, 3 busbar sockets, data socket); pad PT1 11 x 11 x
+  0.25 m, 8 triangular sections, at y = 2.3 on a heat-pipe column. Parts = reactor.fusion SRUs: reactor_cooling_pad,
+  er5_confinement, er5_fuel_feed, er5_inverter, er5_plasma_ctl, er5_plasma_sensors + er5_vessel, er5_heat_pipe_column,
+  er5_emergency_coolant (the only copper), er5_flange_fore/aft, er5_mounts. Triangles LOD0 61 708, LOD1 10 112, LOD2 1 648
+  (empty parts are not written). Open deviation for the author: flange rims 4.5 m exceed the 4 x 4 m passport envelope by
+  0.25 m per side (needed to mate CR-1).
+- Generator: lathe(soft=deg) shared profile normals (CR-1 output unchanged, triangle counts identical); helpers ylathe,
+  rrect, inset, prism, placed. render_preview.py: views top/under, optional hidden parts.
+- Editor: ModelAssetEditorSession lists assets/models/equipment/* as group "equipment" (ObjectType::None, Folder SOURCE,
+  id equipment_<folder>); UI group + localization key model_editor.catalog.group.equipment. EliteAssetEditor build PASS.
+  Not verified in the running editor (GUI wizard SOURCE -> BUILD is the author's step: semantic parts, sockets for the
+  flanges/lugs/pad, LOD distances, BUILD to src/assets/compiled/models/equipment_<folder>/).
+- Renders + review card in the ER-5 workshop sketches.

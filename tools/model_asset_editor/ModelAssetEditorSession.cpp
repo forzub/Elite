@@ -3257,6 +3257,18 @@ ModelAssetEditorSession::ModelAssetEditorSession(
         m_catalog.back().group = "hub";
         hubIds.insert(id);
     }
+    // Equipment units (drives, reactors, ...): assets/models/equipment/<unit>/LOD<N>/*.obj,
+    // generated from the equipment passports by tools/models/build_equipment_models.py.
+    // They have no ObjectType of their own; the catalog id is the folder id.
+    for (const auto& directory : discoverSourceDirectoriesUnder(m_sourceAssetsRoot, "equipment"))
+    {
+        std::string id = "equipment_" + lowerText(directory.filename().string());
+        for (char& c : id)
+            if (!std::isalnum(static_cast<unsigned char>(c))) c = '_';
+        m_catalog.push_back({id, "Equipment — " + directory.filename().string(), ObjectType::None, directory,
+                             CatalogSourceAuthority::Folder, CatalogBootstrapMode::Folder});
+        m_catalog.back().group = "equipment";
+    }
     // without the hub folders the guidance docks stay reachable through the runtime registry
     if (!hubIds.count("guidance_dock_cube"))
         m_catalog.push_back({"guidance_dock_cube", "Guidance Dock Cube", ObjectType::GuidanceDockCube, {}, CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly});

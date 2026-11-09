@@ -1,7 +1,7 @@
 """Blender preview of an equipment model (geometry + MTL colours, no textures).
 
-usage: blender -b --factory-startup -P tools/models/render_preview.py -- <asset dir> <LOD> <out.png> [view]
-view: pad (three-quarter from the pad side, default) | flange (from the reactor side) | side
+usage: blender -b --factory-startup -P tools/models/render_preview.py -- <asset dir> <LOD> <out.png> [view] [hidden,parts]
+view: pad (three-quarter from the pad side, default) | flange (from the reactor side) | side | top | under
 A 1.8 m figure stands next to the unit for scale.
 """
 import math
@@ -14,6 +14,7 @@ from mathutils import Vector
 argv = sys.argv[sys.argv.index("--") + 1:]
 asset, lod, out = argv[0], int(argv[1]), argv[2]
 view = argv[3] if len(argv) > 3 else "pad"
+hide = set(argv[4].split(",")) if len(argv) > 4 else set()   # part names left out (e.g. the pad, to see the body)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 folder = os.path.join(asset, f"LOD{lod}")
@@ -30,6 +31,9 @@ for m in bpy.data.materials:
             m.roughness = 0.55
             m.metallic = 0.0
 
+for o in list(bpy.context.scene.objects):
+    if o.name.split(".")[0] in hide:
+        bpy.data.objects.remove(o, do_unlink=True)
 objs = [o for o in bpy.context.scene.objects if o.type == "MESH"]
 lo = Vector((min(min((o.matrix_world @ Vector(c))[i] for c in o.bound_box) for o in objs) for i in range(3)))
 hi = Vector((max(max((o.matrix_world @ Vector(c))[i] for c in o.bound_box) for o in objs) for i in range(3)))
@@ -64,7 +68,8 @@ sh.background_type = "VIEWPORT"
 sh.background_color = (0.11, 0.12, 0.13)
 
 # the unit axis (OBJ +Z) is Blender -Y after the import; the pad end is at the most negative Y
-dirs = {"pad": Vector((0.9, -1.25, 0.55)), "flange": Vector((-0.9, 1.25, 0.5)), "side": Vector((1.0, 0.0, 0.12))}
+dirs = {"pad": Vector((0.9, -1.25, 0.55)), "flange": Vector((-0.9, 1.25, 0.5)), "side": Vector((1.0, 0.0, 0.12)),
+        "top": Vector((0.8, -1.0, 0.95)), "under": Vector((1.1, -0.9, -0.42))}
 d = dirs.get(view, dirs["pad"]).normalized()
 cam_data = bpy.data.cameras.new("cam")
 cam_data.lens = 60

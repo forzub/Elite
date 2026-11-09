@@ -4,7 +4,7 @@
  "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
  "shapes": {
   "box": "half_size",
-  "cylinder": "radius + half_height along local +Y (proposed engine shape)"
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
  },
  "volumes": [
   {

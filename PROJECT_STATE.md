@@ -4572,3 +4572,16 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   Capsule / ConvexHull) - additive enum value + binary/editor support proposed; editor import of hit_volumes.json into
   COLL; ship hull compartments + interior-on-breach presentation (station interiors/portals exist in
   ModelAssetPresentation; ships still use the legacy assembly path).
+- Author 2026-11-09 "да, делай" (steps 1 + 2) - DONE, compiled + unit-tested, NOT yet exercised in the running editor:
+  1. CollisionShape::Cylinder = 4 (src/model_asset/ModelAsset.h; flat ends, radius + halfHeight along local +Y). The
+     binary stores the shape as a byte without range checks, so no format bump. Editor: name "cylinder", mass/inertia
+     (solid cylinder), PHYSICS validation, viewport primitive, inspector option, localization model_editor.collision.cylinder.
+     tests/model_asset: manifest roundtrip of a cylinder volume (model_asset_tests PASS). The runtime does not read
+     .elmodel collision volumes yet (hits still use the legacy assembly), so nothing changes in flight.
+  2. PHYSICS command import_source_hit_volumes (button "SOURCE HITS" / "ХИТЫ ИЗ SOURCE"): reads <SOURCE asset>/hit_volumes.json,
+     binds each volume to the semantic part with the same id/moduleId, replaces earlier hit.src.* volumes; parts that
+     are missing or whose node chain is no longer at the zero SOURCE transform are skipped and named in the status.
+     SOURCE stays scaffold-only (its contract: collision authoring belongs to PHYSICS).
+  Stale test fixed: tests/model_asset/CMakeLists.txt lacked chunks/PresentationChunks.cpp (link error readPresentationV4).
+  Gates 205 PASS / 6 known red / 0 new. Next (author): open an Equipment asset, SOURCE -> PHYSICS -> SOURCE HITS, check
+  the volumes; step 3 (ship hull compartments, interior only for a breached compartment) is a separate large stage.

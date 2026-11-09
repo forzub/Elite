@@ -24,7 +24,8 @@ enum class CollisionShape : std::uint8_t
     Box = 0,       // Oriented box: localRotationDeg makes this an OBB.
     Sphere = 1,
     Capsule = 2,
-    ConvexHull = 3 // Reserved for a later compiler stage.
+    ConvexHull = 3, // Reserved for a later compiler stage.
+    Cylinder = 4    // Flat-ended cylinder: radius + halfHeight along local +Y (equipment drums, flanges, pads).
 };
 
 enum class AxisDirection : std::int8_t

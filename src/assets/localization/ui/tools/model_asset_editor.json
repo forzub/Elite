@@ -474,6 +474,13 @@
       "es": "Guardar manifiesto",
       "ja": "マニフェストを保存"
     },
+    "model_editor.action.import_hit_volumes": {
+      "en": "SOURCE HITS",
+      "ru": "ХИТЫ ИЗ SOURCE",
+      "zh-Hans": "导入命中体",
+      "es": "HITS DE SOURCE",
+      "ja": "SOURCEのヒット"
+    },
     "model_editor.action.ring": {
       "en": "+ RING",
       "ru": "+ КОЛЬЦО",
@@ -8055,6 +8062,13 @@
       "es": "Cápsula (+Y)",
       "ja": "カプセル (+Y)"
     },
+    "model_editor.collision.cylinder": {
+      "en": "Cylinder (+Y)",
+      "ru": "Цилиндр (+Y)",
+      "zh-Hans": "圆柱 (+Y)",
+      "es": "Cilindro (+Y)",
+      "ja": "円柱 (+Y)"
+    },
     "model_editor.collision.center": {
       "en": "Center",
       "ru": "Центр",
@@ -8383,6 +8397,20 @@
       "zh-Hans": "已为 {id} 生成 {count} 个径向碰撞胶囊体",
       "es": "Se generaron {count} cápsulas de colisión radiales para {id}",
       "ja": "{id} 用の放射状 collision capsule を {count} 個生成"
+    },
+    "model_editor.server.hit_volumes_imported": {
+      "en": "Imported {count} SOURCE hit volumes",
+      "ru": "Импортировано хитвалумов из SOURCE: {count}",
+      "zh-Hans": "已从 SOURCE 导入 {count} 个命中体",
+      "es": "Se importaron {count} volúmenes de impacto de SOURCE",
+      "ja": "SOURCE からヒットボリュームを {count} 個インポート"
+    },
+    "model_editor.server.hit_volumes_imported_skipped": {
+      "en": "Imported {count} SOURCE hit volumes; skipped parts (missing or moved): {parts}",
+      "ru": "Импортировано хитвалумов из SOURCE: {count}; пропущены детали (нет или сдвинуты): {parts}",
+      "zh-Hans": "已从 SOURCE 导入 {count} 个命中体；跳过的部件（缺失或已移动）：{parts}",
+      "es": "Se importaron {count} volúmenes de impacto de SOURCE; piezas omitidas (faltan o movidas): {parts}",
+      "ja": "SOURCE からヒットボリュームを {count} 個インポート。スキップした部品（欠落または移動）：{parts}"
     },
     "model_editor.server.socket_added": {
       "en": "Added socket: {id}",

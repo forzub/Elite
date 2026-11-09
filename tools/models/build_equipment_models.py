@@ -814,7 +814,7 @@ def er5_parts(lod):
 # Author 2026-11-09: hit volumes are drawn together with the model, as close to its shape as boxes and cylinders allow;
 # gameplay keeps the hit volumes, not the render mesh. Format = the engine CollisionVolume (src/model_asset/ModelAsset.h):
 # localPosition, localRotationDeg (applied as T * Rx * Ry * Rz), halfSize for a box; radius + halfHeight along local +Y
-# for a cylinder. "cylinder" is a NEW shape (the engine enum has Box / Sphere / Capsule / ConvexHull) - proposal.
+# for a cylinder (CollisionShape::Cylinder). The editor imports the file in PHYSICS ("SOURCE HITS").
 # "part" = the OBJ part (semantic node / module) the volume belongs to; same OBJ frame and metres as the model.
 def hbox(part, center, size, rot=(0.0, 0.0, 0.0)):
     return {"part": part, "shape": "box", "position": list(center), "rotation_deg": list(rot),
@@ -897,7 +897,7 @@ def hits_text(asset):
                 v[k] = round(v[k], 4)
     doc = {"asset": asset, "generator": "tools/models/build_equipment_models.py (do not edit)",
            "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
-           "shapes": {"box": "half_size", "cylinder": "radius + half_height along local +Y (proposed engine shape)"},
+           "shapes": {"box": "half_size", "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"},
            "volumes": [{k: v[k] for k in ("id", "part", "shape", "position", "rotation_deg", "half_size", "radius", "half_height") if k in v}
                        for v in vols]}
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"

@@ -1404,6 +1404,16 @@ int main()
         lod2.nodes.push_back(proxyNodeB);
         asset.renderLods.push_back(lod2);
 
+        // Cylinder (flat-ended, local +Y axis) is an additive shape value: it must survive the manifest roundtrip.
+        CollisionVolume drum;
+        drum.id = "hit.src.drum.1";
+        drum.shape = CollisionShape::Cylinder;
+        drum.localPosition = glm::vec3(0.0f, 0.0f, 2.1f);
+        drum.localRotationDeg = glm::vec3(90.0f, 0.0f, 0.0f);
+        drum.radius = 2.25f;
+        drum.halfHeight = 0.4f;
+        asset.collisionVolumes.push_back(drum);
+
         const auto path = std::filesystem::temp_directory_path() / "elite_model_asset_v4_roundtrip.elmodel";
         std::string error;
         require(ModelAssetBinary::save(path.string(), asset, &error), error.c_str());
@@ -1418,6 +1428,13 @@ int main()
         bool legacyPackage = true;
         require(ModelAssetBinary::loadManifest(path.string(), manifestOnly, &legacyPackage, &error), error.c_str());
         require(!legacyPackage, "v4 manifest was misclassified as legacy");
+        {
+            const auto it = std::find_if(manifestOnly.collisionVolumes.begin(), manifestOnly.collisionVolumes.end(),
+                [](const CollisionVolume& c) { return c.id == "hit.src.drum.1"; });
+            require(it != manifestOnly.collisionVolumes.end() && it->shape == CollisionShape::Cylinder &&
+                    near(it->radius, 2.25f) && near(it->halfHeight, 0.4f) && near(it->localRotationDeg.x, 90.0f),
+                "cylinder collision volume did not survive the manifest roundtrip");
+        }
         require(manifestOnly.formatVersion == 4 && manifestOnly.renderLods.size() == 3,
             "v4 manifest did not preserve render LOD descriptors");
         require(manifestOnly.renderLods[0].geometries.empty() && manifestOnly.renderLods[1].geometries.empty(),
@@ -1493,7 +1510,7 @@ int main()
             "state transform/pivot override lost");
         require(loaded.stateVariants[0].physicsOverride && near(loaded.stateVariants[0].physics.massKg, 980.0f),
             "state rigid-body override lost");
-        require(loaded.collisionVolumes.size() == 2 && loaded.collisionVolumes[1].activeStates.size() == 1 &&
+        require(loaded.collisionVolumes.size() == 3 && loaded.collisionVolumes[1].activeStates.size() == 1 && // + the cylinder drum
                 loaded.collisionVolumes[1].activeStates[0] == "breached",
             "state-scoped collision lost");
         require(loaded.physicalSize.enabled && loaded.physicalSize.axis == PhysicalSizeAxis::Z &&

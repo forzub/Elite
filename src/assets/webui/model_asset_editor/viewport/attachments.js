@@ -11,6 +11,7 @@ function createViewportAttachmentEffects({
 
  function collisionPrimitive(collision){
   if(collision.shape==='sphere')return new THREE.SphereGeometry(collision.radius,18,12);
+  if(collision.shape==='cylinder')return new THREE.CylinderGeometry(collision.radius,collision.radius,collision.halfHeight*2,24);
   if(collision.shape==='capsule'){
    const group=new THREE.Group(),radius=collision.radius,halfHeight=collision.halfHeight;
    const cylinder=new THREE.Mesh(

@@ -41,6 +41,7 @@ add_executable(model_asset_tests
     "${ELITE_SOURCE_ROOT}/src/model_asset/binary/chunks/StructuralChunks.cpp"
     "${ELITE_SOURCE_ROOT}/src/model_asset/binary/chunks/LodChunks.cpp"
     "${ELITE_SOURCE_ROOT}/src/model_asset/binary/chunks/LegacyChunks.cpp"
+    "${ELITE_SOURCE_ROOT}/src/model_asset/binary/chunks/PresentationChunks.cpp"
     "${ELITE_SOURCE_ROOT}/src/model_asset/binary/ModelAssetBinaryChunkRegistry.cpp"
     "${ELITE_SOURCE_ROOT}/src/model_asset/binary/ModelAssetBinaryValidation.cpp"
     "${ELITE_SOURCE_ROOT}/src/model_asset/binary/ModelAssetBinaryStorage.cpp"

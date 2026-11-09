@@ -1435,6 +1435,7 @@ const char* collisionShapeName(CollisionShape shape)
         case CollisionShape::Sphere: return "sphere";
         case CollisionShape::Capsule: return "capsule";
         case CollisionShape::ConvexHull: return "convex_hull";
+        case CollisionShape::Cylinder: return "cylinder";
     }
     return "box";
 }
@@ -1443,6 +1444,7 @@ CollisionShape collisionShapeFromName(const std::string& value)
     if (value == "sphere") return CollisionShape::Sphere;
     if (value == "capsule") return CollisionShape::Capsule;
     if (value == "convex_hull") return CollisionShape::ConvexHull;
+    if (value == "cylinder") return CollisionShape::Cylinder;
     return CollisionShape::Box;
 }
 
@@ -2191,6 +2193,15 @@ PrimitiveMass primitiveMass(const CollisionVolume& c, float density, float sourc
         const float iSide = mc * (3.0f * r * r + length * length) / 12.0f +
             0.4f * ms * r * r + ms * half * half;
         diag = glm::vec3(iSide, iAxis, iSide); // local capsule axis = +Y
+    }
+    else if (c.shape == CollisionShape::Cylinder)
+    {
+        const float r = std::max(c.radius * scale, 0.001f);
+        const float length = 2.0f * std::max(c.halfHeight * scale, 0.001f);
+        out.mass = density * Pi * r * r * length;
+        const float iAxis = 0.5f * out.mass * r * r;
+        const float iSide = out.mass * (3.0f * r * r + length * length) / 12.0f;
+        diag = glm::vec3(iSide, iAxis, iSide); // local cylinder axis = +Y
     }
     else
     {
@@ -4813,6 +4824,9 @@ bool ModelAssetEditorSession::validateWizardStage(const std::string& stage, std:
             if (collision.shape == CollisionShape::Capsule &&
                 (collision.radius <= 0.0f || collision.halfHeight < 0.0f))
                 return fail("PHYSICS validation failed: capsule collision " + collision.id + " has invalid dimensions");
+            if (collision.shape == CollisionShape::Cylinder &&
+                (collision.radius <= 0.0f || collision.halfHeight <= 0.0f))
+                return fail("PHYSICS validation failed: cylinder collision " + collision.id + " has invalid dimensions");
         }
 
         for (std::size_t ni = 0; ni < m_asset.nodes.size(); ++ni)
@@ -12424,6 +12438,58 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             }
             markManifestDirty(); invalidateWizardFrom(physicsEdit ? "physics" : "damage");
             sendAssetMetadata(); sendStatus("Updated collision volume: " + c.id); return;
+        }
+        if (command == "import_source_hit_volumes")
+        {
+            // Generated hit volumes (tools/models/build_equipment_models.py -> <asset>/hit_volumes.json) in the
+            // SOURCE OBJ frame. Each volume binds to the semantic part named by "part"; the part and its
+            // ancestors must still carry the zero SOURCE transform, otherwise the volume is skipped (re-place it
+            // by hand). Re-import replaces the previous "hit.src.*" volumes.
+            const auto root = selectedSourceAssetRoot();
+            if (root.empty()) throw std::runtime_error("this asset has no SOURCE folder");
+            std::ifstream in(root / "hit_volumes.json", std::ios::binary);
+            if (!in) throw std::runtime_error("no hit_volumes.json in " + root.generic_string());
+            const json doc = json::parse(in);
+            const auto identityChain = [&](std::int32_t index) {
+                for (int guard = 0; index != NoIndex && guard < 4096; ++guard)
+                {
+                    const auto& n = m_asset.nodes[static_cast<std::size_t>(index)];
+                    if (n.localPosition != glm::vec3(0.0f) || n.localRotationDeg != glm::vec3(0.0f)) return false;
+                    index = n.parentIndex;
+                }
+                return true;
+            };
+            m_asset.collisionVolumes.erase(std::remove_if(m_asset.collisionVolumes.begin(), m_asset.collisionVolumes.end(),
+                [](const CollisionVolume& c) { return c.id.rfind("hit.src.", 0) == 0; }), m_asset.collisionVolumes.end());
+            std::size_t added = 0;
+            std::set<std::string> skipped;
+            for (const auto& v : doc.value("volumes", json::array()))
+            {
+                const std::string part = v.value("part", std::string());
+                std::int32_t nodeIndex = NoIndex;
+                for (std::size_t i = 0; i < m_asset.nodes.size() && nodeIndex == NoIndex; ++i)
+                    if (lowerText(m_asset.nodes[i].id) == lowerText(part) || lowerText(m_asset.nodes[i].moduleId) == lowerText(part))
+                        nodeIndex = static_cast<std::int32_t>(i);
+                if (nodeIndex == NoIndex || !identityChain(nodeIndex)) { skipped.insert(part); continue; }
+                CollisionVolume c;
+                c.id = "hit.src." + v.value("id", part);
+                c.moduleId = m_asset.nodes[static_cast<std::size_t>(nodeIndex)].moduleId;
+                c.parentNodeIndex = nodeIndex;
+                c.shape = collisionShapeFromName(v.value("shape", std::string("box")));
+                c.localPosition = jsonVec3(v.value("position", json::array()), glm::vec3(0.0f));
+                c.localRotationDeg = jsonVec3(v.value("rotation_deg", json::array()), glm::vec3(0.0f));
+                c.halfSize = glm::max(jsonVec3(v.value("half_size", json::array()), glm::vec3(0.5f)), glm::vec3(0.001f));
+                c.radius = std::max(0.001f, v.value("radius", 0.5f));
+                c.halfHeight = std::max(0.001f, v.value("half_height", 0.5f));
+                m_asset.collisionVolumes.push_back(std::move(c));
+                ++added;
+            }
+            markManifestDirty(); invalidateWizardFrom("physics"); sendAssetMetadata();
+            std::string skippedText;
+            for (const auto& s : skipped) skippedText += (skippedText.empty() ? "" : ", ") + s;
+            sendStatus("Imported " + std::to_string(added) + " SOURCE hit volumes" +
+                (skipped.empty() ? std::string() : "; skipped parts (missing or moved): " + skippedText), !skipped.empty());
+            return;
         }
         if (command == "generate_radial_capsules")
         {

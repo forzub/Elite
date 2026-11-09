@@ -24,7 +24,8 @@ them by hand; change the generator and rebuild. Preview renders:
 
 `<unit>/hit_volumes.json` - hit volumes generated from the same dimensions as
 the mesh (boxes and cylinders, one or more per part, the engine CollisionVolume
-fields; "cylinder" is a proposed new engine shape). Preview: render_preview.py
+fields; "cylinder" = CollisionShape::Cylinder). In the Model Asset Editor: PHYSICS
+stage -> "SOURCE HITS" imports them onto the parts. Preview: render_preview.py
 `... <view> <hidden> hits`.
 
 No textures: every detail is geometry, colours are MTL materials (`eq_*`

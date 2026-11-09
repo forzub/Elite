@@ -32,6 +32,8 @@ function translateServerMessage(message){
   [/^Duplicated collision volume: (.+)$/, 'model_editor.server.collision_duplicated', ['id']],
   [/^Updated collision volume: (.+)$/, 'model_editor.server.collision_updated', ['id']],
   [/^Generated (\d+) radial collision capsules for (.+)$/, 'model_editor.server.collision_ring_generated', ['count','id']],
+  [/^Imported (\d+) SOURCE hit volumes; skipped parts \(missing or moved\): (.+)$/, 'model_editor.server.hit_volumes_imported_skipped', ['count','parts']],
+  [/^Imported (\d+) SOURCE hit volumes$/, 'model_editor.server.hit_volumes_imported', ['count']],
   [/^Added socket: (.+)$/, 'model_editor.server.socket_added', ['id']],
   [/^Deleted socket: (.+)$/, 'model_editor.server.socket_deleted', ['id']],
   [/^Updated socket: (.+)$/, 'model_editor.server.socket_updated', ['id']],

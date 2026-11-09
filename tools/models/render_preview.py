@@ -1,6 +1,6 @@
 """Blender preview of an equipment model (geometry + MTL colours, no textures).
 
-usage: blender -b --factory-startup -P tools/models/render_preview.py -- <asset dir> <LOD> <out.png> [view] [hidden,parts]
+usage: blender -b --factory-startup -P tools/models/render_preview.py -- <asset dir> <LOD> <out.png> [view] [hidden,parts] [mesh|hits]
 view: pad (three-quarter from the pad side, default) | flange (from the reactor side) | side | top | under
 A 1.8 m figure stands next to the unit for scale.
 """
@@ -31,6 +31,36 @@ for m in bpy.data.materials:
             m.roughness = 0.55
             m.metallic = 0.0
 
+# mode "hits": draw the generated hit volumes (hit_volumes.json) instead of the mesh, one colour per part
+mode = argv[5] if len(argv) > 5 else "mesh"
+if mode == "hits":
+    import colorsys
+    import json
+    from mathutils import Matrix
+    for o in list(bpy.context.scene.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
+    doc = json.load(open(os.path.join(asset, "hit_volumes.json"), encoding="utf-8"))
+    parts = sorted({v["part"] for v in doc["volumes"]})
+    C = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))       # OBJ (x, y, z) -> Blender (x, -z, y)
+    for v in doc["volumes"]:
+        if v["part"] in hide:
+            continue
+        rx, ry, rz = (math.radians(a) for a in v["rotation_deg"])
+        M = Matrix.Translation(v["position"]) @ Matrix.Rotation(rx, 4, "X") @ Matrix.Rotation(ry, 4, "Y") @ Matrix.Rotation(rz, 4, "Z")
+        if v["shape"] == "box":
+            bpy.ops.mesh.primitive_cube_add(size=2)
+            S = Matrix.Diagonal((*v["half_size"], 1))
+            A = Matrix.Identity(4)
+        else:
+            bpy.ops.mesh.primitive_cylinder_add(radius=1, depth=2, vertices=32)
+            S = Matrix.Diagonal((v["radius"], v["half_height"], v["radius"], 1))
+            A = Matrix.Rotation(math.radians(-90), 4, "X")                       # Blender cylinder Z -> local +Y
+        o = bpy.context.object
+        o.matrix_world = C @ M @ S @ A
+        mat = bpy.data.materials.get(v["part"]) or bpy.data.materials.new(v["part"])
+        h = parts.index(v["part"]) / max(1, len(parts))
+        mat.diffuse_color = (*colorsys.hsv_to_rgb(h, 0.55, 0.85), 1)
+        o.data.materials.append(mat)
 for o in list(bpy.context.scene.objects):
     if o.name.split(".")[0] in hide:
         bpy.data.objects.remove(o, do_unlink=True)

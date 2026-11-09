@@ -21,6 +21,7 @@ must not eat a ship's memory): LOD0 ~10k triangles per unit, LOD1 ~2-3k, LOD2 < 
 usage: python tools/models/build_equipment_models.py [--check]
 """
 import argparse
+import json
 import math
 import os
 import sys
@@ -809,6 +810,99 @@ def er5_parts(lod):
     return P
 
 
+# ---------------------------------------------------------------- hit volumes
+# Author 2026-11-09: hit volumes are drawn together with the model, as close to its shape as boxes and cylinders allow;
+# gameplay keeps the hit volumes, not the render mesh. Format = the engine CollisionVolume (src/model_asset/ModelAsset.h):
+# localPosition, localRotationDeg (applied as T * Rx * Ry * Rz), halfSize for a box; radius + halfHeight along local +Y
+# for a cylinder. "cylinder" is a NEW shape (the engine enum has Box / Sphere / Capsule / ConvexHull) - proposal.
+# "part" = the OBJ part (semantic node / module) the volume belongs to; same OBJ frame and metres as the model.
+def hbox(part, center, size, rot=(0.0, 0.0, 0.0)):
+    return {"part": part, "shape": "box", "position": list(center), "rotation_deg": list(rot),
+            "half_size": [size[0] / 2, size[1] / 2, size[2] / 2]}
+
+
+def hcyl(part, p0, p1, r):
+    """a cylinder between two points; only axis-aligned (X/Y/Z) or XY-plane radial axes are needed here"""
+    c = [(a + b) / 2 for a, b in zip(p0, p1)]
+    dx, dy, dz = (b - a for a, b in zip(p0, p1))
+    L = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if abs(dz) > 1e-9 and abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        rot = (90.0, 0.0, 0.0)                                   # local +Y -> +Z
+    elif abs(dz) < 1e-9:
+        rot = (0.0, 0.0, math.degrees(math.atan2(dy, dx)) - 90.0)  # local +Y -> (dx, dy, 0)
+    else:
+        raise ValueError("hcyl: axis must be along Z or in the XY plane")
+    return {"part": part, "shape": "cylinder", "position": c, "rotation_deg": list(rot), "radius": r, "half_height": L / 2}
+
+
+def cr1_hits():
+    d = CR1
+    sr, br, ft = d["shell_r"], d["band_r"], d["flange_t"]
+    sx, sz = sr + 0.32, 2.95
+    H = [hcyl("cr1_flange", (0, 0, -0.24), (0, 0, 0), 0.62),                       # busbar coupling boss
+         hcyl("cr1_flange", (0, 0, -0.08), (0, 0, ft), d["flange_r"]),
+         hcyl("cr1_housing", (0, 0, ft), (0, 0, d["coil_z0"]), br),
+         hcyl("cr1_coil_ring", (0, 0, d["coil_z0"]), (0, 0, d["coil_z1"]), 2.47),
+         hcyl("engine_hot_emitter_annulus", (0, 0, d["pad_z0"]), (0, 0, d["pad_z1"] + 0.05), d["pad_r"]),
+         hbox("cr1_service_module", ((sr + sx + 0.31) / 2, 0, sz), (sx + 0.31 - sr, 1.30, 2.10)),
+         hbox("cr1_service_module", (sx + 0.50, 0, sz - 0.62), (0.38, 1.10, 0.34))]   # coolant ports
+    for a, zz in ((math.pi * 3 / 4, 1.05), (-math.pi * 3 / 4, 1.05), (math.pi * 3 / 4, 3.85), (-math.pi * 3 / 4, 3.85)):
+        H.append(hbox("cr1_mounts", polz(2.28, a, zz), (0.42, 0.46, 0.20), (0, 0, math.degrees(a))))
+    return H
+
+
+def er5_hits():
+    d = ER5
+    ro, zh, fz = d["r_out"], d["zh"], d["face_z"]
+    xi, xf, yb = ro + 0.13, -(ro + 0.13), -(ro + 0.13)
+    H = [hcyl("er5_vessel", (0, 0, -zh), (0, 0, zh), ro)]
+    for k in range(8):                                                                 # magnet hoops on the outer wall
+        a = math.pi / 8 + k * math.pi / 4
+        H.append(hbox("er5_confinement", polz(ro + 0.05, a, 0), (0.18, 0.34, 2 * zh + 0.14), (0, 0, math.degrees(a))))
+    H += [hcyl("er5_flange_aft", (0, 0, fz - 0.80), (0, 0, fz), d["flange_r"]),
+          hcyl("er5_flange_fore", (0, 0, -fz), (0, 0, -fz + 0.80), d["flange_r"]),
+          hbox("er5_inverter", (xi, 0, 0), (0.32, 1.0, 1.25))]
+    for zs in (-1, 1):                                                                 # busbar runs to the flanges
+        H.append(hbox("er5_inverter", (2.20, 0, zs * 1.40), (0.40, 0.64, 1.56)))
+    H += [hbox("er5_fuel_feed", (xf, 0.02, 0), (0.32, 0.90, 0.95)),
+          hcyl("er5_fuel_feed", (xf, 0.47, 0), (xf, 0.90, 0), 0.20),
+          hbox("er5_plasma_ctl", (0, yb, 0), (0.90, 0.26, 1.0))]
+    for a, zz in ((math.pi / 4, 0.9), (math.pi / 4, -0.9), (3 * math.pi / 4, 0.9), (3 * math.pi / 4, -0.9),
+                  (5 * math.pi / 4, 0.0), (7 * math.pi / 4, 0.0)):
+        H.append(hcyl("er5_plasma_sensors", polz(ro + 0.03, a, zz), polz(ro + 0.22, a, zz), 0.07))
+    H += [hbox("er5_heat_pipe_column", (0, ro + 0.02, 0), (0.80, 0.16, 1.30)),
+          hcyl("er5_heat_pipe_column", (0, ro, 0), (0, d["pad_y0"], 0), 0.65),
+          hbox("reactor_cooling_pad", (0, d["pad_y0"] + d["pad_t"] / 2 + 0.03, 0), (2 * d["pad_half"], d["pad_t"] + 0.06, 2 * d["pad_half"])),
+          hbox("er5_emergency_coolant", (0, ro + 0.23, 0.82), (0.46, 0.46, 0.86))]
+    for a in (5 * math.pi / 4, 7 * math.pi / 4):
+        for zz in (-0.9, 0.9):
+            H.append(hbox("er5_mounts", polz(ro + 0.12, a, zz), (0.30, 0.42, 0.46), (0, 0, math.degrees(a))))
+    return H
+
+
+HITS = {"cobretty_cr1_vector": cr1_hits, "cobretty_er5_reactor": er5_hits}
+
+
+def hits_text(asset):
+    vols = HITS[asset]()
+    counts = {}
+    for v in vols:
+        counts[v["part"]] = counts.get(v["part"], 0) + 1
+        v["id"] = f'{v["part"]}.{counts[v["part"]]}'
+        for k in ("position", "rotation_deg", "half_size"):
+            if k in v:
+                v[k] = [round(x, 4) + 0.0 for x in v[k]]
+        for k in ("radius", "half_height"):
+            if k in v:
+                v[k] = round(v[k], 4)
+    doc = {"asset": asset, "generator": "tools/models/build_equipment_models.py (do not edit)",
+           "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+           "shapes": {"box": "half_size", "cylinder": "radius + half_height along local +Y (proposed engine shape)"},
+           "volumes": [{k: v[k] for k in ("id", "part", "shape", "position", "rotation_deg", "half_size", "radius", "half_height") if k in v}
+                       for v in vols]}
+    return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
+
+
 # ---------------------------------------------------------------- output
 ASSETS = {"cobretty_cr1_vector": cr1_parts, "cobretty_er5_reactor": er5_parts}
 
@@ -846,6 +940,8 @@ def build():
                 files[base + ".mtl"] = mtl_text(part.faces.keys())
                 total += part.tris()
             stats[(asset, lod)] = (total, {k: v.tris() for k, v in parts.items()})
+        if asset in HITS:
+            files[os.path.join(OUT, asset, "hit_volumes.json")] = hits_text(asset)
     return files, stats
 
 

@@ -1,0 +1,598 @@
+{
+ "asset": "cobretty_er5_reactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (proposed engine shape)"
+ },
+ "volumes": [
+  {
+   "id": "er5_vessel.1",
+   "part": "er5_vessel",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.2,
+   "half_height": 1.75
+  },
+  {
+   "id": "er5_confinement.1",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    2.0787,
+    0.861,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    22.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_confinement.2",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    0.861,
+    2.0787,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    67.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_confinement.3",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    -0.861,
+    2.0787,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    112.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_confinement.4",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    -2.0787,
+    0.861,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    157.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_confinement.5",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    -2.0787,
+    -0.861,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    202.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_confinement.6",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    -0.861,
+    -2.0787,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    247.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_confinement.7",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    0.861,
+    -2.0787,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    292.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_confinement.8",
+   "part": "er5_confinement",
+   "shape": "box",
+   "position": [
+    2.0787,
+    -0.861,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    337.5
+   ],
+   "half_size": [
+    0.09,
+    0.17,
+    1.82
+   ]
+  },
+  {
+   "id": "er5_flange_aft.1",
+   "part": "er5_flange_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.1
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.25,
+   "half_height": 0.4
+  },
+  {
+   "id": "er5_flange_fore.1",
+   "part": "er5_flange_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -2.1
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.25,
+   "half_height": 0.4
+  },
+  {
+   "id": "er5_inverter.1",
+   "part": "er5_inverter",
+   "shape": "box",
+   "position": [
+    2.33,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.16,
+    0.5,
+    0.625
+   ]
+  },
+  {
+   "id": "er5_inverter.2",
+   "part": "er5_inverter",
+   "shape": "box",
+   "position": [
+    2.2,
+    0.0,
+    -1.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.2,
+    0.32,
+    0.78
+   ]
+  },
+  {
+   "id": "er5_inverter.3",
+   "part": "er5_inverter",
+   "shape": "box",
+   "position": [
+    2.2,
+    0.0,
+    1.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.2,
+    0.32,
+    0.78
+   ]
+  },
+  {
+   "id": "er5_fuel_feed.1",
+   "part": "er5_fuel_feed",
+   "shape": "box",
+   "position": [
+    -2.33,
+    0.02,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.16,
+    0.45,
+    0.475
+   ]
+  },
+  {
+   "id": "er5_fuel_feed.2",
+   "part": "er5_fuel_feed",
+   "shape": "cylinder",
+   "position": [
+    -2.33,
+    0.685,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.2,
+   "half_height": 0.215
+  },
+  {
+   "id": "er5_plasma_ctl.1",
+   "part": "er5_plasma_ctl",
+   "shape": "box",
+   "position": [
+    0.0,
+    -2.33,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.45,
+    0.13,
+    0.5
+   ]
+  },
+  {
+   "id": "er5_plasma_sensors.1",
+   "part": "er5_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    1.644,
+    1.644,
+    0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -45.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.095
+  },
+  {
+   "id": "er5_plasma_sensors.2",
+   "part": "er5_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    1.644,
+    1.644,
+    -0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -45.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.095
+  },
+  {
+   "id": "er5_plasma_sensors.3",
+   "part": "er5_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -1.644,
+    1.644,
+    0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.095
+  },
+  {
+   "id": "er5_plasma_sensors.4",
+   "part": "er5_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -1.644,
+    1.644,
+    -0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.095
+  },
+  {
+   "id": "er5_plasma_sensors.5",
+   "part": "er5_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -1.644,
+    -1.644,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -225.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.095
+  },
+  {
+   "id": "er5_plasma_sensors.6",
+   "part": "er5_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    1.644,
+    -1.644,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -135.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.095
+  },
+  {
+   "id": "er5_heat_pipe_column.1",
+   "part": "er5_heat_pipe_column",
+   "shape": "box",
+   "position": [
+    0.0,
+    2.22,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.4,
+    0.08,
+    0.65
+   ]
+  },
+  {
+   "id": "er5_heat_pipe_column.2",
+   "part": "er5_heat_pipe_column",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    2.6,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.65,
+   "half_height": 0.4
+  },
+  {
+   "id": "reactor_cooling_pad.1",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    3.155,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    5.5,
+    0.155,
+    5.5
+   ]
+  },
+  {
+   "id": "er5_emergency_coolant.1",
+   "part": "er5_emergency_coolant",
+   "shape": "box",
+   "position": [
+    0.0,
+    2.43,
+    0.82
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.23,
+    0.23,
+    0.43
+   ]
+  },
+  {
+   "id": "er5_mounts.1",
+   "part": "er5_mounts",
+   "shape": "box",
+   "position": [
+    -1.6405,
+    -1.6405,
+    -0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.15,
+    0.21,
+    0.23
+   ]
+  },
+  {
+   "id": "er5_mounts.2",
+   "part": "er5_mounts",
+   "shape": "box",
+   "position": [
+    -1.6405,
+    -1.6405,
+    0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.15,
+    0.21,
+    0.23
+   ]
+  },
+  {
+   "id": "er5_mounts.3",
+   "part": "er5_mounts",
+   "shape": "box",
+   "position": [
+    1.6405,
+    -1.6405,
+    -0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.15,
+    0.21,
+    0.23
+   ]
+  },
+  {
+   "id": "er5_mounts.4",
+   "part": "er5_mounts",
+   "shape": "box",
+   "position": [
+    1.6405,
+    -1.6405,
+    0.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.15,
+    0.21,
+    0.23
+   ]
+  }
+ ]
+}

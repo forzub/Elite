@@ -22,6 +22,11 @@ them by hand; change the generator and rebuild. Preview renders:
   cooling pad PT1 (`reactor_cooling_pad`, 11 x 11 x 0.25 m) at y = 3.0 on the
   heat-pipe column.
 
+`<unit>/hit_volumes.json` - hit volumes generated from the same dimensions as
+the mesh (boxes and cylinders, one or more per part, the engine CollisionVolume
+fields; "cylinder" is a proposed new engine shape). Preview: render_preview.py
+`... <view> <hidden> hits`.
+
 No textures: every detail is geometry, colours are MTL materials (`eq_*`
 names are shared asset-level material ids). LOD0 is meant for <= ~30 m,
 LOD1 for ~30-150 m, LOD2 beyond; a part missing in a far LOD is a detail

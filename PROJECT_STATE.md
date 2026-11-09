@@ -4562,3 +4562,13 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   z = -/+2.5), 8 poloidal confinement hoops, inverter +X, feed -X, plasma control -Y, column + pad on top (pad y 3.0).
   The flange rims are now inside the envelope (deviation closed). Triangles LOD0 69 916, LOD1 11 908, LOD2 1 980.
   Bay assembly render (CR-1 + ER-5 + CR-1) + ER-5 prompt v2 in the workshop.
+- Author 2026-11-09: too many triangles -> lightened (commit d0caa342): visibility floor MIN_BOLT 6 cm / MIN_FEATURE 2.5 cm
+  (1 px at 20-30 m ~ 3 cm), 32/16/12 segments, cheap hex heads. CR-1 LOD0 9 882 / LOD1 2 168 / LOD2 840; ER-5 11 596 /
+  3 124 / 684 triangles. An open bay (CR-1 + ER-5 + CR-1) at LOD0 ~31k triangles.
+- Author 2026-11-09 idea: hit volumes drawn with the model; gameplay stores hit volumes, not the full mesh; the hull in
+  compartments, the interior rendered only for a breached compartment. Step 1 done: the generator writes
+  <unit>/hit_volumes.json (CR-1 11, ER-5 31 volumes; boxes + cylinders per part, CollisionVolume fields; T*Rx*Ry*Rz),
+  render_preview.py mode `hits`, renders in the workshop. Open: engine CollisionShape has no Cylinder (Box / Sphere /
+  Capsule / ConvexHull) - additive enum value + binary/editor support proposed; editor import of hit_volumes.json into
+  COLL; ship hull compartments + interior-on-breach presentation (station interiors/portals exist in
+  ModelAssetPresentation; ships still use the legacy assembly path).

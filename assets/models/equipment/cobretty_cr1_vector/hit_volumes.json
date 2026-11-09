@@ -1,0 +1,216 @@
+{
+ "asset": "cobretty_cr1_vector",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (proposed engine shape)"
+ },
+ "volumes": [
+  {
+   "id": "cr1_flange.1",
+   "part": "cr1_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -0.12
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.62,
+   "half_height": 0.12
+  },
+  {
+   "id": "cr1_flange.2",
+   "part": "cr1_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.135
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.25,
+   "half_height": 0.215
+  },
+  {
+   "id": "cr1_housing.1",
+   "part": "cr1_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.825
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.15,
+   "half_height": 2.475
+  },
+  {
+   "id": "cr1_coil_ring.1",
+   "part": "cr1_coil_ring",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    5.725
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.47,
+   "half_height": 0.425
+  },
+  {
+   "id": "engine_hot_emitter_annulus.1",
+   "part": "engine_hot_emitter_annulus",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    6.35
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.5,
+   "half_height": 0.2
+  },
+  {
+   "id": "cr1_service_module.1",
+   "part": "cr1_service_module",
+   "shape": "box",
+   "position": [
+    2.365,
+    0.0,
+    2.95
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.315,
+    0.65,
+    1.05
+   ]
+  },
+  {
+   "id": "cr1_service_module.2",
+   "part": "cr1_service_module",
+   "shape": "box",
+   "position": [
+    2.87,
+    0.0,
+    2.33
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.19,
+    0.55,
+    0.17
+   ]
+  },
+  {
+   "id": "cr1_mounts.1",
+   "part": "cr1_mounts",
+   "shape": "box",
+   "position": [
+    -1.6122,
+    1.6122,
+    1.05
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.21,
+    0.23,
+    0.1
+   ]
+  },
+  {
+   "id": "cr1_mounts.2",
+   "part": "cr1_mounts",
+   "shape": "box",
+   "position": [
+    -1.6122,
+    -1.6122,
+    1.05
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -135.0
+   ],
+   "half_size": [
+    0.21,
+    0.23,
+    0.1
+   ]
+  },
+  {
+   "id": "cr1_mounts.3",
+   "part": "cr1_mounts",
+   "shape": "box",
+   "position": [
+    -1.6122,
+    1.6122,
+    3.85
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.21,
+    0.23,
+    0.1
+   ]
+  },
+  {
+   "id": "cr1_mounts.4",
+   "part": "cr1_mounts",
+   "shape": "box",
+   "position": [
+    -1.6122,
+    -1.6122,
+    3.85
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -135.0
+   ],
+   "half_size": [
+    0.21,
+    0.23,
+    0.1
+   ]
+  }
+ ]
+}

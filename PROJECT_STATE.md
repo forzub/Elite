@@ -4796,6 +4796,27 @@ Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damag
 - Limits: the breach follows destroyed / detached LEGACY modules (panel health), not the per-plate seams of the
   asset (that is S5 together with hits from the asset); penetration holes (BurnState) stay server-only.
 
+### Author 2026-11-10: emitter damage rule ACCEPTED; placement per mesh; ship assets in the editor; Maori check
+- Jump-field emitter damage rule ACCEPTED (one emitter lost: J ceiling halved, no jump until repaired) - docs + the 4
+  passports updated; RUNTIME NOT IMPLEMENTED (the jump code has no emitter modules yet) - queued.
+- Placement belongs to the mesh (author): ModelAssetGpuLibrary reads a socket of kind "object_frame" from the asset
+  (origin, rotation T*Rx*Ry*Rz, extent.x = uniform scale); assets without it keep the legacy descriptor fit (station).
+  The per-type CobraMk1 special case is removed. LIVE: "placement from its object_frame socket", logical size
+  27.8 x 5.8 x 23.2 m, breached plate 7 + right pad drawn.
+- Ship asset semantics filled by the generator: 52 structural links (15 plates WeldSeam to the hull with their 4
+  seam damage proxies, 35 modules EquipmentMount with their 4 mount proxies, 2 ER-5 pads FixedMount to their
+  reactor), 15 plate hit regions (intact), the object_frame socket.
+- tools/ships/build_ship_assets.py: sketch -> SOURCE -> EliteShipAssetAssemble -> production
+  src/assets/compiled/models/ship_cobrett_i/ship_cobrett_i.elmodel + WORKING copy in the editor workspace
+  (build/tools/model_asset_editor/workspaces/ship_cobrett_i/working). Model Asset Editor catalog: new group
+  "ship_assets" (compiled/models/ship_*), opens the WORKING head with every field filled. Not opened in the editor UI
+  by me (no headless mode) - author's look.
+- Kapehu Maori words checked against Te Aka (subagent): wrong ones replaced (rata -> hihiani radar, rererangi ->
+  matatopa drone, tanga -> kura tank, kopae rererangi -> riu matatopa drone bay, rauangi wera -> papa hahana,
+  kapuhera -> kowae mawhiti, poti oranga -> poti whakaora, comm -> punaha whakawhitiwhiti korero); coinages from
+  attested parts marked in equipment_naming.py (reactor putauhohe karihi, emitter putuku whaitua, coolant loop ara
+  whakamatao, life support punaha tautoko ora) - a fluent speaker should confirm; pukupuku (armour) kept with caveat.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

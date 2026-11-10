@@ -275,6 +275,33 @@ def build(name):
             c["active_states"] = ["intact"]
         collision.append(c)
 
+    # ---- structural semantics: what is attached to what, and what breaks it (author 2026-11-10: "what is fixed
+    #      through what, and where"). Plates: weld seams to the hull, broken by their 4 seam volumes; modules:
+    #      equipment mounts to the hull, broken by their 4 mount points; a reactor pad: fixed to its reactor.
+    byid = {v["id"]: v for v in vols}
+    links, regions = [], []
+
+    def proxy(vid):
+        v = byid[vid]
+        return {"id": vid, "position": v["position"], "rotation_deg": v["rotation_deg"], "half_size": v["half_size"]}
+    node_ids = {n_["id"] for n_ in nodes}
+    for r in rules["plates"]:
+        pn = f"plate_{r['plate']}"
+        links.append({"id": f"weld_{r['plate']}", "a": "hull", "b": pn, "kind": "weld_seam", "load_bearing": False,
+                      "proxies": [proxy(x) for x in r["seams"]]})
+        mv = byid[f"{r['plate']}.main"]
+        regions.append({"id": f"hit_{r['plate']}", "node": pn, "position": mv["position"], "rotation_deg": mv["rotation_deg"],
+                        "half_size": mv["half_size"], "active_states": ["intact"]})
+    for r in rules["modules"]:
+        if r["module"] not in node_ids:
+            continue
+        links.append({"id": f"mount_{r['module']}", "a": "hull", "b": r["module"], "kind": "equipment_mount", "load_bearing": True,
+                      "proxies": [proxy(x) for x in r["mounts"]]})
+    for n_ in nodes:
+        if n_["id"].startswith("pad_") and n_["id"][4:] in node_ids:
+            links.append({"id": f"fix_{n_['id']}", "a": n_["id"][4:], "b": n_["id"], "kind": "fixed_mount", "load_bearing": False,
+                          "proxies": []})
+
     used = set()
     for lod in lods:
         for g in lod["geometries"]:
@@ -287,13 +314,17 @@ def build(name):
            "materials": mats, "nodes": nodes, "states": states,
            "compartments": [{k: c[k] for k in ("id", "role", "center", "half_size", "interior_nodes")} for c in comps],
            "openings": openings, "portals": portals, "collision": collision, "render_lods": lods,
+           "structural_links": links, "hit_regions": regions,
+           # placement of THIS mesh in the object's logical frame (game basis, true metres -> identity, scale 1)
+           "object_frame": {"position": [0.0, 0.0, 0.0], "rotation_deg": [0.0, 0.0, 0.0], "scale": 1.0},
+           "catalog_id": "ship_" + name.replace("-", "_"),
            "release_rules": rules}
     open(os.path.join(base, "ship_asset.json"), "w", encoding="utf-8", newline="\n").write(json.dumps(doc, ensure_ascii=False, indent=1))
     LS.INSTALLS.clear()
     LS.PLATES.clear()
     inter = sum(len(c["interior_nodes"]) for c in comps)
     print(f"{name}: {len(nodes)} nodes ({inter} interior in {len(comps)} compartments), {len(states)} breachable, "
-          f"{len(portals)} portals, {len(collision)} collision volumes, geometries per LOD "
+          f"{len(portals)} portals, {len(collision)} collision volumes, {len(links)} structural links, geometries per LOD "
           f"{[len(l['geometries']) for l in lods]} -> {base}")
 
 

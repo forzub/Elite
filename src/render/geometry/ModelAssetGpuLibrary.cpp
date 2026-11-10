@@ -91,7 +91,7 @@ const char* packageFor(ObjectType type)
             static const std::string ship = [] {
                 const char* v = std::getenv("ELITE_SHIP_MODEL_ASSETS");
                 if (!v || !*v || *v == '0') return std::string();
-                return std::string(v) == "1" ? std::string("assets/compiled/models/cobrett-i/cobrett-i.elmodel")
+                return std::string(v) == "1" ? std::string("assets/compiled/models/ship_cobrett_i/ship_cobrett_i.elmodel")
                                              : std::string(v);
             }();
             return ship.empty() ? nullptr : ship.c_str();
@@ -166,15 +166,24 @@ std::unique_ptr<ModelAssetGpu> load(ObjectType type)
     }
     gpu->assetToLogicalScale = scale;
     gpu->assetToLogical = glm::scale(glm::mat4(1.0f), glm::vec3(scale)) * basis;
-    if (type == ObjectType::CobraMk1)
+    // The asset's own placement (author 2026-11-10: rotation / scale belong to the specific mesh, not to the ship
+    // type): a socket of kind "object_frame" is the object's logical frame in asset space - localPosition = origin,
+    // localRotationDeg = orientation (T * Rx * Ry * Rz), extent.x = uniform asset -> logical scale (0 = 1). Assets
+    // without it keep the legacy fit (descriptor mesh basis + logical size), e.g. the station.
+    for (const auto& socket : gpu->asset.sockets)
     {
-        // Step 3 S3: the ship asset is assembled in the game basis (+X right, +Y up, -Z forward) and in true
-        // metres (tools/ships/ship_asset_source.py) - neither the legacy mesh basis nor the legacy logical size
-        // applies (the legacy Cobra mesh lies along X and is 22.2 m long; the layout sketch is ~27.8 x 23.3 m).
-        gpu->assetToLogicalScale = 1.0f;
-        gpu->assetToLogical = glm::mat4(1.0f);
-        size = gpu->index.maxBounds - gpu->index.minBounds;
-        scale = 1.0f;
+        if (socket.kind != "object_frame")
+            continue;
+        glm::mat4 frame = glm::translate(glm::mat4(1.0f), socket.localPosition);
+        frame = glm::rotate(frame, glm::radians(socket.localRotationDeg.x), glm::vec3(1, 0, 0));
+        frame = glm::rotate(frame, glm::radians(socket.localRotationDeg.y), glm::vec3(0, 1, 0));
+        frame = glm::rotate(frame, glm::radians(socket.localRotationDeg.z), glm::vec3(0, 0, 1));
+        scale = socket.extent.x > 0.0f ? socket.extent.x : 1.0f;
+        gpu->assetToLogicalScale = scale;
+        gpu->assetToLogical = glm::scale(glm::mat4(1.0f), glm::vec3(scale)) * glm::inverse(frame);
+        size = (gpu->index.maxBounds - gpu->index.minBounds) * scale;
+        std::cerr << "[ModelAssetGpu] " << path << " placement from its object_frame socket" << std::endl;
+        break;
     }
     for (const auto& node : gpu->asset.nodes)
         gpu->nodeModule.push_back(legacyModuleFor(type, node.id));

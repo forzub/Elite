@@ -1,7 +1,7 @@
 // Ship model-asset ASSEMBLE (step 3, slice S2; author 2026-11-09: "the hull in compartments, interiors drawn only
 // for a breached compartment").
 //
-//   EliteShipAssetAssemble <source dir with ship_asset.json> <production.elmodel>
+//   EliteShipAssetAssemble <source dir with ship_asset.json> <production.elmodel> [<working.elmodel>]
 //
 // Reads the SOURCE written by tools/ships/ship_asset_source.py (semantic nodes, breachable plate / pad states,
 // compartments with interior nodes, openings, exterior portals, collision, render LODs whose geometries are OBJ
@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdio>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <sstream>
@@ -124,7 +125,7 @@ int main(int argc, char** argv)
         if (!f) throw std::runtime_error("cannot open " + dir + "/ship_asset.json");
         const json src = json::parse(f);
         ModelAsset a;
-        a.assetId = src.at("asset_id").get<std::string>();
+        a.assetId = src.value("catalog_id", src.at("asset_id").get<std::string>());
         a.displayName = src.at("display_name").get<std::string>();
 
         std::map<std::string, std::int32_t> mat;
@@ -210,6 +211,54 @@ int main(int argc, char** argv)
             a.collisionVolumes.push_back(c);
         }
 
+        for (const auto& j : src.value("structural_links", json::array()))
+        {
+            StructuralLinkDefinition l;
+            l.id = j.at("id").get<std::string>();
+            l.nodeAIndex = nodeOf(j.at("a"));
+            l.nodeBIndex = nodeOf(j.at("b"));
+            const std::string kind = j.at("kind").get<std::string>();
+            l.kind = kind == "weld_seam" ? StructuralLinkKind::WeldSeam
+                   : kind == "equipment_mount" ? StructuralLinkKind::EquipmentMount
+                   : kind == "controlled_lock" ? StructuralLinkKind::ControlledLock : StructuralLinkKind::FixedMount;
+            l.loadBearing = j.value("load_bearing", true);
+            for (const auto& jp : j.at("proxies"))
+            {
+                StructuralDamageProxy p;
+                p.id = jp.at("id").get<std::string>();
+                p.shape = StructuralDamageShape::Box;
+                p.parentNodeIndex = l.nodeBIndex;   // nodes sit at the origin: asset-space placement
+                p.localPosition = vec3(jp.at("position"));
+                p.localRotationDeg = vec3(jp.at("rotation_deg"));
+                p.halfSize = vec3(jp.at("half_size"));
+                l.damageProxies.push_back(p);
+            }
+            a.structuralLinks.push_back(l);
+        }
+        for (const auto& j : src.value("hit_regions", json::array()))
+        {
+            HitRegion h;
+            h.id = j.at("id").get<std::string>();
+            h.parentNodeIndex = nodeOf(j.at("node"));
+            h.localPosition = vec3(j.at("position"));
+            h.localRotationDeg = vec3(j.at("rotation_deg"));
+            h.halfSize = vec3(j.at("half_size"));
+            h.activeStates = strings(j.at("active_states"));
+            a.hitRegions.push_back(h);
+        }
+        if (src.contains("object_frame"))
+        {
+            // the placement of this mesh in the object's logical frame (ModelAssetGpuLibrary reads it)
+            const auto& f = src.at("object_frame");
+            Socket frame;
+            frame.id = "object_frame";
+            frame.kind = "object_frame";
+            frame.localPosition = vec3(f.at("position"));
+            frame.localRotationDeg = vec3(f.at("rotation_deg"));
+            frame.extent = glm::vec3(f.value("scale", 1.0f), 0.0f, 0.0f);
+            a.sockets.push_back(frame);
+        }
+
         bool first = true;
         for (const auto& jl : src.at("render_lods"))
         {
@@ -273,15 +322,21 @@ int main(int argc, char** argv)
         a.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
         std::string error;
         if (!ModelAssetBinary::validate(a, &error)) throw std::runtime_error("working asset invalid: " + error);
+        if (argc > 3)
+        {
+            // the WORKING (authoring) copy for the Model Asset Editor workspace (it resumes from it)
+            std::filesystem::create_directories(std::filesystem::path(argv[3]).parent_path());
+            if (!ModelAssetBinary::save(argv[3], a, &error)) throw std::runtime_error("working save failed: " + error);
+        }
         ModelAsset production = makeProductionCopy(a);
         if (!ModelAssetBinary::validate(production, &error)) throw std::runtime_error("production invalid: " + error);
         if (!ModelAssetBinary::save(argv[2], production, &error)) throw std::runtime_error("save failed: " + error);
         std::size_t tris = 0;
         for (const auto& g : production.renderLods[0].geometries) tris += g.mesh.triangles.size();
-        std::printf("assembled %s: %zu nodes, %zu states, %zu compartments, %zu portals, %zu collision, %zu LODs "
+        std::printf("assembled %s: %zu nodes, %zu states, %zu compartments, %zu portals, %zu collision, %zu structural links, %zu LODs "
                     "(LOD0 %zu unique-geometry triangles) -> %s\n",
                     a.assetId.c_str(), a.nodes.size(), a.stateVariants.size(), a.compartments.size(), a.portals.size(),
-                    a.collisionVolumes.size(), a.renderLods.size(), tris, argv[2]);
+                    a.collisionVolumes.size(), a.structuralLinks.size(), a.renderLods.size(), tris, argv[2]);
         return 0;
     }
     catch (const std::exception& e)

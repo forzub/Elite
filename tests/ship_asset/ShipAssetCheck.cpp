@@ -111,6 +111,10 @@ int main(int argc, char** argv)
                       index.minBounds.x, index.minBounds.y, index.minBounds.z, index.maxBounds.x, index.maxBounds.y, index.maxBounds.z,
                       ship.minBounds.x, ship.minBounds.y, ship.minBounds.z, ship.maxBounds.x, ship.maxBounds.y, ship.maxBounds.z);
         line(b);
+        std::snprintf(b, sizeof(b), "basis preset=%s canonicalized=%d gameLinked=%d sourceToMeters=%.4f space=%d",
+                      ship.sourceBasis.preset.c_str(), int(ship.sourceBasis.canonicalized), int(ship.physicalSize.gameLinked),
+                      ship.physicalSize.sourceToMeters, int(ship.physicalSize.geometrySpace));
+        line(b);
     }
     line("nodes " + std::to_string(ship.nodes.size()) + ", compartments " + std::to_string(ship.compartments.size()) +
          ", portals " + std::to_string(ship.portals.size()) + ", LODs " + std::to_string(ship.renderLods.size()));

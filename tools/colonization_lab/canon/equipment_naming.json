@@ -611,6 +611,30 @@
    "official_name": "Cobretty LS-1 Landing Skid",
    "display_name_ru": "LS-1 (складная посадочная лыжа)"
   },
+  "um.jfe.zp1": {
+   "model_index": "ZP-FE1",
+   "official_name": "Zero Point ZP-FE1 Field Emitter",
+   "display_name_ru": "ZP-FE1 (излучатель поля прыжка, «Нулевая точка»)",
+   "native_script": "零点 ZP-FE1 场发射器"
+  },
+  "harmony.jfe.he8": {
+   "model_index": "He-FE8",
+   "official_name": "Harmony He-FE8 Field Emitter",
+   "display_name_ru": "He-FE8 (излучатель поля прыжка, Гармония)",
+   "native_script": "和谐 He-FE8 场发射器"
+  },
+  "bastion.jfe.mj2": {
+   "model_index": "MJ-FE2",
+   "official_name": "Bastion MJ-FE2 feltemitter",
+   "display_name_ru": "MJ-FE2 (излучатель поля прыжка, Бастион)",
+   "native_script": "Mjølner MJ-FE2 feltemitter"
+  },
+  "kapehu.jfe.k1": {
+   "model_index": "K-FE1",
+   "official_name": "Kāpehu K-FE1 Field Emitter",
+   "display_name_ru": "K-FE1 (излучатель поля прыжка, Капеху)",
+   "native_script": "Kāpehu K-FE1 ama pūtuku whaitua"
+  },
   "srw.reactor.sr26": {
    "model_index": "SR-2.6",
    "official_name": "Sol Reactor Works SR-2.6 Propulsion Reactor",

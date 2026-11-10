@@ -6706,8 +6706,9 @@
       },
       "model_asset": "equipment/zeropoint_zpfe1_field_emitter",
       "official_name": "Zero Point ZP-FE1 Field Emitter",
-      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (proposal)",
-      "notes": "Jump-field emitter (accepted concept). Standby power from the core; the field energy is the core's charge."
+      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (ACCEPTED by the author 2026-11-10; runtime not implemented yet)",
+      "notes": "Jump-field emitter (accepted concept). Standby power from the core; the field energy is the core's charge.",
+      "native_script": "零点 ZP-FE1 场发射器"
     },
     {
       "id": "harmony.jfe.he8",
@@ -6753,7 +6754,7 @@
       },
       "model_asset": "equipment/harmony_hefe8_field_emitter",
       "official_name": "Harmony He-FE8 Field Emitter",
-      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (proposal)",
+      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (ACCEPTED by the author 2026-11-10; runtime not implemented yet)",
       "notes": "Jump-field emitter (accepted concept). Standby power from the core; the field energy is the core's charge.",
       "native_script": "和谐 He-FE8 场发射器"
     },
@@ -6799,7 +6800,7 @@
       },
       "model_asset": "equipment/bastion_mjfe2_field_emitter",
       "official_name": "Bastion MJ-FE2 feltemitter",
-      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (proposal)",
+      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (ACCEPTED by the author 2026-11-10; runtime not implemented yet)",
       "notes": "Jump-field emitter (accepted concept). Standby power from the core; the field energy is the core's charge.",
       "native_script": "Mjølner MJ-FE2 feltemitter"
     },
@@ -6846,9 +6847,9 @@
       },
       "model_asset": "equipment/kapehu_kfe1_field_emitter",
       "official_name": "Kāpehu K-FE1 Field Emitter",
-      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (proposal)",
+      "fault_effect": "one emitter lost: the field is asymmetric - J ceiling halved, jump impossible until repaired or the pair is rebalanced (ACCEPTED by the author 2026-11-10; runtime not implemented yet)",
       "notes": "Jump-field emitter (accepted concept). Standby power from the core; the field energy is the core's charge.",
-      "native_script": "Kāpehu K-FE1 ama tukuwāhi"
+      "native_script": "Kāpehu K-FE1 ama pūtuku whaitua"
     }
   ]
 }

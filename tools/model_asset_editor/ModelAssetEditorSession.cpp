@@ -3268,6 +3268,26 @@ ModelAssetEditorSession::ModelAssetEditorSession(
         m_catalog.back().group = "hub";
         hubIds.insert(id);
     }
+    // Ship compartment assets (step 3): assembled by tools/ships/build_ship_assets.py (layout sketch -> SOURCE ->
+    // EliteShipAssetAssemble) into compiled/models/ship_<name>/ plus a WORKING copy in the editor workspace, so the
+    // editor opens them with every semantic field filled (nodes, breach states, compartments, portals, collision,
+    // structural links, hit regions, the object_frame placement socket). No OBJ source folder: re-import is not
+    // available, the WORKING asset is the head.
+    {
+        std::error_code ec;
+        if (std::filesystem::is_directory(m_compiledModelsRoot, ec))
+            for (const auto& dir : std::filesystem::directory_iterator(m_compiledModelsRoot, ec))
+            {
+                const std::string id = dir.path().filename().string();
+                if (!dir.is_directory() || id.rfind("ship_", 0) != 0 ||
+                    !std::filesystem::exists(dir.path() / (id + ".elmodel")))
+                    continue;
+                m_catalog.push_back({id, "Ship asset — " + id.substr(5), ObjectType::None, {},
+                                     CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly});
+                m_catalog.back().group = "ship_assets";
+            }
+    }
+
     // Equipment units (drives, reactors, ...): assets/models/equipment/<unit>/LOD<N>/*.obj,
     // generated from the equipment passports by tools/models/build_equipment_models.py.
     // They have no ObjectType of their own; the catalog id is the folder id.

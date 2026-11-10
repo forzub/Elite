@@ -61,6 +61,13 @@
       "es": "Seleccionar modelo…",
       "ja": "モデルを選択…"
     },
+    "model_editor.catalog.group.ship_assets": {
+      "en": "Ship assets (compartments)",
+      "ru": "Корабли: ассеты с отсеками",
+      "zh-Hans": "舰船资产（舱段）",
+      "es": "Naves: activos con compartimentos",
+      "ja": "艦船アセット（区画）"
+    },
     "model_editor.catalog.group.catalog_ships": {
       "en": "Catalog ships",
       "ru": "Корабли каталога",

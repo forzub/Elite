@@ -59,29 +59,34 @@ NATIVE_BRAND = {"mfr.tianhe_heavy": "天河重机", "mfr.harmony_yards": "和谐
                 "mfr.um_core_fab": "零点", "mfr.hyperion": "许珀里翁", "mfr.agora_modular": "Αγορά", "mfr.bharat": "भारत असेंबली",
                 "mfr.uhuru_bio": "Uhuru", "mfr.bastion": "Bastion", "mfr.kapehu_systems": "Kāpehu"}
 # category words: English export / native
+# Maori (Kapehu) words checked against Te Aka Maori Dictionary (maoridictionary.co.nz) 2026-11-10: attested -
+# pukaha (engine), iho (core), peke (jump), rorohiko, hihiani (radar), patu, kura (tank), poti whakaora, matatopa
+# (drone), riu (hold), whaitua (physics field), kowae (module), mawhiti (escape), ama, Kapehu; COINAGES from attested
+# parts (no dictionary entry; a fluent speaker should confirm): putauhohe karihi (reactor), papa hahana (radiator),
+# ara whakamatao (coolant loop), putuku whaitua (field emitter), punaha tautoko ora (life support), kowae mawhiti.
 WORD = {
     "drive": ("Main Drive", {"zh": "主推进器", "nb": "hoveddrift", "el": "κύρια πρόωση", "hi": "मुख्य इंजन", "sw": "injini kuu", "mi": "pūkaha matua"}),
-    "reactor": ("Propulsion Reactor", {"zh": "推进反应堆", "nb": "drivreaktor", "el": "αντιδραστήρας πρόωσης", "hi": "प्रणोदन रिएक्टर", "sw": "kinu cha msukumo", "mi": "tauhohenga"}),
-    "service_reactor": ("Service Reactor", {"zh": "辅助反应堆", "nb": "hjelpereaktor", "el": "βοηθητικός αντιδραστήρας", "hi": "सहायक रिएक्टर", "sw": "kinu kisaidizi", "mi": "tauhohenga āwhina"}),
-    "radiator": ("Radiator", {"zh": "散热板", "nb": "radiator", "el": "ψυκτικό πάνελ", "hi": "रेडिएटर", "sw": "kipoza joto", "mi": "rauangi wera"}),
-    "coolant_loop": ("Coolant Loop", {"zh": "冷却回路", "nb": "kjølekrets", "el": "κύκλωμα ψύξης", "hi": "शीतलन परिपथ", "sw": "mzunguko wa kupoza", "mi": "porowhita mātao"}),
-    "jump_field_emitter": ("Field Emitter", {"zh": "场发射器", "nb": "feltemitter", "el": "πομπός πεδίου", "hi": "क्षेत्र उत्सर्जक", "sw": "kitoa uga", "mi": "tukuwāhi"}),
+    "reactor": ("Propulsion Reactor", {"zh": "推进反应堆", "nb": "drivreaktor", "el": "αντιδραστήρας πρόωσης", "hi": "प्रणोदन रिएक्टर", "sw": "kinu cha msukumo", "mi": "pūtauhohe karihi"}),
+    "service_reactor": ("Service Reactor", {"zh": "辅助反应堆", "nb": "hjelpereaktor", "el": "βοηθητικός αντιδραστήρας", "hi": "सहायक रिएक्टर", "sw": "kinu kisaidizi", "mi": "pūtauhohe āwhina"}),
+    "radiator": ("Radiator", {"zh": "散热板", "nb": "radiator", "el": "ψυκτικό πάνελ", "hi": "रेडिएटर", "sw": "kipoza joto", "mi": "papa hahana"}),
+    "coolant_loop": ("Coolant Loop", {"zh": "冷却回路", "nb": "kjølekrets", "el": "κύκλωμα ψύξης", "hi": "शीतलन परिपथ", "sw": "mzunguko wa kupoza", "mi": "ara whakamātao"}),
+    "jump_field_emitter": ("Field Emitter", {"zh": "场发射器", "nb": "feltemitter", "el": "πομπός πεδίου", "hi": "क्षेत्र उत्सर्जक", "sw": "kitoa uga", "mi": "pūtuku whaitua"}),
     "jump_core": ("Jump Core", {"zh": "跃迁核心", "nb": "hoppkjerne", "el": "πυρήνας άλματος", "hi": "जंप कोर", "sw": "kiini cha kuruka", "mi": "iho peke"}),
-    "tank": ("Tank", {"zh": "储罐", "nb": "tank", "el": "δεξαμενή", "hi": "टंकी", "sw": "tangi", "mi": "tānga"}),
-    "cryo_tank": ("Cryo Tank", {"zh": "低温储罐", "nb": "kryotank", "el": "κρυοδεξαμενή", "hi": "क्रायो टंकी", "sw": "tangi baridi", "mi": "tānga hauhunga"}),
+    "tank": ("Tank", {"zh": "储罐", "nb": "tank", "el": "δεξαμενή", "hi": "टंकी", "sw": "tangi", "mi": "kura"}),
+    "cryo_tank": ("Cryo Tank", {"zh": "低温储罐", "nb": "kryotank", "el": "κρυοδεξαμενή", "hi": "क्रायो टंकी", "sw": "tangi baridi", "mi": "kura whakamātao"}),
     "rcs": ("RCS Cluster", {"zh": "姿控推进簇", "nb": "styredyser", "el": "συστοιχία ελέγχου στάσης", "hi": "आरसीएस समूह", "sw": "kundi la RCS", "mi": "RCS"}),
     "computer": ("Ship Computer", {"zh": "舰载计算机", "nb": "regnemaskin", "el": "υπολογιστής", "hi": "कंप्यूटर", "sw": "kompyuta", "mi": "rorohiko"}),
-    "comm": ("Comm Suite", {"zh": "通信系统", "nb": "samband", "el": "επικοινωνίες", "hi": "संचार", "sw": "mawasiliano", "mi": "whakawhitiwhiti"}),
-    "radar": ("Radar", {"zh": "雷达", "nb": "radar", "el": "ραντάρ", "hi": "रडार", "sw": "rada", "mi": "rāta"}),
+    "comm": ("Comm Suite", {"zh": "通信系统", "nb": "samband", "el": "επικοινωνίες", "hi": "संचार", "sw": "mawasiliano", "mi": "pūnaha whakawhitiwhiti kōrero"}),
+    "radar": ("Radar", {"zh": "雷达", "nb": "radar", "el": "ραντάρ", "hi": "रडार", "sw": "rada", "mi": "hihiani"}),
     "weapon": ("Weapon", {"zh": "武器", "nb": "våpen", "el": "όπλο", "hi": "हथियार", "sw": "silaha", "mi": "patu"}),
     "armour": ("Armour", {"zh": "装甲", "nb": "panser", "el": "θωράκιση", "hi": "कवच", "sw": "deraya", "mi": "pukupuku"}),
-    "hangar": ("Hangar", {"zh": "机库", "nb": "hangar", "el": "υπόστεγο", "hi": "हैंगर", "sw": "banda", "mi": "whare waka"}),
-    "life_support": ("Life Support", {"zh": "生命保障", "nb": "livsstøtte", "el": "υποστήριξη ζωής", "hi": "जीवन रक्षा", "sw": "msaada wa uhai", "mi": "tautoko ora"}),
+    "hangar": ("Hangar", {"zh": "机库", "nb": "hangar", "el": "υπόστεγο", "hi": "हैंगर", "sw": "banda", "mi": "whare waka rererangi"}),
+    "life_support": ("Life Support", {"zh": "生命保障", "nb": "livsstøtte", "el": "υποστήριξη ζωής", "hi": "जीवन रक्षा", "sw": "msaada wa uhai", "mi": "pūnaha tautoko ora"}),
     "passenger_module": ("Passenger Module", {"zh": "客舱模块", "nb": "passasjermodul", "el": "τμήμα επιβατών", "hi": "यात्री खंड", "sw": "sehemu ya abiria", "mi": "wāhanga pāhihi"}),
-    "escape_capsule": ("Escape Module", {"zh": "逃生舱", "nb": "rømningsmodul", "el": "κάψουλα διαφυγής", "hi": "बचाव कैप्सूल", "sw": "kifaa cha kutoroka", "mi": "kapuhera oranga"}),
-    "lifeboat": ("Lifeboat", {"zh": "救生艇", "nb": "livbåt", "el": "σωσίβια λέμβος", "hi": "जीवन नौका", "sw": "mashua ya uokoaji", "mi": "poti oranga"}),
-    "drone_bay": ("Drone Bay", {"zh": "无人机舱", "nb": "dronebukt", "el": "υπόστεγο drone", "hi": "ड्रोन खंड", "sw": "chumba cha ndege nyuki", "mi": "kōpae rererangi"}),
-    "drone": ("Drone", {"zh": "无人机", "nb": "drone", "el": "drone", "hi": "ड्रोन", "sw": "ndege nyuki", "mi": "rererangi"}),
+    "escape_capsule": ("Escape Module", {"zh": "逃生舱", "nb": "rømningsmodul", "el": "κάψουλα διαφυγής", "hi": "बचाव कैप्सूल", "sw": "kifaa cha kutoroka", "mi": "kōwae mawhiti"}),
+    "lifeboat": ("Lifeboat", {"zh": "救生艇", "nb": "livbåt", "el": "σωσίβια λέμβος", "hi": "जीवन नौका", "sw": "mashua ya uokoaji", "mi": "poti whakaora"}),
+    "drone_bay": ("Drone Bay", {"zh": "无人机舱", "nb": "dronebukt", "el": "υπόστεγο drone", "hi": "ड्रोन खंड", "sw": "chumba cha ndege nyuki", "mi": "riu matatopa"}),
+    "drone": ("Drone", {"zh": "无人机", "nb": "drone", "el": "drone", "hi": "ड्रोन", "sw": "ndege nyuki", "mi": "matatopa"}),
 }
 
 

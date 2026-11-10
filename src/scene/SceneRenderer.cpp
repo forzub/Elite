@@ -3588,6 +3588,31 @@ if (policy.drawObjects)
                     }
                 }
                 const glm::mat4 assetModel = devPlacement * object.model * ma.assetToLogical;
+                // DEV jitter diagnosis (author 2026-11-10: "the station keeps jumping"): ELITE_DEV_STATION_TRACE=<csv>
+                // writes, per main-camera frame, the time and the station origin in camera space
+                if (!object.isShip && cameraName == "mainCam")
+                {
+                    static std::FILE* stTrace = [] {
+                        const char* v = std::getenv("ELITE_DEV_STATION_TRACE");
+                        std::FILE* f = v && *v ? std::fopen(v, "w") : nullptr;
+                        if (f) std::fputs("t_ms,obj,cam_x,cam_y,cam_z\n", f);
+                        return f;
+                    }();
+                    if (stTrace)
+                    {
+                        const glm::vec4 c = renderView * object.model * glm::vec4(0, 0, 0, 1);
+                        double ringDeg = 0.0;   // the first spinning node's angle against the object
+                        for (const auto& nm : object.nodeModel)
+                            if (nm != object.model)
+                            {
+                                const glm::mat3 rel = glm::mat3(glm::inverse(object.model) * nm);
+                                ringDeg = glm::degrees(std::atan2(rel[0][1], rel[0][0]));
+                                break;
+                            }
+                        std::fprintf(stTrace, "%.3f,%llu,%.4f,%.4f,%.4f,%.4f\n", renderProfileNowMs(),
+                                     static_cast<unsigned long long>(object.objectId), c.x, c.y, c.z, ringDeg);
+                    }
+                }
                 mp::View view;
                 view.cameraAsset = glm::vec3(glm::inverse(assetModel) * glm::vec4(cameraLocalPosition, 1.0f));
                 view.focalPx = focalPx;

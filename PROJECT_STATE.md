@@ -4902,3 +4902,23 @@ Slices (each its own acceptance; commit != acceptance):
   S5 (high risk, later): hits and collision from the asset instead of descriptor AABBs.
 Acceptance for the stage: live flight on the target machine - an intact Cobrett-I shows no interior; breaching one
 compartment shows only that compartment's equipment.
+
+### Author 2026-11-10/11: containment drama, compact ER-5 pad, ordinary collisions incl. stations, impact tiers
+- Containment emergency (commit 541702ef): hidden 20-60 s fuse, core heats, replicated Containment alert -> red
+  flashing beacon (no sound - author), blast or quiet death by chance; reactors off x0.4; repair drone (Ctrl+R)
+  stabilises in ~8 + 25 s; LIVE: none -> blast after 37 s + chain emergency on the other ER-5; reactors off -> quiet
+  collapse; drone -> stabilised at 36 s of a 37.9 s fuse. Cockpit 260 hp / armour 40.
+- ER-5 compact pad (23409a7f): eff 0.985, waste 76 MW, 16.4 m2 as two 2.35 x 3.5 m plates top + bottom, thermal
+  capacity 80 MJ/K; er5 failure matrix + emergency bridge PASS; model, canon, ship asset, sketch renders.
+- Collisions are standard now (ELITE_DEV_SHIP_COLLISIONS=0 turns off): broad spheres + SAT over the hit boxes, impulse
+  with lever arm (push + spin through pitch/yaw/rollRate), static objects (stations) with infinite mass and their spin,
+  dock modules excluded for now, dock-controlled ships excluded; tiers: < 0.5 MJ per module no damage, damage to the
+  touching modules, ShipCore::applyPartImpulse tears links (parts knocked off), > 3 GJ crushed (cause 4, HUD).
+  LIVE: Cobra into the station at ~490 m/s -> 30 GJ, 22 links torn, crushed; 30 m/s ship-ship -> 50 MJ, 3 links torn,
+  spin 0.1-0.8 rad/s. Reactor blasts push and spin the hull (~2 % of the energy).
+- Station "teleporting" (author report): not reproduced. DEV ELITE_DEV_STATION_TRACE=<csv> (per frame camera-space
+  origin + spinning ring angle): the station at 10 km steps 0.16-0.4 m / frame (sub-pixel); the ring turns every frame
+  but its rate jitters 1.2-6.3 deg/s around 2.9 (interpolated module angle) - not visible at 10 km. Need the author's
+  situation (distance, mode, docked / J / map) to chase it.
+- Open: S5 (hit geometry from the assets for every module in the game - the legacy Cobra ER-5s still have none),
+  dock-module collisions, munition norm tables (author: the fleet plans by expenditure norms) + NPC missile economy.

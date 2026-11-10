@@ -300,6 +300,9 @@ public:
     void devCombatStep(double dt);
     void disableShipIfCombatLost(EntityId shipId, Ship& ship);   // cockpit or all propulsion reactors lost
     void noteCombatAggression(EntityId targetId, EntityId attackerId);
+    void collideShips(double dt);
+    struct StaticTrack { glm::dvec3 p {0.0}; double t = 0.0; bool valid = false; };
+    std::unordered_map<EntityId, StaticTrack> m_staticTracks;   // static object velocity for contacts   // ordinary ship-ship collisions (hit boxes, impulse + spin, local damage)
     // Reactor explosions (author 2026-11-10): cheap vacuum model - a short-range flash on the nearby modules and N
     // fragments (own hull: rays through the penetration model; other ships: a random number of hits by the solid
     // angle they cover, each on a random module). Processed one tick later (chain reactions without recursion).

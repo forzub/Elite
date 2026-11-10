@@ -902,7 +902,7 @@ void GameSimulation::devCombatStep(double dt)
     }();
     static const bool collisions = [] {
         const char* v = std::getenv("ELITE_DEV_SHIP_COLLISIONS");
-        return v && *v && *v != '0';
+        return !(v && *v == '0');   // on by default (author 2026-11-10)
     }();
     static const bool playerTrack = [] {
         const char* v = std::getenv("ELITE_DEV_PLAYER_TRACK");
@@ -1066,100 +1066,15 @@ void GameSimulation::devCombatStep(double dt)
         }
     }
 
-    // ---- ship-ship contacts: bounding spheres, inelastic normal impulse (e = 0.2); the dissipated energy burns the
-    //      hit volumes of both ships near the contact point (MJ x health_per_mj, the weapons' own calibration)
+    // ---- collisions (author 2026-11-10: no special ram - ordinary collisions; what hits what is not known in advance).
+    //      Broad phase: bounding spheres of the ships' hit volumes; narrow phase: their oriented hit boxes (SAT). The
+    //      contact is where boxes really overlap: an inelastic impulse with its lever arm (the ships separate and spin),
+    //      the dissipated energy burns exactly the touching modules (MJ x health_per_mj). ELITE_DEV_SHIP_COLLISIONS=0
+    //      turns it off.
     if (collisions)
-    {
-        std::vector<std::pair<EntityId, Ship*>> list;
-        for (auto& [id, s] : m_ships)
-            if (s->core().transform().motion.mode == game::navigation::MotionMode::HubTactical)
-                list.emplace_back(id, s.get());
-        for (std::size_t i = 0; i < list.size(); ++i)
-            for (std::size_t k = i + 1; k < list.size(); ++k)
-            {
-                Ship* a = list[i].second;
-                Ship* b = list[k].second;
-                auto& ta = a->core().transform();
-                auto& tb = b->core().transform();
-                if (ta.motion.systemId != tb.motion.systemId)
-                    continue;
-                const glm::dvec3 ha = glm::dvec3(a->core().effectivePhysics().physicalActuatorHalfExtentsMeters);
-                const glm::dvec3 hb = glm::dvec3(b->core().effectivePhysics().physicalActuatorHalfExtentsMeters);
-                const double ra = 0.8 * std::max({ha.x, ha.y, ha.z, 5.0});
-                const double rb = 0.8 * std::max({hb.x, hb.y, hb.z, 5.0});
-                const glm::dvec3 pa = world::coordinates::fullMeters(ta.worldPosition);
-                const glm::dvec3 pb = world::coordinates::fullMeters(tb.worldPosition);
-                const glm::dvec3 d = pb - pa;
-                const double dist = glm::length(d);
-                if (dist >= ra + rb || dist < 1.0e-6)
-                    continue;
-                const glm::dvec3 n = d / dist;
-                const auto trA = m_combatTracks.find(list[i].first);
-                const auto trB = m_combatTracks.find(list[k].first);
-                const glm::dvec3 va = trA != m_combatTracks.end() ? trA->second.velocityW : glm::dvec3(0.0);
-                const glm::dvec3 vb = trB != m_combatTracks.end() ? trB->second.velocityW : glm::dvec3(0.0);
-                const double vn = glm::dot(vb - va, n);   // < 0: closing
-                const std::uint64_t pair =
-                    (static_cast<std::uint64_t>(std::min(list[i].first.value, list[k].first.value)) << 32) |
-                    std::max(list[i].first.value, list[k].first.value);
-                if (vn >= -0.05 || m_combatClockS - m_devContactClockS[pair] < 0.5)
-                    continue;
-                m_devContactClockS[pair] = m_combatClockS;
-                for (const EntityId sid : {list[i].first, list[k].first})
-                    if (m_combatTargetDummies.count(sid))
-                        m_devRamRetreatUntilS[sid] = m_combatClockS + 6.0;
-                const double ma = std::max(1.0e3, static_cast<double>(a->core().effectivePhysics().massKg));
-                const double mb = std::max(1.0e3, static_cast<double>(b->core().effectivePhysics().massKg));
-                const double mu = ma * mb / (ma + mb);
-                const double e = 0.2;
-                const double J = -(1.0 + e) * mu * vn;   // > 0
-                const double dissipatedMJ = 0.5 * mu * vn * vn * (1.0 - e * e) * 1.0e-6;
-                const double overlap = ra + rb - dist;
-                ta.motion.localVelocityMps += ta.motion.travelFrame.worldToLocalVector(-n * (J / ma));
-                tb.motion.localVelocityMps += tb.motion.travelFrame.worldToLocalVector(n * (J / mb));
-                ta.motion.localPositionMeters += ta.motion.travelFrame.worldToLocalVector(-n * overlap * mb / (ma + mb));
-                tb.motion.localPositionMeters += tb.motion.travelFrame.worldToLocalVector(n * overlap * ma / (ma + mb));
-                const glm::dvec3 contact = pa + n * (ra * dist / (ra + rb));
-                const auto where = world::coordinates::makeWorldPositionFromMeters(contact);
-                for (Ship* ship : {a, b})
-                {
-                    const EntityId sid = ship == a ? list[i].first : list[k].first;
-                    const auto& tr = ship->core().transform();
-                    const glm::dmat3 R = glm::dmat3(glm::mat3(tr.orientation));
-                    const glm::dvec3 local = glm::transpose(R) * (contact - world::coordinates::fullMeters(tr.worldPosition));
-                    std::vector<std::string> keys;
-                    std::string nearestKey;
-                    double nearest = 1.0e30;
-                    for (const auto& v : ship->core().hitComponent().volumes)
-                    {
-                        if (v.destroyed)
-                            continue;
-                        const std::string key = v.supportLinkVolume ? "link::" + v.supportLinkId : "module::" + v.moduleId;
-                        const glm::dvec3 lo = glm::dvec3(v.center - v.halfSize);
-                        const glm::dvec3 hi = glm::dvec3(v.center + v.halfSize);
-                        const glm::dvec3 q = glm::clamp(local, lo, hi);
-                        const double dd = glm::length(local - q);
-                        if (dd < nearest)
-                        {
-                            nearest = dd;
-                            nearestKey = key;
-                        }
-                        if (dd < 4.0)
-                            keys.push_back(key);
-                    }
-                    if (keys.empty() && !nearestKey.empty())
-                        keys.push_back(nearestKey);
-                    const double health = 0.5 * dissipatedMJ * cat.materials.healthPerMJ;
-                    for (const auto& key : keys)
-                        m_burnStates[sid].pendingHealthLoss[key] += health / static_cast<double>(keys.size());
-                    flushCombatDamage(sid, game::damage::DamageType::Collision, where);
-                }
-                std::cerr << "[Ram] ships " << list[i].first.value << " x " << list[k].first.value << ": closing " << -vn
-                          << " m/s, masses " << ma / 1000.0 << " / " << mb / 1000.0 << " t, dissipated " << dissipatedMJ
-                          << " MJ, impulse " << J / 1000.0 << " kN s" << std::endl;
-            }
-    }
+        collideShips(dt);
 }
+
 
 // ============================================================================ laser controller (author 2026-11-10)
 // Returns the beam power (MW) this tick. firing = the trigger is held. One law for every ship: what differs
@@ -1350,6 +1265,28 @@ void GameSimulation::explodeReactor(const PendingExplosion& e)
         flushCombatDamage(id, game::damage::DamageType::Explosion, world::coordinates::makeWorldPositionFromMeters(p));
         std::cerr << "[Explosion] fragments: ship " << id.value << " at " << d << " m took " << hits << " hits" << std::endl;
     }
+    {
+        // the blast pushes and spins its own ship: ~2 % of the energy goes into the hull's motion, along the reactor's
+        // offset from the centre (an off-centre reactor turns the hull - a big ship tumbling into its neighbours)
+        auto& tr2 = ship->core().transform();
+        const double mass = std::max(1.0e3, static_cast<double>(ship->core().effectivePhysics().massKg));
+        const double p = std::sqrt(2.0 * mass * 0.02 * e.energyMJ * 1.0e6);   // momentum, kg m/s
+        glm::dvec3 off = glm::dvec3(c);
+        const glm::dvec3 dirB = glm::length(off) > 0.1 ? -glm::normalize(off) : glm::dvec3(0.0, 1.0, 0.0);
+        const glm::dvec3 Jw = R * dirB * p;
+        if (tr2.motion.travelFrame.valid)
+            tr2.motion.localVelocityMps += tr2.motion.travelFrame.worldToLocalVector(Jw / mass);
+        double rad = 1.0;
+        for (const auto& v : hit.volumes)
+            if (glm::length(v.center) > 1.0e-4f)
+                rad = std::max(rad, static_cast<double>(glm::length(v.center) + glm::length(v.halfSize)));
+        const glm::dvec3 dw = glm::cross(off, dirB * p) / (0.25 * mass * rad * rad);   // body frame
+        tr2.pitchRate += static_cast<float>(dw.x);
+        tr2.yawRate += static_cast<float>(dw.y);
+        tr2.rollRate += static_cast<float>(dw.z);
+        std::cerr << "[Explosion] ship " << e.shipId.value << ": kicked " << glm::length(Jw) / mass << " m/s, spin "
+                  << glm::length(dw) << " rad/s" << std::endl;
+    }
     recordCombatImpact(e.shipId, where, e.energyMJ, 2, e.moduleId);
     // the reactor is gone: mark it, and judge the ship (all propulsion reactors lost -> out of the fight)
     ship->core().moduleRuntime().markModuleDestroyed(e.moduleId, 0.0f);
@@ -1475,4 +1412,265 @@ void GameSimulation::updateContainmentEmergencies(double dt)
         else if (!sp->core().containmentAlarms().empty())
             sp->core().setContainmentAlarms({});
     }
+}
+
+// ============================================================================ collisions (author 2026-11-10)
+namespace
+{
+struct WorldBox
+{
+    glm::dvec3 c;
+    glm::dmat3 R;   // columns = box axes in the world
+    glm::dvec3 h;
+    std::size_t index;
+};
+
+// separating-axis test of two oriented boxes; returns the penetration depth (<= 0: apart)
+double obbOverlap(const WorldBox& a, const WorldBox& b)
+{
+    const glm::dvec3 t = b.c - a.c;
+    double minPen = 1.0e30;
+    auto test = [&](const glm::dvec3& axisIn) {
+        const double L = glm::length(axisIn);
+        if (L < 1.0e-9)
+            return true;
+        const glm::dvec3 ax = axisIn / L;
+        double ra = 0.0, rb = 0.0;
+        for (int i = 0; i < 3; ++i)
+        {
+            ra += a.h[i] * std::abs(glm::dot(a.R[i], ax));
+            rb += b.h[i] * std::abs(glm::dot(b.R[i], ax));
+        }
+        const double pen = ra + rb - std::abs(glm::dot(t, ax));
+        if (pen <= 0.0)
+            return false;
+        minPen = std::min(minPen, pen);
+        return true;
+    };
+    for (int i = 0; i < 3; ++i)
+        if (!test(a.R[i]) || !test(b.R[i]))
+            return 0.0;
+    for (int i = 0; i < 3; ++i)
+        for (int k = 0; k < 3; ++k)
+            if (!test(glm::cross(a.R[i], b.R[k])))
+                return 0.0;
+    return minPen;
+}
+} // namespace
+
+void GameSimulation::collideShips(double dt)
+{
+    (void)dt;
+    const auto& cat = weaponCatalog();
+    struct Body
+    {
+        EntityId id;
+        Ship* ship;
+        glm::dvec3 p, v, w;   // position, velocity, angular velocity (world)
+        glm::dmat3 R;
+        double m, I, r;
+    };
+    std::vector<Body> bodies;
+    for (auto& [id, sp] : m_ships)
+    {
+        auto& tr = sp->core().transform();
+        if (tr.motion.mode != game::navigation::MotionMode::HubTactical || !tr.motion.travelFrame.valid ||
+            isDockStationControlledShip(id))
+            continue;
+        Body b;
+        b.id = id;
+        b.ship = sp.get();
+        b.p = world::coordinates::fullMeters(tr.worldPosition);
+        const auto t = m_combatTracks.find(id);
+        b.v = t != m_combatTracks.end() && t->second.valid ? t->second.velocityW : glm::dvec3(0.0);
+        b.R = basisOf(tr);
+        b.w = b.R * glm::dvec3(tr.pitchRate, tr.yawRate, tr.rollRate);
+        b.m = std::max(1.0e3, static_cast<double>(sp->core().effectivePhysics().massKg));
+        b.r = 1.0;
+        for (const auto& v : sp->core().hitComponent().volumes)
+            if (!v.destroyed && glm::length(v.center) > 1.0e-4f)
+                b.r = std::max(b.r, static_cast<double>(glm::length(v.center) + glm::length(v.halfSize)));
+        b.I = 0.25 * b.m * b.r * b.r;   // a plate-like hull: radius of gyration ~ r / 2
+        bodies.push_back(b);
+    }
+    const std::size_t shipCount = bodies.size();
+    // stations and other static objects (author 2026-11-10: "why does the ship fly through the station"): bodies of
+    // infinite mass; their spin (rotating modules) is in the contact velocity. The dock modules (hex dock, its service
+    // block, guidance docks) are left out until their hit boxes are checked against the docking corridors.
+    std::vector<const StaticObject*> statics;
+    for (const auto& [oid, o] : m_staticObjects)
+    {
+        if (o.type == ObjectType::HubHexDock || o.type == ObjectType::HubDockServiceBlock ||
+            o.type == ObjectType::GuidanceDockCube || o.type == ObjectType::GuidanceDockCylinder || o.hitComponent.volumes.empty())
+            continue;
+        Body b;
+        b.id = oid;
+        b.ship = nullptr;
+        b.p = world::coordinates::fullMeters(o.worldPosition);
+        auto& track = m_staticTracks[oid];
+        b.v = track.valid && m_combatClockS > track.t ? (b.p - track.p) / (m_combatClockS - track.t) : glm::dvec3(0.0);
+        track.p = b.p;
+        track.t = m_combatClockS;
+        track.valid = true;
+        b.R = glm::dmat3(glm::mat3(o.orientation));
+        b.w = b.R * glm::dvec3(o.angularVelocity);
+        b.m = 1.0e15;
+        b.I = 1.0e20;
+        b.r = 1.0;
+        for (const auto& v : o.hitComponent.volumes)
+            if (!v.destroyed)
+                b.r = std::max(b.r, static_cast<double>(glm::length(v.center) + glm::length(v.halfSize)));
+        bodies.push_back(b);
+        statics.push_back(&o);
+    }
+    for (std::size_t i = 0; i < bodies.size(); ++i)
+        for (std::size_t k = i + 1; k < bodies.size(); ++k)
+        {
+            if (i >= shipCount)
+                break;   // static-static pairs never collide
+            Body& A = bodies[i];
+            Body& B = bodies[k];
+            if (B.ship && A.ship->core().transform().motion.systemId != B.ship->core().transform().motion.systemId)
+                continue;
+            if (glm::length(B.p - A.p) >= A.r + B.r)
+                continue;
+            // narrow phase: every pair of placed, intact hit boxes
+            auto boxes = [&](const Body& X) {
+                std::vector<WorldBox> out;
+                const auto& vols = X.ship ? X.ship->core().hitComponent().volumes
+                                          : statics[static_cast<std::size_t>(&X - &bodies[shipCount])]->hitComponent.volumes;
+                for (std::size_t n = 0; n < vols.size(); ++n)
+                {
+                    const auto& v = vols[n];
+                    if (v.destroyed || glm::length(v.center) < 1.0e-4f)
+                        continue;
+                    WorldBox wb;
+                    wb.c = X.p + X.R * glm::dvec3(v.center);
+                    wb.R = X.R * glm::dmat3(v.orientation);
+                    wb.h = glm::dvec3(v.halfSize);
+                    wb.index = n;
+                    out.push_back(wb);
+                }
+                return out;
+            };
+            const auto ba = boxes(A), bb = boxes(B);
+            std::vector<std::pair<std::size_t, std::size_t>> touching;
+            glm::dvec3 contact(0.0), dirSum(0.0);
+            double maxPen = 0.0;
+            for (const auto& x : ba)
+            {
+                if (glm::length(x.c - B.p) > B.r + glm::length(x.h))
+                    continue;
+                for (const auto& y : bb)
+                {
+                    const double pen = obbOverlap(x, y);
+                    if (pen <= 0.0)
+                        continue;
+                    touching.emplace_back(x.index, y.index);
+                    contact += 0.5 * (x.c + y.c);
+                    dirSum += y.c - x.c;
+                    maxPen = std::max(maxPen, pen);
+                }
+            }
+            if (touching.empty())
+                continue;
+            contact /= static_cast<double>(touching.size());
+            glm::dvec3 n = glm::length(dirSum) > 1.0e-6 ? glm::normalize(dirSum) : glm::normalize(B.p - A.p);
+            const glm::dvec3 rA = contact - A.p, rB = contact - B.p;
+            const glm::dvec3 vRel = (B.v + glm::cross(B.w, rB)) - (A.v + glm::cross(A.w, rA));
+            const double vn = glm::dot(vRel, n);
+            const std::uint64_t pair = (static_cast<std::uint64_t>(std::min(A.id.value, B.id.value)) << 32) |
+                                       std::max(A.id.value, B.id.value);
+            // separate the overlap in any case (no sinking into each other), impulse only while closing
+            auto& ta = A.ship->core().transform();
+            ShipTransform* tbp = B.ship ? &B.ship->core().transform() : nullptr;
+            const double push = std::min(maxPen, 0.5);
+            ta.motion.localPositionMeters += ta.motion.travelFrame.worldToLocalVector(-n * push * B.m / (A.m + B.m));
+            if (tbp)
+                tbp->motion.localPositionMeters += tbp->motion.travelFrame.worldToLocalVector(n * push * A.m / (A.m + B.m));
+            if (vn >= -0.05 || m_combatClockS - m_devContactClockS[pair] < 0.25)
+                continue;
+            m_devContactClockS[pair] = m_combatClockS;
+            const double e = 0.2;
+            const glm::dvec3 cA = glm::cross(rA, n), cB = glm::cross(rB, n);
+            const double denom = 1.0 / A.m + 1.0 / B.m + glm::dot(cA, cA) / A.I + glm::dot(cB, cB) / B.I;
+            const double J = -(1.0 + e) * vn / denom;   // > 0
+            const glm::dvec3 Jv = n * J;
+            // linear and angular velocity changes (angular -> the body rates the flight model integrates)
+            ta.motion.localVelocityMps += ta.motion.travelFrame.worldToLocalVector(-Jv / A.m);
+            if (tbp)
+                tbp->motion.localVelocityMps += tbp->motion.travelFrame.worldToLocalVector(Jv / B.m);
+            const glm::dvec3 dwA = glm::transpose(A.R) * (glm::cross(rA, -Jv) / A.I);
+            const glm::dvec3 dwB = glm::transpose(B.R) * (glm::cross(rB, Jv) / B.I);
+            ta.pitchRate += static_cast<float>(dwA.x); ta.yawRate += static_cast<float>(dwA.y); ta.rollRate += static_cast<float>(dwA.z);
+            if (tbp)
+            {
+                tbp->pitchRate += static_cast<float>(dwB.x);
+                tbp->yawRate += static_cast<float>(dwB.y);
+                tbp->rollRate += static_cast<float>(dwB.z);
+            }
+            // the energy the impact dissipates: (1 - e^2) of the normal kinetic energy at the contact
+            const double dissipatedMJ = 0.5 * (1.0 - e * e) * vn * vn / denom * 1.0e-6;
+            // half to each ship; against a station the ship takes it all (the station's own damage is a later slice)
+            const double health = (B.ship ? 0.5 : 1.0) * dissipatedMJ * cat.materials.healthPerMJ;
+            const auto where = world::coordinates::makeWorldPositionFromMeters(contact);
+            // What the impact does (author 2026-11-10: "where it comes from, how strong, where it lands"), per ship:
+            //  - the impulse at the contact point with its lever arm: a push and, off the centre of mass, a spin (above);
+            //  - energy per touched module below ~0.5 MJ: a bump, no damage;
+            //  - above: the touched modules lose health (energy x health_per_mj);
+            //  - the impulse loads the links that hold each touched part (ShipCore::applyPartImpulse): over a link's
+            //    tolerance it breaks and the part is knocked off; below, the link fatigues;
+            //  - more than ~3 GJ on one ship: the hull is crushed as a whole (destroyed, cause 4 "collision").
+            for (int side = 0; side < (B.ship ? 2 : 1); ++side)
+            {
+                Body& X = side == 0 ? A : B;
+                std::unordered_map<std::string, int> keys;
+                std::unordered_map<std::string, int> modules;
+                for (const auto& [ia, ib] : touching)
+                {
+                    const auto& v = X.ship->core().hitComponent().volumes[side == 0 ? ia : ib];
+                    ++keys[game::combat::volumeKey(v)];
+                    if (!v.supportLinkVolume)
+                        ++modules[v.moduleId];
+                }
+                const double total = static_cast<double>(touching.size());
+                const double shipMJ = health / cat.materials.healthPerMJ;
+                for (const auto& [key, cnt] : keys)
+                {
+                    const double mj = shipMJ * cnt / total;
+                    if (mj >= 0.5)
+                        m_burnStates[X.id].pendingHealthLoss[key] += health * cnt / total;
+                }
+                int knocked = 0;
+                for (const auto& [mod, cnt] : modules)
+                    knocked += X.ship->core().applyPartImpulse(mod, (J / 1000.0) * cnt / total);
+                flushCombatDamage(X.id, game::damage::DamageType::Collision, where);
+                if (knocked > 0)
+                {
+                    markShipGraphDirty(X.id);
+                    std::cerr << "[Collision] ship " << X.id.value << ": " << knocked << " link(s) torn - parts knocked loose" << std::endl;
+                }
+                const auto cause0 = X.ship->core().transform().motion.destroyedCause;
+                if (shipMJ > 3000.0 && (cause0 == 0 || cause0 == 3))   // a disabled hull can still be crushed
+                {
+                    auto& mo = X.ship->core().transform().motion;
+                    mo.destroyedCause = 4;
+                    X.ship->setControlState(ShipControlState {});
+                    X.ship->core().destroyWholeShip();
+                    markShipGraphDirty(X.id);
+                    if (!isPlayerControlled(X.id))
+                        (void)markShipDerelict(X.id);
+                    std::cerr << "[Collision] ship " << X.id.value << ": CRUSHED (" << shipMJ << " MJ at " << -vn << " m/s)" << std::endl;
+                }
+            }
+            std::cerr << "[Collision] ship " << A.id.value << " x " << (B.ship ? "ship " : "STATION OBJECT ") << B.id.value << ": closing " << -vn << " m/s, "
+                      << touching.size() << " touching box pairs, dissipated " << dissipatedMJ << " MJ, spin "
+                      << glm::length(dwA) << " / " << glm::length(dwB) << " rad/s" << std::endl;
+            std::cerr << "[Ram] ships " << A.id.value << " x " << B.id.value << ": closing " << -vn << " m/s, masses "
+                      << A.m / 1000.0 << " / " << B.m / 1000.0 << " t, dissipated " << dissipatedMJ << " MJ, impulse "
+                      << J / 1000.0 << " kN s" << std::endl;
+            for (const EntityId sid : {A.id, B.id})
+                if (m_combatTargetDummies.count(sid))
+                    m_devRamRetreatUntilS[sid] = m_combatClockS + 6.0;
+        }
 }

@@ -126,11 +126,19 @@ function shipModules(s) {
   for (const g of s.functional_groups) for (const it of g.items) ids.add(it.part_id);
   return ids;
 }
+// model status (store.js status()): only "approved" counts as ready; drafts are counted apart
+const MODEL_STATUS = [["none", "нет модели"], ["draft", "набросок"], ["ingame", "в игре (не утв.)"], ["approved", "утверждена"]];
 function readiness(s) {
-  const ids = shipModules(s);
-  let ready = 0;
-  for (const id of ids) if (Store.isReady(id)) ready++;
-  return { ready: ready + (Store.isReady("hull:" + s.id) ? 1 : 0), total: ids.size + 1 };
+  const keys = [...shipModules(s), "hull:" + s.id];
+  let ready = 0, draft = 0;
+  for (const k of keys) { const st = Store.status(k); if (st === "approved") ready++; else if (st !== "none") draft++; }
+  return { ready, draft, total: keys.length };
+}
+const statusClass = key => { const st = Store.status(key); return st === "approved" ? " ready" : st === "none" ? "" : " draft"; };
+function statusSel(key, big) {
+  const st = Store.status(key), note = Store.statusNote(key);
+  return `<label class="ready st-${st}${big ? " big" : ""}" title="${esc(note || "статус модели (общий для всех кораблей)")}">модель:
+    <select data-status="${esc(key)}">${MODEL_STATUS.map(([v, t]) => `<option value="${v}"${v === st ? " selected" : ""}>${t}</option>`).join("")}</select></label>`;
 }
 
 // ---------------------------------------------------------------- pictures
@@ -326,12 +334,12 @@ function shipBrief(s) {
 function moduleCard(s, g, it) {
   const p = partMap.get(it.part_id);
   if (!p) return `<div class="modCard missing">${esc(it.part_id)}</div>`;
-  const ready = Store.isReady(p.id), shared = D.ships.filter(x => shipModules(x).has(p.id)).length;
-  return `<a class="modCard${ready ? " ready" : ""}" href="?ship=${encodeURIComponent(s.id)}&part=${encodeURIComponent(p.id)}">
+  const shared = D.ships.filter(x => shipModules(x).has(p.id)).length;
+  return `<a class="modCard${statusClass(p.id)}" href="?ship=${encodeURIComponent(s.id)}&part=${encodeURIComponent(p.id)}">
     ${partThumb(p)}
     <div class="modBody"><div class="modName">${esc(p.name)}</div>
     <div class="modSub">${esc(catRu(p.cat))} · ${fmt(it.qty)} шт.${shared > 1 ? ` · на ${shared} кораблях` : ""}</div>
-    <label class="ready" title="модель этого модуля готова (общая отметка для всех кораблей)"><input type="checkbox" data-ready="${esc(p.id)}"${ready ? " checked" : ""}> модель готова</label></div></a>`;
+    ${statusSel(p.id)}</div></a>`;
 }
 // ---- layout (tools/maintenance/build_ship_layout.py): compartments by LAYOUT with reference designations in the
 // maker's standard; the functional chains join units by function (author 2026-11-09)
@@ -340,14 +348,14 @@ const layoutOf = id => LD ? LD.ships.find(x => x.id === id) : null;
 function layoutCard(s, n) {
   const p = partMap.get(n.part);
   if (!p) return `<div class="modCard missing">${esc(n.part)}</div>`;
-  const ready = Store.isReady(p.id), shared = D.ships.filter(x => shipModules(x).has(p.id)).length;
+  const shared = D.ships.filter(x => shipModules(x).has(p.id)).length;
   const srus = (n.srus || []).map(x => `<span title="${esc(x.ru)}">${esc(x.des.slice(n.des.length))}</span>`).join(" ");
-  return `<a class="modCard${ready ? " ready" : ""}" href="?ship=${encodeURIComponent(s.id)}&part=${encodeURIComponent(p.id)}">
+  return `<a class="modCard${statusClass(p.id)}" href="?ship=${encodeURIComponent(s.id)}&part=${encodeURIComponent(p.id)}">
     ${partThumb(p)}
     <div class="modBody"><div class="des">${esc(n.des)}${n.inseparable ? ' <span class="badge">неразборный</span>' : ""}</div><div class="modName">${esc(p.name)}</div>
     <div class="modSub">${esc(catRu(p.cat))}${n.qty ? ` · ${fmt(n.qty)} шт.` : ""}${shared > 1 ? ` · на ${shared} кораблях` : ""}</div>
     ${srus ? `<div class="srus">${srus}</div>` : ""}
-    <label class="ready" title="модель этого модуля готова (общая отметка для всех кораблей)"><input type="checkbox" data-ready="${esc(p.id)}"${ready ? " checked" : ""}> модель готова</label></div></a>`;
+    ${statusSel(p.id)}</div></a>`;
 }
 const ROLE_RU = { pad: "пятак", drive: "двигатель", reactor: "реактор" };
 function chainHTML(L) {
@@ -401,12 +409,11 @@ function hullGallery(s) {
   return `<div class="card"><h3>Эскиз корпуса и компоновки</h3><div class="gallery">${sk.map(k => `<a class="sketchThumb" title="${esc(k.note || "")}"><div class="pic"><img data-blob="${esc(k.id)}" alt=""></div><span>${esc(k.name)}</span></a>`).join("")}</div></div>`;
 }
 function renderShipLayout(s, L) {
-  const hullReady = Store.isReady("hull:" + s.id);
   const std = (LD.standards || {})[L.standard];
   let schema = `<div class="section hull"><div class="secHead"><b>${esc(L.unit)}</b> · Корпус / рама</div><div class="mods">
-    <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${hullPic(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
+    <div class="modCard${statusClass("hull:" + s.id)}"><div class="pic thumb">${hullPic(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
     <div class="modSub">${esc((s.frame?.envelope_m || []).map(fmt).join(" × "))} м · ${esc(s.frame?.form || "")} · паспорт рамы отложен</div>
-    <label class="ready"><input type="checkbox" data-ready="hull:${esc(s.id)}"${hullReady ? " checked" : ""}> модель готова</label></div></div></div></div>`;
+    ${statusSel("hull:" + s.id)}</div></div></div></div>`;
   // identical compartments (e.g. the propulsion bays) are drawn once, as a stack: frames behind
   // the card show how many there are (author 2026-11-09)
   const sig = c => c.key + "|" + c.children.map(n => `${n.part}:${n.qty || 1}:${n.cls}`).join(",");
@@ -434,11 +441,10 @@ function renderShipLayout(s, L) {
     <details class="card fullPassport"><summary>Полный инженерный паспорт (баланс, вооружение, замены)</summary>${fullPassport(s)}</details></div></div>`;
 }
 function renderShipFunctional(s) {
-  const hullReady = Store.isReady("hull:" + s.id);
   let schema = `<div class="section hull"><div class="secHead"><b>${esc(shipCode(s))}</b> · Корпус / рама</div><div class="mods">
-    <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${hullPic(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
+    <div class="modCard${statusClass("hull:" + s.id)}"><div class="pic thumb">${hullPic(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
     <div class="modSub">${esc((s.frame?.envelope_m || []).map(fmt).join(" × "))} м · ${esc(s.frame?.form || "")} · паспорт рамы отложен</div>
-    <label class="ready"><input type="checkbox" data-ready="hull:${esc(s.id)}"${hullReady ? " checked" : ""}> модель готова</label></div></div></div></div>`;
+    ${statusSel("hull:" + s.id)}</div></div></div></div>`;
   for (const g of s.functional_groups)
     schema += `<div class="section"><div class="secHead"><b>${esc(sectionCode(s, g))}</b> · ${esc(g.name)}</div><div class="mods">${g.items.map(it => moduleCard(s, g, it)).join("")}</div></div>`;
   return `<div class="shipView"><aside class="side">${shipBrief(s)}</aside>
@@ -482,7 +488,7 @@ function autoPrompt(p) {
   ].filter(Boolean).join("\n");
 }
 function renderPart(s, p) {
-  const g = p.geometry || {}, ready = Store.isReady(p.id), c = CAT[p.cat];
+  const g = p.geometry || {}, c = CAT[p.cat];
   const used = D.ships.filter(x => shipModules(x).has(p.id));
   const sect = s ? s.functional_groups.find(gr => gr.items.some(i => i.part_id === p.id)) : null;
   let fields = "";
@@ -495,7 +501,7 @@ function renderPart(s, p) {
   return `<div class="partView">
     <div class="crumbs"><a href="?" data-nav>Каталог</a>${s ? ` › <a href="?ship=${encodeURIComponent(s.id)}" data-nav>${esc(s.name)}</a>${sect ? " › " + esc(sectionCode(s, sect)) + " " + esc(sect.name) : ""}` : ""} › <b>${esc(p.name)}</b></div>
     <div class="partHead"><div class="grow"><h2>${esc(p.name)}</h2><div class="partId">${esc(p.id)} · ${esc(catRu(p.cat))}</div></div>
-      <label class="ready big"><input type="checkbox" data-ready="${esc(p.id)}"${ready ? " checked" : ""}> модель готова</label></div>
+      ${statusSel(p.id, true)}</div>
     <div class="grid2">
       <div class="card"><h3>Что это</h3><p>${esc(describePart(p))}</p>
         ${kv("Назначение", esc(c ? c[1] : "—"))}
@@ -643,7 +649,7 @@ function render(fresh) {
   else out.innerHTML = renderCatalog(v.filter);
   document.title = (part ? part.name + " · " : ship ? ship.name + " · " : "") + "Elite 3126 — корабельный справочник";
   const meta = $("#refMeta");
-  if (meta) { let r = 0, t = 0; for (const s of D.ships) { const x = readiness(s); r += x.ready; t += x.total; } meta.textContent = D.ships.length + " кораблей · " + D.parts.length + " модулей · моделей готово " + r + " из " + t + " мест"; }
+  if (meta) { let r = 0, t = 0, dr = 0; for (const s of D.ships) { const x = readiness(s); r += x.ready; t += x.total; dr += x.draft; } meta.textContent = D.ships.length + " кораблей · " + D.parts.length + " модулей · моделей утверждено " + r + " из " + t + " мест, набросков " + dr; }
   folderButton();
   bindView(ship, part);
   hydrateImages(out);
@@ -651,16 +657,13 @@ function render(fresh) {
 }
 function bindView(ship, part) {
   const out = $("#view");
-  out.querySelectorAll("input[data-ready]").forEach(cb => {
-    cb.onclick = e => e.stopPropagation();
-    cb.onchange = () => { saveScroll(); Store.setReady(cb.dataset.ready, cb.checked); };
+  out.querySelectorAll("select[data-status]").forEach(sel => {
+    sel.onchange = () => { saveScroll(); Store.setStatus(sel.dataset.status, sel.value); };
   });
-  // a label inside a card link: toggle its box, never follow the link
+  // a status inside a card link: never follow the link
   out.querySelectorAll("label.ready").forEach(l => l.onclick = e => {
     e.stopPropagation();
-    if (e.target.tagName === "INPUT") return;
     e.preventDefault();
-    const cb = l.querySelector("input"); cb.checked = !cb.checked; cb.dispatchEvent(new Event("change"));
   });
   out.querySelectorAll("a[data-tm]").forEach(a => a.onclick = e => {
     e.preventDefault();

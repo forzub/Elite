@@ -168,9 +168,19 @@ const Store = (() => {
       await syncFolder();
       emit();
     },
-    // ---- model-ready flags (key: part id, or "hull:<ship id>")
-    isReady(key) { return !!state.modelReady[key]?.ready; },
-    setReady(key, ready) { state.modelReady[key] = { ready, updated: Date.now() }; save(); },
+    // ---- model status (key: part id, or "hull:<ship id>"; author 2026-11-11: the flags must tell the truth):
+    // none - no model; draft - a sketch / generated model, not approved; ingame - the game draws it, not approved;
+    // approved - the author approved it. A legacy record { ready: true } without a status was a bulk mark, so it
+    // reads as "draft"; only "approved" counts as ready.
+    status(key) { const r = state.modelReady[key]; return !r ? "none" : r.status || (r.ready ? "draft" : "none"); },
+    statusNote(key) { return state.modelReady[key]?.note || ""; },
+    isReady(key) { return this.status(key) === "approved"; },
+    setStatus(key, status) {
+      const prev = state.modelReady[key] || {};
+      state.modelReady[key] = { ready: status === "approved", status, ...(prev.note ? { note: prev.note } : {}), updated: Date.now() };
+      save();
+    },
+    setReady(key, ready) { this.setStatus(key, ready ? "approved" : "none"); },
     // ---- prompt overrides
     prompt(partId) { return state.prompts[partId]?.text ?? null; },
     promptInfo(partId) { return state.prompts[partId] || null; },

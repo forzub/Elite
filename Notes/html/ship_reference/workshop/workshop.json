@@ -2,436 +2,952 @@
  "version": 1,
  "modelReady": {
   "kb.drive.cr1-vector": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.reactor.er5": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.reactor.er1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "srw.reactor.sr48": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "srw.reactor.sr26": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.reactor.tr10": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.reactor.tr26v": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "xz.radar.n10": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.cargo.hold100": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.cargo.c20lock": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.dock.collar": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.bay.drone4": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.surv.pod4": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.surv.boat20": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "agora.hab.pax100": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.rcs.cluster": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.tank.jumpcharge": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.tank.pellets": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.armour.heavy": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.comm.w1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.mc.w1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.bay.hangar4": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.core.b12": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.radar.s50": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.wpn.coil10": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.wpn.pd4": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.wpn.vls16": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.surv.refuge100": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bharat.hab.bunk500": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.drive.n1-axial": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.cool.loop200": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.rad.cs-panel": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.rcs.fc-nozzle": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.apu.s150": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.wpn.pd1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kb.surv.capsule2": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "eurohab.ls.l4": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "eurohab.ls.l20": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "eurohab.ls.l200": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.med.bay": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.armour.ceramic": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "fa.wpn.coil30": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "fa.wpn.pd2": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.core.h5": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.core.h12": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.core.h80": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.wpn.pd3": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.wpn.vls8": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.bay.hangar2": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.mod.cargo4800": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "harmony.mod.tank4200": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "hyp.relay.r1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "hyp.mc.r1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "hyp.ecm.e1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "hyp.radar.pa100": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "hyp.mast.s1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kapehu.mc.k1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kapehu.core.k5": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kapehu.core.k12": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kern.drive.kt1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kern.mine.cutter": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kern.radar.deb5": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kern.tow.heavy": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kern.tow.raft20k": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "kern.md.impactor": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "hyp.drone.rd1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "agora.drone.rm2": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.drive.u33": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.drive.u65m": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.drive.u70": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.drive.u73l": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.lift.shield": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.lift.gear": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.ls.o4": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "ofu.cargo.p20": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.bay.boat": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "sol.cool.loop300": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "sol.cryo.t1000": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.cabin.hold6": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "sol.rad.panel50": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "sol.workshop.w1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "srw.apu.s200": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "srw.apu.s60": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "terra.ls.t10": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "terra.ls.t60": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "terra.ls.t200": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.drive.tz11": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.drive.tz16v": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.drive.tz28": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.cool.loop600": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.rad.panel50": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "std.rcs.cluster_h": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.apu.s150": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "th.apu.s600": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "uhuru.ls.u500": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "uhuru.cryo.pod100": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "um.core.z05": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "um.core.z1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "um.core.z5": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "um.xpdr.t1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "xz.comm.c1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "xz.comm.c3": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "xz.mc.c1": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "xz.mc.c3": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "xz.radar.n2": {
-   "ready": true,
-   "updated": 1794270334061
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.drone.klegg3": {
-   "ready": true,
-   "updated": 1794270452346
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "bastion.bay.bk24": {
-   "ready": true,
-   "updated": 1794270452346
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
   },
   "sol.wpn.mp8": {
-   "ready": true,
-   "updated": 1794270452346
+   "ready": false,
+   "updated": 1794354262114,
+   "status": "draft",
+   "note": "сгенерирована tools/models -> assets/models/equipment (набросок, автором не утверждена)"
+  },
+  "hull:agora.ship.pc-30ak.akritas": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/agora.ship.pc-30ak.akritas), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:agora.ship.pk-30a.limenarch": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/agora.ship.pk-30a.limenarch), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bastion.ship.b-12l.heis": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bastion.ship.b-12l.heis), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bastion.ship.b-20g.hulken": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bastion.ship.b-20g.hulken), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bastion.ship.b-4.sokol": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bastion.ship.b-4.sokol), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bastion.ship.b-90.tsitadel": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bastion.ship.b-90.tsitadel), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bastion.ship.he-120c.oboz": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bastion.ship.he-120c.oboz), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bastion.ship.ts-6b.zastava": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bastion.ship.ts-6b.zastava), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bastion.ship.ts-6f.post": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bastion.ship.ts-6f.post), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bharat.ship.c-120.konveyer": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bharat.ship.c-120.konveyer), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bharat.ship.c-120t.sahayak": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bharat.ship.c-120t.sahayak), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bharat.ship.c-30.doot": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bharat.ship.c-30.doot), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bharat.ship.f-120.prahari": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bharat.ship.f-120.prahari), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bharat.ship.h-20.majdoor": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bharat.ship.h-20.majdoor), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bharat.ship.pk-30b.rakshak": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bharat.ship.pk-30b.rakshak), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:bharat.ship.t-5000.iskhod": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/bharat.ship.t-5000.iskhod), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:harmony.ship.he-120": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/harmony.ship.he-120), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:harmony.ship.he-120p.chunyun": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/harmony.ship.he-120p.chunyun), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:harmony.ship.he-f22.dun": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/harmony.ship.he-f22.dun), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:harmony.ship.he-s240.tylovik": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/harmony.ship.he-s240.tylovik), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:harmony.ship.he-t12.lokomotiv": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/harmony.ship.he-t12.lokomotiv), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:harmony.ship.he-t12c.tanker": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/harmony.ship.he-t12c.tanker), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:harmony.ship.he-t8.yishan": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/harmony.ship.he-t8.yishan), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:hyp.ship.f-900.atlas": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/hyp.ship.f-900.atlas), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:hyp.ship.l-900.piligrim": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/hyp.ship.l-900.piligrim), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:hyp.ship.r-7.argus": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/hyp.ship.r-7.argus), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:kb.ship.cobrett-i.frnu-inta.a3p": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/kb.ship.cobrett-i.frnu-inta.a3p), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:kb.ship.cobrett-i.frnu.n1": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/kb.ship.cobrett-i.frnu.n1), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:kern.ship.ht-20k-d.krot": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/kern.ship.ht-20k-d.krot), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:kern.ship.ht-20k.mul": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/kern.ship.ht-20k.mul), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:ofu.ship.ocs-4.lastochka": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/ofu.ship.ocs-4.lastochka), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:ofu.ship.ocs-4j.strizh": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/ofu.ship.ocs-4j.strizh), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:ofu.ship.sl-12.podyomnik": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/ofu.ship.sl-12.podyomnik), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:sol.ship.ff-3000.gagarin": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/sol.ship.ff-3000.gagarin), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:sol.ship.gt-3000.titan": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/sol.ship.gt-3000.titan), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:sol.ship.gt-3000p.poputchik": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/sol.ship.gt-3000p.poputchik), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:sol.ship.pao-7.shchit": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/sol.ship.pao-7.shchit), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:sol.ship.pk-30.strazh": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/sol.ship.pk-30.strazh), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:sol.ship.st-6.masterovoy": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/sol.ship.st-6.masterovoy), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:stone.ship.he-120r.brodyaga": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/stone.ship.he-120r.brodyaga), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:stone.ship.kamen-s.salvage": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/stone.ship.kamen-s.salvage), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:stone.ship.kamen.tanker": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/stone.ship.kamen.tanker), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:stone.ship.kb-r.stinger": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/stone.ship.kb-r.stinger), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:stone.ship.ocs-4r.bucket": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/stone.ship.ocs-4r.bucket), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:stone.ship.t-5000r.hive": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/stone.ship.t-5000r.hive), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:tianhe.ship.b-4t.sokol-t": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/tianhe.ship.b-4t.sokol-t), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:tianhe.ship.t416.tianyi": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/tianhe.ship.t416.tianyi), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:tianhe.ship.t421.tianti": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/tianhe.ship.t421.tianti), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:tianhe.ship.ts-6.dozor": {
+   "ready": false,
+   "status": "draft",
+   "note": "автоэскиз компоновки (assets/models/layout_sketches/tianhe.ship.ts-6.dozor), корпус не сделан",
+   "updated": 1794354262114
+  },
+  "hull:kb.ship.cobrett-i.frnu-inta.a3": {
+   "ready": false,
+   "status": "draft",
+   "note": "эскиз компоновки v3 (assets/models/layout_sketches/cobrett-i); в игре - старая сборка assets/models/ships/cobrettymk1, не этот корпус",
+   "updated": 1794354262114
   }
  },
  "prompts": {

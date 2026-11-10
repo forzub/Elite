@@ -4740,6 +4740,27 @@ Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damag
   51a5fc68 - the module stays Attached, the slot is not operational). All 5 + cobra_compact_drive_thermal are now
   C++ gates (tools/run_gates.py CPP_SUITES): --cpp-only 8 gates, 8 PASS. Python gates 205 PASS / 6 known red.
 
+### Step 3 slices S1 + S2 (ship compartments asset) - OFFLINE PASS (compiled check), runtime S3-S5 not started
+- S1 data: tools/ships/ship_asset_source.py derives the compartments from the Cobrett-I layout sketch (instead of the
+  catalog blocks planned in the survey): one compartment per cover plate (footprint x hull thickness) + one per
+  propulsion bay (ER-5 + its 2 CR-1, opened by the ER-5 pad). Equipment instances -> interior of the compartment
+  containing them; hull-skin units (weapons, emitters, skids, radar, dock, turret, EC-2 cockpit) exterior.
+  Output (untracked, regenerable): assets/models/ship_assets/<ship>/source (ship_asset.json + geo/*.obj, 13 MB).
+- S2 assembler: tools/ship_asset_assemble/main.cpp -> EliteShipAssetAssemble (CMake target): semantic nodes, state
+  "breached" on 15 plates + 2 ER-5 pads (plate render node intact-only, Opening + exterior CompartmentPortal), 17
+  compartments, 558 collision volumes from the ship hit volumes (plate main volume intact-only, seams / mounts
+  always), render LODs 0-2 Component (units' LOD1/2/3, one geometry per model instanced) + 3 Shell; hull shell with
+  the plate / bay cut-outs (rasterised top). Explicit 1:1 calibration, then the engine's makeProductionCopy + validate.
+  compiled/cobrett-i.elmodel 12 MB, assembled in ~4 s.
+- Check: tests/ship_asset/ShipAssetCheck.cpp -> EliteShipAssetCheck (through ModelAssetPresentation::select, FULL at
+  24 m): intact -> 0 compartments / 0 interior draws; plate over the core torn off -> only c_cover_6, interior = eq_core;
+  ER-5 pad shot away -> only c_bay_l (ER-5 + 2 CR-1); two plates -> exactly two; breach facing away -> none; atomic
+  switch (plate main collision leaves, one opening). Cost: intact 33 draws / 16.9k tris; +254 tris (core
+  compartment), +9.3k (core + service compartments), bay +29.5k (the author's ~30k concern: only when a bay is open).
+  Result: 9/9 PASS. Not yet a gate (needs the main build tree).
+- Next: S3 runtime render (ships on ModelAssetGpuLibrary, nodeState from replicated state), S4 server breach state per
+  compartment + replication, S5 hits/collision from the asset. Acceptance of the stage = live flight (see below).
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

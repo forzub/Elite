@@ -4830,6 +4830,35 @@ Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damag
 - LIVE (nav-stress:simple, flown out of the hub keep-out on the main engines, then J HOME): emitter L destroyed ->
   J command 50 000 g, jump to Alpha Centauri REFUSED "поле прыжка неполное"; intact -> command 100 000 g.
 
+### Cobra drive heat / pad derating - LIVE ACCEPTANCE EVIDENCE (2026-11-10, target machine)
+- DEV tools: ELITE_DEV_DRIVE_THERMAL_TRACE=1 ([DriveThermal] per main engine per second: T, pad intact, burn,
+  safe thrust, thermal damage), ELITE_DEV_DRIVE_PAD_DAMAGE=<s>:<intact01> (ObjectModuleRuntime::
+  debugSetEngineEmitterIntact). Root-cause fix found on the way: the main-engine heat clock ran only for hub-tactical
+  allocator samples; free-flight burns now feed it too (aft bank, requested share x the engine's safe thrust).
+- Healthy pads, full thrust (CR-1 passport: nominal 450 K, safe 1250 K, 70 MJ/K, waste 43.65 MW, pad 71.9 MW):
+  0.62 K/s at start, T(183 s) = 551.7 K live vs 551.6 K model; equilibrium 936 K < safe -> full thrust indefinitely.
+- Pads at 50 %, full thrust 2650 s: T(2090 s) 1167.3 K live vs 1167.2 K model; the governor band (safe - 50 K) is
+  entered at 2322 s (model 2306 s); safe thrust 0.99 -> 0.89 at 1231 K and falling to the 0.824 model value at the
+  safe temperature; thermal damage 0 (the governor protects the drive). Matches cobra_compact_drive_thermal.
+- Not covered live: the reactor (ER-5) pad damage and the RCS banks.
+
+### Combat trials for balance data (author 2026-11-10: "a firefight with rams, how survivable are the ships")
+- tools/combat/combat_trials.py: 9 live trials (pulse / beam / military laser, two missile salvos, duel, rams 90 / 30
+  m/s, ram under fire) -> docs/COMBAT_TRIALS.md; conclusions + proposals docs/COMBAT_BALANCE_NOTES.md. Balance NOT
+  changed (author's call).
+- REAL BUGS FIXED (GameSimulationCombat.cpp): missile contact compared the step one tick early (tvel x dt ~500 m at
+  orbital speed: every missile "passed" at 350-480 m) -> now 4/4 and 3/3 hits; a missile with a target integrates in
+  the target's frame (world-frame drift at ~30 km/s defeated the guidance); the rack point summed every volume of the
+  carrying module (first volume now).
+- MISSING FEATURES found: no ship-ship collisions at all; NPCs never fire; a ship is never killed by combat (modules
+  only). DEV prototypes behind flags (game unchanged by default): ELITE_DEV_SHIP_COLLISIONS=1, ELITE_DEV_TARGET_FIGHTS=
+  duel|ram (+ ELITE_DEV_RAM_SPEED), ELITE_DEV_PLAYER_TRACK=1 (trial pilot sweeping the aim), ELITE_DEV_COMBAT_LOG=<csv>.
+- Key numbers: default pulse laser 1.5 MW ~1.6 hp/s (5 panels in 150 s); military 10 MW: first module 2.5 s, ER-5
+  48 s, mains 70 s; Needle missiles 52 hp for 4 hits (the jet leaves the hull); ram 90 m/s ~490 MJ per hit kills
+  lasers and cockpit of BOTH ships. Python gates 205 PASS / 6 known red.
+- Open (author): the 5 proposals in COMBAT_BALANCE_NOTES.md (jet into the compartment, default laser, ram crumple zone
+  + RCS avoidance, disabled-ship condition + EC-2 escape, NPC duel AI).
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

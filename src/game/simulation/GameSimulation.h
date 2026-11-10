@@ -295,6 +295,9 @@ public:
     void cycleCombatWeapon(EntityId shipId, bool missile);
     // DEV: a Cobra Mk I target `distanceM` ahead of the ship, broadside, in its hub frame
     EntityId spawnCombatTarget(EntityId nearShipId, double distanceM);
+    // DEV combat trials (author 2026-11-10, balance data): the target fights back (ELITE_DEV_TARGET_FIGHTS=duel|ram)
+    // and ship-ship contacts (ELITE_DEV_SHIP_COLLISIONS=1). Off by default - the game is unchanged.
+    void devCombatStep(double dt);
     CombatLoadout& combatLoadout(EntityId shipId);
     game::simulation::ShipCombatSnapshot combatSnapshotFor(EntityId shipId) const;
 
@@ -758,6 +761,10 @@ private:
     std::vector<CombatMissile> m_combatMissiles;
     std::uint32_t m_nextCombatSerial = 1;
     double m_combatClockS = 0.0;
+    std::unordered_map<EntityId, double> m_devTargetMissileClockS;   // DEV duel: last missile launch
+    std::unordered_set<EntityId> m_devTargetLaserOn;
+    std::unordered_map<std::uint64_t, double> m_devContactClockS;      // DEV ram: last contact per pair
+    std::unordered_map<EntityId, double> m_devRamRetreatUntilS;        // DEV ram: back off after a contact
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

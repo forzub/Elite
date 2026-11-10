@@ -1,3 +1,4 @@
+#include <fstream>
 // GameSimulation: combat - lasers and missiles on the runtime hit volumes
 // (game::combat penetration model), impacts, the shell -> full ship promotion
 // of a ship under fire, the DEV combat target.
@@ -146,7 +147,13 @@ bool GameSimulation::launchMissile(EntityId shipId)
             rackLocal = glm::dvec3(a.localPosition);
             for (const auto& v : ship->core().hitComponent().volumes)
                 if (!v.supportLinkVolume && v.moduleId == a.parentModuleId)
+                {
+                    // the first volume of the carrying module only (summing every volume of a multi-volume module
+                    // threw the launch point tens of metres off - the missiles then missed the 1.5 km target)
                     rackLocal += glm::dvec3(v.center) - glm::dvec3(0.0, v.halfSize.y + 1.0, 0.0);
+                    break;
+                }
+            std::cerr << "[Combat] missile rack at " << rackLocal.x << " " << rackLocal.y << " " << rackLocal.z << " m (ship frame)" << std::endl;
             break;
         }
     CombatMissile m;
@@ -258,6 +265,30 @@ void GameSimulation::flushCombatDamage(EntityId targetId, game::damage::DamageTy
             continue;
         const bool destroyed = ship->core().applyVolumeDamage(key, loss, type, where);
         changed = true;
+        // DEV balance data (author 2026-11-10: "how survivable are the ships"): ELITE_DEV_COMBAT_LOG=<csv path>
+        // - one row per applied damage portion: combat clock, target, volume key, type, loss, ship alive modules.
+        static std::ofstream combatLog = [] {
+            const char* path = std::getenv("ELITE_DEV_COMBAT_LOG");
+            std::ofstream out;
+            if (path && *path)
+            {
+                out.open(path, std::ios::trunc);
+                out << "t_s,target,key,type,loss,destroyed,modules_attached,modules_total\n";
+            }
+            return out;
+        }();
+        if (combatLog.is_open())
+        {
+            int attached = 0, total = 0;
+            for (const auto& m : static_cast<const world::modules::ObjectModuleRuntime&>(ship->core().moduleRuntime()).modules())
+            {
+                ++total;
+                attached += m.state == world::modules::ObjectModuleRuntimeState::Attached && m.health > 0.0f ? 1 : 0;
+            }
+            combatLog << m_combatClockS << ',' << targetId.value << ',' << key << ',' << static_cast<int>(type) << ','
+                      << loss << ',' << (destroyed ? 1 : 0) << ',' << attached << ',' << total << '\n';
+            combatLog.flush();
+        }
         if (destroyed)
             std::cerr << "[Combat] ship " << targetId.value << ": DESTROYED " << key << std::endl;
     }
@@ -270,6 +301,7 @@ void GameSimulation::updateCombat(double dt)
     if (dt <= 0.0)
         return;
     m_combatClockS += dt;
+    devCombatStep(dt);
     const auto& cat = weaponCatalog();
     const auto& mat = cat.materials;
     m_combatBeams.clear();
@@ -514,11 +546,26 @@ void GameSimulation::updateCombat(double dt)
         const auto g = game::navigation::GravityFieldSystem::sample(m.positionW, m_gravityBodies);
         const glm::dvec3 accel = (fuel && !capped ? m.heading * spec->accelMps2 : glm::dvec3(0.0)) + g.accelerationMps2;
         const glm::dvec3 prev = m.positionW;
-        m.velocityW += accel * dt;
-        m.positionW += m.velocityW * dt;
+        if (target)
+        {
+            // relative to the target: the tidal difference of gravity over a few km is negligible, so the relative
+            // motion is thrust only - integrating both at ~30 km/s in the world frame accumulated a frame / gravity
+            // mismatch that the guidance could not null (the missiles drifted 20-100 deg off the line of sight)
+            glm::dvec3 relP = m.positionW - targetPos;
+            glm::dvec3 relV = m.velocityW - targetVel;
+            relV += (fuel && !capped ? m.heading * spec->accelMps2 : glm::dvec3(0.0)) * dt;
+            relP += relV * dt;
+            m.velocityW = targetVel + relV;
+            m.positionW = targetPos + targetVel * dt + relP;
+        }
+        else
+        {
+            m.velocityW += accel * dt;
+            m.positionW += m.velocityW * dt;
+        }
         if (target && std::floor(m.ageS) != std::floor(m.ageS - dt))
             std::cerr << "[Combat] missile " << m.id << " t+" << std::floor(m.ageS) << " s: " << glm::length(targetPos - m.positionW)
-                      << " m to target, closing " << glm::length(m.velocityW - targetVel) << " m/s" << std::endl;
+                      << " m to target, closing " << glm::length(m.velocityW - targetVel) << " m/s, heading-LOS " << glm::degrees(std::acos(std::clamp(glm::dot(m.heading, glm::normalize(targetPos - m.positionW)), -1.0, 1.0))) << " deg" << std::endl;
 
         // contact: the segment of this step against every ship it passes near
         bool done = false;
@@ -531,8 +578,10 @@ void GameSimulation::updateCombat(double dt)
             glm::dvec3 tvel(0.0);
             if (const auto t = m_combatTracks.find(id); t != m_combatTracks.end() && t->second.valid)
                 tvel = t->second.velocityW;
-            // relative motion over the step: the target's own displacement removed
-            const glm::dvec3 a = prev - (tpos - tvel * dt), b = m.positionW - tpos;
+            // relative motion over the step: the missile goes from prev (now, t) to positionW (t + dt) while the ship
+            // goes from tpos (t) to tpos + tvel dt. (The old form compared both ends one tick early - an offset of
+            // tvel x dt, ~500 m at orbital speeds: every missile "passed" its target at ~350-480 m.)
+            const glm::dvec3 a = prev - tpos, b = m.positionW - (tpos + tvel * dt);
             const glm::dvec3 seg = b - a;
             const double len = glm::length(seg);
             const double r = shipRadiusM(s->core().desc());
@@ -625,4 +674,249 @@ game::simulation::ShipCombatSnapshot GameSimulation::combatSnapshotFor(EntityId 
             s.missilesInFlight.push_back(ms);
         }
     return s;
+}
+
+// ============================================================================ DEV combat trials (author 2026-11-10)
+void GameSimulation::devCombatStep(double dt)
+{
+    static const std::string fight = [] {
+        const char* v = std::getenv("ELITE_DEV_TARGET_FIGHTS");
+        return std::string(v ? v : "");
+    }();
+    static const bool collisions = [] {
+        const char* v = std::getenv("ELITE_DEV_SHIP_COLLISIONS");
+        return v && *v && *v != '0';
+    }();
+    static const bool playerTrack = [] {
+        const char* v = std::getenv("ELITE_DEV_PLAYER_TRACK");
+        return v && *v && *v != '0';
+    }();
+    if (dt <= 0.0 || (fight.empty() && !collisions && !playerTrack))
+        return;
+    const auto& cat = weaponCatalog();
+
+    // ---- DEV trials: the player's pilot keeps the crosshair on the nearest target (30 deg/s), as a human would
+    if (playerTrack)
+    {
+        for (auto& [pid, ps] : m_ships)
+        {
+            if (ps->core().role() != ShipRole::Player)
+                continue;
+            auto& tp = ps->core().transform();
+            const glm::dvec3 pp = world::coordinates::fullMeters(tp.worldPosition);
+            double best = 1.0e30;
+            glm::dvec3 aimAt(0.0);
+            for (const EntityId tid : m_combatTargetDummies)
+                if (const Ship* t = getShip(tid))
+                {
+                    const glm::dvec3 q = world::coordinates::fullMeters(t->core().transform().worldPosition);
+                    if (glm::length(q - pp) < best)
+                    {
+                        best = glm::length(q - pp);
+                        aimAt = q;
+                    }
+                }
+            if (best > 1.0e29 || best < 1.0)
+                continue;
+            // a pilot sweeps the crosshair over the hull (a fixed point would only cut one line through the ship):
+            // a slow spiral up to 6 m around the target centre, across the line of sight
+            {
+                const glm::dvec3 los = (aimAt - pp) / best;
+                glm::dvec3 side = glm::cross(los, glm::dvec3(0.0, 1.0, 0.0));
+                if (glm::length(side) < 1.0e-6)
+                    side = glm::dvec3(1.0, 0.0, 0.0);
+                side = glm::normalize(side);
+                const glm::dvec3 up = glm::cross(side, los);
+                const double t = m_combatClockS;
+                const double r = 6.0 * (0.5 + 0.5 * std::sin(t * 0.21));
+                aimAt += side * (r * std::cos(t * 0.9)) + up * (0.5 * r * std::sin(t * 0.9));
+            }
+            const glm::dvec3 want = glm::normalize(aimAt - pp);
+            glm::dmat3 R = glm::dmat3(glm::mat3(tp.orientation));
+            const glm::dvec3 fwd = R * glm::dvec3(0, 0, -1);
+            const double ang = std::acos(std::clamp(glm::dot(fwd, want), -1.0, 1.0));
+            if (ang > 1.0e-7)
+            {
+                glm::dvec3 axis = glm::cross(fwd, want);
+                if (glm::length(axis) < 1.0e-12)
+                    axis = R * glm::dvec3(0, 1, 0);
+                R = glm::dmat3(glm::rotate(glm::dmat4(1.0), std::min(ang, glm::radians(30.0) * dt), glm::normalize(axis))) * R;
+                const glm::dvec3 f = glm::normalize(R * glm::dvec3(0, 0, -1));
+                const glm::dvec3 r = glm::normalize(glm::cross(f, R * glm::dvec3(0, 1, 0)));
+                R = glm::dmat3(r, glm::cross(r, f), -f);
+                tp.orientation = glm::mat4(glm::mat3(R));
+            }
+        }
+    }
+
+    // ---- the target fights back: turn to the player (rate-limited), hold a duel range or ram, fire when aligned
+    if (!fight.empty())
+    {
+        EntityId playerId {};
+        for (const auto& [id, s] : m_ships)
+            if (s->core().role() == ShipRole::Player)
+                playerId = id;
+        const Ship* player = playerId.value ? getShip(playerId) : nullptr;
+        for (const EntityId id : std::vector<EntityId>(m_combatTargetDummies.begin(), m_combatTargetDummies.end()))
+        {
+            Ship* d = getShip(id);
+            if (!d || !player)
+                continue;
+            auto& tr = d->core().transform();
+            const glm::dvec3 pd = world::coordinates::fullMeters(tr.worldPosition);
+            const glm::dvec3 pp = world::coordinates::fullMeters(player->core().transform().worldPosition);
+            const auto trackP = m_combatTracks.find(playerId);
+            const glm::dvec3 vp = trackP != m_combatTracks.end() && trackP->second.valid ? trackP->second.velocityW : glm::dvec3(0.0);
+            const glm::dvec3 to = pp - pd;
+            const double dist = glm::length(to);
+            if (dist < 1.0)
+                continue;
+            const bool ram = fight == "ram";
+            static const double ramSpeed = [] {
+                const char* v = std::getenv("ELITE_DEV_RAM_SPEED");
+                return v && *v ? std::atof(v) : 90.0;
+            }();
+            // after a contact the rammer backs off for 6 s, then comes round again (no grinding against the hull)
+            const bool retreat = ram && m_combatClockS < m_devRamRetreatUntilS[id];
+            const double closing = ram ? (retreat ? -40.0 : ramSpeed) : std::clamp((dist - 1500.0) * 0.15, -60.0, 60.0);
+            const glm::dvec3 want = to / dist;   // the player sits still in the trials: no lead
+            // rate-limited turn (40 deg/s duel, 60 deg/s ram)
+            glm::dmat3 R = glm::dmat3(glm::mat3(tr.orientation));
+            const glm::dvec3 fwd = R * glm::dvec3(0, 0, -1);
+            const double ang = std::acos(std::clamp(glm::dot(fwd, want), -1.0, 1.0));
+            const double maxTurn = glm::radians(ram ? 60.0 : 40.0) * dt;
+            if (ang > 1.0e-6)
+            {
+                glm::dvec3 axis = glm::cross(fwd, want);
+                if (glm::length(axis) < 1.0e-9)
+                    axis = R * glm::dvec3(0, 1, 0);
+                const glm::dmat4 rot = glm::rotate(glm::dmat4(1.0), std::min(ang, maxTurn), glm::normalize(axis));
+                R = glm::dmat3(rot) * R;
+                const glm::dvec3 f = glm::normalize(R * glm::dvec3(0, 0, -1));
+                const glm::dvec3 r = glm::normalize(glm::cross(f, R * glm::dvec3(0, 1, 0)));
+                const glm::dvec3 u = glm::cross(r, f);
+                R = glm::dmat3(r, u, -f);
+                tr.orientation = glm::mat4(glm::mat3(R));
+            }
+            // velocity: the player's track + closing speed along the line of sight
+            const glm::dvec3 desiredW = vp + (to / dist) * closing;
+            auto& mo = tr.motion;
+            mo.localVelocityMps = mo.travelFrame.worldToLocalVelocity(pd, desiredW);
+            // weapons: lasers within 3 deg and range; duel missiles every 25 s within the seeker cone
+            const auto& l = combatLoadout(id);
+            const auto* laser = cat.laser(l.laserId);
+            const double alignedDeg =
+                glm::degrees(std::acos(std::clamp(glm::dot(R * glm::dvec3(0, 0, -1), to / dist), -1.0, 1.0)));
+            const bool fire = laser && alignedDeg < 3.0 && dist < laser->rangeM;
+            if (fire != (m_devTargetLaserOn.count(id) > 0))
+            {
+                setLaserFiring(id, fire);
+                if (fire)
+                    m_devTargetLaserOn.insert(id);
+                else
+                    m_devTargetLaserOn.erase(id);
+            }
+            const auto* missile = cat.missile(l.missileId);
+            if (!ram && missile && alignedDeg < missile->seekerDeg * 0.5 && dist < missile->rangeM &&
+                m_combatClockS - m_devTargetMissileClockS[id] > 25.0)
+            {
+                m_devTargetMissileClockS[id] = m_combatClockS;
+                launchMissile(id);
+            }
+        }
+    }
+
+    // ---- ship-ship contacts: bounding spheres, inelastic normal impulse (e = 0.2); the dissipated energy burns the
+    //      hit volumes of both ships near the contact point (MJ x health_per_mj, the weapons' own calibration)
+    if (collisions)
+    {
+        std::vector<std::pair<EntityId, Ship*>> list;
+        for (auto& [id, s] : m_ships)
+            if (s->core().transform().motion.mode == game::navigation::MotionMode::HubTactical)
+                list.emplace_back(id, s.get());
+        for (std::size_t i = 0; i < list.size(); ++i)
+            for (std::size_t k = i + 1; k < list.size(); ++k)
+            {
+                Ship* a = list[i].second;
+                Ship* b = list[k].second;
+                auto& ta = a->core().transform();
+                auto& tb = b->core().transform();
+                if (ta.motion.systemId != tb.motion.systemId)
+                    continue;
+                const glm::dvec3 ha = glm::dvec3(a->core().effectivePhysics().physicalActuatorHalfExtentsMeters);
+                const glm::dvec3 hb = glm::dvec3(b->core().effectivePhysics().physicalActuatorHalfExtentsMeters);
+                const double ra = 0.8 * std::max({ha.x, ha.y, ha.z, 5.0});
+                const double rb = 0.8 * std::max({hb.x, hb.y, hb.z, 5.0});
+                const glm::dvec3 pa = world::coordinates::fullMeters(ta.worldPosition);
+                const glm::dvec3 pb = world::coordinates::fullMeters(tb.worldPosition);
+                const glm::dvec3 d = pb - pa;
+                const double dist = glm::length(d);
+                if (dist >= ra + rb || dist < 1.0e-6)
+                    continue;
+                const glm::dvec3 n = d / dist;
+                const auto trA = m_combatTracks.find(list[i].first);
+                const auto trB = m_combatTracks.find(list[k].first);
+                const glm::dvec3 va = trA != m_combatTracks.end() ? trA->second.velocityW : glm::dvec3(0.0);
+                const glm::dvec3 vb = trB != m_combatTracks.end() ? trB->second.velocityW : glm::dvec3(0.0);
+                const double vn = glm::dot(vb - va, n);   // < 0: closing
+                const std::uint64_t pair =
+                    (static_cast<std::uint64_t>(std::min(list[i].first.value, list[k].first.value)) << 32) |
+                    std::max(list[i].first.value, list[k].first.value);
+                if (vn >= -0.05 || m_combatClockS - m_devContactClockS[pair] < 0.5)
+                    continue;
+                m_devContactClockS[pair] = m_combatClockS;
+                for (const EntityId sid : {list[i].first, list[k].first})
+                    if (m_combatTargetDummies.count(sid))
+                        m_devRamRetreatUntilS[sid] = m_combatClockS + 6.0;
+                const double ma = std::max(1.0e3, static_cast<double>(a->core().effectivePhysics().massKg));
+                const double mb = std::max(1.0e3, static_cast<double>(b->core().effectivePhysics().massKg));
+                const double mu = ma * mb / (ma + mb);
+                const double e = 0.2;
+                const double J = -(1.0 + e) * mu * vn;   // > 0
+                const double dissipatedMJ = 0.5 * mu * vn * vn * (1.0 - e * e) * 1.0e-6;
+                const double overlap = ra + rb - dist;
+                ta.motion.localVelocityMps += ta.motion.travelFrame.worldToLocalVector(-n * (J / ma));
+                tb.motion.localVelocityMps += tb.motion.travelFrame.worldToLocalVector(n * (J / mb));
+                ta.motion.localPositionMeters += ta.motion.travelFrame.worldToLocalVector(-n * overlap * mb / (ma + mb));
+                tb.motion.localPositionMeters += tb.motion.travelFrame.worldToLocalVector(n * overlap * ma / (ma + mb));
+                const glm::dvec3 contact = pa + n * (ra * dist / (ra + rb));
+                const auto where = world::coordinates::makeWorldPositionFromMeters(contact);
+                for (Ship* ship : {a, b})
+                {
+                    const EntityId sid = ship == a ? list[i].first : list[k].first;
+                    const auto& tr = ship->core().transform();
+                    const glm::dmat3 R = glm::dmat3(glm::mat3(tr.orientation));
+                    const glm::dvec3 local = glm::transpose(R) * (contact - world::coordinates::fullMeters(tr.worldPosition));
+                    std::vector<std::string> keys;
+                    std::string nearestKey;
+                    double nearest = 1.0e30;
+                    for (const auto& v : ship->core().hitComponent().volumes)
+                    {
+                        if (v.destroyed)
+                            continue;
+                        const std::string key = v.supportLinkVolume ? "link::" + v.supportLinkId : "module::" + v.moduleId;
+                        const glm::dvec3 lo = glm::dvec3(v.center - v.halfSize);
+                        const glm::dvec3 hi = glm::dvec3(v.center + v.halfSize);
+                        const glm::dvec3 q = glm::clamp(local, lo, hi);
+                        const double dd = glm::length(local - q);
+                        if (dd < nearest)
+                        {
+                            nearest = dd;
+                            nearestKey = key;
+                        }
+                        if (dd < 4.0)
+                            keys.push_back(key);
+                    }
+                    if (keys.empty() && !nearestKey.empty())
+                        keys.push_back(nearestKey);
+                    const double health = 0.5 * dissipatedMJ * cat.materials.healthPerMJ;
+                    for (const auto& key : keys)
+                        m_burnStates[sid].pendingHealthLoss[key] += health / static_cast<double>(keys.size());
+                    flushCombatDamage(sid, game::damage::DamageType::Collision, where);
+                }
+                std::cerr << "[Ram] ships " << list[i].first.value << " x " << list[k].first.value << ": closing " << -vn
+                          << " m/s, masses " << ma / 1000.0 << " / " << mb / 1000.0 << " t, dissipated " << dissipatedMJ
+                          << " MJ, impulse " << J / 1000.0 << " kN s" << std::endl;
+            }
+    }
 }

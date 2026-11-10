@@ -69,6 +69,11 @@ CPP_SUITES: dict[str, tuple[str, str, str]] = {
         "tests/architecture_contracts", "elite_contracts", "wire_data_plane_contract_tests"),
     "cpp:system_map_behavior_tests": (
         "tests/system_map", "elite_sysmap_tests", "system_map_behavior_tests"),
+    # engine thermal / damage contracts (re-baselined 2026-11-10 to the pad law, e41566c6 / 975d2a5f / 51a5fc68)
+    **{f"cpp:{t}": ("tests/architecture_contracts", "elite_contracts", t) for t in (
+        "universe_thermal_radiation_tests", "engine_unit_damage_model_tests",
+        "universe_material_engine_thermal_tests", "installed_engine_actuator_tests",
+        "equipment_damage_failure_pipeline_tests", "cobra_compact_drive_thermal_tests")},
 }
 
 

@@ -4728,6 +4728,18 @@ Open (author): approve or correct the sketches and the proposed frames; jump-fie
 - Runtime: nothing changed (no emitter in the jump code yet; the damage rule is a doc proposal).
 Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damage rule.
 
+### Queue after the decisions (2026-11-10, "continue down the list")
+- N1 model pad now conical like its physics (two tile courses on the 1.3 m cone, units/cobretty.py n1 pad + hits).
+- Five stale engine tests re-baselined to the CURRENT production laws (production not touched). Root causes:
+  universe_thermal_radiation (multiplier 2.5 -> 10, e41566c6: expectations now computed from the law);
+  engine_unit_damage_model + universe_material_engine_thermal (pads became a dedicated 6 MW/m2 sink ramping from
+  nominal to safe temperature, coolant decoupled, 975d2a5f: fixtures moved to the pad law / current CR-1 geometry,
+  energy conservation and overheat-on-destroyed-pad kept; engine heat capacity is floored at 1 MJ/K, so the life
+  fixture runs at 1000 x power); installed_engine_actuator (display name "Cobretty Cobra CR-1 Vector Main Drive",
+  efficiency 0.991); equipment_damage_failure_pipeline (95 % damage switches the engine off per MainEngineCutoff.h
+  51a5fc68 - the module stays Attached, the slot is not operational). All 5 + cobra_compact_drive_thermal are now
+  C++ gates (tools/run_gates.py CPP_SUITES): --cpp-only 8 gates, 8 PASS. Python gates 205 PASS / 6 known red.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

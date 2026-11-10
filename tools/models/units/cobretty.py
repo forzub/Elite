@@ -621,9 +621,12 @@ def n1_parts(lod):
                 a = math.pi / 6 + i * math.pi / 3
                 cyl(c, "eq_metal_band", polz(1.80, a, za), polz(1.80, a, zb), 0.05, small // 2 + 2, caps=False)
 
-    # --- pad = engine_hot_emitter_annulus: two concentric courses of 12 ceramic tiles, centre ring, clamp rim
+    # --- pad = engine_hot_emitter_annulus: two concentric courses of 12 ceramic tiles, centre ring, clamp rim; convex
+    #     cone (author 2026-11-10, same as the CR-1: cone_h over the 3.5 m base -> more emitting area, same physics)
     p = P["engine_hot_emitter_annulus"] = Part("engine_hot_emitter_annulus")
     pz0, pz1, pr = d["pad_z0"], d["pad_z1"], d["pad_r"]
+    H = d.get("cone_h", 0.0)
+    zc = lambda r: pz1 + H * (1.0 - r / 2.38)
     lathe(p, "eq_metal_band", [(0, pz0), (2.38, pz0), (2.38, pz0 + 0.05), (0, pz0 + 0.05)], seg)
     if lod < 2:
         g = 0.01
@@ -631,21 +634,22 @@ def n1_parts(lod):
             for (r0, r1), off in (((0.55, 1.44), 0.0), ((1.50, 2.38), 0.5)):
                 a0 = 2 * math.pi * (i + off) / 12 + g
                 a1 = 2 * math.pi * (i + 1 + off) / 12 - g
-                lathe(p, "eq_pad_ceramic", crect(r0, r1, pz0 + 0.05, pz1 - 0.04), max(2, seg // 12), I3, (0, 0, 0), a0, a1, cap=True)
-        lathe(p, "eq_metal_band", crect(1.44, 1.50, pz0 + 0.05, pz1 - 0.02), seg)                    # course ring
+                prof = [(r0, pz0 + 0.05), (r1, pz0 + 0.05), (r1, zc(r1) - 0.04), (r0, zc(r0) - 0.04), (r0, pz0 + 0.05)]
+                lathe(p, "eq_pad_ceramic", prof, max(2, seg // 12), I3, (0, 0, 0), a0, a1, cap=True)
+        lathe(p, "eq_metal_band", [(1.44, pz0 + 0.05), (1.50, pz0 + 0.05), (1.50, zc(1.50) - 0.02), (1.44, zc(1.44) - 0.02), (1.44, pz0 + 0.05)], seg)  # course ring
         lathe(p, "eq_steel", crect(2.38, 2.50, pz0, pz1, _ch(lod, 0.015)), seg)                      # clamp rim
-        lathe(p, "eq_metal_band", [(0, pz0 + 0.05), (0.55, pz0 + 0.05), (0.55, pz1 - 0.01), (0.47, pz1 + 0.02), (0, pz1 + 0.02)], seg)
+        lathe(p, "eq_metal_band", [(0, pz0 + 0.05), (0.55, pz0 + 0.05), (0.55, zc(0.55) - 0.01), (0.47, zc(0.47) + 0.02), (0, zc(0.0) + 0.02)], seg)
         if lod == 0:
-            hex_bolt(p, "eq_steel", (0, 0, pz1 + 0.02), (0, 0, 1), 0.14, 0.07)
+            hex_bolt(p, "eq_steel", (0, 0, zc(0.0) + 0.02), (0, 0, 1), 0.14, 0.07)
             for i in range(24):
                 a = 2 * math.pi * (i + 0.25) / 24
-                hex_bolt(p, "eq_steel", polz(1.47, a, pz1 - 0.02), (0, 0, 1), 0.035, 0.018, washer=False)
+                hex_bolt(p, "eq_steel", polz(1.47, a, zc(1.47) - 0.02), (0, 0, 1), 0.035, 0.018, washer=False)
                 Rz = rot_z(a)
                 box(p, "eq_steel", apply(Rz, (2.47, 0, 0))[:2] + (pz1 + 0.02,), (0.12, 0.12, 0.04), Rz, chamfer=0.008)
             for i in range(6):
-                hex_bolt(p, "eq_steel", polz(0.40, 2 * math.pi * i / 6, pz1 + 0.02), (0, 0, 1), 0.035, 0.018, washer=False)
+                hex_bolt(p, "eq_steel", polz(0.40, 2 * math.pi * i / 6, zc(0.40) + 0.02), (0, 0, 1), 0.035, 0.018, washer=False)
     else:
-        lathe(p, "eq_pad_ceramic", [(0, pz0 + 0.05), (pr, pz0 + 0.05), (pr, pz1), (0, pz1)], seg)
+        lathe(p, "eq_pad_ceramic", [(0, pz0 + 0.05), (pr, pz0 + 0.05), (pr, pz1), (0, pz1 + H)], seg)
 
     # --- twin side boxes in front of the stack: field control (-X) and backup heat exchanger (+X, copper emergency ports)
     zb = d["box_z"]
@@ -724,7 +728,7 @@ def n1_hits():
          hcyl("n1_housing", (0, 0, 0.35), (0, 0, 0.90), 1.85),
          hcyl("n1_housing", (0, 0, 0.90), (0, 0, d["pad_z0"]), cr),
          hcyl("n1_housing", (0, 0, d["rings"][-1][0] + hw), (0, 0, d["pad_z0"]), 2.0),
-         hcyl("engine_hot_emitter_annulus", (0, 0, d["pad_z0"]), (0, 0, d["pad_z1"] + 0.03), d["pad_r"]),
+         hcyl("engine_hot_emitter_annulus", (0, 0, d["pad_z0"]), (0, 0, d["pad_z1"] + max(0.03, d.get("cone_h", 0.0))), d["pad_r"]),
          hbox("n1_field_ctl", (-1.97, 0, zb), (0.80, 1.10, 0.86)),
          hbox("n1_backup_hx", (1.97, 0, zb), (0.80, 1.10, 0.86)),
          hbox("n1_backup_hx", (2.45, 0, zb), (0.18, 0.80, 0.24)),
@@ -1332,11 +1336,11 @@ def ec2_hits():
     return H
 
 
-ASSETS.update({"cobretty_n1ax_drive": scaled_unit(n1_parts, None, COBRA_BAY_S), "cobretty_cl180_coolant_loop": cl180_parts,
+ASSETS.update({"cobretty_n1ax_drive": scaled_unit(n1_parts, N1, COBRA_BAY_S, CR1_CONE), "cobretty_cl180_coolant_loop": cl180_parts,
                "cobretty_rp10_radiator": rp10_parts, "cobretty_fcrcs_rcs": fcrcs_parts,
                "cobretty_sr150_service_reactor": sr150_parts, "cobretty_pd1_turret": pd1_parts,
                "cobretty_ec2_capsule": ec2_parts})
-HITS.update({"cobretty_n1ax_drive": scaled_unit_hits(n1_hits, None, COBRA_BAY_S), "cobretty_cl180_coolant_loop": cl180_hits,
+HITS.update({"cobretty_n1ax_drive": scaled_unit_hits(n1_hits, N1, COBRA_BAY_S, CR1_CONE), "cobretty_cl180_coolant_loop": cl180_hits,
              "cobretty_rp10_radiator": rp10_hits, "cobretty_fcrcs_rcs": fcrcs_hits,
              "cobretty_sr150_service_reactor": sr150_hits, "cobretty_pd1_turret": pd1_hits,
              "cobretty_ec2_capsule": ec2_hits})

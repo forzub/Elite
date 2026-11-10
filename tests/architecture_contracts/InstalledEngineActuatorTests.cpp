@@ -30,7 +30,7 @@ void commonEngineAndCobrettyPreset()
     const auto passport = presets::CobrettyCR1VectorMainDrive();
     require(passport.engineTypeId == "elite.engine.cobretty.cr1-vector.v1" &&
             passport.engineDisplayName ==
-                "Cobretty CR-1 Vector Main Drive" &&
+                "Cobretty Cobra CR-1 Vector Main Drive" &&
             passport.manufacturerName == "Cobretty Corporation",
             "Cobretty CR-1 type identity missing");
     require(passport.nominalThrustNewtons > 9.56e6 &&
@@ -52,7 +52,8 @@ void commonEngineAndCobrettyPreset()
                  passport.nominalThrustNewtons, 0.5),
             "generic engine failed to deliver own rated thrust");
     require(near(output.consumedElectricalMW, 4850.0) &&
-            near(output.generatedWasteHeatMW, 70.325, 0.001),
+            near(output.generatedWasteHeatMW,
+                 4850.0 * (1.0 - passport.nominalEfficiency01), 0.001),
             "generic engine did not calculate own electric/thermal budget");
     require(near(output.forceBodyNewtons.z,
                  -passport.nominalThrustNewtons, 0.5),

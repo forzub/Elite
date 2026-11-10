@@ -30,7 +30,10 @@ game::equipment::engine::EngineUnitDescriptor cobraMotor()
     d.thermalEmitter.apertureDiameterM = 2.5;
     d.thermalEmitter.materialId = "elite.material.engine.hfc-c.v1";
     d.thermalEmitter.surfaceTemperatureK = 2500.0;
-    d.thermalEmitter.viewFactor01 = 0.90;
+    // Test fixture (the former flat-ring Cobra, not the current CR-1 passport - see cobra_compact_drive_thermal):
+    // the universe multiplier is x10 since e41566c6, so view factor 0.225 (= 0.90 / 4) keeps the ring at 49.3 MW
+    // and the derating ratios this test checks.
+    d.thermalEmitter.viewFactor01 = 0.225;
     d.nominalCoolantTemperatureK = 1050.0;
     d.nominalOperatingTemperatureK = 1200.0;
     d.safeOperatingTemperatureK = 1300.0;
@@ -115,55 +118,54 @@ void localizedLaserAndKineticFracture()
 
 void annulusDamageBalancesPowerAndThrust()
 {
+    // Pad law (propulsionPadCoolingMW, 6 MW/m2): the governor holds sustained thrust at pad capacity x intact / waste
+    // at the safe temperature, full thrust while cool. Fixture: the cobraMotor material set with the current CR-1
+    // pad geometry (3.5 m base + 1.3 m cone, efficiency 0.991).
     using namespace game::equipment::engine;
     auto d = cobraMotor();
+    d.nominalEfficiency01 = 0.991;
+    d.thermalEmitter.outerDiameterM = 3.5;
+    d.thermalEmitter.apertureDiameterM = 0.0;
+    d.thermalEmitter.coneHeightM = 1.3;
     const game::equipment::EquipmentDamageLayer healthyDamage {};
     const auto effective = evaluateEngineUnit(d, healthyDamage);
-    require(near(ratedThermalEmitterPowerMW(d), 49.319051525, 1.0e-5),
-            "Cobra healthy emitter material changed radiation");
-    require(near(generatedWasteHeatMW(d, effective, 1.0), 70.325),
-            "nominal waste heat mismatch");
+    const double waste = generatedWasteHeatMW(d, effective, 1.0);
+    require(near(waste, 43.65), "nominal waste heat mismatch");
+    const double padMW = game::physics::thermal::conicalEmitterAreaM2(3.5, 0.0, 1.3) *
+        game::physics::thermal::PropulsionPadCoolingMWPerM2;
 
     EngineOperatingState run;
-    run.temperatureK = 1200.0;
+    run.temperatureK = d.safeOperatingTemperatureK;
     require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
             "healthy material derated engine");
-
     run.emitter.surface.intactArea01 = 0.75;
     require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
             "25 percent emitter loss prematurely derated engine");
+
     run.emitter.surface.intactArea01 = 0.50;
+    run.temperatureK = d.nominalOperatingTemperatureK;
     require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
             "cold damaged engine should initially retain full thrust");
-    const auto warming = advanceEngineOperatingState(
-        d, effective, run, 1.0, 60.0, 1050.0
-    );
-    require(warming.next.temperatureK > run.temperatureK &&
-            warming.next.temperatureK < 1300.0,
+    const auto warming = advanceEngineOperatingState(d, effective, run, 1.0, 5.0, 1050.0);
+    require(warming.next.temperatureK > run.temperatureK,
             "damaged annulus should heat engine before power protection");
     run.temperatureK = d.safeOperatingTemperatureK;
     const double half = safeEmitterThrustFraction01(d, effective, run);
-    require(half > 0.84 && half < 0.86,
-            "50 percent emitter loss should limit thrust to ~84.85 percent");
-    const auto fullUnsafe = advanceEngineOperatingState(
-        d, effective, run, 1.0, 600.0, 1050.0
-    );
-    const auto safeRun = advanceEngineOperatingState(
-        d, effective, run, half, 600.0, 1050.0
-    );
-    require(fullUnsafe.next.temperatureK > 1300.0 &&
+    require(near(half, 0.5 * padMW / waste, 1.0e-3),
+            "50 percent emitter loss should limit thrust to pad capacity / waste");
+    const auto fullUnsafe = advanceEngineOperatingState(d, effective, run, 1.0, 600.0, 1050.0);
+    const auto safeRun = advanceEngineOperatingState(d, effective, run, half, 600.0, 1050.0);
+    require(fullUnsafe.next.temperatureK > d.safeOperatingTemperatureK &&
             fullUnsafe.thermalDamageIncrement01 > 0.0,
             "unlimited half-destroyed emitter caused no thermal harm");
-    require(safeRun.next.temperatureK <= 1300.01 &&
+    require(safeRun.next.temperatureK <= d.safeOperatingTemperatureK + 0.01 &&
             near(safeRun.thermalDamageIncrement01, 0.0, 1.0e-7),
-            "limiting thrust should protect housing with ideal coolant");
+            "limiting thrust should protect housing");
 
     run.emitter.surface.intactArea01 = 0.0;
-    const double noRing = safeEmitterThrustFraction01(d, effective, run);
-    require(noRing > 0.49 && noRing < 0.51,
-            "zero emitter should leave ~49.8 percent safe thrust");
-    require(near(ratedThermalEmitterPowerMW(d, run.emitter.surface.intactArea01),
-                 0.0),
+    require(safeEmitterThrustFraction01(d, effective, run) < 1.0e-6,
+            "zero emitter must leave no sustained thrust at the safe temperature");
+    require(near(ratedThermalEmitterPowerMW(d, run.emitter.surface.intactArea01), 0.0),
             "destroyed ring still radiated heat");
 
     // Damage channels operate independently: a broken emitter alone must

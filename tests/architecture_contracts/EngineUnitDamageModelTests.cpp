@@ -1,3 +1,4 @@
+#include "src/game/physics/UniverseThermalRadiation.h"
 #include "src/game/equipment/engine/EngineUnit.h"
 
 #include <cmath>
@@ -213,51 +214,45 @@ void testDamageCostsMorePowerForSameDeliveredThrust()
 
 void testHotEmitterFeedsBulkHeatAndDamagedSurfaceOverheats()
 {
+    // Pad law (e41566c6 / UniverseThermalRadiation.h propulsionPadCoolingMW): the pad is a dedicated sink of
+    // 6 MW/m2 x area x intact, ramping from 0 at the nominal to full at the safe operating temperature; no coolant
+    // split. Energy: generated = pad + stored. A destroyed pad stores everything and overheats the engine.
     auto d = descriptor();
     d.nominalElectricalPowerMW = 4850.0;
-    d.nominalEfficiency01 = 0.9855;
-    d.thermalEmitter.outerDiameterM = 4.5;
-    d.thermalEmitter.apertureDiameterM = 2.5;
-    d.thermalEmitter.surfaceTemperatureK = 2500.0;
-    d.thermalEmitter.emissivity01 = 0.90;
-    d.thermalEmitter.viewFactor01 = 0.90;
+    d.nominalEfficiency01 = 0.991;
+    d.thermalEmitter.outerDiameterM = 3.5;
+    d.thermalEmitter.apertureDiameterM = 0.0;
+    d.thermalEmitter.coneHeightM = 1.3;
+    d.nominalOperatingTemperatureK = 1200.0;
+    d.safeOperatingTemperatureK = 1300.0;
+    d.thermalCapacityMJperK = 12.0;
 
-    using game::equipment::engine::ratedThermalEmitterPowerMW;
     using game::equipment::engine::advanceEngineOperatingState;
     using game::equipment::engine::EngineOperatingState;
 
     const auto healthy = evaluateEngineUnit(d, damageLayer());
     const double fullHeatMW = generatedWasteHeatMW(d, healthy, 1.0);
-    const double ringMW = ratedThermalEmitterPowerMW(d);
-    require(near(fullHeatMW, 70.325, 1.0e-6),
+    require(near(fullHeatMW, 4850.0 * 0.009, 1.0e-6),
             "engine heat mismatch for new independent rated input");
-    require(near(ringMW, 49.319051525, 1.0e-5),
-            "Cobra emitter capacity mismatch");
+    const double padFullMW = game::physics::thermal::conicalEmitterAreaM2(3.5, 0.0, 1.3) *
+        game::physics::thermal::PropulsionPadCoolingMWPerM2;
+    require(padFullMW > fullHeatMW, "test fixture: the healthy pad must out-cool the full heat");
 
-    d.thermalConductanceMWperK =
-        (fullHeatMW - ringMW) / 150.0;
-    d.thermalCapacityMJperK =
-        d.thermalConductanceMWperK * 15.0;
-    const EngineOperatingState hotStart {1200.0, 0.0};
-    const auto healthyRun = advanceEngineOperatingState(
-        d, healthy, hotStart, 1.0, 400.0, 1050.0, 1.0
-    );
-    require(near(healthyRun.emitterRadiatedHeatMW, ringMW, 1.0e-5) &&
-            near(healthyRun.coolantHeatMW, fullHeatMW - ringMW, 1.0e-5),
+    const EngineOperatingState atSafe {1300.0, 0.0};
+    const double dt = 10.0;
+    const auto healthyRun = advanceEngineOperatingState(d, healthy, atSafe, 1.0, dt, 1050.0, 1.0);
+    const double storedHealthy = d.thermalCapacityMJperK * (healthyRun.next.temperatureK - atSafe.temperatureK) / dt;
+    require(near(healthyRun.coolantHeatMW, 0.0) &&
+            near(healthyRun.emitterRadiatedHeatMW + storedHealthy, fullHeatMW, 1.0e-6),
             "hot ring did not unload shared coolant");
-    require(near(healthyRun.next.temperatureK, 1200.0, 1.0e-3) &&
+    require(healthyRun.next.temperatureK <= 1300.0 + 1.0e-9 &&
             near(healthyRun.thermalDamageIncrement01, 0.0),
             "healthy ring overheated nominal engine housing");
 
-    const auto broken = advanceEngineOperatingState(
-        d, healthy, hotStart, 1.0, 400.0, 1050.0, 0.0
-    );
-    // Heat split now includes finite ENGINE internal storage. It would be
-    // wrong to send all 70 MW instantly to coolant while the housing warms.
-    const double storedMW=d.thermalCapacityMJperK*
-        (broken.next.temperatureK-hotStart.temperatureK)/400.0;
+    const auto broken = advanceEngineOperatingState(d, healthy, atSafe, 1.0, 400.0, 1050.0, 0.0);
+    const double storedMW = d.thermalCapacityMJperK * (broken.next.temperatureK - atSafe.temperatureK) / 400.0;
     require(near(broken.emitterRadiatedHeatMW, 0.0) &&
-            near(broken.coolantHeatMW+storedMW,fullHeatMW,1.0e-6),
+            near(broken.coolantHeatMW + storedMW, fullHeatMW, 1.0e-6),
             "damaged emitter violated engine-to-coolant energy conservation");
     require(broken.next.temperatureK > 1500.0 &&
             broken.thermalDamageIncrement01 > 0.0,
@@ -302,24 +297,45 @@ void testRatedLifeAndHeatAccumulateOnlyFromPhysicalOperation()
             near(off.thermalDamageIncrement01, 0.0),
             "inactive engine must not age at normal temperature");
 
-    const auto full = advanceEngineOperatingState(
-        d, healthy, start, 1.0, 600.0, 1050.0
-    );
-    require(near(full.next.temperatureK, 1200.0, 0.001),
-            "full-thrust engine did not reach its 1200 K design operating point");
+    // Pad law (975d2a5f / e41566c6): the engine's own pad (6 MW/m2 x area) is its sink, ramping from 0 at the
+    // nominal to full at the safe temperature. Fixture pad = 2 x the full waste heat -> equilibrium at
+    // nominal + 50 % of the band = 1250 K; small steps (explicit integration, time constant ~60 s).
+    // (the engine heat capacity is floored at 1 MJ/K, so the thermal fixture runs at 1000 x the electric rating)
+    d.nominalElectricalPowerMW *= 1000.0;
+    const auto hot = evaluateEngineUnit(d, damageLayer());
+    const double hotWaste = generatedWasteHeatMW(d, hot, 1.0);
+    const double padArea = 2.0 * hotWaste / game::physics::thermal::PropulsionPadCoolingMWPerM2;
+    d.thermalEmitter.outerDiameterM = 2.0 * std::sqrt(padArea / 3.14159265358979323846);
+    d.thermalEmitter.apertureDiameterM = 0.0;
+    d.thermalCapacityMJperK = 2.0 * hotWaste * 60.0 / 100.0;
+    auto runFor = [&](double seconds, double emitterArea01) {
+        EngineOperatingState s = start;
+        game::equipment::engine::EngineLifeStep last;
+        double wear = 0.0, heat = 0.0;
+        for (int i = 0; i < static_cast<int>(seconds); ++i)
+        {
+            last = advanceEngineOperatingState(d, hot, s, 1.0, 1.0, 1050.0, emitterArea01);
+            wear += last.wearDamageIncrement01;
+            heat += last.thermalDamageIncrement01;
+            s = last.next;
+        }
+        last.wearDamageIncrement01 = wear;
+        last.thermalDamageIncrement01 = heat;
+        return last;
+    };
+    const auto full = runFor(900.0, 1.0);
+    require(near(full.next.temperatureK, 1250.0, 1.0),
+            "full-thrust engine did not reach its pad-law design operating point");
     require(full.next.equivalentOperatingHours > 0.0 &&
             full.wearDamageIncrement01 > 0.0 &&
             near(full.thermalDamageIncrement01, 0.0),
             "healthy full load should age but not overheat");
 
-    // An external hotter coolant boundary must overheat the SAME engine
-    // even while reactor/cooling remain nondamageable in this phase.
-    const auto overheated = advanceEngineOperatingState(
-        d, healthy, full.next, 1.0, 600.0, 1350.0
-    );
+    // A destroyed pad must overheat the SAME engine and accumulate thermal damage.
+    const auto overheated = runFor(900.0, 0.0);
     require(overheated.next.temperatureK > 1450.0 &&
             overheated.thermalDamageIncrement01 > 0.0,
-            "hotter coolant did not cause actual accumulated thermal damage");
+            "a destroyed pad did not cause actual accumulated thermal damage");
 }
 
 void testLiveCoolantOverheatReducesThrustAndConservesEnergy()
@@ -341,14 +357,16 @@ void testLiveCoolantOverheatReducesThrustAndConservesEnergy()
     operating.coolantTemperatureK=1050.0;
     const auto baseline=safeEmitterThrustFraction01(d,effective,operating);
     operating.coolantTemperatureK=1320.0;
+    // 975d2a5f (2026-10-22): the pad is the engine's dedicated sink (area-based, 6 MW/m2); the ship coolant is no
+    // longer coupled to the engine governor. A hot common coolant therefore must NOT change the drive's thrust
+    // ceiling; the boundary is still recorded and energy is still conserved.
     const auto unprotected=safeEmitterThrustFraction01(d,effective,operating);
-    require(unprotected<baseline,
-            "hot common coolant did not derate intact installed engine");
+    require(near(unprotected,baseline),
+            "hot common coolant changed the pad-cooled engine governor");
     const auto step=advanceEngineOperatingState(
         d,effective,operating,1.0,120.0,1320.0
     );
-    require(step.next.temperatureK>operating.temperatureK &&
-            step.next.coolantTemperatureK==1320.0,
+    require(step.next.coolantTemperatureK==1320.0,
             "engine ignored actual shared coolant boundary");
     const double storedMW=d.thermalCapacityMJperK*
         (step.next.temperatureK-operating.temperatureK)/120.0;

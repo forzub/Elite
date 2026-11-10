@@ -200,8 +200,13 @@ void testThrustFailurePreservesInstalledModule()
             d, d.physicalControlModel, runtime
         );
 
-    require(slots[0].operational,
+    // 51a5fc68 (MainEngineCutoff.h): an engine damaged beyond 94 % is SWITCHED OFF while another engine of its bank is
+    // usable - the slot is not operational, but the module stays installed (not detached).
+    const auto* failed = runtime.findModule("aft_left");
+    require(failed && failed->state == world::modules::ObjectModuleRuntimeState::Attached,
             "95% functional damage falsely detached engine module");
+    require(!slots[0].operational,
+            "95% damaged main engine not switched off by the cutoff law");
     require(near(slots[0].thrust01, 0.0) &&
             near(slots[0].vectoring01, 0.0),
             "95% engine damage did not disable both functions");

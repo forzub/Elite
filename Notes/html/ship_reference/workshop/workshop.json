@@ -3381,28 +3381,28 @@
   ],
   "hull:kb.ship.cobrett-i.frnu-inta.a3": [
    {
-    "id": "layout-v2-cobra2_inside",
-    "file": "cobra2_inside.jpg",
-    "name": "Эскиз v2 (отсек Ø3,5 м) - внутри: корпус, плиты и пятаки ER-5 скрыты",
+    "id": "layout-v3-cobra3_top",
+    "file": "cobra3_top.jpg",
+    "name": "Эскиз v3 - снаружи: спина, пятаки ER-5, плиты-радиаторы, излучатели поля на законцовках",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794269725362,
-    "updated": 1794269725362
+    "added": 1794271152040,
+    "updated": 1794271152040
    },
    {
-    "id": "layout-v2-cobra2_top",
-    "file": "cobra2_top.jpg",
-    "name": "Эскиз v2 - снаружи: пятаки ER-5 и плиты-радиаторы на спине",
+    "id": "layout-v3-cobra3_inside",
+    "file": "cobra3_inside.jpg",
+    "name": "Эскиз v3 - внутри: кабина EC-2, лазеры FL-2, ракетные установки WR-2, отсеки Ø3,5 м, контейнеры",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794269725362,
-    "updated": 1794269725362
+    "added": 1794271152040,
+    "updated": 1794271152040
    },
    {
-    "id": "layout-v2-cobra2_under",
-    "file": "cobra2_under.jpg",
-    "name": "Эскиз v2 - снизу: контейнеры, люки выгрузки, лыжи (выпущены)",
+    "id": "layout-v3-cobra3_under",
+    "file": "cobra3_under.jpg",
+    "name": "Эскиз v3 - снизу: лыжи LS-1 (выпущены), люки выгрузки",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794269725362,
-    "updated": 1794269725362
+    "added": 1794271152040,
+    "updated": 1794271152040
    }
   ],
   "bastion.drone.klegg3": [

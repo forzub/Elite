@@ -1,0 +1,91 @@
+{
+ "asset": "cobretty_ls1_skid",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "skid_shoe.1",
+   "part": "skid_shoe",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.377,
+    0.4838
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.36,
+    0.055,
+    1.15
+   ]
+  },
+  {
+   "id": "skid_bracket.1",
+   "part": "skid_bracket",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.04,
+    -0.15
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.288,
+    0.04,
+    0.85
+   ]
+  },
+  {
+   "id": "skid_strut_fore.1",
+   "part": "skid_strut_fore",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.676,
+    -0.4331
+   ],
+   "rotation_deg": [
+    28.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.22,
+    0.675,
+    0.07
+   ]
+  },
+  {
+   "id": "skid_strut_aft.1",
+   "part": "skid_strut_aft",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.676,
+    0.7669
+   ],
+   "rotation_deg": [
+    28.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.22,
+    0.675,
+    0.07
+   ]
+  }
+ ]
+}

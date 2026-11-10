@@ -89,6 +89,14 @@ def place(P, name, folder, pos, yaw_deg=0.0, lod=2, _sub=None):
     return part
 
 
+def place_flipped(P, name, folder, pos, lod=2):
+    """a hull-skin unit (outward +Y) installed on the belly: rotated 180 deg about Z, then moved to pos"""
+    part = place(P, name, folder, (0.0, 0.0, 0.0), 0.0, lod)
+    part.v = [(-x + pos[0], -y + pos[1], z + pos[2]) for x, y, z in part.v]
+    part.n = [(-a, -b, c) for a, b, c in part.n]
+    return part
+
+
 def quad(part, mat, pts, normal):
     ids = [part.vert(p, normal) for p in pts]
     part.face(mat, ids, normal)
@@ -146,10 +154,7 @@ def cobrett_i():
         place(P, f"eq_cr1_aft_{side}", "cobretty_cr1_vector", (x, 0.0, ze + 1.75))
         place(P, f"eq_cr1_fore_{side}", "cobretty_cr1_vector", (x, 0.0, ze - 1.75), 180.0)
     # escape cockpit = the nose module with its motor (proxy until its model): big canopy, part of the hull shape
-    ck = P["proxy_escape_cockpit"] = Part("proxy_escape_cockpit")
-    box(ck, "sk_proxy", (0.0, 0.0, -9.2), (7.6, 2.8, 7.0))
-    quad(ck, "sk_glass", [(-3.1, 0.6, -12.62), (3.1, 0.6, -12.62), (2.6, 1.35, -11.0), (-2.6, 1.35, -11.0)], (0, 0.7, -0.7))
-    box(ck, "sk_proxy", (0.0, -0.3, -5.4), (2.0, 1.4, 0.8))                               # its escape motor
+    place(P, "eq_escape_cockpit", "cobretty_ec2_cockpit", (0.0, 0.0, -5.8))                   # EC-2: the nose module
     # spine (x +-1.3): jump core and tanks under the inspection walkway
     place(P, "eq_core", "zeropoint_z05_jump_core", (0.0, -1.0, -3.8))
     for i, z in enumerate((-1.9, -0.2, 1.5)):
@@ -180,12 +185,8 @@ def cobrett_i():
     # weapons: two forward lasers in the cockpit shoulders, two 2-missile racks in the wings outboard of the bays
     for s_ in (-1, 1):
         side = "l" if s_ < 0 else "r"
-        wl = P[f"proxy_laser_{side}"] = Part(f"proxy_laser_{side}")
-        cyl(wl, "sk_proxy", (s_ * 4.9, 0.0, -4.5), (s_ * 4.9, 0.0, -10.4), 0.28, 12)
-        mr = P[f"proxy_missiles_{side}"] = Part(f"proxy_missiles_{side}")
-        box(mr, "sk_proxy", (s_ * 11.3, 0.0, 3.2), (1.3, 0.7, 4.0))
-        for dx in (-0.32, 0.32):
-            cyl(mr, "sk_c20", (s_ * 11.3 + dx, 0.0, 1.3), (s_ * 11.3 + dx, 0.0, 5.1), 0.15, 10)
+        place(P, f"eq_laser_{side}", "cobretty_fl2_laser", (s_ * 4.9, 0.0, -4.2))              # FL-2, fires forward
+        place(P, f"eq_missiles_{side}", "cobretty_wr2_wing_rack", (s_ * 11.3, 0.0, 5.3))       # WR-2, 2 x Aspid-10
     # jump-field emitters on the wingtips (proposal: the jump core's field projectors, cf. the author's prototype)
     for s_ in (-1, 1):
         side = "l" if s_ < 0 else "r"
@@ -215,11 +216,8 @@ def cobrett_i():
             plate(P, f"cover_{k}", "sk_cover", x0 + 0.04, x1 - 0.04, z0_ + 0.04, z1_ - 0.04, H2 + 0.001)
             k += 1
     # landing skids: folded, they are flush panels of the belly (the author's preference); shown deployed here
-    for x, z in ((0.0, -8.0), (-8.4, -2.0), (8.4, -2.0), (-8.4, 7.4), (8.4, 7.4)):
-        sk = P.setdefault("skid_set", Part("skid_set"))
-        plate(P, "skid_wells", "sk_hatch", x - 0.35, x + 0.35, z - 1.1, z + 1.1, -H2 - 0.001, up=False)
-        cyl(sk, "sk_skid", (x, -H2, z - 0.9), (x, -H2 - 1.3, z + 0.2), 0.14, 10)
-        box(sk, "sk_skid", (x, -H2 - 1.35, z + 0.2), (0.6, 0.1, 2.2))
+    for i, (x, z) in enumerate(((0.0, -8.0), (-8.4, -2.0), (8.4, -2.0), (-8.4, 7.4), (8.4, 7.4))):
+        place_flipped(P, f"eq_skid_{i}", "cobretty_ls1_skid", (x, -H2, z))                    # LS-1, deployed
     return P
 
 

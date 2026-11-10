@@ -2449,10 +2449,10 @@
       "id": "kb.surv.capsule2",
       "cat": "escape_capsule",
       "mfr": "mfr.cobretty",
-      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "name": "EC-2 (спасательная кабина: нос корабля с двигателем)",
       "model": "EC-2",
-      "mass_t": 2.5,
-      "price_cr": 40000,
+      "mass_t": 6.5,
+      "price_cr": 180000,
       "seats": 2,
       "existing": true,
       "overhaul_h": 40000,
@@ -2460,17 +2460,17 @@
       "geometry": {
         "status": "PROPOSAL/model",
         "envelope_m": [
-          1.926,
-          1.926,
-          2.696
+          7.6,
+          2.8,
+          7.0
         ],
         "service_clearance_m": [
-          2.16,
-          2.16,
-          3.02
+          8.2,
+          3.2,
+          7.6
         ],
         "basis": [
-          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+          "author 2026-11-10: the Cobretty escape system is the cockpit itself with a motor - the ship's nose module (Cobrett-I sketch v2 nose), big canopy, separates whole"
         ]
       },
       "cooperation_group": "cognium_pool",
@@ -2485,7 +2485,10 @@
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
       },
-      "model_asset": "equipment/cobretty_ec2_capsule"
+      "model_asset": "equipment/cobretty_ec2_cockpit",
+      "official_name": "Cobretty EC-2 Escape Cockpit",
+      "escape_motor": "2 field-thruster rings facing aft",
+      "endurance_days": 4
     },
     {
       "id": "kb.wpn.pd1",

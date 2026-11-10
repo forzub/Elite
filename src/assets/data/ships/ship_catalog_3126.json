@@ -616,15 +616,18 @@
    "id": "kb.surv.capsule2",
    "cat": "escape_capsule",
    "mfr": "mfr.cobretty",
-   "name": "Cobretty катапультируемая капсула кабины (2 места)",
+   "name": "EC-2 (спасательная кабина: нос корабля с двигателем)",
    "model": "EC-2",
-   "mass_t": 2.5,
-   "price_cr": 40000,
+   "mass_t": 6.5,
+   "price_cr": 180000,
    "seats": 2,
    "existing": true,
    "overhaul_h": 40000,
    "life_h": 100000,
-   "model_asset": "equipment/cobretty_ec2_capsule"
+   "model_asset": "equipment/cobretty_ec2_cockpit",
+   "official_name": "Cobretty EC-2 Escape Cockpit",
+   "escape_motor": "2 field-thruster rings facing aft",
+   "endurance_days": 4
   },
   {
    "id": "kb.wpn.pd1",
@@ -2462,9 +2465,9 @@
         -6.105
        ],
        "s": [
-        1.926,
-        1.926,
-        2.696
+        2.648,
+        2.648,
+        3.707
        ]
       }
      ]
@@ -2607,8 +2610,8 @@
    ],
    "mass": {
     "dry_t": 260,
-    "equipment_t": 82.9,
-    "structure_t": 177.1,
+    "equipment_t": 86.9,
+    "structure_t": 173.1,
     "fluids_t": 5.0,
     "consumables_t": 0.36,
     "service_t": 265.54,
@@ -2618,16 +2621,16 @@
     "gross_t": 395.74
    },
    "price": {
-    "parts_cr": 2260000,
+    "parts_cr": 2400000,
     "hull_cr": 650000,
-    "list_cr": 3966000.0,
+    "list_cr": 4157000.0,
     "groups_cr": {
      "main_drive": 380000,
      "reactor": 520000,
      "rcs_thermal": 293000,
      "jump_drive": 634000,
      "electronics": 198000,
-     "life_support": 75000,
+     "life_support": 215000,
      "weapons": 120000
     },
     "class_target_cr": {
@@ -2845,7 +2848,7 @@
      {
       "code": "Cobrett-I N1-A7A2",
       "product": "kb.surv.capsule2",
-      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "name": "EC-2 (спасательная кабина: нос корабля с двигателем)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -3741,9 +3744,9 @@
         -6.105
        ],
        "s": [
-        1.926,
-        1.926,
-        2.696
+        2.648,
+        2.648,
+        3.707
        ]
       }
      ]
@@ -3886,8 +3889,8 @@
    ],
    "mass": {
     "dry_t": 260,
-    "equipment_t": 140.3,
-    "structure_t": 119.7,
+    "equipment_t": 144.3,
+    "structure_t": 115.7,
     "fluids_t": 5.0,
     "consumables_t": 0.36,
     "service_t": 265.54,
@@ -3897,16 +3900,16 @@
     "gross_t": 385.74
    },
    "price": {
-    "parts_cr": 2980000,
+    "parts_cr": 3120000,
     "hull_cr": 650000,
-    "list_cr": 4947000.0,
+    "list_cr": 5138000.0,
     "groups_cr": {
      "main_drive": 760000,
      "reactor": 980000,
      "rcs_thermal": 173000,
      "jump_drive": 634000,
      "electronics": 198000,
-     "life_support": 75000,
+     "life_support": 215000,
      "weapons": 120000
     },
     "class_target_cr": {
@@ -4110,7 +4113,7 @@
      {
       "code": "Cobrett-I A3-A7A2",
       "product": "kb.surv.capsule2",
-      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "name": "EC-2 (спасательная кабина: нос корабля с двигателем)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -20294,9 +20297,9 @@
         -4.95
        ],
        "s": [
-        1.926,
-        1.926,
-        2.696
+        2.648,
+        2.648,
+        3.707
        ]
       }
      ]
@@ -20428,8 +20431,8 @@
    ],
    "mass": {
     "dry_t": 140,
-    "equipment_t": 113.5,
-    "structure_t": 26.5,
+    "equipment_t": 117.5,
+    "structure_t": 22.5,
     "fluids_t": 2.0,
     "consumables_t": 0.06,
     "service_t": 142.24,
@@ -20439,16 +20442,16 @@
     "gross_t": 144.24
    },
    "price": {
-    "parts_cr": 14747000,
+    "parts_cr": 14887000,
     "hull_cr": 1120000,
-    "list_cr": 20564000.0,
+    "list_cr": 20745000.0,
     "groups_cr": {
      "main_drive": 1840000,
      "reactor": 1650000,
      "rcs_thermal": 185000,
      "jump_drive": 6000,
      "electronics": 8866000,
-     "life_support": 100000,
+     "life_support": 240000,
      "weapons": 2100000
     },
     "class_target_cr": {
@@ -20624,7 +20627,7 @@
      {
       "code": "B-4-A7A2",
       "product": "kb.surv.capsule2",
-      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "name": "EC-2 (спасательная кабина: нос корабля с двигателем)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",

@@ -1344,3 +1344,350 @@ MODEL_ASSETS.update({"kb.drive.n1-axial": "cobretty_n1ax_drive", "kb.cool.loop20
                      "kb.rad.cs-panel": "cobretty_rp10_radiator", "kb.rcs.fc-nozzle": "cobretty_fcrcs_rcs",
                      "kb.apu.s150": "cobretty_sr150_service_reactor", "kb.wpn.pd1": "cobretty_pd1_turret",
                      "kb.surv.capsule2": "cobretty_ec2_capsule"})
+
+
+# ---------------------------------------------------------------- Cobretty EC-2 escape cockpit (author 2026-11-10)
+# The Cobretty escape system is the cockpit itself with a motor: the whole nose module separates; it has a big canopy
+# and its shape is the nose of the ship (Cobrett-I sketch v2 nose). Local frame: the rear interface plane at z = 0, the
+# nose towards -Z, +Y up; 7.6 x 2.8 x 7.0 m. Parts: shell, canopy glass + frame, two seats and a console behind the glass,
+# separation frame with latches and pyro bolts, escape motor (two field-thruster rings facing aft), life-support pack,
+# beacon.
+register_materials({"eq_glass": ((0.10, 0.28, 0.38), (0.70, 0.70, 0.70), 140),
+                    "eq_seat": ((0.30, 0.16, 0.10), (0.15, 0.15, 0.15), 25)})
+EC2 = [  # z, half width, top y, bottom y   (stations from the nose to the rear interface)
+    (-7.0, 2.6, 0.20, -1.00),
+    (-5.6, 3.15, 0.95, -1.25),
+    (-3.6, 3.8, 1.40, -1.40),
+    (0.0, 3.8, 1.40, -1.40),
+]
+
+
+def _ec2_section(z, hw, top, bot, c=0.45):
+    """an octagon-like section (chamfered rectangle), counter-clockwise seen from the nose"""
+    return [(-hw + c, bot, z), (hw - c, bot, z), (hw, bot + c, z), (hw, top - c, z), (hw - c, top, z), (-hw + c, top, z),
+            (-hw, top - c, z), (-hw, bot + c, z)]
+
+
+def _loft(part, mat, sections, cap_front=True, cap_rear=False):
+    n = len(sections[0])
+    for a, b in zip(sections, sections[1:]):
+        for i in range(n):
+            j = (i + 1) % n
+            pts = [a[i], a[j], b[j], b[i]]
+            mid = tuple(sum(p[k] for p in pts) / 4 for k in range(3))
+            cx = sum(p[0] for p in a) / n
+            cy = sum(p[1] for p in a) / n
+            hint = (mid[0] - cx, mid[1] - cy, 0.0)
+            part.face(mat, [part.vert(p, norm(hint)) for p in pts], hint)
+    if cap_front:
+        part.face(mat, [part.vert(p, (0, 0, -1)) for p in sections[0]], (0, 0, -1))
+    if cap_rear:
+        part.face(mat, [part.vert(p, (0, 0, 1)) for p in sections[-1]], (0, 0, 1))
+
+
+def _top_y(z):
+    """the shell's top height at z (linear between stations)"""
+    for (z0, _, t0, _), (z1, _, t1, _) in zip(EC2, EC2[1:]):
+        if z0 <= z <= z1:
+            return t0 + (t1 - t0) * (z - z0) / (z1 - z0)
+    return EC2[-1][2]
+
+
+def _half_w(z):
+    for (z0, w0, _, _), (z1, w1, _, _) in zip(EC2, EC2[1:]):
+        if z0 <= z <= z1:
+            return w0 + (w1 - w0) * (z - z0) / (z1 - z0)
+    return EC2[-1][1]
+
+
+def ec2c_parts(lod):
+    small = small_for(lod)
+    P = {}
+    sh = P["ec2_shell"] = Part("ec2_shell")
+    _loft(sh, "eq_metal_graphite", [_ec2_section(*s) for s in EC2], cap_front=True, cap_rear=True)
+    if lod < 2:
+        for z in (-3.6, -1.8):                                                            # ring bands (Cobretty)
+            hw = _half_w(z)
+            sec = _ec2_section(z, hw + 0.03, 1.43, -1.43)
+            sec2 = _ec2_section(z + 0.18, hw + 0.03, 1.43, -1.43)
+            _loft(sh, "eq_metal_band", [sec, sec2], cap_front=False)
+    # canopy: the sloped top from the nose to the shoulder, glass a little proud of the shell, and side windows
+    cp = P["ec2_canopy"] = Part("ec2_canopy")
+    fr = P["ec2_canopy_frame"] = Part("ec2_canopy_frame")
+    zs = [-6.85, -6.2, -5.6, -4.7, -3.75]                          # panes break at the shell station (-5.6)
+    for z0, z1 in zip(zs, zs[1:]):
+        w0, w1 = _half_w(z0) - 0.65, _half_w(z1) - 0.65
+        y0, y1 = _top_y(z0) + 0.02, _top_y(z1) + 0.02
+        nrm = norm((0.0, z1 - z0, -(y1 - y0)))
+        cp.face("eq_glass", [cp.vert(p, nrm) for p in ((-w0, y0, z0), (w0, y0, z0), (w1, y1, z1), (-w1, y1, z1))], nrm)
+    for s in (-1, 1):                                                                     # side windows
+        for z0, z1 in ((-6.4, -5.2), (-5.0, -3.9)):
+            hw0, hw1 = _half_w(z0) + 0.01, _half_w(z1) + 0.01
+            ya, yb = 0.0, _top_y(z0) - 0.55
+            yc = _top_y(z1) - 0.55
+            nrm = (s * 1.0, 0.0, 0.0)
+            cp.face("eq_glass", [cp.vert(p, nrm) for p in ((s * hw0, ya, z0), (s * hw1, ya, z1), (s * hw1, yc, z1), (s * hw0, yb, z0))], nrm)
+    if lod < 2:
+        for x in (-0.95, 0.95):                                                           # canopy mullions
+            cyl(fr, "eq_metal_band", (x, _top_y(-6.85) + 0.05, -6.85), (x, _top_y(-3.75) + 0.05, -3.75), 0.05, 6)
+        for z in zs:
+            w = _half_w(z) - 0.62
+            cyl(fr, "eq_metal_band", (-w, _top_y(z) + 0.05, z), (w, _top_y(z) + 0.05, z), 0.045, 6)
+        for s in (-1, 1):
+            cyl(fr, "eq_metal_band", (s * (_half_w(-6.85) - 0.63), _top_y(-6.85) + 0.05, -6.85),
+                (s * (_half_w(-3.75) - 0.63), _top_y(-3.75) + 0.05, -3.75), 0.05, 6)
+    # interior seen through the glass: two seats and a console
+    if lod < 2:
+        st = P["ec2_seats"] = Part("ec2_seats")
+        for x in (-1.0, 1.0):
+            box(st, "eq_seat", (x, -0.55, -4.3), (0.7, 0.25, 0.75), chamfer=0.04 if lod == 0 else 0.0)        # cushion
+            box(st, "eq_seat", (x, 0.05, -3.85), (0.7, 1.0, 0.18), rot_x(-0.25), chamfer=0.04 if lod == 0 else 0.0)  # back
+            box(st, "eq_metal_band", (x, -0.85, -4.2), (0.3, 0.35, 0.3))                               # pedestal
+        box(st, "eq_metal_panel", (0.0, -0.35, -5.8), (3.6, 0.45, 0.7), rot_x(0.35), chamfer=0.03 if lod == 0 else 0.0)  # console
+        if lod == 0:
+            for i in range(5):
+                box(st, "eq_status_amber", (-1.4 + 0.7 * i, -0.18, -5.9), (0.4, 0.02, 0.18), rot_x(0.35))
+    # separation frame at the rear interface: latches and pyro bolts
+    sp = P["ec2_separation"] = Part("ec2_separation")
+    for x0, x1, y in ((-3.4, 3.4, 1.25), (-3.4, 3.4, -1.25)):
+        box(sp, "eq_metal_band", ((x0 + x1) / 2, y, 0.06), (x1 - x0, 0.14, 0.12))
+    for x in (-3.65, 3.65):
+        box(sp, "eq_metal_band", (x, 0.0, 0.06), (0.14, 2.3, 0.12))
+    if lod < 2:
+        for x, y in ((-3.0, 1.25), (0.0, 1.25), (3.0, 1.25), (-3.0, -1.25), (0.0, -1.25), (3.0, -1.25), (-3.65, 0.0), (3.65, 0.0)):
+            box(sp, "eq_steel", (x, y, 0.16), (0.30, 0.18, 0.12), chamfer=0.02 if lod == 0 else 0.0)      # latch blocks
+            cyl(sp, "eq_copper", (x, y, 0.22), (x, y, 0.30), 0.045, small)                                  # pyro bolt caps
+    # escape motor: two field-thruster rings facing aft (they push the cockpit forward / away), driver box
+    mo = P["ec2_motor"] = Part("ec2_motor")
+    for x in (-1.7, 1.7):
+        lathe(mo, "eq_field_coil", crect(0.30, 0.48, 0.0, 0.16), seg_for(lod) // 2, I3, (x, -0.55, 0.0))
+        lathe(mo, "eq_pad_ceramic", [(0.0, 0.10), (0.30, 0.10), (0.30, 0.13), (0.0, 0.13)], seg_for(lod) // 2, I3, (x, -0.55, 0.0))
+    box(mo, "eq_metal_panel", (0.0, -0.55, -0.35), (1.2, 0.6, 0.6), chamfer=0.03 if lod == 0 else 0.0)
+    # life-support pack and beacon
+    lp = P["ec2_life_pack"] = Part("ec2_life_pack")
+    box(lp, "eq_metal_panel", (0.0, 0.75, -0.9), (2.2, 0.55, 1.2), chamfer=0.03 if lod == 0 else 0.0)
+    if lod < 2:
+        bc = P["ec2_beacon"] = Part("ec2_beacon")
+        cyl(bc, "eq_metal_graphite", (0.0, 1.40, -1.4), (0.0, 1.62, -1.4), 0.12, small)
+        lathe(bc, "eq_status_amber", [(0.0, 0.0), (0.09, 0.0), (0.06, 0.08), (0.0, 0.10)], small, R_Y, (0.0, 1.62, -1.4))
+    if close():
+        hz = P["ec2_harness"] = Part("ec2_harness")
+        harness(hz, bezier((0.8, 0.5, -0.4), (1.6, 0.2, -0.2), (1.9, -0.3, -0.2), (1.7, -0.55, -0.1), 10), 0.03, 3,
+                ("eq_insulator", "eq_metal_graphite"))
+        harness(hz, bezier((-0.8, 0.5, -0.4), (-1.6, 0.2, -0.2), (-1.9, -0.3, -0.2), (-1.7, -0.55, -0.1), 10), 0.03, 3,
+                ("eq_insulator", "eq_metal_graphite"))
+        for x in (-3.0, 0.0, 3.0):
+            for y in (1.25, -1.25):
+                for dx in (-0.1, 0.1):
+                    hex_bolt(sp, "eq_steel", (x + dx, y, 0.22), (0, 0, 1), 0.035, 0.02)
+    return P
+
+
+def ec2c_hits():
+    return [hbox("ec2_shell", (0.0, 0.0, -1.8), (7.6, 2.8, 3.6)),
+            hbox("ec2_shell", (0.0, -0.25, -5.3), (6.6, 2.0, 3.4)),
+            hbox("ec2_canopy", (0.0, 0.85, -5.3), (4.2, 0.5, 3.1), (-20.0, 0.0, 0.0)),
+            hbox("ec2_separation", (0.0, 0.0, 0.12), (7.6, 2.8, 0.25)),
+            hcyl("ec2_motor", (-1.7, -0.55, 0.0), (-1.7, -0.55, 0.16), 0.48),
+            hcyl("ec2_motor", (1.7, -0.55, 0.0), (1.7, -0.55, 0.16), 0.48),
+            hbox("ec2_life_pack", (0.0, 0.75, -0.9), (2.2, 0.55, 1.2)),
+            hbox("ec2_seats", (0.0, -0.3, -4.2), (3.0, 1.4, 1.2))]
+
+
+ASSETS.pop("cobretty_ec2_capsule", None)
+HITS.pop("cobretty_ec2_capsule", None)
+ASSETS["cobretty_ec2_cockpit"] = ec2c_parts
+HITS["cobretty_ec2_cockpit"] = ec2c_hits
+MODEL_ASSETS["kb.surv.capsule2"] = "cobretty_ec2_cockpit"
+
+
+# ---------------------------------------------------------------- Cobra weapons (author 2026-11-10)
+# Doctrine: no guns / fragments; a Cobra carries 2 forward-fixed lasers and 4 missiles in 2 wing racks; the military
+# version carries 4 heavier lasers. Frames: the laser fires along -Z (its axis = OBJ Z, the mount at the rear, z = 0
+# at the breech); the wing rack is buried in the wing, missiles along -Z, the doors on its ventral face (-Y).
+FL = dict(length=6.0, r=0.30)
+
+
+def fl_parts(lod):
+    """FL-2 forward laser: resonator / power block at the breech, cooled barrel with ring heat sinks, lens head"""
+    seg, small = seg_for(lod), small_for(lod)
+    L, r = FL["length"], FL["r"]
+    P = {}
+    rs = P["fl_resonator"] = Part("fl_resonator")
+    box(rs, "eq_metal_graphite", (0.0, 0.0, -0.75), (0.80, 0.70, 1.50), chamfer=0.05 if lod == 0 else 0.0)
+    if lod < 2:
+        lathe(rs, "eq_metal_band", crect(0.36, 0.42, -1.45, -1.30), seg)
+    br = P["fl_barrel"] = Part("fl_barrel")
+    lathe(br, "eq_metal_graphite", [(r, -1.5), (r, -L + 0.6), (r * 0.85, -L + 0.45)], seg)
+    if lod < 2:
+        n = 7 if lod == 0 else 4
+        for i in range(n):                                                      # ring heat sinks along the barrel
+            z = -1.9 - i * (L - 2.8) / max(1, n - 1)
+            lathe(br, "eq_metal_band", crect(r, r + 0.10, z - 0.06, z + 0.06), seg)
+    hd = P["fl_lens_head"] = Part("fl_lens_head")
+    lathe(hd, "eq_metal_band", [(r * 0.85, -L + 0.45), (r + 0.06, -L + 0.40), (r + 0.06, -L + 0.05), (r * 0.7, -L)], seg)
+    lathe(hd, "eq_glass" if "eq_glass" in MATERIALS else "eq_status_amber", [(0.0, -L + 0.06), (r * 0.6, -L + 0.06), (0.0, -L + 0.03)], small)
+    cp = P["fl_capacitors"] = Part("fl_capacitors")
+    for s in (-1, 1):
+        box(cp, "eq_metal_panel", (s * 0.52, -0.05, -0.85), (0.24, 0.50, 1.20), chamfer=0.03 if lod == 0 else 0.0)
+    mt = P["fl_mount"] = Part("fl_mount")
+    lathe(mt, "eq_metal_band", [(0.0, 0.0), (0.42, 0.0), (0.42, 0.10), (0.0, 0.10)], seg)      # Cobretty round mount
+    if close():
+        for i in range(12):
+            a = 2 * math.pi * (i + 0.5) / 12
+            hex_bolt(mt, "eq_steel", (0.36 * math.cos(a), 0.36 * math.sin(a), 0.10), (0, 0, 1), 0.04, 0.025)
+        hz = P["fl_harness"] = Part("fl_harness")
+        for s in (-1, 1):
+            harness(hz, bezier((s * 0.52, 0.22, -0.3), (s * 0.4, 0.45, -0.6), (s * 0.2, 0.42, -1.2), (s * 0.05, 0.35, -1.45), 10),
+                    0.022, 2, ("eq_insulator", "eq_metal_graphite"))
+        pipe_run(hz, "eq_copper", [(0.0, -0.36, -0.3), (0.0, -0.40, -1.6), (0.0, -r - 0.06, -L + 0.9)], 0.035, clamp_every=0.5, seg=8)
+    return P
+
+
+def fl_hits():
+    L, r = FL["length"], FL["r"]
+    return [hbox("fl_resonator", (0.0, 0.0, -0.75), (0.80, 0.70, 1.50)),
+            hcyl("fl_barrel", (0, 0, -1.5), (0, 0, -L + 0.45), r + 0.1),
+            hcyl("fl_lens_head", (0, 0, -L + 0.45), (0, 0, -L), r + 0.06),
+            hbox("fl_capacitors", (0.0, -0.05, -0.85), (1.28, 0.50, 1.20)),
+            hcyl("fl_mount", (0, 0, 0.0), (0, 0, 0.10), 0.42)]
+
+
+WR = dict(length=4.2, width=1.3, height=0.72)
+
+
+def wr_parts(lod):
+    """WR-2 wing rack: a shallow box buried in the wing, two Aspid-10 missiles on ejector rails, two ventral doors"""
+    small = small_for(lod)
+    L, W, H = WR["length"], WR["width"], WR["height"]
+    P = {}
+    bx = P["wr_frame"] = Part("wr_frame")
+    for s in (-1, 1):
+        box(bx, "eq_metal_band", (s * (W / 2 - 0.04), 0.0, -L / 2), (0.08, H, L))
+        box(bx, "eq_metal_band", (0.0, 0.0, -L / 2 + s * (L / 2 - 0.04)), (W, H, 0.08))
+    box(bx, "eq_metal_graphite", (0.0, H / 2 - 0.03, -L / 2), (W, 0.06, L))                        # roof (wing skin side)
+    if lod < 2:
+        for x in (-0.32, 0.32):                                                                   # ejector rails
+            box(bx, "eq_steel", (x, H / 2 - 0.12, -L / 2), (0.08, 0.10, L - 0.3))
+    for k, x in enumerate((-0.32, 0.32)):                                                         # Aspid-10 missiles
+        m = P[f"wr_missile_{k + 1}"] = Part(f"wr_missile_{k + 1}")
+        lathe(m, "eq_metal_panel", [(0.0, -L + 0.25), (0.10, -L + 0.45), (0.15, -L + 0.75), (0.15, -0.55), (0.12, -0.35), (0.0, -0.33)],
+              small, I3, (x, 0.02, 0.0))
+        if lod < 2:
+            lathe(m, "eq_status_amber", crect(0.15, 0.155, -L + 0.85, -L + 0.95), small, I3, (x, 0.02, 0.0))   # warhead band
+            for a in range(4):                                                                    # fins
+                ang = math.pi / 4 + a * math.pi / 2
+                box(m, "eq_metal_graphite", (x + 0.2 * math.cos(ang), 0.02 + 0.2 * math.sin(ang), -0.55), (0.12, 0.02, 0.35),
+                    rot_z(ang))
+    for k, s in enumerate((-1, 1)):                                                               # ventral doors
+        d = P[f"wr_door_{k + 1}"] = Part(f"wr_door_{k + 1}")
+        box(d, "eq_metal_graphite", (s * W / 4, -H / 2 + 0.02, -L / 2), (W / 2 - 0.02, 0.04, L - 0.06))
+        if lod < 2:
+            for z in (-0.6, -L + 0.6):
+                cyl(d, "eq_steel", (s * (W / 2 - 0.08), -H / 2 + 0.02, z - 0.1), (s * (W / 2 - 0.08), -H / 2 + 0.02, z + 0.1), 0.03, 8)
+    lc = P["wr_launch_ctl"] = Part("wr_launch_ctl")
+    box(lc, "eq_metal_panel", (0.0, 0.05, 0.30), (0.8, 0.40, 0.45), chamfer=0.03 if lod == 0 else 0.0)
+    if close():
+        hz = P["wr_harness"] = Part("wr_harness")
+        for x in (-0.32, 0.32):
+            harness(hz, bezier((x * 0.5, 0.2, 0.1), (x, 0.3, -0.1), (x, 0.28, -0.25), (x, 0.17, -0.40), 8), 0.015, 2, ("eq_insulator",))
+    return P
+
+
+def wr_hits():
+    L, W, H = WR["length"], WR["width"], WR["height"]
+    H_ = [hbox("wr_frame", (0.0, 0.0, -L / 2), (W, H, L)), hbox("wr_launch_ctl", (0.0, 0.05, 0.30), (0.8, 0.40, 0.45))]
+    for k, x in enumerate((-0.32, 0.32)):
+        H_.append(hcyl(f"wr_missile_{k + 1}", (x, 0.02, -L + 0.25), (x, 0.02, -0.33), 0.15))
+    for k, s in enumerate((-1, 1)):
+        H_.append(hbox(f"wr_door_{k + 1}", (s * W / 4, -H / 2 + 0.02, -L / 2), (W / 2, 0.05, L)))
+    return H_
+
+
+FL3H_S = 1.25                     # the military heavy laser: the same design, 1.25 x (4 per military Cobra)
+ASSETS.update({"cobretty_fl2_laser": fl_parts, "cobretty_fl3h_laser": scaled_unit(fl_parts, None, FL3H_S),
+               "cobretty_wr2_wing_rack": wr_parts})
+HITS.update({"cobretty_fl2_laser": fl_hits, "cobretty_fl3h_laser": scaled_unit_hits(fl_hits, None, FL3H_S),
+             "cobretty_wr2_wing_rack": wr_hits})
+MODEL_ASSETS.update({"kb.wpn.fl2": "cobretty_fl2_laser", "kb.wpn.fl3h": "cobretty_fl3h_laser",
+                     "kb.wpn.wr2": "cobretty_wr2_wing_rack"})
+
+
+# ---------------------------------------------------------------- Cobretty LS-1 landing skid (author 2026-11-10)
+# Folded, the skid shoe IS a flush panel of the belly (the author's choice, not a gear well with doors). Deployed, the
+# shoe swings out on a parallelogram of two struts with a damper. Hull-skin frame: mounting face at y = 0, outward +Y
+# (on the belly the unit is installed flipped); modelled DEPLOYED; every moving part is separate, pivots in SKID_RIG.
+SK = dict(strut=1.35, tilt=math.radians(28), shoe=(0.72, 0.09, 2.3), p_fore=-0.75, p_aft=0.45)
+
+
+def _skid_geo():
+    L, a = SK["strut"], SK["tilt"]
+    dz, dy = L * math.sin(a), L * math.cos(a)
+    pf, pa = (0.0, 0.08, SK["p_fore"]), (0.0, 0.08, SK["p_aft"])
+    qf, qa = (0.0, 0.08 + dy, SK["p_fore"] + dz), (0.0, 0.08 + dy, SK["p_aft"] + dz)
+    return pf, pa, qf, qa
+
+
+def skid_parts(lod):
+    small = small_for(lod)
+    W, T, Ls = SK["shoe"]
+    pf, pa, qf, qa = _skid_geo()
+    P = {}
+    br = P["skid_bracket"] = Part("skid_bracket")                       # hull bracket with the two upper pivots
+    box(br, "eq_metal_band", (0.0, 0.04, (pf[2] + pa[2]) / 2), (W * 0.8, 0.08, pa[2] - pf[2] + 0.5))
+    for p in (pf, pa):
+        cyl(br, "eq_steel", (-0.22, p[1], p[2]), (0.22, p[1], p[2]), 0.07, small)
+    sh = P["skid_shoe"] = Part("skid_shoe")                             # the shoe = the flush belly panel when folded
+    zc = (qf[2] + qa[2]) / 2
+    box(sh, "eq_metal_graphite", (0.0, qf[1] + T / 2 + 0.06, zc), (W, T, Ls), chamfer=0.03 if lod == 0 else 0.0)
+    if lod < 2:
+        box(sh, "eq_pad_ceramic", (0.0, qf[1] + T + 0.065, zc), (W - 0.12, 0.012, Ls - 0.2))     # wear / grip face
+        for q in (qf, qa):
+            box(sh, "eq_metal_band", (0.0, q[1] + 0.03, q[2]), (0.30, 0.08, 0.25))            # lower pivot lugs
+    for name, p, q in (("skid_strut_fore", pf, qf), ("skid_strut_aft", pa, qa)):
+        s = P[name] = Part(name)
+        for x in (-0.16, 0.16):
+            cyl(s, "eq_metal_band", (x, p[1], p[2]), (x, q[1], q[2]), 0.055, small)
+        if lod < 2:
+            cyl(s, "eq_steel", (-0.2, q[1] + 0.03, q[2]), (0.2, q[1] + 0.03, q[2]), 0.05, small)   # lower pin
+    db = P["skid_damper_body"] = Part("skid_damper_body")               # damper: hull pivot -> mid of the aft strut
+    hp = (0.0, 0.08, SK["p_aft"] + 0.55)
+    mid = tuple((a + b) / 2 for a, b in zip(pa, qa))
+    cut = tuple(hp[k] + (mid[k] - hp[k]) * 0.55 for k in range(3))
+    cyl(db, "eq_metal_panel", hp, cut, 0.07, small)
+    dr = P["skid_damper_rod"] = Part("skid_damper_rod")
+    cyl(dr, "eq_steel", cut, mid, 0.035, small)
+    if close():
+        hz = P["skid_harness"] = Part("skid_harness")
+        harness(hz, bezier((0.25, 0.05, pa[2] + 0.2), (0.3, 0.4, pa[2] + 0.4), (0.25, mid[1], mid[2] + 0.1), (0.2, mid[1], mid[2]), 8),
+                0.015, 2, ("eq_insulator",))
+    return P
+
+
+def skid_hits():
+    W, T, Ls = SK["shoe"]
+    pf, pa, qf, qa = _skid_geo()
+    zc = (qf[2] + qa[2]) / 2
+    return [hbox("skid_shoe", (0.0, qf[1] + T / 2 + 0.06, zc), (W, T + 0.02, Ls)),
+            hbox("skid_bracket", (0.0, 0.04, (pf[2] + pa[2]) / 2), (W * 0.8, 0.08, pa[2] - pf[2] + 0.5)),
+            hbox("skid_strut_fore", tuple((a + b) / 2 for a, b in zip(pf, qf)), (0.44, SK["strut"], 0.14), (math.degrees(SK["tilt"]), 0.0, 0.0)),
+            hbox("skid_strut_aft", tuple((a + b) / 2 for a, b in zip(pa, qa)), (0.44, SK["strut"], 0.14), (math.degrees(SK["tilt"]), 0.0, 0.0))]
+
+
+def skid_rig():
+    """pivots for the deploy animation (deployed pose = 0); folded = struts -62 deg about X (shoe flush at y = 0)"""
+    pf, pa, qf, qa = _skid_geo()
+    fold = -(90.0 - math.degrees(SK["tilt"]))
+    return {"pose": "deployed", "folded_note": "struts rotate to lie along +Z; the shoe stays parallel (parallelogram) and lands flush in the belly",
+            "joints": [
+                {"part": "skid_strut_fore", "parent": "skid_bracket", "pivot": list(pf), "axis": [1, 0, 0], "range_deg": [fold, 0.0]},
+                {"part": "skid_strut_aft", "parent": "skid_bracket", "pivot": list(pa), "axis": [1, 0, 0], "range_deg": [fold, 0.0]},
+                {"part": "skid_shoe", "parent": "skid_strut_fore", "pivot": list(qf), "axis": [1, 0, 0], "range_deg": [0.0, -fold],
+                 "note": "counter-rotates to stay parallel"},
+                {"part": "skid_damper_body", "parent": "skid_bracket", "pivot": [0.0, 0.08, SK["p_aft"] + 0.55], "axis": [1, 0, 0], "range_deg": [-30.0, 0.0]},
+                {"part": "skid_damper_rod", "parent": "skid_damper_body", "slide": "along the damper axis", "range_m": [-0.45, 0.0]}]}
+
+
+ASSETS["cobretty_ls1_skid"] = skid_parts
+HITS["cobretty_ls1_skid"] = skid_hits
+MODEL_ASSETS["kb.lift.ls1"] = "cobretty_ls1_skid"

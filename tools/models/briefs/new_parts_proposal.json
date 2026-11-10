@@ -1023,6 +1023,276 @@
    "official_name": "MJ-BK24 Bikube",
    "short_name": "Bikuben",
    "naming_note": "Bastion: Norwegian bokmal; bikube = beehive"
+  },
+  {
+   "id": "kb.wpn.fl2",
+   "cat": "weapon",
+   "mfr": "mfr.cobretty",
+   "name": "FL-2 (курсовой лазер)",
+   "official_name": "Cobretty FL-2 Forward Laser",
+   "model": "FL-2",
+   "mass_t": 1.6,
+   "price_cr": 210000,
+   "kind": "forward_laser",
+   "beam_mw": 12,
+   "input_mw": 40,
+   "overhaul_h": 20000,
+   "life_h": 60000,
+   "model_asset": "cobretty_fl2_laser",
+   "notes": "Forward-fixed laser of the Cobra (2 per ship, in the cockpit shoulders, firing along -Z). Resonator / power block at the breech with side capacitor banks, cooled barrel with ring heat sinks, lens head; Cobretty round mount.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.28,
+     0.8,
+     6.0
+    ],
+    "service_clearance_m": [
+     1.6,
+     1.1,
+     6.6
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.laser",
+    "ru": "лазер",
+    "srus": {
+     "resonator": "резонатор / блок питания",
+     "barrel": "ствол с теплоотводами",
+     "lens_head": "головка с линзой",
+     "capacitors": "конденсаторы"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3"
+   ]
+  },
+  {
+   "id": "kb.wpn.fl3h",
+   "cat": "weapon",
+   "mfr": "mfr.cobretty",
+   "name": "FL-3H (тяжёлый курсовой лазер)",
+   "official_name": "Cobretty FL-3H Heavy Forward Laser",
+   "model": "FL-3H",
+   "mass_t": 3.1,
+   "price_cr": 420000,
+   "kind": "forward_laser",
+   "beam_mw": 25,
+   "input_mw": 80,
+   "overhaul_h": 15000,
+   "life_h": 50000,
+   "model_asset": "cobretty_fl3h_laser",
+   "notes": "Military variant (author: a military Cobra carries 4 heavier lasers): the FL-2 design at 1.25 x.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.6,
+     1.0,
+     7.5
+    ],
+    "service_clearance_m": [
+     2.0,
+     1.3,
+     8.2
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.laser",
+    "ru": "лазер",
+    "srus": {
+     "resonator": "резонатор / блок питания",
+     "barrel": "ствол с теплоотводами",
+     "lens_head": "головка с линзой",
+     "capacitors": "конденсаторы"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu-inta.a3p"
+   ]
+  },
+  {
+   "id": "kb.wpn.wr2",
+   "cat": "weapon",
+   "mfr": "mfr.cobretty",
+   "name": "WR-2 (крыльевая ракетная установка, 2 ракеты Aspid-10)",
+   "official_name": "Cobretty WR-2 Wing Rack",
+   "model": "WR-2",
+   "mass_t": 0.55,
+   "price_cr": 120000,
+   "kind": "missile_rack",
+   "cells": 2,
+   "missile": {
+    "name": "Aspid-10",
+    "mass_kg": 95,
+    "warhead": "burn-through: burns the compartment's insides, does not rip the hull (doctrine)"
+   },
+   "overhaul_h": 20000,
+   "life_h": 60000,
+   "model_asset": "cobretty_wr2_wing_rack",
+   "notes": "Internal rack buried in the wing (author's prototype: missile racks hidden in the wings): 2 Aspid-10 missiles on ejector rails (separate parts: fired / empty), 2 ventral doors, launch-control unit. A Cobra carries 2 racks = 4 missiles.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.3,
+     0.72,
+     4.2
+    ],
+    "service_clearance_m": [
+     1.6,
+     1.6,
+     4.6
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.missile_rack",
+    "ru": "ракетная установка",
+    "srus": {
+     "doors": "створки",
+     "rails": "направляющие-выбрасыватели",
+     "launch_ctl": "блок управления пуском"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3"
+   ]
+  },
+  {
+   "id": "kb.lift.ls1",
+   "cat": "landing_gear",
+   "mfr": "mfr.cobretty",
+   "name": "LS-1 (складная посадочная лыжа)",
+   "official_name": "Cobretty LS-1 Landing Skid",
+   "model": "LS-1",
+   "mass_t": 0.42,
+   "price_cr": 30000,
+   "kind": "folding_skid",
+   "per_ship": 5,
+   "overhaul_h": 20000,
+   "life_h": 80000,
+   "model_asset": "cobretty_ls1_skid",
+   "notes": "Author 2026-11-10: folded, the skid shoe IS a flush panel of the belly (not a gear well with doors). Deployed on a parallelogram of two struts with a damper; modelled deployed, every moving part separate; pivots for the deploy animation in 'rig'. A Cobra has 5: under the cockpit and two under each drive bay.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     0.72,
+     1.45,
+     2.9
+    ],
+    "service_clearance_m": [
+     1.0,
+     1.7,
+     3.4
+    ],
+    "folded_m": [
+     0.72,
+     0.17,
+     2.3
+    ]
+   },
+   "fault_class": {
+    "id": "gear.skid",
+    "ru": "посадочная лыжа",
+    "srus": {
+     "struts": "стойки",
+     "damper": "амортизатор",
+     "shoe": "башмак-панель",
+     "drive": "привод выпуска"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3"
+   ],
+   "rig": {
+    "pose": "deployed",
+    "folded_note": "struts rotate to lie along +Z; the shoe stays parallel (parallelogram) and lands flush in the belly",
+    "joints": [
+     {
+      "part": "skid_strut_fore",
+      "parent": "skid_bracket",
+      "pivot": [
+       0.0,
+       0.08,
+       -0.75
+      ],
+      "axis": [
+       1,
+       0,
+       0
+      ],
+      "range_deg": [
+       -62.0,
+       0.0
+      ]
+     },
+     {
+      "part": "skid_strut_aft",
+      "parent": "skid_bracket",
+      "pivot": [
+       0.0,
+       0.08,
+       0.45
+      ],
+      "axis": [
+       1,
+       0,
+       0
+      ],
+      "range_deg": [
+       -62.0,
+       0.0
+      ]
+     },
+     {
+      "part": "skid_shoe",
+      "parent": "skid_strut_fore",
+      "pivot": [
+       0.0,
+       1.2719792503595515,
+       -0.11621339023904742
+      ],
+      "axis": [
+       1,
+       0,
+       0
+      ],
+      "range_deg": [
+       0.0,
+       62.0
+      ],
+      "note": "counter-rotates to stay parallel"
+     },
+     {
+      "part": "skid_damper_body",
+      "parent": "skid_bracket",
+      "pivot": [
+       0.0,
+       0.08,
+       1.0
+      ],
+      "axis": [
+       1,
+       0,
+       0
+      ],
+      "range_deg": [
+       -30.0,
+       0.0
+      ]
+     },
+     {
+      "part": "skid_damper_rod",
+      "parent": "skid_damper_body",
+      "slide": "along the damper axis",
+      "range_m": [
+       -0.45,
+       0.0
+      ]
+     }
+    ]
+   }
   }
  ],
  "naming": "names follow tools/colonization_lab/canon/ship_naming.json (maker language; display_name_ru = name)"

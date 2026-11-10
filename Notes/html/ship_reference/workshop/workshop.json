@@ -3490,6 +3490,888 @@
     "added": 1794270452346,
     "updated": 1794270452346
    }
+  ],
+  "hull:agora.ship.pc-30ak.akritas": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272761611,
+    "updated": 1794272761611
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272761611,
+    "updated": 1794272761611
+   }
+  ],
+  "hull:agora.ship.pk-30a.limenarch": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272761954,
+    "updated": 1794272761954
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272761954,
+    "updated": 1794272761954
+   }
+  ],
+  "hull:bastion.ship.b-12l.heis": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272762240,
+    "updated": 1794272762240
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272762240,
+    "updated": 1794272762240
+   }
+  ],
+  "hull:bastion.ship.b-20g.hulken": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272762506,
+    "updated": 1794272762506
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272762506,
+    "updated": 1794272762506
+   }
+  ],
+  "hull:bastion.ship.b-4.sokol": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272762807,
+    "updated": 1794272762807
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272762807,
+    "updated": 1794272762807
+   }
+  ],
+  "hull:bastion.ship.b-90.tsitadel": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272763131,
+    "updated": 1794272763131
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272763131,
+    "updated": 1794272763131
+   }
+  ],
+  "hull:bastion.ship.he-120c.oboz": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272763403,
+    "updated": 1794272763403
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272763403,
+    "updated": 1794272763403
+   }
+  ],
+  "hull:bastion.ship.ts-6b.zastava": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272763721,
+    "updated": 1794272763721
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272763721,
+    "updated": 1794272763721
+   }
+  ],
+  "hull:bastion.ship.ts-6f.post": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764005,
+    "updated": 1794272764005
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764005,
+    "updated": 1794272764005
+   }
+  ],
+  "hull:bharat.ship.c-120.konveyer": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764300,
+    "updated": 1794272764300
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764300,
+    "updated": 1794272764300
+   }
+  ],
+  "hull:bharat.ship.c-120t.sahayak": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764641,
+    "updated": 1794272764641
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764641,
+    "updated": 1794272764641
+   }
+  ],
+  "hull:bharat.ship.c-30.doot": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764989,
+    "updated": 1794272764989
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272764989,
+    "updated": 1794272764989
+   }
+  ],
+  "hull:bharat.ship.f-120.prahari": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272765281,
+    "updated": 1794272765281
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272765281,
+    "updated": 1794272765281
+   }
+  ],
+  "hull:bharat.ship.h-20.majdoor": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272765581,
+    "updated": 1794272765581
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272765581,
+    "updated": 1794272765581
+   }
+  ],
+  "hull:bharat.ship.pk-30b.rakshak": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272765901,
+    "updated": 1794272765901
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272765901,
+    "updated": 1794272765901
+   }
+  ],
+  "hull:bharat.ship.t-5000.iskhod": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272766189,
+    "updated": 1794272766189
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272766189,
+    "updated": 1794272766189
+   }
+  ],
+  "hull:harmony.ship.he-120": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272766553,
+    "updated": 1794272766553
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272766553,
+    "updated": 1794272766553
+   }
+  ],
+  "hull:harmony.ship.he-120p.chunyun": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272766861,
+    "updated": 1794272766861
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272766861,
+    "updated": 1794272766861
+   }
+  ],
+  "hull:harmony.ship.he-f22.dun": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272767192,
+    "updated": 1794272767192
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272767192,
+    "updated": 1794272767192
+   }
+  ],
+  "hull:harmony.ship.he-s240.tylovik": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272767495,
+    "updated": 1794272767495
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272767495,
+    "updated": 1794272767495
+   }
+  ],
+  "hull:harmony.ship.he-t12.lokomotiv": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272767801,
+    "updated": 1794272767801
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272767801,
+    "updated": 1794272767801
+   }
+  ],
+  "hull:harmony.ship.he-t12c.tanker": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272768144,
+    "updated": 1794272768144
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272768144,
+    "updated": 1794272768144
+   }
+  ],
+  "hull:harmony.ship.he-t8.yishan": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272768457,
+    "updated": 1794272768457
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272768457,
+    "updated": 1794272768457
+   }
+  ],
+  "hull:hyp.ship.f-900.atlas": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272768766,
+    "updated": 1794272768766
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272768766,
+    "updated": 1794272768766
+   }
+  ],
+  "hull:hyp.ship.l-900.piligrim": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769060,
+    "updated": 1794272769060
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769060,
+    "updated": 1794272769060
+   }
+  ],
+  "hull:hyp.ship.r-7.argus": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769368,
+    "updated": 1794272769368
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769368,
+    "updated": 1794272769368
+   }
+  ],
+  "hull:kb.ship.cobrett-i.frnu-inta.a3p": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769646,
+    "updated": 1794272769646
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769646,
+    "updated": 1794272769646
+   }
+  ],
+  "hull:kb.ship.cobrett-i.frnu.n1": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769939,
+    "updated": 1794272769939
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272769939,
+    "updated": 1794272769939
+   }
+  ],
+  "hull:kern.ship.ht-20k-d.krot": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272770240,
+    "updated": 1794272770240
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272770240,
+    "updated": 1794272770240
+   }
+  ],
+  "hull:kern.ship.ht-20k.mul": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272770571,
+    "updated": 1794272770571
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272770571,
+    "updated": 1794272770571
+   }
+  ],
+  "hull:ofu.ship.ocs-4.lastochka": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272770876,
+    "updated": 1794272770876
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272770876,
+    "updated": 1794272770876
+   }
+  ],
+  "hull:ofu.ship.ocs-4j.strizh": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272771207,
+    "updated": 1794272771207
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272771207,
+    "updated": 1794272771207
+   }
+  ],
+  "hull:ofu.ship.sl-12.podyomnik": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272771548,
+    "updated": 1794272771548
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272771548,
+    "updated": 1794272771548
+   }
+  ],
+  "hull:sol.ship.ff-3000.gagarin": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272771861,
+    "updated": 1794272771861
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272771861,
+    "updated": 1794272771861
+   }
+  ],
+  "hull:sol.ship.gt-3000.titan": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272772177,
+    "updated": 1794272772177
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272772177,
+    "updated": 1794272772177
+   }
+  ],
+  "hull:sol.ship.gt-3000p.poputchik": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272772493,
+    "updated": 1794272772493
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272772493,
+    "updated": 1794272772493
+   }
+  ],
+  "hull:sol.ship.pao-7.shchit": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272772811,
+    "updated": 1794272772811
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272772811,
+    "updated": 1794272772811
+   }
+  ],
+  "hull:sol.ship.pk-30.strazh": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272773123,
+    "updated": 1794272773123
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272773123,
+    "updated": 1794272773123
+   }
+  ],
+  "hull:sol.ship.st-6.masterovoy": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272773434,
+    "updated": 1794272773434
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272773434,
+    "updated": 1794272773434
+   }
+  ],
+  "hull:stone.ship.he-120r.brodyaga": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272773735,
+    "updated": 1794272773735
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272773735,
+    "updated": 1794272773735
+   }
+  ],
+  "hull:stone.ship.kamen-s.salvage": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774048,
+    "updated": 1794272774048
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774048,
+    "updated": 1794272774048
+   }
+  ],
+  "hull:stone.ship.kamen.tanker": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774352,
+    "updated": 1794272774352
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774352,
+    "updated": 1794272774352
+   }
+  ],
+  "hull:stone.ship.kb-r.stinger": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774656,
+    "updated": 1794272774656
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774656,
+    "updated": 1794272774656
+   }
+  ],
+  "hull:stone.ship.ocs-4r.bucket": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774959,
+    "updated": 1794272774959
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272774959,
+    "updated": 1794272774959
+   }
+  ],
+  "hull:stone.ship.t-5000r.hive": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272775258,
+    "updated": 1794272775258
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272775258,
+    "updated": 1794272775258
+   }
+  ],
+  "hull:tianhe.ship.b-4t.sokol-t": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272775594,
+    "updated": 1794272775594
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272775594,
+    "updated": 1794272775594
+   }
+  ],
+  "hull:tianhe.ship.t416.tianyi": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272775886,
+    "updated": 1794272775886
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272775886,
+    "updated": 1794272775886
+   }
+  ],
+  "hull:tianhe.ship.t421.tianti": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272776187,
+    "updated": 1794272776187
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272776187,
+    "updated": 1794272776187
+   }
+  ],
+  "hull:tianhe.ship.ts-6.dozor": [
+   {
+    "id": "auto-v2-auto_out",
+    "file": "auto_out.jpg",
+    "name": "Автоэскиз v2 - снаружи (принцип постройки производителя; грубый, для правки)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272776523,
+    "updated": 1794272776523
+   },
+   {
+    "id": "auto-v2-auto_in",
+    "file": "auto_in.jpg",
+    "name": "Автоэскиз v2 - внутри: отсеки по функциональным группам, агрегаты ярусами, реальные модели",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794272776523,
+    "updated": 1794272776523
+   }
   ]
  },
  "shipImages": {},

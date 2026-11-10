@@ -62,6 +62,15 @@ for (const q of NEW_EQ.parts) {
   newParts.push(p);
 }
 for (const p of newParts) D.parts.push(p);
+// equipment names in the maker's language (author 2026-11-10): tools/colonization_lab/canon/equipment_naming.json
+const NAMES = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "..", "..", "tools", "colonization_lab", "canon", "equipment_naming.json"), "utf8")).parts;
+for (const p of D.parts) {
+  const n = NAMES[p.id];
+  if (!n) continue;
+  p.model = n.model_index; p.name = n.display_name_ru; p.official_name = n.official_name;
+  if (n.native_script) p.native_script = n.native_script;
+  if (n.legacy_index) p.legacy_index = n.legacy_index;
+}
 const PM = new Map(D.parts.map(p => [p.id, p]));
 const SM = new Map(D.ships.map(s => [s.id, s]));
 

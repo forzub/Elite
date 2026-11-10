@@ -8,81 +8,81 @@
 <rect x="219.0" y="215.0" width="8.9" height="105.0" fill="#7fb8e6" fill-opacity="0.25" stroke="#7fb8e6" stroke-width="0.8"><title>радиаторы 200 м2</title></rect>
 <text x="316.0" y="346.0" fill="#8fb3d1" text-anchor="end">32 × 98 м</text>
 <circle cx="170.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>He-120-A1A1 Тяньхэ ТЦ-13</title></circle>
-<circle cx="170.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>He-120-A2A1 Тяньхэ ТР-10</title></circle>
-<circle cx="170.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>He-120-A2A2 Тяньхэ СР-150</title></circle>
-<circle cx="128.4" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
-<circle cx="211.6" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
-<circle cx="170.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>He-120-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
-<circle cx="170.0" cy="212.8" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>He-120-A4A1 Гармония Х-5 (сборка из блоков Когниума)</title></circle>
-<circle cx="138.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="159.6" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="180.4" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="201.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="138.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="159.6" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="180.4" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="201.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="132.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="207.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="132.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="207.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="132.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="207.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="132.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="207.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="170.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>He-120-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="170.0" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>He-120-A6A2 Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
-<circle cx="170.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="170.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A4 Транспондер Управления Маяков Т-1</title></circle>
-<circle cx="170.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>He-120-A7A1 Terra Habitat ЖО T-10</title></circle>
-<circle cx="159.6" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="180.4" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="138.8" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="159.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="180.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="201.2" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="159.6" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
-<circle cx="180.4" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="170.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>He-120-A2A1 TR-10 · Тяньхэ TR-10</title></circle>
+<circle cx="170.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>He-120-A2A2 TH-FZ150 · Тяньхэ TH-FZ150</title></circle>
+<circle cx="128.4" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 TH-SR50 · Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="211.6" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 TH-SR50 · Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="170.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>He-120-A3A2 TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="170.0" cy="212.8" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>He-120-A4A1 He-5 · Гармония He-5 (сборка из блоков Когниума)</title></circle>
+<circle cx="138.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="159.6" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="180.4" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="201.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="138.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="159.6" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="180.4" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="201.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="132.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="207.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="132.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="207.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="132.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="207.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="132.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="207.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="170.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>He-120-A6A1 MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="170.0" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>He-120-A6A2 N-2 · Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
+<circle cx="170.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A3 C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="170.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A4 T-1 · Транспондер Управления Маяков T-1</title></circle>
+<circle cx="170.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>He-120-A7A1 T-10 · Terra Habitat ЖО T-10</title></circle>
+<circle cx="159.6" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 AG-EP4 · Спасательная капсула (4 места)</title></circle>
+<circle cx="180.4" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 AG-EP4 · Спасательная капсула (4 места)</title></circle>
+<circle cx="138.8" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="159.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="180.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="201.2" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="159.6" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="180.4" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
 <rect x="340.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
 <text x="344.0" y="64" fill="#8fb3d1">вид сбоку</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><rect x="447.14285714285717" y="50.0" width="85.71428571428571" height="300.0" rx="3" /></g>
 <text x="636.0" y="346.0" fill="#8fb3d1" text-anchor="end">28 × 98 м</text>
 <circle cx="490.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>He-120-A1A1 Тяньхэ ТЦ-13</title></circle>
-<circle cx="490.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>He-120-A2A1 Тяньхэ ТР-10</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>He-120-A2A2 Тяньхэ СР-150</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
-<circle cx="490.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>He-120-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
-<circle cx="490.0" cy="212.8" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>He-120-A4A1 Гармония Х-5 (сборка из блоков Когниума)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="519.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="519.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="460.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="460.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="519.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="519.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="460.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="460.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="490.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>He-120-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="522.8" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>He-120-A6A2 Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
-<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A4 Транспондер Управления Маяков Т-1</title></circle>
-<circle cx="490.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>He-120-A7A1 Terra Habitat ЖО T-10</title></circle>
-<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
-<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="490.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>He-120-A2A1 TR-10 · Тяньхэ TR-10</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>He-120-A2A2 TH-FZ150 · Тяньхэ TH-FZ150</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 TH-SR50 · Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 TH-SR50 · Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="490.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>He-120-A3A2 TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="490.0" cy="212.8" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>He-120-A4A1 He-5 · Гармония He-5 (сборка из блоков Когниума)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="519.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="519.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="460.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="460.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="519.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="519.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="460.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="460.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="490.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>He-120-A6A1 MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="522.8" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>He-120-A6A2 N-2 · Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
+<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A3 C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A4 T-1 · Транспондер Управления Маяков T-1</title></circle>
+<circle cx="490.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>He-120-A7A1 T-10 · Terra Habitat ЖО T-10</title></circle>
+<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 AG-EP4 · Спасательная капсула (4 места)</title></circle>
+<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 AG-EP4 · Спасательная капсула (4 места)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
 <rect x="660.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
 <text x="664.0" y="64" fill="#8fb3d1">вид спереди</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><rect x="761.0204081632653" y="157.14285714285714" width="97.95918367346938" height="85.71428571428571" rx="3" /></g>
@@ -90,41 +90,41 @@
 <line x1="859.0" y1="200.0" x2="867.9" y2="200.0" stroke="#7fb8e6" stroke-width="2"/>
 <text x="956.0" y="346.0" fill="#8fb3d1" text-anchor="end">32 × 28 м</text>
 <circle cx="810.0" cy="200.0" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>He-120-A1A1 Тяньхэ ТЦ-13</title></circle>
-<circle cx="810.0" cy="200.0" r="4.5" fill="#d64545" fill-opacity="0.9"><title>He-120-A2A1 Тяньхэ ТР-10</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#c76b6b" fill-opacity="0.9"><title>He-120-A2A2 Тяньхэ СР-150</title></circle>
-<circle cx="768.4" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
-<circle cx="851.6" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>He-120-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
-<circle cx="810.0" cy="200.0" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>He-120-A4A1 Гармония Х-5 (сборка из блоков Когниума)</title></circle>
-<circle cx="778.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="799.6" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="820.4" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="841.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="778.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="799.6" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="820.4" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="841.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="772.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="847.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="772.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="847.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="772.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="847.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="772.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="847.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>He-120-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="810.0" cy="167.2" r="3" fill="#2fa58a" fill-opacity="0.9"><title>He-120-A6A2 Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A4 Транспондер Управления Маяков Т-1</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>He-120-A7A1 Terra Habitat ЖО T-10</title></circle>
-<circle cx="799.6" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="820.4" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="778.8" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="799.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="820.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="841.2" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="799.6" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
-<circle cx="820.4" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#d64545" fill-opacity="0.9"><title>He-120-A2A1 TR-10 · Тяньхэ TR-10</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#c76b6b" fill-opacity="0.9"><title>He-120-A2A2 TH-FZ150 · Тяньхэ TH-FZ150</title></circle>
+<circle cx="768.4" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 TH-SR50 · Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="851.6" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>He-120-A3A1 TH-SR50 · Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>He-120-A3A2 TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>He-120-A4A1 He-5 · Гармония He-5 (сборка из блоков Когниума)</title></circle>
+<circle cx="778.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="799.6" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="820.4" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="841.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="778.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="799.6" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="820.4" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="841.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>He-120-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="772.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="847.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="772.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="847.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="772.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="847.5" cy="170.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="772.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="847.5" cy="229.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>He-120-A5A1 TH-ZK4 · Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>He-120-A6A1 MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="810.0" cy="167.2" r="3" fill="#2fa58a" fill-opacity="0.9"><title>He-120-A6A2 N-2 · Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A3 C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>He-120-A6A4 T-1 · Транспондер Управления Маяков T-1</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>He-120-A7A1 T-10 · Terra Habitat ЖО T-10</title></circle>
+<circle cx="799.6" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 AG-EP4 · Спасательная капсула (4 места)</title></circle>
+<circle cx="820.4" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>He-120-A7A2 AG-EP4 · Спасательная капсула (4 места)</title></circle>
+<circle cx="778.8" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="799.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="820.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="841.2" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>He-120-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="799.6" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="820.4" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>He-120-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
 <circle cx="25" cy="365.0" r="4" fill="#e8762b"/><text x="33" y="368.0" fill="#c8d6e5">главный двигатель</text>
 <circle cx="155" cy="365.0" r="4" fill="#d64545"/><text x="163" y="368.0" fill="#c8d6e5">двигательный реактор</text>
 <circle cx="285" cy="365.0" r="4" fill="#c76b6b"/><text x="293" y="368.0" fill="#c8d6e5">служебный реактор</text>

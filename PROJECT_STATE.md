@@ -4686,6 +4686,30 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   transliteration (sol.wpn.mp8 / smy_mp8_pod, bastion.drone.klegg3, bastion.bay.bk24). Open: a naming pass over all
   equipment names / legacy Cyrillic indices (КО-300, КЦ-1000, ...) per the naming canon.
 
+### Author's list after the Cobra bay decision (2026-11-10, "continue down the list") - PROPOSALS, all committed
+1. EC-2 escape cockpit (Cobretty): the escape system is the ship's nose module with canopy, seats, separation frame with
+   latches / pyro bolts and an escape motor (2 field rings); passport kb.surv.capsule2 -> 6.5 t, 7.6 x 2.8 x 7.0 m.
+2. Cobra weapons: FL-2 forward laser, FL-3H heavy (military, 1.25 x), WR-2 wing rack with 2 Aspid-10 missiles
+   (missiles / doors separate parts); proposal parts kb.wpn.fl2 / fl3h / wr2.
+3. LS-1 folding landing skid: flush belly panel when folded, parallelogram struts + damper, deploy rig (kb.lift.ls1).
+   Cobrett-I sketch v3 uses the real cockpit / lasers / racks / skids.
+4. Ship hit volumes (tools/ships/layout_sketch.py ship_hits): cover plates = main + 4 seam volumes (all seams destroyed ->
+   plate free), equipment hit volumes moved to their installs, 4 mount points per module (all destroyed -> module free),
+   ship_structure.json release rules. Cobrett-I: 544 volumes, 15 plates, 33 modules.
+5. docs/FLEET_DOCTRINE.md: defence-model principles -> design consequences, weapons doctrine, J keep-out (close combat in
+   marching mode), classes with equipment / armament / examples / world counts, carriers = fleet tenders, gaps.
+6. tools/ships/auto_sketch.py: rough content-driven sketches for the other 50 ships (functional groups -> compartments
+   stern->bow, real models in 3D shelves up to the passport height, hull by maker principle monolithic / modular /
+   truss, cover plates, hit volumes); renders in the reference (hull:<ship id>); small craft skipped (own models).
+7. Passports: docs/SHIP_PASSPORT_REVISION.md (tools/ships/passport_revision.py) - 19 ships must grow (small hulls
+   cannot hold their equipment: B-4 / type 415, PC-30 family, TS-6 family...), 25 have far more volume than equipment
+   (cargo / habitable volume or a reserve to declare). Names: tools/colonization_lab/equipment_naming.py ->
+   canon/equipment_naming.json (PROPOSAL): maker-language index / official name / native script, display_name_ru =
+   index + Russian description, legacy_index kept; applied to the canon parts, the reference (build_proposals.js applies
+   it after rebuilding) and the proposals; no Cyrillic index left (--check). Part card shows official / native names.
+Open (author): approve or correct the sketches and the proposed frames; jump-field emitters; accept the new parts
+(LM-MP8, RD-1, RM-2, MJ-K3, MJ-BK24, EC-2 concept, FL-2 / FL-3H, WR-2, LS-1); Kapehu Maori wording to check.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

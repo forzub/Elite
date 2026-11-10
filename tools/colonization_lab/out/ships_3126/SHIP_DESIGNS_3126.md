@@ -4,26 +4,26 @@
 
 | Модель | Класс | Производитель | Схема | Сухая, т | Груз | Тяга, МН | g груж./лёгк. | Реакторы, МВт | Ядро | Цена, млн Cr | Проверки |
 |---|---|---|---|---:|---|---:|---|---:|---|---:|---|
-| Cobrett-I N1 | cobrett_i_n1 | Cobretty Corporation | NewtonianI | 260 | 120 т | 9.56 | 2.463/3.671 | 5000 | Я-0.5 | 4.0 | OK · WARN 2 |
-| Cobrett-I A3 (вариант) | cobrett_i_n1 | Cobretty Corporation | AssistedI | 260 | 110 т | 19.12 | 5.054/7.342 | 10000 | Я-0.5 | 4.9 | OK · WARN 3 |
+| Cobrett-I N1 | cobrett_i_n1 | Cobretty Corporation | NewtonianI | 260 | 120 т | 9.56 | 2.463/3.671 | 5000 | Z-0.5 | 4.2 | OK · WARN 2 |
+| Cobrett-I A3 (вариант) | cobrett_i_n1 | Cobretty Corporation | AssistedI | 260 | 110 т | 19.12 | 5.054/7.342 | 10000 | Z-0.5 | 5.1 | OK · WARN 3 |
 | OCS-4 | ocs4_lastochka | Orbital Freight Union «Ural-Kourou» | NewtonianI | 380 | 409 т | 3.3 | 0.404/0.88 | 2600 | — | 2.3 | OK · WARN 3 |
 | SL-12 | surface_lifter | Orbital Freight Union «Ural-Kourou» | NewtonianY | 620 | 240 т, 144 пасс. | 21.99 | 2.494/3.583 | 27000 | — | 7.0 | OK · WARN 1 |
 | C-120 «Вахак» | medium_freighter | Бхарат Ассембли | NewtonianY | 1900 | 2400 т | 12.99 | 0.292/0.683 | 9900 | М-5 | 14.9 | OK · WARN 3 |
-| Хэ-120 «Синча» (вариант) | medium_freighter | Верфи Гармонии | NewtonianI | 1900 | 2400 т | 13.0 | 0.292/0.683 | 10000 | Х-5 | 13.8 | OK · WARN 2 |
-| Хэ-T12 «Хэсе» | jump_train | Верфи Гармонии | NewtonianX | 10800 | 57600 т | 90.0 | 0.124/0.809 | 80000 | Х-80 | 89.9 | OK · WARN 2 |
-| Хэ-T12G «Хэсе» | jump_tanker | Верфи Гармонии | NewtonianX | 12000 | 50000 т | 90.0 | 0.147/0.732 | 80000 | Х-80 | 93.5 | OK · WARN 2 |
+| Хэ-120 «Синча» (вариант) | medium_freighter | Верфи Гармонии | NewtonianI | 1900 | 2400 т | 13.0 | 0.292/0.683 | 10000 | He-5 | 13.8 | OK · WARN 2 |
+| Хэ-T12 «Хэсе» | jump_train | Верфи Гармонии | NewtonianX | 10800 | 57600 т | 90.0 | 0.124/0.809 | 80000 | He-80 | 89.9 | OK · WARN 2 |
+| Хэ-T12G «Хэсе» | jump_tanker | Верфи Гармонии | NewtonianX | 12000 | 50000 т | 90.0 | 0.147/0.732 | 80000 | He-80 | 93.5 | OK · WARN 2 |
 | GT-3000 «Титан» (вариант) | gas_tanker | Лунно-Марсианские верфи | NewtonianY | 900 | 3000 т | 6.99 | 0.182/0.782 | 6600 | — | 4.6 | OK · WARN 1 |
 | «Камень» (каменный танкер) (вариант) | gas_tanker | Каменные доки Раздора | NewtonianI | 2400 | 6000 т | 3.3 | 0.04/0.14 | 2600 | — | 4.3 | OK · WARN 3 |
 | HT-20K | ore_tug | Kern Heavy Mining | NewtonianX | 700 | 0 т | 4.0 | 0.571/0.571 | 3320 | — | 3.3 | OK · WARN 3 |
 | ST-6 | service_tender | Лунно-Марсианские верфи | AssistedI | 500 | 150 т | 3.0 | 0.459/0.604 | 2800 | — | 2.6 | OK · WARN 3 |
-| PC-30 «Фарос» | patrol_cutter | Лунно-Марсианские верфи | AssistedI | 420 | 20 т, 6 пасс. | 13.0 | 2.926/3.065 | 9600 | Я-1 | 15.8 | OK · WARN 1 |
-| B-4 класса «Фальк» | interceptor | Арсенал «Бастион» | AssistedX | 140 | 2 т | 6.2 | 4.383/4.445 | 10000 | — | 20.6 | OK · WARN 2 |
-| Хэ-F22 класса «Шэнхэ» | escort_frigate | Верфи Гармонии | AssistedY | 2200 | 80 т | 32.1 | 1.385/1.434 | 32100 | Х-5 | 77.0 | OK · WARN 1 |
-| B-90 класса «Ингрид Хауглан» | line_combatant | Арсенал «Бастион» | NewtonianX | 9000 | 300 т | 110.0 | 1.148/1.185 | 120000 | Б-12 | 800.4 | OK · WARN 1 |
-| R-7 «Аргус» | recon_picket | Верфи Гипериона | NewtonianX | 600 | 10 т | 12.0 | 1.932/1.963 | 11000 | Я-1 | 37.0 | OK · WARN 1 |
-| Хэ-B240 класса «Бутянь» | fleet_tender | Верфи Гармонии | NewtonianY | 5000 | 6000 т | 39.0 | 0.342/0.762 | 32100 | Х-12 | 59.8 | OK · WARN 2 |
+| PC-30 «Фарос» | patrol_cutter | Лунно-Марсианские верфи | AssistedI | 420 | 20 т, 6 пасс. | 13.0 | 2.926/3.065 | 9600 | Z-1 | 15.8 | OK · WARN 1 |
+| B-4 класса «Фальк» | interceptor | Арсенал «Бастион» | AssistedX | 140 | 2 т | 6.2 | 4.383/4.445 | 10000 | — | 20.7 | OK · WARN 2 |
+| Хэ-F22 класса «Шэнхэ» | escort_frigate | Верфи Гармонии | AssistedY | 2200 | 80 т | 32.1 | 1.385/1.434 | 32100 | He-5 | 77.0 | OK · WARN 1 |
+| B-90 класса «Ингрид Хауглан» | line_combatant | Арсенал «Бастион» | NewtonianX | 9000 | 300 т | 110.0 | 1.148/1.185 | 120000 | MJ-B12 | 800.4 | OK · WARN 1 |
+| R-7 «Аргус» | recon_picket | Верфи Гипериона | NewtonianX | 600 | 10 т | 12.0 | 1.932/1.963 | 11000 | Z-1 | 37.0 | OK · WARN 1 |
+| Хэ-B240 класса «Бутянь» | fleet_tender | Верфи Гармонии | NewtonianY | 5000 | 6000 т | 39.0 | 0.342/0.762 | 32100 | He-12 | 59.8 | OK · WARN 2 |
 | PDT-7 «Тунгуска» | impact_defence_tug | Лунно-Марсианские верфи | NewtonianX | 1600 | 200 т | 28.0 | 1.555/1.745 | 28000 | — | 33.1 | OK · WARN 1 |
-| L-900 «Эос» | liner | Верфи Гипериона | NewtonianY | 2600 | 90 т, 900 пасс. | 12.0 | 0.407/0.431 | 15000 | Я-5 | 36.0 | OK · WARN 1 |
+| L-900 «Эос» | liner | Верфи Гипериона | NewtonianY | 2600 | 90 т, 900 пасс. | 12.0 | 0.407/0.431 | 15000 | Z-5 | 36.0 | OK · WARN 1 |
 | T-5000 «Правас» | colonist_transport | Бхарат Ассембли | NewtonianX | 6500 | 600 т, 5000 пасс. | 17.32 | 0.196/0.222 | 13200 | М-12 | 58.4 | OK · WARN 1 |
 
 ## Cobrett-I N1 (Cobrett-I N1)
@@ -31,43 +31,43 @@
 - Класс: `cobrett_i_n1`.
 - Производитель: Cobretty Corporation (hd20794_hellas2, блок cognium_pool, школа modular_premium); верфь: industrial_hub.
 - Назначение: быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер.
-- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 177.1 т.
+- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 173.1 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, existing:EliteCobraMk1:NewtonianI).
 - Экипаж 2, пассажиры 0; груз 120 т, C20 6; автономность 30 сут; ресурс 40 лет.
-- Масса: сухая 260 т (оборудование 82.9 т), в рабочем снаряжении 265.54 т, полная 395.74 т (груз 120.0 т + тара C20 10.2 т).
+- Масса: сухая 260 т (оборудование 86.9 т), в рабочем снаряжении 265.54 т, полная 395.74 т (груз 120.0 т + тара C20 10.2 т).
 - Тяга 9.56 МН: 2.463 g гружёный (полная масса), 3.671 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 1 × ER-5 = 5000 МВт; бытовая нагрузка 4.3 МВт от 70 МВт; площадка реактора 120.4 м².
-- Охлаждение: 380 м² радиаторов при 1050 K = 235.7 МВт; контуры 180 МВт; излучатель двигателя ⌀ 2.74 м.
-- Цена: детали 2.26 млн, корпус 0.65 млн, прейскурант 3.97 млн Cr.
+- Охлаждение: 380 м² радиаторов при 1050 K = 235.7 МВт; контуры 180 МВт; излучатель двигателя ⌀ 2.16 м.
+- Цена: детали 2.40 млн, корпус 0.65 млн, прейскурант 4.16 млн Cr.
 - Единичные точки отказа: Cobrett-I N1-A1A1, Cobrett-I N1-A2A1, Cobrett-I N1-A2A2, Cobrett-I N1-A3A2, Cobrett-I N1-A4A1, Cobrett-I N1-A6A1, Cobrett-I N1-A6A2, Cobrett-I N1-A6A3, Cobrett-I N1-A6A4, Cobrett-I N1-A7A1.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| Cobrett-I N1-A1A1 | Cobretty N1 Axial Main Drive | 1 | Cobretty Corporation | yard, LRU, 36 ч |
-| Cobrett-I N1-A2A1 | Cobretty ER-5 Propulsion Reactor | 1 | Cobretty Corporation | yard, LRU, 48 ч |
+| Cobrett-I N1-A1A1 | N1-AX · Cobretty N1 Axial Main Drive | 1 | Cobretty Corporation | yard, LRU, 36 ч |
+| Cobrett-I N1-A2A1 | ER-5 · Cobretty ER-5 Propulsion Reactor | 1 | Cobretty Corporation | yard, LRU, 48 ч |
 | Cobrett-I N1-A2A2 | Cobretty SR-70 Service Reactor | 1 | Cobretty Corporation | station, LRU, 12 ч |
-| Cobrett-I N1-A3A1 | Cobretty C-SiC radiator panel set (10 m2) | 38 | Cobretty Corporation | crew, LRU, 1.5 ч |
-| Cobrett-I N1-A3A2 | Cobretty coolant loop + pump (180 MW) | 1 | Cobretty Corporation | station, LRU, 8 ч |
-| Cobrett-I N1-A4A1 | Ядро «Нулевая точка» Я-0.5 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
-| Cobrett-I N1-A4A2 | Бак заряда прыжка (1 т) | 3 | Agora Modular | station, LRU, 6 ч |
-| Cobrett-I N1-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
-| Cobrett-I N1-A5A1 | Cobretty field-coupled RCS nozzle | 24 | Cobretty Corporation | crew, LRU, 2 ч |
-| Cobrett-I N1-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| Cobrett-I N1-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| Cobrett-I N1-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| Cobrett-I N1-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| Cobrett-I N1-A7A1 | Евро-Хабитат ЖО L-4 (4 чел.) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
-| Cobrett-I N1-A7A2 | Cobretty катапультируемая капсула кабины (2 места) | 1 | Cobretty Corporation | station, LRU, 6 ч |
-| Cobrett-I N1-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 6 | Agora Modular | crew, LRU, 3 ч |
-| Cobrett-I N1-A9A1 | Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
-| Cobrett-I N1-A11A1 | Cobretty PD-1 оборонительная турель | 1 | Cobretty Corporation | station, LRU, 10 ч |
+| Cobrett-I N1-A3A1 | RP-10 · Cobretty C-SiC radiator panel set (10 m2) | 38 | Cobretty Corporation | crew, LRU, 1.5 ч |
+| Cobrett-I N1-A3A2 | CL-180 · Cobretty coolant loop + pump (180 MW) | 1 | Cobretty Corporation | station, LRU, 8 ч |
+| Cobrett-I N1-A4A1 | Z-0.5 · Ядро «Нулевая точка» Z-0.5 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
+| Cobrett-I N1-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 3 | Agora Modular | station, LRU, 6 ч |
+| Cobrett-I N1-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
+| Cobrett-I N1-A5A1 | FC-RCS · Cobretty field-coupled RCS nozzle | 24 | Cobretty Corporation | crew, LRU, 2 ч |
+| Cobrett-I N1-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| Cobrett-I N1-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| Cobrett-I N1-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| Cobrett-I N1-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| Cobrett-I N1-A7A1 | L-4 · Евро-Хабитат ЖО L-4 (4 чел.) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
+| Cobrett-I N1-A7A2 | EC-2 · (спасательная кабина: нос корабля с двигателем) | 1 | Cobretty Corporation | station, LRU, 6 ч |
+| Cobrett-I N1-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 6 | Agora Modular | crew, LRU, 3 ч |
+| Cobrett-I N1-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
+| Cobrett-I N1-A11A1 | PD-1 · Cobretty PD-1 оборонительная турель | 1 | Cobretty Corporation | station, LRU, 10 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 1 drives for NewtonianI (1 aft + 0 fore)
 - OK `one_generator_per_group` — 1 propulsion reactors for 1 groups
 - OK `generator_covers_group_demand` — 5000 MWe per group vs 4850 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 177 t = 68% of dry 260 t (possible 15%-90%)
-- OK `hull_structure_share_typical` — hull structure 68% of dry (typical 30%-75%)
+- OK `equipment_fits_dry_mass` — hull structure 173 t = 67% of dry 260 t (possible 15%-90%)
+- OK `hull_structure_share_typical` — hull structure 67% of dry (typical 30%-75%)
 - OK `thrust_meets_class_acceleration` — 9.56 MN: 2.46 g loaded, 3.67 g in service (class burn 1.0 g)
 - OK `thrust_near_class_target` — 9.6 MN vs class 9.56 MN
 - OK `service_power_covers_hotel` — service 70 MWe vs hotel 4.3 MW (+15 %)
@@ -86,7 +86,7 @@
 - OK `passenger_places` — 0 places vs 0 passengers
 - OK `cargo_near_class_target` — 120 t vs class 120 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
-- WARN `component_prices_near_class_model` — main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M
+- WARN `component_prices_near_class_model` — main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.21/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M
 - WARN `no_single_point_of_failure_in_critical_functions` — Cobrett-I N1-A1A1, Cobrett-I N1-A2A1, Cobrett-I N1-A2A2, Cobrett-I N1-A3A2, Cobrett-I N1-A6A1, Cobrett-I N1-A6A3, Cobrett-I N1-A6A4, Cobrett-I N1-A7A1
 
 ## Cobrett-I A3 (Cobrett-I A3)
@@ -94,42 +94,42 @@
 - Класс: `cobrett_i_n1` — вариант kb.ship.cobrett-i.frnu.n1: другое поколение линии с законом Assisted: широкий вектор тяги CR-1 в четырёх гондолах, два реактора ER-5 (уже существует в игре).
 - Производитель: Cobretty Corporation (hd20794_hellas2, блок cognium_pool, школа modular_premium); верфь: industrial_hub.
 - Назначение: как N1, для пилотов с законом Assisted; дороже в обслуживании.
-- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок, гондолы двигателей; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 119.7 т.
+- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок, гондолы двигателей; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 115.7 т.
 - Схема управления: Assisted I (рантайм `AssistedI`, existing:EliteCobraMk1:AssistedI).
 - Экипаж 2, пассажиры 0; груз 110 т, C20 6; автономность 30 сут; ресурс 40 лет.
-- Масса: сухая 260 т (оборудование 140.3 т), в рабочем снаряжении 265.54 т, полная 385.74 т (груз 110.0 т + тара C20 10.2 т).
+- Масса: сухая 260 т (оборудование 144.3 т), в рабочем снаряжении 265.54 т, полная 385.74 т (груз 110.0 т + тара C20 10.2 т).
 - Тяга 19.12 МН: 5.054 g гружёный (полная масса), 7.342 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 2 × ER-5 = 10000 МВт; бытовая нагрузка 4.3 МВт от 70 МВт; площадка реактора 120.4 м².
-- Охлаждение: 380 м² радиаторов при 1050 K = 235.7 МВт; контуры 180 МВт; излучатель двигателя ⌀ 2.74 м.
-- Цена: детали 2.98 млн, корпус 0.65 млн, прейскурант 4.95 млн Cr.
+- Охлаждение: 380 м² радиаторов при 1050 K = 235.7 МВт; контуры 180 МВт; излучатель двигателя ⌀ 2.16 м.
+- Цена: детали 3.12 млн, корпус 0.65 млн, прейскурант 5.14 млн Cr.
 - Единичные точки отказа: Cobrett-I A3-A2A2, Cobrett-I A3-A3A2, Cobrett-I A3-A4A1, Cobrett-I A3-A6A1, Cobrett-I A3-A6A2, Cobrett-I A3-A6A3, Cobrett-I A3-A6A4, Cobrett-I A3-A7A1.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| Cobrett-I A3-A1A1 | Cobretty CR-1 Vector Main Drive | 4 | Cobretty Corporation | yard, LRU, 36 ч |
-| Cobrett-I A3-A2A1 | Cobretty ER-5 Propulsion Reactor | 2 | Cobretty Corporation | yard, LRU, 48 ч |
+| Cobrett-I A3-A1A1 | CR-1 · Cobretty CR-1 Vector Main Drive | 4 | Cobretty Corporation | yard, LRU, 36 ч |
+| Cobrett-I A3-A2A1 | ER-5 · Cobretty ER-5 Propulsion Reactor | 2 | Cobretty Corporation | yard, LRU, 48 ч |
 | Cobrett-I A3-A2A2 | Cobretty SR-70 Service Reactor | 1 | Cobretty Corporation | station, LRU, 12 ч |
-| Cobrett-I A3-A3A1 | Cobretty C-SiC radiator panel set (10 m2) | 38 | Cobretty Corporation | crew, LRU, 1.5 ч |
-| Cobrett-I A3-A3A2 | Cobretty coolant loop + pump (180 MW) | 1 | Cobretty Corporation | station, LRU, 8 ч |
-| Cobrett-I A3-A4A1 | Ядро «Нулевая точка» Я-0.5 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
-| Cobrett-I A3-A4A2 | Бак заряда прыжка (1 т) | 3 | Agora Modular | station, LRU, 6 ч |
-| Cobrett-I A3-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
-| Cobrett-I A3-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| Cobrett-I A3-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| Cobrett-I A3-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| Cobrett-I A3-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| Cobrett-I A3-A7A1 | Евро-Хабитат ЖО L-4 (4 чел.) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
-| Cobrett-I A3-A7A2 | Cobretty катапультируемая капсула кабины (2 места) | 1 | Cobretty Corporation | station, LRU, 6 ч |
-| Cobrett-I A3-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 6 | Agora Modular | crew, LRU, 3 ч |
-| Cobrett-I A3-A9A1 | Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
-| Cobrett-I A3-A11A1 | Cobretty PD-1 оборонительная турель | 1 | Cobretty Corporation | station, LRU, 10 ч |
+| Cobrett-I A3-A3A1 | RP-10 · Cobretty C-SiC radiator panel set (10 m2) | 38 | Cobretty Corporation | crew, LRU, 1.5 ч |
+| Cobrett-I A3-A3A2 | CL-180 · Cobretty coolant loop + pump (180 MW) | 1 | Cobretty Corporation | station, LRU, 8 ч |
+| Cobrett-I A3-A4A1 | Z-0.5 · Ядро «Нулевая точка» Z-0.5 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
+| Cobrett-I A3-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 3 | Agora Modular | station, LRU, 6 ч |
+| Cobrett-I A3-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
+| Cobrett-I A3-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| Cobrett-I A3-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| Cobrett-I A3-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| Cobrett-I A3-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| Cobrett-I A3-A7A1 | L-4 · Евро-Хабитат ЖО L-4 (4 чел.) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
+| Cobrett-I A3-A7A2 | EC-2 · (спасательная кабина: нос корабля с двигателем) | 1 | Cobretty Corporation | station, LRU, 6 ч |
+| Cobrett-I A3-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 6 | Agora Modular | crew, LRU, 3 ч |
+| Cobrett-I A3-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
+| Cobrett-I A3-A11A1 | PD-1 · Cobretty PD-1 оборонительная турель | 1 | Cobretty Corporation | station, LRU, 10 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for AssistedI (2 aft + 2 fore)
 - OK `one_generator_per_group` — 2 propulsion reactors for 2 groups
 - OK `generator_covers_group_demand` — 5000 MWe per group vs 4850 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 120 t = 46% of dry 260 t (possible 15%-90%)
-- OK `hull_structure_share_typical` — hull structure 46% of dry (typical 30%-75%)
+- OK `equipment_fits_dry_mass` — hull structure 116 t = 45% of dry 260 t (possible 15%-90%)
+- OK `hull_structure_share_typical` — hull structure 45% of dry (typical 30%-75%)
 - OK `thrust_meets_class_acceleration` — 19.12 MN: 5.05 g loaded, 7.34 g in service (class burn 1.0 g)
 - WARN `thrust_near_class_target` — 19.1 MN vs class 9.56 MN
 - OK `service_power_covers_hotel` — service 70 MWe vs hotel 4.3 MW (+15 %)
@@ -147,7 +147,7 @@
 - OK `passenger_places` — 0 places vs 0 passengers
 - OK `cargo_near_class_target` — 110 t vs class 120 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
-- OK `component_prices_near_class_model` — main_drive 0.76/0.47 M, reactor 0.98/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.17/0.17 M, weapons 0.12/0.15 M
+- OK `component_prices_near_class_model` — main_drive 0.76/0.47 M, reactor 0.98/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.21/0.09 M, rcs_thermal 0.17/0.17 M, weapons 0.12/0.15 M
 - WARN `no_single_point_of_failure_in_critical_functions` — Cobrett-I A3-A2A2, Cobrett-I A3-A3A2, Cobrett-I A3-A6A1, Cobrett-I A3-A6A3, Cobrett-I A3-A6A4, Cobrett-I A3-A7A1
 
 ## OCS-4 (OCS-4)
@@ -167,21 +167,21 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| OCS-4-A1A1 | Урал-33 | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
+| OCS-4-A1A1 | U-33 · Урал-33 | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | OCS-4-A2A1 | ОФУ ЭР-2.6 | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 48 ч |
 | OCS-4-A2A2 | ОФУ СР-20 | 1 | Orbital Freight Union «Ural-Kourou» | station, LRU, 12 ч |
-| OCS-4-A3A1 | ЛМВ радиаторная секция (50 м2) | 2 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| OCS-4-A3A2 | ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| OCS-4-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
-| OCS-4-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
-| OCS-4-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| OCS-4-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| OCS-4-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| OCS-4-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| OCS-4-A7A1 | ОФУ ЖО О-4 (челнок) | 1 | Orbital Freight Union «Ural-Kourou» | station, LRU, 10 ч |
-| OCS-4-A7A2 | Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
-| OCS-4-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 24 | Agora Modular | crew, LRU, 3 ч |
-| OCS-4-A9A1 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| OCS-4-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 2 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| OCS-4-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| OCS-4-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
+| OCS-4-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
+| OCS-4-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| OCS-4-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| OCS-4-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| OCS-4-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| OCS-4-A7A1 | OFU-O4 · ОФУ ЖО OFU-O4 (челнок) | 1 | Orbital Freight Union «Ural-Kourou» | station, LRU, 10 ч |
+| OCS-4-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
+| OCS-4-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 24 | Agora Modular | crew, LRU, 3 ч |
+| OCS-4-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 1 drives for NewtonianI (1 aft + 0 fore)
@@ -225,24 +225,24 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| SL-12-A1A1 | Урал-73Л (подъёмный) | 3 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
+| SL-12-A1A1 | U-73L · Урал-73Л (подъёмный) | 3 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | SL-12-A2A1 | Sol Reactor Works SR-9 | 3 | Sol Reactor Works | yard, LRU, 48 ч |
-| SL-12-A2A2 | Sol Reactor Works S-60 | 2 | Sol Reactor Works | station, LRU, 12 ч |
-| SL-12-A3A1 | ЛМВ радиаторная секция (50 м2) | 4 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| SL-12-A3A2 | ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| SL-12-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 3 | Agora Modular | station, LRU, 6 ч |
-| SL-12-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
-| SL-12-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
-| SL-12-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| SL-12-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| SL-12-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| SL-12-A7A1 | ОФУ ЖО О-4 (челнок) | 2 | Orbital Freight Union «Ural-Kourou» | station, LRU, 10 ч |
-| SL-12-A7A2 | Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
-| SL-12-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 12 | Agora Modular | crew, LRU, 3 ч |
-| SL-12-A8A2 | Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый) | 12 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 24 ч |
-| SL-12-A9A1 | Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
-| SL-12-A10A1 | Теплозащитный экран подъёмника | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 40 ч |
-| SL-12-A10A2 | Посадочные опоры (4) | 1 | Orbital Freight Union «Ural-Kourou» | station, LRU, 12 ч |
+| SL-12-A2A2 | S-60 · Sol Reactor Works S-60 | 2 | Sol Reactor Works | station, LRU, 12 ч |
+| SL-12-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 4 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| SL-12-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| SL-12-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 3 | Agora Modular | station, LRU, 6 ч |
+| SL-12-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
+| SL-12-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
+| SL-12-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| SL-12-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| SL-12-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| SL-12-A7A1 | OFU-O4 · ОФУ ЖО OFU-O4 (челнок) | 2 | Orbital Freight Union «Ural-Kourou» | station, LRU, 10 ч |
+| SL-12-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
+| SL-12-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 12 | Agora Modular | crew, LRU, 3 ч |
+| SL-12-A8A2 | P20 · Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый) | 12 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 24 ч |
+| SL-12-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
+| SL-12-A10A1 | OFU-HS12 · Теплозащитный экран подъёмника | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 40 ч |
+| SL-12-A10A2 | OFU-LG4 · Посадочные опоры (4) | 1 | Orbital Freight Union «Ural-Kourou» | station, LRU, 12 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 3 drives for NewtonianY (3 aft + 0 fore)
@@ -288,21 +288,21 @@
 |---|---|---:|---|---|
 | C-120-A1A1 | Урал-43 | 3 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | C-120-A2A1 | Sol Reactor Works SR-3.3 | 3 | Sol Reactor Works | yard, LRU, 48 ч |
-| C-120-A2A2 | Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
-| C-120-A3A1 | ЛМВ радиаторная секция (50 м2) | 4 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| C-120-A3A2 | ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| C-120-A2A2 | S-60 · Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
+| C-120-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 4 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| C-120-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
 | C-120-A4A1 | Дар аль-Мизан М-5 | 1 | Kāpehu Systems | factory |
-| C-120-A4A2 | Бак заряда прыжка (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
-| C-120-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 8 | Agora Modular | station, LRU, 6 ч |
-| C-120-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
+| C-120-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
+| C-120-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 8 | Agora Modular | station, LRU, 6 ч |
+| C-120-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
 | C-120-A6A1 | Мизан бортовой вычислитель МВ-1 | 1 | Kāpehu Systems | station, LRU, 4 ч |
-| C-120-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| C-120-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| C-120-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| C-120-A7A1 | Евро-Хабитат ЖО L-20 | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
-| C-120-A7A2 | Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
-| C-120-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 120 | Agora Modular | crew, LRU, 3 ч |
-| C-120-A9A1 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| C-120-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| C-120-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| C-120-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| C-120-A7A1 | L-20 · Евро-Хабитат ЖО L-20 | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
+| C-120-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
+| C-120-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 120 | Agora Modular | crew, LRU, 3 ч |
+| C-120-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 3 drives for NewtonianY (3 aft + 0 fore)
@@ -341,7 +341,7 @@
 - Экипаж 7, пассажиры 0; груз 2400 т, C20 120; автономность 40 сут; ресурс 40 лет.
 - Масса: сухая 1900 т (оборудование 267.4 т), в рабочем снаряжении 1940.31 т, полная 4544.31 т (груз 2400.0 т + тара C20 204.0 т).
 - Тяга 13.0 МН: 0.292 g гружёный (полная масса), 0.683 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
-- Энергия: 1 × ТР-10 = 10000 МВт; бытовая нагрузка 7.6 МВт от 150 МВт; площадка реактора 267.8 м².
+- Энергия: 1 × TR-10 = 10000 МВт; бытовая нагрузка 7.6 МВт от 150 МВт; площадка реактора 267.8 м².
 - Охлаждение: 200 м² радиаторов при 1000 K = 99.8 МВт; контуры 600 МВт; излучатель двигателя ⌀ 4.04 м.
 - Цена: детали 7.87 млн, корпус 2.56 млн, прейскурант 13.85 млн Cr.
 - Единичные точки отказа: He-120-A1A1, He-120-A2A1, He-120-A2A2, He-120-A3A2, He-120-A4A1, He-120-A6A1, He-120-A6A2, He-120-A6A3, He-120-A6A4, He-120-A7A1.
@@ -349,22 +349,22 @@
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
 | He-120-A1A1 | Тяньхэ ТЦ-13 | 1 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
-| He-120-A2A1 | Тяньхэ ТР-10 | 1 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
-| He-120-A2A2 | Тяньхэ СР-150 | 1 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
-| He-120-A3A1 | Тяньхэ радиаторная секция (50 м2) | 4 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
-| He-120-A3A2 | Тяньхэ контур охлаждения (600 МВт) | 1 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
-| He-120-A4A1 | Гармония Х-5 (сборка из блоков Когниума) | 1 | Верфи Гармонии | factory |
-| He-120-A4A2 | Бак заряда прыжка (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
-| He-120-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 8 | Agora Modular | station, LRU, 6 ч |
-| He-120-A5A1 | Тяжёлый кластер RCS (4 сопла) | 8 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
-| He-120-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| He-120-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| He-120-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| He-120-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| He-120-A7A1 | Terra Habitat ЖО T-10 | 1 | Terra Habitat | station, LRU, 10 ч |
-| He-120-A7A2 | Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
-| He-120-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 120 | Agora Modular | crew, LRU, 3 ч |
-| He-120-A9A1 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| He-120-A2A1 | TR-10 · Тяньхэ TR-10 | 1 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
+| He-120-A2A2 | TH-FZ150 · Тяньхэ TH-FZ150 | 1 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
+| He-120-A3A1 | TH-SR50 · Тяньхэ радиаторная секция (50 м2) | 4 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
+| He-120-A3A2 | TH-LQ600 · Тяньхэ контур охлаждения (600 МВт) | 1 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
+| He-120-A4A1 | He-5 · Гармония He-5 (сборка из блоков Когниума) | 1 | Верфи Гармонии | factory |
+| He-120-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
+| He-120-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 8 | Agora Modular | station, LRU, 6 ч |
+| He-120-A5A1 | TH-ZK4 · Тяжёлый кластер RCS (4 сопла) | 8 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| He-120-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| He-120-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| He-120-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| He-120-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| He-120-A7A1 | T-10 · Terra Habitat ЖО T-10 | 1 | Terra Habitat | station, LRU, 10 ч |
+| He-120-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
+| He-120-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 120 | Agora Modular | crew, LRU, 3 ч |
+| He-120-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 1 drives for NewtonianI (1 aft + 0 fore)
@@ -412,22 +412,22 @@
 |---|---|---:|---|---|
 | He-T12-A1A1 | Тяньхэ ТЦ-23 | 4 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
 | He-T12-A2A1 | Тяньхэ ТР-20 | 4 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
-| He-T12-A2A2 | Тяньхэ СР-600 | 1 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
-| He-T12-A3A1 | Тяньхэ радиаторная секция (50 м2) | 20 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
-| He-T12-A3A2 | Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
-| He-T12-A4A1 | Гармония Х-80 (тягач поезда) | 1 | Верфи Гармонии | factory |
-| He-T12-A4A2 | Бак заряда прыжка (1 т) | 420 | Agora Modular | station, LRU, 6 ч |
-| He-T12-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
-| He-T12-A5A1 | Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
-| He-T12-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| He-T12-A6A2 | Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| He-T12-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| He-T12-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| He-T12-A7A1 | Terra Habitat ЖО T-60 (флот) | 1 | Terra Habitat | station, LRU, 10 ч |
-| He-T12-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 1 | Agora Modular | station, LRU, 8 ч |
-| He-T12-A8A1 | Модуль поезда грузовой (4 800 т, 240 C20) | 12 | Верфи Гармонии | station, LRU, 6 ч |
-| He-T12-A9A1 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
-| He-T12-A11A1 | Гармония турель ПРО ПТ-3 | 2 | Верфи Гармонии | station, LRU, 10 ч |
+| He-T12-A2A2 | TH-FZ600 · Тяньхэ TH-FZ600 | 1 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
+| He-T12-A3A1 | TH-SR50 · Тяньхэ радиаторная секция (50 м2) | 20 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
+| He-T12-A3A2 | TH-LQ600 · Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
+| He-T12-A4A1 | He-80 · Гармония He-80 (тягач поезда) | 1 | Верфи Гармонии | factory |
+| He-T12-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 420 | Agora Modular | station, LRU, 6 ч |
+| He-T12-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
+| He-T12-A5A1 | TH-ZK4 · Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| He-T12-A6A1 | MC-C3 · Синьчжи MotherComputer MC-C3 (флот) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| He-T12-A6A2 | N-10 · Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| He-T12-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| He-T12-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| He-T12-A7A1 | T-60 · Terra Habitat ЖО T-60 (флот) | 1 | Terra Habitat | station, LRU, 10 ч |
+| He-T12-A7A2 | AG-LB20 · Спасательная шлюпка (20 мест, 10 суток) | 1 | Agora Modular | station, LRU, 8 ч |
+| He-T12-A8A1 | He-C4800 · Модуль поезда грузовой (4 800 т, 240 C20) | 12 | Верфи Гармонии | station, LRU, 6 ч |
+| He-T12-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| He-T12-A11A1 | He-PD3 · Гармония турель ПРО He-PD3 | 2 | Верфи Гармонии | station, LRU, 10 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)
@@ -476,22 +476,22 @@
 |---|---|---:|---|---|
 | He-T12G-A1A1 | Тяньхэ ТЦ-23 | 4 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
 | He-T12G-A2A1 | Тяньхэ ТР-20 | 4 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
-| He-T12G-A2A2 | Тяньхэ СР-600 | 1 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
-| He-T12G-A3A1 | Тяньхэ радиаторная секция (50 м2) | 20 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
-| He-T12G-A3A2 | Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
-| He-T12G-A4A1 | Гармония Х-80 (тягач поезда) | 1 | Верфи Гармонии | factory |
-| He-T12G-A4A2 | Бак заряда прыжка (1 т) | 420 | Agora Modular | station, LRU, 6 ч |
-| He-T12G-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
-| He-T12G-A5A1 | Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
-| He-T12G-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| He-T12G-A6A2 | Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| He-T12G-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| He-T12G-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| He-T12G-A7A1 | Terra Habitat ЖО T-60 (флот) | 1 | Terra Habitat | station, LRU, 10 ч |
-| He-T12G-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 1 | Agora Modular | station, LRU, 8 ч |
-| He-T12G-A8A1 | Модуль поезда-цистерна (4 170 т) | 12 | Верфи Гармонии | station, LRU, 6 ч |
-| He-T12G-A9A1 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
-| He-T12G-A11A1 | Гармония турель ПРО ПТ-3 | 2 | Верфи Гармонии | station, LRU, 10 ч |
+| He-T12G-A2A2 | TH-FZ600 · Тяньхэ TH-FZ600 | 1 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
+| He-T12G-A3A1 | TH-SR50 · Тяньхэ радиаторная секция (50 м2) | 20 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
+| He-T12G-A3A2 | TH-LQ600 · Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
+| He-T12G-A4A1 | He-80 · Гармония He-80 (тягач поезда) | 1 | Верфи Гармонии | factory |
+| He-T12G-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 420 | Agora Modular | station, LRU, 6 ч |
+| He-T12G-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
+| He-T12G-A5A1 | TH-ZK4 · Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| He-T12G-A6A1 | MC-C3 · Синьчжи MotherComputer MC-C3 (флот) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| He-T12G-A6A2 | N-10 · Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| He-T12G-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| He-T12G-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| He-T12G-A7A1 | T-60 · Terra Habitat ЖО T-60 (флот) | 1 | Terra Habitat | station, LRU, 10 ч |
+| He-T12G-A7A2 | AG-LB20 · Спасательная шлюпка (20 мест, 10 суток) | 1 | Agora Modular | station, LRU, 8 ч |
+| He-T12G-A8A1 | He-T4200 · Модуль поезда-цистерна (4 170 т) | 12 | Верфи Гармонии | station, LRU, 6 ч |
+| He-T12G-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| He-T12G-A11A1 | He-PD3 · Гармония турель ПРО He-PD3 | 2 | Верфи Гармонии | station, LRU, 10 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)
@@ -540,19 +540,19 @@
 |---|---|---:|---|---|
 | GT-3000-A1A1 | Урал-23 | 3 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | GT-3000-A2A1 | Sol Reactor Works SR-2.2 | 3 | Sol Reactor Works | yard, LRU, 48 ч |
-| GT-3000-A2A2 | Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
-| GT-3000-A3A1 | ЛМВ радиаторная секция (50 м2) | 3 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| GT-3000-A3A2 | ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| GT-3000-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 10 | Agora Modular | station, LRU, 6 ч |
-| GT-3000-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
-| GT-3000-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| GT-3000-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| GT-3000-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| GT-3000-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| GT-3000-A7A1 | Terra Habitat ЖО T-10 | 1 | Terra Habitat | station, LRU, 10 ч |
-| GT-3000-A7A2 | Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
-| GT-3000-A8A1 | Криоцистерна He-3/D (1 000 т) | 3 | Лунно-Марсианские верфи | yard, LRU, 30 ч |
-| GT-3000-A9A1 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| GT-3000-A2A2 | S-60 · Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
+| GT-3000-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 3 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| GT-3000-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| GT-3000-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 10 | Agora Modular | station, LRU, 6 ч |
+| GT-3000-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
+| GT-3000-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| GT-3000-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| GT-3000-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| GT-3000-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| GT-3000-A7A1 | T-10 · Terra Habitat ЖО T-10 | 1 | Terra Habitat | station, LRU, 10 ч |
+| GT-3000-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
+| GT-3000-A8A1 | LM-CT1000 · Криоцистерна He-3/D (1 000 т) | 3 | Лунно-Марсианские верфи | yard, LRU, 30 ч |
+| GT-3000-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 3 drives for NewtonianY (3 aft + 0 fore)
@@ -597,19 +597,19 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| RT-A1A1 | Урал-33 | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
+| RT-A1A1 | U-33 · Урал-33 | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | RT-A2A1 | ОФУ ЭР-2.6 | 1 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 48 ч |
 | RT-A2A2 | ОФУ СР-20 | 1 | Orbital Freight Union «Ural-Kourou» | station, LRU, 12 ч |
-| RT-A3A1 | ЛМВ радиаторная секция (50 м2) | 2 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| RT-A3A2 | ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| RT-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 6 | Agora Modular | station, LRU, 6 ч |
-| RT-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
-| RT-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| RT-A6A2 | Kern радар обломков DR-5 (5 000 км) | 1 | Kern Heavy Mining | station, LRU, 6 ч |
-| RT-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| RT-A7A1 | Евро-Хабитат ЖО L-20 | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
-| RT-A7A2 | Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
-| RT-A9A1 | Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
+| RT-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 2 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| RT-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| RT-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 6 | Agora Modular | station, LRU, 6 ч |
+| RT-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
+| RT-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| RT-A6A2 | DR-5 · Kern радар обломков DR-5 (5 000 км) | 1 | Kern Heavy Mining | station, LRU, 6 ч |
+| RT-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| RT-A7A1 | L-20 · Евро-Хабитат ЖО L-20 | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
+| RT-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
+| RT-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 1 drives for NewtonianI (1 aft + 0 fore)
@@ -653,21 +653,21 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| HT-20K-A1A1 | Kern KT-1 Tug Drive | 4 | Kern Heavy Mining | yard, LRU, 36 ч |
-| HT-20K-A2A1 | Cobretty ER-1 | 4 | Cobretty Corporation | yard, LRU, 48 ч |
-| HT-20K-A2A2 | Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
-| HT-20K-A3A1 | ЛМВ радиаторная секция (50 м2) | 3 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| HT-20K-A3A2 | ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| HT-20K-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 12 | Agora Modular | station, LRU, 6 ч |
-| HT-20K-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
-| HT-20K-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| HT-20K-A6A2 | Kern радар обломков DR-5 (5 000 км) | 1 | Kern Heavy Mining | station, LRU, 6 ч |
-| HT-20K-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| HT-20K-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| HT-20K-A7A1 | Евро-Хабитат ЖО L-20 | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
-| HT-20K-A7A2 | Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
-| HT-20K-A10A1 | Kern буксирная рама плота (20 000 т) | 1 | Kern Heavy Mining | station, LRU, 16 ч |
-| HT-20K-A9A1 | Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
+| HT-20K-A1A1 | KT-1 · Kern KT-1 Tug Drive | 4 | Kern Heavy Mining | yard, LRU, 36 ч |
+| HT-20K-A2A1 | ER-1 · Cobretty ER-1 | 4 | Cobretty Corporation | yard, LRU, 48 ч |
+| HT-20K-A2A2 | S-60 · Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
+| HT-20K-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 3 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| HT-20K-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| HT-20K-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 12 | Agora Modular | station, LRU, 6 ч |
+| HT-20K-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
+| HT-20K-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| HT-20K-A6A2 | DR-5 · Kern радар обломков DR-5 (5 000 км) | 1 | Kern Heavy Mining | station, LRU, 6 ч |
+| HT-20K-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| HT-20K-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| HT-20K-A7A1 | L-20 · Евро-Хабитат ЖО L-20 | 1 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
+| HT-20K-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 1 | Agora Modular | station, LRU, 6 ч |
+| HT-20K-A10A1 | TR-20K · Kern буксирная рама плота (20 000 т) | 1 | Kern Heavy Mining | station, LRU, 16 ч |
+| HT-20K-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)
@@ -713,21 +713,21 @@
 |---|---|---:|---|---|
 | ST-6-A1A1 | Урал-15 | 4 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | ST-6-A2A1 | Sol Reactor Works SR-1.4 | 2 | Sol Reactor Works | yard, LRU, 48 ч |
-| ST-6-A2A2 | Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
-| ST-6-A3A1 | ЛМВ радиаторная секция (50 м2) | 3 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| ST-6-A3A2 | ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| ST-6-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 4 | Agora Modular | station, LRU, 6 ч |
-| ST-6-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
-| ST-6-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| ST-6-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| ST-6-A6A4 | Транспондер Управления Маяков Т-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| ST-6-A7A1 | Terra Habitat ЖО T-10 | 1 | Terra Habitat | station, LRU, 10 ч |
-| ST-6-A7A2 | Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
-| ST-6-A7A3 | Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| ST-6-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 6 | Agora Modular | crew, LRU, 3 ч |
-| ST-6-A9A1 | Отсек дронов (4 сервисных дрона) | 1 | Agora Modular | station, LRU, 8 ч |
-| ST-6-A10A1 | Мастерская сервисного тендера (2 бригады) | 1 | Лунно-Марсианские верфи | station, LRU, 12 ч |
-| ST-6-A9A2 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| ST-6-A2A2 | S-60 · Sol Reactor Works S-60 | 1 | Sol Reactor Works | station, LRU, 12 ч |
+| ST-6-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 3 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| ST-6-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| ST-6-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 4 | Agora Modular | station, LRU, 6 ч |
+| ST-6-A6A1 | MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
+| ST-6-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| ST-6-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| ST-6-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| ST-6-A7A1 | T-10 · Terra Habitat ЖО T-10 | 1 | Terra Habitat | station, LRU, 10 ч |
+| ST-6-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 2 | Agora Modular | station, LRU, 6 ч |
+| ST-6-A7A3 | EH-MB4 · Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| ST-6-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 6 | Agora Modular | crew, LRU, 3 ч |
+| ST-6-A9A1 | AG-DB4 · Отсек дронов (4 сервисных дрона) | 1 | Agora Modular | station, LRU, 8 ч |
+| ST-6-A10A1 | LM-WS1 · Мастерская сервисного тендера (2 бригады) | 1 | Лунно-Марсианские верфи | station, LRU, 12 ч |
+| ST-6-A9A2 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for AssistedI (2 aft + 2 fore)
@@ -770,27 +770,27 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| PC-30-A1A1 | Урал-65М (служебный) | 4 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
-| PC-30-A2A1 | Sol Reactor Works SR-4.8 | 2 | Sol Reactor Works | yard, LRU, 48 ч |
-| PC-30-A2A2 | Sol Reactor Works S-200 | 2 | Sol Reactor Works | station, LRU, 12 ч |
-| PC-30-A3A1 | ЛМВ радиаторная секция (50 м2) | 4 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| PC-30-A3A2 | ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| PC-30-A4A1 | Ядро «Нулевая точка» Я-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
-| PC-30-A4A2 | Бак заряда прыжка (1 т) | 5 | Agora Modular | station, LRU, 6 ч |
-| PC-30-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 4 | Agora Modular | station, LRU, 6 ч |
-| PC-30-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
-| PC-30-A6A2 | Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| PC-30-A6A3 | Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| PC-30-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| PC-30-A7A1 | Terra Habitat ЖО T-10 | 2 | Terra Habitat | station, LRU, 10 ч |
-| PC-30-A7A2 | Спасательная капсула (4 места) | 4 | Agora Modular | station, LRU, 6 ч |
-| PC-30-A7A3 | Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| PC-30-A8A1 | Камера для задержанных и спасённых (6 мест) | 1 | Лунно-Марсианские верфи | yard, LRU, 24 ч |
-| PC-30-A9A1 | Ангар досмотрового катера (1 катер) | 1 | Лунно-Марсианские верфи | yard |
-| PC-30-A9A2 | Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
-| PC-30-A11A1 | Твердыня магнитная пушка КП-30 | 1 | Бронезавод Твердыни | station, LRU, 10 ч |
-| PC-30-A11A2 | Твердыня турель ПРО ПТ-2 | 1 | Бронезавод Твердыни | station, LRU, 10 ч |
-| PC-30-A12A1 | Броня керамокомпозитная (1 т) | 20 | Бронезавод Твердыни | yard, LRU, 2 ч |
+| PC-30-A1A1 | U-65M · Урал-65М (служебный) | 4 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
+| PC-30-A2A1 | SR-4.8 · Sol Reactor Works SR-4.8 | 2 | Sol Reactor Works | yard, LRU, 48 ч |
+| PC-30-A2A2 | S-200 · Sol Reactor Works S-200 | 2 | Sol Reactor Works | station, LRU, 12 ч |
+| PC-30-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 4 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| PC-30-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| PC-30-A4A1 | Z-1 · Ядро «Нулевая точка» Z-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
+| PC-30-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 5 | Agora Modular | station, LRU, 6 ч |
+| PC-30-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 4 | Agora Modular | station, LRU, 6 ч |
+| PC-30-A6A1 | MC-C3 · Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
+| PC-30-A6A2 | N-10 · Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| PC-30-A6A3 | C-3 · Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| PC-30-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| PC-30-A7A1 | T-10 · Terra Habitat ЖО T-10 | 2 | Terra Habitat | station, LRU, 10 ч |
+| PC-30-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 4 | Agora Modular | station, LRU, 6 ч |
+| PC-30-A7A3 | EH-MB4 · Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| PC-30-A8A1 | LM-PC6 · Камера для задержанных и спасённых (6 мест) | 1 | Лунно-Марсианские верфи | yard, LRU, 24 ч |
+| PC-30-A9A1 | LM-BB1 · Ангар досмотрового катера (1 катер) | 1 | Лунно-Марсианские верфи | yard |
+| PC-30-A9A2 | AG-DC1 · Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
+| PC-30-A11A1 | TL-CG30 · Твердыня магнитная пушка TL-CG30 | 1 | Бронезавод Твердыни | station, LRU, 10 ч |
+| PC-30-A11A2 | TL-DF2 · Твердыня турель ПРО TL-DF2 | 1 | Бронезавод Твердыни | station, LRU, 10 ч |
+| PC-30-A12A1 | TL-TC1 · Броня керамокомпозитная (1 т) | 20 | Бронезавод Твердыни | yard, LRU, 2 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for AssistedI (2 aft + 2 fore)
@@ -817,46 +817,46 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 1.40/1.19 M, reactor 2.14/1.45 M, jump_drive 1.84/1.53 M, electronics 2.47/1.53 M, life_support 0.24/0.20 M, rcs_thermal 0.18/0.51 M, weapons 1.90/1.19 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
-- OK `craft_bay_fit` — АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 22.0 x 8.0 x 34.0 m
+- OK `craft_bay_fit` — LM-BB1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 22.0 x 8.0 x 34.0 m
 
 ## B-4 класса «Фальк» (B-4)
 
 - Класс: `interceptor`.
 - Производитель: Арсенал «Бастион» (wolf359_citadel, блок citadel_compact, школа heavy_military); верфь: military_hub.
 - Назначение: быстрый ответ в системе: перехват пиратов и нарушителей, камней и обломков; короткая автономность.
-- Корпус: dart, 18.0 × 12.0 × 4.0 м; плоская стрела, восемь гондол векторной тяги; титан, тяжёлая броня носа; силовой набор 26.5 т.
+- Корпус: dart, 18.0 × 12.0 × 4.0 м; плоская стрела, восемь гондол векторной тяги; титан, тяжёлая броня носа; силовой набор 22.5 т.
 - Схема управления: Assisted X (рантайм `AssistedX`, generic).
 - Экипаж 2, пассажиры 0; груз 2 т, C20 0; автономность 5 сут; ресурс 30 лет.
-- Масса: сухая 140 т (оборудование 113.5 т), в рабочем снаряжении 142.24 т, полная 144.24 т (груз 2.0 т + тара C20 0.0 т).
+- Масса: сухая 140 т (оборудование 117.5 т), в рабочем снаряжении 142.24 т, полная 144.24 т (груз 2.0 т + тара C20 0.0 т).
 - Тяга 6.2 МН: 4.383 g гружёный (полная масса), 4.445 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
-- Энергия: 4 × ТР-2.6В = 10000 МВт; бытовая нагрузка 27.4 МВт от 40 МВт; площадка реактора 60.2 м².
+- Энергия: 4 × TR-2.6V = 10000 МВт; бытовая нагрузка 27.4 МВт от 40 МВт; площадка реактора 60.2 м².
 - Охлаждение: 300 м² радиаторов при 1050 K = 186.1 МВт; контуры 360 МВт; излучатель двигателя ⌀ 1.88 м.
-- Цена: детали 14.75 млн, корпус 1.12 млн, прейскурант 20.56 млн Cr.
+- Цена: детали 14.89 млн, корпус 1.12 млн, прейскурант 20.75 млн Cr.
 - Единичные точки отказа: B-4-A6A2.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| B-4-A1A1 | Тяньхэ ТЦ-1.6В (военная поставка) | 8 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
-| B-4-A2A1 | Тяньхэ ТР-2.6В | 4 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
+| B-4-A1A1 | TZ-16V · Тяньхэ TZ-16V (военная поставка) | 8 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
+| B-4-A2A1 | TR-2.6V · Тяньхэ TR-2.6V | 4 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
 | B-4-A2A2 | ОФУ СР-20 | 2 | Orbital Freight Union «Ural-Kourou» | station, LRU, 12 ч |
-| B-4-A3A1 | Cobretty C-SiC radiator panel set (10 m2) | 30 | Cobretty Corporation | crew, LRU, 1.5 ч |
-| B-4-A3A2 | Cobretty coolant loop + pump (180 MW) | 2 | Cobretty Corporation | station, LRU, 8 ч |
-| B-4-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
-| B-4-A6A1 | Бастион боевой вычислитель БВ-1 | 2 | Арсенал «Бастион» | station, LRU, 4 ч |
-| B-4-A6A2 | Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| B-4-A6A3 | Бастион связь БС-1 | 2 | Арсенал «Бастион» | crew, LRU, 2 ч |
-| B-4-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| B-4-A7A1 | ОФУ ЖО О-4 (челнок) | 2 | Orbital Freight Union «Ural-Kourou» | station, LRU, 10 ч |
-| B-4-A7A2 | Cobretty катапультируемая капсула кабины (2 места) | 1 | Cobretty Corporation | station, LRU, 6 ч |
-| B-4-A11A1 | Бастион скорострельная пушка БП-10 | 2 | Арсенал «Бастион» | station, LRU, 10 ч |
-| B-4-A12A1 | Броня Бастиона тяжёлая (1 т) | 5 | Арсенал «Бастион» | yard, LRU, 2 ч |
+| B-4-A3A1 | RP-10 · Cobretty C-SiC radiator panel set (10 m2) | 30 | Cobretty Corporation | crew, LRU, 1.5 ч |
+| B-4-A3A2 | CL-180 · Cobretty coolant loop + pump (180 MW) | 2 | Cobretty Corporation | station, LRU, 8 ч |
+| B-4-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
+| B-4-A6A1 | MJ-R1 · Бастион боевой вычислитель MJ-R1 | 2 | Арсенал «Бастион» | station, LRU, 4 ч |
+| B-4-A6A2 | N-10 · Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| B-4-A6A3 | MJ-S1 · Бастион связь MJ-S1 | 2 | Арсенал «Бастион» | crew, LRU, 2 ч |
+| B-4-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| B-4-A7A1 | OFU-O4 · ОФУ ЖО OFU-O4 (челнок) | 2 | Orbital Freight Union «Ural-Kourou» | station, LRU, 10 ч |
+| B-4-A7A2 | EC-2 · (спасательная кабина: нос корабля с двигателем) | 1 | Cobretty Corporation | station, LRU, 6 ч |
+| B-4-A11A1 | MJ-SK10 · Бастион скорострельная пушка MJ-SK10 | 2 | Арсенал «Бастион» | station, LRU, 10 ч |
+| B-4-A12A1 | MJ-P1 · Броня Бастиона тяжёлая (1 т) | 5 | Арсенал «Бастион» | yard, LRU, 2 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 8 drives for AssistedX (4 aft + 4 fore)
 - OK `one_generator_per_group` — 4 propulsion reactors for 4 groups
 - OK `generator_covers_group_demand` — 2500 MWe per group vs 2375 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 26 t = 19% of dry 140 t (possible 15%-90%)
-- WARN `hull_structure_share_typical` — hull structure 19% of dry (typical 30%-75%)
+- OK `equipment_fits_dry_mass` — hull structure 22 t = 16% of dry 140 t (possible 15%-90%)
+- WARN `hull_structure_share_typical` — hull structure 16% of dry (typical 30%-75%)
 - OK `thrust_meets_class_acceleration` — 6.20 MN: 4.38 g loaded, 4.44 g in service (class burn 4.0 g)
 - OK `thrust_near_class_target` — 6.2 MN vs class 6.2 MN
 - OK `service_power_covers_hotel` — service 40 MWe vs hotel 27.4 MW (+15 %)
@@ -873,7 +873,7 @@
 - OK `cargo_near_class_target` — 2 t vs class 2 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - OK `grey_supply_declared` — N-10 (tau_ceti_cognium, dual_use black; реэкспорт)
-- WARN `component_prices_near_class_model` — main_drive 1.84/1.82 M, reactor 1.65/2.24 M, electronics 8.87/1.68 M, life_support 0.10/0.11 M, rcs_thermal 0.18/0.73 M, weapons 2.10/2.52 M
+- WARN `component_prices_near_class_model` — main_drive 1.84/1.82 M, reactor 1.65/2.24 M, electronics 8.87/1.68 M, life_support 0.24/0.11 M, rcs_thermal 0.18/0.73 M, weapons 2.10/2.52 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
 
 ## Хэ-F22 класса «Шэнхэ» (He-F22)
@@ -893,27 +893,27 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| He-F22-A1A1 | Тяньхэ ТЦ-11 | 6 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
+| He-F22-A1A1 | TZ-11 · Тяньхэ TZ-11 | 6 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
 | He-F22-A2A1 | Тяньхэ ТР-11 | 3 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
-| He-F22-A2A2 | Тяньхэ СР-600 | 2 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
-| He-F22-A3A1 | Тяньхэ радиаторная секция (50 м2) | 10 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
-| He-F22-A3A2 | Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
-| He-F22-A4A1 | Гармония Х-5 (сборка из блоков Когниума) | 1 | Верфи Гармонии | factory |
-| He-F22-A4A2 | Бак заряда прыжка (1 т) | 28 | Agora Modular | station, LRU, 6 ч |
-| He-F22-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
-| He-F22-A5A1 | Тяжёлый кластер RCS (4 сопла) | 8 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
-| He-F22-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
-| He-F22-A6A2 | Синьчжи радар обзора N-10 (10 000 км) | 2 | Синьчжи Электроникс | station, LRU, 6 ч |
-| He-F22-A6A3 | Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| He-F22-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| He-F22-A7A1 | Terra Habitat ЖО T-60 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
-| He-F22-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 2 | Agora Modular | station, LRU, 8 ч |
-| He-F22-A7A3 | Медотсек (4 койки) | 2 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| He-F22-A9A1 | Ангар досмотрового катера (1 катер) | 1 | Лунно-Марсианские верфи | yard |
-| He-F22-A9A2 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
-| He-F22-A11A1 | Гармония пусковая ВПУ-8 (8 ракет) | 2 | Верфи Гармонии | station, LRU, 10 ч |
-| He-F22-A11A2 | Гармония турель ПРО ПТ-3 | 6 | Верфи Гармонии | station, LRU, 10 ч |
-| He-F22-A12A1 | Броня керамокомпозитная (1 т) | 220 | Бронезавод Твердыни | yard, LRU, 2 ч |
+| He-F22-A2A2 | TH-FZ600 · Тяньхэ TH-FZ600 | 2 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
+| He-F22-A3A1 | TH-SR50 · Тяньхэ радиаторная секция (50 м2) | 10 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
+| He-F22-A3A2 | TH-LQ600 · Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
+| He-F22-A4A1 | He-5 · Гармония He-5 (сборка из блоков Когниума) | 1 | Верфи Гармонии | factory |
+| He-F22-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 28 | Agora Modular | station, LRU, 6 ч |
+| He-F22-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
+| He-F22-A5A1 | TH-ZK4 · Тяжёлый кластер RCS (4 сопла) | 8 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| He-F22-A6A1 | MC-C3 · Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
+| He-F22-A6A2 | N-10 · Синьчжи радар обзора N-10 (10 000 км) | 2 | Синьчжи Электроникс | station, LRU, 6 ч |
+| He-F22-A6A3 | C-3 · Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| He-F22-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| He-F22-A7A1 | T-60 · Terra Habitat ЖО T-60 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
+| He-F22-A7A2 | AG-LB20 · Спасательная шлюпка (20 мест, 10 суток) | 2 | Agora Modular | station, LRU, 8 ч |
+| He-F22-A7A3 | EH-MB4 · Медотсек (4 койки) | 2 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| He-F22-A9A1 | LM-BB1 · Ангар досмотрового катера (1 катер) | 1 | Лунно-Марсианские верфи | yard |
+| He-F22-A9A2 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| He-F22-A11A1 | He-VLS8 · Гармония пусковая He-VLS8 (8 ракет) | 2 | Верфи Гармонии | station, LRU, 10 ч |
+| He-F22-A11A2 | He-PD3 · Гармония турель ПРО He-PD3 | 6 | Верфи Гармонии | station, LRU, 10 ч |
+| He-F22-A12A1 | TL-TC1 · Броня керамокомпозитная (1 т) | 220 | Бронезавод Твердыни | yard, LRU, 2 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 6 drives for AssistedY (3 aft + 3 fore)
@@ -940,7 +940,7 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 7.02/5.60 M, reactor 10.20/7.20 M, jump_drive 3.86/8.32 M, electronics 2.92/9.60 M, life_support 1.68/1.44 M, rcs_thermal 0.66/2.88 M, weapons 24.60/14.40 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
-- OK `craft_bay_fit` — АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 30.0 x 18.0 x 85.0 m
+- OK `craft_bay_fit` — LM-BB1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 30.0 x 18.0 x 85.0 m
 
 ## B-90 класса «Ингрид Хауглан» (B-90)
 
@@ -959,28 +959,28 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| B-90-A1A1 | Тяньхэ ТЦ-28В | 4 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
+| B-90-A1A1 | TZ-28V · Тяньхэ TZ-28В | 4 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
 | B-90-A2A1 | Тяньхэ ТР-30В | 4 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
-| B-90-A2A2 | Тяньхэ СР-600 | 2 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
-| B-90-A3A1 | Тяньхэ радиаторная секция (50 м2) | 40 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
-| B-90-A3A2 | Тяньхэ контур охлаждения (600 МВт) | 4 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
-| B-90-A4A1 | Бастион Б-12 | 1 | Арсенал «Бастион» | factory |
-| B-90-A4A2 | Бак заряда прыжка (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
-| B-90-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 160 | Agora Modular | station, LRU, 6 ч |
-| B-90-A5A1 | Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
-| B-90-A6A1 | Бастион боевой вычислитель БВ-1 | 2 | Арсенал «Бастион» | station, LRU, 4 ч |
-| B-90-A6A2 | Бастион радар обзора С-50 (50 000 км) | 2 | Арсенал «Бастион» | station, LRU, 6 ч |
-| B-90-A6A3 | Бастион связь БС-1 | 2 | Арсенал «Бастион» | crew, LRU, 2 ч |
-| B-90-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| B-90-A7A1 | Terra Habitat ЖО T-200 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
-| B-90-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 9 | Agora Modular | station, LRU, 8 ч |
-| B-90-A7A3 | Медотсек (4 койки) | 3 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| B-90-A9A1 | Ангар перехватчиков (4 места) | 1 | Арсенал «Бастион» | yard |
-| B-90-A9A2 | Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
-| B-90-A9A3 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
-| B-90-A11A1 | Бастион ВПУ-16 дальних ракет | 6 | Арсенал «Бастион» | station, LRU, 10 ч |
-| B-90-A11A2 | Бастион турель ПРО БТ-4 | 12 | Арсенал «Бастион» | station, LRU, 10 ч |
-| B-90-A12A1 | Броня Бастиона тяжёлая (1 т) | 1600 | Арсенал «Бастион» | yard, LRU, 2 ч |
+| B-90-A2A2 | TH-FZ600 · Тяньхэ TH-FZ600 | 2 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
+| B-90-A3A1 | TH-SR50 · Тяньхэ радиаторная секция (50 м2) | 40 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
+| B-90-A3A2 | TH-LQ600 · Тяньхэ контур охлаждения (600 МВт) | 4 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
+| B-90-A4A1 | MJ-B12 · Бастион MJ-B12 | 1 | Арсенал «Бастион» | factory |
+| B-90-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
+| B-90-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 160 | Agora Modular | station, LRU, 6 ч |
+| B-90-A5A1 | TH-ZK4 · Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| B-90-A6A1 | MJ-R1 · Бастион боевой вычислитель MJ-R1 | 2 | Арсенал «Бастион» | station, LRU, 4 ч |
+| B-90-A6A2 | MJ-RA50 · Бастион радар обзора MJ-RA50 (50 000 км) | 2 | Арсенал «Бастион» | station, LRU, 6 ч |
+| B-90-A6A3 | MJ-S1 · Бастион связь MJ-S1 | 2 | Арсенал «Бастион» | crew, LRU, 2 ч |
+| B-90-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| B-90-A7A1 | T-200 · Terra Habitat ЖО T-200 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
+| B-90-A7A2 | AG-LB20 · Спасательная шлюпка (20 мест, 10 суток) | 9 | Agora Modular | station, LRU, 8 ч |
+| B-90-A7A3 | EH-MB4 · Медотсек (4 койки) | 3 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| B-90-A9A1 | MJ-H4 · Ангар перехватчиков (4 места) | 1 | Арсенал «Бастион» | yard |
+| B-90-A9A2 | AG-DB4 · Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
+| B-90-A9A3 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| B-90-A11A1 | MJ-VU16 · Бастион MJ-VU16 дальних ракет | 6 | Арсенал «Бастион» | station, LRU, 10 ч |
+| B-90-A11A2 | MJ-NF4 · Бастион турель ПРО MJ-NF4 | 12 | Арсенал «Бастион» | station, LRU, 10 ч |
+| B-90-A12A1 | MJ-P1 · Броня Бастиона тяжёлая (1 т) | 1600 | Арсенал «Бастион» | yard, LRU, 2 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)
@@ -1008,7 +1008,7 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 42.00/58.80 M, reactor 58.20/79.80 M, jump_drive 67.20/92.40 M, electronics 44.42/117.60 M, life_support 6.78/16.80 M, rcs_thermal 1.56/33.60 M, weapons 285.00/189.00 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
-- OK `craft_bay_fit` — АП-4: 4 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 45.0 m in hull 45.0 x 35.0 x 180.0 m
+- OK `craft_bay_fit` — MJ-H4: 4 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 45.0 m in hull 45.0 x 35.0 x 180.0 m
 
 ## R-7 «Аргус» (R-7)
 
@@ -1029,26 +1029,26 @@
 |---|---|---:|---|---|
 | R-7-A1A1 | Hyperion HD-3 | 4 | Верфи Гипериона | yard, LRU, 36 ч |
 | R-7-A2A1 | Cobretty ER-3 | 4 | Cobretty Corporation | yard, LRU, 48 ч |
-| R-7-A2A2 | Cobretty SR-150 | 2 | Cobretty Corporation | station, LRU, 12 ч |
-| R-7-A3A1 | Cobretty C-SiC radiator panel set (10 m2) | 60 | Cobretty Corporation | crew, LRU, 1.5 ч |
-| R-7-A3A2 | Cobretty coolant loop + pump (180 MW) | 2 | Cobretty Corporation | station, LRU, 8 ч |
-| R-7-A4A1 | Ядро «Нулевая точка» Я-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
-| R-7-A4A2 | Бак заряда прыжка (1 т) | 7 | Agora Modular | station, LRU, 6 ч |
-| R-7-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 10 | Agora Modular | station, LRU, 6 ч |
-| R-7-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
-| R-7-A6A1 | Hyperion разведывательный вычислитель HR-1 | 2 | Верфи Гипериона | station, LRU, 4 ч |
-| R-7-A6A2 | Hyperion пассивная решётка PA-100 + активный режим | 1 | Верфи Гипериона | station, LRU, 6 ч |
-| R-7-A6A3 | Hyperion выдвижная сенсорная мачта | 1 | Верфи Гипериона | station, LRU, 10 ч |
-| R-7-A6A4 | Hyperion комплекс РЭБ E-1 | 1 | Верфи Гипериона | station, LRU, 8 ч |
-| R-7-A6A5 | Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| R-7-A6A6 | Hyperion полевой ретранслятор R-1 (сеть маяков в войну) | 1 | Верфи Гипериона | crew, LRU, 2 ч |
-| R-7-A6A7 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| R-7-A7A1 | Евро-Хабитат ЖО L-20 | 2 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
-| R-7-A7A2 | Спасательная капсула (4 места) | 4 | Agora Modular | station, LRU, 6 ч |
-| R-7-A7A3 | Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| R-7-A9A1 | Отсек дронов (4 сервисных дрона) | 1 | Agora Modular | station, LRU, 8 ч |
-| R-7-A9A2 | Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
-| R-7-A11A1 | Твердыня турель ПРО ПТ-2 | 1 | Бронезавод Твердыни | station, LRU, 10 ч |
+| R-7-A2A2 | SR-150 · Cobretty SR-150 | 2 | Cobretty Corporation | station, LRU, 12 ч |
+| R-7-A3A1 | RP-10 · Cobretty C-SiC radiator panel set (10 m2) | 60 | Cobretty Corporation | crew, LRU, 1.5 ч |
+| R-7-A3A2 | CL-180 · Cobretty coolant loop + pump (180 MW) | 2 | Cobretty Corporation | station, LRU, 8 ч |
+| R-7-A4A1 | Z-1 · Ядро «Нулевая точка» Z-1 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
+| R-7-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 7 | Agora Modular | station, LRU, 6 ч |
+| R-7-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 10 | Agora Modular | station, LRU, 6 ч |
+| R-7-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
+| R-7-A6A1 | HR-1 · Hyperion разведывательный вычислитель HR-1 | 2 | Верфи Гипериона | station, LRU, 4 ч |
+| R-7-A6A2 | PA-100 · Hyperion пассивная решётка PA-100 + активный режим | 1 | Верфи Гипериона | station, LRU, 6 ч |
+| R-7-A6A3 | SM-1 · Hyperion выдвижная сенсорная мачта | 1 | Верфи Гипериона | station, LRU, 10 ч |
+| R-7-A6A4 | E-1 · Hyperion комплекс РЭБ E-1 | 1 | Верфи Гипериона | station, LRU, 8 ч |
+| R-7-A6A5 | C-3 · Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| R-7-A6A6 | R-1 · Hyperion полевой ретранслятор R-1 (сеть маяков в войну) | 1 | Верфи Гипериона | crew, LRU, 2 ч |
+| R-7-A6A7 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| R-7-A7A1 | L-20 · Евро-Хабитат ЖО L-20 | 2 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
+| R-7-A7A2 | AG-EP4 · Спасательная капсула (4 места) | 4 | Agora Modular | station, LRU, 6 ч |
+| R-7-A7A3 | EH-MB4 · Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| R-7-A9A1 | AG-DB4 · Отсек дронов (4 сервисных дрона) | 1 | Agora Modular | station, LRU, 8 ч |
+| R-7-A9A2 | AG-DC1 · Стыковочный узел (стандарт хабов) | 1 | Agora Modular | station, LRU, 8 ч |
+| R-7-A11A1 | TL-DF2 · Твердыня турель ПРО TL-DF2 | 1 | Бронезавод Твердыни | station, LRU, 10 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)
@@ -1096,26 +1096,26 @@
 |---|---|---:|---|---|
 | He-B240-A1A1 | Тяньхэ ТЦ-13 | 3 | Тяньхэ Тяжмаш | yard, LRU, 36 ч |
 | He-B240-A2A1 | Тяньхэ ТР-11 | 3 | Тяньхэ Тяжмаш | yard, LRU, 48 ч |
-| He-B240-A2A2 | Тяньхэ СР-600 | 2 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
-| He-B240-A3A1 | Тяньхэ радиаторная секция (50 м2) | 12 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
-| He-B240-A3A2 | Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
-| He-B240-A4A1 | Гармония Х-12 | 1 | Верфи Гармонии | factory |
-| He-B240-A4A2 | Бак заряда прыжка (1 т) | 90 | Agora Modular | station, LRU, 6 ч |
-| He-B240-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 60 | Agora Modular | station, LRU, 6 ч |
-| He-B240-A5A1 | Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
-| He-B240-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
-| He-B240-A6A2 | Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| He-B240-A6A3 | Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| He-B240-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| He-B240-A7A1 | Terra Habitat ЖО T-60 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
-| He-B240-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 3 | Agora Modular | station, LRU, 8 ч |
-| He-B240-A7A3 | Медотсек (4 койки) | 3 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| He-B240-A8A1 | Стойка C20 (замки и рельсы, 1 место) | 240 | Agora Modular | crew, LRU, 3 ч |
-| He-B240-A9A1 | Ангар перехватчиков (2 места) | 1 | Верфи Гармонии | yard |
-| He-B240-A9A2 | Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
-| He-B240-A10A1 | Мастерская сервисного тендера (2 бригады) | 2 | Лунно-Марсианские верфи | station, LRU, 12 ч |
-| He-B240-A9A3 | Стыковочный узел (стандарт хабов) | 4 | Agora Modular | station, LRU, 8 ч |
-| He-B240-A11A1 | Гармония турель ПРО ПТ-3 | 2 | Верфи Гармонии | station, LRU, 10 ч |
+| He-B240-A2A2 | TH-FZ600 · Тяньхэ TH-FZ600 | 2 | Тяньхэ Тяжмаш | station, LRU, 12 ч |
+| He-B240-A3A1 | TH-SR50 · Тяньхэ радиаторная секция (50 м2) | 12 | Тяньхэ Тяжмаш | crew, LRU, 1.5 ч |
+| He-B240-A3A2 | TH-LQ600 · Тяньхэ контур охлаждения (600 МВт) | 2 | Тяньхэ Тяжмаш | station, LRU, 8 ч |
+| He-B240-A4A1 | He-12 · Гармония He-12 | 1 | Верфи Гармонии | factory |
+| He-B240-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 90 | Agora Modular | station, LRU, 6 ч |
+| He-B240-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 60 | Agora Modular | station, LRU, 6 ч |
+| He-B240-A5A1 | TH-ZK4 · Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| He-B240-A6A1 | MC-C3 · Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
+| He-B240-A6A2 | N-10 · Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| He-B240-A6A3 | C-3 · Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| He-B240-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| He-B240-A7A1 | T-60 · Terra Habitat ЖО T-60 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
+| He-B240-A7A2 | AG-LB20 · Спасательная шлюпка (20 мест, 10 суток) | 3 | Agora Modular | station, LRU, 8 ч |
+| He-B240-A7A3 | EH-MB4 · Медотсек (4 койки) | 3 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| He-B240-A8A1 | C20-R · Стойка C20 (замки и рельсы, 1 место) | 240 | Agora Modular | crew, LRU, 3 ч |
+| He-B240-A9A1 | He-JK2 · Ангар перехватчиков (2 места) | 1 | Верфи Гармонии | yard |
+| He-B240-A9A2 | AG-DB4 · Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
+| He-B240-A10A1 | LM-WS1 · Мастерская сервисного тендера (2 бригады) | 2 | Лунно-Марсианские верфи | station, LRU, 12 ч |
+| He-B240-A9A3 | AG-DC1 · Стыковочный узел (стандарт хабов) | 4 | Agora Modular | station, LRU, 8 ч |
+| He-B240-A11A1 | He-PD3 · Гармония турель ПРО He-PD3 | 2 | Верфи Гармонии | station, LRU, 10 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 3 drives for NewtonianY (3 aft + 0 fore)
@@ -1143,7 +1143,7 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 3.84/4.20 M, reactor 10.20/5.40 M, jump_drive 11.22/8.40 M, electronics 2.47/3.00 M, life_support 1.82/1.80 M, rcs_thermal 1.04/2.40 M, weapons 3.00/1.80 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
-- OK `craft_bay_fit` — АП-2: 2 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 24.0 m in hull 40.0 x 35.0 x 150.0 m
+- OK `craft_bay_fit` — He-JK2: 2 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 24.0 m in hull 40.0 x 35.0 x 150.0 m
 
 ## PDT-7 «Тунгуска» (PDT-7)
 
@@ -1162,26 +1162,26 @@
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
-| PDT-7-A1A1 | Урал-70 | 4 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
+| PDT-7-A1A1 | U-70 · Урал-70 | 4 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | PDT-7-A2A1 | Sol Reactor Works SR-7 | 4 | Sol Reactor Works | yard, LRU, 48 ч |
-| PDT-7-A2A2 | Sol Reactor Works S-200 | 2 | Sol Reactor Works | station, LRU, 12 ч |
-| PDT-7-A3A1 | ЛМВ радиаторная секция (50 м2) | 14 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| PDT-7-A3A2 | ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
-| PDT-7-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
-| PDT-7-A5A1 | Тяжёлый кластер RCS (4 сопла) | 8 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
-| PDT-7-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
-| PDT-7-A6A2 | Kern радар обломков DR-5 (5 000 км) | 1 | Kern Heavy Mining | station, LRU, 6 ч |
-| PDT-7-A6A3 | Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| PDT-7-A6A4 | Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| PDT-7-A6A5 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| PDT-7-A7A1 | Terra Habitat ЖО T-60 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
-| PDT-7-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 1 | Agora Modular | station, LRU, 8 ч |
-| PDT-7-A7A3 | Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| PDT-7-A9A1 | Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
-| PDT-7-A9A2 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
-| PDT-7-A10A1 | Kern тяжёлый захват (обломки, камни) | 1 | Kern Heavy Mining | station, LRU, 16 ч |
-| PDT-7-A11A1 | Kern пусковая ударников МД-40 (масс-драйвер) | 1 | Kern Heavy Mining | station, LRU, 10 ч |
-| PDT-7-A12A1 | Броня керамокомпозитная (1 т) | 60 | Бронезавод Твердыни | yard, LRU, 2 ч |
+| PDT-7-A2A2 | S-200 · Sol Reactor Works S-200 | 2 | Sol Reactor Works | station, LRU, 12 ч |
+| PDT-7-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 14 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| PDT-7-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| PDT-7-A4A1 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 30 | Agora Modular | station, LRU, 6 ч |
+| PDT-7-A5A1 | TH-ZK4 · Тяжёлый кластер RCS (4 сопла) | 8 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| PDT-7-A6A1 | MC-C3 · Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
+| PDT-7-A6A2 | DR-5 · Kern радар обломков DR-5 (5 000 км) | 1 | Kern Heavy Mining | station, LRU, 6 ч |
+| PDT-7-A6A3 | N-10 · Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| PDT-7-A6A4 | C-3 · Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| PDT-7-A6A5 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| PDT-7-A7A1 | T-60 · Terra Habitat ЖО T-60 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
+| PDT-7-A7A2 | AG-LB20 · Спасательная шлюпка (20 мест, 10 суток) | 1 | Agora Modular | station, LRU, 8 ч |
+| PDT-7-A7A3 | EH-MB4 · Медотсек (4 койки) | 1 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| PDT-7-A9A1 | AG-DB4 · Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
+| PDT-7-A9A2 | AG-DC1 · Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| PDT-7-A10A1 | TR-H · Kern тяжёлый захват (обломки, камни) | 1 | Kern Heavy Mining | station, LRU, 16 ч |
+| PDT-7-A11A1 | MD-40 · Kern пусковая ударников MD-40 (масс-драйвер) | 1 | Kern Heavy Mining | station, LRU, 10 ч |
+| PDT-7-A12A1 | TL-TC1 · Броня керамокомпозитная (1 т) | 60 | Бронезавод Твердыни | yard, LRU, 2 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)
@@ -1226,24 +1226,24 @@
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
 |---|---|---:|---|---|
 | L-900-A1A1 | Hyperion HD-4 | 3 | Верфи Гипериона | yard, LRU, 36 ч |
-| L-900-A2A1 | Cobretty ER-5 Propulsion Reactor | 3 | Cobretty Corporation | yard, LRU, 48 ч |
-| L-900-A2A2 | Cobretty SR-150 | 2 | Cobretty Corporation | station, LRU, 12 ч |
-| L-900-A3A1 | Cobretty C-SiC radiator panel set (10 m2) | 400 | Cobretty Corporation | crew, LRU, 1.5 ч |
-| L-900-A3A2 | Cobretty coolant loop + pump (180 MW) | 2 | Cobretty Corporation | station, LRU, 8 ч |
-| L-900-A4A1 | Ядро «Нулевая точка» Я-5 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
-| L-900-A4A2 | Бак заряда прыжка (1 т) | 45 | Agora Modular | station, LRU, 6 ч |
-| L-900-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 20 | Agora Modular | station, LRU, 6 ч |
-| L-900-A5A1 | Кластер RCS (4 сопла, поле) | 16 | Agora Modular | crew, LRU, 2 ч |
-| L-900-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
-| L-900-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| L-900-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| L-900-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| L-900-A7A1 | Евро-Хабитат ЖО L-200 (лайнер) | 5 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
-| L-900-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 47 | Agora Modular | station, LRU, 8 ч |
-| L-900-A7A3 | Медотсек (4 койки) | 4 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| L-900-A8A1 | Пассажирская секция Agora (100 мест) | 9 | Agora Modular | yard, LRU, 24 ч |
-| L-900-A8A2 | Грузовой отсек (100 т, 300 м3) | 1 | Agora Modular | yard |
-| L-900-A9A1 | Стыковочный узел (стандарт хабов) | 4 | Agora Modular | station, LRU, 8 ч |
+| L-900-A2A1 | ER-5 · Cobretty ER-5 Propulsion Reactor | 3 | Cobretty Corporation | yard, LRU, 48 ч |
+| L-900-A2A2 | SR-150 · Cobretty SR-150 | 2 | Cobretty Corporation | station, LRU, 12 ч |
+| L-900-A3A1 | RP-10 · Cobretty C-SiC radiator panel set (10 m2) | 400 | Cobretty Corporation | crew, LRU, 1.5 ч |
+| L-900-A3A2 | CL-180 · Cobretty coolant loop + pump (180 MW) | 2 | Cobretty Corporation | station, LRU, 8 ч |
+| L-900-A4A1 | Z-5 · Ядро «Нулевая точка» Z-5 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
+| L-900-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 45 | Agora Modular | station, LRU, 6 ч |
+| L-900-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 20 | Agora Modular | station, LRU, 6 ч |
+| L-900-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 16 | Agora Modular | crew, LRU, 2 ч |
+| L-900-A6A1 | MC-C3 · Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
+| L-900-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| L-900-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| L-900-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| L-900-A7A1 | L-200 · Евро-Хабитат ЖО L-200 (лайнер) | 5 | Консорциум «Евро-Хабитат» | station, LRU, 10 ч |
+| L-900-A7A2 | AG-LB20 · Спасательная шлюпка (20 мест, 10 суток) | 47 | Agora Modular | station, LRU, 8 ч |
+| L-900-A7A3 | EH-MB4 · Медотсек (4 койки) | 4 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| L-900-A8A1 | PS-100 · Пассажирская секция Agora (100 мест) | 9 | Agora Modular | yard, LRU, 24 ч |
+| L-900-A8A2 | AG-H100 · Грузовой отсек (100 т, 300 м3) | 1 | Agora Modular | yard |
+| L-900-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 4 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 3 drives for NewtonianY (3 aft + 0 fore)
@@ -1291,24 +1291,24 @@
 |---|---|---:|---|---|
 | T-5000-A1A1 | Урал-43 | 4 | Orbital Freight Union «Ural-Kourou» | yard, LRU, 36 ч |
 | T-5000-A2A1 | Sol Reactor Works SR-3.3 | 4 | Sol Reactor Works | yard, LRU, 48 ч |
-| T-5000-A2A2 | Sol Reactor Works S-200 | 2 | Sol Reactor Works | station, LRU, 12 ч |
-| T-5000-A3A1 | ЛМВ радиаторная секция (50 м2) | 20 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
-| T-5000-A3A2 | ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
+| T-5000-A2A2 | S-200 · Sol Reactor Works S-200 | 2 | Sol Reactor Works | station, LRU, 12 ч |
+| T-5000-A3A1 | LM-RS50 · ЛМВ радиаторная секция (50 м2) | 20 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
+| T-5000-A3A2 | LM-CL300 · ЛМВ контур охлаждения (300 МВт) | 2 | Лунно-Марсианские верфи | station, LRU, 8 ч |
 | T-5000-A4A1 | Дар аль-Мизан М-12 | 1 | Kāpehu Systems | factory |
-| T-5000-A4A2 | Бак заряда прыжка (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
-| T-5000-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 40 | Agora Modular | station, LRU, 6 ч |
-| T-5000-A5A1 | Кластер RCS (4 сопла, поле) | 16 | Agora Modular | crew, LRU, 2 ч |
+| T-5000-A4A2 | AG-JT1 · Бак заряда прыжка (1 т) | 120 | Agora Modular | station, LRU, 6 ч |
+| T-5000-A4A3 | MJ-P1 · Бункер топливных таблеток D/He-3 (1 т) | 40 | Agora Modular | station, LRU, 6 ч |
+| T-5000-A5A1 | RCS-4 · Кластер RCS (4 сопла, поле) | 16 | Agora Modular | crew, LRU, 2 ч |
 | T-5000-A6A1 | Мизан бортовой вычислитель МВ-1 | 2 | Kāpehu Systems | station, LRU, 4 ч |
-| T-5000-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
-| T-5000-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
-| T-5000-A6A4 | Транспондер Управления Маяков Т-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
-| T-5000-A7A1 | Uhuru ЖО U-500 (биорегенерация) | 8 | Uhuru Bio-Systems | station, LRU, 10 ч |
-| T-5000-A7A2 | Спасательный модуль-убежище (100 мест) | 51 | Бхарат Ассембли | station, LRU, 8 ч |
-| T-5000-A7A3 | Медотсек (4 койки) | 6 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| T-5000-A8A1 | Секция переселенцев (500 коек) | 7 | Бхарат Ассембли | yard, LRU, 24 ч |
-| T-5000-A8A2 | Блок анабиоза (100 капсул) | 15 | Uhuru Bio-Systems | yard, LRU, 24 ч |
-| T-5000-A8A3 | Грузовой отсек (100 т, 300 м3) | 6 | Agora Modular | yard |
-| T-5000-A9A1 | Стыковочный узел (стандарт хабов) | 4 | Agora Modular | station, LRU, 8 ч |
+| T-5000-A6A2 | N-2 · Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
+| T-5000-A6A3 | C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
+| T-5000-A6A4 | T-1 · Транспондер Управления Маяков T-1 | 2 | Фабрика ядер Управления Маяков «Нулевая точка» | crew, LRU, 0.5 ч |
+| T-5000-A7A1 | U-500 · Uhuru ЖО U-500 (биорегенерация) | 8 | Uhuru Bio-Systems | station, LRU, 10 ч |
+| T-5000-A7A2 | BH-SM100 · Спасательный модуль-убежище (100 мест) | 51 | Бхарат Ассембли | station, LRU, 8 ч |
+| T-5000-A7A3 | EH-MB4 · Медотсек (4 койки) | 6 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
+| T-5000-A8A1 | BH-BK500 · Секция переселенцев (500 коек) | 7 | Бхарат Ассембли | yard, LRU, 24 ч |
+| T-5000-A8A2 | UH-US100 · Блок анабиоза (100 капсул) | 15 | Uhuru Bio-Systems | yard, LRU, 24 ч |
+| T-5000-A8A3 | AG-H100 · Грузовой отсек (100 т, 300 м3) | 6 | Agora Modular | yard |
+| T-5000-A9A1 | AG-DC1 · Стыковочный узел (стандарт хабов) | 4 | Agora Modular | station, LRU, 8 ч |
 
 Проверки:
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)

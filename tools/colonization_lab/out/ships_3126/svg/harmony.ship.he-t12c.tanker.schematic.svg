@@ -47,25 +47,25 @@
 <text x="230" y="67" fill="#e6eef6" text-anchor="middle">ТР-20 ×4</text>
 <text x="230" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A2A1 · yard</text>
 <rect x="170" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="230" y="113" fill="#e6eef6" text-anchor="middle">СР-600</text>
+<text x="230" y="113" fill="#e6eef6" text-anchor="middle">TH-FZ600</text>
 <text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A2A2 · station</text>
 <rect x="330" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="390" y="67" fill="#e6eef6" text-anchor="middle">РС-50 ×20</text>
+<text x="390" y="67" fill="#e6eef6" text-anchor="middle">TH-SR50 ×20</text>
 <text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A3A1 · crew</text>
 <rect x="330" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="390" y="113" fill="#e6eef6" text-anchor="middle">КО-600 ×2</text>
+<text x="390" y="113" fill="#e6eef6" text-anchor="middle">TH-LQ600 ×2</text>
 <text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A3A2 · station</text>
 <rect x="10" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="70" y="67" fill="#e6eef6" text-anchor="middle">Х-80</text>
+<text x="70" y="67" fill="#e6eef6" text-anchor="middle">He-80</text>
 <text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A4A1 · factory</text>
 <rect x="10" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="70" y="113" fill="#e6eef6" text-anchor="middle">БЗ-1 ×420</text>
+<text x="70" y="113" fill="#e6eef6" text-anchor="middle">AG-JT1 ×420</text>
 <text x="70" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A4A2 · station</text>
 <rect x="10" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="70" y="159" fill="#e6eef6" text-anchor="middle">БТ-1 ×120</text>
+<text x="70" y="159" fill="#e6eef6" text-anchor="middle">MJ-P1 ×120</text>
 <text x="70" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A4A3 · station</text>
 <rect x="490" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="550" y="113" fill="#e6eef6" text-anchor="middle">RCS-4Т ×16</text>
+<text x="550" y="113" fill="#e6eef6" text-anchor="middle">TH-ZK4 ×16</text>
 <text x="550" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A5A1 · crew</text>
 <rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="710" y="67" fill="#e6eef6" text-anchor="middle">MC-C3</text>
@@ -77,22 +77,22 @@
 <text x="710" y="159" fill="#e6eef6" text-anchor="middle">C-1</text>
 <text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A6A3 · crew</text>
 <rect x="650" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="710" y="205" fill="#e6eef6" text-anchor="middle">Т-1</text>
+<text x="710" y="205" fill="#e6eef6" text-anchor="middle">T-1</text>
 <text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A6A4 · crew</text>
 <rect x="810" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="870" y="67" fill="#e6eef6" text-anchor="middle">T-60</text>
 <text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A7A1 · station</text>
 <rect x="810" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="113" fill="#e6eef6" text-anchor="middle">СШ-20</text>
+<text x="870" y="113" fill="#e6eef6" text-anchor="middle">AG-LB20</text>
 <text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A7A2 · station</text>
 <rect x="810" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="159" fill="#e6eef6" text-anchor="middle">МЦ-4200 ×12</text>
+<text x="870" y="159" fill="#e6eef6" text-anchor="middle">He-T4200 ×12</text>
 <text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A8A1 · station</text>
 <rect x="650" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="251" fill="#e6eef6" text-anchor="middle">СУ-1 ×2</text>
+<text x="710" y="251" fill="#e6eef6" text-anchor="middle">AG-DC1 ×2</text>
 <text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A9A1 · station</text>
 <rect x="650" y="284" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="297" fill="#e6eef6" text-anchor="middle">ПТ-3 ×2</text>
+<text x="710" y="297" fill="#e6eef6" text-anchor="middle">He-PD3 ×2</text>
 <text x="710" y="310" fill="#8fb3d1" text-anchor="middle" font-size="8">He-T12G-A11A1 · station</text>
 <text x="16" y="364" fill="#ff8a8a">красная рамка — единичная точка отказа функции</text>
 </svg>

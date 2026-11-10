@@ -48,70 +48,70 @@
 <path d="M770,70 C770.0,70 650.0,438 650,438" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
 <path d="M930,70 C930.0,70 810.0,162 810,162" fill="none" stroke="#8cc56f" stroke-opacity="0.55" stroke-width="1.2"/>
 <rect x="490" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="550" y="67" fill="#e6eef6" text-anchor="middle">ТЦ-28В ×4</text>
+<text x="550" y="67" fill="#e6eef6" text-anchor="middle">TZ-28V ×4</text>
 <text x="550" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A1A1 · yard</text>
 <rect x="170" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="230" y="67" fill="#e6eef6" text-anchor="middle">ТР-30В ×4</text>
 <text x="230" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A2A1 · yard</text>
 <rect x="170" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="230" y="113" fill="#e6eef6" text-anchor="middle">СР-600 ×2</text>
+<text x="230" y="113" fill="#e6eef6" text-anchor="middle">TH-FZ600 ×2</text>
 <text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A2A2 · station</text>
 <rect x="330" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="390" y="67" fill="#e6eef6" text-anchor="middle">РС-50 ×40</text>
+<text x="390" y="67" fill="#e6eef6" text-anchor="middle">TH-SR50 ×40</text>
 <text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A3A1 · crew</text>
 <rect x="330" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="390" y="113" fill="#e6eef6" text-anchor="middle">КО-600 ×4</text>
+<text x="390" y="113" fill="#e6eef6" text-anchor="middle">TH-LQ600 ×4</text>
 <text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A3A2 · station</text>
 <rect x="10" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="70" y="67" fill="#e6eef6" text-anchor="middle">Б-12</text>
+<text x="70" y="67" fill="#e6eef6" text-anchor="middle">MJ-B12</text>
 <text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A4A1 · factory</text>
 <rect x="10" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="70" y="113" fill="#e6eef6" text-anchor="middle">БЗ-1 ×120</text>
+<text x="70" y="113" fill="#e6eef6" text-anchor="middle">AG-JT1 ×120</text>
 <text x="70" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A4A2 · station</text>
 <rect x="10" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="70" y="159" fill="#e6eef6" text-anchor="middle">БТ-1 ×160</text>
+<text x="70" y="159" fill="#e6eef6" text-anchor="middle">MJ-P1 ×160</text>
 <text x="70" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A4A3 · station</text>
 <rect x="490" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="550" y="113" fill="#e6eef6" text-anchor="middle">RCS-4Т ×16</text>
+<text x="550" y="113" fill="#e6eef6" text-anchor="middle">TH-ZK4 ×16</text>
 <text x="550" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A5A1 · crew</text>
 <rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="67" fill="#e6eef6" text-anchor="middle">БВ-1 ×2</text>
+<text x="710" y="67" fill="#e6eef6" text-anchor="middle">MJ-R1 ×2</text>
 <text x="710" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A6A1 · station</text>
 <rect x="650" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="113" fill="#e6eef6" text-anchor="middle">С-50 ×2</text>
+<text x="710" y="113" fill="#e6eef6" text-anchor="middle">MJ-RA50 ×2</text>
 <text x="710" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A6A2 · station</text>
 <rect x="650" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="159" fill="#e6eef6" text-anchor="middle">БС-1 ×2</text>
+<text x="710" y="159" fill="#e6eef6" text-anchor="middle">MJ-S1 ×2</text>
 <text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A6A3 · crew</text>
 <rect x="650" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="205" fill="#e6eef6" text-anchor="middle">Т-1 ×2</text>
+<text x="710" y="205" fill="#e6eef6" text-anchor="middle">T-1 ×2</text>
 <text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A6A4 · crew</text>
 <rect x="810" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="67" fill="#e6eef6" text-anchor="middle">T-200 ×2</text>
 <text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A7A1 · station</text>
 <rect x="810" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="113" fill="#e6eef6" text-anchor="middle">СШ-20 ×9</text>
+<text x="870" y="113" fill="#e6eef6" text-anchor="middle">AG-LB20 ×9</text>
 <text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A7A2 · station</text>
 <rect x="810" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="159" fill="#e6eef6" text-anchor="middle">МО-4 ×3</text>
+<text x="870" y="159" fill="#e6eef6" text-anchor="middle">EH-MB4 ×3</text>
 <text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A7A3 · station</text>
 <rect x="650" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="251" fill="#e6eef6" text-anchor="middle">АП-4</text>
+<text x="710" y="251" fill="#e6eef6" text-anchor="middle">MJ-H4</text>
 <text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A9A1 · yard</text>
 <rect x="650" y="284" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="297" fill="#e6eef6" text-anchor="middle">ОД-4 ×2</text>
+<text x="710" y="297" fill="#e6eef6" text-anchor="middle">AG-DB4 ×2</text>
 <text x="710" y="310" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A9A2 · station</text>
 <rect x="650" y="330" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="343" fill="#e6eef6" text-anchor="middle">СУ-1 ×2</text>
+<text x="710" y="343" fill="#e6eef6" text-anchor="middle">AG-DC1 ×2</text>
 <text x="710" y="356" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A9A3 · station</text>
 <rect x="650" y="376" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="389" fill="#e6eef6" text-anchor="middle">ВПУ-16 ×6</text>
+<text x="710" y="389" fill="#e6eef6" text-anchor="middle">MJ-VU16 ×6</text>
 <text x="710" y="402" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A11A1 · station</text>
 <rect x="650" y="422" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="435" fill="#e6eef6" text-anchor="middle">БТ-4 ×12</text>
+<text x="710" y="435" fill="#e6eef6" text-anchor="middle">MJ-NF4 ×12</text>
 <text x="710" y="448" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A11A2 · station</text>
 <rect x="810" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="205" fill="#e6eef6" text-anchor="middle">БТ-1 ×1600</text>
+<text x="870" y="205" fill="#e6eef6" text-anchor="middle">MJ-P1 ×1600</text>
 <text x="870" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">B-90-A12A1 · yard</text>
 <text x="16" y="502" fill="#ff8a8a">красная рамка — единичная точка отказа функции</text>
 </svg>

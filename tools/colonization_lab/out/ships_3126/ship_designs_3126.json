@@ -32,7 +32,7 @@
     ],
     "structure": "несущий клиновидный монокок",
     "material": "алюминий-литиевый сплав, C-SiC обшивка",
-    "structure_t": 177.1
+    "structure_t": 173.1
    },
    "crew": 2,
    "passengers": 0,
@@ -46,8 +46,8 @@
    "service_life_years": 40,
    "mass": {
     "dry_t": 260,
-    "equipment_t": 82.9,
-    "structure_t": 177.1,
+    "equipment_t": 86.9,
+    "structure_t": 173.1,
     "fluids_t": 5.0,
     "consumables_t": 0.36,
     "service_t": 265.54,
@@ -65,7 +65,7 @@
     "accel_g_loaded": 2.463,
     "accel_g_service": 3.671,
     "class_burn_g": 1.0,
-    "drive_emitter_diameter_m": 2.74,
+    "drive_emitter_diameter_m": 2.16,
     "sustainable_thrust01": 1.0
    },
    "power": {
@@ -80,7 +80,7 @@
    },
    "thermal": {
     "reactor_waste_mw": 555.6,
-    "drive_waste_mw": 70.3,
+    "drive_waste_mw": 43.7,
     "service_heat_mw": 9.6,
     "coolant_capacity_mw": 180,
     "radiator_area_m2": 380,
@@ -90,16 +90,16 @@
     "radiator_material": "elite.material.radiator.c-sic.v1"
    },
    "price": {
-    "parts_cr": 2260000,
+    "parts_cr": 2400000,
     "hull_cr": 650000,
-    "list_cr": 3966000.0,
+    "list_cr": 4157000.0,
     "groups_cr": {
      "main_drive": 380000,
      "reactor": 520000,
      "rcs_thermal": 293000,
      "jump_drive": 634000,
      "electronics": 198000,
-     "life_support": 75000,
+     "life_support": 215000,
      "weapons": 120000
     },
     "class_target_cr": {
@@ -759,9 +759,9 @@
         -6.105
        ],
        "s": [
-        1.926,
-        1.926,
-        2.696
+        2.648,
+        2.648,
+        3.707
        ]
       }
      ]
@@ -913,7 +913,7 @@
      {
       "code": "Cobrett-I N1-A1A1",
       "product": "kb.drive.n1-axial",
-      "name": "Cobretty N1 Axial Main Drive",
+      "name": "N1-AX · Cobretty N1 Axial Main Drive",
       "cat": "drive",
       "qty": 1,
       "assembly": "A1",
@@ -927,7 +927,7 @@
      {
       "code": "Cobrett-I N1-A2A1",
       "product": "kb.reactor.er5",
-      "name": "Cobretty ER-5 Propulsion Reactor",
+      "name": "ER-5 · Cobretty ER-5 Propulsion Reactor",
       "cat": "reactor",
       "qty": 1,
       "assembly": "A2",
@@ -955,7 +955,7 @@
      {
       "code": "Cobrett-I N1-A3A1",
       "product": "kb.rad.cs-panel",
-      "name": "Cobretty C-SiC radiator panel set (10 m2)",
+      "name": "RP-10 · Cobretty C-SiC radiator panel set (10 m2)",
       "cat": "radiator",
       "qty": 38,
       "assembly": "A3",
@@ -969,7 +969,7 @@
      {
       "code": "Cobrett-I N1-A3A2",
       "product": "kb.cool.loop200",
-      "name": "Cobretty coolant loop + pump (180 MW)",
+      "name": "CL-180 · Cobretty coolant loop + pump (180 MW)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -983,7 +983,7 @@
      {
       "code": "Cobrett-I N1-A4A1",
       "product": "um.core.z05",
-      "name": "Ядро «Нулевая точка» Я-0.5",
+      "name": "Z-0.5 · Ядро «Нулевая точка» Z-0.5",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -997,7 +997,7 @@
      {
       "code": "Cobrett-I N1-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 3,
       "assembly": "A4",
@@ -1011,7 +1011,7 @@
      {
       "code": "Cobrett-I N1-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 2,
       "assembly": "A4",
@@ -1025,7 +1025,7 @@
      {
       "code": "Cobrett-I N1-A5A1",
       "product": "kb.rcs.fc-nozzle",
-      "name": "Cobretty field-coupled RCS nozzle",
+      "name": "FC-RCS · Cobretty field-coupled RCS nozzle",
       "cat": "rcs",
       "qty": 24,
       "assembly": "A5",
@@ -1039,7 +1039,7 @@
      {
       "code": "Cobrett-I N1-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -1053,7 +1053,7 @@
      {
       "code": "Cobrett-I N1-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -1067,7 +1067,7 @@
      {
       "code": "Cobrett-I N1-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -1081,7 +1081,7 @@
      {
       "code": "Cobrett-I N1-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -1095,7 +1095,7 @@
      {
       "code": "Cobrett-I N1-A7A1",
       "product": "eurohab.ls.l4",
-      "name": "Евро-Хабитат ЖО L-4 (4 чел.)",
+      "name": "L-4 · Евро-Хабитат ЖО L-4 (4 чел.)",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -1109,7 +1109,7 @@
      {
       "code": "Cobrett-I N1-A7A2",
       "product": "kb.surv.capsule2",
-      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "name": "EC-2 · (спасательная кабина: нос корабля с двигателем)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -1123,7 +1123,7 @@
      {
       "code": "Cobrett-I N1-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 6,
       "assembly": "A8",
@@ -1137,7 +1137,7 @@
      {
       "code": "Cobrett-I N1-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 1,
       "assembly": "A9",
@@ -1151,7 +1151,7 @@
      {
       "code": "Cobrett-I N1-A11A1",
       "product": "kb.wpn.pd1",
-      "name": "Cobretty PD-1 оборонительная турель",
+      "name": "PD-1 · Cobretty PD-1 оборонительная турель",
       "cat": "weapon",
       "qty": 1,
       "assembly": "A11",
@@ -1443,13 +1443,13 @@
      "check": "equipment_fits_dry_mass",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 177 t = 68% of dry 260 t (possible 15%-90%)"
+     "detail": "hull structure 173 t = 67% of dry 260 t (possible 15%-90%)"
     },
     {
      "check": "hull_structure_share_typical",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 68% of dry (typical 30%-75%)"
+     "detail": "hull structure 67% of dry (typical 30%-75%)"
     },
     {
      "check": "thrust_meets_class_acceleration",
@@ -1563,7 +1563,7 @@
      "check": "component_prices_near_class_model",
      "ok": false,
      "level": "WARN",
-     "detail": "main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M"
+     "detail": "main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.21/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M"
     },
     {
      "check": "no_single_point_of_failure_in_critical_functions",
@@ -1604,7 +1604,7 @@
     ],
     "structure": "несущий клиновидный монокок, гондолы двигателей",
     "material": "алюминий-литиевый сплав, C-SiC обшивка",
-    "structure_t": 119.7
+    "structure_t": 115.7
    },
    "crew": 2,
    "passengers": 0,
@@ -1618,8 +1618,8 @@
    "service_life_years": 40,
    "mass": {
     "dry_t": 260,
-    "equipment_t": 140.3,
-    "structure_t": 119.7,
+    "equipment_t": 144.3,
+    "structure_t": 115.7,
     "fluids_t": 5.0,
     "consumables_t": 0.36,
     "service_t": 265.54,
@@ -1637,7 +1637,7 @@
     "accel_g_loaded": 5.054,
     "accel_g_service": 7.342,
     "class_burn_g": 1.0,
-    "drive_emitter_diameter_m": 2.74,
+    "drive_emitter_diameter_m": 2.16,
     "sustainable_thrust01": 1.0
    },
    "power": {
@@ -1652,7 +1652,7 @@
    },
    "thermal": {
     "reactor_waste_mw": 555.6,
-    "drive_waste_mw": 70.3,
+    "drive_waste_mw": 43.7,
     "service_heat_mw": 9.6,
     "coolant_capacity_mw": 180,
     "radiator_area_m2": 380,
@@ -1662,16 +1662,16 @@
     "radiator_material": "elite.material.radiator.c-sic.v1"
    },
    "price": {
-    "parts_cr": 2980000,
+    "parts_cr": 3120000,
     "hull_cr": 650000,
-    "list_cr": 4947000.0,
+    "list_cr": 5138000.0,
     "groups_cr": {
      "main_drive": 760000,
      "reactor": 980000,
      "rcs_thermal": 173000,
      "jump_drive": 634000,
      "electronics": 198000,
-     "life_support": 75000,
+     "life_support": 215000,
      "weapons": 120000
     },
     "class_target_cr": {
@@ -2244,9 +2244,9 @@
         -6.105
        ],
        "s": [
-        1.926,
-        1.926,
-        2.696
+        2.648,
+        2.648,
+        3.707
        ]
       }
      ]
@@ -2398,7 +2398,7 @@
      {
       "code": "Cobrett-I A3-A1A1",
       "product": "kb.drive.cr1-vector",
-      "name": "Cobretty CR-1 Vector Main Drive",
+      "name": "CR-1 · Cobretty CR-1 Vector Main Drive",
       "cat": "drive",
       "qty": 4,
       "assembly": "A1",
@@ -2412,7 +2412,7 @@
      {
       "code": "Cobrett-I A3-A2A1",
       "product": "kb.reactor.er5",
-      "name": "Cobretty ER-5 Propulsion Reactor",
+      "name": "ER-5 · Cobretty ER-5 Propulsion Reactor",
       "cat": "reactor",
       "qty": 2,
       "assembly": "A2",
@@ -2440,7 +2440,7 @@
      {
       "code": "Cobrett-I A3-A3A1",
       "product": "kb.rad.cs-panel",
-      "name": "Cobretty C-SiC radiator panel set (10 m2)",
+      "name": "RP-10 · Cobretty C-SiC radiator panel set (10 m2)",
       "cat": "radiator",
       "qty": 38,
       "assembly": "A3",
@@ -2454,7 +2454,7 @@
      {
       "code": "Cobrett-I A3-A3A2",
       "product": "kb.cool.loop200",
-      "name": "Cobretty coolant loop + pump (180 MW)",
+      "name": "CL-180 · Cobretty coolant loop + pump (180 MW)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -2468,7 +2468,7 @@
      {
       "code": "Cobrett-I A3-A4A1",
       "product": "um.core.z05",
-      "name": "Ядро «Нулевая точка» Я-0.5",
+      "name": "Z-0.5 · Ядро «Нулевая точка» Z-0.5",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -2482,7 +2482,7 @@
      {
       "code": "Cobrett-I A3-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 3,
       "assembly": "A4",
@@ -2496,7 +2496,7 @@
      {
       "code": "Cobrett-I A3-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 2,
       "assembly": "A4",
@@ -2510,7 +2510,7 @@
      {
       "code": "Cobrett-I A3-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -2524,7 +2524,7 @@
      {
       "code": "Cobrett-I A3-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -2538,7 +2538,7 @@
      {
       "code": "Cobrett-I A3-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -2552,7 +2552,7 @@
      {
       "code": "Cobrett-I A3-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -2566,7 +2566,7 @@
      {
       "code": "Cobrett-I A3-A7A1",
       "product": "eurohab.ls.l4",
-      "name": "Евро-Хабитат ЖО L-4 (4 чел.)",
+      "name": "L-4 · Евро-Хабитат ЖО L-4 (4 чел.)",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -2580,7 +2580,7 @@
      {
       "code": "Cobrett-I A3-A7A2",
       "product": "kb.surv.capsule2",
-      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "name": "EC-2 · (спасательная кабина: нос корабля с двигателем)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -2594,7 +2594,7 @@
      {
       "code": "Cobrett-I A3-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 6,
       "assembly": "A8",
@@ -2608,7 +2608,7 @@
      {
       "code": "Cobrett-I A3-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 1,
       "assembly": "A9",
@@ -2622,7 +2622,7 @@
      {
       "code": "Cobrett-I A3-A11A1",
       "product": "kb.wpn.pd1",
-      "name": "Cobretty PD-1 оборонительная турель",
+      "name": "PD-1 · Cobretty PD-1 оборонительная турель",
       "cat": "weapon",
       "qty": 1,
       "assembly": "A11",
@@ -2902,13 +2902,13 @@
      "check": "equipment_fits_dry_mass",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 120 t = 46% of dry 260 t (possible 15%-90%)"
+     "detail": "hull structure 116 t = 45% of dry 260 t (possible 15%-90%)"
     },
     {
      "check": "hull_structure_share_typical",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 46% of dry (typical 30%-75%)"
+     "detail": "hull structure 45% of dry (typical 30%-75%)"
     },
     {
      "check": "thrust_meets_class_acceleration",
@@ -3016,7 +3016,7 @@
      "check": "component_prices_near_class_model",
      "ok": true,
      "level": "OK",
-     "detail": "main_drive 0.76/0.47 M, reactor 0.98/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.17/0.17 M, weapons 0.12/0.15 M"
+     "detail": "main_drive 0.76/0.47 M, reactor 0.98/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.21/0.09 M, rcs_thermal 0.17/0.17 M, weapons 0.12/0.15 M"
     },
     {
      "check": "no_single_point_of_failure_in_critical_functions",
@@ -3830,7 +3830,7 @@
      {
       "code": "OCS-4-A1A1",
       "product": "ofu.drive.u33",
-      "name": "Урал-33",
+      "name": "U-33 · Урал-33",
       "cat": "drive",
       "qty": 1,
       "assembly": "A1",
@@ -3872,7 +3872,7 @@
      {
       "code": "OCS-4-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 2,
       "assembly": "A3",
@@ -3886,7 +3886,7 @@
      {
       "code": "OCS-4-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -3900,7 +3900,7 @@
      {
       "code": "OCS-4-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 2,
       "assembly": "A4",
@@ -3914,7 +3914,7 @@
      {
       "code": "OCS-4-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -3928,7 +3928,7 @@
      {
       "code": "OCS-4-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -3942,7 +3942,7 @@
      {
       "code": "OCS-4-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -3956,7 +3956,7 @@
      {
       "code": "OCS-4-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -3970,7 +3970,7 @@
      {
       "code": "OCS-4-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -3984,7 +3984,7 @@
      {
       "code": "OCS-4-A7A1",
       "product": "ofu.ls.o4",
-      "name": "ОФУ ЖО О-4 (челнок)",
+      "name": "OFU-O4 · ОФУ ЖО OFU-O4 (челнок)",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -3998,7 +3998,7 @@
      {
       "code": "OCS-4-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -4012,7 +4012,7 @@
      {
       "code": "OCS-4-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 24,
       "assembly": "A8",
@@ -4026,7 +4026,7 @@
      {
       "code": "OCS-4-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -5510,7 +5510,7 @@
      {
       "code": "SL-12-A1A1",
       "product": "ofu.drive.u73l",
-      "name": "Урал-73Л (подъёмный)",
+      "name": "U-73L · Урал-73Л (подъёмный)",
       "cat": "drive",
       "qty": 3,
       "assembly": "A1",
@@ -5538,7 +5538,7 @@
      {
       "code": "SL-12-A2A2",
       "product": "srw.apu.s60",
-      "name": "Sol Reactor Works S-60",
+      "name": "S-60 · Sol Reactor Works S-60",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -5552,7 +5552,7 @@
      {
       "code": "SL-12-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 4,
       "assembly": "A3",
@@ -5566,7 +5566,7 @@
      {
       "code": "SL-12-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -5580,7 +5580,7 @@
      {
       "code": "SL-12-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 3,
       "assembly": "A4",
@@ -5594,7 +5594,7 @@
      {
       "code": "SL-12-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -5608,7 +5608,7 @@
      {
       "code": "SL-12-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -5622,7 +5622,7 @@
      {
       "code": "SL-12-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -5636,7 +5636,7 @@
      {
       "code": "SL-12-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -5650,7 +5650,7 @@
      {
       "code": "SL-12-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -5664,7 +5664,7 @@
      {
       "code": "SL-12-A7A1",
       "product": "ofu.ls.o4",
-      "name": "ОФУ ЖО О-4 (челнок)",
+      "name": "OFU-O4 · ОФУ ЖО OFU-O4 (челнок)",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -5678,7 +5678,7 @@
      {
       "code": "SL-12-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -5692,7 +5692,7 @@
      {
       "code": "SL-12-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 12,
       "assembly": "A8",
@@ -5706,7 +5706,7 @@
      {
       "code": "SL-12-A8A2",
       "product": "ofu.cargo.p20",
-      "name": "Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)",
+      "name": "P20 · Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)",
       "cat": "passenger_module",
       "qty": 12,
       "assembly": "A8",
@@ -5720,7 +5720,7 @@
      {
       "code": "SL-12-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 1,
       "assembly": "A9",
@@ -5734,7 +5734,7 @@
      {
       "code": "SL-12-A10A1",
       "product": "ofu.lift.shield",
-      "name": "Теплозащитный экран подъёмника",
+      "name": "OFU-HS12 · Теплозащитный экран подъёмника",
       "cat": "heat_shield",
       "qty": 1,
       "assembly": "A10",
@@ -5748,7 +5748,7 @@
      {
       "code": "SL-12-A10A2",
       "product": "ofu.lift.gear",
-      "name": "Посадочные опоры (4)",
+      "name": "OFU-LG4 · Посадочные опоры (4)",
       "cat": "landing_gear",
       "qty": 1,
       "assembly": "A10",
@@ -7179,7 +7179,7 @@
      {
       "code": "C-120-A2A2",
       "product": "srw.apu.s60",
-      "name": "Sol Reactor Works S-60",
+      "name": "S-60 · Sol Reactor Works S-60",
       "cat": "service_reactor",
       "qty": 1,
       "assembly": "A2",
@@ -7193,7 +7193,7 @@
      {
       "code": "C-120-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 4,
       "assembly": "A3",
@@ -7207,7 +7207,7 @@
      {
       "code": "C-120-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -7235,7 +7235,7 @@
      {
       "code": "C-120-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 30,
       "assembly": "A4",
@@ -7249,7 +7249,7 @@
      {
       "code": "C-120-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 8,
       "assembly": "A4",
@@ -7263,7 +7263,7 @@
      {
       "code": "C-120-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -7291,7 +7291,7 @@
      {
       "code": "C-120-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -7305,7 +7305,7 @@
      {
       "code": "C-120-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -7319,7 +7319,7 @@
      {
       "code": "C-120-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -7333,7 +7333,7 @@
      {
       "code": "C-120-A7A1",
       "product": "eurohab.ls.l20",
-      "name": "Евро-Хабитат ЖО L-20",
+      "name": "L-20 · Евро-Хабитат ЖО L-20",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -7347,7 +7347,7 @@
      {
       "code": "C-120-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 2,
       "assembly": "A7",
@@ -7361,7 +7361,7 @@
      {
       "code": "C-120-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 120,
       "assembly": "A8",
@@ -7375,7 +7375,7 @@
      {
       "code": "C-120-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -8760,7 +8760,7 @@
      {
       "code": "He-120-A2A1",
       "product": "th.reactor.tr10",
-      "name": "Тяньхэ ТР-10",
+      "name": "TR-10 · Тяньхэ TR-10",
       "cat": "reactor",
       "qty": 1,
       "assembly": "A2",
@@ -8774,7 +8774,7 @@
      {
       "code": "He-120-A2A2",
       "product": "th.apu.s150",
-      "name": "Тяньхэ СР-150",
+      "name": "TH-FZ150 · Тяньхэ TH-FZ150",
       "cat": "service_reactor",
       "qty": 1,
       "assembly": "A2",
@@ -8788,7 +8788,7 @@
      {
       "code": "He-120-A3A1",
       "product": "th.rad.panel50",
-      "name": "Тяньхэ радиаторная секция (50 м2)",
+      "name": "TH-SR50 · Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 4,
       "assembly": "A3",
@@ -8802,7 +8802,7 @@
      {
       "code": "He-120-A3A2",
       "product": "th.cool.loop600",
-      "name": "Тяньхэ контур охлаждения (600 МВт)",
+      "name": "TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -8816,7 +8816,7 @@
      {
       "code": "He-120-A4A1",
       "product": "harmony.core.h5",
-      "name": "Гармония Х-5 (сборка из блоков Когниума)",
+      "name": "He-5 · Гармония He-5 (сборка из блоков Когниума)",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -8830,7 +8830,7 @@
      {
       "code": "He-120-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 30,
       "assembly": "A4",
@@ -8844,7 +8844,7 @@
      {
       "code": "He-120-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 8,
       "assembly": "A4",
@@ -8858,7 +8858,7 @@
      {
       "code": "He-120-A5A1",
       "product": "std.rcs.cluster_h",
-      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "name": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -8872,7 +8872,7 @@
      {
       "code": "He-120-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -8886,7 +8886,7 @@
      {
       "code": "He-120-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -8900,7 +8900,7 @@
      {
       "code": "He-120-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -8914,7 +8914,7 @@
      {
       "code": "He-120-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -8928,7 +8928,7 @@
      {
       "code": "He-120-A7A1",
       "product": "terra.ls.t10",
-      "name": "Terra Habitat ЖО T-10",
+      "name": "T-10 · Terra Habitat ЖО T-10",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -8942,7 +8942,7 @@
      {
       "code": "He-120-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 2,
       "assembly": "A7",
@@ -8956,7 +8956,7 @@
      {
       "code": "He-120-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 120,
       "assembly": "A8",
@@ -8970,7 +8970,7 @@
      {
       "code": "He-120-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -10527,7 +10527,7 @@
      {
       "code": "He-T12-A2A2",
       "product": "th.apu.s600",
-      "name": "Тяньхэ СР-600",
+      "name": "TH-FZ600 · Тяньхэ TH-FZ600",
       "cat": "service_reactor",
       "qty": 1,
       "assembly": "A2",
@@ -10541,7 +10541,7 @@
      {
       "code": "He-T12-A3A1",
       "product": "th.rad.panel50",
-      "name": "Тяньхэ радиаторная секция (50 м2)",
+      "name": "TH-SR50 · Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 20,
       "assembly": "A3",
@@ -10555,7 +10555,7 @@
      {
       "code": "He-T12-A3A2",
       "product": "th.cool.loop600",
-      "name": "Тяньхэ контур охлаждения (600 МВт)",
+      "name": "TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -10569,7 +10569,7 @@
      {
       "code": "He-T12-A4A1",
       "product": "harmony.core.h80",
-      "name": "Гармония Х-80 (тягач поезда)",
+      "name": "He-80 · Гармония He-80 (тягач поезда)",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -10583,7 +10583,7 @@
      {
       "code": "He-T12-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 420,
       "assembly": "A4",
@@ -10597,7 +10597,7 @@
      {
       "code": "He-T12-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 120,
       "assembly": "A4",
@@ -10611,7 +10611,7 @@
      {
       "code": "He-T12-A5A1",
       "product": "std.rcs.cluster_h",
-      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "name": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
       "qty": 16,
       "assembly": "A5",
@@ -10625,7 +10625,7 @@
      {
       "code": "He-T12-A6A1",
       "product": "xz.mc.c3",
-      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "name": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -10639,7 +10639,7 @@
      {
       "code": "He-T12-A6A2",
       "product": "xz.radar.n10",
-      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "name": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -10653,7 +10653,7 @@
      {
       "code": "He-T12-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -10667,7 +10667,7 @@
      {
       "code": "He-T12-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -10681,7 +10681,7 @@
      {
       "code": "He-T12-A7A1",
       "product": "terra.ls.t60",
-      "name": "Terra Habitat ЖО T-60 (флот)",
+      "name": "T-60 · Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -10695,7 +10695,7 @@
      {
       "code": "He-T12-A7A2",
       "product": "std.surv.boat20",
-      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "name": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
       "qty": 1,
       "assembly": "A7",
@@ -10709,7 +10709,7 @@
      {
       "code": "He-T12-A8A1",
       "product": "harmony.mod.cargo4800",
-      "name": "Модуль поезда грузовой (4 800 т, 240 C20)",
+      "name": "He-C4800 · Модуль поезда грузовой (4 800 т, 240 C20)",
       "cat": "train_module",
       "qty": 12,
       "assembly": "A8",
@@ -10723,7 +10723,7 @@
      {
       "code": "He-T12-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -10737,7 +10737,7 @@
      {
       "code": "He-T12-A11A1",
       "product": "harmony.wpn.pd3",
-      "name": "Гармония турель ПРО ПТ-3",
+      "name": "He-PD3 · Гармония турель ПРО He-PD3",
       "cat": "weapon",
       "qty": 2,
       "assembly": "A11",
@@ -12312,7 +12312,7 @@
      {
       "code": "He-T12G-A2A2",
       "product": "th.apu.s600",
-      "name": "Тяньхэ СР-600",
+      "name": "TH-FZ600 · Тяньхэ TH-FZ600",
       "cat": "service_reactor",
       "qty": 1,
       "assembly": "A2",
@@ -12326,7 +12326,7 @@
      {
       "code": "He-T12G-A3A1",
       "product": "th.rad.panel50",
-      "name": "Тяньхэ радиаторная секция (50 м2)",
+      "name": "TH-SR50 · Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 20,
       "assembly": "A3",
@@ -12340,7 +12340,7 @@
      {
       "code": "He-T12G-A3A2",
       "product": "th.cool.loop600",
-      "name": "Тяньхэ контур охлаждения (600 МВт)",
+      "name": "TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -12354,7 +12354,7 @@
      {
       "code": "He-T12G-A4A1",
       "product": "harmony.core.h80",
-      "name": "Гармония Х-80 (тягач поезда)",
+      "name": "He-80 · Гармония He-80 (тягач поезда)",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -12368,7 +12368,7 @@
      {
       "code": "He-T12G-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 420,
       "assembly": "A4",
@@ -12382,7 +12382,7 @@
      {
       "code": "He-T12G-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 120,
       "assembly": "A4",
@@ -12396,7 +12396,7 @@
      {
       "code": "He-T12G-A5A1",
       "product": "std.rcs.cluster_h",
-      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "name": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
       "qty": 16,
       "assembly": "A5",
@@ -12410,7 +12410,7 @@
      {
       "code": "He-T12G-A6A1",
       "product": "xz.mc.c3",
-      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "name": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -12424,7 +12424,7 @@
      {
       "code": "He-T12G-A6A2",
       "product": "xz.radar.n10",
-      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "name": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -12438,7 +12438,7 @@
      {
       "code": "He-T12G-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -12452,7 +12452,7 @@
      {
       "code": "He-T12G-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -12466,7 +12466,7 @@
      {
       "code": "He-T12G-A7A1",
       "product": "terra.ls.t60",
-      "name": "Terra Habitat ЖО T-60 (флот)",
+      "name": "T-60 · Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -12480,7 +12480,7 @@
      {
       "code": "He-T12G-A7A2",
       "product": "std.surv.boat20",
-      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "name": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
       "qty": 1,
       "assembly": "A7",
@@ -12494,7 +12494,7 @@
      {
       "code": "He-T12G-A8A1",
       "product": "harmony.mod.tank4200",
-      "name": "Модуль поезда-цистерна (4 170 т)",
+      "name": "He-T4200 · Модуль поезда-цистерна (4 170 т)",
       "cat": "train_module",
       "qty": 12,
       "assembly": "A8",
@@ -12508,7 +12508,7 @@
      {
       "code": "He-T12G-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -12522,7 +12522,7 @@
      {
       "code": "He-T12G-A11A1",
       "product": "harmony.wpn.pd3",
-      "name": "Гармония турель ПРО ПТ-3",
+      "name": "He-PD3 · Гармония турель ПРО He-PD3",
       "cat": "weapon",
       "qty": 2,
       "assembly": "A11",
@@ -13868,7 +13868,7 @@
      {
       "code": "GT-3000-A2A2",
       "product": "srw.apu.s60",
-      "name": "Sol Reactor Works S-60",
+      "name": "S-60 · Sol Reactor Works S-60",
       "cat": "service_reactor",
       "qty": 1,
       "assembly": "A2",
@@ -13882,7 +13882,7 @@
      {
       "code": "GT-3000-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 3,
       "assembly": "A3",
@@ -13896,7 +13896,7 @@
      {
       "code": "GT-3000-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -13910,7 +13910,7 @@
      {
       "code": "GT-3000-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 10,
       "assembly": "A4",
@@ -13924,7 +13924,7 @@
      {
       "code": "GT-3000-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -13938,7 +13938,7 @@
      {
       "code": "GT-3000-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -13952,7 +13952,7 @@
      {
       "code": "GT-3000-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -13966,7 +13966,7 @@
      {
       "code": "GT-3000-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -13980,7 +13980,7 @@
      {
       "code": "GT-3000-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -13994,7 +13994,7 @@
      {
       "code": "GT-3000-A7A1",
       "product": "terra.ls.t10",
-      "name": "Terra Habitat ЖО T-10",
+      "name": "T-10 · Terra Habitat ЖО T-10",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -14008,7 +14008,7 @@
      {
       "code": "GT-3000-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -14022,7 +14022,7 @@
      {
       "code": "GT-3000-A8A1",
       "product": "sol.cryo.t1000",
-      "name": "Криоцистерна He-3/D (1 000 т)",
+      "name": "LM-CT1000 · Криоцистерна He-3/D (1 000 т)",
       "cat": "cryo_tank",
       "qty": 3,
       "assembly": "A8",
@@ -14036,7 +14036,7 @@
      {
       "code": "GT-3000-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -15141,7 +15141,7 @@
      {
       "code": "RT-A1A1",
       "product": "ofu.drive.u33",
-      "name": "Урал-33",
+      "name": "U-33 · Урал-33",
       "cat": "drive",
       "qty": 1,
       "assembly": "A1",
@@ -15183,7 +15183,7 @@
      {
       "code": "RT-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 2,
       "assembly": "A3",
@@ -15197,7 +15197,7 @@
      {
       "code": "RT-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -15211,7 +15211,7 @@
      {
       "code": "RT-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 6,
       "assembly": "A4",
@@ -15225,7 +15225,7 @@
      {
       "code": "RT-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -15239,7 +15239,7 @@
      {
       "code": "RT-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -15253,7 +15253,7 @@
      {
       "code": "RT-A6A2",
       "product": "kern.radar.deb5",
-      "name": "Kern радар обломков DR-5 (5 000 км)",
+      "name": "DR-5 · Kern радар обломков DR-5 (5 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -15267,7 +15267,7 @@
      {
       "code": "RT-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -15281,7 +15281,7 @@
      {
       "code": "RT-A7A1",
       "product": "eurohab.ls.l20",
-      "name": "Евро-Хабитат ЖО L-20",
+      "name": "L-20 · Евро-Хабитат ЖО L-20",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -15295,7 +15295,7 @@
      {
       "code": "RT-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 2,
       "assembly": "A7",
@@ -15309,7 +15309,7 @@
      {
       "code": "RT-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 1,
       "assembly": "A9",
@@ -16541,7 +16541,7 @@
      {
       "code": "HT-20K-A1A1",
       "product": "kern.drive.kt1",
-      "name": "Kern KT-1 Tug Drive",
+      "name": "KT-1 · Kern KT-1 Tug Drive",
       "cat": "drive",
       "qty": 4,
       "assembly": "A1",
@@ -16555,7 +16555,7 @@
      {
       "code": "HT-20K-A2A1",
       "product": "kb.reactor.er1",
-      "name": "Cobretty ER-1",
+      "name": "ER-1 · Cobretty ER-1",
       "cat": "reactor",
       "qty": 4,
       "assembly": "A2",
@@ -16569,7 +16569,7 @@
      {
       "code": "HT-20K-A2A2",
       "product": "srw.apu.s60",
-      "name": "Sol Reactor Works S-60",
+      "name": "S-60 · Sol Reactor Works S-60",
       "cat": "service_reactor",
       "qty": 1,
       "assembly": "A2",
@@ -16583,7 +16583,7 @@
      {
       "code": "HT-20K-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 3,
       "assembly": "A3",
@@ -16597,7 +16597,7 @@
      {
       "code": "HT-20K-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -16611,7 +16611,7 @@
      {
       "code": "HT-20K-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 12,
       "assembly": "A4",
@@ -16625,7 +16625,7 @@
      {
       "code": "HT-20K-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -16639,7 +16639,7 @@
      {
       "code": "HT-20K-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -16653,7 +16653,7 @@
      {
       "code": "HT-20K-A6A2",
       "product": "kern.radar.deb5",
-      "name": "Kern радар обломков DR-5 (5 000 км)",
+      "name": "DR-5 · Kern радар обломков DR-5 (5 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -16667,7 +16667,7 @@
      {
       "code": "HT-20K-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -16681,7 +16681,7 @@
      {
       "code": "HT-20K-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -16695,7 +16695,7 @@
      {
       "code": "HT-20K-A7A1",
       "product": "eurohab.ls.l20",
-      "name": "Евро-Хабитат ЖО L-20",
+      "name": "L-20 · Евро-Хабитат ЖО L-20",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -16709,7 +16709,7 @@
      {
       "code": "HT-20K-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -16723,7 +16723,7 @@
      {
       "code": "HT-20K-A10A1",
       "product": "kern.tow.raft20k",
-      "name": "Kern буксирная рама плота (20 000 т)",
+      "name": "TR-20K · Kern буксирная рама плота (20 000 т)",
       "cat": "tow_rig",
       "qty": 1,
       "assembly": "A10",
@@ -16737,7 +16737,7 @@
      {
       "code": "HT-20K-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 1,
       "assembly": "A9",
@@ -17989,7 +17989,7 @@
      {
       "code": "ST-6-A2A2",
       "product": "srw.apu.s60",
-      "name": "Sol Reactor Works S-60",
+      "name": "S-60 · Sol Reactor Works S-60",
       "cat": "service_reactor",
       "qty": 1,
       "assembly": "A2",
@@ -18003,7 +18003,7 @@
      {
       "code": "ST-6-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 3,
       "assembly": "A3",
@@ -18017,7 +18017,7 @@
      {
       "code": "ST-6-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 1,
       "assembly": "A3",
@@ -18031,7 +18031,7 @@
      {
       "code": "ST-6-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 4,
       "assembly": "A4",
@@ -18045,7 +18045,7 @@
      {
       "code": "ST-6-A6A1",
       "product": "xz.mc.c1",
-      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "name": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
       "qty": 1,
       "assembly": "A6",
@@ -18059,7 +18059,7 @@
      {
       "code": "ST-6-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -18073,7 +18073,7 @@
      {
       "code": "ST-6-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -18087,7 +18087,7 @@
      {
       "code": "ST-6-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 1,
       "assembly": "A6",
@@ -18101,7 +18101,7 @@
      {
       "code": "ST-6-A7A1",
       "product": "terra.ls.t10",
-      "name": "Terra Habitat ЖО T-10",
+      "name": "T-10 · Terra Habitat ЖО T-10",
       "cat": "life_support",
       "qty": 1,
       "assembly": "A7",
@@ -18115,7 +18115,7 @@
      {
       "code": "ST-6-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 2,
       "assembly": "A7",
@@ -18129,7 +18129,7 @@
      {
       "code": "ST-6-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 1,
       "assembly": "A7",
@@ -18143,7 +18143,7 @@
      {
       "code": "ST-6-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 6,
       "assembly": "A8",
@@ -18157,7 +18157,7 @@
      {
       "code": "ST-6-A9A1",
       "product": "std.bay.drone4",
-      "name": "Отсек дронов (4 сервисных дрона)",
+      "name": "AG-DB4 · Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
       "qty": 1,
       "assembly": "A9",
@@ -18171,7 +18171,7 @@
      {
       "code": "ST-6-A10A1",
       "product": "sol.workshop.w1",
-      "name": "Мастерская сервисного тендера (2 бригады)",
+      "name": "LM-WS1 · Мастерская сервисного тендера (2 бригады)",
       "cat": "workshop",
       "qty": 1,
       "assembly": "A10",
@@ -18185,7 +18185,7 @@
      {
       "code": "ST-6-A9A2",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -19699,7 +19699,7 @@
      {
       "code": "PC-30-A1A1",
       "product": "ofu.drive.u65m",
-      "name": "Урал-65М (служебный)",
+      "name": "U-65M · Урал-65М (служебный)",
       "cat": "drive",
       "qty": 4,
       "assembly": "A1",
@@ -19713,7 +19713,7 @@
      {
       "code": "PC-30-A2A1",
       "product": "srw.reactor.sr48",
-      "name": "Sol Reactor Works SR-4.8",
+      "name": "SR-4.8 · Sol Reactor Works SR-4.8",
       "cat": "reactor",
       "qty": 2,
       "assembly": "A2",
@@ -19727,7 +19727,7 @@
      {
       "code": "PC-30-A2A2",
       "product": "srw.apu.s200",
-      "name": "Sol Reactor Works S-200",
+      "name": "S-200 · Sol Reactor Works S-200",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -19741,7 +19741,7 @@
      {
       "code": "PC-30-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 4,
       "assembly": "A3",
@@ -19755,7 +19755,7 @@
      {
       "code": "PC-30-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -19769,7 +19769,7 @@
      {
       "code": "PC-30-A4A1",
       "product": "um.core.z1",
-      "name": "Ядро «Нулевая точка» Я-1",
+      "name": "Z-1 · Ядро «Нулевая точка» Z-1",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -19783,7 +19783,7 @@
      {
       "code": "PC-30-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 5,
       "assembly": "A4",
@@ -19797,7 +19797,7 @@
      {
       "code": "PC-30-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 4,
       "assembly": "A4",
@@ -19811,7 +19811,7 @@
      {
       "code": "PC-30-A6A1",
       "product": "xz.mc.c3",
-      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "name": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -19825,7 +19825,7 @@
      {
       "code": "PC-30-A6A2",
       "product": "xz.radar.n10",
-      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "name": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -19839,7 +19839,7 @@
      {
       "code": "PC-30-A6A3",
       "product": "xz.comm.c3",
-      "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+      "name": "C-3 · Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -19853,7 +19853,7 @@
      {
       "code": "PC-30-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -19867,7 +19867,7 @@
      {
       "code": "PC-30-A7A1",
       "product": "terra.ls.t10",
-      "name": "Terra Habitat ЖО T-10",
+      "name": "T-10 · Terra Habitat ЖО T-10",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -19881,7 +19881,7 @@
      {
       "code": "PC-30-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 4,
       "assembly": "A7",
@@ -19895,7 +19895,7 @@
      {
       "code": "PC-30-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 1,
       "assembly": "A7",
@@ -19909,7 +19909,7 @@
      {
       "code": "PC-30-A8A1",
       "product": "std.cabin.hold6",
-      "name": "Камера для задержанных и спасённых (6 мест)",
+      "name": "LM-PC6 · Камера для задержанных и спасённых (6 мест)",
       "cat": "passenger_module",
       "qty": 1,
       "assembly": "A8",
@@ -19923,7 +19923,7 @@
      {
       "code": "PC-30-A9A1",
       "product": "std.bay.boat",
-      "name": "Ангар досмотрового катера (1 катер)",
+      "name": "LM-BB1 · Ангар досмотрового катера (1 катер)",
       "cat": "boat_bay",
       "qty": 1,
       "assembly": "A9",
@@ -19937,7 +19937,7 @@
      {
       "code": "PC-30-A9A2",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 1,
       "assembly": "A9",
@@ -19951,7 +19951,7 @@
      {
       "code": "PC-30-A11A1",
       "product": "fa.wpn.coil30",
-      "name": "Твердыня магнитная пушка КП-30",
+      "name": "TL-CG30 · Твердыня магнитная пушка TL-CG30",
       "cat": "weapon",
       "qty": 1,
       "assembly": "A11",
@@ -19965,7 +19965,7 @@
      {
       "code": "PC-30-A11A2",
       "product": "fa.wpn.pd2",
-      "name": "Твердыня турель ПРО ПТ-2",
+      "name": "TL-DF2 · Твердыня турель ПРО TL-DF2",
       "cat": "weapon",
       "qty": 1,
       "assembly": "A11",
@@ -19979,7 +19979,7 @@
      {
       "code": "PC-30-A12A1",
       "product": "std.armour.ceramic",
-      "name": "Броня керамокомпозитная (1 т)",
+      "name": "TL-TC1 · Броня керамокомпозитная (1 т)",
       "cat": "armour",
       "qty": 20,
       "assembly": "A12",
@@ -20419,7 +20419,7 @@
      "check": "craft_bay_fit",
      "ok": true,
      "level": "OK",
-     "detail": "АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 22.0 x 8.0 x 34.0 m"
+     "detail": "LM-BB1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 22.0 x 8.0 x 34.0 m"
     }
    ]
   },
@@ -20454,7 +20454,7 @@
     ],
     "structure": "плоская стрела, восемь гондол векторной тяги",
     "material": "титан, тяжёлая броня носа",
-    "structure_t": 26.5
+    "structure_t": 22.5
    },
    "crew": 2,
    "passengers": 0,
@@ -20468,8 +20468,8 @@
    "service_life_years": 30,
    "mass": {
     "dry_t": 140,
-    "equipment_t": 113.5,
-    "structure_t": 26.5,
+    "equipment_t": 117.5,
+    "structure_t": 22.5,
     "fluids_t": 2.0,
     "consumables_t": 0.06,
     "service_t": 142.24,
@@ -20512,16 +20512,16 @@
     "radiator_material": "elite.material.radiator.c-sic.v1"
    },
    "price": {
-    "parts_cr": 14747000,
+    "parts_cr": 14887000,
     "hull_cr": 1120000,
-    "list_cr": 20564000.0,
+    "list_cr": 20745000.0,
     "groups_cr": {
      "main_drive": 1840000,
      "reactor": 1650000,
      "rcs_thermal": 185000,
      "jump_drive": 6000,
      "electronics": 8866000,
-     "life_support": 100000,
+     "life_support": 240000,
      "weapons": 2100000
     },
     "class_target_cr": {
@@ -21218,9 +21218,9 @@
         -4.95
        ],
        "s": [
-        1.926,
-        1.926,
-        2.696
+        2.648,
+        2.648,
+        3.707
        ]
       }
      ]
@@ -21359,7 +21359,7 @@
      {
       "code": "B-4-A1A1",
       "product": "th.drive.tz16v",
-      "name": "Тяньхэ ТЦ-1.6В (военная поставка)",
+      "name": "TZ-16V · Тяньхэ TZ-16V (военная поставка)",
       "cat": "drive",
       "qty": 8,
       "assembly": "A1",
@@ -21373,7 +21373,7 @@
      {
       "code": "B-4-A2A1",
       "product": "th.reactor.tr26v",
-      "name": "Тяньхэ ТР-2.6В",
+      "name": "TR-2.6V · Тяньхэ TR-2.6V",
       "cat": "reactor",
       "qty": 4,
       "assembly": "A2",
@@ -21401,7 +21401,7 @@
      {
       "code": "B-4-A3A1",
       "product": "kb.rad.cs-panel",
-      "name": "Cobretty C-SiC radiator panel set (10 m2)",
+      "name": "RP-10 · Cobretty C-SiC radiator panel set (10 m2)",
       "cat": "radiator",
       "qty": 30,
       "assembly": "A3",
@@ -21415,7 +21415,7 @@
      {
       "code": "B-4-A3A2",
       "product": "kb.cool.loop200",
-      "name": "Cobretty coolant loop + pump (180 MW)",
+      "name": "CL-180 · Cobretty coolant loop + pump (180 MW)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -21429,7 +21429,7 @@
      {
       "code": "B-4-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 2,
       "assembly": "A4",
@@ -21443,7 +21443,7 @@
      {
       "code": "B-4-A6A1",
       "product": "bastion.mc.w1",
-      "name": "Бастион боевой вычислитель БВ-1",
+      "name": "MJ-R1 · Бастион боевой вычислитель MJ-R1",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -21457,7 +21457,7 @@
      {
       "code": "B-4-A6A2",
       "product": "xz.radar.n10",
-      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "name": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -21471,7 +21471,7 @@
      {
       "code": "B-4-A6A3",
       "product": "bastion.comm.w1",
-      "name": "Бастион связь БС-1",
+      "name": "MJ-S1 · Бастион связь MJ-S1",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -21485,7 +21485,7 @@
      {
       "code": "B-4-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -21499,7 +21499,7 @@
      {
       "code": "B-4-A7A1",
       "product": "ofu.ls.o4",
-      "name": "ОФУ ЖО О-4 (челнок)",
+      "name": "OFU-O4 · ОФУ ЖО OFU-O4 (челнок)",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -21513,7 +21513,7 @@
      {
       "code": "B-4-A7A2",
       "product": "kb.surv.capsule2",
-      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "name": "EC-2 · (спасательная кабина: нос корабля с двигателем)",
       "cat": "escape_capsule",
       "qty": 1,
       "assembly": "A7",
@@ -21527,7 +21527,7 @@
      {
       "code": "B-4-A11A1",
       "product": "bastion.wpn.coil10",
-      "name": "Бастион скорострельная пушка БП-10",
+      "name": "MJ-SK10 · Бастион скорострельная пушка MJ-SK10",
       "cat": "weapon",
       "qty": 2,
       "assembly": "A11",
@@ -21541,7 +21541,7 @@
      {
       "code": "B-4-A12A1",
       "product": "bastion.armour.heavy",
-      "name": "Броня Бастиона тяжёлая (1 т)",
+      "name": "MJ-P1 · Броня Бастиона тяжёлая (1 т)",
       "cat": "armour",
       "qty": 5,
       "assembly": "A12",
@@ -21778,13 +21778,13 @@
      "check": "equipment_fits_dry_mass",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 26 t = 19% of dry 140 t (possible 15%-90%)"
+     "detail": "hull structure 22 t = 16% of dry 140 t (possible 15%-90%)"
     },
     {
      "check": "hull_structure_share_typical",
      "ok": false,
      "level": "WARN",
-     "detail": "hull structure 19% of dry (typical 30%-75%)"
+     "detail": "hull structure 16% of dry (typical 30%-75%)"
     },
     {
      "check": "thrust_meets_class_acceleration",
@@ -21886,7 +21886,7 @@
      "check": "component_prices_near_class_model",
      "ok": false,
      "level": "WARN",
-     "detail": "main_drive 1.84/1.82 M, reactor 1.65/2.24 M, electronics 8.87/1.68 M, life_support 0.10/0.11 M, rcs_thermal 0.18/0.73 M, weapons 2.10/2.52 M"
+     "detail": "main_drive 1.84/1.82 M, reactor 1.65/2.24 M, electronics 8.87/1.68 M, life_support 0.24/0.11 M, rcs_thermal 0.18/0.73 M, weapons 2.10/2.52 M"
     },
     {
      "check": "no_single_point_of_failure_in_critical_functions",
@@ -23313,7 +23313,7 @@
      {
       "code": "He-F22-A1A1",
       "product": "th.drive.tz11",
-      "name": "Тяньхэ ТЦ-11",
+      "name": "TZ-11 · Тяньхэ TZ-11",
       "cat": "drive",
       "qty": 6,
       "assembly": "A1",
@@ -23341,7 +23341,7 @@
      {
       "code": "He-F22-A2A2",
       "product": "th.apu.s600",
-      "name": "Тяньхэ СР-600",
+      "name": "TH-FZ600 · Тяньхэ TH-FZ600",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -23355,7 +23355,7 @@
      {
       "code": "He-F22-A3A1",
       "product": "th.rad.panel50",
-      "name": "Тяньхэ радиаторная секция (50 м2)",
+      "name": "TH-SR50 · Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 10,
       "assembly": "A3",
@@ -23369,7 +23369,7 @@
      {
       "code": "He-F22-A3A2",
       "product": "th.cool.loop600",
-      "name": "Тяньхэ контур охлаждения (600 МВт)",
+      "name": "TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -23383,7 +23383,7 @@
      {
       "code": "He-F22-A4A1",
       "product": "harmony.core.h5",
-      "name": "Гармония Х-5 (сборка из блоков Когниума)",
+      "name": "He-5 · Гармония He-5 (сборка из блоков Когниума)",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -23397,7 +23397,7 @@
      {
       "code": "He-F22-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 28,
       "assembly": "A4",
@@ -23411,7 +23411,7 @@
      {
       "code": "He-F22-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 30,
       "assembly": "A4",
@@ -23425,7 +23425,7 @@
      {
       "code": "He-F22-A5A1",
       "product": "std.rcs.cluster_h",
-      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "name": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -23439,7 +23439,7 @@
      {
       "code": "He-F22-A6A1",
       "product": "xz.mc.c3",
-      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "name": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -23453,7 +23453,7 @@
      {
       "code": "He-F22-A6A2",
       "product": "xz.radar.n10",
-      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "name": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
       "qty": 2,
       "assembly": "A6",
@@ -23467,7 +23467,7 @@
      {
       "code": "He-F22-A6A3",
       "product": "xz.comm.c3",
-      "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+      "name": "C-3 · Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -23481,7 +23481,7 @@
      {
       "code": "He-F22-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -23495,7 +23495,7 @@
      {
       "code": "He-F22-A7A1",
       "product": "terra.ls.t60",
-      "name": "Terra Habitat ЖО T-60 (флот)",
+      "name": "T-60 · Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -23509,7 +23509,7 @@
      {
       "code": "He-F22-A7A2",
       "product": "std.surv.boat20",
-      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "name": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
       "qty": 2,
       "assembly": "A7",
@@ -23523,7 +23523,7 @@
      {
       "code": "He-F22-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 2,
       "assembly": "A7",
@@ -23537,7 +23537,7 @@
      {
       "code": "He-F22-A9A1",
       "product": "std.bay.boat",
-      "name": "Ангар досмотрового катера (1 катер)",
+      "name": "LM-BB1 · Ангар досмотрового катера (1 катер)",
       "cat": "boat_bay",
       "qty": 1,
       "assembly": "A9",
@@ -23551,7 +23551,7 @@
      {
       "code": "He-F22-A9A2",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -23565,7 +23565,7 @@
      {
       "code": "He-F22-A11A1",
       "product": "harmony.wpn.vls8",
-      "name": "Гармония пусковая ВПУ-8 (8 ракет)",
+      "name": "He-VLS8 · Гармония пусковая He-VLS8 (8 ракет)",
       "cat": "weapon",
       "qty": 2,
       "assembly": "A11",
@@ -23579,7 +23579,7 @@
      {
       "code": "He-F22-A11A2",
       "product": "harmony.wpn.pd3",
-      "name": "Гармония турель ПРО ПТ-3",
+      "name": "He-PD3 · Гармония турель ПРО He-PD3",
       "cat": "weapon",
       "qty": 6,
       "assembly": "A11",
@@ -23593,7 +23593,7 @@
      {
       "code": "He-F22-A12A1",
       "product": "std.armour.ceramic",
-      "name": "Броня керамокомпозитная (1 т)",
+      "name": "TL-TC1 · Броня керамокомпозитная (1 т)",
       "cat": "armour",
       "qty": 220,
       "assembly": "A12",
@@ -24032,7 +24032,7 @@
      "check": "craft_bay_fit",
      "ok": true,
      "level": "OK",
-     "detail": "АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 30.0 x 18.0 x 85.0 m"
+     "detail": "LM-BB1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 30.0 x 18.0 x 85.0 m"
     }
    ]
   },
@@ -25603,7 +25603,7 @@
      {
       "code": "B-90-A1A1",
       "product": "th.drive.tz28",
-      "name": "Тяньхэ ТЦ-28В",
+      "name": "TZ-28V · Тяньхэ TZ-28В",
       "cat": "drive",
       "qty": 4,
       "assembly": "A1",
@@ -25631,7 +25631,7 @@
      {
       "code": "B-90-A2A2",
       "product": "th.apu.s600",
-      "name": "Тяньхэ СР-600",
+      "name": "TH-FZ600 · Тяньхэ TH-FZ600",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -25645,7 +25645,7 @@
      {
       "code": "B-90-A3A1",
       "product": "th.rad.panel50",
-      "name": "Тяньхэ радиаторная секция (50 м2)",
+      "name": "TH-SR50 · Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 40,
       "assembly": "A3",
@@ -25659,7 +25659,7 @@
      {
       "code": "B-90-A3A2",
       "product": "th.cool.loop600",
-      "name": "Тяньхэ контур охлаждения (600 МВт)",
+      "name": "TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
       "qty": 4,
       "assembly": "A3",
@@ -25673,7 +25673,7 @@
      {
       "code": "B-90-A4A1",
       "product": "bastion.core.b12",
-      "name": "Бастион Б-12",
+      "name": "MJ-B12 · Бастион MJ-B12",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -25687,7 +25687,7 @@
      {
       "code": "B-90-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 120,
       "assembly": "A4",
@@ -25701,7 +25701,7 @@
      {
       "code": "B-90-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 160,
       "assembly": "A4",
@@ -25715,7 +25715,7 @@
      {
       "code": "B-90-A5A1",
       "product": "std.rcs.cluster_h",
-      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "name": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
       "qty": 16,
       "assembly": "A5",
@@ -25729,7 +25729,7 @@
      {
       "code": "B-90-A6A1",
       "product": "bastion.mc.w1",
-      "name": "Бастион боевой вычислитель БВ-1",
+      "name": "MJ-R1 · Бастион боевой вычислитель MJ-R1",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -25743,7 +25743,7 @@
      {
       "code": "B-90-A6A2",
       "product": "bastion.radar.s50",
-      "name": "Бастион радар обзора С-50 (50 000 км)",
+      "name": "MJ-RA50 · Бастион радар обзора MJ-RA50 (50 000 км)",
       "cat": "radar",
       "qty": 2,
       "assembly": "A6",
@@ -25757,7 +25757,7 @@
      {
       "code": "B-90-A6A3",
       "product": "bastion.comm.w1",
-      "name": "Бастион связь БС-1",
+      "name": "MJ-S1 · Бастион связь MJ-S1",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -25771,7 +25771,7 @@
      {
       "code": "B-90-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -25785,7 +25785,7 @@
      {
       "code": "B-90-A7A1",
       "product": "terra.ls.t200",
-      "name": "Terra Habitat ЖО T-200 (флот)",
+      "name": "T-200 · Terra Habitat ЖО T-200 (флот)",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -25799,7 +25799,7 @@
      {
       "code": "B-90-A7A2",
       "product": "std.surv.boat20",
-      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "name": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
       "qty": 9,
       "assembly": "A7",
@@ -25813,7 +25813,7 @@
      {
       "code": "B-90-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 3,
       "assembly": "A7",
@@ -25827,7 +25827,7 @@
      {
       "code": "B-90-A9A1",
       "product": "bastion.bay.hangar4",
-      "name": "Ангар перехватчиков (4 места)",
+      "name": "MJ-H4 · Ангар перехватчиков (4 места)",
       "cat": "hangar",
       "qty": 1,
       "assembly": "A9",
@@ -25841,7 +25841,7 @@
      {
       "code": "B-90-A9A2",
       "product": "std.bay.drone4",
-      "name": "Отсек дронов (4 сервисных дрона)",
+      "name": "AG-DB4 · Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
       "qty": 2,
       "assembly": "A9",
@@ -25855,7 +25855,7 @@
      {
       "code": "B-90-A9A3",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -25869,7 +25869,7 @@
      {
       "code": "B-90-A11A1",
       "product": "bastion.wpn.vls16",
-      "name": "Бастион ВПУ-16 дальних ракет",
+      "name": "MJ-VU16 · Бастион MJ-VU16 дальних ракет",
       "cat": "weapon",
       "qty": 6,
       "assembly": "A11",
@@ -25883,7 +25883,7 @@
      {
       "code": "B-90-A11A2",
       "product": "bastion.wpn.pd4",
-      "name": "Бастион турель ПРО БТ-4",
+      "name": "MJ-NF4 · Бастион турель ПРО MJ-NF4",
       "cat": "weapon",
       "qty": 12,
       "assembly": "A11",
@@ -25897,7 +25897,7 @@
      {
       "code": "B-90-A12A1",
       "product": "bastion.armour.heavy",
-      "name": "Броня Бастиона тяжёлая (1 т)",
+      "name": "MJ-P1 · Броня Бастиона тяжёлая (1 т)",
       "cat": "armour",
       "qty": 1600,
       "assembly": "A12",
@@ -26347,7 +26347,7 @@
      "check": "craft_bay_fit",
      "ok": true,
      "level": "OK",
-     "detail": "АП-4: 4 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 45.0 m in hull 45.0 x 35.0 x 180.0 m"
+     "detail": "MJ-H4: 4 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 45.0 m in hull 45.0 x 35.0 x 180.0 m"
     }
    ]
   },
@@ -27674,7 +27674,7 @@
      {
       "code": "R-7-A2A2",
       "product": "kb.apu.s150",
-      "name": "Cobretty SR-150",
+      "name": "SR-150 · Cobretty SR-150",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -27688,7 +27688,7 @@
      {
       "code": "R-7-A3A1",
       "product": "kb.rad.cs-panel",
-      "name": "Cobretty C-SiC radiator panel set (10 m2)",
+      "name": "RP-10 · Cobretty C-SiC radiator panel set (10 m2)",
       "cat": "radiator",
       "qty": 60,
       "assembly": "A3",
@@ -27702,7 +27702,7 @@
      {
       "code": "R-7-A3A2",
       "product": "kb.cool.loop200",
-      "name": "Cobretty coolant loop + pump (180 MW)",
+      "name": "CL-180 · Cobretty coolant loop + pump (180 MW)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -27716,7 +27716,7 @@
      {
       "code": "R-7-A4A1",
       "product": "um.core.z1",
-      "name": "Ядро «Нулевая точка» Я-1",
+      "name": "Z-1 · Ядро «Нулевая точка» Z-1",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -27730,7 +27730,7 @@
      {
       "code": "R-7-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 7,
       "assembly": "A4",
@@ -27744,7 +27744,7 @@
      {
       "code": "R-7-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 10,
       "assembly": "A4",
@@ -27758,7 +27758,7 @@
      {
       "code": "R-7-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -27772,7 +27772,7 @@
      {
       "code": "R-7-A6A1",
       "product": "hyp.mc.r1",
-      "name": "Hyperion разведывательный вычислитель HR-1",
+      "name": "HR-1 · Hyperion разведывательный вычислитель HR-1",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -27786,7 +27786,7 @@
      {
       "code": "R-7-A6A2",
       "product": "hyp.radar.pa100",
-      "name": "Hyperion пассивная решётка PA-100 + активный режим",
+      "name": "PA-100 · Hyperion пассивная решётка PA-100 + активный режим",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -27800,7 +27800,7 @@
      {
       "code": "R-7-A6A3",
       "product": "hyp.mast.s1",
-      "name": "Hyperion выдвижная сенсорная мачта",
+      "name": "SM-1 · Hyperion выдвижная сенсорная мачта",
       "cat": "sensor_mast",
       "qty": 1,
       "assembly": "A6",
@@ -27814,7 +27814,7 @@
      {
       "code": "R-7-A6A4",
       "product": "hyp.ecm.e1",
-      "name": "Hyperion комплекс РЭБ E-1",
+      "name": "E-1 · Hyperion комплекс РЭБ E-1",
       "cat": "ecm",
       "qty": 1,
       "assembly": "A6",
@@ -27828,7 +27828,7 @@
      {
       "code": "R-7-A6A5",
       "product": "xz.comm.c3",
-      "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+      "name": "C-3 · Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -27842,7 +27842,7 @@
      {
       "code": "R-7-A6A6",
       "product": "hyp.relay.r1",
-      "name": "Hyperion полевой ретранслятор R-1 (сеть маяков в войну)",
+      "name": "R-1 · Hyperion полевой ретранслятор R-1 (сеть маяков в войну)",
       "cat": "comm",
       "qty": 1,
       "assembly": "A6",
@@ -27856,7 +27856,7 @@
      {
       "code": "R-7-A6A7",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -27870,7 +27870,7 @@
      {
       "code": "R-7-A7A1",
       "product": "eurohab.ls.l20",
-      "name": "Евро-Хабитат ЖО L-20",
+      "name": "L-20 · Евро-Хабитат ЖО L-20",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -27884,7 +27884,7 @@
      {
       "code": "R-7-A7A2",
       "product": "std.surv.pod4",
-      "name": "Спасательная капсула (4 места)",
+      "name": "AG-EP4 · Спасательная капсула (4 места)",
       "cat": "escape_capsule",
       "qty": 4,
       "assembly": "A7",
@@ -27898,7 +27898,7 @@
      {
       "code": "R-7-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 1,
       "assembly": "A7",
@@ -27912,7 +27912,7 @@
      {
       "code": "R-7-A9A1",
       "product": "std.bay.drone4",
-      "name": "Отсек дронов (4 сервисных дрона)",
+      "name": "AG-DB4 · Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
       "qty": 1,
       "assembly": "A9",
@@ -27926,7 +27926,7 @@
      {
       "code": "R-7-A9A2",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 1,
       "assembly": "A9",
@@ -27940,7 +27940,7 @@
      {
       "code": "R-7-A11A1",
       "product": "fa.wpn.pd2",
-      "name": "Твердыня турель ПРО ПТ-2",
+      "name": "TL-DF2 · Твердыня турель ПРО TL-DF2",
       "cat": "weapon",
       "qty": 1,
       "assembly": "A11",
@@ -29857,7 +29857,7 @@
      {
       "code": "He-B240-A2A2",
       "product": "th.apu.s600",
-      "name": "Тяньхэ СР-600",
+      "name": "TH-FZ600 · Тяньхэ TH-FZ600",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -29871,7 +29871,7 @@
      {
       "code": "He-B240-A3A1",
       "product": "th.rad.panel50",
-      "name": "Тяньхэ радиаторная секция (50 м2)",
+      "name": "TH-SR50 · Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 12,
       "assembly": "A3",
@@ -29885,7 +29885,7 @@
      {
       "code": "He-B240-A3A2",
       "product": "th.cool.loop600",
-      "name": "Тяньхэ контур охлаждения (600 МВт)",
+      "name": "TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -29899,7 +29899,7 @@
      {
       "code": "He-B240-A4A1",
       "product": "harmony.core.h12",
-      "name": "Гармония Х-12",
+      "name": "He-12 · Гармония He-12",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -29913,7 +29913,7 @@
      {
       "code": "He-B240-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 90,
       "assembly": "A4",
@@ -29927,7 +29927,7 @@
      {
       "code": "He-B240-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 60,
       "assembly": "A4",
@@ -29941,7 +29941,7 @@
      {
       "code": "He-B240-A5A1",
       "product": "std.rcs.cluster_h",
-      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "name": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
       "qty": 16,
       "assembly": "A5",
@@ -29955,7 +29955,7 @@
      {
       "code": "He-B240-A6A1",
       "product": "xz.mc.c3",
-      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "name": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -29969,7 +29969,7 @@
      {
       "code": "He-B240-A6A2",
       "product": "xz.radar.n10",
-      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "name": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -29983,7 +29983,7 @@
      {
       "code": "He-B240-A6A3",
       "product": "xz.comm.c3",
-      "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+      "name": "C-3 · Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -29997,7 +29997,7 @@
      {
       "code": "He-B240-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -30011,7 +30011,7 @@
      {
       "code": "He-B240-A7A1",
       "product": "terra.ls.t60",
-      "name": "Terra Habitat ЖО T-60 (флот)",
+      "name": "T-60 · Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -30025,7 +30025,7 @@
      {
       "code": "He-B240-A7A2",
       "product": "std.surv.boat20",
-      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "name": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
       "qty": 3,
       "assembly": "A7",
@@ -30039,7 +30039,7 @@
      {
       "code": "He-B240-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 3,
       "assembly": "A7",
@@ -30053,7 +30053,7 @@
      {
       "code": "He-B240-A8A1",
       "product": "std.cargo.c20lock",
-      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "name": "C20-R · Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
       "qty": 240,
       "assembly": "A8",
@@ -30067,7 +30067,7 @@
      {
       "code": "He-B240-A9A1",
       "product": "harmony.bay.hangar2",
-      "name": "Ангар перехватчиков (2 места)",
+      "name": "He-JK2 · Ангар перехватчиков (2 места)",
       "cat": "hangar",
       "qty": 1,
       "assembly": "A9",
@@ -30081,7 +30081,7 @@
      {
       "code": "He-B240-A9A2",
       "product": "std.bay.drone4",
-      "name": "Отсек дронов (4 сервисных дрона)",
+      "name": "AG-DB4 · Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
       "qty": 2,
       "assembly": "A9",
@@ -30095,7 +30095,7 @@
      {
       "code": "He-B240-A10A1",
       "product": "sol.workshop.w1",
-      "name": "Мастерская сервисного тендера (2 бригады)",
+      "name": "LM-WS1 · Мастерская сервисного тендера (2 бригады)",
       "cat": "workshop",
       "qty": 2,
       "assembly": "A10",
@@ -30109,7 +30109,7 @@
      {
       "code": "He-B240-A9A3",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 4,
       "assembly": "A9",
@@ -30123,7 +30123,7 @@
      {
       "code": "He-B240-A11A1",
       "product": "harmony.wpn.pd3",
-      "name": "Гармония турель ПРО ПТ-3",
+      "name": "He-PD3 · Гармония турель ПРО He-PD3",
       "cat": "weapon",
       "qty": 2,
       "assembly": "A11",
@@ -30564,7 +30564,7 @@
      "check": "craft_bay_fit",
      "ok": true,
      "level": "OK",
-     "detail": "АП-2: 2 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 24.0 m in hull 40.0 x 35.0 x 150.0 m"
+     "detail": "He-JK2: 2 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 24.0 m in hull 40.0 x 35.0 x 150.0 m"
     }
    ]
   },
@@ -31784,7 +31784,7 @@
      {
       "code": "PDT-7-A1A1",
       "product": "ofu.drive.u70",
-      "name": "Урал-70",
+      "name": "U-70 · Урал-70",
       "cat": "drive",
       "qty": 4,
       "assembly": "A1",
@@ -31812,7 +31812,7 @@
      {
       "code": "PDT-7-A2A2",
       "product": "srw.apu.s200",
-      "name": "Sol Reactor Works S-200",
+      "name": "S-200 · Sol Reactor Works S-200",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -31826,7 +31826,7 @@
      {
       "code": "PDT-7-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 14,
       "assembly": "A3",
@@ -31840,7 +31840,7 @@
      {
       "code": "PDT-7-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -31854,7 +31854,7 @@
      {
       "code": "PDT-7-A4A1",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 30,
       "assembly": "A4",
@@ -31868,7 +31868,7 @@
      {
       "code": "PDT-7-A5A1",
       "product": "std.rcs.cluster_h",
-      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "name": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
       "qty": 8,
       "assembly": "A5",
@@ -31882,7 +31882,7 @@
      {
       "code": "PDT-7-A6A1",
       "product": "xz.mc.c3",
-      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "name": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -31896,7 +31896,7 @@
      {
       "code": "PDT-7-A6A2",
       "product": "kern.radar.deb5",
-      "name": "Kern радар обломков DR-5 (5 000 км)",
+      "name": "DR-5 · Kern радар обломков DR-5 (5 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -31910,7 +31910,7 @@
      {
       "code": "PDT-7-A6A3",
       "product": "xz.radar.n10",
-      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "name": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -31924,7 +31924,7 @@
      {
       "code": "PDT-7-A6A4",
       "product": "xz.comm.c3",
-      "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+      "name": "C-3 · Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -31938,7 +31938,7 @@
      {
       "code": "PDT-7-A6A5",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -31952,7 +31952,7 @@
      {
       "code": "PDT-7-A7A1",
       "product": "terra.ls.t60",
-      "name": "Terra Habitat ЖО T-60 (флот)",
+      "name": "T-60 · Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
       "qty": 2,
       "assembly": "A7",
@@ -31966,7 +31966,7 @@
      {
       "code": "PDT-7-A7A2",
       "product": "std.surv.boat20",
-      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "name": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
       "qty": 1,
       "assembly": "A7",
@@ -31980,7 +31980,7 @@
      {
       "code": "PDT-7-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 1,
       "assembly": "A7",
@@ -31994,7 +31994,7 @@
      {
       "code": "PDT-7-A9A1",
       "product": "std.bay.drone4",
-      "name": "Отсек дронов (4 сервисных дрона)",
+      "name": "AG-DB4 · Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
       "qty": 2,
       "assembly": "A9",
@@ -32008,7 +32008,7 @@
      {
       "code": "PDT-7-A9A2",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 2,
       "assembly": "A9",
@@ -32022,7 +32022,7 @@
      {
       "code": "PDT-7-A10A1",
       "product": "kern.tow.heavy",
-      "name": "Kern тяжёлый захват (обломки, камни)",
+      "name": "TR-H · Kern тяжёлый захват (обломки, камни)",
       "cat": "tow_rig",
       "qty": 1,
       "assembly": "A10",
@@ -32036,7 +32036,7 @@
      {
       "code": "PDT-7-A11A1",
       "product": "kern.md.impactor",
-      "name": "Kern пусковая ударников МД-40 (масс-драйвер)",
+      "name": "MD-40 · Kern пусковая ударников MD-40 (масс-драйвер)",
       "cat": "weapon",
       "qty": 1,
       "assembly": "A11",
@@ -32050,7 +32050,7 @@
      {
       "code": "PDT-7-A12A1",
       "product": "std.armour.ceramic",
-      "name": "Броня керамокомпозитная (1 т)",
+      "name": "TL-TC1 · Броня керамокомпозитная (1 т)",
       "cat": "armour",
       "qty": 60,
       "assembly": "A12",
@@ -33821,7 +33821,7 @@
      {
       "code": "L-900-A2A1",
       "product": "kb.reactor.er5",
-      "name": "Cobretty ER-5 Propulsion Reactor",
+      "name": "ER-5 · Cobretty ER-5 Propulsion Reactor",
       "cat": "reactor",
       "qty": 3,
       "assembly": "A2",
@@ -33835,7 +33835,7 @@
      {
       "code": "L-900-A2A2",
       "product": "kb.apu.s150",
-      "name": "Cobretty SR-150",
+      "name": "SR-150 · Cobretty SR-150",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -33849,7 +33849,7 @@
      {
       "code": "L-900-A3A1",
       "product": "kb.rad.cs-panel",
-      "name": "Cobretty C-SiC radiator panel set (10 m2)",
+      "name": "RP-10 · Cobretty C-SiC radiator panel set (10 m2)",
       "cat": "radiator",
       "qty": 400,
       "assembly": "A3",
@@ -33863,7 +33863,7 @@
      {
       "code": "L-900-A3A2",
       "product": "kb.cool.loop200",
-      "name": "Cobretty coolant loop + pump (180 MW)",
+      "name": "CL-180 · Cobretty coolant loop + pump (180 MW)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -33877,7 +33877,7 @@
      {
       "code": "L-900-A4A1",
       "product": "um.core.z5",
-      "name": "Ядро «Нулевая точка» Я-5",
+      "name": "Z-5 · Ядро «Нулевая точка» Z-5",
       "cat": "jump_core",
       "qty": 1,
       "assembly": "A4",
@@ -33891,7 +33891,7 @@
      {
       "code": "L-900-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 45,
       "assembly": "A4",
@@ -33905,7 +33905,7 @@
      {
       "code": "L-900-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 20,
       "assembly": "A4",
@@ -33919,7 +33919,7 @@
      {
       "code": "L-900-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 16,
       "assembly": "A5",
@@ -33933,7 +33933,7 @@
      {
       "code": "L-900-A6A1",
       "product": "xz.mc.c3",
-      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "name": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
       "qty": 2,
       "assembly": "A6",
@@ -33947,7 +33947,7 @@
      {
       "code": "L-900-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -33961,7 +33961,7 @@
      {
       "code": "L-900-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -33975,7 +33975,7 @@
      {
       "code": "L-900-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -33989,7 +33989,7 @@
      {
       "code": "L-900-A7A1",
       "product": "eurohab.ls.l200",
-      "name": "Евро-Хабитат ЖО L-200 (лайнер)",
+      "name": "L-200 · Евро-Хабитат ЖО L-200 (лайнер)",
       "cat": "life_support",
       "qty": 5,
       "assembly": "A7",
@@ -34003,7 +34003,7 @@
      {
       "code": "L-900-A7A2",
       "product": "std.surv.boat20",
-      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "name": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
       "qty": 47,
       "assembly": "A7",
@@ -34017,7 +34017,7 @@
      {
       "code": "L-900-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 4,
       "assembly": "A7",
@@ -34031,7 +34031,7 @@
      {
       "code": "L-900-A8A1",
       "product": "agora.hab.pax100",
-      "name": "Пассажирская секция Agora (100 мест)",
+      "name": "PS-100 · Пассажирская секция Agora (100 мест)",
       "cat": "passenger_module",
       "qty": 9,
       "assembly": "A8",
@@ -34045,7 +34045,7 @@
      {
       "code": "L-900-A8A2",
       "product": "std.cargo.hold100",
-      "name": "Грузовой отсек (100 т, 300 м3)",
+      "name": "AG-H100 · Грузовой отсек (100 т, 300 м3)",
       "cat": "bulk_hold",
       "qty": 1,
       "assembly": "A8",
@@ -34059,7 +34059,7 @@
      {
       "code": "L-900-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 4,
       "assembly": "A9",
@@ -36027,7 +36027,7 @@
      {
       "code": "T-5000-A2A2",
       "product": "srw.apu.s200",
-      "name": "Sol Reactor Works S-200",
+      "name": "S-200 · Sol Reactor Works S-200",
       "cat": "service_reactor",
       "qty": 2,
       "assembly": "A2",
@@ -36041,7 +36041,7 @@
      {
       "code": "T-5000-A3A1",
       "product": "sol.rad.panel50",
-      "name": "ЛМВ радиаторная секция (50 м2)",
+      "name": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
       "qty": 20,
       "assembly": "A3",
@@ -36055,7 +36055,7 @@
      {
       "code": "T-5000-A3A2",
       "product": "sol.cool.loop300",
-      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "name": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
       "qty": 2,
       "assembly": "A3",
@@ -36083,7 +36083,7 @@
      {
       "code": "T-5000-A4A2",
       "product": "std.tank.jumpcharge",
-      "name": "Бак заряда прыжка (1 т)",
+      "name": "AG-JT1 · Бак заряда прыжка (1 т)",
       "cat": "tank",
       "qty": 120,
       "assembly": "A4",
@@ -36097,7 +36097,7 @@
      {
       "code": "T-5000-A4A3",
       "product": "std.tank.pellets",
-      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "name": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
       "qty": 40,
       "assembly": "A4",
@@ -36111,7 +36111,7 @@
      {
       "code": "T-5000-A5A1",
       "product": "std.rcs.cluster",
-      "name": "Кластер RCS (4 сопла, поле)",
+      "name": "RCS-4 · Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
       "qty": 16,
       "assembly": "A5",
@@ -36139,7 +36139,7 @@
      {
       "code": "T-5000-A6A2",
       "product": "xz.radar.n2",
-      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "name": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
       "qty": 1,
       "assembly": "A6",
@@ -36153,7 +36153,7 @@
      {
       "code": "T-5000-A6A3",
       "product": "xz.comm.c1",
-      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "name": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
       "qty": 2,
       "assembly": "A6",
@@ -36167,7 +36167,7 @@
      {
       "code": "T-5000-A6A4",
       "product": "um.xpdr.t1",
-      "name": "Транспондер Управления Маяков Т-1",
+      "name": "T-1 · Транспондер Управления Маяков T-1",
       "cat": "transponder",
       "qty": 2,
       "assembly": "A6",
@@ -36181,7 +36181,7 @@
      {
       "code": "T-5000-A7A1",
       "product": "uhuru.ls.u500",
-      "name": "Uhuru ЖО U-500 (биорегенерация)",
+      "name": "U-500 · Uhuru ЖО U-500 (биорегенерация)",
       "cat": "life_support",
       "qty": 8,
       "assembly": "A7",
@@ -36195,7 +36195,7 @@
      {
       "code": "T-5000-A7A2",
       "product": "std.surv.refuge100",
-      "name": "Спасательный модуль-убежище (100 мест)",
+      "name": "BH-SM100 · Спасательный модуль-убежище (100 мест)",
       "cat": "lifeboat",
       "qty": 51,
       "assembly": "A7",
@@ -36209,7 +36209,7 @@
      {
       "code": "T-5000-A7A3",
       "product": "std.med.bay",
-      "name": "Медотсек (4 койки)",
+      "name": "EH-MB4 · Медотсек (4 койки)",
       "cat": "medbay",
       "qty": 6,
       "assembly": "A7",
@@ -36223,7 +36223,7 @@
      {
       "code": "T-5000-A8A1",
       "product": "bharat.hab.bunk500",
-      "name": "Секция переселенцев (500 коек)",
+      "name": "BH-BK500 · Секция переселенцев (500 коек)",
       "cat": "passenger_module",
       "qty": 7,
       "assembly": "A8",
@@ -36237,7 +36237,7 @@
      {
       "code": "T-5000-A8A2",
       "product": "uhuru.cryo.pod100",
-      "name": "Блок анабиоза (100 капсул)",
+      "name": "UH-US100 · Блок анабиоза (100 капсул)",
       "cat": "passenger_module",
       "qty": 15,
       "assembly": "A8",
@@ -36251,7 +36251,7 @@
      {
       "code": "T-5000-A8A3",
       "product": "std.cargo.hold100",
-      "name": "Грузовой отсек (100 т, 300 м3)",
+      "name": "AG-H100 · Грузовой отсек (100 т, 300 м3)",
       "cat": "bulk_hold",
       "qty": 6,
       "assembly": "A8",
@@ -36265,7 +36265,7 @@
      {
       "code": "T-5000-A9A1",
       "product": "std.dock.collar",
-      "name": "Стыковочный узел (стандарт хабов)",
+      "name": "AG-DC1 · Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
       "qty": 4,
       "assembly": "A9",

@@ -5,110 +5,110 @@
 <text x="24.0" y="64" fill="#8fb3d1">вид сверху</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><polygon points="170.0,71.92307692307693 320.0,328.0769230769231 20.0,328.0769230769231" /></g>
 <text x="316.0" y="346.0" fill="#8fb3d1" text-anchor="end">26 × 22.2 м</text>
-<circle cx="170.0" cy="308.9" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Cobrett-I N1-A1A1 Cobretty N1 Axial Main Drive</title></circle>
-<circle cx="170.0" cy="270.8" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Cobrett-I N1-A2A1 Cobretty ER-5 Propulsion Reactor</title></circle>
+<circle cx="170.0" cy="308.9" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Cobrett-I N1-A1A1 N1-AX · Cobretty N1 Axial Main Drive</title></circle>
+<circle cx="170.0" cy="270.8" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Cobrett-I N1-A2A1 ER-5 · Cobretty ER-5 Propulsion Reactor</title></circle>
 <circle cx="170.0" cy="232.7" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Cobrett-I N1-A2A2 Cobretty SR-70 Service Reactor</title></circle>
-<circle cx="42.5" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 Cobretty C-SiC radiator panel set (10 m2)</title></circle>
-<circle cx="297.5" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 Cobretty C-SiC radiator panel set (10 m2)</title></circle>
-<circle cx="170.0" cy="243.5" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Cobrett-I N1-A3A2 Cobretty coolant loop + pump (180 MW)</title></circle>
-<circle cx="170.0" cy="210.9" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Cobrett-I N1-A4A1 Ядро «Нулевая точка» Я-0.5</title></circle>
-<circle cx="106.2" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="170.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="233.8" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="138.1" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="201.9" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="42.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="297.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="42.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="297.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="42.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="297.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="42.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="297.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="170.0" cy="118.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Cobrett-I N1-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="170.0" cy="107.5" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Cobrett-I N1-A6A2 Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
-<circle cx="170.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="170.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A4 Транспондер Управления Маяков Т-1</title></circle>
-<circle cx="170.0" cy="134.7" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Cobrett-I N1-A7A1 Евро-Хабитат ЖО L-4 (4 чел.)</title></circle>
-<circle cx="170.0" cy="140.1" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Cobrett-I N1-A7A2 Cobretty катапультируемая капсула кабины (2 места)</title></circle>
-<circle cx="74.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="138.1" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="201.9" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="265.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="170.0" cy="91.1" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Cobrett-I N1-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
-<circle cx="170.0" cy="167.3" r="3" fill="#c0392b" fill-opacity="0.9"><title>Cobrett-I N1-A11A1 Cobretty PD-1 оборонительная турель</title></circle>
+<circle cx="42.5" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 RP-10 · Cobretty C-SiC radiator panel set (10 m2)</title></circle>
+<circle cx="297.5" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 RP-10 · Cobretty C-SiC radiator panel set (10 m2)</title></circle>
+<circle cx="170.0" cy="243.5" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Cobrett-I N1-A3A2 CL-180 · Cobretty coolant loop + pump (180 MW)</title></circle>
+<circle cx="170.0" cy="210.9" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Cobrett-I N1-A4A1 Z-0.5 · Ядро «Нулевая точка» Z-0.5</title></circle>
+<circle cx="106.2" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="170.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="233.8" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="138.1" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="201.9" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="42.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="297.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="42.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="297.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="42.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="297.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="42.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="297.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="170.0" cy="118.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Cobrett-I N1-A6A1 MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="170.0" cy="107.5" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Cobrett-I N1-A6A2 N-2 · Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
+<circle cx="170.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A3 C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="170.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A4 T-1 · Транспондер Управления Маяков T-1</title></circle>
+<circle cx="170.0" cy="134.7" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Cobrett-I N1-A7A1 L-4 · Евро-Хабитат ЖО L-4 (4 чел.)</title></circle>
+<circle cx="170.0" cy="140.1" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Cobrett-I N1-A7A2 EC-2 · (спасательная кабина: нос корабля с двигателем)</title></circle>
+<circle cx="74.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="138.1" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="201.9" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="265.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="170.0" cy="91.1" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Cobrett-I N1-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="170.0" cy="167.3" r="3" fill="#c0392b" fill-opacity="0.9"><title>Cobrett-I N1-A11A1 PD-1 · Cobretty PD-1 оборонительная турель</title></circle>
 <rect x="340.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
 <text x="344.0" y="64" fill="#8fb3d1">вид сбоку</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><rect x="461.15384615384613" y="71.92307692307693" width="57.69230769230769" height="256.15384615384613" rx="3" /></g>
 <text x="636.0" y="346.0" fill="#8fb3d1" text-anchor="end">5 × 22.2 м</text>
-<circle cx="490.0" cy="308.9" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Cobrett-I N1-A1A1 Cobretty N1 Axial Main Drive</title></circle>
-<circle cx="490.0" cy="270.8" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Cobrett-I N1-A2A1 Cobretty ER-5 Propulsion Reactor</title></circle>
+<circle cx="490.0" cy="308.9" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Cobrett-I N1-A1A1 N1-AX · Cobretty N1 Axial Main Drive</title></circle>
+<circle cx="490.0" cy="270.8" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Cobrett-I N1-A2A1 ER-5 · Cobretty ER-5 Propulsion Reactor</title></circle>
 <circle cx="490.0" cy="232.7" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Cobrett-I N1-A2A2 Cobretty SR-70 Service Reactor</title></circle>
-<circle cx="490.0" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 Cobretty C-SiC radiator panel set (10 m2)</title></circle>
-<circle cx="490.0" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 Cobretty C-SiC radiator panel set (10 m2)</title></circle>
-<circle cx="490.0" cy="243.5" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Cobrett-I N1-A3A2 Cobretty coolant loop + pump (180 MW)</title></circle>
-<circle cx="490.0" cy="210.9" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Cobrett-I N1-A4A1 Ядро «Нулевая точка» Я-0.5</title></circle>
-<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="514.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="514.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="465.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="465.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="514.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="514.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="465.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="465.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="490.0" cy="118.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Cobrett-I N1-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="512.1" cy="107.5" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Cobrett-I N1-A6A2 Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
-<circle cx="490.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="490.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A4 Транспондер Управления Маяков Т-1</title></circle>
-<circle cx="490.0" cy="134.7" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Cobrett-I N1-A7A1 Евро-Хабитат ЖО L-4 (4 чел.)</title></circle>
-<circle cx="490.0" cy="140.1" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Cobrett-I N1-A7A2 Cobretty катапультируемая капсула кабины (2 места)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="490.0" cy="91.1" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Cobrett-I N1-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
-<circle cx="509.6" cy="167.3" r="3" fill="#c0392b" fill-opacity="0.9"><title>Cobrett-I N1-A11A1 Cobretty PD-1 оборонительная турель</title></circle>
+<circle cx="490.0" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 RP-10 · Cobretty C-SiC radiator panel set (10 m2)</title></circle>
+<circle cx="490.0" cy="232.7" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 RP-10 · Cobretty C-SiC radiator panel set (10 m2)</title></circle>
+<circle cx="490.0" cy="243.5" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Cobrett-I N1-A3A2 CL-180 · Cobretty coolant loop + pump (180 MW)</title></circle>
+<circle cx="490.0" cy="210.9" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Cobrett-I N1-A4A1 Z-0.5 · Ядро «Нулевая точка» Z-0.5</title></circle>
+<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="232.7" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="514.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="514.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="465.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="465.5" cy="91.1" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="514.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="514.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="465.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="465.5" cy="308.9" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="490.0" cy="118.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Cobrett-I N1-A6A1 MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="512.1" cy="107.5" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Cobrett-I N1-A6A2 N-2 · Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
+<circle cx="490.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A3 C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="490.0" cy="112.9" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A4 T-1 · Транспондер Управления Маяков T-1</title></circle>
+<circle cx="490.0" cy="134.7" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Cobrett-I N1-A7A1 L-4 · Евро-Хабитат ЖО L-4 (4 чел.)</title></circle>
+<circle cx="490.0" cy="140.1" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Cobrett-I N1-A7A2 EC-2 · (спасательная кабина: нос корабля с двигателем)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="490.0" cy="91.1" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Cobrett-I N1-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="509.6" cy="167.3" r="3" fill="#c0392b" fill-opacity="0.9"><title>Cobrett-I N1-A11A1 PD-1 · Cobretty PD-1 оборонительная турель</title></circle>
 <rect x="660.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
 <text x="664.0" y="64" fill="#8fb3d1">вид спереди</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><rect x="660.0" y="171.15384615384616" width="300.0" height="57.69230769230769" rx="3" /></g>
 <text x="956.0" y="346.0" fill="#8fb3d1" text-anchor="end">26 × 5 м</text>
-<circle cx="810.0" cy="200.0" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Cobrett-I N1-A1A1 Cobretty N1 Axial Main Drive</title></circle>
-<circle cx="810.0" cy="200.0" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Cobrett-I N1-A2A1 Cobretty ER-5 Propulsion Reactor</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Cobrett-I N1-A1A1 N1-AX · Cobretty N1 Axial Main Drive</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Cobrett-I N1-A2A1 ER-5 · Cobretty ER-5 Propulsion Reactor</title></circle>
 <circle cx="810.0" cy="200.0" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Cobrett-I N1-A2A2 Cobretty SR-70 Service Reactor</title></circle>
-<circle cx="682.5" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 Cobretty C-SiC radiator panel set (10 m2)</title></circle>
-<circle cx="937.5" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 Cobretty C-SiC radiator panel set (10 m2)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Cobrett-I N1-A3A2 Cobretty coolant loop + pump (180 MW)</title></circle>
-<circle cx="810.0" cy="200.0" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Cobrett-I N1-A4A1 Ядро «Нулевая точка» Я-0.5</title></circle>
-<circle cx="746.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="873.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 Бак заряда прыжка (1 т)</title></circle>
-<circle cx="778.1" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="841.9" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="682.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="937.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="682.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="937.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="682.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="937.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="682.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="937.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 Cobretty field-coupled RCS nozzle</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Cobrett-I N1-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="810.0" cy="177.9" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Cobrett-I N1-A6A2 Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A4 Транспондер Управления Маяков Т-1</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Cobrett-I N1-A7A1 Евро-Хабитат ЖО L-4 (4 чел.)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Cobrett-I N1-A7A2 Cobretty катапультируемая капсула кабины (2 места)</title></circle>
-<circle cx="714.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="778.1" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="841.9" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="905.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 Стойка C20 (замки и рельсы, 1 место)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Cobrett-I N1-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
-<circle cx="810.0" cy="180.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Cobrett-I N1-A11A1 Cobretty PD-1 оборонительная турель</title></circle>
+<circle cx="682.5" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 RP-10 · Cobretty C-SiC radiator panel set (10 m2)</title></circle>
+<circle cx="937.5" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Cobrett-I N1-A3A1 RP-10 · Cobretty C-SiC radiator panel set (10 m2)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Cobrett-I N1-A3A2 CL-180 · Cobretty coolant loop + pump (180 MW)</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Cobrett-I N1-A4A1 Z-0.5 · Ядро «Нулевая точка» Z-0.5</title></circle>
+<circle cx="746.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="873.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A2 AG-JT1 · Бак заряда прыжка (1 т)</title></circle>
+<circle cx="778.1" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="841.9" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Cobrett-I N1-A4A3 MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="682.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="937.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="682.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="937.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="682.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="937.5" cy="175.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="682.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="937.5" cy="224.5" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Cobrett-I N1-A5A1 FC-RCS · Cobretty field-coupled RCS nozzle</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Cobrett-I N1-A6A1 MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="810.0" cy="177.9" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Cobrett-I N1-A6A2 N-2 · Синьчжи навигационный радар N-2 (2 000 км)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A3 C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Cobrett-I N1-A6A4 T-1 · Транспондер Управления Маяков T-1</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Cobrett-I N1-A7A1 L-4 · Евро-Хабитат ЖО L-4 (4 чел.)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Cobrett-I N1-A7A2 EC-2 · (спасательная кабина: нос корабля с двигателем)</title></circle>
+<circle cx="714.4" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="778.1" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="841.9" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="905.6" cy="200.0" r="3" fill="#8a8a8a" fill-opacity="0.9"><title>Cobrett-I N1-A8A1 C20-R · Стойка C20 (замки и рельсы, 1 место)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Cobrett-I N1-A9A1 AG-DC1 · Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="810.0" cy="180.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Cobrett-I N1-A11A1 PD-1 · Cobretty PD-1 оборонительная турель</title></circle>
 <circle cx="25" cy="365.0" r="4" fill="#e8762b"/><text x="33" y="368.0" fill="#c8d6e5">главный двигатель</text>
 <circle cx="155" cy="365.0" r="4" fill="#d64545"/><text x="163" y="368.0" fill="#c8d6e5">двигательный реактор</text>
 <circle cx="285" cy="365.0" r="4" fill="#c76b6b"/><text x="293" y="368.0" fill="#c8d6e5">служебный реактор</text>

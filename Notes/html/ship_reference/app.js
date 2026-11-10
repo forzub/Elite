@@ -510,7 +510,10 @@ function renderPart(s, p) {
         ${kv("Зона обслуживания", (g.service_clearance_m || []).map(fmt).join(" × ") + " м")}
         ${g.cooling_pad_side_m ? kv("Охлаждающий пятак", fmt(g.cooling_pad_side_m) + " × " + fmt(g.cooling_pad_side_m) + " м") : ""}
         ${g.deployed_area_m2 ? kv("Развёрнутая площадь", fmt(g.deployed_area_m2) + " м²") : ""}
-        ${kv("3D-модель", p.model_asset ? "assets/models/" + p.model_asset + " (LOD0-2, хитвалумы)" : "нет")}</div>
+        ${kv("3D-модель", p.model_asset ? "assets/models/" + p.model_asset + " (LOD0-3, хитвалумы)" : "нет")}
+        ${p.official_name ? kv("Официальное имя", p.official_name) : ""}
+        ${p.native_script ? kv("На языке производителя", p.native_script) : ""}
+        ${p.legacy_index ? kv("Прежний индекс", p.legacy_index) : ""}</div>
       <div class="card"><h3>Промт для генератора эскиза</h3>
         <textarea id="prompt" class="prompt" spellcheck="false">${esc(prompt)}</textarea>
         <div class="row"><button class="btn" id="copyPrompt">Копировать</button><button class="btn" id="savePrompt" disabled>Сохранить правку</button>

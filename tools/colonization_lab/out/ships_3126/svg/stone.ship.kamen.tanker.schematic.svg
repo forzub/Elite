@@ -33,7 +33,7 @@
 <path d="M770,70 C770.0,70 650.0,162 650,162" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
 <path d="M770,70 C850.0,70 730.0,70 810,70" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
 <rect x="490" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="550" y="67" fill="#e6eef6" text-anchor="middle">У-33</text>
+<text x="550" y="67" fill="#e6eef6" text-anchor="middle">U-33</text>
 <text x="550" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A1A1 · yard</text>
 <rect x="170" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="230" y="67" fill="#e6eef6" text-anchor="middle">ЭР-2.6</text>
@@ -42,13 +42,13 @@
 <text x="230" y="113" fill="#e6eef6" text-anchor="middle">СР-20</text>
 <text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A2A2 · station</text>
 <rect x="330" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="390" y="67" fill="#e6eef6" text-anchor="middle">РС-50С ×2</text>
+<text x="390" y="67" fill="#e6eef6" text-anchor="middle">LM-RS50 ×2</text>
 <text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A3A1 · crew</text>
 <rect x="330" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="390" y="113" fill="#e6eef6" text-anchor="middle">КО-300</text>
+<text x="390" y="113" fill="#e6eef6" text-anchor="middle">LM-CL300</text>
 <text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A3A2 · station</text>
 <rect x="10" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="70" y="67" fill="#e6eef6" text-anchor="middle">БТ-1 ×6</text>
+<text x="70" y="67" fill="#e6eef6" text-anchor="middle">MJ-P1 ×6</text>
 <text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A4A1 · station</text>
 <rect x="490" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="550" y="113" fill="#e6eef6" text-anchor="middle">RCS-4 ×8</text>
@@ -66,10 +66,10 @@
 <text x="870" y="67" fill="#e6eef6" text-anchor="middle">L-20</text>
 <text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A7A1 · station</text>
 <rect x="810" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="113" fill="#e6eef6" text-anchor="middle">СК-4 ×2</text>
+<text x="870" y="113" fill="#e6eef6" text-anchor="middle">AG-EP4 ×2</text>
 <text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A7A2 · station</text>
 <rect x="650" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="205" fill="#e6eef6" text-anchor="middle">СУ-1</text>
+<text x="710" y="205" fill="#e6eef6" text-anchor="middle">AG-DC1</text>
 <text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">RT-A9A1 · station</text>
 <text x="16" y="272" fill="#ff8a8a">красная рамка — единичная точка отказа функции</text>
 </svg>

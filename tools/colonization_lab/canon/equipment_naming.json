@@ -1,0 +1,685 @@
+{
+ "schema": "equipment_naming/1",
+ "status": "PROPOSAL (author 2026-11-10: names in the maker's language, not russified)",
+ "rules": "tools/colonization_lab/canon/ship_naming.json (maker languages); display_name_ru = index + Russian description",
+ "parts": {
+  "agora.hab.pax100": {
+   "model_index": "PS-100",
+   "official_name": "Agora PS-100 Passenger Module",
+   "display_name_ru": "PS-100 · Пассажирская секция Agora (100 мест)",
+   "native_script": "Αγορά PS-100 τμήμα επιβατών"
+  },
+  "bastion.armour.heavy": {
+   "model_index": "MJ-P1",
+   "official_name": "Bastion MJ-P1 Armour",
+   "display_name_ru": "MJ-P1 · Броня Бастиона тяжёлая (1 т)",
+   "native_script": "Bastion MJ-P1 panser",
+   "legacy_index": "БТ-1"
+  },
+  "bastion.bay.hangar4": {
+   "model_index": "MJ-H4",
+   "official_name": "Bastion MJ-H4 Hangar",
+   "display_name_ru": "MJ-H4 · Ангар перехватчиков (4 места)",
+   "native_script": "Bastion MJ-H4 hangar",
+   "legacy_index": "АП-4"
+  },
+  "bastion.comm.w1": {
+   "model_index": "MJ-S1",
+   "official_name": "Bastion MJ-S1 Comm Suite",
+   "display_name_ru": "MJ-S1 · Бастион связь MJ-S1",
+   "native_script": "Bastion MJ-S1 samband",
+   "legacy_index": "БС-1"
+  },
+  "bastion.core.b12": {
+   "model_index": "MJ-B12",
+   "official_name": "Bastion MJ-B12 Jump Core",
+   "display_name_ru": "MJ-B12 · Бастион MJ-B12",
+   "native_script": "Bastion MJ-B12 hoppkjerne",
+   "legacy_index": "Б-12"
+  },
+  "bastion.mc.w1": {
+   "model_index": "MJ-R1",
+   "official_name": "Bastion MJ-R1 Ship Computer",
+   "display_name_ru": "MJ-R1 · Бастион боевой вычислитель MJ-R1",
+   "native_script": "Bastion MJ-R1 regnemaskin",
+   "legacy_index": "БВ-1"
+  },
+  "bastion.radar.s50": {
+   "model_index": "MJ-RA50",
+   "official_name": "Bastion MJ-RA50 Radar",
+   "display_name_ru": "MJ-RA50 · Бастион радар обзора MJ-RA50 (50 000 км)",
+   "native_script": "Bastion MJ-RA50 radar",
+   "legacy_index": "С-50"
+  },
+  "bastion.wpn.coil10": {
+   "model_index": "MJ-SK10",
+   "official_name": "Bastion MJ-SK10 Weapon",
+   "display_name_ru": "MJ-SK10 · Бастион скорострельная пушка MJ-SK10",
+   "native_script": "Bastion MJ-SK10 våpen",
+   "legacy_index": "БП-10"
+  },
+  "bastion.wpn.pd4": {
+   "model_index": "MJ-NF4",
+   "official_name": "Bastion MJ-NF4 Weapon",
+   "display_name_ru": "MJ-NF4 · Бастион турель ПРО MJ-NF4",
+   "native_script": "Bastion MJ-NF4 våpen",
+   "legacy_index": "БТ-4"
+  },
+  "bastion.wpn.vls16": {
+   "model_index": "MJ-VU16",
+   "official_name": "Bastion MJ-VU16 Weapon",
+   "display_name_ru": "MJ-VU16 · Бастион MJ-VU16 дальних ракет",
+   "native_script": "Bastion MJ-VU16 våpen",
+   "legacy_index": "ВПУ-16"
+  },
+  "bharat.hab.bunk500": {
+   "model_index": "BH-BK500",
+   "official_name": "Bharat BH-BK500 Passenger Module",
+   "display_name_ru": "BH-BK500 · Секция переселенцев (500 коек)",
+   "native_script": "भारत असेंबली BH-BK500 यात्री खंड",
+   "legacy_index": "СП-500"
+  },
+  "eurohab.ls.l20": {
+   "model_index": "L-20",
+   "official_name": "Euro-Habitat L-20 Life Support",
+   "display_name_ru": "L-20 · Евро-Хабитат ЖО L-20"
+  },
+  "eurohab.ls.l200": {
+   "model_index": "L-200",
+   "official_name": "Euro-Habitat L-200 Life Support",
+   "display_name_ru": "L-200 · Евро-Хабитат ЖО L-200 (лайнер)"
+  },
+  "eurohab.ls.l4": {
+   "model_index": "L-4",
+   "official_name": "Euro-Habitat L-4 Life Support",
+   "display_name_ru": "L-4 · Евро-Хабитат ЖО L-4 (4 чел.)"
+  },
+  "fa.wpn.coil30": {
+   "model_index": "TL-CG30",
+   "official_name": "Tianlei TL-CG30 Weapon",
+   "display_name_ru": "TL-CG30 · Твердыня магнитная пушка TL-CG30",
+   "native_script": "天雷装甲 TL-CG30 武器",
+   "legacy_index": "КП-30"
+  },
+  "fa.wpn.pd2": {
+   "model_index": "TL-DF2",
+   "official_name": "Tianlei TL-DF2 Weapon",
+   "display_name_ru": "TL-DF2 · Твердыня турель ПРО TL-DF2",
+   "native_script": "天雷装甲 TL-DF2 武器",
+   "legacy_index": "ПТ-2"
+  },
+  "harmony.bay.hangar2": {
+   "model_index": "He-JK2",
+   "official_name": "Hexie He-JK2 Hangar",
+   "display_name_ru": "He-JK2 · Ангар перехватчиков (2 места)",
+   "native_script": "和谐船厂 He-JK2 机库",
+   "legacy_index": "АП-2"
+  },
+  "harmony.core.h12": {
+   "model_index": "He-12",
+   "official_name": "Hexie He-12 Jump Core",
+   "display_name_ru": "He-12 · Гармония He-12",
+   "native_script": "和谐船厂 He-12 跃迁核心",
+   "legacy_index": "Х-12"
+  },
+  "harmony.core.h5": {
+   "model_index": "He-5",
+   "official_name": "Hexie He-5 Jump Core",
+   "display_name_ru": "He-5 · Гармония He-5 (сборка из блоков Когниума)",
+   "native_script": "和谐船厂 He-5 跃迁核心",
+   "legacy_index": "Х-5"
+  },
+  "harmony.core.h80": {
+   "model_index": "He-80",
+   "official_name": "Hexie He-80 Jump Core",
+   "display_name_ru": "He-80 · Гармония He-80 (тягач поезда)",
+   "native_script": "和谐船厂 He-80 跃迁核心",
+   "legacy_index": "Х-80"
+  },
+  "harmony.mod.cargo4800": {
+   "model_index": "He-C4800",
+   "official_name": "Hexie He-C4800 Train Module",
+   "display_name_ru": "He-C4800 · Модуль поезда грузовой (4 800 т, 240 C20)",
+   "legacy_index": "МП-4800"
+  },
+  "harmony.mod.tank4200": {
+   "model_index": "He-T4200",
+   "official_name": "Hexie He-T4200 Train Module",
+   "display_name_ru": "He-T4200 · Модуль поезда-цистерна (4 170 т)",
+   "legacy_index": "МЦ-4200"
+  },
+  "harmony.wpn.pd3": {
+   "model_index": "He-PD3",
+   "official_name": "Hexie He-PD3 Weapon",
+   "display_name_ru": "He-PD3 · Гармония турель ПРО He-PD3",
+   "native_script": "和谐船厂 He-PD3 武器",
+   "legacy_index": "ПТ-3"
+  },
+  "harmony.wpn.vls8": {
+   "model_index": "He-VLS8",
+   "official_name": "Hexie He-VLS8 Weapon",
+   "display_name_ru": "He-VLS8 · Гармония пусковая He-VLS8 (8 ракет)",
+   "native_script": "和谐船厂 He-VLS8 武器",
+   "legacy_index": "ВПУ-8"
+  },
+  "hyp.ecm.e1": {
+   "model_index": "E-1",
+   "official_name": "Hyperion E-1 Ecm",
+   "display_name_ru": "E-1 · Hyperion комплекс РЭБ E-1"
+  },
+  "hyp.mast.s1": {
+   "model_index": "SM-1",
+   "official_name": "Hyperion SM-1 Sensor Mast",
+   "display_name_ru": "SM-1 · Hyperion выдвижная сенсорная мачта"
+  },
+  "hyp.mc.r1": {
+   "model_index": "HR-1",
+   "official_name": "Hyperion HR-1 Ship Computer",
+   "display_name_ru": "HR-1 · Hyperion разведывательный вычислитель HR-1",
+   "native_script": "许珀里翁 HR-1 舰载计算机"
+  },
+  "hyp.radar.pa100": {
+   "model_index": "PA-100",
+   "official_name": "Hyperion PA-100 Radar",
+   "display_name_ru": "PA-100 · Hyperion пассивная решётка PA-100 + активный режим",
+   "native_script": "许珀里翁 PA-100 雷达"
+  },
+  "hyp.relay.r1": {
+   "model_index": "R-1",
+   "official_name": "Hyperion R-1 Comm Suite",
+   "display_name_ru": "R-1 · Hyperion полевой ретранслятор R-1 (сеть маяков в войну)",
+   "native_script": "许珀里翁 R-1 通信系统"
+  },
+  "kapehu.core.k12": {
+   "model_index": "K-12",
+   "official_name": "Kapehu K-12 Jump Core",
+   "display_name_ru": "K-12 · Капеху K-12",
+   "native_script": "Kāpehu K-12 iho peke"
+  },
+  "kapehu.core.k5": {
+   "model_index": "K-5",
+   "official_name": "Kapehu K-5 Jump Core",
+   "display_name_ru": "K-5 · Капеху K-5",
+   "native_script": "Kāpehu K-5 iho peke"
+  },
+  "kapehu.mc.k1": {
+   "model_index": "K-1",
+   "official_name": "Kapehu K-1 Ship Computer",
+   "display_name_ru": "K-1 · Капеху бортовой вычислитель K-1",
+   "native_script": "Kāpehu K-1 rorohiko"
+  },
+  "kb.apu.s150": {
+   "model_index": "SR-150",
+   "official_name": "Cobretty SR-150 Service Reactor",
+   "display_name_ru": "SR-150 · Cobretty SR-150"
+  },
+  "kb.cool.loop200": {
+   "model_index": "CL-180",
+   "official_name": "Cobretty CL-180 Coolant Loop",
+   "display_name_ru": "CL-180 · Cobretty coolant loop + pump (180 MW)"
+  },
+  "kb.drive.cr1-vector": {
+   "model_index": "CR-1",
+   "official_name": "Cobretty CR-1 Main Drive",
+   "display_name_ru": "CR-1 · Cobretty CR-1 Vector Main Drive"
+  },
+  "kb.drive.n1-axial": {
+   "model_index": "N1-AX",
+   "official_name": "Cobretty N1-AX Main Drive",
+   "display_name_ru": "N1-AX · Cobretty N1 Axial Main Drive"
+  },
+  "kb.rad.cs-panel": {
+   "model_index": "RP-10",
+   "official_name": "Cobretty RP-10 Radiator",
+   "display_name_ru": "RP-10 · Cobretty C-SiC radiator panel set (10 m2)"
+  },
+  "kb.rcs.fc-nozzle": {
+   "model_index": "FC-RCS",
+   "official_name": "Cobretty FC-RCS RCS Cluster",
+   "display_name_ru": "FC-RCS · Cobretty field-coupled RCS nozzle"
+  },
+  "kb.reactor.er1": {
+   "model_index": "ER-1",
+   "official_name": "Cobretty ER-1 Propulsion Reactor",
+   "display_name_ru": "ER-1 · Cobretty ER-1"
+  },
+  "kb.reactor.er5": {
+   "model_index": "ER-5",
+   "official_name": "Cobretty ER-5 Propulsion Reactor",
+   "display_name_ru": "ER-5 · Cobretty ER-5 Propulsion Reactor"
+  },
+  "kb.surv.capsule2": {
+   "model_index": "EC-2",
+   "official_name": "Cobretty EC-2 Escape Cockpit",
+   "display_name_ru": "EC-2 · (спасательная кабина: нос корабля с двигателем)"
+  },
+  "kb.wpn.pd1": {
+   "model_index": "PD-1",
+   "official_name": "Cobretty PD-1 Weapon",
+   "display_name_ru": "PD-1 · Cobretty PD-1 оборонительная турель"
+  },
+  "kern.drive.kt1": {
+   "model_index": "KT-1",
+   "official_name": "Kern KT-1 Main Drive",
+   "display_name_ru": "KT-1 · Kern KT-1 Tug Drive"
+  },
+  "kern.md.impactor": {
+   "model_index": "MD-40",
+   "official_name": "Kern MD-40 Weapon",
+   "display_name_ru": "MD-40 · Kern пусковая ударников MD-40 (масс-драйвер)",
+   "legacy_index": "МД-40"
+  },
+  "kern.radar.deb5": {
+   "model_index": "DR-5",
+   "official_name": "Kern DR-5 Radar",
+   "display_name_ru": "DR-5 · Kern радар обломков DR-5 (5 000 км)"
+  },
+  "kern.tow.heavy": {
+   "model_index": "TR-H",
+   "official_name": "Kern TR-H Tow Rig",
+   "display_name_ru": "TR-H · Kern тяжёлый захват (обломки, камни)"
+  },
+  "kern.tow.raft20k": {
+   "model_index": "TR-20K",
+   "official_name": "Kern TR-20K Tow Rig",
+   "display_name_ru": "TR-20K · Kern буксирная рама плота (20 000 т)"
+  },
+  "ofu.cargo.p20": {
+   "model_index": "P20",
+   "official_name": "OFU P20 Passenger Module",
+   "display_name_ru": "P20 · Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)"
+  },
+  "ofu.drive.u33": {
+   "model_index": "U-33",
+   "official_name": "OFU U-33 Main Drive",
+   "display_name_ru": "U-33 · Урал-33",
+   "legacy_index": "У-33"
+  },
+  "ofu.drive.u65m": {
+   "model_index": "U-65M",
+   "official_name": "OFU U-65M Main Drive",
+   "display_name_ru": "U-65M · Урал-65М (служебный)",
+   "legacy_index": "У-65М"
+  },
+  "ofu.drive.u70": {
+   "model_index": "U-70",
+   "official_name": "OFU U-70 Main Drive",
+   "display_name_ru": "U-70 · Урал-70",
+   "legacy_index": "У-70"
+  },
+  "ofu.drive.u73l": {
+   "model_index": "U-73L",
+   "official_name": "OFU U-73L Main Drive",
+   "display_name_ru": "U-73L · Урал-73Л (подъёмный)",
+   "legacy_index": "У-73Л"
+  },
+  "ofu.lift.gear": {
+   "model_index": "OFU-LG4",
+   "official_name": "OFU OFU-LG4 Landing Gear",
+   "display_name_ru": "OFU-LG4 · Посадочные опоры (4)",
+   "legacy_index": "ПО-4"
+  },
+  "ofu.lift.shield": {
+   "model_index": "OFU-HS12",
+   "official_name": "OFU OFU-HS12 Heat Shield",
+   "display_name_ru": "OFU-HS12 · Теплозащитный экран подъёмника",
+   "legacy_index": "ТЗ-12"
+  },
+  "ofu.ls.o4": {
+   "model_index": "OFU-O4",
+   "official_name": "OFU OFU-O4 Life Support",
+   "display_name_ru": "OFU-O4 · ОФУ ЖО OFU-O4 (челнок)",
+   "legacy_index": "О-4"
+  },
+  "sol.cool.loop300": {
+   "model_index": "LM-CL300",
+   "official_name": "Sol Mass Yards LM-CL300 Coolant Loop",
+   "display_name_ru": "LM-CL300 · ЛМВ контур охлаждения (300 МВт)",
+   "legacy_index": "КО-300"
+  },
+  "sol.cryo.t1000": {
+   "model_index": "LM-CT1000",
+   "official_name": "Sol Mass Yards LM-CT1000 Cryo Tank",
+   "display_name_ru": "LM-CT1000 · Криоцистерна He-3/D (1 000 т)",
+   "legacy_index": "КЦ-1000"
+  },
+  "sol.rad.panel50": {
+   "model_index": "LM-RS50",
+   "official_name": "Sol Mass Yards LM-RS50 Radiator",
+   "display_name_ru": "LM-RS50 · ЛМВ радиаторная секция (50 м2)",
+   "legacy_index": "РС-50С"
+  },
+  "sol.workshop.w1": {
+   "model_index": "LM-WS1",
+   "official_name": "Sol Mass Yards LM-WS1 Workshop",
+   "display_name_ru": "LM-WS1 · Мастерская сервисного тендера (2 бригады)",
+   "legacy_index": "МС-1"
+  },
+  "srw.apu.s200": {
+   "model_index": "S-200",
+   "official_name": "Sol Reactor Works S-200 Service Reactor",
+   "display_name_ru": "S-200 · Sol Reactor Works S-200"
+  },
+  "srw.apu.s60": {
+   "model_index": "S-60",
+   "official_name": "Sol Reactor Works S-60 Service Reactor",
+   "display_name_ru": "S-60 · Sol Reactor Works S-60"
+  },
+  "srw.reactor.sr48": {
+   "model_index": "SR-4.8",
+   "official_name": "Sol Reactor Works SR-4.8 Propulsion Reactor",
+   "display_name_ru": "SR-4.8 · Sol Reactor Works SR-4.8"
+  },
+  "std.armour.ceramic": {
+   "model_index": "TL-TC1",
+   "official_name": "Tianlei TL-TC1 Armour",
+   "display_name_ru": "TL-TC1 · Броня керамокомпозитная (1 т)",
+   "native_script": "天雷装甲 TL-TC1 装甲",
+   "legacy_index": "БК-1"
+  },
+  "std.bay.boat": {
+   "model_index": "LM-BB1",
+   "official_name": "Sol Mass Yards LM-BB1 Boat Bay",
+   "display_name_ru": "LM-BB1 · Ангар досмотрового катера (1 катер)",
+   "legacy_index": "АК-1"
+  },
+  "std.bay.drone4": {
+   "model_index": "AG-DB4",
+   "official_name": "Agora AG-DB4 Drone Bay",
+   "display_name_ru": "AG-DB4 · Отсек дронов (4 сервисных дрона)",
+   "native_script": "Αγορά AG-DB4 υπόστεγο drone",
+   "legacy_index": "ОД-4"
+  },
+  "std.cabin.hold6": {
+   "model_index": "LM-PC6",
+   "official_name": "Sol Mass Yards LM-PC6 Passenger Module",
+   "display_name_ru": "LM-PC6 · Камера для задержанных и спасённых (6 мест)",
+   "legacy_index": "КЗ-6"
+  },
+  "std.cargo.c20lock": {
+   "model_index": "C20-R",
+   "official_name": "Agora C20-R Container Rack",
+   "display_name_ru": "C20-R · Стойка C20 (замки и рельсы, 1 место)"
+  },
+  "std.cargo.hold100": {
+   "model_index": "AG-H100",
+   "official_name": "Agora AG-H100 Bulk Hold",
+   "display_name_ru": "AG-H100 · Грузовой отсек (100 т, 300 м3)",
+   "legacy_index": "ГО-100"
+  },
+  "std.dock.collar": {
+   "model_index": "AG-DC1",
+   "official_name": "Agora AG-DC1 Docking Port",
+   "display_name_ru": "AG-DC1 · Стыковочный узел (стандарт хабов)",
+   "legacy_index": "СУ-1"
+  },
+  "std.med.bay": {
+   "model_index": "EH-MB4",
+   "official_name": "Euro-Habitat EH-MB4 Medbay",
+   "display_name_ru": "EH-MB4 · Медотсек (4 койки)",
+   "legacy_index": "МО-4"
+  },
+  "std.rcs.cluster": {
+   "model_index": "RCS-4",
+   "official_name": "Agora RCS-4 RCS Cluster",
+   "display_name_ru": "RCS-4 · Кластер RCS (4 сопла, поле)",
+   "native_script": "Αγορά RCS-4 συστοιχία ελέγχου στάσης"
+  },
+  "std.rcs.cluster_h": {
+   "model_index": "TH-ZK4",
+   "official_name": "Tianhe TH-ZK4 RCS Cluster",
+   "display_name_ru": "TH-ZK4 · Тяжёлый кластер RCS (4 сопла)",
+   "native_script": "天河重机 TH-ZK4 姿控推进簇",
+   "legacy_index": "RCS-4Т"
+  },
+  "std.surv.boat20": {
+   "model_index": "AG-LB20",
+   "official_name": "Agora AG-LB20 Lifeboat",
+   "display_name_ru": "AG-LB20 · Спасательная шлюпка (20 мест, 10 суток)",
+   "native_script": "Αγορά AG-LB20 σωσίβια λέμβος",
+   "legacy_index": "СШ-20"
+  },
+  "std.surv.pod4": {
+   "model_index": "AG-EP4",
+   "official_name": "Agora AG-EP4 Escape Module",
+   "display_name_ru": "AG-EP4 · Спасательная капсула (4 места)",
+   "native_script": "Αγορά AG-EP4 κάψουλα διαφυγής",
+   "legacy_index": "СК-4"
+  },
+  "std.surv.refuge100": {
+   "model_index": "BH-SM100",
+   "official_name": "Bharat BH-SM100 Lifeboat",
+   "display_name_ru": "BH-SM100 · Спасательный модуль-убежище (100 мест)",
+   "native_script": "भारत असेंबली BH-SM100 जीवन नौका",
+   "legacy_index": "СМ-100"
+  },
+  "std.tank.jumpcharge": {
+   "model_index": "AG-JT1",
+   "official_name": "Agora AG-JT1 Tank",
+   "display_name_ru": "AG-JT1 · Бак заряда прыжка (1 т)",
+   "native_script": "Αγορά AG-JT1 δεξαμενή",
+   "legacy_index": "БЗ-1"
+  },
+  "std.tank.pellets": {
+   "model_index": "MJ-P1",
+   "official_name": "Agora MJ-P1 Tank",
+   "display_name_ru": "MJ-P1 · Бункер топливных таблеток D/He-3 (1 т)",
+   "native_script": "Αγορά MJ-P1 δεξαμενή",
+   "legacy_index": "БТ-1"
+  },
+  "terra.ls.t10": {
+   "model_index": "T-10",
+   "official_name": "Terra Habitat T-10 Life Support",
+   "display_name_ru": "T-10 · Terra Habitat ЖО T-10"
+  },
+  "terra.ls.t200": {
+   "model_index": "T-200",
+   "official_name": "Terra Habitat T-200 Life Support",
+   "display_name_ru": "T-200 · Terra Habitat ЖО T-200 (флот)"
+  },
+  "terra.ls.t60": {
+   "model_index": "T-60",
+   "official_name": "Terra Habitat T-60 Life Support",
+   "display_name_ru": "T-60 · Terra Habitat ЖО T-60 (флот)"
+  },
+  "th.apu.s150": {
+   "model_index": "TH-FZ150",
+   "official_name": "Tianhe TH-FZ150 Service Reactor",
+   "display_name_ru": "TH-FZ150 · Тяньхэ TH-FZ150",
+   "native_script": "天河重机 TH-FZ150 辅助反应堆",
+   "legacy_index": "СР-150"
+  },
+  "th.apu.s600": {
+   "model_index": "TH-FZ600",
+   "official_name": "Tianhe TH-FZ600 Service Reactor",
+   "display_name_ru": "TH-FZ600 · Тяньхэ TH-FZ600",
+   "native_script": "天河重机 TH-FZ600 辅助反应堆",
+   "legacy_index": "СР-600"
+  },
+  "th.cool.loop600": {
+   "model_index": "TH-LQ600",
+   "official_name": "Tianhe TH-LQ600 Coolant Loop",
+   "display_name_ru": "TH-LQ600 · Тяньхэ контур охлаждения (600 МВт)",
+   "native_script": "天河重机 TH-LQ600 冷却回路",
+   "legacy_index": "КО-600"
+  },
+  "th.drive.tz11": {
+   "model_index": "TZ-11",
+   "official_name": "Tianhe TZ-11 Main Drive",
+   "display_name_ru": "TZ-11 · Тяньхэ TZ-11",
+   "native_script": "天河重机 TZ-11 主推进器",
+   "legacy_index": "ТЦ-11"
+  },
+  "th.drive.tz16v": {
+   "model_index": "TZ-16V",
+   "official_name": "Tianhe TZ-16V Main Drive",
+   "display_name_ru": "TZ-16V · Тяньхэ TZ-16V (военная поставка)",
+   "native_script": "天河重机 TZ-16V 主推进器",
+   "legacy_index": "ТЦ-1.6В"
+  },
+  "th.drive.tz28": {
+   "model_index": "TZ-28V",
+   "official_name": "Tianhe TZ-28V Main Drive",
+   "display_name_ru": "TZ-28V · Тяньхэ TZ-28В",
+   "native_script": "天河重机 TZ-28V 主推进器",
+   "legacy_index": "ТЦ-28В"
+  },
+  "th.rad.panel50": {
+   "model_index": "TH-SR50",
+   "official_name": "Tianhe TH-SR50 Radiator",
+   "display_name_ru": "TH-SR50 · Тяньхэ радиаторная секция (50 м2)",
+   "native_script": "天河重机 TH-SR50 散热板",
+   "legacy_index": "РС-50"
+  },
+  "th.reactor.tr10": {
+   "model_index": "TR-10",
+   "official_name": "Tianhe TR-10 Propulsion Reactor",
+   "display_name_ru": "TR-10 · Тяньхэ TR-10",
+   "native_script": "天河重机 TR-10 推进反应堆",
+   "legacy_index": "ТР-10"
+  },
+  "th.reactor.tr26v": {
+   "model_index": "TR-2.6V",
+   "official_name": "Tianhe TR-2.6V Propulsion Reactor",
+   "display_name_ru": "TR-2.6V · Тяньхэ TR-2.6V",
+   "native_script": "天河重机 TR-2.6V 推进反应堆",
+   "legacy_index": "ТР-2.6В"
+  },
+  "uhuru.cryo.pod100": {
+   "model_index": "UH-US100",
+   "official_name": "Uhuru UH-US100 Passenger Module",
+   "display_name_ru": "UH-US100 · Блок анабиоза (100 капсул)",
+   "native_script": "Uhuru UH-US100 sehemu ya abiria",
+   "legacy_index": "АБ-100"
+  },
+  "uhuru.ls.u500": {
+   "model_index": "U-500",
+   "official_name": "Uhuru U-500 Life Support",
+   "display_name_ru": "U-500 · Uhuru ЖО U-500 (биорегенерация)",
+   "native_script": "Uhuru U-500 msaada wa uhai"
+  },
+  "um.core.z05": {
+   "model_index": "Z-0.5",
+   "official_name": "Zero Point Z-0.5 Jump Core",
+   "display_name_ru": "Z-0.5 · Ядро «Нулевая точка» Z-0.5",
+   "native_script": "零点 Z-0.5 跃迁核心",
+   "legacy_index": "Я-0.5"
+  },
+  "um.core.z1": {
+   "model_index": "Z-1",
+   "official_name": "Zero Point Z-1 Jump Core",
+   "display_name_ru": "Z-1 · Ядро «Нулевая точка» Z-1",
+   "native_script": "零点 Z-1 跃迁核心",
+   "legacy_index": "Я-1"
+  },
+  "um.core.z5": {
+   "model_index": "Z-5",
+   "official_name": "Zero Point Z-5 Jump Core",
+   "display_name_ru": "Z-5 · Ядро «Нулевая точка» Z-5",
+   "native_script": "零点 Z-5 跃迁核心",
+   "legacy_index": "Я-5"
+  },
+  "um.xpdr.t1": {
+   "model_index": "T-1",
+   "official_name": "Zero Point T-1 Transponder",
+   "display_name_ru": "T-1 · Транспондер Управления Маяков T-1",
+   "legacy_index": "Т-1"
+  },
+  "xz.comm.c1": {
+   "model_index": "C-1",
+   "official_name": "Xinzhi C-1 Comm Suite",
+   "display_name_ru": "C-1 · Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+   "native_script": "信智电子 C-1 通信系统"
+  },
+  "xz.comm.c3": {
+   "model_index": "C-3",
+   "official_name": "Xinzhi C-3 Comm Suite",
+   "display_name_ru": "C-3 · Синьчжи связной комплекс C-3 (флот, защищённый)",
+   "native_script": "信智电子 C-3 通信系统"
+  },
+  "xz.mc.c1": {
+   "model_index": "MC-C1",
+   "official_name": "Xinzhi MC-C1 Ship Computer",
+   "display_name_ru": "MC-C1 · Синьчжи MotherComputer MC-C1 (гражданский)",
+   "native_script": "信智电子 MC-C1 舰载计算机"
+  },
+  "xz.mc.c3": {
+   "model_index": "MC-C3",
+   "official_name": "Xinzhi MC-C3 Ship Computer",
+   "display_name_ru": "MC-C3 · Синьчжи MotherComputer MC-C3 (флот)",
+   "native_script": "信智电子 MC-C3 舰载计算机"
+  },
+  "xz.radar.n10": {
+   "model_index": "N-10",
+   "official_name": "Xinzhi N-10 Radar",
+   "display_name_ru": "N-10 · Синьчжи радар обзора N-10 (10 000 км)",
+   "native_script": "信智电子 N-10 雷达"
+  },
+  "xz.radar.n2": {
+   "model_index": "N-2",
+   "official_name": "Xinzhi N-2 Radar",
+   "display_name_ru": "N-2 · Синьчжи навигационный радар N-2 (2 000 км)",
+   "native_script": "信智电子 N-2 雷达"
+  },
+  "srw.reactor.sr26": {
+   "model_index": "SR-2.6",
+   "official_name": "Sol Reactor Works SR-2.6 Propulsion Reactor",
+   "display_name_ru": "SR-2.6 · Sol Reactor Works SR-2.6 (малый силовой)"
+  },
+  "kern.mine.cutter": {
+   "model_index": "MK-1",
+   "official_name": "Kern MK-1 Mining Rig",
+   "display_name_ru": "MK-1 · Kern добычной комбайн MK-1 (фреза-дробилка, 200 т/ч)",
+   "legacy_index": "МК-1"
+  },
+  "sol.wpn.mp8": {
+   "model_index": "LM-MP8",
+   "official_name": "Sol LM-MP8 Light Missile Pod",
+   "display_name_ru": "LM-MP8 · (лёгкий ракетный блок, 8 ракет)"
+  },
+  "hyp.drone.rd1": {
+   "model_index": "RD-1",
+   "official_name": "Hyperion RD-1 Recon Drone",
+   "display_name_ru": "RD-1 · Hyperion RD-1 (разведывательный дрон)",
+   "native_script": "许珀里翁 RD-1 无人机"
+  },
+  "agora.drone.rm2": {
+   "model_index": "RM-2",
+   "official_name": "Agora RM-2 Mantis",
+   "display_name_ru": "RM-2 · «Мантис» (ремонтный дрон)",
+   "native_script": "Αγορά RM-2 drone"
+  },
+  "bastion.drone.klegg3": {
+   "model_index": "MJ-K3",
+   "official_name": "MJ-K3 Klegg",
+   "display_name_ru": "MJ-K3 · «Клегг» (дрон-камикадзе)",
+   "native_script": "Bastion MJ-K3 drone"
+  },
+  "bastion.bay.bk24": {
+   "model_index": "MJ-BK24",
+   "official_name": "MJ-BK24 Bikube",
+   "display_name_ru": "MJ-BK24 · «Бикубе» (кассета дронов-камикадзе)",
+   "native_script": "Bastion MJ-BK24 dronebukt"
+  },
+  "kb.wpn.fl2": {
+   "model_index": "FL-2",
+   "official_name": "Cobretty FL-2 Forward Laser",
+   "display_name_ru": "FL-2 · (курсовой лазер)"
+  },
+  "kb.wpn.fl3h": {
+   "model_index": "FL-3H",
+   "official_name": "Cobretty FL-3H Heavy Forward Laser",
+   "display_name_ru": "FL-3H · (тяжёлый курсовой лазер)"
+  },
+  "kb.wpn.wr2": {
+   "model_index": "WR-2",
+   "official_name": "Cobretty WR-2 Wing Rack",
+   "display_name_ru": "WR-2 · (крыльевая ракетная установка, 2 ракеты Aspid-10)"
+  },
+  "kb.lift.ls1": {
+   "model_index": "LS-1",
+   "official_name": "Cobretty LS-1 Landing Skid",
+   "display_name_ru": "LS-1 · (складная посадочная лыжа)"
+  }
+ }
+}

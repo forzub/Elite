@@ -45,13 +45,13 @@
 <text x="230" y="113" fill="#e6eef6" text-anchor="middle">S-60</text>
 <text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A2A2 · station</text>
 <rect x="330" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="390" y="67" fill="#e6eef6" text-anchor="middle">РС-50С ×3</text>
+<text x="390" y="67" fill="#e6eef6" text-anchor="middle">LM-RS50 ×3</text>
 <text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A3A1 · crew</text>
 <rect x="330" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="390" y="113" fill="#e6eef6" text-anchor="middle">КО-300</text>
+<text x="390" y="113" fill="#e6eef6" text-anchor="middle">LM-CL300</text>
 <text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A3A2 · station</text>
 <rect x="10" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="70" y="67" fill="#e6eef6" text-anchor="middle">БТ-1 ×4</text>
+<text x="70" y="67" fill="#e6eef6" text-anchor="middle">MJ-P1 ×4</text>
 <text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A4A1 · station</text>
 <rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="710" y="67" fill="#e6eef6" text-anchor="middle">MC-C1</text>
@@ -63,28 +63,28 @@
 <text x="710" y="159" fill="#e6eef6" text-anchor="middle">C-1</text>
 <text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A6A3 · crew</text>
 <rect x="650" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
-<text x="710" y="205" fill="#e6eef6" text-anchor="middle">Т-1</text>
+<text x="710" y="205" fill="#e6eef6" text-anchor="middle">T-1</text>
 <text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A6A4 · crew</text>
 <rect x="810" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="870" y="67" fill="#e6eef6" text-anchor="middle">T-10</text>
 <text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A7A1 · station</text>
 <rect x="810" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="113" fill="#e6eef6" text-anchor="middle">СК-4 ×2</text>
+<text x="870" y="113" fill="#e6eef6" text-anchor="middle">AG-EP4 ×2</text>
 <text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A7A2 · station</text>
 <rect x="810" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="159" fill="#e6eef6" text-anchor="middle">МО-4</text>
+<text x="870" y="159" fill="#e6eef6" text-anchor="middle">EH-MB4</text>
 <text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A7A3 · station</text>
 <rect x="810" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="205" fill="#e6eef6" text-anchor="middle">C20-R ×6</text>
 <text x="870" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A8A1 · crew</text>
 <rect x="650" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="251" fill="#e6eef6" text-anchor="middle">ОД-4</text>
+<text x="710" y="251" fill="#e6eef6" text-anchor="middle">AG-DB4</text>
 <text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A9A1 · station</text>
 <rect x="810" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="870" y="251" fill="#e6eef6" text-anchor="middle">МС-1</text>
+<text x="870" y="251" fill="#e6eef6" text-anchor="middle">LM-WS1</text>
 <text x="870" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A10A1 · station</text>
 <rect x="650" y="284" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="710" y="297" fill="#e6eef6" text-anchor="middle">СУ-1 ×2</text>
+<text x="710" y="297" fill="#e6eef6" text-anchor="middle">AG-DC1 ×2</text>
 <text x="710" y="310" fill="#8fb3d1" text-anchor="middle" font-size="8">ST-6-A9A2 · station</text>
 <text x="16" y="364" fill="#ff8a8a">красная рамка — единичная точка отказа функции</text>
 </svg>

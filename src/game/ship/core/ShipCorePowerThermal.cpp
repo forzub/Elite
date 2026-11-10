@@ -362,6 +362,7 @@ void ShipCore::updateSystems(float dt)
                 // Physical module is lost permanently; invalidate the real
                 // installed topology rather than drawing a fake HUD failure.
                 m_moduleRuntime.markModuleDestroyed(reactorIds[g],0.0f);
+                m_reactorCatastrophes.push_back(reactorIds[g]);   // the simulation blows it up (GameSimulationCombat)
                 reactorDamageChanged=true;
                 continue;
             }
@@ -573,6 +574,15 @@ void ShipCore::updateSystems(float dt)
             }
         }
     }
+}
+
+double ShipCore::serviceReactorHeadroomMW() const
+{
+    double granted = m_powerBus.auxiliaryDemandMW();
+    for (const auto* consumer : m_powerBus.getConsumers())
+        if (consumer)
+            granted += std::max(0.0, consumer->getAvailablePower());
+    return std::max(0.0, m_reactor.getMaxOutput() - granted);
 }
 
 } // namespace game::ship::core

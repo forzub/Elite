@@ -46,6 +46,13 @@ WeaponCatalog load()
             s.pulseHz = l.value("pulse_hz", s.pulseHz);
             s.rangeM = l.value("range_km", s.rangeM / 1000.0) * 1000.0;
             s.beamRadiusM = l.value("beam_radius_m", s.beamRadiusM);
+            s.efficiency = l.value("efficiency", s.efficiency);
+            s.heatCapacityMJperK = l.value("heat_capacity_mj_per_k", s.heatCapacityMJperK);
+            s.maxTemperatureK = l.value("max_temperature_k", s.maxTemperatureK);
+            s.coolingMWperK = l.value("cooling_mw_per_k", s.coolingMWperK);
+            s.capacitorMJ = l.value("capacitor_mj", s.capacitorMJ);
+            s.chargeMW = l.value("charge_mw", s.chargeMW);
+            s.dischargeS = l.value("discharge_s", s.dischargeS);
             if (l.contains("colour") && l["colour"].size() == 3)
                 s.colour = glm::vec3(l["colour"][0].get<float>(), l["colour"][1].get<float>(), l["colour"][2].get<float>());
             cat.lasers.push_back(s);
@@ -98,8 +105,11 @@ WeaponCatalog load()
 
 const LaserSpec* WeaponCatalog::laser(const std::string& id) const
 {
+    // the former ids stay valid (ship passports): pulse -> Pulsar, beam -> Squall, military -> Discharger
+    const std::string key = id == "laser.pulse_1" ? "laser.pulsar" : id == "laser.beam_4" ? "laser.squall"
+                          : id == "laser.military_10" ? "laser.discharger" : id;
     for (const auto& l : lasers)
-        if (l.id == id)
+        if (l.id == key || l.id == id)
             return &l;
     return nullptr;
 }

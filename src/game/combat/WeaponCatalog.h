@@ -29,6 +29,19 @@ struct LaserSpec
     double rangeM = 3000.0;
     double beamRadiusM = 0.1;
     glm::vec3 colour {1.0f, 0.3f, 0.2f};
+    // Laser controller (author 2026-11-10: lasers are limited by their own heat and by the ship's reactor and
+    // coolant - the same laser behaves differently on different ships). Electrical draw = beam power / efficiency,
+    // taken from the service reactor's headroom; the rest is heat into the laser body, which conducts it into the
+    // ship's service coolant. The controller throttles the beam near the body's or the coolant's limit.
+    double efficiency = 0.3;
+    double heatCapacityMJperK = 0.15;   // laser body
+    double maxTemperatureK = 900.0;     // body limit: throttled over the last 60 K, off at the limit
+    double coolingMWperK = 0.02;        // body -> ship service coolant
+    // capacitor-discharge lasers (capacitorMJ > 0): charge at chargeMW electrical, fire the stored energy in
+    // dischargeS when the trigger is held and the bank is full
+    double capacitorMJ = 0.0;
+    double chargeMW = 0.0;
+    double dischargeS = 0.25;
 };
 
 enum class WarheadKind { Shaped, Slug };

@@ -27,26 +27,35 @@ MINGW = "C:/msys64/mingw64/bin"
 
 # script verbs: t:verb (space-state seconds); target:<m> spawns the Cobra target ahead
 TRIALS = [
-    {"name": "pulse_laser", "title": "Импульсный лазер 1,5 МВт (по умолчанию) против неподвижной Cobra, 400 м",
-     "script": "6:target:400;9:fire:on", "seconds": 150, "env": {}},
-    {"name": "beam_laser", "title": "Лучевой лазер 4 МВт против неподвижной Cobra, 400 м",
-     "script": "6:target:400;7:laser:next;9:fire:on", "seconds": 120, "env": {}},
-    {"name": "military_laser", "title": "Военный лазер 10 МВт против неподвижной Cobra, 400 м",
-     "script": "6:target:400;7:laser:next;8:laser:next;9:fire:on", "seconds": 100, "env": {}},
+    # lasers (author 2026-11-10 line-up, catalog order: Pulsar, Discharger, Squall, Stiletto, Cutter)
+    {"name": "pulse_laser", "title": "Пульсар 2,5 МВт (по умолчанию, импульсный) против неподвижной Cobra, 400 м",
+     "script": "6:target:400;9:fire:on", "seconds": 150, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
+    {"name": "discharger", "title": "Разрядник 60 МДж (конденсатор: редкий мощный выстрел), 400 м",
+     "script": "6:target:400;7:laser:next;9:fire:on", "seconds": 150, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
+    {"name": "squall", "title": "Шквал 8 МВт (непрерывный, сильно греет), 400 м",
+     "script": "6:target:400;7:laser:next;7.5:laser:next;9:fire:on", "seconds": 150, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
+    {"name": "stiletto", "title": "Стилет 1,2 МВт (дальний узкий), 400 м",
+     "script": "6:target:400;7:laser:next;7.3:laser:next;7.6:laser:next;9:fire:on", "seconds": 120, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
+    {"name": "cutter", "title": "Резак 15 МВт (ближний широкий), 400 м",
+     "script": "6:target:400;7:laser:next;7.2:laser:next;7.4:laser:next;7.6:laser:next;9:fire:on", "seconds": 120, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
     {"name": "missiles_needle", "title": "4 ракеты «Игла» (кумулятивные 30 МДж) по неподвижной Cobra, 1500 м",
-     "script": "6:target:1500;9:missile;15:missile;21:missile;27:missile", "seconds": 60, "env": {}},
+     "script": "6:target:1500;9:missile;15:missile;21:missile;27:missile", "seconds": 60, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
     {"name": "missiles_mixed", "title": "«Термит» 90 МДж + «Лом» (кинетика 40 кг) по неподвижной Cobra, 1500 м",
-     "script": "6:target:1500;7:missile:next;9:missile;14:missile:next;16:missile;22:missile", "seconds": 60, "env": {}},
-    {"name": "duel_pulse", "title": "Дуэль: обе Cobra с импульсными лазерами, мишень держит 1,5 км и отвечает ракетами",
-     "script": "6:target:400;9:fire:on", "seconds": 180, "env": {"ELITE_DEV_TARGET_FIGHTS": "duel"}},
+     "script": "6:target:1500;7:missile:next;9:missile;14:missile:next;16:missile;22:missile", "seconds": 60, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
+    {"name": "duel_pulse", "title": "Дуэль: обе Cobra с Пульсарами; мишень отвечает сама (штатный боевой ИИ: 1,5 км, ведение прицела, ракеты)",
+     "script": "6:target:400;9:fire:on", "seconds": 180, "env": {}},
+    {"name": "reactor_blast", "title": "Взрыв маршевого реактора мишени (DEV-триггер), корабль игрока в 150 м",
+     "script": "6:target:150", "seconds": 40, "env": {"ELITE_DEV_TARGET_PASSIVE": "1", "ELITE_DEV_REACTOR_EXPLODE": "8"}},
+    {"name": "discharger_kill", "title": "Разрядник до гибели реакторов мишени (естественный жребий взрыва 35 %)",
+     "script": "6:target:400;7:laser:next;9:fire:on", "seconds": 240, "env": {"ELITE_DEV_TARGET_PASSIVE": "1"}},
     {"name": "ram_90", "title": "Таран: мишень идёт на корабль игрока на 90 м/с (повторные заходы)",
      "script": "6:target:900", "seconds": 90,
      "env": {"ELITE_DEV_TARGET_FIGHTS": "ram", "ELITE_DEV_SHIP_COLLISIONS": "1", "ELITE_DEV_RAM_SPEED": "90"}},
     {"name": "ram_30", "title": "Таран: 30 м/с (толчок / абордажная скорость)",
      "script": "6:target:600", "seconds": 90,
      "env": {"ELITE_DEV_TARGET_FIGHTS": "ram", "ELITE_DEV_SHIP_COLLISIONS": "1", "ELITE_DEV_RAM_SPEED": "30"}},
-    {"name": "ram_and_fire", "title": "Таран 60 м/с под огнём: игрок стреляет военным лазером в идущую на таран Cobra",
-     "script": "6:target:1500;7:laser:next;8:laser:next;9:fire:on", "seconds": 90,
+    {"name": "ram_and_fire", "title": "Таран 60 м/с под огнём: игрок стреляет Шквалом в идущую на таран Cobra",
+     "script": "6:target:1500;7:laser:next;7.5:laser:next;9:fire:on", "seconds": 90,
      "env": {"ELITE_DEV_TARGET_FIGHTS": "ram", "ELITE_DEV_SHIP_COLLISIONS": "1", "ELITE_DEV_RAM_SPEED": "60"}},
 ]
 
@@ -55,7 +64,7 @@ MILESTONES = [
     ("лазеры", lambda k: "laser" in k),
     ("кабина", lambda k: "cockpit" in k),
     ("маршевые двигатели", lambda k: re.search(r"ship_(fore_)?engine_[LR]$", k) is not None),
-    ("реакторы ER-5", lambda k: k.endswith("_reactor") and "service" not in k),
+    ("реакторы ER-5", lambda k: k.endswith("_reactor") and "service" not in k and "frame" not in k),
 ]
 
 
@@ -105,11 +114,12 @@ def analyse(trial, csv_path, log_path):
         sides[who] = {"dealt": dealt, "destroyed": destroyed, "miles": miles, "rows": len(rs),
                       "attached": f"{last['modules_attached']}/{last['modules_total']}",
                       "span": round(float(rs[-1]["t_s"]) - t0, 1)}
+    blasts = re.findall(r"\[Explosion\] ship (\d+): REACTOR (\S+) EXPLODED \((.*?)\), ([\d.]+) MJ: flash on (\d+) modules, (\d+)/(\d+) fragments hit the own hull, (\d+) hit other ships", text)
     rams = re.findall(r"\[Ram\] ships (\d+) x (\d+): closing ([\d.]+) m/s, masses ([\d.]+) / ([\d.]+) t, dissipated ([\d.]+) MJ", text)
     burns = len(re.findall(r"BURN-THROUGH", text))
     hits = len(re.findall(r"missile \d+ HIT ship", text))
     misses = len(re.findall(r"self-destruct \(no hit\)|passed the target", text))
-    return {"sides": sides, "rams": rams, "burns": burns, "missile_hits": hits, "missile_misses": misses,
+    return {"sides": sides, "rams": rams, "blasts": blasts, "out": re.findall(r"ship (\d+): OUT OF THE FIGHT - ([^;]+); crew ([^(]+)\(combat clock ([\d.]+)", text), "burns": burns, "missile_hits": hits, "missile_misses": misses,
             "t0": t0}
 
 
@@ -150,6 +160,10 @@ def report(results):
             sp = [float(r[2]) for r in res["rams"]]
             extra.append(f"таранов: {len(res['rams'])}, скорость сближения {min(sp):.0f}-{max(sp):.0f} м/с, "
                          f"рассеяно {min(mj):.1f}-{max(mj):.1f} МДж за удар (масса {res['rams'][0][3]} / {res['rams'][0][4]} т)")
+        for b in res.get("blasts", []):
+            extra.append(f"ВЗРЫВ реактора {b[1]} ({b[2]}): {b[3]} МДж, вспышка по {b[4]} модулям, осколков в свой корпус {b[5]}/{b[6]}, в другие корабли {b[7]}")
+        for o in res.get("out", []):
+            extra.append(f"корабль {o[0]} выведен из строя на {float(o[3]) - (res['t0'] or 0):.0f} с: {o[1]}, экипаж {o[2].strip()}")
         if extra:
             out.append("- " + "; ".join(extra))
         out.append("")

@@ -1,3 +1,5 @@
+#include <random>
+#include "src/game/navigation/rules/JumpRules.h"
 #include <fstream>
 // GameSimulation: combat - lasers and missiles on the runtime hit volumes
 // (game::combat penetration model), impacts, the shell -> full ship promotion
@@ -46,6 +48,16 @@ bool raySphere(const glm::dvec3& o, const glm::dvec3& d, const glm::dvec3& c, do
 glm::dmat3 basisOf(const ShipTransform& tr)
 {
     return glm::dmat3(glm::mat3(tr.orientation));
+}
+
+// a reactor module (not its structural frame "ship_frame_reactor"); service = the ship's service reactor
+bool isReactorModule(const std::string& id)
+{
+    return id.size() > 8 && id.compare(id.size() - 8, 8, "_reactor") == 0 && id.find("frame") == std::string::npos;
+}
+bool isPropulsionReactorModule(const std::string& id)
+{
+    return isReactorModule(id) && id.find("service") == std::string::npos;
 }
 } // namespace
 
@@ -228,6 +240,13 @@ EntityId GameSimulation::spawnCombatTarget(EntityId nearShipId, double distanceM
     // broadside to the shooter
     tr.orientation = ptr.orientation * glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
     (void)promoteShipToDetailedSimulation(id);
+    {
+        std::string reactors;
+        for (const auto& m : static_cast<const world::modules::ObjectModuleRuntime&>(ship->core().moduleRuntime()).modules())
+            if (isReactorModule(m.moduleId))
+                reactors += " " + m.moduleId;
+
+    }
     std::cerr << "[Combat] target Cobra id=" << id.value << " " << distanceM << " m ahead of ship " << nearShipId.value
               << ", hub " << frame.hubId << ", " << ship->core().hitComponent().volumes.size() << " hit volumes; shooter mode "
               << static_cast<int>(ptr.motion.mode) << " frame " << ptr.motion.travelFrame.frameId << ", target mode "
@@ -290,10 +309,110 @@ void GameSimulation::flushCombatDamage(EntityId targetId, game::damage::DamageTy
             combatLog.flush();
         }
         if (destroyed)
+        {
             std::cerr << "[Combat] ship " << targetId.value << ": DESTROYED " << key << std::endl;
+            // the module behind the key: a module volume, or a support-link volume (the legacy Cobra's ER-5s have no
+            // body volume - a weapon tears them off their mounts)
+            std::string mod = key.rfind("module::", 0) == 0 ? key.substr(8) : std::string();
+            if (mod.empty() && key.rfind("link::", 0) == 0)
+                for (const auto& v : ship->core().hitComponent().volumes)
+                    if (v.supportLinkVolume && v.supportLinkId == key.substr(6))
+                    {
+                        mod = v.moduleId;
+                        break;
+                    }
+            const bool reactor = isReactorModule(mod);
+            // the reactor bay's frame destroyed: every installed propulsion reactor in it is torn loose (a roll each)
+            if (mod == "ship_frame_reactor")
+                for (const auto& r : ship->core().desc().powerThermalInstallation.engineReactorModuleIds)
+                {
+                    const std::size_t hr = std::hash<std::string>{}(r + "#bay#" + std::to_string(targetId.value) + "#" +
+                                                                    std::to_string(static_cast<long long>(m_combatClockS)));
+                    const double roll = static_cast<double>(hr % 10000) / 10000.0;
+                    if (roll < 0.35)
+                        queueReactorExplosion(targetId, r, "reactor bay frame destroyed (roll " + std::to_string(roll) + ")");
+                }
+            if (reactor)
+            {
+                const auto* m = static_cast<const world::modules::ObjectModuleRuntime&>(ship->core().moduleRuntime()).findModule(mod);
+                const bool service = mod.find("service") != std::string::npos;
+                const bool running = service || (m && (m->engineReactorOperating.lastElectricalOutputMW > 0.0 ||
+                                                       m->engineReactorOperating.temperatureK > 1500.0));
+                // a deterministic roll (repeatable trials): hash of ship, module and the combat clock second
+                const std::size_t h = std::hash<std::string>{}(mod + "#" + std::to_string(targetId.value) + "#" +
+                                                               std::to_string(static_cast<long long>(m_combatClockS)));
+                const double roll = static_cast<double>(h % 10000) / 10000.0;
+                if (running && roll < (service ? 0.20 : 0.35))
+                    queueReactorExplosion(targetId, mod, "destroyed while running (roll " + std::to_string(roll) + ")");
+            }
+        }
     }
     if (changed)
+    {
         markShipGraphDirty(targetId);
+        disableShipIfCombatLost(targetId, *ship);
+    }
+}
+
+void GameSimulation::noteCombatAggression(EntityId targetId, EntityId attackerId)
+{
+    static const bool passive = [] {
+        const char* v = std::getenv("ELITE_DEV_TARGET_PASSIVE");
+        return v && *v && *v != '0';
+    }();
+    if (passive || !attackerId.value || targetId == attackerId || isPlayerControlled(targetId) || m_combatHostility.count(targetId))
+        return;
+    const Ship* t = getShip(targetId);
+    if (!t || t->core().role() == ShipRole::Player || t->core().transform().motion.destroyedCause != 0)
+        return;
+    m_combatHostility[targetId] = attackerId;
+    std::cerr << "[Combat] ship " << targetId.value << " fights back against ship " << attackerId.value << std::endl;
+}
+
+// Author 2026-11-10 (combat balance item 4): a ship is out of the fight when its cockpit is lost or all its propulsion
+// reactors are lost. It is NOT blown up: the hull keeps its modules (salvage, trophies), it drifts with no control;
+// the crew leaves in the EC-2 escape cockpit when that is intact and detachable, else the crew is lost. An NPC hull
+// becomes a derelict. Cause 3 (motion.destroyedCause) - the HUD says "выведен из строя".
+void GameSimulation::disableShipIfCombatLost(EntityId shipId, Ship& ship)
+{
+    auto& motion = ship.core().transform().motion;
+    if (motion.destroyedCause != 0)
+        return;
+    const auto& runtime = static_cast<const world::modules::ObjectModuleRuntime&>(ship.core().moduleRuntime());
+    const auto alive = [](const world::modules::ObjectModuleState& m) {
+        return m.state == world::modules::ObjectModuleRuntimeState::Attached && m.health > 0.0f;
+    };
+    bool cockpitLost = false;
+    int reactors = 0, reactorsAlive = 0;
+    for (const auto& m : runtime.modules())
+    {
+        if (m.moduleId == "ship_cockpit")
+            cockpitLost = !alive(m);
+        const bool propulsionReactor = isPropulsionReactorModule(m.moduleId);
+        if (propulsionReactor)
+        {
+            ++reactors;
+            reactorsAlive += alive(m) ? 1 : 0;
+        }
+    }
+    const bool reactorsLost = reactors > 0 && reactorsAlive == 0;
+    if (!cockpitLost && !reactorsLost)
+        return;
+    motion.destroyedCause = 3;
+    const auto* cockpit = runtime.findModule("ship_cockpit");
+    const bool crewEscapes = !cockpitLost && cockpit && cockpit->detachable;
+    std::cerr << "[Combat] ship " << shipId.value << ": OUT OF THE FIGHT - " << (cockpitLost ? "cockpit lost" : "all propulsion reactors lost")
+              << "; crew " << (crewEscapes ? "escapes in the EC-2 cockpit" : cockpitLost ? "lost with the cockpit" : "stays aboard (no escape module)")
+              << " (combat clock " << m_combatClockS << " s)" << std::endl;
+    cancelJump(shipId, static_cast<std::uint8_t>(game::navigation::jump::Refusal::Interrupted));
+    motion.jEngine = false;
+    motion.jStopping = false;
+    motion.freeFlightThrust = 0;
+    motion.freeFlightAutopilotPhase = 0;
+    ship.setControlState(ShipControlState {});
+    m_laserFiring.erase(shipId);
+    if (!isPlayerControlled(shipId))
+        (void)markShipDerelict(shipId);
 }
 
 void GameSimulation::updateCombat(double dt)
@@ -301,6 +420,33 @@ void GameSimulation::updateCombat(double dt)
     if (dt <= 0.0)
         return;
     m_combatClockS += dt;
+    for (auto& [id, sp] : m_ships)
+        for (const auto& mod : sp->core().takeReactorCatastrophes())
+            queueReactorExplosion(id, mod, "containment loss (overheat + damage)");
+    {
+        // DEV (explosion trials): ELITE_DEV_REACTOR_EXPLODE=<combat s> blows up a propulsion reactor of the combat target
+        static const double devBlastAt = [] {
+            const char* v = std::getenv("ELITE_DEV_REACTOR_EXPLODE");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static bool devBlastDone = false;
+        if (devBlastAt >= 0.0 && !devBlastDone && m_combatClockS >= devBlastAt && !m_combatTargetDummies.empty())
+        {
+            devBlastDone = true;
+            const EntityId tid = *m_combatTargetDummies.begin();
+            if (const Ship* t = getShip(tid))
+            {
+                const auto& installed = t->core().desc().powerThermalInstallation.engineReactorModuleIds;
+                if (!installed.empty())
+                {
+                    queueReactorExplosion(tid, installed.front(), "DEV trigger");
+                    std::cerr << "[Explosion] DEV trigger: ship " << tid.value << " " << installed.front() << std::endl;
+                }
+            }
+        }
+    }
+    for (const auto& e : std::exchange(m_pendingExplosions, {}))
+        explodeReactor(e);
     devCombatStep(dt);
     const auto& cat = weaponCatalog();
     const auto& mat = cat.materials;
@@ -324,7 +470,12 @@ void GameSimulation::updateCombat(double dt)
     for (auto& [id, burn] : m_burnStates)
         burn.cool(dt, mat);
 
-    // ---- lasers
+    // ---- lasers: idle units cool into the ship coolant (the trigger released)
+    for (auto& [uid, unit] : m_laserUnits)
+        if (!m_laserFiring.count(uid))
+            if (Ship* idle = getShip(uid))
+                if (const auto* l = cat.laser(combatLoadout(uid).laserId))
+                    (void)laserControllerStep(uid, *idle, *l, dt, false);
     for (const EntityId shooterId : std::vector<EntityId>(m_laserFiring.begin(), m_laserFiring.end()))
     {
         const Ship* shooter = getShip(shooterId);
@@ -392,8 +543,12 @@ void GameSimulation::updateCombat(double dt)
         const glm::dvec3 aim = pos + fwd * converge;
 
         // pulsed lasers: the beam is on for `duty` of each pulse period
-        const bool on = laser->pulseHz <= 0.0 || std::fmod(m_combatClockS * laser->pulseHz, 1.0) < laser->duty;
-        const double powerMW = on ? laser->powerMW : 0.0;
+        // the laser controller: beam power from the service reactor's headroom, limited by the laser body's and
+        // the ship coolant's temperature; capacitor lasers charge and fire their bank in one short burst
+        double powerMW = 0.0;
+        if (Ship* shooterMut = getShip(shooterId))
+            powerMW = laserControllerStep(shooterId, *shooterMut, *laser, dt, true);
+        const bool on = powerMW > 0.0;
 
         Ship* targetShip = target.value && !targetIsShell ? getShip(target) : nullptr;
         // the muzzles: the laser modules' fronts; a hull without muzzle
@@ -449,7 +604,7 @@ void GameSimulation::updateCombat(double dt)
             game::simulation::CombatBeamSnapshot beam;
             beam.from = world::coordinates::makeWorldPositionFromMeters(from);
             beam.to = world::coordinates::makeWorldPositionFromMeters(from + dir * laser->rangeM);
-            beam.powerMW = static_cast<float>(on ? laser->powerMW : 0.0);
+            beam.powerMW = static_cast<float>(powerMW);
             beam.colour = laser->colour;
             if (on && targetShip)
             {
@@ -462,6 +617,8 @@ void GameSimulation::updateCombat(double dt)
                 // every mount is one laser of the loadout's type
                 const auto hit = game::combat::stepBeam(targetShip->core().hitComponent(), burn, oL, dL,
                                                         static_cast<float>(laser->rangeM), powerMW, dt, laser->beamRadiusM, mat);
+                if (hit.hit)
+                    noteCombatAggression(target, shooterId);
                 {
                     static double lastMissLog = -10.0;
                     if (!hit.hit && m_combatClockS - lastMissLog >= 1.0)
@@ -620,6 +777,7 @@ void GameSimulation::updateCombat(double dt)
             const auto res = game::combat::penetrate(s->core().hitComponent(), burn, entryL - lineL * 0.05f, lineL, 60.0f, energy,
                                                      spec->warhead, spec->slugKg, mat);
             const auto whereW = world::coordinates::makeWorldPositionFromMeters(tpos + TR * glm::dvec3(entryL));
+            noteCombatAggression(id, m.shooter);
             std::cerr << "[Combat] missile " << m.id << " HIT ship " << id.value << " at " << relSpeed << " m/s, "
                       << (spec->warhead == game::combat::WarheadKind::Slug ? "slug " : "jet ") << energy << " MJ:";
             for (const auto& l : res.layers)
@@ -627,6 +785,44 @@ void GameSimulation::updateCombat(double dt)
             std::cerr << (res.stuck ? " -> slug STUCK" : res.exited ? " -> out of the hull" : " -> spent") << std::endl;
             recordCombatImpact(id, whereW, energy, spec->warhead == game::combat::WarheadKind::Slug ? 3 : 2,
                                res.layers.empty() ? std::string() : res.layers.front().moduleId);
+            // Doctrine (author 2026-11-10): a missile burns the INSIDE of a compartment, it does not fly out. A shaped
+            // jet that holed the outer skin spends what it has left in the compartment behind the breach: the
+            // equipment within 3 m of the jet's line inside the hull (hot gas and molten metal). Before, the jet left
+            // the hull with most of its energy (4 Needle hits = ~50 health in the trials).
+            if (spec->warhead == game::combat::WarheadKind::Shaped && !res.layers.empty() && res.layers.front().holed)
+            {
+                double spent = 0.0;
+                for (const auto& l : res.layers)
+                    spent += l.spentMJ;
+                const double left = std::max(0.0, energy - spent);
+                if (left > 0.1)
+                {
+                    std::vector<std::pair<std::string, double>> inside;   // key, weight
+                    double total = 0.0;
+                    for (const auto& v : s->core().hitComponent().volumes)
+                    {
+                        if (v.destroyed || v.supportLinkVolume || v.moduleId.find("panel") != std::string::npos)
+                            continue;
+                        const glm::vec3 rel = v.center - entryL;
+                        const float along = glm::dot(rel, lineL);
+                        if (along < 0.0f || along > 12.0f)
+                            continue;
+                        const float off = glm::length(rel - lineL * along) - glm::length(v.halfSize) * 0.5f;
+                        if (off > 3.0f)
+                            continue;
+                        const double w = 1.0 / (1.0 + std::max(0.0f, off) + 0.15 * along);
+                        inside.emplace_back(game::combat::volumeKey(v), w);
+                        total += w;
+                    }
+                    if (total > 0.0)
+                    {
+                        for (const auto& [key, w] : inside)
+                            burn.pendingHealthLoss[key] += left * (w / total) * mat.healthPerMJ;
+                        std::cerr << "[Combat] missile " << m.id << ": " << left << " MJ burn the compartment behind the breach ("
+                                  << inside.size() << " modules)" << std::endl;
+                    }
+                }
+            }
             flushCombatDamage(id, game::damage::DamageType::Explosion, whereW);
             // momentum: the hull is pushed, the struck part loads its links
             const double massKg = std::max(1000.0, s->core().currentMassKg());
@@ -691,7 +887,7 @@ void GameSimulation::devCombatStep(double dt)
         const char* v = std::getenv("ELITE_DEV_PLAYER_TRACK");
         return v && *v && *v != '0';
     }();
-    if (dt <= 0.0 || (fight.empty() && !collisions && !playerTrack))
+    if (dt <= 0.0)
         return;
     const auto& cat = weaponCatalog();
 
@@ -749,80 +945,103 @@ void GameSimulation::devCombatStep(double dt)
         }
     }
 
-    // ---- the target fights back: turn to the player (rate-limited), hold a duel range or ram, fire when aligned
+    // ---- combat AI (author 2026-11-10, item 5): an NPC that was shot at fights its attacker - turns to it (rate-limited),
+    //      holds a duel range of 1.5 km, sweeps the aim over the hull like a pilot, fires the laser when the aim is
+    //      on and launches a missile when the seeker window opens (every 25 s). DEV ram mode: rams instead.
+    //      ELITE_DEV_TARGET_FIGHTS=duel|ram makes the spawned combat targets hostile to the player at once.
     if (!fight.empty())
     {
         EntityId playerId {};
         for (const auto& [id, s] : m_ships)
             if (s->core().role() == ShipRole::Player)
                 playerId = id;
-        const Ship* player = playerId.value ? getShip(playerId) : nullptr;
-        for (const EntityId id : std::vector<EntityId>(m_combatTargetDummies.begin(), m_combatTargetDummies.end()))
+        if (playerId.value)
+            for (const EntityId id : m_combatTargetDummies)
+                if (!m_combatHostility.count(id))
+                    m_combatHostility[id] = playerId;
+    }
+    for (auto it = m_combatHostility.begin(); it != m_combatHostility.end();)
+    {
+        const EntityId id = it->first;
+        Ship* d = getShip(id);
+        const Ship* enemy = getShip(it->second);
+        if (!d || !enemy || d->core().transform().motion.destroyedCause != 0 || enemy->core().transform().motion.destroyedCause != 0)
         {
-            Ship* d = getShip(id);
-            if (!d || !player)
-                continue;
-            auto& tr = d->core().transform();
-            const glm::dvec3 pd = world::coordinates::fullMeters(tr.worldPosition);
-            const glm::dvec3 pp = world::coordinates::fullMeters(player->core().transform().worldPosition);
-            const auto trackP = m_combatTracks.find(playerId);
-            const glm::dvec3 vp = trackP != m_combatTracks.end() && trackP->second.valid ? trackP->second.velocityW : glm::dvec3(0.0);
-            const glm::dvec3 to = pp - pd;
-            const double dist = glm::length(to);
-            if (dist < 1.0)
-                continue;
-            const bool ram = fight == "ram";
-            static const double ramSpeed = [] {
-                const char* v = std::getenv("ELITE_DEV_RAM_SPEED");
-                return v && *v ? std::atof(v) : 90.0;
-            }();
-            // after a contact the rammer backs off for 6 s, then comes round again (no grinding against the hull)
-            const bool retreat = ram && m_combatClockS < m_devRamRetreatUntilS[id];
-            const double closing = ram ? (retreat ? -40.0 : ramSpeed) : std::clamp((dist - 1500.0) * 0.15, -60.0, 60.0);
-            const glm::dvec3 want = to / dist;   // the player sits still in the trials: no lead
-            // rate-limited turn (40 deg/s duel, 60 deg/s ram)
-            glm::dmat3 R = glm::dmat3(glm::mat3(tr.orientation));
-            const glm::dvec3 fwd = R * glm::dvec3(0, 0, -1);
-            const double ang = std::acos(std::clamp(glm::dot(fwd, want), -1.0, 1.0));
-            const double maxTurn = glm::radians(ram ? 60.0 : 40.0) * dt;
-            if (ang > 1.0e-6)
+            if (d && m_devTargetLaserOn.count(id))
             {
-                glm::dvec3 axis = glm::cross(fwd, want);
-                if (glm::length(axis) < 1.0e-9)
-                    axis = R * glm::dvec3(0, 1, 0);
-                const glm::dmat4 rot = glm::rotate(glm::dmat4(1.0), std::min(ang, maxTurn), glm::normalize(axis));
-                R = glm::dmat3(rot) * R;
-                const glm::dvec3 f = glm::normalize(R * glm::dvec3(0, 0, -1));
-                const glm::dvec3 r = glm::normalize(glm::cross(f, R * glm::dvec3(0, 1, 0)));
-                const glm::dvec3 u = glm::cross(r, f);
-                R = glm::dmat3(r, u, -f);
-                tr.orientation = glm::mat4(glm::mat3(R));
+                setLaserFiring(id, false);
+                m_devTargetLaserOn.erase(id);
             }
-            // velocity: the player's track + closing speed along the line of sight
-            const glm::dvec3 desiredW = vp + (to / dist) * closing;
-            auto& mo = tr.motion;
-            mo.localVelocityMps = mo.travelFrame.worldToLocalVelocity(pd, desiredW);
-            // weapons: lasers within 3 deg and range; duel missiles every 25 s within the seeker cone
-            const auto& l = combatLoadout(id);
-            const auto* laser = cat.laser(l.laserId);
-            const double alignedDeg =
-                glm::degrees(std::acos(std::clamp(glm::dot(R * glm::dvec3(0, 0, -1), to / dist), -1.0, 1.0)));
-            const bool fire = laser && alignedDeg < 3.0 && dist < laser->rangeM;
-            if (fire != (m_devTargetLaserOn.count(id) > 0))
-            {
-                setLaserFiring(id, fire);
-                if (fire)
-                    m_devTargetLaserOn.insert(id);
-                else
-                    m_devTargetLaserOn.erase(id);
-            }
-            const auto* missile = cat.missile(l.missileId);
-            if (!ram && missile && alignedDeg < missile->seekerDeg * 0.5 && dist < missile->rangeM &&
-                m_combatClockS - m_devTargetMissileClockS[id] > 25.0)
-            {
-                m_devTargetMissileClockS[id] = m_combatClockS;
-                launchMissile(id);
-            }
+            it = m_combatHostility.erase(it);
+            continue;
+        }
+        ++it;
+        auto& tr = d->core().transform();
+        const glm::dvec3 pd = world::coordinates::fullMeters(tr.worldPosition);
+        const glm::dvec3 pp = world::coordinates::fullMeters(enemy->core().transform().worldPosition);
+        const auto trackP = m_combatTracks.find(m_combatHostility.count(id) ? m_combatHostility[id] : EntityId {});
+        const glm::dvec3 vp = trackP != m_combatTracks.end() && trackP->second.valid ? trackP->second.velocityW : glm::dvec3(0.0);
+        const glm::dvec3 to = pp - pd;
+        const double dist = glm::length(to);
+        if (dist < 1.0)
+            continue;
+        const bool ram = fight == "ram";
+        static const double ramSpeed = [] {
+            const char* v = std::getenv("ELITE_DEV_RAM_SPEED");
+            return v && *v ? std::atof(v) : 90.0;
+        }();
+        // after a contact the rammer backs off for 6 s, then comes round again (no grinding against the hull)
+        const bool retreat = ram && m_combatClockS < m_devRamRetreatUntilS[id];
+        const double closing = ram ? (retreat ? -40.0 : ramSpeed) : std::clamp((dist - 1500.0) * 0.15, -60.0, 60.0);
+        // the aim point: the enemy's centre swept over its hull (a fixed point only cuts one line through a ship)
+        glm::dvec3 aimAt = pp;
+        if (!ram)
+        {
+            const glm::dvec3 los = to / dist;
+            glm::dvec3 side = glm::cross(los, glm::dvec3(0.0, 1.0, 0.0));
+            side = glm::length(side) < 1.0e-6 ? glm::dvec3(1.0, 0.0, 0.0) : glm::normalize(side);
+            const glm::dvec3 up = glm::cross(side, los);
+            const double t = m_combatClockS + 3.0 * static_cast<double>(id.value % 7);
+            const double r = 6.0 * (0.5 + 0.5 * std::sin(t * 0.23));
+            aimAt += side * (r * std::cos(t * 0.8)) + up * (0.5 * r * std::sin(t * 0.8));
+        }
+        const glm::dvec3 want = glm::normalize(aimAt - pd);
+        glm::dmat3 R = glm::dmat3(glm::mat3(tr.orientation));
+        const glm::dvec3 fwd = R * glm::dvec3(0, 0, -1);
+        const double ang = std::acos(std::clamp(glm::dot(fwd, want), -1.0, 1.0));
+        const double maxTurn = glm::radians(ram ? 60.0 : 40.0) * dt;
+        if (ang > 1.0e-6)
+        {
+            glm::dvec3 axis = glm::cross(fwd, want);
+            if (glm::length(axis) < 1.0e-9)
+                axis = R * glm::dvec3(0, 1, 0);
+            R = glm::dmat3(glm::rotate(glm::dmat4(1.0), std::min(ang, maxTurn), glm::normalize(axis))) * R;
+            const glm::dvec3 f = glm::normalize(R * glm::dvec3(0, 0, -1));
+            const glm::dvec3 r = glm::normalize(glm::cross(f, R * glm::dvec3(0, 1, 0)));
+            R = glm::dmat3(r, glm::cross(r, f), -f);
+            tr.orientation = glm::mat4(glm::mat3(R));
+        }
+        const glm::dvec3 desiredW = vp + (to / dist) * closing;
+        auto& mo = tr.motion;
+        mo.localVelocityMps = mo.travelFrame.worldToLocalVelocity(pd, desiredW);
+        const auto& l = combatLoadout(id);
+        const auto* laser = cat.laser(l.laserId);
+        const double alignedDeg = glm::degrees(std::acos(std::clamp(glm::dot(R * glm::dvec3(0, 0, -1), want), -1.0, 1.0)));
+        const bool fire = !ram && laser && alignedDeg < 3.0 && dist < laser->rangeM;
+        if (fire != (m_devTargetLaserOn.count(id) > 0))
+        {
+            setLaserFiring(id, fire);
+            if (fire)
+                m_devTargetLaserOn.insert(id);
+            else
+                m_devTargetLaserOn.erase(id);
+        }
+        const auto* missile = cat.missile(l.missileId);
+        if (!ram && missile && alignedDeg < missile->seekerDeg * 0.5 && dist < missile->rangeM &&
+            m_combatClockS - m_devTargetMissileClockS[id] > 25.0)
+        {
+            m_devTargetMissileClockS[id] = m_combatClockS;
+            launchMissile(id);
         }
     }
 
@@ -919,4 +1138,204 @@ void GameSimulation::devCombatStep(double dt)
                           << " MJ, impulse " << J / 1000.0 << " kN s" << std::endl;
             }
     }
+}
+
+// ============================================================================ laser controller (author 2026-11-10)
+// Returns the beam power (MW) this tick. firing = the trigger is held. One law for every ship: what differs
+// between ships is the service reactor headroom and the coolant they give the laser.
+double GameSimulation::laserControllerStep(EntityId shooterId, Ship& ship, const game::combat::LaserSpec& laser, double dt,
+                                           bool firing)
+{
+    auto& core = ship.core();
+    LaserUnit& u = m_laserUnits[shooterId];
+    const double coolantK = core.serviceCoolantTemperatureK();
+    if (u.temperatureK <= 0.0)
+        u.temperatureK = coolantK;
+    const double coolCritK = core.serviceCoolantCriticalTemperatureK();
+    const double bodyF = std::clamp((laser.maxTemperatureK - u.temperatureK) / 60.0, 0.0, 1.0);
+    const double coolF = std::clamp((coolCritK - 50.0 - coolantK) / 100.0, 0.0, 1.0);
+    const double throttle = std::min(bodyF, coolF);
+    const double headroom = core.serviceReactorHeadroomMW();
+    const double eff = std::clamp(laser.efficiency, 0.01, 1.0);
+    double electricalMW = 0.0, beamMW = 0.0, heatMJ = 0.0;
+    if (laser.capacitorMJ > 0.0)
+    {
+        if (u.dischargeLeftS > 0.0)
+        {
+            beamMW = laser.capacitorMJ * eff / std::max(0.01, laser.dischargeS);
+            u.dischargeLeftS -= dt;
+        }
+        else if (firing)
+        {
+            electricalMW = std::min(laser.chargeMW * throttle, headroom);
+            u.capacitorMJ += electricalMW * dt;
+            if (u.capacitorMJ >= laser.capacitorMJ && throttle > 0.0)
+            {
+                u.capacitorMJ = 0.0;
+                u.dischargeLeftS = laser.dischargeS;   // the shot: the bank goes out in one burst
+                heatMJ += laser.capacitorMJ * (1.0 - eff);
+                beamMW = laser.capacitorMJ * eff / std::max(0.01, laser.dischargeS);
+                u.dischargeLeftS -= dt;
+                ++u.shots;
+            }
+        }
+    }
+    else if (firing)
+    {
+        const bool pulseOn = laser.pulseHz <= 0.0 || std::fmod(m_combatClockS * laser.pulseHz, 1.0) < laser.duty;
+        const double wantMW = pulseOn ? laser.powerMW / eff : 0.0;
+        electricalMW = std::min(wantMW * throttle, headroom);
+        beamMW = electricalMW * eff;
+        heatMJ += electricalMW * (1.0 - eff) * dt;
+    }
+    // the body conducts into the ship's service coolant
+    const double conductedMJ = std::max(0.0, laser.coolingMWperK * (u.temperatureK - coolantK) * dt);
+    u.temperatureK += (heatMJ - conductedMJ) / std::max(0.01, laser.heatCapacityMJperK);
+    core.addServiceHeatMJ(conductedMJ);
+    u.electricalMJ += electricalMW * dt;
+    u.beamMJ += beamMW * dt;
+
+    static const bool trace = [] {
+        const char* v = std::getenv("ELITE_DEV_COMBAT_LOG");
+        return v && *v;
+    }();
+    if (trace && firing && m_combatClockS - u.lastTraceS >= 1.0)
+    {
+        u.lastTraceS = m_combatClockS;
+        std::cerr << "[LaserCtl] ship " << shooterId.value << " " << laser.id << " body " << u.temperatureK << " K (limit "
+                  << laser.maxTemperatureK << "), coolant " << coolantK << " K (critical " << coolCritK << "), headroom "
+                  << headroom << " MW, electrical " << electricalMW << " MW, beam " << beamMW << " MW, throttle " << throttle
+                  << (laser.capacitorMJ > 0.0 ? ", bank " + std::to_string(u.capacitorMJ) + " MJ, shots " + std::to_string(u.shots) : "")
+                  << std::endl;
+    }
+    return beamMW;
+}
+
+// ============================================================================ reactor explosions (author 2026-11-10)
+void GameSimulation::queueReactorExplosion(EntityId shipId, const std::string& moduleId, const std::string& cause)
+{
+    if (m_explodedReactors.count(std::to_string(shipId.value) + "#" + moduleId))
+        return;   // a reactor blows up once
+    for (const auto& e : m_pendingExplosions)
+        if (e.shipId == shipId && e.moduleId == moduleId)
+            return;
+    // stored energy of the containment: a propulsion reactor (ER-5 class) ~300 MJ, a service reactor ~80 MJ
+    const double energy = moduleId.find("service") != std::string::npos ? 80.0 : 300.0;
+    m_pendingExplosions.push_back({shipId, moduleId, energy, cause});
+}
+
+void GameSimulation::explodeReactor(const PendingExplosion& e)
+{
+    Ship* ship = getShip(e.shipId);
+    if (!ship || !m_explodedReactors.insert(std::to_string(e.shipId.value) + "#" + e.moduleId).second)
+        return;   // marked first: a chain started by this blast cannot re-queue the same reactor
+    const auto& cat = weaponCatalog();
+    const auto& mat = cat.materials;
+    auto& hit = ship->core().hitComponent();
+    // the reactor's centre (its first hit volume; destroyed volumes keep their geometry)
+    glm::vec3 c(0.0f);
+    bool found = false;
+    // where: the reactor's body volume, else a placed mount (link) volume, else the reactor bay's frame (the legacy
+    // Cobra's ER-5s have no placed geometry of their own - they sit in ship_frame_reactor)
+    for (int pass = 0; pass < 3 && !found; ++pass)
+        for (const auto& v : hit.volumes)
+        {
+            const bool match = pass == 2 ? (v.moduleId == "ship_frame_reactor" && !v.supportLinkVolume)
+                                         : (v.moduleId == e.moduleId && v.supportLinkVolume == (pass == 1));
+            if (match && glm::length(v.center) > 1.0e-4f)
+            {
+                c = v.center;
+                found = true;
+                break;
+            }
+        }
+    if (!found)
+    {
+        std::cerr << "[Explosion] ship " << e.shipId.value << ": no hit volume for " << e.moduleId << std::endl;
+        return;
+    }
+    const ShipTransform& tr = ship->core().transform();
+    const glm::dmat3 R = basisOf(tr);
+    const glm::dvec3 shipPos = world::coordinates::fullMeters(tr.worldPosition);
+    const glm::dvec3 centreW = shipPos + R * glm::dvec3(c);
+    const auto where = world::coordinates::makeWorldPositionFromMeters(centreW);
+    std::mt19937 rng(static_cast<std::uint32_t>(std::hash<std::string>{}(e.moduleId) ^ (e.shipId.value * 2654435761u) ^
+                                                static_cast<std::uint32_t>(m_combatClockS * 1000.0)));
+    std::uniform_real_distribution<double> uni(0.0, 1.0);
+    auto& burn = m_burnStates[e.shipId];
+
+    // 1) the flash: no air, so no long-range blast wave - 25 % of the energy on the modules within 4 m
+    const double flashMJ = 0.25 * e.energyMJ;
+    std::vector<std::pair<std::string, double>> near;
+    double wsum = 0.0;
+    for (const auto& v : hit.volumes)
+    {
+        if (v.destroyed || v.moduleId == e.moduleId)
+            continue;
+        const glm::vec3 q = glm::clamp(c, v.center - v.halfSize, v.center + v.halfSize);
+        const double d = glm::length(c - q);
+        if (d > 4.0)
+            continue;
+        const double w = 1.0 / (1.0 + d * d);
+        near.emplace_back(game::combat::volumeKey(v), w);
+        wsum += w;
+    }
+    for (const auto& [key, w] : near)
+        burn.pendingHealthLoss[key] += flashMJ * (w / wsum) * mat.healthPerMJ;
+
+    // 2) fragments: the rest of the energy in N pieces flying out at random
+    constexpr int N = 40;
+    const double fragMJ = 0.75 * e.energyMJ / N;
+    int ownHits = 0, otherHits = 0;
+    for (int i = 0; i < N; ++i)
+    {
+        const double z = 2.0 * uni(rng) - 1.0, a = 2.0 * glm::pi<double>() * uni(rng);
+        const glm::vec3 dir(static_cast<float>(std::sqrt(1.0 - z * z) * std::cos(a)), static_cast<float>(z),
+                            static_cast<float>(std::sqrt(1.0 - z * z) * std::sin(a)));
+        const auto res = game::combat::penetrate(hit, burn, c, dir, 60.0f, fragMJ, game::combat::WarheadKind::Slug, 2.0, mat);
+        if (!res.layers.empty())
+            ++ownHits;
+    }
+    flushCombatDamage(e.shipId, game::damage::DamageType::Explosion, where);
+
+    // 3) other ships: fragments that left the hull reach a ship at distance d with probability (its cross-section /
+    //    the sphere) - a random number of hits, each on a random module (no rays: cheap)
+    for (auto& [id, other] : m_ships)
+    {
+        if (id == e.shipId)
+            continue;
+        const glm::dvec3 p = world::coordinates::fullMeters(other->core().transform().worldPosition);
+        const double d = glm::length(p - centreW);
+        if (d > 3000.0)
+            continue;
+        const double r = shipRadiusM(other->core().desc()) * 0.6;
+        const double share = std::min(0.5, (r * r) / (4.0 * std::max(d * d, r * r)));
+        const double expected = N * share;
+        int hits = static_cast<int>(std::floor(expected + uni(rng)));
+        auto& vols = other->core().hitComponent().volumes;
+        std::vector<int> alive;
+        for (int k = 0; k < static_cast<int>(vols.size()); ++k)
+            if (!vols[k].destroyed && !vols[k].supportLinkVolume)
+                alive.push_back(k);
+        if (alive.empty() || hits <= 0)
+            continue;
+        auto& ob = m_burnStates[id];
+        for (int k = 0; k < hits; ++k)
+        {
+            const auto& v = vols[alive[static_cast<std::size_t>(uni(rng) * alive.size()) % alive.size()]];
+            ob.pendingHealthLoss[game::combat::volumeKey(v)] += fragMJ * mat.healthPerMJ;
+        }
+        otherHits += hits;
+        flushCombatDamage(id, game::damage::DamageType::Explosion, world::coordinates::makeWorldPositionFromMeters(p));
+        std::cerr << "[Explosion] fragments: ship " << id.value << " at " << d << " m took " << hits << " hits" << std::endl;
+    }
+    recordCombatImpact(e.shipId, where, e.energyMJ, 2, e.moduleId);
+    // the reactor is gone: mark it, and judge the ship (all propulsion reactors lost -> out of the fight)
+    ship->core().moduleRuntime().markModuleDestroyed(e.moduleId, 0.0f);
+    ship->core().refreshRuntimeState();
+    markShipGraphDirty(e.shipId);
+    disableShipIfCombatLost(e.shipId, *ship);
+    std::cerr << "[Explosion] ship " << e.shipId.value << ": REACTOR " << e.moduleId << " EXPLODED (" << e.cause << "), "
+              << e.energyMJ << " MJ: flash on " << near.size() << " modules, " << ownHits << "/" << N
+              << " fragments hit the own hull, " << otherHits << " hit other ships" << std::endl;
 }

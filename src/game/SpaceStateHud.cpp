@@ -2073,7 +2073,9 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         if (motion.destroyedCause != 0)
         {
             namespace cap = game::navigation::capsule;
-            warning = motion.destroyedCause == 1 ? "КОРАБЛЬ РАЗРУШЕН: удар о поверхность" : "КОРАБЛЬ РАЗРУШЕН: перегрузка в плотных слоях атмосферы";
+            warning = motion.destroyedCause == 1 ? "КОРАБЛЬ РАЗРУШЕН: удар о поверхность"
+                    : motion.destroyedCause == 3 ? "КОРАБЛЬ ВЫВЕДЕН ИЗ СТРОЯ: кабина или реакторы потеряны в бою"
+                    : "КОРАБЛЬ РАЗРУШЕН: перегрузка в плотных слоях атмосферы";
             const auto cs = static_cast<cap::State>(motion.capsuleState);
             if (cs != cap::State::None)
             {

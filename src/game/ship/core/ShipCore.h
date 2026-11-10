@@ -1,4 +1,5 @@
 #pragma once
+#include <utility>
 
 #include <vector>
 #include <array>
@@ -374,6 +375,12 @@ public:
     // demanded together at their single-axis limits (installed nozzles).
     double newtonianRcsPairFeasibility01() const { (void)capabilities(); return m_cachedNewtonianRcsPairFeasibility01; }
     double serviceCoolantTemperatureK() const { return m_thermal.getTemperature(); }
+    // Weapons (laser controller, author 2026-11-10): the service reactor's electrical headroom over the bus
+    // consumers and the RCS draw, and heat dumped into the ship's service coolant.
+    double serviceReactorHeadroomMW() const;
+    void addServiceHeatMJ(double energyMJ) { if (energyMJ > 0.0) m_thermal.addHeat(energyMJ); }
+    // Reactor explosions (author 2026-11-10): containment losses this ship had since the last poll (module ids).
+    std::vector<std::string> takeReactorCatastrophes() { return std::exchange(m_reactorCatastrophes, {}); }
     double serviceCoolantCriticalTemperatureK() const { return m_thermal.getCriticalTemp(); }
     // DEV checks only (EliteShipThermalCheck).
     void debugSetServiceCoolantTemperatureK(double k) { m_thermal.setTemperature(k); }
@@ -454,6 +461,7 @@ private:
     bool m_newtonianRcsPhysical = false;
     bool m_propulsionReactorsOn = true;
     // DEV drive thermal acceptance (ShipCorePowerThermal.cpp): ship clock, one-shot pad damage, trace period
+    std::vector<std::string> m_reactorCatastrophes;
     double m_devDriveClockS = 0.0;
     double m_devDriveTraceS = -1.0;
     bool m_devDrivePadApplied = false;

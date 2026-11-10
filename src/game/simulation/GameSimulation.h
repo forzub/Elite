@@ -298,6 +298,34 @@ public:
     // DEV combat trials (author 2026-11-10, balance data): the target fights back (ELITE_DEV_TARGET_FIGHTS=duel|ram)
     // and ship-ship contacts (ELITE_DEV_SHIP_COLLISIONS=1). Off by default - the game is unchanged.
     void devCombatStep(double dt);
+    void disableShipIfCombatLost(EntityId shipId, Ship& ship);   // cockpit or all propulsion reactors lost
+    void noteCombatAggression(EntityId targetId, EntityId attackerId);
+    // Reactor explosions (author 2026-11-10): cheap vacuum model - a short-range flash on the nearby modules and N
+    // fragments (own hull: rays through the penetration model; other ships: a random number of hits by the solid
+    // angle they cover, each on a random module). Processed one tick later (chain reactions without recursion).
+    struct PendingExplosion
+    {
+        EntityId shipId;
+        std::string moduleId;
+        double energyMJ = 0.0;
+        std::string cause;
+    };
+    std::vector<PendingExplosion> m_pendingExplosions;
+    std::unordered_set<std::string> m_explodedReactors;   // "<ship>#<module>"
+    void queueReactorExplosion(EntityId shipId, const std::string& moduleId, const std::string& cause);
+    void explodeReactor(const PendingExplosion& e);
+    std::unordered_map<EntityId, EntityId> m_combatHostility;      // NPC -> the enemy it fights (combat AI)
+    // Laser controller (author 2026-11-10): one law, ship-specific limits (reactor headroom, coolant).
+    struct LaserUnit
+    {
+        double temperatureK = 0.0;   // laser body; 0 = take the coolant's
+        double capacitorMJ = 0.0;
+        double dischargeLeftS = 0.0;
+        double electricalMJ = 0.0, beamMJ = 0.0, lastTraceS = -1.0;
+        int shots = 0;
+    };
+    std::unordered_map<EntityId, LaserUnit> m_laserUnits;
+    double laserControllerStep(EntityId shooterId, Ship& ship, const game::combat::LaserSpec& laser, double dt, bool firing);
     CombatLoadout& combatLoadout(EntityId shipId);
     game::simulation::ShipCombatSnapshot combatSnapshotFor(EntityId shipId) const;
 

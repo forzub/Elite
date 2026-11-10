@@ -4859,6 +4859,26 @@ Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damag
 - Open (author): the 5 proposals in COMBAT_BALANCE_NOTES.md (jet into the compartment, default laser, ram crumple zone
   + RCS avoidance, disabled-ship condition + EC-2 escape, NPC duel AI).
 
+### Combat round 2 (author 2026-11-10: items 1, 4, 5 + laser line-up with a controller + reactor explosions) - LIVE
+- Lasers (weapons.json + WeaponCatalog): Pulsar (default), Discharger (capacitor 60 MJ), Squall 8 MW, Stiletto 1.2 MW,
+  Cutter 15 MW; former ids aliased. Laser controller (GameSimulation::laserControllerStep): electrical = beam /
+  efficiency from ShipCore::serviceReactorHeadroomMW (Cobra ~9 MW), (1 - eff) heats the laser body, which conducts into
+  the service coolant (ShipCore::addServiceHeatMJ); throttled over the last 60 K of the body limit and near the
+  coolant's critical temperature. First run found the body limits (900 K) below the coolant's working ~1000 K -> fixed.
+- Item 1: a shaped jet that holed the skin spends its rest on the equipment within 3 m of its line (Needle x4: 52 ->
+  271 hp). Item 4: disableShipIfCombatLost (cockpit or all propulsion reactors) -> destroyedCause 3, no control, NPC
+  derelict, modules kept; HUD text. Item 5: noteCombatAggression -> m_combatHostility; the duel AI is standard (NPC
+  fights its attacker; excluded from the traffic AI); ELITE_DEV_TARGET_PASSIVE=1 for pure weapon trials.
+- Reactor explosions: catastrophic containment (ShipCore queues) / reactor destroyed while running (35 %, service 20 %)
+  / reactor-bay frame destroyed (35 % per installed ER-5); one blast per reactor (marked before the blast - a chain
+  re-queued the same one); 25 % flash within 4 m, 40 fragments: own hull by penetration rays, other ships by solid
+  angle, random modules. Found: the legacy Cobra ER-5 modules have no placed hit geometry (only unplaced link
+  volumes) - they sit in ship_frame_reactor, used as their location; isReactorModule excludes the frame (it was
+  counted as a reactor in the disabled check and the breach mapping - fixed).
+- Trials (13): docs/COMBAT_TRIALS.md, round-2 table in COMBAT_BALANCE_NOTES.md: Discharger 781 hp / 150 s, Squall 666
+  (throttled by the Cobra reactor and heat), natural ER-5 explosion after the bay frame fell, duel decided in 30 s by a
+  missile into the cockpit (90 hp). Python gates 205 PASS / 6 known red.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

@@ -10,14 +10,143 @@
     "spot_merge_m": 0.6
   },
   "lasers": [
-    { "id": "laser.pulse_1",     "name": "Импульсный лазер 1,5 МВт", "power_mw": 1.5,  "duty": 0.5, "pulse_hz": 4.0, "range_km": 3.0, "beam_radius_m": 0.08, "colour": [1.0, 0.25, 0.15] },
-    { "id": "laser.beam_4",      "name": "Лучевой лазер 4 МВт",      "power_mw": 4.0,  "duty": 1.0, "pulse_hz": 0.0, "range_km": 4.0, "beam_radius_m": 0.10, "colour": [0.3, 1.0, 0.35] },
-    { "id": "laser.military_10", "name": "Военный лазер 10 МВт",     "power_mw": 10.0, "duty": 1.0, "pulse_hz": 0.0, "range_km": 5.0, "beam_radius_m": 0.12, "colour": [0.45, 0.6, 1.0] }
+    {
+      "id": "laser.pulsar",
+      "name": "Пульсар 2,5 МВт (импульсный, средний)",
+      "power_mw": 2.5,
+      "duty": 0.5,
+      "pulse_hz": 4.0,
+      "range_km": 3.0,
+      "beam_radius_m": 0.08,
+      "efficiency": 0.35,
+      "heat_capacity_mj_per_k": 0.25,
+      "max_temperature_k": 1500,
+      "cooling_mw_per_k": 0.006,
+      "colour": [
+        1.0,
+        0.25,
+        0.15
+      ]
+    },
+    {
+      "id": "laser.discharger",
+      "name": "Разрядник 60 МДж (конденсаторный: редкий мощный выстрел)",
+      "power_mw": 0.0,
+      "capacitor_mj": 60.0,
+      "charge_mw": 6.0,
+      "discharge_s": 0.25,
+      "efficiency": 0.6,
+      "range_km": 4.0,
+      "beam_radius_m": 0.07,
+      "heat_capacity_mj_per_k": 0.6,
+      "max_temperature_k": 1600,
+      "cooling_mw_per_k": 0.008,
+      "colour": [
+        0.85,
+        0.9,
+        1.0
+      ]
+    },
+    {
+      "id": "laser.squall",
+      "name": "Шквал 8 МВт (непрерывный, сильно греет)",
+      "power_mw": 8.0,
+      "duty": 1.0,
+      "pulse_hz": 0.0,
+      "range_km": 3.5,
+      "beam_radius_m": 0.1,
+      "efficiency": 0.3,
+      "heat_capacity_mj_per_k": 0.35,
+      "max_temperature_k": 1450,
+      "cooling_mw_per_k": 0.012,
+      "colour": [
+        0.3,
+        1.0,
+        0.35
+      ]
+    },
+    {
+      "id": "laser.stiletto",
+      "name": "Стилет 1,2 МВт (дальний узкий луч)",
+      "power_mw": 1.2,
+      "duty": 1.0,
+      "pulse_hz": 0.0,
+      "range_km": 7.0,
+      "beam_radius_m": 0.04,
+      "efficiency": 0.4,
+      "heat_capacity_mj_per_k": 0.2,
+      "max_temperature_k": 1500,
+      "cooling_mw_per_k": 0.006,
+      "colour": [
+        1.0,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "id": "laser.cutter",
+      "name": "Резак 15 МВт (ближний широкий: обшивка, швы, разделка)",
+      "power_mw": 15.0,
+      "duty": 1.0,
+      "pulse_hz": 0.0,
+      "range_km": 0.8,
+      "beam_radius_m": 0.3,
+      "efficiency": 0.3,
+      "heat_capacity_mj_per_k": 0.5,
+      "max_temperature_k": 1400,
+      "cooling_mw_per_k": 0.015,
+      "colour": [
+        1.0,
+        0.55,
+        0.1
+      ]
+    }
   ],
   "missiles": [
-    { "id": "missile.needle",   "name": "Ракета «Игла» (прожигающая)",            "warhead": "shaped", "jet_mj": 30.0, "mass_kg": 60.0,  "accel_mps2": 300.0, "max_speed_mps": 1500.0, "fuel_s": 12.0, "turn_dps": 90.0, "seeker_deg": 30.0, "range_km": 8.0 },
-    { "id": "missile.thermite", "name": "Ракета «Термит» (прожигающая, тяжёлая)", "warhead": "shaped", "jet_mj": 90.0, "mass_kg": 160.0, "accel_mps2": 180.0, "max_speed_mps": 1100.0, "fuel_s": 16.0, "turn_dps": 50.0, "seeker_deg": 25.0, "range_km": 10.0 },
-    { "id": "missile.crowbar",  "name": "Ракета «Лом» (кинетическая болванка)",   "warhead": "slug",   "slug_kg": 40.0, "mass_kg": 90.0,  "accel_mps2": 400.0, "max_speed_mps": 2200.0, "fuel_s": 9.0,  "turn_dps": 70.0, "seeker_deg": 25.0, "range_km": 9.0 }
+    {
+      "id": "missile.needle",
+      "name": "Ракета «Игла» (прожигающая)",
+      "warhead": "shaped",
+      "jet_mj": 30.0,
+      "mass_kg": 60.0,
+      "accel_mps2": 300.0,
+      "max_speed_mps": 1500.0,
+      "fuel_s": 12.0,
+      "turn_dps": 90.0,
+      "seeker_deg": 30.0,
+      "range_km": 8.0
+    },
+    {
+      "id": "missile.thermite",
+      "name": "Ракета «Термит» (прожигающая, тяжёлая)",
+      "warhead": "shaped",
+      "jet_mj": 90.0,
+      "mass_kg": 160.0,
+      "accel_mps2": 180.0,
+      "max_speed_mps": 1100.0,
+      "fuel_s": 16.0,
+      "turn_dps": 50.0,
+      "seeker_deg": 25.0,
+      "range_km": 10.0
+    },
+    {
+      "id": "missile.crowbar",
+      "name": "Ракета «Лом» (кинетическая болванка)",
+      "warhead": "slug",
+      "slug_kg": 40.0,
+      "mass_kg": 90.0,
+      "accel_mps2": 400.0,
+      "max_speed_mps": 2200.0,
+      "fuel_s": 9.0,
+      "turn_dps": 70.0,
+      "seeker_deg": 25.0,
+      "range_km": 9.0
+    }
   ],
-  "default_loadout": { "laser": "laser.pulse_1", "missile": "missile.needle", "missiles": 4 }
+  "default_loadout": {
+    "laser": "laser.pulsar",
+    "missile": "missile.needle",
+    "missiles": 4
+  },
+  "note_lasers": "Lasers (author 2026-11-10): no 'technical' / 'military' names. The controller draws beam power / efficiency from the service reactor's headroom; the rest heats the laser body (heat_capacity, max_temperature), which conducts into the ship's service coolant. Throttled near the body or coolant limit - the same laser behaves differently on different ships. Body limits are above the service coolant's working ~1000 K (critical 1350 K)."
 }

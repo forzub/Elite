@@ -1763,7 +1763,7 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (isHubMotionLabShip(id) || isDockStationControlledShip(id))
                 continue;
 
-            if (isInterplanetaryTransferLabShip(id) || m_combatTargetDummies.count(id))
+            if (isInterplanetaryTransferLabShip(id) || m_combatTargetDummies.count(id) || m_combatHostility.count(id))
                 continue;
 
             Ship& ship = *shipPtr;

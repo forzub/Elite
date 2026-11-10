@@ -31,7 +31,7 @@ namespace game::client
     if (moduleId == "ship_panel_top_RB") return {"plate_cover_11", "plate_cover_14"};
     // propulsion reactors (Assisted-I: ship_drive_left/right_reactor; other models: <prefix><slot>_reactor)
     const bool reactor = moduleId.size() > 8 && moduleId.compare(moduleId.size() - 8, 8, "_reactor") == 0 &&
-                         moduleId.find("service") == std::string::npos;
+                         moduleId.find("service") == std::string::npos && moduleId.find("frame") == std::string::npos;
     if (reactor && moduleId.find("left") != std::string::npos) return {"pad_eq_er5_l"};
     if (reactor && moduleId.find("right") != std::string::npos) return {"pad_eq_er5_r"};
     return {};

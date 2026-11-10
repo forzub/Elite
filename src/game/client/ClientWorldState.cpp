@@ -1,5 +1,6 @@
 #include "src/game/geometry/CatalogShipAssembly.h"
 #include "ClientWorldState.h"
+#include "src/game/client/ShipBreachNodes.h"
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/client/ReferenceFramePresentation.h"
 #include "src/game/client/ClientHubTacticalPrediction.h"
@@ -283,6 +284,9 @@ namespace
         );
     }
 
+    ObjectType objectTypeOf(const ClientShipState& s) { return s.typeId; }
+    ObjectType objectTypeOf(const ClientObjectState& s) { return s.type; }
+
     template<typename TState>
     void rebuildHiddenPartIds(TState& state)
     {
@@ -334,6 +338,7 @@ namespace
             return true;
         };
 
+        state.breachedNodeIds.clear();
         for (const auto& modDesc : state.descriptor->moduleDescriptors())
         {
             if (isEffectivelyVisible(modDesc.moduleId))
@@ -341,6 +346,8 @@ namespace
 
             for (const auto& partId : modDesc.meshPartIds)
                 state.hiddenPartIds.insert(partId);
+            for (auto& node : game::client::breachNodesForLegacyModule(objectTypeOf(state), modDesc.moduleId))
+                state.breachedNodeIds.insert(std::move(node));
         }
     }
 

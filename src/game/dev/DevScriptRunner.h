@@ -50,6 +50,9 @@ private:
         double freeFlightThrustAtSeconds = -1.0;
         int freeFlightThrustCommand = 1;
         double droneViewAtSeconds = -1.0;
+        // ELITE_DEV_DESTROY_MODULES_AT=<s>:<module id>,<module id>... (step 3 S4 live breach test)
+        double destroyModulesAtSeconds = -1.0;
+        std::vector<std::string> destroyModules;
     };
 
     DevScriptRunner();
@@ -63,6 +66,7 @@ private:
     void traceFreeFlight(SpaceState& s);
     void latchFreeFlightThrustWhenDue(SpaceState& s);
     void openDroneViewWhenDue(SpaceState& s);
+    void destroyModulesWhenDue(SpaceState& s);
 
     // ELITE_DEV_SOL_MAP_SCRIPT verbs, in the original dispatch order; each
     // returns false when the verb is not its own.
@@ -82,6 +86,7 @@ private:
     double m_freeFlightTraceStart = -1.0;
     bool m_freeThrustSent = false;
     bool m_droneSet = false;
+    bool m_modulesDestroyed = false;
 };
 
 } // namespace game::dev

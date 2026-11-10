@@ -4779,6 +4779,23 @@ Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damag
 - Not done: S4 (server breach state per plate / pad + replication -> nodeState), S5 (hits / collision from the
   asset). The legacy collision / hit volumes of the Cobra stay authoritative (22.2 m) while the asset is 27.8 x 23.3 m.
 
+### Step 3 S4: breach state from the server, no wire change - LIVE PASS (opt-in path)
+- Survey (subagent): no generic replicated per-ship flags exist; module states (Attached / Destroyed / Detached /
+  Hanging) are replicated in ObjectModuleSnapshot; static node ids on the wire are forbidden
+  (check_replication_static_definitions). Decision: derive like hiddenPartIds on the client.
+- src/game/client/ShipBreachNodes.h: legacy Cobra module -> asset nodes (ship_panel_top_{L,C,R}{F,B} -> the cover
+  plates of that column / row group; propulsion reactors *left* / *right* -> pad_eq_er5_l / _r).
+  ClientWorldState::rebuildHiddenPartIds also fills ClientShipState::breachedNodeIds (a module not locally visible,
+  itself or by its parent chain). SceneRenderer sets nodeState "breached" from it (+ the DEV env list).
+- DEV ELITE_DEV_DESTROY_MODULES_AT=<s>:<id>,... (DevScriptRunner) destroys player modules through the debug session
+  (the dev panel's server path).
+- LIVE (nav-stress:simple, ELITE_SHIP_MODEL_ASSETS=1, destroy ship_panel_top_CF + ship_drive_left_reactor at 15 s):
+  LOD log before 0 compartments / 0 interior draws, after 3 compartments (plates 6, 7 + left bay) / 9 interior
+  draws. Captures D:/tmp/elite_ship_s4_{before,after}.png (dark lighting, evidence = the presentation log).
+  Python gates 205 PASS / 6 known red.
+- Limits: the breach follows destroyed / detached LEGACY modules (panel health), not the per-plate seams of the
+  asset (that is S5 together with hits from the asset); penetration holes (BurnState) stay server-only.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

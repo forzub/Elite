@@ -100,6 +100,8 @@ struct ClientShipState
     std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
     std::vector<game::simulation::ObjectRepairJobSnapshot> repairJobs;
     std::unordered_set<std::string>                     hiddenPartIds;
+    // Step 3 S4: compartment-asset nodes breached by lost legacy modules (ShipBreachNodes.h), "breached" state
+    std::unordered_set<std::string>                     breachedNodeIds;
     std::unordered_map<std::string, float> detachedVisualAge;
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
 
@@ -150,6 +152,7 @@ struct ClientObjectState
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot> renderAssemblyModules;
     std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
     std::unordered_set<std::string>                                 hiddenPartIds;
+    std::unordered_set<std::string>                                 breachedNodeIds; // step 3 S4 (ships only so far)
     std::unordered_map<std::string, float> detachedVisualAge;
     std::vector<game::simulation::DebugHitVolumeSnapshot>           debugHitVolumes;
 

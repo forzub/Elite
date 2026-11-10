@@ -1321,13 +1321,17 @@ void SceneRenderer::prepareScene(
                     }
                     return ids;
                 }();
-                if (!devBreach.empty())
+                // S4: breached nodes derived from the replicated legacy module states (ShipBreachNodes.h)
+                if (!devBreach.empty() || !ship.breachedNodeIds.empty())
                 {
                     item.nodeState.assign(shipAsset->asset.nodes.size(), std::string());
                     for (std::size_t n = 0; n < shipAsset->asset.nodes.size(); ++n)
-                        for (const auto& id : devBreach)
-                            if (shipAsset->asset.nodes[n].id == id)
-                                item.nodeState[n] = "breached";
+                    {
+                        const auto& id = shipAsset->asset.nodes[n].id;
+                        if (ship.breachedNodeIds.count(id) ||
+                            std::find(devBreach.begin(), devBreach.end(), id) != devBreach.end())
+                            item.nodeState[n] = "breached";
+                    }
                 }
                 shipModelAssets.push_back(std::move(item));
                 continue;

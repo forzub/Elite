@@ -98,6 +98,18 @@ DevScriptRunner::Config DevScriptRunner::readConfig()
     if (const char* cmdEnv = std::getenv("ELITE_DEV_FREE_FLIGHT_THRUST_CMD"); cmdEnv && *cmdEnv)
         c.freeFlightThrustCommand = std::atoi(cmdEnv);
     c.droneViewAtSeconds = envSeconds("ELITE_DEV_DRONE_VIEW_AT", -1.0);
+    if (const char* v = std::getenv("ELITE_DEV_DESTROY_MODULES_AT"); v && *v)
+    {
+        const std::string spec(v);
+        const auto colon = spec.find(':');
+        c.destroyModulesAtSeconds = std::atof(spec.substr(0, colon).c_str());
+        std::string cur;
+        for (std::size_t i = colon == std::string::npos ? spec.size() : colon + 1; i <= spec.size(); ++i)
+        {
+            if (i == spec.size() || spec[i] == ',') { if (!cur.empty()) c.destroyModules.push_back(cur); cur.clear(); }
+            else cur += spec[i];
+        }
+    }
     return c;
 }
 
@@ -111,6 +123,7 @@ void DevScriptRunner::update(SpaceState& s)
     traceFreeFlight(s);
     latchFreeFlightThrustWhenDue(s);
     openDroneViewWhenDue(s);
+    destroyModulesWhenDue(s);
 }
 
 // DEV (map performance measurements): ELITE_DEV_GALAXY_MAP_AT=<s> opens the
@@ -751,6 +764,21 @@ void DevScriptRunner::openDroneViewWhenDue(SpaceState& s)
         m_droneSet = true;
         std::cerr << "[FlightCamera] DEV drone view request" << '\n';
         s.context().app->requestFlightView(FlightPresentationView::Drone);
+    }
+}
+
+// DEV (step 3 S4): destroys modules of the player ship once through the debug session (the same server path
+// as the dev panel's "destroy module"), to see the derived compartment breaches in flight.
+void DevScriptRunner::destroyModulesWhenDue(SpaceState& s)
+{
+    if (m_config.destroyModulesAtSeconds < 0.0 || m_modulesDestroyed || !s.m_debugSession ||
+        startupElapsedMs(s.m_startupTotalBegin) < m_config.destroyModulesAtSeconds * 1000.0)
+        return;
+    m_modulesDestroyed = true;
+    for (const auto& id : m_config.destroyModules)
+    {
+        std::cerr << "[DevBreach] destroy module " << id << std::endl;
+        s.m_debugSession->destroyShipModule(s.m_playerId, id);
     }
 }
 

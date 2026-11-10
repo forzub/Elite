@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -1218,6 +1219,9 @@ void SceneRenderer::prepareScene(
     prepared.debugAssemblies.clear();
 
         prepared.realShipMeshes.clear();
+        // Step 3 S3: real ships with a compiled compartment asset (opt-in, ModelAssetGpuLibrary) - appended to
+        // prepared.modelAssetObjects after the object pass clears it.
+        std::vector<PreparedScene::ModelAssetObjectItem> shipModelAssets;
 
         for (const auto& pair : ships)
         {
@@ -1293,6 +1297,42 @@ void SceneRenderer::prepareScene(
             shipDebug.debugHitVolumes = &ship.debugHitVolumes;
             prepared.debugAssemblies.push_back(shipDebug);
 
+            if (const auto* shipAsset = render::geometry::ModelAssetGpuLibrary::get(ship.typeId))
+            {
+                PreparedScene::ModelAssetObjectItem item;
+                item.type = ship.typeId;
+                item.objectId = ship.id.value;
+                item.gpu = shipAsset;
+                item.model = shipModel;
+                item.nodeModel.assign(shipAsset->asset.nodes.size(), shipModel);
+                item.isShip = true;
+                item.shipRole = ship.role;
+                // No replicated breach state yet (slice S4): DEV ELITE_DEV_SHIP_BREACH=<node id>,<node id>... marks
+                // nodes "breached" (cover plates plate_cover_<k>, reactor pads pad_eq_er5_l / _r) to see the
+                // compartment interiors in flight.
+                static const std::vector<std::string> devBreach = [] {
+                    std::vector<std::string> ids;
+                    const char* v = std::getenv("ELITE_DEV_SHIP_BREACH");
+                    std::string cur;
+                    for (const char* c = v ? v : ""; ; ++c)
+                    {
+                        if (*c == ',' || *c == '\0') { if (!cur.empty()) ids.push_back(cur); cur.clear(); if (!*c) break; }
+                        else cur += *c;
+                    }
+                    return ids;
+                }();
+                if (!devBreach.empty())
+                {
+                    item.nodeState.assign(shipAsset->asset.nodes.size(), std::string());
+                    for (std::size_t n = 0; n < shipAsset->asset.nodes.size(); ++n)
+                        for (const auto& id : devBreach)
+                            if (shipAsset->asset.nodes[n].id == id)
+                                item.nodeState[n] = "breached";
+                }
+                shipModelAssets.push_back(std::move(item));
+                continue;
+            }
+
             for (const auto& module : ship.assembly->modules)
             {
                 glm::mat4 moduleModel =
@@ -1335,6 +1375,8 @@ void SceneRenderer::prepareScene(
 
         prepared.objectMeshes.clear();
         prepared.modelAssetObjects.clear();
+        for (auto& item : shipModelAssets)
+            prepared.modelAssetObjects.push_back(std::move(item));
 
         for (const auto& pair : world.objects())
         {
@@ -3493,7 +3535,8 @@ if (policy.drawObjects)
             modelAssetLog = lodLog;
             for (const auto& object : prepared.modelAssetObjects)
             {
-                if (!policy.shouldDrawObject(object.type) || !object.gpu)
+                if (!object.gpu ||
+                    !(object.isShip ? policy.shouldDrawRealShip(object.shipRole) : policy.shouldDrawObject(object.type)))
                     continue;
                 const auto& ma = *object.gpu;
                 // the prewarm: <= 3 ms per main frame of chunked uploads ahead of the LOD selection
@@ -3508,7 +3551,18 @@ if (policy.drawObjects)
                     const char* v = std::getenv("ELITE_DEV_MODEL_ASSET_PLACE_M");
                     return v && *v ? static_cast<float>(std::atof(v)) : -1.0f;
                 }();
-                if (devPlaceM >= 0.0f && cameraName == "mainCam")
+                // DEV (step 3 S3): ELITE_DEV_SHIP_ASSET_PLACE_M=<m>[:<tilt deg>] does the same for the PLAYER ship
+                // only, tilted towards the camera about the camera's right axis (default 35 deg) so the dorsal cover
+                // plates and the compartments behind a breach face the view.
+                static const glm::vec2 devShip = [] {
+                    const char* v = std::getenv("ELITE_DEV_SHIP_ASSET_PLACE_M");
+                    if (!v || !*v) return glm::vec2(-1.0f, 0.0f);
+                    const char* colon = std::strchr(v, ':');
+                    return glm::vec2(static_cast<float>(std::atof(v)), colon ? static_cast<float>(std::atof(colon + 1)) : 35.0f);
+                }();
+                const float placeM = object.isShip ? (object.shipRole == ShipRole::Player ? devShip.x : -1.0f)
+                                                   : devPlaceM;
+                if (placeM >= 0.0f && cameraName == "mainCam")
                 {
                     const glm::vec3 forward =
                         glm::normalize(-glm::vec3(renderView[0][2], renderView[1][2], renderView[2][2]));
@@ -3519,8 +3573,15 @@ if (policy.drawObjects)
                                             std::abs(glm::dot(glm::vec3(toLogical[1]), forward)) * half.y +
                                             std::abs(glm::dot(glm::vec3(toLogical[2]), forward)) * half.z;
                     const glm::vec3 centreNow = glm::vec3(toLogical * glm::vec4(centre, 1.0f));
-                    const glm::vec3 target = cameraLocalPosition + forward * (devPlaceM + halfAlong);
+                    const glm::vec3 target = cameraLocalPosition + forward * (placeM + halfAlong);
                     devPlacement = glm::translate(glm::mat4(1.0f), target - centreNow);
+                    if (object.isShip && devShip.y != 0.0f)
+                    {
+                        const glm::vec3 right = glm::normalize(glm::vec3(renderView[0][0], renderView[1][0], renderView[2][0]));
+                        devPlacement = glm::translate(glm::mat4(1.0f), target) *
+                                       glm::rotate(glm::mat4(1.0f), glm::radians(devShip.y), right) *
+                                       glm::translate(glm::mat4(1.0f), -centreNow);
+                    }
                 }
                 const glm::mat4 assetModel = devPlacement * object.model * ma.assetToLogical;
                 mp::View view;
@@ -3537,6 +3598,7 @@ if (policy.drawObjects)
                 // each part is now, not its rest pose.
                 const glm::mat4 assetFromWorld = glm::inverse(assetModel);
                 mp::ObjectState state;
+                state.nodeState = object.nodeState;
                 for (std::size_t n = 0; n < object.nodeModel.size(); ++n)
                 {
                     if (object.nodeModel[n] == object.model)

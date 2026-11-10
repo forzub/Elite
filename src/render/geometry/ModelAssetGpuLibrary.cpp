@@ -83,6 +83,19 @@ const char* packageFor(ObjectType type)
     switch (type)
     {
         case ObjectType::Station: return "assets/compiled/models/station/station.elmodel";
+        case ObjectType::CobraMk1:
+        {
+            // Step 3 S3 (author 2026-11-10, option "a"): the compartment asset built from the Cobrett-I layout
+            // sketch is opt-in only - ELITE_SHIP_MODEL_ASSETS=1 (default package) or =<path to .elmodel>. Without
+            // it the ship keeps the legacy assembly (the sketch is not the approved exterior).
+            static const std::string ship = [] {
+                const char* v = std::getenv("ELITE_SHIP_MODEL_ASSETS");
+                if (!v || !*v || *v == '0') return std::string();
+                return std::string(v) == "1" ? std::string("assets/compiled/models/cobrett-i/cobrett-i.elmodel")
+                                             : std::string(v);
+            }();
+            return ship.empty() ? nullptr : ship.c_str();
+        }
         default: return nullptr;
     }
 }
@@ -138,7 +151,7 @@ std::unique_ptr<ModelAssetGpu> load(ObjectType type)
         mn = glm::min(mn, p);
         mx = glm::max(mx, p);
     }
-    const glm::vec3 size = mx - mn;
+    glm::vec3 size = mx - mn;
     const auto& dims = desc.logicalDimensions();
     float scale = 1.0f;
     if (dims.enabled)
@@ -153,6 +166,16 @@ std::unique_ptr<ModelAssetGpu> load(ObjectType type)
     }
     gpu->assetToLogicalScale = scale;
     gpu->assetToLogical = glm::scale(glm::mat4(1.0f), glm::vec3(scale)) * basis;
+    if (type == ObjectType::CobraMk1)
+    {
+        // Step 3 S3: the ship asset is assembled in the game basis (+X right, +Y up, -Z forward) and in true
+        // metres (tools/ships/ship_asset_source.py) - neither the legacy mesh basis nor the legacy logical size
+        // applies (the legacy Cobra mesh lies along X and is 22.2 m long; the layout sketch is ~27.8 x 23.3 m).
+        gpu->assetToLogicalScale = 1.0f;
+        gpu->assetToLogical = glm::mat4(1.0f);
+        size = gpu->index.maxBounds - gpu->index.minBounds;
+        scale = 1.0f;
+    }
     for (const auto& node : gpu->asset.nodes)
         gpu->nodeModule.push_back(legacyModuleFor(type, node.id));
 

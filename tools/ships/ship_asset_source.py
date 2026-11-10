@@ -82,25 +82,40 @@ def hull_with_cutouts(outline, thick, holes, cell=0.25):
         j = (i + 1) % n
         LS.quad(h, "sk_hull", [B[i], B[j], T[j], T[i]], LS.norm((outline[i][0] - cx, 0, outline[i][1] - cz)))
         h.face("sk_hull", [h.vert(B[i], (0, -1, 0)), h.vert(B[j], (0, -1, 0)), h.vert((cx, -thick(cx, cz), cz), (0, -1, 0))], (0, -1, 0))
-    xs = [p[0] for p in outline]
-    zs = [p[1] for p in outline]
-    z = min(zs)
-    while z < max(zs):
-        zc = z + cell / 2
-        x = min(xs)
-        run = None
-        while x <= max(xs) + cell:
-            xc = x + cell / 2
-            solid = inside(outline, xc, zc) and not any(x0 <= xc <= x1 and z0 <= zc <= z1 for x0, x1, z0, z1 in holes)
-            if solid and run is None:
-                run = x
-            if not solid and run is not None:
-                xa, xb = run, x
-                q = [(xa, thick(xa, z), z), (xb, thick(xb, z), z), (xb, thick(xb, z + cell), z + cell), (xa, thick(xa, z + cell), z + cell)]
-                LS.quad(h, "sk_hull", q, (0, 1, 0))
-                run = None
-            x += cell
-        z += cell
+    # the top: rows of trapezoids following the exact outline edges; the plate / bay holes are cut as straight
+    # x-intervals (row edges snapped to the hole edges so no sliver remains)
+    def span(zq):
+        xs_ = []
+        for i in range(n):
+            (x0, z0), (x1, z1) = outline[i], outline[(i + 1) % n]
+            if (z0 - zq) * (z1 - zq) <= 0 and z0 != z1:
+                xs_.append(x0 + (x1 - x0) * (zq - z0) / (z1 - z0))
+        return (min(xs_), max(xs_)) if len(xs_) >= 2 else None
+    zs = sorted(set([p[1] for p in outline] + [h_[2] for h_ in holes] + [h_[3] for h_ in holes]))
+    cuts = []
+    for za, zb in zip(zs, zs[1:]):
+        k = max(1, int(math.ceil((zb - za) / cell)))
+        cuts += [za + (zb - za) * i / k for i in range(k)]
+    cuts.append(zs[-1])
+    for za, zb in zip(cuts, cuts[1:]):
+        e = 1e-6
+        sa, sb = span(za + e), span(zb - e)
+        if not sa or not sb:
+            continue
+        zm = (za + zb) / 2
+        hs = sorted((x0, x1) for x0, x1, z0, z1 in holes if z0 <= zm <= z1)
+        pieces, left = [], ("edge", None)
+        for x0, x1 in hs:
+            pieces.append((left, ("x", x0)))
+            left = ("x", x1)
+        pieces.append((left, ("edge", None)))
+        for (ka, va), (kb, vb) in pieces:
+            xa0, xa1 = (sa[0], sb[0]) if ka == "edge" else (max(va, sa[0]), max(va, sb[0]))
+            xb0, xb1 = (sa[1], sb[1]) if kb == "edge" else (min(vb, sa[1]), min(vb, sb[1]))
+            if xb0 - xa0 < 1e-4 and xb1 - xa1 < 1e-4:
+                continue
+            q = [(xa0, thick(xa0, za), za), (xb0, thick(xb0, za), za), (xb1, thick(xb1, zb), zb), (xa1, thick(xa1, zb), zb)]
+            LS.quad(h, "sk_hull", q, (0, 1, 0))
     return h
 
 

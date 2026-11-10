@@ -104,6 +104,9 @@ struct PreparedScene
         const render::geometry::ModelAssetGpu* gpu = nullptr;
         glm::mat4 model = glm::mat4(1.0f);              // object base model
         std::vector<glm::mat4> nodeModel;               // per semantic node: module model
+        bool isShip = false;                            // real ship (step 3 S3): drawn under the ship policy
+        ShipRole shipRole = ShipRole::NPC;
+        std::vector<std::string> nodeState;             // per semantic node state id ("" = default)
     };
     std::vector<ModelAssetObjectItem> modelAssetObjects;
 

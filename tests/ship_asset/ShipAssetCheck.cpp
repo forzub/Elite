@@ -105,6 +105,13 @@ int main(int argc, char** argv)
     if (g_failures) return 1;
     check(ModelAssetBinary::validate(ship, &error), "asset validates " + error);
     const mp::Index index = mp::buildIndex(ship);
+    {
+        char b[200];
+        std::snprintf(b, sizeof(b), "index bounds (%.2f %.2f %.2f) .. (%.2f %.2f %.2f), asset bounds (%.2f %.2f %.2f) .. (%.2f %.2f %.2f)",
+                      index.minBounds.x, index.minBounds.y, index.minBounds.z, index.maxBounds.x, index.maxBounds.y, index.maxBounds.z,
+                      ship.minBounds.x, ship.minBounds.y, ship.minBounds.z, ship.maxBounds.x, ship.maxBounds.y, ship.maxBounds.z);
+        line(b);
+    }
     line("nodes " + std::to_string(ship.nodes.size()) + ", compartments " + std::to_string(ship.compartments.size()) +
          ", portals " + std::to_string(ship.portals.size()) + ", LODs " + std::to_string(ship.renderLods.size()));
 

@@ -4761,6 +4761,24 @@ Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damag
 - Next: S3 runtime render (ships on ModelAssetGpuLibrary, nodeState from replicated state), S4 server breach state per
   compartment + replication, S5 hits/collision from the asset. Acceptance of the stage = live flight (see below).
 
+### Step 3 S3 runtime render, opt-in (author 2026-11-10: option "a" - behind a flag, the game keeps the legacy Cobra)
+- ModelAssetGpuLibrary: ObjectType::CobraMk1 -> assets/compiled/models/cobrett-i/cobrett-i.elmodel ONLY with
+  ELITE_SHIP_MODEL_ASSETS=1 (or =<path>). The ship asset is in the game basis and true metres: identity
+  assetToLogical, scale 1 (root cause of the first in-game frame - ship turned 90 deg and scaled 0.8: the legacy
+  Cobra mesh basis / 22.2 m logical size were applied). The compiled package goes to src/assets/compiled/models/
+  cobrett-i (git-ignored like every compiled package; regenerate: ship_asset_source.py + EliteShipAssetAssemble).
+- SceneRenderer: real ships with a package go to prepared.modelAssetObjects (isShip, role -> shouldDrawRealShip),
+  legacy meshes skipped for that ship; ObjectState.nodeState from the item. No replicated breach state yet (S4):
+  DEV ELITE_DEV_SHIP_BREACH=plate_cover_6,pad_eq_er5_l,... ; DEV ELITE_DEV_SHIP_ASSET_PLACE_M=<m>[:<tilt>] puts the
+  PLAYER ship in front of the main camera tilted to show the dorsal plates.
+- Hull top rebuilt as exact trapezoid rows (no staircase on the swept wing edges); check still 9/9 PASS.
+- LIVE (target machine, build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple, modern
+  style, captures by the game's back buffer D:/tmp/elite_ship_s3_f.png intact / _h.png breached): FULL 976 px, 4
+  breaches -> 4 compartments, 12 interior draws (walkway + tanks in the spine, ER-5 + CR-1 in the left bay), closed
+  compartments not drawn, 57k triangles. Python gates 205 PASS / 6 known red.
+- Not done: S4 (server breach state per plate / pad + replication -> nodeState), S5 (hits / collision from the
+  asset). The legacy collision / hit volumes of the Cobra stay authoritative (22.2 m) while the asset is 27.8 x 23.3 m.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

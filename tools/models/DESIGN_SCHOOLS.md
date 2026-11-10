@@ -32,4 +32,4 @@ Rules of thumb
 - Serviceable units stay readable as separate blocks in every school (the maintenance game needs them), even Bastion's
   (behind armoured hatches) and Zero Point's (sealed blocks with keyed sockets).
 - Factions without own industry (Варпстанис, Ново-Фиваида, Сельва-Верде) do not make equipment; they run others' units
-  (pirate field adapters, overheated ritual operation, bio-film pads) - a later proposal.
+  (pirate field adapters, overheated ritual operation, bio-film pads) - proposal: docs/NON_INDUSTRIAL_FACTION_EQUIPMENT.md.

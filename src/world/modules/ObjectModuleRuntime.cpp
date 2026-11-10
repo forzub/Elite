@@ -452,6 +452,16 @@ bool ObjectModuleRuntime::debugRestoreInternalFailure(
     return true;
 }
 
+bool ObjectModuleRuntime::debugSetEngineEmitterIntact(const std::string& moduleId, double intactArea01)
+{
+    const int index = findModuleIndex(moduleId);
+    if (index < 0 || !std::isfinite(intactArea01))
+        return false;
+    m_modules[index].engineOperating.emitter.surface.intactArea01 = std::clamp(intactArea01, 0.0, 1.0);
+    ++m_revision;
+    return true;
+}
+
 bool ObjectModuleRuntime::addEngineImpactShock(
     const std::string& moduleId, double hitDamage01,
     std::uint64_t incidentKey

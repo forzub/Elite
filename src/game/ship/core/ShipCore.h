@@ -453,6 +453,10 @@ private:
     glm::dvec3 m_attitudeRatesAtTickStart {0.0};
     bool m_newtonianRcsPhysical = false;
     bool m_propulsionReactorsOn = true;
+    // DEV drive thermal acceptance (ShipCorePowerThermal.cpp): ship clock, one-shot pad damage, trace period
+    double m_devDriveClockS = 0.0;
+    double m_devDriveTraceS = -1.0;
+    bool m_devDrivePadApplied = false;
     double m_serviceThrottleSaved = 0.0;
     std::uint32_t m_propulsionSwitchRevision = 0;
     double m_propulsionReactorsStartupRemainingSeconds = 0.0;

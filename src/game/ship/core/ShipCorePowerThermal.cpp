@@ -1,3 +1,4 @@
+#include <cstring>
 // ShipCore: service power bus, reactors, ER-5 generators, propulsion and ship coolant loops, radiators (updateSystems).
 
 #include "src/game/ship/core/ShipCoreInternal.h"
@@ -126,12 +127,30 @@ void ShipCore::updateSystems(float dt)
                     !definition->engine)
                     continue;
 
+                // Free flight (normal / global flight, author 2026-11-10 thermal acceptance): the main burn is the
+                // aft bank at the requested share of the main-engine acceleration, limited by the engine's own safe
+                // thrust - long burns heat the pads too, not only hub-tactical manoeuvres.
+                double burn01 = actualBurnSample ? motion.mainEngineDeliveredThrust01[i] : 0.0;
+                if (!actualBurnSample && motion.freeFlight && motion.mainEngineMaxMps2 > 0.0 &&
+                    topology[i].role == game::ship::plant::EngineSlotRole::AftMain)
+                {
+                    const double throttle = std::clamp(
+                        glm::length(motion.requestedMainEngineAccelerationMps2) / motion.mainEngineMaxMps2, 0.0, 1.0);
+                    if (throttle > 0.0)
+                        if (const auto* module = m_moduleRuntime.findModule(bindings[i]))
+                        {
+                            game::equipment::EquipmentDamageLayer damage;
+                            damage.accumulated = module->equipmentDamage.accumulated;
+                            const auto effective = game::equipment::engine::evaluateEngineUnit(*definition->engine, damage);
+                            burn01 = throttle * game::equipment::engine::safeEmitterThrustFraction01(
+                                *definition->engine, effective, module->engineOperating);
+                        }
+                }
                 double transferredMW=0.0;
                 changed |= m_moduleRuntime.advanceEngineOperatingLife(
                     bindings[i],
                     *definition->engine,
-                    actualBurnSample
-                        ? motion.mainEngineDeliveredThrust01[i] : 0.0,
+                    burn01,
                     static_cast<double>(dt),
                     coolantK,
                     &transferredMW
@@ -143,6 +162,62 @@ void ShipCore::updateSystems(float dt)
                         m_propulsionThermal.addHeat(energyMJ);
                     else
                         m_propulsionThermal.removeHeat(-energyMJ);
+                }
+            }
+
+            // DEV (Cobra drive thermal acceptance, author 2026-11-10): ELITE_DEV_DRIVE_PAD_DAMAGE=<s>:<intact01>
+            // sets the pads of the player's main engines to <intact01> once, <s> seconds of ship time in;
+            // ELITE_DEV_DRIVE_THERMAL_TRACE=1 prints one [DriveThermal] line per second per main engine.
+            if (m_role == ShipRole::Player)
+            {
+                static const double padAtS = [] {
+                    const char* v = std::getenv("ELITE_DEV_DRIVE_PAD_DAMAGE");
+                    return v && *v ? std::atof(v) : -1.0;
+                }();
+                static const double padIntact = [] {
+                    const char* v = std::getenv("ELITE_DEV_DRIVE_PAD_DAMAGE");
+                    const char* c = v ? std::strchr(v, ':') : nullptr;
+                    return c ? std::atof(c + 1) : 1.0;
+                }();
+                static const bool trace = [] {
+                    const char* v = std::getenv("ELITE_DEV_DRIVE_THERMAL_TRACE");
+                    return v && *v && *v != '0';
+                }();
+                m_devDriveClockS += static_cast<double>(dt);
+                if (padAtS >= 0.0 && !m_devDrivePadApplied && m_devDriveClockS >= padAtS)
+                {
+                    m_devDrivePadApplied = true;
+                    for (std::size_t i = 0; i < bindings.size(); ++i)
+                        if (!bindings[i].empty() && topology[i].role != game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                            changed |= m_moduleRuntime.debugSetEngineEmitterIntact(bindings[i], padIntact);
+                    std::cerr << "[DriveThermal] DEV pads of the main engines set to intact " << padIntact
+                              << " at t=" << m_devDriveClockS << " s" << std::endl;
+                }
+                if (trace && m_devDriveClockS - m_devDriveTraceS >= 1.0)
+                {
+                    m_devDriveTraceS = m_devDriveClockS;
+                    for (std::size_t i = 0; i < bindings.size(); ++i)
+                    {
+                        if (bindings[i].empty() || topology[i].role == game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                            continue;
+                        const auto* module = m_moduleRuntime.findModule(bindings[i]);
+                        const auto definition = std::find_if(m_desc->modules.begin(), m_desc->modules.end(),
+                            [&](const auto& m) { return m.moduleId == bindings[i]; });
+                        if (!module || definition == m_desc->modules.end() || !definition->engine)
+                            continue;
+                        game::equipment::EquipmentDamageLayer damage;
+                        damage.accumulated = module->equipmentDamage.accumulated;
+                        const auto effective = game::equipment::engine::evaluateEngineUnit(*definition->engine, damage);
+                        std::cerr << "[DriveThermal] t=" << m_devDriveClockS << " " << bindings[i]
+                                  << " T=" << module->engineOperating.temperatureK
+                                  << "K safe=" << definition->engine->safeOperatingTemperatureK
+                                  << "K pad_intact=" << module->engineOperating.emitter.surface.intactArea01
+                                  << " mode=" << (actualBurnSample ? "hub" : motion.freeFlight ? "free" : "other")
+                                  << " burn_request=" << (motion.mainEngineMaxMps2 > 0.0 ? glm::length(motion.requestedMainEngineAccelerationMps2) / motion.mainEngineMaxMps2 : 0.0)
+                                  << " safe_thrust=" << game::equipment::engine::safeEmitterThrustFraction01(
+                                         *definition->engine, effective, module->engineOperating)
+                                  << " thermal_damage=" << module->equipmentDamage.accumulated.thermal01 << std::endl;
+                    }
                 }
             }
 

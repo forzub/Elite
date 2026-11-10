@@ -45,6 +45,8 @@ public:
 
     // Revert only a temporary diagnostic internal fault. Never repair real
     // impact, thermal, radiation, laser, wear or structural damage.
+    // DEV (Cobra thermal acceptance): set the intact area of an engine's hot emitter (pad) directly.
+    bool debugSetEngineEmitterIntact(const std::string& moduleId, double intactArea01);
     bool debugRestoreInternalFailure(
         const std::string& moduleId, double previousInternalFailure01);
 

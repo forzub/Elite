@@ -3383,34 +3383,34 @@
    {
     "id": "layout-v3-cobra3_top",
     "file": "cobra3_top.jpg",
-    "name": "Эскиз v3 - снаружи: спина, пятаки ER-5, плиты-радиаторы, излучатели поля ZP-FE1 на законцовках",
+    "name": "Эскиз v3 - снаружи: спина, компактные пятаки ER-5 (две пластины 2,35 x 3,5 м сверху и снизу отсека), плиты-радиаторы, излучатели поля ZP-FE1",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794281275772,
-    "updated": 1794281275772
+    "added": 1794345703780,
+    "updated": 1794345703780
    },
    {
     "id": "layout-v3-cobra3_inside",
     "file": "cobra3_inside.jpg",
-    "name": "Эскиз v3 - внутри: кабина EC-2, лазеры FL-2, ракетные установки WR-2, отсеки Ø3,5 м, контейнеры",
+    "name": "Эскиз v3 - внутри: кабина EC-2, лазеры FL-2, ракетные установки WR-2, отсеки 3,5 м, контейнеры",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794281275772,
-    "updated": 1794281275772
+    "added": 1794345703780,
+    "updated": 1794345703780
    },
    {
     "id": "layout-v3-cobra3_under",
     "file": "cobra3_under.jpg",
-    "name": "Эскиз v3 - снизу: лыжи LS-1 (выпущены), люки выгрузки",
+    "name": "Эскиз v3 - снизу: нижние пластины пятаков ER-5, лыжи LS-1 (выпущены), люки выгрузки",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794281275772,
-    "updated": 1794281275772
+    "added": 1794345703780,
+    "updated": 1794345703780
    },
    {
     "id": "layout-v3-cobra3_hits",
     "file": "cobra3_hits.jpg",
     "name": "Хитвалумы корабля: плиты со швами, точки крепления модулей, объёмы оборудования",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794281275772,
-    "updated": 1794281275772
+    "added": 1794345703780,
+    "updated": 1794345703780
    }
   ],
   "bastion.drone.klegg3": [

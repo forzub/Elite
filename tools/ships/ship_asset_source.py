@@ -190,7 +190,8 @@ def build(name):
     # the bays sit under their ER-5 pads: the top over each bay is open, the pad closes it
     for side, ci in bays.items():
         c = comps[ci]
-        holes.append((c["center"][0] - 1.75, c["center"][0] + 1.75, c["center"][2] - 1.75, c["center"][2] + 1.75))
+        # the ER-5 top plate (2.35 x 3.5 m, long along the drive group) closes the bay from above
+        holes.append((c["center"][0] - 1.175, c["center"][0] + 1.175, c["center"][2] - 1.75, c["center"][2] + 1.75))
     hull = hull_with_cutouts(outline, thick, holes)
     for nm, part in P.items():
         if nm.startswith("hatch_"):
@@ -244,10 +245,10 @@ def build(name):
                 c = comps[ci]
                 top = H2
                 openings.append({"id": f"open_pad_{nm}", "node": pid, "position": [c["center"][0], top, c["center"][2]],
-                                 "rotation_deg": [-90, 0, 0], "half_size": [1.75, 1.75, 0.2], "active_states": ["breached"]})
+                                 "rotation_deg": [-90, 0, 0], "half_size": [1.175, 1.75, 0.2], "active_states": ["breached"]})
                 portals.append({"id": f"portal_pad_{nm}", "a": c["id"], "b": None, "node": pid,
                                 "position": [c["center"][0], top, c["center"][2]], "rotation_deg": [-90, 0, 0],
-                                "half_size": [1.75, 1.75, 0.1], "opening": f"open_pad_{nm}"})
+                                "half_size": [1.175, 1.75, 0.1], "opening": f"open_pad_{nm}"})
 
     # ---- containers and the walkway (interior)
     for nm, part in P.items():

@@ -489,10 +489,47 @@
     0.0
    ],
    "half_size": [
-    5.5,
+    1.175,
     0.1085,
-    5.5
+    1.75
    ]
+  },
+  {
+   "id": "reactor_cooling_pad.2",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    -2.2085,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.175,
+    0.1085,
+    1.75
+   ]
+  },
+  {
+   "id": "er5_heat_pipe_column.3",
+   "part": "er5_heat_pipe_column",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -1.82,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.455,
+   "half_height": 0.28
   },
   {
    "id": "er5_emergency_coolant.1",

@@ -2484,7 +2484,7 @@
       "mass_t": 25,
       "price_cr": 460000,
       "mwe": 5000,
-      "eff": 0.9,
+      "eff": 0.985,
       "runtime_preset": "elite.reactor.cobra.cobretty.er5.v1",
       "existing": true,
       "overhaul_h": 30000,
@@ -2502,14 +2502,23 @@
           4.03,
           4.03
         ],
-        "cooling_pad_side_m": 11,
         "cooling_pad_thickness_m": 0.25,
-        "anchor": "runtime ER-5 padSideM = 11.0 m",
+        "anchor": "runtime ER-5 nominalEfficiency01 0.985, padSideM 4.05 (equivalent square 16.4 m2)",
         "basis": [
           "reactor housing scales with mass; cooling interface scales with thermal waste",
           "author 2026-11-09: body diameter = CR-1 envelope (5 m), coaxial torus, flanges on its end faces - drive / reactor / drive read as one cylindrical engine bay",
-          "author 2026-11-10: Cobra bay dia 3.5 m; the 11 x 11 m pad (its own heat sink) is unchanged"
-        ]
+          "author 2026-11-10: Cobra bay dia 3.5 m; the 11 x 11 m pad (its own heat sink) is unchanged",
+          "author 2026-11-10: the 11 x 11 m pad was out of proportion - efficiency 0.985 (waste 76 MW, like the CR-1 0.991) -> 16.4 m2 at the same x1.31 margin, two plates 2.35 x 3.5 m on the top and the bottom of the bay"
+        ],
+        "cooling_pads": {
+          "count": 2,
+          "size_m": [
+            2.35,
+            3.5
+          ],
+          "placement": "top and bottom of the drive bay, long along the drive group",
+          "area_m2": 16.45
+        }
       },
       "cooperation_group": "cognium_pool",
       "replacements": {

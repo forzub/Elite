@@ -268,6 +268,45 @@ def er5_flange(lod, seg):
 
 
 
+
+def mirror_y_into(dst, src):
+    """append src mirrored through y = 0 (the bottom heat-pipe column)"""
+    base = len(dst.v)
+    dst.v += [(x, -y, z) for x, y, z in src.v]
+    dst.n += [(a, -b, c) for a, b, c in src.n]
+    for mat, fl in src.faces.items():
+        dst.faces.setdefault(mat, []).extend(tuple(base + i for i in reversed(f)) for f in fl)
+
+
+def strip_pad(pd, lod, y0, pt, hx, hz, sign):
+    """a rectangular cooling plate 2hx x 2hz (long along Z, the drive group), underside at y0 (sign +1: on top; -1:
+    mirrored below): rim, cross beams, a 2 x 3 grid of replaceable ceramic tiles, clamps on the close level"""
+    ya, yb = (y0, y0 + pt) if sign > 0 else (-y0 - pt, -y0)
+    ym = (ya + yb) / 2
+    bw = 0.16
+    if lod == 2:
+        box(pd, "eq_pad_ceramic", (0, ym, 0), (2 * hx, pt, 2 * hz))
+        return
+    box(pd, "eq_metal_graphite", (0, ya + 0.02 if sign > 0 else yb - 0.02, 0), (2 * hx - 0.1, 0.04, 2 * hz - 0.1))
+    for sx in (-1, 1):
+        box(pd, "eq_metal_band", (sx * (hx - bw / 2), ym, 0), (bw, pt, 2 * hz), chamfer=0.02 if lod == 0 else 0.0)
+    for sz in (-1, 1):
+        box(pd, "eq_metal_band", (0, ym, sz * (hz - bw / 2)), (2 * hx - 2 * bw, pt, bw), chamfer=0.02 if lod == 0 else 0.0)
+    box(pd, "eq_metal_band", (0, ym, 0), (0.14, pt - 0.01, 2 * hz - 2 * bw))
+    for k in (-1, 1):
+        box(pd, "eq_metal_band", (0, ym, k * hz / 3), (2 * hx - 2 * bw, pt - 0.01, 0.12))
+    tile_t = 0.10
+    ty = (yb - 0.012 - tile_t / 2) if sign > 0 else (ya + 0.012 + tile_t / 2)
+    cw, cl = (hx - bw - 0.07) - 0.04, (2 * hz - 2 * bw) / 3
+    for ix in (-1, 1):
+        for iz in (-1, 0, 1):
+            box(pd, "eq_pad_ceramic", (ix * (cw / 2 + 0.07), ty, iz * cl), (cw - 0.04, tile_t, cl - 0.12))
+    if lod == 0:
+        for sx in (-1, 1):
+            for iz in range(5):
+                z = -hz + 0.3 + iz * (2 * hz - 0.6) / 4
+                box(pd, "eq_steel", (sx * (hx + 0.03), ym, z), (0.06, 0.12, 0.16), chamfer=0.01)
+
 def er5_parts(lod):
     seg = seg_for(lod)
     small = small_for(lod)
@@ -375,9 +414,20 @@ def er5_parts(lod):
             if lod == 0:
                 lathe(sn, "eq_insulator", [(0.05, 0), (0.04, 0.03), (0, 0.05)], 8, axis_to(polz(1, a, 0)), p1)
 
-    # --- heat-pipe column from the vessel top to the pad, cooling pad PT1 (11 x 11 x 0.25 m)
-    heat_column(P.setdefault("er5_heat_pipe_column", Part("er5_heat_pipe_column")), lod, seg, small, ro, d["pad_y0"])
-    cooling_pad(P.setdefault("reactor_cooling_pad", Part("reactor_cooling_pad")), lod, d["pad_y0"], d["pad_t"], d["pad_half"])
+    # --- heat-pipe column(s) from the vessel to the pad(s). ER-5 (author 2026-11-10, compact): two plates along the
+    #     drive group, on the top and the bottom of the bay; ER-1 keeps its square pad
+    if d.get("strip"):
+        hc = P.setdefault("er5_heat_pipe_column", Part("er5_heat_pipe_column"))
+        heat_column(hc, lod, seg, small, ro, d["pad_y0"])
+        low = Part("tmp")
+        heat_column(low, lod, seg, small, ro, d["pad_y0"])
+        mirror_y_into(hc, low)
+        pad = P.setdefault("reactor_cooling_pad", Part("reactor_cooling_pad"))
+        for sign in (1, -1):
+            strip_pad(pad, lod, d["pad_y0"], d["pad_t"], d["strip_hx"], d["strip_hz"], sign)
+    else:
+        heat_column(P.setdefault("er5_heat_pipe_column", Part("er5_heat_pipe_column")), lod, seg, small, ro, d["pad_y0"])
+        cooling_pad(P.setdefault("reactor_cooling_pad", Part("reactor_cooling_pad")), lod, d["pad_y0"], d["pad_t"], d["pad_half"])
 
     # --- emergency connection to the shared coolant loop: the only copper lines (column foot -> port block, aft top)
     ec = P["er5_emergency_coolant"] = Part("er5_emergency_coolant")
@@ -458,7 +508,11 @@ def er5_hits():
         H.append(hcyl("er5_plasma_sensors", polz(ro + 0.03, a, zz), polz(ro + 0.22, a, zz), 0.07))
     H += [hbox("er5_heat_pipe_column", (0, ro + 0.02, 0), (0.80, 0.16, 1.30)),
           hcyl("er5_heat_pipe_column", (0, ro, 0), (0, d["pad_y0"], 0), 0.65),
-          hbox("reactor_cooling_pad", (0, d["pad_y0"] + d["pad_t"] / 2 + 0.03, 0), (2 * d["pad_half"], d["pad_t"] + 0.06, 2 * d["pad_half"])),
+          hbox("reactor_cooling_pad", (0, d["pad_y0"] + d["pad_t"] / 2 + 0.03, 0),
+               (2 * d["strip_hx"], d["pad_t"] + 0.06, 2 * d["strip_hz"]) if d.get("strip")
+               else (2 * d["pad_half"], d["pad_t"] + 0.06, 2 * d["pad_half"])),
+          *([hbox("reactor_cooling_pad", (0, -(d["pad_y0"] + d["pad_t"] / 2 + 0.03), 0), (2 * d["strip_hx"], d["pad_t"] + 0.06, 2 * d["strip_hz"])),
+             hcyl("er5_heat_pipe_column", (0, -d["pad_y0"], 0), (0, -ro, 0), 0.65)] if d.get("strip") else []),
           hbox("er5_emergency_coolant", (0, ro + 0.23, 0.82), (0.46, 0.46, 0.86))]
     for a in (5 * math.pi / 4, 7 * math.pi / 4):
         for zz in (-0.9, 0.9):
@@ -516,11 +570,26 @@ def scaled_unit_hits(base_hits, D, s, overrides=None):
 
 
 CR1_CONE = {"cone_h": 1.3 / COBRA_BAY_S}
+# ER-5 compact pad (author 2026-11-10): efficiency 0.985 -> 16.4 m2 as two plates 2.35 x 3.5 m (long along the drive
+# group) on the top and the bottom of the bay, instead of one 11 x 11 m square
+ER5_STRIP = {"strip": True, "strip_hx": 2.35 / 2 / COBRA_BAY_S, "strip_hz": 3.5 / 2 / COBRA_BAY_S}
+
+
+def _with(D, over, fn):
+    def run(*a):
+        saved = dict(D)
+        D.update(over)
+        try:
+            return fn(*a)
+        finally:
+            D.clear()
+            D.update(saved)
+    return run
 ASSETS = {"cobretty_cr1_vector": scaled_unit(cr1_parts, CR1, COBRA_BAY_S, CR1_CONE),
-          "cobretty_er5_reactor": scaled_family(er5_parts, ER5, COBRA_BAY_S, 11.0),
+          "cobretty_er5_reactor": scaled_family(_with(ER5, ER5_STRIP, er5_parts), ER5, COBRA_BAY_S, 4.05),
           "cobretty_er1_reactor": scaled_family(er5_parts, ER5, ER1_S, 4.48, {"er5_": "er1_"})}
 HITS = {"cobretty_cr1_vector": scaled_unit_hits(cr1_hits, CR1, COBRA_BAY_S, CR1_CONE),
-        "cobretty_er5_reactor": scaled_hits(er5_hits, ER5, COBRA_BAY_S, 11.0),
+        "cobretty_er5_reactor": scaled_hits(_with(ER5, ER5_STRIP, er5_hits), ER5, COBRA_BAY_S, 4.05),
         "cobretty_er1_reactor": scaled_hits(er5_hits, ER5, ER1_S, 4.48, {"er5_": "er1_"})}
 MODEL_ASSETS = {"kb.drive.cr1-vector": "cobretty_cr1_vector", "kb.reactor.er5": "cobretty_er5_reactor",
                 "kb.reactor.er1": "cobretty_er1_reactor"}

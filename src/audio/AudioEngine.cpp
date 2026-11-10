@@ -119,6 +119,90 @@ std::vector<unsigned char> makeTerminalTickWav()
     return wav;
 }
 
+// Reactor containment siren (author 2026-11-10): a 0.9 s two-tone sweep, repeated by the HUD while the alert lasts.
+std::vector<unsigned char> makeSirenWav()
+{
+    constexpr int SampleRate = 22050;
+    constexpr double DurationSeconds = 0.9;
+    constexpr int SampleCount = static_cast<int>(SampleRate * DurationSeconds);
+    std::vector<std::int16_t> pcm(static_cast<std::size_t>(SampleCount));
+    constexpr double Pi = 3.14159265358979323846;
+    double phase = 0.0;
+    for (int i = 0; i < SampleCount; ++i)
+    {
+        const double t = static_cast<double>(i) / static_cast<double>(SampleRate);
+        const double f = t < 0.45 ? 620.0 + 380.0 * (t / 0.45) : 1000.0 - 380.0 * ((t - 0.45) / 0.45);
+        phase += 2.0 * Pi * f / SampleRate;
+        const double env = std::min(1.0, t / 0.02) * std::min(1.0, (DurationSeconds - t) / 0.03);
+        const double sample = std::clamp((std::sin(phase) + 0.3 * std::sin(2.0 * phase)) * env * 0.18, -1.0, 1.0);
+        pcm[static_cast<std::size_t>(i)] = static_cast<std::int16_t>(sample * 32767.0);
+    }
+    constexpr std::uint16_t Channels = 1;
+    constexpr std::uint16_t BitsPerSample = 16;
+    constexpr std::uint16_t BlockAlign =
+        Channels * BitsPerSample / 8;
+    constexpr std::uint32_t ByteRate =
+        SampleRate * BlockAlign;
+
+    const std::uint32_t dataBytes =
+        static_cast<std::uint32_t>(
+            pcm.size() * sizeof(std::int16_t)
+        );
+    const std::uint32_t riffBytes =
+        36u + dataBytes;
+
+    std::vector<unsigned char> wav(
+        static_cast<std::size_t>(44u + dataBytes)
+    );
+
+    auto put16 = [&](std::size_t offset, std::uint16_t value)
+    {
+        wav[offset + 0] =
+            static_cast<unsigned char>(value & 0xffu);
+        wav[offset + 1] =
+            static_cast<unsigned char>((value >> 8u) & 0xffu);
+    };
+
+    auto put32 = [&](std::size_t offset, std::uint32_t value)
+    {
+        wav[offset + 0] =
+            static_cast<unsigned char>(value & 0xffu);
+        wav[offset + 1] =
+            static_cast<unsigned char>((value >> 8u) & 0xffu);
+        wav[offset + 2] =
+            static_cast<unsigned char>((value >> 16u) & 0xffu);
+        wav[offset + 3] =
+            static_cast<unsigned char>((value >> 24u) & 0xffu);
+    };
+
+    std::memcpy(wav.data() + 0, "RIFF", 4);
+    put32(4, riffBytes);
+    std::memcpy(wav.data() + 8, "WAVE", 4);
+    std::memcpy(wav.data() + 12, "fmt ", 4);
+    put32(16, 16u);
+    put16(20, 1u);
+    put16(22, Channels);
+    put32(24, SampleRate);
+    put32(28, ByteRate);
+    put16(32, BlockAlign);
+    put16(34, BitsPerSample);
+    std::memcpy(wav.data() + 36, "data", 4);
+    put32(40, dataBytes);
+    std::memcpy(
+        wav.data() + 44,
+        pcm.data(),
+        static_cast<std::size_t>(dataBytes)
+    );
+
+    return wav;
+}
+
+const std::vector<unsigned char>& sirenWav()
+{
+    static const std::vector<unsigned char> wav = makeSirenWav();
+    return wav;
+}
+
 const std::vector<unsigned char>& terminalTickWav()
 {
     static const std::vector<unsigned char> wav =
@@ -192,6 +276,24 @@ void AudioEngine::playTerminalTick() noexcept
         SND_ASYNC |
         SND_NODEFAULT
     );
+#endif
+}
+
+void AudioEngine::playReactorSiren() noexcept
+{
+    static const bool effectsOn = [] {
+        const char* v = std::getenv("ELITE_SOUND_EFFECTS");
+        return v && *v == '1';
+    }();
+    if (!effectsOn)
+        return;
+    if (!m_initialized)
+        initialize();
+    if (!m_available)
+        return;
+#ifdef _WIN32
+    const auto& wav = sirenWav();
+    PlaySoundA(reinterpret_cast<LPCSTR>(wav.data()), nullptr, SND_MEMORY | SND_ASYNC | SND_NODEFAULT);
 #endif
 }
 

@@ -381,6 +381,17 @@ public:
     void addServiceHeatMJ(double energyMJ) { if (energyMJ > 0.0) m_thermal.addHeat(energyMJ); }
     // Reactor explosions (author 2026-11-10): containment losses this ship had since the last poll (module ids).
     std::vector<std::string> takeReactorCatastrophes() { return std::exchange(m_reactorCatastrophes, {}); }
+    // Containment emergency (author 2026-11-10): the simulation publishes the running emergencies of this ship; the
+    // status turns them into critical alerts (replicated with the ship status) - the HUD shows them and sounds the siren.
+    struct ContainmentAlarm
+    {
+        std::string moduleId;
+        double elapsedS = 0.0;
+        double coreTemperatureK = 0.0;
+        std::string advice;
+    };
+    void setContainmentAlarms(std::vector<ContainmentAlarm> alarms) { m_containmentAlarms = std::move(alarms); }
+    const std::vector<ContainmentAlarm>& containmentAlarms() const { return m_containmentAlarms; }
     double serviceCoolantCriticalTemperatureK() const { return m_thermal.getCriticalTemp(); }
     // DEV checks only (EliteShipThermalCheck).
     void debugSetServiceCoolantTemperatureK(double k) { m_thermal.setTemperature(k); }
@@ -462,6 +473,7 @@ private:
     bool m_propulsionReactorsOn = true;
     // DEV drive thermal acceptance (ShipCorePowerThermal.cpp): ship clock, one-shot pad damage, trace period
     std::vector<std::string> m_reactorCatastrophes;
+    std::vector<ContainmentAlarm> m_containmentAlarms;
     double m_devDriveClockS = 0.0;
     double m_devDriveTraceS = -1.0;
     bool m_devDrivePadApplied = false;

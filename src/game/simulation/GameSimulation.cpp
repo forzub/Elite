@@ -4084,6 +4084,14 @@ bool GameSimulation::startBestRepairJobForMissingSlot(
 
 bool GameSimulation::startBestRepairJobForFirstMissingSlot(EntityId targetShipId)
 {
+    // a failing reactor containment has priority (author 2026-11-10): the repair drone goes to the reactor
+    for (auto& c : m_containment)
+        if (c.shipId == targetShipId && c.droneDispatchedS < 0.0)
+        {
+            c.droneDispatchedS = m_combatClockS;
+            std::cerr << "[Containment] ship " << targetShipId.value << ": repair drone dispatched to " << c.moduleId << std::endl;
+            return true;
+        }
     Ship* targetShip = getShip(targetShipId);
     if (!targetShip)
         return false;

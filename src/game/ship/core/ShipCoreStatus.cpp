@@ -184,6 +184,21 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     }
     
     // ----- Алерты -----
+
+    // Reactor containment emergency (author 2026-11-10): the siren alert - the outcome is not known in advance
+    for (const auto& a : m_containmentAlarms) {
+        game::AlertStatus alert;
+        alert.severity = 2;
+        alert.system = "Containment";
+        const std::string which = a.moduleId.find("left") != std::string::npos ? "левый реактор"
+                                : a.moduleId.find("right") != std::string::npos ? "правый реактор"
+                                : a.moduleId.find("service") != std::string::npos ? "служебный реактор" : "реактор";
+        alert.message = "ПОТЕРЯ УДЕРЖАНИЯ: " + which + "|" + a.advice;   // "|" splits the beacon's two lines
+        alert.value = a.coreTemperatureK;
+        alert.threshold = a.elapsedS;
+        status.alerts.push_back(alert);
+        status.criticalSystems.push_back("Containment");
+    }
     
     // Реактор горячий
     if (status.reactor.temperature > status.reactor.criticalTemp * 0.85) {

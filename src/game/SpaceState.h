@@ -340,6 +340,7 @@ private:
     void renderNavigationStressOverlay(const Viewport& viewport);
     // Ctrl+J free flight: the banner at the top of the HUD (speed no longer local, keys, capture)
     void renderFreeFlightBanner(const Viewport& viewport);
+    void renderContainmentBeacon(const Viewport& viewport);
     // the interstellar jump (navigation/rules/JumpRules.h): the map's calculate / START / cancel;
     // the presentation (author 2026-11-09, SpaceStateJump.cpp): the terminal's lines and charge bar,
     // the cockpit's shake and fish-eye swell while charging, the fling forward at the jump, the

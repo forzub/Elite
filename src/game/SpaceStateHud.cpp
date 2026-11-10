@@ -217,6 +217,7 @@ m_systemMapRenderer.render(
     renderUiLanguageIndicator(vp);
     renderNavigationStressOverlay(vp);
     renderFreeFlightBanner(vp);
+    renderContainmentBeacon(vp);
     renderHudJump(vp);
     renderDockingWidget(vp);
     renderZoneViolationBanner(vp);
@@ -2216,5 +2217,48 @@ void SpaceState::renderUniverseTimeSimulationOverlay(
         glm::vec4(1.0f, 0.42f, 0.18f, 0.98f)
     );
 
+    text.endFrame();
+}
+
+// Reactor containment emergency (author 2026-11-10: "a red flashing beacon instead of a siren"): while the replicated
+// ship status carries a Containment alert, a red lamp flashes at the top of the screen (2 Hz) with the alert text.
+void SpaceState::renderContainmentBeacon(const Viewport& viewport)
+{
+    if (!m_client || viewport.width <= 0 || viewport.height <= 0)
+        return;
+    const auto& ships = m_client->world().ships();
+    const auto it = ships.find(m_playerId.value);
+    if (it == ships.end())
+        return;
+    const game::AlertStatus* alarm = nullptr;
+    for (const auto& alert : it->second.shipCoreStatus.alerts)
+        if (alert.system == "Containment")
+        {
+            alarm = &alert;
+            break;
+        }
+    if (!alarm)
+        return;
+    const double now = glfwGetTime();
+    const bool on = std::fmod(now * 2.0, 1.0) < 0.55;
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+    const auto bar = alarm->message.find('|');
+    const std::string head = alarm->message.substr(0, bar);
+    const std::string advice = bar == std::string::npos ? std::string() : alarm->message.substr(bar + 1);
+    char line[200];
+    std::snprintf(line, sizeof line, "%s   ·   ядро %.0f K   ·   %.0f с", head.c_str(), alarm->value, alarm->threshold);
+    const float tw = std::max(text.measureTextPx(line, 18), text.measureTextPx(advice, 14));
+    const float w = tw + 90.0f;
+    const float x = std::max(8.0f, (static_cast<float>(viewport.width) - w) * 0.5f);
+    const float y = 118.0f;
+    const glm::vec4 red(1.0f, 0.12f, 0.08f, 1.0f);
+    text.solidRectPx(x, y, w, 58.0f, on ? glm::vec4(0.55f, 0.02f, 0.02f, 0.9f) : glm::vec4(0.18f, 0.0f, 0.0f, 0.85f));
+    // the lamp: a bright square with a halo while lit
+    if (on)
+        text.solidRectPx(x + 10.0f, y + 12.0f, 34.0f, 34.0f, glm::vec4(1.0f, 0.25f, 0.15f, 0.35f));
+    text.solidRectPx(x + 17.0f, y + 19.0f, 20.0f, 20.0f, on ? glm::vec4(1.0f, 0.2f, 0.1f, 1.0f) : glm::vec4(0.35f, 0.05f, 0.04f, 1.0f));
+    text.textDrawPx(line, x + 60.0f, y + 24.0f, 18, on ? glm::vec4(1.0f, 0.9f, 0.85f, 1.0f) : red);
+    text.textDrawPx(advice, x + 60.0f, y + 46.0f, 14, glm::vec4(1.0f, 0.75f, 0.65f, 1.0f));
     text.endFrame();
 }

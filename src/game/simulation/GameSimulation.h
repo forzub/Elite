@@ -314,6 +314,21 @@ public:
     std::unordered_set<std::string> m_explodedReactors;   // "<ship>#<module>"
     void queueReactorExplosion(EntityId shipId, const std::string& moduleId, const std::string& cause);
     void explodeReactor(const PendingExplosion& e);
+    // Containment emergency (author 2026-11-10): a reactor does not blow up at once. The emergency runs for an
+    // unknown fuse (20-60 s), the core heats up, the siren sounds (critical alert); at the end it blows up or
+    // collapses quietly - by chance. The crew can switch the propulsion reactors off (lower chance, not certain),
+    // eject in the EC-2 cockpit, or (repair games) send a repair drone that may stabilise it in time.
+    struct ContainmentEmergency
+    {
+        EntityId shipId;
+        std::string moduleId, cause;
+        double startS = 0.0, fuseS = 30.0, chance = 0.5, stabilise01 = 0.0, lastLogS = -10.0;
+        double startTemperatureK = 0.0;
+        double droneDispatchedS = -1.0;   // Ctrl+R during the emergency: the drone flies 8 s, then works
+    };
+    std::vector<ContainmentEmergency> m_containment;
+    void startContainmentEmergency(EntityId shipId, const std::string& moduleId, double chance, const std::string& cause);
+    void updateContainmentEmergencies(double dt);
     std::unordered_map<EntityId, EntityId> m_combatHostility;      // NPC -> the enemy it fights (combat AI)
     // Laser controller (author 2026-11-10): one law, ship-specific limits (reactor headroom, coolant).
     struct LaserUnit

@@ -473,7 +473,7 @@ bool DevScriptRunner::runObjectListVerb(SpaceState& s, const std::string& cmd)
 }
 
 // Ship command verbs: fire:on|off, missile, laser:next, missile:next, target:,
-// freeflight, stabilization, jengine, backspace, home, end, insert, thrust:,
+// freeflight, stabilization, jengine, reactors, repair, eject, backspace, home, end, insert, thrust:,
 // yaw:, roll:, pitch:
 bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
 {
@@ -519,6 +519,17 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         game::network::ClientMessage msg;
         ClientShipCommand command;
         command.type = cmd == "jengine" ? ClientShipCommand::ToggleJEngine : ClientShipCommand::ToggleStabilization;
+        msg.payload = command;
+        s.m_client->sendMessage(msg);
+    }
+    // the emergency keys (author 2026-11-10 containment trials): Ctrl+Alt+Shift+I propulsion reactors on / off,
+    // Ctrl+R the repair drone, L-Ctrl+Q eject the cockpit
+    else if (cmd == "reactors" || cmd == "repair" || cmd == "eject")
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = cmd == "reactors" ? ClientShipCommand::TogglePropulsionReactors
+                     : cmd == "repair" ? ClientShipCommand::StartBestRepairJob : ClientShipCommand::EjectCockpitCapsule;
         msg.payload = command;
         s.m_client->sendMessage(msg);
     }

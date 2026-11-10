@@ -1,3 +1,4 @@
+#include <cstring>
 #include <random>
 #include "src/game/navigation/rules/JumpRules.h"
 #include <fstream>
@@ -329,8 +330,8 @@ void GameSimulation::flushCombatDamage(EntityId targetId, game::damage::DamageTy
                     const std::size_t hr = std::hash<std::string>{}(r + "#bay#" + std::to_string(targetId.value) + "#" +
                                                                     std::to_string(static_cast<long long>(m_combatClockS)));
                     const double roll = static_cast<double>(hr % 10000) / 10000.0;
-                    if (roll < 0.35)
-                        queueReactorExplosion(targetId, r, "reactor bay frame destroyed (roll " + std::to_string(roll) + ")");
+                    if (roll < 0.6)   // the reactor is torn loose: an emergency (the blast itself is a later roll)
+                        startContainmentEmergency(targetId, r, 0.45, "reactor bay frame destroyed");
                 }
             if (reactor)
             {
@@ -342,8 +343,8 @@ void GameSimulation::flushCombatDamage(EntityId targetId, game::damage::DamageTy
                 const std::size_t h = std::hash<std::string>{}(mod + "#" + std::to_string(targetId.value) + "#" +
                                                                std::to_string(static_cast<long long>(m_combatClockS)));
                 const double roll = static_cast<double>(h % 10000) / 10000.0;
-                if (running && roll < (service ? 0.20 : 0.35))
-                    queueReactorExplosion(targetId, mod, "destroyed while running (roll " + std::to_string(roll) + ")");
+                if (running && roll < (service ? 0.5 : 0.8))
+                    startContainmentEmergency(targetId, mod, service ? 0.35 : 0.5, "destroyed while running");
             }
         }
     }
@@ -422,7 +423,7 @@ void GameSimulation::updateCombat(double dt)
     m_combatClockS += dt;
     for (auto& [id, sp] : m_ships)
         for (const auto& mod : sp->core().takeReactorCatastrophes())
-            queueReactorExplosion(id, mod, "containment loss (overheat + damage)");
+            startContainmentEmergency(id, mod, 0.8, "containment loss (overheat + damage)");
     {
         // DEV (explosion trials): ELITE_DEV_REACTOR_EXPLODE=<combat s> blows up a propulsion reactor of the combat target
         static const double devBlastAt = [] {
@@ -445,6 +446,26 @@ void GameSimulation::updateCombat(double dt)
             }
         }
     }
+    {
+        // DEV (emergency trials): ELITE_DEV_REACTOR_EMERGENCY=<combat s>[:<chance>] starts a containment emergency on
+        // a propulsion reactor of the PLAYER ship (to see the siren, the heat and the outcome)
+        static const char* devEm = std::getenv("ELITE_DEV_REACTOR_EMERGENCY");
+        static bool devEmDone = false;
+        if (devEm && *devEm && !devEmDone && m_combatClockS >= std::atof(devEm))
+        {
+            devEmDone = true;
+            const char* colon = std::strchr(devEm, ':');
+            for (const auto& [id, sp] : m_ships)
+                if (sp->core().role() == ShipRole::Player)
+                {
+                    const auto& installed = sp->core().desc().powerThermalInstallation.engineReactorModuleIds;
+                    if (!installed.empty())
+                        startContainmentEmergency(id, installed.front(), colon ? std::atof(colon + 1) : 0.5, "DEV trigger");
+                    break;
+                }
+        }
+    }
+    updateContainmentEmergencies(dt);
     for (const auto& e : std::exchange(m_pendingExplosions, {}))
         explodeReactor(e);
     devCombatStep(dt);
@@ -1338,4 +1359,120 @@ void GameSimulation::explodeReactor(const PendingExplosion& e)
     std::cerr << "[Explosion] ship " << e.shipId.value << ": REACTOR " << e.moduleId << " EXPLODED (" << e.cause << "), "
               << e.energyMJ << " MJ: flash on " << near.size() << " modules, " << ownHits << "/" << N
               << " fragments hit the own hull, " << otherHits << " hit other ships" << std::endl;
+}
+
+// ============================================================================ containment emergency (author 2026-11-10)
+void GameSimulation::startContainmentEmergency(EntityId shipId, const std::string& moduleId, double chance, const std::string& cause)
+{
+    if (m_explodedReactors.count(std::to_string(shipId.value) + "#" + moduleId))
+        return;
+    for (const auto& c : m_containment)
+        if (c.shipId == shipId && c.moduleId == moduleId)
+            return;
+    const Ship* ship = getShip(shipId);
+    if (!ship)
+        return;
+    ContainmentEmergency c;
+    c.shipId = shipId;
+    c.moduleId = moduleId;
+    c.cause = cause;
+    c.startS = m_combatClockS;
+    c.chance = std::clamp(chance, 0.0, 1.0);
+    // the fuse: 20-60 s, not known to anyone aboard
+    const std::size_t h = std::hash<std::string>{}(moduleId + "#fuse#" + std::to_string(shipId.value) + "#" +
+                                                   std::to_string(static_cast<long long>(m_combatClockS * 10.0)));
+    c.fuseS = 20.0 + 40.0 * static_cast<double>(h % 1000) / 1000.0;
+    if (const auto* m = static_cast<const world::modules::ObjectModuleRuntime&>(ship->core().moduleRuntime()).findModule(moduleId))
+        c.startTemperatureK = std::max(1500.0, m->engineReactorOperating.temperatureK);
+    else
+        c.startTemperatureK = 2500.0;
+    m_containment.push_back(c);
+    std::cerr << "[Containment] ship " << shipId.value << ": " << moduleId << " CONTAINMENT FAILING (" << cause
+              << ") - siren; base blast chance " << c.chance << ", fuse unknown (" << c.fuseS << " s)" << std::endl;
+}
+
+void GameSimulation::updateContainmentEmergencies(double dt)
+{
+    std::unordered_map<EntityId, std::vector<ShipCore::ContainmentAlarm>> alarms;
+    for (auto it = m_containment.begin(); it != m_containment.end();)
+    {
+        Ship* ship = getShip(it->shipId);
+        if (!ship)
+        {
+            it = m_containment.erase(it);
+            continue;
+        }
+        auto& c = *it;
+        auto& core = ship->core();
+        const double t = m_combatClockS - c.startS;
+        // the core heats towards the critical temperature and beyond over the fuse (the HUD reads it)
+        const double coreK = c.startTemperatureK + (3400.0 - c.startTemperatureK) * std::min(1.0, t / c.fuseS);
+        const bool reactorsOff = !core.propulsionReactorsOn();
+        const bool repairing = core.activeRepairJobCount() > 0 ||
+                               (c.droneDispatchedS >= 0.0 && m_combatClockS - c.droneDispatchedS >= 8.0);
+        const bool droneEnRoute = c.droneDispatchedS >= 0.0 && !repairing;
+        if (repairing)
+            c.stabilise01 += dt / 25.0;   // a repair drone at work: ~25 s of work stabilises the containment
+        // the chance at the end of the fuse: switching the propulsion reactors off helps, but not always
+        double chance = c.chance * (reactorsOff ? 0.4 : 1.0);
+        ShipCore::ContainmentAlarm a;
+        a.moduleId = c.moduleId;
+        a.elapsedS = t;
+        a.coreTemperatureK = coreK;
+        a.advice = droneEnRoute ? "ремонтный дрон летит к реактору"
+                 : repairing ? "ремонтный дрон работает - стабилизация " + std::to_string(static_cast<int>(100.0 * std::min(1.0, c.stabilise01))) + " %"
+                 : reactorsOff ? "реакторы отключены - шанс ниже, но не ноль; катапульта L-Ctrl+Q"
+                               : "отключите реакторы (Ctrl+Alt+Shift+I), катапульта (L-Ctrl+Q) или ремонтный дрон (Ctrl+R)";
+        alarms[c.shipId].push_back(a);
+        if (m_combatClockS - c.lastLogS >= 5.0)
+        {
+            c.lastLogS = m_combatClockS;
+            std::cerr << "[Containment] ship " << c.shipId.value << " " << c.moduleId << " t+" << static_cast<int>(t) << " s: core "
+                      << static_cast<int>(coreK) << " K, reactors " << (reactorsOff ? "OFF" : "on") << ", repair "
+                      << (repairing ? "yes" : "no") << ", stabilised " << static_cast<int>(100.0 * std::min(1.0, c.stabilise01)) << " %"
+                      << std::endl;
+        }
+        if (c.stabilise01 >= 1.0)
+        {
+            std::cerr << "[Containment] ship " << c.shipId.value << " " << c.moduleId << ": STABILISED by the repair drone at t+"
+                      << static_cast<int>(t) << " s - no blast; the reactor is offline" << std::endl;
+            m_explodedReactors.insert(std::to_string(c.shipId.value) + "#" + c.moduleId);   // never again
+            it = m_containment.erase(it);
+            continue;
+        }
+        if (t >= c.fuseS)
+        {
+            const std::size_t h = std::hash<std::string>{}(c.moduleId + "#outcome#" + std::to_string(c.shipId.value) + "#" +
+                                                           std::to_string(static_cast<long long>(c.startS * 10.0)));
+            const double roll = static_cast<double>(h % 10000) / 10000.0;
+            if (roll < chance)
+            {
+                std::cerr << "[Containment] ship " << c.shipId.value << " " << c.moduleId << ": BLAST at t+" << static_cast<int>(t)
+                          << " s (roll " << roll << " < chance " << chance << ")" << std::endl;
+                queueReactorExplosion(c.shipId, c.moduleId, c.cause + ", after " + std::to_string(static_cast<int>(t)) + " s");
+            }
+            else
+            {
+                std::cerr << "[Containment] ship " << c.shipId.value << " " << c.moduleId << ": collapsed QUIETLY at t+"
+                          << static_cast<int>(t) << " s (roll " << roll << " >= chance " << chance << ") - the reactor is dead" << std::endl;
+                m_explodedReactors.insert(std::to_string(c.shipId.value) + "#" + c.moduleId);
+                core.moduleRuntime().markModuleDestroyed(c.moduleId, 0.0f);
+                core.refreshRuntimeState();
+                markShipGraphDirty(c.shipId);
+                disableShipIfCombatLost(c.shipId, *ship);
+            }
+            it = m_containment.erase(it);
+            continue;
+        }
+        ++it;
+    }
+    // publish (an empty list clears a finished alarm)
+    for (auto& [id, sp] : m_ships)
+    {
+        auto f = alarms.find(id);
+        if (f != alarms.end())
+            sp->core().setContainmentAlarms(std::move(f->second));
+        else if (!sp->core().containmentAlarms().empty())
+            sp->core().setContainmentAlarms({});
+    }
 }

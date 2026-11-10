@@ -561,9 +561,11 @@ desc.modules =
         "avionics_front",
         { "ship_cockpit" },
         game::damage::HitZoneType::Cockpit,
-        90.0f,
-        10.0f,
-        16.0f,
+        // author 2026-11-10: the cockpit is the hardest module to kill (an armoured capsule - burning it out must take
+        // long): more health, armour and burn resistance than even the reactor bay frame (180 / 34 / 44)
+        260.0f,
+        40.0f,
+        60.0f,
         1,
         120,
         true,

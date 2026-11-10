@@ -21,6 +21,8 @@ public:
 
     // Short non-critical UI sound. Failure to play is always non-fatal.
     void playTerminalTick() noexcept;
+    // Reactor containment siren (one 0.9 s cycle; the HUD repeats it while the alert lasts).
+    void playReactorSiren() noexcept;
 
     // The jump core's hum (author 2026-11-09): 0 silent .. 1 the moment of the jump; it rises with
     // the charge. Sound effects are off for now - the level is kept for the future backend.

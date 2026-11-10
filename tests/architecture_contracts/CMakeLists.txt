@@ -1771,3 +1771,9 @@ target_include_directories(er5_failure_matrix_scenario PRIVATE
     "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
 target_compile_features(er5_failure_matrix_scenario PRIVATE cxx_std_17)
 add_test(NAME er5_failure_matrix COMMAND er5_failure_matrix_scenario)
+
+# Author 2026-11-10: jump-field emitter damage rule (jdrive::jFieldFactor)
+add_executable(j_field_emitter_tests JFieldEmitterTests.cpp)
+target_include_directories(j_field_emitter_tests PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(j_field_emitter_tests PRIVATE cxx_std_17)
+add_test(NAME j_field_emitter COMMAND j_field_emitter_tests)

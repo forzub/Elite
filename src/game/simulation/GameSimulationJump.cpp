@@ -5,6 +5,7 @@
 // client its sky / bodies / maps on the next tick), and once the new system's bodies are in the
 // gravity context the ship is put on a circular orbit of the exit planet (version 1: no hubs in
 // other systems yet - the orbit of the planet with the most world sites, else the heaviest).
+#include "src/game/simulation/JFieldIntegrity.h"
 #include "src/game/simulation/GameSimulation.h"
 
 #include <algorithm>
@@ -52,6 +53,9 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
         return refuse(jr::Refusal::SameSystem);
     if (!motion.freeFlight || m_freeFlights.count(shipId) == 0 || m_freeFlights.at(shipId).localFrame)
         return refuse(jr::Refusal::NotInNormalFlight);
+    if (!game::navigation::jdrive::jumpFieldComplete(game::simulation::jFieldIntegrity(
+            static_cast<const world::modules::ObjectModuleRuntime&>(ship->core().moduleRuntime()))))
+        return refuse(jr::Refusal::FieldIncomplete);
     const auto physics = ship->core().effectivePhysics();
     const double massT = physics.massKg / 1000.0;
     if (motion.jChargeT < 0.0)
@@ -136,6 +140,13 @@ void GameSimulation::updateJumps(double dt)
             {
                 ++it;
                 cancelJump(id, static_cast<std::uint8_t>(jr::Refusal::Interrupted));
+                continue;
+            }
+            if (!game::navigation::jdrive::jumpFieldComplete(game::simulation::jFieldIntegrity(
+                    static_cast<const world::modules::ObjectModuleRuntime&>(ship->core().moduleRuntime()))))
+            {
+                ++it;
+                cancelJump(id, static_cast<std::uint8_t>(jr::Refusal::FieldIncomplete));   // an emitter lost mid charge-up
                 continue;
             }
             j.elapsedS = std::min(j.durationS, j.elapsedS + dt);

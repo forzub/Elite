@@ -70,6 +70,7 @@
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
 #include "src/game/navigation/rules/JDrive.h"
+#include "src/game/simulation/JFieldIntegrity.h"
 #include "src/game/navigation/rules/JumpRules.h"
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
 
@@ -137,6 +138,15 @@ double halfHeightAlong(const Ship& ship, const glm::dvec3& vertical)
 }
 }
 
+namespace
+{
+game::navigation::jdrive::JFieldIntegrity jFieldOf(const Ship& ship)
+{
+    return game::simulation::jFieldIntegrity(
+        static_cast<const world::modules::ObjectModuleRuntime&>(ship.core().moduleRuntime()));
+}
+} // namespace
+
 bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const
 {
     namespace jd = game::navigation::jdrive;
@@ -185,7 +195,8 @@ void GameSimulation::setFreeFlightThrust(EntityId shipId, int command)
     {
         // J: HOME = full positive acceleration, END = full negative, INSERT = none
         namespace jd = game::navigation::jdrive;
-        motion.jAccelCommandMps2 = command == 1 ? jd::MaxAccelMps2 : command == 2 ? -jd::MaxAccelMps2 : 0.0;
+        const double full = jd::MaxAccelMps2 * jd::jFieldFactor(jFieldOf(*ship));   // one emitter lost: half
+        motion.jAccelCommandMps2 = command == 1 ? full : command == 2 ? -full : 0.0;
         motion.freeFlightThrust = 0;
         motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
         std::cerr << "[Flight] ship " << shipId.value << " J command "
@@ -218,7 +229,8 @@ void GameSimulation::applyGlobalFlightCommand(EntityId shipId, Ship& ship, Activ
         motion.jAccelCommandMps2 = 0.0;
         motion.freeFlightThrust = 0;
         // the field's own ramp: from 1 g, doubling every DriveRampDoublingS, within the client's limit
-        double cap = std::min({std::max(0.0, cmd.globalJAccelLimitMps2), jd::MaxAccelMps2,
+        const double field = jd::jFieldFactor(jFieldOf(ship));   // emitter / core damage halves or removes J
+        double cap = std::min({std::max(0.0, cmd.globalJAccelLimitMps2), jd::MaxAccelMps2 * field,
                                jd::StandardGravityMps2 * std::exp2(f.globalRampSeconds / jd::DriveRampDoublingS)});
         std::string why;
         const int blocked = jEngineBlocked(shipId, motion.systemId, frame.originMeters, why);
@@ -611,6 +623,13 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
                   << std::abs(motion.jAccelMps2) / 9.81 << " g" << std::endl;
         return true;
     }
+    if (game::navigation::jdrive::jFieldFactor(jFieldOf(*ship)) <= 0.0)
+    {
+        // the core or every field emitter lost (author 2026-11-10): no field to fly J with
+        motion.freeFlightCaptureRefusal = code(FlightRefusal::JChargeEmpty);
+        std::cerr << "[Flight] ship " << shipId.value << ": J engine REFUSED - no jump field (core / emitters lost)" << std::endl;
+        return false;
+    }
     if (ship->core().effectivePhysics().jumpCoreRatingT <= 0.0 || motion.jChargeT == 0.0)
     {
         motion.freeFlightCaptureRefusal = code(FlightRefusal::JChargeEmpty);
@@ -806,7 +825,8 @@ void GameSimulation::updateFreeFlights(double dt)
                     const double grow = std::exp2(dt / 0.5 * std::abs(plus));
                     const bool up = plus > 0.0;
                     if ((up && cmd >= 0.0) || (!up && cmd <= 0.0))
-                        cmd = (up ? 1.0 : -1.0) * std::min(jd::MaxAccelMps2, std::max(g, std::abs(cmd) * grow));
+                        cmd = (up ? 1.0 : -1.0) * std::min(jd::MaxAccelMps2 * jd::jFieldFactor(jFieldOf(*ship)),
+                                                           std::max(g, std::abs(cmd) * grow));
                     else
                         cmd = std::abs(cmd) / grow < g ? 0.0 : cmd / grow;
                     motion.jAccelCommandMps2 = cmd;
@@ -1303,8 +1323,12 @@ void GameSimulation::updateFreeFlights(double dt)
             {
                 const glm::dvec3 refVel = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
                 const glm::dvec3 rel = frame.linearVelocityMps - refVel;
-                if (glm::length(rel) > game::navigation::jdrive::SpeedCapMps)
-                    frame.linearVelocityMps = refVel + rel * (game::navigation::jdrive::SpeedCapMps / glm::length(rel));
+                // the cap shrinks with the field (one emitter lost: half); no field: the J cap does not bind here,
+                // the ship is on its main engines
+                const double fieldCap = game::navigation::jdrive::SpeedCapMps *
+                    std::max(0.5, game::navigation::jdrive::jFieldFactor(jFieldOf(*ship)));
+                if (glm::length(rel) > fieldCap)
+                    frame.linearVelocityMps = refVel + rel * (fieldCap / glm::length(rel));
             }
             f.lastPrimaryId = primary ? primary->id : std::string();
             f.lastPrimaryCenterMeters = primary ? primary->centerMeters : glm::dvec3(0.0);

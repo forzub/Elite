@@ -73,7 +73,7 @@ CPP_SUITES: dict[str, tuple[str, str, str]] = {
     **{f"cpp:{t}": ("tests/architecture_contracts", "elite_contracts", t) for t in (
         "universe_thermal_radiation_tests", "engine_unit_damage_model_tests",
         "universe_material_engine_thermal_tests", "installed_engine_actuator_tests",
-        "equipment_damage_failure_pipeline_tests", "cobra_compact_drive_thermal_tests")},
+        "equipment_damage_failure_pipeline_tests", "cobra_compact_drive_thermal_tests", "j_field_emitter_tests")},
 }
 
 

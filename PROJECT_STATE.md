@@ -4817,6 +4817,19 @@ Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damag
   attested parts marked in equipment_naming.py (reactor putauhohe karihi, emitter putuku whaitua, coolant loop ara
   whakamatao, life support punaha tautoko ora) - a fluent speaker should confirm; pukupuku (armour) kept with caveat.
 
+### Jump-field emitter damage rule in the runtime (author-accepted 2026-11-10) - LIVE PASS
+- JDrive.h: JFieldIntegrity + jFieldFactor (all intact 1; one emitter lost 0.5 and no jump; core or every emitter
+  lost 0) + jumpFieldComplete; src/game/simulation/JFieldIntegrity.h counts "*jump_field_emitter*" modules and
+  ship_jump_core (intact = Attached with health). Cobra descriptor: passive modules ship_jump_field_emitter_L / _R
+  (like the jump core; no mesh / hit volume yet - shooting them needs S5).
+- Server: J acceleration cap (route / global command, pilot +/- ramp, HOME / END command) x factor, J speed cap
+  x max(0.5, factor), J refused without a field; requestJump refuses FieldIncomplete (new jump::Refusal 10 with
+  Russian text) and a charge-up is cancelled when an emitter is lost mid-way.
+- Test j_field_emitter_tests (C++ gate): PASS. Gates --cpp: 220, 214 PASS / 6 known red (one new red on the way
+  - check_test_suite_source_integrity read "JDrive.h" in a CMake comment as a source - fixed).
+- LIVE (nav-stress:simple, flown out of the hub keep-out on the main engines, then J HOME): emitter L destroyed ->
+  J command 50 000 g, jump to Alpha Centauri REFUSED "поле прыжка неполное"; intact -> command 100 000 g.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

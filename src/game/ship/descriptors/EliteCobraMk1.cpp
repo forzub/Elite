@@ -1303,7 +1303,10 @@ if (const char* rawModel =
              desc.powerThermalInstallation.commonCoolingModuleId,
              desc.powerThermalInstallation.emergencyHeatExchangerModuleId,
              std::string("ship_jump_core"),
-             std::string("ship_jump_charge_tank")})
+             std::string("ship_jump_charge_tank"),
+             // ZP-FE1 jump-field emitters on the wingtips (author 2026-11-10, accepted): JDrive.h jFieldFactor
+             std::string("ship_jump_field_emitter_L"),
+             std::string("ship_jump_field_emitter_R")})
     {
         ModuleDescriptor m;
         m.moduleId = service;

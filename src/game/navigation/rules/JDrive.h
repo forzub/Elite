@@ -57,6 +57,31 @@ constexpr double MeanJumpLy = 22.83;
 constexpr double JumpEnvelopeT = 388.0;          // alpha_ref
 constexpr double ReferenceLegSeconds = 950.0;    // a mean 1.2 AU leg at a_max with the 0.9 c cap
 
+// The field emitters (author 2026-11-10, ACCEPTED - docs/SHIP_ARCHITECTURE_DOCTRINE.md, JUMP_MECHANICS.md): the
+// jump core makes the field, the emitters on the hull extremities shape it around the hull. One emitter lost: the
+// field is asymmetric - the J ceiling (speed cap and acceleration) is halved and a jump is impossible until it is
+// repaired; the core or every emitter lost: no field, no J. A hull without declared emitters keeps the full field.
+struct JFieldIntegrity
+{
+    int emittersInstalled = 0;
+    int emittersIntact = 0;
+    bool coreIntact = true;
+};
+
+inline double jFieldFactor(const JFieldIntegrity& j)
+{
+    if (!j.coreIntact)
+        return 0.0;
+    if (j.emittersInstalled <= 0 || j.emittersIntact >= j.emittersInstalled)
+        return 1.0;
+    return j.emittersIntact <= 0 ? 0.0 : 0.5;
+}
+
+inline bool jumpFieldComplete(const JFieldIntegrity& j)
+{
+    return jFieldFactor(j) >= 1.0;
+}
+
 inline double meanJumpChargeT(double massT)
 {
     return JumpChargePerLyT * MeanJumpLy * (JumpEnvelopeT + massT);

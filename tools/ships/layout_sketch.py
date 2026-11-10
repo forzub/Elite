@@ -20,7 +20,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "models"))
-from eqlib import (Part, box, cyl, lathe, crect, rot_y, rot_z, apply, norm, obj_text, mtl_text, MATERIALS,  # noqa: E402
+from eqlib import (Part, box, cyl, lathe, crect, rot_x, rot_y, rot_z, apply, norm, obj_text, mtl_text, MATERIALS,  # noqa: E402
                    register_materials, I3, ROOT)
 import importlib  # noqa: E402
 import pkgutil  # noqa: E402
@@ -68,6 +68,8 @@ def load_obj(folder, lod=2, only=None, skip=None):
 
 
 _CACHE = {}
+INSTALLS = []        # (instance name, equipment folder, rotation matrix, position) - for the ship hit volumes
+PLATES = []          # (plate name, x0, x1, z0, z1, y) - removable radiator cover plates
 
 
 PADS = ("reactor_cooling_pad",)       # hull-skin parts kept as their own sketch part (hidden in the interior view)
@@ -82,6 +84,8 @@ def place(P, name, folder, pos, yaw_deg=0.0, lod=2, _sub=None):
         _CACHE[key] = load_obj(folder, lod, only=PADS if _sub == "pad" else None, skip=None if _sub == "pad" else PADS)
     V, N, F = _CACHE[key]
     R = rot_y(math.radians(yaw_deg))
+    if _sub is None:
+        INSTALLS.append((name, folder, R, tuple(pos)))
     part = P[name] = Part(name)
     part.v = [tuple(a + b for a, b in zip(apply(R, v), pos)) for v in V]
     part.n = [norm(apply(R, n)) for n in N] + [(0, 1, 0)] * max(0, len(V) - len(N))
@@ -92,6 +96,7 @@ def place(P, name, folder, pos, yaw_deg=0.0, lod=2, _sub=None):
 def place_flipped(P, name, folder, pos, lod=2):
     """a hull-skin unit (outward +Y) installed on the belly: rotated 180 deg about Z, then moved to pos"""
     part = place(P, name, folder, (0.0, 0.0, 0.0), 0.0, lod)
+    INSTALLS[-1] = (name, folder, rot_z(math.pi), tuple(pos))
     part.v = [(-x + pos[0], -y + pos[1], z + pos[2]) for x, y, z in part.v]
     part.n = [(-a, -b, c) for a, b, c in part.n]
     return part
@@ -105,6 +110,8 @@ def quad(part, mat, pts, normal):
 def plate(P, name, mat, x0, x1, z0, z1, y, up=True):
     """a zero-thickness horizontal plate (radiator cover / hatch)"""
     part = P.setdefault(name, Part(name))
+    if mat == "sk_cover":
+        PLATES.append((name, x0, x1, z0, z1, y))
     n = (0, 1, 0) if up else (0, -1, 0)
     quad(part, mat, [(x0, y, z0), (x1, y, z0), (x1, y, z1), (x0, y, z1)], n)
     return part
@@ -224,6 +231,88 @@ def cobrett_i():
 SHIPS = {"cobrett-i": cobrett_i}
 
 
+# ---------------------------------------------------------------- ship hit volumes (author 2026-11-10)
+# Plates: a main volume + one volume per seam; destroying all seams of a plate frees it (it can be torn off by a laser or
+# a robot and the compartment emptied). Equipment: its own hit volumes moved to the install, plus mount points; destroying
+# all mounts of a module frees it - it flies apart from the ship. Written next to the sketch as hit_volumes.json (render
+# with render_preview ... hits) and ship_structure.json (the release rules).
+def _mat(A, B):
+    return [[sum(A[i][k] * B[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+
+
+def _euler_xyz(deg):
+    rx, ry, rz = (math.radians(a) for a in deg)
+    return _mat(_mat(rot_x(rx), rot_y(ry)), rot_z(rz))
+
+
+def _to_euler_xyz(R):
+    sy = max(-1.0, min(1.0, R[0][2]))
+    ry = math.asin(sy)
+    if abs(sy) < 0.9999:
+        rx = math.atan2(-R[1][2], R[2][2])
+        rz = math.atan2(-R[0][1], R[0][0])
+    else:
+        rx = math.atan2(R[2][1], R[1][1])
+        rz = 0.0
+    return [round(math.degrees(a), 4) + 0.0 for a in (rx, ry, rz)]
+
+
+def ship_hits():
+    import json
+    vols, rules = [], {"plates": [], "modules": []}
+    for name, x0, x1, z0, z1, y in PLATES:
+        cx, cz, w, l = (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0
+        vols.append({"id": f"{name}.main", "part": name, "role": "plate", "shape": "box", "position": [cx, y - 0.03, cz],
+                     "rotation_deg": [0, 0, 0], "half_size": [w / 2, 0.03, l / 2]})
+        seams = []
+        for edge, c, hs in (("fore", (cx, y - 0.05, z0), (w / 2, 0.05, 0.06)), ("aft", (cx, y - 0.05, z1), (w / 2, 0.05, 0.06)),
+                            ("left", (x0, y - 0.05, cz), (0.06, 0.05, l / 2)), ("right", (x1, y - 0.05, cz), (0.06, 0.05, l / 2))):
+            sid = f"{name}.seam_{edge}"
+            seams.append(sid)
+            vols.append({"id": sid, "part": name, "role": "seam", "shape": "box", "position": list(c), "rotation_deg": [0, 0, 0],
+                         "half_size": list(hs)})
+        rules["plates"].append({"plate": name, "seams": seams, "rule": "all seams destroyed -> the plate is free (can be torn off)"})
+    for name, folder, R, pos in INSTALLS:
+        hp = os.path.join(EQ, folder, "hit_volumes.json")
+        if not os.path.exists(hp):
+            continue
+        lo, hi = [1e9] * 3, [-1e9] * 3
+        for v in json.load(open(hp, encoding="utf-8"))["volumes"]:
+            q = dict(v)
+            q["id"] = f"{name}.{v['id']}"
+            q["part"] = name
+            q["role"] = "equipment"
+            q["module_part"] = v["part"]
+            q["position"] = [a + b for a, b in zip(apply(R, v["position"]), pos)]
+            q["rotation_deg"] = _to_euler_xyz(_mat(R, _euler_xyz(v["rotation_deg"])))
+            ext = v.get("half_size") or [v.get("radius", 0.0), v.get("half_height", 0.0), v.get("radius", 0.0)]
+            RW = _mat(R, _euler_xyz(v["rotation_deg"]))
+            for cx in (-1, 1):                                   # true corners of the volume's local box
+                for cy in (-1, 1):
+                    for cz in (-1, 1):
+                        c = apply(RW, (cx * ext[0], cy * ext[1], cz * ext[2]))
+                        for k in range(3):
+                            lo[k] = min(lo[k], q["position"][k] + c[k])
+                            hi[k] = max(hi[k], q["position"][k] + c[k])
+            vols.append(q)
+        # mount points: four small blocks at the base corners of the module (its mounting side = lowest Y here)
+        mounts = []
+        ins = 0.18 * min(hi[0] - lo[0], hi[2] - lo[2])
+        for i, (sx, sz) in enumerate(((-1, -1), (1, -1), (-1, 1), (1, 1))):
+            c = [((lo[0] + hi[0]) / 2) + sx * ((hi[0] - lo[0]) / 2 - ins), lo[1] + 0.12, ((lo[2] + hi[2]) / 2) + sz * ((hi[2] - lo[2]) / 2 - ins)]
+            mid = f"{name}.mount_{i + 1}"
+            mounts.append(mid)
+            vols.append({"id": mid, "part": name, "role": "mount", "shape": "box", "position": c, "rotation_deg": [0, 0, 0],
+                         "half_size": [0.15, 0.12, 0.15]})
+        rules["modules"].append({"module": name, "equipment": folder, "mounts": mounts,
+                                 "rule": "all mounts destroyed -> the module is free (flies apart from the ship)"})
+    for v in vols:
+        for k in ("position", "half_size"):
+            if k in v:
+                v[k] = [round(a, 4) + 0.0 for a in v[k]]
+    return vols, rules
+
+
 def main():
     names = sys.argv[1:] or list(SHIPS)
     for name in names:
@@ -237,7 +326,16 @@ def main():
             open(os.path.join(d, pname + ".obj"), "w", encoding="utf-8", newline="\n").write(obj_text(part, pname + ".mtl"))
             open(os.path.join(d, pname + ".mtl"), "w", encoding="utf-8", newline="\n").write(mtl_text(part.faces.keys()))
             tri += part.tris()
-        print(f"{name}: {len(P)} parts, {tri} triangles -> {d}")
+        import json
+        vols, rules = ship_hits()
+        base = os.path.join(OUT, name)
+        open(os.path.join(base, "hit_volumes.json"), "w", encoding="utf-8", newline=chr(10)).write(json.dumps(
+            {"ship": name, "frame": "metres, +Y up, -Z forward; rotation_deg T*Rx*Ry*Rz", "volumes": vols}, ensure_ascii=False, indent=1))
+        open(os.path.join(base, "ship_structure.json"), "w", encoding="utf-8", newline=chr(10)).write(json.dumps(rules, ensure_ascii=False, indent=1))
+        print(f"{name}: {len(P)} parts, {tri} triangles, {len(vols)} hit volumes ({len(rules['plates'])} plates, "
+              f"{len(rules['modules'])} modules with mounts) -> {d}")
+        INSTALLS.clear()
+        PLATES.clear()
 
 
 if __name__ == "__main__":

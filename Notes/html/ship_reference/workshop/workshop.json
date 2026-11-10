@@ -3385,24 +3385,32 @@
     "file": "cobra3_top.jpg",
     "name": "Эскиз v3 - снаружи: спина, пятаки ER-5, плиты-радиаторы, излучатели поля на законцовках",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794271152040,
-    "updated": 1794271152040
+    "added": 1794271313354,
+    "updated": 1794271313354
    },
    {
     "id": "layout-v3-cobra3_inside",
     "file": "cobra3_inside.jpg",
     "name": "Эскиз v3 - внутри: кабина EC-2, лазеры FL-2, ракетные установки WR-2, отсеки Ø3,5 м, контейнеры",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794271152040,
-    "updated": 1794271152040
+    "added": 1794271313354,
+    "updated": 1794271313354
    },
    {
     "id": "layout-v3-cobra3_under",
     "file": "cobra3_under.jpg",
     "name": "Эскиз v3 - снизу: лыжи LS-1 (выпущены), люки выгрузки",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794271152040,
-    "updated": 1794271152040
+    "added": 1794271313354,
+    "updated": 1794271313354
+   },
+   {
+    "id": "layout-v3-cobra3_hits",
+    "file": "cobra3_hits.jpg",
+    "name": "Хитвалумы корабля: плиты со швами, точки крепления модулей, объёмы оборудования",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794271313354,
+    "updated": 1794271313354
    }
   ],
   "bastion.drone.klegg3": [

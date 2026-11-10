@@ -54,6 +54,8 @@ src/assets/generated/**/*.TGA
 /assets/models/*
 !/assets/models/hub/
 !/assets/models/equipment/
+# ship source meshes (author 2026-11-11: the in-game Cobra mesh existed only in build/ - now versioned)
+!/assets/models/ships/
 /build/assets/generated/
 
 __pycache__/

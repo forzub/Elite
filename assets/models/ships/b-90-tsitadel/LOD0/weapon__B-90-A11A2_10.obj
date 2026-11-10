@@ -1,0 +1,20 @@
+# EliteShipMeshExport - primitive placeholder, module Б-90-A11A2.10
+# frame: +X right, +Y up, -Z forward (metres); do not edit, see ship_models.json
+mtllib primitive.mtl
+o Б-90-A11A2.10
+g Б-90-A11A2.10#0
+v 15.4440 13.1415 -29.2895
+v 18.3060 13.1415 -29.2895
+v 15.4440 14.8585 -29.2895
+v 18.3060 14.8585 -29.2895
+v 15.4440 13.1415 -24.7105
+v 18.3060 13.1415 -24.7105
+v 15.4440 14.8585 -24.7105
+v 18.3060 14.8585 -24.7105
+usemtl cat_weapon
+f 2 4 8 6
+f 1 5 7 3
+f 3 7 8 4
+f 1 2 6 5
+f 5 6 8 7
+f 1 3 4 2

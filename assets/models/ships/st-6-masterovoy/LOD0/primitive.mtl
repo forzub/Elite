@@ -1,0 +1,91 @@
+# EliteShipMeshExport - category colours of CatalogShipAssembly (designer palette)
+newmtl cat_comm
+Kd 0.0900 0.5700 0.4300
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_computer
+Kd 0.0500 0.5200 0.3300
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_container_rack
+Kd 0.2600 0.2600 0.2600
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_coolant_loop
+Kd 0.0500 0.2700 0.6600
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_docking_port
+Kd 0.6300 0.6300 0.6300
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_drive
+Kd 0.8200 0.3000 0.0600
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_drone_bay
+Kd 0.5000 0.5000 0.5200
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_escape_capsule
+Kd 0.2600 0.5600 0.1600
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_hull
+Kd 0.4200 0.4500 0.5000
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_life_support
+Kd 0.1000 0.3600 0.0600
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_medbay
+Kd 0.5000 0.5000 0.5200
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_radar
+Kd 0.0300 0.3800 0.2500
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_radiator
+Kd 0.2200 0.4800 0.7900
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_reactor
+Kd 0.6600 0.1000 0.1000
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_service_reactor
+Kd 0.5500 0.2200 0.2200
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_tank
+Kd 0.4300 0.2500 0.6700
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_transponder
+Kd 0.0900 0.5700 0.4300
+Ks 0.1000 0.1000 0.1000
+Ns 16
+
+newmtl cat_workshop
+Kd 0.5000 0.5000 0.5200
+Ks 0.1000 0.1000 0.1000
+Ns 16
+

@@ -1,0 +1,20 @@
+# EliteShipMeshExport - primitive placeholder, module HT-20K-A2A1.2
+# frame: +X right, +Y up, -Z forward (metres); do not edit, see ship_models.json
+mtllib primitive.mtl
+o HT-20K-A2A1.2
+g HT-20K-A2A1.2#0
+v 2.8815 2.8815 15.7575
+v 4.1185 2.8815 15.7575
+v 2.8815 4.1185 15.7575
+v 4.1185 4.1185 15.7575
+v 2.8815 2.8815 17.2425
+v 4.1185 2.8815 17.2425
+v 2.8815 4.1185 17.2425
+v 4.1185 4.1185 17.2425
+usemtl cat_reactor
+f 2 4 8 6
+f 1 5 7 3
+f 3 7 8 4
+f 1 2 6 5
+f 5 6 8 7
+f 1 3 4 2

@@ -1,0 +1,20 @@
+# EliteShipMeshExport - primitive placeholder, module Хэ-Ф22-A1A1.5
+# frame: +X right, +Y up, -Z forward (metres); do not edit, see ship_models.json
+mtllib primitive.mtl
+o Хэ-Ф22-A1A1.5
+g Хэ-Ф22-A1A1.5#0
+v -13.8785 -5.3285 -42.5000
+v -12.2215 -5.3285 -42.5000
+v -13.8785 -3.6715 -42.5000
+v -12.2215 -3.6715 -42.5000
+v -13.8785 -5.3285 -38.8560
+v -12.2215 -5.3285 -38.8560
+v -13.8785 -3.6715 -38.8560
+v -12.2215 -3.6715 -38.8560
+usemtl cat_drive
+f 2 4 8 6
+f 1 5 7 3
+f 3 7 8 4
+f 1 2 6 5
+f 5 6 8 7
+f 1 3 4 2

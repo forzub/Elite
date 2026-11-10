@@ -1,0 +1,20 @@
+# EliteShipMeshExport - primitive placeholder, module C-120-A2A1.2
+# frame: +X right, +Y up, -Z forward (metres); do not edit, see ship_models.json
+mtllib primitive.mtl
+o C-120-A2A1.2
+g C-120-A2A1.2#0
+v -5.4265 -3.1865 25.0310
+v -3.6035 -3.1865 25.0310
+v -5.4265 -1.3635 25.0310
+v -3.6035 -1.3635 25.0310
+v -5.4265 -3.1865 27.2190
+v -3.6035 -3.1865 27.2190
+v -5.4265 -1.3635 27.2190
+v -3.6035 -1.3635 27.2190
+usemtl cat_reactor
+f 2 4 8 6
+f 1 5 7 3
+f 3 7 8 4
+f 1 2 6 5
+f 5 6 8 7
+f 1 3 4 2

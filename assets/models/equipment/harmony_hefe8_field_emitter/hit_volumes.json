@@ -1,0 +1,79 @@
+{
+ "asset": "harmony_hefe8_field_emitter",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "hefe_emitter.1",
+   "part": "hefe_emitter",
+   "shape": "cylinder",
+   "position": [
+    0.9,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.55,
+   "half_height": 1.5
+  },
+  {
+   "id": "hefe_emitter.2",
+   "part": "hefe_emitter",
+   "shape": "cylinder",
+   "position": [
+    0.9,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.26,
+   "half_height": 2.1
+  },
+  {
+   "id": "hefe_pylon.1",
+   "part": "hefe_pylon",
+   "shape": "cylinder",
+   "position": [
+    0.405,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.2,
+   "half_height": 0.325
+  },
+  {
+   "id": "hefe_mount.1",
+   "part": "hefe_mount",
+   "shape": "cylinder",
+   "position": [
+    0.04,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.42,
+   "half_height": 0.04
+  }
+ ]
+}

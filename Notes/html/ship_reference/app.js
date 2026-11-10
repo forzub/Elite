@@ -33,6 +33,7 @@ const CAT = {
   radiator: ["Радиатор", "сбрасывает служебное тепло излучением в космос", "deployable heat radiator panel", "thin deployable radiator panels on a hinged boom with coolant manifolds"],
   coolant_loop: ["Контур охлаждения", "переносит тепло от агрегатов к радиаторам и пятакам", "coolant loop pump module", "pump and heat-exchanger unit with insulated pipework"],
   jump_core: ["Ядро прыжка", "запечатанный стратегический модуль межзвёздного прыжка", "sealed jump-drive core", "sealed armoured jump core canister with field emitters and warning markings"],
+  jump_field_emitter: ["Излучатель поля прыжка", "формирует поле ядра вокруг всего корпуса; ставится парами на законцовки крыльев / оконечности корпуса", "jump-field emitter pod", "wingtip field emitter pod on a short pylon"],
   tank: ["Бак", "запас топливных таблеток / заряда прыжка / расходников", "fuel / charge tank", "cylindrical tank with mounting saddles"],
   cryo_tank: ["Криобак", "хранение криогенных жидкостей", "cryogenic tank", "insulated cryogenic dewar tank"],
   computer: ["Бортовой компьютер", "навигация, управление полётом, автоматика", "flight computer rack", "rugged avionics computer rack with cooling ducts"],

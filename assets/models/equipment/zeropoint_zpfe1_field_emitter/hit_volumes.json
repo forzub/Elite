@@ -1,0 +1,68 @@
+{
+ "asset": "zeropoint_zpfe1_field_emitter",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "zpfe_emitter.1",
+   "part": "zpfe_emitter",
+   "shape": "cylinder",
+   "position": [
+    0.78,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.45,
+   "half_height": 1.5
+  },
+  {
+   "id": "zpfe_pylon.1",
+   "part": "zpfe_pylon",
+   "shape": "box",
+   "position": [
+    0.2313,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.2213,
+    0.1,
+    0.75
+   ]
+  },
+  {
+   "id": "zpfe_mount.1",
+   "part": "zpfe_mount",
+   "shape": "box",
+   "position": [
+    0.03,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.03,
+    0.17,
+    0.85
+   ]
+  }
+ ]
+}

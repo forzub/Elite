@@ -1,4 +1,4 @@
-"""New equipment proposals (author request 2026-11-10, not in the canon yet - passports in briefs/new_parts_proposal.json):
+"""New equipment (author request 2026-11-10, ACCEPTED by the author 2026-11-10 - passports in tools/colonization_lab/canon/ship_parts_unified.json):
   Sol Mass Yards LM-MP8   light external missile rack (8 cells, blow-out covers, end reload hatch, launch-control unit);
   Hyperion Yards RD-1   recon drone (gimballed camera turret, deployable antenna, power block, 4 field-coupled thrusters,
                         3-point kinematic docking latch);

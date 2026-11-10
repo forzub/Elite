@@ -65,6 +65,7 @@ WORD = {
     "service_reactor": ("Service Reactor", {"zh": "辅助反应堆", "nb": "hjelpereaktor", "el": "βοηθητικός αντιδραστήρας", "hi": "सहायक रिएक्टर", "sw": "kinu kisaidizi", "mi": "tauhohenga āwhina"}),
     "radiator": ("Radiator", {"zh": "散热板", "nb": "radiator", "el": "ψυκτικό πάνελ", "hi": "रेडिएटर", "sw": "kipoza joto", "mi": "rauangi wera"}),
     "coolant_loop": ("Coolant Loop", {"zh": "冷却回路", "nb": "kjølekrets", "el": "κύκλωμα ψύξης", "hi": "शीतलन परिपथ", "sw": "mzunguko wa kupoza", "mi": "porowhita mātao"}),
+    "jump_field_emitter": ("Field Emitter", {"zh": "场发射器", "nb": "feltemitter", "el": "πομπός πεδίου", "hi": "क्षेत्र उत्सर्जक", "sw": "kitoa uga", "mi": "tukuwāhi"}),
     "jump_core": ("Jump Core", {"zh": "跃迁核心", "nb": "hoppkjerne", "el": "πυρήνας άλματος", "hi": "जंप कोर", "sw": "kiini cha kuruka", "mi": "iho peke"}),
     "tank": ("Tank", {"zh": "储罐", "nb": "tank", "el": "δεξαμενή", "hi": "टंकी", "sw": "tangi", "mi": "tānga"}),
     "cryo_tank": ("Cryo Tank", {"zh": "低温储罐", "nb": "kryotank", "el": "κρυοδεξαμενή", "hi": "क्रायो टंकी", "sw": "tangi baridi", "mi": "tānga hauhunga"}),
@@ -102,10 +103,20 @@ def name_for(p):
     if p.get("official_name") and not CYR.search(p["official_name"]):
         official = p["official_name"]                      # already authored (new items, Cobra weapons...)
     ru = p.get("name", "")
+    if idx:                                                # repair the earlier double-prefix forms (idempotent)
+        ru = re.sub(r"^" + re.escape(idx) + r" · \(", idx + " (", ru)
+        m = re.match(r"^" + re.escape(idx) + r" · (.*(^|\W)" + re.escape(idx) + r"(\W|$).*)$", ru)
+        if m:
+            ru = m.group(1)
+    if p.get("native_script"):
+        native = p["native_script"]                        # authored native line wins (new items)
     ru_desc = re.sub(r"^\s*" + re.escape(old) + r"\s*", "", ru) if old else ru
     for o, n in REINDEX.items():
         ru_desc = ru_desc.replace(o, n)
-    display = ru_desc if ru_desc.startswith(idx) else f"{idx} · {ru_desc}"
+    if idx and re.search(r"(^|\W)" + re.escape(idx) + r"(\W|$)", ru):
+        display = ru                                       # the Russian name already carries the index
+    else:
+        display = ru_desc if ru_desc.startswith(idx) else f"{idx} · {ru_desc}"
     out = {"model_index": idx, "official_name": official, "display_name_ru": display}
     if native:
         out["native_script"] = native
@@ -139,8 +150,10 @@ def main():
     semi = body.endswith(";")
     D = json.loads(body.rstrip(";"))
     table = {}
+    for p in json.load(open(os.path.join(CANON, "ship_parts_unified.json"), encoding="utf-8"))["parts"]:
+        table[p["id"]] = name_for(p)                       # the canon first (accepted items carry authored names)
     for p in D["parts"]:
-        table[p["id"]] = name_for(p)
+        table.setdefault(p["id"], name_for(p))
     for p in json.load(open(os.path.join(ROOT, "tools", "models", "briefs", "new_parts_proposal.json"), encoding="utf-8"))["parts"]:
         table.setdefault(p["id"], name_for(p))
     if "--check" in sys.argv:

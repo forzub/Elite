@@ -6,7 +6,7 @@ Bastion school: faceted armour grey / dark / hazard yellow, no exposed cables.
   bastion_bk24_cassette - MJ-BK24 Bikube (nb "beehive") armoured cassette: 24 vertical cells (drones stowed nose-up, arms folded), 6 sliding lids,
                           launch control; hull-skin unit: launches along +Y, mounting face at y = 0
 Names follow the naming canon (tools/colonization_lab/canon/ship_naming.json: Bastion = Norwegian bokmal,
-blueprint prefix MJ from the Mjolner yard). Proposal only - passports in tools/models/briefs/new_parts_proposal.json.
+blueprint prefix MJ from the Mjolner yard). ACCEPTED (author 2026-11-10) - passports in tools/colonization_lab/canon/ship_parts_unified.json.
 """
 import math
 

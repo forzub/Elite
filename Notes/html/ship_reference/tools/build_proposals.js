@@ -52,14 +52,22 @@ const newParts = [
     }
   }
 ];
-// new equipment items proposed by the model builders (author 2026-11-10: missile rack, drones, kamikaze cassette) -
-// one source: tools/models/briefs/new_parts_proposal.json (not canon until the author accepts)
+// new equipment items proposed by the model builders (author 2026-11-10: missile rack, drones, kamikaze cassette):
+// pending proposals live in tools/models/briefs/new_parts_proposal.json; accepted ones (author 2026-11-10) moved to the
+// canon tools/colonization_lab/canon/ship_parts_unified.json with status "ACCEPTED (author ...)" - added here if data.js lacks them
 const NEW_EQ = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "..", "..", "tools", "models", "briefs", "new_parts_proposal.json"), "utf8"));
 for (const q of NEW_EQ.parts) {
   const p = Object.assign({}, q, { status: ST, model_asset: q.model_asset ? "equipment/" + q.model_asset.replace(/^equipment\//, "") : undefined });
   p.geometry = Object.assign({}, q.geometry || {}, { status: ST });
   p.notes = "PROPOSAL (reference, tools/models/briefs/new_parts_proposal.json): " + (q.notes || "");
   newParts.push(p);
+}
+const CANON_PARTS = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "..", "..", "tools", "colonization_lab", "canon", "ship_parts_unified.json"), "utf8")).parts;
+for (const q of CANON_PARTS) {
+  if (!String(q.status || "").startsWith("ACCEPTED")) continue;
+  const p = Object.assign({}, q, { model_asset: q.model_asset ? "equipment/" + q.model_asset.replace(/^equipment\//, "") : undefined });
+  const i = D.parts.findIndex(x => x.id === q.id);
+  if (i >= 0) D.parts[i] = Object.assign({}, D.parts[i], p); else D.parts.push(p);
 }
 for (const p of newParts) D.parts.push(p);
 // equipment names in the maker's language (author 2026-11-10): tools/colonization_lab/canon/equipment_naming.json
@@ -115,14 +123,14 @@ const PROPOSAL_MODEL_CODES = {
   "aux.craft.lifeboat-20": 72,
 };
 const CAT_GROUP = {
-  drive: "A1", rcs: "A2", radiator: "A3", coolant_loop: "A3", reactor: "A4", service_reactor: "A4", jump_core: "A5",
+  drive: "A1", rcs: "A2", radiator: "A3", coolant_loop: "A3", reactor: "A4", service_reactor: "A4", jump_core: "A5", jump_field_emitter: "A5",
   computer: "A6", radar: "A6", transponder: "A6", sensor_mast: "A6", ecm: "A6", comm: "A7", life_support: "A8", medbay: "A8",
   container_rack: "A9", bulk_hold: "A9", passenger_module: "A9", train_module: "A9", cryo_tank: "A9",
   escape_capsule: "A10", lifeboat: "A10", docking_port: "A11", tow_rig: "A11", drone_bay: "A11", workshop: "A11", boat_bay: "A11",
   hangar: "A11", mining_rig: "A11", weapon: "A12", armour: "A13", heat_shield: "A13", landing_gear: "A13"
 };
 const CAT_SLOT = {
-  drive: "D", rcs: "Q", radiator: "T", coolant_loop: "L", reactor: "R", service_reactor: "S", jump_core: "J", computer: "M", radar: "SR",
+  drive: "D", rcs: "Q", radiator: "T", coolant_loop: "L", reactor: "R", service_reactor: "S", jump_core: "J", jump_field_emitter: "JF", computer: "M", radar: "SR",
   transponder: "SX", sensor_mast: "SM", ecm: "SE", comm: "SC", life_support: "H", medbay: "V", container_rack: "C", bulk_hold: "C",
   passenger_module: "P", train_module: "U", cryo_tank: "U", escape_capsule: "E", lifeboat: "E", docking_port: "K", tow_rig: "X",
   drone_bay: "BD", workshop: "X", boat_bay: "B", hangar: "BH", mining_rig: "XM", weapon: "W", armour: "A", heat_shield: "Z", landing_gear: "G"

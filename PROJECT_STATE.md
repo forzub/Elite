@@ -4710,6 +4710,24 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 Open (author): approve or correct the sketches and the proposed frames; jump-field emitters; accept the new parts
 (LM-MP8, RD-1, RM-2, MJ-K3, MJ-BK24, EC-2 concept, FL-2 / FL-3H, WR-2, LS-1); Kapehu Maori wording to check.
 
+### Author decisions 2026-11-10: jump-field emitters ACCEPTED, new parts ACCEPTED
+- Parts: the 9 proposal items moved from tools/models/briefs/new_parts_proposal.json (now empty, accepted_ids kept) to the
+  canon tools/colonization_lab/canon/ship_parts_unified.json with status "ACCEPTED (author 2026-11-10)"; EC-2 escape
+  cockpit (kb.surv.capsule2) ACCEPTED. Geometry stays PROPOSAL/model. build_proposals.js overlays ACCEPTED canon parts
+  onto data.js (no PROPOSAL label); equipment_naming.py reads the canon first, keeps authored native names, no longer
+  double-prefixes the index (earlier "LM-MP8 · (…" / "CR-1 · Cobretty CR-1 …" forms repaired, idempotent).
+- Jump-field emitters (concept ACCEPTED): one per core maker, keyed to its cores - ZP-FE1 (Zero Point), He-FE8 (Harmony),
+  MJ-FE2 (Bastion), K-FE1 (Kapehu); models tools/models/units/field_emitters.py (4 LODs + hit volumes, LOD0 0.5-4.5k
+  tris), passports cat jump_field_emitter with compatible_cores. Count rule: 2 up to ~40 m hull, 4 up to ~150 m, 8 above.
+  Cobrett-I sketch: ZP-FE1 pair on the flat wingtips (x +-12.6, pods outboard; span ~26.9 m). auto_sketch places the
+  core maker's emitters on every jump-capable ship. Damage rule (proposal, default): one emitter lost -> J ceiling
+  halved, no jump until repaired (player role: interdiction by shooting the emitter). Docs: SHIP_ARCHITECTURE_DOCTRINE,
+  JUMP_MECHANICS section 1, FLEET_DOCTRINE principles.
+- Ship BOMs do NOT yet carry the accepted parts (passports are not canon); the list to add on passport approval is in
+  docs/SHIP_PASSPORT_REVISION.md. tools/ships/ws_hull.py (workshop registration of sketch renders) moved into the repo.
+- Runtime: nothing changed (no emitter in the jump code yet; the damage rule is a doc proposal).
+Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damage rule.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

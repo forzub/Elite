@@ -194,11 +194,11 @@ def cobrett_i():
         side = "l" if s_ < 0 else "r"
         place(P, f"eq_laser_{side}", "cobretty_fl2_laser", (s_ * 4.9, 0.0, -4.2))              # FL-2, fires forward
         place(P, f"eq_missiles_{side}", "cobretty_wr2_wing_rack", (s_ * 11.3, 0.0, 5.3))       # WR-2, 2 x Aspid-10
-    # jump-field emitters on the wingtips (proposal: the jump core's field projectors, cf. the author's prototype)
+    # jump-field emitters on the wingtips (author 2026-11-10, ACCEPTED): ZP-FE1, the pair of the Z-0.5 core; mount face on the
+    # wingtip, pod outboard (the left one yawed 180 deg - the pod is fore / aft symmetric)
     for s_ in (-1, 1):
         side = "l" if s_ < 0 else "r"
-        je = P[f"proxy_field_emitter_{side}"] = Part(f"proxy_field_emitter_{side}")
-        cyl(je, "sk_glass", (s_ * 12.4, 0.0, 1.3), (s_ * 12.4, 0.0, 5.2), 0.45, 16)
+        place(P, f"eq_field_emitter_{side}", "zeropoint_zpfe1_field_emitter", (s_ * 12.6, 0.0, 3.25), 0.0 if s_ > 0 else 180.0)   # flat wingtip x 12.6, z 1.0..5.5
     # inspection walkway in the spine above the core and tanks, aft cross passage to the bays, ladders, handrails
     sh = P["shaft_spine"] = Part("shaft_spine")
     z0, z1 = -5.0, 10.0

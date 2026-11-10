@@ -40,6 +40,20 @@ SKIN = {"radar", "sensor_mast", "weapon", "docking_port", "landing_gear", "heat_
 C20 = (2.44, 2.59, 6.06)
 
 
+def emitter_map():
+    """jump core part id -> the field-emitter model of its maker (canon: compatible_cores on the emitter passports)"""
+    d = json.load(open(os.path.join(ROOT, "tools", "colonization_lab", "canon", "ship_parts_unified.json"), encoding="utf-8"))
+    out = {}
+    for p in d["parts"]:
+        if p.get("cat") == "jump_field_emitter" and p.get("model_asset"):
+            for c in p.get("compatible_cores", []):
+                out[c] = p["model_asset"].split("/")[-1]
+    return out
+
+
+EMITTER_FOR = {}
+
+
 def models():
     sys.path.insert(0, os.path.join(ROOT, "tools", "models"))
     import build_equipment_models as B
@@ -170,6 +184,18 @@ def build(ship, M, sizes):
                 zn = -length * (i + 1) / n
                 for sxx in (-1, 1):
                     cyl(h, "sk_hull", (sxx * (width / 2 + 0.4), -0.3, zz), (sxx * (width / 2 + 0.4), H + 0.3, zn), 0.07, 6)
+    # jump-field emitters (author 2026-11-10, ACCEPTED): the pair of the ship's core maker on the hull extremities -
+    # 2 up to ~40 m (wingtips), 4 up to ~150 m, 8 above; mount face on the hull side, pod outboard
+    core = next((it.get("part_id") for g in ship.get("functional_groups", []) for it in g.get("items", [])
+                 if it.get("category") == "jump_core"), None)
+    fe = EMITTER_FOR.get(core)
+    if fe:
+        n_pairs = 1 if length <= 40 else (2 if length <= 150 else 4)
+        stations = [0.3] if n_pairs == 1 else [0.08 + 0.84 * i / (n_pairs - 1) for i in range(n_pairs)]
+        edge = width / 2 + (0.6 if principle == "monolithic" else 0.4)
+        for k, f in enumerate(stations):
+            for s_ in (-1, 1):
+                place(P, f"eq_field_emitter_{k}_{'l' if s_ < 0 else 'r'}", fe, (s_ * edge, H / 2, -length * f), 0.0 if s_ > 0 else 180.0, lod)
     # radiator cover plates over the compartments (zero thickness)
     k = 0
     for name, za, zb, hh in comps:
@@ -197,6 +223,7 @@ def main():
     txt = open(os.path.join(ROOT, "Notes", "html", "ship_reference", "data.js"), encoding="utf-8").read()
     D = json.loads(txt.split("=", 1)[1].rstrip().rstrip(";"))
     M = models()
+    EMITTER_FOR.update(emitter_map())
     sizes = {f: size_of(f) for f in set(M.values())}
     report = {}
     skip = {"kb.ship.cobrett-i.frnu-inta.a3"}                 # hand-made sketch

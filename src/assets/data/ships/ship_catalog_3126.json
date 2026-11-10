@@ -506,7 +506,7 @@
    "price_cr": 190000,
    "thrust_mn": 9.56,
    "input_mw": 4850,
-   "eff": 0.9855,
+   "eff": 0.991,
    "gimbal_deg": 75,
    "overhaul_h": 30000,
    "life_h": 50000,
@@ -524,7 +524,7 @@
    "price_cr": 380000,
    "thrust_mn": 9.56,
    "input_mw": 4850,
-   "eff": 0.9855,
+   "eff": 0.991,
    "gimbal_deg": 4,
    "overhaul_h": 30000,
    "life_h": 50000,
@@ -1823,7 +1823,7 @@
     "accel_g_loaded": 2.463,
     "accel_g_service": 3.671,
     "class_burn_g": 1.0,
-    "drive_emitter_diameter_m": 2.74,
+    "drive_emitter_diameter_m": 2.16,
     "sustainable_thrust01": 1.0
    },
    "power": {
@@ -1838,7 +1838,7 @@
    },
    "thermal": {
     "reactor_waste_mw": 555.6,
-    "drive_waste_mw": 70.3,
+    "drive_waste_mw": 43.7,
     "service_heat_mw": 9.6,
     "coolant_capacity_mw": 180,
     "radiator_area_m2": 380,
@@ -3186,7 +3186,7 @@
     "accel_g_loaded": 5.054,
     "accel_g_service": 7.342,
     "class_burn_g": 1.0,
-    "drive_emitter_diameter_m": 2.74,
+    "drive_emitter_diameter_m": 2.16,
     "sustainable_thrust01": 1.0
    },
    "power": {
@@ -3201,7 +3201,7 @@
    },
    "thermal": {
     "reactor_waste_mw": 555.6,
-    "drive_waste_mw": 70.3,
+    "drive_waste_mw": 43.7,
     "service_heat_mw": 9.6,
     "coolant_capacity_mw": 180,
     "radiator_area_m2": 380,

@@ -119,95 +119,107 @@ def hull_loft(P, outline, top, bottom):
 
 
 # ---------------------------------------------------------------- Cobrett-I A3 (Assisted: fore + aft drive per bay)
+# v2 (author 2026-11-10): the Cobretty bay is dia 3.5 m (CR-1 with a 1.3 m conical pad, ER-5 3.5 m with its 11 m pad on
+# the back) -> the hull is 3.5 m thick and ~25 x 23 m, close to the passport 26 x 22.2 x 5. The inspection walkway runs
+# in the spine beside the containers (a C20 is 2.59 m high: no walkway fits above it any more).
+H2 = 1.75                                            # half hull thickness
+
+
 def cobrett_i():
     P = {}
-    # hull: wedge nose (escape cockpit), body x +-13.5 is 5 m thick (the drive bays are dia 5), thin wings to x +-17
-    outline = [(-3.0, -16.0), (3.0, -16.0), (6.5, -12.0), (13.5, -7.0), (17.5, 1.0), (17.5, 6.0), (13.5, 13.2),
-               (-13.5, 13.2), (-17.5, 6.0), (-17.5, 1.0), (-13.5, -7.0), (-6.5, -12.0)]
+    outline = [(-2.6, -12.8), (2.6, -12.8), (5.4, -9.6), (10.2, -5.2), (12.6, 1.0), (12.6, 5.5), (10.2, 10.4),
+               (-10.2, 10.4), (-12.6, 5.5), (-12.6, 1.0), (-10.2, -5.2), (-5.4, -9.6)]
 
     def thick(x, z):
         ax = abs(x)
-        t = 2.5 if ax <= 13.5 else 2.5 - (ax - 13.5) * 0.45
-        if z < -7.0:                       # the nose tapers into the cockpit
-            t = min(t, 1.9 + (z + 16.0) * 0.07)
+        t = H2 if ax <= 10.2 else H2 - (ax - 10.2) * 0.42
+        if z < -5.5:                       # the nose tapers into the escape cockpit
+            t = min(t, 1.45 + (z + 12.8) * 0.05)
         return t
     hull_loft(P, outline, lambda x, z: thick(x, z), lambda x, z: -thick(x, z))
 
-    # propulsion bays: fore CR-1 (pad forward) - ER-5 - aft CR-1 (pad aft), coaxial with Z at x = +-10.75
-    for s, side in ((-1, "l"), (1, "r")):
-        x = s * 10.75
-        place(P, f"eq_er5_{side}", "cobretty_er5_reactor", (x, 0.0, 3.5))
-        place(P, f"eq_cr1_aft_{side}", "cobretty_cr1_vector", (x, 0.0, 6.0))            # flange at the ER-5 aft face
-        place(P, f"eq_cr1_fore_{side}", "cobretty_cr1_vector", (x, 0.0, 1.0), 180.0)    # turned to face forward
-    # escape cockpit (the Cobretty escape system is the cockpit itself with a motor - proxy until the new model)
+    # propulsion bays at x = +-8.4: fore CR-1 (cone forward) - ER-5 (pad on the back) - aft CR-1 (cone aft)
+    ze = 2.4
+    for s_, side in ((-1, "l"), (1, "r")):
+        x = s_ * 8.4
+        place(P, f"eq_er5_{side}", "cobretty_er5_reactor", (x, 0.0, ze))
+        place(P, f"eq_cr1_aft_{side}", "cobretty_cr1_vector", (x, 0.0, ze + 1.75))
+        place(P, f"eq_cr1_fore_{side}", "cobretty_cr1_vector", (x, 0.0, ze - 1.75), 180.0)
+    # escape cockpit = the nose module with its motor (proxy until its model): big canopy, part of the hull shape
     ck = P["proxy_escape_cockpit"] = Part("proxy_escape_cockpit")
-    box(ck, "sk_proxy", (0.0, 0.1, -12.0), (8.6, 3.4, 7.6))
-    quad(ck, "sk_glass", [(-3.6, 1.0, -15.82), (3.6, 1.0, -15.82), (3.0, 1.75, -14.2), (-3.0, 1.75, -14.2)], (0, 0.7, -0.7))
-    box(ck, "sk_proxy", (0.0, -0.4, -7.9), (2.2, 1.6, 0.8))                               # its escape motor
-    # spine: jump core, tanks, service reactor, coolant loop
-    place(P, "eq_core", "zeropoint_z05_jump_core", (0.0, -1.0, -6.6))
-    for i, z in enumerate((-4.4, -2.6, -0.8)):
-        place(P, f"eq_jumpcharge_{i}", "agora_bz1_jumptank", (0.0, -1.2, z))
-    for i, z in enumerate((1.2, 2.9)):
+    box(ck, "sk_proxy", (0.0, 0.0, -9.2), (7.6, 2.8, 7.0))
+    quad(ck, "sk_glass", [(-3.1, 0.6, -12.62), (3.1, 0.6, -12.62), (2.6, 1.35, -11.0), (-2.6, 1.35, -11.0)], (0, 0.7, -0.7))
+    box(ck, "sk_proxy", (0.0, -0.3, -5.4), (2.0, 1.4, 0.8))                               # its escape motor
+    # spine (x +-1.3): jump core and tanks under the inspection walkway
+    place(P, "eq_core", "zeropoint_z05_jump_core", (0.0, -1.0, -3.8))
+    for i, z in enumerate((-1.9, -0.2, 1.5)):
+        place(P, f"eq_jumpcharge_{i}", "agora_bz1_jumptank", (0.0, -1.25, z))
+    for i, z in enumerate((3.3, 4.9)):
         place(P, f"eq_pellets_{i}", "agora_bt1_pellettank", (0.0, -1.3, z))
-    place(P, "eq_apu", "cobretty_sr150_service_reactor", (0.0, -1.0, 6.2))
-    place(P, "eq_coolant", "cobretty_cl180_coolant_loop", (0.0, -1.8, 10.0))
-    # avionics and life support between the cockpit and the cargo deck
-    place(P, "eq_computer", "xinzhi_mcc1_computer", (-4.2, -1.6, -7.2))
-    place(P, "eq_comm", "xinzhi_c1_comm", (-4.2, -0.6, -6.0))
-    place(P, "eq_transponder", "zeropoint_t1_transponder", (-2.6, -1.8, -7.2))
-    place(P, "eq_radar", "xinzhi_n2_radar", (0.0, 2.5, -9.4))
-    place(P, "eq_life_support", "eurohab_l4_lifesupport", (4.3, -1.7, -6.6))
-    place(P, "eq_dock", "agora_su1_collar", (0.0, 2.5, -4.0))
-    place(P, "eq_pd1", "cobretty_pd1_turret", (0.0, 2.5, 4.0))
-    # cargo deck: 6 C20 in two L-shaped groups (author's prototype topology), on the hull floor, ventral hatches below
+    place(P, "eq_apu", "cobretty_sr150_service_reactor", (0.0, -0.9, 7.2))
+    place(P, "eq_coolant", "cobretty_cl180_coolant_loop", (0.0, -1.45, 9.4))
+    # avionics and life support behind the cockpit, beside the spine
+    place(P, "eq_computer", "xinzhi_mcc1_computer", (-3.4, -1.3, -4.6))
+    place(P, "eq_comm", "xinzhi_c1_comm", (-3.4, -0.4, -3.4))
+    place(P, "eq_transponder", "zeropoint_t1_transponder", (-2.0, -1.5, -4.6))
+    place(P, "eq_radar", "xinzhi_n2_radar", (0.0, 1.45, -7.0))
+    place(P, "eq_life_support", "eurohab_l4_lifesupport", (3.5, -1.15, -4.2))
+    place(P, "eq_dock", "agora_su1_collar", (0.0, H2, -1.6))
+    place(P, "eq_pd1", "cobretty_pd1_turret", (0.0, H2, 6.2))
+    # cargo deck: 6 C20 in two L groups (the author's prototype topology), ventral unloading hatches under each
     k = 0
-    for s in (-1, 1):
-        for x, z in ((s * 2.75, -2.9), (s * 2.75, 3.3), (s * 5.3, 3.3)):
+    for s_ in (-1, 1):
+        for x, z in ((s_ * 2.6, -2.6), (s_ * 2.6, 3.5), (s_ * 5.1, 3.5)):
             c = P[f"c20_{k}"] = Part(f"c20_{k}")
-            box(c, "sk_c20", (x, -1.15, z + 3.03), (2.44, 2.59, 6.06))
-            plate(P, f"hatch_{k}", "sk_hatch", x - 1.25, x + 1.25, z - 0.05, z + 6.11, -2.501, up=False)
+            box(c, "sk_c20", (x, -H2 + 0.05 + 1.295, z + 3.03), (2.44, 2.59, 6.06))
+            plate(P, f"hatch_{k}", "sk_hatch", x - 1.25, x + 1.25, z - 0.05, z + 6.11, -H2 - 0.001, up=False)
             k += 1
-    # drone bay at the stern between the cargo groups and the bays: repair drone left, recon drone right
-    place(P, "eq_repair_drone", "agora_rm2_drone", (-4.0, -1.8, 11.0), 0.0)
-    place(P, "eq_recon_drone", "hyperion_rd1_drone", (4.0, -1.6, 11.2))
+    # drone bays beside the forward cargo cells: repair drone left, recon drone right
+    place(P, "eq_repair_drone", "agora_rm2_drone", (-5.1, -1.1, -2.0))
+    place(P, "eq_recon_drone", "hyperion_rd1_drone", (5.1, -1.0, -2.0))
     # weapons: two forward lasers in the cockpit shoulders, two 2-missile racks in the wings outboard of the bays
-    for s in (-1, 1):
-        wl = P[f"proxy_laser_{'l' if s < 0 else 'r'}"] = Part("proxy_laser")
-        cyl(wl, "sk_proxy", (s * 6.2, 0.0, -6.5), (s * 6.2, 0.0, -12.6), 0.32, 12)
-        mr = P[f"proxy_missiles_{'l' if s < 0 else 'r'}"] = Part("proxy_missiles")
-        box(mr, "sk_proxy", (s * 15.0, 0.0, 2.6), (1.4, 0.8, 4.2))
-        for dx in (-0.35, 0.35):
-            cyl(mr, "sk_c20", (s * 15.0 + dx, 0.0, 0.6), (s * 15.0 + dx, 0.0, 4.6), 0.16, 10)
-    # inspection shaft along the spine above the tanks, cross passages to the bays over the cargo deck, ladders, rails
+    for s_ in (-1, 1):
+        side = "l" if s_ < 0 else "r"
+        wl = P[f"proxy_laser_{side}"] = Part(f"proxy_laser_{side}")
+        cyl(wl, "sk_proxy", (s_ * 4.9, 0.0, -4.5), (s_ * 4.9, 0.0, -10.4), 0.28, 12)
+        mr = P[f"proxy_missiles_{side}"] = Part(f"proxy_missiles_{side}")
+        box(mr, "sk_proxy", (s_ * 11.3, 0.0, 3.2), (1.3, 0.7, 4.0))
+        for dx in (-0.32, 0.32):
+            cyl(mr, "sk_c20", (s_ * 11.3 + dx, 0.0, 1.3), (s_ * 11.3 + dx, 0.0, 5.1), 0.15, 10)
+    # jump-field emitters on the wingtips (proposal: the jump core's field projectors, cf. the author's prototype)
+    for s_ in (-1, 1):
+        side = "l" if s_ < 0 else "r"
+        je = P[f"proxy_field_emitter_{side}"] = Part(f"proxy_field_emitter_{side}")
+        cyl(je, "sk_glass", (s_ * 12.4, 0.0, 1.3), (s_ * 12.4, 0.0, 5.2), 0.45, 16)
+    # inspection walkway in the spine above the core and tanks, aft cross passage to the bays, ladders, handrails
     sh = P["shaft_spine"] = Part("shaft_spine")
-    for z0, z1 in ((-7.6, 12.6),):
-        for x in (-0.65, 0.65):                       # handrails
-            cyl(sh, "sk_shaft", (x, 1.6, z0), (x, 1.6, z1), 0.035, 6)
-        for zz in [z0 + i * 0.5 for i in range(int((z1 - z0) / 0.5) + 1)]:   # walkway grating ribs
-            box(sh, "sk_shaft", (0, 0.55, zz), (1.4, 0.04, 0.06))
-        box(sh, "sk_shaft", (0, 0.5, (z0 + z1) / 2), (0.06, 0.04, z1 - z0))
-    for z in (-1.0, 9.0):                                # cross passages
-        for zz in (z - 0.65, z + 0.65):
-            cyl(sh, "sk_shaft", (-8.2, 1.6, zz), (8.2, 1.6, zz), 0.035, 6)
-        box(sh, "sk_shaft", (0, 0.5, z), (16.4, 0.04, 1.4))
-    for x, z in ((0.0, -7.4), (-8.0, 9.0), (8.0, 9.0), (0.0, 12.4)):      # ladders down to the deck
-        for dx in (-0.25, 0.25):
-            cyl(sh, "sk_shaft", (x + dx, -2.4, z), (x + dx, 0.5, z), 0.03, 6)
-        for i in range(6):
-            cyl(sh, "sk_shaft", (x - 0.25, -2.2 + i * 0.5, z), (x + 0.25, -2.2 + i * 0.5, z), 0.02, 6)
-    # radiator cover plates (Cobretty CS-panels): one per compartment field, dorsal and ventral, zero thickness;
-    # over the bays the ER-5 pads are the skin
+    z0, z1 = -5.0, 10.0
+    for x in (-0.6, 0.6):
+        cyl(sh, "sk_shaft", (x, 1.25, z0), (x, 1.25, z1), 0.035, 6)
+    for zz in [z0 + i * 0.5 for i in range(int((z1 - z0) / 0.5) + 1)]:
+        box(sh, "sk_shaft", (0, 0.25, zz), (1.2, 0.04, 0.06))
+    box(sh, "sk_shaft", (0, 0.22, (z0 + z1) / 2), (0.06, 0.04, z1 - z0))
+    zx = 9.75
+    for zz in (zx - 0.55, zx + 0.55):
+        cyl(sh, "sk_shaft", (-6.6, 0.9, zz), (6.6, 0.9, zz), 0.035, 6)
+    box(sh, "sk_shaft", (0, -0.1, zx), (13.2, 0.04, 1.1))
+    for x, z in ((0.0, -4.6), (-6.4, zx), (6.4, zx)):
+        for dx in (-0.22, 0.22):
+            cyl(sh, "sk_shaft", (x + dx, -H2 + 0.1, z), (x + dx, 0.25, z), 0.03, 6)
+        for i in range(4):
+            cyl(sh, "sk_shaft", (x - 0.22, -1.45 + i * 0.45, z), (x + 0.22, -1.45 + i * 0.45, z), 0.02, 6)
+    # radiator cover plates over the compartments (dorsal, zero thickness); the ER-5 pads cover the bays
     k = 0
-    for x0, x1 in ((-8.0, -4.0), (-4.0, -1.4), (-1.4, 1.4), (1.4, 4.0), (4.0, 8.0)):
-        for z0, z1 in ((-7.6, -3.0), (-3.0, 3.2), (3.2, 9.4), (9.4, 13.2)):
-            plate(P, f"cover_{k}", "sk_cover", x0 + 0.04, x1 - 0.04, z0 + 0.04, z1 - 0.04, 2.501)
+    for x0, x1 in ((-6.5, -3.9), (-3.9, -1.3), (-1.3, 1.3), (1.3, 3.9), (3.9, 6.5)):
+        for z0_, z1_ in ((-5.2, -2.7), (-2.7, 3.4), (3.4, 9.6)):
+            plate(P, f"cover_{k}", "sk_cover", x0 + 0.04, x1 - 0.04, z0_ + 0.04, z1_ - 0.04, H2 + 0.001)
             k += 1
-    # folding landing skids (deployed): one under the cockpit, two under each bay
-    for x, z in ((0.0, -10.5), (-10.75, -3.0), (10.75, -3.0), (-10.75, 9.0), (10.75, 9.0)):
+    # landing skids: folded, they are flush panels of the belly (the author's preference); shown deployed here
+    for x, z in ((0.0, -8.0), (-8.4, -2.0), (8.4, -2.0), (-8.4, 7.4), (8.4, 7.4)):
         sk = P.setdefault("skid_set", Part("skid_set"))
-        cyl(sk, "sk_skid", (x, -2.5, z), (x, -4.1, z + 0.6), 0.16, 10)
-        box(sk, "sk_skid", (x, -4.15, z + 0.6), (0.5, 0.1, 2.2))
+        plate(P, "skid_wells", "sk_hatch", x - 0.35, x + 0.35, z - 1.1, z + 1.1, -H2 - 0.001, up=False)
+        cyl(sk, "sk_skid", (x, -H2, z - 0.9), (x, -H2 - 1.3, z + 0.2), 0.14, 10)
+        box(sk, "sk_skid", (x, -H2 - 1.35, z + 0.2), (0.6, 0.1, 2.2))
     return P
 
 

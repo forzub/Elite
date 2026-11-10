@@ -52,6 +52,15 @@ const newParts = [
     }
   }
 ];
+// new equipment items proposed by the model builders (author 2026-11-10: missile rack, drones, kamikaze cassette) -
+// one source: tools/models/briefs/new_parts_proposal.json (not canon until the author accepts)
+const NEW_EQ = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "..", "..", "tools", "models", "briefs", "new_parts_proposal.json"), "utf8"));
+for (const q of NEW_EQ.parts) {
+  const p = Object.assign({}, q, { status: ST, model_asset: q.model_asset ? "equipment/" + q.model_asset.replace(/^equipment\//, "") : undefined });
+  p.geometry = Object.assign({}, q.geometry || {}, { status: ST });
+  p.notes = "PROPOSAL (reference, tools/models/briefs/new_parts_proposal.json): " + (q.notes || "");
+  newParts.push(p);
+}
 for (const p of newParts) D.parts.push(p);
 const PM = new Map(D.parts.map(p => [p.id, p]));
 const SM = new Map(D.ships.map(s => [s.id, s]));

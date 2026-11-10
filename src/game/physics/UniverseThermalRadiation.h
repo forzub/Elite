@@ -41,6 +41,17 @@ inline constexpr double PropulsionPadCoolingMWPerM2 = 6.0;
         std::clamp(intact01,0.0,1.0)*ratio;
 }
 
+// Convex conical pad (author 2026-11-10): a cone of the same base diameter has
+// more radiating surface than a flat disk; every point of a convex cone sees
+// open space, so the one universe pad law applies to its lateral area. With an
+// aperture it is a frustum (the opening stays at the tip). coneHeightM <= 0 is
+// the flat annulus below.
+[[nodiscard]] inline double conicalEmitterAreaM2(
+    double outerDiameterM,
+    double apertureDiameterM,
+    double coneHeightM
+) noexcept;
+
 // One-sided hot annulus (no fictitious solid disk over the exhaust opening).
 // Geometry belongs to the installed engine type, not these universe laws.
 [[nodiscard]] inline double annulusAreaM2(
@@ -109,4 +120,22 @@ inline constexpr double PropulsionPadCoolingMWPerM2 = 6.0;
         : 0.0;
 }
 
+
+[[nodiscard]] inline double conicalEmitterAreaM2(
+    double outerDiameterM,
+    double apertureDiameterM,
+    double coneHeightM
+) noexcept
+{
+    if (!std::isfinite(coneHeightM) || coneHeightM <= 0.0)
+        return annulusAreaM2(outerDiameterM, apertureDiameterM);
+    if (!std::isfinite(outerDiameterM) || !std::isfinite(apertureDiameterM) ||
+        outerDiameterM <= 0.0 || apertureDiameterM < 0.0 ||
+        apertureDiameterM >= outerDiameterM)
+        return 0.0;
+    const double R = 0.5 * outerDiameterM;
+    const double r = 0.5 * apertureDiameterM;
+    const double slant = std::sqrt((R - r) * (R - r) + coneHeightM * coneHeightM);
+    return Pi * (R + r) * slant;
+}
 } // namespace game::physics::thermal

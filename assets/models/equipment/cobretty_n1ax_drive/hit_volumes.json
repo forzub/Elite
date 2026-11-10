@@ -14,15 +14,15 @@
    "position": [
     0.0,
     0.0,
-    -0.12
+    -0.084
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 0.62,
-   "half_height": 0.12
+   "radius": 0.434,
+   "half_height": 0.084
   },
   {
    "id": "n1_flange.2",
@@ -31,15 +31,15 @@
    "position": [
     0.0,
     0.0,
-    0.135
+    0.0945
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 2.25,
-   "half_height": 0.215
+   "radius": 1.575,
+   "half_height": 0.1505
   },
   {
    "id": "n1_housing.1",
@@ -48,15 +48,15 @@
    "position": [
     0.0,
     0.0,
-    0.625
+    0.4375
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 1.85,
-   "half_height": 0.275
+   "radius": 1.295,
+   "half_height": 0.1925
   },
   {
    "id": "n1_housing.2",
@@ -65,15 +65,15 @@
    "position": [
     0.0,
     0.0,
-    3.525
+    2.4675
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 1.55,
-   "half_height": 2.625
+   "radius": 1.085,
+   "half_height": 1.8375
   },
   {
    "id": "n1_housing.3",
@@ -82,15 +82,15 @@
    "position": [
     0.0,
     0.0,
-    6.015
+    4.2105
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 2.0,
-   "half_height": 0.135
+   "radius": 1.4,
+   "half_height": 0.0945
   },
   {
    "id": "engine_hot_emitter_annulus.1",
@@ -99,24 +99,24 @@
    "position": [
     0.0,
     0.0,
-    6.34
+    4.438
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 2.5,
-   "half_height": 0.19
+   "radius": 1.75,
+   "half_height": 0.133
   },
   {
    "id": "n1_field_ctl.1",
    "part": "n1_field_ctl",
    "shape": "box",
    "position": [
-    -1.97,
+    -1.379,
     0.0,
-    1.07
+    0.749
    ],
    "rotation_deg": [
     0.0,
@@ -124,9 +124,9 @@
     0.0
    ],
    "half_size": [
-    0.4,
-    0.55,
-    0.43
+    0.28,
+    0.385,
+    0.301
    ]
   },
   {
@@ -134,9 +134,9 @@
    "part": "n1_backup_hx",
    "shape": "box",
    "position": [
-    1.97,
+    1.379,
     0.0,
-    1.07
+    0.749
    ],
    "rotation_deg": [
     0.0,
@@ -144,9 +144,9 @@
     0.0
    ],
    "half_size": [
-    0.4,
-    0.55,
-    0.43
+    0.28,
+    0.385,
+    0.301
    ]
   },
   {
@@ -154,9 +154,9 @@
    "part": "n1_backup_hx",
    "shape": "box",
    "position": [
-    2.45,
+    1.715,
     0.0,
-    1.07
+    0.749
    ],
    "rotation_deg": [
     0.0,
@@ -164,9 +164,9 @@
     0.0
    ],
    "half_size": [
-    0.09,
-    0.4,
-    0.12
+    0.063,
+    0.28,
+    0.084
    ]
   },
   {
@@ -175,8 +175,8 @@
    "shape": "box",
    "position": [
     0.0,
-    1.62,
-    1.26
+    1.134,
+    0.882
    ],
    "rotation_deg": [
     0.0,
@@ -184,9 +184,9 @@
     0.0
    ],
    "half_size": [
-    0.15,
-    0.05,
-    0.18
+    0.105,
+    0.035,
+    0.126
    ]
   },
   {
@@ -196,15 +196,15 @@
    "position": [
     0.0,
     0.0,
-    1.95
+    1.365
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 1.97,
-   "half_height": 0.33
+   "radius": 1.379,
+   "half_height": 0.231
   },
   {
    "id": "n1_sensors.2",
@@ -212,16 +212,16 @@
    "shape": "cylinder",
    "position": [
     0.0,
-    1.7,
-    1.57
+    1.19,
+    1.099
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 0.06,
-   "half_height": 0.05
+   "radius": 0.042,
+   "half_height": 0.035
   },
   {
    "id": "n1_coil_stack.2",
@@ -230,15 +230,15 @@
    "position": [
     0.0,
     0.0,
-    3.15
+    2.205
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 2.12,
-   "half_height": 0.33
+   "radius": 1.484,
+   "half_height": 0.231
   },
   {
    "id": "n1_sensors.3",
@@ -246,16 +246,16 @@
    "shape": "cylinder",
    "position": [
     0.0,
-    1.85,
-    2.77
+    1.295,
+    1.939
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 0.06,
-   "half_height": 0.05
+   "radius": 0.042,
+   "half_height": 0.035
   },
   {
    "id": "n1_coil_stack.3",
@@ -264,15 +264,15 @@
    "position": [
     0.0,
     0.0,
-    4.35
+    3.045
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 2.27,
-   "half_height": 0.33
+   "radius": 1.589,
+   "half_height": 0.231
   },
   {
    "id": "n1_sensors.4",
@@ -280,16 +280,16 @@
    "shape": "cylinder",
    "position": [
     0.0,
-    2.0,
-    3.97
+    1.4,
+    2.779
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 0.06,
-   "half_height": 0.05
+   "radius": 0.042,
+   "half_height": 0.035
   },
   {
    "id": "n1_coil_stack.4",
@@ -298,15 +298,15 @@
    "position": [
     0.0,
     0.0,
-    5.55
+    3.885
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 2.42,
-   "half_height": 0.33
+   "radius": 1.694,
+   "half_height": 0.231
   },
   {
    "id": "n1_sensors.5",
@@ -314,25 +314,25 @@
    "shape": "cylinder",
    "position": [
     0.0,
-    2.15,
-    5.17
+    1.505,
+    3.619
    ],
    "rotation_deg": [
     90.0,
     0.0,
     0.0
    ],
-   "radius": 0.06,
-   "half_height": 0.05
+   "radius": 0.042,
+   "half_height": 0.035
   },
   {
    "id": "n1_mounts.1",
    "part": "n1_mounts",
    "shape": "box",
    "position": [
-    -1.3435,
-    -1.3435,
-    1.07
+    -0.9405,
+    -0.9405,
+    0.749
    ],
    "rotation_deg": [
     0.0,
@@ -340,9 +340,9 @@
     225.0
    ],
    "half_size": [
-    0.35,
-    0.2,
-    0.22
+    0.245,
+    0.14,
+    0.154
    ]
   },
   {
@@ -350,9 +350,9 @@
    "part": "n1_mounts",
    "shape": "box",
    "position": [
-    -1.3435,
-    -1.3435,
-    3.75
+    -0.9405,
+    -0.9405,
+    2.625
    ],
    "rotation_deg": [
     0.0,
@@ -360,9 +360,9 @@
     225.0
    ],
    "half_size": [
-    0.35,
-    0.2,
-    0.22
+    0.245,
+    0.14,
+    0.154
    ]
   },
   {
@@ -370,9 +370,9 @@
    "part": "n1_mounts",
    "shape": "box",
    "position": [
-    1.3435,
-    -1.3435,
-    1.07
+    0.9405,
+    -0.9405,
+    0.749
    ],
    "rotation_deg": [
     0.0,
@@ -380,9 +380,9 @@
     315.0
    ],
    "half_size": [
-    0.35,
-    0.2,
-    0.22
+    0.245,
+    0.14,
+    0.154
    ]
   },
   {
@@ -390,9 +390,9 @@
    "part": "n1_mounts",
    "shape": "box",
    "position": [
-    1.3435,
-    -1.3435,
-    3.75
+    0.9405,
+    -0.9405,
+    2.625
    ],
    "rotation_deg": [
     0.0,
@@ -400,9 +400,9 @@
     315.0
    ],
    "half_size": [
-    0.35,
-    0.2,
-    0.22
+    0.245,
+    0.14,
+    0.154
    ]
   }
  ]

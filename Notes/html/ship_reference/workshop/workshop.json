@@ -3,427 +3,435 @@
  "modelReady": {
   "kb.drive.cr1-vector": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.reactor.er5": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.reactor.er1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "srw.reactor.sr48": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "srw.reactor.sr26": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.reactor.tr10": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.reactor.tr26v": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "xz.radar.n10": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.cargo.hold100": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.cargo.c20lock": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.dock.collar": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.bay.drone4": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.surv.pod4": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.surv.boat20": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "agora.hab.pax100": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.rcs.cluster": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.tank.jumpcharge": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.tank.pellets": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.armour.heavy": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.comm.w1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.mc.w1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.bay.hangar4": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.core.b12": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.radar.s50": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.wpn.coil10": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.wpn.pd4": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bastion.wpn.vls16": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.surv.refuge100": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "bharat.hab.bunk500": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.drive.n1-axial": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.cool.loop200": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.rad.cs-panel": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.rcs.fc-nozzle": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.apu.s150": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.wpn.pd1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kb.surv.capsule2": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "eurohab.ls.l4": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "eurohab.ls.l20": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "eurohab.ls.l200": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.med.bay": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.armour.ceramic": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "fa.wpn.coil30": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "fa.wpn.pd2": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.core.h5": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.core.h12": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.core.h80": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.wpn.pd3": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.wpn.vls8": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.bay.hangar2": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.mod.cargo4800": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "harmony.mod.tank4200": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "hyp.relay.r1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "hyp.mc.r1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "hyp.ecm.e1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "hyp.radar.pa100": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "hyp.mast.s1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kapehu.mc.k1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kapehu.core.k5": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kapehu.core.k12": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kern.drive.kt1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kern.mine.cutter": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kern.radar.deb5": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kern.tow.heavy": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kern.tow.raft20k": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "kern.md.impactor": {
    "ready": true,
-   "updated": 1794266964573
-  },
-  "sol.wpn.pb8": {
-   "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "hyp.drone.rd1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "agora.drone.rm2": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.drive.u33": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.drive.u65m": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.drive.u70": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.drive.u73l": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.lift.shield": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.lift.gear": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.ls.o4": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "ofu.cargo.p20": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.bay.boat": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "sol.cool.loop300": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "sol.cryo.t1000": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.cabin.hold6": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "sol.rad.panel50": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "sol.workshop.w1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "srw.apu.s200": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "srw.apu.s60": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "terra.ls.t10": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "terra.ls.t60": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "terra.ls.t200": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.drive.tz11": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.drive.tz16v": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.drive.tz28": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.cool.loop600": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.rad.panel50": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "std.rcs.cluster_h": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.apu.s150": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "th.apu.s600": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "uhuru.ls.u500": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "uhuru.cryo.pod100": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "um.core.z05": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "um.core.z1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "um.core.z5": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "um.xpdr.t1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "xz.comm.c1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "xz.comm.c3": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "xz.mc.c1": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "xz.mc.c3": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
   },
   "xz.radar.n2": {
    "ready": true,
-   "updated": 1794266964573
+   "updated": 1794270334061
+  },
+  "bastion.drone.klegg3": {
+   "ready": true,
+   "updated": 1794270452346
+  },
+  "bastion.bay.bk24": {
+   "ready": true,
+   "updated": 1794270452346
+  },
+  "sol.wpn.mp8": {
+   "ready": true,
+   "updated": 1794270452346
   }
  },
  "prompts": {
@@ -2331,32 +2339,6 @@
     "updated": 1794266964573
    }
   ],
-  "sol.wpn.pb8": [
-   {
-    "id": "sol.wpn.pb8-model-lod1",
-    "file": "model-lod1.jpg",
-    "name": "3D-модель · LOD1 (вид с 20-30 м)",
-    "note": "assets/models/equipment/smy_pb8_rack",
-    "added": 1794266964573,
-    "updated": 1794266964573
-   },
-   {
-    "id": "sol.wpn.pb8-model-lod0",
-    "file": "model-lod0.jpg",
-    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
-    "note": "assets/models/equipment/smy_pb8_rack",
-    "added": 1794266964573,
-    "updated": 1794266964573
-   },
-   {
-    "id": "sol.wpn.pb8-model-hits",
-    "file": "model-hits.jpg",
-    "name": "Хитвалумы, цвет = деталь",
-    "note": "assets/models/equipment/smy_pb8_rack",
-    "added": 1794266964573,
-    "updated": 1794266964573
-   }
-  ],
   "hyp.drone.rd1": [
    {
     "id": "hyp.drone.rd1-model-lod1",
@@ -3399,28 +3381,106 @@
   ],
   "hull:kb.ship.cobrett-i.frnu-inta.a3": [
    {
-    "id": "layout-v1-cobra_layout_inside",
-    "file": "cobra_layout_inside.jpg",
-    "name": "Эскиз компоновки v1 - внутри (корпус, плиты и пятаки скрыты)",
+    "id": "layout-v2-cobra2_inside",
+    "file": "cobra2_inside.jpg",
+    "name": "Эскиз v2 (отсек Ø3,5 м) - внутри: корпус, плиты и пятаки ER-5 скрыты",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794268791066,
-    "updated": 1794268791066
+    "added": 1794269725362,
+    "updated": 1794269725362
    },
    {
-    "id": "layout-v1-cobra_layout_under",
-    "file": "cobra_layout_under.jpg",
-    "name": "Эскиз компоновки v1 - снизу: контейнеры, люки, лыжи",
+    "id": "layout-v2-cobra2_top",
+    "file": "cobra2_top.jpg",
+    "name": "Эскиз v2 - снаружи: пятаки ER-5 и плиты-радиаторы на спине",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794268791066,
-    "updated": 1794268791066
+    "added": 1794269725362,
+    "updated": 1794269725362
    },
    {
-    "id": "layout-v1-cobra_layout_top",
-    "file": "cobra_layout_top.jpg",
-    "name": "Эскиз компоновки v1 - снаружи: плиты-радиаторы, пятаки ER-5",
+    "id": "layout-v2-cobra2_under",
+    "file": "cobra2_under.jpg",
+    "name": "Эскиз v2 - снизу: контейнеры, люки выгрузки, лыжи (выпущены)",
     "note": "tools/ships/layout_sketch.py",
-    "added": 1794268791066,
-    "updated": 1794268791066
+    "added": 1794269725362,
+    "updated": 1794269725362
+   }
+  ],
+  "bastion.drone.klegg3": [
+   {
+    "id": "bastion.drone.klegg3-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_klegg3_drone",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   },
+   {
+    "id": "bastion.drone.klegg3-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_klegg3_drone",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   },
+   {
+    "id": "bastion.drone.klegg3-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_klegg3_drone",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   }
+  ],
+  "bastion.bay.bk24": [
+   {
+    "id": "bastion.bay.bk24-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_bk24_cassette",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   },
+   {
+    "id": "bastion.bay.bk24-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_bk24_cassette",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   },
+   {
+    "id": "bastion.bay.bk24-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_bk24_cassette",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   }
+  ],
+  "sol.wpn.mp8": [
+   {
+    "id": "sol.wpn.mp8-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_mp8_pod",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   },
+   {
+    "id": "sol.wpn.mp8-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_mp8_pod",
+    "added": 1794270452346,
+    "updated": 1794270452346
+   },
+   {
+    "id": "sol.wpn.mp8-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_mp8_pod",
+    "added": 1794270452346,
+    "updated": 1794270452346
    }
   ]
  },

@@ -4660,6 +4660,32 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Next: author review of the sketch; then escape-cockpit model, forward laser and wing missile rack items, skid rig,
   plate seams / mount-point hit volumes; fleet doctrine; sketches of the other ships per maker principle.
 
+### Cobra drive bay 3.5 m (conical pads), jump concept, kamikaze drones, maker-language names (author 2026-11-10)
+- Author: silhouette over size -> the Cobretty bay shrinks to dia 3.5 m with a recalculation of overheating / failures;
+  author's idea: conical engine pads. Runtime (PROPOSAL, compiled, NOT flight-verified): EngineThermalEmitterDescriptor
+  .coneHeightM + physics::thermal::conicalEmitterAreaM2 (lateral cone / frustum area, flat when height <= 0) used at the
+  4 emitter-area sites of EngineUnit.h; CR-1 preset (and N1, which inherits it): pad 3.5 m base + 1.3 m cone
+  (11.99 m2 x 6 MW/m2 = 71.9 MW), efficiency 0.9855 -> 0.991 (waste 43.65 MW): margin x1.65 (was x1.68), full thrust
+  down to ~61 % pad integrity (was 60 %), half pad -> 82 % sustained thrust. ER-5 unchanged (own 11 m pad, x1.31).
+  New test tests/architecture_contracts/CobraCompactDriveThermalTests.cpp (cobra_compact_drive_thermal) PASS; EliteGame
+  build PASS. Pre-existing stale reds (same failure on the baseline, not in run_gates): universe_thermal_radiation_tests
+  (multiplier 2.5 vs 10), engine_unit_damage_model_tests, universe_material_engine_thermal_tests,
+  installed_engine_actuator_tests ("CR-1 type identity missing"), equipment_damage_failure_pipeline_tests - queued.
+  Needed for acceptance: a live flight with the Cobra (heat at full thrust, pad damage derating).
+- Models: CR-1 / ER-5 / N1 scaled by 0.7 (scaled_unit / scaled_family in units/cobretty.py), CR-1 pad = conical 8-sector
+  pad; N1 pad still flat in the model (physics conical) - to redo. Draft passports (not canon): CR-1 / N1 envelope
+  3.5 x 3.5 x 5.85 m, emitter 3.5 m + cone 1.3 m, eff 0.991; ER-5 3.5 x 3.5 x 3.5 m; geometry_rule anchors updated.
+- Cobrett-I layout sketch v2: hull ~25 x 23 x 3.5 m (passport 26 x 22.2 x 5), bays at x = +-8.4, walkway in the spine,
+  wingtip jump-field emitters (proposal), skids flush with the belly when folded (author's choice).
+- Jump: per JUMP_MECHANICS.md one field / three modes; the field is the jump core's (a separate unit), CR-1 is the
+  marching mode only; PROPOSAL awaiting the author: wingtip field emitters of the core shape the field around the hull.
+- Kamikaze drones (author: big military ships, like FPV): Bastion MJ-K3 Klegg drone + MJ-BK24 Bikube 24-cell cassette
+  (units/bastion_drones.py), first carrier B-90; all 5 new items (LM-MP8 missile pod, RD-1, RM-2 Mantis, MJ-K3,
+  MJ-BK24) are reference parts via build_proposals.js from tools/models/briefs/new_parts_proposal.json (108 parts),
+  new reference category "drone". Names by maker language (ship_naming.json); ids / folders without Russian
+  transliteration (sol.wpn.mp8 / smy_mp8_pod, bastion.drone.klegg3, bastion.bay.bk24). Open: a naming pass over all
+  equipment names / legacy Cyrillic indices (КО-300, КЦ-1000, ...) per the naming canon.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

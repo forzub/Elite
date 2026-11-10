@@ -26,10 +26,17 @@ namespace game::equipment::engine::presets
     e.nominalGimbalRateRadPerSec = 1000.0; // not simulated as servo motion
 
     e.nominalElectricalPowerMW = 4850.0; // Rated input; not F*v
-    e.nominalEfficiency01 = 0.9855;
+    // Author 2026-11-10: the Cobra silhouette wins - the drive bay shrinks from
+    // dia 5 m to 3.5 m, and the pad becomes a convex cone 1.3 m high on the 3.5 m
+    // base (11.98 m2 x 6 MW/m2 = 71.9 MW). With the compact drive's higher
+    // efficiency the full-thrust heat margin is x1.65 (was x1.68): waste 43.7 MW,
+    // housing settles at ~935 K (safe 1250 K), full thrust holds down to 61 %
+    // pad integrity (was 60 %). Before: flat 5 m pad, 0.9855.
+    e.nominalEfficiency01 = 0.991;
     e.maxRelativeEfficiencyLossAtFullDamage01 = 0.002;
 
-    e.thermalEmitter.outerDiameterM = 5.0;
+    e.thermalEmitter.outerDiameterM = 3.5;
+    e.thermalEmitter.coneHeightM = 1.3;
     e.thermalEmitter.apertureDiameterM = 0.0;
     e.thermalEmitter.surfaceTemperatureK = 2500.0;
     e.thermalEmitter.emissivity01 = 0.9;
@@ -44,7 +51,7 @@ namespace game::equipment::engine::presets
     const double wasteMW =
         e.nominalElectricalPowerMW * (1.0 - e.nominalEfficiency01);
     // Keep the finite physical housing→coolant heat path used before
-    // conversion to a solid 5m radiating pad. Do not recalculate it as
+    // conversion to a solid radiating pad. Do not recalculate it as
     // (waste - emitter capacity): that would become zero when healthy and
     // would prevent a damaged emitter from heating the coolant.
     // Calibrated independent housing-to-coolant conductance: not tied to

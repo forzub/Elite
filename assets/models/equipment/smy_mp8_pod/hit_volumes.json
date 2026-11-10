@@ -1,0 +1,487 @@
+{
+ "asset": "smy_mp8_pod",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "mp8_rail_mount.1",
+   "part": "mp8_rail_mount",
+   "shape": "box",
+   "position": [
+    -0.265,
+    0.04,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.04,
+    0.04,
+    0.58
+   ]
+  },
+  {
+   "id": "mp8_rail_mount.2",
+   "part": "mp8_rail_mount",
+   "shape": "box",
+   "position": [
+    0.265,
+    0.04,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.04,
+    0.04,
+    0.58
+   ]
+  },
+  {
+   "id": "mp8_rail_mount.3",
+   "part": "mp8_rail_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.02,
+    -0.55
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.265,
+    0.02,
+    0.03
+   ]
+  },
+  {
+   "id": "mp8_rail_mount.4",
+   "part": "mp8_rail_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.02,
+    0.55
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.265,
+    0.02,
+    0.03
+   ]
+  },
+  {
+   "id": "mp8_housing.1",
+   "part": "mp8_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.065,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.29,
+    0.015,
+    0.455
+   ]
+  },
+  {
+   "id": "mp8_housing.2",
+   "part": "mp8_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.665,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.255,
+    0.585,
+    0.445
+   ]
+  },
+  {
+   "id": "mp8_hatch_1.1",
+   "part": "mp8_hatch_1",
+   "shape": "box",
+   "position": [
+    -0.105,
+    1.262,
+    -0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_1.1",
+   "part": "mp8_missile_1",
+   "shape": "cylinder",
+   "position": [
+    -0.105,
+    0.64,
+    -0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_hatch_2.1",
+   "part": "mp8_hatch_2",
+   "shape": "box",
+   "position": [
+    0.105,
+    1.262,
+    -0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_2.1",
+   "part": "mp8_missile_2",
+   "shape": "cylinder",
+   "position": [
+    0.105,
+    0.64,
+    -0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_hatch_3.1",
+   "part": "mp8_hatch_3",
+   "shape": "box",
+   "position": [
+    -0.105,
+    1.262,
+    -0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_3.1",
+   "part": "mp8_missile_3",
+   "shape": "cylinder",
+   "position": [
+    -0.105,
+    0.64,
+    -0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_hatch_4.1",
+   "part": "mp8_hatch_4",
+   "shape": "box",
+   "position": [
+    0.105,
+    1.262,
+    -0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_4.1",
+   "part": "mp8_missile_4",
+   "shape": "cylinder",
+   "position": [
+    0.105,
+    0.64,
+    -0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_hatch_5.1",
+   "part": "mp8_hatch_5",
+   "shape": "box",
+   "position": [
+    -0.105,
+    1.262,
+    0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_5.1",
+   "part": "mp8_missile_5",
+   "shape": "cylinder",
+   "position": [
+    -0.105,
+    0.64,
+    0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_hatch_6.1",
+   "part": "mp8_hatch_6",
+   "shape": "box",
+   "position": [
+    0.105,
+    1.262,
+    0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_6.1",
+   "part": "mp8_missile_6",
+   "shape": "cylinder",
+   "position": [
+    0.105,
+    0.64,
+    0.105
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_hatch_7.1",
+   "part": "mp8_hatch_7",
+   "shape": "box",
+   "position": [
+    -0.105,
+    1.262,
+    0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_7.1",
+   "part": "mp8_missile_7",
+   "shape": "cylinder",
+   "position": [
+    -0.105,
+    0.64,
+    0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_hatch_8.1",
+   "part": "mp8_hatch_8",
+   "shape": "box",
+   "position": [
+    0.105,
+    1.262,
+    0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.099,
+    0.012,
+    0.099
+   ]
+  },
+  {
+   "id": "mp8_missile_8.1",
+   "part": "mp8_missile_8",
+   "shape": "cylinder",
+   "position": [
+    0.105,
+    0.64,
+    0.315
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.54
+  },
+  {
+   "id": "mp8_ignition.1",
+   "part": "mp8_ignition",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.4,
+    -0.505
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.19,
+    0.23,
+    0.06
+   ]
+  },
+  {
+   "id": "mp8_ignition.2",
+   "part": "mp8_ignition",
+   "shape": "box",
+   "position": [
+    -0.12,
+    0.92,
+    -0.475
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.04,
+    0.3,
+    0.03
+   ]
+  },
+  {
+   "id": "mp8_reload_hatch.1",
+   "part": "mp8_reload_hatch",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.665,
+    0.475
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.22,
+    0.535,
+    0.03
+   ]
+  }
+ ]
+}

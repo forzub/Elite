@@ -1,5 +1,5 @@
 """New equipment proposals (author request 2026-11-10, not in the canon yet - passports in briefs/new_parts_proposal.json):
-  Sol Mass Yards PB-8   light external missile rack (8 cells, blow-out covers, end reload hatch, launch-control unit);
+  Sol Mass Yards LM-MP8   light external missile rack (8 cells, blow-out covers, end reload hatch, launch-control unit);
   Hyperion Yards RD-1   recon drone (gimballed camera turret, deployable antenna, power block, 4 field-coupled thrusters,
                         3-point kinematic docking latch);
   Agora Modular RM-2 "Mantide"  repair drone, a mantis on four magnetic feet: every limb segment / joint is its own part
@@ -11,9 +11,9 @@ from eqlib import *  # noqa: F401,F403 - the unit kernel (geometry, LOD policy, 
 
 register_materials({
     # Sol Mass Yards (serial school)
-    "eq_smy_pb8_regolith": ((0.55, 0.55, 0.53), (0.15, 0.15, 0.15), 30),
-    "eq_smy_pb8_slate": ((0.28, 0.34, 0.42), (0.20, 0.20, 0.22), 40),
-    "eq_smy_pb8_missile": ((0.72, 0.72, 0.68), (0.25, 0.25, 0.25), 50),
+    "eq_smy_mp8_regolith": ((0.55, 0.55, 0.53), (0.15, 0.15, 0.15), 30),
+    "eq_smy_mp8_slate": ((0.28, 0.34, 0.42), (0.20, 0.20, 0.22), 40),
+    "eq_smy_mp8_missile": ((0.72, 0.72, 0.68), (0.25, 0.25, 0.25), 50),
     # Hyperion Yards (light aerospace)
     "eq_hyp_rd1_foil": ((0.80, 0.62, 0.25), (0.70, 0.60, 0.35), 110),
     "eq_hyp_rd1_carbon": ((0.15, 0.15, 0.16), (0.30, 0.30, 0.32), 80),
@@ -101,15 +101,15 @@ def pivoted(src, pivot, R):
     return placed(src, R, _sub(pivot, apply(R, pivot)))
 
 
-# ================================================================ 1. Sol Mass Yards PB-8 light missile rack
+# ================================================================ 1. Sol Mass Yards LM-MP8 light missile rack
 # Hull-skin weapon: mounting face y = 0, the cells fire outward (+Y). 2 x 4 square cells on a 0.21 m pitch,
-# one missile per cell (separate parts pb8_missile_1..8 so a cell can be shown fired), one frangible blow-out cover
-# per cell (pb8_hatch_1..8), an end-loading reload hatch on +Z, the launch-control unit on -Z, SMY rail mount.
+# one missile per cell (separate parts mp8_missile_1..8 so a cell can be shown fired), one frangible blow-out cover
+# per cell (mp8_hatch_1..8), an end-loading reload hatch on +Z, the launch-control unit on -Z, SMY rail mount.
 PB8 = dict(pitch=0.21, ix=0.21, iz=0.42, wall=0.025, div=0.016, y_floor=0.08, y_top=1.25, rail_x=0.265, rail_z=0.58)
 PB8_CELLS = [(sx * 0.105, z) for z in (-0.315, -0.105, 0.105, 0.315) for sx in (-1, 1)]
 
 
-def pb8_parts(lod):
+def mp8_parts(lod):
     d = PB8
     small = small_for(lod)
     ch = (lambda c: c) if lod == 0 else (lambda c: 0.0)
@@ -119,12 +119,12 @@ def pb8_parts(lod):
     ox, oz = ix + w, iz + w
 
     # --- SMY rectangular rail mount with 4 twist pins
-    m = P["pb8_rail_mount"] = Part("pb8_rail_mount")
+    m = P["mp8_rail_mount"] = Part("mp8_rail_mount")
     rx, rz = d["rail_x"], d["rail_z"]
     for s in (-1, 1):
-        box(m, "eq_smy_pb8_slate", (s * rx, 0.025, 0), (0.05, 0.05, 2 * rz), chamfer=ch(0.01))
+        box(m, "eq_smy_mp8_slate", (s * rx, 0.025, 0), (0.05, 0.05, 2 * rz), chamfer=ch(0.01))
     for z in (-rz + 0.03, 0.0, rz - 0.03):
-        box(m, "eq_smy_pb8_slate", (0, 0.02, z), (2 * rx - 0.05, 0.04, 0.06))
+        box(m, "eq_smy_mp8_slate", (0, 0.02, z), (2 * rx - 0.05, 0.04, 0.06))
     for s in (-1, 1):
         for zs in (-1, 1):
             x, z = s * rx, zs * 0.52
@@ -135,17 +135,17 @@ def pb8_parts(lod):
         for s in (-1, 1):
             for i in range(9):
                 hex_bolt(m, "eq_steel", (s * rx, 0.05, -rz + 0.07 + i * (2 * rz - 0.14) / 8), (0, 1, 0), 0.03, 0.015)
-        box(m, "eq_smy_pb8_regolith", (0.12, 0.055, -rz + 0.03), (0.12, 0.03, 0.05), chamfer=0.005)  # power / data socket
+        box(m, "eq_smy_mp8_regolith", (0.12, 0.055, -rz + 0.03), (0.12, 0.03, 0.05), chamfer=0.005)  # power / data socket
 
     # --- housing: base flange with pin lugs, outer walls on a rib grid, cell dividers (dark)
-    hs = P["pb8_housing"] = Part("pb8_housing")
-    box(hs, "eq_smy_pb8_slate", (0, 0.065, 0), (2 * rx + 0.05, 0.03, 2 * oz + 0.02), chamfer=ch(0.008))
+    hs = P["mp8_housing"] = Part("mp8_housing")
+    box(hs, "eq_smy_mp8_slate", (0, 0.065, 0), (2 * rx + 0.05, 0.03, 2 * oz + 0.02), chamfer=ch(0.008))
     for s in (-1, 1):
         for zs in (-1, 1):
-            box(hs, "eq_smy_pb8_slate", (s * rx, 0.065, zs * 0.50), (0.07, 0.03, 0.08))           # pin lugs
+            box(hs, "eq_smy_mp8_slate", (s * rx, 0.065, zs * 0.50), (0.07, 0.03, 0.08))           # pin lugs
     for s in (-1, 1):
-        box(hs, "eq_smy_pb8_regolith", (s * (ix + w / 2), ym, 0), (w, hh, 2 * oz))
-        box(hs, "eq_smy_pb8_regolith", (0, ym, s * (iz + w / 2)), (2 * ix, hh, w))
+        box(hs, "eq_smy_mp8_regolith", (s * (ix + w / 2), ym, 0), (w, hh, 2 * oz))
+        box(hs, "eq_smy_mp8_regolith", (0, ym, s * (iz + w / 2)), (2 * ix, hh, w))
     if lod < 2:
         box(hs, "eq_metal_band", (0, ym, 0), (d["div"], hh, 2 * iz))
         for z in (-0.21, 0.0, 0.21):
@@ -154,21 +154,21 @@ def pb8_parts(lod):
         # rib grid: vertical ribs on the long walls, horizontal belts all round, corner posts, top rim
         for s in (-1, 1):
             for z in (-0.315, -0.105, 0.105, 0.315):
-                box(hs, "eq_smy_pb8_regolith", (s * (ox + 0.01), ym, z), (0.02, hh, 0.03), chamfer=ch(0.005))
+                box(hs, "eq_smy_mp8_regolith", (s * (ox + 0.01), ym, z), (0.02, hh, 0.03), chamfer=ch(0.005))
             for y in (0.42, 0.80):
-                box(hs, "eq_smy_pb8_regolith", (s * (ox + 0.01), y, 0), (0.02, 0.03, 2 * oz), chamfer=ch(0.005))
+                box(hs, "eq_smy_mp8_regolith", (s * (ox + 0.01), y, 0), (0.02, 0.03, 2 * oz), chamfer=ch(0.005))
             for zs in (-1, 1):
-                box(hs, "eq_smy_pb8_slate", (s * (ox - 0.005), ym, zs * (oz - 0.005)), (0.05, hh, 0.05), chamfer=ch(0.008))
+                box(hs, "eq_smy_mp8_slate", (s * (ox - 0.005), ym, zs * (oz - 0.005)), (0.05, hh, 0.05), chamfer=ch(0.008))
         for s in (-1, 1):
-            box(hs, "eq_smy_pb8_slate", (s * (ox + 0.012), yt - 0.02, 0), (0.024, 0.04, 2 * oz + 0.05), chamfer=ch(0.006))
-            box(hs, "eq_smy_pb8_slate", (0, yt - 0.02, s * (oz + 0.012)), (2 * ox, 0.04, 0.024), chamfer=ch(0.006))
+            box(hs, "eq_smy_mp8_slate", (s * (ox + 0.012), yt - 0.02, 0), (0.024, 0.04, 2 * oz + 0.05), chamfer=ch(0.006))
+            box(hs, "eq_smy_mp8_slate", (0, yt - 0.02, s * (oz + 0.012)), (2 * ox, 0.04, 0.024), chamfer=ch(0.006))
     else:
         box(hs, "eq_metal_band", (0, yt - 0.01, 0), (2 * ix, 0.02, 2 * iz))                    # far: dark deck only
     if lod == 0:
         for s in (-1, 1):                                                                       # stencilled panels (relief)
             for z in (-0.21, 0.21):
-                box(hs, "eq_smy_pb8_slate", (s * (ox + 0.003), 1.02, z), (0.006, 0.08, 0.14))
-                box(hs, "eq_smy_pb8_regolith", (s * (ox + 0.006), 1.02, z), (0.004, 0.05, 0.10))
+                box(hs, "eq_smy_mp8_slate", (s * (ox + 0.003), 1.02, z), (0.006, 0.08, 0.14))
+                box(hs, "eq_smy_mp8_regolith", (s * (ox + 0.006), 1.02, z), (0.004, 0.05, 0.10))
         for s in (-1, 1):
             for zs in (-1, 1):
                 for k in range(3):
@@ -176,10 +176,10 @@ def pb8_parts(lod):
 
     # --- blow-out covers (one per cell) and missiles
     for i, (cx, cz) in enumerate(PB8_CELLS):
-        hc = P[f"pb8_hatch_{i + 1}"] = Part(f"pb8_hatch_{i + 1}")
-        box(hc, "eq_smy_pb8_slate", (cx, yt + 0.011, cz), (0.198, 0.022, 0.198), chamfer=ch(0.006))
+        hc = P[f"mp8_hatch_{i + 1}"] = Part(f"mp8_hatch_{i + 1}")
+        box(hc, "eq_smy_mp8_slate", (cx, yt + 0.011, cz), (0.198, 0.022, 0.198), chamfer=ch(0.006))
         if lod < 2:
-            box(hc, "eq_smy_pb8_regolith", (cx, yt + 0.024, cz), (0.08, 0.006, 0.08))                # frangible centre
+            box(hc, "eq_smy_mp8_regolith", (cx, yt + 0.024, cz), (0.08, 0.006, 0.08))                # frangible centre
         if lod == 0:
             for a in (math.pi / 4, -math.pi / 4):                                                  # scoring lines
                 box(hc, "eq_metal_band", (cx, yt + 0.0225, cz), (0.24, 0.004, 0.006), rot_y(a))
@@ -187,38 +187,38 @@ def pb8_parts(lod):
                 for sz in (-1, 1):
                     hex_bolt(hc, "eq_steel", (cx + sx * 0.082, yt + 0.022, cz + sz * 0.082), (0, 1, 0), 0.014, 0.006)
 
-        ms = P[f"pb8_missile_{i + 1}"] = Part(f"pb8_missile_{i + 1}")
+        ms = P[f"mp8_missile_{i + 1}"] = Part(f"mp8_missile_{i + 1}")
         t = (cx, 0, cz)
         ns = small if lod == 0 else 6
         ylathe(ms, "eq_metal_band", [(0.0, 0.10), (0.042, 0.10), (0.05, 0.14), (0.0, 0.14)], ns, t=t)                  # nozzle
-        ylathe(ms, "eq_smy_pb8_missile", [(0.05, 0.14), (0.068, 0.14), (0.068, 0.94), (0.0, 0.94)], ns, t=t)
-        ylathe(ms, "eq_smy_pb8_slate", [(0.068, 0.94), (0.062, 1.02), (0.048, 1.09), (0.026, 1.15), (0.0, 1.18)], ns, t=t, soft=35)
+        ylathe(ms, "eq_smy_mp8_missile", [(0.05, 0.14), (0.068, 0.14), (0.068, 0.94), (0.0, 0.94)], ns, t=t)
+        ylathe(ms, "eq_smy_mp8_slate", [(0.068, 0.94), (0.062, 1.02), (0.048, 1.09), (0.026, 1.15), (0.0, 1.18)], ns, t=t, soft=35)
         if lod == 0:
             ylathe(ms, "eq_status_amber", crect(0.067, 0.071, 0.88, 0.91), ns, t=t)              # warhead band
             for k in range(4):                                                                      # tail fins (diagonal)
                 a = math.pi / 4 + k * math.pi / 2
-                box(ms, "eq_smy_pb8_slate", (cx + 0.094 * math.cos(a), 0.25, cz + 0.094 * math.sin(a)), (0.058, 0.20, 0.008), rot_y(-a))
+                box(ms, "eq_smy_mp8_slate", (cx + 0.094 * math.cos(a), 0.25, cz + 0.094 * math.sin(a)), (0.058, 0.20, 0.008), rot_y(-a))
         if lod == 0:
             for k in range(4):                                                                      # canards
                 a = math.pi / 4 + k * math.pi / 2
-                box(ms, "eq_smy_pb8_slate", (cx + 0.083 * math.cos(a), 0.80, cz + 0.083 * math.sin(a)), (0.03, 0.06, 0.006), rot_y(-a))
+                box(ms, "eq_smy_mp8_slate", (cx + 0.083 * math.cos(a), 0.80, cz + 0.083 * math.sin(a)), (0.03, 0.06, 0.006), rot_y(-a))
 
     # --- launch-control unit (-Z end) with the ribbed cable duct to the cell igniters
-    ig = P["pb8_ignition"] = Part("pb8_ignition")
+    ig = P["mp8_ignition"] = Part("mp8_ignition")
     zf = -(oz + 0.06)
-    box(ig, "eq_smy_pb8_regolith", (0, 0.40, zf), (0.38, 0.46, 0.12), chamfer=ch(0.015))
-    box(ig, "eq_smy_pb8_slate", (-0.12, 0.92, -(oz + 0.03)), (0.08, 0.60, 0.06), chamfer=ch(0.008))     # duct up to the deck
+    box(ig, "eq_smy_mp8_regolith", (0, 0.40, zf), (0.38, 0.46, 0.12), chamfer=ch(0.015))
+    box(ig, "eq_smy_mp8_slate", (-0.12, 0.92, -(oz + 0.03)), (0.08, 0.60, 0.06), chamfer=ch(0.008))     # duct up to the deck
     if lod < 2:
-        box(ig, "eq_smy_pb8_slate", (0.10, 0.12, -(oz + 0.03)), (0.10, 0.08, 0.06))                    # duct to the rail socket
+        box(ig, "eq_smy_mp8_slate", (0.10, 0.12, -(oz + 0.03)), (0.10, 0.08, 0.06))                    # duct to the rail socket
         for x in (-0.11, 0.0, 0.11):
-            box(ig, "eq_smy_pb8_slate", (x, 0.40, zf - 0.065), (0.04, 0.40, 0.012))                      # cover ribs
+            box(ig, "eq_smy_mp8_slate", (x, 0.40, zf - 0.065), (0.04, 0.40, 0.012))                      # cover ribs
     if lod == 0:
         for k in range(9):                                                                          # duct ribs
-            box(ig, "eq_smy_pb8_slate", (-0.12, 0.66 + k * 0.06, -(oz + 0.03)), (0.09, 0.012, 0.07))
+            box(ig, "eq_smy_mp8_slate", (-0.12, 0.66 + k * 0.06, -(oz + 0.03)), (0.09, 0.012, 0.07))
         box(ig, "eq_status_amber", (0.14, 0.58, zf - 0.072), (0.04, 0.02, 0.006))
         for x in (0.05, 0.10, 0.15):
             cyl(ig, "eq_metal_band", (x, 0.26, zf - 0.06), (x, 0.26, zf - 0.10), 0.016, 8)          # connectors
-        box(ig, "eq_smy_pb8_slate", (-0.06, 0.24, zf - 0.068), (0.12, 0.06, 0.004))                    # stencil plate
+        box(ig, "eq_smy_mp8_slate", (-0.06, 0.24, zf - 0.068), (0.12, 0.06, 0.004))                    # stencil plate
         for sx in (-1, 1):
             for y in (0.20, 0.60):
                 hex_bolt(ig, "eq_steel", (sx * 0.17, y, zf - 0.06), (0, 0, -1), 0.016, 0.008)
@@ -226,12 +226,12 @@ def pb8_parts(lod):
                 0.01, 2, ("eq_metal_band", "eq_insulator"), tie_every=3)
 
     # --- reload hatch (+Z end): hinged on +X, two latch handles, stiffeners
-    rh = P["pb8_reload_hatch"] = Part("pb8_reload_hatch")
+    rh = P["mp8_reload_hatch"] = Part("mp8_reload_hatch")
     zh = oz + 0.0125
-    box(rh, "eq_smy_pb8_slate", (0, 0.665, zh), (0.40, 1.07, 0.025), chamfer=ch(0.006))
+    box(rh, "eq_smy_mp8_slate", (0, 0.665, zh), (0.40, 1.07, 0.025), chamfer=ch(0.006))
     if lod < 2:
         for y in (0.33, 0.665, 1.0):
-            box(rh, "eq_smy_pb8_regolith", (0, y, zh + 0.02), (0.34, 0.03, 0.02), chamfer=ch(0.005))
+            box(rh, "eq_smy_mp8_regolith", (0, y, zh + 0.02), (0.34, 0.03, 0.02), chamfer=ch(0.005))
         for y in (0.30, 1.03):
             cyl(rh, "eq_steel", (0.215, y - 0.06, zh + 0.01), (0.215, y + 0.06, zh + 0.01), 0.02, small)  # hinges
         for y in (0.50, 0.83):
@@ -240,25 +240,25 @@ def pb8_parts(lod):
                 box(rh, "eq_steel", (-0.15, yy, zh + 0.025), (0.025, 0.02, 0.025))
     if lod == 0:
         for y in (0.50, 0.83):
-            box(rh, "eq_smy_pb8_regolith", (-0.185, y, zh + 0.016), (0.03, 0.05, 0.008))               # latch dogs
-        box(rh, "eq_smy_pb8_regolith", (0.05, 0.16, zh + 0.0145), (0.18, 0.06, 0.004))                # stencil plate
+            box(rh, "eq_smy_mp8_regolith", (-0.185, y, zh + 0.016), (0.03, 0.05, 0.008))               # latch dogs
+        box(rh, "eq_smy_mp8_regolith", (0.05, 0.16, zh + 0.0145), (0.18, 0.06, 0.004))                # stencil plate
     return P
 
 
-def pb8_hits():
+def mp8_hits():
     d = PB8
     yf, yt, ix, iz, w = d["y_floor"], d["y_top"], d["ix"], d["iz"], d["wall"]
     ox, oz = ix + w, iz + w
-    H = [hbox("pb8_rail_mount", (s * d["rail_x"], 0.04, 0), (0.08, 0.08, 2 * d["rail_z"])) for s in (-1, 1)]
-    H += [hbox("pb8_rail_mount", (0, 0.02, z), (2 * d["rail_x"], 0.04, 0.06)) for z in (-d["rail_z"] + 0.03, d["rail_z"] - 0.03)]
-    H += [hbox("pb8_housing", (0, 0.065, 0), (2 * d["rail_x"] + 0.05, 0.03, 2 * oz + 0.02)),
-          hbox("pb8_housing", (0, (yf + yt) / 2, 0), (2 * ox + 0.04, yt - yf, 2 * oz))]
+    H = [hbox("mp8_rail_mount", (s * d["rail_x"], 0.04, 0), (0.08, 0.08, 2 * d["rail_z"])) for s in (-1, 1)]
+    H += [hbox("mp8_rail_mount", (0, 0.02, z), (2 * d["rail_x"], 0.04, 0.06)) for z in (-d["rail_z"] + 0.03, d["rail_z"] - 0.03)]
+    H += [hbox("mp8_housing", (0, 0.065, 0), (2 * d["rail_x"] + 0.05, 0.03, 2 * oz + 0.02)),
+          hbox("mp8_housing", (0, (yf + yt) / 2, 0), (2 * ox + 0.04, yt - yf, 2 * oz))]
     for i, (cx, cz) in enumerate(PB8_CELLS):
-        H.append(hbox(f"pb8_hatch_{i + 1}", (cx, yt + 0.012, cz), (0.198, 0.024, 0.198)))
-        H.append(hcyl(f"pb8_missile_{i + 1}", (cx, 0.10, cz), (cx, 1.18, cz), 0.07))
-    H += [hbox("pb8_ignition", (0, 0.40, -(oz + 0.06)), (0.38, 0.46, 0.12)),
-          hbox("pb8_ignition", (-0.12, 0.92, -(oz + 0.03)), (0.08, 0.60, 0.06)),
-          hbox("pb8_reload_hatch", (0, 0.665, oz + 0.03), (0.44, 1.07, 0.06))]
+        H.append(hbox(f"mp8_hatch_{i + 1}", (cx, yt + 0.012, cz), (0.198, 0.024, 0.198)))
+        H.append(hcyl(f"mp8_missile_{i + 1}", (cx, 0.10, cz), (cx, 1.18, cz), 0.07))
+    H += [hbox("mp8_ignition", (0, 0.40, -(oz + 0.06)), (0.38, 0.46, 0.12)),
+          hbox("mp8_ignition", (-0.12, 0.92, -(oz + 0.03)), (0.08, 0.60, 0.06)),
+          hbox("mp8_reload_hatch", (0, 0.665, oz + 0.03), (0.44, 1.07, 0.06))]
     return H
 
 
@@ -813,6 +813,6 @@ def rm2_rig():
 
 RM2_RIG = rm2_rig()
 
-ASSETS = {"smy_pb8_rack": pb8_parts, "hyperion_rd1_drone": rd1_parts, "agora_rm2_drone": rm2_parts}
-HITS = {"smy_pb8_rack": pb8_hits, "hyperion_rd1_drone": rd1_hits, "agora_rm2_drone": rm2_hits}
-MODEL_ASSETS = {"sol.wpn.pb8": "smy_pb8_rack", "hyp.drone.rd1": "hyperion_rd1_drone", "agora.drone.rm2": "agora_rm2_drone"}
+ASSETS = {"smy_mp8_pod": mp8_parts, "hyperion_rd1_drone": rd1_parts, "agora_rm2_drone": rm2_parts}
+HITS = {"smy_mp8_pod": mp8_hits, "hyperion_rd1_drone": rd1_hits, "agora_rm2_drone": rm2_hits}
+MODEL_ASSETS = {"sol.wpn.mp8": "smy_mp8_pod", "hyp.drone.rd1": "hyperion_rd1_drone", "agora.drone.rm2": "agora_rm2_drone"}

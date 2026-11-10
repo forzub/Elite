@@ -54,6 +54,7 @@ const CAT = {
   hangar: ["Ангар", "размещение малых аппаратов", "hangar bay", "hangar bay module with doors and craft cradles"],
   boat_bay: ["Отсек катера", "стоянка и пуск бортового катера", "boat bay", "small craft bay with launch rails"],
   drone_bay: ["Отсек дронов", "стоянка и пуск дронов", "drone bay", "drone launch bay with racks"],
+  drone: ["Дрон", "ремонтный, разведывательный или ударный (камикадзе) дрон корабля", "drone", "ship-borne drone"],
   train_module: ["Модуль прыжкового поезда", "сцепляемый грузовой модуль поезда", "jump-train cargo module", "coupled cargo module with train couplers at both ends"],
   container_rack: ["Контейнерная рама", "перевозка стандартных контейнеров C20", "container rack", "open container rack frame holding standard cargo containers"],
   bulk_hold: ["Насыпной трюм", "перевозка руды и сыпучих грузов", "bulk hold", "bulk cargo hold with hoppers"],

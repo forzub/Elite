@@ -199,6 +199,18 @@ set_tests_properties(
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+# Compact Cobra drive (author 2026-11-10): conical 3.5 m CR-1 pad keeps the former heat / damage margin.
+add_executable(
+    cobra_compact_drive_thermal_tests
+    CobraCompactDriveThermalTests.cpp
+)
+target_include_directories(
+    cobra_compact_drive_thermal_tests
+    PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(cobra_compact_drive_thermal_tests PRIVATE cxx_std_17)
+add_test(NAME cobra_compact_drive_thermal COMMAND cobra_compact_drive_thermal_tests)
+
 # Universal material definitions and engine annulus laser/impact thermal
 # envelope are header-only and testable without the graphics game target.
 add_executable(

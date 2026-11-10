@@ -30,6 +30,9 @@ struct EngineThermalEmitterDescriptor
 {
     double outerDiameterM = 0.0;
     double apertureDiameterM = 0.0;
+    // 0 = flat pad; > 0 = convex cone of this height on the same base
+    // diameter (more radiating area without a wider drive, author 2026-11-10).
+    double coneHeightM = 0.0;
     double surfaceTemperatureK = 2500.0;
     double emissivity01 = 0.9;
     double viewFactor01 = 1.0;
@@ -130,9 +133,10 @@ struct EngineUnitDescriptor
 {
     const auto& emitter = descriptor.thermalEmitter;
     const double oneSidedArea =
-        game::physics::thermal::annulusAreaM2(
+        game::physics::thermal::conicalEmitterAreaM2(
             emitter.outerDiameterM,
-            emitter.apertureDiameterM
+            emitter.apertureDiameterM,
+            emitter.coneHeightM
         );
     if (!std::isfinite(effectiveArea01))
         return 0.0;
@@ -435,9 +439,10 @@ applyEngineEmitterExposure(
     );
     if (!material)
         return previous;
-    const double area = game::physics::thermal::annulusAreaM2(
+    const double area = game::physics::thermal::conicalEmitterAreaM2(
         descriptor.thermalEmitter.outerDiameterM,
-        descriptor.thermalEmitter.apertureDiameterM
+        descriptor.thermalEmitter.apertureDiameterM,
+        descriptor.thermalEmitter.coneHeightM
     );
     return game::physics::materials::exposeSurface(
         *material, area, previous, hit
@@ -485,9 +490,10 @@ applyEngineEmitterExposure(
     // advanceEngineOperatingState(). The protection-band interpolation
     // below controls the transition toward this ceiling. Do not ramp pad
     // capacity a second time using currentTemperatureK.
-    const double area=game::physics::thermal::annulusAreaM2(
+    const double area=game::physics::thermal::conicalEmitterAreaM2(
         descriptor.thermalEmitter.outerDiameterM,
-        descriptor.thermalEmitter.apertureDiameterM
+        descriptor.thermalEmitter.apertureDiameterM,
+        descriptor.thermalEmitter.coneHeightM
     );
     const double safePadMW=game::physics::thermal::propulsionPadCoolingMW(
         area,effectiveEmitterArea01(operating),
@@ -662,9 +668,10 @@ inline EngineLifeStep advanceEngineOperatingState(
         : game::physics::thermal::DeepSpaceTemperatureK;
     const double effectiveArea=finiteClamp01(emitterEffectiveArea01)*
         effectiveEmitterArea01(previous);
-    const double area=game::physics::thermal::annulusAreaM2(
+    const double area=game::physics::thermal::conicalEmitterAreaM2(
         descriptor.thermalEmitter.outerDiameterM,
-        descriptor.thermalEmitter.apertureDiameterM);
+        descriptor.thermalEmitter.apertureDiameterM,
+        descriptor.thermalEmitter.coneHeightM);
     const double padMW=game::physics::thermal::propulsionPadCoolingMW(
         area,effectiveArea,startT,idle,design);
     // A 300-second cold start reaches 99% of engine idle temperature.

@@ -2,11 +2,11 @@
  "status": "PROPOSAL (author request 2026-11-10) - not canon; models in tools/models/units/new_equipment.py",
  "parts": [
   {
-   "id": "sol.wpn.pb8",
+   "id": "sol.wpn.mp8",
    "cat": "weapon",
    "mfr": "mfr.sol_mass_yards",
-   "name": "ЛМВ лёгкий ракетный блок ПБ-8 (8 ракет)",
-   "model": "ПБ-8",
+   "name": "LM-MP8 (лёгкий ракетный блок, 8 ракет)",
+   "model": "LM-MP8",
    "mass_t": 0.85,
    "price_cr": 380000,
    "kind": "missile_rack",
@@ -22,8 +22,8 @@
    "reload": "end-loading hatch (+Z): canisters slide out on the cell rails; 8 rounds by a crew pair or a repair drone, ~20 min",
    "overhaul_h": 20000,
    "life_h": 50000,
-   "model_asset": "smy_pb8_rack",
-   "notes": "Light external box launcher for small ships (Cobrett-I class). Sol Authority serial export item: regolith-grey walls on a rib grid, slate-blue frame, SMY rectangular rail mount with 4 twist pins (foreign hulls need an adapter rail). Per-cell frangible blow-out covers (pb8_hatch_N) and separate missiles (pb8_missile_N) so the model can show fired / empty cells. Mass basis: housing + rails ~0.6 t, 8 x 28 kg rounds.",
+   "model_asset": "smy_mp8_pod",
+   "notes": "Light external box launcher for small ships (Cobrett-I class). Sol Authority serial export item: regolith-grey walls on a rib grid, slate-blue frame, SMY rectangular rail mount with 4 twist pins (foreign hulls need an adapter rail). Per-cell frangible blow-out covers (mp8_hatch_N) and separate missiles (mp8_missile_N) so the model can show fired / empty cells. Mass basis: housing + rails ~0.6 t, 8 x 28 kg rounds.",
    "geometry": {
     "status": "PROPOSAL/model",
     "envelope_m": [
@@ -65,13 +65,15 @@
    },
    "installed_on": [
     "kb.ship.cobrett-i (proposed)"
-   ]
+   ],
+   "official_name": "Sol LM-MP8 Light Missile Pod",
+   "naming_note": "Sol Mass Yards: English; old Cyrillic indices are reindexed into LM- (naming canon)"
   },
   {
    "id": "hyp.drone.rd1",
    "cat": "drone",
    "mfr": "mfr.hyperion",
-   "name": "Hyperion разведывательный дрон RD-1",
+   "name": "Hyperion RD-1 (разведывательный дрон)",
    "model": "RD-1",
    "mass_t": 0.045,
    "price_cr": 240000,
@@ -134,13 +136,16 @@
    },
    "carried_in": [
     "std.bay.drone4 (with adapter)"
-   ]
+   ],
+   "official_name": "Hyperion RD-1 Recon Drone",
+   "native_script": "侦察无人机 RD-1",
+   "naming_note": "Hyperion: English officially, Chinese second line on the hull"
   },
   {
    "id": "agora.drone.rm2",
    "cat": "drone",
    "mfr": "mfr.agora_modular",
-   "name": "Agora ремонтный дрон RM-2 «Mantide»",
+   "name": "RM-2 «Мантис» (ремонтный дрон)",
    "model": "RM-2",
    "mass_t": 0.14,
    "price_cr": 420000,
@@ -912,7 +917,113 @@
       "joint": "tool head pitch (bit spins about the head axis)"
      }
     ]
-   }
+   },
+   "official_name": "Agora RM-2 Mantis",
+   "native_script": "Μάντις",
+   "naming_note": "Agora: Greek with Latin export (open Lalande market)"
+  },
+  {
+   "id": "bastion.drone.klegg3",
+   "cat": "drone",
+   "mfr": "mfr.bastion",
+   "name": "MJ-K3 «Клегг» (дрон-камикадзе)",
+   "model": "MJ-K3",
+   "mass_t": 0.035,
+   "price_cr": 18000,
+   "kind": "kamikaze",
+   "power_kw": 6,
+   "endurance_min": 12,
+   "field_thrust_n": 120,
+   "warhead": {
+    "type": "plasma_lance",
+    "note": "burn-through: pressed against a cover-plate seam, pad or hatch, it burns the compartment's insides; no fragments (friendly-fire doctrine)"
+   },
+   "overhaul_h": 0,
+   "life_h": 500,
+   "model_asset": "bastion_klegg3_drone",
+   "notes": "FPV-style kamikaze drone (author 2026-11-10: like modern FPV drones). Four field-thruster rings on folding arms, nose camera, power cell, armoured spine duct, plasma-lance nose. Launched in salvos from КД-24 cassettes; operator-guided or autonomous terminal homing on seams and pads.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.14,
+     0.36,
+     1.33
+    ],
+    "service_clearance_m": [
+     1.3,
+     0.5,
+     1.5
+    ],
+    "stowed_m": [
+     0.36,
+     0.36,
+     1.33
+    ]
+   },
+   "fault_class": {
+    "id": "drone.kamikaze",
+    "ru": "дрон-камикадзе",
+    "srus": {
+     "thrusters": "кольца-движители",
+     "warhead": "плазменное копьё",
+     "camera": "камера",
+     "power": "батарея"
+    }
+   },
+   "carried_in": [
+    "bastion.bay.bk24"
+   ],
+   "official_name": "MJ-K3 Klegg",
+   "short_name": "Kleggen",
+   "naming_note": "Bastion: Norwegian bokmal, MJ blueprint prefix (Mjolner yard); klegg = horsefly"
+  },
+  {
+   "id": "bastion.bay.bk24",
+   "cat": "drone_bay",
+   "mfr": "mfr.bastion",
+   "name": "MJ-BK24 «Бикубе» (кассета дронов-камикадзе)",
+   "model": "MJ-BK24",
+   "mass_t": 3.3,
+   "price_cr": 620000,
+   "kind": "kamikaze_cassette",
+   "cells": 24,
+   "power_mw": 0.05,
+   "salvo": "6 drones per lid row, 4 rows a minute",
+   "reload": "from the ship's magazine by the cell rails, or by a repair drone; 24 drones ~40 min",
+   "overhaul_h": 20000,
+   "life_h": 60000,
+   "model_asset": "bastion_bk24_cassette",
+   "notes": "Armoured hull-skin cassette for big military ships: 4 x 6 vertical cells, drones stowed nose-up with arms folded, six sliding armoured lids (one row shown open), locked launch-control unit, Bastion hexagonal toothed lugs. Mass basis: cassette ~2.46 t + 24 x 35 kg drones.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.25,
+     1.5,
+     3.25
+    ],
+    "service_clearance_m": [
+     2.6,
+     1.8,
+     3.7
+    ]
+   },
+   "fault_class": {
+    "id": "bay.kamikaze",
+    "ru": "кассета дронов-камикадзе",
+    "srus": {
+     "lids": "сдвижные крышки",
+     "launch_ctl": "блок управления пуском",
+     "cells": "ячейки с направляющими"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-90.tsitadel"
+   ],
+   "proposed_for_other_blocs": "own makers' equivalents for FF-3000 (Sol), Хэ-F22 (Harmony), F-120 (Bharat), PDT-7 (Sol) - to design with the fleet doctrine",
+   "official_name": "MJ-BK24 Bikube",
+   "short_name": "Bikuben",
+   "naming_note": "Bastion: Norwegian bokmal; bikube = beehive"
   }
- ]
+ ],
+ "naming": "names follow tools/colonization_lab/canon/ship_naming.json (maker language; display_name_ru = name)"
 }

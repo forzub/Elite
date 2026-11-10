@@ -114,13 +114,32 @@ def cr1_parts(lod):
     lathe(p, "eq_metal_band", [(0, pz0), (2.3, pz0), (2.3, pz0 + 0.05), (0, pz0 + 0.05)], seg)  # backing plate
     if lod < 2:
         gap = 0.012
+        H = d.get("cone_h", 0.0)                      # author 2026-11-10: convex conical pad (more area, same diameter)
+        zc = lambda r: pz1 + H * (1.0 - r / 2.36)
         for i in range(8):
             a0 = 2 * math.pi * i / 8 + gap
             a1 = 2 * math.pi * (i + 1) / 8 - gap
-            lathe(p, "eq_pad_ceramic", crect(0.48, 2.36, pz0 + 0.05, pz1 - 0.03), max(2, seg // 8), I3, (0, 0, 0), a0, a1, cap=True)
+            if H > 0:
+                prof = [(0.48, pz0 + 0.05), (2.36, pz0 + 0.05), (2.36, pz1), (0.48, zc(0.48)), (0.48, pz0 + 0.05)]
+                lathe(p, "eq_pad_ceramic", prof, max(2, seg // 8), I3, (0, 0, 0), a0, a1, cap=True)
+            else:
+                lathe(p, "eq_pad_ceramic", crect(0.48, 2.36, pz0 + 0.05, pz1 - 0.03), max(2, seg // 8), I3, (0, 0, 0), a0, a1, cap=True)
         lathe(p, "eq_steel", crect(2.36, 2.44, pz0, pz1, 0.015 if lod == 0 else 0.0), seg)                      # clamp rim
-        lathe(p, "eq_metal_band", [(0, pz0 + 0.05), (0.48, pz0 + 0.05), (0.48, pz1 - 0.01), (0.42, pz1 + 0.02), (0, pz1 + 0.02)], seg)  # hub
-        if lod == 0:
+        if H > 0:                                                                                              # hub = cone tip
+            lathe(p, "eq_metal_band", [(0, pz0 + 0.05), (0.48, pz0 + 0.05), (0.48, zc(0.48)), (0, zc(0.0) + 0.04)], seg)
+            if lod == 0:
+                for i in range(8):                                   # seam bars along the cone generatrix
+                    a = 2 * math.pi * i / 8
+                    c, s_ = math.cos(a), math.sin(a)
+                    cyl(p, "eq_steel", (0.56 * c, 0.56 * s_, zc(0.56) + 0.02), (2.30 * c, 2.30 * s_, zc(2.30) + 0.02), 0.03, 8)
+                for i in range(16):
+                    a = 2 * math.pi * (i + 0.5) / 16
+                    Rz = rot_z(a)
+                    box(p, "eq_steel", apply(Rz, (2.42, 0, 0))[:2] + (pz1 + 0.025,), (0.16, 0.14, 0.05), Rz, chamfer=0.01)
+                    box(p, "eq_metal_band", apply(Rz, (2.475, 0, 0))[:2] + ((pz0 + pz1) / 2,), (0.05, 0.12, 0.30), Rz, chamfer=0.01)
+        else:
+            lathe(p, "eq_metal_band", [(0, pz0 + 0.05), (0.48, pz0 + 0.05), (0.48, pz1 - 0.01), (0.42, pz1 + 0.02), (0, pz1 + 0.02)], seg)  # hub
+        if lod == 0 and H <= 0:
             hex_bolt(p, "eq_steel", (0, 0, pz1 + 0.02), (0, 0, 1), 0.14, 0.07)
             for i in range(8):                                   # sector seams: radial clamp bars on the gaps
                 a = 2 * math.pi * i / 8
@@ -134,7 +153,7 @@ def cr1_parts(lod):
                 box(p, "eq_steel", apply(Rz, (2.42, 0, 0))[:2] + (pz1 + 0.025,), (0.16, 0.14, 0.05), Rz, chamfer=0.01)
                 box(p, "eq_metal_band", apply(Rz, (2.475, 0, 0))[:2] + ((pz0 + pz1) / 2,), (0.05, 0.12, 0.30), Rz, chamfer=0.01)
     else:
-        lathe(p, "eq_pad_ceramic", [(0, pz0 + 0.05), (pr, pz0 + 0.05), (pr, pz1), (0, pz1)], seg)
+        lathe(p, "eq_pad_ceramic", [(0, pz0 + 0.05), (pr, pz0 + 0.05), (pr, pz1), (0, pz1 + d.get("cone_h", 0.0))], seg)
         lathe(p, "eq_steel", [(pr - 0.01, pz0), (pr, pz0), (pr, pz1), (pr - 0.01, pz1)], seg)
 
     # --- service module: backup heat exchanger, two coolant ports, field / temperature sensors (side +X)
@@ -410,7 +429,7 @@ def cr1_hits():
          hcyl("cr1_flange", (0, 0, -0.08), (0, 0, ft), d["flange_r"]),
          hcyl("cr1_housing", (0, 0, ft), (0, 0, d["coil_z0"]), br),
          hcyl("cr1_coil_ring", (0, 0, d["coil_z0"]), (0, 0, d["coil_z1"]), 2.47),
-         hcyl("engine_hot_emitter_annulus", (0, 0, d["pad_z0"]), (0, 0, d["pad_z1"] + 0.05), d["pad_r"]),
+         hcyl("engine_hot_emitter_annulus", (0, 0, d["pad_z0"]), (0, 0, d["pad_z1"] + max(0.05, d.get("cone_h", 0.0))), d["pad_r"]),
          hbox("cr1_service_module", ((sr + sx + 0.31) / 2, 0, sz), (sx + 0.31 - sr, 1.30, 2.10)),
          hbox("cr1_service_module", (sx + 0.50, 0, sz - 0.62), (0.38, 1.10, 0.34))]   # coolant ports
     for a, zz in ((math.pi * 3 / 4, 1.05), (-math.pi * 3 / 4, 1.05), (math.pi * 3 / 4, 3.85), (-math.pi * 3 / 4, 3.85)):
@@ -450,9 +469,58 @@ def er5_hits():
 
 ER1_S = 2.34 / 5.0          # ER-1 passport envelope / ER-5 envelope
 
-ASSETS = {"cobretty_cr1_vector": cr1_parts, "cobretty_er5_reactor": er5_parts,
+# Author 2026-11-10: the Cobra silhouette wins - the Cobretty drive bay (CR-1 / N1 - ER-5 - CR-1 / N1) is dia 3.5 m:
+# the approved dia 5 m designs scaled by 0.7, the CR-1 pad a convex cone 1.3 m high (thermal passport in
+# src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h), the ER-5 pad stays 11 x 11 m (its own sink).
+COBRA_BAY_S = 0.7
+
+
+def scaled_unit(base_fn, D, s, overrides=None):
+    """the unit built with patched dimensions, then scaled uniformly by s (normals unchanged)"""
+    def fn(lod):
+        saved = dict(D) if D is not None else None
+        if D is not None:
+            D.update(overrides or {})
+        try:
+            P = base_fn(lod)
+        finally:
+            if D is not None:
+                D.clear()
+                D.update(saved)
+        for part in P.values():
+            part.v = [(x * s, y * s, z * s) for x, y, z in part.v]
+        return P
+    return fn
+
+
+def scaled_unit_hits(base_hits, D, s, overrides=None):
+    def fn():
+        saved = dict(D) if D is not None else None
+        if D is not None:
+            D.update(overrides or {})
+        try:
+            H = base_hits()
+        finally:
+            if D is not None:
+                D.clear()
+                D.update(saved)
+        for v in H:
+            v["position"] = [x * s for x in v["position"]]
+            if "half_size" in v:
+                v["half_size"] = [x * s for x in v["half_size"]]
+            for k in ("radius", "half_height"):
+                if k in v:
+                    v[k] *= s
+        return H
+    return fn
+
+
+CR1_CONE = {"cone_h": 1.3 / COBRA_BAY_S}
+ASSETS = {"cobretty_cr1_vector": scaled_unit(cr1_parts, CR1, COBRA_BAY_S, CR1_CONE),
+          "cobretty_er5_reactor": scaled_family(er5_parts, ER5, COBRA_BAY_S, 11.0),
           "cobretty_er1_reactor": scaled_family(er5_parts, ER5, ER1_S, 4.48, {"er5_": "er1_"})}
-HITS = {"cobretty_cr1_vector": cr1_hits, "cobretty_er5_reactor": er5_hits,
+HITS = {"cobretty_cr1_vector": scaled_unit_hits(cr1_hits, CR1, COBRA_BAY_S, CR1_CONE),
+        "cobretty_er5_reactor": scaled_hits(er5_hits, ER5, COBRA_BAY_S, 11.0),
         "cobretty_er1_reactor": scaled_hits(er5_hits, ER5, ER1_S, 4.48, {"er5_": "er1_"})}
 MODEL_ASSETS = {"kb.drive.cr1-vector": "cobretty_cr1_vector", "kb.reactor.er5": "cobretty_er5_reactor",
                 "kb.reactor.er1": "cobretty_er1_reactor"}
@@ -1264,11 +1332,11 @@ def ec2_hits():
     return H
 
 
-ASSETS.update({"cobretty_n1ax_drive": n1_parts, "cobretty_cl180_coolant_loop": cl180_parts,
+ASSETS.update({"cobretty_n1ax_drive": scaled_unit(n1_parts, None, COBRA_BAY_S), "cobretty_cl180_coolant_loop": cl180_parts,
                "cobretty_rp10_radiator": rp10_parts, "cobretty_fcrcs_rcs": fcrcs_parts,
                "cobretty_sr150_service_reactor": sr150_parts, "cobretty_pd1_turret": pd1_parts,
                "cobretty_ec2_capsule": ec2_parts})
-HITS.update({"cobretty_n1ax_drive": n1_hits, "cobretty_cl180_coolant_loop": cl180_hits,
+HITS.update({"cobretty_n1ax_drive": scaled_unit_hits(n1_hits, None, COBRA_BAY_S), "cobretty_cl180_coolant_loop": cl180_hits,
              "cobretty_rp10_radiator": rp10_hits, "cobretty_fcrcs_rcs": fcrcs_hits,
              "cobretty_sr150_service_reactor": sr150_hits, "cobretty_pd1_turret": pd1_hits,
              "cobretty_ec2_capsule": ec2_hits})

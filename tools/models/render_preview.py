@@ -64,6 +64,8 @@ if mode == "hits":
 for o in list(bpy.context.scene.objects):
     if o.name.split(".")[0] in hide:
         bpy.data.objects.remove(o, do_unlink=True)
+    elif o.name.startswith("ghost_"):          # layout sketches: the hull shell is drawn as a wire cage
+        o.display_type = "WIRE"
 objs = [o for o in bpy.context.scene.objects if o.type == "MESH"]
 lo = Vector((min(min((o.matrix_world @ Vector(c))[i] for c in o.bound_box) for o in objs) for i in range(3)))
 hi = Vector((max(max((o.matrix_world @ Vector(c))[i] for c in o.bound_box) for o in objs) for i in range(3)))

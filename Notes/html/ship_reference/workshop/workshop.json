@@ -3396,6 +3396,32 @@
     "added": 1794266964573,
     "updated": 1794266964573
    }
+  ],
+  "hull:kb.ship.cobrett-i.frnu-inta.a3": [
+   {
+    "id": "layout-v1-cobra_layout_inside",
+    "file": "cobra_layout_inside.jpg",
+    "name": "Эскиз компоновки v1 - внутри (корпус, плиты и пятаки скрыты)",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794268791066,
+    "updated": 1794268791066
+   },
+   {
+    "id": "layout-v1-cobra_layout_under",
+    "file": "cobra_layout_under.jpg",
+    "name": "Эскиз компоновки v1 - снизу: контейнеры, люки, лыжи",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794268791066,
+    "updated": 1794268791066
+   },
+   {
+    "id": "layout-v1-cobra_layout_top",
+    "file": "cobra_layout_top.jpg",
+    "name": "Эскиз компоновки v1 - снаружи: плиты-радиаторы, пятаки ER-5",
+    "note": "tools/ships/layout_sketch.py",
+    "added": 1794268791066,
+    "updated": 1794268791066
+   }
   ]
  },
  "shipImages": {},

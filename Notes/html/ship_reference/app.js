@@ -388,11 +388,21 @@ function renderShip(s) {
   if (L) return renderShipLayout(s, L);
   return renderShipFunctional(s);
 }
+// hull layout sketches (tools/ships/layout_sketch.py) are workshop sketches of the key "hull:<ship id>" (author 2026-11-10)
+function hullPic(s) {
+  const sk = Store.sketches("hull:" + s.id);
+  return sk.length ? `<img data-blob="${esc(sk[0].id)}" alt="">` : shipSilhouette(s);
+}
+function hullGallery(s) {
+  const sk = Store.sketches("hull:" + s.id);
+  if (!sk.length) return "";
+  return `<div class="card"><h3>Эскиз корпуса и компоновки</h3><div class="gallery">${sk.map(k => `<a class="sketchThumb" title="${esc(k.note || "")}"><div class="pic"><img data-blob="${esc(k.id)}" alt=""></div><span>${esc(k.name)}</span></a>`).join("")}</div></div>`;
+}
 function renderShipLayout(s, L) {
   const hullReady = Store.isReady("hull:" + s.id);
   const std = (LD.standards || {})[L.standard];
   let schema = `<div class="section hull"><div class="secHead"><b>${esc(L.unit)}</b> · Корпус / рама</div><div class="mods">
-    <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${shipSilhouette(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
+    <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${hullPic(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
     <div class="modSub">${esc((s.frame?.envelope_m || []).map(fmt).join(" × "))} м · ${esc(s.frame?.form || "")} · паспорт рамы отложен</div>
     <label class="ready"><input type="checkbox" data-ready="hull:${esc(s.id)}"${hullReady ? " checked" : ""}> модель готова</label></div></div></div></div>`;
   // identical compartments (e.g. the propulsion bays) are drawn once, as a stack: frames behind
@@ -416,6 +426,7 @@ function renderShipLayout(s, L) {
     <h2 class="viewTitle">Компоновка · ${esc(s.name)}</h2>
     <div class="sub stdLine">Позиционные обозначения: ${esc(std ? std.ru : L.standard)}${std ? ` · пример <code>${esc(std.example)}</code>` : ""}. Компоновка сгенерирована из оборудования (предложение).</div>
     <div class="schema">${schema}</div>
+    ${hullGallery(s)}
     ${chainHTML(L)}
     ${shipFaultHTML(s)}
     <details class="card fullPassport"><summary>Полный инженерный паспорт (баланс, вооружение, замены)</summary>${fullPassport(s)}</details></div></div>`;
@@ -423,7 +434,7 @@ function renderShipLayout(s, L) {
 function renderShipFunctional(s) {
   const hullReady = Store.isReady("hull:" + s.id);
   let schema = `<div class="section hull"><div class="secHead"><b>${esc(shipCode(s))}</b> · Корпус / рама</div><div class="mods">
-    <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${shipSilhouette(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
+    <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${hullPic(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
     <div class="modSub">${esc((s.frame?.envelope_m || []).map(fmt).join(" × "))} м · ${esc(s.frame?.form || "")} · паспорт рамы отложен</div>
     <label class="ready"><input type="checkbox" data-ready="hull:${esc(s.id)}"${hullReady ? " checked" : ""}> модель готова</label></div></div></div></div>`;
   for (const g of s.functional_groups)
@@ -432,6 +443,7 @@ function renderShipFunctional(s) {
     <div class="mainCol"><div class="crumbs"><a href="?" data-nav>Каталог</a> › ${esc(blocTitle(s.cooperation_group))} › ${esc(mfrName(s.manufacturer))} › <b>${esc(s.name)}</b></div>
     <h2 class="viewTitle">Функциональная схема · ${esc(s.name)}</h2>
     <div class="schema">${schema}</div>
+    ${hullGallery(s)}
     ${shipFaultHTML(s)}
     <details class="card fullPassport"><summary>Полный инженерный паспорт (баланс, вооружение, замены)</summary>${fullPassport(s)}</details></div></div>`;
 }

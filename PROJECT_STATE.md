@@ -4638,6 +4638,28 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   4 with one envelope, stowed leg exceeds it; (5) sol.rad.panel50 radiating area ~46 m2 vs 50; (6) harmony
   cargo4800: 240 C20 do not fit the envelope (model carries 85); (7) accept the 3 new items into canon.
 
+### Ship architecture doctrine + Cobrett-I layout sketch v1 (author 2026-11-10) - PROPOSAL
+- Author: passports are NOT canon until the ship models are approved and disputes settled. Decisions recorded in
+  docs/SHIP_ARCHITECTURE_DOCTRINE.md: Cobretty escape = the cockpit itself with a motor (big window, part of the hull
+  design; other makers may use capsules); no machine guns (friendly debris) - lasers, missiles (burn internals, do not
+  rip the hull), railgun on very large ships; Cobra = 2 forward lasers + 4 missiles in 2 wing racks, military = 4 heavier
+  lasers; drone bays (repair + recon) on ships, docks for auxiliaries / fighters on carriers; fleet doctrine from
+  military need (TODO); compartments under removable radiator cover plates (zero-thickness polygons, main + seam hit
+  volumes, seams free the plate), equipment mount points (hit volumes; destroyed mounts free the module), inspection
+  shafts / passages with handrails and ladders, folding landing skids (animated), container unloading hatches.
+- Author's Cobra sources: D:/__elite/_data/objects/ships (Cobretti-mk1-PROTOTYPE-LEGACY-V2.blend = the author's layout
+  topology: nose cockpit module, central power unit, 6 containers in two L groups, engines outboard, missile racks in the
+  wings, lasers beside the cockpit; earlier service-volume studies in _codex_work_*).
+- Tool tools/ships/layout_sketch.py: rough hull + REAL equipment models (LOD2) placed; output
+  assets/models/layout_sketches/<ship> (untracked); renders in the reference as workshop sketches "hull:<ship id>",
+  shown on the ship card (hullPic / hullGallery in app.js). Cobrett-I A3 v1: two side bays (fore CR-1 - ER-5 - aft CR-1)
+  at x = +-10.75 (dia 5 m -> hull 5 m thick), 6 C20 in two L groups on the cargo deck with ventral hatches, spine with
+  jump core / tanks / APU / coolant under an inspection shaft with cross passages and ladders, escape-cockpit proxy in
+  the nose, 2 forward lasers (proxy), 2 wing missile racks of 2 (proxy), stern drone bay (RM-2 + RD-1), 5 skids,
+  20 dorsal radiator plates, ER-5 pads as dorsal skin. Overall ~35 x 29 x 5 m vs passport 26 x 22.2 x 5.
+- Next: author review of the sketch; then escape-cockpit model, forward laser and wing missile rack items, skid rig,
+  plate seams / mount-point hit volumes; fleet doctrine; sketches of the other ships per maker principle.
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

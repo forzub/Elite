@@ -5118,3 +5118,23 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - The author's list of 2026-11-11 is worked through: gas giants v2, map clouds / giant presets, Moon landing time
   (author decision, unchanged), forced-shutdown crash, the jump text. Open for the AUTHOR: look of gas giants v2,
   passport colours, Jupiter / Sol bodies on the map, delete assets/generated tiles (3.97 GB), landing glide item 6.
+
+### Author decisions 2026-11-11 (after the gas giant previews)
+- ACCEPTED by the author: gas giants v2 ("очень нравится"); the appearance passport colours (Io, Europa, Phobos,
+  Deimos); Sol bodies on the map baked from the flight surface (Jupiter = Cassini via the field).
+- Authorized: delete the unused lod/tiles of assets/generated (3.97 GB).
+- Landing glide item 6: option (b) REJECTED - "пилот видит всегда из кабины; камера дрона - только при запуске самого
+  дрона". No automatic camera switch; the glide shape stays as it is unless the author asks for (c).
+- Next (author: "надо разбираться с оставшимися проблемами"): Planet Lab rocky coastline FAIL, the DEV map script
+  that cannot switch Detail bodies, the map's remaining reads of assets/generated (OBJ shapes, Hub normal / preview,
+  environment profile lookups).
+- DONE (author-authorized): lod/tiles deleted from assets/generated AND its runtime copy build/assets/generated
+  (60 dirs, 7.88 GB freed; each tree 5.6 -> 1.7 GB); 44 meta.json files now say tiles disabled (the library's check
+  skips them). Live: map + Mars Detail map fine, graceful exit 0, no "assets unavailable".
+- Planet Lab "rocky coastline" FAIL (pre-existing since the crater layer for procedural airless bodies, 3443 landmark
+  id changes across band limits) FIXED: the crater layers named a landmark from the RESOLVED bowl (fade > 0.5 -> LOD
+  dependent), against the generator contract (feature ids identical at every LOD). New CraterLayer::landmark(dir,
+  minRadius): the largest crater >= the macro cutoff containing dir, band-independent, the same candidates as
+  sample(); PlanetSurfaceField and ImportedSurfaceField name crater landmarks from it. Relief / colour unchanged
+  (curated Earth / Moon / Mars / Jupiter globe bakes bit-identical). ElitePlanetLab --check: PASS (0 failed) - all
+  bodies' coastline / landmark checks green for the first time this session.

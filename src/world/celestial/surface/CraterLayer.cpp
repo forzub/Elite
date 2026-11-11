@@ -161,6 +161,50 @@ CraterSample CraterLayer::sample(const glm::dvec3& dir, double minWavelengthM) c
     return out;
 }
 
+bool CraterLayer::landmark(const glm::dvec3& dir, double minRadiusM, std::uint64_t& craterId, double& craterRadiusM) const
+{
+    bool found = false;
+    craterRadiusM = 0.0;
+    const glm::dvec3 x = dir * m_radius;
+    for (const Class& cls : m_classes)
+    {
+        if (cls.cellM * MaxRadiusOfCell < minRadiusM)
+            break;   // the classes only get smaller
+        const glm::dvec3 p = x / cls.cellM;
+        const glm::dvec3 base = glm::floor(p);
+        for (int dz = -1; dz <= 1; ++dz)
+            for (int dy = -1; dy <= 1; ++dy)
+                for (int dx = -1; dx <= 1; ++dx)
+                {
+                    const auto cx = static_cast<std::int64_t>(base.x) + dx;
+                    const auto cy = static_cast<std::int64_t>(base.y) + dy;
+                    const auto cz = static_cast<std::int64_t>(base.z) + dz;
+                    const std::uint64_t h = latticeHash(cls.seed, cx, cy, cz);
+                    if (unitFromHash(h, 0) >= cls.probability)
+                        continue;
+                    const glm::dvec3 q = (glm::dvec3(static_cast<double>(cx), static_cast<double>(cy),
+                                                     static_cast<double>(cz)) +
+                                          glm::dvec3(unitFromHash(h, 1), unitFromHash(h, 2), unitFromHash(h, 3))) *
+                                         cls.cellM;
+                    if (std::abs(glm::length(q) - m_radius) > cls.cellM * 0.5)
+                        continue;
+                    const double radius =
+                        cls.cellM * (MinRadiusOfCell + (MaxRadiusOfCell - MinRadiusOfCell) * std::pow(unitFromHash(h, 4), 2.0));
+                    if (radius < minRadiusM || radius <= craterRadiusM)
+                        continue;
+                    const glm::dvec3 centre = glm::normalize(q) * m_radius;
+                    if (glm::length(x - centre) >= radius)
+                        continue;
+                    if (m_density && unitFromHash(h, 0) >= cls.probability * densityAt(centre / m_radius))
+                        continue;
+                    craterRadiusM = radius;
+                    craterId = h;
+                    found = true;
+                }
+    }
+    return found;
+}
+
 double CraterLayer::boulders(const glm::dvec3& dir, double minWavelengthM, double rockiness) const
 {
     // blocks of 0.5 - 6 m: only at ground level of detail, mostly around fresh rims

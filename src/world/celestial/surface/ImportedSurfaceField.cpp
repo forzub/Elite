@@ -185,10 +185,13 @@ SurfaceSample ImportedSurfaceField::sample(const glm::dvec3& dir, double minWave
         const CraterSample c = m_craters.sample(dir, minWavelengthM);
         detail = c.heightM;
         s.freshness = c.freshness;
-        if (c.insideCrater)
+        // the landmark: a macro-sized crater, the same at every LOD (not the resolved bowl)
+        std::uint64_t craterId = 0;
+        double craterRadius = 0.0;
+        if (m_craters.landmark(dir, m_macroCutoffM, craterId, craterRadius))
         {
             s.featureClass = FeatureClass::ImpactCrater;
-            s.featureId = c.craterId;
+            s.featureId = craterId;
         }
     }
     else if (minWavelengthM < m_macroCutoffM)
@@ -203,10 +206,13 @@ SurfaceSample ImportedSurfaceField::sample(const glm::dvec3& dir, double minWave
             const CraterSample c = m_craters.sample(dir, minWavelengthM);
             detail = 0.6 * hills * m_detailAmplitudeM + c.heightM;
             s.freshness = c.freshness;
-            if (c.insideCrater)
+            // the landmark: a macro-sized crater, the same at every LOD (not the resolved bowl)
+            std::uint64_t craterId = 0;
+            double craterRadius = 0.0;
+            if (m_craters.landmark(dir, m_macroCutoffM, craterId, craterRadius))
             {
                 s.featureClass = FeatureClass::ImpactCrater;
-                s.featureId = c.craterId;
+                s.featureId = craterId;
             }
         }
         else

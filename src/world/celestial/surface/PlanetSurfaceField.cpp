@@ -774,10 +774,14 @@ SurfaceSample PlanetSurfaceField::sample(const glm::dvec3& dir, double minWavele
             h += c.heightM;
             s.freshness = std::max(s.freshness, c.freshness);
             craterRocks = c.rockiness;
-            if (c.insideCrater && s.featureClass == FeatureClass::None)
+            // the landmark: a macro-sized crater, the same at every LOD (not the resolved bowl)
+            std::uint64_t craterId = 0;
+            double craterRadius = 0.0;
+            if (s.featureClass == FeatureClass::None &&
+                m_smallCraters.landmark(dir, m_macroCutoffM, craterId, craterRadius))
             {
                 s.featureClass = FeatureClass::ImpactCrater;
-                s.featureId = c.craterId;
+                s.featureId = craterId;
             }
         }
         if (minWavelengthM < 8.0)

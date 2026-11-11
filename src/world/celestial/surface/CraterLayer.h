@@ -51,6 +51,12 @@ public:
 
     CraterSample sample(const glm::dvec3& dir, double minWavelengthM) const;
 
+    // The landmark crater at a direction, INDEPENDENT of the band limit (the generator contract: feature ids
+    // are the same at every LOD): the largest crater of radius >= minRadiusM whose bowl contains dir -
+    // the same candidates as sample(). False when none. The bowl's resolved / faded state (sample's
+    // insideCrater) depends on the LOD and must not name a landmark.
+    bool landmark(const glm::dvec3& dir, double minRadiusM, std::uint64_t& craterId, double& craterRadiusM) const;
+
 private:
     struct Class
     {

@@ -7,7 +7,8 @@
 //                             [--preview DIR]
 //   --force    bake even when a file of the same fingerprint exists
 //   --preview  also write <DIR>/<body>.png: the decoded BC1 albedo (what the map shows)
-// Run from the repository root or build/ (the asset root is found as the game finds it).
+// Run from the repository root or build/. Default output: <repo>/assets/baked/celestial/map (the external
+// asset tree, not in git, copied into build/assets by every build).
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -65,7 +66,20 @@ int main(int argc, char** argv)
         return 1;
     }
     if (outDir.empty())
-        outDir = surf::mapBodyPrebakeDir(catalog.assetRoot());
+    {
+        // the project's external asset tree (<repo>/assets, staged into build/assets by every build) is the
+        // library's home: it survives a clean build; build/ only as the fallback
+        std::error_code ec;
+        const fs::path cwd = fs::current_path(ec);
+        for (const fs::path& base : {cwd, cwd.parent_path()})
+            if (fs::is_regular_file(base / "CMakeLists.txt", ec) && fs::is_directory(base / "assets", ec))
+            {
+                outDir = surf::mapBodyPrebakeDir(base.lexically_normal().generic_string());
+                break;
+            }
+        if (outDir.empty())
+            outDir = surf::mapBodyPrebakeDir(catalog.assetRoot());
+    }
 
     struct Job
     {

@@ -5274,3 +5274,8 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     1290 s with 11 threads. Planet Lab --check PASS. LIVE non-Sol: Epsilon Eridani K2 Detail map "loaded in 52 ms"
     (D:/tmp/elite_prebake/eps_detail.png). The prebake lives in build/assets/baked (not in git); a clean build
     needs EliteMapPrebake again (or the maps fill the runtime cache as before).
+- AUTHOR 2026-11-11: keep the baked models as a library in the project. Home: <repo>/assets/baked/celestial/map
+  (913 bodies, 384 MB) - the external asset tree like assets/source and assets/generated: NOT in git (/assets/*
+  ignored; 384 MB of incompressible binary per regeneration would bloat history), staged into build/assets by
+  every build (elite_copy_asset_tree), so a clean build no longer loses it. EliteMapPrebake now writes there by
+  default. Reproducible from git + assets/source in ~21 min. LIVE: Jupiter Detail loaded from the staged copy.

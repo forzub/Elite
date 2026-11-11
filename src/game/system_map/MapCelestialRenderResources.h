@@ -90,6 +90,13 @@ public:
         const std::string& displayName
     ) const;
 
+    // the curated shape model (Phobos, Deimos) from assets/source when the baked cache has none / is off
+    std::string sourceShapeModelPath(
+        int systemId,
+        const std::string& bodyId,
+        const std::string& displayName
+    ) const;
+
     GLuint mapPreviewTextureForGeneratedAsset(
         const world::celestial::visual::CelestialGeneratedAssetSet& asset
     );

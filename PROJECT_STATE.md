@@ -5142,3 +5142,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   stayed in Detail and a later body: / detail did nothing. Now it also returns through setSystemMapLoadedSystemMode
   (the panel's СИСТЕМА path). LIVE (D:/tmp/elite_mapscript): Detail maps Jupiter -> Mars -> Phobos in one run,
   each baked, graceful exit 0.
+- Map without assets/generated: DEV ELITE_MAP_GENERATED_ASSETS=0 skips the baked library; the Detail map's shape
+  models (Phobos / Deimos) now fall back to the curated assets/source/celestial/sol/<body>/shape_model_source.obj
+  (Sol alias table: body id / name -> folder), their albedo is the field bake. LIVE (D:/tmp/elite_mapscript): Earth,
+  Jupiter (identical to the cached run, jup_cmp.png), Phobos on its OBJ - all drawn with the cache OFF, exit 0.
+  Still read from the cache when present (all optional): Hub map preview / normal (fallback while a bake runs; the
+  normal is skipped for field bakes), the flight's albedo fallback lod/global/albedo_2048.tga for a Sol body without
+  albedo_source (none today). => Deleting the rest of assets/generated (1.7 GB + its build copy) is now possible -
+  AUTHOR's decision; recommended to keep it one release with ELITE_MAP_GENERATED_ASSETS=0 tried in normal play.

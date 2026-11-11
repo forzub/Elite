@@ -772,6 +772,15 @@ void MapCelestialRenderResources::ensureGeneratedCelestialAssets()
     options.validateFiles = false;
     options.verbose = false;
 
+    // ELITE_MAP_GENERATED_ASSETS=0: run without the baked assets/generated cache (the map bakes every body
+    // from its surface field; shapes come from assets/source) - checks that nothing still needs it
+    if (const char* v = std::getenv("ELITE_MAP_GENERATED_ASSETS"); v && *v == '0')
+    {
+        m_generatedCelestialAssetsLoaded = false;
+        std::cerr << "[SystemMapRenderer] generated celestial assets OFF (ELITE_MAP_GENERATED_ASSETS=0)" << std::endl;
+        return;
+    }
+
     m_generatedCelestialAssetsLoaded =
     m_generatedCelestialAssets.load(options);
 
@@ -1922,6 +1931,38 @@ MapCelestialRenderResources::generatedAssetForIdentity(
     }
 
     return nullptr;
+}
+
+std::string MapCelestialRenderResources::sourceShapeModelPath(
+    int systemId,
+    const std::string& bodyId,
+    const std::string& displayName
+) const
+{
+    // the curated shape models live with the curated maps: assets/source/celestial/sol/<body>/
+    if (systemId != 0)
+        return {};
+    const std::string fromId =
+        normalizeGeneratedIdentityToken(lastGeneratedIdentityPathPart(bodyId));
+    const std::string fromName =
+        normalizeGeneratedIdentityToken(displayName);
+    for (const auto& [folder, names] : knownGeneratedSolAliases())
+    {
+        bool match =
+            fromId == normalizeGeneratedIdentityToken(folder) ||
+            fromName == normalizeGeneratedIdentityToken(folder);
+        for (const std::string& alias : names)
+            match = match ||
+                    fromId == normalizeGeneratedIdentityToken(alias) ||
+                    fromName == normalizeGeneratedIdentityToken(alias);
+        if (!match)
+            continue;
+        const std::filesystem::path p =
+            resolveSystemMapAssetPath("assets/source/celestial/sol/" + folder + "/shape_model_source.obj");
+        std::error_code ec;
+        return std::filesystem::exists(p, ec) ? p.generic_string() : std::string();
+    }
+    return {};
 }
 
 GLuint MapCelestialRenderResources::mapPreviewTextureForGeneratedAsset(

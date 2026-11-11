@@ -1672,30 +1672,29 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
             planet.planetName
         );
 
-    if (!asset ||
-        !asset->hasShapeModel())
-    {
-        return false;
-    }
-
     if (planet.planetRadiusMeters <= 1.0)
         return false;
 
-    const std::string objPath =
-        resolveDetailMapAssetPath(
-            asset->base.shapeModelPath
-        ).generic_string();
+    // the cached shape, else the curated source model (the albedo then comes from the body's procedural /
+    // field bake below: proceduralAlbedoTextureForIdentity)
+    std::string objPath;
+    if (asset && asset->hasShapeModel())
+        objPath = resolveDetailMapAssetPath(asset->base.shapeModelPath).generic_string();
+    else
+        objPath = m_resources.sourceShapeModelPath(planet.systemId, planet.planetBodyId, planet.planetName);
+    if (objPath.empty())
+        return false;
 
     std::string albedoPath;
 
-    if (!asset->global.albedoPath.empty())
+    if (asset && !asset->global.albedoPath.empty())
     {
         albedoPath =
             resolveDetailMapAssetPath(
                 asset->global.albedoPath
             ).generic_string();
     }
-    else if (!asset->base.albedoPath.empty())
+    else if (asset && !asset->base.albedoPath.empty())
     {
         albedoPath =
             resolveDetailMapAssetPath(

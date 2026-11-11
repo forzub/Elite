@@ -474,6 +474,9 @@ public:
     // DEV / load test: the ship leaves for systemId at once (the jump's instant part, no charge,
     // no checks); its system's pass puts it on the exit body's orbit like a jump exit.
     bool devPlaceShipInSystem(EntityId shipId, int systemId, const std::string& systemName, const std::string& exitBodyId);
+    // DEV start point (ELITE_DEV_START=hub:<id>@<km>): normal flight <km> above the hub (radially away from the
+    // body it orbits), at the hub's velocity, the hub as the velocity reference.
+    bool devPlaceShipNearHub(EntityId shipId, const std::string& hubId, double distanceKm);
 
     void buildInitialScene(
         const game::world_state::InitialWorldState& initialState

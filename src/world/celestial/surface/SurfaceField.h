@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -141,5 +142,10 @@ public:
 
     // Landmarks whose influence reaches the cap (dir, angular radius).
     virtual void landmarks(const glm::dvec3& dir, double radiusRad, std::vector<SurfaceFeature>& out) const = 0;
+
+    // Heap bytes this field holds (curated maps, settlement discs); the
+    // procedural fields are pure functions and report ~0. DEV memory
+    // accounting (core/dev/MemoryLedger.h).
+    virtual std::size_t memoryBytes() const { return 0; }
 };
 } // namespace world::celestial::surface

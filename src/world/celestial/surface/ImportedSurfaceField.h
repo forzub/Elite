@@ -47,6 +47,12 @@ public:
     double detailAmplitudeBoundM() const override { return m_detailBoundM; }
     double macroCutoffM() const override { return m_macroCutoffM; }
     void landmarks(const glm::dvec3&, double, std::vector<SurfaceFeature>&) const override {}
+    std::size_t memoryBytes() const override
+    {
+        return m_maps ? m_maps->heightM.capacity() * sizeof(float) + m_maps->albedo.capacity() * sizeof(glm::vec3) +
+                            m_maps->water.capacity()
+                      : 0;
+    }
 
 private:
     struct Bilinear

@@ -4947,3 +4947,94 @@ compartment shows only that compartment's equipment.
   Deimos -> Moon, Mars -> the rest; Earth stays mostly as is. The old texture path is switched OFF behind a flag, NOT
   deleted; deletion only after the author checks the result. Also: assets/source/celestial (21 MB) under git; Tau Ceti
   data (778 MB) looks orphaned - check before touching.
+
+### Author 2026-11-11 (cont.): procedural bodies on the map, appearance passports, Jupiter root cause
+Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight, Sol); NOT committed, NOT accepted.
+- Map procedural source (src/game/system_map/ProceduralBodyTextureCache.*): equirect albedo baked on a background
+  worker (below normal priority) from the body's generated descriptor through makeSurfaceField - the same field flight
+  draws; GL row order / longitude as the cached TGA (TextureLoader flip). Wired into all three map paths:
+  System (globalAlbedoTextureForBody), Detail (globalAlbedoTextureForIdentity, shape-model OBJ albedo override),
+  Hub (albedo + cached normal suppressed when procedural). Policy ELITE_MAP_PROCEDURAL_BODIES: unset = procedural only
+  for bodies without a cached texture (every system except Sol / Tau Ceti), "all" = procedural everywhere (compare),
+  "0" = old behaviour; ELITE_MAP_PROCEDURAL_SIZE (default 1024). Old cache path untouched (not deleted).
+  LIVE: Mars Detail map in "all" mode drawn from the bake (2.3-2.6 s per 1024x512 body); Phobos Detail = real OBJ shape
+  with the procedural albedo. Other systems: same code path, descriptor lookup by system folder NNN_ + body JSON id;
+  not yet seen live (the player starts in Sol; needs a jump) - author to check.
+- Appearance passports (src/world/celestial/surface/AppearancePassport.*, data src/assets/data/celestial/
+  appearance_passports.json): per famous body, procedural=true (generator instead of curated / cached maps, in flight
+  via loadBodySurface and on the map) + mean_albedo_linear (the field's sphere-mean colour scaled per channel to the
+  observed one; relief / pattern untouched). Applied inside makeSurfaceField, so map, flight, server terrain probe,
+  baker and preview agree. Author decision 2026-11-11: Io, Europa, Phobos, Deimos look better procedural, colour to be
+  matched -> passports for these four (Io 0.76/0.56/0.17, Europa 0.66/0.60/0.50, Phobos 0.080/0.068/0.058, Deimos
+  0.082/0.069/0.057, NASA fact-sheet albedos). Colour acceptance = author.
+- Jupiter "awful" root cause: the Detail map never showed the Cassini texture - environment/sol/jupiter.json had
+  surface_visibility hidden + load_surface_textures false, so a procedural banded cloud deck was drawn instead.
+  Changed (TEST, author to judge): surface visible, cloud deck off, atmosphere haze kept. Same flags remain on Saturn,
+  Uranus, Neptune, Venus (untouched). GasGiantField itself is far worse than Cassini (cartoon bands) - procedural
+  replacement for gas giants needs a new band / turbulence model first.
+- Generator bug fixed: PlanetSurfaceField::lakeInCell kept a thread_local std::unordered_map; its destructor
+  corrupted the heap at thread exit under MinGW (tls_atexit) -> crash of any short-lived sampling thread on
+  terrestrial bodies (Earth). Replaced by a trivially destructible direct-mapped memo of the same pure function.
+  Planet Lab --verify against checksums recorded with the old code: 86/86 identical. Pre-existing FAIL (before and
+  after): "rocky coastline ... landmark id changes 3443".
+- Tools: build/EliteCelestialPreview.exe <body.json> <out_prefix> [width] (equirect map + lit globe PNG, headless);
+  DEV aliases body:phobos|deimos|io|europa in ELITE_DEV_SOL_MAP_SCRIPT. Preview page (private artifact):
+  https://claude.ai/artifact/EKaGhQD1PzTzBG2KfQyDCD
+- Next: author checks the map live (another system after a jump; Jupiter Detail close up; passport colours);
+  then gas giant band model, Phobos Stickney / grooves, Moon / Mars review; Tau Ceti 778 MB data still to check.
+- Celestial resource audit (source audit, no measurement yet): docs/CELESTIAL_RESOURCE_AUDIT.md - CPU surface fields
+  never released (flight renderer + terrain probe, up to 3 copies per body on one machine), curated maps held as
+  float (4x), map GPU caches unbounded, Sol look from two sources (flight = curated sources, map = restyled baker
+  cache + hidden surfaces), lod/tiles (~70 % of the 4.9 GB Sol cache) never read. Target: one BodySurfaceRegistry per
+  process + one budgeted map texture cache + map bakes the flight field. Not started - author decides.
+- Repository cleanup (author order 2026-11-11, group 1 only): removed root headless_server/ (stale 2026-09-28 build,
+  6.1 GB; canonical build/headless_server untouched), the stray "$' " file, root last_* / navigation_* traces and logs,
+  tools/navigation_runtime/last_* traces and logs, third_party/asio-1-24-0.tar.gz. None were tracked.
+- DEV memory ledger (step 0 of docs/CELESTIAL_RESOURCE_AUDIT.md): src/core/DevMemoryLedger.{h,cpp} (lib
+  EliteCelestialSurface: client + server). ELITE_DEV_CELESTIAL_MEMORY=<s> prints every s seconds "[CelestialMemory]"
+  process working set / private + one line per cache (cpu flight.surface_fields, flight.bodies_known, gpu flight.globes
+  / clouds / terrain / asteroids, cpu terrain_probe.fields, gpu map.generated_albedo / preview / normal,
+  map.procedural_albedo, map.cloud_layers, cpu map.procedural_pending). SurfaceField::memoryBytes() (curated maps,
+  settlement discs, passports forward). Inert without the env var.
+  First live numbers (Sol start near Earth, D:/tmp/elite_mem/err.txt): process working set ~1.1 GB, private ~1.0 GB;
+  flight fields 66 MB CPU for 2 bodies (Earth + Moon curated maps as float, matches the 17 B/texel estimate);
+  flight globes 96 MB GPU for 2 bodies; Jupiter Detail map +10.7 MB GPU (cached albedo). Not yet measured:
+  accumulation over a long flight / a jump, the server process, the terrain probe (needs a landing).
+  DEV note: a game window started in the background is minimized and draws nothing; ELITE_DEV_FRAME_CAPTURE restores
+  it. ELITE_DEV_SOL_MAP_SCRIPT "system;body:X;detail" after a first Detail map does not switch to another body.
+- Memory scenarios (DEV, ELITE_DEV_OFFSCREEN_WINDOW=1 + ELITE_DEV_CELESTIAL_MEMORY=15, logs D:/tmp/elite_mem/A..D):
+  A Earth hub -> Moon autopilot (10 min): fields 66 MB / 2 bodies all along; the terrain probe loaded a SECOND Moon
+  field (32 MB) at the approach - client + server share one probe cache in --dev-direct-flight (one process);
+  globes 96 MB -> 0 -> 96 MB during the J transfer (budget works); terrain rings 3 -> 8 MB near the ground;
+  transient peak 1.50 GB at ~150 s with the celestial caches DOWN (~400 MB outside the ledger - to find).
+  Landing not reached in 600 s (580 s: 269 m from the pad at 179 m/s); November runs landed in ~4 min - to check.
+  C hub start @50 km -> jump to Tau Ceti: exit on Tau_Ceti_m 418 km; Sol's Earth + Moon fields (66 MB CPU) and their
+  globes (96 MB GPU) are NOT released in Tau Ceti (globes 192 MB / 3, known bodies 36 -> 45); transient 1.63 GB for
+  ~30 s after the jump, steady 1.22 GB vs 1.10 GB before.
+  B/B2 "jump failed" root cause: not a jump bug - the DEV thrust:30 flew the ship nose-first into the Earth Orbital
+  Hub (1.1 km/s, CRUSHED), the charge-up was then interrupted; with no thrust the ship co-orbits the hub at 10 km and
+  never reaches the 20 km J clearance. Minor UX: a destroyed ship's charge reports "вышел из нормального полёта".
+- DEV start point ELITE_DEV_START (author 2026-11-11), applied once ~3 s after the start (GameServer::applyDevStartPoint):
+  hub:<id>[@<km>] normal flight km above the hub at its velocity (GameSimulation::devPlaceShipNearHub);
+  body:<stem>[@<system>] orbit of any body of any system at J floor + 100 km (descriptor file stem: moon, phobos,
+  jupiter, eps_eri_b; reuses devPlaceShipInSystem = a jump exit); system:<id>. LIVE: hub@50 -> jump PASS; body:phobos
+  -> 150 km orbit of Phobos, frame D:/tmp/elite_mem/D/f080.png.
+- Fixed: a zero-distance jump exit (DEV placement, also the server load test) asserted in std::normal_distribution
+  (sigma 0, debug libstdc++) - the scatter is drawn only for sigma > 0.
+- DEV window: ELITE_DEV_OFFSCREEN_WINDOW=1 opens the game window off the desktop without focus (a minimized window has
+  a 0x0 surface and renders nothing); frame captures work.
+- Transient memory peaks FOUND + FIXED: GlobeBake::bakeGlobeFace held a whole face of SurfaceSample + dvec3 directions
+  ((n+2)^2 x ~110 B = ~115 MB per 1024 face), several faces in parallel on the flight workers -> +400-500 MB for tens of
+  seconds on every large globe tier (J transfer, after a jump). Now baked in strips of 32 output rows (+1 halo row):
+  ~4 MB per face. Bit-identical output: 6-face bake hashes of Earth / Jupiter / Phobos / Alpha_Centauri_A_j at face
+  200 (incl. a partial last strip) equal before / after (scratch checker built against libEliteCelestialSurface).
+  LIVE (2 s ledger, D:/tmp/elite_mem/P1, P2): Moon transfer peak 1.60 -> 1.16 GB at the 72 MB globe bake; after the
+  jump to Tau Ceti 1.63 -> 1.25 GB. Ledger got cpu flight.globe_bakes_pending / gpu flight.globe_staging /
+  cpu flight.cloud_bakes_pending / cpu flight.terrain_builds_pending.
+- Startup crash FOUND + FIXED (pre-existing, intermittent; 3/3 with ELITE_DEV_START + 2 s ledger): EconomyModel::load
+  iterated `delay.value("hubs", json::object()).items()` - the json temporary died before the range-for body (pre-C++23)
+  and the keys were read from freed memory (0xfeeefeee). Bound to a local; 3/3 runs pass. No other such pattern in
+  src/ or tools/.
+- KNOWN, not fixed (pre-existing since at least 2026-11-10, D:/tmp/elite_combat/em_*.txt): every run killed by
+  `timeout` ends with [CRASH] SEH 0xc0000005 in opengl32.dll after "Failed to unregister class Chrome_WidgetWin_0" -
+  a GL call after the window / WebView teardown on a forced shutdown. Not a gameplay crash; to look at separately.

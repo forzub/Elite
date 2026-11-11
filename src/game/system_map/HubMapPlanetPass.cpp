@@ -454,15 +454,23 @@ void HubMapPlanetPass::drawHubMapPlanetSurfaceHint(
 
 
 
+    bool proceduralAlbedo = false;
+
     const GLuint albedoTexture =
-        m_resources.globalAlbedoTextureForHubSnapshot(
-            hub
+        m_resources.globalAlbedoTextureForIdentity(
+            hub.systemId,
+            hub.parentBodyId,
+            hub.parentBodyId,
+            &proceduralAlbedo
         );
 
+    // the cached normal map belongs to the cached albedo only
     const GLuint normalTexture =
-        globalNormalTextureForHubSnapshot(
-            hub
-        );
+        proceduralAlbedo
+            ? 0
+            : globalNormalTextureForHubSnapshot(
+                  hub
+              );
 
     const GLuint previewTexture =
         mapPreviewTextureForHubSnapshot(

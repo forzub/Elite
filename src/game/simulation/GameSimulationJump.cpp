@@ -8,6 +8,7 @@
 #include "src/game/simulation/JFieldIntegrity.h"
 #include "src/game/simulation/GameSimulation.h"
 
+#include <limits>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -298,6 +299,9 @@ void GameSimulation::updateJumps(double dt)
         const glm::dvec3 planned = exit->centerMeters + radial * r;
         const double sigma = jr::exitSigmaM(j.distanceLy, jr::exitLockFactor(systemHasSites(j.fromSystemId), systemHasSites(j.targetSystemId)));
         glm::dvec3 offset(0.0);
+        // a zero-distance exit (DEV placement: ELITE_DEV_START / the load test) has no scatter;
+        // std::normal_distribution requires sigma > 0 (debug libstdc++ asserts)
+        if (sigma > 0.0)
         {
             std::mt19937_64 rng(static_cast<std::uint64_t>(id.value) * 0x9E3779B97F4A7C15ull + motion.jumpSerial * 7919ull + 17ull);
             std::normal_distribution<double> n(0.0, sigma / std::sqrt(3.0));
@@ -347,6 +351,52 @@ void GameSimulation::updateJumps(double dt)
                   << ", " << motion.jumpExitDeviationM / 1000.0 << " km off the calculated point (sigma " << sigma / 1000.0 << " km)" << std::endl;
         it = m_jumps.erase(it);
     }
+}
+
+bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, double distanceKm)
+{
+    Ship* ship = getShip(id);
+    const auto* hub = hubNavigationFrame(hubId);
+    if (!ship || !hub || !hub->valid)
+    {
+        std::cerr << "[DevStart] hub " << hubId << ": not found / not valid" << std::endl;
+        return false;
+    }
+    auto& tr = ship->core().transform();
+    auto& motion = tr.motion;
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+        (void)toggleFreeFlight(id);   // out of the start hub's frame into normal flight
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+    {
+        std::cerr << "[DevStart] ship " << id.value << ": not in normal flight" << std::endl;
+        return false;
+    }
+    // radially away from the body the hub orbits (the nearest gravity body), else +X
+    glm::dvec3 up(1.0, 0.0, 0.0);
+    double best = std::numeric_limits<double>::infinity();
+    for (const auto& b : m_gravityBodies)
+    {
+        const double d = glm::length(hub->originMeters - b.centerMeters) - b.radiusMeters;
+        if (b.radiusMeters > 0.0 && d < best)
+        {
+            best = d;
+            up = glm::normalize(hub->originMeters - b.centerMeters);
+        }
+    }
+    auto& frame = motion.travelFrame;
+    frame.originMeters = hub->originMeters + up * distanceKm * 1000.0;
+    frame.linearVelocityMps = hub->velocityMetersPerSecond;
+    frame.linearAccelerationMps2 = glm::dvec3(0.0);
+    motion.localPositionMeters = glm::dvec3(0.0);
+    motion.localVelocityMps = glm::dvec3(0.0);
+    tr.setWorldPositionMeters(frame.originMeters);
+    motion.freeFlightReferenceId = hubId;
+    motion.freeFlightReferenceVelocityMps = hub->velocityMetersPerSecond;
+    m_shipReferenceBindings.erase(id);
+    motion.matchedToReferenceFrame = false;
+    m_freeFlights[id].localFrame = false;
+    std::cerr << "[DevStart] ship " << id.value << ": normal flight " << distanceKm << " km above hub " << hubId << std::endl;
+    return true;
 }
 
 bool GameSimulation::devPlaceShipInSystem(EntityId id, int systemId, const std::string& systemName, const std::string& exitBodyId)

@@ -152,6 +152,8 @@ target_include_directories(EliteNavigationGeometry PUBLIC
 add_library(EliteCelestialSurface STATIC
     src/core/ThreadPriority.cpp
     src/world/celestial/surface/BodySurfaceFieldLoader.cpp
+    src/world/celestial/surface/AppearancePassport.cpp
+    src/core/DevMemoryLedger.cpp
     src/world/celestial/surface/SurfaceNoise.cpp
     src/world/celestial/surface/SurfaceField.cpp
     src/world/celestial/surface/BodySurfaceDescriptor.cpp
@@ -780,6 +782,7 @@ add_executable(EliteGame
     src/game/system_map/MapObjectOverlayRenderer.cpp
     src/game/system_map/NavigationRouteOverlay.cpp
     src/game/system_map/MapCelestialRenderResources.cpp
+    src/game/system_map/ProceduralBodyTextureCache.cpp
     src/game/system_map/DetailMapSceneRenderer.cpp
     src/game/system_map/HubMapSceneRenderer.cpp
     src/game/system_map/DetailMapBackend.cpp
@@ -1695,3 +1698,7 @@ if(ELITE_BUILD_CLIENT)
     target_include_directories(ElitePlanetLab PRIVATE src "${CMAKE_SOURCE_DIR}" glad/include)
     target_link_libraries(ElitePlanetLab PRIVATE EliteCelestialFlightRender EliteCelestialSurface glfw opengl32)
 endif()
+# Headless preview of a body's procedural surface (equirect map + lit globe PNG):
+#   build/EliteCelestialPreview.exe <body.json> <out_prefix> [width]
+add_executable(EliteCelestialPreview tools/planet_lab/CelestialPreview.cpp)
+target_link_libraries(EliteCelestialPreview PRIVATE EliteCelestialSurface)

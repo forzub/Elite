@@ -1,3 +1,4 @@
+#include "src/core/DevMemoryLedger.h"
 #include "src/world/celestial/settlements/SettlementMesh.h"
 #include "src/core/ThreadPriority.h"
 #include "src/render/celestial/flight/CelestialFlightRenderer.h"
@@ -2361,6 +2362,71 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
     for (const auto& [id, a] : asteroids)
         stats.meshBytes += a.mesh.bytes;
     stats.meshBytes += sphereHigh.bytes + sphereLow.bytes;
+    // DEV memory ledger (ELITE_DEV_CELESTIAL_MEMORY, docs/CELESTIAL_RESOURCE_AUDIT.md)
+    if (core::dev::memoryLedgerEnabled() && frameIndex % 10 == 0)
+    {
+        std::size_t fieldBytes = 0, fields = 0, globeBytes = 0, globes = 0, cloudBytes = 0, clouds = 0,
+                    terrainBytes = 0, terrainLevels = 0, astBytes = 0;
+        for (const auto& [id, b] : bodies)
+        {
+            if (b.field)
+            {
+                fieldBytes += b.field->memoryBytes();
+                ++fields;
+            }
+            if (b.globe.bytes > 0)
+            {
+                globeBytes += b.globe.bytes;
+                ++globes;
+            }
+            if (b.cloud.current)
+            {
+                cloudBytes += static_cast<std::size_t>(b.cloud.size) * b.cloud.size * 6 * (b.cloud.previous ? 2 : 1);
+                ++clouds;
+            }
+            for (const auto& [k, l] : b.levels)
+            {
+                terrainBytes += l.bytes + static_cast<std::size_t>(l.indexCount) * 4;
+                ++terrainLevels;
+            }
+        }
+        for (const auto& [id, a] : asteroids)
+            astBytes += a.mesh.bytes;
+        // transient: globe bakes in flight (CPU faces) and their GL staging cubes, cloud bakes, terrain builds
+        std::size_t bakeBytes = 0, bakes = 0, stagingBytes = 0, stagings = 0, cloudBakeBytes = 0, cloudBakes = 0,
+                    pendingLevels = 0;
+        for (const auto& [id, b] : bodies)
+        {
+            if (b.pendingGlobe.faces)
+            {
+                bakeBytes += b.pendingGlobe.faces->bytes();
+                ++bakes;
+            }
+            if (b.pendingGlobe.staging.albedo)
+            {
+                const auto n = static_cast<std::size_t>(b.pendingGlobe.size);
+                stagingBytes += n * n * 6u * 12u * 4u / 3u;
+                ++stagings;
+            }
+            if (b.pendingCloud.faces)
+            {
+                const auto n = static_cast<std::size_t>(b.pendingCloud.faces->size);
+                cloudBakeBytes += n * n * 6u;
+                ++cloudBakes;
+            }
+            pendingLevels += b.pendingLevels.size() + b.faceSwitch.size();
+        }
+        core::dev::memoryLedgerSet("cpu flight.globe_bakes_pending", bakeBytes, bakes);
+        core::dev::memoryLedgerSet("gpu flight.globe_staging", stagingBytes, stagings);
+        core::dev::memoryLedgerSet("cpu flight.cloud_bakes_pending", cloudBakeBytes, cloudBakes);
+        core::dev::memoryLedgerSet("cpu flight.terrain_builds_pending", 0, pendingLevels);
+        core::dev::memoryLedgerSet("cpu flight.surface_fields", fieldBytes, fields);
+        core::dev::memoryLedgerSet("cpu flight.bodies_known", 0, bodies.size());
+        core::dev::memoryLedgerSet("gpu flight.globes", globeBytes, globes);
+        core::dev::memoryLedgerSet("gpu flight.clouds", cloudBytes, clouds);
+        core::dev::memoryLedgerSet("gpu flight.terrain", terrainBytes, terrainLevels);
+        core::dev::memoryLedgerSet("gpu flight.asteroids", astBytes, asteroids.size());
+    }
     stats.pendingJobs = pool.pending();
     for (const auto& [id, b] : bodies)
         stats.pendingJobs += b.pendingGlobe.faces ? 1 : 0;

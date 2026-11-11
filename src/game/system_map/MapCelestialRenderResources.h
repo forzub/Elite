@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "src/game/system_map/HubMapVisualSettings.h"
 #include "src/game/system_map/LocalMapEnvironmentStyle.h"
 #include "src/game/system_map/MapMode.h"
+#include "src/game/system_map/ProceduralBodyTextureCache.h"
 #include "src/render/celestial/HubPlanetSurfaceRenderer.h"
 #include "src/render/celestial/PlanetGlobeMeshRenderer.h"
 #include "src/render/celestial/ProceduralCloudLayer.h"
@@ -108,6 +110,30 @@ public:
         const world::celestial::SystemMapBody& body
     );
 
+    // The albedo of a body by identity (Detail / Hub maps): the cached
+    // generated texture or the procedural bake of the body's descriptor,
+    // per ProceduralBodyTextureCache policy. usedProcedural (optional) tells
+    // the caller the cached normal / preview maps do not belong to it.
+    // Procedural policy "all", or the body's appearance passport chose the
+    // generator: the procedural bake wins over the cached texture.
+    bool preferProceduralAlbedo(
+        const std::string& bodyId
+    ) const;
+
+    // The procedural albedo only when preferred (else 0); for the shape
+    // model meshes (Phobos, Deimos) that carry their own cached texture.
+    GLuint proceduralAlbedoTextureForIdentity(
+        int systemId,
+        const std::string& bodyId
+    );
+
+    GLuint globalAlbedoTextureForIdentity(
+        int systemId,
+        const std::string& bodyId,
+        const std::string& displayName,
+        bool* usedProcedural = nullptr
+    );
+
     double visualEffectTimeSeconds(
         double sourceTimeSeconds
     );
@@ -163,6 +189,13 @@ private:
     bool m_environmentProfilesLoaded = false;
 
     std::string m_environmentRenderSessionKey;
+
+    // DEV memory ledger (beginFrame, every 60 frames)
+    void reportMemoryLedger();
+    std::uint64_t m_memoryLedgerFrame = 0;
+
+    // created in init() (GL thread); baking runs on its own worker
+    std::unique_ptr<ProceduralBodyTextureCache> m_proceduralBodies;
 
     std::unordered_map<std::string, GLuint>
         m_mapPreviewTextureByAssetKey;

@@ -168,6 +168,15 @@ public:
 
     void clearCache();
 
+    // DEV memory ledger: GPU bytes (four RGBA8 textures per style, no mips) and styles cached.
+    void memoryUsage(std::size_t& bytes, std::size_t& entries) const
+    {
+        bytes = 0;
+        entries = m_textureByKey.size();
+        for (const auto& kv : m_textureByKey)
+            bytes += static_cast<std::size_t>(kv.second.width) * kv.second.height * 4 * 4;
+    }
+
 private:
     static constexpr int MaxClimateZones =
         8;

@@ -662,6 +662,83 @@ void GameServer::materializeWorldSiteHubs(int startSystemId)
     std::cerr << "[WorldSiteHubs] " << made << " hubs in " << systems << " inhabited systems (one per body with world sites)" << std::endl;
 }
 
+/*
+    DEV start point (automated runs; author 2026-11-11): ELITE_DEV_START
+      hub:<hub id>[@<km>]      normal flight <km> (default 50) above the hub
+      body:<name>[@<system>]   orbit of a body at its J floor + 100 km, as a jump exit; <name> = the
+                               body's descriptor file stem without planet_ / moon_ / dwarf_planet_
+                               (ASCII: moon, phobos, jupiter, eps_eri_b), searched in <system> or the
+                               current system first, then every system
+      system:<id>              the system's exit planet (the jump exit rule)
+    Applied once, ~3 s of server time after the start (session, hub frames settled).
+*/
+void GameServer::applyDevStartPoint(double dt)
+{
+    static const std::string spec = [] {
+        const char* v = std::getenv("ELITE_DEV_START");
+        return std::string(v ? v : "");
+    }();
+    static bool done = false;
+    static double waited = 0.0;
+    if (done || spec.empty())
+        return;
+    waited += std::max(0.0, dt);
+    const EntityId ship = m_simulation.playerId();
+    if (waited < 3.0 || !m_simulation.getShip(ship))
+        return;
+    done = true;
+    const auto colon = spec.find(':');
+    const std::string kind = spec.substr(0, colon);
+    std::string arg = colon == std::string::npos ? std::string() : spec.substr(colon + 1);
+    std::string after;
+    if (const auto at = arg.find('@'); at != std::string::npos)
+    {
+        after = arg.substr(at + 1);
+        arg.resize(at);
+    }
+    bool ok = false;
+    if (kind == "hub")
+        ok = m_simulation.devPlaceShipNearHub(ship, arg, after.empty() ? 50.0 : std::atof(after.c_str()));
+    else if (kind == "system")
+        ok = devPlaceShipInSystem(ship, std::atoi(arg.c_str()), 0);
+    else if (kind == "body")
+    {
+        const auto stemOf = [](const std::string& path) {
+            const std::size_t slash = path.find_last_of("/\\");
+            std::string stem = slash == std::string::npos ? path : path.substr(slash + 1);
+            if (const std::size_t dot = stem.rfind('.'); dot != std::string::npos)
+                stem.resize(dot);
+            for (const char* prefix : {"dwarf_planet_", "planet_", "moon_", "dwarf_"})
+                if (stem.rfind(prefix, 0) == 0)
+                    return stem.substr(std::char_traits<char>::length(prefix));
+            return stem;
+        };
+        std::vector<int> order;
+        if (!after.empty())
+            order.push_back(std::atoi(after.c_str()));
+        else if (const Ship* s = m_simulation.getShip(ship))
+            order.push_back(s->core().transform().motion.systemId);
+        for (const auto& summary : m_starAtlas.systems())
+            order.push_back(summary.id);
+        for (int systemId : order)
+        {
+            const auto* system = m_starAtlas.findSystem(systemId);
+            if (!system)
+                continue;
+            for (const auto& b : system->bodies)
+                if (!b.sourcePath.empty() && b.radiusKm > 0.0 && stemOf(b.sourcePath) == arg)
+                {
+                    ok = m_simulation.devPlaceShipInSystem(ship, systemId, system->name, b.id);
+                    std::cerr << "[DevStart] body " << arg << " -> " << b.id << " (system " << systemId << ")" << std::endl;
+                    break;
+                }
+            if (ok)
+                break;
+        }
+    }
+    std::cerr << "[DevStart] ELITE_DEV_START=" << spec << (ok ? " applied" : " NOT applied (unknown target)") << std::endl;
+}
+
 bool GameServer::devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal)
 {
     const auto* system = m_starAtlas.findSystem(systemId);
@@ -860,6 +937,7 @@ void GameServer::update(double dt)
 
     m_universeClock.update(dt);
     m_serverTick++;
+    applyDevStartPoint(dt);
 
     const double universeTime =
         m_universeClock.timeSeconds();

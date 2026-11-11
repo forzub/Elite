@@ -11,6 +11,7 @@
 #include <thread>
 #include <unordered_map>
 
+#include "src/core/DevMemoryLedger.h"
 #include "src/game/system_map/PlanetBodyOrientation.h"
 #include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 
@@ -32,6 +33,21 @@ std::mutex& cacheMutex()
 {
     static std::mutex m;
     return m;
+}
+// DEV memory ledger: the probe's fields are never released (docs/CELESTIAL_RESOURCE_AUDIT.md, E)
+void reportProbeMemory()
+{
+    if (!core::dev::memoryLedgerEnabled())
+        return;
+    std::size_t bytes = 0, entries = 0;
+    std::lock_guard<std::mutex> lock(cacheMutex());
+    for (const auto& [key, f] : cache())
+        if (f && f->ready.load(std::memory_order_acquire) && f->loaded.field)
+        {
+            bytes += f->loaded.field->memoryBytes();
+            ++entries;
+        }
+    core::dev::memoryLedgerSet("cpu terrain_probe.fields", bytes, entries);
 }
 } // namespace
 
@@ -70,6 +86,7 @@ bool sampleBodyTerrain(const world::celestial::CelestialSystemSnapshot& snapshot
         std::thread([field = slot, source] {
             world::celestial::surface::loadBodySurface(source, field->loaded);
             field->ready.store(true, std::memory_order_release);
+            reportProbeMemory();
             std::cerr << "[Terrain] " << source.id << ": surface field "
                       << (field->loaded.field ? "loaded" : "FAILED " + field->loaded.error)
                       << (source.importedHeightPath.empty() ? " (procedural)" : " (curated height map)") << std::endl;

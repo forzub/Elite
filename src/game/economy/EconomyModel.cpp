@@ -244,7 +244,11 @@ void EconomyModel::load()
         m_c20LegCr = num(rules["board"]["reward"], "c20_leg_cr", m_c20LegCr);
     }
 
-    for (const auto& [id, n] : delay.value("hubs", json::object()).items())
+    // bound to a local: `delay.value(...)` is a temporary and `.items()` only refers to it - in a
+    // range-for (before C++23) the temporary died before the loop and the keys were read from freed
+    // memory (intermittent startup crash in EconomyModel::load, 2026-11-11)
+    const json delayHubs = delay.value("hubs", json::object());
+    for (const auto& [id, n] : delayHubs.items())
         m_delayNodes[id] = {static_cast<int>(num(n, "node", -1.0)), num(n, "light_lag_s")};
     for (const auto& row : delay.value("bulk_h", json::array()))
     {

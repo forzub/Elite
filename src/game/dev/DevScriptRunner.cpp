@@ -24,7 +24,9 @@ using Alias = std::pair<const char*, const char*>;
 constexpr Alias FocusBodyAliases[] = {
     {"earth", "system_0.Sol.Земля"}, {"moon", "system_0.Sol.Земля.Луна"}, {"mars", "system_0.Sol.Марс"},
     {"jupiter", "system_0.Sol.Юпитер"}, {"saturn", "system_0.Sol.Сатурн"}, {"venus", "system_0.Sol.Венера"},
-    {"mercury", "system_0.Sol.Меркурий"}, {"belt", "system_0.Sol.asteroid_belt"}};
+    {"mercury", "system_0.Sol.Меркурий"}, {"belt", "system_0.Sol.asteroid_belt"},
+    {"phobos", "system_0.Sol.Марс.Фобос"}, {"deimos", "system_0.Sol.Марс.Деймос"},
+    {"io", "system_0.Sol.Юпитер.Ио"}, {"europa", "system_0.Sol.Юпитер.Европа"}};
 // enter:<name>
 constexpr Alias EnterBodyAliases[] = {
     {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"}, {"jupiter", "system_0.Sol.Юпитер"},

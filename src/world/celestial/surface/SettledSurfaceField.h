@@ -77,6 +77,10 @@ public:
     {
         m_base->landmarks(dir, radiusRad, out);
     }
+    std::size_t memoryBytes() const override
+    {
+        return m_base->memoryBytes() + m_discs.capacity() * sizeof(Disc);
+    }
 
 private:
     struct Disc

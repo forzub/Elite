@@ -379,6 +379,8 @@ public:
     // DEV / load test: send a ship to systemId (ordinal picks the exit body: the hub bodies first,
     // else the planets by mass)
     bool devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal);
+    // DEV start point: ELITE_DEV_START applied once to the player ship after the start settles
+    void applyDevStartPoint(double dt);
     std::size_t orbitalHubCount() const { return m_simulation.orbitalHubs().size(); }
 private:
 };

@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <vector>
 
+#include "src/world/celestial/surface/AppearancePassport.h"
 #include "src/world/celestial/surface/ImportedSurfaceField.h"
 #include "src/world/celestial/surface/PlanetSurfaceField.h"
 
@@ -123,7 +124,13 @@ bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
     }
     auto& d = out.descriptor;
     d.radiusM = source.radiusM;
-    if (!source.importedAlbedoPath.empty())
+    // a passport may choose the generator over the curated maps (AppearancePassport.h)
+    const AppearancePassport* passport = findAppearancePassport(source.id);
+    const bool passportProcedural = passport && passport->procedural;
+    if (passportProcedural && !source.importedAlbedoPath.empty())
+        std::fprintf(stderr, "[CelestialFlight] %s: appearance passport -> procedural (curated maps not used)\n",
+                     source.id.c_str());
+    if (!source.importedAlbedoPath.empty() && !passportProcedural)
     {
         d.source = SurfaceSourceKind::ImportedRealData;
         auto maps = std::make_shared<ImportedSurfaceMaps>();

@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <mutex>
+#include <type_traits>
 #include <cmath>
 
+#include "src/world/celestial/surface/AppearancePassport.h"
 #include "src/world/celestial/surface/GasGiantField.h"
 #include "src/world/celestial/surface/SurfaceIdentity.h"
 
@@ -422,18 +424,27 @@ void PlanetSurfaceField::lakeCandidates(const glm::dvec3& dir, std::vector<Landm
 std::optional<PlanetSurfaceField::Landmark> PlanetSurfaceField::lakeInCell(std::int64_t cx, std::int64_t cy,
                                                                           std::int64_t cz) const
 {
-    // Per-thread memo (no lock contention between streaming workers); the
-    // field's identity seed keys it, so fields never share entries.
-    thread_local std::unordered_map<std::uint64_t, std::optional<Landmark>> cache;
-    thread_local std::uint64_t cacheOwner = 0;
-    if (cacheOwner != m_seedLakes || cache.size() > 200000)
+    // Per-thread memo (no lock contention between streaming workers): a
+    // direct-mapped table of a pure function, keyed by the field's lake seed
+    // and the cell, so a miss or an overwrite only recomputes the same value.
+    // Trivially destructible on purpose: a thread_local with a destructor
+    // (the old unordered_map) corrupts the heap at thread exit under MinGW
+    // (tls_atexit), which the map's texture bake threads hit.
+    struct LakeMemo
     {
-        cache.clear();
-        cacheOwner = m_seedLakes;
-    }
+        std::uint64_t owner;
+        std::uint64_t key;
+        bool valid;
+        bool has;
+        Landmark lake;
+    };
+    static_assert(std::is_trivially_destructible_v<LakeMemo>);
+    constexpr std::size_t MemoSize = 1u << 14;
+    thread_local LakeMemo memo[MemoSize] {};
     const std::uint64_t key = latticeHash(0x1A4Eull, cx, cy, cz);
-    if (const auto it = cache.find(key); it != cache.end())
-        return it->second;
+    LakeMemo& slot = memo[(key ^ (key >> 29)) & (MemoSize - 1)];
+    if (slot.valid && slot.owner == m_seedLakes && slot.key == key)
+        return slot.has ? std::optional<Landmark>(slot.lake) : std::nullopt;
     const double cellM = m_radius * 0.045;
     std::optional<Landmark> result;
     do
@@ -475,7 +486,12 @@ std::optional<PlanetSurfaceField::Landmark> PlanetSurfaceField::lakeInCell(std::
         l.levelM = at.macro;
         result = l;
     } while (false);
-    cache.emplace(key, result);
+    slot.owner = m_seedLakes;
+    slot.key = key;
+    slot.valid = true;
+    slot.has = result.has_value();
+    if (result)
+        slot.lake = *result;
     return result;
 }
 
@@ -959,8 +975,12 @@ void PlanetSurfaceField::landmarks(const glm::dvec3& dir, double radiusRad, std:
 
 std::unique_ptr<SurfaceField> makeSurfaceField(const BodySurfaceDescriptor& body)
 {
+    std::unique_ptr<SurfaceField> field;
     if (!hasSolidSurface(body))
-        return std::make_unique<GasGiantField>(body);
-    return std::make_unique<PlanetSurfaceField>(body);
+        field = std::make_unique<GasGiantField>(body);
+    else
+        field = std::make_unique<PlanetSurfaceField>(body);
+    // famous bodies: the observed mean colour (AppearancePassport.h)
+    return applyAppearancePassport(std::move(field), body.id);
 }
 } // namespace world::celestial::surface

@@ -69,59 +69,75 @@ bool bakeGlobeFace(const SurfaceField& field, int size, int face, GlobeFaces& ou
     const double radius = field.referenceRadiusM();
     // Band limit: two texels at the face centre (the face spans pi/2).
     const double band = 2.0 * radius * 1.5707963267948966 / static_cast<double>(n);
-    std::vector<SurfaceSample> samples(static_cast<std::size_t>(b) * static_cast<std::size_t>(b));
-    std::vector<glm::dvec3> dirs(samples.size());
-    for (int y = 0; y < b; ++y)
-    {
-        if (cancel && cancel->load(std::memory_order_relaxed))
-            return false;
-        for (int x = 0; x < b; ++x)
-        {
-            const double s = 2.0 * (x - 1 + 0.5) / n - 1.0;
-            const double t = 2.0 * (y - 1 + 0.5) / n - 1.0;
-            const std::size_t i = static_cast<std::size_t>(y) * b + x;
-            dirs[i] = cubeMapDirection(face, s, t);
-            samples[i] = field.sample(dirs[i], band);
-        }
-    }
     auto& albedo = out.albedo[static_cast<std::size_t>(face)];
     auto& normal = out.normal[static_cast<std::size_t>(face)];
     auto& relief = out.relief[static_cast<std::size_t>(face)];
     albedo.assign(static_cast<std::size_t>(n) * n * 4, 0);
     normal.assign(static_cast<std::size_t>(n) * n * 4, 0);
     relief.assign(static_cast<std::size_t>(n) * n * 2, 0);
-    const auto shown = [&](std::size_t i) {
-        const SurfaceSample& s = samples[i];
-        return s.water ? std::max(s.waterLevelM, s.heightM) : s.heightM;
-    };
-    for (int y = 0; y < n; ++y)
+
+    // The face is baked in strips of output rows: only the strip and its
+    // one-row halo are sampled at a time. A whole face of SurfaceSample at
+    // once was ~110 B per texel (~115 MB for a 1024 face, several faces in
+    // parallel on the workers - the 400-500 MB transient peaks of a globe
+    // tier change, docs/CELESTIAL_RESOURCE_AUDIT.md). Every texel is a pure
+    // function of its direction: the output is bit-identical.
+    constexpr int StripRows = 32;
+    std::vector<SurfaceSample> samples;
+    std::vector<glm::dvec3> dirs;
+    for (int y0 = 0; y0 < n; y0 += StripRows)
     {
-        if (cancel && cancel->load(std::memory_order_relaxed))
-            return false;
-        for (int x = 0; x < n; ++x)
+        const int rows = std::min(StripRows, n - y0);
+        // sampled rows: bordered rows y0 .. y0 + rows + 1 (= output rows y0 - 1 .. y0 + rows)
+        const int sampledRows = rows + 2;
+        samples.resize(static_cast<std::size_t>(sampledRows) * b);
+        dirs.resize(samples.size());
+        for (int r = 0; r < sampledRows; ++r)
         {
-            const std::size_t c = static_cast<std::size_t>(y + 1) * b + (x + 1);
-            const auto p = [&](std::size_t i) { return dirs[i] * (radius + shown(i)); };
-            const glm::dvec3 du = p(c + 1) - p(c - 1);
-            const glm::dvec3 dv = p(c + b) - p(c - b);
-            glm::dvec3 nrm = glm::normalize(glm::cross(du, dv));
-            if (glm::dot(nrm, dirs[c]) < 0.0)
-                nrm = -nrm;
-            const double slope = 1.0 - glm::dot(nrm, dirs[c]);
-            const SurfaceSample& s = samples[c];
-            const SurfaceAppearance a = field.appearance(s, dirs[c], slope);
-            const std::size_t o = (static_cast<std::size_t>(y) * n + x);
-            const glm::vec3 enc = glm::sqrt(glm::clamp(a.albedo, glm::vec3(0.0f), glm::vec3(1.0f)));
-            albedo[o * 4 + 0] = static_cast<std::uint8_t>(enc.r * 255.0f + 0.5f);
-            albedo[o * 4 + 1] = static_cast<std::uint8_t>(enc.g * 255.0f + 0.5f);
-            albedo[o * 4 + 2] = static_cast<std::uint8_t>(enc.b * 255.0f + 0.5f);
-            albedo[o * 4 + 3] = s.water ? 255 : 0;
-            normal[o * 4 + 0] = static_cast<std::uint8_t>((nrm.x * 0.5 + 0.5) * 255.0 + 0.5);
-            normal[o * 4 + 1] = static_cast<std::uint8_t>((nrm.y * 0.5 + 0.5) * 255.0 + 0.5);
-            normal[o * 4 + 2] = static_cast<std::uint8_t>((nrm.z * 0.5 + 0.5) * 255.0 + 0.5);
-            normal[o * 4 + 3] = static_cast<std::uint8_t>(std::clamp(a.emission, 0.0f, 1.0f) * 255.0f + 0.5f);
-            relief[o * 2 + 0] = toHalf(static_cast<float>(shown(c) / 1000.0));
-            relief[o * 2 + 1] = toHalf(static_cast<float>(std::clamp(s.coastM, -60000.0, 60000.0) / 1000.0));
+            if (cancel && cancel->load(std::memory_order_relaxed))
+                return false;
+            const int y = y0 + r; // bordered row index
+            for (int x = 0; x < b; ++x)
+            {
+                const double s = 2.0 * (x - 1 + 0.5) / n - 1.0;
+                const double t = 2.0 * (y - 1 + 0.5) / n - 1.0;
+                const std::size_t i = static_cast<std::size_t>(r) * b + x;
+                dirs[i] = cubeMapDirection(face, s, t);
+                samples[i] = field.sample(dirs[i], band);
+            }
+        }
+        const auto shown = [&](std::size_t i) {
+            const SurfaceSample& s = samples[i];
+            return s.water ? std::max(s.waterLevelM, s.heightM) : s.heightM;
+        };
+        for (int ry = 0; ry < rows; ++ry)
+        {
+            const int y = y0 + ry;
+            for (int x = 0; x < n; ++x)
+            {
+                const std::size_t c = static_cast<std::size_t>(ry + 1) * b + (x + 1);
+                const auto p = [&](std::size_t i) { return dirs[i] * (radius + shown(i)); };
+                const glm::dvec3 du = p(c + 1) - p(c - 1);
+                const glm::dvec3 dv = p(c + b) - p(c - b);
+                glm::dvec3 nrm = glm::normalize(glm::cross(du, dv));
+                if (glm::dot(nrm, dirs[c]) < 0.0)
+                    nrm = -nrm;
+                const double slope = 1.0 - glm::dot(nrm, dirs[c]);
+                const SurfaceSample& s = samples[c];
+                const SurfaceAppearance a = field.appearance(s, dirs[c], slope);
+                const std::size_t o = (static_cast<std::size_t>(y) * n + x);
+                const glm::vec3 enc = glm::sqrt(glm::clamp(a.albedo, glm::vec3(0.0f), glm::vec3(1.0f)));
+                albedo[o * 4 + 0] = static_cast<std::uint8_t>(enc.r * 255.0f + 0.5f);
+                albedo[o * 4 + 1] = static_cast<std::uint8_t>(enc.g * 255.0f + 0.5f);
+                albedo[o * 4 + 2] = static_cast<std::uint8_t>(enc.b * 255.0f + 0.5f);
+                albedo[o * 4 + 3] = s.water ? 255 : 0;
+                normal[o * 4 + 0] = static_cast<std::uint8_t>((nrm.x * 0.5 + 0.5) * 255.0 + 0.5);
+                normal[o * 4 + 1] = static_cast<std::uint8_t>((nrm.y * 0.5 + 0.5) * 255.0 + 0.5);
+                normal[o * 4 + 2] = static_cast<std::uint8_t>((nrm.z * 0.5 + 0.5) * 255.0 + 0.5);
+                normal[o * 4 + 3] = static_cast<std::uint8_t>(std::clamp(a.emission, 0.0f, 1.0f) * 255.0f + 0.5f);
+                relief[o * 2 + 0] = toHalf(static_cast<float>(shown(c) / 1000.0));
+                relief[o * 2 + 1] = toHalf(static_cast<float>(std::clamp(s.coastM, -60000.0, 60000.0) / 1000.0));
+            }
         }
     }
     const double seconds =

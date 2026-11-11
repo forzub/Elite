@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
@@ -374,6 +375,27 @@ void Window::show()
 {
     if (!m_window)
         return;
+
+    // DEV: ELITE_DEV_OFFSCREEN_WINDOW=1 - the window opens outside the desktop
+    // and without taking focus, so automated runs do not cover the screen. A
+    // minimized window has no drawable surface (0x0) and renders nothing; an
+    // off-screen one keeps drawing into its DWM surface (frame captures work).
+    static const bool offscreen = [] {
+        const char* v = std::getenv("ELITE_DEV_OFFSCREEN_WINDOW");
+        return v && *v && *v != '0';
+    }();
+    if (offscreen)
+    {
+        glfwSetWindowAttrib(m_window, GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
+        glfwSetWindowPos(m_window, -20000, -20000);
+#ifdef _WIN32
+        if (const HWND hwnd = glfwGetWin32Window(m_window))
+        {
+            ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+            return;
+        }
+#endif
+    }
 
     glfwShowWindow(m_window);
 }

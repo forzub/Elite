@@ -1,0 +1,30 @@
+{
+  "schema": "elite.appearance_passports.v1",
+  "note": "Appearance passports of famous bodies (src/world/celestial/surface/AppearancePassport.h). The generator keeps the relief and pattern from the physical descriptor; mean_albedo_linear is the observed mean surface colour (linear reflectance), procedural = draw the generator instead of the curated / cached maps (author 2026-11-11: Io, Europa, Phobos, Deimos look better procedural, colour to be matched).",
+  "bodies": [
+    {
+      "id": "system_0.Sol.Юпитер.Ио",
+      "procedural": true,
+      "mean_albedo_linear": [0.76, 0.56, 0.17],
+      "reference": "geometric albedo 0.63 (NASA Jupiter satellite fact sheet); sulphur yellow-orange globe (Galileo SSI true colour)"
+    },
+    {
+      "id": "system_0.Sol.Юпитер.Европа",
+      "procedural": true,
+      "mean_albedo_linear": [0.66, 0.60, 0.50],
+      "reference": "geometric albedo 0.67 (NASA fact sheet); ice white with tan-brown lineae (Galileo / Juno true colour)"
+    },
+    {
+      "id": "system_0.Sol.Марс.Фобос",
+      "procedural": true,
+      "mean_albedo_linear": [0.080, 0.068, 0.058],
+      "reference": "geometric albedo 0.071 (NASA Mars satellite fact sheet); very dark grey with a red slope (HiRISE colour)"
+    },
+    {
+      "id": "system_0.Sol.Марс.Деймос",
+      "procedural": true,
+      "mean_albedo_linear": [0.082, 0.069, 0.057],
+      "reference": "geometric albedo 0.068 (NASA fact sheet); dark, slightly redder and smoother than Phobos (HiRISE colour)"
+    }
+  ]
+}

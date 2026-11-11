@@ -1977,13 +1977,24 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
         GL_BLEND
     );
 
-    if (mesh->albedoTexture != 0)
+    // a passport / "all" policy body: the procedural bake on the real shape
+    // (same equirect convention as the cached albedo the OBJ UVs address)
+    GLuint shapeAlbedo =
+        m_resources.proceduralAlbedoTextureForIdentity(
+            planet.systemId,
+            planet.planetBodyId
+        );
+
+    if (shapeAlbedo == 0)
+        shapeAlbedo = mesh->albedoTexture;
+
+    if (shapeAlbedo != 0)
     {
         elite::render::core_legacy::enableTexture2D(true);
 
         glBindTexture(
             GL_TEXTURE_2D,
-            mesh->albedoTexture
+            shapeAlbedo
         );
 
         elite::render::core_legacy::color4f(
@@ -2074,18 +2085,10 @@ GLuint DetailMapPlanetPass::globalAlbedoTextureForPlanetSnapshot(
     const world::celestial::DetailMapSnapshot& planet
 )
 {
-    const auto* asset =
-        m_resources.generatedAssetForIdentity(
-            planet.systemId,
-            planet.planetBodyId,
-            planet.planetName
-        );
-
-    if (!asset)
-        return 0;
-
-    return m_resources.globalAlbedoTextureForGeneratedAsset(
-        *asset
+    return m_resources.globalAlbedoTextureForIdentity(
+        planet.systemId,
+        planet.planetBodyId,
+        planet.planetName
     );
 }
 

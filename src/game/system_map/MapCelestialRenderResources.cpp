@@ -16,6 +16,8 @@
 #include <nlohmann/json.hpp>
 
 #include "src/render/bitmap/TextureLoader.h"
+#include "src/core/DevMemoryLedger.h"
+#include "src/world/celestial/surface/AppearancePassport.h"
 #include "src/debug/DebugSettings.h"
 
 namespace
@@ -528,6 +530,9 @@ void MapCelestialRenderResources::init(
     ensureGeneratedCelestialAssets();
     ensureEnvironmentProfiles();
 
+    if (!m_proceduralBodies)
+        m_proceduralBodies = std::make_unique<ProceduralBodyTextureCache>();
+
     if (!m_mapStarfieldInitialized)
     {
         m_mapStarfieldRenderer.setConstellationOverlayAvailable(false);
@@ -572,6 +577,65 @@ void MapCelestialRenderResources::init(
 void MapCelestialRenderResources::beginFrame()
 {
     m_proceduralCloudLayer.beginFrame();
+
+    if (m_proceduralBodies)
+        m_proceduralBodies->beginFrame();
+
+    reportMemoryLedger();
+}
+
+void MapCelestialRenderResources::reportMemoryLedger()
+{
+    // DEV memory ledger (ELITE_DEV_CELESTIAL_MEMORY, docs/CELESTIAL_RESOURCE_AUDIT.md F, G, I)
+    if (!core::dev::memoryLedgerEnabled() ||
+        ++m_memoryLedgerFrame % 60 != 0)
+    {
+        return;
+    }
+
+    GLint previous = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous);
+
+    // level 0 size as uploaded (RGBA8, TextureLoader builds the full mip chain: + 1/3)
+    auto bytesOf =
+        [](const std::unordered_map<std::string, GLuint>& textures, std::size_t& bytes, std::size_t& entries)
+        {
+            for (const auto& kv : textures)
+            {
+                if (kv.second == 0)
+                    continue;
+                GLint w = 0, h = 0;
+                glBindTexture(GL_TEXTURE_2D, kv.second);
+                glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+                glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+                bytes += static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4 * 4 / 3;
+                ++entries;
+            }
+        };
+
+    std::size_t bytes = 0, entries = 0;
+    bytesOf(m_globalAlbedoTextureByAssetKey, bytes, entries);
+    core::dev::memoryLedgerSet("gpu map.generated_albedo", bytes, entries);
+    bytes = entries = 0;
+    bytesOf(m_mapPreviewTextureByAssetKey, bytes, entries);
+    core::dev::memoryLedgerSet("gpu map.generated_preview", bytes, entries);
+    bytes = entries = 0;
+    bytesOf(m_globalNormalTextureByAssetKey, bytes, entries);
+    core::dev::memoryLedgerSet("gpu map.generated_normal", bytes, entries);
+
+    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
+
+    if (m_proceduralBodies)
+    {
+        std::size_t gpuBytes = 0, gpuEntries = 0, cpuBytes = 0;
+        m_proceduralBodies->memoryUsage(gpuBytes, gpuEntries, cpuBytes);
+        core::dev::memoryLedgerSet("gpu map.procedural_albedo", gpuBytes, gpuEntries);
+        core::dev::memoryLedgerSet("cpu map.procedural_pending", cpuBytes, cpuBytes ? 1 : 0);
+    }
+
+    bytes = entries = 0;
+    m_proceduralCloudLayer.memoryUsage(bytes, entries);
+    core::dev::memoryLedgerSet("gpu map.cloud_layers", bytes, entries);
 }
 
 void MapCelestialRenderResources::resetPresentationTime()
@@ -1848,19 +1912,89 @@ GLuint MapCelestialRenderResources::globalAlbedoTextureForHubSnapshot(
     const world::celestial::HubMapSnapshot& hub
 )
 {
-    const auto* asset =
-        generatedAssetForIdentity(
-            hub.systemId,
-            hub.parentBodyId,
-            hub.parentBodyId
-        );
-
-    if (!asset)
-        return 0;
-
-    return globalAlbedoTextureForGeneratedAsset(
-        *asset
+    return globalAlbedoTextureForIdentity(
+        hub.systemId,
+        hub.parentBodyId,
+        hub.parentBodyId
     );
+}
+
+bool MapCelestialRenderResources::preferProceduralAlbedo(
+    const std::string& bodyId
+) const
+{
+    using Policy = ProceduralBodyTextureCache::Policy;
+
+    if (!m_proceduralBodies ||
+        m_proceduralBodies->policy() == Policy::Off)
+    {
+        return false;
+    }
+
+    if (m_proceduralBodies->policy() == Policy::All)
+        return true;
+
+    // a famous body whose passport chose the generator over its cache
+    const auto* passport =
+        world::celestial::surface::findAppearancePassport(bodyId);
+
+    return passport && passport->procedural;
+}
+
+GLuint MapCelestialRenderResources::proceduralAlbedoTextureForIdentity(
+    int systemId,
+    const std::string& bodyId
+)
+{
+    return preferProceduralAlbedo(bodyId)
+        ? m_proceduralBodies->textureFor(systemId, bodyId)
+        : 0;
+}
+
+GLuint MapCelestialRenderResources::globalAlbedoTextureForIdentity(
+    int systemId,
+    const std::string& bodyId,
+    const std::string& displayName,
+    bool* usedProcedural
+)
+{
+    using Policy = ProceduralBodyTextureCache::Policy;
+
+    if (usedProcedural)
+        *usedProcedural = false;
+
+    const Policy policy =
+        m_proceduralBodies ? m_proceduralBodies->policy() : Policy::Off;
+
+    if (preferProceduralAlbedo(bodyId))
+    {
+        if (const GLuint tex = m_proceduralBodies->textureFor(systemId, bodyId))
+        {
+            if (usedProcedural)
+                *usedProcedural = true;
+            return tex;
+        }
+    }
+
+    // the cached generated texture (Sol, Tau Ceti); in "all" mode only
+    // while the procedural bake is still running
+    if (const auto* asset = generatedAssetForIdentity(systemId, bodyId, displayName))
+    {
+        if (const GLuint tex = globalAlbedoTextureForGeneratedAsset(*asset))
+            return tex;
+    }
+
+    if (policy == Policy::MissingOnly)
+    {
+        if (const GLuint tex = m_proceduralBodies->textureFor(systemId, bodyId))
+        {
+            if (usedProcedural)
+                *usedProcedural = true;
+            return tex;
+        }
+    }
+
+    return 0;
 }
 
 GLuint MapCelestialRenderResources::globalNormalTextureForGeneratedAsset(
@@ -1922,17 +2056,32 @@ GLuint MapCelestialRenderResources::globalAlbedoTextureForBody(
     const world::celestial::SystemMapBody& body
 )
 {
-    const auto* asset =
-        generatedAssetForBody(
-            body
-        );
+    using world::celestial::BodyType;
+    using Policy = ProceduralBodyTextureCache::Policy;
 
-    if (!asset)
-        return 0;
+    const bool surfaceBody =
+        body.type != BodyType::Star &&
+        body.type != BodyType::AsteroidBelt;
 
-    return globalAlbedoTextureForGeneratedAsset(
-        *asset
-    );
+    const Policy policy =
+        m_proceduralBodies ? m_proceduralBodies->policy() : Policy::Off;
+
+    if (surfaceBody && preferProceduralAlbedo(body.id))
+    {
+        if (const GLuint tex = m_proceduralBodies->textureFor(-1, body.id))
+            return tex;
+    }
+
+    if (const auto* asset = generatedAssetForBody(body))
+    {
+        if (const GLuint tex = globalAlbedoTextureForGeneratedAsset(*asset))
+            return tex;
+    }
+
+    if (surfaceBody && policy == Policy::MissingOnly)
+        return m_proceduralBodies->textureFor(-1, body.id);
+
+    return 0;
 }
 
 double MapCelestialRenderResources::visualEffectTimeSeconds(

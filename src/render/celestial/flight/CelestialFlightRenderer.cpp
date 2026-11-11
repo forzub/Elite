@@ -2017,8 +2017,10 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
                 ++stats.cacheHits;
             else
                 ++stats.cacheMisses;
+            // a body seen for the first time: a coarse tier first (6 x 256^2, a fraction of a second) so its
+            // continents show at once, the full tier after it (2026-11-11: Earth stayed blank ~1 s after load)
             if (want > rt.globe.size && !rt.pendingGlobe.faces)
-                requestGlobe(rt, want);
+                requestGlobe(rt, rt.globe.size == 0 ? std::min(want, 256) : want);
             else if (rt.globe.size > 0 && want * 4 <= rt.globe.size && !rt.pendingGlobe.faces)
                 requestGlobe(rt, want * 2);
             if (level >= 2)
@@ -2282,6 +2284,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
                 : 1.0f;
             cloud.set("uBlend", blend);
             cloud.set("uOpacity", atm.cloudOpacity);
+            cloud.set("uDeck", rt->clouds && rt->clouds->hasDeck() ? 1.0f : 0.0f);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, rt->cloud.current);
             glActiveTexture(GL_TEXTURE1);
@@ -2511,7 +2514,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
     }
     stats.pendingJobs = pool.pending();
     for (const auto& [id, b] : bodies)
-        stats.pendingJobs += b.pendingGlobe.faces ? 1 : 0;
+        stats.pendingJobs += (b.pendingGlobe.faces ? 1 : 0) + (b.pendingCloud.faces ? 1 : 0) + (b.load && !b.failed ? 1 : 0);
     stats.workerBusySeconds = pool.busySeconds();
     stats.samplesTaken = samples.load();
     stats.cpuDrawMs = (nowSeconds() - t1) * 1000.0;

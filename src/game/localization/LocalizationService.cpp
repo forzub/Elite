@@ -98,6 +98,105 @@ bool validateSchema(const json& root)
 }
 }
 
+/*
+    The names the colonists / discoverers gave (author 2026-11-11): the runtime naming mirror
+    data/naming/names_3126.json (written by tools/colonization_lab/naming.py from canon/naming.json) over the
+    catalogue names of the star-system files:
+      body:<body id>   the body's own name ("Ананке", not the catalogue "Фомальгаут g");
+      system:<id>      the system and its star(s): "<new name> (<the name we know>)" - "Фортуна (Фомальгаут)".
+    A locale without its own spelling takes English, then the transliteration, then the native form. Bodies
+    without a given name keep the catalogue designation.
+*/
+void LocalizationService::applyDiscovererNames(const fs::path& path)
+{
+    json root;
+    std::string error;
+    if (!fs::exists(path) || !readJsonFile(path, root, error) || !root.contains("names") ||
+        !root["names"].is_object())
+    {
+        std::cerr << "[Localization] discoverer names not loaded (" << pathText(path) << ")" << std::endl;
+        return;
+    }
+    const auto field = [](const json& e, const char* key) {
+        return e.contains(key) && e[key].is_string() ? e[key].get<std::string>() : std::string();
+    };
+    const auto givenName = [&](const json& e, const std::string& locale) {
+        for (const std::string& key : {locale, std::string("en"), std::string("translit"), std::string("native")})
+            if (const std::string v = field(e, key.c_str()); !v.empty())
+                return v;
+        return std::string();
+    };
+    auto& bodies = m_catalogNames["bodies"];
+    auto& systems = m_catalogNames["systems"];
+    int bodiesNamed = 0, systemsNamed = 0;
+    for (const auto& [id, e] : root["names"].items())
+    {
+        if (!e.is_object())
+            continue;
+        if (id.rfind("body:", 0) == 0)
+        {
+            // "body:system_61.Fomalhaut.Lexie" -> catalogue key "61:system_61.Fomalhaut.Lexie"
+            const std::string bodyId = id.substr(5);
+            if (bodyId.rfind("system_", 0) != 0)
+                continue;
+            const std::string sid = bodyId.substr(7, bodyId.find('.') - 7);
+            auto& names = bodies[sid + ":" + bodyId];
+            for (const std::string& locale : m_localeOrder)
+                if (const std::string v = givenName(e, locale); !v.empty())
+                    names[locale] = v;
+            ++bodiesNamed;
+        }
+        else if (id.rfind("system:", 0) == 0)
+        {
+            const std::string sid = id.substr(7);
+            const auto known = systems.find(sid);
+            if (known == systems.end() || givenName(e, "en").empty())
+                continue;
+            const TranslationMap knownSystem = known->second;
+            const auto knownIn = [](const TranslationMap& m, const std::string& locale) {
+                const auto it = m.find(locale);
+                if (it != m.end() && !it->second.empty())
+                    return it->second;
+                const auto en = m.find("en");
+                return en != m.end() ? en->second : std::string();
+            };
+            for (const std::string& locale : m_localeOrder)
+            {
+                const std::string given = givenName(e, locale);
+                const std::string was = knownIn(knownSystem, locale);
+                if (given.empty() || was.empty() || given == was)
+                    continue;
+                known->second[locale] = given + " (" + was + ")";
+            }
+            // its stars: "system_61.Fomalhaut" (one dot) - "Fomalhaut" -> "Fortuna (Fomalhaut)",
+            // "Alpha Centauri A" -> "<given> A (Alpha Centauri A)"
+            const std::string starPrefix = sid + ":system_" + sid + ".";
+            for (auto& [key, names] : bodies)
+            {
+                if (key.rfind(starPrefix, 0) != 0 || key.find('.', starPrefix.size()) != std::string::npos ||
+                    key.find("barycenter") != std::string::npos)
+                    continue;
+                const TranslationMap star = names;
+                for (const std::string& locale : m_localeOrder)
+                {
+                    const std::string given = givenName(e, locale);
+                    const std::string starName = knownIn(star, locale);
+                    const std::string systemName = knownIn(knownSystem, locale);
+                    if (given.empty() || starName.empty())
+                        continue;
+                    const std::string suffix =
+                        !systemName.empty() && starName.rfind(systemName, 0) == 0 ? starName.substr(systemName.size())
+                                                                                  : std::string();
+                    names[locale] = given + suffix + " (" + starName + ")";
+                }
+            }
+            ++systemsNamed;
+        }
+    }
+    std::cout << "[Localization] discoverer names: " << bodiesNamed << " bodies, " << systemsNamed << " systems"
+              << std::endl;
+}
+
 bool LocalizationService::loadDirectory(const std::string& rootPath)
 {
     m_defaultLocale = "en";
@@ -510,6 +609,8 @@ bool LocalizationService::loadDirectory(const std::string& rootPath)
     {
         m_locale = m_defaultLocale;
     }
+
+    applyDiscovererNames(root.parent_path() / "data" / "naming" / "names_3126.json");
 
     std::cout << "[Localization] root=" << rootPath
               << " loaded=" << m_loadedFileCount

@@ -1,5 +1,6 @@
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/MapObjectOverlayRenderer.h"
+#include "src/core/Utf8.h"
 
 #include <algorithm>
 #include <cmath>
@@ -400,9 +401,7 @@ void drawHoverTooltip(const MapObjectOverlayItem& item, const Viewport& viewport
         // never draw past the box: trim to the width with an ellipsis
         while (t.size() > 4 && text.measureTextPx(t, lines[i].second) > maxW)
         {
-            t.pop_back();
-            while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80)
-                t.pop_back();
+            core::utf8PopBack(t);
         }
         if (t.size() != lines[i].first.size())
             t += "...";

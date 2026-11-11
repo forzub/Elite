@@ -1,4 +1,5 @@
 #include "src/ui/presentation/InSessionPresentationRenderer.h"
+#include "src/core/Utf8.h"
 
 #include <algorithm>
 #include <array>
@@ -127,9 +128,7 @@ std::vector<std::string> wrapText(TextRenderer& text, const std::string& s, int 
             std::string head = w;
             while (head.size() > 1 && text.measureTextPx(head, px) > maxWidth)
             {
-                head.pop_back();
-                while (!head.empty() && (static_cast<unsigned char>(head.back()) & 0xC0) == 0x80)
-                    head.pop_back();
+                core::utf8PopBack(head);
             }
             if (head.empty())
                 break;

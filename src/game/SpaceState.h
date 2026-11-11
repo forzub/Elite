@@ -122,6 +122,9 @@ public:
         StartupMode startupMode = StartupMode::Immediate
     );
     bool advanceStartupInitialization();
+    // the flight's celestial visuals have nothing in progress (surface loads, globe tiers, cloud bakes):
+    // the loading screen stays until then (Application::commitPreparedPresentationAfterSwap)
+    bool flightVisualsSettled() const;
     ~SpaceState();
 
     void renderUI() override;
@@ -816,6 +819,7 @@ private:
 
     double m_perfFps = 0.0;
     double m_perfFrameMs = 0.0;
+    double m_mapPrewarmAtMs = -1.0e9;   // flight: the last map prewarm of the near body (once a second)
     double m_perfMainRenderMs = 0.0;
     double m_perfRenderUiMs = 0.0;
 

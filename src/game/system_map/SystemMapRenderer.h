@@ -526,6 +526,11 @@ public:
     // DEV acceptance script: focus a body / hub through the ordinary selection path; hover an object.
     void devFocusBody(const std::string& bodyId) { m_devFocusBodyId = bodyId; }
     void devFocusHub(const std::string& hubId) { m_devFocusHubId = hubId; }
+    // flight: the map textures (albedo + clouds) of the body the ship is near, ready before the map opens
+    void prewarmBodyMap(int systemId, const std::string& bodyId, double universeTimeSeconds)
+    {
+        m_mapResources.prewarmBody(systemId, bodyId, universeTimeSeconds);
+    }
     void devHover(const std::string& objectId) { m_devHoverObjectId = objectId; }
     // DEV: the double-click approach on a body (body id) or a hub (hub id) - one cube level per call.
     void devEnter(const std::string& id) { m_devEnterId = id; }

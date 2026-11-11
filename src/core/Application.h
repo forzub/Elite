@@ -74,6 +74,8 @@ public:
     void requestServicePanel(ui::services::ServiceUiId service);
     void prepareRequestedPresentation(SpaceState& space);
     void commitPreparedPresentationAfterSwap(SpaceState& space);
+    double m_loadingVisualsWaitStart = -1.0;   // the loading screen holding for the flight's planets
+    int m_loadingVisualsFrames = 0;
 
     // Committed presentation visible to the user. Never exposes a staged scene.
     GameUiMode gameUiMode() const;

@@ -1809,7 +1809,6 @@ void Application::prepareRequestedPresentation(SpaceState& space)
 
 void Application::commitPreparedPresentationAfterSwap(SpaceState& space)
 {
-    (void)space;
     const GameUiTarget requested = m_gameUi.requestedTarget();
     const GameUiTarget scene = m_gameUi.sceneTarget();
     if (requested != scene ||
@@ -1822,6 +1821,27 @@ void Application::commitPreparedPresentationAfterSwap(SpaceState& space)
 
     if (m_gameUi.committedTarget() == requested)
         return;
+
+    // Leaving the loading screen: flight starts when its planets are ready - the surface loads, globe
+    // tiers and cloud bakes the first frames started are done (author 2026-11-11: Earth's continents came
+    // ~1 s after the loading screen). The frames keep rendering under the loading surface meanwhile;
+    // never longer than LoadingVisualsMaxWaitSeconds.
+    if (m_gameUi.committedTarget().mode == GameUiMode::Loading && requested.mode == GameUiMode::Flight)
+    {
+        constexpr double LoadingVisualsMaxWaitSeconds = 20.0;
+        const double now = glfwGetTime();
+        if (m_loadingVisualsWaitStart < 0.0)
+            m_loadingVisualsWaitStart = now;
+        // a few frames first: the frames plan their tiers, then the work they asked for is counted
+        const bool settled = ++m_loadingVisualsFrames >= 3 && space.flightVisualsSettled();
+        if (!settled && now - m_loadingVisualsWaitStart < LoadingVisualsMaxWaitSeconds)
+            return;
+        std::cerr << "[App] flight visuals " << (settled ? "ready" : "NOT ready (timeout)") << " after "
+                  << static_cast<int>((now - m_loadingVisualsWaitStart) * 1000.0) << " ms under the loading screen"
+                  << std::endl;
+        m_loadingVisualsWaitStart = -1.0;
+        m_loadingVisualsFrames = 0;
+    }
 
 #ifdef _WIN32
     const bool outgoingFullScreen =

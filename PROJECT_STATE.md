@@ -5279,3 +5279,42 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   ignored; 384 MB of incompressible binary per regeneration would bloat history), staged into build/assets by
   every build (elite_copy_asset_tree), so a clean build no longer loses it. EliteMapPrebake now writes there by
   default. Reproducible from git + assets/source in ~21 min. LIVE: Jupiter Detail loaded from the staged copy.
+- AUTHOR FEEDBACK 2026-11-11 (7 items) - source + compiled + live DEV (offscreen captures D:/tmp/elite_fb*, D:/tmp/elite_clouds2):
+  1. Earth clouds "three rings", "a smooth circle around the north pole" (Hub map). ROOT CAUSE: CloudWeatherField's
+     climate tendency was three narrow strong belts (ITCZ + two 55 deg storm tracks) that the weak noise (std 0.13)
+     could not break - clouds existed only in the belts, poles and subtropics clear (equirect at t=0 already
+     three bands); plus the zonal wind was a step function (|lat| < 30 / 30-60 / > 60) advecting for the whole
+     world time (year 3126) -> seams at 30 and 60 deg. FIXED: one smooth wind profile; each pattern lives one
+     1-day advection cycle (advected from its fade-in, cross-faded into the next - bounded shear, no seams);
+     weather noise normalised to unit std and weighted over a softened tendency; a large domain warp (fronts /
+     eddies); mid-latitude lows larger and loosely wound. Earth mean cover 0.39 (both layers), no rings, no polar
+     circle (D:/tmp/elite_clouds2/earth_ortho.png). One evaluation for cover + structure (sample()).
+  7. Venus-like decks "a billiard ball": the deck keeps (almost) no holes (deckClosure 0.45), its weather is
+     shading - Detail / Hub map texture colour from the structure (ochre lanes on a hot deck), flight Cinematic
+     shell darkened by the cube's G (uDeck); the deck pattern is stretched zonally (super-rotation streaks).
+     Planet Lab cloud check now tests a deck on its structure (PASS: moves 0.107 in 6 h, equator > subtropics).
+  3. "On F12 the planet appears after 1-2 s": the surface was there in 0.1 s (prebake), but the night Pacific with
+     no clouds read as an empty globe; the clouds (512x256 field bake, single thread) came ~0.7-1.2 s later.
+     FIXED: map cloud bake on worker threads; FLIGHT PREWARM - once a second SpaceState asks the map cache for the
+     albedo + current clouds of the body the ship is near (its sphere of influence / a hub's parent), so F10/F11/F12
+     open with both (LIVE: albedo and clouds in the first map frame).
+  2. "Continents appear late after loading": Earth's first globe tier was 6 x 1024^2 (~1 s) with nothing before
+     it. FIXED: a body seen for the first time gets a 256 tier first (0.25 s), the full tier after; and the
+     LOADING GATE now waits for the flight's planets: Application::commitPreparedPresentationAfterSwap keeps the
+     loading screen until SpaceState::flightVisualsSettled() (no surface load / globe tier / cloud bake in
+     progress; pendingJobs now counts clouds and loads) - max 20 s. LIVE: "flight visuals ready after 3888 ms
+     under the loading screen" (Earth 1024 tier + clouds done before the first visible frame).
+  5. Cyrillic broken on the maps ("Навигационн?е ретранслятор?"). ROOT CAUSES: (a) wrapText / the map-object
+     label trimmer cut a word by popping one byte and then the continuation bytes before it - a lone lead byte
+     stayed at the end (UTF-8 "?") and the next line began with an orphan continuation byte; core::utf8PopBack
+     (src/core/Utf8.h) removes whole characters. (b) Font::loadGlyph uploaded lazily loaded glyphs (Cyrillic) with
+     whatever GL_UNPACK_ALIGNMENT the last upload left; my map texture uploader set it to 4 (glyphs whose width is
+     not a multiple of 4 come out skewed) - the font now sets alignment 1 / row length = pitch for its upload and
+     restores the state; the map uploader restores the previous alignment.
+  6. Names: the discoverers' names (data/naming/names_3126.json, naming.py mirror) were NEVER read by the game -
+     the maps showed catalogue designations ("Фомальгаут g"). LocalizationService now overlays them on the
+     catalogue: a named body shows its name (Ананке, Лекси, Морта ...), a named system and its stars
+     "<given name> (<the name we know>)" - "Фортуна (Фомальгаут)" (LIVE system map + panel). A locale without its
+     own spelling takes en -> transliteration -> native. GAP (AUTHOR): names exist only for Fomalhaut's 16 bodies
+     and systems 3 (Ульвен), 8 / 9 (Chinese only, no Russian: shown as the transliteration), 61 (Фортуна); Tau Ceti
+     etc. planets have no given names, they keep the catalogue designation until named in canon/naming.json.

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -270,6 +271,8 @@ std::size_t uploadBc1(GLuint tex, int width, int height, const std::vector<std::
 {
     namespace surf = world::celestial::surface;
     glBindTexture(GL_TEXTURE_2D, tex);
+    GLint previousAlignment = 4;
+    glGetIntegerv(GL_UNPACK_ALIGNMENT, &previousAlignment);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     std::size_t bytes = 0;
     int w = width, h = height;
@@ -293,7 +296,7 @@ std::size_t uploadBc1(GLuint tex, int width, int height, const std::vector<std::
         w = std::max(1, w / 2);
         h = std::max(1, h / 2);
     }
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, previousAlignment);   // shared GL state (the fonts upload with 1)
     setMapTextureParameters(static_cast<int>(mips.size()));
     return bytes;
 }
@@ -310,7 +313,7 @@ bool ProceduralBodyTextureCache::upload(Entry& e)
             return false;
         glGenTextures(1, &tex);
         glBindTexture(GL_TEXTURE_2D, tex);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        // RGBA8 rows are 4-byte aligned under any alignment: the shared unpack state is left as it is
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, e.width, e.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, e.rgba.data());
         glGenerateMipmap(GL_TEXTURE_2D);
         setMapTextureParameters(1 + static_cast<int>(std::floor(std::log2(std::max(e.width, e.height)))));
@@ -371,6 +374,7 @@ void ProceduralBodyTextureCache::bakeClouds(Entry& e)
         e.state.store(2, std::memory_order_release);
         return;
     }
+    const auto t0 = std::chrono::steady_clock::now();
     const surf::CloudWeatherField clouds(body);
     if (clouds.layers().empty())
     {
@@ -381,31 +385,61 @@ void ProceduralBodyTextureCache::bakeClouds(Entry& e)
     const double pi = 3.14159265358979323846;
     // a hot dense deck reads yellow-white (sulphuric acid, Venus ~740 K), a cold deck and water clouds
     // white-grey
-    const glm::vec3 colour = clouds.hasDeck() && body.meanTemperatureK > 500.0 ? glm::vec3(0.93f, 0.87f, 0.70f)
-                             : clouds.hasDeck()                               ? glm::vec3(0.90f, 0.91f, 0.93f)
-                                                                              : glm::vec3(0.97f, 0.97f, 0.98f);
+    const bool deck = clouds.hasDeck();
+    const glm::vec3 colour = deck && body.meanTemperatureK > 500.0 ? glm::vec3(0.93f, 0.87f, 0.70f)
+                             : deck                                ? glm::vec3(0.90f, 0.91f, 0.93f)
+                                                                   : glm::vec3(0.97f, 0.97f, 0.98f);
+    // the deck's own weather as light and shade (2026-11-11: a uniform deck read as a billiard ball);
+    // the darker lanes of a hot deck lean ochre
+    const glm::vec3 shade = deck && body.meanTemperatureK > 500.0 ? glm::vec3(0.66f, 0.55f, 0.36f)
+                                                                  : glm::vec3(0.62f, 0.64f, 0.68f);
     std::vector<std::uint8_t> rgba(static_cast<std::size_t>(w) * h * 4);
-    for (int row = 0; row < h && !m_abort.load(std::memory_order_relaxed); ++row)
-        for (int x = 0; x < w; ++x)
-        {
-            const double lon = ((x + 0.5) / w - 0.5) * 2.0 * pi;
-            const double lat = (0.5 - (row + 0.5) / h) * pi;
-            const glm::dvec3 dir(std::cos(lat) * std::cos(lon), std::sin(lat), std::cos(lat) * std::sin(lon));
-            double clear = 1.0;
-            for (std::size_t l = 0; l < clouds.layers().size(); ++l)
-                clear *= 1.0 - std::clamp(static_cast<double>(clouds.coverage(l, dir, e.cloudTimeSeconds)), 0.0, 1.0);
-            const std::size_t o = (static_cast<std::size_t>(h - 1 - row) * w + x) * 4;   // GL row order: south first
-            rgba[o + 0] = static_cast<std::uint8_t>(colour.r * 255.0f);
-            rgba[o + 1] = static_cast<std::uint8_t>(colour.g * 255.0f);
-            rgba[o + 2] = static_cast<std::uint8_t>(colour.b * 255.0f);
-            rgba[o + 3] = static_cast<std::uint8_t>(std::clamp(1.0 - clear, 0.0, 1.0) * 255.0 + 0.5);
-        }
+    const auto rows = [&](int from, int to) {
+        for (int row = from; row < to && !m_abort.load(std::memory_order_relaxed); ++row)
+            for (int x = 0; x < w; ++x)
+            {
+                const double lon = ((x + 0.5) / w - 0.5) * 2.0 * pi;
+                const double lat = (0.5 - (row + 0.5) / h) * pi;
+                const glm::dvec3 dir(std::cos(lat) * std::cos(lon), std::sin(lat), std::cos(lat) * std::sin(lon));
+                double clear = 1.0;
+                float structure = 0.0f;
+                for (std::size_t l = 0; l < clouds.layers().size(); ++l)
+                {
+                    float cover = 0.0f, st = 0.0f;
+                    clouds.sample(l, dir, e.cloudTimeSeconds, cover, st);
+                    if (l == 0)
+                        structure = st;
+                    clear *= 1.0 - std::clamp(static_cast<double>(cover), 0.0, 1.0);
+                }
+                const float alpha = static_cast<float>(std::clamp(1.0 - clear, 0.0, 1.0));
+                // a deck: shaded by its structure; water clouds: thin edges a little greyer than dense cores
+                const glm::vec3 c = deck ? glm::mix(shade, colour, glm::smoothstep(0.10f, 0.85f, structure))
+                                         : colour * (0.86f + 0.14f * glm::smoothstep(0.3f, 0.9f, alpha));
+                const std::size_t o = (static_cast<std::size_t>(h - 1 - row) * w + x) * 4;   // GL rows: south first
+                rgba[o + 0] = static_cast<std::uint8_t>(std::clamp(c.r, 0.0f, 1.0f) * 255.0f + 0.5f);
+                rgba[o + 1] = static_cast<std::uint8_t>(std::clamp(c.g, 0.0f, 1.0f) * 255.0f + 0.5f);
+                rgba[o + 2] = static_cast<std::uint8_t>(std::clamp(c.b, 0.0f, 1.0f) * 255.0f + 0.5f);
+                rgba[o + 3] = static_cast<std::uint8_t>(alpha * 255.0f + 0.5f);
+            }
+    };
+    // rows on worker threads: one bake was ~1-2 s single-threaded (the Hub map's clouds came late)
+    const int threads = std::clamp(static_cast<int>(std::thread::hardware_concurrency()) / 2, 1, 8);
+    std::vector<std::thread> pool;
+    for (int t = 1; t < threads; ++t)
+        pool.emplace_back(rows, h * t / threads, h * (t + 1) / threads);
+    rows(0, h / threads);
+    for (auto& t : pool)
+        t.join();
     if (m_abort.load())
         return;
     e.width = w;
     e.height = h;
     e.rgba = std::move(rgba);
     e.state.store(1, std::memory_order_release);
+    std::cerr << "[MapProceduralBodies] clouds of " << e.bodyId << " baked in "
+              << static_cast<int>(
+                     std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count())
+              << " ms (" << threads << " threads)" << std::endl;
 }
 
 bool ProceduralBodyTextureCache::loadStored(Entry& e, std::uint64_t fingerprint)

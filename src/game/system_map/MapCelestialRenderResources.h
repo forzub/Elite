@@ -173,6 +173,15 @@ public:
         double sourceTimeSeconds
     );
 
+    // Flight-side prewarm (GL thread): the body the ship is near gets its map albedo and current clouds
+    // baked / loaded before the map opens (2026-11-11: F12 showed the night Pacific as an empty dark globe
+    // for ~0.7 s - the clouds were baked only on open).
+    void prewarmBody(
+        int systemId,
+        const std::string& bodyId,
+        double universeTimeSeconds
+    );
+
     void drawStarfield(
         const Viewport& viewport,
         const glm::dvec3& observerPositionLy,

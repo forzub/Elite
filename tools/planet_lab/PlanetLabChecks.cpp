@@ -401,6 +401,11 @@ namespace
         if (!body.clouds)
             return;
         const CloudWeatherField& c = *body.clouds;
+        // a dense deck covers (almost) everything: its weather lives in its structure (the shading /
+        // Elite lines), so the deck is checked on that
+        const auto value = [&](const glm::dvec3& d, double t) {
+            return c.hasDeck() ? c.structure(0, d, t) : c.coverage(0, d, t);
+        };
         double same = 0.0;
         double moved = 0.0;
         double eq = 0.0;
@@ -411,9 +416,9 @@ namespace
         for (int i = 0; i < n; ++i)
         {
             const glm::dvec3 d = fibonacci(i, n);
-            const float a = c.coverage(0, d, 86400.0 * 10.0);
-            same = std::max(same, static_cast<double>(std::abs(a - c.coverage(0, d, 86400.0 * 10.0))));
-            moved += std::abs(a - c.coverage(0, d, 86400.0 * 10.0 + CloudWeatherField::EpochSeconds));
+            const float a = value(d, 86400.0 * 10.0);
+            same = std::max(same, static_cast<double>(std::abs(a - value(d, 86400.0 * 10.0))));
+            moved += std::abs(a - value(d, 86400.0 * 10.0 + CloudWeatherField::EpochSeconds));
             const double lat = std::abs(std::asin(d.y)) * 180.0 / Pi;
             if (lat < 8.0)
             {
@@ -428,9 +433,9 @@ namespace
         }
         char buffer[200];
         std::snprintf(buffer, sizeof buffer,
-                      " clouds: same world time -> same sky (max diff %.1g); 6 h later mean change %.3f; equator "
+                      " clouds%s: same world time -> same sky (max diff %.1g); 6 h later mean change %.3f; equator "
                       "%.2f vs subtropics %.2f",
-                      same, moved / n, eq / std::max(1, nEq), sub / std::max(1, nSub));
+                      c.hasDeck() ? " (deck structure)" : "", same, moved / n, eq / std::max(1, nEq), sub / std::max(1, nSub));
         // The latitude climatology applies to water clouds, not to haze.
         const bool waterClouds = c.layers().front().kind != "haze";
         check(same == 0.0 && (!waterClouds || (moved / n > 0.02 && eq / std::max(1, nEq) > sub / std::max(1, nSub))),

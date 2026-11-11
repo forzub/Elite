@@ -78,6 +78,11 @@ SpaceState::SpaceState(
     }
 }
 
+bool SpaceState::flightVisualsSettled() const
+{
+    return m_sceneRenderer.celestialStats().pendingJobs == 0;
+}
+
 bool SpaceState::advanceStartupInitialization()
 {
     if (m_startupStage == StartupStage::Complete)
@@ -3009,6 +3014,23 @@ void SpaceState::renderUI()
     );
     m_preparedScene.celestialSnapshot =
         m_client ? m_client->celestialSnapshot() : nullptr;
+    // the map textures of the body the ship is near (its sphere of influence, or a hub's parent): baked
+    // in the background before F10 / F11 / F12 opens (the clouds took ~0.7 s on open)
+    if (m_preparedScene.celestialSnapshot && nowMs() - m_mapPrewarmAtMs > 1000.0)
+    {
+        m_mapPrewarmAtMs = nowMs();
+        const auto& ships = m_client->world().ships();
+        if (const auto it = ships.find(m_playerId.value); it != ships.end())
+        {
+            const auto& motion = it->second.transform.motion;
+            std::string body = motion.freeFlightReferenceIsRoot != 0 ? std::string() : motion.freeFlightReferenceId;
+            if (const auto hub = m_client->world().hubs().find(body); hub != m_client->world().hubs().end())
+                body = hub->second.parentBodyId;
+            if (body.find('.') != std::string::npos)
+                m_systemMapRenderer.prewarmBodyMap(m_preparedScene.celestialSnapshot->systemId, body,
+                                                   m_preparedScene.celestialSnapshot->simTimeSeconds);
+        }
+    }
     m_preparedScene.celestialSystem =
         m_preparedScene.celestialSnapshot && m_client->starAtlas()
             ? m_client->starAtlas()->findSystem(

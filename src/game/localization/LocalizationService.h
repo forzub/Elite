@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -63,6 +64,8 @@ public:
     std::size_t skippedFileCount() const { return m_skippedFileCount; }
 
 private:
+    void applyDiscovererNames(const std::filesystem::path& path);
+
     std::string resolve(
         const TranslationMap& translations,
         const std::string& fallback

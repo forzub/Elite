@@ -2273,6 +2273,24 @@ GLuint MapCelestialRenderResources::globalAlbedoTextureForBody(
     return 0;
 }
 
+void MapCelestialRenderResources::prewarmBody(
+    int systemId,
+    const std::string& bodyId,
+    double universeTimeSeconds
+)
+{
+    if (!m_proceduralBodies ||
+        m_proceduralBodies->policy() == ProceduralBodyTextureCache::Policy::Off ||
+        bodyId.empty())
+    {
+        return;
+    }
+    if (preferProceduralAlbedo(bodyId))
+        m_proceduralBodies->textureFor(systemId, bodyId);
+    bool noClouds = false;
+    m_proceduralBodies->cloudTextureFor(systemId, bodyId, visualEffectTimeSeconds(universeTimeSeconds), noClouds);
+}
+
 double MapCelestialRenderResources::visualEffectTimeSeconds(
     double sourceTimeSeconds
 )

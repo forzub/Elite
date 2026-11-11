@@ -638,6 +638,7 @@ uniform samplerCube uCover;
 uniform samplerCube uCoverPrev;
 uniform float uBlend;
 uniform float uOpacity;
+uniform float uDeck; // 1: a dense deck - its structure (G) shades it (a uniform deck read as a billiard ball)
 uniform vec3 uCentre;
 out vec4 fragColour;
 void writeLogDepth();
@@ -685,6 +686,11 @@ void main()
         float l = max(dot(n, L), 0.0);
         float thick = smoothstep(0.5, 1.0, c);
         vec3 col = vec3(dot(uSunColour, vec3(0.33))) * 0.78 * (0.10 + 0.90 * day) * mix(1.0, 0.72, thick * (1.0 - l));
+        if (uDeck > 0.5)
+        {
+            float st = mix(texture(uCoverPrev, d).g, texture(uCover, d).g, uBlend);
+            col *= mix(0.68, 1.06, smoothstep(0.10, 0.85, st));
+        }
         // Forward scattering at the limb.
         col += uSunColour * pow(max(dot(-v, L), 0.0), 8.0) * 0.25 * day;
         fragColour = vec4(col * (0.04 + 0.96 * day), a * (0.35 + 0.65 * day + 0.2));

@@ -336,6 +336,16 @@ Character& Font::loadGlyph(uint32_t codepoint)
                 return glyph(static_cast<uint32_t>('?'));
         }
 
+        // Glyphs load lazily (Cyrillic on first use): the unpack state is whatever the last texture upload
+        // left - an alignment of 4 skewed every glyph whose width is not a multiple of 4 into garbage
+        // (2026-11-11, map labels). Set it for this upload (bitmap rows are `pitch` bytes) and restore it.
+        GLint previousTexture = 0, previousAlignment = 4, previousRowLength = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTexture);
+        glGetIntegerv(GL_UNPACK_ALIGNMENT, &previousAlignment);
+        glGetIntegerv(GL_UNPACK_ROW_LENGTH, &previousRowLength);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, std::abs(g->bitmap.pitch) == glyphW ? 0 : std::abs(g->bitmap.pitch));
+
         glBindTexture(GL_TEXTURE_2D, m_atlasTexture);
 
         glTexSubImage2D(
@@ -350,7 +360,9 @@ Character& Font::loadGlyph(uint32_t codepoint)
             g->bitmap.buffer
         );
 
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previousTexture));
+        glPixelStorei(GL_UNPACK_ALIGNMENT, previousAlignment);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, previousRowLength);
 
         ch.uv0 = {
             static_cast<float>(m_penX) / static_cast<float>(m_atlasW),

@@ -21,8 +21,10 @@ namespace world::celestial::surface
       fronts) and the number / heights / kinds of layers depend only on the
       descriptor - stable;
     - the pattern is advected by zonal winds (trade winds westward,
-      westerlies eastward) and evolves through a noise dimension driven by
-      world time;
+      westerlies eastward; one smooth profile, no seams between the belts)
+      for at most ~1.25 advection cycles (1 day): each cycle is a fresh
+      pattern cross-faded into the next, so the shear of the belts never
+      accumulates over the world's centuries into latitude stripes;
     - cyclones live for one weather epoch (6 h of world time), each from a
       lattice cell of (seed, epoch) and blended into the next epoch.
 
@@ -55,14 +57,22 @@ public:
     // 2026-11-11: from above, the cloud deck is the relief; the ground under it is not seen).
     float structure(std::size_t layer, const glm::dvec3& dir, double worldTimeSeconds) const;
 
+    // Both at once (one evaluation; the cube / map bakes need both)
+    void sample(std::size_t layer, const glm::dvec3& dir, double worldTimeSeconds, float& coverage,
+                float& structure) const;
+
     // A dense overcast deck as the first layer (Venus-like worlds)
     bool hasDeck() const { return !m_layers.empty() && m_layers.front().kind == "deck"; }
 
     static constexpr double EpochSeconds = 6.0 * 3600.0;
+    static constexpr double AdvectionCycleSeconds = 86400.0;
 
 private:
     float cyclones(const glm::dvec3& dir, std::int64_t epoch) const;
     double rawValue(std::size_t layer, const glm::dvec3& dir, double worldTimeSeconds) const;
+    double pattern(std::size_t layer, std::uint64_t seed, const glm::dvec3& dir, double ageSeconds) const;
+    double zonalWind(std::size_t layer, double lat) const;   // rad / s, + eastward
+    double deckClosure(std::size_t layer) const;
 
     BodySurfaceDescriptor m_body;
     std::uint64_t m_seed = 0;

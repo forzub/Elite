@@ -5198,3 +5198,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   procedural passport like Phobos / Deimos (Amalthea, maybe other small Sol moons with curated junk) - AUTHOR to decide.
   Note: a ship placed on a 150 km "orbit" of a 7 km moon drifts away (Pe ~15 000 km after ~1 min) - the parent's
   pull; the DEV start is not meant for such bodies.
+- AUTHOR 2026-11-11: "переводи Амальтею и таких же с плохими картами на генератор по паспорту". Contact sheet of
+  every Sol albedo_source: only Earth, Moon, Mars, Jupiter are real maps; the other 32 are synthetic placeholders
+  (noise + ring "craters" / lines / waves). appearance_passports.json now has all 32 (procedural; mean colour from
+  the published geometric albedo + observed tint; Saturn: the v2 palette; Uranus pale cyan, Neptune deeper blue;
+  Iapetus only its mean - two-tone needs a passport v2). DEV ELITE_APPEARANCE_PASSPORTS=0 = without them (A/B).
+- PERFORMANCE check (author: "сразу проверь все это на производительность"), DEV ELITE_DEV_FRAME_STATS=<s> (frame
+  p50 / p95 / max / frames > 33 ms), A/B passports on / off, start at Ganymede then Detail maps Io / Europa /
+  Amalthea / Himalia (D:/tmp/elite_perf):
+  * bake cost: procedural 2.7x the placeholder lookup for rocky / icy (Ganymede 6x512^2 globe 23.4 s vs 8.6 s single
+    thread), gas giants 35x (Saturn 14.7 s vs 0.4 s) -> gas giant optimised: one shear warp per texel (sample() hands
+    it to appearance()), texture noises band-limited to the texel, polar noise skipped far from the poles: Saturn
+    14.7 -> 10.6 s (-28 %), output-equivalent (Planet Lab PASS).
+  * flight: steady state equal (p50 11.5-12.5 ms both); while the Ganymede 1024 globe bakes (~40 s with passports vs
+    <10 s without) frames are +4-5 ms (p50 16.7-17.5 vs 11.2-13.0 ms), no hitches.
+  * map: Detail bakes 2.2-2.7 s (procedural) vs 0.7-1.0 s, frames +~2 ms meanwhile.
+  * REGRESSION found + FIXED: the small-body field mesh (step 4) was 128x64 = 16k triangles the Detail map projects /
+    sorts on the CPU every frame (Amalthea Detail p50 17.5-30.7 ms, up to 56 frames > 33 ms per 10 s) -> 64x32:
+    p50 13.4-13.5 ms, 0 slow frames, passports on / off alike.
+  Next candidate: profile + speed up PlanetSurfaceField (15 us/texel) - it serves every procedural body.

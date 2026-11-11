@@ -75,7 +75,9 @@ private:
     const Band& bandAt(double lat, double& t, const Band*& neighbour, double& edge) const;
     void shearWarp(double lat, double lon, const glm::dvec3& dir, double& lat2, double& lon2) const;
     double bandSignal(double lat) const;
-    glm::vec3 deckColour(double lat, double lon, const glm::dvec3& dir, double bandLimitM, double& turbulenceOut) const;
+    // warped: {lat, lon} after the shear warp when the caller has it (sample() -> appearance()), else computed
+    glm::vec3 deckColour(double lat, double lon, const glm::dvec3& dir, double bandLimitM, double& turbulenceOut,
+                         const double* warped = nullptr) const;
 
     BodySurfaceDescriptor m_body;
     bool m_iceGiant = false;

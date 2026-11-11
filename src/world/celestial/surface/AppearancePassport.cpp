@@ -1,6 +1,7 @@
 #include "src/world/celestial/surface/AppearancePassport.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -19,6 +20,9 @@ namespace fs = std::filesystem;
 std::unordered_map<std::string, AppearancePassport> loadPassports()
 {
     std::unordered_map<std::string, AppearancePassport> out;
+    // DEV: ELITE_APPEARANCE_PASSPORTS=0 - no passports (A/B checks against the curated / placeholder maps)
+    if (const char* v = std::getenv("ELITE_APPEARANCE_PASSPORTS"); v && *v == '0')
+        return out;
     std::error_code ec;
     const fs::path cwd = fs::current_path(ec);
     fs::path file;

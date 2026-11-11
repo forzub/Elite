@@ -273,10 +273,16 @@ double GasGiantField::bandSignal(double lat) const
 }
 
 glm::vec3 GasGiantField::deckColour(double lat, double lon, const glm::dvec3& dir, double bandLimitM,
-                                    double& turbulenceOut) const
+                                    double& turbulenceOut, const double* warped) const
 {
     double lat2 = lat, lon2 = lon;
-    shearWarp(lat, lon, dir, lat2, lon2);
+    if (warped)
+    {
+        lat2 = warped[0];   // the shear warp sample() already computed at this point
+        lon2 = warped[1];
+    }
+    else
+        shearWarp(lat, lon, dir, lat2, lon2);
 
     double t = 0.0, edge = 0.0;
     const Band* nb = nullptr;
@@ -295,15 +301,15 @@ glm::vec3 GasGiantField::deckColour(double lat, double lon, const glm::dvec3& di
     const glm::dvec3 q = fromLatLon(lat2, lon2);
     // folded texture: the filament noise is itself domain-warped (swirls, curls in the belts)
     const glm::dvec3 qs(q.x, q.y * 3.0, q.z);
-    const double fx = fbm(m_seedTexture + 11, qs, m_radius, OctaveSpec {m_radius * 0.08, 1.92, 0.5, 4, 2.0}, 0.0, 0.0).macro;
-    const double fz = fbm(m_seedTexture + 12, qs, m_radius, OctaveSpec {m_radius * 0.08, 1.92, 0.5, 4, 2.0}, 0.0, 0.0).macro;
+    const double fx = fbm(m_seedTexture + 11, qs, m_radius, OctaveSpec {m_radius * 0.08, 1.92, 0.5, 4, 2.0}, 1.0e30, bandLimitM).total;
+    const double fz = fbm(m_seedTexture + 12, qs, m_radius, OctaveSpec {m_radius * 0.08, 1.92, 0.5, 4, 2.0}, 1.0e30, bandLimitM).total;
     const glm::dvec3 folded = qs + glm::dvec3(fx, 0.0, fz) / FbmRms * (0.035 * (0.3 + b.turbulence));
     const glm::dvec3 streak(folded.x, folded.y * 3.0, folded.z);
-    const double fil = fbm(m_seedTexture, streak, m_radius, OctaveSpec {m_radius * 0.05, 1.92, 0.58, 6, 1.5}, 0.0, 0.0).macro;
-    const double clump = fbm(m_seedTexture + 1, folded, m_radius, OctaveSpec {m_radius * 0.06, 1.92, 0.55, 5, 2.5}, 0.0, 0.0).macro;
+    const double fil = fbm(m_seedTexture, streak, m_radius, OctaveSpec {m_radius * 0.05, 1.92, 0.58, 6, 1.5}, 1.0e30, bandLimitM).total;
+    const double clump = fbm(m_seedTexture + 1, folded, m_radius, OctaveSpec {m_radius * 0.06, 1.92, 0.55, 5, 2.5}, 1.0e30, bandLimitM).total;
     // thin zonal stripes inside every band (latitude-only noise), then the folded texture
     const double stripes = fbm(m_seedTexture + 21, glm::dvec3(0.0, std::sin(lat2), 0.0), m_radius,
-                               OctaveSpec {m_radius * 0.02, 1.92, 0.6, 4, 1.0}, 0.0, 0.0).macro;
+                               OctaveSpec {m_radius * 0.02, 1.92, 0.6, 4, 1.0}, 1.0e30, bandLimitM).total;
     // brightness modulation, per unit RMS: stripes +-8 %, filaments +-12 %, belt clumps +-15 %
     double mod = 0.08 * stripes / FbmRms + 0.12 * fil / FbmRms * (0.35 + 0.65 * b.turbulence) +
                  (b.zone ? 0.05 : 0.15) * clump / FbmRms * b.turbulence;
@@ -321,9 +327,9 @@ glm::vec3 GasGiantField::deckColour(double lat, double lon, const glm::dvec3& di
     if (m_iceGiant)
     {
         // few, long, thin: a large-scale gate times a streak shape stretched along the jets
-        const double gate = fbm(m_seedTexture + 4, q, m_radius, OctaveSpec {m_radius * 0.6, 1.92, 0.5, 3, 2.0}, 0.0, 0.0).macro;
+        const double gate = fbm(m_seedTexture + 4, q, m_radius, OctaveSpec {m_radius * 0.6, 1.92, 0.5, 3, 2.0}, 1.0e30, bandLimitM).total;
         const double s = fbm(m_seedTexture + 3, glm::dvec3(q.x, q.y * 14.0, q.z), m_radius,
-                             OctaveSpec {m_radius * 0.12, 1.92, 0.5, 3, 1.0}, 0.0, 0.0).macro;
+                             OctaveSpec {m_radius * 0.12, 1.92, 0.5, 3, 1.0}, 1.0e30, bandLimitM).total;
         const double streakMask = smoothstep(1.2, 2.0, gate / FbmRms) * smoothstep(1.0, 1.8, s / FbmRms) *
                                   smoothstep(0.15, 0.45, std::abs(lat2)) * (1.0 - smoothstep(0.9, 1.2, std::abs(lat2)));
         c = glm::mix(c, glm::vec3(0.95f, 0.98f, 1.0f), static_cast<float>(streakMask * 0.8));
@@ -363,6 +369,11 @@ SurfaceSample GasGiantField::sample(const glm::dvec3& dirIn, double minWavelengt
         }
     }
     s.coastM = (10.0 + signal) * 1000.0;
+    // the shear warp handed to appearance() (a deck has no heights / water: these fields are free; lake marks
+    // them valid) - one warp per texel instead of two
+    s.macroHeightM = lat2;
+    s.waterLevelM = lon2;
+    s.lake = true;
     return s;
 }
 
@@ -379,6 +390,7 @@ SurfaceAppearance GasGiantField::appearance(const SurfaceSample& sample, const g
     glm::vec3 ovalColour(1.0f);
     float rimDark = 0.0f;
     double wakeBoost = 0.0;
+    bool swirled = false;
     for (const Vortex& v : m_vortices)
     {
         const double dy = (lat - v.lat) / v.radiusLat;
@@ -392,6 +404,7 @@ SurfaceAppearance GasGiantField::appearance(const SurfaceSample& sample, const g
         if (r2 > 2.4 * 2.4)
             continue;
         const double r = std::sqrt(r2);
+        swirled = true;
         const double angle = v.spin * (v.great ? 4.5 : 3.0) * std::exp(-r2 * 1.1);
         const double ca = std::cos(angle), sa = std::sin(angle);
         const double rx = dx * ca - dy * sa, ry = dx * sa + dy * ca;
@@ -412,27 +425,35 @@ SurfaceAppearance GasGiantField::appearance(const SurfaceSample& sample, const g
     lat = std::clamp(lat, -Pi * 0.5, Pi * 0.5);
 
     double turbulence = 0.0;
-    glm::vec3 c = deckColour(lat, lon, fromLatLon(lat, lon), sample.bandLimitM, turbulence);
+    const double warped[2] = {sample.macroHeightM, sample.waterLevelM};
+    glm::vec3 c = deckColour(lat, lon, fromLatLon(lat, lon), sample.bandLimitM, turbulence,
+                             !swirled && sample.lake ? warped : nullptr);
     if (wakeBoost > 0.0)
     {
         // the great oval's turbulent wake: churned, mixed brighter / darker
         const glm::dvec3 q = fromLatLon(lat, lon);
-        const double churn = fbm(m_seedTexture + 5, q, m_radius, OctaveSpec {m_radius * 0.03, 1.92, 0.6, 5, 2.0}, 0.0, 0.0).macro;
+        const double churn = fbm(m_seedTexture + 5, q, m_radius, OctaveSpec {m_radius * 0.03, 1.92, 0.6, 5, 2.0}, 1.0e30, sample.bandLimitM).total;
         c *= static_cast<float>(1.0 + 0.25 * churn / FbmRms * wakeBoost);
     }
     c *= 1.0f - rimDark;
     c = glm::mix(c, ovalColour, ovalMix * 0.7f);
 
     // polar regions: mottled haze with small cyclones instead of bands
-    const double polarNoise =
-        fbm(m_seedPolar, dir, m_radius, OctaveSpec {m_radius * 0.20, 1.92, 0.5, 4, 2.0}, 0.0, 0.0).macro;
-    const double pol = smoothstep(m_polarLat - 0.12, m_polarLat + 0.22, std::abs(lat) + 0.10 * polarNoise / FbmRms);
+    // the boundary noise moves the polar edge by at most ~0.42 rad (|fbm| <= 0.53 measured): far from it the
+    // result is 0 anyway - skip the noise there (same output, ~4 octaves less per texel)
+    double pol = 0.0;
+    if (std::abs(lat) > m_polarLat - 0.12 - 0.45)
+    {
+        const double polarNoise =
+            fbm(m_seedPolar, dir, m_radius, OctaveSpec {m_radius * 0.20, 1.92, 0.5, 4, 2.0}, 0.0, 0.0).macro;
+        pol = smoothstep(m_polarLat - 0.12, m_polarLat + 0.22, std::abs(lat) + 0.10 * polarNoise / FbmRms);
+    }
     if (pol > 0.0)
     {
         const double mottle =
-            fbm(m_seedPolar + 1, dir, m_radius, OctaveSpec {m_radius * 0.05, 1.92, 0.55, 5, 3.0}, 0.0, 0.0).macro;
+            fbm(m_seedPolar + 1, dir, m_radius, OctaveSpec {m_radius * 0.05, 1.92, 0.55, 5, 3.0}, 1.0e30, sample.bandLimitM).total;
         const double cyclones = ridgedMultifractal(m_seedPolar + 2, dir, m_radius,
-                                                   OctaveSpec {m_radius * 0.035, 1.92, 0.5, 3, 1.0}, 0.0, 0.0).macro;
+                                                   OctaveSpec {m_radius * 0.035, 1.92, 0.5, 3, 1.0}, 1.0e30, sample.bandLimitM).total;
         // the band colours fade into the mottle (not a cap): keep the deck under the haze
         glm::vec3 p = glm::mix(c * 0.8f, m_polar, 0.6f) *
                       static_cast<float>(0.85 + 0.15 * mottle / FbmRms + 0.20 * smoothstep(0.85, 0.97, cyclones));

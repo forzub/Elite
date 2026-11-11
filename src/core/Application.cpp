@@ -1,4 +1,6 @@
 #include "src/core/ShutdownRequest.h"
+#include <cstdio>
+#include <vector>
 #include "src/core/HitchProfiler.h"
 #include "src/core/DevFrameCapture.h"
 #include "src/render/SceneStyle.h"
@@ -908,6 +910,35 @@ void Application::mainLoop()
         core::hitch::beginFrame();
         double currentTime      = glfwGetTime();
         float dt                = static_cast<float>(currentTime - lastTime);
+
+        // DEV: ELITE_DEV_FRAME_STATS=<s> - every s seconds the frame-time distribution (p50 / p95 / max and the
+        // frames over 33 ms) for performance checks
+        {
+            static const double statsEvery = [] {
+                const char* v = std::getenv("ELITE_DEV_FRAME_STATS");
+                return v && *v ? std::atof(v) : 0.0;
+            }();
+            static bool firstFrame = true;
+            if (statsEvery > 0.0 && !firstFrame)
+            {
+                static std::vector<float> frameMs;
+                static double windowStart = currentTime;
+                frameMs.push_back(dt * 1000.0f);
+                if (currentTime - windowStart >= statsEvery && !frameMs.empty())
+                {
+                    std::vector<float> sorted = frameMs;
+                    std::sort(sorted.begin(), sorted.end());
+                    const auto at = [&](double q) { return sorted[static_cast<std::size_t>(q * (sorted.size() - 1))]; };
+                    const auto hitches = std::count_if(sorted.begin(), sorted.end(), [](float v) { return v > 33.0f; });
+                    std::fprintf(stderr, "[FrameStats] t=%.0f s frames=%zu p50=%.1f ms p95=%.1f ms max=%.1f ms over33=%lld\n",
+                                 currentTime, sorted.size(), at(0.5), at(0.95), sorted.back(),
+                                 static_cast<long long>(hitches));
+                    frameMs.clear();
+                    windowStart = currentTime;
+                }
+            }
+            firstFrame = false;
+        }
 
 #ifdef _WIN32
         const float frameGapTraceThresholdSeconds =

@@ -1,30 +1,321 @@
 {
   "schema": "elite.appearance_passports.v1",
-  "note": "Appearance passports of famous bodies (src/world/celestial/surface/AppearancePassport.h). The generator keeps the relief and pattern from the physical descriptor; mean_albedo_linear is the observed mean surface colour (linear reflectance), procedural = draw the generator instead of the curated / cached maps (author 2026-11-11: Io, Europa, Phobos, Deimos look better procedural, colour to be matched).",
+  "note": "Appearance passports of famous bodies (src/world/celestial/surface/AppearancePassport.h). The generator keeps the relief and pattern from the physical descriptor; mean_albedo_linear is the observed mean surface colour (linear reflectance), procedural = draw the generator instead of the curated / cached maps (author 2026-11-11: Io, Europa, Phobos, Deimos look better procedural, colour to be matched). 2026-11-11 (author): every Sol body with a synthetic placeholder map goes to the generator by passport; only Earth, Moon, Mars, Jupiter keep real curated maps.",
   "bodies": [
     {
       "id": "system_0.Sol.Юпитер.Ио",
       "procedural": true,
-      "mean_albedo_linear": [0.76, 0.56, 0.17],
+      "mean_albedo_linear": [
+        0.76,
+        0.56,
+        0.17
+      ],
       "reference": "geometric albedo 0.63 (NASA Jupiter satellite fact sheet); sulphur yellow-orange globe (Galileo SSI true colour)"
     },
     {
       "id": "system_0.Sol.Юпитер.Европа",
       "procedural": true,
-      "mean_albedo_linear": [0.66, 0.60, 0.50],
+      "mean_albedo_linear": [
+        0.66,
+        0.6,
+        0.5
+      ],
       "reference": "geometric albedo 0.67 (NASA fact sheet); ice white with tan-brown lineae (Galileo / Juno true colour)"
     },
     {
       "id": "system_0.Sol.Марс.Фобос",
       "procedural": true,
-      "mean_albedo_linear": [0.080, 0.068, 0.058],
+      "mean_albedo_linear": [
+        0.08,
+        0.068,
+        0.058
+      ],
       "reference": "geometric albedo 0.071 (NASA Mars satellite fact sheet); very dark grey with a red slope (HiRISE colour)"
     },
     {
       "id": "system_0.Sol.Марс.Деймос",
       "procedural": true,
-      "mean_albedo_linear": [0.082, 0.069, 0.057],
+      "mean_albedo_linear": [
+        0.082,
+        0.069,
+        0.057
+      ],
       "reference": "geometric albedo 0.068 (NASA fact sheet); dark, slightly redder and smoother than Phobos (HiRISE colour)"
+    },
+    {
+      "id": "system_0.Sol.Меркурий",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.15,
+        0.14,
+        0.13
+      ],
+      "reference": "geometric albedo 0.142, grey-brown; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Венера",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.12,
+        0.1,
+        0.08
+      ],
+      "reference": "surface under the deck: dark basalt (radar / Venera); the deck hides it; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Юпитер.Амальтея",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.13,
+        0.06,
+        0.04
+      ],
+      "reference": "geometric albedo 0.09, the reddest body of the Solar System (Galileo); the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Юпитер.Гималия",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.06,
+        0.058,
+        0.054
+      ],
+      "reference": "geometric albedo 0.057, neutral grey; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Юпитер.Элара",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.048,
+        0.046,
+        0.043
+      ],
+      "reference": "geometric albedo 0.046; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Юпитер.Пасифе",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.045,
+        0.043,
+        0.04
+      ],
+      "reference": "geometric albedo 0.04; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Юпитер.Ганимед",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.42,
+        0.38,
+        0.33
+      ],
+      "reference": "geometric albedo 0.43, grey-brown with bright grooved terrain; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Юпитер.Каллисто",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.22,
+        0.19,
+        0.16
+      ],
+      "reference": "geometric albedo 0.22, dark brown-grey; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Мимас",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "reference": "geometric albedo 0.96, bright ice; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Энцелад",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.92,
+        0.92,
+        0.93
+      ],
+      "reference": "geometric albedo 1.38 (capped), the brightest ice; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Тетис",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.88,
+        0.88,
+        0.88
+      ],
+      "reference": "geometric albedo 1.23 (capped), bright ice; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Диона",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.78,
+        0.78,
+        0.78
+      ],
+      "reference": "geometric albedo 1.0, bright ice; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Рея",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.74,
+        0.73,
+        0.72
+      ],
+      "reference": "geometric albedo 0.95, bright ice; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Титан",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.13,
+        0.1,
+        0.07
+      ],
+      "reference": "surface under the orange haze: dark organics (Huygens); the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Япет",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.3,
+        0.26,
+        0.22
+      ],
+      "reference": "two-tone: leading side 0.03-0.05, trailing 0.5-0.6 - the mean only (passport v1 has no two-tone); the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн.Феба",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.06,
+        0.056,
+        0.052
+      ],
+      "reference": "geometric albedo 0.06, dark; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Уран.Миранда",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.32,
+        0.32,
+        0.32
+      ],
+      "reference": "geometric albedo 0.32, grey; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Уран.Ариэль",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "reference": "geometric albedo 0.53, the brightest Uranian moon; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Уран.Умбриэль",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "reference": "geometric albedo 0.26, the darkest Uranian moon; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Уран.Титания",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.3,
+        0.29,
+        0.28
+      ],
+      "reference": "geometric albedo 0.35, grey; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Уран.Оберон",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.26,
+        0.24,
+        0.22
+      ],
+      "reference": "geometric albedo 0.31, slightly red; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Нептун.Тритон",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.66,
+        0.58,
+        0.55
+      ],
+      "reference": "geometric albedo 0.76, pinkish-white nitrogen ice; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Нептун.Нереида",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.15,
+        0.15,
+        0.15
+      ],
+      "reference": "geometric albedo 0.155, grey; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Нептун.Ларисса",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.09,
+        0.088,
+        0.085
+      ],
+      "reference": "geometric albedo 0.09; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Нептун.Протей",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.096,
+        0.092,
+        0.088
+      ],
+      "reference": "geometric albedo 0.096; the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Сатурн",
+      "procedural": true,
+      "reference": "gas giant v2 palette (temperature-driven pale ammonia); the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Уран",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.41,
+        0.69,
+        0.75
+      ],
+      "reference": "pale cyan (Voyager 2 true colour); the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_0.Sol.Нептун",
+      "procedural": true,
+      "mean_albedo_linear": [
+        0.11,
+        0.23,
+        0.64
+      ],
+      "reference": "deeper blue than Uranus (Voyager 2 true colour); the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
     }
   ]
 }

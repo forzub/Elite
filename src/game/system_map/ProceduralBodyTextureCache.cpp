@@ -549,7 +549,9 @@ void ProceduralBodyTextureCache::bake(Entry& e)
     // a small body: its field as a displaced lat-long mesh (the shape flight shows)
     if (field->solidSurface() && field->referenceRadiusM() < SmallBodyShapeRadiusM)
     {
-        constexpr int NLon = 128, NLat = 64;
+        // 64 x 32: the Detail map projects and sorts the shape on the CPU every frame (128 x 64 = 16k
+        // triangles cost ~15 ms a frame, measured 2026-11-11); enough for the silhouette at map scale
+        constexpr int NLon = 64, NLat = 32;
         const double radius = field->referenceRadiusM();
         std::vector<render::celestial::CelestialShapeVertex> grid(static_cast<std::size_t>(NLon + 1) * NLat);
         for (int i = 0; i < NLat; ++i)

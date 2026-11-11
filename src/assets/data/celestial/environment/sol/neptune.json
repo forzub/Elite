@@ -92,7 +92,7 @@
     }
   },
   "clouds": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "banded",
     "seed_policy": "world_time",
     "seed_base": 8119,
@@ -419,9 +419,9 @@
   },
   "rendering": {
     "visual_class": "ice_giant",
-    "surface_visibility": "hidden",
-    "load_surface_textures": false,
-    "base_render_mode": "procedural_primary_cloud_deck",
+    "surface_visibility": "visible",
+    "load_surface_textures": true,
+    "base_render_mode": "surface_texture",
     "primary_layer_id": "deep_water_ammonia",
     "primary_layer_must_cover_surface": true,
     "primary_layer_opacity_floor": 0.999,
@@ -443,6 +443,7 @@
       "overlay_layers": "time_sliced_one_generation_per_frame",
       "far_lod": "single_cached_primary_layer",
       "offscreen": "do_not_update"
-    }
+    },
+    "note": "2026-11-11: the deck IS the surface field (GasGiantField v2 / curated maps) - shown; the procedural cloud deck that hid it is off (same as sol/jupiter.json)."
   }
 }

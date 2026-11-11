@@ -5095,3 +5095,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   chaotic contours). LIVE: ELITE_DEV_START=body:eps_eri_b, D:/tmp/elite_gg/epsEri_b2.png (clean band-edge lines).
   Previews: scratchpad gg2/sheet.png (Jupiter, Saturn, Uranus, Neptune, eps Eri b, GJ 832 b, HD 102195 b, Lalande j).
   Sol giants keep their curated maps (Jupiter Cassini) where they exist; the generator serves every other giant.
+- Map clouds in other systems: present (the generated bodies' environment_preset_id -> presets/*.json cloud layers,
+  e.g. ocean_world broken fields on Alpha_Centauri_A_j, D:/tmp/elite_clouds/detail.png). FOUND + FIXED: the presets
+  gas_giant_ammonia / ice_giant_methane (58 giants) and sol saturn / uranus / neptune hid the surface and drew the
+  crude procedural banded deck on the Detail map (the Jupiter case): surface visible, that deck off, haze kept.
+  LIVE: eps Eri b Detail map shows the v2 field (D:/tmp/elite_gg/eps_detail.png). venusian_dense still hides its
+  surface under the overcast (intended).

@@ -5081,3 +5081,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Memory audit plan (docs/CELESTIAL_RESOURCE_AUDIT.md) steps 1-5 DONE. Left for the AUTHOR: delete assets/generated
   lod/tiles (3.97 GB, never read) and decide on the rest of assets/generated (still read for Hub normal / preview,
   Phobos / Deimos OBJ shapes, environment lookups). Small, not budgeted: DetailMapPlanetPass shape-mesh textures.
+- Gas giants v2 (GasGiantField, source + compiled + previews + live DEV; author to judge the look): per-hemisphere band
+  table of unequal widths (belts / zones with own brightness, hue, turbulence; rusty belts), shear-flow domain warp
+  strongest at band edges (waves, festoons), folded filament texture, thin zonal stripes, band-limited fine filaments,
+  vortices on band edges that swirl the deck (spiral, soft core, dark rim), a great red oval with a wake on large
+  ammonia giants, mottled polar regions; colour in LINEAR albedo from observed sRGB (the v1 palette was sRGB-like ->
+  washed out); temperature sets contrast (Saturn ~half of Jupiter), per-body zone / belt variety; ice giants: few
+  low-contrast bands, sparse methane streaks, dark spot; hot giants dark red-brown. Noise amplitudes calibrated per
+  measured RMS (fbm 0.125, ridged mean 0.68 / RMS 0.15). New layer tags gg2_*: Planet Lab --verify changes ONLY the
+  gas_giant entries (patch / landmark checksums, by design), rocky / earth / asteroid / dry identical, gas_giant order
+  check PASS; Jupiter 1024 map bake 1.3 s. Elite style: the gas giant lines follow a band signal written into the
+  (unused on a deck) coast channel - band edges + oval rims - instead of the colour luminance (the v2 texture made
+  chaotic contours). LIVE: ELITE_DEV_START=body:eps_eri_b, D:/tmp/elite_gg/epsEri_b2.png (clean band-edge lines).
+  Previews: scratchpad gg2/sheet.png (Jupiter, Saturn, Uranus, Neptune, eps Eri b, GJ 832 b, HD 102195 b, Lalande j).
+  Sol giants keep their curated maps (Jupiter Cassini) where they exist; the generator serves every other giant.

@@ -249,8 +249,10 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
             float slope = fwidth(heightKm) * 1000.0 / max(dist * uPixelAngle, 1e-3);
             contour *= smoothstep(uContourMinSlope * 0.5, uContourMinSlope, slope);
         }
+        // a gas giant's lines: its band edges and oval rims (GasGiantField::sample puts the band
+        // signal into the coast channel, integers on the edges) - not the fine colour texture
         if (isGas > 0.5)
-            contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
+            contour = contourMask(coastKm, 1.0) * 0.6;
         // the local terrain (lattice >= 0) draws the same lines as the globe (author 2026-11-07:
         // the brighter patch under the ship is gone); no horizon rim on it
         bool terrainPass = lattice >= 0.0;

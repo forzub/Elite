@@ -166,6 +166,8 @@ void bakeCloudFace(const CloudWeatherField& clouds, std::size_t layer, double wo
 {
     auto& cov = out.coverage[static_cast<std::size_t>(face)];
     cov.assign(static_cast<std::size_t>(size) * size, 0);
+    auto& st = out.structure[static_cast<std::size_t>(face)];
+    st.assign(static_cast<std::size_t>(size) * size, 0);
     if (layer >= clouds.layers().size())
         return;
     for (int y = 0; y < size; ++y)
@@ -174,6 +176,8 @@ void bakeCloudFace(const CloudWeatherField& clouds, std::size_t layer, double wo
             const glm::dvec3 d = cubeMapDirection(face, 2.0 * (x + 0.5) / size - 1.0, 2.0 * (y + 0.5) / size - 1.0);
             const float c = clouds.coverage(layer, d, worldTimeSeconds);
             cov[static_cast<std::size_t>(y) * size + x] = static_cast<std::uint8_t>(std::clamp(c, 0.0f, 1.0f) * 255.0f);
+            st[static_cast<std::size_t>(y) * size + x] =
+                static_cast<std::uint8_t>(clouds.structure(layer, d, worldTimeSeconds) * 255.0f + 0.5f);
         }
     out.size = size;
     out.worldTimeSeconds = worldTimeSeconds;

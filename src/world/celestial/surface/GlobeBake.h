@@ -58,6 +58,7 @@ struct CloudFaces
     int size = 0;
     double worldTimeSeconds = 0.0;
     std::array<std::vector<std::uint8_t>, 6> coverage;
+    std::array<std::vector<std::uint8_t>, 6> structure; // CloudWeatherField::structure (the deck's shapes)
 };
 void bakeCloudFace(const CloudWeatherField& clouds, std::size_t layer, double worldTimeSeconds, int size, int face,
                    CloudFaces& out);

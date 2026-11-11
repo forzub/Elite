@@ -5151,3 +5151,16 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   albedo_source (none today). => Deleting the rest of assets/generated (1.7 GB + its build copy) is now possible -
   AUTHOR's decision; recommended to keep it one release with ELITE_MAP_GENERATED_ASSETS=0 tried in normal play.
 - docs/CLEANUP_CANDIDATES.md: the list of things to delete LATER (author: record, do not delete yet).
+- AUTHOR DECISION 2026-11-11 (dense-atmosphere bodies, e.g. the 52 venusian_dense worlds, Fomalhaut_g black disc):
+  in the Elite style the cloud layer is shown as the relief (its lines), NOT solid - a ship falls through it to the
+  real surface below; the altitude above the surface does not change because of the cloud layer.
+  Next after it (author: "дальше делаем по твоему плану 1-4"): distant systems + interstellar bodies on the map,
+  one cloud source (map = flight), Hub map normals for field bakes, irregular shapes of small bodies.
+- Dense-deck look DONE (author decision above; source + compiled + live DEV): CloudWeatherField::structure (the
+  deck's value before its cover saturates; hasDeck() = a "deck" first layer, e.g. 92-126 bar worlds); the cloud cube
+  is RG8 (R cover for the colour styles - unchanged, G structure). Elite style with the camera ABOVE the deck height:
+  the globe draws the deck's lines (through the gas-giant line path, no ground contours / coasts / sea) and the local
+  terrain + settlements are not drawn; BELOW the deck height the ground as before. Flight, collisions and altitude
+  untouched. LIVE: Alpha_Centauri_A_h (126 bar) from a 454 km orbit shows cloud-shape lines instead of the black disc
+  (D:/tmp/elite_deck/deck2.png). Not yet seen live: the descent below the deck (45 km) to the ground lines.
+  Planet Lab --check PASS.

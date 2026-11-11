@@ -105,6 +105,19 @@ float CloudWeatherField::coverage(std::size_t layer, const glm::dvec3& dir, doub
 {
     if (layer >= m_layers.size())
         return 0.0f;
+    return static_cast<float>(smoothstep(0.0, 0.28, rawValue(layer, dir, t)) * m_layers[layer].opacity);
+}
+
+float CloudWeatherField::structure(std::size_t layer, const glm::dvec3& dir, double t) const
+{
+    if (layer >= m_layers.size())
+        return 0.0f;
+    // the unsaturated value of a deck lies ~0..1 (measured: Venus p95 0.45, Alpha Centauri A h p95 0.95)
+    return static_cast<float>(std::clamp(rawValue(layer, dir, t), 0.0, 1.0));
+}
+
+double CloudWeatherField::rawValue(std::size_t layer, const glm::dvec3& dir, double t) const
+{
     const CloudLayer& L = m_layers[layer];
     const double lat = std::asin(std::clamp(dir.y, -1.0, 1.0));
     const double latDeg = std::abs(lat) * 180.0 / Pi;
@@ -135,7 +148,6 @@ float CloudWeatherField::coverage(std::size_t layer, const glm::dvec3& dir, doub
     const double storms = (1.0 - blend) * cyclones(advected, epoch) + blend * cyclones(advected, epoch + 1);
 
     const double base = tendency(dir) + L.coverageBias;
-    const double value = base - 0.5 + 0.55 * pattern + 0.7 * storms * (layer == 0 ? 1.0 : 0.4);
-    return static_cast<float>(smoothstep(0.0, 0.28, value) * L.opacity);
+    return base - 0.5 + 0.55 * pattern + 0.7 * storms * (layer == 0 ? 1.0 : 0.4);
 }
 } // namespace world::celestial::surface

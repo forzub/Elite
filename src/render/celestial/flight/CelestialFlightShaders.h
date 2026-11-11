@@ -395,6 +395,7 @@ uniform samplerCube uRelief;
 uniform samplerCube uCloudCover;
 uniform float uHasClouds;
 uniform float uIsGas;
+uniform float uDeckLines;    // Elite: a dense deck above which only its lines show (G = its structure)
 uniform float uRadius;
 uniform float uSkyDisc;      // 0..1: a small far body in the sky (cinematic apparent size)
 uniform vec3 uFlat;          // colour while the texture bakes
@@ -449,8 +450,18 @@ void main()
     float shadow = 0.0;
     if (uHasClouds > 0.5)
         shadow = texture(uCloudCover, normalize(d + 0.004 * (transpose(uBodyToWorld) * uSunDir))).r;
+    // a dense deck seen from above (Elite): its structure takes the gas-giant line path (lines on the
+    // integers of the coast channel, no ground contours / coasts / sea)
+    float gasLines = uIsGas;
+    if (uDeckLines > 0.5)
+    {
+        coastKm = 10.0 + texture(uCloudCover, d).g * 20.0;
+        heightKm = 0.0;
+        nr = ns;
+        gasLines = 1.0;
+    }
     float alpha;
-    vec3 col = shadeSurface(land, water, coastKm, heightKm, emission, 0.0, nr, ns, v, dist, -1.0, uIsGas,
+    vec3 col = shadeSurface(land, water, coastKm, heightKm, emission, 0.0, nr, ns, v, dist, -1.0, gasLines,
                             shadow, alpha);
     if (uSkyDisc > 0.0)
     {

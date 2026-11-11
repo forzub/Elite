@@ -1020,17 +1020,30 @@ struct CelestialFlightRenderer::Impl
         {
             const double u0 = nowSeconds();
             const auto& f = *p.faces;
+            // RG8: R the cover (colour styles), G the structure (Elite deck lines)
+            std::array<std::vector<std::uint8_t>, 6> rg;
             std::array<const void*, 6> c {};
             for (int i = 0; i < 6; ++i)
-                c[static_cast<std::size_t>(i)] = f.coverage[static_cast<std::size_t>(i)].data();
+            {
+                const auto& cov = f.coverage[static_cast<std::size_t>(i)];
+                const auto& st = f.structure[static_cast<std::size_t>(i)];
+                auto& out = rg[static_cast<std::size_t>(i)];
+                out.resize(cov.size() * 2);
+                for (std::size_t k = 0; k < cov.size(); ++k)
+                {
+                    out[k * 2] = cov[k];
+                    out[k * 2 + 1] = k < st.size() ? st[k] : 0;
+                }
+                c[static_cast<std::size_t>(i)] = out.data();
+            }
             if (rt.cloud.previous)
                 glDeleteTextures(1, &rt.cloud.previous);
             rt.cloud.previous = rt.cloud.current;
             rt.cloud.previousTime = rt.cloud.currentTime;
-            rt.cloud.current = makeCube(f.size, GL_R8, GL_RED, GL_UNSIGNED_BYTE, c);
+            rt.cloud.current = makeCube(f.size, GL_RG8, GL_RG, GL_UNSIGNED_BYTE, c);
             ++stats.textureUploads;
             ++stats.mipGenerations;
-            stats.uploadBytes += static_cast<long long>(f.size) * f.size * 6;
+            stats.uploadBytes += static_cast<long long>(f.size) * f.size * 12;
             rt.cloud.currentTime = p.timeSeconds;
             rt.cloud.size = f.size;
             p = PendingCloud {};
@@ -2145,13 +2158,22 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         }
         const glm::dvec3 cameraBody = glm::transpose(glm::dmat3(toWorld)) * (-it.rel);
 
+        // Elite style, a dense cloud deck, the camera above it (author 2026-11-11): the deck is the relief -
+        // its lines on the globe, the ground (globe lines AND the local terrain) not seen; below the deck
+        // the ground as usual. Not solid: flight and altitude are unchanged.
+        const bool deckHides = style == CelestialRenderStyle::EliteStyle && rt->clouds && rt->clouds->hasDeck() &&
+                               rt->cloud.current && alt > rt->clouds->layers().front().heightM;
+
         // Local terrain (nearest solid body only).
         if (b.id == nearestId && b.kind == FlightBodyKind::Solid && rt->field->solidSurface())
         {
             if (primary)
                 updateTerrain(*rt, cameraBody, pixelAngle);
-            drawTerrain(*rt, b, toWorld, it.rel, cameraBody, viewProj, pixelAngle, sunDir, sunColour, hazeDensity);
-            drawSettlements(*rt, toWorld, it.rel, cameraBody, viewProj, sunDir, sunColour);
+            if (!deckHides)
+            {
+                drawTerrain(*rt, b, toWorld, it.rel, cameraBody, viewProj, pixelAngle, sunDir, sunColour, hazeDensity);
+                drawSettlements(*rt, toWorld, it.rel, cameraBody, viewProj, sunDir, sunColour);
+            }
             if (!rt->levels.empty())
             {
                 terrainBodyId = b.id;
@@ -2208,6 +2230,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
                                    : style == CelestialRenderStyle::Modern ? 1.5f : 0.0f);
             const bool cloudShadow = style != CelestialRenderStyle::EliteStyle && rt->cloud.current;
             globe.set("uHasClouds", cloudShadow ? 1.0f : 0.0f);
+            globe.set("uDeckLines", deckHides ? 1.0f : 0.0f);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex ? rt->globe.albedo : dummyCube);
             glActiveTexture(GL_TEXTURE1);
@@ -2215,7 +2238,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex ? rt->globe.relief : dummyCube);
             glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cloudShadow ? rt->cloud.current : dummyCube);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cloudShadow || deckHides ? rt->cloud.current : dummyCube);
             globe.set("uAlbedo", 0);
             globe.set("uNormal", 1);
             globe.set("uRelief", 2);
@@ -2414,7 +2437,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
     {
         stats.textureBytes += b.globe.bytes;
         if (b.cloud.current)
-            stats.textureBytes += static_cast<std::size_t>(b.cloud.size) * b.cloud.size * 6 * (b.cloud.previous ? 2 : 1);
+            stats.textureBytes += static_cast<std::size_t>(b.cloud.size) * b.cloud.size * 12 * (b.cloud.previous ? 2 : 1);
         for (const auto& [k, l] : b.levels)
             stats.meshBytes += l.bytes + static_cast<std::size_t>(l.indexCount) * 4;
     }
@@ -2440,7 +2463,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             }
             if (b.cloud.current)
             {
-                cloudBytes += static_cast<std::size_t>(b.cloud.size) * b.cloud.size * 6 * (b.cloud.previous ? 2 : 1);
+                cloudBytes += static_cast<std::size_t>(b.cloud.size) * b.cloud.size * 12 * (b.cloud.previous ? 2 : 1);
                 ++clouds;
             }
             for (const auto& [k, l] : b.levels)

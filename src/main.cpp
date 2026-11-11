@@ -1,4 +1,5 @@
 #include <chrono>
+#include "src/core/ShutdownRequest.h"
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
 #include <system_error>
 #include <typeinfo>
@@ -92,6 +93,18 @@ const char* accessViolationOperation(ULONG_PTR operation) noexcept
         case 8: return "execute";
         default: return "unknown";
     }
+}
+
+// Ctrl+C / Ctrl+Break / closing the console: ask the main loop to quit and let it shut down normally
+// (core/ShutdownRequest.h). For a console close Windows kills the process ~5 s after the handler
+// returns: wait for main() to finish its cleanup first.
+BOOL WINAPI eliteConsoleCtrlHandler(DWORD type)
+{
+    core::requestQuit();
+    if (type == CTRL_CLOSE_EVENT || type == CTRL_LOGOFF_EVENT || type == CTRL_SHUTDOWN_EVENT)
+        for (int i = 0; i < 90 && !core::cleanShutdownDone(); ++i)
+            Sleep(50);
+    return TRUE;
 }
 
 LONG WINAPI eliteUnhandledExceptionFilter(EXCEPTION_POINTERS* info)
@@ -630,6 +643,7 @@ int main(int argc, char** argv)
     // the logs never stall the game loop (a console write per `<<`, a QuickEdit selection)
     core::installAsyncStderr();
 #ifdef _WIN32
+    SetConsoleCtrlHandler(eliteConsoleCtrlHandler, TRUE);
     bindChildProcessesToThisProcessLifetime();
     GameServer::setDevCommandsAllowed(true);   // the embedded single-player server: the player is the host
     // the route composer's diagnostic planning times (the pure route code owns no clock)
@@ -971,8 +985,10 @@ int main(int argc, char** argv)
         if (const auto* sys = dynamic_cast<const std::system_error*>(&e))
             std::cerr << " code=" << sys->code().value() << " (" << sys->code().category().name() << ")";
         std::cerr << std::endl;
+        core::markCleanShutdownDone();
         return -1;
     }
 
+    core::markCleanShutdownDone();
     return 0;
 }

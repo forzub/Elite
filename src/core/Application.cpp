@@ -1,3 +1,4 @@
+#include "src/core/ShutdownRequest.h"
 #include "src/core/HitchProfiler.h"
 #include "src/core/DevFrameCapture.h"
 #include "src/render/SceneStyle.h"
@@ -889,8 +890,20 @@ void Application::mainLoop()
     double lastTime = glfwGetTime();
 
 
-    while (m_running && !m_window->shouldClose() && !m_states.empty())
+    // DEV: ELITE_DEV_QUIT_AFTER_S=<s> - a graceful quit after s seconds (automated runs end through the
+    // normal shutdown instead of a killed process)
+    static const double devQuitAfterS = [] {
+        const char* v = std::getenv("ELITE_DEV_QUIT_AFTER_S");
+        return v && *v ? std::atof(v) : 0.0;
+    }();
+    while (m_running && !m_window->shouldClose() && !m_states.empty() && !core::quitRequested())
     {
+        if (devQuitAfterS > 0.0 && glfwGetTime() > devQuitAfterS)
+        {
+            std::cerr << "[Shutdown] DEV quit after " << devQuitAfterS << " s" << std::endl;
+            core::requestQuit();
+            break;
+        }
         static int frame        = 0;
         core::hitch::beginFrame();
         double currentTime      = glfwGetTime();

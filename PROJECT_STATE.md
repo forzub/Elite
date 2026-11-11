@@ -5101,3 +5101,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   crude procedural banded deck on the Detail map (the Jupiter case): surface visible, that deck off, haze kept.
   LIVE: eps Eri b Detail map shows the v2 field (D:/tmp/elite_gg/eps_detail.png). venusian_dense still hides its
   surface under the overcast (intended).
+- Moon landing ">10 min" (author question): NOT a regression - the author-ordered belly-down aircraft-like glide
+  (2026-11-05 z; live then LANDED 534 s) replaced the ~4 min J tail-down landing; the run A timeline matches (orbit
+  199 s, glide from 257 km, hand-over to the ground stabilization 505 s). Open author item 6 (accept / drone view /
+  shorter steeper glide) still decides it - behaviour unchanged.
+- Forced-shutdown crash: the client had no console control handler (Ctrl+C / Break / console close -> Windows'
+  ExitProcess on its own thread, DLL detach under a drawing main thread). Added SetConsoleCtrlHandler ->
+  core::requestQuit (src/core/ShutdownRequest.h), the main loop leaves normally; a console close waits up to 4.5 s for
+  main() to finish. The MSYS `timeout` kill is NOT a console event (it still ends with the opengl32 [CRASH]: harness
+  artefact). DEV ELITE_DEV_QUIT_AFTER_S=<s>: a graceful quit - 2/2 runs exit 0, no [CRASH]
+  (D:/tmp/elite_shutdown/err_q*.txt). Automated runs use it instead of `timeout`.

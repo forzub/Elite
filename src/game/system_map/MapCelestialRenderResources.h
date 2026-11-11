@@ -129,6 +129,22 @@ public:
 
     // The procedural albedo only when preferred (else 0); for the shape
     // model meshes (Phobos, Deimos) that carry their own cached texture.
+    // the map draws the bodies' own clouds (procedural policy on) instead of the presets' styled layers
+    bool fieldCloudsEnabled() const
+    {
+        return m_proceduralBodies &&
+               m_proceduralBodies->policy() != ProceduralBodyTextureCache::Policy::Off;
+    }
+
+    // The body's cloud layer from its CloudWeatherField (the flight's clouds); 0 while baking or when the
+    // procedural policy is off; noClouds: the body has none (no preset clouds should be drawn either).
+    GLuint fieldCloudTextureForIdentity(
+        int systemId,
+        const std::string& bodyId,
+        double worldTimeSeconds,
+        bool& noClouds
+    );
+
     GLuint proceduralAlbedoTextureForIdentity(
         int systemId,
         const std::string& bodyId

@@ -5171,3 +5171,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   them (jumps go to systems): surfaces for them are DEFERRED until they become destinations (their cells already
   carry mass / radius / class / composition / temperature for a future body descriptor). Note: Kepler-62 e / f / l are
   venusian_dense - the map shows their overcast preset, flight their deck (the decision above).
+- Plan item 2 (one cloud source) DONE for the Detail map (source + compiled + live DEV): ProceduralBodyTextureCache
+  ::cloudTextureFor bakes the body's CloudWeatherField (the flight's clouds; the flight's rule: solid body,
+  > 50 Pa, cloud potential > 0) at the flight's 20-min world-time step: RGBA 512x256, alpha = combined layer cover,
+  colour white (water) / white-grey (cold deck) / yellow-white (hot deck > 500 K); the previous step shows while the
+  next bakes; evicted with the map texture budget. The Detail map draws it instead of the presets' styled layers when
+  the procedural policy is on (policy 0 = the old styled clouds). Physics now decides which bodies are cloudy on the
+  map (a preset can no longer give an airless lava world cumulus). LIVE: Alpha_Centauri_A_j (103 bar global ocean)
+  shows the same global deck flight draws (the preset's broken fields were not what flight shows),
+  D:/tmp/elite_clouds/acj_field.png. Still on the preset clouds: the Hub map. Not re-captured after the deck colour
+  change (cold deck now white-grey instead of yellow).

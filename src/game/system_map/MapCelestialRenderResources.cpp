@@ -2098,6 +2098,22 @@ bool MapCelestialRenderResources::preferProceduralAlbedo(
     return passport && passport->procedural;
 }
 
+GLuint MapCelestialRenderResources::fieldCloudTextureForIdentity(
+    int systemId,
+    const std::string& bodyId,
+    double worldTimeSeconds,
+    bool& noClouds
+)
+{
+    noClouds = false;
+    if (!m_proceduralBodies ||
+        m_proceduralBodies->policy() == ProceduralBodyTextureCache::Policy::Off)
+    {
+        return 0;
+    }
+    return m_proceduralBodies->cloudTextureFor(systemId, bodyId, worldTimeSeconds, noClouds);
+}
+
 GLuint MapCelestialRenderResources::proceduralAlbedoTextureForIdentity(
     int systemId,
     const std::string& bodyId

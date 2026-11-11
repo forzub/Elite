@@ -73,6 +73,12 @@ public:
     // generated descriptor (stars, belts, ships).
     GLuint textureFor(int systemId, const std::string& bodyId);
 
+    // GL thread. The body's cloud layer from the SAME CloudWeatherField flight draws (one source of
+    // clouds, docs/CELESTIAL_RESOURCE_AUDIT.md): RGBA equirect, alpha = the combined cover of its layers at
+    // the 20-min world-time step flight uses (the previous step's texture shows while the next bakes).
+    // 0 while baking; noClouds = the body has no cloud layer (airless, giant, no cloud potential).
+    GLuint cloudTextureFor(int systemId, const std::string& bodyId, double worldTimeSeconds, bool& noClouds);
+
 private:
     struct Entry
     {
@@ -84,7 +90,12 @@ private:
         std::vector<std::uint8_t> rgba; // GL row order (south first)
         GLuint texture = 0;
         std::uint64_t lastUsedFrame = 0;
+        bool clouds = false;          // a cloud bake (cloudTextureFor) instead of the surface albedo
+        double cloudTimeSeconds = 0.0;
     };
+    GLuint useEntry(const std::string& key, int systemId, const std::string& bodyId, bool clouds, double cloudTime,
+                    int& state);
+    void bakeClouds(Entry& entry);
 
     void workerLoop();
     void bake(Entry& entry);

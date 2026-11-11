@@ -1273,18 +1273,37 @@ void DetailMapPlanetPass::drawPlanetEnvironmentLayers(
 
     /*
         Сначала рисуем облачные оболочки.
-    */
-    for (const auto& cloudStyle : cloudStyles)
-    {
-        if (!cloudStyle.enabled)
-            continue;
 
-        drawPlanetAnimatedCloudLayers(
-            planet,
-            scale,
-            centerPx,
-            cloudStyle
-        );
+        One source of clouds (2026-11-11): the body's CloudWeatherField - the clouds flight draws - when
+        the procedural policy is on; the preset's styled layers only in the old mode (policy 0).
+    */
+    bool noFieldClouds = false;
+    if (m_resources.fieldCloudsEnabled())
+    {
+        const GLuint fieldClouds =
+            m_resources.fieldCloudTextureForIdentity(
+                planet.systemId,
+                planet.planetBodyId,
+                m_resources.visualEffectTimeSeconds(planet.universeTimeSeconds),
+                noFieldClouds
+            );
+        if (fieldClouds != 0)
+            drawPlanetFieldCloudLayer(planet, scale, centerPx, fieldClouds);
+    }
+    else
+    {
+        for (const auto& cloudStyle : cloudStyles)
+        {
+            if (!cloudStyle.enabled)
+                continue;
+
+            drawPlanetAnimatedCloudLayers(
+                planet,
+                scale,
+                centerPx,
+                cloudStyle
+            );
+        }
     }
 
     /*
@@ -1439,6 +1458,31 @@ void DetailMapPlanetPass::drawPlanetAtmosphereLimb(
         26,
         256
     );
+}
+
+void DetailMapPlanetPass::drawPlanetFieldCloudLayer(
+    const world::celestial::DetailMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    GLuint texture
+)
+{
+    // the same orientation as the surface bake (u = atan2(z, x), GL row 0 south, spin in bodyToCamera)
+    render::celestial::PlanetGlobeLayerDraw draw;
+    draw.texture = texture;
+    draw.centerPx = glm::dvec2(centerPx.x + activeCamera().state.pan.x, centerPx.y + activeCamera().state.pan.y);
+    draw.radiusPx = planet.planetRadiusMeters * scale * activeCamera().state.zoom * 1.004;
+    draw.bodyToCamera = planetBodyToDetailCameraMatrix(planet);
+    draw.longitudeUvOffset = 0.0f;
+    draw.flipV = false;
+    draw.color = glm::vec4(1.0f);
+    draw.opacity = 0.92f;
+    draw.blending = true;
+    draw.useHorizonFade = true;
+    draw.horizonFadeStart = 0.035f;
+    draw.horizonFadeEnd = 0.30f;
+    draw.usePolarFade = false;
+    m_resources.planetGlobeMeshRenderer().render(draw);
 }
 
 void DetailMapPlanetPass::drawPlanetAnimatedCloudLayers(

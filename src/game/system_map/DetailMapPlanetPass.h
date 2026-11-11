@@ -104,6 +104,13 @@ private:
         const LocalMapAtmosphereStyle& style
     );
 
+    void drawPlanetFieldCloudLayer(
+        const world::celestial::DetailMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        GLuint texture
+    );
+
     void drawPlanetAnimatedCloudLayers(
         const world::celestial::DetailMapSnapshot& planet,
         double scale,

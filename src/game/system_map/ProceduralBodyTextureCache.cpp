@@ -15,6 +15,7 @@
 #include "src/core/ThreadPriority.h"
 #include "src/world/celestial/surface/BodySurfaceDescriptor.h"
 #include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
+#include "src/world/celestial/surface/CloudWeatherField.h"
 #include "src/world/celestial/surface/PlanetSurfaceField.h"
 
 namespace game::system_map
@@ -146,32 +147,30 @@ std::size_t ProceduralBodyTextureCache::evict(const std::string& key)
     return bytes;
 }
 
-GLuint ProceduralBodyTextureCache::textureFor(int systemId, const std::string& bodyId)
+GLuint ProceduralBodyTextureCache::useEntry(const std::string& key, int systemId, const std::string& bodyId,
+                                            bool clouds, double cloudTime, int& state)
 {
-    if (m_policy == Policy::Off || bodyId.empty())
-        return 0;
-    if (systemId < 0)
-        systemId = systemIdFromBodyId(bodyId);
-    if (systemId < 0)
-        return 0;
-    const std::string key = std::to_string(systemId) + "|" + bodyId;
     auto it = m_entries.find(key);
     if (it == m_entries.end())
     {
         auto entry = std::make_shared<Entry>();
         entry->systemId = systemId;
         entry->bodyId = bodyId;
+        entry->clouds = clouds;
+        entry->cloudTimeSeconds = cloudTime;
+        entry->lastUsedFrame = m_frame;
         m_entries.emplace(key, entry);
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             m_queue.push_back(entry);
         }
         m_wake.notify_one();
+        state = 0;
         return 0;
     }
     Entry& e = *it->second;
     e.lastUsedFrame = m_frame;
-    const int state = e.state.load(std::memory_order_acquire);
+    state = e.state.load(std::memory_order_acquire);
     if (state == 3)
         return e.texture;
     if (state == 1 && m_uploadsLeft > 0)
@@ -180,9 +179,58 @@ GLuint ProceduralBodyTextureCache::textureFor(int systemId, const std::string& b
         if (upload(e))
         {
             e.state.store(3, std::memory_order_release);
+            state = 3;
             return e.texture;
         }
         e.state.store(2, std::memory_order_release);
+        state = 2;
+    }
+    return 0;
+}
+
+GLuint ProceduralBodyTextureCache::textureFor(int systemId, const std::string& bodyId)
+{
+    if (m_policy == Policy::Off || bodyId.empty())
+        return 0;
+    if (systemId < 0)
+        systemId = systemIdFromBodyId(bodyId);
+    if (systemId < 0)
+        return 0;
+    int state = 0;
+    return useEntry(std::to_string(systemId) + "|" + bodyId, systemId, bodyId, false, 0.0, state);
+}
+
+GLuint ProceduralBodyTextureCache::cloudTextureFor(int systemId, const std::string& bodyId, double worldTimeSeconds,
+                                                  bool& noClouds)
+{
+    noClouds = false;
+    if (m_policy == Policy::Off || bodyId.empty())
+        return 0;
+    if (systemId < 0)
+        systemId = systemIdFromBodyId(bodyId);
+    if (systemId < 0)
+        return 0;
+    // the flight renderer's weather step (CelestialFlightRenderer::updateClouds): a new state every 20 min
+    constexpr double Step = 1200.0;
+    const auto step = static_cast<long long>(std::floor(worldTimeSeconds / Step));
+    const auto keyFor = [&](long long s) {
+        return "clouds|" + std::to_string(systemId) + "|" + bodyId + "|" + std::to_string(s);
+    };
+    int state = 0;
+    const GLuint now = useEntry(keyFor(step), systemId, bodyId, true, static_cast<double>(step) * Step, state);
+    if (state == 2)
+    {
+        noClouds = true;
+        return 0;
+    }
+    if (now != 0)
+        return now;
+    // while the new step bakes: the previous step's texture, if it is still here
+    const auto prev = m_entries.find(keyFor(step - 1));
+    if (prev != m_entries.end() && prev->second->state.load(std::memory_order_acquire) == 3)
+    {
+        prev->second->lastUsedFrame = m_frame;
+        return prev->second->texture;
     }
     return 0;
 }
@@ -285,9 +333,64 @@ std::string ProceduralBodyTextureCache::descriptorPathFor(int systemId, const st
     return b == sys->second.end() ? std::string() : b->second;
 }
 
+void ProceduralBodyTextureCache::bakeClouds(Entry& e)
+{
+    namespace surf = world::celestial::surface;
+    const std::string path = descriptorPathFor(e.systemId, e.bodyId);
+    surf::BodySurfaceDescriptor body;
+    std::string error;
+    // the flight's rule (CelestialFlightRenderer::startLoad): a solid body with an atmosphere that can cloud
+    if (path.empty() || !surf::loadGeneratedBody(path, body, &error) || !surf::hasSolidSurface(body) ||
+        body.surfacePressurePa <= 50.0 || body.cloudPotential <= 0.0)
+    {
+        e.state.store(2, std::memory_order_release);
+        return;
+    }
+    const surf::CloudWeatherField clouds(body);
+    if (clouds.layers().empty())
+    {
+        e.state.store(2, std::memory_order_release);
+        return;
+    }
+    const int w = 512, h = 256;
+    const double pi = 3.14159265358979323846;
+    // a hot dense deck reads yellow-white (sulphuric acid, Venus ~740 K), a cold deck and water clouds
+    // white-grey
+    const glm::vec3 colour = clouds.hasDeck() && body.meanTemperatureK > 500.0 ? glm::vec3(0.93f, 0.87f, 0.70f)
+                             : clouds.hasDeck()                               ? glm::vec3(0.90f, 0.91f, 0.93f)
+                                                                              : glm::vec3(0.97f, 0.97f, 0.98f);
+    std::vector<std::uint8_t> rgba(static_cast<std::size_t>(w) * h * 4);
+    for (int row = 0; row < h && !m_abort.load(std::memory_order_relaxed); ++row)
+        for (int x = 0; x < w; ++x)
+        {
+            const double lon = ((x + 0.5) / w - 0.5) * 2.0 * pi;
+            const double lat = (0.5 - (row + 0.5) / h) * pi;
+            const glm::dvec3 dir(std::cos(lat) * std::cos(lon), std::sin(lat), std::cos(lat) * std::sin(lon));
+            double clear = 1.0;
+            for (std::size_t l = 0; l < clouds.layers().size(); ++l)
+                clear *= 1.0 - std::clamp(static_cast<double>(clouds.coverage(l, dir, e.cloudTimeSeconds)), 0.0, 1.0);
+            const std::size_t o = (static_cast<std::size_t>(h - 1 - row) * w + x) * 4;   // GL row order: south first
+            rgba[o + 0] = static_cast<std::uint8_t>(colour.r * 255.0f);
+            rgba[o + 1] = static_cast<std::uint8_t>(colour.g * 255.0f);
+            rgba[o + 2] = static_cast<std::uint8_t>(colour.b * 255.0f);
+            rgba[o + 3] = static_cast<std::uint8_t>(std::clamp(1.0 - clear, 0.0, 1.0) * 255.0 + 0.5);
+        }
+    if (m_abort.load())
+        return;
+    e.width = w;
+    e.height = h;
+    e.rgba = std::move(rgba);
+    e.state.store(1, std::memory_order_release);
+}
+
 void ProceduralBodyTextureCache::bake(Entry& e)
 {
     namespace surf = world::celestial::surface;
+    if (e.clouds)
+    {
+        bakeClouds(e);
+        return;
+    }
     const auto t0 = std::chrono::steady_clock::now();
     const std::string path = descriptorPathFor(e.systemId, e.bodyId);
     surf::BodySurfaceDescriptor body;

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
@@ -236,8 +237,20 @@ std::string ProceduralBodyTextureCache::descriptorPathFor(int systemId, const st
             m_systemsRoot = findSystemsRoot();
         std::unordered_map<std::string, std::string> index;
         std::error_code ec;
+        // the local systems and the distant quest / route targets (galaxy_details/distant_systems, e.g.
+        // 100062_kepler_62): findSystem() serves both, so their maps can open
+        std::vector<fs::path> roots;
         if (!m_systemsRoot.empty())
-            for (const auto& dir : fs::directory_iterator(m_systemsRoot, ec))
+        {
+            roots.push_back(fs::path(m_systemsRoot));
+            roots.push_back(fs::path(m_systemsRoot).parent_path() / "distant_systems");
+        }
+        bool found = false;
+        for (const fs::path& root : roots)
+        {
+            if (found)
+                break;
+            for (const auto& dir : fs::directory_iterator(root, ec))
             {
                 const std::string name = dir.path().filename().string();
                 const std::size_t us = name.find('_');
@@ -262,8 +275,10 @@ std::string ProceduralBodyTextureCache::descriptorPathFor(int systemId, const st
                     {
                     }
                 }
+                found = true;
                 break;
             }
+        }
         sys = m_descriptorIndex.emplace(systemId, std::move(index)).first;
     }
     const auto b = sys->second.find(bodyId);

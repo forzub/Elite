@@ -5164,3 +5164,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   untouched. LIVE: Alpha_Centauri_A_h (126 bar) from a 454 km orbit shows cloud-shape lines instead of the black disc
   (D:/tmp/elite_deck/deck2.png). Not yet seen live: the descent below the deck (45 km) to the ground lines.
   Planet Lab --check PASS.
+- Plan item 1 (distant + interstellar on the map): the map cache now also indexes galaxy_details/distant_systems
+  (findSystem serves both; e.g. Kepler-62, a quest / route target). LIVE: ELITE_DEV_START=body:kepler_62_g@100062 ->
+  its Detail map baked from the distant descriptor (D:/tmp/elite_distant/detail_g.png). Interstellar objects (554
+  rogue planets, 97 rogue moons, 157 brown dwarfs, 118 comets ...) are galaxy-map points only - nothing can travel to
+  them (jumps go to systems): surfaces for them are DEFERRED until they become destinations (their cells already
+  carry mass / radius / class / composition / temperature for a future body descriptor). Note: Kepler-62 e / f / l are
+  venusian_dense - the map shows their overcast preset, flight their deck (the decision above).

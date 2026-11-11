@@ -2,10 +2,14 @@
 #include "src/world/celestial/surface/SettledSurfaceField.h"
 
 #include <algorithm>
+#include <condition_variable>
+#include <mutex>
+#include <unordered_map>
 #include <cstdio>
 #include <filesystem>
 #include <vector>
 
+#include "src/core/DevMemoryLedger.h"
 #include "src/world/celestial/surface/AppearancePassport.h"
 #include "src/world/celestial/surface/ImportedSurfaceField.h"
 #include "src/world/celestial/surface/PlanetSurfaceField.h"
@@ -114,6 +118,95 @@ void findImportedBodyMaps(const std::string& assetRoot, const std::string& syste
     }
 }
 
+namespace
+{
+struct RegistryEntry
+{
+    std::weak_ptr<SurfaceField> field;
+    BodySurfaceDescriptor descriptor;
+    bool loading = false;
+};
+
+std::mutex& registryMutex()
+{
+    static std::mutex m;
+    return m;
+}
+
+std::condition_variable& registryLoaded()
+{
+    static std::condition_variable cv;
+    return cv;
+}
+
+std::unordered_map<std::string, RegistryEntry>& registry()
+{
+    static std::unordered_map<std::string, RegistryEntry> r;
+    return r;
+}
+
+// DEV memory ledger: the unique surfaces alive in this process (caller holds the mutex)
+void reportRegistryLocked()
+{
+    if (!core::dev::memoryLedgerEnabled())
+        return;
+    std::size_t bytes = 0, alive = 0;
+    for (auto& [key, e] : registry())
+        if (const auto f = e.field.lock())
+        {
+            bytes += f->memoryBytes();
+            ++alive;
+        }
+    core::dev::memoryLedgerSet("cpu surfaces.registry_unique", bytes, alive);
+}
+} // namespace
+
+void reportBodySurfaceRegistry()
+{
+    std::lock_guard<std::mutex> lock(registryMutex());
+    reportRegistryLocked();
+}
+
+bool acquireBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
+{
+    const std::string key = source.id + "|" + source.descriptorPath + "|" + source.importedAlbedoPath + "|" +
+                            source.importedHeightPath;
+    std::unique_lock<std::mutex> lock(registryMutex());
+    for (;;)
+    {
+        auto& entry = registry()[key];
+        if (const auto alive = entry.field.lock())
+        {
+            out.descriptor = entry.descriptor;
+            out.field = alive;
+            return true;
+        }
+        if (!entry.loading)
+            break;
+        registryLoaded().wait(lock);
+    }
+    registry()[key].loading = true;
+    lock.unlock();
+    const bool ok = loadBodySurface(source, out);
+    lock.lock();
+    auto& entry = registry()[key];
+    entry.loading = false;
+    if (ok && out.field)
+    {
+        entry.field = out.field;
+        entry.descriptor = out.descriptor;
+    }
+    // drop expired entries (bodies nobody holds any more)
+    for (auto it = registry().begin(); it != registry().end();)
+        if (!it->second.loading && it->second.field.expired())
+            it = registry().erase(it);
+        else
+            ++it;
+    reportRegistryLocked();
+    registryLoaded().notify_all();
+    return ok;
+}
+
 bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
 {
     std::string error;
@@ -140,10 +233,7 @@ bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
         {
             maps->width = w;
             maps->height = h;
-            maps->albedo.resize(static_cast<std::size_t>(w) * h);
-            for (std::size_t i = 0; i < maps->albedo.size(); ++i)
-                maps->albedo[i] = glm::pow(glm::vec3(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2]) / 255.0f,
-                                           glm::vec3(2.2f));
+            maps->albedoRgb = std::move(rgb);   // 8-bit, decoded on read (ImportedSurfaceMaps::albedoAt)
         }
         std::vector<std::uint8_t> grey;
         int hw = 0, hh = 0;
@@ -152,7 +242,7 @@ bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
         {
             // Height grey on the albedo grid (nearest).
             const int w = maps->width, h = maps->height;
-            std::vector<std::uint8_t> g(maps->albedo.size());
+            std::vector<std::uint8_t> g(maps->texelCount());
             for (int y = 0; y < h; ++y)
                 for (int x = 0; x < w; ++x)
                     g[static_cast<std::size_t>(y) * w + x] =
@@ -180,7 +270,7 @@ bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
                         {
                             const std::size_t ai = static_cast<std::size_t>(y) * w + x;
                             const std::size_t gi = static_cast<std::size_t>(y) * w + (x + shift) % w;
-                            agree += (g[gi] <= median) == oceanColour(maps->albedo[ai]) ? 1 : 0;
+                            agree += (g[gi] <= median) == oceanColour(maps->albedoAt(ai)) ? 1 : 0;
                         }
                     if (agree > bestAgree)
                     {
@@ -198,7 +288,7 @@ bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
                 maps->water.assign(g.size(), 0);
                 for (std::size_t i = 0; i < g.size(); ++i)
                 {
-                    maps->water[i] = oceanColour(maps->albedo[i]) ? 1 : 0;
+                    maps->water[i] = oceanColour(maps->albedoAt(i)) ? 1 : 0;
                     if (!maps->water[i])
                         land.push_back(shifted[i]);
                 }

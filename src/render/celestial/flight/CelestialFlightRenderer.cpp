@@ -569,6 +569,7 @@ namespace
         GLuint ringTexture = 0;
         double ringInner = 0.0, ringOuter = 0.0;
         std::uint64_t lastUsedFrame = 0;
+        std::uint64_t lastSeenFrame = 0;   // in the frame (the current system) at all
         glm::vec3 flatColour {0.5f};
         int lastLevel = -1;   // diagnostics: last logged representation
         // surface settlements (SurfaceSettlementLayout / SettlementMesh), built once the field is ready
@@ -793,7 +794,8 @@ struct CelestialFlightRenderer::Impl
             source.importedHeightSigned = copy.importedHeightSigned;
             source.importedWaterFromHeight = copy.importedWaterFromHeight;
             surface::LoadedBodySurface loaded;
-            if (!surface::loadBodySurface(source, loaded))
+            // the process-wide owner: the terrain probe shares the same surface
+            if (!surface::acquireBodySurface(source, loaded))
             {
                 result->error = loaded.error;
                 result->done = true;
@@ -1751,6 +1753,49 @@ struct CelestialFlightRenderer::Impl
         glBindVertexArray(0);
     }
 
+    // ---- release ---------------------------------------------------------------
+    // A body no longer in the frame (another system after a jump) for ~5 s: its
+    // textures, terrain and its hold on the shared surface are released; the
+    // BodySurfaceRegistry frees the surface with its last holder
+    // (docs/CELESTIAL_RESOURCE_AUDIT.md, step 1). Jobs in flight only hold
+    // shared buffers and their cancel flags, never the BodyRuntime.
+    void releaseStaleBodies()
+    {
+        constexpr std::uint64_t StaleFrames = 300;
+        bool released = false;
+        for (auto it = bodies.begin(); it != bodies.end();)
+        {
+            BodyRuntime& b = it->second;
+            if (frameIndex - b.lastSeenFrame <= StaleFrames)
+            {
+                ++it;
+                continue;
+            }
+            if (b.pendingGlobe.cancel)
+                b.pendingGlobe.cancel->store(true);
+            for (auto& [k, l] : b.pendingLevels)
+                if (l.cancel)
+                    l.cancel->store(true);
+            for (auto& l : b.faceSwitch)
+                if (l.cancel)
+                    l.cancel->store(true);
+            b.globe.destroy();
+            b.pendingGlobe.staging.destroy();
+            b.cloud.destroy();
+            for (auto& [k, l] : b.levels)
+                l.destroy();
+            for (auto& st : b.settlements)
+                st.mesh.destroy();
+            if (b.ringTexture)
+                glDeleteTextures(1, &b.ringTexture);
+            diagEvent(b.id, "released (not in the frame)");
+            it = bodies.erase(it);
+            released = true;
+        }
+        if (released)
+            surface::reportBodySurfaceRegistry();
+    }
+
     // ---- memory budget --------------------------------------------------------
     void enforceBudget()
     {
@@ -1894,6 +1939,8 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             continue;
         BodyRuntime& rt = bodies[b.id];
         rt.id = b.id;
+        if (primary)
+            rt.lastSeenFrame = frameIndex;
         // "Used" = its disc is on screen; sprites need no textures, so a
         // body seen as a dot can lose its globe tier to the budget.
         if (primary && it.pxRadius >= 1.5)
@@ -2351,6 +2398,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         return;
     }
     enforceBudget();
+    releaseStaleBodies();
     for (const auto& [id, b] : bodies)
     {
         stats.textureBytes += b.globe.bytes;
@@ -2420,7 +2468,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         core::dev::memoryLedgerSet("gpu flight.globe_staging", stagingBytes, stagings);
         core::dev::memoryLedgerSet("cpu flight.cloud_bakes_pending", cloudBakeBytes, cloudBakes);
         core::dev::memoryLedgerSet("cpu flight.terrain_builds_pending", 0, pendingLevels);
-        core::dev::memoryLedgerSet("cpu flight.surface_fields", fieldBytes, fields);
+        core::dev::memoryLedgerSet("cpu flight.surface_fields_ref", fieldBytes, fields);
         core::dev::memoryLedgerSet("cpu flight.bodies_known", 0, bodies.size());
         core::dev::memoryLedgerSet("gpu flight.globes", globeBytes, globes);
         core::dev::memoryLedgerSet("gpu flight.clouds", cloudBytes, clouds);

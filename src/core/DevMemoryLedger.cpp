@@ -102,7 +102,9 @@ void memoryLedgerPrint()
             std::snprintf(line, sizeof(line), "[CelestialMemory]   %-34s %9.1f MB %6zu entries\n", name.c_str(),
                           e.bytes / 1048576.0, e.entries);
             out += line;
-            (name.rfind("gpu ", 0) == 0 ? gpu : cpu) += e.bytes / 1048576.0;
+            // "<owner>_ref" lines count what a holder references (shared, already in another line)
+            if (name.find("_ref") == std::string::npos)
+                (name.rfind("gpu ", 0) == 0 ? gpu : cpu) += e.bytes / 1048576.0;
         }
     }
     std::snprintf(line, sizeof(line), "[CelestialMemory]   total celestial cpu %.1f MB, gpu %.1f MB\n", cpu, gpu);

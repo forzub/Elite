@@ -40,12 +40,16 @@ ImportedSurfaceField::ImportedSurfaceField(const BodySurfaceDescriptor& body,
         m_maxCraterRadiusM = std::max(m_macroCutoffM * 0.5, 0.03 * m_radius);
         m_craters.configure(layerSeed(m_seed, "imported_craters"), m_radius, m_maxCraterRadiusM, 1.5,
                             std::max(density, 0.3));
-        if (m_maps && !m_maps->albedo.empty())
+        if (m_maps && m_maps->hasAlbedo())
         {
             double sum = 0.0;
-            for (const glm::vec3& c : m_maps->albedo)
+            const std::size_t texels = m_maps->texelCount();
+            for (std::size_t i = 0; i < texels; ++i)
+            {
+                const glm::vec3 c = m_maps->albedoAt(i);
                 sum += 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
-            m_meanAlbedoLum = sum / static_cast<double>(m_maps->albedo.size());
+            }
+            m_meanAlbedoLum = sum / static_cast<double>(texels);
             m_craters.setDensityModulation([this](const glm::dvec3& d) { return craterDensityAt(d); });
         }
         if (m_maps && !m_maps->heightM.empty())
@@ -113,7 +117,7 @@ double ImportedSurfaceField::craterDensityAt(const glm::dvec3& dir) const
 {
     // the dark maria are young lava plains: a fraction of the highland craters
     const Bilinear b = locate(dir);
-    const glm::vec3 c = m_maps->albedo[static_cast<std::size_t>(b.i00)];
+    const glm::vec3 c = m_maps->albedoAt(static_cast<std::size_t>(b.i00));
     const double lum = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
     const double t = std::clamp((lum / std::max(m_meanAlbedoLum, 1.0e-4) - 0.7) / 0.4, 0.0, 1.0);
     return 0.2 + 0.8 * t * t * (3.0 - 2.0 * t);
@@ -226,15 +230,13 @@ SurfaceAppearance ImportedSurfaceField::appearance(const SurfaceSample& s, const
 {
     SurfaceAppearance a;
     a.weights.fill(0.0f);
-    if (!m_maps || m_maps->albedo.empty())
+    if (!m_maps || !m_maps->hasAlbedo())
         return a;
     const Bilinear b = locate(dir);
-    const auto& al = m_maps->albedo;
-    glm::vec3 c = (al[static_cast<std::size_t>(b.i00)] * static_cast<float>(1.0 - b.fx) +
-                   al[static_cast<std::size_t>(b.i10)] * static_cast<float>(b.fx)) *
+    const auto al = [&](int i) { return m_maps->albedoAt(static_cast<std::size_t>(i)); };
+    glm::vec3 c = (al(b.i00) * static_cast<float>(1.0 - b.fx) + al(b.i10) * static_cast<float>(b.fx)) *
                       static_cast<float>(1.0 - b.fy) +
-                  (al[static_cast<std::size_t>(b.i01)] * static_cast<float>(1.0 - b.fx) +
-                   al[static_cast<std::size_t>(b.i11)] * static_cast<float>(b.fx)) *
+                  (al(b.i01) * static_cast<float>(1.0 - b.fx) + al(b.i11) * static_cast<float>(b.fx)) *
                       static_cast<float>(b.fy);
     if (!s.water && s.bandLimitM < m_macroCutoffM)
     {

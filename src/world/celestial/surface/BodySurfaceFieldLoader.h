@@ -43,4 +43,16 @@ struct LoadedBodySurface
 
 // Blocking (image decode + field build): call it off the frame / tick thread.
 bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out);
+
+/*
+    The one owner of body surfaces in a process (docs/CELESTIAL_RESOURCE_AUDIT.md, step 1): the flight
+    renderer and the terrain probe (client and server) ask here instead of loading their own copy.
+    The registry keeps only weak references: a surface lives while somebody holds its field and is
+    freed with the last holder; the next request loads it again. Concurrent requests for the same body
+    wait for one load. Blocking like loadBodySurface - off the frame / tick thread.
+*/
+bool acquireBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out);
+
+// DEV memory ledger: report the registry's live surfaces now (holders call it after releasing).
+void reportBodySurfaceRegistry();
 } // namespace world::celestial::surface

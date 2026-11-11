@@ -5038,3 +5038,18 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - KNOWN, not fixed (pre-existing since at least 2026-11-10, D:/tmp/elite_combat/em_*.txt): every run killed by
   `timeout` ends with [CRASH] SEH 0xc0000005 in opengl32.dll after "Failed to unregister class Chrome_WidgetWin_0" -
   a GL call after the window / WebView teardown on a forced shutdown. Not a gameplay crash; to look at separately.
+- Step 1 of docs/CELESTIAL_RESOURCE_AUDIT.md DONE (source + compiled + live DEV, not author-accepted):
+  (a) curated maps compact: ImportedSurfaceMaps::albedoRgb (source 8-bit, decoded through a 256-entry pow(c/255, 2.2)
+  table) instead of glm::vec3 - bit-identical globe bakes (6 faces, size 160) of Earth / Moon / Mars / Jupiter;
+  memory Earth 35.7 -> 16.8 MB, Moon 33.6 -> 14.7, Mars 8.4 -> 3.7, Jupiter 100.7 -> 25.2.
+  (b) acquireBodySurface (BodySurfaceFieldLoader): one surface per body per process, weak references, concurrent
+  requests wait for one load; flight renderer + terrain probe use it. (c) flight releaseStaleBodies(): a body not in
+  the frame for 300 frames frees textures / terrain / its surface ref; the probe drops other systems' bodies on a
+  system change. Ledger: cpu surfaces.registry_unique; holders report *_ref (not summed into the total).
+  LIVE (D:/tmp/elite_mem/P1, P2): start fields 66 -> 30 MB; Moon approach: probe holds the Moon (14 MB ref), unique
+  stays 30 MB / 2 (before: a second 32 MB copy); jump to Tau Ceti: ~5 s after the exit Sol's surfaces and globes are
+  released (unique 0 MB / 1, globes 192 -> 96 MB / 1, known bodies 45 -> 9), working set ~1.0-1.07 GB vs 1.22 GB
+  before. Planet Lab --verify 86/86 identical (pre-existing rocky coastline FAIL unchanged). Runs still end with the
+  known forced-shutdown [CRASH] in opengl32.
+- Next: step 2 (one map texture cache with a byte budget, dropped on a system change), step 3 (the map bakes the
+  flight field; Sol look unified; assets/generated no longer needed at runtime).

@@ -47,7 +47,7 @@ void reportProbeMemory()
             bytes += f->loaded.field->memoryBytes();
             ++entries;
         }
-    core::dev::memoryLedgerSet("cpu terrain_probe.fields", bytes, entries);
+    core::dev::memoryLedgerSet("cpu terrain_probe.fields_ref", bytes, entries);
 }
 } // namespace
 
@@ -65,6 +65,19 @@ bool sampleBodyTerrain(const world::celestial::CelestialSystemSnapshot& snapshot
     std::shared_ptr<TerrainField> slot;
     {
         std::lock_guard<std::mutex> lock(cacheMutex());
+        // another system now (a jump): drop the previous system's bodies - the shared surface is freed
+        // with its last holder (BodySurfaceRegistry, docs/CELESTIAL_RESOURCE_AUDIT.md step 1)
+        static std::string lastSystem;
+        if (lastSystem != snapshot.systemName)
+        {
+            const std::string prefix = snapshot.systemName + "|";
+            for (auto it = cache().begin(); it != cache().end();)
+                if (it->first.rfind(prefix, 0) != 0 && it->second->ready.load(std::memory_order_acquire))
+                    it = cache().erase(it);
+                else
+                    ++it;
+            lastSystem = snapshot.systemName;
+        }
         auto& cached = cache()[snapshot.systemName + "|" + body->sourcePath + "|" + bodyId];
         if (!cached)
         {
@@ -84,7 +97,8 @@ bool sampleBodyTerrain(const world::celestial::CelestialSystemSnapshot& snapshot
         source.radiusM = body->radiusKm * 1000.0;
         world::celestial::surface::findImportedBodyMaps(".", snapshot.systemName, body->sourcePath, source);
         std::thread([field = slot, source] {
-            world::celestial::surface::loadBodySurface(source, field->loaded);
+            // the process-wide owner: shares the flight renderer's surface of the same body
+            world::celestial::surface::acquireBodySurface(source, field->loaded);
             field->ready.store(true, std::memory_order_release);
             reportProbeMemory();
             std::cerr << "[Terrain] " << source.id << ": surface field "

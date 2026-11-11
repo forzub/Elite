@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <cmath>
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -30,8 +33,30 @@ struct ImportedSurfaceMaps
     int width = 0;
     int height = 0;
     std::vector<float> heightM;      // above the reference radius (may be empty)
-    std::vector<glm::vec3> albedo;   // linear 0..1
+    // The source's 8-bit sRGB-ish colour, 3 bytes per texel: decoded to linear
+    // on read through a 256-entry table - bit-identical to the former
+    // glm::vec3 (12 B / texel) per-texel pow(c / 255, 2.2), at a quarter of
+    // the memory (docs/CELESTIAL_RESOURCE_AUDIT.md, finding 2).
+    std::vector<std::uint8_t> albedoRgb;
     std::vector<std::uint8_t> water; // 1 = ocean (may be empty)
+
+    bool hasAlbedo() const { return !albedoRgb.empty(); }
+    std::size_t texelCount() const { return albedoRgb.size() / 3; }
+    static const float* albedoDecodeTable()
+    {
+        static const std::array<float, 256> table = [] {
+            std::array<float, 256> t {};
+            for (int c = 0; c < 256; ++c)
+                t[static_cast<std::size_t>(c)] = std::pow(static_cast<float>(c) / 255.0f, 2.2f);
+            return t;
+        }();
+        return table.data();
+    }
+    glm::vec3 albedoAt(std::size_t i) const
+    {
+        const float* t = albedoDecodeTable();
+        return {t[albedoRgb[i * 3]], t[albedoRgb[i * 3 + 1]], t[albedoRgb[i * 3 + 2]]};
+    }
 };
 
 class ImportedSurfaceField final : public SurfaceField
@@ -49,7 +74,7 @@ public:
     void landmarks(const glm::dvec3&, double, std::vector<SurfaceFeature>&) const override {}
     std::size_t memoryBytes() const override
     {
-        return m_maps ? m_maps->heightM.capacity() * sizeof(float) + m_maps->albedo.capacity() * sizeof(glm::vec3) +
+        return m_maps ? m_maps->heightM.capacity() * sizeof(float) + m_maps->albedoRgb.capacity() +
                             m_maps->water.capacity()
                       : 0;
     }

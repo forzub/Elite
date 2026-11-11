@@ -30,6 +30,27 @@ std::shared_ptr<const world::celestial::GalaxyMapMediumAtlas> buildGalaxyMapMedi
 std::vector<std::pair<std::string, std::string>> galaxyMapMediumInfo(
     const world::celestial::GalaxyObjectDefinition& source);
 
+/*
+    The static object layer of the Galaxy map (catalog objects with their medium proxies) - deterministic
+    from the local StarAtlas, ~0.7 s to build (the medium shells). Built once per catalog and shared:
+    prewarmGalaxyMapCatalogObjectLayer starts it on a worker as soon as the atlas is loaded, the first
+    map response then only waits for what is left. ClientGalaxyMapBridge.cpp.
+*/
+struct GalaxyMapCatalogObjectLayer
+{
+    std::vector<world::celestial::GalaxyMapObject> objects;
+    std::shared_ptr<const world::celestial::GalaxyMapMediumAtlas> mediumAtlas;
+};
+
+std::shared_ptr<const GalaxyMapCatalogObjectLayer> galaxyMapCatalogObjectLayer(
+    const std::vector<world::celestial::GalaxyObjectDefinition>& objects);
+
+void prewarmGalaxyMapCatalogObjectLayer(
+    const std::vector<world::celestial::GalaxyObjectDefinition>& objects);
+
+// the catalog goes (its owner is destroyed): waits for a running build and forgets the layer
+void releaseGalaxyMapCatalogObjectLayer();
+
 inline void rebuildGalaxyMapCatalogLayer(
     world::celestial::GalaxyMapSnapshot& snapshot,
     const std::vector<world::celestial::StarSystemSummary>& systems,
@@ -76,30 +97,9 @@ inline void rebuildGalaxyMapCatalogLayer(
         snapshot.systems.push_back(std::move(item));
     }
 
-    snapshot.objects.clear();
-    snapshot.objects.reserve(objects.size());
-
-    std::vector<int> proxyOfObject;
-    snapshot.mediumAtlas = buildGalaxyMapMediumAtlas(objects, proxyOfObject);
-
-    for (std::size_t index = 0; index < objects.size(); ++index)
-    {
-        const auto& source = objects[index];
-        world::celestial::GalaxyMapObject item;
-        item.id = source.id;
-        item.name = source.name;
-        item.objectType = source.objectType;
-        item.positionLy = source.positionLy;
-        item.description = source.description;
-        item.tags = source.tags;
-        item.mediumVolume = galaxyMapMediumVolume(source);
-        item.mediumProxy = proxyOfObject[index];
-        item.mediumInfo = galaxyMapMediumInfo(source);
-        if (source.objectType == "icy_debris_field" && source.properties.contains("geometry") &&
-            source.properties["geometry"].contains("radii_ly"))
-            item.markerRadiusLy = source.properties["geometry"]["radii_ly"][0].get<float>();
-        snapshot.objects.push_back(std::move(item));
-    }
+    const auto layer = galaxyMapCatalogObjectLayer(objects);
+    snapshot.objects = layer->objects;
+    snapshot.mediumAtlas = layer->mediumAtlas;
 }
 
 inline void rebuildGalaxyMapCatalogLayer(

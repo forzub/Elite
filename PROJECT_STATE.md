@@ -5217,3 +5217,30 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     sorts on the CPU every frame (Amalthea Detail p50 17.5-30.7 ms, up to 56 frames > 33 ms per 10 s) -> 64x32:
     p50 13.4-13.5 ms, 0 slow frames, passports on / off alike.
   Next candidate: profile + speed up PlanetSurfaceField (15 us/texel) - it serves every procedural body.
+- DESIGN (author asked for storage in the game folder; layout chosen from the architecture 2026-11-11, PROPOSAL until
+  built): a disk cache of field bakes (deterministic: key = body id + generator version + passport + size):
+  shipped prebake (Sol, inhabited systems, map textures of every body) in <game>/assets/baked/celestial/ (read-only,
+  made by a bake command at build time); the self-filling runtime cache in <game>/cache/celestial/, falling back to
+  %LOCALAPPDATA%\Elite\cache\celestial\ only when the game folder is not writable (an install under Program Files);
+  lookup cache -> prebake -> generate + save. Not in git; a clean build only empties it. Order of work: (1) find and
+  remove the single-frame freezes (100-370 ms: map open / Detail switch / once in flight - suspected GPU upload of a
+  large globe tier), (2) runtime cache, (3) prebake command.
+- FREEZE HUNT step (1), 2026-11-11 (hitch log phases split: map_pre / map_detail_build / map_detail_scene /
+  map_decorate / map_overlay, detail_ensure / detail_bg_stars / detail_central / detail_context / detail_geometry,
+  geo_orbits / geo_rings / geo_belts):
+  * FOUND: build/ is a Debug (-O0) build - every timing above this entry is Debug and several times the optimised
+    figure. Re-measured on build-relwithdebinfo (-O2, rebuilt today).
+  * FIXED (pre-existing, not the generator): the Jupiter Detail map ran ~100 ms EVERY frame (Debug; ELITE_MAP_PROCEDURAL_BODIES=0
+    alike): drawRingAsteroids walked 2048 x 24 cells per ring with ~6 trig calls each and one GL draw per body.
+    Now the camera rotation + sector directions once, whole sectors culled by their screen box, all ring / belt
+    crosses in one draw call. Debug p50 98 -> 24 ms; RelWithDebInfo p50 7 ms, 0 frames > 33 ms. Bodies still drawn
+    (D:/tmp/elite_perf/jupiter_detail_rings.png); a close-up was NOT checked (the DEV zoom verb is System-map only).
+  * FIXED: the first map open froze 0.66 s (client-sync maps-update): every Galaxy response rebuilt the static
+    catalog object layer (interstellar-medium shells from the lattices) on the main thread. Now built once per
+    catalog on a worker as soon as the StarAtlas is loaded (prewarmGalaxyMapCatalogObjectLayer, ClientMapService;
+    released in ~ClientMapService before the catalog goes). maps-update no longer appears.
+  * LEFT (RelWithDebInfo): the first frame of flight after the session start 1.0 s (r_celestial 604 ms,
+    scene_prepare 184, hud 175) - globe preparation, the prebake / cache target; the first System map open 110 ms
+    (map_decorate 31, render_tail 35); session-start-update stalls 0.4-1.8 s before flight (loading, no loading screen).
+  * AUTHOR 2026-11-11: map objects are a fixed bounded set -> prebake ALL map bodies (textures + normals + clouds)
+    into <game>/assets/baked/celestial/ with a bake command; the map then only loads.

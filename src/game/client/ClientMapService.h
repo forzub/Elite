@@ -22,6 +22,9 @@ public:
         const ClientCatalogService& catalogs,
         const ::ClientWorldState& world
     );
+    ~ClientMapService();
+    ClientMapService(const ClientMapService&) = delete;
+    ClientMapService& operator=(const ClientMapService&) = delete;
 
     void update(float dt);
     void pumpResponses();
@@ -90,6 +93,7 @@ private:
 private:
     ITransport& m_transport;
     const ClientCatalogService& m_catalogs;
+    bool m_galaxyCatalogPrewarmed = false;
     const ::ClientWorldState& m_world;
     std::uint64_t m_nextRequestId = 1;
     std::uint64_t m_universeTimelineRevision = 0;

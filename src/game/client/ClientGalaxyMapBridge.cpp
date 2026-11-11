@@ -4,6 +4,8 @@
 #include <atomic>
 #include <cmath>
 #include <cstdio>
+#include <future>
+#include <mutex>
 
 #include "src/world/interstellar/DensityLattice.h"
 #include "src/world/interstellar/EnvironmentalHazard.h"
@@ -389,4 +391,93 @@ std::vector<std::pair<std::string, std::string>> galaxyMapMediumInfo(
     return out;
 }
 
+
+namespace
+{
+std::shared_ptr<const GalaxyMapCatalogObjectLayer> buildObjectLayer(
+    const std::vector<world::celestial::GalaxyObjectDefinition>& objects)
+{
+    auto layer = std::make_shared<GalaxyMapCatalogObjectLayer>();
+    layer->objects.reserve(objects.size());
+    std::vector<int> proxyOfObject;
+    layer->mediumAtlas = buildGalaxyMapMediumAtlas(objects, proxyOfObject);
+    for (std::size_t index = 0; index < objects.size(); ++index)
+    {
+        const auto& source = objects[index];
+        world::celestial::GalaxyMapObject item;
+        item.id = source.id;
+        item.name = source.name;
+        item.objectType = source.objectType;
+        item.positionLy = source.positionLy;
+        item.description = source.description;
+        item.tags = source.tags;
+        item.mediumVolume = galaxyMapMediumVolume(source);
+        item.mediumProxy = proxyOfObject[index];
+        item.mediumInfo = galaxyMapMediumInfo(source);
+        if (source.objectType == "icy_debris_field" && source.properties.contains("geometry") &&
+            source.properties["geometry"].contains("radii_ly"))
+            item.markerRadiusLy = source.properties["geometry"]["radii_ly"][0].get<float>();
+        layer->objects.push_back(std::move(item));
+    }
+    return layer;
+}
+
+// one catalog per process (the client's StarAtlas); a different object list rebuilds
+struct ObjectLayerCache
+{
+    std::mutex mutex;
+    const void* key = nullptr;
+    std::size_t count = 0;
+    std::shared_future<std::shared_ptr<const GalaxyMapCatalogObjectLayer>> layer;
+};
+
+ObjectLayerCache& objectLayerCache()
+{
+    static ObjectLayerCache cache;
+    return cache;
+}
+
+std::shared_future<std::shared_ptr<const GalaxyMapCatalogObjectLayer>> objectLayerFuture(
+    const std::vector<world::celestial::GalaxyObjectDefinition>& objects,
+    std::launch policy)
+{
+    auto& cache = objectLayerCache();
+    std::lock_guard lock(cache.mutex);
+    if (!cache.layer.valid() || cache.key != objects.data() || cache.count != objects.size())
+    {
+        cache.key = objects.data();
+        cache.count = objects.size();
+        // the atlas outlives the build: it is the client's catalog, loaded once
+        cache.layer = std::async(policy, [&objects] { return buildObjectLayer(objects); }).share();
+    }
+    return cache.layer;
+}
+} // namespace
+
+std::shared_ptr<const GalaxyMapCatalogObjectLayer> galaxyMapCatalogObjectLayer(
+    const std::vector<world::celestial::GalaxyObjectDefinition>& objects)
+{
+    return objectLayerFuture(objects, std::launch::deferred).get();
+}
+
+void releaseGalaxyMapCatalogObjectLayer()
+{
+    auto& cache = objectLayerCache();
+    std::shared_future<std::shared_ptr<const GalaxyMapCatalogObjectLayer>> pending;
+    {
+        std::lock_guard lock(cache.mutex);
+        pending = std::move(cache.layer);
+        cache.layer = {};
+        cache.key = nullptr;
+        cache.count = 0;
+    }
+    if (pending.valid())
+        pending.wait();   // a running build reads the catalog that is about to go
+}
+
+void prewarmGalaxyMapCatalogObjectLayer(
+    const std::vector<world::celestial::GalaxyObjectDefinition>& objects)
+{
+    (void)objectLayerFuture(objects, std::launch::async);
+}
 } // namespace game::client

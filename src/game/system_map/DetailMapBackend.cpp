@@ -1,5 +1,6 @@
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/DetailMapBackend.h"
+#include "src/core/HitchProfiler.h"
 
 #include <GLFW/glfw3.h>
 
@@ -25,6 +26,7 @@ void DetailMapBackend::renderDetailMapPasses(
 {
     m_resources.ensureGeneratedCelestialAssets();
     m_resources.ensureEnvironmentProfiles();
+    core::hitch::mark("detail_ensure");
 
     glViewport(
         viewport.x,
@@ -92,10 +94,12 @@ void DetailMapBackend::renderDetailMapPasses(
         );
     }
 
+    core::hitch::mark("detail_bg_stars");
     m_planetPass.renderCentralBody(
         presentation,
         planet
     );
+    core::hitch::mark("detail_central");
 
     // A scene without a central body (an F12 terminal cube, a deep-space hub
     // scene): the bodies in view with the same body renderer, far first, each
@@ -159,11 +163,13 @@ void DetailMapBackend::renderDetailMapPasses(
         }
     }
 
+    core::hitch::mark("detail_context");
     m_geometryPass.renderScene(
         presentation,
         viewport,
         planet
     );
+    core::hitch::mark("detail_geometry");
 
     glEnable(GL_DEPTH_TEST);
 }

@@ -1,3 +1,4 @@
+#include "src/core/HitchProfiler.h"
 #include "src/game/system_map/DetailMapGeometryPass.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/PlanetMapAxes.h"
@@ -201,8 +202,11 @@ void DetailMapGeometryPass::renderScene(
         text.endFrame();
     }
 
+    core::hitch::mark("geo_orbits");
     drawRingAsteroids(planet, viewport);
+    core::hitch::mark("geo_rings");
     drawBeltAsteroids(planet, viewport);
+    core::hitch::mark("geo_belts");
 
     // Hub/ship/infrastructure markers are rendered by the shared tactical
     // object overlay. This geometry pass keeps celestial/orbit structure only.
@@ -511,6 +515,16 @@ double ringUnit(std::uint64_t& state)
     state = ringHash(state);
     return static_cast<double>(state >> 11) * (1.0 / 9007199254740992.0);
 }
+
+// a cross as two line segments in a batch: ring / belt bodies go to the GPU in one draw call
+// (one call per body was ~80 ms a frame on Jupiter's rings)
+void appendCross(std::vector<glm::dvec2>& lines, const glm::dvec2& p, double size)
+{
+    lines.emplace_back(p.x - size, p.y);
+    lines.emplace_back(p.x + size, p.y);
+    lines.emplace_back(p.x, p.y - size);
+    lines.emplace_back(p.x, p.y + size);
+}
 } // namespace
 
 void DetailMapGeometryPass::drawRingAsteroids(
@@ -542,6 +556,35 @@ void DetailMapGeometryPass::drawRingAsteroids(
     constexpr int LaneCount = 24;
     constexpr int MaxPerCell = 8;
     constexpr double PixelsPerBody = 22.0;   // ~one body per 22 x 22 px of ring
+    std::vector<glm::dvec2> crosses;
+
+    // The camera's rotation once (project() recomputes its trig per call) and the sector directions
+    // once: ~50 000 cells a ring, most of them culled by the sector's screen box or empty at this zoom.
+    const LocalMapCameraSnapshot& cam = activeCamera();
+    const double cy = std::cos(cam.state.yaw), sy = std::sin(cam.state.yaw);
+    const double cp = std::cos(cam.state.pitch), sp = std::sin(cam.state.pitch);
+    const auto toCamera = [&](const glm::dvec3& v) {
+        const double yx = v.x * cy - v.z * sy;
+        const double yz = v.x * sy + v.z * cy;
+        return glm::dvec3(yx, v.y * cp - yz * sp, v.y * sp + yz * cp);
+    };
+    const auto projectCamera = [&](const glm::dvec3& c) {
+        const double k = pixelsPerMeter * cam.perspectiveFactor(c.z);
+        return glm::dvec2(cam.centerPx.x + cam.state.pan.x + c.x * k, cam.centerPx.y + cam.state.pan.y - c.y * k);
+    };
+    // camera-space ring geometry: centre + (X cos a + Y sin a) r + N h
+    const glm::dvec3 centreCam = toCamera(planet.planetCenterMeters - cam.originMeters);
+    const glm::dvec3 xCam = toCamera(axisX), yCam = toCamera(axisY), nCam = toCamera(normal);
+    static const std::vector<glm::dvec2> sectorDir = [] {
+        std::vector<glm::dvec2> d(SectorCount + 1);
+        for (int i = 0; i <= SectorCount; ++i)
+        {
+            const double a = glm::two_pi<double>() * i / SectorCount;
+            d[static_cast<std::size_t>(i)] = glm::dvec2(std::cos(a), std::sin(a));
+        }
+        return d;
+    }();
+    const double radius2 = planet.planetRadiusMeters * planet.planetRadiusMeters;
 
     for (std::size_t ringIndex = 0; ringIndex < planet.rings.size(); ++ringIndex)
     {
@@ -553,31 +596,41 @@ void DetailMapGeometryPass::drawRingAsteroids(
         // the whole ring below a few pixels: the ring texture says enough
         if (outer * pixelsPerMeter < 40.0)
             continue;
+        const double density = std::clamp(static_cast<double>(ring.opticalDepth) * 1.5, 0.03, 1.0);
 
         const double laneWidth = (outer - inner) / LaneCount;
         for (int sector = 0; sector < SectorCount; ++sector)
         {
             const double a0 = glm::two_pi<double>() * sector / SectorCount;
+            // the sector's radial span on screen (both edges, inner and outer) - all its lanes culled at once
+            const double sectorArcPx = outer * glm::two_pi<double>() / SectorCount * pixelsPerMeter;
+            const double margin = std::max(laneWidth * pixelsPerMeter, sectorArcPx) + 8.0;
+            glm::dvec2 lo(1.0e30), hi(-1.0e30);
+            for (const int edgeIndex : {sector, sector + 1})
+            {
+                const glm::dvec2 d = sectorDir[static_cast<std::size_t>(edgeIndex)];
+                const glm::dvec3 dirCam = xCam * d.x + yCam * d.y;
+                for (const double r : {inner, outer})
+                {
+                    const glm::dvec2 q = projectCamera(centreCam + dirCam * r);
+                    lo = glm::min(lo, q);
+                    hi = glm::max(hi, q);
+                }
+            }
+            if (hi.x < -margin || hi.y < -margin || lo.x > viewport.width + margin || lo.y > viewport.height + margin)
+                continue;
             for (int lane = 0; lane < LaneCount; ++lane)
             {
                 const double rMid = inner + (lane + 0.5) * laneWidth;
-                const double aMid = a0 + glm::pi<double>() / SectorCount;
-                const glm::dvec3 centre = planet.planetCenterMeters +
-                    (axisX * std::cos(aMid) + axisY * std::sin(aMid)) * rMid;
-                const glm::dvec2 c = activeCamera().project(centre);
                 // cell footprint on screen (a perspective-free estimate)
                 const double cellPx = std::max(laneWidth, rMid * glm::two_pi<double>() / SectorCount) * pixelsPerMeter;
-                const double margin = cellPx + 8.0;
-                if (c.x < -margin || c.y < -margin || c.x > viewport.width + margin || c.y > viewport.height + margin)
-                    continue;
 
                 std::uint64_t state = bodySeed ^ ringHash((static_cast<std::uint64_t>(ringIndex) << 40) ^
                                                           (static_cast<std::uint64_t>(sector) << 12) ^
                                                           static_cast<std::uint64_t>(lane));
                 // bodies of this cell shown at the current zoom
                 // dense rings (high optical depth) show many bodies, dusty ones few
-                const double wanted = cellPx * cellPx / (PixelsPerBody * PixelsPerBody) *
-                    std::clamp(static_cast<double>(ring.opticalDepth) * 1.5, 0.03, 1.0);
+                const double wanted = cellPx * cellPx / (PixelsPerBody * PixelsPerBody) * density;
                 int count = static_cast<int>(std::min<double>(MaxPerCell, std::floor(wanted)));
                 if (count == 0 && ringUnit(state) < wanted)
                     count = 1;
@@ -589,22 +642,23 @@ void DetailMapGeometryPass::drawRingAsteroids(
                     const double size = ringUnit(state);
                     const double a = a0 + glm::two_pi<double>() / SectorCount * u;
                     const double r = inner + (lane + v) * laneWidth;
-                    const glm::dvec3 p = planet.planetCenterMeters +
-                        (axisX * std::cos(a) + axisY * std::sin(a)) * r +
-                        normal * (w * 0.002 * planet.planetRadiusMeters);   // a thin ring
+                    // planet-relative, camera space
+                    const glm::dvec3 rel = (xCam * std::cos(a) + yCam * std::sin(a)) * r +
+                        nCam * (w * 0.002 * planet.planetRadiusMeters);   // a thin ring
                     // behind the planet disc: hidden (planet is opaque)
-                    const glm::dvec3 rel = activeCamera().vectorToCamera(p - planet.planetCenterMeters);
-                    if (rel.z < 0.0 &&
-                        rel.x * rel.x + rel.y * rel.y < planet.planetRadiusMeters * planet.planetRadiusMeters)
+                    if (rel.z < 0.0 && rel.x * rel.x + rel.y * rel.y < radius2)
                         continue;
-                    const glm::dvec2 sp = activeCamera().project(p);
+                    const glm::dvec2 spt = projectCamera(centreCam + rel);
+                    if (spt.x < -8.0 || spt.y < -8.0 || spt.x > viewport.width + 8.0 || spt.y > viewport.height + 8.0)
+                        continue;
                     // a few big bodies, many small ones (power law of the visible size)
-                    const float px = static_cast<float>(1.2 + 3.0 * std::pow(size, 6.0));
-                    drawPlanetMapCross(sp, px, colour);
+                    const double px = 1.2 + 3.0 * std::pow(size, 6.0);
+                    appendCross(crosses, spt, px);
                 }
             }
         }
     }
+    drawLocalMapLines(crosses.data(), crosses.size(), colour);
 }
 
 void DetailMapGeometryPass::drawBeltAsteroids(
@@ -650,6 +704,7 @@ void DetailMapGeometryPass::drawBeltAsteroids(
     // orientation: the belt edges (arcs) and the direction to the star
     {
         const glm::vec4 edge(0.55f, 0.62f, 0.72f, 0.45f);
+        std::vector<glm::dvec2> arcs;
         for (const double radius : {inner, outer})
         {
             glm::dvec2 previous {0.0};
@@ -659,10 +714,14 @@ void DetailMapGeometryPass::drawBeltAsteroids(
                 const glm::dvec2 q = activeCamera().project(
                     planet.beltCenterMeters + (axisX * std::cos(a) + axisY * std::sin(a)) * radius);
                 if (i > 0)
-                    drawPlanetMapLine(previous, q, edge);
+                {
+                    arcs.push_back(previous);
+                    arcs.push_back(q);
+                }
                 previous = q;
             }
         }
+        drawLocalMapLines(arcs.data(), arcs.size(), edge);
         const glm::dvec2 here = activeCamera().project(planet.planetCenterMeters);
         const glm::dvec2 star = activeCamera().project(planet.beltCenterMeters);
         glm::dvec2 dir = star - here;
@@ -690,6 +749,7 @@ void DetailMapGeometryPass::drawBeltAsteroids(
     const glm::vec4 colour(0.70f, 0.66f, 0.58f, 0.85f);
     constexpr int MaxPerCell = 12;
     constexpr double PixelsPerBody = 26.0;
+    std::vector<glm::dvec2> crosses;
     for (int sRaw = s0; sRaw <= s1; ++sRaw)
     {
         const int sector = ((sRaw % sectorCount) + sectorCount) % sectorCount;
@@ -726,11 +786,12 @@ void DetailMapGeometryPass::drawBeltAsteroids(
                     (axisX * std::cos(a) + axisY * std::sin(a)) * r +
                     n * (w * 2.0 * planet.beltHalfThicknessMeters * profile);
                 const glm::dvec2 sp = activeCamera().project(p);
-                const float px = static_cast<float>(1.2 + 3.5 * std::pow(size, 7.0));
-                drawPlanetMapCross(sp, px, colour);
+                const double px = 1.2 + 3.5 * std::pow(size, 7.0);
+                appendCross(crosses, sp, px);
             }
         }
     }
+    drawLocalMapLines(crosses.data(), crosses.size(), colour);
 }
 
 void DetailMapGeometryPass::drawDetailMapOrbit3D(

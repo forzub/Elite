@@ -1,3 +1,4 @@
+#include "src/core/HitchProfiler.h"
 #include "src/game/system_map/SystemMapRendererInternal.h"
 
 
@@ -489,6 +490,7 @@ void SystemMapRenderer::render(
 
 
 
+    core::hitch::mark("map_pre");
     if (m_modeState.current() == Mode::Detail)
     {
         // The body actually shown keys the remembered view: a new body (first
@@ -515,6 +517,7 @@ void SystemMapRenderer::render(
 
             m_detailFrameDirty = false;
         }
+        core::hitch::mark("map_detail_build");
 
         m_detailSceneRenderer.render(
             m_detailPresentation,
@@ -525,6 +528,7 @@ void SystemMapRenderer::render(
 
         m_detailFramePrepared = false;
         m_detailFrameDirty = true;
+        core::hitch::mark("map_detail_scene");
     }
     else if (m_modeState.current() == Mode::Hub)
     {
@@ -579,6 +583,7 @@ void SystemMapRenderer::render(
     decorateActiveGuidanceTrajectory(vp, system, planet, hub);
     decorateTrafficRoutes(planet, hub);
     decorateSystemNetworkRoutes(vp, system);
+    core::hitch::mark("map_decorate");
 
     if (m_modeState.current() == Mode::Galaxy)
     {
@@ -628,6 +633,7 @@ void SystemMapRenderer::render(
         );
     }
 
+    core::hitch::mark("map_overlay");
     m_routeOverlayRenderer.render(
         vp,
         m_navigationWorkspace.routePlan(),

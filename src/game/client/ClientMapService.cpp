@@ -1,3 +1,5 @@
+#include <iostream>
+#include <chrono>
 #include "src/game/client/ClientMapService.h"
 #include "src/game/client/ClientCatalogService.h"
 #include "src/game/client/ClientCelestialMapBridge.h"
@@ -25,6 +27,13 @@ ClientMapService::ClientMapService(
     , m_catalogs(catalogs)
     , m_world(world)
 {
+}
+
+ClientMapService::~ClientMapService()
+{
+    // the prewarmed Galaxy object layer reads this client's catalog
+    if (m_galaxyCatalogPrewarmed)
+        releaseGalaxyMapCatalogObjectLayer();
 }
 
 std::uint64_t ClientMapService::nextRequestId()
@@ -94,6 +103,13 @@ void ClientMapService::sendGalaxyRequest()
 
 void ClientMapService::update(float dt)
 {
+    // the Galaxy map's static object layer (~0.7 s of medium shells) on a worker as soon as the
+    // catalog is here, not on the main thread when the map first opens
+    if (!m_galaxyCatalogPrewarmed && m_catalogs.hasStarAtlas())
+    {
+        m_galaxyCatalogPrewarmed = true;
+        prewarmGalaxyMapCatalogObjectLayer(m_catalogs.starAtlas()->objects());
+    }
     pumpResponses();
     if (advanceTimeout(m_galaxyRequest, dt))
         sendGalaxyRequest();
@@ -436,7 +452,12 @@ void ClientMapService::pumpResponses()
                 }
 
                 auto rebuilt = std::move(typedResponse.snapshot);
+                const auto rebuildBegin = std::chrono::steady_clock::now();
                 rebuildGalaxyMapCatalogLayer(rebuilt, *atlas);
+                const double rebuildMs = std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - rebuildBegin).count();
+                if (rebuildMs >= 50.0)
+                    std::cerr << "[ClientMapService] galaxy catalog layer rebuilt in " << rebuildMs << " ms" << std::endl;
 
                 m_galaxyMetadata = typedResponse.metadata;
                 m_galaxySnapshot = std::move(rebuilt);

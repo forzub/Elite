@@ -62,12 +62,13 @@
   {
    "system": 5,
    "catalog": "Sirius A+B",
-   "discoverer": "hd69830_verde",
-   "year": 2370,
-   "how": "flyby",
+   "discoverer": "leo83_zion",
+   "year": 2309,
+   "how": "long_survey",
    "detail": {
-    "mission": "AMAZONIA-1",
-    "dist_ly": 3.35
+    "mission": "NEW-JERUSALEM-1",
+    "dist_ly": 8.19,
+    "balanced_from": "hd69830_verde"
    },
    "candidates": [
     {
@@ -631,6 +632,13 @@
      "dist_ly": 3.89
     },
     {
+     "unit": "leo83_zion",
+     "year": 2431,
+     "how": "flyby",
+     "mission": "NEW-JERUSALEM-1",
+     "dist_ly": 1.08
+    },
+    {
      "unit": "tau_ceti_cognium",
      "year": 2768,
      "how": "expedition",
@@ -657,14 +665,6 @@
     {
      "unit": "lalande_mecca",
      "year": 2818,
-     "how": "expedition",
-     "base": 4,
-     "legs": 1,
-     "dist_ly": 6.55
-    },
-    {
-     "unit": "lalande_hellas",
-     "year": 2819,
      "how": "expedition",
      "base": 4,
      "legs": 1,
@@ -1986,13 +1986,13 @@
   {
    "system": 58,
    "catalog": "Gliese 514",
-   "discoverer": "tau_ceti_cognium",
-   "year": 2785,
-   "how": "expedition",
+   "discoverer": "hd114783_hellas3",
+   "year": 2592,
+   "how": "long_survey",
    "detail": {
-    "base": 8,
-    "legs": 3,
-    "dist_ly": 36.82
+    "mission": "ODYSSEY-1",
+    "dist_ly": 5.77,
+    "balanced_from": "tau_ceti_cognium"
    },
    "candidates": [
     {
@@ -2145,6 +2145,9 @@
    17,
    51
   ],
+  "hd114783_hellas3": [
+   58
+  ],
   "hd20794_hellas2": [
    47
   ],
@@ -2158,7 +2161,6 @@
    7
   ],
   "hd69830_verde": [
-   5,
    52
   ],
   "lalande_hellas": [
@@ -2167,6 +2169,9 @@
   ],
   "lalande_mecca": [
    56
+  ],
+  "leo83_zion": [
+   5
   ],
   "proxima_outpost": [
    1
@@ -2180,15 +2185,11 @@
    26,
    28,
    36,
-   49,
-   58
+   49
   ],
   "wolf359_citadel": [
    27
   ]
  },
- "without_systems": [
-  "hd114783_hellas3",
-  "leo83_zion"
- ]
+ "without_systems": []
 }

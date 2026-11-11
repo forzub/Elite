@@ -27,19 +27,18 @@ Alpha Centauri B m | राम | Рама | Rama | = | 罗摩 | ラーマ | ге
 Alpha Centauri (BA) K1 | जाम्बवान् | Джамбаван | Jambavan | = | 阎婆梵 | ジャーンバヴァーン | царь медведей | Jāmbavān
 Alpha Centauri (BA) K2 | अंगद | Ангада | Angada | = | 安伽陀 | アンガダ | сын Вали | Aṅgada
 Alpha Centauri (BA) K3 | शबरी | Шабари | Shabari | = | 舍波利 | シャバリー | отшельница, ждавшая Раму | Śabarī
-@ 5 | pt | AMAZONIA-1 (Сельва-Верде): корабль поколений прошёл в 3 св. годах от Сириуса около 2370 | португальские мореплаватели: звезда — Сагреш, школа навигации
-* | Sagres | Сагреш | Sagres | Sagres | 萨格里什 | サグレス | мыс и школа мореходов принца Энрике
-Sirius A b | Cabral | Кабрал | Cabral | = | 卡布拉尔 | カブラル | Педру Кабрал, открывший Бразилию
-Sirius A c | Gama | Гама | Gama | = | 达伽马 | ガマ | Васко да Гама
-Sirius A d | Dias | Диаш | Dias | Días | 迪亚士 | ディアス | Бартоломеу Диаш
-Sirius A e | Magalhães | Магеллан | Magellan | Magallanes | 麦哲伦 | マゼラン | Магеллан
-Sirius A f | Henrique | Энрике | Henry | Enrique | 恩里克 | エンリケ | принц Энрике Мореплаватель: суперземля
-Sirius A g | Corte-Real | Корте-Реал | Corte-Real | = | 科尔特雷亚尔 | コルテ=レアル | Гашпар Корте-Реал: атмосфера в 140 бар
-Sirius (BA) b | Caminha | Каминья | Caminha | Caminha | 卡米尼亚 | カミーニャ | Перу Ваш де Каминья, летописец открытия Бразилии
-Sirius (BA) K1 | Bojador | Бохадор | Bojador | = | 博哈多尔 | ボジャドール | мыс Бохадор, за которым «кончался мир»
-Sirius (BA) K2 | Tormentas | Торментас | Tormentas | = | 风暴角 | 嵐の岬 | мыс Бурь
-Sirius (BA) K3 | Boa Esperança | Боа-Эшперанса | Good Hope | Buena Esperanza | 好望角 | 喜望峰 | мыс Доброй Надежды
-
+@ 5 | el | Ново-Фиваида (NEW-JERUSALEM-1): монахи корабля поколений наблюдали Сириус с 8 св. лет около 2309, задолго до прибытия | архангелы и три добродетели: звезда — Вифлеемская
+* | Βηθλεέμ | Вифлеем | Bethlehem | Belén | 伯利恒 | ベツレヘム | ярчайшая звезда неба стала для монахов Вифлеемской | Vithleém
+Sirius A b | Μιχαήλ | Михаил | Michael | Miguel | 米迦勒 | ミカエル | архистратиг: самая горячая | Michaíl
+Sirius A c | Γαβριήλ | Гавриил | Gabriel | Gabriel | 加百列 | ガブリエル | вестник | Gavriíl
+Sirius A d | Ραφαήλ | Рафаил | Raphael | Rafael | 拉斐尔 | ラファエル | целитель | Rafaíl
+Sirius A e | Ουριήλ | Уриил | Uriel | Uriel | 乌列 | ウリエル | свет Божий | Ouriíl
+Sirius A f | Σαλαθιήλ | Селафиил | Selaphiel | Selafiel | 撒拉铁 | セラフィエル | молитвенник: суперземля | Salathiíl
+Sirius A g | Ιεγουδιήλ | Иегудиил | Jegudiel | Jehudiel | 耶胡迪勒 | イェグディエル | прославитель: атмосфера в 140 бар | Iegoudiíl
+Sirius (BA) b | Βαραχιήλ | Варахиил | Barachiel | Baraquiel | 巴拉基勒 | バラキエル | благословение: мир у белого карлика | Varachiíl
+Sirius (BA) K1 | Πίστις | Вера | Faith | Fe | 信 | 信仰 | вера | Pístis
+Sirius (BA) K2 | Ελπίς | Надежда | Hope | Esperanza | 望 | 希望 | надежда | Elpís
+Sirius (BA) K3 | Αγάπη | Любовь | Love | Caridad | 爱 | 愛 | любовь | Agápi
 @ 52 | pt | AMAZONIA-1 (Сельва-Верде): корабль поколений прошёл в 3 св. годах от Проциона около 2388 | бразильская музыка: звезда — Саудади
 * | Saudade | Саудади | Saudade | Saudade | 萨乌达德 | サウダージ | тоска по тому, чего нет рядом: последний взгляд на Землю
 Procyon A b | Frevo | Фрево | Frevo | = | 弗雷沃 | フレーヴォ | фрево, танец Ресифи: самая горячая

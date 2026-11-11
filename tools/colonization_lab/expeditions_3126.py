@@ -34,7 +34,8 @@ OUT = os.path.join(HERE, "out", "world_3126", "expeditions_3126.json")
 SYSTEMS = os.path.join(ROOT, "src", "assets", "data", "galaxy_details", "systems")
 FLYBY_LY = 4.0
 NEIGHBOUR_LY = 1.0
-MAX_PER = 4         # a holder keeps at most this many systems outside the frontier canon
+LONG_SURVEY_LY = 9.0   # a generation ship watching a star for decades from this far; used only for participants with nothing else
+MAX_PER = 3         # a holder keeps at most this many systems outside the frontier canon
 YEAR = 3126
 FORTUNA = 61
 
@@ -146,6 +147,7 @@ def model():
     targets = sorted(s for s in A if s not in inhabited)
     founded = {c["id"]: c["founded"] for c in W["colonies"]}
     cand = {t: [] for t in targets}
+    survey = {t: [] for t in targets}   # long-baseline observation from a passing generation ship
 
     # generation-ship fly-bys
     for m in M["missions"]:
@@ -153,7 +155,7 @@ def model():
         tgt = m.get("final_system") if isinstance(m.get("final_system"), int) else m.get("target_system")
         if unit not in P or not isinstance(tgt, int) or tgt not in A:
             continue
-        path = [m["source_system"]] + ([m["target_system"]] if isinstance(m["target_system"], int) and m["target_system"] != tgt else []) + [tgt]
+        path = [m["source_system"], tgt]   # a target changed on the way (NEW-JERUSALEM-1, 2291) is flown to the final one
         pts = [A[s]["pos"] for s in path]
         legs = [math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1)]
         total = sum(legs) or 1.0
@@ -162,11 +164,14 @@ def model():
             done = 0.0
             for i, L in enumerate(legs):
                 d, f = seg_dist(A[t]["pos"], pts[i], pts[i + 1])
-                if d <= FLYBY_LY and (0.0 < f < 1.0 or (f >= 1.0 and i == len(legs) - 1)):
+                if d <= LONG_SURVEY_LY and (0.0 < f < 1.0 or (f >= 1.0 and i == len(legs) - 1)):
                     yr = round(m["launch_year"] + (done + f * L) / total * (arrive - m["launch_year"]))
                     if yr > YEAR:
                         continue
-                    cand[t].append(dict(unit=unit, year=yr, how="flyby", mission=m["id"], dist_ly=round(d, 2)))
+                    if d <= FLYBY_LY:
+                        cand[t].append(dict(unit=unit, year=yr, how="flyby", mission=m["id"], dist_ly=round(d, 2)))
+                    else:
+                        survey[t].append(dict(unit=unit, year=yr, how="long_survey", mission=m["id"], dist_ly=round(d, 2)))
                 done += L
 
     # jump-era expeditions from bases
@@ -246,6 +251,18 @@ def model():
                 prev = owner[t]["unit"]
                 owner[t] = dict(mine, balanced_from=prev)
                 changed = True
+
+    # late arrivals (Third Hellas 3122, New Thebaid 3126: no jump technology, no close pass) keep the
+    # stars their ships watched first from afar on the long voyage - when they saw it before the holder
+    for u in sorted(P):
+        if count(u):
+            continue
+        opts = [(s["year"] - owner[t]["year"], t, s) for t in targets for s in survey[t]
+                if s["unit"] == u and t in owner and t not in FRONTIER_CANON and t not in home
+                and s["year"] < owner[t]["year"] and count(owner[t]["unit"]) >= 2]
+        if opts:
+            _, t, s = min(opts)
+            owner[t] = dict(s, balanced_from=owner[t]["unit"])
 
     # fairness: the first-jump monopoly (Cognium 2750-2760) would take most of the map; a holder above
     # MAX_PER gives its systems, nearest second visit first, to the participant with the fewest systems

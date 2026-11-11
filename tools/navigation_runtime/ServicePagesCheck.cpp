@@ -193,10 +193,10 @@ int main()
                 }
             return false;
         };
-        const game::economy::HubEconomyInfo *cog = nullptr, *tauranga = nullptr, *india = nullptr, *cit = nullptr, *svarog = nullptr,
+        const game::economy::HubEconomyInfo *cog = nullptr, *tauranga = nullptr, *india = nullptr, *cit = nullptr, *meru = nullptr,
                                             *thebaid = nullptr, *firm = nullptr, *zone = nullptr;
         const bool found = hubOf(8, "tau_ceti_cognium", &cog) && hubOf(4, "lalande_mecca", &tauranga) && hubOf(14, "hd20794_newindia", &india) &&
-                           hubOf(3, "wolf359_citadel", &cit) && hubOf(60, "proxima_outpost", &svarog) && hubOf(45, "leo83_zion", &thebaid) &&
+                           hubOf(3, "wolf359_citadel", &cit) && hubOf(60, "proxima_outpost", &meru) && hubOf(45, "leo83_zion", &thebaid) &&
                            hubOf(15, "eps_eri_harmony", &firm, "hd40307_firmament");
         for (const auto* h : eco.hubsOfSystem(12))
             if (h->bloc.rfind("zone:", 0) == 0 && !zone)
@@ -217,11 +217,11 @@ int main()
         check(!retired, "no hub shows a retired name");
         if (found && zone)
         {
-            std::cout << "  blocs: Cognium " << cog->bloc << ", Tauranga " << tauranga->bloc << ", Citadel " << cit->bloc << ", Svarog " << svarog->bloc
+            std::cout << "  blocs: Cognium " << cog->bloc << ", Tauranga " << tauranga->bloc << ", Citadel " << cit->bloc << ", Meru " << meru->bloc
                       << ", Thebaid " << thebaid->bloc << ", Firmament " << firm->bloc << ", zone " << zone->bloc << "\n";
             check(tauranga->bloc == "southern_circle" && india->bloc == "southern_circle" && eco.channel(tauranga->id, india->id) == "open",
                   "Southern circle: Tauranga - New India open");
-            check(cit->bloc == "citadel_compact" && svarog->bloc == "citadel_compact", "Citadel and Svarog in the Citadel pact");
+            check(cit->bloc == "citadel_compact" && meru->bloc == "citadel_compact", "Citadel and Meru in the Citadel pact");
             check(firm->bloc == "heavenly_pact", "Celestial Firmament (province of Xin He) runs under the Celestial pact");
             check(thebaid->bloc == "nonaligned:leo83_zion", "Novo-Thebaid non-aligned");
             check(eco.channel(cog->id, cit->id) != "open" && eco.channel(cog->id, cit->id) != "closed", "Cognium - Citadel: civilian trade possible, not open (" + eco.channel(cog->id, cit->id) + ")");

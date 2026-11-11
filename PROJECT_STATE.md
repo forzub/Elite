@@ -5188,3 +5188,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   normalised to the body's range, strength 8) used by the Hub surface shading (it was skipped: flat relief).
   LIVE (F12 at the Earth Orbital Hub, D:/tmp/elite_hub/hub_crop.png): the field's weather (a large cloud mass) over
   the curated Earth vs the preset's scattered clouds with policy 0.
+- Plan item 4 (irregular shapes of small bodies): in FLIGHT already irregular (the field's relief is comparable to a
+  small body's radius: Gliese_436_h_I, 7 km, lumpy silhouette, D:/tmp/elite_small/moon.png). DONE on the Detail map
+  (source + compiled + live DEV): a field bake of a body < 300 km also builds a 128x64 displaced lat-long mesh of its
+  own field (ProceduralBodyTextureCache::shapeFor, UVs in the bake layout); the Detail map draws it through the
+  shape-model path (CelestialShapeMeshLibrary::adopt) when no curated OBJ exists. LIVE: Amalthea (84 km)
+  D:/tmp/elite_small/amalthea.png. DEV aliases body:amalthea|himalia|proteus|phoebe.
+  Found: Amalthea's curated albedo is the same junk as Phobos' was (drawn ring "craters") - candidates for a
+  procedural passport like Phobos / Deimos (Amalthea, maybe other small Sol moons with curated junk) - AUTHOR to decide.
+  Note: a ship placed on a 150 km "orbit" of a 7 km moon drifts away (Pe ~15 000 km after ~1 min) - the parent's
+  pull; the DEV start is not meant for such bodies.

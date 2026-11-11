@@ -146,6 +146,12 @@ public:
     );
 
     // the relief normal map of the body's field bake (Hub map shading); 0 until baked / policy off
+    // a small body's field as a mesh (Detail map shape), nullptr until baked / larger bodies / policy off
+    const std::vector<render::celestial::CelestialShapeTriangle>* proceduralShapeForIdentity(
+        int systemId,
+        const std::string& bodyId
+    );
+
     GLuint proceduralNormalTextureForIdentity(
         int systemId,
         const std::string& bodyId

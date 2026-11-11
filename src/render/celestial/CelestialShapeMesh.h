@@ -51,6 +51,13 @@ namespace render::celestial
             bool flipTexcoordV = true
         );
 
+        // An in-memory shape (a small body's surface field as a mesh, ProceduralBodyTextureCache) under a
+        // key; bounds as for an OBJ. Returns the stored mesh (kept until the library goes).
+        const CelestialShapeMesh* adopt(
+            const std::string& key,
+            const std::vector<CelestialShapeTriangle>& triangles
+        );
+
     private:
         bool loadObjMesh(
             const std::string& objPath,

@@ -194,6 +194,20 @@ GLuint ProceduralBodyTextureCache::useEntry(const std::string& key, int systemId
     return 0;
 }
 
+const std::vector<render::celestial::CelestialShapeTriangle>*
+ProceduralBodyTextureCache::shapeFor(int systemId, const std::string& bodyId)
+{
+    if (m_policy == Policy::Off || bodyId.empty())
+        return nullptr;
+    if (systemId < 0)
+        systemId = systemIdFromBodyId(bodyId);
+    const auto it = m_entries.find(std::to_string(systemId) + "|" + bodyId);
+    if (it == m_entries.end() || it->second->state.load(std::memory_order_acquire) != 3 || it->second->shape.empty())
+        return nullptr;
+    it->second->lastUsedFrame = m_frame;
+    return &it->second->shape;
+}
+
 GLuint ProceduralBodyTextureCache::normalTextureFor(int systemId, const std::string& bodyId)
 {
     if (m_policy == Policy::Off || bodyId.empty())
@@ -531,6 +545,34 @@ void ProceduralBodyTextureCache::bake(Entry& e)
                 normal[o + 3] = 255;
             }
         e.normalRgba = std::move(normal);
+    }
+    // a small body: its field as a displaced lat-long mesh (the shape flight shows)
+    if (field->solidSurface() && field->referenceRadiusM() < SmallBodyShapeRadiusM)
+    {
+        constexpr int NLon = 128, NLat = 64;
+        const double radius = field->referenceRadiusM();
+        std::vector<render::celestial::CelestialShapeVertex> grid(static_cast<std::size_t>(NLon + 1) * NLat);
+        for (int i = 0; i < NLat; ++i)
+            for (int j = 0; j <= NLon; ++j)
+            {
+                const double lat = pi * 0.5 - pi * i / (NLat - 1);
+                const double lon = (static_cast<double>(j) / NLon - 0.5) * 2.0 * pi;
+                const glm::dvec3 dir(std::cos(lat) * std::cos(lon), std::sin(lat), std::cos(lat) * std::sin(lon));
+                const double hgt = field->sample(dir, 2.0 * pi * radius / NLon).heightM;
+                auto& v = grid[static_cast<std::size_t>(i) * (NLon + 1) + j];
+                v.pos = glm::vec3(dir * std::max(radius * 0.2, radius + hgt));
+                v.uv = glm::vec2(static_cast<float>(j) / NLon, 1.0f - static_cast<float>(i) / (NLat - 1));
+            }
+        for (int i = 0; i + 1 < NLat; ++i)
+            for (int j = 0; j < NLon; ++j)
+            {
+                const auto& a = grid[static_cast<std::size_t>(i) * (NLon + 1) + j];
+                const auto& b = grid[static_cast<std::size_t>(i) * (NLon + 1) + j + 1];
+                const auto& c = grid[static_cast<std::size_t>(i + 1) * (NLon + 1) + j];
+                const auto& d = grid[static_cast<std::size_t>(i + 1) * (NLon + 1) + j + 1];
+                e.shape.push_back({a, c, b});
+                e.shape.push_back({b, c, d});
+            }
     }
     e.width = w;
     e.height = h;

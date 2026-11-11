@@ -312,6 +312,33 @@ namespace render::celestial
         return true;
     }
 
+    const CelestialShapeMesh* CelestialShapeMeshLibrary::adopt(
+        const std::string& key,
+        const std::vector<CelestialShapeTriangle>& triangles
+    )
+    {
+        auto existing = m_meshByPath.find(key);
+        if (existing != m_meshByPath.end())
+            return &existing->second;
+        if (triangles.empty())
+            return nullptr;
+        CelestialShapeMesh mesh;
+        mesh.triangles = triangles;
+        mesh.minBounds = mesh.maxBounds = triangles.front().a.pos;
+        for (const auto& t : triangles)
+            for (const CelestialShapeVertex* v : {&t.a, &t.b, &t.c})
+            {
+                mesh.minBounds = glm::min(mesh.minBounds, v->pos);
+                mesh.maxBounds = glm::max(mesh.maxBounds, v->pos);
+            }
+        mesh.boundCenter = (mesh.minBounds + mesh.maxBounds) * 0.5f;
+        mesh.boundRadius = 0.0f;
+        for (const auto& t : triangles)
+            for (const CelestialShapeVertex* v : {&t.a, &t.b, &t.c})
+                mesh.boundRadius = std::max(mesh.boundRadius, glm::length(v->pos - mesh.boundCenter));
+        return &m_meshByPath.emplace(key, std::move(mesh)).first->second;
+    }
+
     GLuint CelestialShapeMeshLibrary::loadAlbedoTexture(
         const std::string& albedoPath
     )

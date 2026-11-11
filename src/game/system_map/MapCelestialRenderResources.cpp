@@ -2114,6 +2114,15 @@ GLuint MapCelestialRenderResources::fieldCloudTextureForIdentity(
     return m_proceduralBodies->cloudTextureFor(systemId, bodyId, worldTimeSeconds, noClouds);
 }
 
+const std::vector<render::celestial::CelestialShapeTriangle>*
+MapCelestialRenderResources::proceduralShapeForIdentity(
+    int systemId,
+    const std::string& bodyId
+)
+{
+    return m_proceduralBodies ? m_proceduralBodies->shapeFor(systemId, bodyId) : nullptr;
+}
+
 GLuint MapCelestialRenderResources::proceduralNormalTextureForIdentity(
     int systemId,
     const std::string& bodyId

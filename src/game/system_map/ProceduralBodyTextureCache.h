@@ -14,6 +14,8 @@
 
 #include <glad/gl.h>
 
+#include "src/render/celestial/CelestialShapeMesh.h"
+
 namespace game::system_map
 {
 /*
@@ -78,6 +80,12 @@ public:
     // height normalised to the body's range, strength 8). 0 until the surface bake is uploaded.
     GLuint normalTextureFor(int systemId, const std::string& bodyId);
 
+    // GL thread. A small body (radius < SmallBodyShapeRadiusM) as a mesh of its own surface field - the
+    // irregular shape flight draws (relief comparable to the radius) - for the Detail map; UVs in the
+    // surface bake's layout (u = atan2(z, x), v = 0 south). nullptr until baked / for larger bodies.
+    const std::vector<render::celestial::CelestialShapeTriangle>* shapeFor(int systemId, const std::string& bodyId);
+    static constexpr double SmallBodyShapeRadiusM = 300000.0;
+
     // GL thread. The body's cloud layer from the SAME CloudWeatherField flight draws (one source of
     // clouds, docs/CELESTIAL_RESOURCE_AUDIT.md): RGBA equirect, alpha = the combined cover of its layers at
     // the 20-min world-time step flight uses (the previous step's texture shows while the next bakes).
@@ -94,6 +102,7 @@ private:
         int height = 0;
         std::vector<std::uint8_t> rgba; // GL row order (south first)
         std::vector<std::uint8_t> normalRgba; // surface bakes: the relief normal map, same layout
+        std::vector<render::celestial::CelestialShapeTriangle> shape;   // small bodies: the field as a mesh
         GLuint texture = 0;
         GLuint normalTexture = 0;
         std::uint64_t lastUsedFrame = 0;

@@ -26,7 +26,9 @@ constexpr Alias FocusBodyAliases[] = {
     {"jupiter", "system_0.Sol.Юпитер"}, {"saturn", "system_0.Sol.Сатурн"}, {"venus", "system_0.Sol.Венера"},
     {"mercury", "system_0.Sol.Меркурий"}, {"belt", "system_0.Sol.asteroid_belt"},
     {"phobos", "system_0.Sol.Марс.Фобос"}, {"deimos", "system_0.Sol.Марс.Деймос"},
-    {"io", "system_0.Sol.Юпитер.Ио"}, {"europa", "system_0.Sol.Юпитер.Европа"}};
+    {"io", "system_0.Sol.Юпитер.Ио"}, {"europa", "system_0.Sol.Юпитер.Европа"},
+    {"amalthea", "system_0.Sol.Юпитер.Амальтея"}, {"himalia", "system_0.Sol.Юпитер.Гималия"},
+    {"proteus", "system_0.Sol.Нептун.Протей"}, {"phoebe", "system_0.Sol.Сатурн.Феба"}};
 // enter:<name>
 constexpr Alias EnterBodyAliases[] = {
     {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"}, {"jupiter", "system_0.Sol.Юпитер"},

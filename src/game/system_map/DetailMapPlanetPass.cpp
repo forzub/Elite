@@ -1726,7 +1726,11 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
         objPath = resolveDetailMapAssetPath(asset->base.shapeModelPath).generic_string();
     else
         objPath = m_resources.sourceShapeModelPath(planet.systemId, planet.planetBodyId, planet.planetName);
+    // no curated shape: a small body's own field as its shape (irregular, as in flight)
+    const std::vector<render::celestial::CelestialShapeTriangle>* fieldShape = nullptr;
     if (objPath.empty())
+        fieldShape = m_resources.proceduralShapeForIdentity(planet.systemId, planet.planetBodyId);
+    if (objPath.empty() && !fieldShape)
         return false;
 
     std::string albedoPath;
@@ -1747,11 +1751,13 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
     }
 
     const render::celestial::CelestialShapeMesh* mesh =
-        m_shapeMeshes.load(
-            objPath,
-            albedoPath,
-            true
-        );
+        fieldShape
+            ? m_shapeMeshes.adopt("field|" + std::to_string(planet.systemId) + "|" + planet.planetBodyId, *fieldShape)
+            : m_shapeMeshes.load(
+                  objPath,
+                  albedoPath,
+                  true
+              );
 
     if (!mesh ||
         !mesh->valid())

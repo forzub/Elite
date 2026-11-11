@@ -5150,3 +5150,4 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   normal is skipped for field bakes), the flight's albedo fallback lod/global/albedo_2048.tga for a Sol body without
   albedo_source (none today). => Deleting the rest of assets/generated (1.7 GB + its build copy) is now possible -
   AUTHOR's decision; recommended to keep it one release with ELITE_MAP_GENERATED_ASSETS=0 tried in normal play.
+- docs/CLEANUP_CANDIDATES.md: the list of things to delete LATER (author: record, do not delete yet).

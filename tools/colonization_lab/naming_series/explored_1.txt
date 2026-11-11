@@ -1,33 +1,32 @@
 # Naming series 3126 (PROPOSAL) - systems nobody lives in, named by their first visitors
 # (out/world_3126/expeditions_3126.json). Format: see inhabited_1.txt.
 
-@ 1 | ru | Красный Форпост (SVAROG-1): соседи по системе Альфы Центавра, 0.2 св. года, наблюдают её с 2150 | русские сказки и былины: у A — злодеи и богатыри, у B — волшебные помощники и герои
-* | Лукоморье | = | Lukomorye | Lukomórie | 卢科莫里耶 | ルコモーリエ | сказочное Лукоморье, где «дуб зелёный»
-Alpha Centauri A b | Горыныч | = | Gorynych | Gorínich | 戈雷内奇 | ゴルイニチ | Змей Горыныч: самая горячая
-Alpha Centauri A c | Кощей | = | Koshchei | Koschéi | 科谢伊 | コシチェイ | Кощей Бессмертный
-Alpha Centauri A d | Яга | = | Yaga | Yaga | 雅加 | ヤガー | Баба-Яга
-Alpha Centauri A e | Соловей | = | Solovei | Solovéi | 索洛维 | ソロヴェイ | Соловей-Разбойник
-Alpha Centauri A f | Тугарин | = | Tugarin | Tugarín | 图加林 | トゥガーリン | Тугарин Змеевич
-Alpha Centauri A g | Святогор | = | Svyatogor | Sviatogor | 斯维亚托戈尔 | スヴャトゴール | великан-богатырь
-Alpha Centauri A h | Идолище | = | Idolishche | Ídolische | 伊多利谢 | イドリシチェ | Идолище Поганое: атмосфера в 130 бар
-Alpha Centauri A i | Микула | = | Mikula | Mikula | 米库拉 | ミクーラ | Микула Селянинович, пахарь
-Alpha Centauri A j | Илья | = | Ilya | Iliá | 伊利亚 | イリヤー | Илья Муромец: суперземля
-Alpha Centauri B b | Жар-птица | = | Firebird | Pájaro de Fuego | 火鸟 | 火の鳥 | огненная птица
-Alpha Centauri B c | Сивка | = | Sivka | Sivka | 西夫卡 | シフカ | Сивка-Бурка: железная планета
-Alpha Centauri B d | Финист | = | Finist | Finist | 菲尼斯特 | フィニスト | Финист — Ясный Сокол
-Alpha Centauri B e | Горбунок | = | Gorbunok | Gorbunok | 驼背小马 | せむしの仔馬 | Конёк-Горбунок
-Alpha Centauri B f | Садко | = | Sadko | Sadkó | 萨特阔 | サトコ | гусляр Садко
-Alpha Centauri B g | Вольга | = | Volga | Volga | 沃利加 | ヴォリガ | Вольга-оборотень
-Alpha Centauri B h | Добрыня | = | Dobrynya | Dobrinia | 多布雷尼亚 | ドブルイニャ | Добрыня Никитич
-Alpha Centauri B i | Алёша | = | Alyosha | Aliosha | 阿廖沙 | アリョーシャ | Алёша Попович
-Alpha Centauri B j | Василиса | = | Vasilisa | Vasilisa | 瓦西里莎 | ヴァシリーサ | Василиса Премудрая
-Alpha Centauri B k | Моревна | = | Morevna | Morevna | 玛丽娅·莫列夫娜 | マリヤ・モレヴナ | Марья Моревна: атмосфера в 51 бар
-Alpha Centauri B l | Беловодье | = | Belovodye | Belovodie | 白水国 | ベロヴォジエ | земля праведных: умеренный мир в 26 бар
-Alpha Centauri B m | Буян | = | Buyan | Buián | 布扬岛 | ブヤン | остров Буян: суперземля
-Alpha Centauri (BA) K1 | Алатырь | = | Alatyr | Alatir | 阿拉特里 | アラトゥイリ | бел-горюч камень
-Alpha Centauri (BA) K2 | Емеля | = | Yemelya | Yemelia | 叶梅利亚 | エメーリャ | Емеля на печи
-Alpha Centauri (BA) K3 | Колобок | = | Kolobok | Kolobok | 小圆面包 | コロボーク | убежавший колобок: самый дальний
-
+@ 1 | sa | Красный Форпост (SVAROG-1): соседи по системе Альфы Центавра, 0.2 св. года, наблюдают её с 2150; имена дала индийская часть экипажа | «Рамаяна»: у A — Ланка и её воины, у B — Айодхья и её герои
+* | अयोध्या | Айодхья | Ayodhya | Ayodhya | 阿逾陀 | アヨーディヤー | город Рамы | Ayodhyā
+Alpha Centauri A b | रावण | Равана | Ravana | Rávana | 罗波那 | ラーヴァナ | царь Ланки: самая горячая | Rāvaṇa
+Alpha Centauri A c | कुम्भकर्ण | Кумбхакарна | Kumbhakarna | = | 鸠槃羯叻拏 | クンバカルナ | спящий великан | Kumbhakarṇa
+Alpha Centauri A d | इन्द्रजित् | Индраджит | Indrajit | = | 因陀罗耆特 | インドラジット | сын Раваны | Indrajit
+Alpha Centauri A e | शूर्पणखा | Шурпанакха | Shurpanakha | = | 首哩薄那迦 | シュールパナカー | сестра Раваны | Śūrpaṇakhā
+Alpha Centauri A f | मारीच | Марича | Maricha | Márícha | 摩哩遮 | マーリーチャ | золотой олень-оборотень | Mārīca
+Alpha Centauri A g | विभीषण | Вибхишана | Vibhishana | = | 维毗沙那 | ヴィビーシャナ | праведный брат Раваны | Vibhīṣaṇa
+Alpha Centauri A h | लंका | Ланка | Lanka | = | 楞伽 | ランカー | остров-крепость: атмосфера в 130 бар | Laṅkā
+Alpha Centauri A i | जटायु | Джатаю | Jatayu | = | 阇吒优 | ジャターユ | царь-гриф | Jaṭāyu
+Alpha Centauri A j | हनुमान | Хануман | Hanuman | Hánuman | 哈奴曼 | ハヌマーン | царь обезьян: суперземля | Hanumān
+Alpha Centauri B b | दशरथ | Дашаратха | Dasharatha | = | 十车王 | ダシャラタ | отец Рамы: самая горячая у B | Daśaratha
+Alpha Centauri B c | भरत | Бхарата | Bharata | = | 婆罗多 | バラタ | брат Рамы: железная | Bharata
+Alpha Centauri B d | शत्रुघ्न | Шатругхна | Shatrughna | = | 设睹卢祇那 | シャトルグナ | брат Рамы | Śatrughna
+Alpha Centauri B e | लक्ष्मण | Лакшмана | Lakshmana | = | 罗什曼那 | ラクシュマナ | верный брат | Lakṣmaṇa
+Alpha Centauri B f | उर्मिला | Урмила | Urmila | = | 乌尔米拉 | ウルミラー | жена Лакшманы | Ūrmilā
+Alpha Centauri B g | कौसल्या | Каушалья | Kausalya | = | 憍萨厘雅 | カウサリヤー | мать Рамы | Kausalyā
+Alpha Centauri B h | सुमित्रा | Сумитра | Sumitra | = | 须弥多罗 | スミトラー | мать Лакшманы | Sumitrā
+Alpha Centauri B i | कैकेयी | Кайкейи | Kaikeyi | = | 吉迦伊 | カイケーイー | мачеха, изгнавшая Раму | Kaikeyī
+Alpha Centauri B j | सुग्रीव | Сугрива | Sugriva | = | 须羯哩婆 | スグリーヴァ | царь ванаров | Sugrīva
+Alpha Centauri B k | वाली | Вали | Vali | = | 波林 | ヴァーリン | брат Сугривы: атмосфера в 51 бар | Vālī
+Alpha Centauri B l | सीता | Сита | Sita | = | 悉多 | シーター | жена Рамы: умеренный мир в 26 бар | Sītā
+Alpha Centauri B m | राम | Рама | Rama | = | 罗摩 | ラーマ | герой «Рамаяны»: суперземля | Rāma
+Alpha Centauri (BA) K1 | जाम्बवान् | Джамбаван | Jambavan | = | 阎婆梵 | ジャーンバヴァーン | царь медведей | Jāmbavān
+Alpha Centauri (BA) K2 | अंगद | Ангада | Angada | = | 安伽陀 | アンガダ | сын Вали | Aṅgada
+Alpha Centauri (BA) K3 | शबरी | Шабари | Shabari | = | 舍波利 | シャバリー | отшельница, ждавшая Раму | Śabarī
 @ 5 | pt | AMAZONIA-1 (Сельва-Верде): корабль поколений прошёл в 3 св. годах от Сириуса около 2370 | португальские мореплаватели: звезда — Сагреш, школа навигации
 * | Sagres | Сагреш | Sagres | Sagres | 萨格里什 | サグレス | мыс и школа мореходов принца Энрике
 Sirius A b | Cabral | Кабрал | Cabral | = | 卡布拉尔 | カブラル | Педру Кабрал, открывший Бразилию

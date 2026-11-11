@@ -117,16 +117,16 @@ HD 10360 f | Machweo | Мачвео | Machweo | = | 马奇韦奥 | マチュウ�
 HD 10360 g | Usiku | Усику | Usiku | = | 乌西库 | ウシク | ночь
 HD 10360 K1 | Kesho | Кешо | Kesho | = | 凯绍 | ケショ | завтра
 
-@ 60 | ru | SVAROG-1 (Красный Форпост) | славянский пантеон: звезда — Сварог, небесный кузнец, планеты — его род
-* | Сварог | = | Svarog | Svarog | 斯瓦罗格 | スヴァローグ | небесный кузнец, отец огня
-Proxima Centauri c | Семаргл | = | Semargl | Semargl | 西马尔格 | セマルグル | огненный крылатый пёс
-Proxima Centauri e | Хорс | = | Khors | Jors | 霍尔斯 | ホルス | солнечный диск
-Proxima Centauri f | Ярило | = | Yarilo | Yarilo | 雅里洛 | ヤリーロ | весеннее солнце
-Proxima Cen d | Дажьбог | = | Dazhbog | Dazhbog | 达日博格 | ダジボーグ | податель света, сын Сварога
-Proxima Cen b | Мокошь | = | Mokosh | Mókosh | 莫科什 | モコシ | мать-земля: поселение
-Proxima Centauri g | Велес | = | Veles | Veles | 韦莱斯 | ヴェーレス | хозяин скота и подземных вод
-Proxima Centauri h | Морозко | = | Morozko | Morozko | 严寒老人 | モロスコ | мороз
-Proxima Centauri i | Марена | = | Marena | Marena | 玛瑞娜 | マレーナ | зима и смерть
-Proxima Centauri j | Китеж | = | Kitezh | Kitezh | 基捷日 | キーテジ | невидимый град: столица Красного Форпоста
-Proxima Centauri k | Лада | = | Lada | Lada | 拉达 | ラーダ | богиня лада и урожая: поселение и фермы
-Proxima Centauri l | Стрибог | = | Stribog | Stribog | 斯特里博格 | ストリボーグ | владыка ветров: газовые платформы
+@ 60 | uz | SVAROG-1 (Красный Форпост): имена дала среднеазиатская часть экипажа (Узбекистан, Казахстан) | Шёлковый путь: звезда — Улугбек, астроном Самарканда, планеты — города и реки Средней Азии
+* | Ulugʻbek | Улугбек | Ulugh Beg | Ulugh Beg | 兀鲁伯 | ウルグ・ベク | астроном Самарканда, составитель звёздного каталога 1437 г.
+Proxima Centauri c | Buxoro | Бухара | Bukhara | Bujará | 布哈拉 | ブハラ | Бухара: самая горячая
+Proxima Centauri e | Xiva | Хива | Khiva | Jiva | 希瓦 | ヒヴァ | Хива
+Proxima Centauri f | Termiz | Термез | Termez | Termez | 铁尔梅兹 | テルメズ | Термез
+Proxima Cen d | Marv | Мерв | Merv | Merv | 木鹿 | メルブ | Мерв
+Proxima Cen b | Fargʻona | Фергана | Fergana | Fergana | 费尔干纳 | フェルガナ | Ферганская долина: поселение
+Proxima Centauri g | Turkiston | Туркестан | Turkestan | Turquestán | 突厥斯坦 | トルキスタン | город Ходжи Ахмеда Ясави
+Proxima Centauri h | Oʻtror | Отрар | Otrar | Otrar | 讹答剌 | オトラル | Отрар на Сырдарье
+Proxima Centauri i | Taroz | Тараз | Taraz | Taraz | 塔拉兹 | タラズ | Тараз
+Proxima Centauri j | Samarqand | Самарканд | Samarkand | Samarcanda | 撒马尔罕 | サマルカンド | Самарканд: столица Красного Форпоста
+Proxima Centauri k | Toshkent | Ташкент | Tashkent | Taskent | 塔什干 | タシケント | Ташкент: поселение и фермы
+Proxima Centauri l | Orol | Арал | Aral | Aral | 咸海 | アラル | Аральское море: газовые платформы

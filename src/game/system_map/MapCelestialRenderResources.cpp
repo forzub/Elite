@@ -2114,6 +2114,14 @@ GLuint MapCelestialRenderResources::fieldCloudTextureForIdentity(
     return m_proceduralBodies->cloudTextureFor(systemId, bodyId, worldTimeSeconds, noClouds);
 }
 
+GLuint MapCelestialRenderResources::proceduralNormalTextureForIdentity(
+    int systemId,
+    const std::string& bodyId
+)
+{
+    return m_proceduralBodies ? m_proceduralBodies->normalTextureFor(systemId, bodyId) : 0;
+}
+
 GLuint MapCelestialRenderResources::proceduralAlbedoTextureForIdentity(
     int systemId,
     const std::string& bodyId

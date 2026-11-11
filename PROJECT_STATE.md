@@ -5181,3 +5181,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   shows the same global deck flight draws (the preset's broken fields were not what flight shows),
   D:/tmp/elite_clouds/acj_field.png. Still on the preset clouds: the Hub map. Not re-captured after the deck colour
   change (cold deck now white-grey instead of yellow).
+- Plan item 2 completed on the Hub map + item 3 DONE (source + compiled + live DEV): the Hub map draws the parent
+  body's field clouds (the flight's CloudWeatherField, the same bake as the Detail map) instead of the presets'
+  styled layers when the procedural policy is on; field surface bakes now carry a relief normal map
+  (ProceduralBodyTextureCache::normalTextureFor - the baker's buildNormalFromHeightImage format: equirect height
+  normalised to the body's range, strength 8) used by the Hub surface shading (it was skipped: flat relief).
+  LIVE (F12 at the Earth Orbital Hub, D:/tmp/elite_hub/hub_crop.png): the field's weather (a large cloud mass) over
+  the curated Earth vs the preset's scattered clouds with policy 0.

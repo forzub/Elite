@@ -464,10 +464,13 @@ void HubMapPlanetPass::drawHubMapPlanetSurfaceHint(
             &proceduralAlbedo
         );
 
-    // the cached normal map belongs to the cached albedo only
+    // the cached normal map belongs to the cached albedo only; a field bake brings its own
     const GLuint normalTexture =
         proceduralAlbedo
-            ? 0
+            ? m_resources.proceduralNormalTextureForIdentity(
+                  hub.systemId,
+                  hub.parentBodyId
+              )
             : globalNormalTextureForHubSnapshot(
                   hub
               );
@@ -703,10 +706,45 @@ const glm::mat3 cameraToPlanetBody =
             game::system_map::HubMapBackend::GpuStage::Clouds
         );
 
+        // one cloud source (2026-11-11): the parent body's CloudWeatherField - the clouds flight draws -
+        // when the procedural policy is on; the preset's styled layers only in the old mode
+        if (m_resources.fieldCloudsEnabled())
+        {
+            bool noClouds = false;
+            const GLuint fieldClouds =
+                m_resources.fieldCloudTextureForIdentity(
+                    hub.systemId,
+                    hub.parentBodyId,
+                    cloudVisualTimeSeconds,
+                    noClouds
+                );
+            if (fieldClouds != 0)
+            {
+                render::celestial::PlanetGlobeLayerDraw draw;
+                draw.texture = fieldClouds;
+                draw.centerPx = softPlanetCenterPx;
+                draw.radiusPx = softPlanetRadiusPx * 1.006;
+                draw.bodyToCamera = glm::transpose(cameraToPlanetBody);
+                draw.longitudeUvOffset = 0.0f;       // the weather moves inside the field (world time)
+                draw.flipV = false;                  // the field bake's layout (as on the Detail map)
+                draw.color = glm::vec4(1.0f);
+                draw.opacity = 0.9f;
+                draw.blending = true;
+                draw.premultipliedTarget = softLayerTargetActive;
+                draw.useHorizonFade = true;
+                draw.horizonFadeStart = 0.05f;
+                draw.horizonFadeEnd = 0.32f;
+                draw.usePolarFade = false;
+                m_resources.planetGlobeMeshRenderer().render(draw);
+            }
+        }
+
         const auto cloudStyles =
-            hubPlanetCloudStylesForHub(
-                hub
-            );
+            m_resources.fieldCloudsEnabled()
+                ? std::vector<render::celestial::ProceduralCloudStyle> {}
+                : hubPlanetCloudStylesForHub(
+                      hub
+                  );
 
         for (std::size_t layerIndex = 0;
             layerIndex < cloudStyles.size();

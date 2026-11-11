@@ -145,6 +145,12 @@ public:
         bool& noClouds
     );
 
+    // the relief normal map of the body's field bake (Hub map shading); 0 until baked / policy off
+    GLuint proceduralNormalTextureForIdentity(
+        int systemId,
+        const std::string& bodyId
+    );
+
     GLuint proceduralAlbedoTextureForIdentity(
         int systemId,
         const std::string& bodyId

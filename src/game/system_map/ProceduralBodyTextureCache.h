@@ -73,6 +73,11 @@ public:
     // generated descriptor (stars, belts, ships).
     GLuint textureFor(int systemId, const std::string& bodyId);
 
+    // GL thread. The relief normal map of a surface bake (the Hub map's shading), the cached generated
+    // normal's format (CelestialTextureBaker::buildNormalFromHeightImage: tangent-space from the equirect
+    // height normalised to the body's range, strength 8). 0 until the surface bake is uploaded.
+    GLuint normalTextureFor(int systemId, const std::string& bodyId);
+
     // GL thread. The body's cloud layer from the SAME CloudWeatherField flight draws (one source of
     // clouds, docs/CELESTIAL_RESOURCE_AUDIT.md): RGBA equirect, alpha = the combined cover of its layers at
     // the 20-min world-time step flight uses (the previous step's texture shows while the next bakes).
@@ -88,7 +93,9 @@ private:
         int width = 0;
         int height = 0;
         std::vector<std::uint8_t> rgba; // GL row order (south first)
+        std::vector<std::uint8_t> normalRgba; // surface bakes: the relief normal map, same layout
         GLuint texture = 0;
+        GLuint normalTexture = 0;
         std::uint64_t lastUsedFrame = 0;
         bool clouds = false;          // a cloud bake (cloudTextureFor) instead of the surface albedo
         double cloudTimeSeconds = 0.0;

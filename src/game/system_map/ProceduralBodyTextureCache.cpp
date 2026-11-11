@@ -109,7 +109,7 @@ void ProceduralBodyTextureCache::memoryUsage(std::size_t& gpuBytes, std::size_t&
         const int state = e->state.load(std::memory_order_acquire);
         if (state == 3)
         {
-            gpuBytes += static_cast<std::size_t>(e->width) * e->height * 4 * 4 / 3;
+            gpuBytes += static_cast<std::size_t>(e->width) * e->height * 4 * 4 / 3 * (e->normalTexture ? 2 : 1);
             ++gpuEntries;
         }
         else if (state == 1)
@@ -143,8 +143,14 @@ std::size_t ProceduralBodyTextureCache::evict(const std::string& key)
         return 0;
     const std::size_t bytes = static_cast<std::size_t>(it->second->width) * it->second->height * 4 * 4 / 3;
     glDeleteTextures(1, &it->second->texture);
+    std::size_t total = bytes;
+    if (it->second->normalTexture)
+    {
+        glDeleteTextures(1, &it->second->normalTexture);
+        total += bytes;
+    }
     m_entries.erase(it);   // baked again on its next request
-    return bytes;
+    return total;
 }
 
 GLuint ProceduralBodyTextureCache::useEntry(const std::string& key, int systemId, const std::string& bodyId,
@@ -186,6 +192,19 @@ GLuint ProceduralBodyTextureCache::useEntry(const std::string& key, int systemId
         state = 2;
     }
     return 0;
+}
+
+GLuint ProceduralBodyTextureCache::normalTextureFor(int systemId, const std::string& bodyId)
+{
+    if (m_policy == Policy::Off || bodyId.empty())
+        return 0;
+    if (systemId < 0)
+        systemId = systemIdFromBodyId(bodyId);
+    const auto it = m_entries.find(std::to_string(systemId) + "|" + bodyId);
+    if (it == m_entries.end() || it->second->state.load(std::memory_order_acquire) != 3)
+        return 0;
+    it->second->lastUsedFrame = m_frame;
+    return it->second->normalTexture;
 }
 
 GLuint ProceduralBodyTextureCache::textureFor(int systemId, const std::string& bodyId)
@@ -255,6 +274,21 @@ bool ProceduralBodyTextureCache::upload(Entry& e)
     glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
     e.texture = tex;
     std::vector<std::uint8_t>().swap(e.rgba);
+    if (!e.normalRgba.empty())
+    {
+        GLuint n = 0;
+        glGenTextures(1, &n);
+        glBindTexture(GL_TEXTURE_2D, n);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, e.width, e.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, e.normalRgba.data());
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
+        e.normalTexture = n;
+        std::vector<std::uint8_t>().swap(e.normalRgba);
+    }
     return tex != 0;
 }
 
@@ -468,6 +502,36 @@ void ProceduralBodyTextureCache::bake(Entry& e)
     });
     if (m_abort.load())
         return;
+    // relief normal map (the baker's buildNormalFromHeightImage on the height normalised to the body's range)
+    {
+        double minH = 1.0e30, maxH = -1.0e30;
+        for (const auto& s : samples)
+        {
+            minH = std::min(minH, s.heightM);
+            maxH = std::max(maxH, s.heightM);
+        }
+        const double range = std::max(1.0, maxH - minH);
+        const auto h01 = [&](int x, int row) {   // row 0 = north, wrapped in x, clamped in y
+            x = (x % w + w) % w;
+            row = std::clamp(row, 0, h - 1);
+            return static_cast<float>((samples[static_cast<std::size_t>(row) * w + x].heightM - minH) / range);
+        };
+        constexpr float Strength = 8.0f;
+        std::vector<std::uint8_t> normal(static_cast<std::size_t>(w) * h * 4);
+        for (int row = 0; row < h; ++row)
+            for (int x = 0; x < w; ++x)
+            {
+                const glm::vec3 n = glm::normalize(glm::vec3(-(h01(x + 1, row) - h01(x - 1, row)) * Strength,
+                                                             -(h01(x, row + 1) - h01(x, row - 1)) * Strength, 1.0f));
+                const glm::vec3 enc = n * 0.5f + glm::vec3(0.5f);
+                const std::size_t o = (static_cast<std::size_t>(h - 1 - row) * w + x) * 4;   // GL rows: south first
+                normal[o + 0] = static_cast<std::uint8_t>(enc.x * 255.0f + 0.5f);
+                normal[o + 1] = static_cast<std::uint8_t>(enc.y * 255.0f + 0.5f);
+                normal[o + 2] = static_cast<std::uint8_t>(enc.z * 255.0f + 0.5f);
+                normal[o + 3] = 255;
+            }
+        e.normalRgba = std::move(normal);
+    }
     e.width = w;
     e.height = h;
     e.rgba = std::move(rgba);

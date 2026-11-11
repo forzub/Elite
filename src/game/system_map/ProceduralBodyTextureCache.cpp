@@ -13,6 +13,7 @@
 
 #include "src/core/ThreadPriority.h"
 #include "src/world/celestial/surface/BodySurfaceDescriptor.h"
+#include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 #include "src/world/celestial/surface/PlanetSurfaceField.h"
 
 namespace game::system_map
@@ -25,13 +26,13 @@ ProceduralBodyTextureCache::Policy policyFromEnv()
 {
     const char* v = std::getenv("ELITE_MAP_PROCEDURAL_BODIES");
     if (!v)
-        return ProceduralBodyTextureCache::Policy::MissingOnly;
+        return ProceduralBodyTextureCache::Policy::All;
     const std::string s(v);
     if (s == "0" || s == "off" || s == "OFF")
         return ProceduralBodyTextureCache::Policy::Off;
-    if (s == "all" || s == "ALL" || s == "2")
-        return ProceduralBodyTextureCache::Policy::All;
-    return ProceduralBodyTextureCache::Policy::MissingOnly;
+    if (s == "missing" || s == "MISSING" || s == "1")
+        return ProceduralBodyTextureCache::Policy::MissingOnly;
+    return ProceduralBodyTextureCache::Policy::All;
 }
 
 int systemIdFromBodyId(const std::string& bodyId)
@@ -46,6 +47,17 @@ int systemIdFromBodyId(const std::string& bodyId)
     for (; i < bodyId.size() && std::isdigit(static_cast<unsigned char>(bodyId[i])); ++i)
         id = id * 10 + (bodyId[i] - '0');
     return id;
+}
+
+// the folder holding assets/source/celestial (curated maps): the working directory or a parent
+std::string findAssetRoot()
+{
+    const fs::path cwd = fs::current_path();
+    std::error_code ec;
+    for (const fs::path& base : {cwd, cwd.parent_path(), cwd.parent_path().parent_path()})
+        if (fs::is_directory(base / "assets/source/celestial", ec))
+            return base.lexically_normal().generic_string();
+    return {};
 }
 
 std::string findSystemsRoot()
@@ -232,6 +244,8 @@ std::string ProceduralBodyTextureCache::descriptorPathFor(int systemId, const st
                 if (us == std::string::npos || us == 0 || name.find_first_not_of("0123456789") != us ||
                     std::atoi(name.substr(0, us).c_str()) != systemId)
                     continue;
+                // "000_sol" -> "sol": the curated maps folder (assets/source/celestial/<system>)
+                m_systemFolder[systemId] = name.substr(us + 1);
                 const fs::path bodies = dir.path() / "generated" / "bodies";
                 for (const auto& f : fs::directory_iterator(bodies, ec))
                 {
@@ -271,7 +285,24 @@ void ProceduralBodyTextureCache::bake(Entry& e)
         e.state.store(2, std::memory_order_release);
         return;
     }
-    const std::unique_ptr<surf::SurfaceField> field = surf::makeSurfaceField(body);
+    // the flight renderer's surface (curated maps, passports) from the shared registry: no second copy
+    // while the body is also in flight; released after the bake when nobody else holds it
+    surf::BodySurfaceSource source;
+    source.id = e.bodyId;
+    source.descriptorPath = path;
+    source.radiusM = body.radiusM;
+    if (m_assetRoot.empty())
+        m_assetRoot = findAssetRoot();
+    if (!m_assetRoot.empty())
+        surf::findImportedBodyMaps(m_assetRoot, m_systemFolder[e.systemId], path, source);
+    surf::LoadedBodySurface loaded;
+    if (!surf::acquireBodySurface(source, loaded) || !loaded.field)
+    {
+        std::cerr << "[MapProceduralBodies] " << e.bodyId << ": surface not loaded " << loaded.error << "\n";
+        e.state.store(2, std::memory_order_release);
+        return;
+    }
+    const std::shared_ptr<surf::SurfaceField> field = loaded.field;
     const int w = m_width, h = m_width / 2;
     const double pi = 3.14159265358979323846;
     const double texelM = 2.0 * pi * field->referenceRadiusM() / w;
@@ -324,7 +355,8 @@ void ProceduralBodyTextureCache::bake(Entry& e)
     e.rgba = std::move(rgba);
     e.state.store(1, std::memory_order_release);
     const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-    std::cerr << "[MapProceduralBodies] baked " << e.bodyId << " (" << surf::archetypeName(surf::surfaceArchetype(body))
+    std::cerr << "[MapProceduralBodies] baked " << e.bodyId << " ("
+              << (loaded.descriptor.source == surf::SurfaceSourceKind::ImportedRealData ? "curated maps, " : "") << surf::archetypeName(surf::surfaceArchetype(body))
               << ") " << w << "x" << h << " in " << static_cast<int>(ms) << " ms\n";
 }
 } // namespace game::system_map

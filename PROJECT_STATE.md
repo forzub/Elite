@@ -5060,3 +5060,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   gpu map.texture_evictions. LIVE (budget 1 MB, policy all, Jupiter Detail): the cached 10.7 MB albedo shown while
   the bake ran was evicted, the procedural 2.7 MB one kept and drawn (D:/tmp/elite_mem/S2/e.png).
   DEV limit seen again: ELITE_DEV_SOL_MAP_SCRIPT system / enter:<body> / detail after a first Detail map stays on it.
+- Step 3 DONE (source + compiled + live DEV): the map bakes every body from the flight surface through the registry
+  (acquireBodySurface: curated Sol maps from assets/source/celestial, passports, procedural fields); registry key =
+  body id (flight / map spell descriptor paths differently). ELITE_MAP_PROCEDURAL_BODIES default is now "all"
+  ("missing" = step-1 behaviour, "0" = old cache only). LIVE Detail maps (D:/tmp/elite_mem/S3): Earth baked from
+  curated maps in 287 ms (registry 16 MB), Jupiter from Cassini 315 ms (24 MB), Phobos procedural by passport
+  1.6 s on its OBJ shape. assets/generated is still read for: the Hub map normal / preview, the Phobos / Deimos OBJ
+  shape models, environment / cloud lookups - not for body albedo any more. Author to judge: Sol bodies on the map
+  now look like in flight (Jupiter = Cassini via the field, paler than the restyled cache).

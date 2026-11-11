@@ -169,8 +169,9 @@ void reportBodySurfaceRegistry()
 
 bool acquireBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
 {
-    const std::string key = source.id + "|" + source.descriptorPath + "|" + source.importedAlbedoPath + "|" +
-                            source.importedHeightPath;
+    // the body id: unique per process; the flight renderer, the probe and the map spell the descriptor
+    // path differently (relative / resolved), so a path in the key would load the same body twice
+    const std::string key = source.id;
     std::unique_lock<std::mutex> lock(registryMutex());
     for (;;)
     {

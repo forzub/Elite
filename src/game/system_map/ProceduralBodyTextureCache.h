@@ -17,10 +17,13 @@
 namespace game::system_map
 {
 /*
-    Map textures of bodies from their generated physical descriptor
-    (elite.generated_body.v1): the equirect albedo is a bake of the SAME
-    surface field the flight renderer draws (makeSurfaceField), so the map
-    and the flight show one planet. Bakes run on a background worker
+    Map textures of bodies from their surface field: the equirect albedo is
+    a bake of the SAME surface the flight renderer draws, taken from the
+    process-wide BodySurfaceRegistry (acquireBodySurface): the procedural
+    field of the generated descriptor, the curated Sol maps
+    (assets/source/celestial) where they exist, appearance passports - so
+    the map and the flight show one planet (docs/CELESTIAL_RESOURCE_AUDIT.md
+    step 3) and the baked assets/generated cache is not needed for it. Bakes run on a background worker
     (below normal priority); textureFor() returns 0 until the bake is
     uploaded, the caller draws its fallback meanwhile.
 
@@ -28,10 +31,11 @@ namespace game::system_map
     uploads it: longitude u = atan2(z, x) / 2pi + 0.5, GL row 0 = south pole.
 
     Policy (env ELITE_MAP_PROCEDURAL_BODIES):
-      unset / "missing"  procedural only for bodies without a cached texture
-                         (every system except Sol / Tau Ceti)
-      "all"              procedural for every body (compare against the cache)
-      "0" / "off"        never (old behaviour)
+      unset / "all"      every body from its surface field (the cached
+                         generated texture only while the bake runs)
+      "missing"          only bodies without a cached generated texture
+                         (the step-1 behaviour: Sol / Tau Ceti from the cache)
+      "0" / "off"        never (the old cache-only behaviour)
     ELITE_MAP_PROCEDURAL_SIZE: texture width (height = width / 2), default 1024.
 */
 class ProceduralBodyTextureCache
@@ -87,7 +91,7 @@ private:
     std::string descriptorPathFor(int systemId, const std::string& bodyId);
     static bool upload(Entry& entry);
 
-    Policy m_policy = Policy::MissingOnly;
+    Policy m_policy = Policy::All;
     int m_width = 1024;
 
     std::unordered_map<std::string, std::shared_ptr<Entry>> m_entries; // GL thread only
@@ -103,6 +107,8 @@ private:
 
     // worker only: systemId -> (body id -> descriptor path)
     std::unordered_map<int, std::unordered_map<std::string, std::string>> m_descriptorIndex;
+    std::unordered_map<int, std::string> m_systemFolder;   // "000_sol" -> "sol" (curated maps folder)
     std::string m_systemsRoot;
+    std::string m_assetRoot;   // holds assets/source/celestial
 };
 } // namespace game::system_map

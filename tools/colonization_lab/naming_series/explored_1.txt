@@ -1,0 +1,171 @@
+# Naming series 3126 (PROPOSAL) - systems nobody lives in, named by their first visitors
+# (out/world_3126/expeditions_3126.json). Format: see inhabited_1.txt.
+
+@ 1 | ru | Красный Форпост (SVAROG-1): соседи по системе Альфы Центавра, 0.2 св. года, наблюдают её с 2150 | русские сказки и былины: у A — злодеи и богатыри, у B — волшебные помощники и герои
+* | Лукоморье | = | Lukomorye | Lukomórie | 卢科莫里耶 | ルコモーリエ | сказочное Лукоморье, где «дуб зелёный»
+Alpha Centauri A b | Горыныч | = | Gorynych | Gorínich | 戈雷内奇 | ゴルイニチ | Змей Горыныч: самая горячая
+Alpha Centauri A c | Кощей | = | Koshchei | Koschéi | 科谢伊 | コシチェイ | Кощей Бессмертный
+Alpha Centauri A d | Яга | = | Yaga | Yaga | 雅加 | ヤガー | Баба-Яга
+Alpha Centauri A e | Соловей | = | Solovei | Solovéi | 索洛维 | ソロヴェイ | Соловей-Разбойник
+Alpha Centauri A f | Тугарин | = | Tugarin | Tugarín | 图加林 | トゥガーリン | Тугарин Змеевич
+Alpha Centauri A g | Святогор | = | Svyatogor | Sviatogor | 斯维亚托戈尔 | スヴャトゴール | великан-богатырь
+Alpha Centauri A h | Идолище | = | Idolishche | Ídolische | 伊多利谢 | イドリシチェ | Идолище Поганое: атмосфера в 130 бар
+Alpha Centauri A i | Микула | = | Mikula | Mikula | 米库拉 | ミクーラ | Микула Селянинович, пахарь
+Alpha Centauri A j | Илья | = | Ilya | Iliá | 伊利亚 | イリヤー | Илья Муромец: суперземля
+Alpha Centauri B b | Жар-птица | = | Firebird | Pájaro de Fuego | 火鸟 | 火の鳥 | огненная птица
+Alpha Centauri B c | Сивка | = | Sivka | Sivka | 西夫卡 | シフカ | Сивка-Бурка: железная планета
+Alpha Centauri B d | Финист | = | Finist | Finist | 菲尼斯特 | フィニスト | Финист — Ясный Сокол
+Alpha Centauri B e | Горбунок | = | Gorbunok | Gorbunok | 驼背小马 | せむしの仔馬 | Конёк-Горбунок
+Alpha Centauri B f | Садко | = | Sadko | Sadkó | 萨特阔 | サトコ | гусляр Садко
+Alpha Centauri B g | Вольга | = | Volga | Volga | 沃利加 | ヴォリガ | Вольга-оборотень
+Alpha Centauri B h | Добрыня | = | Dobrynya | Dobrinia | 多布雷尼亚 | ドブルイニャ | Добрыня Никитич
+Alpha Centauri B i | Алёша | = | Alyosha | Aliosha | 阿廖沙 | アリョーシャ | Алёша Попович
+Alpha Centauri B j | Василиса | = | Vasilisa | Vasilisa | 瓦西里莎 | ヴァシリーサ | Василиса Премудрая
+Alpha Centauri B k | Моревна | = | Morevna | Morevna | 玛丽娅·莫列夫娜 | マリヤ・モレヴナ | Марья Моревна: атмосфера в 51 бар
+Alpha Centauri B l | Беловодье | = | Belovodye | Belovodie | 白水国 | ベロヴォジエ | земля праведных: умеренный мир в 26 бар
+Alpha Centauri B m | Буян | = | Buyan | Buián | 布扬岛 | ブヤン | остров Буян: суперземля
+Alpha Centauri (BA) K1 | Алатырь | = | Alatyr | Alatir | 阿拉特里 | アラトゥイリ | бел-горюч камень
+Alpha Centauri (BA) K2 | Емеля | = | Yemelya | Yemelia | 叶梅利亚 | エメーリャ | Емеля на печи
+Alpha Centauri (BA) K3 | Колобок | = | Kolobok | Kolobok | 小圆面包 | コロボーク | убежавший колобок: самый дальний
+
+@ 5 | pt | AMAZONIA-1 (Сельва-Верде): корабль поколений прошёл в 3 св. годах от Сириуса около 2370 | португальские мореплаватели: звезда — Сагреш, школа навигации
+* | Sagres | Сагреш | Sagres | Sagres | 萨格里什 | サグレス | мыс и школа мореходов принца Энрике
+Sirius A b | Cabral | Кабрал | Cabral | = | 卡布拉尔 | カブラル | Педру Кабрал, открывший Бразилию
+Sirius A c | Gama | Гама | Gama | = | 达伽马 | ガマ | Васко да Гама
+Sirius A d | Dias | Диаш | Dias | Días | 迪亚士 | ディアス | Бартоломеу Диаш
+Sirius A e | Magalhães | Магеллан | Magellan | Magallanes | 麦哲伦 | マゼラン | Магеллан
+Sirius A f | Henrique | Энрике | Henry | Enrique | 恩里克 | エンリケ | принц Энрике Мореплаватель: суперземля
+Sirius A g | Corte-Real | Корте-Реал | Corte-Real | = | 科尔特雷亚尔 | コルテ=レアル | Гашпар Корте-Реал: атмосфера в 140 бар
+Sirius (BA) b | Caminha | Каминья | Caminha | Caminha | 卡米尼亚 | カミーニャ | Перу Ваш де Каминья, летописец открытия Бразилии
+Sirius (BA) K1 | Bojador | Бохадор | Bojador | = | 博哈多尔 | ボジャドール | мыс Бохадор, за которым «кончался мир»
+Sirius (BA) K2 | Tormentas | Торментас | Tormentas | = | 风暴角 | 嵐の岬 | мыс Бурь
+Sirius (BA) K3 | Boa Esperança | Боа-Эшперанса | Good Hope | Buena Esperanza | 好望角 | 喜望峰 | мыс Доброй Надежды
+
+@ 52 | pt | AMAZONIA-1 (Сельва-Верде): корабль поколений прошёл в 3 св. годах от Проциона около 2388 | бразильская музыка: звезда — Саудади
+* | Saudade | Саудади | Saudade | Saudade | 萨乌达德 | サウダージ | тоска по тому, чего нет рядом: последний взгляд на Землю
+Procyon A b | Frevo | Фрево | Frevo | = | 弗雷沃 | フレーヴォ | фрево, танец Ресифи: самая горячая
+Procyon A c | Maracatu | Маракату | Maracatu | = | 马拉卡图 | マラカトゥ | маракату
+Procyon A d | Samba | Самба | Samba | = | 桑巴 | サンバ | самба
+Procyon A e | Choro | Шоро | Choro | = | 肖罗 | ショーロ | шоро
+Procyon A f | Baião | Байан | Baiao | Baião | 拜昂 | バイアン | байан
+Procyon A g | Forró | Форро | Forro | Forró | 福罗 | フォホー | форро
+Procyon A h | Xote | Шоте | Xote | = | 肖特 | ショッチ | шоте
+Procyon A i | Bossa | Босса | Bossa | = | 波萨 | ボサ | босса-нова
+Procyon A j | Lundu | Лунду | Lundu | Lundú | 伦杜 | ルンドゥ | лунду: атмосфера в 130 бар
+Procyon A k | Maxixe | Машиши | Maxixe | = | 马希谢 | マシシ | машиши: атмосфера в 290 бар
+Procyon (BA) K1 | Pandeiro | Пандейру | Pandeiro | = | 潘德罗鼓 | パンデイロ | бубен
+Procyon (BA) K2 | Cuíca | Куика | Cuica | Cuíca | 库伊卡鼓 | クイーカ | куика
+Procyon (BA) K3 | Berimbau | Беримбау | Berimbau | = | 贝林巴乌 | ビリンバウ | беримбау
+
+@ 6 | zh-Hans | Цветущая Гармония: научная экспедиция с Тяньюаня, 2786 | музыка Гармонии: древние инструменты
+* | 和声 | Хэшэн | Hesheng | Hesheng | = | 和声 | «Созвучие» | Héshēng
+Luyten's Star b | 钟 | Чжун | Zhong | Zhong | = | 鐘 | колокол: самая горячая | Zhōng
+Luyten's Star c | 鼓 | Гу | Gu | Gu | = | 鼓 | барабан | Gǔ
+Luyten's Star d | 磬 | Цин | Qing | Qing | = | 磬 | каменный гонг | Qìng
+Luyten's Star e | 笙 | Шэн | Sheng | Sheng | = | 笙 | губной орган | Shēng
+Luyten's Star f | 琴 | Цинь | Qin | Qin | = | 琴 | цитра: умеренный мир | Qín
+Luyten's Star g | 筝 | Чжэн | Zheng | Zheng | = | 箏 | гучжэн: водный мир | Zhēng
+Luyten's Star h | 埙 | Сюнь | Xun | Xun | = | 塤 | глиняная окарина | Xūn
+Luyten's Star i | 箫 | Сяо | Xiao | Xiao | = | 簫 | продольная флейта | Xiāo
+Luyten's Star j | 笛 | Ди | Di | Di | = | 笛 | поперечная флейта | Dí
+Luyten's Star k | 琵琶 | Пипа | Pipa | Pipa | = | 琵琶 | лютня пипа: планета с кольцами | Pípa
+Luyten's Star l | 瑟 | Сэ | Se | Se | = | 瑟 | большая цитра | Sè
+Luyten's Star K1 | 二胡 | Эрху | Erhu | Erhu | = | 二胡 | скрипка эрху | Èrhú
+Luyten's Star K2 | 锣 | Ло | Luo | Luo | = | 銅鑼 | гонг | Luó
+
+@ 29 | zh-Hans | Цветущая Гармония: научная экспедиция с Тяньюаня, 2787 | двадцать четыре сезона: у жаркого A — лето и осень, у холодного коричневого карлика B — зима
+* | 四时 | Сыши | Sishi | Sishi | = | 四時 | «Четыре времени года» | Sìshí
+Gliese 229 A d | 大暑 | Дашу | Dashu | Dashu | = | 大暑 | Великая жара | Dàshǔ
+Gliese 229 A e | 小暑 | Сяошу | Xiaoshu | Xiaoshu | = | 小暑 | Малая жара | Xiǎoshǔ
+Gliese 229 A f | 夏至 | Сячжи | Xiazhi | Xiazhi | = | 夏至 | Летнее солнцестояние | Xiàzhì
+Gliese 229 A g | 芒种 | Манчжун | Mangzhong | Mangzhong | = | 芒種 | Колошение | Mángzhòng
+Gliese 229 A h | 小满 | Сяомань | Xiaoman | Xiaoman | = | 小満 | Малое наполнение зерна | Xiǎomǎn
+Gliese 229 A i | 立夏 | Лися | Lixia | Lixia | = | 立夏 | Начало лета | Lìxià
+Gliese 229 A j | 谷雨 | Гуюй | Guyu | Guyu | = | 穀雨 | Хлебные дожди | Gǔyǔ
+Gliese 229 A k | 清明 | Цинмин | Qingming | Qingming | = | 清明 | Ясный свет | Qīngmíng
+Gliese 229 A l | 春分 | Чуньфэнь | Chunfen | Chunfen | = | 春分 | Весеннее равноденствие | Chūnfēn
+Gliese 229 A m | 惊蛰 | Цзинчжэ | Jingzhe | Jingzhe | = | 啓蟄 | Пробуждение насекомых | Jīngzhé
+Gliese 229 A n | 雨水 | Юйшуй | Yushui | Yushui | = | 雨水 | Дождевая вода | Yǔshuǐ
+Gliese 229 A o | 立春 | Личунь | Lichun | Lichun | = | 立春 | Начало весны | Lìchūn
+Gliese 229 B d | 立冬 | Лидун | Lidong | Lidong | = | 立冬 | Начало зимы | Lìdōng
+Gliese 229 B e | 小雪 | Сяосюэ | Xiaoxue | Xiaoxue | = | 小雪 | Малые снега | Xiǎoxuě
+Gliese 229 B f | 大雪 | Дасюэ | Daxue | Daxue | = | 大雪 | Большие снега | Dàxuě
+Gliese 229 B g | 冬至 | Дунчжи | Dongzhi | Dongzhi | = | 冬至 | Зимнее солнцестояние | Dōngzhì
+Gliese 229 B g I | 大寒 | Дахань | Dahan | Dahan | = | 大寒 | Большие холода | Dàhán
+
+@ 7 | sw | UHURU-2 (Новая Маланд): корабль поколений прошёл в 3.5 св. года от звезды Каптейна около 2356 | древняя звезда гало — «Старец»; планеты — слова о памяти и мудрости
+* | Mzee | Мзее | Mzee | Mzee | 姆泽 | ムゼー | старец: звезде Каптейна 11 млрд лет
+Kapteyn's Star b | Babu | Бабу | Babu | = | 巴布 | バブ | дед
+Kapteyn's Star d | Bibi | Биби | Bibi | = | 比比 | ビビ | бабушка
+Kapteyn's Star e | Hekima | Хекима | Hekima | = | 赫基马 | ヘキマ | мудрость
+Kapteyn's Star f | Hadithi | Хадити | Hadithi | = | 哈迪蒂 | ハディシ | сказание
+Kapteyn's Star g | Methali | Метали | Methali | = | 梅塔利 | メサリ | пословица
+Kapteyn's Star h | Kumbukumbu | Кумбукумбу | Kumbukumbu | = | 昆布昆布 | クンブクンブ | память
+Kapteyn's Star K1 | Zamani | Замани | Zamani | = | 扎马尼 | ザマニ | давнее время
+
+@ 17 | en | Провидение (Культ Машины): экспедиция с Gliese 876, 2806; у планеты e — пустой корабль GAIA-2 | реликвии Машины: первые вычислители Земли; звезда — Антикитера
+* | Antikythera | Антикитера | Antikythera | Anticitera | 安提基特拉 | アンティキティラ | первый известный механический вычислитель
+TRAPPIST-1 i | Colossus | Колосс | Colossus | Coloso | 巨人机 | コロッサス | Colossus, Блетчли-парк: ближайшая
+TRAPPIST-1 b | ENIAC | ЭНИАК | ENIAC | = | 埃尼阿克 | エニアック | ENIAC
+TRAPPIST-1 c | UNIVAC | ЮНИВАК | UNIVAC | = | 尤尼瓦克 | ユニバック | UNIVAC
+TRAPPIST-1 d | EDSAC | ЭДСАК | EDSAC | = | 埃德萨克 | エドサック | EDSAC
+TRAPPIST-1 e | Jacquard | Жаккар | Jacquard | = | 雅卡尔 | ジャカード | перфокарты ткацкого станка; на орбите — пустой GAIA-2
+TRAPPIST-1 f | Difference | Разностная | Difference | Diferencial | 差分机 | 階差機関 | разностная машина Бэббиджа
+TRAPPIST-1 g | Analytical | Аналитическая | Analytical | Analítica | 分析机 | 解析機関 | аналитическая машина
+TRAPPIST-1 h | Abacus | Абак | Abacus | Ábaco | 算盘 | 算盤 | счёты
+TRAPPIST-1 j | Quipu | Кипу | Quipu | Quipu | 奇普 | キープ | узелковое письмо инков: самая дальняя
+
+@ 51 | en | Провидение (Культ Машины): экспедиция с Gliese 876, 2829 | логика Машины: от аксиомы у звезды до бесконечности на краю
+* | Ergo | Эрго | Ergo | Ergo | 故而 | エルゴ | «следовательно»
+GJ 433 e | Axiom | Аксиома | Axiom | Axioma | 公理 | 公理 | аксиома
+GJ 433 f | Lemma | Лемма | Lemma | Lema | 引理 | 補題 | лемма
+GJ 433 g | Theorem | Теорема | Theorem | Teorema | 定理 | 定理 | теорема
+GJ 433 h | Corollary | Следствие | Corollary | Corolario | 推论 | 系 | следствие
+GJ 433 b | Paradox | Парадокс | Paradox | Paradoja | 悖论 | パラドックス | парадокс: атмосфера в 490 бар
+GJ 433 i | Proof | Доказательство | Proof | Prueba | 证明 | 証明 | доказательство
+GJ 433 d | Algorithm | Алгоритм | Algorithm | Algoritmo | 算法 | アルゴリズム | алгоритм: газовый субнептун
+GJ 433 j | Recursion | Рекурсия | Recursion | Recursión | 递归 | 再帰 | рекурсия
+GJ 433 k | Iteration | Итерация | Iteration | Iteración | 迭代 | 反復 | итерация
+GJ 433 l | Entropy | Энтропия | Entropy | Entropía | 熵 | エントロピー | энтропия
+GJ 433 m | Cipher | Шифр | Cipher | Cifra | 密码 | 暗号 | шифр
+GJ 433 n | Parity | Чётность | Parity | Paridad | 奇偶 | パリティ | чётность
+GJ 433 n I | Bit | Бит | Bit | Bit | 比特 | ビット | бит
+GJ 433 o | Qubit | Кубит | Qubit | Cúbit | 量子比特 | 量子ビット | кубит
+GJ 433 c | Halting | Останов | Halting | Parada | 停机 | 停止性 | проблема остановки: гигант в 1200 бар
+GJ 433 K2 | Zero | Ноль | Zero | Cero | 零 | ゼロ | ноль
+GJ 433 K3 | One | Единица | One | Uno | 壹 | イチ | единица
+GJ 433 K1 | Infinity | Бесконечность | Infinity | Infinito | 无穷 | 無限 | бесконечность: самый дальний
+
+@ 21 | fr | Новая Европа: экспедиция с Gliese 581 через склад в пустоте, 2836 | Просвещение: звезда — Свет, планеты — философы
+* | Lumière | Люмьер | Lumiere | Luz | 光明 | リュミエール | «свет» эпохи Просвещения
+GJ 1214 c | Voltaire | Вольтер | Voltaire | = | 伏尔泰 | ヴォルテール | Вольтер: железная, ближайшая
+GJ 1214 b | Descartes | Декарт | Descartes | = | 笛卡尔 | デカルト | Декарт: суперземля
+GJ 1214 d | Diderot | Дидро | Diderot | = | 狄德罗 | ディドロ | Дидро
+GJ 1214 e | Rousseau | Руссо | Rousseau | = | 卢梭 | ルソー | Руссо: умеренный мир
+GJ 1214 f | Montesquieu | Монтескьё | Montesquieu | = | 孟德斯鸠 | モンテスキュー | Монтескьё
+GJ 1214 g | Alembert | Даламбер | d'Alembert | d'Alembert | 达朗贝尔 | ダランベール | Даламбер
+GJ 1214 h | Condorcet | Кондорсе | Condorcet | = | 孔多塞 | コンドルセ | Кондорсе
+GJ 1214 i | Lavoisier | Лавуазье | Lavoisier | = | 拉瓦锡 | ラヴォアジエ | Лавуазье
+GJ 1214 j | Buffon | Бюффон | Buffon | = | 布丰 | ビュフォン | Бюффон: газовый субнептун
+GJ 1214 K1 | Montaigne | Монтень | Montaigne | Montaigne | 蒙田 | モンテーニュ | Монтень: самый дальний
+
+@ 43 | fr | Новая Европа: экспедиция с Gliese 581, 2894 | импрессионисты: звезда — сад Живерни
+* | Giverny | Живерни | Giverny | = | 吉维尼 | ジヴェルニー | сад Моне
+Theta Draconis (BA) b | Monet | Моне | Monet | = | 莫奈 | モネ | Клод Моне
+Theta Draconis (BA) c | Manet | Мане | Manet | = | 马奈 | マネ | Эдуар Мане
+Theta Draconis (BA) d | Renoir | Ренуар | Renoir | = | 雷诺阿 | ルノワール | Огюст Ренуар
+Theta Draconis (BA) e | Degas | Дега | Degas | = | 德加 | ドガ | Эдгар Дега: атмосфера в 280 бар
+Theta Draconis (BA) f | Cézanne | Сезанн | Cezanne | Cézanne | 塞尚 | セザンヌ | Поль Сезанн: атмосфера в 450 бар
+Theta Draconis (BA) g | Pissarro | Писсарро | Pissarro | = | 毕沙罗 | ピサロ | Камиль Писсарро
+Theta Draconis (BA) h | Sisley | Сислей | Sisley | = | 西斯莱 | シスレー | Альфред Сислей
+Theta Draconis (BA) i | Morisot | Моризо | Morisot | = | 莫里索 | モリゾ | Берта Моризо
+Theta Draconis (BA) j | Seurat | Сёра | Seurat | = | 修拉 | スーラ | Жорж Сёра
+Theta Draconis (BA) k | Signac | Синьяк | Signac | = | 西涅克 | シニャック | Поль Синьяк
+Theta Draconis (BA) l | Gauguin | Гоген | Gauguin | = | 高更 | ゴーギャン | Поль Гоген
+Theta Draconis (BA) m | Matisse | Матисс | Matisse | = | 马蒂斯 | マティス | Анри Матисс
+Theta Draconis (BA) n | Rodin | Роден | Rodin | = | 罗丹 | ロダン | Огюст Роден: гигант в 410 бар
+Theta Draconis (BA) o | Bazille | Базиль | Bazille | = | 巴齐耶 | バジール | Фредерик Базиль
+Theta Draconis (BA) p | Caillebotte | Кайботт | Caillebotte | = | 卡耶博特 | カイユボット | Гюстав Кайботт
+Theta Draconis (BA) K1 | Cassatt | Кассат | Cassatt | = | 卡萨特 | カサット | Мэри Кассат
+Theta Draconis (BA) K2 | Utrillo | Утрилло | Utrillo | = | 郁特里罗 | ユトリロ | Морис Утрилло
+Theta Draconis (BA) K3 | Valadon | Валадон | Valadon | = | 瓦拉东 | ヴァラドン | Сюзанна Валадон

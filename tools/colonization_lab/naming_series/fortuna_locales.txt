@@ -1,0 +1,22 @@
+# Fortuna (Fomalhaut) - CANON names (author 2026-11-06); this file only adds the es / zh-Hans / ja forms.
+# Designation column = runtime body id (Fortuna's body files carry the Russian name as designation).
+# Different-name practice: zh 命运之轮 / ja 運命の輪 «Колесо судьбы» (canon zh exonym), not a transliteration.
+
+@ 61 | la | CANON (автор 2026-11-06) | мифологическая серия Фортуны
+* | Fortuna | Фортуна | Fortuna | Fortuna | 命运之轮 | 運命の輪 | Колесо Фортуны
+id:system_61.Fomalhaut.Lexie | Lexie | Лекси | Lexie | Lexie | 柏辛 | レクシー | CANON
+id:system_61.Fomalhaut.Fomalhaut_c | Atropos | Атропос | Atropos | Átropos | 阿特罗波斯 | アトロポス | Мойра, режущая нить
+id:system_61.Fomalhaut.Fomalhaut_d | Lachesis | Лахесис | Lachesis | Láquesis | 拉刻西斯 | ラケシス | Мойра, отмеряющая нить
+id:system_61.Fomalhaut.Fomalhaut_e | Clotho | Клото | Clotho | Cloto | 克洛托 | クロト | Мойра, прядущая нить
+id:system_61.Fomalhaut.Fomalhaut_f | Nemesis | Немезида | Nemesis | Némesis | 涅墨西斯 | ネメシス | возмездие
+id:system_61.Fomalhaut.Fomalhaut_g | Ananke | Ананке | Ananke | Ananké | 阿南刻 | アナンケ | необходимость
+id:system_61.Fomalhaut.Fomalhaut_h | Spes | Спес | Spes | Spes | 斯佩斯 | スペース | надежда
+id:system_61.Fomalhaut.Fomalhaut_i | Derceto | Деркето | Derceto | Derceto | 德尔刻托 | デルケト | богиня-рыба
+id:system_61.Fomalhaut.Fomalhaut_j | Oannes | Оаннес | Oannes | Oannes | 欧安尼斯 | オアンネス | человек-рыба
+id:system_61.Fomalhaut.Fomalhaut_k | Felicitas | Фелицитас | Felicitas | Felicitas | 费利西塔斯 | フェリキタス | удача
+id:system_61.Fomalhaut.Fomalhaut_l | Morta | Морта | Morta | Morta | 摩尔塔 | モルタ | Парка смерти
+id:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I | Occasio | Окказия | Occasio | Ocasión | 奥卡西奥 | オッカシオ | случай
+id:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I | Decima | Децима | Decima | Décima | 得客玛 | デキマ | Парка судьбы
+id:system_61.Fomalhaut.Fomalhaut_K1 | Tyche | Тюхе | Tyche | Tique | 堤喀 | テュケー | удача
+id:system_61.Fomalhaut.Fomalhaut_K2 | Plutus | Плутос | Plutus | Pluto | 普路托斯 | プルートス | богатство
+id:system_61.Fomalhaut.Fomalhaut_K3 | Fors | Форс | Fors | Fors | 福尔斯 | フォルス | случай

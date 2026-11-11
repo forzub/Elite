@@ -1,0 +1,2194 @@
+{
+ "schema": "elite.colonization_lab.expeditions.v1",
+ "status": "PROPOSAL",
+ "year": 3126,
+ "generated_by": "tools/colonization_lab/expeditions_3126.py",
+ "note": "первые посещения необитаемых систем: пролёты кораблей поколений, научные экспедиции эпохи прыжка с баз и маяков, канон фронтиров; баланс — у каждого участника хотя бы одна система",
+ "systems": [
+  {
+   "system": 1,
+   "catalog": "Alpha Centauri A+B",
+   "discoverer": "proxima_outpost",
+   "year": 2150,
+   "how": "neighbour",
+   "detail": {
+    "dist_ly": 0.19
+   },
+   "candidates": [
+    {
+     "unit": "gj832_tianhe",
+     "year": 2128,
+     "how": "flyby",
+     "mission": "TIANHE-1",
+     "dist_ly": 3.51
+    },
+    {
+     "unit": "proxima_outpost",
+     "year": 2150,
+     "how": "flyby",
+     "mission": "SVAROG-1",
+     "dist_ly": 0.19
+    },
+    {
+     "unit": "gj832_gaia_zone",
+     "year": 2156,
+     "how": "flyby",
+     "mission": "GREEN-ARK-1",
+     "dist_ly": 3.51
+    },
+    {
+     "unit": "delta_pav_karma",
+     "year": 2180,
+     "how": "flyby",
+     "mission": "DHARMA-1",
+     "dist_ly": 2.44
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2266,
+     "how": "flyby",
+     "mission": "EUROPA-1",
+     "dist_ly": 3.48
+    },
+    {
+     "unit": "hd40307_maland",
+     "year": 2296,
+     "how": "flyby",
+     "mission": "UHURU-2",
+     "dist_ly": 3.47
+    }
+   ]
+  },
+  {
+   "system": 5,
+   "catalog": "Sirius A+B",
+   "discoverer": "hd69830_verde",
+   "year": 2370,
+   "how": "flyby",
+   "detail": {
+    "mission": "AMAZONIA-1",
+    "dist_ly": 3.35
+   },
+   "candidates": [
+    {
+     "unit": "hd69830_verde",
+     "year": 2370,
+     "how": "flyby",
+     "mission": "AMAZONIA-1",
+     "dist_ly": 3.35
+    },
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2761,
+     "how": "expedition",
+     "base": 8,
+     "legs": 1,
+     "dist_ly": 12.31
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2789,
+     "how": "expedition",
+     "base": 9,
+     "legs": 1,
+     "dist_ly": 7.84
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2810,
+     "how": "expedition",
+     "base": 13,
+     "legs": 2,
+     "dist_ly": 20.09
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2821,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 10.93
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2826,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 10.93
+    }
+   ]
+  },
+  {
+   "system": 6,
+   "catalog": "Luyten's Star",
+   "discoverer": "eps_eri_harmony",
+   "year": 2786,
+   "how": "expedition",
+   "detail": {
+    "base": 9,
+    "legs": 1,
+    "dist_ly": 11.6,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2775,
+     "how": "expedition",
+     "base": 8,
+     "legs": 2,
+     "dist_ly": 16.8
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2786,
+     "how": "expedition",
+     "base": 9,
+     "legs": 1,
+     "dist_ly": 11.6
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2803,
+     "how": "expedition",
+     "base": 13,
+     "legs": 2,
+     "dist_ly": 24.99
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2822,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 10.68
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2823,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 10.68
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2825,
+     "how": "expedition",
+     "base": 12,
+     "legs": 2,
+     "dist_ly": 25.8
+    }
+   ]
+  },
+  {
+   "system": 7,
+   "catalog": "Kapteyn's Star",
+   "discoverer": "hd40307_maland",
+   "year": 2356,
+   "how": "flyby",
+   "detail": {
+    "mission": "UHURU-2",
+    "dist_ly": 3.58
+   },
+   "candidates": [
+    {
+     "unit": "hd40307_maland",
+     "year": 2356,
+     "how": "flyby",
+     "mission": "UHURU-2",
+     "dist_ly": 3.58
+    },
+    {
+     "unit": "hd40307_firmament",
+     "year": 2556,
+     "how": "flyby",
+     "mission": "CELESTIAL-DESTINY-2",
+     "dist_ly": 3.58
+    },
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2761,
+     "how": "expedition",
+     "base": 8,
+     "legs": 1,
+     "dist_ly": 10.87
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2782,
+     "how": "expedition",
+     "base": 9,
+     "legs": 1,
+     "dist_ly": 8.49
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2809,
+     "how": "expedition",
+     "base": 13,
+     "legs": 2,
+     "dist_ly": 18.71
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2821,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 17.76
+    }
+   ]
+  },
+  {
+   "system": 17,
+   "catalog": "TRAPPIST-1",
+   "discoverer": "gj876_next",
+   "year": 2806,
+   "how": "expedition",
+   "detail": {
+    "base": 13,
+    "legs": 2,
+    "dist_ly": 25.6,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2786,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 32.36
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2806,
+     "how": "expedition",
+     "base": 13,
+     "legs": 2,
+     "dist_ly": 25.6
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2826,
+     "how": "expedition",
+     "base": 9,
+     "legs": 4,
+     "dist_ly": 37.54
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2838,
+     "how": "expedition",
+     "base": 12,
+     "legs": 3,
+     "dist_ly": 32.11
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2840,
+     "how": "expedition",
+     "base": 31,
+     "legs": 2,
+     "dist_ly": 34.68
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2843,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 47.86
+    }
+   ]
+  },
+  {
+   "system": 19,
+   "catalog": "HD 102195",
+   "discoverer": "tau_ceti_cognium",
+   "year": 3091,
+   "how": "frontier_canon",
+   "detail": {
+    "note": "«Лунные врата» (月门星区): научная служба Когниума после находки Керна у «Лотоса»"
+   },
+   "candidates": [
+    {
+     "unit": "lalande_hellas",
+     "year": 2909,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 89.95
+    },
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2909,
+     "how": "expedition",
+     "base": 54,
+     "legs": 4,
+     "dist_ly": 80.21
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2912,
+     "how": "expedition",
+     "base": 10,
+     "legs": 4,
+     "dist_ly": 86.43
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2912,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 89.95
+    },
+    {
+     "unit": "hd69830_verde",
+     "year": 2913,
+     "how": "expedition",
+     "base": 16,
+     "legs": 4,
+     "dist_ly": 79.65
+    },
+    {
+     "unit": "wolf359_citadel",
+     "year": 2916,
+     "how": "expedition",
+     "base": 3,
+     "legs": 4,
+     "dist_ly": 89.09
+    }
+   ]
+  },
+  {
+   "system": 20,
+   "catalog": "HD 93083",
+   "discoverer": "tau_ceti_cognium",
+   "year": 3060,
+   "how": "frontier_canon",
+   "detail": {
+    "note": "Обсерватория «Нулевое измерение» (零维观测站): научная служба Управления Маяков"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2906,
+     "how": "expedition",
+     "base": 54,
+     "legs": 4,
+     "dist_ly": 56.32
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2918,
+     "how": "expedition",
+     "base": 4,
+     "legs": 5,
+     "dist_ly": 88.31
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2921,
+     "how": "expedition",
+     "base": 4,
+     "legs": 5,
+     "dist_ly": 88.31
+    },
+    {
+     "unit": "hd69830_verde",
+     "year": 2922,
+     "how": "expedition",
+     "base": 16,
+     "legs": 5,
+     "dist_ly": 64.65
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2924,
+     "how": "expedition",
+     "base": 10,
+     "legs": 5,
+     "dist_ly": 85.38
+    },
+    {
+     "unit": "wolf359_citadel",
+     "year": 2926,
+     "how": "expedition",
+     "base": 3,
+     "legs": 5,
+     "dist_ly": 85.09
+    }
+   ]
+  },
+  {
+   "system": 21,
+   "catalog": "GJ 1214",
+   "discoverer": "gj581_europa",
+   "year": 2836,
+   "how": "expedition",
+   "detail": {
+    "base": 10,
+    "legs": 2,
+    "dist_ly": 32.28,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2818,
+     "how": "expedition",
+     "base": 11,
+     "legs": 2,
+     "dist_ly": 33.85
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2836,
+     "how": "expedition",
+     "base": 10,
+     "legs": 2,
+     "dist_ly": 32.28
+    },
+    {
+     "unit": "delta_pav_freekarma",
+     "year": 2849,
+     "how": "expedition",
+     "base": 22,
+     "legs": 3,
+     "dist_ly": 47.66
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2855,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 48.4
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2856,
+     "how": "expedition",
+     "base": 12,
+     "legs": 3,
+     "dist_ly": 47.0
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2858,
+     "how": "expedition",
+     "base": 31,
+     "legs": 4,
+     "dist_ly": 43.62
+    }
+   ]
+  },
+  {
+   "system": 24,
+   "catalog": "Gliese 436",
+   "discoverer": "lalande_hellas",
+   "year": 2831,
+   "how": "expedition",
+   "detail": {
+    "base": 4,
+    "legs": 2,
+    "dist_ly": 25.03,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2792,
+     "how": "expedition",
+     "base": 8,
+     "legs": 4,
+     "dist_ly": 43.77
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2821,
+     "how": "expedition",
+     "base": 9,
+     "legs": 4,
+     "dist_ly": 39.78
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2831,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 25.03
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2832,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 25.03
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2834,
+     "how": "expedition",
+     "base": 13,
+     "legs": 4,
+     "dist_ly": 47.91
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2837,
+     "how": "expedition",
+     "base": 10,
+     "legs": 2,
+     "dist_ly": 29.89
+    }
+   ]
+  },
+  {
+   "system": 26,
+   "catalog": "Teegarden's Star",
+   "discoverer": "tau_ceti_cognium",
+   "year": 2762,
+   "how": "expedition",
+   "detail": {
+    "base": 8,
+    "legs": 1,
+    "dist_ly": 7.75
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2762,
+     "how": "expedition",
+     "base": 8,
+     "legs": 1,
+     "dist_ly": 7.75
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2786,
+     "how": "expedition",
+     "base": 9,
+     "legs": 1,
+     "dist_ly": 5.91
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2810,
+     "how": "expedition",
+     "base": 13,
+     "legs": 2,
+     "dist_ly": 15.49
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2818,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 16.62
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2823,
+     "how": "expedition",
+     "base": 31,
+     "legs": 1,
+     "dist_ly": 14.87
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2823,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 16.62
+    }
+   ]
+  },
+  {
+   "system": 27,
+   "catalog": "Ross 128",
+   "discoverer": "wolf359_citadel",
+   "year": 2228,
+   "how": "flyby",
+   "detail": {
+    "mission": "IRON-SHIELD-1",
+    "dist_ly": 3.89
+   },
+   "candidates": [
+    {
+     "unit": "wolf359_citadel",
+     "year": 2228,
+     "how": "flyby",
+     "mission": "IRON-SHIELD-1",
+     "dist_ly": 3.89
+    },
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2768,
+     "how": "expedition",
+     "base": 8,
+     "legs": 2,
+     "dist_ly": 21.94
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2799,
+     "how": "expedition",
+     "base": 9,
+     "legs": 2,
+     "dist_ly": 18.87
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2809,
+     "how": "expedition",
+     "base": 13,
+     "legs": 2,
+     "dist_ly": 25.88
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2818,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 6.55
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2819,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 6.55
+    }
+   ]
+  },
+  {
+   "system": 28,
+   "catalog": "YZ Ceti",
+   "discoverer": "tau_ceti_cognium",
+   "year": 2233,
+   "how": "flyby",
+   "detail": {
+    "mission": "MAYFLOWER-2",
+    "dist_ly": 1.6
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2233,
+     "how": "flyby",
+     "mission": "MAYFLOWER-2",
+     "dist_ly": 1.6
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2788,
+     "how": "expedition",
+     "base": 9,
+     "legs": 1,
+     "dist_ly": 6.92
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2792,
+     "how": "expedition",
+     "base": 13,
+     "legs": 1,
+     "dist_ly": 8.49
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2827,
+     "how": "expedition",
+     "base": 12,
+     "legs": 2,
+     "dist_ly": 13.39
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2829,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 19.47
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2830,
+     "how": "expedition",
+     "base": 31,
+     "legs": 1,
+     "dist_ly": 15.05
+    }
+   ]
+  },
+  {
+   "system": 29,
+   "catalog": "Gliese 229",
+   "discoverer": "eps_eri_harmony",
+   "year": 2787,
+   "how": "expedition",
+   "detail": {
+    "base": 9,
+    "legs": 1,
+    "dist_ly": 12.63,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2777,
+     "how": "expedition",
+     "base": 8,
+     "legs": 2,
+     "dist_ly": 17.03
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2787,
+     "how": "expedition",
+     "base": 9,
+     "legs": 1,
+     "dist_ly": 12.63
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2818,
+     "how": "expedition",
+     "base": 13,
+     "legs": 3,
+     "dist_ly": 26.54
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2832,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 20.53
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2834,
+     "how": "expedition",
+     "base": 31,
+     "legs": 2,
+     "dist_ly": 28.33
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2834,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 20.53
+    }
+   ]
+  },
+  {
+   "system": 32,
+   "catalog": "Aldebaran",
+   "discoverer": "eps_eri_strife",
+   "year": 2912,
+   "how": "expedition",
+   "detail": {
+    "base": 9,
+    "legs": 3,
+    "dist_ly": 57.83,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2888,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 60.3
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2900,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 57.83
+    },
+    {
+     "unit": "hd69830_verde",
+     "year": 2905,
+     "how": "expedition",
+     "base": 16,
+     "legs": 4,
+     "dist_ly": 59.75
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2907,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 66.54
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2908,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 66.54
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2909,
+     "how": "expedition",
+     "base": 31,
+     "legs": 4,
+     "dist_ly": 68.78
+    }
+   ]
+  },
+  {
+   "system": 33,
+   "catalog": "Hamal",
+   "discoverer": "gj832_gaia_zone",
+   "year": 2921,
+   "how": "expedition",
+   "detail": {
+    "base": 12,
+    "legs": 4,
+    "dist_ly": 68.99,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2886,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 57.17
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2901,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 58.04
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2905,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 68.62
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2910,
+     "how": "expedition",
+     "base": 31,
+     "legs": 4,
+     "dist_ly": 61.74
+    },
+    {
+     "unit": "hd20794_hellas2",
+     "year": 2910,
+     "how": "expedition",
+     "base": 14,
+     "legs": 4,
+     "dist_ly": 61.43
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2911,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 68.62
+    }
+   ]
+  },
+  {
+   "system": 34,
+   "catalog": "Gamma Doradus",
+   "discoverer": "gj832_tianhe",
+   "year": 2865,
+   "how": "expedition",
+   "detail": {
+    "base": 12,
+    "legs": 4,
+    "dist_ly": 60.03,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2838,
+     "how": "expedition",
+     "base": 14,
+     "legs": 3,
+     "dist_ly": 47.7
+    },
+    {
+     "unit": "delta_pav_freekarma",
+     "year": 2861,
+     "how": "expedition",
+     "base": 22,
+     "legs": 4,
+     "dist_ly": 57.45
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2864,
+     "how": "expedition",
+     "base": 9,
+     "legs": 4,
+     "dist_ly": 59.49
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2865,
+     "how": "expedition",
+     "base": 12,
+     "legs": 4,
+     "dist_ly": 60.03
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2868,
+     "how": "expedition",
+     "base": 4,
+     "legs": 5,
+     "dist_ly": 71.74
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2870,
+     "how": "expedition",
+     "base": 4,
+     "legs": 5,
+     "dist_ly": 71.74
+    }
+   ]
+  },
+  {
+   "system": 35,
+   "catalog": "Tau Cygni",
+   "discoverer": "delta_pav_karma",
+   "year": 2915,
+   "how": "expedition",
+   "detail": {
+    "base": 22,
+    "legs": 4,
+    "dist_ly": 74.05,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2886,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 65.95
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2891,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 68.53
+    },
+    {
+     "unit": "wolf359_citadel",
+     "year": 2899,
+     "how": "expedition",
+     "base": 3,
+     "legs": 3,
+     "dist_ly": 71.52
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2900,
+     "how": "expedition",
+     "base": 13,
+     "legs": 3,
+     "dist_ly": 59.46
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2900,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 68.53
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2902,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 68.83
+    }
+   ]
+  },
+  {
+   "system": 36,
+   "catalog": "9 Ceti",
+   "discoverer": "tau_ceti_cognium",
+   "year": 3030,
+   "how": "frontier_canon",
+   "detail": {
+    "note": "«Китовый сундук» (鲸箱): разведка Когниума через склад «Китовая Щель»"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2850,
+     "how": "expedition",
+     "base": 8,
+     "legs": 4,
+     "dist_ly": 57.01
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2861,
+     "how": "expedition",
+     "base": 31,
+     "legs": 4,
+     "dist_ly": 64.74
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2864,
+     "how": "expedition",
+     "base": 12,
+     "legs": 4,
+     "dist_ly": 59.15
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2865,
+     "how": "expedition",
+     "base": 13,
+     "legs": 4,
+     "dist_ly": 54.16
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2865,
+     "how": "expedition",
+     "base": 4,
+     "legs": 5,
+     "dist_ly": 75.37
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2867,
+     "how": "expedition",
+     "base": 4,
+     "legs": 5,
+     "dist_ly": 75.37
+    }
+   ]
+  },
+  {
+   "system": 39,
+   "catalog": "HD 114613",
+   "discoverer": "gj581_freeclans",
+   "year": 2916,
+   "how": "expedition",
+   "detail": {
+    "base": 10,
+    "legs": 3,
+    "dist_ly": 53.97,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2885,
+     "how": "expedition",
+     "base": 54,
+     "legs": 2,
+     "dist_ly": 44.72
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2894,
+     "how": "expedition",
+     "base": 10,
+     "legs": 3,
+     "dist_ly": 53.97
+    },
+    {
+     "unit": "hd69830_verde",
+     "year": 2899,
+     "how": "expedition",
+     "base": 16,
+     "legs": 3,
+     "dist_ly": 65.27
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2901,
+     "how": "expedition",
+     "base": 4,
+     "legs": 8,
+     "dist_ly": 66.41
+    },
+    {
+     "unit": "wolf359_citadel",
+     "year": 2905,
+     "how": "expedition",
+     "base": 3,
+     "legs": 3,
+     "dist_ly": 63.25
+    },
+    {
+     "unit": "hd40307_maland",
+     "year": 2907,
+     "how": "expedition",
+     "base": 15,
+     "legs": 4,
+     "dist_ly": 63.72
+    }
+   ]
+  },
+  {
+   "system": 40,
+   "catalog": "HD 24496",
+   "discoverer": "hd20794_newindia",
+   "year": 2909,
+   "how": "expedition",
+   "detail": {
+    "base": 14,
+    "legs": 4,
+    "dist_ly": 59.36,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2882,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 58.94
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2896,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 57.44
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2905,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 67.65
+    },
+    {
+     "unit": "hd20794_hellas2",
+     "year": 2906,
+     "how": "expedition",
+     "base": 14,
+     "legs": 4,
+     "dist_ly": 59.36
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2906,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 67.65
+    },
+    {
+     "unit": "hd69830_verde",
+     "year": 2908,
+     "how": "expedition",
+     "base": 16,
+     "legs": 4,
+     "dist_ly": 66.13
+    }
+   ]
+  },
+  {
+   "system": 42,
+   "catalog": "17 Cygni",
+   "discoverer": "cyg61_kern",
+   "year": 2910,
+   "how": "expedition",
+   "detail": {
+    "base": 31,
+    "legs": 4,
+    "dist_ly": 58.46,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2900,
+     "how": "expedition",
+     "base": 8,
+     "legs": 4,
+     "dist_ly": 71.94
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2905,
+     "how": "expedition",
+     "base": 10,
+     "legs": 4,
+     "dist_ly": 67.1
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2905,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 70.67
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2907,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 70.67
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2910,
+     "how": "expedition",
+     "base": 31,
+     "legs": 4,
+     "dist_ly": 58.46
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2910,
+     "how": "expedition",
+     "base": 9,
+     "legs": 4,
+     "dist_ly": 74.65
+    }
+   ]
+  },
+  {
+   "system": 43,
+   "catalog": "Theta Draconis",
+   "discoverer": "gj581_europa",
+   "year": 2894,
+   "how": "expedition",
+   "detail": {
+    "base": 10,
+    "legs": 3,
+    "dist_ly": 63.43
+   },
+   "candidates": [
+    {
+     "unit": "gj581_europa",
+     "year": 2894,
+     "how": "expedition",
+     "base": 10,
+     "legs": 3,
+     "dist_ly": 63.43
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2895,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 63.85
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2897,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 63.85
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2898,
+     "how": "expedition",
+     "base": 31,
+     "legs": 3,
+     "dist_ly": 62.06
+    },
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2901,
+     "how": "expedition",
+     "base": 8,
+     "legs": 4,
+     "dist_ly": 76.86
+    },
+    {
+     "unit": "wolf359_citadel",
+     "year": 2905,
+     "how": "expedition",
+     "base": 3,
+     "legs": 3,
+     "dist_ly": 67.27
+    }
+   ]
+  },
+  {
+   "system": 44,
+   "catalog": "HD 33564",
+   "discoverer": "lalande_hellas",
+   "year": 2904,
+   "how": "expedition",
+   "detail": {
+    "base": 4,
+    "legs": 4,
+    "dist_ly": 63.58
+   },
+   "candidates": [
+    {
+     "unit": "lalande_hellas",
+     "year": 2904,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 63.58
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2904,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 63.58
+    },
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2906,
+     "how": "expedition",
+     "base": 8,
+     "legs": 5,
+     "dist_ly": 71.07
+    },
+    {
+     "unit": "hd20794_hellas2",
+     "year": 2916,
+     "how": "expedition",
+     "base": 14,
+     "legs": 5,
+     "dist_ly": 80.72
+    },
+    {
+     "unit": "hd69830_verde",
+     "year": 2918,
+     "how": "expedition",
+     "base": 16,
+     "legs": 5,
+     "dist_ly": 82.25
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2921,
+     "how": "expedition",
+     "base": 10,
+     "legs": 5,
+     "dist_ly": 76.52
+    }
+   ]
+  },
+  {
+   "system": 46,
+   "catalog": "GJ 3021",
+   "discoverer": "delta_pav_freekarma",
+   "year": 2852,
+   "how": "expedition",
+   "detail": {
+    "base": 22,
+    "legs": 3,
+    "dist_ly": 39.11,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2834,
+     "how": "expedition",
+     "base": 14,
+     "legs": 3,
+     "dist_ly": 43.95
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2850,
+     "how": "expedition",
+     "base": 12,
+     "legs": 3,
+     "dist_ly": 44.57
+    },
+    {
+     "unit": "delta_pav_freekarma",
+     "year": 2852,
+     "how": "expedition",
+     "base": 22,
+     "legs": 3,
+     "dist_ly": 39.11
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2853,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 63.27
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2858,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 63.27
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2861,
+     "how": "expedition",
+     "base": 31,
+     "legs": 4,
+     "dist_ly": 63.76
+    }
+   ]
+  },
+  {
+   "system": 47,
+   "catalog": "HD 154345",
+   "discoverer": "hd20794_hellas2",
+   "year": 2904,
+   "how": "expedition",
+   "detail": {
+    "base": 14,
+    "legs": 4,
+    "dist_ly": 79.56,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2881,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 68.7
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2893,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 57.53
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2895,
+     "how": "expedition",
+     "base": 10,
+     "legs": 3,
+     "dist_ly": 53.24
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2896,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 68.76
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2896,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 57.53
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2899,
+     "how": "expedition",
+     "base": 31,
+     "legs": 3,
+     "dist_ly": 53.09
+    }
+   ]
+  },
+  {
+   "system": 48,
+   "catalog": "HD 102365",
+   "discoverer": "sol_authority",
+   "year": 3126,
+   "how": "expedition",
+   "detail": {
+    "base": 0,
+    "legs": 1,
+    "dist_ly": 30.07,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2794,
+     "how": "expedition",
+     "base": 8,
+     "legs": 4,
+     "dist_ly": 37.08
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2818,
+     "how": "expedition",
+     "base": 9,
+     "legs": 4,
+     "dist_ly": 34.75
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2829,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 29.36
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2831,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 29.36
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2833,
+     "how": "expedition",
+     "base": 13,
+     "legs": 4,
+     "dist_ly": 40.63
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2836,
+     "how": "expedition",
+     "base": 10,
+     "legs": 2,
+     "dist_ly": 25.67
+    }
+   ]
+  },
+  {
+   "system": 49,
+   "catalog": "GJ 176",
+   "discoverer": "tau_ceti_cognium",
+   "year": 2771,
+   "how": "expedition",
+   "detail": {
+    "base": 8,
+    "legs": 2,
+    "dist_ly": 25.6
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2771,
+     "how": "expedition",
+     "base": 8,
+     "legs": 2,
+     "dist_ly": 25.6
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2798,
+     "how": "expedition",
+     "base": 9,
+     "legs": 2,
+     "dist_ly": 22.23
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2821,
+     "how": "expedition",
+     "base": 13,
+     "legs": 3,
+     "dist_ly": 34.42
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2834,
+     "how": "expedition",
+     "base": 31,
+     "legs": 2,
+     "dist_ly": 33.33
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2834,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 30.37
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2837,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 30.37
+    }
+   ]
+  },
+  {
+   "system": 50,
+   "catalog": "GJ 3293",
+   "discoverer": "hd40307_firmament",
+   "year": 2887,
+   "how": "expedition",
+   "detail": {
+    "base": 15,
+    "legs": 2,
+    "dist_ly": 41.54,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2842,
+     "how": "expedition",
+     "base": 14,
+     "legs": 4,
+     "dist_ly": 48.28
+    },
+    {
+     "unit": "delta_pav_freekarma",
+     "year": 2873,
+     "how": "expedition",
+     "base": 22,
+     "legs": 5,
+     "dist_ly": 65.28
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2874,
+     "how": "expedition",
+     "base": 9,
+     "legs": 5,
+     "dist_ly": 56.15
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2880,
+     "how": "expedition",
+     "base": 12,
+     "legs": 5,
+     "dist_ly": 64.92
+    },
+    {
+     "unit": "hd20794_hellas2",
+     "year": 2881,
+     "how": "expedition",
+     "base": 14,
+     "legs": 2,
+     "dist_ly": 48.28
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2883,
+     "how": "expedition",
+     "base": 31,
+     "legs": 6,
+     "dist_ly": 72.34
+    }
+   ]
+  },
+  {
+   "system": 51,
+   "catalog": "GJ 433",
+   "discoverer": "gj876_next",
+   "year": 2829,
+   "how": "expedition",
+   "detail": {
+    "base": 13,
+    "legs": 4,
+    "dist_ly": 40.83,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2795,
+     "how": "expedition",
+     "base": 8,
+     "legs": 4,
+     "dist_ly": 36.78
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2811,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 33.96
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2829,
+     "how": "expedition",
+     "base": 13,
+     "legs": 4,
+     "dist_ly": 40.83
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2831,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 27.12
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2835,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 27.12
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2840,
+     "how": "expedition",
+     "base": 10,
+     "legs": 2,
+     "dist_ly": 24.83
+    }
+   ]
+  },
+  {
+   "system": 52,
+   "catalog": "Procyon A+B",
+   "discoverer": "hd69830_verde",
+   "year": 2388,
+   "how": "flyby",
+   "detail": {
+    "mission": "AMAZONIA-1",
+    "dist_ly": 3.98
+   },
+   "candidates": [
+    {
+     "unit": "hd69830_verde",
+     "year": 2388,
+     "how": "flyby",
+     "mission": "AMAZONIA-1",
+     "dist_ly": 3.98
+    },
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2775,
+     "how": "expedition",
+     "base": 8,
+     "legs": 2,
+     "dist_ly": 16.57
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2781,
+     "how": "expedition",
+     "base": 9,
+     "legs": 1,
+     "dist_ly": 11.52
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2801,
+     "how": "expedition",
+     "base": 13,
+     "legs": 2,
+     "dist_ly": 24.44
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2818,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 9.68
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2820,
+     "how": "expedition",
+     "base": 4,
+     "legs": 1,
+     "dist_ly": 9.68
+    }
+   ]
+  },
+  {
+   "system": 55,
+   "catalog": "Gliese 163",
+   "discoverer": "delta_pav_freekarma",
+   "year": 2852,
+   "how": "expedition",
+   "detail": {
+    "base": 22,
+    "legs": 3,
+    "dist_ly": 40.32,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2819,
+     "how": "expedition",
+     "base": 8,
+     "legs": 6,
+     "dist_ly": 42.12
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2849,
+     "how": "expedition",
+     "base": 9,
+     "legs": 6,
+     "dist_ly": 42.5
+    },
+    {
+     "unit": "delta_pav_freekarma",
+     "year": 2852,
+     "how": "expedition",
+     "base": 22,
+     "legs": 3,
+     "dist_ly": 40.32
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2852,
+     "how": "expedition",
+     "base": 13,
+     "legs": 6,
+     "dist_ly": 46.94
+    },
+    {
+     "unit": "gj832_tianhe",
+     "year": 2854,
+     "how": "expedition",
+     "base": 12,
+     "legs": 3,
+     "dist_ly": 42.74
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2854,
+     "how": "expedition",
+     "base": 4,
+     "legs": 4,
+     "dist_ly": 54.61
+    }
+   ]
+  },
+  {
+   "system": 56,
+   "catalog": "Gliese 422",
+   "discoverer": "lalande_mecca",
+   "year": 2848,
+   "how": "expedition",
+   "detail": {
+    "base": 4,
+    "legs": 3,
+    "dist_ly": 42.63,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2821,
+     "how": "expedition",
+     "base": 8,
+     "legs": 6,
+     "dist_ly": 45.0
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2831,
+     "how": "expedition",
+     "base": 9,
+     "legs": 5,
+     "dist_ly": 43.53
+    },
+    {
+     "unit": "delta_pav_freekarma",
+     "year": 2844,
+     "how": "expedition",
+     "base": 22,
+     "legs": 2,
+     "dist_ly": 32.81
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2848,
+     "how": "expedition",
+     "base": 4,
+     "legs": 3,
+     "dist_ly": 42.63
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2849,
+     "how": "expedition",
+     "base": 10,
+     "legs": 3,
+     "dist_ly": 38.65
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2849,
+     "how": "expedition",
+     "base": 13,
+     "legs": 3,
+     "dist_ly": 48.28
+    }
+   ]
+  },
+  {
+   "system": 58,
+   "catalog": "Gliese 514",
+   "discoverer": "tau_ceti_cognium",
+   "year": 2785,
+   "how": "expedition",
+   "detail": {
+    "base": 8,
+    "legs": 3,
+    "dist_ly": 36.82
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2785,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 36.82
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2809,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 34.44
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2825,
+     "how": "expedition",
+     "base": 13,
+     "legs": 4,
+     "dist_ly": 38.15
+    },
+    {
+     "unit": "gj581_europa",
+     "year": 2829,
+     "how": "expedition",
+     "base": 10,
+     "legs": 1,
+     "dist_ly": 13.51
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2833,
+     "how": "expedition",
+     "base": 31,
+     "legs": 2,
+     "dist_ly": 29.45
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2834,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 19.59
+    }
+   ]
+  },
+  {
+   "system": 59,
+   "catalog": "Gliese 625",
+   "discoverer": "cyg61_kern",
+   "year": 2830,
+   "how": "expedition",
+   "detail": {
+    "base": 31,
+    "legs": 1,
+    "dist_ly": 16.17,
+    "balanced_from": "tau_ceti_cognium"
+   },
+   "candidates": [
+    {
+     "unit": "tau_ceti_cognium",
+     "year": 2789,
+     "how": "expedition",
+     "base": 8,
+     "legs": 3,
+     "dist_ly": 30.38
+    },
+    {
+     "unit": "eps_eri_harmony",
+     "year": 2811,
+     "how": "expedition",
+     "base": 9,
+     "legs": 3,
+     "dist_ly": 29.52
+    },
+    {
+     "unit": "cyg61_kern",
+     "year": 2830,
+     "how": "expedition",
+     "base": 31,
+     "legs": 1,
+     "dist_ly": 16.17
+    },
+    {
+     "unit": "gj876_next",
+     "year": 2831,
+     "how": "expedition",
+     "base": 13,
+     "legs": 4,
+     "dist_ly": 29.33
+    },
+    {
+     "unit": "lalande_mecca",
+     "year": 2833,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 18.02
+    },
+    {
+     "unit": "lalande_hellas",
+     "year": 2834,
+     "how": "expedition",
+     "base": 4,
+     "legs": 2,
+     "dist_ly": 18.02
+    }
+   ]
+  }
+ ],
+ "by_participant": {
+  "cyg61_kern": [
+   42,
+   59
+  ],
+  "delta_pav_freekarma": [
+   46,
+   55
+  ],
+  "delta_pav_karma": [
+   35
+  ],
+  "eps_eri_harmony": [
+   6,
+   29
+  ],
+  "eps_eri_strife": [
+   32
+  ],
+  "gj581_europa": [
+   21,
+   43
+  ],
+  "gj581_freeclans": [
+   39
+  ],
+  "gj832_gaia_zone": [
+   33
+  ],
+  "gj832_tianhe": [
+   34
+  ],
+  "gj876_next": [
+   17,
+   51
+  ],
+  "hd20794_hellas2": [
+   47
+  ],
+  "hd20794_newindia": [
+   40
+  ],
+  "hd40307_firmament": [
+   50
+  ],
+  "hd40307_maland": [
+   7
+  ],
+  "hd69830_verde": [
+   5,
+   52
+  ],
+  "lalande_hellas": [
+   24,
+   44
+  ],
+  "lalande_mecca": [
+   56
+  ],
+  "proxima_outpost": [
+   1
+  ],
+  "sol_authority": [
+   48
+  ],
+  "tau_ceti_cognium": [
+   19,
+   20,
+   26,
+   28,
+   36,
+   49,
+   58
+  ],
+  "wolf359_citadel": [
+   27
+  ]
+ },
+ "without_systems": [
+  "hd114783_hellas3",
+  "leo83_zion"
+ ]
+}

@@ -2,2414 +2,7660 @@
  "do_not_edit": true,
  "generated_by": "tools/colonization_lab/naming.py (from canon/naming.json)",
  "names": {
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_b": {
+   "en": "Gorynych",
+   "es": "Gorínich",
+   "ja": "ゴルイニチ",
+   "native": "Горыныч",
+   "native_lang": "ru",
+   "ru": "Горыныч",
+   "zh-Hans": "戈雷内奇"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_c": {
+   "en": "Koshchei",
+   "es": "Koschéi",
+   "ja": "コシチェイ",
+   "native": "Кощей",
+   "native_lang": "ru",
+   "ru": "Кощей",
+   "zh-Hans": "科谢伊"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_d": {
+   "en": "Yaga",
+   "es": "Yaga",
+   "ja": "ヤガー",
+   "native": "Яга",
+   "native_lang": "ru",
+   "ru": "Яга",
+   "zh-Hans": "雅加"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_e": {
+   "en": "Solovei",
+   "es": "Solovéi",
+   "ja": "ソロヴェイ",
+   "native": "Соловей",
+   "native_lang": "ru",
+   "ru": "Соловей",
+   "zh-Hans": "索洛维"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_f": {
+   "en": "Tugarin",
+   "es": "Tugarín",
+   "ja": "トゥガーリン",
+   "native": "Тугарин",
+   "native_lang": "ru",
+   "ru": "Тугарин",
+   "zh-Hans": "图加林"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_g": {
+   "en": "Svyatogor",
+   "es": "Sviatogor",
+   "ja": "スヴャトゴール",
+   "native": "Святогор",
+   "native_lang": "ru",
+   "ru": "Святогор",
+   "zh-Hans": "斯维亚托戈尔"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_h": {
+   "en": "Idolishche",
+   "es": "Ídolische",
+   "ja": "イドリシチェ",
+   "native": "Идолище",
+   "native_lang": "ru",
+   "ru": "Идолище",
+   "zh-Hans": "伊多利谢"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_i": {
+   "en": "Mikula",
+   "es": "Mikula",
+   "ja": "ミクーラ",
+   "native": "Микула",
+   "native_lang": "ru",
+   "ru": "Микула",
+   "zh-Hans": "米库拉"
+  },
+  "body:system_1.Alpha_Centauri_A.Alpha_Centauri_A_j": {
+   "en": "Ilya",
+   "es": "Iliá",
+   "ja": "イリヤー",
+   "native": "Илья",
+   "native_lang": "ru",
+   "ru": "Илья",
+   "zh-Hans": "伊利亚"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_b": {
+   "en": "Firebird",
+   "es": "Pájaro de Fuego",
+   "ja": "火の鳥",
+   "native": "Жар-птица",
+   "native_lang": "ru",
+   "ru": "Жар-птица",
+   "zh-Hans": "火鸟"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_c": {
+   "en": "Sivka",
+   "es": "Sivka",
+   "ja": "シフカ",
+   "native": "Сивка",
+   "native_lang": "ru",
+   "ru": "Сивка",
+   "zh-Hans": "西夫卡"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_d": {
+   "en": "Finist",
+   "es": "Finist",
+   "ja": "フィニスト",
+   "native": "Финист",
+   "native_lang": "ru",
+   "ru": "Финист",
+   "zh-Hans": "菲尼斯特"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_e": {
+   "en": "Gorbunok",
+   "es": "Gorbunok",
+   "ja": "せむしの仔馬",
+   "native": "Горбунок",
+   "native_lang": "ru",
+   "ru": "Горбунок",
+   "zh-Hans": "驼背小马"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_f": {
+   "en": "Sadko",
+   "es": "Sadkó",
+   "ja": "サトコ",
+   "native": "Садко",
+   "native_lang": "ru",
+   "ru": "Садко",
+   "zh-Hans": "萨特阔"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_g": {
+   "en": "Volga",
+   "es": "Volga",
+   "ja": "ヴォリガ",
+   "native": "Вольга",
+   "native_lang": "ru",
+   "ru": "Вольга",
+   "zh-Hans": "沃利加"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_h": {
+   "en": "Dobrynya",
+   "es": "Dobrinia",
+   "ja": "ドブルイニャ",
+   "native": "Добрыня",
+   "native_lang": "ru",
+   "ru": "Добрыня",
+   "zh-Hans": "多布雷尼亚"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_i": {
+   "en": "Alyosha",
+   "es": "Aliosha",
+   "ja": "アリョーシャ",
+   "native": "Алёша",
+   "native_lang": "ru",
+   "ru": "Алёша",
+   "zh-Hans": "阿廖沙"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_j": {
+   "en": "Vasilisa",
+   "es": "Vasilisa",
+   "ja": "ヴァシリーサ",
+   "native": "Василиса",
+   "native_lang": "ru",
+   "ru": "Василиса",
+   "zh-Hans": "瓦西里莎"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_k": {
+   "en": "Morevna",
+   "es": "Morevna",
+   "ja": "マリヤ・モレヴナ",
+   "native": "Моревна",
+   "native_lang": "ru",
+   "ru": "Моревна",
+   "zh-Hans": "玛丽娅·莫列夫娜"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_l": {
+   "en": "Belovodye",
+   "es": "Belovodie",
+   "ja": "ベロヴォジエ",
+   "native": "Беловодье",
+   "native_lang": "ru",
+   "ru": "Беловодье",
+   "zh-Hans": "白水国"
+  },
+  "body:system_1.Alpha_Centauri_B.Alpha_Centauri_B_m": {
+   "en": "Buyan",
+   "es": "Buián",
+   "ja": "ブヤン",
+   "native": "Буян",
+   "native_lang": "ru",
+   "ru": "Буян",
+   "zh-Hans": "布扬岛"
+  },
+  "body:system_1.barycenter_ab.Alpha_Centauri__BA__K1": {
+   "en": "Alatyr",
+   "es": "Alatir",
+   "ja": "アラトゥイリ",
+   "native": "Алатырь",
+   "native_lang": "ru",
+   "ru": "Алатырь",
+   "zh-Hans": "阿拉特里"
+  },
+  "body:system_1.barycenter_ab.Alpha_Centauri__BA__K2": {
+   "en": "Yemelya",
+   "es": "Yemelia",
+   "ja": "エメーリャ",
+   "native": "Емеля",
+   "native_lang": "ru",
+   "ru": "Емеля",
+   "zh-Hans": "叶梅利亚"
+  },
+  "body:system_1.barycenter_ab.Alpha_Centauri__BA__K3": {
+   "en": "Kolobok",
+   "es": "Kolobok",
+   "ja": "コロボーク",
+   "native": "Колобок",
+   "native_lang": "ru",
+   "ru": "Колобок",
+   "zh-Hans": "小圆面包"
+  },
   "body:system_10.Gliese_581.GJ_581_b": {
    "en": "Danube",
+   "es": "Danubio",
+   "ja": "ドナウ",
    "native": "Danube",
    "native_lang": "fr",
-   "ru": "Дунай"
+   "ru": "Дунай",
+   "zh-Hans": "多瑙"
   },
   "body:system_10.Gliese_581.GJ_581_c": {
    "en": "Rhine",
+   "es": "Rin",
+   "ja": "ライン",
    "native": "Rhin",
    "native_lang": "fr",
-   "ru": "Рейн"
+   "ru": "Рейн",
+   "zh-Hans": "莱茵"
   },
   "body:system_10.Gliese_581.GJ_581_e": {
    "en": "Tagus",
+   "es": "Tajo",
+   "ja": "タホ",
    "native": "Tage",
    "native_lang": "fr",
-   "ru": "Тахо"
+   "ru": "Тахо",
+   "zh-Hans": "塔霍"
   },
   "body:system_10.Gliese_581.Gliese_581_K1": {
    "en": "Ladoga",
+   "es": "Ládoga",
+   "ja": "ラドガ",
    "native": "Ladoga",
    "native_lang": "fr",
-   "ru": "Ладога"
+   "ru": "Ладога",
+   "zh-Hans": "拉多加"
   },
   "body:system_10.Gliese_581.Gliese_581_K2": {
    "en": "Leman",
+   "es": "Lemán",
+   "ja": "レマン",
    "native": "Léman",
    "native_lang": "fr",
-   "ru": "Леман"
+   "ru": "Леман",
+   "zh-Hans": "莱芒"
   },
   "body:system_10.Gliese_581.Gliese_581_K3": {
    "en": "Constance",
+   "es": "Constanza",
+   "ja": "コンスタンツ",
    "native": "Constance",
    "native_lang": "fr",
-   "ru": "Констанц"
+   "ru": "Констанц",
+   "zh-Hans": "康斯坦茨"
   },
   "body:system_10.Gliese_581.Gliese_581_d": {
    "en": "Rhone",
+   "es": "Ródano",
+   "ja": "ローヌ",
    "native": "Rhône",
    "native_lang": "fr",
-   "ru": "Рона"
+   "ru": "Рона",
+   "zh-Hans": "罗讷"
   },
   "body:system_10.Gliese_581.Gliese_581_f": {
    "en": "Garonne",
+   "es": "Garona",
+   "ja": "ガロンヌ",
    "native": "Garonne",
    "native_lang": "fr",
-   "ru": "Гаронна"
+   "ru": "Гаронна",
+   "zh-Hans": "加龙"
   },
   "body:system_10.Gliese_581.Gliese_581_g": {
    "en": "Loire",
+   "es": "Loira",
+   "ja": "ロワール",
    "native": "Loire",
    "native_lang": "fr",
-   "ru": "Луара"
+   "ru": "Луара",
+   "zh-Hans": "卢瓦尔"
   },
   "body:system_10.Gliese_581.Gliese_581_h": {
    "en": "Seine",
+   "es": "Sena",
+   "ja": "セーヌ",
    "native": "Seine",
    "native_lang": "fr",
-   "ru": "Сена"
+   "ru": "Сена",
+   "zh-Hans": "塞纳"
   },
   "body:system_10.Gliese_581.Gliese_581_i": {
    "en": "Vistula",
+   "es": "Vístula",
+   "ja": "ヴィスワ",
    "native": "Vistule",
    "native_lang": "fr",
-   "ru": "Висла"
+   "ru": "Висла",
+   "zh-Hans": "维斯瓦"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_d": {
    "en": "Umlilo",
+   "es": "Umlilo",
+   "ja": "ウムリロ",
    "native": "Umlilo",
    "native_lang": "zu",
-   "ru": "Умлило"
+   "ru": "Умлило",
+   "zh-Hans": "乌姆利洛"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_h": {
    "en": "Ilangabi",
+   "es": "Ilangabi",
+   "ja": "イランガビ",
    "native": "Ilangabi",
    "native_lang": "zu",
-   "ru": "Илангаби"
+   "ru": "Илангаби",
+   "zh-Hans": "伊兰加比"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_i": {
    "en": "Amalahle",
+   "es": "Amalahle",
+   "ja": "アマラフレ",
    "native": "Amalahle",
    "native_lang": "zu",
-   "ru": "Амалахле"
+   "ru": "Амалахле",
+   "zh-Hans": "阿马拉赫勒"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_j": {
    "en": "Umlotha",
+   "es": "Umlotha",
+   "ja": "ウムロタ",
    "native": "Umlotha",
    "native_lang": "zu",
-   "ru": "Умлота"
+   "ru": "Умлота",
+   "zh-Hans": "乌姆洛塔"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_k": {
    "en": "Ukushisa",
+   "es": "Ukushisa",
+   "ja": "ウクシサ",
    "native": "Ukushisa",
    "native_lang": "zu",
-   "ru": "Укушиса"
+   "ru": "Укушиса",
+   "zh-Hans": "乌库希萨"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_l": {
    "en": "Ilitshe",
+   "es": "Ilitshe",
+   "ja": "イリチェ",
    "native": "Ilitshe",
    "native_lang": "zu",
-   "ru": "Илитше"
+   "ru": "Илитше",
+   "zh-Hans": "伊利切"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_m": {
    "en": "Insimbi",
+   "es": "Insimbi",
+   "ja": "インシンビ",
    "native": "Insimbi",
    "native_lang": "zu",
-   "ru": "Инсимби"
+   "ru": "Инсимби",
+   "zh-Hans": "因辛比"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_n": {
    "en": "Ithusi",
+   "es": "Ithusi",
+   "ja": "イトゥシ",
    "native": "Ithusi",
    "native_lang": "zu",
-   "ru": "Итуси"
+   "ru": "Итуси",
+   "zh-Hans": "伊图西"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_o": {
    "en": "Igolide",
+   "es": "Igolide",
+   "ja": "イゴリデ",
    "native": "Igolide",
    "native_lang": "zu",
-   "ru": "Иголиде"
+   "ru": "Иголиде",
+   "zh-Hans": "伊戈利德"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_p": {
    "en": "Isihlabathi",
+   "es": "Isihlabathi",
+   "ja": "イシフラバティ",
    "native": "Isihlabathi",
    "native_lang": "zu",
-   "ru": "Исихлабати"
+   "ru": "Исихлабати",
+   "zh-Hans": "伊西赫拉巴蒂"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_q": {
    "en": "Intaba",
+   "es": "Intaba",
+   "ja": "インタバ",
    "native": "Intaba",
    "native_lang": "zu",
-   "ru": "Интаба"
+   "ru": "Интаба",
+   "zh-Hans": "因塔巴"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_r": {
    "en": "Umhlabathi",
+   "es": "Umhlabathi",
+   "ja": "ウムフラバティ",
    "native": "Umhlabathi",
    "native_lang": "zu",
-   "ru": "Умхлабати"
+   "ru": "Умхлабати",
+   "zh-Hans": "乌姆赫拉巴蒂"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_s": {
    "en": "Umfula",
+   "es": "Umfula",
+   "ja": "ウムフラ",
    "native": "Umfula",
    "native_lang": "zu",
-   "ru": "Умфула"
+   "ru": "Умфула",
+   "zh-Hans": "乌姆富拉"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_s.Gliese_667_A_s_II": {
    "en": "Amanzi",
+   "es": "Amanzi",
+   "ja": "アマンジ",
    "native": "Amanzi",
    "native_lang": "zu",
-   "ru": "Аманзи"
+   "ru": "Аманзи",
+   "zh-Hans": "阿曼济"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_t": {
    "en": "Indaba",
+   "es": "Indaba",
+   "ja": "インダバ",
    "native": "Indaba",
    "native_lang": "zu",
-   "ru": "Индаба"
+   "ru": "Индаба",
+   "zh-Hans": "因达巴"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_u": {
    "en": "Ithemba",
+   "es": "Ithemba",
+   "ja": "イテンバ",
    "native": "Ithemba",
    "native_lang": "zu",
-   "ru": "Итемба"
+   "ru": "Итемба",
+   "zh-Hans": "伊滕巴"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_u.Gliese_667_A_u_II": {
    "en": "Isibane",
+   "es": "Isibane",
+   "ja": "イシバネ",
    "native": "Isibane",
    "native_lang": "zu",
-   "ru": "Исибане"
+   "ru": "Исибане",
+   "zh-Hans": "伊西巴内"
   },
   "body:system_11.Gliese_667_A.Gliese_667_A_v": {
    "en": "Isiphepho",
+   "es": "Isiphepho",
+   "ja": "イシペポ",
    "native": "Isiphepho",
    "native_lang": "zu",
-   "ru": "Исипепо"
+   "ru": "Исипепо",
+   "zh-Hans": "伊西佩波"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_d": {
    "en": "Umbane",
+   "es": "Umbane",
+   "ja": "ウンバネ",
    "native": "Umbane",
    "native_lang": "zu",
-   "ru": "Умбане"
+   "ru": "Умбане",
+   "zh-Hans": "乌姆巴内"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_h": {
    "en": "Ukuduma",
+   "es": "Ukuduma",
+   "ja": "ウクドゥマ",
    "native": "Ukuduma",
    "native_lang": "zu",
-   "ru": "Укудума"
+   "ru": "Укудума",
+   "zh-Hans": "乌库杜马"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_i": {
    "en": "Imvula",
+   "es": "Imvula",
+   "ja": "イムヴラ",
    "native": "Imvula",
    "native_lang": "zu",
-   "ru": "Имвула"
+   "ru": "Имвула",
+   "zh-Hans": "伊姆武拉"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_j": {
    "en": "Ifu",
+   "es": "Ifu",
+   "ja": "イフ",
    "native": "Ifu",
    "native_lang": "zu",
-   "ru": "Ифу"
+   "ru": "Ифу",
+   "zh-Hans": "伊富"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_k": {
    "en": "Inkungu",
+   "es": "Inkungu",
+   "ja": "インクング",
    "native": "Inkungu",
    "native_lang": "zu",
-   "ru": "Инкунгу"
+   "ru": "Инкунгу",
+   "zh-Hans": "因昆古"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_l": {
    "en": "Umoya",
+   "es": "Umoya",
+   "ja": "ウモヤ",
    "native": "Umoya",
    "native_lang": "zu",
-   "ru": "Умоя"
+   "ru": "Умоя",
+   "zh-Hans": "乌莫亚"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_m": {
    "en": "Ulwandle",
+   "es": "Ulwandle",
+   "ja": "ウルワンドレ",
    "native": "Ulwandle",
    "native_lang": "zu",
-   "ru": "Улвандле"
+   "ru": "Улвандле",
+   "zh-Hans": "乌尔万德勒"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_n": {
    "en": "Isiqhingi",
+   "es": "Isiqhingi",
+   "ja": "イシチンギ",
    "native": "Isiqhingi",
    "native_lang": "zu",
-   "ru": "Исикхинги"
+   "ru": "Исикхинги",
+   "zh-Hans": "伊西青吉"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_o": {
    "en": "Iqhwa",
+   "es": "Iqhwa",
+   "ja": "イクワ",
    "native": "Iqhwa",
    "native_lang": "zu",
-   "ru": "Икхва"
+   "ru": "Икхва",
+   "zh-Hans": "伊奇瓦"
   },
   "body:system_11.Gliese_667_B.Gliese_667_B_p": {
    "en": "Ubusika",
+   "es": "Ubusika",
+   "ja": "ウブシカ",
    "native": "Ubusika",
    "native_lang": "zu",
-   "ru": "Убусика"
+   "ru": "Убусика",
+   "zh-Hans": "乌布西卡"
   },
   "body:system_11.Gliese_667_C.GJ_667_C_b": {
    "en": "Kusihlwa",
+   "es": "Kusihlwa",
+   "ja": "クシフルワ",
    "native": "Kusihlwa",
    "native_lang": "zu",
-   "ru": "Кусихлва"
+   "ru": "Кусихлва",
+   "zh-Hans": "库西赫尔瓦"
   },
   "body:system_11.Gliese_667_C.GJ_667_C_c": {
    "en": "Ubusuku",
+   "es": "Ubusuku",
+   "ja": "ウブスク",
    "native": "Ubusuku",
    "native_lang": "zu",
-   "ru": "Убусуку"
+   "ru": "Убусуку",
+   "zh-Hans": "乌布苏库"
   },
   "body:system_11.Gliese_667_C.Gliese_667_C_d": {
    "en": "Ukusa",
+   "es": "Ukusa",
+   "ja": "ウクサ",
    "native": "Ukusa",
    "native_lang": "zu",
-   "ru": "Укуса"
+   "ru": "Укуса",
+   "zh-Hans": "乌库萨"
   },
   "body:system_11.Gliese_667_C.Gliese_667_C_h": {
    "en": "Imini",
+   "es": "Imini",
+   "ja": "イミニ",
    "native": "Imini",
    "native_lang": "zu",
-   "ru": "Имини"
+   "ru": "Имини",
+   "zh-Hans": "伊米尼"
   },
   "body:system_11.Gliese_667_C.Gliese_667_C_i": {
    "en": "Ntambama",
+   "es": "Ntambama",
+   "ja": "ンタンバマ",
    "native": "Ntambama",
    "native_lang": "zu",
-   "ru": "Нтамбама"
+   "ru": "Нтамбама",
+   "zh-Hans": "恩坦巴马"
   },
   "body:system_11.Gliese_667_C.Gliese_667_C_j": {
    "en": "Inkanyezi",
+   "es": "Inkanyezi",
+   "ja": "インカニェジ",
    "native": "Inkanyezi",
    "native_lang": "zu",
-   "ru": "Инканьези"
+   "ru": "Инканьези",
+   "zh-Hans": "因坎耶齐"
   },
   "body:system_11.barycenter_ab.Gliese_667__BA__K1": {
    "en": "Ukuthula",
+   "es": "Ukuthula",
+   "ja": "ウクトゥラ",
    "native": "Ukuthula",
    "native_lang": "zu",
-   "ru": "Укутула"
+   "ru": "Укутула",
+   "zh-Hans": "乌库图拉"
   },
   "body:system_11.barycenter_ab.Gliese_667__BA__K2": {
    "en": "Ubumbano",
+   "es": "Ubumbano",
+   "ja": "ウブンバノ",
    "native": "Ubumbano",
    "native_lang": "zu",
-   "ru": "Убумбано"
+   "ru": "Убумбано",
+   "zh-Hans": "乌本巴诺"
   },
   "body:system_11.barycenter_ab.Gliese_667__BA__K3": {
    "en": "Inkululeko",
+   "es": "Inkululeko",
+   "ja": "インクルレコ",
    "native": "Inkululeko",
    "native_lang": "zu",
-   "ru": "Инкулулеко"
+   "ru": "Инкулулеко",
+   "zh-Hans": "因库卢莱科"
   },
   "body:system_12.Gliese_832.GJ_832_b": {
    "en": "Niulang",
+   "es": "Niulang",
+   "ja": "牽牛",
    "native": "牛郎",
    "native_lang": "zh-Hans",
    "ru": "Нюлан",
-   "translit": "Niúláng"
+   "translit": "Niúláng",
+   "zh-Hans": "牛郎"
   },
   "body:system_12.Gliese_832.GJ_832_b.GJ_832_b_I": {
    "en": "Xique",
+   "es": "Xique",
+   "ja": "鵲",
    "native": "喜鹊",
    "native_lang": "zh-Hans",
    "ru": "Сицюэ",
-   "translit": "Xǐquè"
+   "translit": "Xǐquè",
+   "zh-Hans": "喜鹊"
   },
   "body:system_12.Gliese_832.GJ_832_b.GJ_832_b_II": {
    "en": "Jinsuo",
+   "es": "Jinsuo",
+   "ja": "金杼",
    "native": "金梭",
    "native_lang": "zh-Hans",
    "ru": "Цзиньсо",
-   "translit": "Jīnsuō"
+   "translit": "Jīnsuō",
+   "zh-Hans": "金梭"
   },
   "body:system_12.Gliese_832.GJ_832_b.GJ_832_b_III": {
-   "en": "Zhinü",
+   "en": "Zhinu",
+   "es": "Zhinu",
+   "ja": "織女",
    "native": "织女",
    "native_lang": "zh-Hans",
    "ru": "Чжинюй",
-   "translit": "Zhīnǚ"
+   "translit": "Zhīnǚ",
+   "zh-Hans": "织女"
   },
   "body:system_12.Gliese_832.Gliese_832_A1": {
    "en": "Biandan",
+   "es": "Biandan",
+   "ja": "天秤棒",
    "native": "扁担",
    "native_lang": "zh-Hans",
    "ru": "Бяньдань",
-   "translit": "Biǎndan"
+   "translit": "Biǎndan",
+   "zh-Hans": "扁担"
   },
   "body:system_12.Gliese_832.Gliese_832_K2": {
    "en": "Laoniu",
+   "es": "Laoniu",
+   "ja": "老牛",
    "native": "老牛",
    "native_lang": "zh-Hans",
    "ru": "Лаоню",
-   "translit": "Lǎoniú"
+   "translit": "Lǎoniú",
+   "zh-Hans": "老牛"
   },
   "body:system_12.Gliese_832.Gliese_832_c": {
    "en": "Wangmu",
+   "es": "Wangmu",
+   "ja": "王母",
    "native": "王母",
    "native_lang": "zh-Hans",
    "ru": "Ванму",
-   "translit": "Wángmǔ"
+   "translit": "Wángmǔ",
+   "zh-Hans": "王母"
   },
   "body:system_12.Gliese_832.Gliese_832_d": {
    "en": "Yuzan",
+   "es": "Yuzan",
+   "ja": "玉簪",
    "native": "玉簪",
    "native_lang": "zh-Hans",
    "ru": "Юйцзань",
-   "translit": "Yùzān"
+   "translit": "Yùzān",
+   "zh-Hans": "玉簪"
   },
   "body:system_12.Gliese_832.Gliese_832_e": {
    "en": "Yinhan",
+   "es": "Yinhan",
+   "ja": "銀漢",
    "native": "银汉",
    "native_lang": "zh-Hans",
    "ru": "Иньхань",
-   "translit": "Yínhàn"
+   "translit": "Yínhàn",
+   "zh-Hans": "银汉"
   },
   "body:system_12.Gliese_832.Gliese_832_f": {
    "en": "Zhiji",
+   "es": "Zhiji",
+   "ja": "織機",
    "native": "织机",
    "native_lang": "zh-Hans",
    "ru": "Чжицзи",
-   "translit": "Zhījī"
+   "translit": "Zhījī",
+   "zh-Hans": "织机"
   },
   "body:system_12.Gliese_832.Gliese_832_g": {
    "en": "Qixi",
+   "es": "Qixi",
+   "ja": "七夕",
    "native": "七夕",
    "native_lang": "zh-Hans",
    "ru": "Цыси",
-   "translit": "Qīxī"
+   "translit": "Qīxī",
+   "zh-Hans": "七夕"
   },
   "body:system_13.Gliese_876.GJ_876_b": {
    "en": "Babbage",
+   "es": "Babbage",
+   "ja": "バベッジ",
    "native": "Babbage",
    "native_lang": "en",
-   "ru": "Бэббидж"
+   "ru": "Бэббидж",
+   "zh-Hans": "巴贝奇"
   },
   "body:system_13.Gliese_876.GJ_876_c": {
    "en": "Leibniz",
+   "es": "Leibniz",
+   "ja": "ライプニッツ",
    "native": "Leibniz",
    "native_lang": "en",
-   "ru": "Лейбниц"
+   "ru": "Лейбниц",
+   "zh-Hans": "莱布尼茨"
   },
   "body:system_13.Gliese_876.GJ_876_d": {
    "en": "Pascal",
+   "es": "Pascal",
+   "ja": "パスカル",
    "native": "Pascal",
    "native_lang": "en",
-   "ru": "Паскаль"
+   "ru": "Паскаль",
+   "zh-Hans": "帕斯卡"
   },
   "body:system_13.Gliese_876.GJ_876_e": {
    "en": "Lovelace",
+   "es": "Lovelace",
+   "ja": "ラブレス",
    "native": "Lovelace",
    "native_lang": "en",
-   "ru": "Лавлейс"
+   "ru": "Лавлейс",
+   "zh-Hans": "洛夫莱斯"
   },
   "body:system_13.Gliese_876.Gliese_876_K1": {
    "en": "Boole",
+   "es": "Boole",
+   "ja": "ブール",
    "native": "Boole",
    "native_lang": "en",
-   "ru": "Буль"
+   "ru": "Буль",
+   "zh-Hans": "布尔"
   },
   "body:system_13.Gliese_876.Gliese_876_K2": {
    "en": "Shannon",
+   "es": "Shannon",
+   "ja": "シャノン",
    "native": "Shannon",
    "native_lang": "en",
-   "ru": "Шеннон"
+   "ru": "Шеннон",
+   "zh-Hans": "香农"
   },
   "body:system_13.Gliese_876.Gliese_876_K3": {
    "en": "Hopper",
+   "es": "Hopper",
+   "ja": "ホッパー",
    "native": "Hopper",
    "native_lang": "en",
-   "ru": "Хоппер"
+   "ru": "Хоппер",
+   "zh-Hans": "霍珀"
   },
   "body:system_13.Gliese_876.Gliese_876_f": {
    "en": "Turing",
+   "es": "Turing",
+   "ja": "チューリング",
    "native": "Turing",
    "native_lang": "en",
-   "ru": "Тьюринг"
+   "ru": "Тьюринг",
+   "zh-Hans": "图灵"
   },
   "body:system_13.Gliese_876.Gliese_876_g": {
    "en": "Von Neumann",
+   "es": "Von Neumann",
+   "ja": "フォン・ノイマン",
    "native": "Von Neumann",
    "native_lang": "en",
-   "ru": "Фон Нейман"
+   "ru": "Фон Нейман",
+   "zh-Hans": "冯·诺依曼"
   },
   "body:system_14.HD_20794.HD_20794_K1": {
    "en": "Paddock",
+   "es": "Corral",
+   "ja": "パドック",
    "native": "Paddock",
    "native_lang": "en",
-   "ru": "Загон"
+   "ru": "Загон",
+   "zh-Hans": "围场"
   },
   "body:system_14.HD_20794.HD_20794_K2": {
    "en": "Orchard",
+   "es": "Huerto",
+   "ja": "オーチャード",
    "native": "Orchard",
    "native_lang": "en",
-   "ru": "Сад"
+   "ru": "Сад",
+   "zh-Hans": "果园"
   },
   "body:system_14.HD_20794.HD_20794_K3": {
    "en": "Hearth",
+   "es": "Hogar",
+   "ja": "ハース",
    "native": "Hearth",
    "native_lang": "en",
-   "ru": "Очаг"
+   "ru": "Очаг",
+   "zh-Hans": "炉床"
   },
   "body:system_14.HD_20794.HD_20794_b": {
    "en": "Millstone",
+   "es": "Muela",
+   "ja": "ミルストーン",
    "native": "Millstone",
    "native_lang": "en",
-   "ru": "Жёрнов"
+   "ru": "Жёрнов",
+   "zh-Hans": "磨盘"
   },
   "body:system_14.HD_20794.HD_20794_c": {
    "en": "Cinder",
+   "es": "Escoria",
+   "ja": "シンダー",
    "native": "Cinder",
    "native_lang": "en",
-   "ru": "Окалина"
+   "ru": "Окалина",
+   "zh-Hans": "余烬"
   },
   "body:system_14.HD_20794.HD_20794_d": {
    "en": "Windmill",
+   "es": "Molino",
+   "ja": "ウインドミル",
    "native": "Windmill",
    "native_lang": "en",
-   "ru": "Ветряк"
+   "ru": "Ветряк",
+   "zh-Hans": "风车"
   },
   "body:system_14.HD_20794.HD_20794_f": {
    "en": "Silo",
+   "es": "Silo",
+   "ja": "サイロ",
    "native": "Silo",
    "native_lang": "en",
-   "ru": "Силос"
+   "ru": "Силос",
+   "zh-Hans": "粮仓"
   },
   "body:system_14.HD_20794.HD_20794_f.HD_20794_f_I": {
    "en": "Scarecrow",
+   "es": "Espantapájaros",
+   "ja": "スケアクロウ",
    "native": "Scarecrow",
    "native_lang": "en",
-   "ru": "Пугало"
+   "ru": "Пугало",
+   "zh-Hans": "稻草人"
   },
   "body:system_14.HD_20794.HD_20794_g": {
    "en": "Ember",
+   "es": "Ascua",
+   "ja": "エンバー",
    "native": "Ember",
    "native_lang": "en",
-   "ru": "Уголёк"
+   "ru": "Уголёк",
+   "zh-Hans": "炭火"
   },
   "body:system_14.HD_20794.HD_20794_h": {
    "en": "Kiln",
+   "es": "Horno",
+   "ja": "キルン",
    "native": "Kiln",
    "native_lang": "en",
-   "ru": "Обжиг"
+   "ru": "Обжиг",
+   "zh-Hans": "窑"
   },
   "body:system_14.HD_20794.HD_20794_i": {
    "en": "Forge",
+   "es": "Fragua",
+   "ja": "フォージ",
    "native": "Forge",
    "native_lang": "en",
-   "ru": "Кузня"
+   "ru": "Кузня",
+   "zh-Hans": "锻炉"
   },
   "body:system_14.HD_20794.HD_20794_j": {
    "en": "Anvil",
+   "es": "Yunque",
+   "ja": "アンビル",
    "native": "Anvil",
    "native_lang": "en",
-   "ru": "Наковальня"
+   "ru": "Наковальня",
+   "zh-Hans": "铁砧"
   },
   "body:system_14.HD_20794.HD_20794_k": {
    "en": "Furnace",
+   "es": "Fogón",
+   "ja": "ファーネス",
    "native": "Furnace",
    "native_lang": "en",
-   "ru": "Горн"
+   "ru": "Горн",
+   "zh-Hans": "熔炉"
   },
   "body:system_14.HD_20794.HD_20794_l": {
    "en": "Smithy",
+   "es": "Herrería",
+   "ja": "スミシー",
    "native": "Smithy",
    "native_lang": "en",
-   "ru": "Мастерская"
+   "ru": "Мастерская",
+   "zh-Hans": "铁匠铺"
   },
   "body:system_14.HD_20794.HD_20794_m": {
    "en": "Frost",
+   "es": "Escarcha",
+   "ja": "フロスト",
    "native": "Frost",
    "native_lang": "en",
-   "ru": "Иней"
+   "ru": "Иней",
+   "zh-Hans": "霜"
   },
   "body:system_15.HD_40307.HD_40307_K1": {
    "en": "Theluji",
+   "es": "Theluji",
+   "ja": "テルジ",
    "native": "Theluji",
    "native_lang": "sw",
-   "ru": "Телуджи"
+   "ru": "Телуджи",
+   "zh-Hans": "特卢吉"
   },
   "body:system_15.HD_40307.HD_40307_K2": {
    "en": "Shamba",
+   "es": "Shamba",
+   "ja": "シャンバ",
    "native": "Shamba",
    "native_lang": "sw",
-   "ru": "Шамба"
+   "ru": "Шамба",
+   "zh-Hans": "尚巴"
   },
   "body:system_15.HD_40307.HD_40307_K3": {
    "en": "Kisima",
+   "es": "Kisima",
+   "ja": "キシマ",
    "native": "Kisima",
    "native_lang": "sw",
-   "ru": "Кисима"
+   "ru": "Кисима",
+   "zh-Hans": "基西马"
   },
   "body:system_15.HD_40307.HD_40307_b": {
    "en": "Mlima",
+   "es": "Mlima",
+   "ja": "ムリマ",
    "native": "Mlima",
    "native_lang": "sw",
-   "ru": "Млима"
+   "ru": "Млима",
+   "zh-Hans": "姆利马"
   },
   "body:system_15.HD_40307.HD_40307_c": {
    "en": "Simba",
+   "es": "Simba",
+   "ja": "シンバ",
    "native": "Simba",
    "native_lang": "sw",
-   "ru": "Симба"
+   "ru": "Симба",
+   "zh-Hans": "辛巴"
   },
   "body:system_15.HD_40307.HD_40307_d": {
    "en": "Kimbunga",
+   "es": "Kimbunga",
+   "ja": "キンブンガ",
    "native": "Kimbunga",
    "native_lang": "sw",
-   "ru": "Кимбунга"
+   "ru": "Кимбунга",
+   "zh-Hans": "金本加"
   },
   "body:system_15.HD_40307.HD_40307_e": {
    "en": "Moto",
+   "es": "Moto",
+   "ja": "モト",
    "native": "Moto",
    "native_lang": "sw",
-   "ru": "Мото"
+   "ru": "Мото",
+   "zh-Hans": "莫托"
   },
   "body:system_15.HD_40307.HD_40307_f": {
    "en": "Mvua",
+   "es": "Mvua",
+   "ja": "ムヴア",
    "native": "Mvua",
    "native_lang": "sw",
-   "ru": "Мвуа"
+   "ru": "Мвуа",
+   "zh-Hans": "姆武阿"
   },
   "body:system_15.HD_40307.HD_40307_h": {
    "en": "Chuma",
+   "es": "Chuma",
+   "ja": "チュマ",
    "native": "Chuma",
    "native_lang": "sw",
-   "ru": "Чума"
+   "ru": "Чума",
+   "zh-Hans": "丘马"
   },
   "body:system_15.HD_40307.HD_40307_i": {
    "en": "Jiwe",
+   "es": "Jiwe",
+   "ja": "ジウェ",
    "native": "Jiwe",
    "native_lang": "sw",
-   "ru": "Дживе"
+   "ru": "Дживе",
+   "zh-Hans": "吉维"
   },
   "body:system_15.HD_40307.HD_40307_j": {
    "en": "Upepo",
+   "es": "Upepo",
+   "ja": "ウペポ",
    "native": "Upepo",
    "native_lang": "sw",
-   "ru": "Упепо"
+   "ru": "Упепо",
+   "zh-Hans": "乌佩波"
   },
   "body:system_15.HD_40307.HD_40307_k": {
    "en": "Uhuru",
+   "es": "Uhuru",
+   "ja": "ウフル",
    "native": "Uhuru",
    "native_lang": "sw",
-   "ru": "Ухуру"
+   "ru": "Ухуру",
+   "zh-Hans": "乌呼鲁"
   },
   "body:system_16.HD_69830.HD_69830_A1": {
    "en": "Saci",
+   "es": "Sací",
+   "ja": "サシ",
    "native": "Saci",
    "native_lang": "pt",
-   "ru": "Саси"
+   "ru": "Саси",
+   "zh-Hans": "萨西"
   },
   "body:system_16.HD_69830.HD_69830_K2": {
    "en": "Mapinguari",
+   "es": "Mapinguari",
+   "ja": "マピングアリ",
    "native": "Mapinguari",
    "native_lang": "pt",
-   "ru": "Мапингуари"
+   "ru": "Мапингуари",
+   "zh-Hans": "马平瓜里"
   },
   "body:system_16.HD_69830.HD_69830_K3": {
    "en": "Caipora",
+   "es": "Caipora",
+   "ja": "カイポラ",
    "native": "Caipora",
    "native_lang": "pt",
-   "ru": "Кайпора"
+   "ru": "Кайпора",
+   "zh-Hans": "凯波拉"
   },
   "body:system_16.HD_69830.HD_69830_K4": {
    "en": "Curupira",
+   "es": "Curupira",
+   "ja": "クルピラ",
    "native": "Curupira",
    "native_lang": "pt",
-   "ru": "Курупира"
+   "ru": "Курупира",
+   "zh-Hans": "库鲁皮拉"
   },
   "body:system_16.HD_69830.HD_69830_b": {
    "en": "Boitata",
+   "es": "Boitatá",
+   "ja": "ボイタタ",
    "native": "Boitatá",
    "native_lang": "pt",
-   "ru": "Боитата"
+   "ru": "Боитата",
+   "zh-Hans": "火蛇"
   },
   "body:system_16.HD_69830.HD_69830_c": {
    "en": "Jurua",
+   "es": "Yuruá",
+   "ja": "ジュルア",
    "native": "Juruá",
    "native_lang": "pt",
-   "ru": "Журуа"
+   "ru": "Журуа",
+   "zh-Hans": "茹鲁阿"
   },
   "body:system_16.HD_69830.HD_69830_d": {
    "en": "Rio Negro",
+   "es": "Río Negro",
+   "ja": "ネグロ川",
    "native": "Rio Negro",
    "native_lang": "pt",
-   "ru": "Риу-Негру"
+   "ru": "Риу-Негру",
+   "zh-Hans": "内格罗河"
   },
   "body:system_16.HD_69830.HD_69830_e": {
    "en": "Xingu",
+   "es": "Xingú",
+   "ja": "シングー",
    "native": "Xingu",
    "native_lang": "pt",
-   "ru": "Шингу"
+   "ru": "Шингу",
+   "zh-Hans": "欣古"
   },
   "body:system_16.HD_69830.HD_69830_f": {
    "en": "Tapajos",
+   "es": "Tapajós",
+   "ja": "タパジョス",
    "native": "Tapajós",
    "native_lang": "pt",
-   "ru": "Тапажос"
+   "ru": "Тапажос",
+   "zh-Hans": "塔帕若斯"
   },
   "body:system_16.HD_69830.HD_69830_g": {
    "en": "Madeira",
+   "es": "Madeira",
+   "ja": "マデイラ",
    "native": "Madeira",
    "native_lang": "pt",
-   "ru": "Мадейра"
+   "ru": "Мадейра",
+   "zh-Hans": "马代拉"
   },
   "body:system_16.HD_69830.HD_69830_h": {
    "en": "Purus",
+   "es": "Purus",
+   "ja": "プルス",
    "native": "Purus",
    "native_lang": "pt",
-   "ru": "Пурус"
+   "ru": "Пурус",
+   "zh-Hans": "普鲁斯"
   },
   "body:system_16.HD_69830.HD_69830_i": {
    "en": "Japura",
+   "es": "Yapurá",
+   "ja": "ジャプラ",
    "native": "Japurá",
    "native_lang": "pt",
-   "ru": "Жапура"
+   "ru": "Жапура",
+   "zh-Hans": "雅普拉"
   },
   "body:system_16.HD_69830.HD_69830_j": {
    "en": "Tocantins",
+   "es": "Tocantins",
+   "ja": "トカンチンス",
    "native": "Tocantins",
    "native_lang": "pt",
-   "ru": "Токантинс"
+   "ru": "Токантинс",
+   "zh-Hans": "托坎廷斯"
   },
   "body:system_16.HD_69830.HD_69830_k": {
    "en": "Tupa",
+   "es": "Tupá",
+   "ja": "トゥパン",
    "native": "Tupã",
    "native_lang": "pt",
-   "ru": "Тупан"
+   "ru": "Тупан",
+   "zh-Hans": "图潘"
   },
   "body:system_16.HD_69830.HD_69830_k.HD_69830_k_I": {
    "en": "Jaci",
+   "es": "Yací",
+   "ja": "ジャシ",
    "native": "Jaci",
    "native_lang": "pt",
-   "ru": "Жаси"
+   "ru": "Жаси",
+   "zh-Hans": "雅西"
   },
   "body:system_16.HD_69830.HD_69830_k.HD_69830_k_II": {
    "en": "Ruda",
+   "es": "Rudá",
+   "ja": "ルダ",
    "native": "Rudá",
    "native_lang": "pt",
-   "ru": "Руда"
+   "ru": "Руда",
+   "zh-Hans": "鲁达"
   },
   "body:system_16.HD_69830.HD_69830_k.HD_69830_k_III": {
    "en": "Iara",
+   "es": "Iara",
+   "ja": "イアラ",
    "native": "Iara",
    "native_lang": "pt",
-   "ru": "Иара"
+   "ru": "Иара",
+   "zh-Hans": "伊阿拉"
   },
   "body:system_16.HD_69830.HD_69830_l": {
    "en": "Amazonas",
+   "es": "Amazonas",
+   "ja": "アマゾナス",
    "native": "Amazonas",
    "native_lang": "pt",
-   "ru": "Амазонас"
+   "ru": "Амазонас",
+   "zh-Hans": "亚马孙"
   },
   "body:system_16.HD_69830.HD_69830_l.HD_69830_l_I": {
    "en": "Boto",
+   "es": "Boto",
+   "ja": "ボート",
    "native": "Boto",
    "native_lang": "pt",
-   "ru": "Бото"
+   "ru": "Бото",
+   "zh-Hans": "博托"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_b": {
+   "en": "ENIAC",
+   "es": "ENIAC",
+   "ja": "エニアック",
+   "native": "ENIAC",
+   "native_lang": "en",
+   "ru": "ЭНИАК",
+   "zh-Hans": "埃尼阿克"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_c": {
+   "en": "UNIVAC",
+   "es": "UNIVAC",
+   "ja": "ユニバック",
+   "native": "UNIVAC",
+   "native_lang": "en",
+   "ru": "ЮНИВАК",
+   "zh-Hans": "尤尼瓦克"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_d": {
+   "en": "EDSAC",
+   "es": "EDSAC",
+   "ja": "エドサック",
+   "native": "EDSAC",
+   "native_lang": "en",
+   "ru": "ЭДСАК",
+   "zh-Hans": "埃德萨克"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_e": {
+   "en": "Jacquard",
+   "es": "Jacquard",
+   "ja": "ジャカード",
+   "native": "Jacquard",
+   "native_lang": "en",
+   "ru": "Жаккар",
+   "zh-Hans": "雅卡尔"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_f": {
+   "en": "Difference",
+   "es": "Diferencial",
+   "ja": "階差機関",
+   "native": "Difference",
+   "native_lang": "en",
+   "ru": "Разностная",
+   "zh-Hans": "差分机"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_g": {
+   "en": "Analytical",
+   "es": "Analítica",
+   "ja": "解析機関",
+   "native": "Analytical",
+   "native_lang": "en",
+   "ru": "Аналитическая",
+   "zh-Hans": "分析机"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_h": {
+   "en": "Abacus",
+   "es": "Ábaco",
+   "ja": "算盤",
+   "native": "Abacus",
+   "native_lang": "en",
+   "ru": "Абак",
+   "zh-Hans": "算盘"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_i": {
+   "en": "Colossus",
+   "es": "Coloso",
+   "ja": "コロッサス",
+   "native": "Colossus",
+   "native_lang": "en",
+   "ru": "Колосс",
+   "zh-Hans": "巨人机"
+  },
+  "body:system_17.TRAPPIST-1.TRAPPIST-1_j": {
+   "en": "Quipu",
+   "es": "Quipu",
+   "ja": "キープ",
+   "native": "Quipu",
+   "native_lang": "en",
+   "ru": "Кипу",
+   "zh-Hans": "奇普"
+  },
+  "body:system_19.HD_102195.HD_102195_K1": {
+   "en": "Chanchu",
+   "es": "Chanchu",
+   "ja": "蟾蜍",
+   "native": "蟾蜍",
+   "native_lang": "zh-Hans",
+   "ru": "Чаньчу",
+   "translit": "Chánchú",
+   "zh-Hans": "蟾蜍"
+  },
+  "body:system_19.HD_102195.HD_102195_K2": {
+   "en": "Jinghua",
+   "es": "Jinghua",
+   "ja": "鏡花",
+   "native": "镜花",
+   "native_lang": "zh-Hans",
+   "ru": "Цзинхуа",
+   "translit": "Jìnghuā",
+   "zh-Hans": "镜花"
+  },
+  "body:system_19.HD_102195.HD_102195_K3": {
+   "en": "Shuiyue",
+   "es": "Shuiyue",
+   "ja": "水月",
+   "native": "水月",
+   "native_lang": "zh-Hans",
+   "ru": "Шуйюэ",
+   "translit": "Shuǐyuè",
+   "zh-Hans": "水月"
+  },
+  "body:system_19.HD_102195.HD_102195_b": {
+   "en": "Houyi",
+   "es": "Houyi",
+   "ja": "羿",
+   "native": "后羿",
+   "native_lang": "zh-Hans",
+   "ru": "Хоу И",
+   "translit": "Hòuyì",
+   "zh-Hans": "后羿"
+  },
+  "body:system_19.HD_102195.HD_102195_c": {
+   "en": "Jinwu",
+   "es": "Jinwu",
+   "ja": "金烏",
+   "native": "金乌",
+   "native_lang": "zh-Hans",
+   "ru": "Цзиньу",
+   "translit": "Jīnwū",
+   "zh-Hans": "金乌"
+  },
+  "body:system_19.HD_102195.HD_102195_d": {
+   "en": "Wu Gang",
+   "es": "Wu Gang",
+   "ja": "呉剛",
+   "native": "吴刚",
+   "native_lang": "zh-Hans",
+   "ru": "У Ган",
+   "translit": "Wú Gāng",
+   "zh-Hans": "吴刚"
+  },
+  "body:system_19.HD_102195.HD_102195_e": {
+   "en": "Yuegui",
+   "es": "Yuegui",
+   "ja": "月桂",
+   "native": "月桂",
+   "native_lang": "zh-Hans",
+   "ru": "Юэгуй",
+   "translit": "Yuèguì",
+   "zh-Hans": "月桂"
+  },
+  "body:system_19.HD_102195.HD_102195_f": {
+   "en": "Busiyao",
+   "es": "Busiyao",
+   "ja": "不死の薬",
+   "native": "不死药",
+   "native_lang": "zh-Hans",
+   "ru": "Бусыяо",
+   "translit": "Bùsǐyào",
+   "zh-Hans": "不死药"
+  },
+  "body:system_19.HD_102195.HD_102195_g": {
+   "en": "Chang'e",
+   "es": "Chang'e",
+   "ja": "嫦娥",
+   "native": "嫦娥",
+   "native_lang": "zh-Hans",
+   "ru": "Чанъэ",
+   "translit": "Cháng'é",
+   "zh-Hans": "嫦娥"
+  },
+  "body:system_19.HD_102195.HD_102195_h": {
+   "en": "Guanghan",
+   "es": "Guanghan",
+   "ja": "広寒宮",
+   "native": "广寒",
+   "native_lang": "zh-Hans",
+   "ru": "Гуанхань",
+   "translit": "Guǎnghán",
+   "zh-Hans": "广寒"
+  },
+  "body:system_19.HD_102195.HD_102195_i": {
+   "en": "Yutu",
+   "es": "Yutu",
+   "ja": "玉兎",
+   "native": "玉兔",
+   "native_lang": "zh-Hans",
+   "ru": "Юйту",
+   "translit": "Yùtù",
+   "zh-Hans": "玉兔"
   },
   "body:system_2.Barnard's_Star.Barnard's_Star_f": {
    "en": "Surt",
+   "es": "Surt",
+   "ja": "スルト",
    "native": "Surt",
    "native_lang": "nb",
-   "ru": "Сурт"
+   "ru": "Сурт",
+   "zh-Hans": "苏尔特"
   },
   "body:system_2.Barnard's_Star.Barnard's_Star_g": {
    "en": "Muspell",
+   "es": "Muspel",
+   "ja": "ムスペル",
    "native": "Muspell",
    "native_lang": "nb",
-   "ru": "Муспелль"
+   "ru": "Муспелль",
+   "zh-Hans": "穆斯贝尔"
   },
   "body:system_2.Barnard's_Star.Barnard's_Star_h": {
    "en": "Valaskjalf",
+   "es": "Valaskjalf",
+   "ja": "ヴァーラスキャールヴ",
    "native": "Valaskjalv",
    "native_lang": "nb",
-   "ru": "Валаскьяльв"
+   "ru": "Валаскьяльв",
+   "zh-Hans": "瓦拉斯奇尔夫"
   },
   "body:system_2.Barnard's_Star.Barnard's_Star_i": {
    "en": "Gjoll",
+   "es": "Gjöll",
+   "ja": "ギョッル",
    "native": "Gjøll",
    "native_lang": "nb",
-   "ru": "Гьёлль"
+   "ru": "Гьёлль",
+   "zh-Hans": "吉欧尔河"
   },
   "body:system_2.Barnard's_Star.Barnard's_Star_j": {
    "en": "Muninn",
+   "es": "Muninn",
+   "ja": "ムニン",
    "native": "Muninn",
    "native_lang": "nb",
-   "ru": "Мунин"
+   "ru": "Мунин",
+   "zh-Hans": "穆宁"
   },
   "body:system_2.Barnard's_Star.Barnard's_Star_k": {
    "en": "Fimbul",
+   "es": "Fimbul",
+   "ja": "フィンブル",
    "native": "Fimbul",
    "native_lang": "nb",
-   "ru": "Фимбуль"
+   "ru": "Фимбуль",
+   "zh-Hans": "芬布尔"
   },
   "body:system_2.Barnard's_Star.Barnard_b": {
    "en": "Brokk",
+   "es": "Brokk",
+   "ja": "ブロック",
    "native": "Brokk",
    "native_lang": "nb",
-   "ru": "Брокк"
+   "ru": "Брокк",
+   "zh-Hans": "布洛克"
   },
   "body:system_2.Barnard's_Star.Barnard_c": {
-   "en": "Sindre",
+   "en": "Sindri",
+   "es": "Sindri",
+   "ja": "シンドリ",
    "native": "Sindre",
    "native_lang": "nb",
-   "ru": "Синдри"
+   "ru": "Синдри",
+   "zh-Hans": "辛德里"
   },
   "body:system_2.Barnard's_Star.Barnard_d": {
    "en": "Loge",
+   "es": "Logi",
+   "ja": "ロギ",
    "native": "Loge",
    "native_lang": "nb",
-   "ru": "Логе"
+   "ru": "Логе",
+   "zh-Hans": "洛格"
   },
   "body:system_2.Barnard's_Star.Barnard_e": {
    "en": "Hlidskjalf",
+   "es": "Hlidskjalf",
+   "ja": "フリズスキャールヴ",
    "native": "Hlidskjalv",
    "native_lang": "nb",
-   "ru": "Хлидскьяльв"
+   "ru": "Хлидскьяльв",
+   "zh-Hans": "至高王座"
+  },
+  "body:system_20.HD_93083.GJ_1137_c": {
+   "en": "Chi",
+   "es": "Chi",
+   "ja": "尺",
+   "native": "尺",
+   "native_lang": "zh-Hans",
+   "ru": "Чи",
+   "translit": "Chǐ",
+   "zh-Hans": "尺"
+  },
+  "body:system_20.HD_93083.HD_93083_K1": {
+   "en": "Jin",
+   "es": "Jin",
+   "ja": "斤",
+   "native": "斤",
+   "native_lang": "zh-Hans",
+   "ru": "Цзинь",
+   "translit": "Jīn",
+   "zh-Hans": "斤"
+  },
+  "body:system_20.HD_93083.HD_93083_K2": {
+   "en": "Sheng",
+   "es": "Sheng",
+   "ja": "升",
+   "native": "升",
+   "native_lang": "zh-Hans",
+   "ru": "Шэн",
+   "translit": "Shēng",
+   "zh-Hans": "升"
+  },
+  "body:system_20.HD_93083.HD_93083_K3": {
+   "en": "Jun",
+   "es": "Jun",
+   "ja": "鈞",
+   "native": "钧",
+   "native_lang": "zh-Hans",
+   "ru": "Цзюнь",
+   "translit": "Jūn",
+   "zh-Hans": "钧"
+  },
+  "body:system_20.HD_93083.HD_93083_b": {
+   "en": "Lu",
+   "es": "Lu",
+   "ja": "律",
+   "native": "律",
+   "native_lang": "zh-Hans",
+   "ru": "Люй",
+   "translit": "Lǜ",
+   "zh-Hans": "律"
+  },
+  "body:system_20.HD_93083.HD_93083_d": {
+   "en": "Du",
+   "es": "Du",
+   "ja": "度",
+   "native": "度",
+   "native_lang": "zh-Hans",
+   "ru": "Ду",
+   "translit": "Dù",
+   "zh-Hans": "度"
+  },
+  "body:system_20.HD_93083.HD_93083_e": {
+   "en": "Heng",
+   "es": "Heng",
+   "ja": "衡",
+   "native": "衡",
+   "native_lang": "zh-Hans",
+   "ru": "Хэн",
+   "translit": "Héng",
+   "zh-Hans": "衡"
+  },
+  "body:system_20.HD_93083.HD_93083_f": {
+   "en": "Liang",
+   "es": "Liang",
+   "ja": "量",
+   "native": "量",
+   "native_lang": "zh-Hans",
+   "ru": "Лян",
+   "translit": "Liàng",
+   "zh-Hans": "量"
+  },
+  "body:system_20.HD_93083.HD_93083_g": {
+   "en": "Cun",
+   "es": "Cun",
+   "ja": "寸",
+   "native": "寸",
+   "native_lang": "zh-Hans",
+   "ru": "Цунь",
+   "translit": "Cùn",
+   "zh-Hans": "寸"
+  },
+  "body:system_20.HD_93083.HD_93083_h": {
+   "en": "Ke",
+   "es": "Ke",
+   "ja": "刻",
+   "native": "刻",
+   "native_lang": "zh-Hans",
+   "ru": "Кэ",
+   "translit": "Kè",
+   "zh-Hans": "刻"
+  },
+  "body:system_20.HD_93083.HD_93083_i": {
+   "en": "Zhun",
+   "es": "Zhun",
+   "ja": "準",
+   "native": "准",
+   "native_lang": "zh-Hans",
+   "ru": "Чжунь",
+   "translit": "Zhǔn",
+   "zh-Hans": "准"
+  },
+  "body:system_20.HD_93083.HD_93083_j": {
+   "en": "Gui",
+   "es": "Gui",
+   "ja": "規",
+   "native": "规",
+   "native_lang": "zh-Hans",
+   "ru": "Гуй",
+   "translit": "Guī",
+   "zh-Hans": "规"
+  },
+  "body:system_20.HD_93083.HD_93083_j.HD_93083_j_I": {
+   "en": "Ju",
+   "es": "Ju",
+   "ja": "矩",
+   "native": "矩",
+   "native_lang": "zh-Hans",
+   "ru": "Цзюй",
+   "translit": "Jǔ",
+   "zh-Hans": "矩"
+  },
+  "body:system_20.HD_93083.HD_93083_k": {
+   "en": "Dou",
+   "es": "Dou",
+   "ja": "斗",
+   "native": "斗",
+   "native_lang": "zh-Hans",
+   "ru": "Доу",
+   "translit": "Dǒu",
+   "zh-Hans": "斗"
+  },
+  "body:system_21.GJ_1214.GJ_1214_K1": {
+   "en": "Montaigne",
+   "es": "Montaigne",
+   "ja": "モンテーニュ",
+   "native": "Montaigne",
+   "native_lang": "fr",
+   "ru": "Монтень",
+   "zh-Hans": "蒙田"
+  },
+  "body:system_21.GJ_1214.GJ_1214_b": {
+   "en": "Descartes",
+   "es": "Descartes",
+   "ja": "デカルト",
+   "native": "Descartes",
+   "native_lang": "fr",
+   "ru": "Декарт",
+   "zh-Hans": "笛卡尔"
+  },
+  "body:system_21.GJ_1214.GJ_1214_c": {
+   "en": "Voltaire",
+   "es": "Voltaire",
+   "ja": "ヴォルテール",
+   "native": "Voltaire",
+   "native_lang": "fr",
+   "ru": "Вольтер",
+   "zh-Hans": "伏尔泰"
+  },
+  "body:system_21.GJ_1214.GJ_1214_d": {
+   "en": "Diderot",
+   "es": "Diderot",
+   "ja": "ディドロ",
+   "native": "Diderot",
+   "native_lang": "fr",
+   "ru": "Дидро",
+   "zh-Hans": "狄德罗"
+  },
+  "body:system_21.GJ_1214.GJ_1214_e": {
+   "en": "Rousseau",
+   "es": "Rousseau",
+   "ja": "ルソー",
+   "native": "Rousseau",
+   "native_lang": "fr",
+   "ru": "Руссо",
+   "zh-Hans": "卢梭"
+  },
+  "body:system_21.GJ_1214.GJ_1214_f": {
+   "en": "Montesquieu",
+   "es": "Montesquieu",
+   "ja": "モンテスキュー",
+   "native": "Montesquieu",
+   "native_lang": "fr",
+   "ru": "Монтескьё",
+   "zh-Hans": "孟德斯鸠"
+  },
+  "body:system_21.GJ_1214.GJ_1214_g": {
+   "en": "d'Alembert",
+   "es": "d'Alembert",
+   "ja": "ダランベール",
+   "native": "Alembert",
+   "native_lang": "fr",
+   "ru": "Даламбер",
+   "zh-Hans": "达朗贝尔"
+  },
+  "body:system_21.GJ_1214.GJ_1214_h": {
+   "en": "Condorcet",
+   "es": "Condorcet",
+   "ja": "コンドルセ",
+   "native": "Condorcet",
+   "native_lang": "fr",
+   "ru": "Кондорсе",
+   "zh-Hans": "孔多塞"
+  },
+  "body:system_21.GJ_1214.GJ_1214_i": {
+   "en": "Lavoisier",
+   "es": "Lavoisier",
+   "ja": "ラヴォアジエ",
+   "native": "Lavoisier",
+   "native_lang": "fr",
+   "ru": "Лавуазье",
+   "zh-Hans": "拉瓦锡"
+  },
+  "body:system_21.GJ_1214.GJ_1214_j": {
+   "en": "Buffon",
+   "es": "Buffon",
+   "ja": "ビュフォン",
+   "native": "Buffon",
+   "native_lang": "fr",
+   "ru": "Бюффон",
+   "zh-Hans": "布丰"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_K1": {
    "en": "Nandi",
+   "es": "Nandi",
+   "ja": "ナンディン",
    "native": "नन्दी",
    "native_lang": "hi",
    "ru": "Нанди",
-   "translit": "Nandī"
+   "translit": "Nandī",
+   "zh-Hans": "南迪"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_K2": {
    "en": "Garuda",
+   "es": "Garuda",
+   "ja": "ガルダ",
    "native": "गरुड",
    "native_lang": "hi",
    "ru": "Гаруда",
-   "translit": "Garuḍa"
+   "translit": "Garuḍa",
+   "zh-Hans": "迦楼罗"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_K3": {
    "en": "Hamsa",
+   "es": "Hamsa",
+   "ja": "ハンサ",
    "native": "हंस",
    "native_lang": "hi",
    "ru": "Хамса",
-   "translit": "Haṃsa"
+   "translit": "Haṃsa",
+   "zh-Hans": "天鹅"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_b": {
    "en": "Agni",
+   "es": "Agni",
+   "ja": "アグニ",
    "native": "अग्नि",
    "native_lang": "hi",
    "ru": "Агни",
-   "translit": "Agni"
+   "translit": "Agni",
+   "zh-Hans": "阿耆尼"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_c": {
    "en": "Jvala",
+   "es": "Jvala",
+   "ja": "ジュヴァーラー",
    "native": "ज्वाला",
    "native_lang": "hi",
    "ru": "Джвала",
-   "translit": "Jvālā"
+   "translit": "Jvālā",
+   "zh-Hans": "焰"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_d": {
    "en": "Tejas",
+   "es": "Tejas",
+   "ja": "テージャス",
    "native": "तेजस्",
    "native_lang": "hi",
    "ru": "Теджас",
-   "translit": "Tejas"
+   "translit": "Tejas",
+   "zh-Hans": "光辉"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_e": {
    "en": "Kundala",
+   "es": "Kundala",
+   "ja": "クンダラ",
    "native": "कुण्डल",
    "native_lang": "hi",
    "ru": "Кундала",
-   "translit": "Kuṇḍala"
+   "translit": "Kuṇḍala",
+   "zh-Hans": "耳环"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_f": {
    "en": "Marut",
+   "es": "Marut",
+   "ja": "マルト",
    "native": "मरुत्",
    "native_lang": "hi",
    "ru": "Марут",
-   "translit": "Marut"
+   "translit": "Marut",
+   "zh-Hans": "摩录多"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_g": {
    "en": "Mitra",
+   "es": "Mitra",
+   "ja": "ミトラ",
    "native": "मित्र",
    "native_lang": "hi",
    "ru": "Митра",
-   "translit": "Mitra"
+   "translit": "Mitra",
+   "zh-Hans": "密多罗"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_h": {
    "en": "Prithvi",
+   "es": "Prithvi",
+   "ja": "プリトヴィー",
    "native": "पृथ्वी",
    "native_lang": "hi",
    "ru": "Притхви",
-   "translit": "Pṛthvī"
+   "translit": "Pṛthvī",
+   "zh-Hans": "地母"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_i": {
    "en": "Indra",
+   "es": "Indra",
+   "ja": "インドラ",
    "native": "इन्द्र",
    "native_lang": "hi",
    "ru": "Индра",
-   "translit": "Indra"
+   "translit": "Indra",
+   "zh-Hans": "因陀罗"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_j": {
    "en": "Soma",
+   "es": "Soma",
+   "ja": "ソーマ",
    "native": "सोम",
    "native_lang": "hi",
    "ru": "Сома",
-   "translit": "Soma"
+   "translit": "Soma",
+   "zh-Hans": "苏摩"
   },
   "body:system_22.Delta_Pavonis.Delta_Pavonis_k": {
    "en": "Kailasa",
+   "es": "Kailash",
+   "ja": "カイラス",
    "native": "कैलास",
    "native_lang": "hi",
    "ru": "Кайласа",
-   "translit": "Kailāsa"
+   "translit": "Kailāsa",
+   "zh-Hans": "冈仁波齐"
   },
   "body:system_23.Gliese_892.Gliese_892_A1": {
    "en": "Nugget",
+   "es": "Pepita",
+   "ja": "ナゲット",
    "native": "Nugget",
    "native_lang": "en",
-   "ru": "Самородок"
+   "ru": "Самородок",
+   "zh-Hans": "金块"
   },
   "body:system_23.Gliese_892.Gliese_892_e": {
    "en": "Slag",
+   "es": "Escoria",
+   "ja": "スラグ",
    "native": "Slag",
    "native_lang": "en",
-   "ru": "Шлак"
+   "ru": "Шлак",
+   "zh-Hans": "炉渣"
   },
   "body:system_23.Gliese_892.Gliese_892_i": {
    "en": "Crucible",
+   "es": "Crisol",
+   "ja": "るつぼ",
    "native": "Crucible",
    "native_lang": "en",
-   "ru": "Тигель"
+   "ru": "Тигель",
+   "zh-Hans": "坩埚"
   },
   "body:system_23.Gliese_892.Gliese_892_j": {
    "en": "Smelter",
+   "es": "Fundición",
+   "ja": "製錬所",
    "native": "Smelter",
    "native_lang": "en",
-   "ru": "Плавильня"
+   "ru": "Плавильня",
+   "zh-Hans": "冶炼厂"
   },
   "body:system_23.Gliese_892.Gliese_892_k": {
    "en": "Assay",
+   "es": "Ensayo",
+   "ja": "試金",
    "native": "Assay",
    "native_lang": "en",
-   "ru": "Проба"
+   "ru": "Проба",
+   "zh-Hans": "试金"
   },
   "body:system_23.Gliese_892.Gliese_892_l": {
    "en": "Lode",
+   "es": "Filón",
+   "ja": "鉱脈",
    "native": "Lode",
    "native_lang": "en",
-   "ru": "Жила"
+   "ru": "Жила",
+   "zh-Hans": "矿脉"
   },
   "body:system_23.Gliese_892.HD_219134_b": {
    "en": "Bessemer",
+   "es": "Bessemer",
+   "ja": "ベッセマー",
    "native": "Bessemer",
    "native_lang": "en",
-   "ru": "Бессемер"
+   "ru": "Бессемер",
+   "zh-Hans": "贝塞麦"
   },
   "body:system_23.Gliese_892.HD_219134_c": {
    "en": "Ingot",
+   "es": "Lingote",
+   "ja": "インゴット",
    "native": "Ingot",
    "native_lang": "en",
-   "ru": "Слиток"
+   "ru": "Слиток",
+   "zh-Hans": "铸锭"
   },
   "body:system_23.Gliese_892.HD_219134_d": {
    "en": "Bellows",
+   "es": "Fuelle",
+   "ja": "ふいご",
    "native": "Bellows",
    "native_lang": "en",
-   "ru": "Мехи"
+   "ru": "Мехи",
+   "zh-Hans": "风箱"
   },
   "body:system_23.Gliese_892.HD_219134_h": {
    "en": "Motherlode",
+   "es": "Veta Madre",
+   "ja": "マザーロード",
    "native": "Motherlode",
    "native_lang": "en",
-   "ru": "Главная Жила"
+   "ru": "Главная Жила",
+   "zh-Hans": "主矿脉"
   },
   "body:system_23.Gliese_892.HD_219134_h.HD_219134_h_I": {
    "en": "Pickaxe",
+   "es": "Pico",
+   "ja": "つるはし",
    "native": "Pickaxe",
    "native_lang": "en",
-   "ru": "Кайло"
+   "ru": "Кайло",
+   "zh-Hans": "鹤嘴锄"
   },
   "body:system_23.Gliese_892.HD_219134_h.HD_219134_h_II": {
    "en": "Bedrock",
+   "es": "Roca Madre",
+   "ja": "岩盤",
    "native": "Bedrock",
    "native_lang": "en",
-   "ru": "Коренная"
+   "ru": "Коренная",
+   "zh-Hans": "基岩"
+  },
+  "body:system_24.Gliese_436.GJ_436_b": {
+   "en": "Melpomene",
+   "es": "Melpómene",
+   "ja": "メルポメネー",
+   "native": "Μελπομένη",
+   "native_lang": "el",
+   "ru": "Мельпомена",
+   "translit": "Melpoméni",
+   "zh-Hans": "墨尔波墨涅"
+  },
+  "body:system_24.Gliese_436.Gliese_436_K1": {
+   "en": "Urania",
+   "es": "Urania",
+   "ja": "ウーラニアー",
+   "native": "Ουρανία",
+   "native_lang": "el",
+   "ru": "Урания",
+   "translit": "Ouranía",
+   "zh-Hans": "乌拉尼亚"
+  },
+  "body:system_24.Gliese_436.Gliese_436_c": {
+   "en": "Calliope",
+   "es": "Calíope",
+   "ja": "カリオペー",
+   "native": "Καλλιόπη",
+   "native_lang": "el",
+   "ru": "Каллиопа",
+   "translit": "Kalliópi",
+   "zh-Hans": "卡利俄佩"
+  },
+  "body:system_24.Gliese_436.Gliese_436_d": {
+   "en": "Clio",
+   "es": "Clío",
+   "ja": "クレイオー",
+   "native": "Κλειώ",
+   "native_lang": "el",
+   "ru": "Клио",
+   "translit": "Kleió",
+   "zh-Hans": "克利俄"
+  },
+  "body:system_24.Gliese_436.Gliese_436_e": {
+   "en": "Erato",
+   "es": "Érato",
+   "ja": "エラトー",
+   "native": "Ερατώ",
+   "native_lang": "el",
+   "ru": "Эрато",
+   "translit": "Erató",
+   "zh-Hans": "厄剌托"
+  },
+  "body:system_24.Gliese_436.Gliese_436_f": {
+   "en": "Euterpe",
+   "es": "Euterpe",
+   "ja": "エウテルペー",
+   "native": "Ευτέρπη",
+   "native_lang": "el",
+   "ru": "Эвтерпа",
+   "translit": "Efterpi",
+   "zh-Hans": "欧忒耳佩"
+  },
+  "body:system_24.Gliese_436.Gliese_436_g": {
+   "en": "Polyhymnia",
+   "es": "Polimnia",
+   "ja": "ポリュムニアー",
+   "native": "Πολύμνια",
+   "native_lang": "el",
+   "ru": "Полигимния",
+   "translit": "Polýmnia",
+   "zh-Hans": "波吕许谟尼亚"
+  },
+  "body:system_24.Gliese_436.Gliese_436_h": {
+   "en": "Terpsichore",
+   "es": "Terpsícore",
+   "ja": "テルプシコラー",
+   "native": "Τερψιχόρη",
+   "native_lang": "el",
+   "ru": "Терпсихора",
+   "translit": "Terpsichóri",
+   "zh-Hans": "忒耳普西科瑞"
   },
   "body:system_25.Gliese_357.GJ_357_b": {
    "en": "Goshawk",
+   "es": "Azor",
+   "ja": "オオタカ",
    "native": "Goshawk",
    "native_lang": "en",
-   "ru": "Ястреб"
+   "ru": "Ястреб",
+   "zh-Hans": "苍鹰"
   },
   "body:system_25.Gliese_357.GJ_357_c": {
    "en": "Harrier",
+   "es": "Aguilucho",
+   "ja": "チュウヒ",
    "native": "Harrier",
    "native_lang": "en",
-   "ru": "Лунь"
+   "ru": "Лунь",
+   "zh-Hans": "鹞"
   },
   "body:system_25.Gliese_357.GJ_357_d": {
    "en": "Osprey",
+   "es": "Águila Pescadora",
+   "ja": "ミサゴ",
    "native": "Osprey",
    "native_lang": "en",
-   "ru": "Скопа"
+   "ru": "Скопа",
+   "zh-Hans": "鹗"
   },
   "body:system_25.Gliese_357.Gliese_357_e": {
    "en": "Merlin",
+   "es": "Esmerejón",
+   "ja": "コチョウゲンボウ",
    "native": "Merlin",
    "native_lang": "en",
-   "ru": "Дербник"
+   "ru": "Дербник",
+   "zh-Hans": "灰背隼"
   },
   "body:system_25.Gliese_357.Gliese_357_f": {
    "en": "Hobby",
+   "es": "Alcotán",
+   "ja": "チゴハヤブサ",
    "native": "Hobby",
    "native_lang": "en",
-   "ru": "Чеглок"
+   "ru": "Чеглок",
+   "zh-Hans": "燕隼"
   },
   "body:system_25.Gliese_357.Gliese_357_g": {
    "en": "Peregrine",
+   "es": "Peregrino",
+   "ja": "ハヤブサ",
    "native": "Peregrine",
    "native_lang": "en",
-   "ru": "Сапсан"
+   "ru": "Сапсан",
+   "zh-Hans": "游隼"
   },
   "body:system_25.Gliese_357.Gliese_357_h": {
    "en": "Saker",
+   "es": "Sacre",
+   "ja": "セーカーハヤブサ",
    "native": "Saker",
    "native_lang": "en",
-   "ru": "Балобан"
+   "ru": "Балобан",
+   "zh-Hans": "猎隼"
   },
   "body:system_25.Gliese_357.Gliese_357_i": {
    "en": "Lanner",
+   "es": "Borní",
+   "ja": "ラナーハヤブサ",
    "native": "Lanner",
    "native_lang": "en",
-   "ru": "Ланнер"
+   "ru": "Ланнер",
+   "zh-Hans": "地中海隼"
   },
   "body:system_25.Gliese_357.Gliese_357_j": {
    "en": "Buzzard",
+   "es": "Ratonero",
+   "ja": "ノスリ",
    "native": "Buzzard",
    "native_lang": "en",
-   "ru": "Канюк"
+   "ru": "Канюк",
+   "zh-Hans": "鵟"
   },
   "body:system_25.Gliese_357.Gliese_357_k": {
    "en": "Gyrfalcon",
+   "es": "Gerifalte",
+   "ja": "シロハヤブサ",
    "native": "Gyrfalcon",
    "native_lang": "en",
-   "ru": "Кречет"
+   "ru": "Кречет",
+   "zh-Hans": "矛隼"
   },
   "body:system_25.Gliese_357.Gliese_357_l": {
    "en": "Kite",
+   "es": "Milano",
+   "ja": "トビ",
    "native": "Kite",
    "native_lang": "en",
-   "ru": "Коршун"
+   "ru": "Коршун",
+   "zh-Hans": "鸢"
   },
   "body:system_25.Gliese_357.Gliese_357_m": {
    "en": "Eagle",
+   "es": "Águila Real",
+   "ja": "イヌワシ",
    "native": "Eagle",
    "native_lang": "en",
-   "ru": "Беркут"
+   "ru": "Беркут",
+   "zh-Hans": "金雕"
   },
   "body:system_25.Gliese_357.Gliese_357_m.Gliese_357_m_I": {
    "en": "Eaglet",
+   "es": "Aguilucho Real",
+   "ja": "若鷲",
    "native": "Eaglet",
    "native_lang": "en",
-   "ru": "Орлёнок"
+   "ru": "Орлёнок",
+   "zh-Hans": "雏鹰"
   },
   "body:system_25.Gliese_357.Gliese_357_n": {
    "en": "Sparrowhawk",
+   "es": "Gavilán",
+   "ja": "ハイタカ",
    "native": "Sparrowhawk",
    "native_lang": "en",
-   "ru": "Перепелятник"
+   "ru": "Перепелятник",
+   "zh-Hans": "雀鹰"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_b": {
+   "en": "Bing",
+   "es": "Bing",
+   "ja": "丙",
+   "native": "丙",
+   "native_lang": "zh-Hans",
+   "ru": "Бин",
+   "translit": "Bǐng",
+   "zh-Hans": "丙"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_c": {
+   "en": "Wu",
+   "es": "Wu",
+   "ja": "戊",
+   "native": "戊",
+   "native_lang": "zh-Hans",
+   "ru": "У",
+   "translit": "Wù",
+   "zh-Hans": "戊"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_d": {
+   "en": "Geng",
+   "es": "Geng",
+   "ja": "庚",
+   "native": "庚",
+   "native_lang": "zh-Hans",
+   "ru": "Гэн",
+   "translit": "Gēng",
+   "zh-Hans": "庚"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_e": {
+   "en": "Jia",
+   "es": "Jia",
+   "ja": "甲",
+   "native": "甲",
+   "native_lang": "zh-Hans",
+   "ru": "Цзя",
+   "translit": "Jiǎ",
+   "zh-Hans": "甲"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_f": {
+   "en": "Yi",
+   "es": "Yi",
+   "ja": "乙",
+   "native": "乙",
+   "native_lang": "zh-Hans",
+   "ru": "И",
+   "translit": "Yǐ",
+   "zh-Hans": "乙"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_g": {
+   "en": "Ding",
+   "es": "Ding",
+   "ja": "丁",
+   "native": "丁",
+   "native_lang": "zh-Hans",
+   "ru": "Дин",
+   "translit": "Dīng",
+   "zh-Hans": "丁"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_h": {
+   "en": "Ji",
+   "es": "Ji",
+   "ja": "己",
+   "native": "己",
+   "native_lang": "zh-Hans",
+   "ru": "Цзи",
+   "translit": "Jǐ",
+   "zh-Hans": "己"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_i": {
+   "en": "Xin",
+   "es": "Xin",
+   "ja": "辛",
+   "native": "辛",
+   "native_lang": "zh-Hans",
+   "ru": "Синь",
+   "translit": "Xīn",
+   "zh-Hans": "辛"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_j": {
+   "en": "Ren",
+   "es": "Ren",
+   "ja": "壬",
+   "native": "壬",
+   "native_lang": "zh-Hans",
+   "ru": "Жэнь",
+   "translit": "Rén",
+   "zh-Hans": "壬"
+  },
+  "body:system_26.Teegarden's_Star.Teegarden's_Star_k": {
+   "en": "Gui",
+   "es": "Gui",
+   "ja": "癸",
+   "native": "癸",
+   "native_lang": "zh-Hans",
+   "ru": "Гуй",
+   "translit": "Guǐ",
+   "zh-Hans": "癸"
+  },
+  "body:system_27.Ross_128.Ross_128_K1": {
+   "en": "Ginnungagap",
+   "es": "Ginnungagap",
+   "ja": "ギンヌンガガプ",
+   "native": "Ginnungagap",
+   "native_lang": "nb",
+   "ru": "Гиннунгагап",
+   "zh-Hans": "金伦加鸿沟"
+  },
+  "body:system_27.Ross_128.Ross_128_b": {
+   "en": "Midgard",
+   "es": "Midgard",
+   "ja": "ミズガルズ",
+   "native": "Midgard",
+   "native_lang": "nb",
+   "ru": "Мидгард",
+   "zh-Hans": "米德加尔特"
+  },
+  "body:system_27.Ross_128.Ross_128_c": {
+   "en": "Alfheim",
+   "es": "Alfheim",
+   "ja": "アルフヘイム",
+   "native": "Alfheim",
+   "native_lang": "nb",
+   "ru": "Альвхейм",
+   "zh-Hans": "亚尔夫海姆"
+  },
+  "body:system_27.Ross_128.Ross_128_d": {
+   "en": "Asgard",
+   "es": "Asgard",
+   "ja": "アースガルズ",
+   "native": "Asgard",
+   "native_lang": "nb",
+   "ru": "Асгард",
+   "zh-Hans": "阿斯加德"
+  },
+  "body:system_27.Ross_128.Ross_128_e": {
+   "en": "Vanaheim",
+   "es": "Vanaheim",
+   "ja": "ヴァナヘイム",
+   "native": "Vanaheim",
+   "native_lang": "nb",
+   "ru": "Ванахейм",
+   "zh-Hans": "华纳海姆"
+  },
+  "body:system_27.Ross_128.Ross_128_f": {
+   "en": "Nidavellir",
+   "es": "Nidavellir",
+   "ja": "ニダヴェリール",
+   "native": "Nidavellir",
+   "native_lang": "nb",
+   "ru": "Нидавеллир",
+   "zh-Hans": "尼达维勒"
+  },
+  "body:system_27.Ross_128.Ross_128_g": {
+   "en": "Jotunheim",
+   "es": "Jotunheim",
+   "ja": "ヨトゥンヘイム",
+   "native": "Jotunheim",
+   "native_lang": "nb",
+   "ru": "Ётунхейм",
+   "zh-Hans": "约顿海姆"
+  },
+  "body:system_27.Ross_128.Ross_128_h": {
+   "en": "Svartalfheim",
+   "es": "Svartalfheim",
+   "ja": "スヴァルトアールヴヘイム",
+   "native": "Svartalfheim",
+   "native_lang": "nb",
+   "ru": "Свартальвхейм",
+   "zh-Hans": "斯瓦塔尔海姆"
+  },
+  "body:system_27.Ross_128.Ross_128_i": {
+   "en": "Niflheim",
+   "es": "Niflheim",
+   "ja": "ニヴルヘイム",
+   "native": "Niflheim",
+   "native_lang": "nb",
+   "ru": "Нифльхейм",
+   "zh-Hans": "尼福尔海姆"
+  },
+  "body:system_27.Ross_128.Ross_128_j": {
+   "en": "Helheim",
+   "es": "Helheim",
+   "ja": "ヘルヘイム",
+   "native": "Helheim",
+   "native_lang": "nb",
+   "ru": "Хельхейм",
+   "zh-Hans": "赫尔海姆"
+  },
+  "body:system_28.YZ_Ceti.YZ_Cet_b": {
+   "en": "Brewster",
+   "es": "Brewster",
+   "ja": "ブルースター",
+   "native": "Brewster",
+   "native_lang": "en",
+   "ru": "Брюстер",
+   "zh-Hans": "布鲁斯特"
+  },
+  "body:system_28.YZ_Ceti.YZ_Cet_c": {
+   "en": "Carver",
+   "es": "Carver",
+   "ja": "カーヴァー",
+   "native": "Carver",
+   "native_lang": "en",
+   "ru": "Карвер",
+   "zh-Hans": "卡弗"
+  },
+  "body:system_28.YZ_Ceti.YZ_Cet_d": {
+   "en": "Winslow",
+   "es": "Winslow",
+   "ja": "ウィンスロー",
+   "native": "Winslow",
+   "native_lang": "en",
+   "ru": "Уинслоу",
+   "zh-Hans": "温斯洛"
+  },
+  "body:system_28.YZ_Ceti.YZ_Ceti_e": {
+   "en": "Bradford",
+   "es": "Bradford",
+   "ja": "ブラッドフォード",
+   "native": "Bradford",
+   "native_lang": "en",
+   "ru": "Брэдфорд",
+   "zh-Hans": "布拉德福德"
+  },
+  "body:system_28.YZ_Ceti.YZ_Ceti_f": {
+   "en": "Standish",
+   "es": "Standish",
+   "ja": "スタンディッシュ",
+   "native": "Standish",
+   "native_lang": "en",
+   "ru": "Стэндиш",
+   "zh-Hans": "斯坦迪什"
+  },
+  "body:system_28.YZ_Ceti.YZ_Ceti_g": {
+   "en": "Alden",
+   "es": "Alden",
+   "ja": "オールデン",
+   "native": "Alden",
+   "native_lang": "en",
+   "ru": "Олден",
+   "zh-Hans": "奥尔登"
+  },
+  "body:system_28.YZ_Ceti.YZ_Ceti_h": {
+   "en": "Priscilla",
+   "es": "Priscila",
+   "ja": "プリシラ",
+   "native": "Priscilla",
+   "native_lang": "en",
+   "ru": "Присцилла",
+   "zh-Hans": "普丽西拉"
+  },
+  "body:system_28.YZ_Ceti.YZ_Ceti_i": {
+   "en": "Hopkins",
+   "es": "Hopkins",
+   "ja": "ホプキンス",
+   "native": "Hopkins",
+   "native_lang": "en",
+   "ru": "Хопкинс",
+   "zh-Hans": "霍普金斯"
+  },
+  "body:system_28.YZ_Ceti.YZ_Ceti_j": {
+   "en": "Fuller",
+   "es": "Fuller",
+   "ja": "フラー",
+   "native": "Fuller",
+   "native_lang": "en",
+   "ru": "Фуллер",
+   "zh-Hans": "富勒"
+  },
+  "body:system_28.YZ_Ceti.YZ_Ceti_k": {
+   "en": "Speedwell",
+   "es": "Speedwell",
+   "ja": "スピードウェル",
+   "native": "Speedwell",
+   "native_lang": "en",
+   "ru": "Спидвелл",
+   "zh-Hans": "快帆号"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_d": {
+   "en": "Dashu",
+   "es": "Dashu",
+   "ja": "大暑",
+   "native": "大暑",
+   "native_lang": "zh-Hans",
+   "ru": "Дашу",
+   "translit": "Dàshǔ",
+   "zh-Hans": "大暑"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_e": {
+   "en": "Xiaoshu",
+   "es": "Xiaoshu",
+   "ja": "小暑",
+   "native": "小暑",
+   "native_lang": "zh-Hans",
+   "ru": "Сяошу",
+   "translit": "Xiǎoshǔ",
+   "zh-Hans": "小暑"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_f": {
+   "en": "Xiazhi",
+   "es": "Xiazhi",
+   "ja": "夏至",
+   "native": "夏至",
+   "native_lang": "zh-Hans",
+   "ru": "Сячжи",
+   "translit": "Xiàzhì",
+   "zh-Hans": "夏至"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_g": {
+   "en": "Mangzhong",
+   "es": "Mangzhong",
+   "ja": "芒種",
+   "native": "芒种",
+   "native_lang": "zh-Hans",
+   "ru": "Манчжун",
+   "translit": "Mángzhòng",
+   "zh-Hans": "芒种"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_h": {
+   "en": "Xiaoman",
+   "es": "Xiaoman",
+   "ja": "小満",
+   "native": "小满",
+   "native_lang": "zh-Hans",
+   "ru": "Сяомань",
+   "translit": "Xiǎomǎn",
+   "zh-Hans": "小满"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_i": {
+   "en": "Lixia",
+   "es": "Lixia",
+   "ja": "立夏",
+   "native": "立夏",
+   "native_lang": "zh-Hans",
+   "ru": "Лися",
+   "translit": "Lìxià",
+   "zh-Hans": "立夏"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_j": {
+   "en": "Guyu",
+   "es": "Guyu",
+   "ja": "穀雨",
+   "native": "谷雨",
+   "native_lang": "zh-Hans",
+   "ru": "Гуюй",
+   "translit": "Gǔyǔ",
+   "zh-Hans": "谷雨"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_k": {
+   "en": "Qingming",
+   "es": "Qingming",
+   "ja": "清明",
+   "native": "清明",
+   "native_lang": "zh-Hans",
+   "ru": "Цинмин",
+   "translit": "Qīngmíng",
+   "zh-Hans": "清明"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_l": {
+   "en": "Chunfen",
+   "es": "Chunfen",
+   "ja": "春分",
+   "native": "春分",
+   "native_lang": "zh-Hans",
+   "ru": "Чуньфэнь",
+   "translit": "Chūnfēn",
+   "zh-Hans": "春分"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_m": {
+   "en": "Jingzhe",
+   "es": "Jingzhe",
+   "ja": "啓蟄",
+   "native": "惊蛰",
+   "native_lang": "zh-Hans",
+   "ru": "Цзинчжэ",
+   "translit": "Jīngzhé",
+   "zh-Hans": "惊蛰"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_n": {
+   "en": "Yushui",
+   "es": "Yushui",
+   "ja": "雨水",
+   "native": "雨水",
+   "native_lang": "zh-Hans",
+   "ru": "Юйшуй",
+   "translit": "Yǔshuǐ",
+   "zh-Hans": "雨水"
+  },
+  "body:system_29.Gliese_229_A.Gliese_229_A_o": {
+   "en": "Lichun",
+   "es": "Lichun",
+   "ja": "立春",
+   "native": "立春",
+   "native_lang": "zh-Hans",
+   "ru": "Личунь",
+   "translit": "Lìchūn",
+   "zh-Hans": "立春"
+  },
+  "body:system_29.Gliese_229_B.Gliese_229_B_d": {
+   "en": "Lidong",
+   "es": "Lidong",
+   "ja": "立冬",
+   "native": "立冬",
+   "native_lang": "zh-Hans",
+   "ru": "Лидун",
+   "translit": "Lìdōng",
+   "zh-Hans": "立冬"
+  },
+  "body:system_29.Gliese_229_B.Gliese_229_B_e": {
+   "en": "Xiaoxue",
+   "es": "Xiaoxue",
+   "ja": "小雪",
+   "native": "小雪",
+   "native_lang": "zh-Hans",
+   "ru": "Сяосюэ",
+   "translit": "Xiǎoxuě",
+   "zh-Hans": "小雪"
+  },
+  "body:system_29.Gliese_229_B.Gliese_229_B_f": {
+   "en": "Daxue",
+   "es": "Daxue",
+   "ja": "大雪",
+   "native": "大雪",
+   "native_lang": "zh-Hans",
+   "ru": "Дасюэ",
+   "translit": "Dàxuě",
+   "zh-Hans": "大雪"
+  },
+  "body:system_29.Gliese_229_B.Gliese_229_B_g": {
+   "en": "Dongzhi",
+   "es": "Dongzhi",
+   "ja": "冬至",
+   "native": "冬至",
+   "native_lang": "zh-Hans",
+   "ru": "Дунчжи",
+   "translit": "Dōngzhì",
+   "zh-Hans": "冬至"
+  },
+  "body:system_29.Gliese_229_B.Gliese_229_B_g.Gliese_229_B_g_I": {
+   "en": "Dahan",
+   "es": "Dahan",
+   "ja": "大寒",
+   "native": "大寒",
+   "native_lang": "zh-Hans",
+   "ru": "Дахань",
+   "translit": "Dàhán",
+   "zh-Hans": "大寒"
   },
   "body:system_3.Wolf_359.Wolf_359_b": {
    "en": "Skoll",
+   "es": "Sköll",
+   "ja": "スコル",
    "native": "Sköll",
    "native_lang": "nb",
-   "ru": "Скёлль"
+   "ru": "Скёлль",
+   "zh-Hans": "斯库尔"
   },
   "body:system_3.Wolf_359.Wolf_359_c": {
    "en": "Hati",
+   "es": "Hati",
+   "ja": "ハティ",
    "native": "Hati",
    "native_lang": "nb",
-   "ru": "Хати"
+   "ru": "Хати",
+   "zh-Hans": "哈提"
   },
   "body:system_3.Wolf_359.Wolf_359_d": {
    "en": "Geri",
+   "es": "Geri",
+   "ja": "ゲリ",
    "native": "Geri",
    "native_lang": "nb",
-   "ru": "Гери"
+   "ru": "Гери",
+   "zh-Hans": "基利"
   },
   "body:system_3.Wolf_359.Wolf_359_e": {
    "en": "Garm",
+   "es": "Garm",
+   "ja": "ガルム",
    "native": "Garm",
    "native_lang": "nb",
-   "ru": "Гарм"
+   "ru": "Гарм",
+   "zh-Hans": "加姆"
   },
   "body:system_3.Wolf_359.Wolf_359_f": {
    "en": "Freki",
+   "es": "Freki",
+   "ja": "フレキ",
    "native": "Freki",
    "native_lang": "nb",
-   "ru": "Фреки"
+   "ru": "Фреки",
+   "zh-Hans": "弗雷基"
   },
   "body:system_3.Wolf_359.Wolf_359_g": {
    "en": "Fenrir",
+   "es": "Fenrir",
+   "ja": "フェンリル",
    "native": "Fenrir",
    "native_lang": "nb",
-   "ru": "Фенрир"
+   "ru": "Фенрир",
+   "zh-Hans": "芬里尔"
   },
   "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_A1": {
    "en": "Jin",
+   "es": "Jin",
+   "ja": "金",
    "native": "金",
    "native_lang": "zh-Hans",
    "ru": "Цзинь",
-   "translit": "Jīn"
+   "translit": "Jīn",
+   "zh-Hans": "金"
   },
   "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_K2": {
    "en": "Mu",
+   "es": "Mu",
+   "ja": "木",
    "native": "木",
    "native_lang": "zh-Hans",
    "ru": "Му",
-   "translit": "Mù"
+   "translit": "Mù",
+   "zh-Hans": "木"
   },
   "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_K3": {
    "en": "Huo",
+   "es": "Huo",
+   "ja": "火",
    "native": "火",
    "native_lang": "zh-Hans",
    "ru": "Хо",
-   "translit": "Huǒ"
+   "translit": "Huǒ",
+   "zh-Hans": "火"
   },
   "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_K4": {
    "en": "Tu",
+   "es": "Tu",
+   "ja": "土",
    "native": "土",
    "native_lang": "zh-Hans",
    "ru": "Ту",
-   "translit": "Tǔ"
+   "translit": "Tǔ",
+   "zh-Hans": "土"
   },
   "body:system_30.Epsilon_Indi_A.eps_Ind_A_b": {
    "en": "Qian",
+   "es": "Qian",
+   "ja": "乾",
    "native": "乾",
    "native_lang": "zh-Hans",
    "ru": "Цянь",
-   "translit": "Qián"
+   "translit": "Qián",
+   "zh-Hans": "乾"
   },
   "body:system_30.Epsilon_Indi_A.eps_Ind_A_b.eps_Ind_A_b_I": {
    "en": "Kun",
+   "es": "Kun",
+   "ja": "坤",
    "native": "坤",
    "native_lang": "zh-Hans",
    "ru": "Кунь",
-   "translit": "Kūn"
+   "translit": "Kūn",
+   "zh-Hans": "坤"
   },
   "body:system_30.Epsilon_Indi_Ba.Epsilon_Indi_Ba_c": {
    "en": "Zhen",
+   "es": "Zhen",
+   "ja": "震",
    "native": "震",
    "native_lang": "zh-Hans",
    "ru": "Чжэнь",
-   "translit": "Zhèn"
+   "translit": "Zhèn",
+   "zh-Hans": "震"
   },
   "body:system_30.Epsilon_Indi_Ba.Epsilon_Indi_Ba_d": {
    "en": "Xun",
+   "es": "Xun",
+   "ja": "巽",
    "native": "巽",
    "native_lang": "zh-Hans",
    "ru": "Сюнь",
-   "translit": "Xùn"
+   "translit": "Xùn",
+   "zh-Hans": "巽"
   },
   "body:system_30.Epsilon_Indi_Ba.Epsilon_Indi_Ba_e": {
    "en": "Kan",
+   "es": "Kan",
+   "ja": "坎",
    "native": "坎",
    "native_lang": "zh-Hans",
    "ru": "Кань",
-   "translit": "Kǎn"
+   "translit": "Kǎn",
+   "zh-Hans": "坎"
   },
   "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_c": {
    "en": "Li",
+   "es": "Li",
+   "ja": "離",
    "native": "离",
    "native_lang": "zh-Hans",
    "ru": "Ли",
-   "translit": "Lí"
+   "translit": "Lí",
+   "zh-Hans": "离"
   },
   "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_d": {
    "en": "Gen",
+   "es": "Gen",
+   "ja": "艮",
    "native": "艮",
    "native_lang": "zh-Hans",
    "ru": "Гэнь",
-   "translit": "Gèn"
+   "translit": "Gèn",
+   "zh-Hans": "艮"
   },
   "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_e": {
    "en": "Dui",
+   "es": "Dui",
+   "ja": "兌",
    "native": "兑",
    "native_lang": "zh-Hans",
    "ru": "Дуй",
-   "translit": "Duì"
+   "translit": "Duì",
+   "zh-Hans": "兑"
   },
   "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_f": {
    "en": "Shui",
+   "es": "Shui",
+   "ja": "水",
    "native": "水",
    "native_lang": "zh-Hans",
    "ru": "Шуй",
-   "translit": "Shuǐ"
+   "translit": "Shuǐ",
+   "zh-Hans": "水"
   },
   "body:system_30.barycenter_bab.Epsilon_Indi_Bb__BAB__K1": {
    "en": "Yin",
+   "es": "Yin",
+   "ja": "陰",
    "native": "阴",
    "native_lang": "zh-Hans",
    "ru": "Инь",
-   "translit": "Yīn"
+   "translit": "Yīn",
+   "zh-Hans": "阴"
   },
   "body:system_30.barycenter_bab.Epsilon_Indi_Bb__BAB__K2": {
    "en": "Yang",
+   "es": "Yang",
+   "ja": "陽",
    "native": "阳",
    "native_lang": "zh-Hans",
    "ru": "Ян",
-   "translit": "Yáng"
+   "translit": "Yáng",
+   "zh-Hans": "阳"
   },
   "body:system_31.61_Cygni_A.61_Cygni_A_b": {
    "en": "Cinnabar",
+   "es": "Cinabrio",
+   "ja": "辰砂",
    "native": "Cinnabar",
    "native_lang": "en",
-   "ru": "Киноварь"
+   "ru": "Киноварь",
+   "zh-Hans": "辰砂"
   },
   "body:system_31.61_Cygni_A.61_Cygni_A_c": {
    "en": "Pyrite",
+   "es": "Pirita",
+   "ja": "黄鉄鉱",
    "native": "Pyrite",
    "native_lang": "en",
-   "ru": "Пирит"
+   "ru": "Пирит",
+   "zh-Hans": "黄铁矿"
   },
   "body:system_31.61_Cygni_A.61_Cygni_A_d": {
    "en": "Hematite",
+   "es": "Hematites",
+   "ja": "赤鉄鉱",
    "native": "Hematite",
    "native_lang": "en",
-   "ru": "Гематит"
+   "ru": "Гематит",
+   "zh-Hans": "赤铁矿"
   },
   "body:system_31.61_Cygni_A.61_Cygni_A_e": {
    "en": "Magnetite",
+   "es": "Magnetita",
+   "ja": "磁鉄鉱",
    "native": "Magnetite",
    "native_lang": "en",
-   "ru": "Магнетит"
+   "ru": "Магнетит",
+   "zh-Hans": "磁铁矿"
   },
   "body:system_31.61_Cygni_A.61_Cygni_A_f": {
    "en": "Galena",
+   "es": "Galena",
+   "ja": "方鉛鉱",
    "native": "Galena",
    "native_lang": "en",
-   "ru": "Галенит"
+   "ru": "Галенит",
+   "zh-Hans": "方铅矿"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_b": {
    "en": "Sulphur",
+   "es": "Azufre",
+   "ja": "硫黄",
    "native": "Sulphur",
    "native_lang": "en",
-   "ru": "Сера"
+   "ru": "Сера",
+   "zh-Hans": "硫磺"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_c": {
    "en": "Realgar",
+   "es": "Rejalgar",
+   "ja": "鶏冠石",
    "native": "Realgar",
    "native_lang": "en",
-   "ru": "Реальгар"
+   "ru": "Реальгар",
+   "zh-Hans": "雄黄"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_d": {
    "en": "Cuprite",
+   "es": "Cuprita",
+   "ja": "赤銅鉱",
    "native": "Cuprite",
    "native_lang": "en",
-   "ru": "Куприт"
+   "ru": "Куприт",
+   "zh-Hans": "赤铜矿"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_e": {
    "en": "Bauxite",
+   "es": "Bauxita",
+   "ja": "ボーキサイト",
    "native": "Bauxite",
    "native_lang": "en",
-   "ru": "Боксит"
+   "ru": "Боксит",
+   "zh-Hans": "铝土矿"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_f": {
    "en": "Malachite",
+   "es": "Malaquita",
+   "ja": "孔雀石",
    "native": "Malachite",
    "native_lang": "en",
-   "ru": "Малахит"
+   "ru": "Малахит",
+   "zh-Hans": "孔雀石"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_g": {
    "en": "Bornite",
+   "es": "Bornita",
+   "ja": "斑銅鉱",
    "native": "Bornite",
    "native_lang": "en",
-   "ru": "Борнит"
+   "ru": "Борнит",
+   "zh-Hans": "斑铜矿"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_h": {
    "en": "Cassiterite",
+   "es": "Casiterita",
+   "ja": "錫石",
    "native": "Cassiterite",
    "native_lang": "en",
-   "ru": "Касситерит"
+   "ru": "Касситерит",
+   "zh-Hans": "锡石"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_i": {
    "en": "Wolframite",
+   "es": "Wolframita",
+   "ja": "鉄マンガン重石",
    "native": "Wolframite",
    "native_lang": "en",
-   "ru": "Вольфрамит"
+   "ru": "Вольфрамит",
+   "zh-Hans": "黑钨矿"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_j": {
    "en": "Quartz",
+   "es": "Cuarzo",
+   "ja": "石英",
    "native": "Quartz",
    "native_lang": "en",
-   "ru": "Кварц"
+   "ru": "Кварц",
+   "zh-Hans": "石英"
   },
   "body:system_31.61_Cygni_B.61_Cygni_B_k": {
    "en": "Mica",
+   "es": "Mica",
+   "ja": "雲母",
    "native": "Mica",
    "native_lang": "en",
-   "ru": "Слюда"
+   "ru": "Слюда",
+   "zh-Hans": "云母"
+  },
+  "body:system_32.Aldebaran.Aldebaran_K1": {
+   "en": "Last Call",
+   "es": "Última Ronda",
+   "ja": "ラストコール",
+   "native": "Last Call",
+   "native_lang": "en",
+   "ru": "Последний Заказ",
+   "zh-Hans": "最后一杯"
+  },
+  "body:system_32.Aldebaran.Aldebaran_K2": {
+   "en": "Far Cry",
+   "es": "Grito Lejano",
+   "ja": "ファークライ",
+   "native": "Far Cry",
+   "native_lang": "en",
+   "ru": "Далёкий Крик",
+   "zh-Hans": "远呼"
+  },
+  "body:system_32.Aldebaran.Aldebaran_K3": {
+   "en": "Long Shot",
+   "es": "Tiro Largo",
+   "ja": "ロングショット",
+   "native": "Long Shot",
+   "native_lang": "en",
+   "ru": "Дальний Выстрел",
+   "zh-Hans": "远射"
+  },
+  "body:system_32.Aldebaran.Aldebaran_c": {
+   "en": "Bullseye",
+   "es": "Diana",
+   "ja": "ブルズアイ",
+   "native": "Bullseye",
+   "native_lang": "en",
+   "ru": "Яблочко",
+   "zh-Hans": "靶心"
+  },
+  "body:system_33.Hamal.Hamal_K1": {
+   "en": "Margulis",
+   "es": "Margulis",
+   "ja": "マーギュリス",
+   "native": "Margulis",
+   "native_lang": "en",
+   "ru": "Маргулис",
+   "zh-Hans": "马古利斯"
+  },
+  "body:system_33.Hamal.Hamal_K2": {
+   "en": "Linnaeus",
+   "es": "Linneo",
+   "ja": "リンネ",
+   "native": "Linnaeus",
+   "native_lang": "en",
+   "ru": "Линней",
+   "zh-Hans": "林奈"
+  },
+  "body:system_33.Hamal.Hamal_K3": {
+   "en": "Carson",
+   "es": "Carson",
+   "ja": "カーソン",
+   "native": "Carson",
+   "native_lang": "en",
+   "ru": "Карсон",
+   "zh-Hans": "卡森"
+  },
+  "body:system_33.Hamal.Hamal_c": {
+   "en": "Humboldt",
+   "es": "Humboldt",
+   "ja": "フンボルト",
+   "native": "Humboldt",
+   "native_lang": "en",
+   "ru": "Гумбольдт",
+   "zh-Hans": "洪堡"
+  },
+  "body:system_33.Hamal.alf_Ari_b": {
+   "en": "Darwin",
+   "es": "Darwin",
+   "ja": "ダーウィン",
+   "native": "Darwin",
+   "native_lang": "en",
+   "ru": "Дарвин",
+   "zh-Hans": "达尔文"
+  },
+  "body:system_33.Hamal.alf_Ari_b.alf_Ari_b_I": {
+   "en": "Wallace",
+   "es": "Wallace",
+   "ja": "ウォレス",
+   "native": "Wallace",
+   "native_lang": "en",
+   "ru": "Уоллес",
+   "zh-Hans": "华莱士"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_K1": {
+   "en": "Jiao",
+   "es": "Jiao",
+   "ja": "蛟",
+   "native": "蛟",
+   "native_lang": "zh-Hans",
+   "ru": "Цзяо",
+   "translit": "Jiāo",
+   "zh-Hans": "蛟"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_K2": {
+   "en": "Peng",
+   "es": "Peng",
+   "ja": "鵬",
+   "native": "鹏",
+   "native_lang": "zh-Hans",
+   "ru": "Пэн",
+   "translit": "Péng",
+   "zh-Hans": "鹏"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_K3": {
+   "en": "Kun",
+   "es": "Kun",
+   "ja": "鯤",
+   "native": "鲲",
+   "native_lang": "zh-Hans",
+   "ru": "Кунь",
+   "translit": "Kūn",
+   "zh-Hans": "鲲"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_b": {
+   "en": "Qiuniu",
+   "es": "Qiuniu",
+   "ja": "囚牛",
+   "native": "囚牛",
+   "native_lang": "zh-Hans",
+   "ru": "Цюню",
+   "translit": "Qiúniú",
+   "zh-Hans": "囚牛"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_c": {
+   "en": "Yazi",
+   "es": "Yazi",
+   "ja": "睚眦",
+   "native": "睚眦",
+   "native_lang": "zh-Hans",
+   "ru": "Яцзы",
+   "translit": "Yázì",
+   "zh-Hans": "睚眦"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_d": {
+   "en": "Chaofeng",
+   "es": "Chaofeng",
+   "ja": "嘲風",
+   "native": "嘲风",
+   "native_lang": "zh-Hans",
+   "ru": "Чаофэн",
+   "translit": "Cháofēng",
+   "zh-Hans": "嘲风"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_e": {
+   "en": "Pulao",
+   "es": "Pulao",
+   "ja": "蒲牢",
+   "native": "蒲牢",
+   "native_lang": "zh-Hans",
+   "ru": "Пулао",
+   "translit": "Púláo",
+   "zh-Hans": "蒲牢"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_f": {
+   "en": "Suanni",
+   "es": "Suanni",
+   "ja": "狻猊",
+   "native": "狻猊",
+   "native_lang": "zh-Hans",
+   "ru": "Суаньни",
+   "translit": "Suānní",
+   "zh-Hans": "狻猊"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_g": {
+   "en": "Bixi",
+   "es": "Bixi",
+   "ja": "贔屓",
+   "native": "赑屃",
+   "native_lang": "zh-Hans",
+   "ru": "Бисы",
+   "translit": "Bìxì",
+   "zh-Hans": "赑屃"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_h": {
+   "en": "Bian",
+   "es": "Bian",
+   "ja": "狴犴",
+   "native": "狴犴",
+   "native_lang": "zh-Hans",
+   "ru": "Бигань",
+   "translit": "Bì'àn",
+   "zh-Hans": "狴犴"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_h.Gamma_Doradus_h_I": {
+   "en": "Fuxi",
+   "es": "Fuxi",
+   "ja": "負屓",
+   "native": "负屃",
+   "native_lang": "zh-Hans",
+   "ru": "Фуси",
+   "translit": "Fùxì",
+   "zh-Hans": "负屃"
+  },
+  "body:system_34.Gamma_Doradus.Gamma_Doradus_i": {
+   "en": "Chiwen",
+   "es": "Chiwen",
+   "ja": "螭吻",
+   "native": "螭吻",
+   "native_lang": "zh-Hans",
+   "ru": "Чивэнь",
+   "translit": "Chīwěn",
+   "zh-Hans": "螭吻"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_b": {
+   "en": "Ashvini",
+   "es": "Ashvini",
+   "ja": "アシュヴィニー",
+   "native": "अश्विनी",
+   "native_lang": "sa",
+   "ru": "Ашвини",
+   "translit": "Aśvinī",
+   "zh-Hans": "娄宿"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_c": {
+   "en": "Bharani",
+   "es": "Bharani",
+   "ja": "バラニー",
+   "native": "भरणी",
+   "native_lang": "sa",
+   "ru": "Бхарани",
+   "translit": "Bharaṇī",
+   "zh-Hans": "胃宿"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_d": {
+   "en": "Krittika",
+   "es": "Krittika",
+   "ja": "クリッティカー",
+   "native": "कृत्तिका",
+   "native_lang": "sa",
+   "ru": "Криттика",
+   "translit": "Kṛttikā",
+   "zh-Hans": "昴宿"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_e": {
+   "en": "Rohini",
+   "es": "Rohini",
+   "ja": "ローヒニー",
+   "native": "रोहिणी",
+   "native_lang": "sa",
+   "ru": "Рохини",
+   "translit": "Rohiṇī",
+   "zh-Hans": "毕宿"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_f": {
+   "en": "Mrigashira",
+   "es": "Mrigashira",
+   "ja": "ムリガシラー",
+   "native": "मृगशिरा",
+   "native_lang": "sa",
+   "ru": "Мригашира",
+   "translit": "Mṛgaśirā",
+   "zh-Hans": "觜宿"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_g": {
+   "en": "Ardra",
+   "es": "Ardra",
+   "ja": "アールドラー",
+   "native": "आर्द्रा",
+   "native_lang": "sa",
+   "ru": "Ардра",
+   "translit": "Ārdrā",
+   "zh-Hans": "参宿"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_h": {
+   "en": "Punarvasu",
+   "es": "Punarvasu",
+   "ja": "プナルヴァス",
+   "native": "पुनर्वसु",
+   "native_lang": "sa",
+   "ru": "Пунарвасу",
+   "translit": "Punarvasu",
+   "zh-Hans": "井宿"
+  },
+  "body:system_35.Tau_Cygni_A.Tau_Cygni_A_i": {
+   "en": "Pushya",
+   "es": "Pushya",
+   "ja": "プシュヤ",
+   "native": "पुष्य",
+   "native_lang": "sa",
+   "ru": "Пушья",
+   "translit": "Puṣya",
+   "zh-Hans": "鬼宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_b": {
+   "en": "Ashlesha",
+   "es": "Ashlesha",
+   "ja": "アーシュレーシャー",
+   "native": "आश्लेषा",
+   "native_lang": "sa",
+   "ru": "Ашлеша",
+   "translit": "Āśleṣā",
+   "zh-Hans": "柳宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_c": {
+   "en": "Magha",
+   "es": "Magha",
+   "ja": "マガー",
+   "native": "मघा",
+   "native_lang": "sa",
+   "ru": "Магха",
+   "translit": "Maghā",
+   "zh-Hans": "星宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_d": {
+   "en": "Hasta",
+   "es": "Hasta",
+   "ja": "ハスタ",
+   "native": "हस्त",
+   "native_lang": "sa",
+   "ru": "Хаста",
+   "translit": "Hasta",
+   "zh-Hans": "轸宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_e": {
+   "en": "Chitra",
+   "es": "Chitra",
+   "ja": "チトラー",
+   "native": "चित्रा",
+   "native_lang": "sa",
+   "ru": "Читра",
+   "translit": "Citrā",
+   "zh-Hans": "角宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_f": {
+   "en": "Swati",
+   "es": "Swati",
+   "ja": "スヴァーティー",
+   "native": "स्वाति",
+   "native_lang": "sa",
+   "ru": "Свати",
+   "translit": "Svātī",
+   "zh-Hans": "亢宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_g": {
+   "en": "Vishakha",
+   "es": "Vishakha",
+   "ja": "ヴィシャーカー",
+   "native": "विशाखा",
+   "native_lang": "sa",
+   "ru": "Вишакха",
+   "translit": "Viśākhā",
+   "zh-Hans": "氐宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_h": {
+   "en": "Anuradha",
+   "es": "Anuradha",
+   "ja": "アヌラーダー",
+   "native": "अनुराधा",
+   "native_lang": "sa",
+   "ru": "Анурадха",
+   "translit": "Anurādhā",
+   "zh-Hans": "房宿"
+  },
+  "body:system_35.Tau_Cygni_B.Tau_Cygni_B_i": {
+   "en": "Jyeshtha",
+   "es": "Jyeshtha",
+   "ja": "ジイェーシュター",
+   "native": "ज्येष्ठा",
+   "native_lang": "sa",
+   "ru": "Джьештха",
+   "translit": "Jyeṣṭhā",
+   "zh-Hans": "心宿"
+  },
+  "body:system_35.barycenter_ab.Tau_Cygni__BA__K1": {
+   "en": "Mula",
+   "es": "Mula",
+   "ja": "ムーラ",
+   "native": "मूल",
+   "native_lang": "sa",
+   "ru": "Мула",
+   "translit": "Mūla",
+   "zh-Hans": "尾宿"
+  },
+  "body:system_35.barycenter_ab.Tau_Cygni__BA__K2": {
+   "en": "Shravana",
+   "es": "Shravana",
+   "ja": "シュラヴァナ",
+   "native": "श्रवण",
+   "native_lang": "sa",
+   "ru": "Шравана",
+   "translit": "Śravaṇa",
+   "zh-Hans": "女宿"
+  },
+  "body:system_35.barycenter_ab.Tau_Cygni__BA__K3": {
+   "en": "Revati",
+   "es": "Revati",
+   "ja": "レーヴァティー",
+   "native": "रेवती",
+   "native_lang": "sa",
+   "ru": "Ревати",
+   "translit": "Revatī",
+   "zh-Hans": "奎宿"
+  },
+  "body:system_36.9_Ceti.9_Ceti_A1": {
+   "en": "Yao",
+   "es": "Yao",
+   "ja": "鍵",
+   "native": "钥",
+   "native_lang": "zh-Hans",
+   "ru": "Яо",
+   "translit": "Yào",
+   "zh-Hans": "钥"
+  },
+  "body:system_36.9_Ceti.9_Ceti_K2": {
+   "en": "Xia",
+   "es": "Xia",
+   "ja": "匣",
+   "native": "匣",
+   "native_lang": "zh-Hans",
+   "ru": "Ся",
+   "translit": "Xiá",
+   "zh-Hans": "匣"
+  },
+  "body:system_36.9_Ceti.9_Ceti_K3": {
+   "en": "Suo",
+   "es": "Suo",
+   "ja": "錠",
+   "native": "锁",
+   "native_lang": "zh-Hans",
+   "ru": "Со",
+   "translit": "Suǒ",
+   "zh-Hans": "锁"
+  },
+  "body:system_36.9_Ceti.9_Ceti_K4": {
+   "en": "Qi",
+   "es": "Qi",
+   "ja": "契",
+   "native": "契",
+   "native_lang": "zh-Hans",
+   "ru": "Ци",
+   "translit": "Qì",
+   "zh-Hans": "契"
+  },
+  "body:system_36.9_Ceti.9_Ceti_b": {
+   "en": "Jin",
+   "es": "Jin",
+   "ja": "金",
+   "native": "金",
+   "native_lang": "zh-Hans",
+   "ru": "Цзинь",
+   "translit": "Jīn",
+   "zh-Hans": "金"
+  },
+  "body:system_36.9_Ceti.9_Ceti_c": {
+   "en": "Yin",
+   "es": "Yin",
+   "ja": "銀",
+   "native": "银",
+   "native_lang": "zh-Hans",
+   "ru": "Инь",
+   "translit": "Yín",
+   "zh-Hans": "银"
+  },
+  "body:system_36.9_Ceti.9_Ceti_d": {
+   "en": "Tong",
+   "es": "Tong",
+   "ja": "銅",
+   "native": "铜",
+   "native_lang": "zh-Hans",
+   "ru": "Тун",
+   "translit": "Tóng",
+   "zh-Hans": "铜"
+  },
+  "body:system_36.9_Ceti.9_Ceti_e": {
+   "en": "Ding",
+   "es": "Ding",
+   "ja": "鼎",
+   "native": "鼎",
+   "native_lang": "zh-Hans",
+   "ru": "Дин",
+   "translit": "Dǐng",
+   "zh-Hans": "鼎"
+  },
+  "body:system_36.9_Ceti.9_Ceti_f": {
+   "en": "Yu",
+   "es": "Yu",
+   "ja": "玉",
+   "native": "玉",
+   "native_lang": "zh-Hans",
+   "ru": "Юй",
+   "translit": "Yù",
+   "zh-Hans": "玉"
+  },
+  "body:system_36.9_Ceti.9_Ceti_g": {
+   "en": "Zhu",
+   "es": "Zhu",
+   "ja": "珠",
+   "native": "珠",
+   "native_lang": "zh-Hans",
+   "ru": "Чжу",
+   "translit": "Zhū",
+   "zh-Hans": "珠"
+  },
+  "body:system_36.9_Ceti.9_Ceti_h": {
+   "en": "Cui",
+   "es": "Cui",
+   "ja": "翠",
+   "native": "翠",
+   "native_lang": "zh-Hans",
+   "ru": "Цуй",
+   "translit": "Cuì",
+   "zh-Hans": "翠"
+  },
+  "body:system_36.9_Ceti.9_Ceti_i": {
+   "en": "Hupo",
+   "es": "Hupo",
+   "ja": "琥珀",
+   "native": "琥珀",
+   "native_lang": "zh-Hans",
+   "ru": "Хупо",
+   "translit": "Hǔpò",
+   "zh-Hans": "琥珀"
+  },
+  "body:system_36.9_Ceti.9_Ceti_j": {
+   "en": "Manao",
+   "es": "Manao",
+   "ja": "瑪瑙",
+   "native": "玛瑙",
+   "native_lang": "zh-Hans",
+   "ru": "Манао",
+   "translit": "Mǎnǎo",
+   "zh-Hans": "玛瑙"
+  },
+  "body:system_36.9_Ceti.9_Ceti_k": {
+   "en": "Shanhu",
+   "es": "Shanhu",
+   "ja": "珊瑚",
+   "native": "珊瑚",
+   "native_lang": "zh-Hans",
+   "ru": "Шаньху",
+   "translit": "Shānhú",
+   "zh-Hans": "珊瑚"
+  },
+  "body:system_36.9_Ceti.9_Ceti_k.9_Ceti_k_I": {
+   "en": "Bei",
+   "es": "Bei",
+   "ja": "貝",
+   "native": "贝",
+   "native_lang": "zh-Hans",
+   "ru": "Бэй",
+   "translit": "Bèi",
+   "zh-Hans": "贝"
+  },
+  "body:system_36.9_Ceti.9_Ceti_l": {
+   "en": "Jing",
+   "es": "Jing",
+   "ja": "鯨",
+   "native": "鲸",
+   "native_lang": "zh-Hans",
+   "ru": "Цзин",
+   "translit": "Jīng",
+   "zh-Hans": "鲸"
+  },
+  "body:system_36.9_Ceti.9_Ceti_l.9_Ceti_l_I": {
+   "en": "Liuli",
+   "es": "Liuli",
+   "ja": "瑠璃",
+   "native": "琉璃",
+   "native_lang": "zh-Hans",
+   "ru": "Люли",
+   "translit": "Liúlí",
+   "zh-Hans": "琉璃"
+  },
+  "body:system_36.9_Ceti.9_Ceti_l.9_Ceti_l_II": {
+   "en": "Shuijing",
+   "es": "Shuijing",
+   "ja": "水晶",
+   "native": "水晶",
+   "native_lang": "zh-Hans",
+   "ru": "Шуйцзин",
+   "translit": "Shuǐjīng",
+   "zh-Hans": "水晶"
+  },
+  "body:system_36.9_Ceti.9_Ceti_l.9_Ceti_l_III": {
+   "en": "Zhenzhu",
+   "es": "Zhenzhu",
+   "ja": "真珠",
+   "native": "珍珠",
+   "native_lang": "zh-Hans",
+   "ru": "Чжэньчжу",
+   "translit": "Zhēnzhū",
+   "zh-Hans": "珍珠"
+  },
+  "body:system_36.9_Ceti.9_Ceti_l.9_Ceti_l_IV": {
+   "en": "Feicui",
+   "es": "Feicui",
+   "ja": "翡翠",
+   "native": "翡翠",
+   "native_lang": "zh-Hans",
+   "ru": "Фэйцуй",
+   "translit": "Fěicuì",
+   "zh-Hans": "翡翠"
   },
   "body:system_37.HD_114783.HD_114783_A1": {
    "en": "Thrinacia",
+   "es": "Trinacia",
+   "ja": "トリナキエー",
    "native": "Θρινακία",
    "native_lang": "el",
    "ru": "Тринакия",
-   "translit": "Thrinakía"
+   "translit": "Thrinakía",
+   "zh-Hans": "特里纳基亚"
   },
   "body:system_37.HD_114783.HD_114783_K2": {
    "en": "Telemachus",
+   "es": "Telémaco",
+   "ja": "テーレマコス",
    "native": "Τηλέμαχος",
    "native_lang": "el",
    "ru": "Телемах",
-   "translit": "Tilémachos"
+   "translit": "Tilémachos",
+   "zh-Hans": "忒勒马科斯"
   },
   "body:system_37.HD_114783.HD_114783_K3": {
    "en": "Mentor",
+   "es": "Méntor",
+   "ja": "メントール",
    "native": "Μέντωρ",
    "native_lang": "el",
    "ru": "Ментор",
-   "translit": "Méntor"
+   "translit": "Méntor",
+   "zh-Hans": "门托尔"
   },
   "body:system_37.HD_114783.HD_114783_K4": {
    "en": "Eumaeus",
+   "es": "Eumeo",
+   "ja": "エウマイオス",
    "native": "Εύμαιος",
    "native_lang": "el",
    "ru": "Эвмей",
-   "translit": "Évmaios"
+   "translit": "Évmaios",
+   "zh-Hans": "欧迈俄斯"
   },
   "body:system_37.HD_114783.HD_114783_b": {
    "en": "Poseidon",
+   "es": "Poseidón",
+   "ja": "ポセイドン",
    "native": "Ποσειδών",
    "native_lang": "el",
    "ru": "Посейдон",
-   "translit": "Poseidón"
+   "translit": "Poseidón",
+   "zh-Hans": "波塞冬"
   },
   "body:system_37.HD_114783.HD_114783_b.HD_114783_b_I": {
    "en": "Sirens",
+   "es": "Sirenas",
+   "ja": "セイレーン",
    "native": "Σειρήνες",
    "native_lang": "el",
    "ru": "Сирены",
-   "translit": "Seirínes"
+   "translit": "Seirínes",
+   "zh-Hans": "塞壬"
   },
   "body:system_37.HD_114783.HD_114783_c": {
    "en": "Scheria",
+   "es": "Esqueria",
+   "ja": "スケリア",
    "native": "Σχερία",
    "native_lang": "el",
    "ru": "Схерия",
-   "translit": "Schería"
+   "translit": "Schería",
+   "zh-Hans": "斯刻里亚"
   },
   "body:system_37.HD_114783.HD_114783_c.HD_114783_c_I": {
    "en": "Scylla",
+   "es": "Escila",
+   "ja": "スキュラ",
    "native": "Σκύλλα",
    "native_lang": "el",
    "ru": "Сцилла",
-   "translit": "Skýlla"
+   "translit": "Skýlla",
+   "zh-Hans": "斯库拉"
   },
   "body:system_37.HD_114783.HD_114783_c.HD_114783_c_II": {
    "en": "Charybdis",
+   "es": "Caribdis",
+   "ja": "カリュブディス",
    "native": "Χάρυβδις",
    "native_lang": "el",
    "ru": "Харибда",
-   "translit": "Cháryvdis"
+   "translit": "Cháryvdis",
+   "zh-Hans": "卡律布狄斯"
   },
   "body:system_37.HD_114783.HD_114783_c.HD_114783_c_III": {
    "en": "Ithaca",
+   "es": "Ítaca",
+   "ja": "イタケー",
    "native": "Ιθάκη",
    "native_lang": "el",
    "ru": "Итака",
-   "translit": "Itháki"
+   "translit": "Itháki",
+   "zh-Hans": "伊萨卡"
   },
   "body:system_37.HD_114783.HD_114783_c.HD_114783_c_IV": {
    "en": "Penelope",
+   "es": "Penélope",
+   "ja": "ペーネロペー",
    "native": "Πηνελόπη",
    "native_lang": "el",
    "ru": "Пенелопа",
-   "translit": "Pinelópi"
+   "translit": "Pinelópi",
+   "zh-Hans": "珀涅罗珀"
   },
   "body:system_37.HD_114783.HD_114783_d": {
    "en": "Troy",
+   "es": "Troya",
+   "ja": "トロイア",
    "native": "Τροία",
    "native_lang": "el",
    "ru": "Троя",
-   "translit": "Troía"
+   "translit": "Troía",
+   "zh-Hans": "特洛伊"
   },
   "body:system_37.HD_114783.HD_114783_e": {
    "en": "Ismaros",
+   "es": "Ísmaro",
+   "ja": "イスマロス",
    "native": "Ίσμαρος",
    "native_lang": "el",
    "ru": "Исмар",
-   "translit": "Ísmaros"
+   "translit": "Ísmaros",
+   "zh-Hans": "伊斯马洛斯"
   },
   "body:system_37.HD_114783.HD_114783_f": {
    "en": "Lotophagi",
+   "es": "Lotófagos",
+   "ja": "ロートパゴス",
    "native": "Λωτοφάγοι",
    "native_lang": "el",
    "ru": "Лотофаги",
-   "translit": "Lotofágoi"
+   "translit": "Lotofágoi",
+   "zh-Hans": "食莲人"
   },
   "body:system_37.HD_114783.HD_114783_g": {
    "en": "Cyclops",
+   "es": "Cíclope",
+   "ja": "キュクロプス",
    "native": "Κύκλωψ",
    "native_lang": "el",
    "ru": "Киклоп",
-   "translit": "Kýklops"
+   "translit": "Kýklops",
+   "zh-Hans": "独眼巨人"
   },
   "body:system_37.HD_114783.HD_114783_h": {
    "en": "Aeolia",
+   "es": "Eolia",
+   "ja": "アイオリア",
    "native": "Αιολία",
    "native_lang": "el",
    "ru": "Эолия",
-   "translit": "Aiolía"
+   "translit": "Aiolía",
+   "zh-Hans": "埃俄利亚"
   },
   "body:system_37.HD_114783.HD_114783_i": {
    "en": "Laestrygonia",
+   "es": "Lestrigonia",
+   "ja": "ライストリュゴネス",
    "native": "Λαιστρυγόνες",
    "native_lang": "el",
    "ru": "Лестригония",
-   "translit": "Laistrygónes"
+   "translit": "Laistrygónes",
+   "zh-Hans": "莱斯特律戈涅斯"
   },
   "body:system_37.HD_114783.HD_114783_j": {
    "en": "Aeaea",
+   "es": "Eea",
+   "ja": "アイアイエー",
    "native": "Αιαία",
    "native_lang": "el",
    "ru": "Ээя",
-   "translit": "Aiaía"
+   "translit": "Aiaía",
+   "zh-Hans": "埃埃亚"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_A1": {
    "en": "Nome",
+   "es": "Nome",
+   "ja": "ノーム",
    "native": "Nome",
    "native_lang": "en",
-   "ru": "Ном"
+   "ru": "Ном",
+   "zh-Hans": "诺姆"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_b": {
    "en": "Deadwood",
+   "es": "Deadwood",
+   "ja": "デッドウッド",
    "native": "Deadwood",
    "native_lang": "en",
-   "ru": "Дедвуд"
+   "ru": "Дедвуд",
+   "zh-Hans": "戴德伍德"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_c": {
    "en": "Tombstone",
+   "es": "Tombstone",
+   "ja": "トゥームストーン",
    "native": "Tombstone",
    "native_lang": "en",
-   "ru": "Тумстон"
+   "ru": "Тумстон",
+   "zh-Hans": "墓碑镇"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_d": {
    "en": "Bodie",
+   "es": "Bodie",
+   "ja": "ボディ",
    "native": "Bodie",
    "native_lang": "en",
-   "ru": "Боди"
+   "ru": "Боди",
+   "zh-Hans": "博迪"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_e": {
    "en": "Comstock",
+   "es": "Comstock",
+   "ja": "コムストック",
    "native": "Comstock",
    "native_lang": "en",
-   "ru": "Комсток"
+   "ru": "Комсток",
+   "zh-Hans": "康斯托克"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_f": {
    "en": "Cripple Creek",
+   "es": "Cripple Creek",
+   "ja": "クリップルクリーク",
    "native": "Cripple Creek",
    "native_lang": "en",
-   "ru": "Крипл-Крик"
+   "ru": "Крипл-Крик",
+   "zh-Hans": "克里普尔溪"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_g": {
    "en": "Sutter",
+   "es": "Sutter",
+   "ja": "サッター",
    "native": "Sutter",
    "native_lang": "en",
-   "ru": "Саттер"
+   "ru": "Саттер",
+   "zh-Hans": "萨特"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h": {
    "en": "Klondike",
+   "es": "Klondike",
+   "ja": "クロンダイク",
    "native": "Klondike",
    "native_lang": "en",
-   "ru": "Клондайк"
+   "ru": "Клондайк",
+   "zh-Hans": "克朗代克"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_I": {
    "en": "Dawson",
+   "es": "Dawson",
+   "ja": "ドーソン",
    "native": "Dawson",
    "native_lang": "en",
-   "ru": "Доусон"
+   "ru": "Доусон",
+   "zh-Hans": "道森"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_II": {
    "en": "Bendigo",
+   "es": "Bendigo",
+   "ja": "ベンディゴ",
    "native": "Bendigo",
    "native_lang": "en",
-   "ru": "Бендиго"
+   "ru": "Бендиго",
+   "zh-Hans": "本迪戈"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_III": {
    "en": "Ballarat",
+   "es": "Ballarat",
+   "ja": "バララット",
    "native": "Ballarat",
    "native_lang": "en",
-   "ru": "Балларат"
+   "ru": "Балларат",
+   "zh-Hans": "巴拉瑞特"
   },
   "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_IV": {
    "en": "Eldorado",
+   "es": "El Dorado",
+   "ja": "エルドラド",
    "native": "Eldorado",
    "native_lang": "en",
-   "ru": "Эльдорадо"
+   "ru": "Эльдорадо",
+   "zh-Hans": "黄金国"
   },
   "body:system_38.Sigma²_UMa_C.Sigma²_UMa_C_b": {
    "en": "Kalgoorlie",
+   "es": "Kalgoorlie",
+   "ja": "カルグーリー",
    "native": "Kalgoorlie",
    "native_lang": "en",
-   "ru": "Калгурли"
+   "ru": "Калгурли",
+   "zh-Hans": "卡尔古利"
   },
   "body:system_38.Sigma²_UMa_C.Sigma²_UMa_C_c": {
    "en": "Coolgardie",
+   "es": "Coolgardie",
+   "ja": "クールガーディ",
    "native": "Coolgardie",
    "native_lang": "en",
-   "ru": "Кулгарди"
+   "ru": "Кулгарди",
+   "zh-Hans": "库尔加迪"
   },
   "body:system_38.Sigma²_UMa_C.Sigma²_UMa_C_d": {
    "en": "Yukon",
+   "es": "Yukón",
+   "ja": "ユーコン",
    "native": "Yukon",
    "native_lang": "en",
-   "ru": "Юкон"
+   "ru": "Юкон",
+   "zh-Hans": "育空"
+  },
+  "body:system_39.HD_114613.HD_114613_K1": {
+   "en": "Rob Roy",
+   "es": "Rob Roy",
+   "ja": "ロブ・ロイ",
+   "native": "Rob Roy",
+   "native_lang": "en",
+   "ru": "Роб Рой",
+   "zh-Hans": "罗布·罗伊"
+  },
+  "body:system_39.HD_114613.HD_114613_K2": {
+   "en": "Ned Kelly",
+   "es": "Ned Kelly",
+   "ja": "ネッド・ケリー",
+   "native": "Ned Kelly",
+   "native_lang": "en",
+   "ru": "Нед Келли",
+   "zh-Hans": "内德·凯利"
+  },
+  "body:system_39.HD_114613.HD_114613_K3": {
+   "en": "Tortuga",
+   "es": "Tortuga",
+   "ja": "トルトゥーガ",
+   "native": "Tortuga",
+   "native_lang": "en",
+   "ru": "Тортуга",
+   "zh-Hans": "托尔图加"
+  },
+  "body:system_39.HD_114613.HD_114613_b": {
+   "en": "Kidd",
+   "es": "Kidd",
+   "ja": "キッド",
+   "native": "Kidd",
+   "native_lang": "en",
+   "ru": "Кидд",
+   "zh-Hans": "基德"
+  },
+  "body:system_39.HD_114613.HD_114613_c": {
+   "en": "Morgan",
+   "es": "Morgan",
+   "ja": "モーガン",
+   "native": "Morgan",
+   "native_lang": "en",
+   "ru": "Морган",
+   "zh-Hans": "摩根"
+  },
+  "body:system_39.HD_114613.HD_114613_d": {
+   "en": "Drake",
+   "es": "Drake",
+   "ja": "ドレーク",
+   "native": "Drake",
+   "native_lang": "en",
+   "ru": "Дрейк",
+   "zh-Hans": "德雷克"
+  },
+  "body:system_39.HD_114613.HD_114613_e": {
+   "en": "Bonny",
+   "es": "Bonny",
+   "ja": "ボニー",
+   "native": "Bonny",
+   "native_lang": "en",
+   "ru": "Бонни",
+   "zh-Hans": "邦妮"
+  },
+  "body:system_39.HD_114613.HD_114613_f": {
+   "en": "Read",
+   "es": "Read",
+   "ja": "リード",
+   "native": "Read",
+   "native_lang": "en",
+   "ru": "Рид",
+   "zh-Hans": "里德"
+  },
+  "body:system_39.HD_114613.HD_114613_g": {
+   "en": "Teach",
+   "es": "Teach",
+   "ja": "ティーチ",
+   "native": "Teach",
+   "native_lang": "en",
+   "ru": "Тич",
+   "zh-Hans": "蒂奇"
+  },
+  "body:system_39.HD_114613.HD_114613_h": {
+   "en": "Turpin",
+   "es": "Turpin",
+   "ja": "ターピン",
+   "native": "Turpin",
+   "native_lang": "en",
+   "ru": "Тёрпин",
+   "zh-Hans": "特平"
+  },
+  "body:system_39.HD_114613.HD_114613_i": {
+   "en": "Robin",
+   "es": "Robin",
+   "ja": "ロビン",
+   "native": "Robin",
+   "native_lang": "en",
+   "ru": "Робин",
+   "zh-Hans": "罗宾"
+  },
+  "body:system_39.HD_114613.HD_114613_j": {
+   "en": "Marian",
+   "es": "Mariana",
+   "ja": "マリアン",
+   "native": "Marian",
+   "native_lang": "en",
+   "ru": "Мэриан",
+   "zh-Hans": "玛丽安"
+  },
+  "body:system_39.HD_114613.HD_114613_k": {
+   "en": "Tuck",
+   "es": "Tuck",
+   "ja": "タック",
+   "native": "Tuck",
+   "native_lang": "en",
+   "ru": "Тук",
+   "zh-Hans": "塔克"
+  },
+  "body:system_39.HD_114613.HD_114613_l": {
+   "en": "Scarlet",
+   "es": "Escarlata",
+   "ja": "スカーレット",
+   "native": "Scarlet",
+   "native_lang": "en",
+   "ru": "Скарлет",
+   "zh-Hans": "斯卡利特"
+  },
+  "body:system_39.HD_114613.HD_114613_m": {
+   "en": "Little John",
+   "es": "Pequeño Juan",
+   "ja": "リトル・ジョン",
+   "native": "Little John",
+   "native_lang": "en",
+   "ru": "Малыш Джон",
+   "zh-Hans": "小约翰"
+  },
+  "body:system_39.HD_114613.HD_114613_n": {
+   "en": "Much",
+   "es": "Much",
+   "ja": "マッチ",
+   "native": "Much",
+   "native_lang": "en",
+   "ru": "Мач",
+   "zh-Hans": "马奇"
+  },
+  "body:system_39.HD_114613.HD_114613_o": {
+   "en": "Allan-a-Dale",
+   "es": "Allan-a-Dale",
+   "ja": "アラン・ア・デイル",
+   "native": "Allan-a-Dale",
+   "native_lang": "en",
+   "ru": "Алан-э-Дейл",
+   "zh-Hans": "艾伦·戴尔"
+  },
+  "body:system_39.HD_114613.HD_114613_p": {
+   "en": "Sherwood",
+   "es": "Sherwood",
+   "ja": "シャーウッド",
+   "native": "Sherwood",
+   "native_lang": "en",
+   "ru": "Шервуд",
+   "zh-Hans": "舍伍德"
   },
   "body:system_4.Lalande_21185.Lalande_21185_b": {
    "en": "Nemea",
+   "es": "Nemea",
+   "ja": "ネメア",
    "native": "Νεμέα",
    "native_lang": "el",
    "ru": "Немея",
-   "translit": "Neméa"
+   "translit": "Neméa",
+   "zh-Hans": "尼米亚"
   },
   "body:system_4.Lalande_21185.Lalande_21185_c": {
    "en": "Lerna",
+   "es": "Lerna",
+   "ja": "レルネー",
    "native": "Λέρνη",
    "native_lang": "el",
    "ru": "Лерна",
-   "translit": "Lérni"
+   "translit": "Lérni",
+   "zh-Hans": "勒拿"
   },
   "body:system_4.Lalande_21185.Lalande_21185_d": {
    "en": "Ceryneia",
+   "es": "Cerinea",
+   "ja": "ケリュネイア",
    "native": "Κερύνεια",
    "native_lang": "el",
    "ru": "Керинея",
-   "translit": "Kerýneia"
+   "translit": "Kerýneia",
+   "zh-Hans": "刻律涅亚"
   },
   "body:system_4.Lalande_21185.Lalande_21185_e": {
    "en": "Erymanthos",
+   "es": "Erimanto",
+   "ja": "エリュマントス",
    "native": "Ερύμανθος",
    "native_lang": "el",
    "ru": "Эриманф",
-   "translit": "Erýmanthos"
+   "translit": "Erýmanthos",
+   "zh-Hans": "厄律曼托斯"
   },
   "body:system_4.Lalande_21185.Lalande_21185_f": {
    "en": "Augeas",
+   "es": "Augías",
+   "ja": "アウゲイアス",
    "native": "Αυγείας",
    "native_lang": "el",
    "ru": "Авгий",
-   "translit": "Avgeías"
+   "translit": "Avgeías",
+   "zh-Hans": "奥革阿斯"
   },
   "body:system_4.Lalande_21185.Lalande_21185_g": {
    "en": "Stymphalia",
+   "es": "Estinfalia",
+   "ja": "ステュムパーロス",
    "native": "Στυμφαλία",
    "native_lang": "el",
    "ru": "Стимфалия",
-   "translit": "Stymfalía"
+   "translit": "Stymfalía",
+   "zh-Hans": "斯廷法利斯"
   },
   "body:system_4.Lalande_21185.Lalande_21185_h": {
    "en": "Crete",
+   "es": "Creta",
+   "ja": "クレタ",
    "native": "Κρήτη",
    "native_lang": "el",
    "ru": "Крит",
-   "translit": "Kríti"
+   "translit": "Kríti",
+   "zh-Hans": "克里特"
   },
   "body:system_4.Lalande_21185.Lalande_21185_i": {
    "en": "Thrace",
+   "es": "Tracia",
+   "ja": "トラキア",
    "native": "Θράκη",
    "native_lang": "el",
    "ru": "Фракия",
-   "translit": "Thráki"
+   "translit": "Thráki",
+   "zh-Hans": "色雷斯"
   },
   "body:system_4.Lalande_21185.Lalande_21185_j": {
    "en": "Themiscyra",
+   "es": "Temiscira",
+   "ja": "テミスキュラ",
    "native": "Θεμίσκυρα",
    "native_lang": "el",
    "ru": "Фемискира",
-   "translit": "Themískyra"
+   "translit": "Themískyra",
+   "zh-Hans": "忒弥斯库拉"
   },
   "body:system_4.Lalande_21185.Lalande_21185_k": {
    "en": "Erytheia",
+   "es": "Eritia",
+   "ja": "エリュテイア",
    "native": "Ερύθεια",
    "native_lang": "el",
    "ru": "Эрифия",
-   "translit": "Erýtheia"
+   "translit": "Erýtheia",
+   "zh-Hans": "厄律忒亚"
   },
   "body:system_4.Lalande_21185.Lalande_21185_k.Lalande_21185_k_I": {
    "en": "Orthrus",
+   "es": "Ortro",
+   "ja": "オルトロス",
    "native": "Όρθρος",
    "native_lang": "el",
    "ru": "Орф",
-   "translit": "Órthros"
+   "translit": "Órthros",
+   "zh-Hans": "俄耳托斯"
   },
   "body:system_4.Lalande_21185.Lalande_21185_l": {
    "en": "Cerberus",
+   "es": "Cerbero",
+   "ja": "ケルベロス",
    "native": "Κέρβερος",
    "native_lang": "el",
    "ru": "Кербер",
-   "translit": "Kérveros"
+   "translit": "Kérveros",
+   "zh-Hans": "刻耳柏洛斯"
   },
   "body:system_4.Lalande_21185.Lalande_21185_m": {
    "en": "Hesperides",
+   "es": "Hespérides",
+   "ja": "ヘスペリデス",
    "native": "Εσπερίδες",
    "native_lang": "el",
    "ru": "Геспериды",
-   "translit": "Esperídes"
+   "translit": "Esperídes",
+   "zh-Hans": "赫斯珀里得斯"
+  },
+  "body:system_40.HD_24496.HD_24496_K1": {
+   "en": "Kaveri",
+   "es": "Kaveri",
+   "ja": "カーヴェーリ",
+   "native": "कावेरी",
+   "native_lang": "hi",
+   "ru": "Кавери",
+   "translit": "Kāverī",
+   "zh-Hans": "高韦里"
+  },
+  "body:system_40.HD_24496.HD_24496_K2": {
+   "en": "Brahmaputra",
+   "es": "Brahmaputra",
+   "ja": "ブラマプトラ",
+   "native": "ब्रह्मपुत्र",
+   "native_lang": "hi",
+   "ru": "Брахмапутра",
+   "translit": "Brahmaputra",
+   "zh-Hans": "布拉马普特拉"
+  },
+  "body:system_40.HD_24496.HD_24496_K3": {
+   "en": "Sindhu",
+   "es": "Indo",
+   "ja": "インダス",
+   "native": "सिन्धु",
+   "native_lang": "hi",
+   "ru": "Синдху",
+   "translit": "Sindhu",
+   "zh-Hans": "印度河"
+  },
+  "body:system_40.HD_24496.HD_24496_b": {
+   "en": "Ganga",
+   "es": "Ganges",
+   "ja": "ガンジス",
+   "native": "गंगा",
+   "native_lang": "hi",
+   "ru": "Ганга",
+   "translit": "Gaṅgā",
+   "zh-Hans": "恒河"
+  },
+  "body:system_40.HD_24496.HD_24496_c": {
+   "en": "Yamuna",
+   "es": "Yamuna",
+   "ja": "ヤムナー",
+   "native": "यमुना",
+   "native_lang": "hi",
+   "ru": "Ямуна",
+   "translit": "Yamunā",
+   "zh-Hans": "亚穆纳"
+  },
+  "body:system_40.HD_24496.HD_24496_d": {
+   "en": "Sarasvati",
+   "es": "Sarasvati",
+   "ja": "サラスヴァティー",
+   "native": "सरस्वती",
+   "native_lang": "hi",
+   "ru": "Сарасвати",
+   "translit": "Sarasvatī",
+   "zh-Hans": "萨拉斯瓦蒂"
+  },
+  "body:system_40.HD_24496.HD_24496_e": {
+   "en": "Narmada",
+   "es": "Narmada",
+   "ja": "ナルマダー",
+   "native": "नर्मदा",
+   "native_lang": "hi",
+   "ru": "Нармада",
+   "translit": "Narmadā",
+   "zh-Hans": "讷尔默达"
+  },
+  "body:system_40.HD_24496.HD_24496_f": {
+   "en": "Godavari",
+   "es": "Godavari",
+   "ja": "ゴーダーヴァリー",
+   "native": "गोदावरी",
+   "native_lang": "hi",
+   "ru": "Годавари",
+   "translit": "Godāvarī",
+   "zh-Hans": "戈达瓦里"
   },
   "body:system_41.HD_104067.HD_104067_K1": {
    "en": "Siskin",
+   "es": "Lúgano",
+   "ja": "マヒワ",
    "native": "Siskin",
    "native_lang": "en",
-   "ru": "Чиж"
+   "ru": "Чиж",
+   "zh-Hans": "黄雀"
   },
   "body:system_41.HD_104067.HD_104067_K2": {
    "en": "Waxwing",
+   "es": "Ampelis",
+   "ja": "レンジャク",
    "native": "Waxwing",
    "native_lang": "en",
-   "ru": "Свиристель"
+   "ru": "Свиристель",
+   "zh-Hans": "太平鸟"
   },
   "body:system_41.HD_104067.HD_104067_K3": {
    "en": "Redpoll",
+   "es": "Pardillo Sizerín",
+   "ja": "ベニヒワ",
    "native": "Redpoll",
    "native_lang": "en",
-   "ru": "Чечётка"
+   "ru": "Чечётка",
+   "zh-Hans": "白腰朱顶雀"
   },
   "body:system_41.HD_104067.HD_104067_b": {
    "en": "Nightingale",
+   "es": "Ruiseñor",
+   "ja": "ナイチンゲール",
    "native": "Nightingale",
    "native_lang": "en",
-   "ru": "Соловей"
+   "ru": "Соловей",
+   "zh-Hans": "夜莺"
   },
   "body:system_41.HD_104067.HD_104067_c": {
    "en": "Starling",
+   "es": "Estornino",
+   "ja": "ムクドリ",
    "native": "Starling",
    "native_lang": "en",
-   "ru": "Скворец"
+   "ru": "Скворец",
+   "zh-Hans": "椋鸟"
   },
   "body:system_41.HD_104067.HD_104067_d": {
    "en": "Firecrest",
+   "es": "Reyezuelo",
+   "ja": "マミジロキクイタダキ",
    "native": "Firecrest",
    "native_lang": "en",
-   "ru": "Королёк"
+   "ru": "Королёк",
+   "zh-Hans": "火冠戴菊"
   },
   "body:system_41.HD_104067.HD_104067_e": {
    "en": "Wren",
+   "es": "Chochín",
+   "ja": "ミソサザイ",
    "native": "Wren",
    "native_lang": "en",
-   "ru": "Крапивник"
+   "ru": "Крапивник",
+   "zh-Hans": "鹪鹩"
   },
   "body:system_41.HD_104067.HD_104067_f": {
    "en": "Finch",
+   "es": "Pinzón",
+   "ja": "ズアオアトリ",
    "native": "Finch",
    "native_lang": "en",
-   "ru": "Зяблик"
+   "ru": "Зяблик",
+   "zh-Hans": "苍头燕雀"
   },
   "body:system_41.HD_104067.HD_104067_g": {
    "en": "Robin",
+   "es": "Petirrojo",
+   "ja": "ヨーロッパコマドリ",
    "native": "Robin",
    "native_lang": "en",
-   "ru": "Малиновка"
+   "ru": "Малиновка",
+   "zh-Hans": "知更鸟"
   },
   "body:system_41.HD_104067.HD_104067_h": {
    "en": "Thrush",
+   "es": "Zorzal",
+   "ja": "ツグミ",
    "native": "Thrush",
    "native_lang": "en",
-   "ru": "Дрозд"
+   "ru": "Дрозд",
+   "zh-Hans": "鸫"
   },
   "body:system_41.HD_104067.HD_104067_i": {
    "en": "Swallow",
+   "es": "Golondrina",
+   "ja": "ツバメ",
    "native": "Swallow",
    "native_lang": "en",
-   "ru": "Ласточка"
+   "ru": "Ласточка",
+   "zh-Hans": "燕"
   },
   "body:system_41.HD_104067.HD_104067_j": {
    "en": "Bunting",
+   "es": "Escribano",
+   "ja": "ホオジロ",
    "native": "Bunting",
    "native_lang": "en",
-   "ru": "Овсянка"
+   "ru": "Овсянка",
+   "zh-Hans": "鹀"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__K1": {
+   "en": "Cassatt",
+   "es": "Cassatt",
+   "ja": "カサット",
+   "native": "Cassatt",
+   "native_lang": "fr",
+   "ru": "Кассат",
+   "zh-Hans": "卡萨特"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__K2": {
+   "en": "Utrillo",
+   "es": "Utrillo",
+   "ja": "ユトリロ",
+   "native": "Utrillo",
+   "native_lang": "fr",
+   "ru": "Утрилло",
+   "zh-Hans": "郁特里罗"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__K3": {
+   "en": "Valadon",
+   "es": "Valadon",
+   "ja": "ヴァラドン",
+   "native": "Valadon",
+   "native_lang": "fr",
+   "ru": "Валадон",
+   "zh-Hans": "瓦拉东"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__b": {
+   "en": "Monet",
+   "es": "Monet",
+   "ja": "モネ",
+   "native": "Monet",
+   "native_lang": "fr",
+   "ru": "Моне",
+   "zh-Hans": "莫奈"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__c": {
+   "en": "Manet",
+   "es": "Manet",
+   "ja": "マネ",
+   "native": "Manet",
+   "native_lang": "fr",
+   "ru": "Мане",
+   "zh-Hans": "马奈"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__d": {
+   "en": "Renoir",
+   "es": "Renoir",
+   "ja": "ルノワール",
+   "native": "Renoir",
+   "native_lang": "fr",
+   "ru": "Ренуар",
+   "zh-Hans": "雷诺阿"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__e": {
+   "en": "Degas",
+   "es": "Degas",
+   "ja": "ドガ",
+   "native": "Degas",
+   "native_lang": "fr",
+   "ru": "Дега",
+   "zh-Hans": "德加"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__f": {
+   "en": "Cezanne",
+   "es": "Cézanne",
+   "ja": "セザンヌ",
+   "native": "Cézanne",
+   "native_lang": "fr",
+   "ru": "Сезанн",
+   "zh-Hans": "塞尚"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__g": {
+   "en": "Pissarro",
+   "es": "Pissarro",
+   "ja": "ピサロ",
+   "native": "Pissarro",
+   "native_lang": "fr",
+   "ru": "Писсарро",
+   "zh-Hans": "毕沙罗"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__h": {
+   "en": "Sisley",
+   "es": "Sisley",
+   "ja": "シスレー",
+   "native": "Sisley",
+   "native_lang": "fr",
+   "ru": "Сислей",
+   "zh-Hans": "西斯莱"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__i": {
+   "en": "Morisot",
+   "es": "Morisot",
+   "ja": "モリゾ",
+   "native": "Morisot",
+   "native_lang": "fr",
+   "ru": "Моризо",
+   "zh-Hans": "莫里索"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__j": {
+   "en": "Seurat",
+   "es": "Seurat",
+   "ja": "スーラ",
+   "native": "Seurat",
+   "native_lang": "fr",
+   "ru": "Сёра",
+   "zh-Hans": "修拉"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__k": {
+   "en": "Signac",
+   "es": "Signac",
+   "ja": "シニャック",
+   "native": "Signac",
+   "native_lang": "fr",
+   "ru": "Синьяк",
+   "zh-Hans": "西涅克"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__l": {
+   "en": "Gauguin",
+   "es": "Gauguin",
+   "ja": "ゴーギャン",
+   "native": "Gauguin",
+   "native_lang": "fr",
+   "ru": "Гоген",
+   "zh-Hans": "高更"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__m": {
+   "en": "Matisse",
+   "es": "Matisse",
+   "ja": "マティス",
+   "native": "Matisse",
+   "native_lang": "fr",
+   "ru": "Матисс",
+   "zh-Hans": "马蒂斯"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__n": {
+   "en": "Rodin",
+   "es": "Rodin",
+   "ja": "ロダン",
+   "native": "Rodin",
+   "native_lang": "fr",
+   "ru": "Роден",
+   "zh-Hans": "罗丹"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__o": {
+   "en": "Bazille",
+   "es": "Bazille",
+   "ja": "バジール",
+   "native": "Bazille",
+   "native_lang": "fr",
+   "ru": "Базиль",
+   "zh-Hans": "巴齐耶"
+  },
+  "body:system_43.barycenter_ab.Theta_Draconis__BA__p": {
+   "en": "Caillebotte",
+   "es": "Caillebotte",
+   "ja": "カイユボット",
+   "native": "Caillebotte",
+   "native_lang": "fr",
+   "ru": "Кайботт",
+   "zh-Hans": "卡耶博特"
+  },
+  "body:system_44.HD_33564_A.HD_33564_A_c": {
+   "en": "Thales",
+   "es": "Tales",
+   "ja": "タレス",
+   "native": "Θαλής",
+   "native_lang": "el",
+   "ru": "Фалес",
+   "translit": "Thalís",
+   "zh-Hans": "泰勒斯"
+  },
+  "body:system_44.HD_33564_A.HD_33564_A_d": {
+   "en": "Anaximander",
+   "es": "Anaximandro",
+   "ja": "アナクシマンドロス",
+   "native": "Αναξίμανδρος",
+   "native_lang": "el",
+   "ru": "Анаксимандр",
+   "translit": "Anaxímandros",
+   "zh-Hans": "阿那克西曼德"
+  },
+  "body:system_44.HD_33564_A.HD_33564_A_e": {
+   "en": "Pythagoras",
+   "es": "Pitágoras",
+   "ja": "ピタゴラス",
+   "native": "Πυθαγόρας",
+   "native_lang": "el",
+   "ru": "Пифагор",
+   "translit": "Pythagóras",
+   "zh-Hans": "毕达哥拉斯"
+  },
+  "body:system_44.HD_33564_A.HD_33564_A_f": {
+   "en": "Heraclitus",
+   "es": "Heráclito",
+   "ja": "ヘラクレイトス",
+   "native": "Ηράκλειτος",
+   "native_lang": "el",
+   "ru": "Гераклит",
+   "translit": "Irákleitos",
+   "zh-Hans": "赫拉克利特"
+  },
+  "body:system_44.HD_33564_A.HD_33564_b": {
+   "en": "Plato",
+   "es": "Platón",
+   "ja": "プラトン",
+   "native": "Πλάτων",
+   "native_lang": "el",
+   "ru": "Платон",
+   "translit": "Plátōn",
+   "zh-Hans": "柏拉图"
+  },
+  "body:system_44.HD_33564_A.HD_33564_b.HD_33564_b_I": {
+   "en": "Socrates",
+   "es": "Sócrates",
+   "ja": "ソクラテス",
+   "native": "Σωκράτης",
+   "native_lang": "el",
+   "ru": "Сократ",
+   "translit": "Sokrátis",
+   "zh-Hans": "苏格拉底"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_K1": {
+   "en": "Theophrastus",
+   "es": "Teofrasto",
+   "ja": "テオプラストス",
+   "native": "Θεόφραστος",
+   "native_lang": "el",
+   "ru": "Феофраст",
+   "translit": "Theófrastos",
+   "zh-Hans": "泰奥弗拉斯托斯"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_K2": {
+   "en": "Euclid",
+   "es": "Euclides",
+   "ja": "ユークリッド",
+   "native": "Ευκλείδης",
+   "native_lang": "el",
+   "ru": "Евклид",
+   "translit": "Efkleídis",
+   "zh-Hans": "欧几里得"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_c": {
+   "en": "Democritus",
+   "es": "Demócrito",
+   "ja": "デモクリトス",
+   "native": "Δημόκριτος",
+   "native_lang": "el",
+   "ru": "Демокрит",
+   "translit": "Dimókritos",
+   "zh-Hans": "德谟克利特"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_d": {
+   "en": "Empedocles",
+   "es": "Empédocles",
+   "ja": "エンペドクレス",
+   "native": "Εμπεδοκλής",
+   "native_lang": "el",
+   "ru": "Эмпедокл",
+   "translit": "Empedoklís",
+   "zh-Hans": "恩培多克勒"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_e": {
+   "en": "Parmenides",
+   "es": "Parménides",
+   "ja": "パルメニデス",
+   "native": "Παρμενίδης",
+   "native_lang": "el",
+   "ru": "Парменид",
+   "translit": "Parmenídis",
+   "zh-Hans": "巴门尼德"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_f": {
+   "en": "Zeno",
+   "es": "Zenón",
+   "ja": "ゼノン",
+   "native": "Ζήνων",
+   "native_lang": "el",
+   "ru": "Зенон",
+   "translit": "Zínon",
+   "zh-Hans": "芝诺"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_g": {
+   "en": "Aristotle",
+   "es": "Aristóteles",
+   "ja": "アリストテレス",
+   "native": "Αριστοτέλης",
+   "native_lang": "el",
+   "ru": "Аристотель",
+   "translit": "Aristotélis",
+   "zh-Hans": "亚里士多德"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_h": {
+   "en": "Epicurus",
+   "es": "Epicuro",
+   "ja": "エピクロス",
+   "native": "Επίκουρος",
+   "native_lang": "el",
+   "ru": "Эпикур",
+   "translit": "Epíkouros",
+   "zh-Hans": "伊壁鸠鲁"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_i": {
+   "en": "Diogenes",
+   "es": "Diógenes",
+   "ja": "ディオゲネス",
+   "native": "Διογένης",
+   "native_lang": "el",
+   "ru": "Диоген",
+   "translit": "Diogénis",
+   "zh-Hans": "第欧根尼"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_j": {
+   "en": "Chrysippus",
+   "es": "Crisipo",
+   "ja": "クリュシッポス",
+   "native": "Χρύσιππος",
+   "native_lang": "el",
+   "ru": "Хрисипп",
+   "translit": "Chrýsippos",
+   "zh-Hans": "克吕西波"
+  },
+  "body:system_44.HD_33564_B.HD_33564_B_k": {
+   "en": "Hypatia",
+   "es": "Hipatia",
+   "ja": "ヒュパティア",
+   "native": "Υπατία",
+   "native_lang": "el",
+   "ru": "Гипатия",
+   "translit": "Ypatía",
+   "zh-Hans": "希帕提娅"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_d": {
    "en": "Antony",
+   "es": "Antonio",
+   "ja": "アントニオス",
    "native": "Αντώνιος",
    "native_lang": "el",
    "ru": "Антоний",
-   "translit": "Antónios"
+   "translit": "Antónios",
+   "zh-Hans": "安东尼"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_e": {
    "en": "Pachomius",
+   "es": "Pacomio",
+   "ja": "パコミオス",
    "native": "Παχώμιος",
    "native_lang": "el",
    "ru": "Пахомий",
-   "translit": "Pachómios"
+   "translit": "Pachómios",
+   "zh-Hans": "帕科缪"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_f": {
    "en": "Macarius",
+   "es": "Macario",
+   "ja": "マカリオス",
    "native": "Μακάριος",
    "native_lang": "el",
    "ru": "Макарий",
-   "translit": "Makários"
+   "translit": "Makários",
+   "zh-Hans": "马卡里乌斯"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_g": {
    "en": "Arsenius",
+   "es": "Arsenio",
+   "ja": "アルセニオス",
    "native": "Αρσένιος",
    "native_lang": "el",
    "ru": "Арсений",
-   "translit": "Arsénios"
+   "translit": "Arsénios",
+   "zh-Hans": "阿尔塞纽"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_h": {
    "en": "Poemen",
+   "es": "Poemén",
+   "ja": "ポイメン",
    "native": "Ποιμήν",
    "native_lang": "el",
    "ru": "Пимен",
-   "translit": "Poimín"
+   "translit": "Poimín",
+   "zh-Hans": "波门"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_i": {
    "en": "Evagrius",
+   "es": "Evagrio",
+   "ja": "エウアグリオス",
    "native": "Ευάγριος",
    "native_lang": "el",
    "ru": "Евагрий",
-   "translit": "Evágrios"
+   "translit": "Evágrios",
+   "zh-Hans": "埃瓦格里乌斯"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_j": {
    "en": "Moses",
+   "es": "Moisés",
+   "ja": "モーセ",
    "native": "Μωυσής",
    "native_lang": "el",
    "ru": "Моисей",
-   "translit": "Moysís"
+   "translit": "Moysís",
+   "zh-Hans": "摩西"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_k": {
    "en": "Sisoes",
+   "es": "Sisoes",
+   "ja": "シソエス",
    "native": "Σισώης",
    "native_lang": "el",
    "ru": "Сисой",
-   "translit": "Sisóis"
+   "translit": "Sisóis",
+   "zh-Hans": "西索斯"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_l": {
    "en": "Amoun",
+   "es": "Amún",
+   "ja": "アムン",
    "native": "Αμμούν",
    "native_lang": "el",
    "ru": "Аммун",
-   "translit": "Ammoún"
+   "translit": "Ammoún",
+   "zh-Hans": "阿蒙"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_m": {
    "en": "Paul",
+   "es": "Pablo",
+   "ja": "パウロ",
    "native": "Παύλος",
    "native_lang": "el",
    "ru": "Павел",
-   "translit": "Pávlos"
+   "translit": "Pávlos",
+   "zh-Hans": "保罗"
   },
   "body:system_45.83_Leonis_A.83_Leonis_A_n": {
    "en": "Hilarion",
+   "es": "Hilarión",
+   "ja": "ヒラリオン",
    "native": "Ιλαρίων",
    "native_lang": "el",
    "ru": "Иларион",
-   "translit": "Ilaríon"
+   "translit": "Ilaríon",
+   "zh-Hans": "希拉里翁"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_A1": {
    "en": "Barsanuphius",
+   "es": "Barsanufio",
+   "ja": "バルサヌフィオス",
    "native": "Βαρσανούφιος",
    "native_lang": "el",
    "ru": "Варсонофий",
-   "translit": "Varsanoúfios"
+   "translit": "Varsanoúfios",
+   "zh-Hans": "巴尔萨努菲乌斯"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_d": {
    "en": "Mary",
+   "es": "María",
+   "ja": "マリア",
    "native": "Μαρία",
    "native_lang": "el",
    "ru": "Мария",
-   "translit": "María"
+   "translit": "María",
+   "zh-Hans": "玛利亚"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_e": {
    "en": "Syncletica",
+   "es": "Sinclética",
+   "ja": "シンクレティケ",
    "native": "Συγκλητική",
    "native_lang": "el",
    "ru": "Синклитикия",
-   "translit": "Synklitikí"
+   "translit": "Synklitikí",
+   "zh-Hans": "辛克莱蒂卡"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_f": {
    "en": "Cassian",
+   "es": "Casiano",
+   "ja": "カッシアヌス",
    "native": "Κασσιανός",
    "native_lang": "el",
    "ru": "Кассиан",
-   "translit": "Kassianós"
+   "translit": "Kassianós",
+   "zh-Hans": "卡西安"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_g": {
    "en": "Ephrem",
+   "es": "Efrén",
+   "ja": "エフレム",
    "native": "Εφραίμ",
    "native_lang": "el",
    "ru": "Ефрем",
-   "translit": "Efraím"
+   "translit": "Efraím",
+   "zh-Hans": "厄弗冷"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_h": {
    "en": "Scetis",
+   "es": "Escete",
+   "ja": "スケティス",
    "native": "Σκήτις",
    "native_lang": "el",
    "ru": "Скит",
-   "translit": "Skítis"
+   "translit": "Skítis",
+   "zh-Hans": "斯凯蒂斯"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_h.83_Leonis_B_h_I": {
    "en": "Kellia",
+   "es": "Kellia",
+   "ja": "ケリア",
    "native": "Κελλία",
    "native_lang": "el",
    "ru": "Келлии",
-   "translit": "Kellía"
+   "translit": "Kellía",
+   "zh-Hans": "凯利亚"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_i": {
    "en": "Nitria",
+   "es": "Nitria",
+   "ja": "ニトリア",
    "native": "Νιτρία",
    "native_lang": "el",
    "ru": "Нитрия",
-   "translit": "Nitría"
+   "translit": "Nitría",
+   "zh-Hans": "尼特里亚"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_i.83_Leonis_B_i_I": {
    "en": "Isaac",
+   "es": "Isaac",
+   "ja": "イサク",
    "native": "Ισαάκ",
    "native_lang": "el",
    "ru": "Исаак",
-   "translit": "Isaák"
+   "translit": "Isaák",
+   "zh-Hans": "以撒"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_j": {
    "en": "Athanasius",
+   "es": "Atanasio",
+   "ja": "アタナシオス",
    "native": "Αθανάσιος",
    "native_lang": "el",
    "ru": "Афанасий",
-   "translit": "Athanásios"
+   "translit": "Athanásios",
+   "zh-Hans": "亚他那修"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_I": {
    "en": "John",
+   "es": "Juan",
+   "ja": "ヨハネ",
    "native": "Ιωάννης",
    "native_lang": "el",
    "ru": "Иоанн",
-   "translit": "Ioánnis"
+   "translit": "Ioánnis",
+   "zh-Hans": "约翰"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_II": {
    "en": "Simeon",
+   "es": "Simeón",
+   "ja": "シメオン",
    "native": "Σιμεών",
    "native_lang": "el",
    "ru": "Симеон",
-   "translit": "Simeón"
+   "translit": "Simeón",
+   "zh-Hans": "西缅"
   },
   "body:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_III": {
    "en": "Dorotheus",
+   "es": "Doroteo",
+   "ja": "ドロテオス",
    "native": "Δωρόθεος",
    "native_lang": "el",
    "ru": "Дорофей",
-   "translit": "Dorótheos"
+   "translit": "Dorótheos",
+   "zh-Hans": "多罗特乌斯"
   },
   "body:system_45.83_Leonis_B.HD_99492_b": {
    "en": "Serapion",
+   "es": "Serapión",
+   "ja": "セラピオン",
    "native": "Σεραπίων",
    "native_lang": "el",
    "ru": "Серапион",
-   "translit": "Serapíon"
+   "translit": "Serapíon",
+   "zh-Hans": "塞拉皮翁"
   },
   "body:system_45.83_Leonis_B.HD_99492_c": {
    "en": "Zosimas",
+   "es": "Zósimo",
+   "ja": "ゾシマ",
    "native": "Ζωσιμάς",
    "native_lang": "el",
    "ru": "Зосима",
-   "translit": "Zosimás"
+   "translit": "Zosimás",
+   "zh-Hans": "佐西马"
+  },
+  "body:system_46.GJ_3021_A.GJ_3021_A_K1": {
+   "en": "Malkauns",
+   "es": "Malkauns",
+   "ja": "マールカウンス",
+   "native": "मालकौंस",
+   "native_lang": "hi",
+   "ru": "Малькаунс",
+   "translit": "Mālkauns",
+   "zh-Hans": "马尔考恩斯"
+  },
+  "body:system_46.GJ_3021_A.GJ_3021_A_K2": {
+   "en": "Darbari",
+   "es": "Darbari",
+   "ja": "ダルバーリー",
+   "native": "दरबारी",
+   "native_lang": "hi",
+   "ru": "Дарбари",
+   "translit": "Darbārī",
+   "zh-Hans": "达尔巴里"
+  },
+  "body:system_46.GJ_3021_A.GJ_3021_A_K3": {
+   "en": "Todi",
+   "es": "Todi",
+   "ja": "トーディ",
+   "native": "तोडी",
+   "native_lang": "hi",
+   "ru": "Тоди",
+   "translit": "Toḍī",
+   "zh-Hans": "托迪"
+  },
+  "body:system_46.GJ_3021_A.GJ_3021_A_c": {
+   "en": "Deepak",
+   "es": "Dipak",
+   "ja": "ディーパク",
+   "native": "दीपक",
+   "native_lang": "hi",
+   "ru": "Дипак",
+   "translit": "Dīpak",
+   "zh-Hans": "迪帕克"
+  },
+  "body:system_46.GJ_3021_A.GJ_3021_A_d": {
+   "en": "Yaman",
+   "es": "Yaman",
+   "ja": "ヤマン",
+   "native": "यमन",
+   "native_lang": "hi",
+   "ru": "Яман",
+   "translit": "Yaman",
+   "zh-Hans": "亚曼"
+  },
+  "body:system_46.GJ_3021_A.GJ_3021_A_e": {
+   "en": "Bhairavi",
+   "es": "Bhairavi",
+   "ja": "バイラヴィー",
+   "native": "भैरवी",
+   "native_lang": "hi",
+   "ru": "Бхайрави",
+   "translit": "Bhairavī",
+   "zh-Hans": "拜拉维"
+  },
+  "body:system_46.GJ_3021_A.GJ_3021_b": {
+   "en": "Bhairav",
+   "es": "Bhairav",
+   "ja": "バイラヴ",
+   "native": "भैरव",
+   "native_lang": "hi",
+   "ru": "Бхайрав",
+   "translit": "Bhairav",
+   "zh-Hans": "拜拉夫"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_K1": {
+   "en": "Kafi",
+   "es": "Kafi",
+   "ja": "カーフィー",
+   "native": "काफ़ी",
+   "native_lang": "hi",
+   "ru": "Кафи",
+   "translit": "Kāfī",
+   "zh-Hans": "卡菲"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_K2": {
+   "en": "Shree",
+   "es": "Shri",
+   "ja": "シュリー",
+   "native": "श्री",
+   "native_lang": "hi",
+   "ru": "Шри",
+   "translit": "Śrī",
+   "zh-Hans": "室利"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_K3": {
+   "en": "Des",
+   "es": "Des",
+   "ja": "デース",
+   "native": "देस",
+   "native_lang": "hi",
+   "ru": "Дес",
+   "translit": "Des",
+   "zh-Hans": "德斯"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_c": {
+   "en": "Sarang",
+   "es": "Sarang",
+   "ja": "サーラング",
+   "native": "सारंग",
+   "native_lang": "hi",
+   "ru": "Саранг",
+   "translit": "Sāraṅg",
+   "zh-Hans": "萨朗"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_d": {
+   "en": "Marwa",
+   "es": "Marwa",
+   "ja": "マールワー",
+   "native": "मारवा",
+   "native_lang": "hi",
+   "ru": "Марва",
+   "translit": "Mārvā",
+   "zh-Hans": "马尔瓦"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_e": {
+   "en": "Purvi",
+   "es": "Purvi",
+   "ja": "プールヴィー",
+   "native": "पूर्वी",
+   "native_lang": "hi",
+   "ru": "Пурви",
+   "translit": "Pūrvī",
+   "zh-Hans": "普尔维"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_f": {
+   "en": "Megh",
+   "es": "Megh",
+   "ja": "メーグ",
+   "native": "मेघ",
+   "native_lang": "hi",
+   "ru": "Мегх",
+   "translit": "Megh",
+   "zh-Hans": "梅格"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_g": {
+   "en": "Hindol",
+   "es": "Hindol",
+   "ja": "ヒンドール",
+   "native": "हिंडोल",
+   "native_lang": "hi",
+   "ru": "Хиндол",
+   "translit": "Hiṇḍol",
+   "zh-Hans": "辛多尔"
+  },
+  "body:system_46.GJ_3021_B.GJ_3021_B_h": {
+   "en": "Bageshri",
+   "es": "Bageshri",
+   "ja": "バーゲーシュリー",
+   "native": "बागेश्री",
+   "native_lang": "hi",
+   "ru": "Багешри",
+   "translit": "Bāgeśrī",
+   "zh-Hans": "巴格什里"
+  },
+  "body:system_47.HD_154345.HD_154345_A1": {
+   "en": "Rip",
+   "es": "Rip",
+   "ja": "リップ",
+   "native": "Rip",
+   "native_lang": "en",
+   "ru": "Рип",
+   "zh-Hans": "瑞普"
+  },
+  "body:system_47.HD_154345.HD_154345_K2": {
+   "en": "Hollow",
+   "es": "Hollow",
+   "ja": "スリーピー・ホロウ",
+   "native": "Hollow",
+   "native_lang": "en",
+   "ru": "Холлоу",
+   "zh-Hans": "睡谷"
+  },
+  "body:system_47.HD_154345.HD_154345_K3": {
+   "en": "Febold",
+   "es": "Febold",
+   "ja": "フェボルド",
+   "native": "Febold",
+   "native_lang": "en",
+   "ru": "Фебольд",
+   "zh-Hans": "费博尔德"
+  },
+  "body:system_47.HD_154345.HD_154345_K4": {
+   "en": "Ichabod",
+   "es": "Ichabod",
+   "ja": "イカボッド",
+   "native": "Ichabod",
+   "native_lang": "en",
+   "ru": "Икабод",
+   "zh-Hans": "伊卡博德"
+  },
+  "body:system_47.HD_154345.HD_154345_b": {
+   "en": "Bunyan",
+   "es": "Bunyan",
+   "ja": "バニヤン",
+   "native": "Bunyan",
+   "native_lang": "en",
+   "ru": "Баньян",
+   "zh-Hans": "班扬"
+  },
+  "body:system_47.HD_154345.HD_154345_b.HD_154345_b_I": {
+   "en": "Babe",
+   "es": "Babe",
+   "ja": "ベイブ",
+   "native": "Babe",
+   "native_lang": "en",
+   "ru": "Бейб",
+   "zh-Hans": "贝比"
+  },
+  "body:system_47.HD_154345.HD_154345_b.HD_154345_b_II": {
+   "en": "Paddle",
+   "es": "Remo",
+   "ja": "パドル",
+   "native": "Paddle",
+   "native_lang": "en",
+   "ru": "Весло",
+   "zh-Hans": "船桨"
+  },
+  "body:system_47.HD_154345.HD_154345_c": {
+   "en": "Pecos Bill",
+   "es": "Pecos Bill",
+   "ja": "ペコス・ビル",
+   "native": "Pecos Bill",
+   "native_lang": "en",
+   "ru": "Пекос Билл",
+   "zh-Hans": "佩科斯·比尔"
+  },
+  "body:system_47.HD_154345.HD_154345_d": {
+   "en": "John Henry",
+   "es": "John Henry",
+   "ja": "ジョン・ヘンリー",
+   "native": "John Henry",
+   "native_lang": "en",
+   "ru": "Джон Генри",
+   "zh-Hans": "约翰·亨利"
+  },
+  "body:system_47.HD_154345.HD_154345_e": {
+   "en": "Casey Jones",
+   "es": "Casey Jones",
+   "ja": "ケイシー・ジョーンズ",
+   "native": "Casey Jones",
+   "native_lang": "en",
+   "ru": "Кейси Джонс",
+   "zh-Hans": "凯西·琼斯"
+  },
+  "body:system_47.HD_154345.HD_154345_f": {
+   "en": "Crockett",
+   "es": "Crockett",
+   "ja": "クロケット",
+   "native": "Crockett",
+   "native_lang": "en",
+   "ru": "Крокетт",
+   "zh-Hans": "克罗克特"
+  },
+  "body:system_47.HD_154345.HD_154345_g": {
+   "en": "Oakley",
+   "es": "Oakley",
+   "ja": "オークリー",
+   "native": "Oakley",
+   "native_lang": "en",
+   "ru": "Оукли",
+   "zh-Hans": "奥克利"
+  },
+  "body:system_47.HD_154345.HD_154345_h": {
+   "en": "Calamity",
+   "es": "Calamity",
+   "ja": "カラミティ",
+   "native": "Calamity",
+   "native_lang": "en",
+   "ru": "Каламити",
+   "zh-Hans": "卡拉米蒂"
+  },
+  "body:system_47.HD_154345.HD_154345_i": {
+   "en": "Appleseed",
+   "es": "Appleseed",
+   "ja": "アップルシード",
+   "native": "Appleseed",
+   "native_lang": "en",
+   "ru": "Эпплсид",
+   "zh-Hans": "苹果籽"
+  },
+  "body:system_47.HD_154345.HD_154345_j": {
+   "en": "Huck",
+   "es": "Huck",
+   "ja": "ハック",
+   "native": "Huck",
+   "native_lang": "en",
+   "ru": "Гек",
+   "zh-Hans": "哈克"
+  },
+  "body:system_47.HD_154345.HD_154345_j.HD_154345_j_I": {
+   "en": "Tom",
+   "es": "Tom",
+   "ja": "トム",
+   "native": "Tom",
+   "native_lang": "en",
+   "ru": "Том",
+   "zh-Hans": "汤姆"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_b": {
+   "en": "Virtus",
+   "es": "Virtus",
+   "ja": "ウィルトゥス",
+   "native": "Virtus",
+   "native_lang": "la",
+   "ru": "Виртус",
+   "zh-Hans": "维尔图斯"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_c": {
+   "en": "Pietas",
+   "es": "Piedad",
+   "ja": "ピエタス",
+   "native": "Pietas",
+   "native_lang": "la",
+   "ru": "Пиетас",
+   "zh-Hans": "皮埃塔斯"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_d": {
+   "en": "Fides",
+   "es": "Fe",
+   "ja": "フィデス",
+   "native": "Fides",
+   "native_lang": "la",
+   "ru": "Фидес",
+   "zh-Hans": "菲德斯"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_e": {
+   "en": "Pax",
+   "es": "Paz",
+   "ja": "パークス",
+   "native": "Pax",
+   "native_lang": "la",
+   "ru": "Пакс",
+   "zh-Hans": "帕克斯"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_f": {
+   "en": "Clementia",
+   "es": "Clemencia",
+   "ja": "クレメンティア",
+   "native": "Clementia",
+   "native_lang": "la",
+   "ru": "Клеменция",
+   "zh-Hans": "克莱门蒂娅"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_g": {
+   "en": "Constantia",
+   "es": "Constancia",
+   "ja": "コンスタンティア",
+   "native": "Constantia",
+   "native_lang": "la",
+   "ru": "Констанция",
+   "zh-Hans": "康斯坦蒂娅"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_h": {
+   "en": "Iustitia",
+   "es": "Justicia",
+   "ja": "ユースティティア",
+   "native": "Iustitia",
+   "native_lang": "la",
+   "ru": "Юстиция",
+   "zh-Hans": "尤斯蒂提亚"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_i": {
+   "en": "Prudentia",
+   "es": "Prudencia",
+   "ja": "プルデンティア",
+   "native": "Prudentia",
+   "native_lang": "la",
+   "ru": "Пруденция",
+   "zh-Hans": "普鲁登蒂娅"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_j": {
+   "en": "Victoria",
+   "es": "Victoria",
+   "ja": "ウィクトーリア",
+   "native": "Victoria",
+   "native_lang": "la",
+   "ru": "Виктория",
+   "zh-Hans": "维多利亚"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_k": {
+   "en": "Salus",
+   "es": "Salud",
+   "ja": "サルース",
+   "native": "Salus",
+   "native_lang": "la",
+   "ru": "Салюс",
+   "zh-Hans": "萨卢斯"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_l": {
+   "en": "Libertas",
+   "es": "Libertad",
+   "ja": "リベルタス",
+   "native": "Libertas",
+   "native_lang": "la",
+   "ru": "Либертас",
+   "zh-Hans": "利贝塔斯"
+  },
+  "body:system_48.HD_102365_A.HD_102365_A_m": {
+   "en": "Aequitas",
+   "es": "Equidad",
+   "ja": "アエクィタス",
+   "native": "Aequitas",
+   "native_lang": "la",
+   "ru": "Эквитас",
+   "zh-Hans": "埃奎塔斯"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_K1": {
+   "en": "Liberalitas",
+   "es": "Liberalidad",
+   "ja": "リベラリタス",
+   "native": "Liberalitas",
+   "native_lang": "la",
+   "ru": "Либералитас",
+   "zh-Hans": "利贝拉利塔斯"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_K2": {
+   "en": "Concordia Minor",
+   "es": "Concordia Minor",
+   "ja": "小コンコルディア",
+   "native": "Concordia Minor",
+   "native_lang": "la",
+   "ru": "Малая Конкордия",
+   "zh-Hans": "小康科迪娅"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_b": {
+   "en": "Honos",
+   "es": "Honor",
+   "ja": "ホノス",
+   "native": "Honos",
+   "native_lang": "la",
+   "ru": "Хонос",
+   "zh-Hans": "霍诺斯"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_c": {
+   "en": "Securitas",
+   "es": "Seguridad",
+   "ja": "セクリタス",
+   "native": "Securitas",
+   "native_lang": "la",
+   "ru": "Секуритас",
+   "zh-Hans": "塞库里塔斯"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_d": {
+   "en": "Providentia",
+   "es": "Providencia",
+   "ja": "プロウィデンティア",
+   "native": "Providentia",
+   "native_lang": "la",
+   "ru": "Провиденция",
+   "zh-Hans": "普罗维登蒂娅"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_e": {
+   "en": "Humanitas",
+   "es": "Humanidad",
+   "ja": "フーマーニタース",
+   "native": "Humanitas",
+   "native_lang": "la",
+   "ru": "Хуманитас",
+   "zh-Hans": "胡曼尼塔斯"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_f": {
+   "en": "Disciplina",
+   "es": "Disciplina",
+   "ja": "ディスキプリナ",
+   "native": "Disciplina",
+   "native_lang": "la",
+   "ru": "Дисциплина",
+   "zh-Hans": "迪希普利娜"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_g": {
+   "en": "Abundantia",
+   "es": "Abundancia",
+   "ja": "アブンダンティア",
+   "native": "Abundantia",
+   "native_lang": "la",
+   "ru": "Абунданция",
+   "zh-Hans": "阿布丹蒂娅"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_h": {
+   "en": "Annona",
+   "es": "Annona",
+   "ja": "アンノーナ",
+   "native": "Annona",
+   "native_lang": "la",
+   "ru": "Аннона",
+   "zh-Hans": "阿诺娜"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_h.HD_102365_B_h_I": {
+   "en": "Moneta",
+   "es": "Moneta",
+   "ja": "モネータ",
+   "native": "Moneta",
+   "native_lang": "la",
+   "ru": "Монета",
+   "zh-Hans": "莫内塔"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_i": {
+   "en": "Laetitia",
+   "es": "Leticia",
+   "ja": "ラエティティア",
+   "native": "Laetitia",
+   "native_lang": "la",
+   "ru": "Летиция",
+   "zh-Hans": "莱蒂提亚"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_j": {
+   "en": "Hilaritas",
+   "es": "Hilaridad",
+   "ja": "ヒラリタス",
+   "native": "Hilaritas",
+   "native_lang": "la",
+   "ru": "Хиларитас",
+   "zh-Hans": "希拉里塔斯"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_k": {
+   "en": "Tranquillitas",
+   "es": "Tranquilidad",
+   "ja": "トランクィッリタス",
+   "native": "Tranquillitas",
+   "native_lang": "la",
+   "ru": "Транквиллитас",
+   "zh-Hans": "特兰奎利塔斯"
+  },
+  "body:system_48.HD_102365_B.HD_102365_B_k.HD_102365_B_k_II": {
+   "en": "Quies",
+   "es": "Quietud",
+   "ja": "クィエス",
+   "native": "Quies",
+   "native_lang": "la",
+   "ru": "Квиес",
+   "zh-Hans": "奎埃斯"
+  },
+  "body:system_49.GJ_176.GJ_176_K1": {
+   "en": "Suanchou",
+   "es": "Suanchou",
+   "ja": "算木",
+   "native": "算筹",
+   "native_lang": "zh-Hans",
+   "ru": "Суаньчоу",
+   "translit": "Suànchóu",
+   "zh-Hans": "算筹"
+  },
+  "body:system_49.GJ_176.GJ_176_K2": {
+   "en": "Shuiche",
+   "es": "Shuiche",
+   "ja": "水車",
+   "native": "水车",
+   "native_lang": "zh-Hans",
+   "ru": "Шуйчэ",
+   "translit": "Shuǐchē",
+   "zh-Hans": "水车"
+  },
+  "body:system_49.GJ_176.GJ_176_K3": {
+   "en": "Didongyi",
+   "es": "Didongyi",
+   "ja": "地動儀",
+   "native": "地动仪",
+   "native_lang": "zh-Hans",
+   "ru": "Дидуни",
+   "translit": "Dìdòngyí",
+   "zh-Hans": "地动仪"
+  },
+  "body:system_49.GJ_176.GJ_176_c": {
+   "en": "Huoyao",
+   "es": "Huoyao",
+   "ja": "火薬",
+   "native": "火药",
+   "native_lang": "zh-Hans",
+   "ru": "Хояо",
+   "translit": "Huǒyào",
+   "zh-Hans": "火药"
+  },
+  "body:system_49.GJ_176.GJ_176_d": {
+   "en": "Ci",
+   "es": "Ci",
+   "ja": "磁器",
+   "native": "瓷",
+   "native_lang": "zh-Hans",
+   "ru": "Цы",
+   "translit": "Cí",
+   "zh-Hans": "瓷"
+  },
+  "body:system_49.GJ_176.GJ_176_e": {
+   "en": "Qi",
+   "es": "Qi",
+   "ja": "漆",
+   "native": "漆",
+   "native_lang": "zh-Hans",
+   "ru": "Ци",
+   "translit": "Qī",
+   "zh-Hans": "漆"
+  },
+  "body:system_49.GJ_176.GJ_176_f": {
+   "en": "Luopan",
+   "es": "Luopan",
+   "ja": "羅盤",
+   "native": "罗盘",
+   "native_lang": "zh-Hans",
+   "ru": "Лопань",
+   "translit": "Luópán",
+   "zh-Hans": "罗盘"
+  },
+  "body:system_49.GJ_176.GJ_176_g": {
+   "en": "Yin",
+   "es": "Yin",
+   "ja": "印",
+   "native": "印",
+   "native_lang": "zh-Hans",
+   "ru": "Инь",
+   "translit": "Yìn",
+   "zh-Hans": "印"
+  },
+  "body:system_49.GJ_176.GJ_176_h": {
+   "en": "Zhi",
+   "es": "Zhi",
+   "ja": "紙",
+   "native": "纸",
+   "native_lang": "zh-Hans",
+   "ru": "Чжи",
+   "translit": "Zhǐ",
+   "zh-Hans": "纸"
+  },
+  "body:system_49.GJ_176.GJ_176_i": {
+   "en": "Si",
+   "es": "Si",
+   "ja": "絹",
+   "native": "丝",
+   "native_lang": "zh-Hans",
+   "ru": "Сы",
+   "translit": "Sī",
+   "zh-Hans": "丝"
+  },
+  "body:system_49.GJ_176.GJ_176_j": {
+   "en": "Cha",
+   "es": "Cha",
+   "ja": "茶",
+   "native": "茶",
+   "native_lang": "zh-Hans",
+   "ru": "Ча",
+   "translit": "Chá",
+   "zh-Hans": "茶"
+  },
+  "body:system_49.GJ_176.GJ_176_k": {
+   "en": "Hunyi",
+   "es": "Hunyi",
+   "ja": "渾儀",
+   "native": "浑仪",
+   "native_lang": "zh-Hans",
+   "ru": "Хуньи",
+   "translit": "Húnyí",
+   "zh-Hans": "浑仪"
+  },
+  "body:system_49.GJ_176.HD_285968_b": {
+   "en": "Ding",
+   "es": "Ding",
+   "ja": "鼎",
+   "native": "鼎",
+   "native_lang": "zh-Hans",
+   "ru": "Дин",
+   "translit": "Dǐng",
+   "zh-Hans": "鼎"
+  },
+  "body:system_5.Sirius_A.Sirius_A_b": {
+   "en": "Cabral",
+   "es": "Cabral",
+   "ja": "カブラル",
+   "native": "Cabral",
+   "native_lang": "pt",
+   "ru": "Кабрал",
+   "zh-Hans": "卡布拉尔"
+  },
+  "body:system_5.Sirius_A.Sirius_A_c": {
+   "en": "Gama",
+   "es": "Gama",
+   "ja": "ガマ",
+   "native": "Gama",
+   "native_lang": "pt",
+   "ru": "Гама",
+   "zh-Hans": "达伽马"
+  },
+  "body:system_5.Sirius_A.Sirius_A_d": {
+   "en": "Dias",
+   "es": "Días",
+   "ja": "ディアス",
+   "native": "Dias",
+   "native_lang": "pt",
+   "ru": "Диаш",
+   "zh-Hans": "迪亚士"
+  },
+  "body:system_5.Sirius_A.Sirius_A_e": {
+   "en": "Magellan",
+   "es": "Magallanes",
+   "ja": "マゼラン",
+   "native": "Magalhães",
+   "native_lang": "pt",
+   "ru": "Магеллан",
+   "zh-Hans": "麦哲伦"
+  },
+  "body:system_5.Sirius_A.Sirius_A_f": {
+   "en": "Henry",
+   "es": "Enrique",
+   "ja": "エンリケ",
+   "native": "Henrique",
+   "native_lang": "pt",
+   "ru": "Энрике",
+   "zh-Hans": "恩里克"
+  },
+  "body:system_5.Sirius_A.Sirius_A_g": {
+   "en": "Corte-Real",
+   "es": "Corte-Real",
+   "ja": "コルテ=レアル",
+   "native": "Corte-Real",
+   "native_lang": "pt",
+   "ru": "Корте-Реал",
+   "zh-Hans": "科尔特雷亚尔"
+  },
+  "body:system_5.barycenter_ab.Sirius__BA__K1": {
+   "en": "Bojador",
+   "es": "Bojador",
+   "ja": "ボジャドール",
+   "native": "Bojador",
+   "native_lang": "pt",
+   "ru": "Бохадор",
+   "zh-Hans": "博哈多尔"
+  },
+  "body:system_5.barycenter_ab.Sirius__BA__K2": {
+   "en": "Tormentas",
+   "es": "Tormentas",
+   "ja": "嵐の岬",
+   "native": "Tormentas",
+   "native_lang": "pt",
+   "ru": "Торментас",
+   "zh-Hans": "风暴角"
+  },
+  "body:system_5.barycenter_ab.Sirius__BA__K3": {
+   "en": "Good Hope",
+   "es": "Buena Esperanza",
+   "ja": "喜望峰",
+   "native": "Boa Esperança",
+   "native_lang": "pt",
+   "ru": "Боа-Эшперанса",
+   "zh-Hans": "好望角"
+  },
+  "body:system_5.barycenter_ab.Sirius__BA__b": {
+   "en": "Caminha",
+   "es": "Caminha",
+   "ja": "カミーニャ",
+   "native": "Caminha",
+   "native_lang": "pt",
+   "ru": "Каминья",
+   "zh-Hans": "卡米尼亚"
+  },
+  "body:system_50.GJ_3293.GJ_3293_b": {
+   "en": "Yue",
+   "es": "Yue",
+   "ja": "鉞",
+   "native": "钺",
+   "native_lang": "zh-Hans",
+   "ru": "Юэ",
+   "translit": "Yuè",
+   "zh-Hans": "钺"
+  },
+  "body:system_50.GJ_3293.GJ_3293_c": {
+   "en": "Chui",
+   "es": "Chui",
+   "ja": "錘",
+   "native": "锤",
+   "native_lang": "zh-Hans",
+   "ru": "Чуй",
+   "translit": "Chuí",
+   "zh-Hans": "锤"
+  },
+  "body:system_50.GJ_3293.GJ_3293_d": {
+   "en": "Qi",
+   "es": "Qi",
+   "ja": "旗",
+   "native": "旗",
+   "native_lang": "zh-Hans",
+   "ru": "Ци",
+   "translit": "Qí",
+   "zh-Hans": "旗"
+  },
+  "body:system_50.GJ_3293.GJ_3293_d.GJ_3293_d_I": {
+   "en": "Ge",
+   "es": "Ge",
+   "ja": "戈",
+   "native": "戈",
+   "native_lang": "zh-Hans",
+   "ru": "Гэ",
+   "translit": "Gē",
+   "zh-Hans": "戈"
+  },
+  "body:system_50.GJ_3293.GJ_3293_e": {
+   "en": "Gu",
+   "es": "Gu",
+   "ja": "鼓",
+   "native": "鼓",
+   "native_lang": "zh-Hans",
+   "ru": "Гу",
+   "translit": "Gǔ",
+   "zh-Hans": "鼓"
+  },
+  "body:system_50.GJ_3293.GJ_3293_f": {
+   "en": "Jian",
+   "es": "Jian",
+   "ja": "剣",
+   "native": "剑",
+   "native_lang": "zh-Hans",
+   "ru": "Цзянь",
+   "translit": "Jiàn",
+   "zh-Hans": "剑"
+  },
+  "body:system_50.GJ_3293.GJ_3293_g": {
+   "en": "Dao",
+   "es": "Dao",
+   "ja": "刀",
+   "native": "刀",
+   "native_lang": "zh-Hans",
+   "ru": "Дао",
+   "translit": "Dāo",
+   "zh-Hans": "刀"
+  },
+  "body:system_50.GJ_3293.GJ_3293_h": {
+   "en": "Qiang",
+   "es": "Qiang",
+   "ja": "槍",
+   "native": "枪",
+   "native_lang": "zh-Hans",
+   "ru": "Цян",
+   "translit": "Qiāng",
+   "zh-Hans": "枪"
+  },
+  "body:system_50.GJ_3293.GJ_3293_i": {
+   "en": "Ji",
+   "es": "Ji",
+   "ja": "戟",
+   "native": "戟",
+   "native_lang": "zh-Hans",
+   "ru": "Цзи",
+   "translit": "Jǐ",
+   "zh-Hans": "戟"
+  },
+  "body:system_50.GJ_3293.GJ_3293_j": {
+   "en": "Gong",
+   "es": "Gong",
+   "ja": "弓",
+   "native": "弓",
+   "native_lang": "zh-Hans",
+   "ru": "Гун",
+   "translit": "Gōng",
+   "zh-Hans": "弓"
+  },
+  "body:system_50.GJ_3293.GJ_3293_k": {
+   "en": "Nu",
+   "es": "Nu",
+   "ja": "弩",
+   "native": "弩",
+   "native_lang": "zh-Hans",
+   "ru": "Ну",
+   "translit": "Nǔ",
+   "zh-Hans": "弩"
+  },
+  "body:system_50.GJ_3293.GJ_3293_l": {
+   "en": "Dun",
+   "es": "Dun",
+   "ja": "盾",
+   "native": "盾",
+   "native_lang": "zh-Hans",
+   "ru": "Дунь",
+   "translit": "Dùn",
+   "zh-Hans": "盾"
+  },
+  "body:system_50.GJ_3293.GJ_3293_m": {
+   "en": "Jia",
+   "es": "Jia",
+   "ja": "甲",
+   "native": "甲",
+   "native_lang": "zh-Hans",
+   "ru": "Цзя",
+   "translit": "Jiǎ",
+   "zh-Hans": "甲"
+  },
+  "body:system_50.GJ_3293.GJ_3293_n": {
+   "en": "Mao",
+   "es": "Mao",
+   "ja": "矛",
+   "native": "矛",
+   "native_lang": "zh-Hans",
+   "ru": "Мао",
+   "translit": "Máo",
+   "zh-Hans": "矛"
+  },
+  "body:system_50.GJ_3293.GJ_3293_o": {
+   "en": "Kui",
+   "es": "Kui",
+   "ja": "兜",
+   "native": "盔",
+   "native_lang": "zh-Hans",
+   "ru": "Куй",
+   "translit": "Kuī",
+   "zh-Hans": "盔"
+  },
+  "body:system_51.GJ_433.GJ_433_K1": {
+   "en": "Infinity",
+   "es": "Infinito",
+   "ja": "無限",
+   "native": "Infinity",
+   "native_lang": "en",
+   "ru": "Бесконечность",
+   "zh-Hans": "无穷"
+  },
+  "body:system_51.GJ_433.GJ_433_K2": {
+   "en": "Zero",
+   "es": "Cero",
+   "ja": "ゼロ",
+   "native": "Zero",
+   "native_lang": "en",
+   "ru": "Ноль",
+   "zh-Hans": "零"
+  },
+  "body:system_51.GJ_433.GJ_433_K3": {
+   "en": "One",
+   "es": "Uno",
+   "ja": "イチ",
+   "native": "One",
+   "native_lang": "en",
+   "ru": "Единица",
+   "zh-Hans": "壹"
+  },
+  "body:system_51.GJ_433.GJ_433_b": {
+   "en": "Paradox",
+   "es": "Paradoja",
+   "ja": "パラドックス",
+   "native": "Paradox",
+   "native_lang": "en",
+   "ru": "Парадокс",
+   "zh-Hans": "悖论"
+  },
+  "body:system_51.GJ_433.GJ_433_c": {
+   "en": "Halting",
+   "es": "Parada",
+   "ja": "停止性",
+   "native": "Halting",
+   "native_lang": "en",
+   "ru": "Останов",
+   "zh-Hans": "停机"
+  },
+  "body:system_51.GJ_433.GJ_433_d": {
+   "en": "Algorithm",
+   "es": "Algoritmo",
+   "ja": "アルゴリズム",
+   "native": "Algorithm",
+   "native_lang": "en",
+   "ru": "Алгоритм",
+   "zh-Hans": "算法"
+  },
+  "body:system_51.GJ_433.GJ_433_e": {
+   "en": "Axiom",
+   "es": "Axioma",
+   "ja": "公理",
+   "native": "Axiom",
+   "native_lang": "en",
+   "ru": "Аксиома",
+   "zh-Hans": "公理"
+  },
+  "body:system_51.GJ_433.GJ_433_f": {
+   "en": "Lemma",
+   "es": "Lema",
+   "ja": "補題",
+   "native": "Lemma",
+   "native_lang": "en",
+   "ru": "Лемма",
+   "zh-Hans": "引理"
+  },
+  "body:system_51.GJ_433.GJ_433_g": {
+   "en": "Theorem",
+   "es": "Teorema",
+   "ja": "定理",
+   "native": "Theorem",
+   "native_lang": "en",
+   "ru": "Теорема",
+   "zh-Hans": "定理"
+  },
+  "body:system_51.GJ_433.GJ_433_h": {
+   "en": "Corollary",
+   "es": "Corolario",
+   "ja": "系",
+   "native": "Corollary",
+   "native_lang": "en",
+   "ru": "Следствие",
+   "zh-Hans": "推论"
+  },
+  "body:system_51.GJ_433.GJ_433_i": {
+   "en": "Proof",
+   "es": "Prueba",
+   "ja": "証明",
+   "native": "Proof",
+   "native_lang": "en",
+   "ru": "Доказательство",
+   "zh-Hans": "证明"
+  },
+  "body:system_51.GJ_433.GJ_433_j": {
+   "en": "Recursion",
+   "es": "Recursión",
+   "ja": "再帰",
+   "native": "Recursion",
+   "native_lang": "en",
+   "ru": "Рекурсия",
+   "zh-Hans": "递归"
+  },
+  "body:system_51.GJ_433.GJ_433_k": {
+   "en": "Iteration",
+   "es": "Iteración",
+   "ja": "反復",
+   "native": "Iteration",
+   "native_lang": "en",
+   "ru": "Итерация",
+   "zh-Hans": "迭代"
+  },
+  "body:system_51.GJ_433.GJ_433_l": {
+   "en": "Entropy",
+   "es": "Entropía",
+   "ja": "エントロピー",
+   "native": "Entropy",
+   "native_lang": "en",
+   "ru": "Энтропия",
+   "zh-Hans": "熵"
+  },
+  "body:system_51.GJ_433.GJ_433_m": {
+   "en": "Cipher",
+   "es": "Cifra",
+   "ja": "暗号",
+   "native": "Cipher",
+   "native_lang": "en",
+   "ru": "Шифр",
+   "zh-Hans": "密码"
+  },
+  "body:system_51.GJ_433.GJ_433_n": {
+   "en": "Parity",
+   "es": "Paridad",
+   "ja": "パリティ",
+   "native": "Parity",
+   "native_lang": "en",
+   "ru": "Чётность",
+   "zh-Hans": "奇偶"
+  },
+  "body:system_51.GJ_433.GJ_433_n.GJ_433_n_I": {
+   "en": "Bit",
+   "es": "Bit",
+   "ja": "ビット",
+   "native": "Bit",
+   "native_lang": "en",
+   "ru": "Бит",
+   "zh-Hans": "比特"
+  },
+  "body:system_51.GJ_433.GJ_433_o": {
+   "en": "Qubit",
+   "es": "Cúbit",
+   "ja": "量子ビット",
+   "native": "Qubit",
+   "native_lang": "en",
+   "ru": "Кубит",
+   "zh-Hans": "量子比特"
+  },
+  "body:system_52.Procyon_A.Procyon_A_b": {
+   "en": "Frevo",
+   "es": "Frevo",
+   "ja": "フレーヴォ",
+   "native": "Frevo",
+   "native_lang": "pt",
+   "ru": "Фрево",
+   "zh-Hans": "弗雷沃"
+  },
+  "body:system_52.Procyon_A.Procyon_A_c": {
+   "en": "Maracatu",
+   "es": "Maracatu",
+   "ja": "マラカトゥ",
+   "native": "Maracatu",
+   "native_lang": "pt",
+   "ru": "Маракату",
+   "zh-Hans": "马拉卡图"
+  },
+  "body:system_52.Procyon_A.Procyon_A_d": {
+   "en": "Samba",
+   "es": "Samba",
+   "ja": "サンバ",
+   "native": "Samba",
+   "native_lang": "pt",
+   "ru": "Самба",
+   "zh-Hans": "桑巴"
+  },
+  "body:system_52.Procyon_A.Procyon_A_e": {
+   "en": "Choro",
+   "es": "Choro",
+   "ja": "ショーロ",
+   "native": "Choro",
+   "native_lang": "pt",
+   "ru": "Шоро",
+   "zh-Hans": "肖罗"
+  },
+  "body:system_52.Procyon_A.Procyon_A_f": {
+   "en": "Baiao",
+   "es": "Baião",
+   "ja": "バイアン",
+   "native": "Baião",
+   "native_lang": "pt",
+   "ru": "Байан",
+   "zh-Hans": "拜昂"
+  },
+  "body:system_52.Procyon_A.Procyon_A_g": {
+   "en": "Forro",
+   "es": "Forró",
+   "ja": "フォホー",
+   "native": "Forró",
+   "native_lang": "pt",
+   "ru": "Форро",
+   "zh-Hans": "福罗"
+  },
+  "body:system_52.Procyon_A.Procyon_A_h": {
+   "en": "Xote",
+   "es": "Xote",
+   "ja": "ショッチ",
+   "native": "Xote",
+   "native_lang": "pt",
+   "ru": "Шоте",
+   "zh-Hans": "肖特"
+  },
+  "body:system_52.Procyon_A.Procyon_A_i": {
+   "en": "Bossa",
+   "es": "Bossa",
+   "ja": "ボサ",
+   "native": "Bossa",
+   "native_lang": "pt",
+   "ru": "Босса",
+   "zh-Hans": "波萨"
+  },
+  "body:system_52.Procyon_A.Procyon_A_j": {
+   "en": "Lundu",
+   "es": "Lundú",
+   "ja": "ルンドゥ",
+   "native": "Lundu",
+   "native_lang": "pt",
+   "ru": "Лунду",
+   "zh-Hans": "伦杜"
+  },
+  "body:system_52.Procyon_A.Procyon_A_k": {
+   "en": "Maxixe",
+   "es": "Maxixe",
+   "ja": "マシシ",
+   "native": "Maxixe",
+   "native_lang": "pt",
+   "ru": "Машиши",
+   "zh-Hans": "马希谢"
+  },
+  "body:system_52.barycenter_ab.Procyon__BA__K1": {
+   "en": "Pandeiro",
+   "es": "Pandeiro",
+   "ja": "パンデイロ",
+   "native": "Pandeiro",
+   "native_lang": "pt",
+   "ru": "Пандейру",
+   "zh-Hans": "潘德罗鼓"
+  },
+  "body:system_52.barycenter_ab.Procyon__BA__K2": {
+   "en": "Cuica",
+   "es": "Cuíca",
+   "ja": "クイーカ",
+   "native": "Cuíca",
+   "native_lang": "pt",
+   "ru": "Куика",
+   "zh-Hans": "库伊卡鼓"
+  },
+  "body:system_52.barycenter_ab.Procyon__BA__K3": {
+   "en": "Berimbau",
+   "es": "Berimbau",
+   "ja": "ビリンバウ",
+   "native": "Berimbau",
+   "native_lang": "pt",
+   "ru": "Беримбау",
+   "zh-Hans": "贝林巴乌"
   },
   "body:system_53.Gliese_674.GJ_674_b": {
    "en": "Eagle-owl",
+   "es": "Búho Real",
+   "ja": "ワシミミズク",
    "native": "Eagle-owl",
    "native_lang": "en",
-   "ru": "Филин"
+   "ru": "Филин",
+   "zh-Hans": "雕鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_K1": {
    "en": "Great Grey",
+   "es": "Cárabo Lapón",
+   "ja": "カラフトフクロウ",
    "native": "Great Grey",
    "native_lang": "en",
-   "ru": "Бородатая неясыть"
+   "ru": "Бородатая неясыть",
+   "zh-Hans": "乌林鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_K2": {
    "en": "Long-eared",
+   "es": "Búho Chico",
+   "ja": "トラフズク",
    "native": "Long-eared",
    "native_lang": "en",
-   "ru": "Ушастая сова"
+   "ru": "Ушастая сова",
+   "zh-Hans": "长耳鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_K3": {
    "en": "Short-eared",
+   "es": "Búho Campestre",
+   "ja": "コミミズク",
    "native": "Short-eared",
    "native_lang": "en",
-   "ru": "Болотная сова"
+   "ru": "Болотная сова",
+   "zh-Hans": "短耳鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_c": {
    "en": "Scops",
+   "es": "Autillo",
+   "ja": "コノハズク",
    "native": "Scops",
    "native_lang": "en",
-   "ru": "Сплюшка"
+   "ru": "Сплюшка",
+   "zh-Hans": "角鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_d": {
    "en": "Pygmy",
+   "es": "Mochuelo Chico",
+   "ja": "スズメフクロウ",
    "native": "Pygmy",
    "native_lang": "en",
-   "ru": "Сычик"
+   "ru": "Сычик",
+   "zh-Hans": "花头鸺鹠"
   },
   "body:system_53.Gliese_674.Gliese_674_e": {
    "en": "Little Owl",
+   "es": "Mochuelo",
+   "ja": "コキンメフクロウ",
    "native": "Little Owl",
    "native_lang": "en",
-   "ru": "Домовый сыч"
+   "ru": "Домовый сыч",
+   "zh-Hans": "纵纹腹小鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_f": {
    "en": "Barn Owl",
+   "es": "Lechuza",
+   "ja": "メンフクロウ",
    "native": "Barn Owl",
    "native_lang": "en",
-   "ru": "Сипуха"
+   "ru": "Сипуха",
+   "zh-Hans": "仓鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_g": {
    "en": "Tawny",
+   "es": "Cárabo",
+   "ja": "モリフクロウ",
    "native": "Tawny",
    "native_lang": "en",
-   "ru": "Неясыть"
+   "ru": "Неясыть",
+   "zh-Hans": "灰林鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_h": {
    "en": "Snowy",
+   "es": "Búho Nival",
+   "ja": "シロフクロウ",
    "native": "Snowy",
    "native_lang": "en",
-   "ru": "Белая сова"
+   "ru": "Белая сова",
+   "zh-Hans": "雪鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_i": {
    "en": "Boreal",
+   "es": "Mochuelo Boreal",
+   "ja": "キンメフクロウ",
    "native": "Boreal",
    "native_lang": "en",
-   "ru": "Мохноногий сыч"
+   "ru": "Мохноногий сыч",
+   "zh-Hans": "鬼鸮"
   },
   "body:system_53.Gliese_674.Gliese_674_j": {
    "en": "Hawk-owl",
+   "es": "Cárabo Gavilán",
+   "ja": "オナガフクロウ",
    "native": "Hawk-owl",
    "native_lang": "en",
-   "ru": "Ястребиная сова"
+   "ru": "Ястребиная сова",
+   "zh-Hans": "猛鸮"
   },
   "body:system_54.HD_85512.HD_85512_K1": {
    "en": "Eider",
+   "es": "Eider",
+   "ja": "ケワタガモ",
    "native": "Eider",
    "native_lang": "en",
-   "ru": "Гага"
+   "ru": "Гага",
+   "zh-Hans": "绒鸭"
   },
   "body:system_54.HD_85512.HD_85512_K2": {
    "en": "Loon",
+   "es": "Colimbo",
+   "ja": "アビ",
    "native": "Loon",
    "native_lang": "en",
-   "ru": "Гагара"
+   "ru": "Гагара",
+   "zh-Hans": "潜鸟"
   },
   "body:system_54.HD_85512.HD_85512_K3": {
    "en": "Tern",
+   "es": "Charrán",
+   "ja": "アジサシ",
    "native": "Tern",
    "native_lang": "en",
-   "ru": "Крачка"
+   "ru": "Крачка",
+   "zh-Hans": "燕鸥"
   },
   "body:system_54.HD_85512.HD_85512_b": {
    "en": "Flamingo",
+   "es": "Flamenco",
+   "ja": "フラミンゴ",
    "native": "Flamingo",
    "native_lang": "en",
-   "ru": "Фламинго"
+   "ru": "Фламинго",
+   "zh-Hans": "火烈鸟"
   },
   "body:system_54.HD_85512.HD_85512_c": {
    "en": "Pelican",
+   "es": "Pelícano",
+   "ja": "ペリカン",
    "native": "Pelican",
    "native_lang": "en",
-   "ru": "Пеликан"
+   "ru": "Пеликан",
+   "zh-Hans": "鹈鹕"
   },
   "body:system_54.HD_85512.HD_85512_d": {
    "en": "Ibis",
+   "es": "Ibis",
+   "ja": "トキ",
    "native": "Ibis",
    "native_lang": "en",
-   "ru": "Ибис"
+   "ru": "Ибис",
+   "zh-Hans": "朱鹭"
   },
   "body:system_54.HD_85512.HD_85512_e": {
    "en": "Stork",
+   "es": "Cigüeña",
+   "ja": "コウノトリ",
    "native": "Stork",
    "native_lang": "en",
-   "ru": "Аист"
+   "ru": "Аист",
+   "zh-Hans": "白鹳"
   },
   "body:system_54.HD_85512.HD_85512_f": {
    "en": "Crane",
+   "es": "Grulla",
+   "ja": "ツル",
    "native": "Crane",
    "native_lang": "en",
-   "ru": "Журавль"
+   "ru": "Журавль",
+   "zh-Hans": "鹤"
   },
   "body:system_54.HD_85512.HD_85512_g": {
    "en": "Albatross",
+   "es": "Albatros",
+   "ja": "アホウドリ",
    "native": "Albatross",
    "native_lang": "en",
-   "ru": "Альбатрос"
+   "ru": "Альбатрос",
+   "zh-Hans": "信天翁"
   },
   "body:system_54.HD_85512.HD_85512_h": {
    "en": "Petrel",
+   "es": "Petrel",
+   "ja": "ミズナギドリ",
    "native": "Petrel",
    "native_lang": "en",
-   "ru": "Буревестник"
+   "ru": "Буревестник",
+   "zh-Hans": "海燕"
+  },
+  "body:system_55.Gliese_163.GJ_163_b": {
+   "en": "Haldi",
+   "es": "Haldi",
+   "ja": "ハルディ",
+   "native": "हल्दी",
+   "native_lang": "hi",
+   "ru": "Халди",
+   "translit": "Haldī",
+   "zh-Hans": "姜黄"
+  },
+  "body:system_55.Gliese_163.GJ_163_c": {
+   "en": "Kesar",
+   "es": "Kesar",
+   "ja": "ケサル",
+   "native": "केसर",
+   "native_lang": "hi",
+   "ru": "Кесар",
+   "translit": "Kesar",
+   "zh-Hans": "藏红花"
+  },
+  "body:system_55.Gliese_163.GJ_163_d": {
+   "en": "Hing",
+   "es": "Hing",
+   "ja": "ヒング",
+   "native": "हींग",
+   "native_lang": "hi",
+   "ru": "Хинг",
+   "translit": "Hīṅg",
+   "zh-Hans": "阿魏"
+  },
+  "body:system_55.Gliese_163.Gliese_163_e": {
+   "en": "Mirch",
+   "es": "Mirch",
+   "ja": "ミルチ",
+   "native": "मिर्च",
+   "native_lang": "hi",
+   "ru": "Мирч",
+   "translit": "Mirc",
+   "zh-Hans": "辣椒"
+  },
+  "body:system_55.Gliese_163.Gliese_163_f": {
+   "en": "Adrak",
+   "es": "Adrak",
+   "ja": "アドラク",
+   "native": "अदरक",
+   "native_lang": "hi",
+   "ru": "Адрак",
+   "translit": "Adrak",
+   "zh-Hans": "生姜"
+  },
+  "body:system_55.Gliese_163.Gliese_163_g": {
+   "en": "Jeera",
+   "es": "Jira",
+   "ja": "ジーラ",
+   "native": "जीरा",
+   "native_lang": "hi",
+   "ru": "Джира",
+   "translit": "Jīrā",
+   "zh-Hans": "孜然"
+  },
+  "body:system_55.Gliese_163.Gliese_163_h": {
+   "en": "Laung",
+   "es": "Laung",
+   "ja": "ラウング",
+   "native": "लौंग",
+   "native_lang": "hi",
+   "ru": "Лаунг",
+   "translit": "Lauṅg",
+   "zh-Hans": "丁香"
+  },
+  "body:system_55.Gliese_163.Gliese_163_i": {
+   "en": "Dalchini",
+   "es": "Dalchini",
+   "ja": "ダールチーニー",
+   "native": "दालचीनी",
+   "native_lang": "hi",
+   "ru": "Дальчини",
+   "translit": "Dālcīnī",
+   "zh-Hans": "肉桂"
+  },
+  "body:system_55.Gliese_163.Gliese_163_j": {
+   "en": "Elaichi",
+   "es": "Elaichi",
+   "ja": "イラーイチー",
+   "native": "इलायची",
+   "native_lang": "hi",
+   "ru": "Элайчи",
+   "translit": "Ilāycī",
+   "zh-Hans": "小豆蔻"
+  },
+  "body:system_55.Gliese_163.Gliese_163_k": {
+   "en": "Methi",
+   "es": "Methi",
+   "ja": "メーティ",
+   "native": "मेथी",
+   "native_lang": "hi",
+   "ru": "Метхи",
+   "translit": "Methī",
+   "zh-Hans": "葫芦巴"
+  },
+  "body:system_55.Gliese_163.Gliese_163_k.Gliese_163_k_I": {
+   "en": "Saunf",
+   "es": "Saunf",
+   "ja": "サウンフ",
+   "native": "सौंफ",
+   "native_lang": "hi",
+   "ru": "Саунф",
+   "translit": "Sauṁf",
+   "zh-Hans": "茴香"
+  },
+  "body:system_56.Gliese_422.GJ_422_b": {
+   "en": "Tangaroa",
+   "es": "Tangaroa",
+   "ja": "タンガロア",
+   "native": "Tangaroa",
+   "native_lang": "mi",
+   "ru": "Тангароа",
+   "zh-Hans": "坦加罗阿"
+  },
+  "body:system_56.Gliese_422.Gliese_422_c": {
+   "en": "Ruaumoko",
+   "es": "Ruaumoko",
+   "ja": "ルーアウモコ",
+   "native": "Rūaumoko",
+   "native_lang": "mi",
+   "ru": "Руаумоко",
+   "zh-Hans": "鲁奥莫科"
+  },
+  "body:system_56.Gliese_422.Gliese_422_d": {
+   "en": "Mahuika",
+   "es": "Mahuika",
+   "ja": "マフイカ",
+   "native": "Mahuika",
+   "native_lang": "mi",
+   "ru": "Махуика",
+   "zh-Hans": "马胡伊卡"
+  },
+  "body:system_56.Gliese_422.Gliese_422_e": {
+   "en": "Tawhirimatea",
+   "es": "Tawhirimatea",
+   "ja": "ターフィリマーテア",
+   "native": "Tāwhirimātea",
+   "native_lang": "mi",
+   "ru": "Тафиримате-а",
+   "zh-Hans": "塔维里马泰亚"
+  },
+  "body:system_56.Gliese_422.Gliese_422_f": {
+   "en": "Rongo",
+   "es": "Rongo",
+   "ja": "ロンゴ",
+   "native": "Rongo",
+   "native_lang": "mi",
+   "ru": "Ронго",
+   "zh-Hans": "龙戈"
   },
   "body:system_57.HD_10360.HD_10360_K1": {
    "en": "Kesho",
+   "es": "Kesho",
+   "ja": "ケショ",
    "native": "Kesho",
    "native_lang": "sw",
-   "ru": "Кешо"
+   "ru": "Кешо",
+   "zh-Hans": "凯绍"
   },
   "body:system_57.HD_10360.HD_10360_b": {
    "en": "Mwangaza",
+   "es": "Mwangaza",
+   "ja": "ムワンガザ",
    "native": "Mwangaza",
    "native_lang": "sw",
-   "ru": "Мвангаза"
+   "ru": "Мвангаза",
+   "zh-Hans": "姆万加扎"
   },
   "body:system_57.HD_10360.HD_10360_c": {
    "en": "Mchana",
+   "es": "Mchana",
+   "ja": "ムチャナ",
    "native": "Mchana",
    "native_lang": "sw",
-   "ru": "Мчана"
+   "ru": "Мчана",
+   "zh-Hans": "姆查纳"
   },
   "body:system_57.HD_10360.HD_10360_d": {
    "en": "Alfajiri",
+   "es": "Alfajiri",
+   "ja": "アルファジリ",
    "native": "Alfajiri",
    "native_lang": "sw",
-   "ru": "Альфаджири"
+   "ru": "Альфаджири",
+   "zh-Hans": "阿尔法吉里"
   },
   "body:system_57.HD_10360.HD_10360_e": {
    "en": "Jioni",
+   "es": "Jioni",
+   "ja": "ジオニ",
    "native": "Jioni",
    "native_lang": "sw",
-   "ru": "Джиони"
+   "ru": "Джиони",
+   "zh-Hans": "吉奥尼"
   },
   "body:system_57.HD_10360.HD_10360_f": {
    "en": "Machweo",
+   "es": "Machweo",
+   "ja": "マチュウェオ",
    "native": "Machweo",
    "native_lang": "sw",
-   "ru": "Мачвео"
+   "ru": "Мачвео",
+   "zh-Hans": "马奇韦奥"
   },
   "body:system_57.HD_10360.HD_10360_g": {
    "en": "Usiku",
+   "es": "Usiku",
+   "ja": "ウシク",
    "native": "Usiku",
    "native_lang": "sw",
-   "ru": "Усику"
+   "ru": "Усику",
+   "zh-Hans": "乌西库"
   },
   "body:system_57.barycenter_ab.p_Eridani__A__K1": {
    "en": "Barafu",
+   "es": "Barafu",
+   "ja": "バラフ",
    "native": "Barafu",
    "native_lang": "sw",
-   "ru": "Барафу"
+   "ru": "Барафу",
+   "zh-Hans": "巴拉富"
   },
   "body:system_57.barycenter_ab.p_Eridani__A__K2": {
    "en": "Sauti",
+   "es": "Sauti",
+   "ja": "サウティ",
    "native": "Sauti",
    "native_lang": "sw",
-   "ru": "Сауте"
+   "ru": "Сауте",
+   "zh-Hans": "绍蒂"
   },
   "body:system_57.barycenter_ab.p_Eridani__A__K3": {
    "en": "Ujumbe",
+   "es": "Ujumbe",
+   "ja": "ウジュンベ",
    "native": "Ujumbe",
    "native_lang": "sw",
-   "ru": "Уджумбе"
+   "ru": "Уджумбе",
+   "zh-Hans": "乌琼贝"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_b": {
    "en": "Joto",
+   "es": "Joto",
+   "ja": "ジョト",
    "native": "Joto",
    "native_lang": "sw",
-   "ru": "Джото"
+   "ru": "Джото",
+   "zh-Hans": "乔托"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_c": {
    "en": "Kaa",
+   "es": "Kaa",
+   "ja": "カア",
    "native": "Kaa",
    "native_lang": "sw",
-   "ru": "Каа"
+   "ru": "Каа",
+   "zh-Hans": "卡阿"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_d": {
    "en": "Jivu",
+   "es": "Jivu",
+   "ja": "ジヴ",
    "native": "Jivu",
    "native_lang": "sw",
-   "ru": "Дживу"
+   "ru": "Дживу",
+   "zh-Hans": "吉武"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_e": {
    "en": "Mwako",
+   "es": "Mwako",
+   "ja": "ムワコ",
    "native": "Mwako",
    "native_lang": "sw",
-   "ru": "Мвако"
+   "ru": "Мвако",
+   "zh-Hans": "姆瓦科"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_f": {
    "en": "Radi",
+   "es": "Radi",
+   "ja": "ラディ",
    "native": "Radi",
    "native_lang": "sw",
-   "ru": "Ради"
+   "ru": "Ради",
+   "zh-Hans": "拉迪"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_g": {
    "en": "Umeme",
+   "es": "Umeme",
+   "ja": "ウメメ",
    "native": "Umeme",
    "native_lang": "sw",
-   "ru": "Умеме"
+   "ru": "Умеме",
+   "zh-Hans": "乌梅梅"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_h": {
    "en": "Ngurumo",
+   "es": "Ngurumo",
+   "ja": "ングルモ",
    "native": "Ngurumo",
    "native_lang": "sw",
-   "ru": "Нгурумо"
+   "ru": "Нгурумо",
+   "zh-Hans": "恩古鲁莫"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_i": {
    "en": "Mchanga",
+   "es": "Mchanga",
+   "ja": "ムチャンガ",
    "native": "Mchanga",
    "native_lang": "sw",
-   "ru": "Мчанга"
+   "ru": "Мчанга",
+   "zh-Hans": "姆昌加"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_j": {
    "en": "Tanuri",
+   "es": "Tanuri",
+   "ja": "タヌリ",
    "native": "Tanuri",
    "native_lang": "sw",
-   "ru": "Танури"
+   "ru": "Танури",
+   "zh-Hans": "塔努里"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_k": {
    "en": "Mnara",
+   "es": "Mnara",
+   "ja": "ムナラ",
    "native": "Mnara",
    "native_lang": "sw",
-   "ru": "Мнара"
+   "ru": "Мнара",
+   "zh-Hans": "姆纳拉"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_l": {
    "en": "Tufani",
+   "es": "Tufani",
+   "ja": "トゥファニ",
    "native": "Tufani",
    "native_lang": "sw",
-   "ru": "Туфани"
+   "ru": "Туфани",
+   "zh-Hans": "图法尼"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_m": {
    "en": "Wingu",
+   "es": "Wingu",
+   "ja": "ウィング",
    "native": "Wingu",
    "native_lang": "sw",
-   "ru": "Вингу"
+   "ru": "Вингу",
+   "zh-Hans": "温古"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_n": {
    "en": "Kivuko",
+   "es": "Kivuko",
+   "ja": "キヴコ",
    "native": "Kivuko",
    "native_lang": "sw",
-   "ru": "Кивуко"
+   "ru": "Кивуко",
+   "zh-Hans": "基武科"
   },
   "body:system_57.p_Eridani_A.p_Eridani_A_o": {
    "en": "Bandari",
+   "es": "Bandari",
+   "ja": "バンダリ",
    "native": "Bandari",
    "native_lang": "sw",
-   "ru": "Бандари"
+   "ru": "Бандари",
+   "zh-Hans": "班达里"
+  },
+  "body:system_58.Gliese_514.GJ_514_b": {
+   "en": "Su Song",
+   "es": "Su Song",
+   "ja": "蘇頌",
+   "native": "苏颂",
+   "native_lang": "zh-Hans",
+   "ru": "Су Сун",
+   "translit": "Sū Sòng",
+   "zh-Hans": "苏颂"
+  },
+  "body:system_58.Gliese_514.Gliese_514_K1": {
+   "en": "Song Yingxing",
+   "es": "Song Yingxing",
+   "ja": "宋応星",
+   "native": "宋应星",
+   "native_lang": "zh-Hans",
+   "ru": "Сун Инсин",
+   "translit": "Sòng Yìngxīng",
+   "zh-Hans": "宋应星"
+  },
+  "body:system_58.Gliese_514.Gliese_514_K2": {
+   "en": "Bi Sheng",
+   "es": "Bi Sheng",
+   "ja": "畢昇",
+   "native": "毕昇",
+   "native_lang": "zh-Hans",
+   "ru": "Би Шэн",
+   "translit": "Bì Shēng",
+   "zh-Hans": "毕昇"
+  },
+  "body:system_58.Gliese_514.Gliese_514_K3": {
+   "en": "Li Shizhen",
+   "es": "Li Shizhen",
+   "ja": "李時珍",
+   "native": "李时珍",
+   "native_lang": "zh-Hans",
+   "ru": "Ли Шичжэнь",
+   "translit": "Lǐ Shízhēn",
+   "zh-Hans": "李时珍"
+  },
+  "body:system_58.Gliese_514.Gliese_514_c": {
+   "en": "Gan De",
+   "es": "Gan De",
+   "ja": "甘徳",
+   "native": "甘德",
+   "native_lang": "zh-Hans",
+   "ru": "Гань Дэ",
+   "translit": "Gān Dé",
+   "zh-Hans": "甘德"
+  },
+  "body:system_58.Gliese_514.Gliese_514_d": {
+   "en": "Shi Shen",
+   "es": "Shi Shen",
+   "ja": "石申",
+   "native": "石申",
+   "native_lang": "zh-Hans",
+   "ru": "Ши Шэнь",
+   "translit": "Shí Shēn",
+   "zh-Hans": "石申"
+  },
+  "body:system_58.Gliese_514.Gliese_514_e": {
+   "en": "Zhang Heng",
+   "es": "Zhang Heng",
+   "ja": "張衡",
+   "native": "张衡",
+   "native_lang": "zh-Hans",
+   "ru": "Чжан Хэн",
+   "translit": "Zhāng Héng",
+   "zh-Hans": "张衡"
+  },
+  "body:system_58.Gliese_514.Gliese_514_f": {
+   "en": "Zu Chongzhi",
+   "es": "Zu Chongzhi",
+   "ja": "祖沖之",
+   "native": "祖冲之",
+   "native_lang": "zh-Hans",
+   "ru": "Цзу Чунчжи",
+   "translit": "Zǔ Chōngzhī",
+   "zh-Hans": "祖冲之"
+  },
+  "body:system_58.Gliese_514.Gliese_514_g": {
+   "en": "Yixing",
+   "es": "Yixing",
+   "ja": "一行",
+   "native": "一行",
+   "native_lang": "zh-Hans",
+   "ru": "Исин",
+   "translit": "Yīxíng",
+   "zh-Hans": "一行"
+  },
+  "body:system_58.Gliese_514.Gliese_514_h": {
+   "en": "Shen Kuo",
+   "es": "Shen Kuo",
+   "ja": "沈括",
+   "native": "沈括",
+   "native_lang": "zh-Hans",
+   "ru": "Шэнь Ко",
+   "translit": "Shěn Kuò",
+   "zh-Hans": "沈括"
+  },
+  "body:system_58.Gliese_514.Gliese_514_i": {
+   "en": "Guo Shoujing",
+   "es": "Guo Shoujing",
+   "ja": "郭守敬",
+   "native": "郭守敬",
+   "native_lang": "zh-Hans",
+   "ru": "Го Шоуцзин",
+   "translit": "Guō Shǒujìng",
+   "zh-Hans": "郭守敬"
+  },
+  "body:system_58.Gliese_514.Gliese_514_j": {
+   "en": "Xu Guangqi",
+   "es": "Xu Guangqi",
+   "ja": "徐光啓",
+   "native": "徐光启",
+   "native_lang": "zh-Hans",
+   "ru": "Сюй Гуанци",
+   "translit": "Xú Guāngqǐ",
+   "zh-Hans": "徐光启"
+  },
+  "body:system_59.Gliese_625.GJ_625_b": {
+   "en": "Sluice",
+   "es": "Esclusa",
+   "ja": "スルース",
+   "native": "Sluice",
+   "native_lang": "en",
+   "ru": "Шлюз",
+   "zh-Hans": "溜槽"
+  },
+  "body:system_59.Gliese_625.Gliese_625_c": {
+   "en": "Dynamite",
+   "es": "Dinamita",
+   "ja": "ダイナマイト",
+   "native": "Dynamite",
+   "native_lang": "en",
+   "ru": "Динамит",
+   "zh-Hans": "炸药"
+  },
+  "body:system_59.Gliese_625.Gliese_625_d": {
+   "en": "Fuse",
+   "es": "Mecha",
+   "ja": "導火線",
+   "native": "Fuse",
+   "native_lang": "en",
+   "ru": "Запал",
+   "zh-Hans": "导火索"
+  },
+  "body:system_59.Gliese_625.Gliese_625_e": {
+   "en": "Drill",
+   "es": "Taladro",
+   "ja": "ドリル",
+   "native": "Drill",
+   "native_lang": "en",
+   "ru": "Бур",
+   "zh-Hans": "钻机"
+  },
+  "body:system_59.Gliese_625.Gliese_625_f": {
+   "en": "Shovel",
+   "es": "Pala",
+   "ja": "シャベル",
+   "native": "Shovel",
+   "native_lang": "en",
+   "ru": "Лопата",
+   "zh-Hans": "铁锹"
+  },
+  "body:system_59.Gliese_625.Gliese_625_g": {
+   "en": "Pan",
+   "es": "Batea",
+   "ja": "パン皿",
+   "native": "Pan",
+   "native_lang": "en",
+   "ru": "Лоток",
+   "zh-Hans": "淘金盘"
+  },
+  "body:system_59.Gliese_625.Gliese_625_h": {
+   "en": "Rocker",
+   "es": "Cuna",
+   "ja": "ロッカー",
+   "native": "Rocker",
+   "native_lang": "en",
+   "ru": "Вашгерд",
+   "zh-Hans": "摇床"
+  },
+  "body:system_59.Gliese_625.Gliese_625_i": {
+   "en": "Cradle",
+   "es": "Artesa",
+   "ja": "クレードル",
+   "native": "Cradle",
+   "native_lang": "en",
+   "ru": "Колыбель",
+   "zh-Hans": "淘金摇篮"
+  },
+  "body:system_59.Gliese_625.Gliese_625_i.Gliese_625_i_I": {
+   "en": "Nugget II",
+   "es": "Pepita II",
+   "ja": "ナゲット2",
+   "native": "Nugget II",
+   "native_lang": "en",
+   "ru": "Самородок-2",
+   "zh-Hans": "金块二号"
+  },
+  "body:system_59.Gliese_625.Gliese_625_j": {
+   "en": "Claim",
+   "es": "Concesión",
+   "ja": "鉱区",
+   "native": "Claim",
+   "native_lang": "en",
+   "ru": "Заявка",
+   "zh-Hans": "矿权"
+  },
+  "body:system_59.Gliese_625.Gliese_625_k": {
+   "en": "Stake",
+   "es": "Estaca",
+   "ja": "杭",
+   "native": "Stake",
+   "native_lang": "en",
+   "ru": "Колышек",
+   "zh-Hans": "界桩"
+  },
+  "body:system_59.Gliese_625.Gliese_625_l": {
+   "en": "Tailings",
+   "es": "Relaves",
+   "ja": "尾鉱",
+   "native": "Tailings",
+   "native_lang": "en",
+   "ru": "Отвал",
+   "zh-Hans": "尾矿"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_K1": {
+   "en": "Erhu",
+   "es": "Erhu",
+   "ja": "二胡",
+   "native": "二胡",
+   "native_lang": "zh-Hans",
+   "ru": "Эрху",
+   "translit": "Èrhú",
+   "zh-Hans": "二胡"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_K2": {
+   "en": "Luo",
+   "es": "Luo",
+   "ja": "銅鑼",
+   "native": "锣",
+   "native_lang": "zh-Hans",
+   "ru": "Ло",
+   "translit": "Luó",
+   "zh-Hans": "锣"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_b": {
+   "en": "Zhong",
+   "es": "Zhong",
+   "ja": "鐘",
+   "native": "钟",
+   "native_lang": "zh-Hans",
+   "ru": "Чжун",
+   "translit": "Zhōng",
+   "zh-Hans": "钟"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_c": {
+   "en": "Gu",
+   "es": "Gu",
+   "ja": "鼓",
+   "native": "鼓",
+   "native_lang": "zh-Hans",
+   "ru": "Гу",
+   "translit": "Gǔ",
+   "zh-Hans": "鼓"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_d": {
+   "en": "Qing",
+   "es": "Qing",
+   "ja": "磬",
+   "native": "磬",
+   "native_lang": "zh-Hans",
+   "ru": "Цин",
+   "translit": "Qìng",
+   "zh-Hans": "磬"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_e": {
+   "en": "Sheng",
+   "es": "Sheng",
+   "ja": "笙",
+   "native": "笙",
+   "native_lang": "zh-Hans",
+   "ru": "Шэн",
+   "translit": "Shēng",
+   "zh-Hans": "笙"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_f": {
+   "en": "Qin",
+   "es": "Qin",
+   "ja": "琴",
+   "native": "琴",
+   "native_lang": "zh-Hans",
+   "ru": "Цинь",
+   "translit": "Qín",
+   "zh-Hans": "琴"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_g": {
+   "en": "Zheng",
+   "es": "Zheng",
+   "ja": "箏",
+   "native": "筝",
+   "native_lang": "zh-Hans",
+   "ru": "Чжэн",
+   "translit": "Zhēng",
+   "zh-Hans": "筝"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_h": {
+   "en": "Xun",
+   "es": "Xun",
+   "ja": "塤",
+   "native": "埙",
+   "native_lang": "zh-Hans",
+   "ru": "Сюнь",
+   "translit": "Xūn",
+   "zh-Hans": "埙"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_i": {
+   "en": "Xiao",
+   "es": "Xiao",
+   "ja": "簫",
+   "native": "箫",
+   "native_lang": "zh-Hans",
+   "ru": "Сяо",
+   "translit": "Xiāo",
+   "zh-Hans": "箫"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_j": {
+   "en": "Di",
+   "es": "Di",
+   "ja": "笛",
+   "native": "笛",
+   "native_lang": "zh-Hans",
+   "ru": "Ди",
+   "translit": "Dí",
+   "zh-Hans": "笛"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_k": {
+   "en": "Pipa",
+   "es": "Pipa",
+   "ja": "琵琶",
+   "native": "琵琶",
+   "native_lang": "zh-Hans",
+   "ru": "Пипа",
+   "translit": "Pípa",
+   "zh-Hans": "琵琶"
+  },
+  "body:system_6.Luyten's_Star.Luyten's_Star_l": {
+   "en": "Se",
+   "es": "Se",
+   "ja": "瑟",
+   "native": "瑟",
+   "native_lang": "zh-Hans",
+   "ru": "Сэ",
+   "translit": "Sè",
+   "zh-Hans": "瑟"
   },
   "body:system_60.Proxima_Centauri.Proxima_Cen_b": {
    "en": "Mokosh",
+   "es": "Mókosh",
+   "ja": "モコシ",
    "native": "Мокошь",
    "native_lang": "ru",
-   "ru": "Мокошь"
+   "ru": "Мокошь",
+   "zh-Hans": "莫科什"
   },
   "body:system_60.Proxima_Centauri.Proxima_Cen_d": {
    "en": "Dazhbog",
+   "es": "Dazhbog",
+   "ja": "ダジボーグ",
    "native": "Дажьбог",
    "native_lang": "ru",
-   "ru": "Дажьбог"
+   "ru": "Дажьбог",
+   "zh-Hans": "达日博格"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_c": {
    "en": "Semargl",
+   "es": "Semargl",
+   "ja": "セマルグル",
    "native": "Семаргл",
    "native_lang": "ru",
-   "ru": "Семаргл"
+   "ru": "Семаргл",
+   "zh-Hans": "西马尔格"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_e": {
    "en": "Khors",
+   "es": "Jors",
+   "ja": "ホルス",
    "native": "Хорс",
    "native_lang": "ru",
-   "ru": "Хорс"
+   "ru": "Хорс",
+   "zh-Hans": "霍尔斯"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_f": {
    "en": "Yarilo",
+   "es": "Yarilo",
+   "ja": "ヤリーロ",
    "native": "Ярило",
    "native_lang": "ru",
-   "ru": "Ярило"
+   "ru": "Ярило",
+   "zh-Hans": "雅里洛"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_g": {
    "en": "Veles",
+   "es": "Veles",
+   "ja": "ヴェーレス",
    "native": "Велес",
    "native_lang": "ru",
-   "ru": "Велес"
+   "ru": "Велес",
+   "zh-Hans": "韦莱斯"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_h": {
    "en": "Morozko",
+   "es": "Morozko",
+   "ja": "モロスコ",
    "native": "Морозко",
    "native_lang": "ru",
-   "ru": "Морозко"
+   "ru": "Морозко",
+   "zh-Hans": "严寒老人"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_i": {
    "en": "Marena",
+   "es": "Marena",
+   "ja": "マレーナ",
    "native": "Марена",
    "native_lang": "ru",
-   "ru": "Марена"
+   "ru": "Марена",
+   "zh-Hans": "玛瑞娜"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_j": {
    "en": "Kitezh",
+   "es": "Kitezh",
+   "ja": "キーテジ",
    "native": "Китеж",
    "native_lang": "ru",
-   "ru": "Китеж"
+   "ru": "Китеж",
+   "zh-Hans": "基捷日"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_k": {
    "en": "Lada",
+   "es": "Lada",
+   "ja": "ラーダ",
    "native": "Лада",
    "native_lang": "ru",
-   "ru": "Лада"
+   "ru": "Лада",
+   "zh-Hans": "拉达"
   },
   "body:system_60.Proxima_Centauri.Proxima_Centauri_l": {
    "en": "Stribog",
+   "es": "Stribog",
+   "ja": "ストリボーグ",
    "native": "Стрибог",
    "native_lang": "ru",
-   "ru": "Стрибог"
+   "ru": "Стрибог",
+   "zh-Hans": "斯特里博格"
   },
   "body:system_61.Fomalhaut.Fomalhaut_K1": {
    "en": "Tyche",
+   "es": "Tique",
+   "ja": "テュケー",
    "native": "Tyche",
    "native_lang": "la",
-   "ru": "Тюхе"
+   "ru": "Тюхе",
+   "zh-Hans": "堤喀"
   },
   "body:system_61.Fomalhaut.Fomalhaut_K2": {
    "en": "Plutus",
+   "es": "Pluto",
+   "ja": "プルートス",
    "native": "Plutus",
    "native_lang": "la",
-   "ru": "Плутос"
+   "ru": "Плутос",
+   "zh-Hans": "普路托斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_K3": {
    "en": "Fors",
+   "es": "Fors",
+   "ja": "フォルス",
    "native": "Fors",
    "native_lang": "la",
-   "ru": "Форс"
+   "ru": "Форс",
+   "zh-Hans": "福尔斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_c": {
    "en": "Atropos",
+   "es": "Átropos",
+   "ja": "アトロポス",
    "native": "Atropos",
    "native_lang": "la",
-   "ru": "Атропос"
+   "ru": "Атропос",
+   "zh-Hans": "阿特罗波斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_d": {
    "en": "Lachesis",
+   "es": "Láquesis",
+   "ja": "ラケシス",
    "native": "Lachesis",
    "native_lang": "la",
-   "ru": "Лахесис"
+   "ru": "Лахесис",
+   "zh-Hans": "拉刻西斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_e": {
    "en": "Clotho",
+   "es": "Cloto",
+   "ja": "クロト",
    "native": "Clotho",
    "native_lang": "la",
-   "ru": "Клото"
+   "ru": "Клото",
+   "zh-Hans": "克洛托"
   },
   "body:system_61.Fomalhaut.Fomalhaut_f": {
    "en": "Nemesis",
+   "es": "Némesis",
+   "ja": "ネメシス",
    "native": "Nemesis",
    "native_lang": "la",
-   "ru": "Немезида"
+   "ru": "Немезида",
+   "zh-Hans": "涅墨西斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_g": {
    "en": "Ananke",
+   "es": "Ananké",
+   "ja": "アナンケ",
    "native": "Ananke",
    "native_lang": "la",
-   "ru": "Ананке"
+   "ru": "Ананке",
+   "zh-Hans": "阿南刻"
   },
   "body:system_61.Fomalhaut.Fomalhaut_h": {
    "en": "Spes",
+   "es": "Spes",
+   "ja": "スペース",
    "native": "Spes",
    "native_lang": "la",
-   "ru": "Спес"
+   "ru": "Спес",
+   "zh-Hans": "斯佩斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_i": {
    "en": "Derceto",
+   "es": "Derceto",
+   "ja": "デルケト",
    "native": "Derceto",
    "native_lang": "la",
-   "ru": "Деркето"
+   "ru": "Деркето",
+   "zh-Hans": "德尔刻托"
   },
   "body:system_61.Fomalhaut.Fomalhaut_j": {
    "en": "Oannes",
+   "es": "Oannes",
+   "ja": "オアンネス",
    "native": "Oannes",
    "native_lang": "la",
-   "ru": "Оаннес"
+   "ru": "Оаннес",
+   "zh-Hans": "欧安尼斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_k": {
    "en": "Felicitas",
+   "es": "Felicitas",
+   "ja": "フェリキタス",
    "native": "Felicitas",
    "native_lang": "la",
-   "ru": "Фелицитас"
+   "ru": "Фелицитас",
+   "zh-Hans": "费利西塔斯"
   },
   "body:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I": {
    "en": "Occasio",
+   "es": "Ocasión",
+   "ja": "オッカシオ",
    "native": "Occasio",
    "native_lang": "la",
-   "ru": "Окказия"
+   "ru": "Окказия",
+   "zh-Hans": "奥卡西奥"
   },
   "body:system_61.Fomalhaut.Fomalhaut_l": {
    "en": "Morta",
+   "es": "Morta",
+   "ja": "モルタ",
    "native": "Morta",
    "native_lang": "la",
-   "ru": "Морта"
+   "ru": "Морта",
+   "zh-Hans": "摩尔塔"
   },
   "body:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I": {
    "en": "Decima",
+   "es": "Décima",
+   "ja": "デキマ",
    "native": "Decima",
    "native_lang": "la",
-   "ru": "Децима"
+   "ru": "Децима",
+   "zh-Hans": "得客玛"
   },
   "body:system_61.Fomalhaut.Lexie": {
    "en": "Lexie",
+   "es": "Lexie",
+   "ja": "レクシー",
    "native": "Lexie",
    "native_lang": "en",
    "ru": "Лекси",
    "zh-Hans": "柏辛",
    "zh-Hant": "柏辛"
   },
+  "body:system_7.Kapteyn's_Star.Kapteyn's_Star_K1": {
+   "en": "Zamani",
+   "es": "Zamani",
+   "ja": "ザマニ",
+   "native": "Zamani",
+   "native_lang": "sw",
+   "ru": "Замани",
+   "zh-Hans": "扎马尼"
+  },
+  "body:system_7.Kapteyn's_Star.Kapteyn's_Star_b": {
+   "en": "Babu",
+   "es": "Babu",
+   "ja": "バブ",
+   "native": "Babu",
+   "native_lang": "sw",
+   "ru": "Бабу",
+   "zh-Hans": "巴布"
+  },
+  "body:system_7.Kapteyn's_Star.Kapteyn's_Star_d": {
+   "en": "Bibi",
+   "es": "Bibi",
+   "ja": "ビビ",
+   "native": "Bibi",
+   "native_lang": "sw",
+   "ru": "Биби",
+   "zh-Hans": "比比"
+  },
+  "body:system_7.Kapteyn's_Star.Kapteyn's_Star_e": {
+   "en": "Hekima",
+   "es": "Hekima",
+   "ja": "ヘキマ",
+   "native": "Hekima",
+   "native_lang": "sw",
+   "ru": "Хекима",
+   "zh-Hans": "赫基马"
+  },
+  "body:system_7.Kapteyn's_Star.Kapteyn's_Star_f": {
+   "en": "Hadithi",
+   "es": "Hadithi",
+   "ja": "ハディシ",
+   "native": "Hadithi",
+   "native_lang": "sw",
+   "ru": "Хадити",
+   "zh-Hans": "哈迪蒂"
+  },
+  "body:system_7.Kapteyn's_Star.Kapteyn's_Star_g": {
+   "en": "Methali",
+   "es": "Methali",
+   "ja": "メサリ",
+   "native": "Methali",
+   "native_lang": "sw",
+   "ru": "Метали",
+   "zh-Hans": "梅塔利"
+  },
+  "body:system_7.Kapteyn's_Star.Kapteyn's_Star_h": {
+   "en": "Kumbukumbu",
+   "es": "Kumbukumbu",
+   "ja": "クンブクンブ",
+   "native": "Kumbukumbu",
+   "native_lang": "sw",
+   "ru": "Кумбукумбу",
+   "zh-Hans": "昆布昆布"
+  },
   "body:system_8.Tau_Ceti.Tau_Ceti_b": {
    "en": "Dao",
+   "es": "Dao",
+   "ja": "稲",
    "native": "稻",
    "native_lang": "zh-Hans",
    "ru": "Дао",
-   "translit": "Dào"
+   "translit": "Dào",
+   "zh-Hans": "稻"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_c": {
    "en": "Mai",
+   "es": "Mai",
+   "ja": "麦",
    "native": "麦",
    "native_lang": "zh-Hans",
    "ru": "Май",
-   "translit": "Mài"
+   "translit": "Mài",
+   "zh-Hans": "麦"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_d": {
    "en": "Shu",
+   "es": "Shu",
+   "ja": "黍",
    "native": "黍",
    "native_lang": "zh-Hans",
    "ru": "Шу",
-   "translit": "Shǔ"
+   "translit": "Shǔ",
+   "zh-Hans": "黍"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_e": {
    "en": "Gaoliang",
+   "es": "Gaoliang",
+   "ja": "高粱",
    "native": "高粱",
    "native_lang": "zh-Hans",
    "ru": "Гаолян",
-   "translit": "Gāoliang"
+   "translit": "Gāoliang",
+   "zh-Hans": "高粱"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_i": {
    "en": "Dou",
+   "es": "Dou",
+   "ja": "豆",
    "native": "豆",
    "native_lang": "zh-Hans",
    "ru": "Доу",
-   "translit": "Dòu"
+   "translit": "Dòu",
+   "zh-Hans": "豆"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_j": {
    "en": "Su",
+   "es": "Su",
+   "ja": "粟",
    "native": "粟",
    "native_lang": "zh-Hans",
    "ru": "Су",
-   "translit": "Sù"
+   "translit": "Sù",
+   "zh-Hans": "粟"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_k": {
    "en": "Liang",
+   "es": "Liang",
+   "ja": "粱",
    "native": "粱",
    "native_lang": "zh-Hans",
    "ru": "Лян",
-   "translit": "Liáng"
+   "translit": "Liáng",
+   "zh-Hans": "粱"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_l": {
    "en": "Ma",
+   "es": "Ma",
+   "ja": "麻",
    "native": "麻",
    "native_lang": "zh-Hans",
    "ru": "Ма",
-   "translit": "Má"
+   "translit": "Má",
+   "zh-Hans": "麻"
   },
   "body:system_8.Tau_Ceti.Tau_Ceti_m": {
    "en": "Gu",
+   "es": "Gu",
+   "ja": "穀",
    "native": "谷",
    "native_lang": "zh-Hans",
    "ru": "Гу",
-   "translit": "Gǔ"
+   "translit": "Gǔ",
+   "zh-Hans": "谷"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_A1": {
    "en": "Zha",
+   "es": "Zha",
+   "ja": "柵",
    "native": "栅",
    "native_lang": "zh-Hans",
    "ru": "Чжа",
-   "translit": "Zhà"
+   "translit": "Zhà",
+   "zh-Hans": "栅"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_K2": {
    "en": "Muchang",
+   "es": "Muchang",
+   "ja": "牧場",
    "native": "牧场",
    "native_lang": "zh-Hans",
    "ru": "Мучан",
-   "translit": "Mùchǎng"
+   "translit": "Mùchǎng",
+   "zh-Hans": "牧场"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_K3": {
    "en": "Quan",
+   "es": "Quan",
+   "ja": "泉",
    "native": "泉",
    "native_lang": "zh-Hans",
    "ru": "Цюань",
-   "translit": "Quán"
+   "translit": "Quán",
+   "zh-Hans": "泉"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_K4": {
    "en": "Yuan",
+   "es": "Yuan",
+   "ja": "園",
    "native": "园",
    "native_lang": "zh-Hans",
    "ru": "Юань",
-   "translit": "Yuán"
+   "translit": "Yuán",
+   "zh-Hans": "园"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_c": {
    "en": "Mei",
+   "es": "Mei",
+   "ja": "梅",
    "native": "梅",
    "native_lang": "zh-Hans",
    "ru": "Мэй",
-   "translit": "Méi"
+   "translit": "Méi",
+   "zh-Hans": "梅"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_d": {
    "en": "Lan",
+   "es": "Lan",
+   "ja": "蘭",
    "native": "兰",
    "native_lang": "zh-Hans",
    "ru": "Лань",
-   "translit": "Lán"
+   "translit": "Lán",
+   "zh-Hans": "兰"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_e": {
    "en": "Zhu",
+   "es": "Zhu",
+   "ja": "竹",
    "native": "竹",
    "native_lang": "zh-Hans",
    "ru": "Чжу",
-   "translit": "Zhú"
+   "translit": "Zhú",
+   "zh-Hans": "竹"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_f": {
    "en": "Ju",
+   "es": "Ju",
+   "ja": "菊",
    "native": "菊",
    "native_lang": "zh-Hans",
    "ru": "Цзюй",
-   "translit": "Jú"
+   "translit": "Jú",
+   "zh-Hans": "菊"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_g": {
    "en": "Mudan",
+   "es": "Mudan",
+   "ja": "牡丹",
    "native": "牡丹",
    "native_lang": "zh-Hans",
    "ru": "Мудань",
-   "translit": "Mǔdān"
+   "translit": "Mǔdān",
+   "zh-Hans": "牡丹"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_h": {
    "en": "He",
+   "es": "He",
+   "ja": "荷",
    "native": "荷",
    "native_lang": "zh-Hans",
    "ru": "Хэ",
-   "translit": "Hé"
+   "translit": "Hé",
+   "zh-Hans": "荷"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_i": {
    "en": "Gui",
+   "es": "Gui",
+   "ja": "桂",
    "native": "桂",
    "native_lang": "zh-Hans",
    "ru": "Гуй",
-   "translit": "Guì"
+   "translit": "Guì",
+   "zh-Hans": "桂"
   },
   "body:system_9.Epsilon_Eridani.Epsilon_Eridani_j": {
    "en": "Tao",
+   "es": "Tao",
+   "ja": "桃",
    "native": "桃",
    "native_lang": "zh-Hans",
    "ru": "Тао",
-   "translit": "Táo"
+   "translit": "Táo",
+   "zh-Hans": "桃"
   },
   "body:system_9.Epsilon_Eridani.eps_Eri_b": {
    "en": "Tianma",
+   "es": "Tianma",
+   "ja": "天馬",
    "native": "天马",
    "native_lang": "zh-Hans",
    "ru": "Тяньма",
-   "translit": "Tiānmǎ"
+   "translit": "Tiānmǎ",
+   "zh-Hans": "天马"
   },
   "body:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_I": {
    "en": "Qi",
+   "es": "Qi",
+   "ja": "騏",
    "native": "骐",
    "native_lang": "zh-Hans",
    "ru": "Ци",
-   "translit": "Qí"
+   "translit": "Qí",
+   "zh-Hans": "骐"
   },
   "body:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_II": {
    "en": "Ji",
+   "es": "Ji",
+   "ja": "驥",
    "native": "骥",
    "native_lang": "zh-Hans",
    "ru": "Цзи",
-   "translit": "Jì"
+   "translit": "Jì",
+   "zh-Hans": "骥"
   },
   "body:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_III": {
    "en": "Hua",
+   "es": "Hua",
+   "ja": "驊",
    "native": "骅",
    "native_lang": "zh-Hans",
    "ru": "Хуа",
-   "translit": "Huá"
+   "translit": "Huá",
+   "zh-Hans": "骅"
   },
   "colony:cyg61_kern": {
    "en": "Mine Alpha",
@@ -2938,172 +8184,570 @@
    "native_lang": "en",
    "ru": "Фомальгаут"
   },
+  "system:1": {
+   "en": "Lukomorye",
+   "es": "Lukomórie",
+   "ja": "ルコモーリエ",
+   "native": "Лукоморье",
+   "native_lang": "ru",
+   "ru": "Лукоморье",
+   "zh-Hans": "卢科莫里耶"
+  },
   "system:10": {
    "en": "Marianne",
+   "es": "Mariana",
+   "ja": "マリアンヌ",
    "native": "Marianne",
    "native_lang": "fr",
-   "ru": "Марианна"
+   "ru": "Марианна",
+   "zh-Hans": "玛丽安娜"
   },
   "system:11": {
    "en": "Ubuntu",
+   "es": "Ubuntu",
+   "ja": "ウブントゥ",
    "native": "Ubuntu",
    "native_lang": "zu",
-   "ru": "Убунту"
+   "ru": "Убунту",
+   "zh-Hans": "乌班图"
   },
   "system:12": {
    "en": "Queqiao",
+   "es": "Queqiao",
+   "ja": "鵲橋",
    "native": "鹊桥",
    "native_lang": "zh-Hans",
    "ru": "Цюэцяо",
-   "translit": "Quèqiáo"
+   "translit": "Quèqiáo",
+   "zh-Hans": "鹊桥"
   },
   "system:13": {
    "en": "Primum Mobile",
+   "es": "Primer Motor",
+   "ja": "第一動者",
    "native": "Primum Mobile",
    "native_lang": "en",
-   "ru": "Перводвигатель"
+   "ru": "Перводвигатель",
+   "zh-Hans": "第一推动"
   },
   "system:14": {
    "en": "Lantern",
+   "es": "Farol",
+   "ja": "ランタン",
    "native": "Lantern",
    "native_lang": "en",
-   "ru": "Фонарь"
+   "ru": "Фонарь",
+   "zh-Hans": "灯笼"
   },
   "system:15": {
    "en": "Nuru",
+   "es": "Nuru",
+   "ja": "ヌル",
    "native": "Nuru",
    "native_lang": "sw",
-   "ru": "Нуру"
+   "ru": "Нуру",
+   "zh-Hans": "努鲁"
   },
   "system:16": {
    "en": "Guaraci",
+   "es": "Guaraci",
+   "ja": "グアラシ",
    "native": "Guaraci",
    "native_lang": "pt",
-   "ru": "Гуараси"
+   "ru": "Гуараси",
+   "zh-Hans": "瓜拉西"
+  },
+  "system:17": {
+   "en": "Antikythera",
+   "es": "Anticitera",
+   "ja": "アンティキティラ",
+   "native": "Antikythera",
+   "native_lang": "en",
+   "ru": "Антикитера",
+   "zh-Hans": "安提基特拉"
+  },
+  "system:19": {
+   "en": "World's Ass",
+   "es": "Culo del Mundo",
+   "ja": "世界のケツ",
+   "native": "月门",
+   "native_lang": "zh-Hans",
+   "ru": "Жопа мира",
+   "translit": "Yuèmén",
+   "zh-Hans": "月门"
   },
   "system:2": {
    "en": "Huginn",
+   "es": "Huginn",
+   "ja": "フギン",
    "native": "Huginn",
    "native_lang": "nb",
-   "ru": "Хугин"
+   "ru": "Хугин",
+   "zh-Hans": "胡金"
+  },
+  "system:20": {
+   "en": "Lingwei",
+   "es": "Lingwei",
+   "ja": "零次元",
+   "native": "零维",
+   "native_lang": "zh-Hans",
+   "ru": "Линвэй",
+   "translit": "Língwéi",
+   "zh-Hans": "零维"
+  },
+  "system:21": {
+   "en": "Lumiere",
+   "es": "Luz",
+   "ja": "リュミエール",
+   "native": "Lumière",
+   "native_lang": "fr",
+   "ru": "Люмьер",
+   "zh-Hans": "光明"
   },
   "system:22": {
    "en": "Mayura",
+   "es": "Mayura",
+   "ja": "マユーラ",
    "native": "मयूर",
    "native_lang": "hi",
    "ru": "Маюра",
-   "translit": "Mayūr"
+   "translit": "Mayūr",
+   "zh-Hans": "孔雀"
   },
   "system:23": {
    "en": "Bonanza",
+   "es": "Bonanza",
+   "ja": "ボナンザ",
    "native": "Bonanza",
    "native_lang": "en",
-   "ru": "Бонанза"
+   "ru": "Бонанза",
+   "zh-Hans": "富矿"
+  },
+  "system:24": {
+   "en": "Parnassus",
+   "es": "Parnaso",
+   "ja": "パルナッソス",
+   "native": "Παρνασσός",
+   "native_lang": "el",
+   "ru": "Парнас",
+   "translit": "Parnassós",
+   "zh-Hans": "帕纳索斯"
   },
   "system:25": {
    "en": "Kestrel",
+   "es": "Cernícalo",
+   "ja": "チョウゲンボウ",
    "native": "Kestrel",
    "native_lang": "en",
-   "ru": "Пустельга"
+   "ru": "Пустельга",
+   "zh-Hans": "红隼"
+  },
+  "system:26": {
+   "en": "Jiazi",
+   "es": "Jiazi",
+   "ja": "甲子",
+   "native": "甲子",
+   "native_lang": "zh-Hans",
+   "ru": "Цзяцзы",
+   "translit": "Jiǎzǐ",
+   "zh-Hans": "甲子"
+  },
+  "system:27": {
+   "en": "Yggdrasil",
+   "es": "Yggdrasil",
+   "ja": "ユグドラシル",
+   "native": "Yggdrasil",
+   "native_lang": "nb",
+   "ru": "Иггдрасиль",
+   "zh-Hans": "世界树"
+  },
+  "system:28": {
+   "en": "Plymouth",
+   "es": "Plymouth",
+   "ja": "プリマス",
+   "native": "Plymouth",
+   "native_lang": "en",
+   "ru": "Плимут",
+   "zh-Hans": "普利茅斯"
+  },
+  "system:29": {
+   "en": "Sishi",
+   "es": "Sishi",
+   "ja": "四時",
+   "native": "四时",
+   "native_lang": "zh-Hans",
+   "ru": "Сыши",
+   "translit": "Sìshí",
+   "zh-Hans": "四时"
   },
   "system:3": {
    "en": "Ulven",
+   "es": "Ulven",
+   "ja": "ウルヴェン",
    "native": "Ulven",
    "native_lang": "nb",
-   "pron": "[ˈʉ̀lvən]",
-   "ru": "Ульвен"
+   "ru": "Ульвен",
+   "zh-Hans": "乌尔文"
   },
   "system:30": {
    "en": "Haitian",
+   "es": "Haitian",
+   "ja": "氦田",
    "native": "氦田",
    "native_lang": "zh-Hans",
    "ru": "Хайтянь",
-   "translit": "Hàitián"
+   "translit": "Hàitián",
+   "zh-Hans": "氦田"
   },
   "system:31": {
    "en": "Bessel",
+   "es": "Bessel",
+   "ja": "ベッセル",
    "native": "Bessel",
    "native_lang": "en",
-   "ru": "Бессель"
+   "ru": "Бессель",
+   "zh-Hans": "贝塞尔"
+  },
+  "system:32": {
+   "en": "Red Eye",
+   "es": "Ojo Rojo",
+   "ja": "赤い目",
+   "native": "Red Eye",
+   "native_lang": "en",
+   "ru": "Красный Глаз",
+   "zh-Hans": "红眼"
+  },
+  "system:33": {
+   "en": "Lovelock",
+   "es": "Lovelock",
+   "ja": "ラブロック",
+   "native": "Lovelock",
+   "native_lang": "en",
+   "ru": "Лавлок",
+   "zh-Hans": "洛夫洛克"
+  },
+  "system:34": {
+   "en": "Longgong",
+   "es": "Longgong",
+   "ja": "竜宮",
+   "native": "龙宫",
+   "native_lang": "zh-Hans",
+   "ru": "Лунгун",
+   "translit": "Lónggōng",
+   "zh-Hans": "龙宫"
+  },
+  "system:35": {
+   "en": "Jyotisha",
+   "es": "Jyotisha",
+   "ja": "ジョーティシャ",
+   "native": "ज्योतिष",
+   "native_lang": "sa",
+   "ru": "Джйотиша",
+   "translit": "Jyotiṣa",
+   "zh-Hans": "天文"
+  },
+  "system:36": {
+   "en": "Whale Chest",
+   "es": "Cofre de la Ballena",
+   "ja": "鯨の箱",
+   "native": "鲸箱",
+   "native_lang": "zh-Hans",
+   "ru": "Китовый Сундук",
+   "translit": "Jīngxiāng",
+   "zh-Hans": "鲸箱"
   },
   "system:37": {
    "en": "Homer",
+   "es": "Homero",
+   "ja": "ホメロス",
    "native": "Όμηρος",
    "native_lang": "el",
    "ru": "Гомер",
-   "translit": "Ómiros"
+   "translit": "Ómiros",
+   "zh-Hans": "荷马"
   },
   "system:38": {
    "en": "Eureka",
+   "es": "Eureka",
+   "ja": "ユーレカ",
    "native": "Eureka",
    "native_lang": "en",
-   "ru": "Эврика"
+   "ru": "Эврика",
+   "zh-Hans": "尤里卡"
+  },
+  "system:39": {
+   "en": "Libertalia",
+   "es": "Libertalia",
+   "ja": "リベルタリア",
+   "native": "Libertalia",
+   "native_lang": "en",
+   "ru": "Либерталия",
+   "zh-Hans": "自由之地"
   },
   "system:4": {
    "en": "Heracles",
+   "es": "Heracles",
+   "ja": "ヘラクレス",
    "native": "Ηρακλής",
    "native_lang": "el",
    "ru": "Геракл",
-   "translit": "Iraklís"
+   "translit": "Iraklís",
+   "zh-Hans": "赫拉克勒斯"
+  },
+  "system:40": {
+   "en": "Triveni",
+   "es": "Triveni",
+   "ja": "トリヴェーニー",
+   "native": "त्रिवेणी",
+   "native_lang": "hi",
+   "ru": "Тривени",
+   "translit": "Trivēṇī",
+   "zh-Hans": "三河汇"
   },
   "system:41": {
    "en": "Lark",
+   "es": "Alondra",
+   "ja": "ヒバリ",
    "native": "Lark",
    "native_lang": "en",
-   "ru": "Жаворонок"
+   "ru": "Жаворонок",
+   "zh-Hans": "云雀"
+  },
+  "system:42": {
+   "en": "Prospect",
+   "es": "Prospecto",
+   "ja": "プロスペクト",
+   "native": "Prospect",
+   "native_lang": "en",
+   "ru": "Проспект",
+   "zh-Hans": "勘探"
+  },
+  "system:43": {
+   "en": "Giverny",
+   "es": "Giverny",
+   "ja": "ジヴェルニー",
+   "native": "Giverny",
+   "native_lang": "fr",
+   "ru": "Живерни",
+   "zh-Hans": "吉维尼"
+  },
+  "system:44": {
+   "en": "Academy",
+   "es": "Academia",
+   "ja": "アカデメイア",
+   "native": "Ακαδημία",
+   "native_lang": "el",
+   "ru": "Академия",
+   "translit": "Akadimía",
+   "zh-Hans": "学园"
   },
   "system:45": {
    "en": "Thebaid",
+   "es": "Tebaida",
+   "ja": "テーバイス",
    "native": "Θηβαΐς",
    "native_lang": "el",
    "ru": "Фиваида",
-   "translit": "Thivaḯs"
+   "translit": "Thivaḯs",
+   "zh-Hans": "底比斯荒漠"
+  },
+  "system:46": {
+   "en": "Sangeet",
+   "es": "Sangit",
+   "ja": "サンギート",
+   "native": "संगीत",
+   "native_lang": "hi",
+   "ru": "Сангит",
+   "translit": "Saṅgīt",
+   "zh-Hans": "乐"
+  },
+  "system:47": {
+   "en": "Prairie",
+   "es": "Pradera",
+   "ja": "プレーリー",
+   "native": "Prairie",
+   "native_lang": "en",
+   "ru": "Прерия",
+   "zh-Hans": "草原"
+  },
+  "system:48": {
+   "en": "Concordia",
+   "es": "Concordia",
+   "ja": "コンコルディア",
+   "native": "Concordia",
+   "native_lang": "la",
+   "ru": "Конкордия",
+   "zh-Hans": "康科迪娅"
+  },
+  "system:49": {
+   "en": "Tiangong",
+   "es": "Tiangong",
+   "ja": "天工",
+   "native": "天工",
+   "native_lang": "zh-Hans",
+   "ru": "Тяньгун",
+   "translit": "Tiāngōng",
+   "zh-Hans": "天工"
+  },
+  "system:5": {
+   "en": "Sagres",
+   "es": "Sagres",
+   "ja": "サグレス",
+   "native": "Sagres",
+   "native_lang": "pt",
+   "ru": "Сагреш",
+   "zh-Hans": "萨格里什"
+  },
+  "system:50": {
+   "en": "Sunzi",
+   "es": "Sun Tzu",
+   "ja": "孫子",
+   "native": "孙子",
+   "native_lang": "zh-Hans",
+   "ru": "Сунь-цзы",
+   "translit": "Sūnzǐ",
+   "zh-Hans": "孙子"
+  },
+  "system:51": {
+   "en": "Ergo",
+   "es": "Ergo",
+   "ja": "エルゴ",
+   "native": "Ergo",
+   "native_lang": "en",
+   "ru": "Эрго",
+   "zh-Hans": "故而"
+  },
+  "system:52": {
+   "en": "Saudade",
+   "es": "Saudade",
+   "ja": "サウダージ",
+   "native": "Saudade",
+   "native_lang": "pt",
+   "ru": "Саудади",
+   "zh-Hans": "萨乌达德"
   },
   "system:53": {
    "en": "Strix",
+   "es": "Strix",
+   "ja": "ストリクス",
    "native": "Strix",
    "native_lang": "en",
-   "ru": "Стрикс"
+   "ru": "Стрикс",
+   "zh-Hans": "林鸮"
   },
   "system:54": {
    "en": "Heron",
+   "es": "Garza",
+   "ja": "アオサギ",
    "native": "Heron",
    "native_lang": "en",
-   "ru": "Цапля"
+   "ru": "Цапля",
+   "zh-Hans": "苍鹭"
+  },
+  "system:55": {
+   "en": "Masala",
+   "es": "Masala",
+   "ja": "マサラ",
+   "native": "मसाला",
+   "native_lang": "hi",
+   "ru": "Масала",
+   "translit": "Masālā",
+   "zh-Hans": "玛萨拉"
+  },
+  "system:56": {
+   "en": "Te Ara",
+   "es": "Te Ara",
+   "ja": "テ・アラ",
+   "native": "Te Ara",
+   "native_lang": "mi",
+   "ru": "Те-Ара",
+   "zh-Hans": "特阿拉"
   },
   "system:57": {
    "en": "Daraja",
+   "es": "Daraja",
+   "ja": "ダラジャ",
    "native": "Daraja",
    "native_lang": "sw",
-   "ru": "Дараджа"
+   "ru": "Дараджа",
+   "zh-Hans": "达拉贾"
+  },
+  "system:58": {
+   "en": "Qintian",
+   "es": "Qintian",
+   "ja": "欽天",
+   "native": "钦天",
+   "native_lang": "zh-Hans",
+   "ru": "Циньтянь",
+   "translit": "Qīntiān",
+   "zh-Hans": "钦天"
+  },
+  "system:59": {
+   "en": "Paydirt",
+   "es": "Placer",
+   "ja": "ペイダート",
+   "native": "Paydirt",
+   "native_lang": "en",
+   "ru": "Россыпь",
+   "zh-Hans": "富矿砂"
+  },
+  "system:6": {
+   "en": "Hesheng",
+   "es": "Hesheng",
+   "ja": "和声",
+   "native": "和声",
+   "native_lang": "zh-Hans",
+   "ru": "Хэшэн",
+   "translit": "Héshēng",
+   "zh-Hans": "和声"
   },
   "system:60": {
    "en": "Svarog",
+   "es": "Svarog",
+   "ja": "スヴァローグ",
    "native": "Сварог",
    "native_lang": "ru",
-   "ru": "Сварог"
+   "ru": "Сварог",
+   "zh-Hans": "斯瓦罗格"
   },
   "system:61": {
    "en": "Fortuna",
+   "es": "Fortuna",
+   "ja": "運命の輪",
    "native": "Fortuna",
    "native_lang": "la",
    "ru": "Фортуна",
    "zh-Hans": "命运之轮",
    "zh-Hant": "命運之輪"
   },
+  "system:7": {
+   "en": "Mzee",
+   "es": "Mzee",
+   "ja": "ムゼー",
+   "native": "Mzee",
+   "native_lang": "sw",
+   "ru": "Мзее",
+   "zh-Hans": "姆泽"
+  },
   "system:8": {
    "en": "Tiancang",
+   "es": "Tiancang",
+   "ja": "天倉",
    "native": "天仓",
    "native_lang": "zh-Hans",
    "ru": "Тяньцан",
-   "translit": "Tiāncāng"
+   "translit": "Tiāncāng",
+   "zh-Hans": "天仓"
   },
   "system:9": {
    "en": "Tianyuan",
+   "es": "Tianyuan",
+   "ja": "天苑",
    "native": "天苑",
    "native_lang": "zh-Hans",
    "ru": "Тяньюань",
-   "translit": "Tiānyuàn"
+   "translit": "Tiānyuàn",
+   "zh-Hans": "天苑"
   }
  },
  "note": "id -> имена. Отображение в игре: stable ID -> этот резолвер -> строка на языке интерфейса. colony:<unit> — столица / колония, polity:<unit> — полития.",

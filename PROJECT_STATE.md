@@ -5343,3 +5343,27 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Known names without a Russian catalogue spelling stay English in brackets (Proxima Centauri, Epsilon Eridani,
   83 Leonis) - the star_systems localization has no ru for them.
 - AUTHOR: all series are PROPOSAL - accept / replace per system.
+
+## EXPEDITIONS + NAMES IN EVERY SYSTEM AND LOCALE 2026-11-11 (author request)
+- tools/colonization_lab/expeditions_3126.py -> out/world_3126/expeditions_3126.json (PROPOSAL): who first
+  visited each of the 34 systems nobody lives in. Generation-ship fly-bys (missions.json routes, <= 4 ly; pass
+  year from launch / founding), a colony living <= 1 ly away (Proxima -> Alpha Centauri), jump-era science
+  expeditions from own systems and operated beacons (max_hop_ly by epoch, legs through catalogue stars or a
+  charge cache in empty space up to 2x the reach, +12 y per extra leg, delay by research x jump level x pop),
+  frontier canon (World's Ass 19, Monastery 20, Chest 36 -> Cognium). Balance: everybody reachable gets >= 1,
+  nobody keeps > 4 outside the frontier canon. Result: 21 participants (Cognium 7 incl. 3 frontiers, the rest
+  1-2). WITHOUT systems: Third Hellas (arrived 3122) and New Thebaid (arrived 3126) - their ships passed no free
+  star within 4 ly and they have no jump technology. AUTHOR decision pending.
+- World's Ass exists in canon: HD 102195 (system 19), official zh 月门星区 «Moon Gate». Names now per locale:
+  zh 月门, ru «Жопа мира», en World's Ass, es Culo del Mundo, ja 世界のケツ; its bodies are the Moon Palace
+  legend (Чанъэ = station «Порог», 不死药 «elixir of immortality», Нефритовый заяц, Цзинхуа = «Мандала» camp).
+- naming_series/*.txt (format in inhabited_1.txt) replaces the dict in naming_series_3126.py: 60 systems,
+  813 bodies, every name in ru / en / es / zh-Hans / ja (translation for meaning names, transliteration for
+  proper names, different names where a culture has its own: Fortuna = 命运之轮 / 運命の輪). Fortuna CANON:
+  only es / zh / ja forms added (Lexie: ru Лекси, en/es Lexie, zh 柏辛 canon, ja レクシー proposal).
+  Checks: no missing locale, no duplicate inside a system, every body >= 1e-5 Earth masses named, every atlas
+  system named; naming.py --check 29/29.
+- LocalizationService: a star with no own translation takes the translated system base + its letter
+  ("Лукоморье A (Альфа Центавра A)", "卢科莫里耶 A (南门二 A)"); "A+B" tails stripped from the base.
+- Evidence: game LocalizationService probe over build/assets in all 5 locales (D:/tmp/naming/probe/out2.txt).
+  NOT seen on a live map (offscreen captures black this evening, environment).

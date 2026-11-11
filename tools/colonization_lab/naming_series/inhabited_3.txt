@@ -1,0 +1,132 @@
+# Naming series 3126 (PROPOSAL) - inhabited systems, part 3. Format: see inhabited_1.txt.
+
+@ 38 | en | экспедиция Керна (3060) | звезда — «Эврика!», крик старателя; тела — золотые лихорадки Земли
+* | Eureka | Эврика | Eureka | Eureka | 尤里卡 | ユーレカ | «нашёл!»: лучшие металлы каталога
+Sigma² UMa A b | Deadwood | Дедвуд | Deadwood | = | 戴德伍德 | デッドウッド | Дедвуд, Чёрные холмы
+Sigma² UMa A c | Tombstone | Тумстон | Tombstone | = | 墓碑镇 | トゥームストーン | Тумстон, Аризона
+Sigma² UMa A d | Bodie | Боди | Bodie | = | 博迪 | ボディ | Боди, Калифорния
+Sigma² UMa A e | Comstock | Комсток | Comstock | = | 康斯托克 | コムストック | Комстокская жила, Невада
+Sigma² UMa A f | Cripple Creek | Крипл-Крик | Cripple Creek | = | 克里普尔溪 | クリップルクリーク | Крипл-Крик, Колорадо: атмосфера 3300 бар
+Sigma² UMa A g | Sutter | Саттер | Sutter | = | 萨特 | サッター | лесопилка Саттера
+Sigma² UMa A h | Klondike | Клондайк | Klondike | = | 克朗代克 | クロンダイク | Клондайк: сверхюпитер с кольцами
+Sigma² UMa A h I | Dawson | Доусон | Dawson | = | 道森 | ドーソン | Доусон-Сити
+Sigma² UMa A h II | Bendigo | Бендиго | Bendigo | = | 本迪戈 | ベンディゴ | Бендиго: поселение
+Sigma² UMa A h III | Ballarat | Балларат | Ballarat | = | 巴拉瑞特 | バララット | Балларат: поселение
+Sigma² UMa A h IV | Eldorado | Эльдорадо | Eldorado | El Dorado | 黄金国 | エルドラド | Эльдорадо: база экспедиции
+Sigma² UMa A A1 | Nome | Ном | Nome | = | 诺姆 | ノーム | Ном, Аляска
+Sigma² UMa C b | Kalgoorlie | Калгурли | Kalgoorlie | = | 卡尔古利 | カルグーリー | Калгурли, Западная Австралия
+Sigma² UMa C c | Coolgardie | Кулгарди | Coolgardie | = | 库尔加迪 | クールガーディ | Кулгарди
+Sigma² UMa C d | Yukon | Юкон | Yukon | Yukón | 育空 | ユーコン | река Юкон
+
+@ 41 | en | фронтир Когниума у экспедиционного маяка (3050), птичья серия «Сычёвника» | певчие птицы: лучшая агро-земля глубокого куста
+* | Lark | Жаворонок | Lark | Alondra | 云雀 | ヒバリ | жаворонок над полем
+HD 104067 d | Firecrest | Королёк | Firecrest | Reyezuelo | 火冠戴菊 | マミジロキクイタダキ | красноголовый королёк
+HD 104067 e | Wren | Крапивник | Wren | Chochín | 鹪鹩 | ミソサザイ | крапивник
+HD 104067 f | Finch | Зяблик | Finch | Pinzón | 苍头燕雀 | ズアオアトリ | зяблик
+HD 104067 c | Starling | Скворец | Starling | Estornino | 椋鸟 | ムクドリ | скворец: суперземля в 3600 K
+HD 104067 b | Nightingale | Соловей | Nightingale | Ruiseñor | 夜莺 | ナイチンゲール | соловей: газовый гигант, станция «Ворота»
+HD 104067 g | Robin | Малиновка | Robin | Petirrojo | 知更鸟 | ヨーロッパコマドリ | малиновка: столица фронтира
+HD 104067 h | Thrush | Дрозд | Thrush | Zorzal | 鸫 | ツグミ | дрозд
+HD 104067 i | Swallow | Ласточка | Swallow | Golondrina | 燕 | ツバメ | ласточка: поселение
+HD 104067 j | Bunting | Овсянка | Bunting | Escribano | 鹀 | ホオジロ | овсянка: поселение
+HD 104067 K1 | Siskin | Чиж | Siskin | Lúgano | 黄雀 | マヒワ | чиж
+HD 104067 K2 | Waxwing | Свиристель | Waxwing | Ampelis | 太平鸟 | レンジャク | свиристель
+HD 104067 K3 | Redpoll | Чечётка | Redpoll | Pardillo Sizerín | 白腰朱顶雀 | ベニヒワ | чечётка
+
+@ 45 | el | NEW-JERUSALEM-1 (Ново-Фиваида) | Фиваида — пустыня первых монахов: звезда — Фиваида, планеты — отцы и матери пустыни, столица — Скит
+* | Θηβαΐς | Фиваида | Thebaid | Tebaida | 底比斯荒漠 | テーバイス | египетская пустыня, где родилось монашество | Thivaḯs
+83 Leonis A d | Αντώνιος | Антоний | Antony | Antonio | 安东尼 | アントニオス | Антоний Великий | Antónios
+83 Leonis A e | Παχώμιος | Пахомий | Pachomius | Pacomio | 帕科缪 | パコミオス | Пахомий Великий | Pachómios
+83 Leonis A f | Μακάριος | Макарий | Macarius | Macario | 马卡里乌斯 | マカリオス | Макарий Египетский | Makários
+83 Leonis A g | Αρσένιος | Арсений | Arsenius | Arsenio | 阿尔塞纽 | アルセニオス | Арсений Великий | Arsénios
+83 Leonis A h | Ποιμήν | Пимен | Poemen | Poemén | 波门 | ポイメン | Пимен Великий | Poimín
+83 Leonis A i | Ευάγριος | Евагрий | Evagrius | Evagrio | 埃瓦格里乌斯 | エウアグリオス | Евагрий Понтийский | Evágrios
+83 Leonis A j | Μωυσής | Моисей | Moses | Moisés | 摩西 | モーセ | Моисей Мурин | Moysís
+83 Leonis A k | Σισώης | Сисой | Sisoes | Sisoes | 西索斯 | シソエス | Сисой Великий | Sisóis
+83 Leonis A l | Αμμούν | Аммун | Amoun | Amún | 阿蒙 | アムン | Аммун Нитрийский: суперземля в 64 бар | Ammoún
+83 Leonis A m | Παύλος | Павел | Paul | Pablo | 保罗 | パウロ | Павел Фивейский, первый пустынник | Pávlos
+83 Leonis A n | Ιλαρίων | Иларион | Hilarion | Hilarión | 希拉里翁 | ヒラリオン | Иларион Великий | Ilaríon
+83 Leonis B d | Μαρία | Мария | Mary | María | 玛利亚 | マリア | Мария Египетская | María
+83 Leonis B e | Συγκλητική | Синклитикия | Syncletica | Sinclética | 辛克莱蒂卡 | シンクレティケ | Синклитикия Александрийская | Synklitikí
+83 Leonis B f | Κασσιανός | Кассиан | Cassian | Casiano | 卡西安 | カッシアヌス | Иоанн Кассиан | Kassianós
+83 Leonis B g | Εφραίμ | Ефрем | Ephrem | Efrén | 厄弗冷 | エフレム | Ефрем Сирин | Efraím
+83 Leonis B h | Σκήτις | Скит | Scetis | Escete | 斯凯蒂斯 | スケティス | пустыня Скит: ковчег Ново-Фиваиды и «Золотой Город» | Skítis
+83 Leonis B h I | Κελλία | Келлии | Kellia | Kellia | 凯利亚 | ケリア | Келлии, поселение отшельников | Kellía
+83 Leonis B i | Νιτρία | Нитрия | Nitria | Nitria | 尼特里亚 | ニトリア | Нитрийская гора: поселение | Nitría
+83 Leonis B i I | Ισαάκ | Исаак | Isaac | = | 以撒 | イサク | Исаак Сирин | Isaák
+83 Leonis B j | Αθανάσιος | Афанасий | Athanasius | Atanasio | 亚他那修 | アタナシオス | Афанасий Великий: сверхюпитер с кольцами | Athanásios
+83 Leonis B j I | Ιωάννης | Иоанн | John | Juan | 约翰 | ヨハネ | Иоанн Лествичник | Ioánnis
+83 Leonis B j II | Σιμεών | Симеон | Simeon | Simeón | 西缅 | シメオン | Симеон Столпник: поселение | Simeón
+83 Leonis B j III | Δωρόθεος | Дорофей | Dorotheus | Doroteo | 多罗特乌斯 | ドロテオス | авва Дорофей | Dorótheos
+83 Leonis B A1 | Βαρσανούφιος | Варсонофий | Barsanuphius | Barsanufio | 巴尔萨努菲乌斯 | バルサヌフィオス | Варсонофий Великий | Varsanoúfios
+HD 99492 b | Σεραπίων | Серапион | Serapion | Serapión | 塞拉皮翁 | セラピオン | Серапион Синдонит | Serapíon
+HD 99492 c | Ζωσιμάς | Зосима | Zosimas | Zósimo | 佐西马 | ゾシマ | Зосима Палестинский | Zosimás
+
+@ 53 | en | фронтир Когниума у маяка (2810), птичья серия «Сычёвника» | совы: первый фронтир «Сычёвника»
+* | Strix | Стрикс | Strix | Strix | 林鸮 | ストリクス | родовое имя сов
+Gliese 674 c | Scops | Сплюшка | Scops | Autillo | 角鸮 | コノハズク | сплюшка
+Gliese 674 d | Pygmy | Сычик | Pygmy | Mochuelo Chico | 花头鸺鹠 | スズメフクロウ | воробьиный сычик
+GJ 674 b | Eagle-owl | Филин | Eagle-owl | Búho Real | 雕鸮 | ワシミミズク | филин: суперземля в 530 бар
+Gliese 674 e | Little Owl | Домовый сыч | Little Owl | Mochuelo | 纵纹腹小鸮 | コキンメフクロウ | домовый сыч
+Gliese 674 f | Barn Owl | Сипуха | Barn Owl | Lechuza | 仓鸮 | メンフクロウ | сипуха
+Gliese 674 g | Tawny | Неясыть | Tawny | Cárabo | 灰林鸮 | モリフクロウ | серая неясыть
+Gliese 674 h | Snowy | Белая сова | Snowy | Búho Nival | 雪鸮 | シロフクロウ | белая сова: столица фронтира
+Gliese 674 i | Boreal | Мохноногий сыч | Boreal | Mochuelo Boreal | 鬼鸮 | キンメフクロウ | мохноногий сыч
+Gliese 674 j | Hawk-owl | Ястребиная сова | Hawk-owl | Cárabo Gavilán | 猛鸮 | オナガフクロウ | ястребиная сова: поселение
+Gliese 674 K2 | Long-eared | Ушастая сова | Long-eared | Búho Chico | 长耳鸮 | トラフズク | ушастая сова
+Gliese 674 K1 | Great Grey | Бородатая неясыть | Great Grey | Cárabo Lapón | 乌林鸮 | カラフトフクロウ | бородатая неясыть
+Gliese 674 K3 | Short-eared | Болотная сова | Short-eared | Búho Campestre | 短耳鸮 | コミミズク | болотная сова: поселение
+
+@ 54 | en | фронтир Когниума у маяка (2860), птичья серия «Сычёвника» | водоплавающие и болотные птицы
+* | Heron | Цапля | Heron | Garza | 苍鹭 | アオサギ | цапля
+HD 85512 b | Flamingo | Фламинго | Flamingo | Flamenco | 火烈鸟 | フラミンゴ | фламинго: самая горячая
+HD 85512 c | Pelican | Пеликан | Pelican | Pelícano | 鹈鹕 | ペリカン | пеликан
+HD 85512 d | Ibis | Ибис | Ibis | Ibis | 朱鹭 | トキ | ибис
+HD 85512 e | Stork | Аист | Stork | Cigüeña | 白鹳 | コウノトリ | аист
+HD 85512 f | Crane | Журавль | Crane | Grulla | 鹤 | ツル | журавль
+HD 85512 g | Albatross | Альбатрос | Albatross | Albatros | 信天翁 | アホウドリ | альбатрос: суперземля в 54 бар
+HD 85512 h | Petrel | Буревестник | Petrel | Petrel | 海燕 | ミズナギドリ | буревестник
+HD 85512 K3 | Tern | Крачка | Tern | Charrán | 燕鸥 | アジサシ | крачка: поселение
+HD 85512 K2 | Loon | Гагара | Loon | Colimbo | 潜鸟 | アビ | гагара: поселение
+HD 85512 K1 | Eider | Гага | Eider | Eider | 绒鸭 | ケワタガモ | гага: столица фронтира
+
+@ 57 | sw | Реле HD 10360 (Хомстед и Маланд, 2840): имена дали связисты Маланд | звезда — Мост; у p Eridani A — стихии и гавани, у HD 10360 — время суток
+* | Daraja | Дараджа | Daraja | Daraja | 达拉贾 | ダラジャ | мост: реле, связывающее Хомстед с HD 40307
+p Eridani A b | Joto | Джото | Joto | = | 乔托 | ジョト | жара
+p Eridani A c | Kaa | Каа | Kaa | = | 卡阿 | カア | уголь
+p Eridani A d | Jivu | Дживу | Jivu | = | 吉武 | ジヴ | пепел
+p Eridani A e | Mwako | Мвако | Mwako | = | 姆瓦科 | ムワコ | пыл, зарево
+p Eridani A f | Radi | Ради | Radi | = | 拉迪 | ラディ | раскат грома
+p Eridani A g | Umeme | Умеме | Umeme | = | 乌梅梅 | ウメメ | молния
+p Eridani A h | Ngurumo | Нгурумо | Ngurumo | = | 恩古鲁莫 | ングルモ | гром
+p Eridani A i | Mchanga | Мчанга | Mchanga | = | 姆昌加 | ムチャンガ | песок
+p Eridani A j | Tanuri | Танури | Tanuri | = | 塔努里 | タヌリ | печь: атмосфера в 140 бар
+p Eridani A k | Mnara | Мнара | Mnara | = | 姆纳拉 | ムナラ | маяк-башня: столица реле
+p Eridani A l | Tufani | Туфани | Tufani | = | 图法尼 | トゥファニ | буря: атмосфера в 520 бар
+p Eridani A m | Wingu | Вингу | Wingu | = | 温古 | ウィング | облако
+p Eridani A n | Kivuko | Кивуко | Kivuko | = | 基武科 | キヴコ | переправа: поселение
+p Eridani A o | Bandari | Бандари | Bandari | = | 班达里 | バンダリ | гавань: поселение
+p Eridani (A) K1 | Barafu | Барафу | Barafu | = | 巴拉富 | バラフ | лёд
+p Eridani (A) K2 | Sauti | Сауте | Sauti | = | 绍蒂 | サウティ | голос
+p Eridani (A) K3 | Ujumbe | Уджумбе | Ujumbe | = | 乌琼贝 | ウジュンベ | послание
+HD 10360 b | Mwangaza | Мвангаза | Mwangaza | = | 姆万加扎 | ムワンガザ | сияние
+HD 10360 c | Mchana | Мчана | Mchana | = | 姆查纳 | ムチャナ | день
+HD 10360 d | Alfajiri | Альфаджири | Alfajiri | = | 阿尔法吉里 | アルファジリ | рассвет
+HD 10360 e | Jioni | Джиони | Jioni | = | 吉奥尼 | ジオニ | вечер
+HD 10360 f | Machweo | Мачвео | Machweo | = | 马奇韦奥 | マチュウェオ | закат
+HD 10360 g | Usiku | Усику | Usiku | = | 乌西库 | ウシク | ночь
+HD 10360 K1 | Kesho | Кешо | Kesho | = | 凯绍 | ケショ | завтра
+
+@ 60 | ru | SVAROG-1 (Красный Форпост) | славянский пантеон: звезда — Сварог, небесный кузнец, планеты — его род
+* | Сварог | = | Svarog | Svarog | 斯瓦罗格 | スヴァローグ | небесный кузнец, отец огня
+Proxima Centauri c | Семаргл | = | Semargl | Semargl | 西马尔格 | セマルグル | огненный крылатый пёс
+Proxima Centauri e | Хорс | = | Khors | Jors | 霍尔斯 | ホルス | солнечный диск
+Proxima Centauri f | Ярило | = | Yarilo | Yarilo | 雅里洛 | ヤリーロ | весеннее солнце
+Proxima Cen d | Дажьбог | = | Dazhbog | Dazhbog | 达日博格 | ダジボーグ | податель света, сын Сварога
+Proxima Cen b | Мокошь | = | Mokosh | Mókosh | 莫科什 | モコシ | мать-земля: поселение
+Proxima Centauri g | Велес | = | Veles | Veles | 韦莱斯 | ヴェーレス | хозяин скота и подземных вод
+Proxima Centauri h | Морозко | = | Morozko | Morozko | 严寒老人 | モロスコ | мороз
+Proxima Centauri i | Марена | = | Marena | Marena | 玛瑞娜 | マレーナ | зима и смерть
+Proxima Centauri j | Китеж | = | Kitezh | Kitezh | 基捷日 | キーテジ | невидимый град: столица Красного Форпоста
+Proxima Centauri k | Лада | = | Lada | Lada | 拉达 | ラーダ | богиня лада и урожая: поселение и фермы
+Proxima Centauri l | Стрибог | = | Stribog | Stribog | 斯特里博格 | ストリボーグ | владыка ветров: газовые платформы

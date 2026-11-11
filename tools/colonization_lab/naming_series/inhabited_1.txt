@@ -1,0 +1,154 @@
+# Naming series 3126 (PROPOSAL) - inhabited systems, part 1.
+# "@ system | lang | named_by | theme"
+# "* | native | ru | en | es | zh-Hans | ja | meaning [| translit]"  - the system / star name ("-" = keep canon)
+# "designation | native | ru | en | es | zh-Hans | ja | meaning [| translit]"
+# "=": ru = native, es = en, zh = native, ja = native.
+
+@ 2 | nb | Скьольдборг (Цитадель Wolf 359), пост прослушивания у Барнарда, 2860 | вороны Одина и огненный юг скандинавского мифа: пост, который смотрит на Сол
+* | Huginn | Хугин | Huginn | Huginn | 胡金 | フギン | ворон Одина «Мысль», облетающий мир и приносящий вести: пост прослушивания Сола
+Barnard's Star f | Surt | Сурт | Surt | Surt | 苏尔特 | スルト | огненный великан Муспелля: самая горячая
+Barnard's Star g | Muspell | Муспелль | Muspell | Muspel | 穆斯贝尔 | ムスペル | огненный мир юга
+Barnard d | Loge | Логе | Loge | Logi | 洛格 | ロギ | пламя, соперник Локи в поедании
+Barnard b | Brokk | Брокк | Brokk | Brokk | 布洛克 | ブロック | карлик-кузнец, ковавший Мьёльнир
+Barnard c | Sindre | Синдри | Sindri | Sindri | 辛德里 | シンドリ | брат Брокка, кузнец у горна
+Barnard e | Hlidskjalv | Хлидскьяльв | Hlidskjalf | Hlidskjalf | 至高王座 | フリズスキャールヴ | престол Одина, с которого видно все миры
+Barnard's Star h | Valaskjalv | Валаскьяльв | Valaskjalf | Valaskjalf | 瓦拉斯奇尔夫 | ヴァーラスキャールヴ | чертог Одина с серебряной кровлей
+Barnard's Star i | Gjøll | Гьёлль | Gjoll | Gjöll | 吉欧尔河 | ギョッル | ледяная река у врат Хель
+Barnard's Star j | Muninn | Мунин | Muninn | Muninn | 穆宁 | ムニン | второй ворон Одина, «Память»: столица поста
+Barnard's Star k | Fimbul | Фимбуль | Fimbul | Fimbul | 芬布尔 | フィンブル | Фимбульвинтер, великая зима
+
+@ 3 | nb | норвежские поселенцы IRON-SHIELD-1 (Скьольдборг) | волки скандинавского мифа: звезда Ulven («Волк»), планеты — её стая
+* | Ulven | Ульвен | Ulven | Ulven | 乌尔文 | ウルヴェン | «Волк»: народная этимология каталожного Wolf
+Wolf 359 b | Sköll | Скёлль | Skoll | Sköll | 斯库尔 | スコル | волк, гонящийся за Солнцем
+Wolf 359 c | Hati | Хати | Hati | Hati | 哈提 | ハティ | волк, гонящийся за Луной: поселение Нюхамн
+Wolf 359 d | Geri | Гери | Geri | Geri | 基利 | ゲリ | «жадный», волк Одина
+Wolf 359 e | Garm | Гарм | Garm | Garm | 加姆 | ガルム | пёс-страж у врат Хель: мир Цитадели и Мьёльнера
+Wolf 359 f | Freki | Фреки | Freki | Freki | 弗雷基 | フレキ | «прожорливый», второй волк Одина: поселение Ярнвик
+Wolf 359 g | Fenrir | Фенрир | Fenrir | Fenrir | 芬里尔 | フェンリル | скованный волк на краю мира
+
+@ 4 | el | HERACLES-1 (Новая Эллада); капеху зовут звезду Te Rā Hou | двенадцать подвигов Геракла — двенадцать планет, по порядку от звезды
+* | Ηρακλής | Геракл | Heracles | Heracles | 赫拉克勒斯 | ヘラクレス | миссия HERACLES-1 назвала звезду именем своего героя | Iraklís
+Lalande 21185 b | Νεμέα | Немея | Nemea | Nemea | 尼米亚 | ネメア | 1-й подвиг: немейский лев | Neméa
+Lalande 21185 c | Λέρνη | Лерна | Lerna | Lerna | 勒拿 | レルネー | 2-й подвиг: лернейская гидра | Lérni
+Lalande 21185 d | Κερύνεια | Керинея | Ceryneia | Cerinea | 刻律涅亚 | ケリュネイア | 3-й подвиг: керинейская лань | Kerýneia
+Lalande 21185 e | Ερύμανθος | Эриманф | Erymanthos | Erimanto | 厄律曼托斯 | エリュマントス | 4-й подвиг: эримантский вепрь | Erýmanthos
+Lalande 21185 f | Αυγείας | Авгий | Augeas | Augías | 奥革阿斯 | アウゲイアス | 5-й подвиг: авгиевы конюшни | Avgeías
+Lalande 21185 g | Στυμφαλία | Стимфалия | Stymphalia | Estinfalia | 斯廷法利斯 | ステュムパーロス | 6-й подвиг: стимфалийские птицы | Stymfalía
+Lalande 21185 h | Κρήτη | Крит | Crete | Creta | 克里特 | クレタ | 7-й подвиг: критский бык; общие поселения и огороды капеху | Kríti
+Lalande 21185 i | Θράκη | Фракия | Thrace | Tracia | 色雷斯 | トラキア | 8-й подвиг: кони Диомеда | Thráki
+Lalande 21185 j | Θεμίσκυρα | Фемискира | Themiscyra | Temiscira | 忒弥斯库拉 | テミスキュラ | 9-й подвиг: пояс Ипполиты; газовые платформы | Themískyra
+Lalande 21185 k | Ερύθεια | Эрифия | Erytheia | Eritia | 厄律忒亚 | エリュテイア | 10-й подвиг: коровы Гериона | Erýtheia
+Lalande 21185 k I | Όρθρος | Орф | Orthrus | Ortro | 俄耳托斯 | オルトロス | двуглавый пёс Гериона | Órthros
+Lalande 21185 l | Κέρβερος | Кербер | Cerberus | Cerbero | 刻耳柏洛斯 | ケルベロス | 12-й подвиг: пёс Аида | Kérveros
+Lalande 21185 m | Εσπερίδες | Геспериды | Hesperides | Hespérides | 赫斯珀里得斯 | ヘスペリデス | 11-й подвиг: сад Гесперид — мир Агоры и Тауранги | Esperídes
+
+@ 8 | zh-Hans | Когниум (Синь-Шанхай), по китайскому имени звезды 天仓 «Небесная житница» | звезда — Небесная житница, раскалённые планеты — зёрна в её закромах
+* | 天仓 | Тяньцан | Tiancang | Tiancang | = | 天倉 | «Небесная житница» | Tiāncāng
+Tau Ceti b | 稻 | Дао | Dao | Dao | = | 稲 | рис | Dào
+Tau Ceti c | 麦 | Май | Mai | Mai | = | 麦 | пшеница | Mài
+Tau Ceti d | 黍 | Шу | Shu | Shu | = | 黍 | просо клейкое | Shǔ
+Tau Ceti e | 高粱 | Гаолян | Gaoliang | Gaoliang | = | 高粱 | гаолян, сорго | Gāoliang
+Tau Ceti i | 豆 | Доу | Dou | Dou | = | 豆 | бобы | Dòu
+Tau Ceti j | 粟 | Су | Su | Su | = | 粟 | чумиза | Sù
+Tau Ceti k | 粱 | Лян | Liang | Liang | = | 粱 | отборное просо | Liáng
+Tau Ceti l | 麻 | Ма | Ma | Ma | = | 麻 | конопля | Má
+Tau Ceti m | 谷 | Гу | Gu | Gu | = | 穀 | зерно в колосе: самая дальняя | Gǔ
+
+@ 9 | zh-Hans | CELESTIAL-DESTINY-1 (Цветущая Гармония), по китайскому имени звезды 天苑 «Небесные луга» | Небесные луга: планеты — цветы, гигант — небесный конь и его скакуны, ледяные тела — хозяйство луга
+* | 天苑 | Тяньюань | Tianyuan | Tianyuan | = | 天苑 | «Небесные луга» | Tiānyuàn
+Epsilon Eridani c | 梅 | Мэй | Mei | Mei | = | 梅 | цветущая слива | Méi
+Epsilon Eridani d | 兰 | Лань | Lan | Lan | = | 蘭 | орхидея | Lán
+Epsilon Eridani e | 竹 | Чжу | Zhu | Zhu | = | 竹 | бамбук | Zhú
+Epsilon Eridani f | 菊 | Цзюй | Ju | Ju | = | 菊 | хризантема | Jú
+Epsilon Eridani g | 牡丹 | Мудань | Mudan | Mudan | = | 牡丹 | пион | Mǔdān
+Epsilon Eridani h | 荷 | Хэ | He | He | = | 荷 | лотос | Hé
+Epsilon Eridani i | 桂 | Гуй | Gui | Gui | = | 桂 | османтус | Guì
+Epsilon Eridani j | 桃 | Тао | Tao | Tao | = | 桃 | персик | Táo
+eps Eri b | 天马 | Тяньма | Tianma | Tianma | = | 天馬 | Небесный конь: газовый гигант с кольцами | Tiānmǎ
+eps Eri b I | 骐 | Ци | Qi | Qi | = | 騏 | вороной скакун | Qí
+eps Eri b II | 骥 | Цзи | Ji | Ji | = | 驥 | скакун на тысячу ли | Jì
+eps Eri b III | 骅 | Хуа | Hua | Hua | = | 驊 | рыжий скакун | Huá
+Epsilon Eridani A1 | 栅 | Чжа | Zha | Zha | = | 柵 | изгородь луга: пояс астероидов | Zhà
+Epsilon Eridani K2 | 牧场 | Мучан | Muchang | Muchang | = | 牧場 | пастбище | Mùchǎng
+Epsilon Eridani K3 | 泉 | Цюань | Quan | Quan | = | 泉 | родник | Quán
+Epsilon Eridani K4 | 园 | Юань | Yuan | Yuan | = | 園 | сад: мир Гармонии и Пояса Раздора | Yuán
+
+@ 10 | fr | EUROPA-1 (Новая Европа) | реки Европы — планеты, озёра — ледяные карлики; звезда — Марианна
+* | Marianne | Марианна | Marianne | Mariana | 玛丽安娜 | マリアンヌ | символ Республики
+Gliese 581 d | Rhône | Рона | Rhone | Ródano | 罗讷 | ローヌ | самая быстрая река
+Gliese 581 f | Garonne | Гаронна | Garonne | Garona | 加龙 | ガロンヌ | река Аквитании
+Gliese 581 g | Loire | Луара | Loire | Loira | 卢瓦尔 | ロワール | река замков
+GJ 581 e | Tage | Тахо | Tagus | Tajo | 塔霍 | タホ | Тежу / Тахо, река Иберии
+GJ 581 b | Danube | Дунай | Danube | Danubio | 多瑙 | ドナウ | великая река: тяжёлая суперземля
+GJ 581 c | Rhin | Рейн | Rhine | Rin | 莱茵 | ライン | пограничная река
+Gliese 581 h | Seine | Сена | Seine | Sena | 塞纳 | セーヌ | река Парижа: мир Новой Европы и Свободных поселений
+Gliese 581 i | Vistule | Висла | Vistula | Vístula | 维斯瓦 | ヴィスワ | река с кольцами газовых платформ
+Gliese 581 K2 | Léman | Леман | Leman | Lemán | 莱芒 | レマン | Женевское озеро
+Gliese 581 K3 | Constance | Констанц | Constance | Constanza | 康斯坦茨 | コンスタンツ | Боденское озеро
+Gliese 581 K1 | Ladoga | Ладога | Ladoga | Ládoga | 拉多加 | ラドガ | самое большое озеро Европы: агромодули
+
+@ 11 | zu | Узел Убунту (Когниум, связисты из Южной Африки), 2800 | слова зулу: у звезды A — огонь, металлы и земля, у B — погода и вода, у C — время суток, у пояса — общее дело
+* | Ubuntu | Убунту | Ubuntu | Ubuntu | 乌班图 | ウブントゥ | «человек человеку — человек»: узел связи
+Gliese 667 A d | Umlilo | Умлило | Umlilo | = | 乌姆利洛 | ウムリロ | огонь
+Gliese 667 A h | Ilangabi | Илангаби | Ilangabi | = | 伊兰加比 | イランガビ | пламя
+Gliese 667 A i | Amalahle | Амалахле | Amalahle | = | 阿马拉赫勒 | アマラフレ | угли
+Gliese 667 A j | Umlotha | Умлота | Umlotha | = | 乌姆洛塔 | ウムロタ | пепел
+Gliese 667 A k | Ukushisa | Укушиса | Ukushisa | = | 乌库希萨 | ウクシサ | жар
+Gliese 667 A l | Ilitshe | Илитше | Ilitshe | = | 伊利切 | イリチェ | камень
+Gliese 667 A m | Insimbi | Инсимби | Insimbi | = | 因辛比 | インシンビ | железо
+Gliese 667 A n | Ithusi | Итуси | Ithusi | = | 伊图西 | イトゥシ | медь
+Gliese 667 A o | Igolide | Иголиде | Igolide | = | 伊戈利德 | イゴリデ | золото
+Gliese 667 A p | Isihlabathi | Исихлабати | Isihlabathi | = | 伊西赫拉巴蒂 | イシフラバティ | песок
+Gliese 667 A q | Intaba | Интаба | Intaba | = | 因塔巴 | インタバ | гора
+Gliese 667 A r | Umhlabathi | Умхлабати | Umhlabathi | = | 乌姆赫拉巴蒂 | ウムフラバティ | почва
+Gliese 667 A s | Umfula | Умфула | Umfula | = | 乌姆富拉 | ウムフラ | река: поселение
+Gliese 667 A s II | Amanzi | Аманзи | Amanzi | = | 阿曼济 | アマンジ | вода
+Gliese 667 A t | Indaba | Индаба | Indaba | = | 因达巴 | インダバ | совет, разговор: столица узла связи
+Gliese 667 A u | Ithemba | Итемба | Ithemba | = | 伊滕巴 | イテンバ | надежда: поселение
+Gliese 667 A u II | Isibane | Исибане | Isibane | = | 伊西巴内 | イシバネ | светильник
+Gliese 667 A v | Isiphepho | Исипепо | Isiphepho | = | 伊西佩波 | イシペポ | смерч: плотная горячая атмосфера
+Gliese 667 B d | Umbane | Умбане | Umbane | = | 乌姆巴内 | ウンバネ | молния
+Gliese 667 B h | Ukuduma | Укудума | Ukuduma | = | 乌库杜马 | ウクドゥマ | гром
+Gliese 667 B i | Imvula | Имвула | Imvula | = | 伊姆武拉 | イムヴラ | дождь
+Gliese 667 B j | Ifu | Ифу | Ifu | = | 伊富 | イフ | облако
+Gliese 667 B k | Inkungu | Инкунгу | Inkungu | = | 因昆古 | インクング | туман
+Gliese 667 B l | Umoya | Умоя | Umoya | = | 乌莫亚 | ウモヤ | ветер, дух
+Gliese 667 B m | Ulwandle | Улвандле | Ulwandle | = | 乌尔万德勒 | ウルワンドレ | море
+Gliese 667 B n | Isiqhingi | Исикхинги | Isiqhingi | = | 伊西青吉 | イシチンギ | остров
+Gliese 667 B o | Iqhwa | Икхва | Iqhwa | = | 伊奇瓦 | イクワ | лёд
+Gliese 667 B p | Ubusika | Убусика | Ubusika | = | 乌布西卡 | ウブシカ | зима
+Gliese 667 C d | Ukusa | Укуса | Ukusa | = | 乌库萨 | ウクサ | рассвет
+Gliese 667 C h | Imini | Имини | Imini | = | 伊米尼 | イミニ | полдень
+Gliese 667 C i | Ntambama | Нтамбама | Ntambama | = | 恩坦巴马 | ンタンバマ | после полудня
+GJ 667 C b | Kusihlwa | Кусихлва | Kusihlwa | = | 库西赫尔瓦 | クシフルワ | вечер
+GJ 667 C c | Ubusuku | Убусуку | Ubusuku | = | 乌布苏库 | ウブスク | ночь
+Gliese 667 C j | Inkanyezi | Инканьези | Inkanyezi | = | 因坎耶齐 | インカニェジ | звезда
+Gliese 667 (BA) K2 | Ubumbano | Убумбано | Ubumbano | = | 乌本巴诺 | ウブンバノ | единство
+Gliese 667 (BA) K1 | Ukuthula | Укутула | Ukuthula | = | 乌库图拉 | ウクトゥラ | мир, покой
+Gliese 667 (BA) K3 | Inkululeko | Инкулулеко | Inkululeko | = | 因库卢莱科 | インクルレコ | свобода
+
+@ 12 | zh-Hans | TIANHE-1 (Тяньхэ, «Небесная река» — Млечный Путь) | легенда о Пастухе и Ткачихе, разлучённых Небесной рекой: звезда — Сорочий мост
+* | 鹊桥 | Цюэцяо | Queqiao | Queqiao | = | 鵲橋 | Сорочий мост, по которому Пастух и Ткачиха встречаются раз в год | Quèqiáo
+Gliese 832 c | 王母 | Ванму | Wangmu | Wangmu | = | 王母 | Царица-Мать Запада, разделившая влюблённых | Wángmǔ
+Gliese 832 d | 玉簪 | Юйцзань | Yuzan | Yuzan | = | 玉簪 | нефритовая шпилька, которой она провела Небесную реку | Yùzān
+Gliese 832 e | 银汉 | Иньхань | Yinhan | Yinhan | = | 銀漢 | Серебряная река | Yínhàn
+Gliese 832 f | 织机 | Чжицзи | Zhiji | Zhiji | = | 織機 | ткацкий станок: железная планета | Zhījī
+Gliese 832 g | 七夕 | Цыси | Qixi | Qixi | = | 七夕 | ночь встречи | Qīxī
+GJ 832 b | 牛郎 | Нюлан | Niulang | Niulang | = | 牽牛 | Пастух: газовый гигант | Niúláng
+GJ 832 b I | 喜鹊 | Сицюэ | Xique | Xique | = | 鵲 | сорока, строительница моста | Xǐquè
+GJ 832 b II | 金梭 | Цзиньсо | Jinsuo | Jinsuo | = | 金杼 | золотой челнок Ткачихи | Jīnsuō
+GJ 832 b III | 织女 | Чжинюй | Zhinu | Zhinu | = | 織女 | Ткачиха: столица Тяньхэ и Зона «Филоморфоз» | Zhīnǚ
+Gliese 832 A1 | 扁担 | Бяньдань | Biandan | Biandan | = | 天秤棒 | коромысло, на котором Пастух нёс детей через небо | Biǎndan
+Gliese 832 K2 | 老牛 | Лаоню | Laoniu | Laoniu | = | 老牛 | старый вол, научивший Пастуха | Lǎoniú
+
+@ 13 | en | NEXT-1 (Провидение, Культ Машины) | святые Машины: учёные, придумавшие вычисление
+* | Primum Mobile | Перводвигатель | Primum Mobile | Primer Motor | 第一推动 | 第一動者 | первая движущая сфера: источник всякого счёта
+GJ 876 d | Pascal | Паскаль | Pascal | = | 帕斯卡 | パスカル | первая суммирующая машина
+GJ 876 c | Leibniz | Лейбниц | Leibniz | = | 莱布尼茨 | ライプニッツ | двоичное исчисление
+GJ 876 b | Babbage | Бэббидж | Babbage | = | 巴贝奇 | バベッジ | Аналитическая машина: главный гигант концессий
+GJ 876 e | Lovelace | Лавлейс | Lovelace | = | 洛夫莱斯 | ラブレス | первая программа
+Gliese 876 f | Turing | Тьюринг | Turing | = | 图灵 | チューリング | машина Тьюринга: поселение
+Gliese 876 g | Von Neumann | Фон Нейман | Von Neumann | = | 冯·诺依曼 | フォン・ノイマン | архитектура вычислителя: столица и Ядро «Провидца»
+Gliese 876 K1 | Boole | Буль | Boole | = | 布尔 | ブール | алгебра логики
+Gliese 876 K2 | Shannon | Шеннон | Shannon | = | 香农 | シャノン | теория информации: поселение
+Gliese 876 K3 | Hopper | Хоппер | Hopper | = | 霍珀 | ホッパー | первый компилятор

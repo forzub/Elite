@@ -164,7 +164,16 @@ void LocalizationService::applyDiscovererNames(const fs::path& path)
             // inside "Ubuntu (...)"); "HD 20794 (82 G. Eridani)" -> "HD 20794, 82 G. Eridani"
             const auto baseOf = [](const std::string& name) {
                 const auto open = name.find(" (");
-                return open == std::string::npos ? name : name.substr(0, open);
+                std::string base = open == std::string::npos ? name : name.substr(0, open);
+                // "Alpha Centauri A+B" -> "Alpha Centauri": a trailing star-letter list is not the name
+                const auto space = base.rfind(' ');
+                if (space != std::string::npos)
+                {
+                    const std::string tail = base.substr(space + 1);
+                    if (tail.find('+') != std::string::npos && tail.find_first_not_of("ABCD+") == std::string::npos)
+                        base = base.substr(0, space);
+                }
+                return base;
             };
             const auto flatOf = [](const std::string& name) {
                 const auto open = name.find(" (");
@@ -195,8 +204,18 @@ void LocalizationService::applyDiscovererNames(const fs::path& path)
                 for (const std::string& locale : m_localeOrder)
                 {
                     const std::string given = givenName(e, locale);
-                    const std::string starName = knownIn(star, locale);
+                    std::string starName = knownIn(star, locale);
                     const std::string systemName = baseOf(knownIn(knownSystem, locale));
+                    // a star with no translation of its own ("Alpha Centauri A" in every locale) takes the
+                    // translated system name + its letter: "Альфа Центавра A", "南门二 A"
+                    const auto own = star.find(locale);
+                    if (own == star.end() || own->second.empty())
+                    {
+                        const std::string enStar = knownIn(star, "en");
+                        const std::string enSystem = baseOf(knownIn(knownSystem, "en"));
+                        if (!enSystem.empty() && !systemName.empty() && enStar.rfind(enSystem, 0) == 0)
+                            starName = systemName + enStar.substr(enSystem.size());
+                    }
                     if (given.empty() || starName.empty())
                         continue;
                     const std::string suffix =

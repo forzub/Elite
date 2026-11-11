@@ -1,0 +1,161 @@
+# Naming series 3126 (PROPOSAL) - inhabited systems, part 2. Format: see inhabited_1.txt.
+
+@ 14 | en | HOMESTEAD-1 (Хомстед); Новая Индия приняла эти имена | хозяйство поселенца: от кузни у звезды до усадьбы на льду
+* | Lantern | Фонарь | Lantern | Farol | 灯笼 | ランタン | фонарь над усадьбой
+HD 20794 c | Cinder | Окалина | Cinder | Escoria | 余烬 | シンダー | окалина: раскалённая ближняя
+HD 20794 g | Ember | Уголёк | Ember | Ascua | 炭火 | エンバー | тлеющий уголь
+HD 20794 h | Kiln | Обжиг | Kiln | Horno | 窑 | キルン | печь для обжига
+HD 20794 i | Forge | Кузня | Forge | Fragua | 锻炉 | フォージ | кузница
+HD 20794 j | Anvil | Наковальня | Anvil | Yunque | 铁砧 | アンビル | наковальня
+HD 20794 k | Furnace | Горн | Furnace | Fogón | 熔炉 | ファーネス | горн
+HD 20794 l | Smithy | Мастерская | Smithy | Herrería | 铁匠铺 | スミシー | мастерская кузнеца
+HD 20794 b | Millstone | Жёрнов | Millstone | Muela | 磨盘 | ミルストーン | жёрнов: тяжёлая суперземля
+HD 20794 d | Windmill | Ветряк | Windmill | Molino | 风车 | ウインドミル | ветряная мельница: газовые платформы
+HD 20794 f | Silo | Силос | Silo | Silo | 粮仓 | サイロ | зерновая башня
+HD 20794 f I | Scarecrow | Пугало | Scarecrow | Espantapájaros | 稻草人 | スケアクロウ | пугало у силоса
+HD 20794 m | Frost | Иней | Frost | Escarcha | 霜 | フロスト | первый заморозок
+HD 20794 K1 | Paddock | Загон | Paddock | Corral | 围场 | パドック | загон: поселение
+HD 20794 K2 | Orchard | Сад | Orchard | Huerto | 果园 | オーチャード | фруктовый сад: поселение
+HD 20794 K3 | Hearth | Очаг | Hearth | Hogar | 炉床 | ハース | очаг: столица Хомстеда и Новой Индии
+
+@ 15 | sw | UHURU-2 (Новая Маланд, Содружество Уджамаа) | слова суахили: стихии и хозяйство общины
+* | Nuru | Нуру | Nuru | Nuru | 努鲁 | ヌル | свет
+HD 40307 e | Moto | Мото | Moto | = | 莫托 | モト | огонь
+HD 40307 h | Chuma | Чума | Chuma | = | 丘马 | チュマ | железо: железная планета
+HD 40307 b | Mlima | Млима | Mlima | = | 姆利马 | ムリマ | гора: суперземля
+HD 40307 c | Simba | Симба | Simba | = | 辛巴 | シンバ | лев: самая массивная из твёрдых
+HD 40307 i | Jiwe | Дживе | Jiwe | = | 吉维 | ジウェ | камень
+HD 40307 d | Kimbunga | Кимбунга | Kimbunga | = | 金本加 | キンブンガ | ураган: атмосфера в 940 бар
+HD 40307 j | Upepo | Упепо | Upepo | = | 乌佩波 | ウペポ | ветер
+HD 40307 f | Mvua | Мвуа | Mvua | = | 姆武阿 | ムヴア | дождь: газовые платформы
+HD 40307 k | Uhuru | Ухуру | Uhuru | = | 乌呼鲁 | ウフル | свобода: столица Маланд и Небесной Твердыни
+HD 40307 K1 | Theluji | Телуджи | Theluji | = | 特卢吉 | テルジ | снег
+HD 40307 K2 | Shamba | Шамба | Shamba | = | 尚巴 | シャンバ | поле: агрокольца «Житница»
+HD 40307 K3 | Kisima | Кисима | Kisima | = | 基西马 | キシマ | колодец: поселение
+
+@ 16 | pt | AMAZONIA-1 (Сельва-Верде) | Амазония: реки бассейна — планеты, боги тупи — гигант и его луны, лесные духи — ледяные карлики
+* | Guaraci | Гуараси | Guaraci | Guaraci | 瓜拉西 | グアラシ | солнце-бог тупи-гуарани
+HD 69830 e | Xingu | Шингу | Xingu | Xingú | 欣古 | シングー | река Шингу
+HD 69830 f | Tapajós | Тапажос | Tapajos | Tapajós | 塔帕若斯 | タパジョス | река Тапажос
+HD 69830 g | Madeira | Мадейра | Madeira | = | 马代拉 | マデイラ | река Мадейра
+HD 69830 b | Boitatá | Боитата | Boitata | Boitatá | 火蛇 | ボイタタ | огненный змей: мир в 3600 K
+HD 69830 h | Purus | Пурус | Purus | = | 普鲁斯 | プルス | река Пурус
+HD 69830 c | Juruá | Журуа | Jurua | Yuruá | 茹鲁阿 | ジュルア | река Журуа: газовые платформы
+HD 69830 i | Japurá | Жапура | Japura | Yapurá | 雅普拉 | ジャプラ | река Жапура
+HD 69830 j | Tocantins | Токантинс | Tocantins | = | 托坎廷斯 | トカンチンス | река Токантинс
+HD 69830 d | Rio Negro | Риу-Негру | Rio Negro | Río Negro | 内格罗河 | ネグロ川 | Чёрная река
+HD 69830 k | Tupã | Тупан | Tupa | Tupá | 图潘 | トゥパン | бог грома: газовый гигант с кольцами
+HD 69830 k I | Jaci | Жаси | Jaci | Yací | 雅西 | ジャシ | луна, жена Гуараси
+HD 69830 k II | Rudá | Руда | Ruda | Rudá | 鲁达 | ルダ | бог любви
+HD 69830 k III | Iara | Иара | Iara | Iara | 伊阿拉 | イアラ | водная дева
+HD 69830 l | Amazonas | Амазонас | Amazonas | = | 亚马孙 | アマゾナス | Амазонка: столица Сельва-Верде
+HD 69830 l I | Boto | Бото | Boto | Boto | 博托 | ボート | речной дельфин-оборотень
+HD 69830 A1 | Saci | Саси | Saci | Sací | 萨西 | サシ | одноногий проказник
+HD 69830 K2 | Mapinguari | Мапингуари | Mapinguari | = | 马平瓜里 | マピングアリ | лесной великан: поселение
+HD 69830 K3 | Caipora | Кайпора | Caipora | = | 凯波拉 | カイポラ | хранительница зверей
+HD 69830 K4 | Curupira | Курупира | Curupira | = | 库鲁皮拉 | クルピラ | страж леса с вывернутыми ступнями: поселение
+
+@ 22 | hi | DHARMA-1 (Новая Карма) | звезда созвездия Павлина — Маюра; планеты — боги ведийского пантеона, ледяные тела — их ваханы
+* | मयूर | Маюра | Mayura | Mayura | 孔雀 | マユーラ | павлин: колонисты перевели созвездие Павлина | Mayūr
+Delta Pavonis b | अग्नि | Агни | Agni | = | 阿耆尼 | アグニ | огонь | Agni
+Delta Pavonis c | ज्वाला | Джвала | Jvala | Jvala | 焰 | ジュヴァーラー | пламя | Jvālā
+Delta Pavonis d | तेजस् | Теджас | Tejas | = | 光辉 | テージャス | сияние, жар | Tejas
+Delta Pavonis e | कुण्डल | Кундала | Kundala | = | 耳环 | クンダラ | серьга-кольцо: планета с кольцами | Kuṇḍala
+Delta Pavonis f | मरुत् | Марут | Marut | = | 摩录多 | マルト | буревые божества | Marut
+Delta Pavonis g | मित्र | Митра | Mitra | = | 密多罗 | ミトラ | бог договора | Mitra
+Delta Pavonis h | पृथ्वी | Притхви | Prithvi | = | 地母 | プリトヴィー | земля-мать | Pṛthvī
+Delta Pavonis i | इन्द्र | Индра | Indra | = | 因陀罗 | インドラ | громовержец: суперземля в бурях | Indra
+Delta Pavonis j | सोम | Сома | Soma | = | 苏摩 | ソーマ | напиток бессмертия, луна: поселение | Soma
+Delta Pavonis k | कैलास | Кайласа | Kailasa | Kailash | 冈仁波齐 | カイラス | священная гора: столица Новой и Свободной Кармы | Kailāsa
+Delta Pavonis K1 | नन्दी | Нанди | Nandi | = | 南迪 | ナンディン | бык Шивы: поселение | Nandī
+Delta Pavonis K2 | गरुड | Гаруда | Garuda | = | 迦楼罗 | ガルダ | птица Вишну | Garuḍa
+Delta Pavonis K3 | हंस | Хамса | Hamsa | = | 天鹅 | ハンサ | лебедь Сарасвати | Haṃsa
+
+@ 23 | en | Проспекторат Керн, стратегические рудники, 2880 | горняцкий словарь Керна: плавка у звезды, жилы и забои у гиганта
+* | Bonanza | Бонанза | Bonanza | Bonanza | 富矿 | ボナンザ | богатая жила
+Gliese 892 e | Slag | Шлак | Slag | Escoria | 炉渣 | スラグ | шлак
+Gliese 892 i | Crucible | Тигель | Crucible | Crisol | 坩埚 | るつぼ | тигель
+HD 219134 b | Bessemer | Бессемер | Bessemer | = | 贝塞麦 | ベッセマー | конвертер Бессемера
+Gliese 892 j | Smelter | Плавильня | Smelter | Fundición | 冶炼厂 | 製錬所 | плавильня
+HD 219134 c | Ingot | Слиток | Ingot | Lingote | 铸锭 | インゴット | слиток
+Gliese 892 k | Assay | Проба | Assay | Ensayo | 试金 | 試金 | проба руды
+Gliese 892 l | Lode | Жила | Lode | Filón | 矿脉 | 鉱脈 | рудная жила
+HD 219134 d | Bellows | Мехи | Bellows | Fuelle | 风箱 | ふいご | кузнечные мехи: газовый субнептун
+Gliese 892 A1 | Nugget | Самородок | Nugget | Pepita | 金块 | ナゲット | самородок: поселение
+HD 219134 h | Motherlode | Главная Жила | Motherlode | Veta Madre | 主矿脉 | マザーロード | главная жила: газовый гигант
+HD 219134 h I | Pickaxe | Кайло | Pickaxe | Pico | 鹤嘴锄 | つるはし | кайло: поселение
+HD 219134 h II | Bedrock | Коренная | Bedrock | Roca Madre | 基岩 | 岩盤 | коренная порода: столица рудников
+
+@ 25 | en | фронтир Когниума у маяка (2860): Управление маяков «Сычёвник» называет свои миры птицами | соколы и ястребы
+* | Kestrel | Пустельга | Kestrel | Cernícalo | 红隼 | チョウゲンボウ | пустельга
+Gliese 357 e | Merlin | Дербник | Merlin | Esmerejón | 灰背隼 | コチョウゲンボウ | дербник
+Gliese 357 f | Hobby | Чеглок | Hobby | Alcotán | 燕隼 | チゴハヤブサ | чеглок
+Gliese 357 g | Peregrine | Сапсан | Peregrine | Peregrino | 游隼 | ハヤブサ | сапсан
+Gliese 357 h | Saker | Балобан | Saker | Sacre | 猎隼 | セーカーハヤブサ | балобан
+GJ 357 b | Goshawk | Ястреб | Goshawk | Azor | 苍鹰 | オオタカ | ястреб-тетеревятник
+Gliese 357 i | Lanner | Ланнер | Lanner | Borní | 地中海隼 | ラナーハヤブサ | средиземноморский сокол
+GJ 357 c | Harrier | Лунь | Harrier | Aguilucho | 鹞 | チュウヒ | лунь
+GJ 357 d | Osprey | Скопа | Osprey | Águila Pescadora | 鹗 | ミサゴ | скопа: газовый субнептун
+Gliese 357 j | Buzzard | Канюк | Buzzard | Ratonero | 鵟 | ノスリ | канюк
+Gliese 357 k | Gyrfalcon | Кречет | Gyrfalcon | Gerifalte | 矛隼 | シロハヤブサ | кречет: столица фронтира
+Gliese 357 l | Kite | Коршун | Kite | Milano | 鸢 | トビ | коршун
+Gliese 357 m | Eagle | Беркут | Eagle | Águila Real | 金雕 | イヌワシ | беркут: поселение
+Gliese 357 m I | Eaglet | Орлёнок | Eaglet | Aguilucho Real | 雏鹰 | 若鷲 | птенец беркута
+Gliese 357 n | Sparrowhawk | Перепелятник | Sparrowhawk | Gavilán | 雀鹰 | ハイタカ | перепелятник: поселение
+
+@ 30 | zh-Hans | Гелиевое поле (Гармония, Тяньхэ, Когниум, 2778); имена дали первые операторы — Цветущая Гармония | Гелиевое поле: гигант и его луна — Небо и Земля, тела коричневых карликов — триграммы, пояса — пять стихий, Инь и Ян
+* | 氦田 | Хайтянь | Haitian | Haitian | = | 氦田 | Гелиевое поле | Hàitián
+eps Ind A b | 乾 | Цянь | Qian | Qian | = | 乾 | Небо: сверхюпитер | Qián
+eps Ind A b I | 坤 | Кунь | Kun | Kun | = | 坤 | Земля: водная луна | Kūn
+Epsilon Indi Ba c | 震 | Чжэнь | Zhen | Zhen | = | 震 | Гром | Zhèn
+Epsilon Indi Ba d | 巽 | Сюнь | Xun | Xun | = | 巽 | Ветер: поселение | Xùn
+Epsilon Indi Ba e | 坎 | Кань | Kan | Kan | = | 坎 | Вода | Kǎn
+Epsilon Indi Bb c | 离 | Ли | Li | Li | = | 離 | Огонь, сияние: столица Гелиевого поля | Lí
+Epsilon Indi Bb d | 艮 | Гэнь | Gen | Gen | = | 艮 | Гора | Gèn
+Epsilon Indi Bb e | 兑 | Дуй | Dui | Dui | = | 兌 | Озеро: поселение | Duì
+Epsilon Indi Bb f | 水 | Шуй | Shui | Shui | = | 水 | вода | Shuǐ
+Epsilon Indi A A1 | 金 | Цзинь | Jin | Jin | = | 金 | металл | Jīn
+Epsilon Indi A K2 | 木 | Му | Mu | Mu | = | 木 | дерево | Mù
+Epsilon Indi A K3 | 火 | Хо | Huo | Huo | = | 火 | огонь | Huǒ
+Epsilon Indi A K4 | 土 | Ту | Tu | Tu | = | 土 | земля | Tǔ
+Epsilon Indi Bb (BAB) K1 | 阴 | Инь | Yin | Yin | = | 陰 | тёмное начало | Yīn
+Epsilon Indi Bb (BAB) K2 | 阳 | Ян | Yang | Yang | = | 陽 | светлое начало | Yáng
+
+@ 31 | en | RESOURCER-1 (Шахта Альфа, Проспекторат Керн) | звезда — Бессель (первый измеренный параллакс, 1838); планеты — минералы Керна
+* | Bessel | Бессель | Bessel | Bessel | 贝塞尔 | ベッセル | Бессель измерил по 61 Лебедя первое расстояние до звезды
+61 Cygni A b | Cinnabar | Киноварь | Cinnabar | Cinabrio | 辰砂 | 辰砂 | киноварь
+61 Cygni A c | Pyrite | Пирит | Pyrite | Pirita | 黄铁矿 | 黄鉄鉱 | пирит
+61 Cygni A d | Hematite | Гематит | Hematite | Hematites | 赤铁矿 | 赤鉄鉱 | гематит
+61 Cygni A e | Magnetite | Магнетит | Magnetite | Magnetita | 磁铁矿 | 磁鉄鉱 | магнетит
+61 Cygni A f | Galena | Галенит | Galena | Galena | 方铅矿 | 方鉛鉱 | галенит: поселение
+61 Cygni B b | Sulphur | Сера | Sulphur | Azufre | 硫磺 | 硫黄 | сера
+61 Cygni B c | Realgar | Реальгар | Realgar | Rejalgar | 雄黄 | 鶏冠石 | реальгар
+61 Cygni B d | Cuprite | Куприт | Cuprite | Cuprita | 赤铜矿 | 赤銅鉱 | куприт
+61 Cygni B e | Bauxite | Боксит | Bauxite | Bauxita | 铝土矿 | ボーキサイト | боксит
+61 Cygni B f | Malachite | Малахит | Malachite | Malaquita | 孔雀石 | 孔雀石 | малахит
+61 Cygni B g | Bornite | Борнит | Bornite | Bornita | 斑铜矿 | 斑銅鉱 | борнит
+61 Cygni B h | Cassiterite | Касситерит | Cassiterite | Casiterita | 锡石 | 錫石 | касситерит
+61 Cygni B i | Wolframite | Вольфрамит | Wolframite | Wolframita | 黑钨矿 | 鉄マンガン重石 | вольфрамит: газовые платформы
+61 Cygni B j | Quartz | Кварц | Quartz | Cuarzo | 石英 | 石英 | кварц: столица Керна, Шахта Альфа
+61 Cygni B k | Mica | Слюда | Mica | Mica | 云母 | 雲母 | слюда: поселение
+
+@ 37 | el | ODYSSEY-1 (Третья Эллада) | «Одиссея»: звезда — Гомер, планеты — остановки Одиссея, второй гигант — Схерия, столица — Итака
+* | Όμηρος | Гомер | Homer | Homero | 荷马 | ホメロス | тот, кто рассказал о её герое | Ómiros
+HD 114783 d | Τροία | Троя | Troy | Troya | 特洛伊 | トロイア | начало пути | Troía
+HD 114783 e | Ίσμαρος | Исмар | Ismaros | Ísmaro | 伊斯马洛斯 | イスマロス | город киконов | Ísmaros
+HD 114783 f | Λωτοφάγοι | Лотофаги | Lotophagi | Lotófagos | 食莲人 | ロートパゴス | страна поедателей лотоса | Lotofágoi
+HD 114783 g | Κύκλωψ | Киклоп | Cyclops | Cíclope | 独眼巨人 | キュクロプス | остров Полифема | Kýklops
+HD 114783 h | Αιολία | Эолия | Aeolia | Eolia | 埃俄利亚 | アイオリア | остров ветров | Aiolía
+HD 114783 i | Λαιστρυγόνες | Лестригония | Laestrygonia | Lestrigonia | 莱斯特律戈涅斯 | ライストリュゴネス | страна великанов-людоедов | Laistrygónes
+HD 114783 j | Αιαία | Ээя | Aeaea | Eea | 埃埃亚 | アイアイエー | остров Кирки | Aiaía
+HD 114783 b | Ποσειδών | Посейдон | Poseidon | Poseidón | 波塞冬 | ポセイドン | бог, мешавший Одиссею вернуться | Poseidón
+HD 114783 b I | Σειρήνες | Сирены | Sirens | Sirenas | 塞壬 | セイレーン | сирены | Seirínes
+HD 114783 c | Σχερία | Схерия | Scheria | Esqueria | 斯刻里亚 | スケリア | остров феаков, откуда Одиссея доставили домой | Schería
+HD 114783 c I | Σκύλλα | Сцилла | Scylla | Escila | 斯库拉 | スキュラ | Сцилла | Skýlla
+HD 114783 c II | Χάρυβδις | Харибда | Charybdis | Caribdis | 卡律布狄斯 | カリュブディス | Харибда | Cháryvdis
+HD 114783 c III | Ιθάκη | Итака | Ithaca | Ítaca | 伊萨卡 | イタケー | дом: столица Третьей Эллады и лагерь «Кларион» | Itháki
+HD 114783 c IV | Πηνελόπη | Пенелопа | Penelope | Penélope | 珀涅罗珀 | ペーネロペー | та, что ждала | Pinelópi
+HD 114783 A1 | Θρινακία | Тринакия | Thrinacia | Trinacia | 特里纳基亚 | トリナキエー | остров быков Гелиоса | Thrinakía
+HD 114783 K2 | Τηλέμαχος | Телемах | Telemachus | Telémaco | 忒勒马科斯 | テーレマコス | сын Одиссея: поселение | Tilémachos
+HD 114783 K3 | Μέντωρ | Ментор | Mentor | Méntor | 门托尔 | メントール | наставник Телемаха | Méntor
+HD 114783 K4 | Εύμαιος | Эвмей | Eumaeus | Eumeo | 欧迈俄斯 | エウマイオス | верный свинопас: поселение | Évmaios

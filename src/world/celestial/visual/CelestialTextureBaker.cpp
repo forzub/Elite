@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include "CelestialTextureBaker.h"
 
 #include "CelestialVisualLibrary.h"
@@ -2437,6 +2438,15 @@ bool shouldBakeTilePyramid(
 )
 {
     namespace fs = std::filesystem;
+
+    // No runtime reads lod/tiles (only CelestialGeneratedAssetLibrary validates it); the near surface is
+    // the field itself (GlobeBake + LocalTerrain). The pyramid was ~70 % of the Sol cache on disk
+    // (docs/CELESTIAL_RESOURCE_AUDIT.md finding 5, step 4): off unless ELITE_BAKE_TILE_PYRAMID=1.
+    {
+        const char* v = std::getenv("ELITE_BAKE_TILE_PYRAMID");
+        if (!v || *v != '1')
+            return false;
+    }
 
     // Irregular bodies will need a separate mesh-LOD path later.
     // Do not generate equirectangular sphere tiles for Phobos/Deimos meshes.

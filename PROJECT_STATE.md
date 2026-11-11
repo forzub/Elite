@@ -5068,3 +5068,8 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   1.6 s on its OBJ shape. assets/generated is still read for: the Hub map normal / preview, the Phobos / Deimos OBJ
   shape models, environment / cloud lookups - not for body albedo any more. Author to judge: Sol bodies on the map
   now look like in flight (Jupiter = Cassini via the field, paler than the restyled cache).
+- Step 4 DONE (baker only; NOTHING deleted on disk): CelestialTextureBaker no longer bakes lod/tiles (never read at
+  runtime, only validated) unless ELITE_BAKE_TILE_PYRAMID=1; meta then says tiles disabled, the library skips the
+  check. Check: --bake-celestial-textures --system sol --body moon --import-real --output D:/tmp/elite_bake -> 55 MB,
+  no tiles (the current cache has 181 MB for the Moon). Existing tiles on disk: 3.97 GB under assets/generated
+  (untracked) - deleting them is the AUTHOR's decision (asset deletion); the runtime does not need them.

@@ -5073,3 +5073,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   check. Check: --bake-celestial-textures --system sol --body moon --import-real --output D:/tmp/elite_bake -> 55 MB,
   no tiles (the current cache has 181 MB for the Moon). Existing tiles on disk: 3.97 GB under assets/generated
   (untracked) - deleting them is the AUTHOR's decision (asset deletion); the runtime does not need them.
+- Step 5 (flight lifetime within a system) DONE (source + compiled + live DEV): releaseStaleBodies also frees a body
+  that stayed below the load threshold (<= 1 px; lastNeededFrame) for 3600 frames (~60 s), never the local-terrain
+  body; the entry is made / loaded again when the disc shows. LIVE (ELITE_DEV_START=body:phobos, D:/tmp/elite_mem/S5):
+  Earth + Moon loaded at the Earth start, points at Mars -> released: registry 34 MB / 4 -> 4 MB / 2 (Mars + Phobos),
+  globes 102 -> 6 MB, working set 1220 -> 1054 MB.
+- Memory audit plan (docs/CELESTIAL_RESOURCE_AUDIT.md) steps 1-5 DONE. Left for the AUTHOR: delete assets/generated
+  lod/tiles (3.97 GB, never read) and decide on the rest of assets/generated (still read for Hub normal / preview,
+  Phobos / Deimos OBJ shapes, environment lookups). Small, not budgeted: DetailMapPlanetPass shape-mesh textures.

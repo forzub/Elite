@@ -570,6 +570,7 @@ namespace
         double ringInner = 0.0, ringOuter = 0.0;
         std::uint64_t lastUsedFrame = 0;
         std::uint64_t lastSeenFrame = 0;   // in the frame (the current system) at all
+        std::uint64_t lastNeededFrame = 0; // big enough to need its surface (> 1 px, the load threshold)
         glm::vec3 flatColour {0.5f};
         int lastLevel = -1;   // diagnostics: last logged representation
         // surface settlements (SurfaceSettlementLayout / SettlementMesh), built once the field is ready
@@ -1762,11 +1763,17 @@ struct CelestialFlightRenderer::Impl
     void releaseStaleBodies()
     {
         constexpr std::uint64_t StaleFrames = 300;
+        // in the system but only a point (< 1.5 px) for ~60 s: the surface and textures go too; the entry
+        // is made again (and loaded) once the disc shows - never the body under the local terrain
+        constexpr std::uint64_t PointFrames = 3600;
         bool released = false;
         for (auto it = bodies.begin(); it != bodies.end();)
         {
             BodyRuntime& b = it->second;
-            if (frameIndex - b.lastSeenFrame <= StaleFrames)
+            const bool gone = frameIndex - b.lastSeenFrame > StaleFrames;
+            const bool longAPoint = b.ready && b.id != terrainBodyId && frameIndex > PointFrames &&
+                                    frameIndex - b.lastNeededFrame > PointFrames;
+            if (!gone && !longAPoint)
             {
                 ++it;
                 continue;
@@ -1788,7 +1795,7 @@ struct CelestialFlightRenderer::Impl
                 st.mesh.destroy();
             if (b.ringTexture)
                 glDeleteTextures(1, &b.ringTexture);
-            diagEvent(b.id, "released (not in the frame)");
+            diagEvent(b.id, gone ? "released (not in the frame)" : "released (a point for 60 s)");
             it = bodies.erase(it);
             released = true;
         }
@@ -1940,7 +1947,11 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         BodyRuntime& rt = bodies[b.id];
         rt.id = b.id;
         if (primary)
+        {
             rt.lastSeenFrame = frameIndex;
+            if (it.pxRadius > 1.0 || rt.lastNeededFrame == 0)
+                rt.lastNeededFrame = frameIndex;
+        }
         // "Used" = its disc is on screen; sprites need no textures, so a
         // body seen as a dot can lose its globe tier to the budget.
         if (primary && it.pxRadius >= 1.5)

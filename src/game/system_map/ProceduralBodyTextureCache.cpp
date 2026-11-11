@@ -103,9 +103,34 @@ void ProceduralBodyTextureCache::memoryUsage(std::size_t& gpuBytes, std::size_t&
     }
 }
 
-void ProceduralBodyTextureCache::beginFrame()
+void ProceduralBodyTextureCache::beginFrame(std::uint64_t frame)
 {
     m_uploadsLeft = 2;
+    m_frame = frame;
+}
+
+bool ProceduralBodyTextureCache::oldestUploaded(std::uint64_t& lastUsedFrame, std::string& key) const
+{
+    bool any = false;
+    for (const auto& [k, e] : m_entries)
+        if (e->state.load(std::memory_order_acquire) == 3 && e->texture != 0 && (!any || e->lastUsedFrame < lastUsedFrame))
+        {
+            lastUsedFrame = e->lastUsedFrame;
+            key = k;
+            any = true;
+        }
+    return any;
+}
+
+std::size_t ProceduralBodyTextureCache::evict(const std::string& key)
+{
+    const auto it = m_entries.find(key);
+    if (it == m_entries.end() || it->second->state.load(std::memory_order_acquire) != 3)
+        return 0;
+    const std::size_t bytes = static_cast<std::size_t>(it->second->width) * it->second->height * 4 * 4 / 3;
+    glDeleteTextures(1, &it->second->texture);
+    m_entries.erase(it);   // baked again on its next request
+    return bytes;
 }
 
 GLuint ProceduralBodyTextureCache::textureFor(int systemId, const std::string& bodyId)
@@ -132,6 +157,7 @@ GLuint ProceduralBodyTextureCache::textureFor(int systemId, const std::string& b
         return 0;
     }
     Entry& e = *it->second;
+    e.lastUsedFrame = m_frame;
     const int state = e.state.load(std::memory_order_acquire);
     if (state == 3)
         return e.texture;

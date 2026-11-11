@@ -51,8 +51,14 @@ public:
 
     Policy policy() const noexcept { return m_policy; }
 
-    // GL thread, once per frame: resets the upload budget (two textures).
-    void beginFrame();
+    // GL thread, once per frame: resets the upload budget (two textures); frame = the map's frame counter
+    // (stamps the entries' last use for the map texture budget).
+    void beginFrame(std::uint64_t frame);
+
+    // Map texture budget (MapCelestialRenderResources::enforceMapTextureBudget): the least recently used
+    // uploaded texture, and its eviction (GL delete; baked again on its next request). Returns the bytes freed.
+    bool oldestUploaded(std::uint64_t& lastUsedFrame, std::string& key) const;
+    std::size_t evict(const std::string& key);
 
     // GL thread. DEV memory ledger: uploaded GPU bytes (RGBA8 + mips) and
     // baked-but-not-uploaded CPU bytes.
@@ -73,6 +79,7 @@ private:
         int height = 0;
         std::vector<std::uint8_t> rgba; // GL row order (south first)
         GLuint texture = 0;
+        std::uint64_t lastUsedFrame = 0;
     };
 
     void workerLoop();
@@ -85,6 +92,7 @@ private:
 
     std::unordered_map<std::string, std::shared_ptr<Entry>> m_entries; // GL thread only
     int m_uploadsLeft = 2;
+    std::uint64_t m_frame = 0;
 
     std::mutex m_mutex;
     std::condition_variable m_wake;

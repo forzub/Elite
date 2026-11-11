@@ -190,6 +190,24 @@ private:
 
     std::string m_environmentRenderSessionKey;
 
+    // One texture policy for every map texture (docs/CELESTIAL_RESOURCE_AUDIT.md step 2): a byte budget
+    // (ELITE_MAP_TEXTURE_BUDGET_MB, default 256) evicts the least recently used textures not drawn in the
+    // last frames; a texture unused for ~5 min is released anyway. An evicted texture loads / bakes again
+    // on its next request.
+    struct MapTextureEntry
+    {
+        GLuint texture = 0;          // 0 = the load failed (kept: no retry every frame)
+        std::size_t bytes = 0;
+        std::uint64_t lastUsedFrame = 0;
+    };
+    using MapTextureCache = std::unordered_map<std::string, MapTextureEntry>;
+    GLuint useCachedTexture(MapTextureCache& cache, const std::string& key, bool& found);
+    void storeCachedTexture(MapTextureCache& cache, const std::string& key, GLuint texture);
+    void enforceMapTextureBudget();
+    std::uint64_t m_mapFrame = 0;
+    std::size_t m_mapTextureBudgetBytes = 0;
+    std::uint64_t m_mapTextureEvictions = 0;
+
     // DEV memory ledger (beginFrame, every 60 frames)
     void reportMemoryLedger();
     std::uint64_t m_memoryLedgerFrame = 0;
@@ -197,11 +215,11 @@ private:
     // created in init() (GL thread); baking runs on its own worker
     std::unique_ptr<ProceduralBodyTextureCache> m_proceduralBodies;
 
-    std::unordered_map<std::string, GLuint>
+    MapTextureCache
         m_mapPreviewTextureByAssetKey;
-    std::unordered_map<std::string, GLuint>
+    MapTextureCache
         m_globalAlbedoTextureByAssetKey;
-    std::unordered_map<std::string, GLuint>
+    MapTextureCache
         m_globalNormalTextureByAssetKey;
 
     render::celestial::HubPlanetSurfaceRenderer

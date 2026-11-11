@@ -578,10 +578,125 @@ void MapCelestialRenderResources::beginFrame()
 {
     m_proceduralCloudLayer.beginFrame();
 
+    ++m_mapFrame;
+
     if (m_proceduralBodies)
-        m_proceduralBodies->beginFrame();
+        m_proceduralBodies->beginFrame(m_mapFrame);
+
+    if (m_mapFrame % 30 == 0)
+        enforceMapTextureBudget();
 
     reportMemoryLedger();
+}
+
+GLuint MapCelestialRenderResources::useCachedTexture(
+    MapTextureCache& cache,
+    const std::string& key,
+    bool& found
+)
+{
+    const auto it = cache.find(key);
+    found = it != cache.end();
+    if (!found)
+        return 0;
+    it->second.lastUsedFrame = m_mapFrame;
+    return it->second.texture;
+}
+
+void MapCelestialRenderResources::storeCachedTexture(
+    MapTextureCache& cache,
+    const std::string& key,
+    GLuint texture
+)
+{
+    MapTextureEntry entry;
+    entry.texture = texture;
+    entry.lastUsedFrame = m_mapFrame;
+    if (texture != 0)
+    {
+        // level 0 as uploaded (RGBA8; TextureLoader builds the mip chain: + 1/3)
+        GLint previous = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous);
+        GLint w = 0, h = 0;
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+        glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
+        entry.bytes = static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4 * 4 / 3;
+    }
+    cache[key] = entry;
+}
+
+void MapCelestialRenderResources::enforceMapTextureBudget()
+{
+    if (m_mapTextureBudgetBytes == 0)
+    {
+        const char* v = std::getenv("ELITE_MAP_TEXTURE_BUDGET_MB");
+        const double mb = v && *v ? std::atof(v) : 256.0;
+        m_mapTextureBudgetBytes = static_cast<std::size_t>(std::max(1.0, mb) * 1048576.0);
+    }
+    // never what the last frames drew; anything idle for ~5 min (18 000 frames) goes regardless
+    constexpr std::uint64_t KeepFrames = 3;
+    constexpr std::uint64_t IdleFrames = 18000;
+    MapTextureCache* caches[] = {
+        &m_globalAlbedoTextureByAssetKey,
+        &m_mapPreviewTextureByAssetKey,
+        &m_globalNormalTextureByAssetKey
+    };
+
+    std::size_t total = 0;
+    for (MapTextureCache* c : caches)
+        for (const auto& kv : *c)
+            total += kv.second.bytes;
+    std::size_t proceduralBytes = 0, proceduralEntries = 0, pendingCpu = 0;
+    if (m_proceduralBodies)
+        m_proceduralBodies->memoryUsage(proceduralBytes, proceduralEntries, pendingCpu);
+    total += proceduralBytes;
+
+    for (;;)
+    {
+        // the least recently used candidate over all map textures
+        MapTextureCache* bestCache = nullptr;
+        std::string bestKey;
+        std::uint64_t bestFrame = m_mapFrame;
+        bool bestProcedural = false;
+        for (MapTextureCache* c : caches)
+            for (const auto& kv : *c)
+                if (kv.second.texture != 0 && kv.second.lastUsedFrame + KeepFrames < m_mapFrame &&
+                    kv.second.lastUsedFrame < bestFrame)
+                {
+                    bestFrame = kv.second.lastUsedFrame;
+                    bestCache = c;
+                    bestKey = kv.first;
+                    bestProcedural = false;
+                }
+        std::string procKey;
+        std::uint64_t procFrame = 0;
+        if (m_proceduralBodies && m_proceduralBodies->oldestUploaded(procFrame, procKey) &&
+            procFrame + KeepFrames < m_mapFrame && procFrame < bestFrame)
+        {
+            bestFrame = procFrame;
+            bestKey = procKey;
+            bestCache = nullptr;
+            bestProcedural = true;
+        }
+        if (bestKey.empty())
+            break;
+        const bool overBudget = total > m_mapTextureBudgetBytes;
+        const bool idle = bestFrame + IdleFrames < m_mapFrame;
+        if (!overBudget && !idle)
+            break;
+        if (bestProcedural)
+            total -= std::min(total, m_proceduralBodies->evict(bestKey));
+        else
+        {
+            auto it = bestCache->find(bestKey);
+            glDeleteTextures(1, &it->second.texture);
+            total -= std::min(total, it->second.bytes);
+            bestCache->erase(it);   // loads again on its next request
+        }
+        ++m_mapTextureEvictions;
+    }
 }
 
 void MapCelestialRenderResources::reportMemoryLedger()
@@ -593,22 +708,15 @@ void MapCelestialRenderResources::reportMemoryLedger()
         return;
     }
 
-    GLint previous = 0;
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous);
-
     // level 0 size as uploaded (RGBA8, TextureLoader builds the full mip chain: + 1/3)
     auto bytesOf =
-        [](const std::unordered_map<std::string, GLuint>& textures, std::size_t& bytes, std::size_t& entries)
+        [](const MapTextureCache& textures, std::size_t& bytes, std::size_t& entries)
         {
             for (const auto& kv : textures)
             {
-                if (kv.second == 0)
+                if (kv.second.texture == 0)
                     continue;
-                GLint w = 0, h = 0;
-                glBindTexture(GL_TEXTURE_2D, kv.second);
-                glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-                glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
-                bytes += static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4 * 4 / 3;
+                bytes += kv.second.bytes;
                 ++entries;
             }
         };
@@ -623,7 +731,7 @@ void MapCelestialRenderResources::reportMemoryLedger()
     bytesOf(m_globalNormalTextureByAssetKey, bytes, entries);
     core::dev::memoryLedgerSet("gpu map.generated_normal", bytes, entries);
 
-    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
+    core::dev::memoryLedgerSet("gpu map.texture_evictions", 0, static_cast<std::size_t>(m_mapTextureEvictions));
 
     if (m_proceduralBodies)
     {
@@ -1826,11 +1934,16 @@ GLuint MapCelestialRenderResources::mapPreviewTextureForGeneratedAsset(
     const std::string key =
         generatedAssetKey(asset);
 
-    auto existing =
-        m_mapPreviewTextureByAssetKey.find(key);
+    bool cached = false;
+    const GLuint cachedTexture =
+        useCachedTexture(
+            m_mapPreviewTextureByAssetKey,
+            key,
+            cached
+        );
 
-    if (existing != m_mapPreviewTextureByAssetKey.end())
-        return existing->second;
+    if (cached)
+        return cachedTexture;
 
     const std::filesystem::path resolvedPath =
         resolveSystemMapAssetPath(asset.map.preview512Path);
@@ -1845,8 +1958,7 @@ GLuint MapCelestialRenderResources::mapPreviewTextureForGeneratedAsset(
         tex
     );
 
-    m_mapPreviewTextureByAssetKey[key] =
-        tex;
+    storeCachedTexture(m_mapPreviewTextureByAssetKey, key, tex);
 
     if (tex == 0)
     {
@@ -1871,11 +1983,16 @@ GLuint MapCelestialRenderResources::globalAlbedoTextureForGeneratedAsset(
     const std::string key =
         generatedAssetKey(asset);
 
-    auto existing =
-        m_globalAlbedoTextureByAssetKey.find(key);
+    bool cached = false;
+    const GLuint cachedTexture =
+        useCachedTexture(
+            m_globalAlbedoTextureByAssetKey,
+            key,
+            cached
+        );
 
-    if (existing != m_globalAlbedoTextureByAssetKey.end())
-        return existing->second;
+    if (cached)
+        return cachedTexture;
 
     const std::filesystem::path resolvedPath =
         resolveSystemMapAssetPath(
@@ -1892,8 +2009,7 @@ GLuint MapCelestialRenderResources::globalAlbedoTextureForGeneratedAsset(
         tex
     );
 
-    m_globalAlbedoTextureByAssetKey[key] =
-        tex;
+    storeCachedTexture(m_globalAlbedoTextureByAssetKey, key, tex);
 
     if (tex == 0)
     {
@@ -2009,16 +2125,16 @@ GLuint MapCelestialRenderResources::globalNormalTextureForGeneratedAsset(
             asset
         );
 
-    auto existing =
-        m_globalNormalTextureByAssetKey.find(
-            key
+    bool cached = false;
+    const GLuint cachedTexture =
+        useCachedTexture(
+            m_globalNormalTextureByAssetKey,
+            key,
+            cached
         );
 
-    if (existing !=
-        m_globalNormalTextureByAssetKey.end())
-    {
-        return existing->second;
-    }
+    if (cached)
+        return cachedTexture;
 
     const std::filesystem::path resolvedPath =
         resolveSystemMapAssetPath(
@@ -2035,8 +2151,7 @@ GLuint MapCelestialRenderResources::globalNormalTextureForGeneratedAsset(
         texture
     );
 
-    m_globalNormalTextureByAssetKey[key] =
-        texture;
+    storeCachedTexture(m_globalNormalTextureByAssetKey, key, texture);
 
     if (texture == 0)
     {

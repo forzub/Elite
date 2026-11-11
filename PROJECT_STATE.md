@@ -5053,3 +5053,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   known forced-shutdown [CRASH] in opengl32.
 - Next: step 2 (one map texture cache with a byte budget, dropped on a system change), step 3 (the map bakes the
   flight field; Sol look unified; assets/generated no longer needed at runtime).
+- Step 2 DONE (source + compiled + live DEV): one map texture policy (MapCelestialRenderResources): the three cached
+  generated-texture maps (albedo / preview / normal) and ProceduralBodyTextureCache share a byte budget
+  ELITE_MAP_TEXTURE_BUDGET_MB (default 256, min 1 for tests): LRU eviction of textures not drawn in the last 3 frames,
+  anything idle ~5 min (18 000 frames) released regardless; an evicted texture loads / bakes again on request. Ledger
+  gpu map.texture_evictions. LIVE (budget 1 MB, policy all, Jupiter Detail): the cached 10.7 MB albedo shown while
+  the bake ran was evicted, the procedural 2.7 MB one kept and drawn (D:/tmp/elite_mem/S2/e.png).
+  DEV limit seen again: ELITE_DEV_SOL_MAP_SCRIPT system / enter:<body> / detail after a first Detail map stays on it.

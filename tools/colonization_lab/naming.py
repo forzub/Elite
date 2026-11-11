@@ -249,7 +249,10 @@ def mirrors(NM):
     for path in glob.glob(os.path.join(GALAXY_DETAILS, "systems", "*", "generated", "bodies", "*.json")):
         b = _load(path)
         eid = "body:" + b.get("id", "")
-        if eid not in NM.E or eid == LEXIE_ENTITY:
+        # only Fortuna's bodies carry the name in the body file: in the inhabited systems the canon
+        # (settlements.json, world_sites.body_id_for) finds bodies by their catalogue designation, so
+        # there the name lives in names_3126.json only (LocalizationService overlay at runtime)
+        if eid not in NM.E or eid == LEXIE_ENTITY or not eid.startswith(f"body:system_{FOMALHAUT_ID}."):
             continue
         names = NM.E[eid]["names"]
         ru = names.get("exonyms", {}).get("ru")
@@ -358,6 +361,16 @@ def fomalhaut_bodies():
 
 def fomalhaut_reservoirs():
     return [_load(p) for p in sorted(glob.glob(os.path.join(GALAXY_DETAILS, "systems", "061_fomalhaut", "generated", "reservoirs", "*.json")))]
+
+
+def all_body_ids():
+    ids = set()
+    for p in glob.glob(os.path.join(GALAXY_DETAILS, "systems", "*", "generated", "bodies", "*.json")):
+        with open(p, encoding="utf-8") as f:
+            m = re.search(r'"id": "([^"]+)"', f.read(2000))
+        if m:
+            ids.add(m.group(1))
+    return ids
 
 
 def lexie_body():
@@ -472,7 +485,7 @@ def checks(NM, mirror_texts=None):
     for eid in NM.E:
         if eid.startswith("site:") and eid[5:] not in site_ids and eid[5:] not in rt_ids:
             bad.append(eid)
-    bodies = {b["id"] for b in fomalhaut_bodies()}
+    bodies = all_body_ids()
     bad += [eid for eid in NM.E if eid.startswith("body:") and eid[5:] not in bodies]
     add("t02_t11_ids_resolve", not bad, f"сущностей {len(NM.E)}; битые ссылки: {bad}")
     # 3

@@ -160,10 +160,25 @@ void LocalizationService::applyDiscovererNames(const fs::path& path)
                 const auto en = m.find("en");
                 return en != m.end() ? en->second : std::string();
             };
+            // "Gliese 667 (A+B+C)" -> base "Gliese 667", shown "Gliese 667 A+B+C" (no nested brackets
+            // inside "Ubuntu (...)"); "HD 20794 (82 G. Eridani)" -> "HD 20794, 82 G. Eridani"
+            const auto baseOf = [](const std::string& name) {
+                const auto open = name.find(" (");
+                return open == std::string::npos ? name : name.substr(0, open);
+            };
+            const auto flatOf = [](const std::string& name) {
+                const auto open = name.find(" (");
+                if (open == std::string::npos || name.back() != ')')
+                    return name;
+                const std::string inner = name.substr(open + 2, name.size() - open - 3);
+                const bool starLetters =
+                    inner.find_first_not_of("ABCDab+") == std::string::npos;
+                return name.substr(0, open) + (starLetters ? " " : ", ") + inner;
+            };
             for (const std::string& locale : m_localeOrder)
             {
                 const std::string given = givenName(e, locale);
-                const std::string was = knownIn(knownSystem, locale);
+                const std::string was = flatOf(knownIn(knownSystem, locale));
                 if (given.empty() || was.empty() || given == was)
                     continue;
                 known->second[locale] = given + " (" + was + ")";
@@ -181,7 +196,7 @@ void LocalizationService::applyDiscovererNames(const fs::path& path)
                 {
                     const std::string given = givenName(e, locale);
                     const std::string starName = knownIn(star, locale);
-                    const std::string systemName = knownIn(knownSystem, locale);
+                    const std::string systemName = baseOf(knownIn(knownSystem, locale));
                     if (given.empty() || starName.empty())
                         continue;
                     const std::string suffix =

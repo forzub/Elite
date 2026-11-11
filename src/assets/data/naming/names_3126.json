@@ -2,6 +2,2142 @@
  "do_not_edit": true,
  "generated_by": "tools/colonization_lab/naming.py (from canon/naming.json)",
  "names": {
+  "body:system_10.Gliese_581.GJ_581_b": {
+   "en": "Danube",
+   "native": "Danube",
+   "native_lang": "fr",
+   "ru": "Дунай"
+  },
+  "body:system_10.Gliese_581.GJ_581_c": {
+   "en": "Rhine",
+   "native": "Rhin",
+   "native_lang": "fr",
+   "ru": "Рейн"
+  },
+  "body:system_10.Gliese_581.GJ_581_e": {
+   "en": "Tagus",
+   "native": "Tage",
+   "native_lang": "fr",
+   "ru": "Тахо"
+  },
+  "body:system_10.Gliese_581.Gliese_581_K1": {
+   "en": "Ladoga",
+   "native": "Ladoga",
+   "native_lang": "fr",
+   "ru": "Ладога"
+  },
+  "body:system_10.Gliese_581.Gliese_581_K2": {
+   "en": "Leman",
+   "native": "Léman",
+   "native_lang": "fr",
+   "ru": "Леман"
+  },
+  "body:system_10.Gliese_581.Gliese_581_K3": {
+   "en": "Constance",
+   "native": "Constance",
+   "native_lang": "fr",
+   "ru": "Констанц"
+  },
+  "body:system_10.Gliese_581.Gliese_581_d": {
+   "en": "Rhone",
+   "native": "Rhône",
+   "native_lang": "fr",
+   "ru": "Рона"
+  },
+  "body:system_10.Gliese_581.Gliese_581_f": {
+   "en": "Garonne",
+   "native": "Garonne",
+   "native_lang": "fr",
+   "ru": "Гаронна"
+  },
+  "body:system_10.Gliese_581.Gliese_581_g": {
+   "en": "Loire",
+   "native": "Loire",
+   "native_lang": "fr",
+   "ru": "Луара"
+  },
+  "body:system_10.Gliese_581.Gliese_581_h": {
+   "en": "Seine",
+   "native": "Seine",
+   "native_lang": "fr",
+   "ru": "Сена"
+  },
+  "body:system_10.Gliese_581.Gliese_581_i": {
+   "en": "Vistula",
+   "native": "Vistule",
+   "native_lang": "fr",
+   "ru": "Висла"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_d": {
+   "en": "Umlilo",
+   "native": "Umlilo",
+   "native_lang": "zu",
+   "ru": "Умлило"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_h": {
+   "en": "Ilangabi",
+   "native": "Ilangabi",
+   "native_lang": "zu",
+   "ru": "Илангаби"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_i": {
+   "en": "Amalahle",
+   "native": "Amalahle",
+   "native_lang": "zu",
+   "ru": "Амалахле"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_j": {
+   "en": "Umlotha",
+   "native": "Umlotha",
+   "native_lang": "zu",
+   "ru": "Умлота"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_k": {
+   "en": "Ukushisa",
+   "native": "Ukushisa",
+   "native_lang": "zu",
+   "ru": "Укушиса"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_l": {
+   "en": "Ilitshe",
+   "native": "Ilitshe",
+   "native_lang": "zu",
+   "ru": "Илитше"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_m": {
+   "en": "Insimbi",
+   "native": "Insimbi",
+   "native_lang": "zu",
+   "ru": "Инсимби"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_n": {
+   "en": "Ithusi",
+   "native": "Ithusi",
+   "native_lang": "zu",
+   "ru": "Итуси"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_o": {
+   "en": "Igolide",
+   "native": "Igolide",
+   "native_lang": "zu",
+   "ru": "Иголиде"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_p": {
+   "en": "Isihlabathi",
+   "native": "Isihlabathi",
+   "native_lang": "zu",
+   "ru": "Исихлабати"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_q": {
+   "en": "Intaba",
+   "native": "Intaba",
+   "native_lang": "zu",
+   "ru": "Интаба"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_r": {
+   "en": "Umhlabathi",
+   "native": "Umhlabathi",
+   "native_lang": "zu",
+   "ru": "Умхлабати"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_s": {
+   "en": "Umfula",
+   "native": "Umfula",
+   "native_lang": "zu",
+   "ru": "Умфула"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_s.Gliese_667_A_s_II": {
+   "en": "Amanzi",
+   "native": "Amanzi",
+   "native_lang": "zu",
+   "ru": "Аманзи"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_t": {
+   "en": "Indaba",
+   "native": "Indaba",
+   "native_lang": "zu",
+   "ru": "Индаба"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_u": {
+   "en": "Ithemba",
+   "native": "Ithemba",
+   "native_lang": "zu",
+   "ru": "Итемба"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_u.Gliese_667_A_u_II": {
+   "en": "Isibane",
+   "native": "Isibane",
+   "native_lang": "zu",
+   "ru": "Исибане"
+  },
+  "body:system_11.Gliese_667_A.Gliese_667_A_v": {
+   "en": "Isiphepho",
+   "native": "Isiphepho",
+   "native_lang": "zu",
+   "ru": "Исипепо"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_d": {
+   "en": "Umbane",
+   "native": "Umbane",
+   "native_lang": "zu",
+   "ru": "Умбане"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_h": {
+   "en": "Ukuduma",
+   "native": "Ukuduma",
+   "native_lang": "zu",
+   "ru": "Укудума"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_i": {
+   "en": "Imvula",
+   "native": "Imvula",
+   "native_lang": "zu",
+   "ru": "Имвула"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_j": {
+   "en": "Ifu",
+   "native": "Ifu",
+   "native_lang": "zu",
+   "ru": "Ифу"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_k": {
+   "en": "Inkungu",
+   "native": "Inkungu",
+   "native_lang": "zu",
+   "ru": "Инкунгу"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_l": {
+   "en": "Umoya",
+   "native": "Umoya",
+   "native_lang": "zu",
+   "ru": "Умоя"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_m": {
+   "en": "Ulwandle",
+   "native": "Ulwandle",
+   "native_lang": "zu",
+   "ru": "Улвандле"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_n": {
+   "en": "Isiqhingi",
+   "native": "Isiqhingi",
+   "native_lang": "zu",
+   "ru": "Исикхинги"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_o": {
+   "en": "Iqhwa",
+   "native": "Iqhwa",
+   "native_lang": "zu",
+   "ru": "Икхва"
+  },
+  "body:system_11.Gliese_667_B.Gliese_667_B_p": {
+   "en": "Ubusika",
+   "native": "Ubusika",
+   "native_lang": "zu",
+   "ru": "Убусика"
+  },
+  "body:system_11.Gliese_667_C.GJ_667_C_b": {
+   "en": "Kusihlwa",
+   "native": "Kusihlwa",
+   "native_lang": "zu",
+   "ru": "Кусихлва"
+  },
+  "body:system_11.Gliese_667_C.GJ_667_C_c": {
+   "en": "Ubusuku",
+   "native": "Ubusuku",
+   "native_lang": "zu",
+   "ru": "Убусуку"
+  },
+  "body:system_11.Gliese_667_C.Gliese_667_C_d": {
+   "en": "Ukusa",
+   "native": "Ukusa",
+   "native_lang": "zu",
+   "ru": "Укуса"
+  },
+  "body:system_11.Gliese_667_C.Gliese_667_C_h": {
+   "en": "Imini",
+   "native": "Imini",
+   "native_lang": "zu",
+   "ru": "Имини"
+  },
+  "body:system_11.Gliese_667_C.Gliese_667_C_i": {
+   "en": "Ntambama",
+   "native": "Ntambama",
+   "native_lang": "zu",
+   "ru": "Нтамбама"
+  },
+  "body:system_11.Gliese_667_C.Gliese_667_C_j": {
+   "en": "Inkanyezi",
+   "native": "Inkanyezi",
+   "native_lang": "zu",
+   "ru": "Инканьези"
+  },
+  "body:system_11.barycenter_ab.Gliese_667__BA__K1": {
+   "en": "Ukuthula",
+   "native": "Ukuthula",
+   "native_lang": "zu",
+   "ru": "Укутула"
+  },
+  "body:system_11.barycenter_ab.Gliese_667__BA__K2": {
+   "en": "Ubumbano",
+   "native": "Ubumbano",
+   "native_lang": "zu",
+   "ru": "Убумбано"
+  },
+  "body:system_11.barycenter_ab.Gliese_667__BA__K3": {
+   "en": "Inkululeko",
+   "native": "Inkululeko",
+   "native_lang": "zu",
+   "ru": "Инкулулеко"
+  },
+  "body:system_12.Gliese_832.GJ_832_b": {
+   "en": "Niulang",
+   "native": "牛郎",
+   "native_lang": "zh-Hans",
+   "ru": "Нюлан",
+   "translit": "Niúláng"
+  },
+  "body:system_12.Gliese_832.GJ_832_b.GJ_832_b_I": {
+   "en": "Xique",
+   "native": "喜鹊",
+   "native_lang": "zh-Hans",
+   "ru": "Сицюэ",
+   "translit": "Xǐquè"
+  },
+  "body:system_12.Gliese_832.GJ_832_b.GJ_832_b_II": {
+   "en": "Jinsuo",
+   "native": "金梭",
+   "native_lang": "zh-Hans",
+   "ru": "Цзиньсо",
+   "translit": "Jīnsuō"
+  },
+  "body:system_12.Gliese_832.GJ_832_b.GJ_832_b_III": {
+   "en": "Zhinü",
+   "native": "织女",
+   "native_lang": "zh-Hans",
+   "ru": "Чжинюй",
+   "translit": "Zhīnǚ"
+  },
+  "body:system_12.Gliese_832.Gliese_832_A1": {
+   "en": "Biandan",
+   "native": "扁担",
+   "native_lang": "zh-Hans",
+   "ru": "Бяньдань",
+   "translit": "Biǎndan"
+  },
+  "body:system_12.Gliese_832.Gliese_832_K2": {
+   "en": "Laoniu",
+   "native": "老牛",
+   "native_lang": "zh-Hans",
+   "ru": "Лаоню",
+   "translit": "Lǎoniú"
+  },
+  "body:system_12.Gliese_832.Gliese_832_c": {
+   "en": "Wangmu",
+   "native": "王母",
+   "native_lang": "zh-Hans",
+   "ru": "Ванму",
+   "translit": "Wángmǔ"
+  },
+  "body:system_12.Gliese_832.Gliese_832_d": {
+   "en": "Yuzan",
+   "native": "玉簪",
+   "native_lang": "zh-Hans",
+   "ru": "Юйцзань",
+   "translit": "Yùzān"
+  },
+  "body:system_12.Gliese_832.Gliese_832_e": {
+   "en": "Yinhan",
+   "native": "银汉",
+   "native_lang": "zh-Hans",
+   "ru": "Иньхань",
+   "translit": "Yínhàn"
+  },
+  "body:system_12.Gliese_832.Gliese_832_f": {
+   "en": "Zhiji",
+   "native": "织机",
+   "native_lang": "zh-Hans",
+   "ru": "Чжицзи",
+   "translit": "Zhījī"
+  },
+  "body:system_12.Gliese_832.Gliese_832_g": {
+   "en": "Qixi",
+   "native": "七夕",
+   "native_lang": "zh-Hans",
+   "ru": "Цыси",
+   "translit": "Qīxī"
+  },
+  "body:system_13.Gliese_876.GJ_876_b": {
+   "en": "Babbage",
+   "native": "Babbage",
+   "native_lang": "en",
+   "ru": "Бэббидж"
+  },
+  "body:system_13.Gliese_876.GJ_876_c": {
+   "en": "Leibniz",
+   "native": "Leibniz",
+   "native_lang": "en",
+   "ru": "Лейбниц"
+  },
+  "body:system_13.Gliese_876.GJ_876_d": {
+   "en": "Pascal",
+   "native": "Pascal",
+   "native_lang": "en",
+   "ru": "Паскаль"
+  },
+  "body:system_13.Gliese_876.GJ_876_e": {
+   "en": "Lovelace",
+   "native": "Lovelace",
+   "native_lang": "en",
+   "ru": "Лавлейс"
+  },
+  "body:system_13.Gliese_876.Gliese_876_K1": {
+   "en": "Boole",
+   "native": "Boole",
+   "native_lang": "en",
+   "ru": "Буль"
+  },
+  "body:system_13.Gliese_876.Gliese_876_K2": {
+   "en": "Shannon",
+   "native": "Shannon",
+   "native_lang": "en",
+   "ru": "Шеннон"
+  },
+  "body:system_13.Gliese_876.Gliese_876_K3": {
+   "en": "Hopper",
+   "native": "Hopper",
+   "native_lang": "en",
+   "ru": "Хоппер"
+  },
+  "body:system_13.Gliese_876.Gliese_876_f": {
+   "en": "Turing",
+   "native": "Turing",
+   "native_lang": "en",
+   "ru": "Тьюринг"
+  },
+  "body:system_13.Gliese_876.Gliese_876_g": {
+   "en": "Von Neumann",
+   "native": "Von Neumann",
+   "native_lang": "en",
+   "ru": "Фон Нейман"
+  },
+  "body:system_14.HD_20794.HD_20794_K1": {
+   "en": "Paddock",
+   "native": "Paddock",
+   "native_lang": "en",
+   "ru": "Загон"
+  },
+  "body:system_14.HD_20794.HD_20794_K2": {
+   "en": "Orchard",
+   "native": "Orchard",
+   "native_lang": "en",
+   "ru": "Сад"
+  },
+  "body:system_14.HD_20794.HD_20794_K3": {
+   "en": "Hearth",
+   "native": "Hearth",
+   "native_lang": "en",
+   "ru": "Очаг"
+  },
+  "body:system_14.HD_20794.HD_20794_b": {
+   "en": "Millstone",
+   "native": "Millstone",
+   "native_lang": "en",
+   "ru": "Жёрнов"
+  },
+  "body:system_14.HD_20794.HD_20794_c": {
+   "en": "Cinder",
+   "native": "Cinder",
+   "native_lang": "en",
+   "ru": "Окалина"
+  },
+  "body:system_14.HD_20794.HD_20794_d": {
+   "en": "Windmill",
+   "native": "Windmill",
+   "native_lang": "en",
+   "ru": "Ветряк"
+  },
+  "body:system_14.HD_20794.HD_20794_f": {
+   "en": "Silo",
+   "native": "Silo",
+   "native_lang": "en",
+   "ru": "Силос"
+  },
+  "body:system_14.HD_20794.HD_20794_f.HD_20794_f_I": {
+   "en": "Scarecrow",
+   "native": "Scarecrow",
+   "native_lang": "en",
+   "ru": "Пугало"
+  },
+  "body:system_14.HD_20794.HD_20794_g": {
+   "en": "Ember",
+   "native": "Ember",
+   "native_lang": "en",
+   "ru": "Уголёк"
+  },
+  "body:system_14.HD_20794.HD_20794_h": {
+   "en": "Kiln",
+   "native": "Kiln",
+   "native_lang": "en",
+   "ru": "Обжиг"
+  },
+  "body:system_14.HD_20794.HD_20794_i": {
+   "en": "Forge",
+   "native": "Forge",
+   "native_lang": "en",
+   "ru": "Кузня"
+  },
+  "body:system_14.HD_20794.HD_20794_j": {
+   "en": "Anvil",
+   "native": "Anvil",
+   "native_lang": "en",
+   "ru": "Наковальня"
+  },
+  "body:system_14.HD_20794.HD_20794_k": {
+   "en": "Furnace",
+   "native": "Furnace",
+   "native_lang": "en",
+   "ru": "Горн"
+  },
+  "body:system_14.HD_20794.HD_20794_l": {
+   "en": "Smithy",
+   "native": "Smithy",
+   "native_lang": "en",
+   "ru": "Мастерская"
+  },
+  "body:system_14.HD_20794.HD_20794_m": {
+   "en": "Frost",
+   "native": "Frost",
+   "native_lang": "en",
+   "ru": "Иней"
+  },
+  "body:system_15.HD_40307.HD_40307_K1": {
+   "en": "Theluji",
+   "native": "Theluji",
+   "native_lang": "sw",
+   "ru": "Телуджи"
+  },
+  "body:system_15.HD_40307.HD_40307_K2": {
+   "en": "Shamba",
+   "native": "Shamba",
+   "native_lang": "sw",
+   "ru": "Шамба"
+  },
+  "body:system_15.HD_40307.HD_40307_K3": {
+   "en": "Kisima",
+   "native": "Kisima",
+   "native_lang": "sw",
+   "ru": "Кисима"
+  },
+  "body:system_15.HD_40307.HD_40307_b": {
+   "en": "Mlima",
+   "native": "Mlima",
+   "native_lang": "sw",
+   "ru": "Млима"
+  },
+  "body:system_15.HD_40307.HD_40307_c": {
+   "en": "Simba",
+   "native": "Simba",
+   "native_lang": "sw",
+   "ru": "Симба"
+  },
+  "body:system_15.HD_40307.HD_40307_d": {
+   "en": "Kimbunga",
+   "native": "Kimbunga",
+   "native_lang": "sw",
+   "ru": "Кимбунга"
+  },
+  "body:system_15.HD_40307.HD_40307_e": {
+   "en": "Moto",
+   "native": "Moto",
+   "native_lang": "sw",
+   "ru": "Мото"
+  },
+  "body:system_15.HD_40307.HD_40307_f": {
+   "en": "Mvua",
+   "native": "Mvua",
+   "native_lang": "sw",
+   "ru": "Мвуа"
+  },
+  "body:system_15.HD_40307.HD_40307_h": {
+   "en": "Chuma",
+   "native": "Chuma",
+   "native_lang": "sw",
+   "ru": "Чума"
+  },
+  "body:system_15.HD_40307.HD_40307_i": {
+   "en": "Jiwe",
+   "native": "Jiwe",
+   "native_lang": "sw",
+   "ru": "Дживе"
+  },
+  "body:system_15.HD_40307.HD_40307_j": {
+   "en": "Upepo",
+   "native": "Upepo",
+   "native_lang": "sw",
+   "ru": "Упепо"
+  },
+  "body:system_15.HD_40307.HD_40307_k": {
+   "en": "Uhuru",
+   "native": "Uhuru",
+   "native_lang": "sw",
+   "ru": "Ухуру"
+  },
+  "body:system_16.HD_69830.HD_69830_A1": {
+   "en": "Saci",
+   "native": "Saci",
+   "native_lang": "pt",
+   "ru": "Саси"
+  },
+  "body:system_16.HD_69830.HD_69830_K2": {
+   "en": "Mapinguari",
+   "native": "Mapinguari",
+   "native_lang": "pt",
+   "ru": "Мапингуари"
+  },
+  "body:system_16.HD_69830.HD_69830_K3": {
+   "en": "Caipora",
+   "native": "Caipora",
+   "native_lang": "pt",
+   "ru": "Кайпора"
+  },
+  "body:system_16.HD_69830.HD_69830_K4": {
+   "en": "Curupira",
+   "native": "Curupira",
+   "native_lang": "pt",
+   "ru": "Курупира"
+  },
+  "body:system_16.HD_69830.HD_69830_b": {
+   "en": "Boitata",
+   "native": "Boitatá",
+   "native_lang": "pt",
+   "ru": "Боитата"
+  },
+  "body:system_16.HD_69830.HD_69830_c": {
+   "en": "Jurua",
+   "native": "Juruá",
+   "native_lang": "pt",
+   "ru": "Журуа"
+  },
+  "body:system_16.HD_69830.HD_69830_d": {
+   "en": "Rio Negro",
+   "native": "Rio Negro",
+   "native_lang": "pt",
+   "ru": "Риу-Негру"
+  },
+  "body:system_16.HD_69830.HD_69830_e": {
+   "en": "Xingu",
+   "native": "Xingu",
+   "native_lang": "pt",
+   "ru": "Шингу"
+  },
+  "body:system_16.HD_69830.HD_69830_f": {
+   "en": "Tapajos",
+   "native": "Tapajós",
+   "native_lang": "pt",
+   "ru": "Тапажос"
+  },
+  "body:system_16.HD_69830.HD_69830_g": {
+   "en": "Madeira",
+   "native": "Madeira",
+   "native_lang": "pt",
+   "ru": "Мадейра"
+  },
+  "body:system_16.HD_69830.HD_69830_h": {
+   "en": "Purus",
+   "native": "Purus",
+   "native_lang": "pt",
+   "ru": "Пурус"
+  },
+  "body:system_16.HD_69830.HD_69830_i": {
+   "en": "Japura",
+   "native": "Japurá",
+   "native_lang": "pt",
+   "ru": "Жапура"
+  },
+  "body:system_16.HD_69830.HD_69830_j": {
+   "en": "Tocantins",
+   "native": "Tocantins",
+   "native_lang": "pt",
+   "ru": "Токантинс"
+  },
+  "body:system_16.HD_69830.HD_69830_k": {
+   "en": "Tupa",
+   "native": "Tupã",
+   "native_lang": "pt",
+   "ru": "Тупан"
+  },
+  "body:system_16.HD_69830.HD_69830_k.HD_69830_k_I": {
+   "en": "Jaci",
+   "native": "Jaci",
+   "native_lang": "pt",
+   "ru": "Жаси"
+  },
+  "body:system_16.HD_69830.HD_69830_k.HD_69830_k_II": {
+   "en": "Ruda",
+   "native": "Rudá",
+   "native_lang": "pt",
+   "ru": "Руда"
+  },
+  "body:system_16.HD_69830.HD_69830_k.HD_69830_k_III": {
+   "en": "Iara",
+   "native": "Iara",
+   "native_lang": "pt",
+   "ru": "Иара"
+  },
+  "body:system_16.HD_69830.HD_69830_l": {
+   "en": "Amazonas",
+   "native": "Amazonas",
+   "native_lang": "pt",
+   "ru": "Амазонас"
+  },
+  "body:system_16.HD_69830.HD_69830_l.HD_69830_l_I": {
+   "en": "Boto",
+   "native": "Boto",
+   "native_lang": "pt",
+   "ru": "Бото"
+  },
+  "body:system_2.Barnard's_Star.Barnard's_Star_f": {
+   "en": "Surt",
+   "native": "Surt",
+   "native_lang": "nb",
+   "ru": "Сурт"
+  },
+  "body:system_2.Barnard's_Star.Barnard's_Star_g": {
+   "en": "Muspell",
+   "native": "Muspell",
+   "native_lang": "nb",
+   "ru": "Муспелль"
+  },
+  "body:system_2.Barnard's_Star.Barnard's_Star_h": {
+   "en": "Valaskjalf",
+   "native": "Valaskjalv",
+   "native_lang": "nb",
+   "ru": "Валаскьяльв"
+  },
+  "body:system_2.Barnard's_Star.Barnard's_Star_i": {
+   "en": "Gjoll",
+   "native": "Gjøll",
+   "native_lang": "nb",
+   "ru": "Гьёлль"
+  },
+  "body:system_2.Barnard's_Star.Barnard's_Star_j": {
+   "en": "Muninn",
+   "native": "Muninn",
+   "native_lang": "nb",
+   "ru": "Мунин"
+  },
+  "body:system_2.Barnard's_Star.Barnard's_Star_k": {
+   "en": "Fimbul",
+   "native": "Fimbul",
+   "native_lang": "nb",
+   "ru": "Фимбуль"
+  },
+  "body:system_2.Barnard's_Star.Barnard_b": {
+   "en": "Brokk",
+   "native": "Brokk",
+   "native_lang": "nb",
+   "ru": "Брокк"
+  },
+  "body:system_2.Barnard's_Star.Barnard_c": {
+   "en": "Sindre",
+   "native": "Sindre",
+   "native_lang": "nb",
+   "ru": "Синдри"
+  },
+  "body:system_2.Barnard's_Star.Barnard_d": {
+   "en": "Loge",
+   "native": "Loge",
+   "native_lang": "nb",
+   "ru": "Логе"
+  },
+  "body:system_2.Barnard's_Star.Barnard_e": {
+   "en": "Hlidskjalf",
+   "native": "Hlidskjalv",
+   "native_lang": "nb",
+   "ru": "Хлидскьяльв"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_K1": {
+   "en": "Nandi",
+   "native": "नन्दी",
+   "native_lang": "hi",
+   "ru": "Нанди",
+   "translit": "Nandī"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_K2": {
+   "en": "Garuda",
+   "native": "गरुड",
+   "native_lang": "hi",
+   "ru": "Гаруда",
+   "translit": "Garuḍa"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_K3": {
+   "en": "Hamsa",
+   "native": "हंस",
+   "native_lang": "hi",
+   "ru": "Хамса",
+   "translit": "Haṃsa"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_b": {
+   "en": "Agni",
+   "native": "अग्नि",
+   "native_lang": "hi",
+   "ru": "Агни",
+   "translit": "Agni"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_c": {
+   "en": "Jvala",
+   "native": "ज्वाला",
+   "native_lang": "hi",
+   "ru": "Джвала",
+   "translit": "Jvālā"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_d": {
+   "en": "Tejas",
+   "native": "तेजस्",
+   "native_lang": "hi",
+   "ru": "Теджас",
+   "translit": "Tejas"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_e": {
+   "en": "Kundala",
+   "native": "कुण्डल",
+   "native_lang": "hi",
+   "ru": "Кундала",
+   "translit": "Kuṇḍala"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_f": {
+   "en": "Marut",
+   "native": "मरुत्",
+   "native_lang": "hi",
+   "ru": "Марут",
+   "translit": "Marut"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_g": {
+   "en": "Mitra",
+   "native": "मित्र",
+   "native_lang": "hi",
+   "ru": "Митра",
+   "translit": "Mitra"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_h": {
+   "en": "Prithvi",
+   "native": "पृथ्वी",
+   "native_lang": "hi",
+   "ru": "Притхви",
+   "translit": "Pṛthvī"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_i": {
+   "en": "Indra",
+   "native": "इन्द्र",
+   "native_lang": "hi",
+   "ru": "Индра",
+   "translit": "Indra"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_j": {
+   "en": "Soma",
+   "native": "सोम",
+   "native_lang": "hi",
+   "ru": "Сома",
+   "translit": "Soma"
+  },
+  "body:system_22.Delta_Pavonis.Delta_Pavonis_k": {
+   "en": "Kailasa",
+   "native": "कैलास",
+   "native_lang": "hi",
+   "ru": "Кайласа",
+   "translit": "Kailāsa"
+  },
+  "body:system_23.Gliese_892.Gliese_892_A1": {
+   "en": "Nugget",
+   "native": "Nugget",
+   "native_lang": "en",
+   "ru": "Самородок"
+  },
+  "body:system_23.Gliese_892.Gliese_892_e": {
+   "en": "Slag",
+   "native": "Slag",
+   "native_lang": "en",
+   "ru": "Шлак"
+  },
+  "body:system_23.Gliese_892.Gliese_892_i": {
+   "en": "Crucible",
+   "native": "Crucible",
+   "native_lang": "en",
+   "ru": "Тигель"
+  },
+  "body:system_23.Gliese_892.Gliese_892_j": {
+   "en": "Smelter",
+   "native": "Smelter",
+   "native_lang": "en",
+   "ru": "Плавильня"
+  },
+  "body:system_23.Gliese_892.Gliese_892_k": {
+   "en": "Assay",
+   "native": "Assay",
+   "native_lang": "en",
+   "ru": "Проба"
+  },
+  "body:system_23.Gliese_892.Gliese_892_l": {
+   "en": "Lode",
+   "native": "Lode",
+   "native_lang": "en",
+   "ru": "Жила"
+  },
+  "body:system_23.Gliese_892.HD_219134_b": {
+   "en": "Bessemer",
+   "native": "Bessemer",
+   "native_lang": "en",
+   "ru": "Бессемер"
+  },
+  "body:system_23.Gliese_892.HD_219134_c": {
+   "en": "Ingot",
+   "native": "Ingot",
+   "native_lang": "en",
+   "ru": "Слиток"
+  },
+  "body:system_23.Gliese_892.HD_219134_d": {
+   "en": "Bellows",
+   "native": "Bellows",
+   "native_lang": "en",
+   "ru": "Мехи"
+  },
+  "body:system_23.Gliese_892.HD_219134_h": {
+   "en": "Motherlode",
+   "native": "Motherlode",
+   "native_lang": "en",
+   "ru": "Главная Жила"
+  },
+  "body:system_23.Gliese_892.HD_219134_h.HD_219134_h_I": {
+   "en": "Pickaxe",
+   "native": "Pickaxe",
+   "native_lang": "en",
+   "ru": "Кайло"
+  },
+  "body:system_23.Gliese_892.HD_219134_h.HD_219134_h_II": {
+   "en": "Bedrock",
+   "native": "Bedrock",
+   "native_lang": "en",
+   "ru": "Коренная"
+  },
+  "body:system_25.Gliese_357.GJ_357_b": {
+   "en": "Goshawk",
+   "native": "Goshawk",
+   "native_lang": "en",
+   "ru": "Ястреб"
+  },
+  "body:system_25.Gliese_357.GJ_357_c": {
+   "en": "Harrier",
+   "native": "Harrier",
+   "native_lang": "en",
+   "ru": "Лунь"
+  },
+  "body:system_25.Gliese_357.GJ_357_d": {
+   "en": "Osprey",
+   "native": "Osprey",
+   "native_lang": "en",
+   "ru": "Скопа"
+  },
+  "body:system_25.Gliese_357.Gliese_357_e": {
+   "en": "Merlin",
+   "native": "Merlin",
+   "native_lang": "en",
+   "ru": "Дербник"
+  },
+  "body:system_25.Gliese_357.Gliese_357_f": {
+   "en": "Hobby",
+   "native": "Hobby",
+   "native_lang": "en",
+   "ru": "Чеглок"
+  },
+  "body:system_25.Gliese_357.Gliese_357_g": {
+   "en": "Peregrine",
+   "native": "Peregrine",
+   "native_lang": "en",
+   "ru": "Сапсан"
+  },
+  "body:system_25.Gliese_357.Gliese_357_h": {
+   "en": "Saker",
+   "native": "Saker",
+   "native_lang": "en",
+   "ru": "Балобан"
+  },
+  "body:system_25.Gliese_357.Gliese_357_i": {
+   "en": "Lanner",
+   "native": "Lanner",
+   "native_lang": "en",
+   "ru": "Ланнер"
+  },
+  "body:system_25.Gliese_357.Gliese_357_j": {
+   "en": "Buzzard",
+   "native": "Buzzard",
+   "native_lang": "en",
+   "ru": "Канюк"
+  },
+  "body:system_25.Gliese_357.Gliese_357_k": {
+   "en": "Gyrfalcon",
+   "native": "Gyrfalcon",
+   "native_lang": "en",
+   "ru": "Кречет"
+  },
+  "body:system_25.Gliese_357.Gliese_357_l": {
+   "en": "Kite",
+   "native": "Kite",
+   "native_lang": "en",
+   "ru": "Коршун"
+  },
+  "body:system_25.Gliese_357.Gliese_357_m": {
+   "en": "Eagle",
+   "native": "Eagle",
+   "native_lang": "en",
+   "ru": "Беркут"
+  },
+  "body:system_25.Gliese_357.Gliese_357_m.Gliese_357_m_I": {
+   "en": "Eaglet",
+   "native": "Eaglet",
+   "native_lang": "en",
+   "ru": "Орлёнок"
+  },
+  "body:system_25.Gliese_357.Gliese_357_n": {
+   "en": "Sparrowhawk",
+   "native": "Sparrowhawk",
+   "native_lang": "en",
+   "ru": "Перепелятник"
+  },
+  "body:system_3.Wolf_359.Wolf_359_b": {
+   "en": "Skoll",
+   "native": "Sköll",
+   "native_lang": "nb",
+   "ru": "Скёлль"
+  },
+  "body:system_3.Wolf_359.Wolf_359_c": {
+   "en": "Hati",
+   "native": "Hati",
+   "native_lang": "nb",
+   "ru": "Хати"
+  },
+  "body:system_3.Wolf_359.Wolf_359_d": {
+   "en": "Geri",
+   "native": "Geri",
+   "native_lang": "nb",
+   "ru": "Гери"
+  },
+  "body:system_3.Wolf_359.Wolf_359_e": {
+   "en": "Garm",
+   "native": "Garm",
+   "native_lang": "nb",
+   "ru": "Гарм"
+  },
+  "body:system_3.Wolf_359.Wolf_359_f": {
+   "en": "Freki",
+   "native": "Freki",
+   "native_lang": "nb",
+   "ru": "Фреки"
+  },
+  "body:system_3.Wolf_359.Wolf_359_g": {
+   "en": "Fenrir",
+   "native": "Fenrir",
+   "native_lang": "nb",
+   "ru": "Фенрир"
+  },
+  "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_A1": {
+   "en": "Jin",
+   "native": "金",
+   "native_lang": "zh-Hans",
+   "ru": "Цзинь",
+   "translit": "Jīn"
+  },
+  "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_K2": {
+   "en": "Mu",
+   "native": "木",
+   "native_lang": "zh-Hans",
+   "ru": "Му",
+   "translit": "Mù"
+  },
+  "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_K3": {
+   "en": "Huo",
+   "native": "火",
+   "native_lang": "zh-Hans",
+   "ru": "Хо",
+   "translit": "Huǒ"
+  },
+  "body:system_30.Epsilon_Indi_A.Epsilon_Indi_A_K4": {
+   "en": "Tu",
+   "native": "土",
+   "native_lang": "zh-Hans",
+   "ru": "Ту",
+   "translit": "Tǔ"
+  },
+  "body:system_30.Epsilon_Indi_A.eps_Ind_A_b": {
+   "en": "Qian",
+   "native": "乾",
+   "native_lang": "zh-Hans",
+   "ru": "Цянь",
+   "translit": "Qián"
+  },
+  "body:system_30.Epsilon_Indi_A.eps_Ind_A_b.eps_Ind_A_b_I": {
+   "en": "Kun",
+   "native": "坤",
+   "native_lang": "zh-Hans",
+   "ru": "Кунь",
+   "translit": "Kūn"
+  },
+  "body:system_30.Epsilon_Indi_Ba.Epsilon_Indi_Ba_c": {
+   "en": "Zhen",
+   "native": "震",
+   "native_lang": "zh-Hans",
+   "ru": "Чжэнь",
+   "translit": "Zhèn"
+  },
+  "body:system_30.Epsilon_Indi_Ba.Epsilon_Indi_Ba_d": {
+   "en": "Xun",
+   "native": "巽",
+   "native_lang": "zh-Hans",
+   "ru": "Сюнь",
+   "translit": "Xùn"
+  },
+  "body:system_30.Epsilon_Indi_Ba.Epsilon_Indi_Ba_e": {
+   "en": "Kan",
+   "native": "坎",
+   "native_lang": "zh-Hans",
+   "ru": "Кань",
+   "translit": "Kǎn"
+  },
+  "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_c": {
+   "en": "Li",
+   "native": "离",
+   "native_lang": "zh-Hans",
+   "ru": "Ли",
+   "translit": "Lí"
+  },
+  "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_d": {
+   "en": "Gen",
+   "native": "艮",
+   "native_lang": "zh-Hans",
+   "ru": "Гэнь",
+   "translit": "Gèn"
+  },
+  "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_e": {
+   "en": "Dui",
+   "native": "兑",
+   "native_lang": "zh-Hans",
+   "ru": "Дуй",
+   "translit": "Duì"
+  },
+  "body:system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_f": {
+   "en": "Shui",
+   "native": "水",
+   "native_lang": "zh-Hans",
+   "ru": "Шуй",
+   "translit": "Shuǐ"
+  },
+  "body:system_30.barycenter_bab.Epsilon_Indi_Bb__BAB__K1": {
+   "en": "Yin",
+   "native": "阴",
+   "native_lang": "zh-Hans",
+   "ru": "Инь",
+   "translit": "Yīn"
+  },
+  "body:system_30.barycenter_bab.Epsilon_Indi_Bb__BAB__K2": {
+   "en": "Yang",
+   "native": "阳",
+   "native_lang": "zh-Hans",
+   "ru": "Ян",
+   "translit": "Yáng"
+  },
+  "body:system_31.61_Cygni_A.61_Cygni_A_b": {
+   "en": "Cinnabar",
+   "native": "Cinnabar",
+   "native_lang": "en",
+   "ru": "Киноварь"
+  },
+  "body:system_31.61_Cygni_A.61_Cygni_A_c": {
+   "en": "Pyrite",
+   "native": "Pyrite",
+   "native_lang": "en",
+   "ru": "Пирит"
+  },
+  "body:system_31.61_Cygni_A.61_Cygni_A_d": {
+   "en": "Hematite",
+   "native": "Hematite",
+   "native_lang": "en",
+   "ru": "Гематит"
+  },
+  "body:system_31.61_Cygni_A.61_Cygni_A_e": {
+   "en": "Magnetite",
+   "native": "Magnetite",
+   "native_lang": "en",
+   "ru": "Магнетит"
+  },
+  "body:system_31.61_Cygni_A.61_Cygni_A_f": {
+   "en": "Galena",
+   "native": "Galena",
+   "native_lang": "en",
+   "ru": "Галенит"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_b": {
+   "en": "Sulphur",
+   "native": "Sulphur",
+   "native_lang": "en",
+   "ru": "Сера"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_c": {
+   "en": "Realgar",
+   "native": "Realgar",
+   "native_lang": "en",
+   "ru": "Реальгар"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_d": {
+   "en": "Cuprite",
+   "native": "Cuprite",
+   "native_lang": "en",
+   "ru": "Куприт"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_e": {
+   "en": "Bauxite",
+   "native": "Bauxite",
+   "native_lang": "en",
+   "ru": "Боксит"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_f": {
+   "en": "Malachite",
+   "native": "Malachite",
+   "native_lang": "en",
+   "ru": "Малахит"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_g": {
+   "en": "Bornite",
+   "native": "Bornite",
+   "native_lang": "en",
+   "ru": "Борнит"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_h": {
+   "en": "Cassiterite",
+   "native": "Cassiterite",
+   "native_lang": "en",
+   "ru": "Касситерит"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_i": {
+   "en": "Wolframite",
+   "native": "Wolframite",
+   "native_lang": "en",
+   "ru": "Вольфрамит"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_j": {
+   "en": "Quartz",
+   "native": "Quartz",
+   "native_lang": "en",
+   "ru": "Кварц"
+  },
+  "body:system_31.61_Cygni_B.61_Cygni_B_k": {
+   "en": "Mica",
+   "native": "Mica",
+   "native_lang": "en",
+   "ru": "Слюда"
+  },
+  "body:system_37.HD_114783.HD_114783_A1": {
+   "en": "Thrinacia",
+   "native": "Θρινακία",
+   "native_lang": "el",
+   "ru": "Тринакия",
+   "translit": "Thrinakía"
+  },
+  "body:system_37.HD_114783.HD_114783_K2": {
+   "en": "Telemachus",
+   "native": "Τηλέμαχος",
+   "native_lang": "el",
+   "ru": "Телемах",
+   "translit": "Tilémachos"
+  },
+  "body:system_37.HD_114783.HD_114783_K3": {
+   "en": "Mentor",
+   "native": "Μέντωρ",
+   "native_lang": "el",
+   "ru": "Ментор",
+   "translit": "Méntor"
+  },
+  "body:system_37.HD_114783.HD_114783_K4": {
+   "en": "Eumaeus",
+   "native": "Εύμαιος",
+   "native_lang": "el",
+   "ru": "Эвмей",
+   "translit": "Évmaios"
+  },
+  "body:system_37.HD_114783.HD_114783_b": {
+   "en": "Poseidon",
+   "native": "Ποσειδών",
+   "native_lang": "el",
+   "ru": "Посейдон",
+   "translit": "Poseidón"
+  },
+  "body:system_37.HD_114783.HD_114783_b.HD_114783_b_I": {
+   "en": "Sirens",
+   "native": "Σειρήνες",
+   "native_lang": "el",
+   "ru": "Сирены",
+   "translit": "Seirínes"
+  },
+  "body:system_37.HD_114783.HD_114783_c": {
+   "en": "Scheria",
+   "native": "Σχερία",
+   "native_lang": "el",
+   "ru": "Схерия",
+   "translit": "Schería"
+  },
+  "body:system_37.HD_114783.HD_114783_c.HD_114783_c_I": {
+   "en": "Scylla",
+   "native": "Σκύλλα",
+   "native_lang": "el",
+   "ru": "Сцилла",
+   "translit": "Skýlla"
+  },
+  "body:system_37.HD_114783.HD_114783_c.HD_114783_c_II": {
+   "en": "Charybdis",
+   "native": "Χάρυβδις",
+   "native_lang": "el",
+   "ru": "Харибда",
+   "translit": "Cháryvdis"
+  },
+  "body:system_37.HD_114783.HD_114783_c.HD_114783_c_III": {
+   "en": "Ithaca",
+   "native": "Ιθάκη",
+   "native_lang": "el",
+   "ru": "Итака",
+   "translit": "Itháki"
+  },
+  "body:system_37.HD_114783.HD_114783_c.HD_114783_c_IV": {
+   "en": "Penelope",
+   "native": "Πηνελόπη",
+   "native_lang": "el",
+   "ru": "Пенелопа",
+   "translit": "Pinelópi"
+  },
+  "body:system_37.HD_114783.HD_114783_d": {
+   "en": "Troy",
+   "native": "Τροία",
+   "native_lang": "el",
+   "ru": "Троя",
+   "translit": "Troía"
+  },
+  "body:system_37.HD_114783.HD_114783_e": {
+   "en": "Ismaros",
+   "native": "Ίσμαρος",
+   "native_lang": "el",
+   "ru": "Исмар",
+   "translit": "Ísmaros"
+  },
+  "body:system_37.HD_114783.HD_114783_f": {
+   "en": "Lotophagi",
+   "native": "Λωτοφάγοι",
+   "native_lang": "el",
+   "ru": "Лотофаги",
+   "translit": "Lotofágoi"
+  },
+  "body:system_37.HD_114783.HD_114783_g": {
+   "en": "Cyclops",
+   "native": "Κύκλωψ",
+   "native_lang": "el",
+   "ru": "Киклоп",
+   "translit": "Kýklops"
+  },
+  "body:system_37.HD_114783.HD_114783_h": {
+   "en": "Aeolia",
+   "native": "Αιολία",
+   "native_lang": "el",
+   "ru": "Эолия",
+   "translit": "Aiolía"
+  },
+  "body:system_37.HD_114783.HD_114783_i": {
+   "en": "Laestrygonia",
+   "native": "Λαιστρυγόνες",
+   "native_lang": "el",
+   "ru": "Лестригония",
+   "translit": "Laistrygónes"
+  },
+  "body:system_37.HD_114783.HD_114783_j": {
+   "en": "Aeaea",
+   "native": "Αιαία",
+   "native_lang": "el",
+   "ru": "Ээя",
+   "translit": "Aiaía"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_A1": {
+   "en": "Nome",
+   "native": "Nome",
+   "native_lang": "en",
+   "ru": "Ном"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_b": {
+   "en": "Deadwood",
+   "native": "Deadwood",
+   "native_lang": "en",
+   "ru": "Дедвуд"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_c": {
+   "en": "Tombstone",
+   "native": "Tombstone",
+   "native_lang": "en",
+   "ru": "Тумстон"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_d": {
+   "en": "Bodie",
+   "native": "Bodie",
+   "native_lang": "en",
+   "ru": "Боди"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_e": {
+   "en": "Comstock",
+   "native": "Comstock",
+   "native_lang": "en",
+   "ru": "Комсток"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_f": {
+   "en": "Cripple Creek",
+   "native": "Cripple Creek",
+   "native_lang": "en",
+   "ru": "Крипл-Крик"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_g": {
+   "en": "Sutter",
+   "native": "Sutter",
+   "native_lang": "en",
+   "ru": "Саттер"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h": {
+   "en": "Klondike",
+   "native": "Klondike",
+   "native_lang": "en",
+   "ru": "Клондайк"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_I": {
+   "en": "Dawson",
+   "native": "Dawson",
+   "native_lang": "en",
+   "ru": "Доусон"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_II": {
+   "en": "Bendigo",
+   "native": "Bendigo",
+   "native_lang": "en",
+   "ru": "Бендиго"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_III": {
+   "en": "Ballarat",
+   "native": "Ballarat",
+   "native_lang": "en",
+   "ru": "Балларат"
+  },
+  "body:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_IV": {
+   "en": "Eldorado",
+   "native": "Eldorado",
+   "native_lang": "en",
+   "ru": "Эльдорадо"
+  },
+  "body:system_38.Sigma²_UMa_C.Sigma²_UMa_C_b": {
+   "en": "Kalgoorlie",
+   "native": "Kalgoorlie",
+   "native_lang": "en",
+   "ru": "Калгурли"
+  },
+  "body:system_38.Sigma²_UMa_C.Sigma²_UMa_C_c": {
+   "en": "Coolgardie",
+   "native": "Coolgardie",
+   "native_lang": "en",
+   "ru": "Кулгарди"
+  },
+  "body:system_38.Sigma²_UMa_C.Sigma²_UMa_C_d": {
+   "en": "Yukon",
+   "native": "Yukon",
+   "native_lang": "en",
+   "ru": "Юкон"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_b": {
+   "en": "Nemea",
+   "native": "Νεμέα",
+   "native_lang": "el",
+   "ru": "Немея",
+   "translit": "Neméa"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_c": {
+   "en": "Lerna",
+   "native": "Λέρνη",
+   "native_lang": "el",
+   "ru": "Лерна",
+   "translit": "Lérni"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_d": {
+   "en": "Ceryneia",
+   "native": "Κερύνεια",
+   "native_lang": "el",
+   "ru": "Керинея",
+   "translit": "Kerýneia"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_e": {
+   "en": "Erymanthos",
+   "native": "Ερύμανθος",
+   "native_lang": "el",
+   "ru": "Эриманф",
+   "translit": "Erýmanthos"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_f": {
+   "en": "Augeas",
+   "native": "Αυγείας",
+   "native_lang": "el",
+   "ru": "Авгий",
+   "translit": "Avgeías"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_g": {
+   "en": "Stymphalia",
+   "native": "Στυμφαλία",
+   "native_lang": "el",
+   "ru": "Стимфалия",
+   "translit": "Stymfalía"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_h": {
+   "en": "Crete",
+   "native": "Κρήτη",
+   "native_lang": "el",
+   "ru": "Крит",
+   "translit": "Kríti"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_i": {
+   "en": "Thrace",
+   "native": "Θράκη",
+   "native_lang": "el",
+   "ru": "Фракия",
+   "translit": "Thráki"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_j": {
+   "en": "Themiscyra",
+   "native": "Θεμίσκυρα",
+   "native_lang": "el",
+   "ru": "Фемискира",
+   "translit": "Themískyra"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_k": {
+   "en": "Erytheia",
+   "native": "Ερύθεια",
+   "native_lang": "el",
+   "ru": "Эрифия",
+   "translit": "Erýtheia"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_k.Lalande_21185_k_I": {
+   "en": "Orthrus",
+   "native": "Όρθρος",
+   "native_lang": "el",
+   "ru": "Орф",
+   "translit": "Órthros"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_l": {
+   "en": "Cerberus",
+   "native": "Κέρβερος",
+   "native_lang": "el",
+   "ru": "Кербер",
+   "translit": "Kérveros"
+  },
+  "body:system_4.Lalande_21185.Lalande_21185_m": {
+   "en": "Hesperides",
+   "native": "Εσπερίδες",
+   "native_lang": "el",
+   "ru": "Геспериды",
+   "translit": "Esperídes"
+  },
+  "body:system_41.HD_104067.HD_104067_K1": {
+   "en": "Siskin",
+   "native": "Siskin",
+   "native_lang": "en",
+   "ru": "Чиж"
+  },
+  "body:system_41.HD_104067.HD_104067_K2": {
+   "en": "Waxwing",
+   "native": "Waxwing",
+   "native_lang": "en",
+   "ru": "Свиристель"
+  },
+  "body:system_41.HD_104067.HD_104067_K3": {
+   "en": "Redpoll",
+   "native": "Redpoll",
+   "native_lang": "en",
+   "ru": "Чечётка"
+  },
+  "body:system_41.HD_104067.HD_104067_b": {
+   "en": "Nightingale",
+   "native": "Nightingale",
+   "native_lang": "en",
+   "ru": "Соловей"
+  },
+  "body:system_41.HD_104067.HD_104067_c": {
+   "en": "Starling",
+   "native": "Starling",
+   "native_lang": "en",
+   "ru": "Скворец"
+  },
+  "body:system_41.HD_104067.HD_104067_d": {
+   "en": "Firecrest",
+   "native": "Firecrest",
+   "native_lang": "en",
+   "ru": "Королёк"
+  },
+  "body:system_41.HD_104067.HD_104067_e": {
+   "en": "Wren",
+   "native": "Wren",
+   "native_lang": "en",
+   "ru": "Крапивник"
+  },
+  "body:system_41.HD_104067.HD_104067_f": {
+   "en": "Finch",
+   "native": "Finch",
+   "native_lang": "en",
+   "ru": "Зяблик"
+  },
+  "body:system_41.HD_104067.HD_104067_g": {
+   "en": "Robin",
+   "native": "Robin",
+   "native_lang": "en",
+   "ru": "Малиновка"
+  },
+  "body:system_41.HD_104067.HD_104067_h": {
+   "en": "Thrush",
+   "native": "Thrush",
+   "native_lang": "en",
+   "ru": "Дрозд"
+  },
+  "body:system_41.HD_104067.HD_104067_i": {
+   "en": "Swallow",
+   "native": "Swallow",
+   "native_lang": "en",
+   "ru": "Ласточка"
+  },
+  "body:system_41.HD_104067.HD_104067_j": {
+   "en": "Bunting",
+   "native": "Bunting",
+   "native_lang": "en",
+   "ru": "Овсянка"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_d": {
+   "en": "Antony",
+   "native": "Αντώνιος",
+   "native_lang": "el",
+   "ru": "Антоний",
+   "translit": "Antónios"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_e": {
+   "en": "Pachomius",
+   "native": "Παχώμιος",
+   "native_lang": "el",
+   "ru": "Пахомий",
+   "translit": "Pachómios"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_f": {
+   "en": "Macarius",
+   "native": "Μακάριος",
+   "native_lang": "el",
+   "ru": "Макарий",
+   "translit": "Makários"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_g": {
+   "en": "Arsenius",
+   "native": "Αρσένιος",
+   "native_lang": "el",
+   "ru": "Арсений",
+   "translit": "Arsénios"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_h": {
+   "en": "Poemen",
+   "native": "Ποιμήν",
+   "native_lang": "el",
+   "ru": "Пимен",
+   "translit": "Poimín"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_i": {
+   "en": "Evagrius",
+   "native": "Ευάγριος",
+   "native_lang": "el",
+   "ru": "Евагрий",
+   "translit": "Evágrios"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_j": {
+   "en": "Moses",
+   "native": "Μωυσής",
+   "native_lang": "el",
+   "ru": "Моисей",
+   "translit": "Moysís"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_k": {
+   "en": "Sisoes",
+   "native": "Σισώης",
+   "native_lang": "el",
+   "ru": "Сисой",
+   "translit": "Sisóis"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_l": {
+   "en": "Amoun",
+   "native": "Αμμούν",
+   "native_lang": "el",
+   "ru": "Аммун",
+   "translit": "Ammoún"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_m": {
+   "en": "Paul",
+   "native": "Παύλος",
+   "native_lang": "el",
+   "ru": "Павел",
+   "translit": "Pávlos"
+  },
+  "body:system_45.83_Leonis_A.83_Leonis_A_n": {
+   "en": "Hilarion",
+   "native": "Ιλαρίων",
+   "native_lang": "el",
+   "ru": "Иларион",
+   "translit": "Ilaríon"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_A1": {
+   "en": "Barsanuphius",
+   "native": "Βαρσανούφιος",
+   "native_lang": "el",
+   "ru": "Варсонофий",
+   "translit": "Varsanoúfios"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_d": {
+   "en": "Mary",
+   "native": "Μαρία",
+   "native_lang": "el",
+   "ru": "Мария",
+   "translit": "María"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_e": {
+   "en": "Syncletica",
+   "native": "Συγκλητική",
+   "native_lang": "el",
+   "ru": "Синклитикия",
+   "translit": "Synklitikí"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_f": {
+   "en": "Cassian",
+   "native": "Κασσιανός",
+   "native_lang": "el",
+   "ru": "Кассиан",
+   "translit": "Kassianós"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_g": {
+   "en": "Ephrem",
+   "native": "Εφραίμ",
+   "native_lang": "el",
+   "ru": "Ефрем",
+   "translit": "Efraím"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_h": {
+   "en": "Scetis",
+   "native": "Σκήτις",
+   "native_lang": "el",
+   "ru": "Скит",
+   "translit": "Skítis"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_h.83_Leonis_B_h_I": {
+   "en": "Kellia",
+   "native": "Κελλία",
+   "native_lang": "el",
+   "ru": "Келлии",
+   "translit": "Kellía"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_i": {
+   "en": "Nitria",
+   "native": "Νιτρία",
+   "native_lang": "el",
+   "ru": "Нитрия",
+   "translit": "Nitría"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_i.83_Leonis_B_i_I": {
+   "en": "Isaac",
+   "native": "Ισαάκ",
+   "native_lang": "el",
+   "ru": "Исаак",
+   "translit": "Isaák"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_j": {
+   "en": "Athanasius",
+   "native": "Αθανάσιος",
+   "native_lang": "el",
+   "ru": "Афанасий",
+   "translit": "Athanásios"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_I": {
+   "en": "John",
+   "native": "Ιωάννης",
+   "native_lang": "el",
+   "ru": "Иоанн",
+   "translit": "Ioánnis"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_II": {
+   "en": "Simeon",
+   "native": "Σιμεών",
+   "native_lang": "el",
+   "ru": "Симеон",
+   "translit": "Simeón"
+  },
+  "body:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_III": {
+   "en": "Dorotheus",
+   "native": "Δωρόθεος",
+   "native_lang": "el",
+   "ru": "Дорофей",
+   "translit": "Dorótheos"
+  },
+  "body:system_45.83_Leonis_B.HD_99492_b": {
+   "en": "Serapion",
+   "native": "Σεραπίων",
+   "native_lang": "el",
+   "ru": "Серапион",
+   "translit": "Serapíon"
+  },
+  "body:system_45.83_Leonis_B.HD_99492_c": {
+   "en": "Zosimas",
+   "native": "Ζωσιμάς",
+   "native_lang": "el",
+   "ru": "Зосима",
+   "translit": "Zosimás"
+  },
+  "body:system_53.Gliese_674.GJ_674_b": {
+   "en": "Eagle-owl",
+   "native": "Eagle-owl",
+   "native_lang": "en",
+   "ru": "Филин"
+  },
+  "body:system_53.Gliese_674.Gliese_674_K1": {
+   "en": "Great Grey",
+   "native": "Great Grey",
+   "native_lang": "en",
+   "ru": "Бородатая неясыть"
+  },
+  "body:system_53.Gliese_674.Gliese_674_K2": {
+   "en": "Long-eared",
+   "native": "Long-eared",
+   "native_lang": "en",
+   "ru": "Ушастая сова"
+  },
+  "body:system_53.Gliese_674.Gliese_674_K3": {
+   "en": "Short-eared",
+   "native": "Short-eared",
+   "native_lang": "en",
+   "ru": "Болотная сова"
+  },
+  "body:system_53.Gliese_674.Gliese_674_c": {
+   "en": "Scops",
+   "native": "Scops",
+   "native_lang": "en",
+   "ru": "Сплюшка"
+  },
+  "body:system_53.Gliese_674.Gliese_674_d": {
+   "en": "Pygmy",
+   "native": "Pygmy",
+   "native_lang": "en",
+   "ru": "Сычик"
+  },
+  "body:system_53.Gliese_674.Gliese_674_e": {
+   "en": "Little Owl",
+   "native": "Little Owl",
+   "native_lang": "en",
+   "ru": "Домовый сыч"
+  },
+  "body:system_53.Gliese_674.Gliese_674_f": {
+   "en": "Barn Owl",
+   "native": "Barn Owl",
+   "native_lang": "en",
+   "ru": "Сипуха"
+  },
+  "body:system_53.Gliese_674.Gliese_674_g": {
+   "en": "Tawny",
+   "native": "Tawny",
+   "native_lang": "en",
+   "ru": "Неясыть"
+  },
+  "body:system_53.Gliese_674.Gliese_674_h": {
+   "en": "Snowy",
+   "native": "Snowy",
+   "native_lang": "en",
+   "ru": "Белая сова"
+  },
+  "body:system_53.Gliese_674.Gliese_674_i": {
+   "en": "Boreal",
+   "native": "Boreal",
+   "native_lang": "en",
+   "ru": "Мохноногий сыч"
+  },
+  "body:system_53.Gliese_674.Gliese_674_j": {
+   "en": "Hawk-owl",
+   "native": "Hawk-owl",
+   "native_lang": "en",
+   "ru": "Ястребиная сова"
+  },
+  "body:system_54.HD_85512.HD_85512_K1": {
+   "en": "Eider",
+   "native": "Eider",
+   "native_lang": "en",
+   "ru": "Гага"
+  },
+  "body:system_54.HD_85512.HD_85512_K2": {
+   "en": "Loon",
+   "native": "Loon",
+   "native_lang": "en",
+   "ru": "Гагара"
+  },
+  "body:system_54.HD_85512.HD_85512_K3": {
+   "en": "Tern",
+   "native": "Tern",
+   "native_lang": "en",
+   "ru": "Крачка"
+  },
+  "body:system_54.HD_85512.HD_85512_b": {
+   "en": "Flamingo",
+   "native": "Flamingo",
+   "native_lang": "en",
+   "ru": "Фламинго"
+  },
+  "body:system_54.HD_85512.HD_85512_c": {
+   "en": "Pelican",
+   "native": "Pelican",
+   "native_lang": "en",
+   "ru": "Пеликан"
+  },
+  "body:system_54.HD_85512.HD_85512_d": {
+   "en": "Ibis",
+   "native": "Ibis",
+   "native_lang": "en",
+   "ru": "Ибис"
+  },
+  "body:system_54.HD_85512.HD_85512_e": {
+   "en": "Stork",
+   "native": "Stork",
+   "native_lang": "en",
+   "ru": "Аист"
+  },
+  "body:system_54.HD_85512.HD_85512_f": {
+   "en": "Crane",
+   "native": "Crane",
+   "native_lang": "en",
+   "ru": "Журавль"
+  },
+  "body:system_54.HD_85512.HD_85512_g": {
+   "en": "Albatross",
+   "native": "Albatross",
+   "native_lang": "en",
+   "ru": "Альбатрос"
+  },
+  "body:system_54.HD_85512.HD_85512_h": {
+   "en": "Petrel",
+   "native": "Petrel",
+   "native_lang": "en",
+   "ru": "Буревестник"
+  },
+  "body:system_57.HD_10360.HD_10360_K1": {
+   "en": "Kesho",
+   "native": "Kesho",
+   "native_lang": "sw",
+   "ru": "Кешо"
+  },
+  "body:system_57.HD_10360.HD_10360_b": {
+   "en": "Mwangaza",
+   "native": "Mwangaza",
+   "native_lang": "sw",
+   "ru": "Мвангаза"
+  },
+  "body:system_57.HD_10360.HD_10360_c": {
+   "en": "Mchana",
+   "native": "Mchana",
+   "native_lang": "sw",
+   "ru": "Мчана"
+  },
+  "body:system_57.HD_10360.HD_10360_d": {
+   "en": "Alfajiri",
+   "native": "Alfajiri",
+   "native_lang": "sw",
+   "ru": "Альфаджири"
+  },
+  "body:system_57.HD_10360.HD_10360_e": {
+   "en": "Jioni",
+   "native": "Jioni",
+   "native_lang": "sw",
+   "ru": "Джиони"
+  },
+  "body:system_57.HD_10360.HD_10360_f": {
+   "en": "Machweo",
+   "native": "Machweo",
+   "native_lang": "sw",
+   "ru": "Мачвео"
+  },
+  "body:system_57.HD_10360.HD_10360_g": {
+   "en": "Usiku",
+   "native": "Usiku",
+   "native_lang": "sw",
+   "ru": "Усику"
+  },
+  "body:system_57.barycenter_ab.p_Eridani__A__K1": {
+   "en": "Barafu",
+   "native": "Barafu",
+   "native_lang": "sw",
+   "ru": "Барафу"
+  },
+  "body:system_57.barycenter_ab.p_Eridani__A__K2": {
+   "en": "Sauti",
+   "native": "Sauti",
+   "native_lang": "sw",
+   "ru": "Сауте"
+  },
+  "body:system_57.barycenter_ab.p_Eridani__A__K3": {
+   "en": "Ujumbe",
+   "native": "Ujumbe",
+   "native_lang": "sw",
+   "ru": "Уджумбе"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_b": {
+   "en": "Joto",
+   "native": "Joto",
+   "native_lang": "sw",
+   "ru": "Джото"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_c": {
+   "en": "Kaa",
+   "native": "Kaa",
+   "native_lang": "sw",
+   "ru": "Каа"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_d": {
+   "en": "Jivu",
+   "native": "Jivu",
+   "native_lang": "sw",
+   "ru": "Дживу"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_e": {
+   "en": "Mwako",
+   "native": "Mwako",
+   "native_lang": "sw",
+   "ru": "Мвако"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_f": {
+   "en": "Radi",
+   "native": "Radi",
+   "native_lang": "sw",
+   "ru": "Ради"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_g": {
+   "en": "Umeme",
+   "native": "Umeme",
+   "native_lang": "sw",
+   "ru": "Умеме"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_h": {
+   "en": "Ngurumo",
+   "native": "Ngurumo",
+   "native_lang": "sw",
+   "ru": "Нгурумо"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_i": {
+   "en": "Mchanga",
+   "native": "Mchanga",
+   "native_lang": "sw",
+   "ru": "Мчанга"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_j": {
+   "en": "Tanuri",
+   "native": "Tanuri",
+   "native_lang": "sw",
+   "ru": "Танури"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_k": {
+   "en": "Mnara",
+   "native": "Mnara",
+   "native_lang": "sw",
+   "ru": "Мнара"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_l": {
+   "en": "Tufani",
+   "native": "Tufani",
+   "native_lang": "sw",
+   "ru": "Туфани"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_m": {
+   "en": "Wingu",
+   "native": "Wingu",
+   "native_lang": "sw",
+   "ru": "Вингу"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_n": {
+   "en": "Kivuko",
+   "native": "Kivuko",
+   "native_lang": "sw",
+   "ru": "Кивуко"
+  },
+  "body:system_57.p_Eridani_A.p_Eridani_A_o": {
+   "en": "Bandari",
+   "native": "Bandari",
+   "native_lang": "sw",
+   "ru": "Бандари"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Cen_b": {
+   "en": "Mokosh",
+   "native": "Мокошь",
+   "native_lang": "ru",
+   "ru": "Мокошь"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Cen_d": {
+   "en": "Dazhbog",
+   "native": "Дажьбог",
+   "native_lang": "ru",
+   "ru": "Дажьбог"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_c": {
+   "en": "Semargl",
+   "native": "Семаргл",
+   "native_lang": "ru",
+   "ru": "Семаргл"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_e": {
+   "en": "Khors",
+   "native": "Хорс",
+   "native_lang": "ru",
+   "ru": "Хорс"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_f": {
+   "en": "Yarilo",
+   "native": "Ярило",
+   "native_lang": "ru",
+   "ru": "Ярило"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_g": {
+   "en": "Veles",
+   "native": "Велес",
+   "native_lang": "ru",
+   "ru": "Велес"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_h": {
+   "en": "Morozko",
+   "native": "Морозко",
+   "native_lang": "ru",
+   "ru": "Морозко"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_i": {
+   "en": "Marena",
+   "native": "Марена",
+   "native_lang": "ru",
+   "ru": "Марена"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_j": {
+   "en": "Kitezh",
+   "native": "Китеж",
+   "native_lang": "ru",
+   "ru": "Китеж"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_k": {
+   "en": "Lada",
+   "native": "Лада",
+   "native_lang": "ru",
+   "ru": "Лада"
+  },
+  "body:system_60.Proxima_Centauri.Proxima_Centauri_l": {
+   "en": "Stribog",
+   "native": "Стрибог",
+   "native_lang": "ru",
+   "ru": "Стрибог"
+  },
   "body:system_61.Fomalhaut.Fomalhaut_K1": {
    "en": "Tyche",
    "native": "Tyche",
@@ -99,6 +2235,181 @@
    "ru": "Лекси",
    "zh-Hans": "柏辛",
    "zh-Hant": "柏辛"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_b": {
+   "en": "Dao",
+   "native": "稻",
+   "native_lang": "zh-Hans",
+   "ru": "Дао",
+   "translit": "Dào"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_c": {
+   "en": "Mai",
+   "native": "麦",
+   "native_lang": "zh-Hans",
+   "ru": "Май",
+   "translit": "Mài"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_d": {
+   "en": "Shu",
+   "native": "黍",
+   "native_lang": "zh-Hans",
+   "ru": "Шу",
+   "translit": "Shǔ"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_e": {
+   "en": "Gaoliang",
+   "native": "高粱",
+   "native_lang": "zh-Hans",
+   "ru": "Гаолян",
+   "translit": "Gāoliang"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_i": {
+   "en": "Dou",
+   "native": "豆",
+   "native_lang": "zh-Hans",
+   "ru": "Доу",
+   "translit": "Dòu"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_j": {
+   "en": "Su",
+   "native": "粟",
+   "native_lang": "zh-Hans",
+   "ru": "Су",
+   "translit": "Sù"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_k": {
+   "en": "Liang",
+   "native": "粱",
+   "native_lang": "zh-Hans",
+   "ru": "Лян",
+   "translit": "Liáng"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_l": {
+   "en": "Ma",
+   "native": "麻",
+   "native_lang": "zh-Hans",
+   "ru": "Ма",
+   "translit": "Má"
+  },
+  "body:system_8.Tau_Ceti.Tau_Ceti_m": {
+   "en": "Gu",
+   "native": "谷",
+   "native_lang": "zh-Hans",
+   "ru": "Гу",
+   "translit": "Gǔ"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_A1": {
+   "en": "Zha",
+   "native": "栅",
+   "native_lang": "zh-Hans",
+   "ru": "Чжа",
+   "translit": "Zhà"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_K2": {
+   "en": "Muchang",
+   "native": "牧场",
+   "native_lang": "zh-Hans",
+   "ru": "Мучан",
+   "translit": "Mùchǎng"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_K3": {
+   "en": "Quan",
+   "native": "泉",
+   "native_lang": "zh-Hans",
+   "ru": "Цюань",
+   "translit": "Quán"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_K4": {
+   "en": "Yuan",
+   "native": "园",
+   "native_lang": "zh-Hans",
+   "ru": "Юань",
+   "translit": "Yuán"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_c": {
+   "en": "Mei",
+   "native": "梅",
+   "native_lang": "zh-Hans",
+   "ru": "Мэй",
+   "translit": "Méi"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_d": {
+   "en": "Lan",
+   "native": "兰",
+   "native_lang": "zh-Hans",
+   "ru": "Лань",
+   "translit": "Lán"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_e": {
+   "en": "Zhu",
+   "native": "竹",
+   "native_lang": "zh-Hans",
+   "ru": "Чжу",
+   "translit": "Zhú"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_f": {
+   "en": "Ju",
+   "native": "菊",
+   "native_lang": "zh-Hans",
+   "ru": "Цзюй",
+   "translit": "Jú"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_g": {
+   "en": "Mudan",
+   "native": "牡丹",
+   "native_lang": "zh-Hans",
+   "ru": "Мудань",
+   "translit": "Mǔdān"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_h": {
+   "en": "He",
+   "native": "荷",
+   "native_lang": "zh-Hans",
+   "ru": "Хэ",
+   "translit": "Hé"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_i": {
+   "en": "Gui",
+   "native": "桂",
+   "native_lang": "zh-Hans",
+   "ru": "Гуй",
+   "translit": "Guì"
+  },
+  "body:system_9.Epsilon_Eridani.Epsilon_Eridani_j": {
+   "en": "Tao",
+   "native": "桃",
+   "native_lang": "zh-Hans",
+   "ru": "Тао",
+   "translit": "Táo"
+  },
+  "body:system_9.Epsilon_Eridani.eps_Eri_b": {
+   "en": "Tianma",
+   "native": "天马",
+   "native_lang": "zh-Hans",
+   "ru": "Тяньма",
+   "translit": "Tiānmǎ"
+  },
+  "body:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_I": {
+   "en": "Qi",
+   "native": "骐",
+   "native_lang": "zh-Hans",
+   "ru": "Ци",
+   "translit": "Qí"
+  },
+  "body:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_II": {
+   "en": "Ji",
+   "native": "骥",
+   "native_lang": "zh-Hans",
+   "ru": "Цзи",
+   "translit": "Jì"
+  },
+  "body:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_III": {
+   "en": "Hua",
+   "native": "骅",
+   "native_lang": "zh-Hans",
+   "ru": "Хуа",
+   "translit": "Huá"
   },
   "colony:cyg61_kern": {
    "en": "Mine Alpha",
@@ -627,18 +2938,150 @@
    "native_lang": "en",
    "ru": "Фомальгаут"
   },
+  "system:10": {
+   "en": "Marianne",
+   "native": "Marianne",
+   "native_lang": "fr",
+   "ru": "Марианна"
+  },
+  "system:11": {
+   "en": "Ubuntu",
+   "native": "Ubuntu",
+   "native_lang": "zu",
+   "ru": "Убунту"
+  },
+  "system:12": {
+   "en": "Queqiao",
+   "native": "鹊桥",
+   "native_lang": "zh-Hans",
+   "ru": "Цюэцяо",
+   "translit": "Quèqiáo"
+  },
+  "system:13": {
+   "en": "Primum Mobile",
+   "native": "Primum Mobile",
+   "native_lang": "en",
+   "ru": "Перводвигатель"
+  },
+  "system:14": {
+   "en": "Lantern",
+   "native": "Lantern",
+   "native_lang": "en",
+   "ru": "Фонарь"
+  },
+  "system:15": {
+   "en": "Nuru",
+   "native": "Nuru",
+   "native_lang": "sw",
+   "ru": "Нуру"
+  },
+  "system:16": {
+   "en": "Guaraci",
+   "native": "Guaraci",
+   "native_lang": "pt",
+   "ru": "Гуараси"
+  },
+  "system:2": {
+   "en": "Huginn",
+   "native": "Huginn",
+   "native_lang": "nb",
+   "ru": "Хугин"
+  },
+  "system:22": {
+   "en": "Mayura",
+   "native": "मयूर",
+   "native_lang": "hi",
+   "ru": "Маюра",
+   "translit": "Mayūr"
+  },
+  "system:23": {
+   "en": "Bonanza",
+   "native": "Bonanza",
+   "native_lang": "en",
+   "ru": "Бонанза"
+  },
+  "system:25": {
+   "en": "Kestrel",
+   "native": "Kestrel",
+   "native_lang": "en",
+   "ru": "Пустельга"
+  },
   "system:3": {
-   "en": null,
+   "en": "Ulven",
    "native": "Ulven",
    "native_lang": "nb",
    "pron": "[ˈʉ̀lvən]",
    "ru": "Ульвен"
   },
+  "system:30": {
+   "en": "Haitian",
+   "native": "氦田",
+   "native_lang": "zh-Hans",
+   "ru": "Хайтянь",
+   "translit": "Hàitián"
+  },
+  "system:31": {
+   "en": "Bessel",
+   "native": "Bessel",
+   "native_lang": "en",
+   "ru": "Бессель"
+  },
+  "system:37": {
+   "en": "Homer",
+   "native": "Όμηρος",
+   "native_lang": "el",
+   "ru": "Гомер",
+   "translit": "Ómiros"
+  },
+  "system:38": {
+   "en": "Eureka",
+   "native": "Eureka",
+   "native_lang": "en",
+   "ru": "Эврика"
+  },
   "system:4": {
-   "en": null,
-   "native": null,
-   "native_lang": null,
-   "ru": null
+   "en": "Heracles",
+   "native": "Ηρακλής",
+   "native_lang": "el",
+   "ru": "Геракл",
+   "translit": "Iraklís"
+  },
+  "system:41": {
+   "en": "Lark",
+   "native": "Lark",
+   "native_lang": "en",
+   "ru": "Жаворонок"
+  },
+  "system:45": {
+   "en": "Thebaid",
+   "native": "Θηβαΐς",
+   "native_lang": "el",
+   "ru": "Фиваида",
+   "translit": "Thivaḯs"
+  },
+  "system:53": {
+   "en": "Strix",
+   "native": "Strix",
+   "native_lang": "en",
+   "ru": "Стрикс"
+  },
+  "system:54": {
+   "en": "Heron",
+   "native": "Heron",
+   "native_lang": "en",
+   "ru": "Цапля"
+  },
+  "system:57": {
+   "en": "Daraja",
+   "native": "Daraja",
+   "native_lang": "sw",
+   "ru": "Дараджа"
+  },
+  "system:60": {
+   "en": "Svarog",
+   "native": "Сварог",
+   "native_lang": "ru",
+   "ru": "Сварог"
   },
   "system:61": {
    "en": "Fortuna",
@@ -649,17 +3092,17 @@
    "zh-Hant": "命運之輪"
   },
   "system:8": {
-   "en": null,
+   "en": "Tiancang",
    "native": "天仓",
    "native_lang": "zh-Hans",
-   "ru": null,
+   "ru": "Тяньцан",
    "translit": "Tiāncāng"
   },
   "system:9": {
-   "en": null,
+   "en": "Tianyuan",
    "native": "天苑",
    "native_lang": "zh-Hans",
-   "ru": null,
+   "ru": "Тяньюань",
    "translit": "Tiānyuàn"
   }
  },

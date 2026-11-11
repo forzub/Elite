@@ -5318,3 +5318,28 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
      own spelling takes en -> transliteration -> native. GAP (AUTHOR): names exist only for Fomalhaut's 16 bodies
      and systems 3 (Ульвен), 8 / 9 (Chinese only, no Russian: shown as the transliteration), 61 (Фортуна); Tau Ceti
      etc. planets have no given names, they keep the catalogue designation until named in canon/naming.json.
+
+## NAMING SERIES 2026-11-11 (author: "names should have been given to the systems long ago")
+- tools/colonization_lab/naming_series_3126.py (PROPOSAL): one naming series per inhabited system, in the language
+  and myth of the people who discovered / settled it, the way Sol has Roman gods and Fortuna the circle of Fortune:
+  25 systems, 365 bodies (planets, dwarf planets, moons >= 1e-5 Earth masses; captured moonlets keep the catalogue
+  designation). Examples: Barnard = Хугин (ravens of Odin, the Citadel's listening post), Wolf 359 Ульвен - its
+  wolves (Гарм = the Citadel's world), Lalande = Геракл - 12 labours for 12 planets (Геспериды = Agora / Tauranga),
+  Tau Ceti = Тяньцан (Celestial Granary) - grains, eps Eri = Тяньюань - flowers / heavenly steeds, Gliese 832 =
+  Цюэцяо - the Cowherd and Weaver Girl (Чжинюй = Tianhe), Gliese 667 = Убунту (Zulu words), 61 Cygni = Бессель
+  (minerals of Kern), HD 114783 = Гомер (the Odyssey, Итака = Third Hellas), 83 Leonis = Фиваида (Desert Fathers,
+  Скит = New Thebaid), Proxima = Сварог (Slavic gods, Китеж = Red Outpost), Cognium frontiers = birds (Owlery).
+  `python naming_series_3126.py --write` merges into canon/naming.json (CANON entries untouched), then
+  `python naming.py --write` mirrors into names_3126.json. naming.py --check 29/29 OK; no duplicate ru names.
+- naming.py: t02 now resolves body entities against every system (was Fomalhaut only); body-file designations are
+  still rewritten for Fortuna only - in inhabited systems settlements.json / world_sites.body_id_for find bodies by
+  the catalogue designation, so the name lives in names_3126.json (LocalizationService overlay) only.
+- LocalizationService: a multi-star system name no longer nests brackets ("Убунту (Gliese 667 A+B+C)",
+  "Фонарь (HD 20794, 82 G. Eridani)"); stars keep their letter ("Бессель B (61 Лебедя B)").
+- Evidence: the game's LocalizationService compiled into a probe over build/assets (ru): system 8 -> "Тяньцан (Тау
+  Кита)", 11 -> "Убунту (Gliese 667 A+B+C)", star Gliese_667_C -> "Убунту C (Gliese 667 C)", Wolf 359 e -> Гарм,
+  Proxima j -> Китеж, HD 114783 c III -> Итака, Lexie -> Лекси. NOT seen on a live map: this evening every offscreen
+  capture is black, the old build-relwithdebinfo binary too (environment, display asleep) - re-check the system map.
+- Known names without a Russian catalogue spelling stay English in brackets (Proxima Centauri, Epsilon Eridani,
+  83 Leonis) - the star_systems localization has no ru for them.
+- AUTHOR: all series are PROPOSAL - accept / replace per system.

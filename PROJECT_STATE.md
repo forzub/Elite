@@ -5111,3 +5111,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   main() to finish. The MSYS `timeout` kill is NOT a console event (it still ends with the opengl32 [CRASH]: harness
   artefact). DEV ELITE_DEV_QUIT_AFTER_S=<s>: a graceful quit - 2/2 runs exit 0, no [CRASH]
   (D:/tmp/elite_shutdown/err_q*.txt). Automated runs use it instead of `timeout`.
+- Jump charge-up text on a lost ship: new refusal codes ShipDisabled = 11 ("зарядка прервана: корабль выведен из
+  строя", combat: cockpit / all reactors lost) and ShipDestroyed = 12 ("... корабль разрушен", impact / dense
+  atmosphere) instead of Interrupted ("вышел из нормального полёта"). LIVE (DEV thrust into the Earth hub while
+  charged, D:/tmp/elite_jumptext/err.txt): "stopped: зарядка прервана: корабль выведен из строя", graceful exit 0.
+- The author's list of 2026-11-11 is worked through: gas giants v2, map clouds / giant presets, Moon landing time
+  (author decision, unchanged), forced-shutdown crash, the jump text. Open for the AUTHOR: look of gas giants v2,
+  passport colours, Jupiter / Sol bodies on the map, delete assets/generated tiles (3.97 GB), landing glide item 6.

@@ -34,7 +34,9 @@ enum class Refusal : std::uint8_t
     UnknownSystem = 7,
     Cancelled = 8,           // by the pilot
     Interrupted = 9,         // the ship left normal flight during the charge-up
-    FieldIncomplete = 10     // a jump-field emitter (or the core) is lost - repair first (author 2026-11-10)
+    FieldIncomplete = 10,    // a jump-field emitter (or the core) is lost - repair first (author 2026-11-10)
+    ShipDisabled = 11,       // the charge-up ended: the ship is out of the fight (cockpit / all reactors lost)
+    ShipDestroyed = 12       // the charge-up ended: the ship was destroyed (impact / dense atmosphere)
 };
 
 inline double chargeT(double distanceLy, double massT)
@@ -93,6 +95,8 @@ inline const char* refusalText(Refusal r)
     case Refusal::Cancelled: return "прыжок отменён";
     case Refusal::Interrupted: return "зарядка сорвана: корабль вышел из нормального полёта";
     case Refusal::FieldIncomplete: return "поле прыжка неполное: повреждён излучатель поля или ядро - нужен ремонт";
+    case Refusal::ShipDisabled: return "зарядка прервана: корабль выведен из строя";
+    case Refusal::ShipDestroyed: return "зарядка прервана: корабль разрушен";
     default: return "";
     }
 }

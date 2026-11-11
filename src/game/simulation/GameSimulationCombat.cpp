@@ -405,7 +405,7 @@ void GameSimulation::disableShipIfCombatLost(EntityId shipId, Ship& ship)
     std::cerr << "[Combat] ship " << shipId.value << ": OUT OF THE FIGHT - " << (cockpitLost ? "cockpit lost" : "all propulsion reactors lost")
               << "; crew " << (crewEscapes ? "escapes in the EC-2 cockpit" : cockpitLost ? "lost with the cockpit" : "stays aboard (no escape module)")
               << " (combat clock " << m_combatClockS << " s)" << std::endl;
-    cancelJump(shipId, static_cast<std::uint8_t>(game::navigation::jump::Refusal::Interrupted));
+    cancelJump(shipId, static_cast<std::uint8_t>(game::navigation::jump::Refusal::ShipDisabled));
     motion.jEngine = false;
     motion.jStopping = false;
     motion.freeFlightThrust = 0;

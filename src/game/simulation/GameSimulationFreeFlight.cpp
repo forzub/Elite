@@ -1407,7 +1407,7 @@ void GameSimulation::destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8
               << (cause == 1 ? "surface impact" : "dense atmosphere") << " at " << speedMps << " m/s, " << decelerationG
               << " g; " << (hasCapsule ? "capsule: " : "") << cap::stateText(static_cast<cap::State>(motion.capsuleState))
               << " (pilot " << capsule.bodyG << " g, limit " << cap::BodyLimitG << " g)" << std::endl;
-    cancelJump(shipId, static_cast<std::uint8_t>(game::navigation::jump::Refusal::Interrupted));
+    cancelJump(shipId, static_cast<std::uint8_t>(game::navigation::jump::Refusal::ShipDestroyed));
     motion.jEngine = false;
     motion.jStopping = false;
     motion.freeFlightThrust = 0;

@@ -5244,3 +5244,33 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     (map_decorate 31, render_tail 35); session-start-update stalls 0.4-1.8 s before flight (loading, no loading screen).
   * AUTHOR 2026-11-11: map objects are a fixed bounded set -> prebake ALL map bodies (textures + normals + clouds)
     into <game>/assets/baked/celestial/ with a bake command; the map then only loads.
+- Loading gate (author asked: start flight only when everything is loaded, hidden under the menu): ALREADY so -
+  the WebView loading surface stays until SpaceState::advanceStartupInitialization finishes AND the first complete
+  flight frame is swapped (Application::updatePendingSessionStart / commitPreparedPresentationAfterSwap); the
+  session-start stalls and the 1 s first flight frame are under it. No frame >= 80 ms in flight after it (-O2 run).
+  Correction: EliteCelestialSurface is -O2 in every configuration, so the earlier BAKE timings were optimised; only
+  map / render code ran -O0 in build/.
+- MAP PREBAKE + RUNTIME CACHE (plan steps 2 + 3), 2026-11-11, source + compiled + live DEV:
+  * src/world/celestial/surface/MapBodyBake.{h,cpp} (GL-free): MapBodyCatalog (descriptor index of systems +
+    distant_systems, moved out of ProceduralBodyTextureCache), bakeMapBody (the same albedo bake; the relief normal
+    now at half size), small-body shape grid, fingerprint (bake version, width, body id, descriptor bytes,
+    passport, curated map names + sizes) and a PROBE (sRGB albedo at 16 fixed points of the live field) so a
+    generator change makes a stored file stale by itself (no manual version bump needed).
+  * TextureBlockCompression.{h,cpp}: BC1 encoder / decoder + mip chain. Files: BC1 mips (albedo 1024x512, normal
+    512x256) + shape, ~0.43 MB a body; GPU upload as is (glCompressedTexImage2D 0x83F0; RGBA8 decode fallback
+    when the GPU lists no S3TC) - also 1/8 of the old map texture video memory.
+  * Lookup (ProceduralBodyTextureCache::bake, worker): <root>/assets/baked/celestial/map (prebake, read-only) ->
+    <root>/cache/celestial/map (fallback %LOCALAPPDATA%/Elite/cache/celestial/map) -> live bake, compressed and
+    written to the cache. <root> = the folder holding assets/source/celestial (build/ in development). /cache/
+    in .gitignore (assets/ already is).
+  * Tool: build/EliteMapPrebake.exe [--width] [--threads] [--out] [--system ID] [--force] [--preview DIR]; skips
+    files whose fingerprint + probe match. Sol: 36 bodies, 48 s (23 threads), 15.3 MB; re-run 0.4 s.
+  * LIVE: Earth / Jupiter Detail maps "loaded ... in 70-174 ms" (was a 0.3-2.7 s bake); cache fill (Jupiter baked
+    306 ms, compressed + cached 34 ms, next session loaded); a corrupted probe (Saturn) -> "stale ... baking again"
+    in the game and rebaked by the tool. Earth preview of the decoded BC1 = the source map (north up).
+  * NOT checked: the Hub map's lit side with the BC1 albedo / half-size normal (the hub was over the night side);
+    a close-up of BC1 quality in game.
+  * FULL PREBAKE: 913 bodies in 61 systems (incl. distant_systems), 0 failed, 366.9 MB of files (384 MB on disk),
+    1290 s with 11 threads. Planet Lab --check PASS. LIVE non-Sol: Epsilon Eridani K2 Detail map "loaded in 52 ms"
+    (D:/tmp/elite_prebake/eps_detail.png). The prebake lives in build/assets/baked (not in git); a clean build
+    needs EliteMapPrebake again (or the maps fill the runtime cache as before).

@@ -15,6 +15,7 @@
 #include <glad/gl.h>
 
 #include "src/render/celestial/CelestialShapeMesh.h"
+#include "src/world/celestial/surface/MapBodyBake.h"
 
 namespace game::system_map
 {
@@ -84,7 +85,7 @@ public:
     // irregular shape flight draws (relief comparable to the radius) - for the Detail map; UVs in the
     // surface bake's layout (u = atan2(z, x), v = 0 south). nullptr until baked / for larger bodies.
     const std::vector<render::celestial::CelestialShapeTriangle>* shapeFor(int systemId, const std::string& bodyId);
-    static constexpr double SmallBodyShapeRadiusM = 300000.0;
+    static constexpr double SmallBodyShapeRadiusM = world::celestial::surface::MapSmallBodyShapeRadiusM;
 
     // GL thread. The body's cloud layer from the SAME CloudWeatherField flight draws (one source of
     // clouds, docs/CELESTIAL_RESOURCE_AUDIT.md): RGBA equirect, alpha = the combined cover of its layers at
@@ -100,8 +101,11 @@ private:
         std::atomic<int> state {0}; // 0 queued, 1 baked (pixels ready), 2 failed, 3 uploaded
         int width = 0;
         int height = 0;
-        std::vector<std::uint8_t> rgba; // GL row order (south first)
-        std::vector<std::uint8_t> normalRgba; // surface bakes: the relief normal map, same layout
+        std::vector<std::uint8_t> rgba; // cloud bakes: RGBA8, GL row order (south first)
+        // surface bakes: BC1 mip chains of the albedo and the relief normal map (prebaked file, runtime
+        // cache or a live bake compressed), uploaded as they are
+        world::celestial::surface::MapBodyPrebake surface;
+        std::size_t gpuBytes = 0;
         std::vector<render::celestial::CelestialShapeTriangle> shape;   // small bodies: the field as a mesh
         GLuint texture = 0;
         GLuint normalTexture = 0;
@@ -115,8 +119,11 @@ private:
 
     void workerLoop();
     void bake(Entry& entry);
-    std::string descriptorPathFor(int systemId, const std::string& bodyId);
-    static bool upload(Entry& entry);
+    bool upload(Entry& entry);
+    bool loadStored(Entry& entry, std::uint64_t fingerprint);
+
+    // GL thread: does the GPU take BC1 (S3TC DXT1)? -1 unknown until the first beginFrame
+    std::atomic<int> m_bc1Supported {-1};
 
     Policy m_policy = Policy::All;
     int m_width = 1024;
@@ -132,10 +139,10 @@ private:
     std::atomic<bool> m_abort {false};
     std::thread m_worker;
 
-    // worker only: systemId -> (body id -> descriptor path)
-    std::unordered_map<int, std::unordered_map<std::string, std::string>> m_descriptorIndex;
-    std::unordered_map<int, std::string> m_systemFolder;   // "000_sol" -> "sol" (curated maps folder)
-    std::string m_systemsRoot;
-    std::string m_assetRoot;   // holds assets/source/celestial
+    // worker only
+    world::celestial::surface::MapBodyCatalog m_catalog;
+    std::string m_prebakeDir;   // shipped, read-only
+    std::string m_cacheDir;     // self-filling ("" = not writable anywhere)
+    bool m_dirsResolved = false;
 };
 } // namespace game::system_map

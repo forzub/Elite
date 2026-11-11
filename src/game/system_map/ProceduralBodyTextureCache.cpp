@@ -17,6 +17,7 @@
 #include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 #include "src/world/celestial/surface/CloudWeatherField.h"
 #include "src/world/celestial/surface/PlanetSurfaceField.h"
+#include "src/world/celestial/surface/TextureBlockCompression.h"
 
 namespace game::system_map
 {
@@ -39,38 +40,7 @@ ProceduralBodyTextureCache::Policy policyFromEnv()
 
 int systemIdFromBodyId(const std::string& bodyId)
 {
-    // "system_9.Epsilon_Eridani.eps_Eri_b"
-    if (bodyId.rfind("system_", 0) != 0)
-        return -1;
-    int id = 0;
-    std::size_t i = 7;
-    if (i >= bodyId.size() || !std::isdigit(static_cast<unsigned char>(bodyId[i])))
-        return -1;
-    for (; i < bodyId.size() && std::isdigit(static_cast<unsigned char>(bodyId[i])); ++i)
-        id = id * 10 + (bodyId[i] - '0');
-    return id;
-}
-
-// the folder holding assets/source/celestial (curated maps): the working directory or a parent
-std::string findAssetRoot()
-{
-    const fs::path cwd = fs::current_path();
-    std::error_code ec;
-    for (const fs::path& base : {cwd, cwd.parent_path(), cwd.parent_path().parent_path()})
-        if (fs::is_directory(base / "assets/source/celestial", ec))
-            return base.lexically_normal().generic_string();
-    return {};
-}
-
-std::string findSystemsRoot()
-{
-    const fs::path cwd = fs::current_path();
-    std::error_code ec;
-    for (const char* rel : {"assets/data/galaxy_details/systems", "src/assets/data/galaxy_details/systems"})
-        for (const fs::path& base : {cwd, cwd.parent_path(), cwd.parent_path().parent_path()})
-            if (fs::is_directory(base / rel, ec))
-                return (base / rel).lexically_normal().generic_string();
-    return {};
+    return world::celestial::surface::mapBodySystemId(bodyId);
 }
 } // namespace
 
@@ -109,16 +79,34 @@ void ProceduralBodyTextureCache::memoryUsage(std::size_t& gpuBytes, std::size_t&
         const int state = e->state.load(std::memory_order_acquire);
         if (state == 3)
         {
-            gpuBytes += static_cast<std::size_t>(e->width) * e->height * 4 * 4 / 3 * (e->normalTexture ? 2 : 1);
+            gpuBytes += e->gpuBytes;
             ++gpuEntries;
         }
         else if (state == 1)
+        {
             cpuBytes += e->rgba.size();
+            for (const auto& m : e->surface.albedoMips)
+                cpuBytes += m.size();
+            for (const auto& m : e->surface.normalMips)
+                cpuBytes += m.size();
+        }
     }
 }
 
 void ProceduralBodyTextureCache::beginFrame(std::uint64_t frame)
 {
+    if (m_bc1Supported.load(std::memory_order_relaxed) < 0)
+    {
+        GLint count = 0;
+        glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &count);
+        std::vector<GLint> formats(static_cast<std::size_t>(std::max(0, count)));
+        if (count > 0)
+            glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, formats.data());
+        constexpr GLint Bc1 = 0x83F0;   // GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+        m_bc1Supported.store(std::find(formats.begin(), formats.end(), Bc1) != formats.end() ? 1 : 0);
+        if (m_bc1Supported.load() == 0)
+            std::cerr << "[MapProceduralBodies] no S3TC: map textures decoded to RGBA8" << std::endl;
+    }
     m_uploadsLeft = 2;
     m_frame = frame;
 }
@@ -141,15 +129,11 @@ std::size_t ProceduralBodyTextureCache::evict(const std::string& key)
     const auto it = m_entries.find(key);
     if (it == m_entries.end() || it->second->state.load(std::memory_order_acquire) != 3)
         return 0;
-    const std::size_t bytes = static_cast<std::size_t>(it->second->width) * it->second->height * 4 * 4 / 3;
+    const std::size_t total = it->second->gpuBytes;
     glDeleteTextures(1, &it->second->texture);
-    std::size_t total = bytes;
     if (it->second->normalTexture)
-    {
         glDeleteTextures(1, &it->second->normalTexture);
-        total += bytes;
-    }
-    m_entries.erase(it);   // baked again on its next request
+    m_entries.erase(it);   // loaded / baked again on its next request
     return total;
 }
 
@@ -268,41 +252,91 @@ GLuint ProceduralBodyTextureCache::cloudTextureFor(int systemId, const std::stri
     return 0;
 }
 
-bool ProceduralBodyTextureCache::upload(Entry& e)
+namespace
 {
-    if (e.width <= 0 || e.rgba.empty())
-        return false;
-    GLint previous = 0;
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous);
-    GLuint tex = 0;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, e.width, e.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, e.rgba.data());
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+void setMapTextureParameters(int levels)
+{
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, levels - 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // equirect: periodic in longitude, clamped at the poles
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
+// a BC1 mip chain as it is, or decoded to RGBA8 when the GPU has no S3TC; returns the GPU bytes
+std::size_t uploadBc1(GLuint tex, int width, int height, const std::vector<std::vector<std::uint8_t>>& mips,
+                      bool bc1)
+{
+    namespace surf = world::celestial::surface;
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    std::size_t bytes = 0;
+    int w = width, h = height;
+    std::vector<std::uint8_t> rgba;
+    for (std::size_t level = 0; level < mips.size(); ++level)
+    {
+        if (bc1)
+        {
+            glCompressedTexImage2D(GL_TEXTURE_2D, static_cast<GLint>(level), 0x83F0, w, h, 0,
+                                   static_cast<GLsizei>(mips[level].size()), mips[level].data());
+            bytes += mips[level].size();
+        }
+        else
+        {
+            rgba.resize(static_cast<std::size_t>(w) * h * 4);
+            surf::decodeBC1(mips[level].data(), w, h, rgba.data());
+            glTexImage2D(GL_TEXTURE_2D, static_cast<GLint>(level), GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         rgba.data());
+            bytes += rgba.size();
+        }
+        w = std::max(1, w / 2);
+        h = std::max(1, h / 2);
+    }
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    setMapTextureParameters(static_cast<int>(mips.size()));
+    return bytes;
+}
+} // namespace
+
+bool ProceduralBodyTextureCache::upload(Entry& e)
+{
+    GLint previous = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous);
+    GLuint tex = 0;
+    if (e.clouds)
+    {
+        if (e.width <= 0 || e.rgba.empty())
+            return false;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, e.width, e.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, e.rgba.data());
+        glGenerateMipmap(GL_TEXTURE_2D);
+        setMapTextureParameters(1 + static_cast<int>(std::floor(std::log2(std::max(e.width, e.height)))));
+        e.gpuBytes = e.rgba.size() * 4 / 3;
+        std::vector<std::uint8_t>().swap(e.rgba);
+    }
+    else
+    {
+        if (e.surface.albedoMips.empty())
+            return false;
+        const bool bc1 = m_bc1Supported.load(std::memory_order_relaxed) != 0;
+        glGenTextures(1, &tex);
+        e.gpuBytes = uploadBc1(tex, e.surface.width, e.surface.height, e.surface.albedoMips, bc1);
+        if (!e.surface.normalMips.empty())
+        {
+            GLuint n = 0;
+            glGenTextures(1, &n);
+            e.gpuBytes += uploadBc1(n, e.surface.normalWidth, e.surface.normalHeight, e.surface.normalMips, bc1);
+            e.normalTexture = n;
+        }
+        // the shape triangles stay (shapeFor), the pixels go
+        decltype(e.surface.albedoMips)().swap(e.surface.albedoMips);
+        decltype(e.surface.normalMips)().swap(e.surface.normalMips);
+    }
     glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
     e.texture = tex;
-    std::vector<std::uint8_t>().swap(e.rgba);
-    if (!e.normalRgba.empty())
-    {
-        GLuint n = 0;
-        glGenTextures(1, &n);
-        glBindTexture(GL_TEXTURE_2D, n);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, e.width, e.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, e.normalRgba.data());
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
-        e.normalTexture = n;
-        std::vector<std::uint8_t>().swap(e.normalRgba);
-    }
     return tex != 0;
 }
 
@@ -324,67 +358,10 @@ void ProceduralBodyTextureCache::workerLoop()
     }
 }
 
-std::string ProceduralBodyTextureCache::descriptorPathFor(int systemId, const std::string& bodyId)
-{
-    auto sys = m_descriptorIndex.find(systemId);
-    if (sys == m_descriptorIndex.end())
-    {
-        if (m_systemsRoot.empty())
-            m_systemsRoot = findSystemsRoot();
-        std::unordered_map<std::string, std::string> index;
-        std::error_code ec;
-        // the local systems and the distant quest / route targets (galaxy_details/distant_systems, e.g.
-        // 100062_kepler_62): findSystem() serves both, so their maps can open
-        std::vector<fs::path> roots;
-        if (!m_systemsRoot.empty())
-        {
-            roots.push_back(fs::path(m_systemsRoot));
-            roots.push_back(fs::path(m_systemsRoot).parent_path() / "distant_systems");
-        }
-        bool found = false;
-        for (const fs::path& root : roots)
-        {
-            if (found)
-                break;
-            for (const auto& dir : fs::directory_iterator(root, ec))
-            {
-                const std::string name = dir.path().filename().string();
-                const std::size_t us = name.find('_');
-                if (us == std::string::npos || us == 0 || name.find_first_not_of("0123456789") != us ||
-                    std::atoi(name.substr(0, us).c_str()) != systemId)
-                    continue;
-                // "000_sol" -> "sol": the curated maps folder (assets/source/celestial/<system>)
-                m_systemFolder[systemId] = name.substr(us + 1);
-                const fs::path bodies = dir.path() / "generated" / "bodies";
-                for (const auto& f : fs::directory_iterator(bodies, ec))
-                {
-                    if (f.path().extension() != ".json")
-                        continue;
-                    try
-                    {
-                        std::ifstream in(f.path());
-                        const nlohmann::json j = nlohmann::json::parse(in);
-                        if (j.value("schema", std::string()) == "elite.generated_body.v1")
-                            index[j.value("id", std::string())] = f.path().generic_string();
-                    }
-                    catch (const std::exception&)
-                    {
-                    }
-                }
-                found = true;
-                break;
-            }
-        }
-        sys = m_descriptorIndex.emplace(systemId, std::move(index)).first;
-    }
-    const auto b = sys->second.find(bodyId);
-    return b == sys->second.end() ? std::string() : b->second;
-}
-
 void ProceduralBodyTextureCache::bakeClouds(Entry& e)
 {
     namespace surf = world::celestial::surface;
-    const std::string path = descriptorPathFor(e.systemId, e.bodyId);
+    const std::string path = m_catalog.descriptorPath(e.systemId, e.bodyId);
     surf::BodySurfaceDescriptor body;
     std::string error;
     // the flight's rule (CelestialFlightRenderer::startLoad): a solid body with an atmosphere that can cloud
@@ -431,6 +408,59 @@ void ProceduralBodyTextureCache::bakeClouds(Entry& e)
     e.state.store(1, std::memory_order_release);
 }
 
+bool ProceduralBodyTextureCache::loadStored(Entry& e, std::uint64_t fingerprint)
+{
+    namespace surf = world::celestial::surface;
+    for (const std::string& dir : {m_prebakeDir, m_cacheDir})
+    {
+        if (dir.empty())
+            continue;
+        surf::MapBodyPrebake stored;
+        if (!surf::readMapBodyPrebake(surf::mapBodyPrebakePath(dir, e.systemId, e.bodyId), fingerprint, stored))
+            continue;
+        // the file's probe against the surface field as the generator makes it NOW
+        surf::MapBodyProbe probe;
+        std::string error;
+        if (!surf::mapBodyProbe(m_catalog, e.systemId, e.bodyId, m_width, probe, error) ||
+            !surf::mapBodyProbesMatch(probe, stored.probe))
+        {
+            std::cerr << "[MapProceduralBodies] " << e.bodyId << ": stored bake in " << dir
+                      << " is stale (the surface generator changed), baking again" << std::endl;
+            continue;
+        }
+        e.surface = std::move(stored);
+        return true;
+    }
+    return false;
+}
+
+namespace
+{
+std::vector<render::celestial::CelestialShapeTriangle> shapeTriangles(
+    const world::celestial::surface::MapBodyPrebake& p)
+{
+    std::vector<render::celestial::CelestialShapeTriangle> out;
+    const int NLon = p.shapeLon, NLat = p.shapeLat;
+    if (NLon <= 0 || NLat < 2 || p.shapeGrid.size() != static_cast<std::size_t>(NLon + 1) * NLat)
+        return out;
+    const auto vertex = [&](int i, int j) {
+        render::celestial::CelestialShapeVertex v;
+        v.pos = p.shapeGrid[static_cast<std::size_t>(i) * (NLon + 1) + j];
+        v.uv = glm::vec2(static_cast<float>(j) / NLon, 1.0f - static_cast<float>(i) / (NLat - 1));
+        return v;
+    };
+    out.reserve(static_cast<std::size_t>(NLon) * (NLat - 1) * 2);
+    for (int i = 0; i + 1 < NLat; ++i)
+        for (int j = 0; j < NLon; ++j)
+        {
+            const auto a = vertex(i, j), b = vertex(i, j + 1), c = vertex(i + 1, j), d = vertex(i + 1, j + 1);
+            out.push_back({a, c, b});
+            out.push_back({b, c, d});
+        }
+    return out;
+}
+} // namespace
+
 void ProceduralBodyTextureCache::bake(Entry& e)
 {
     namespace surf = world::celestial::surface;
@@ -439,150 +469,60 @@ void ProceduralBodyTextureCache::bake(Entry& e)
         bakeClouds(e);
         return;
     }
+    if (!m_dirsResolved)
+    {
+        m_dirsResolved = true;
+        m_prebakeDir = surf::mapBodyPrebakeDir(m_catalog.assetRoot());
+        m_cacheDir = surf::mapBodyRuntimeCacheDir(m_catalog.assetRoot());
+        std::cerr << "[MapProceduralBodies] prebake " << (m_prebakeDir.empty() ? "-" : m_prebakeDir) << ", cache "
+                  << (m_cacheDir.empty() ? "- (not writable)" : m_cacheDir) << std::endl;
+    }
     const auto t0 = std::chrono::steady_clock::now();
-    const std::string path = descriptorPathFor(e.systemId, e.bodyId);
-    surf::BodySurfaceDescriptor body;
-    std::string error;
-    if (path.empty() || !surf::loadGeneratedBody(path, body, &error))
+    const auto msSince = [&] {
+        return static_cast<int>(
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
+    };
+    const std::uint64_t fingerprint = surf::mapBodyFingerprint(m_catalog, e.systemId, e.bodyId, m_width);
+    if (fingerprint == 0)
     {
         // stars, belts, stations: no generated body - silently no texture
-        if (!path.empty())
-            std::cerr << "[MapProceduralBodies] " << e.bodyId << ": " << error << "\n";
         e.state.store(2, std::memory_order_release);
         return;
     }
-    // the flight renderer's surface (curated maps, passports) from the shared registry: no second copy
-    // while the body is also in flight; released after the bake when nobody else holds it
-    surf::BodySurfaceSource source;
-    source.id = e.bodyId;
-    source.descriptorPath = path;
-    source.radiusM = body.radiusM;
-    if (m_assetRoot.empty())
-        m_assetRoot = findAssetRoot();
-    if (!m_assetRoot.empty())
-        surf::findImportedBodyMaps(m_assetRoot, m_systemFolder[e.systemId], path, source);
-    surf::LoadedBodySurface loaded;
-    if (!surf::acquireBodySurface(source, loaded) || !loaded.field)
+    // a prebaked or cached file of the same inputs: no generation at all
+    if (loadStored(e, fingerprint))
     {
-        std::cerr << "[MapProceduralBodies] " << e.bodyId << ": surface not loaded " << loaded.error << "\n";
-        e.state.store(2, std::memory_order_release);
+        e.shape = shapeTriangles(e.surface);
+        e.width = e.surface.width;
+        e.height = e.surface.height;
+        e.state.store(1, std::memory_order_release);
+        std::cerr << "[MapProceduralBodies] loaded " << e.bodyId << " in " << msSince() << " ms" << std::endl;
         return;
     }
-    const std::shared_ptr<surf::SurfaceField> field = loaded.field;
-    const int w = m_width, h = m_width / 2;
-    const double pi = 3.14159265358979323846;
-    const double texelM = 2.0 * pi * field->referenceRadiusM() / w;
-    const auto dirAt = [&](int x, int row) { // row 0 = north
-        const double lon = ((x + 0.5) / w - 0.5) * 2.0 * pi;
-        const double lat = (0.5 - (row + 0.5) / h) * pi;
-        return glm::dvec3(std::cos(lat) * std::cos(lon), std::sin(lat), std::cos(lat) * std::sin(lon));
-    };
-    std::vector<surf::SurfaceSample> samples(static_cast<std::size_t>(w) * h);
-    std::vector<std::uint8_t> rgba(samples.size() * 4);
+    surf::MapBodyBake baked;
+    std::string error;
     const int threads = std::max(1, static_cast<int>(std::thread::hardware_concurrency()) / 2);
-    const auto parallelRows = [&](auto&& fn) {
-        std::vector<std::thread> pool;
-        for (int t = 0; t < threads; ++t)
-            pool.emplace_back([&, t] {
-                core::lowerCurrentThreadPriority();
-                for (int row = t; row < h && !m_abort.load(std::memory_order_relaxed); row += threads)
-                    fn(row);
-            });
-        for (auto& th : pool)
-            th.join();
-    };
-    parallelRows([&](int row) {
-        for (int x = 0; x < w; ++x)
-            samples[static_cast<std::size_t>(row) * w + x] = field->sample(dirAt(x, row), texelM * 2.0);
-    });
-    parallelRows([&](int row) {
-        for (int x = 0; x < w; ++x)
-        {
-            const auto& s = samples[static_cast<std::size_t>(row) * w + x];
-            const auto& east = samples[static_cast<std::size_t>(row) * w + (x + 1) % w];
-            const auto& north = samples[static_cast<std::size_t>(std::max(0, row - 1)) * w + x];
-            const double slope =
-                std::min(1.0, std::hypot(east.heightM - s.heightM, north.heightM - s.heightM) / texelM);
-            const glm::vec3 a =
-                field->appearance(s, dirAt(x, row), 1.0 - 1.0 / std::sqrt(1.0 + slope * slope)).albedo;
-            const glm::vec3 c = glm::pow(glm::clamp(a, glm::vec3(0.0f), glm::vec3(1.0f)), glm::vec3(1.0f / 2.2f));
-            // GL row order: south first (as TextureLoader flips the cached TGA)
-            const std::size_t o = (static_cast<std::size_t>(h - 1 - row) * w + x) * 4;
-            rgba[o + 0] = static_cast<std::uint8_t>(c.r * 255.0f + 0.5f);
-            rgba[o + 1] = static_cast<std::uint8_t>(c.g * 255.0f + 0.5f);
-            rgba[o + 2] = static_cast<std::uint8_t>(c.b * 255.0f + 0.5f);
-            rgba[o + 3] = 255;
-        }
-    });
-    if (m_abort.load())
+    if (!surf::bakeMapBody(m_catalog, e.systemId, e.bodyId, m_width, threads, &m_abort, baked, error))
+    {
+        if (m_abort.load())
+            return;
+        if (!error.empty())
+            std::cerr << "[MapProceduralBodies] " << e.bodyId << ": " << error << std::endl;
+        e.state.store(2, std::memory_order_release);
         return;
-    // relief normal map (the baker's buildNormalFromHeightImage on the height normalised to the body's range)
-    {
-        double minH = 1.0e30, maxH = -1.0e30;
-        for (const auto& s : samples)
-        {
-            minH = std::min(minH, s.heightM);
-            maxH = std::max(maxH, s.heightM);
-        }
-        const double range = std::max(1.0, maxH - minH);
-        const auto h01 = [&](int x, int row) {   // row 0 = north, wrapped in x, clamped in y
-            x = (x % w + w) % w;
-            row = std::clamp(row, 0, h - 1);
-            return static_cast<float>((samples[static_cast<std::size_t>(row) * w + x].heightM - minH) / range);
-        };
-        constexpr float Strength = 8.0f;
-        std::vector<std::uint8_t> normal(static_cast<std::size_t>(w) * h * 4);
-        for (int row = 0; row < h; ++row)
-            for (int x = 0; x < w; ++x)
-            {
-                const glm::vec3 n = glm::normalize(glm::vec3(-(h01(x + 1, row) - h01(x - 1, row)) * Strength,
-                                                             -(h01(x, row + 1) - h01(x, row - 1)) * Strength, 1.0f));
-                const glm::vec3 enc = n * 0.5f + glm::vec3(0.5f);
-                const std::size_t o = (static_cast<std::size_t>(h - 1 - row) * w + x) * 4;   // GL rows: south first
-                normal[o + 0] = static_cast<std::uint8_t>(enc.x * 255.0f + 0.5f);
-                normal[o + 1] = static_cast<std::uint8_t>(enc.y * 255.0f + 0.5f);
-                normal[o + 2] = static_cast<std::uint8_t>(enc.z * 255.0f + 0.5f);
-                normal[o + 3] = 255;
-            }
-        e.normalRgba = std::move(normal);
     }
-    // a small body: its field as a displaced lat-long mesh (the shape flight shows)
-    if (field->solidSurface() && field->referenceRadiusM() < SmallBodyShapeRadiusM)
-    {
-        // 64 x 32: the Detail map projects and sorts the shape on the CPU every frame (128 x 64 = 16k
-        // triangles cost ~15 ms a frame, measured 2026-11-11); enough for the silhouette at map scale
-        constexpr int NLon = 64, NLat = 32;
-        const double radius = field->referenceRadiusM();
-        std::vector<render::celestial::CelestialShapeVertex> grid(static_cast<std::size_t>(NLon + 1) * NLat);
-        for (int i = 0; i < NLat; ++i)
-            for (int j = 0; j <= NLon; ++j)
-            {
-                const double lat = pi * 0.5 - pi * i / (NLat - 1);
-                const double lon = (static_cast<double>(j) / NLon - 0.5) * 2.0 * pi;
-                const glm::dvec3 dir(std::cos(lat) * std::cos(lon), std::sin(lat), std::cos(lat) * std::sin(lon));
-                const double hgt = field->sample(dir, 2.0 * pi * radius / NLon).heightM;
-                auto& v = grid[static_cast<std::size_t>(i) * (NLon + 1) + j];
-                v.pos = glm::vec3(dir * std::max(radius * 0.2, radius + hgt));
-                v.uv = glm::vec2(static_cast<float>(j) / NLon, 1.0f - static_cast<float>(i) / (NLat - 1));
-            }
-        for (int i = 0; i + 1 < NLat; ++i)
-            for (int j = 0; j < NLon; ++j)
-            {
-                const auto& a = grid[static_cast<std::size_t>(i) * (NLon + 1) + j];
-                const auto& b = grid[static_cast<std::size_t>(i) * (NLon + 1) + j + 1];
-                const auto& c = grid[static_cast<std::size_t>(i + 1) * (NLon + 1) + j];
-                const auto& d = grid[static_cast<std::size_t>(i + 1) * (NLon + 1) + j + 1];
-                e.shape.push_back({a, c, b});
-                e.shape.push_back({b, c, d});
-            }
-    }
-    e.width = w;
-    e.height = h;
-    e.rgba = std::move(rgba);
+    const int bakeMs = msSince();
+    surf::MapBodyPrebake compressed = surf::compressMapBodyBake(baked, fingerprint);
+    // into the runtime cache: the next session loads it
+    const bool saved = !m_cacheDir.empty() &&
+                       surf::writeMapBodyPrebake(surf::mapBodyPrebakePath(m_cacheDir, e.systemId, e.bodyId), compressed);
+    e.surface = std::move(compressed);
+    e.shape = shapeTriangles(e.surface);
+    e.width = e.surface.width;
+    e.height = e.surface.height;
     e.state.store(1, std::memory_order_release);
-    const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-    std::cerr << "[MapProceduralBodies] baked " << e.bodyId << " ("
-              << (loaded.descriptor.source == surf::SurfaceSourceKind::ImportedRealData ? "curated maps, " : "") << surf::archetypeName(surf::surfaceArchetype(body))
-              << ") " << w << "x" << h << " in " << static_cast<int>(ms) << " ms\n";
+    std::cerr << "[MapProceduralBodies] baked " << e.bodyId << " (" << baked.description << ") " << baked.width
+              << "x" << baked.height << " in " << bakeMs << " ms, compressed + " << (saved ? "cached" : "NOT cached")
+              << " in " << (msSince() - bakeMs) << " ms" << std::endl;
 }
 } // namespace game::system_map

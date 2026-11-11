@@ -164,6 +164,8 @@ add_library(EliteCelestialSurface STATIC
     src/world/celestial/surface/ImportedSurfaceField.cpp
     src/world/celestial/surface/CraterLayer.cpp
     src/world/celestial/surface/GlobeBake.cpp
+    src/world/celestial/surface/MapBodyBake.cpp
+    src/world/celestial/surface/TextureBlockCompression.cpp
     src/world/celestial/surface/LocalTerrain.cpp
 )
 target_include_directories(EliteCelestialSurface PUBLIC "${CMAKE_SOURCE_DIR}")
@@ -1702,3 +1704,9 @@ endif()
 #   build/EliteCelestialPreview.exe <body.json> <out_prefix> [width]
 add_executable(EliteCelestialPreview tools/planet_lab/CelestialPreview.cpp)
 target_link_libraries(EliteCelestialPreview PRIVATE EliteCelestialSurface)
+
+# Map prebake: every body's map textures (albedo + relief normal, BC1 mips) and small-body shapes into
+# assets/baked/celestial/map - the maps then load instead of generating (MapBodyBake.h).
+#   build/EliteMapPrebake.exe [--width 1024] [--threads N] [--out DIR] [--system ID ...] [--force]
+add_executable(EliteMapPrebake tools/planet_lab/MapPrebake.cpp)
+target_link_libraries(EliteMapPrebake PRIVATE EliteCelestialSurface)

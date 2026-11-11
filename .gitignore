@@ -2,6 +2,7 @@
 /build/
 /build-relwithdebinfo/
 /out/
+/cache/
 /bin/
 /third_party/*
 !/third_party/procedural_reference/

@@ -5138,3 +5138,7 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   sample(); PlanetSurfaceField and ImportedSurfaceField name crater landmarks from it. Relief / colour unchanged
   (curated Earth / Moon / Mars / Jupiter globe bakes bit-identical). ElitePlanetLab --check: PASS (0 failed) - all
   bodies' coastline / landmark checks green for the first time this session.
+- DEV map script FIXED: "system" from a Detail / Hub map called only requestNavigationView(System), the renderer
+  stayed in Detail and a later body: / detail did nothing. Now it also returns through setSystemMapLoadedSystemMode
+  (the panel's СИСТЕМА path). LIVE (D:/tmp/elite_mapscript): Detail maps Jupiter -> Mars -> Phobos in one run,
+  each baked, graceful exit 0.

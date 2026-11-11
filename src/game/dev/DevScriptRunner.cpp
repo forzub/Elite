@@ -172,7 +172,13 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
 {
     auto arg = [&](const char* k) { return cmd.substr(std::string(k).size()); };
     if (cmd == "system")
+    {
+        // from a Detail / Hub map back to the System map the way the panel's СИСТЕМА button does
+        // (requestNavigationView alone kept the renderer in Detail: a later body: / detail did nothing)
         s.context().app->requestNavigationView(NavigationPresentationView::System);
+        if (s.m_systemMapRenderer.mode() != SystemMapRenderer::Mode::System)
+            s.setSystemMapLoadedSystemMode();
+    }
     else if (cmd == "grid")
         s.m_systemMapRenderer.toggleSystemGridOverlay();
     else if (cmd.rfind("body:", 0) == 0)

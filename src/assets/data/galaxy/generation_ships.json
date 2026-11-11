@@ -2857,7 +2857,7 @@
       }
     },
     {
-      "id": "SVAROG-1",
+      "id": "MERU-1",
       "wave": "early",
       "launchYear": 2095,
       "arrival": {
@@ -2871,7 +2871,7 @@
       "status_3126": "КОЛОНИЯ",
       "legacy_values": true,
       "canon": {
-        "id": "SVAROG-1",
+        "id": "MERU-1",
         "status": "canon",
         "knowledge": {
           "status": "CANON",
@@ -2882,7 +2882,7 @@
           "launch_year": {
             "status": "CANON",
             "visibility": "PUBLIC_RECORD",
-            "basis": "год в 02. SVAROG-1.md"
+            "basis": "год в 02. MERU-1.md"
           },
           "population": {
             "status": "CANON",
@@ -2906,7 +2906,7 @@
           }
         },
         "aliases": [
-          "Сварог"
+          "Меру"
         ],
         "wave": "I",
         "sponsor": "Eurasian cluster: Russia + India + Kazakhstan + Uzbekistan",
@@ -2931,15 +2931,15 @@
         },
         "fate_3126": "arrived",
         "ship_state_3126": "orbital_fortress",
-        "ship_note": "корпус — орбитальная крепость «Сварог» над Proxima Cen d",
+        "ship_note": "корпус — орбитальная крепость «Меру» над Proxima Cen d",
         "location_3126": 60,
         "living_aboard_3126": 0,
-        "owner_3126": "Сварог",
+        "owner_3126": "Меру",
         "findable": true,
         "author_knows_truth": true,
         "colony": "proxima_outpost",
         "sources": [
-          "02. SVAROG-1.md",
+          "02. MERU-1.md",
           "fate.md §2"
         ]
       }

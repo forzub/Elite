@@ -21,6 +21,7 @@
 | Когниум | [Фронтир Gliese 674](gj674_frontier.md) | фронтир | Gliese 674 | 2810 | 12 134 | — | — | PROPOSAL · PUBLIC |
 | Когниум | [Фронтир HD 104067](hd104067_frontier.md) | фронтир | HD 104067 | 3050 | 507 | — | — | PROPOSAL · PUBLIC |
 | Когниум | [Фронтир HD 85512](hd85512_frontier.md) | фронтир | HD 85512 | 2860 | 2 417 | — | — | PROPOSAL · PUBLIC |
+| Меру | [Лал-Кот](proxima_outpost.md) | колония | Proxima Centauri | 2150 | 725 716 924 | 890 000 | security_oligarchy | CANON · PUBLIC |
 | Новая Эллада | [Агора](lalande_hellas.md) | колония | Lalande 21185 | 2197 | 327 607 324 | 1 500 000 | shareholder_agora | CANON · PUBLIC |
 | Ново-Фиваида | [Ново-Фиваида](leo83_zion.md) | колония | 83 Leonis | 3126 | 9 229 | 8 900 | synod_theocracy | CANON · PUBLIC |
 | Провидение | [Провидение](gj876_next.md) | колония | Gliese 876 | 2314 | 99 645 | 45 000 | machine_oracle | CANON · PUBLIC |
@@ -29,7 +30,6 @@
 | Проспекторат Керн | [Лагерь «Кларион»](hd114783_claims.md) | аванпост | HD 114783 | 3040 | 1 364 | 25 000 | — | PROPOSAL · PUBLIC |
 | Проспекторат Керн | [«Золотой Город»](leo83_golden_city.md) | аванпост | 83 Leonis | 3045 | 1 317 | 6 000 | — | PROPOSAL · PUBLIC |
 | Проспекторат Керн | [Экспедиция Sigma² UMa](sigma2uma_expedition.md) | аванпост | Sigma² Ursae Majoris | 3060 | 370 | 3 000 | — | PROPOSAL · PUBLIC |
-| Сварог | [Красный Форпост](proxima_outpost.md) | колония | Proxima Centauri | 2150 | 725 716 924 | 890 000 | security_oligarchy | CANON · PUBLIC |
 | Свободная Карма | [Свободная Карма](delta_pav_freekarma.md) | колония | Delta Pavonis | 2420 | 200 070 346 | 350 000 | exile_republic | CANON · PUBLIC |
 | Сельва-Верде | [Сельва-Верде](hd69830_verde.md) | колония | HD 69830 | 2576 | 204 780 917 | 1 400 000 | grandees_and_church | CANON · PUBLIC |
 | Синьхэ | [Цветущая Гармония](eps_eri_harmony.md) | колония | Epsilon Eridani | 2212 | 1 371 123 715 | 3 280 000 | sage_council | CANON · PUBLIC |

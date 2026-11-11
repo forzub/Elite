@@ -1,5 +1,5 @@
 {
- "entities": 920,
+ "entities": 921,
  "fortuna": {
   "catalog": {
    "atlas_visible": true,
@@ -400,9 +400,9 @@
  "verdicts": {
   "EXONYM": 11,
   "HISTORICAL": 0,
-  "KEEP": 77,
+  "KEEP": 75,
   "NORMALIZE": 15,
-  "RENAME": 22,
+  "RENAME": 25,
   "SLANG": 2,
   "VERIFY": 1
  }

@@ -18,7 +18,7 @@
 | № | Корабль | Система | ID | Координаты (X, Y, Z) | Население (3126) | Старт | Прибытие |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | **MAYFLOWER-2** | Tau Ceti | 8 | `10.291, 5.024, -3.271` | 2 800 000 | 2088 | 2233 |
-| 2 | **SVAROG-1** | Proxima Centauri | 60 | `-1.634, -1.366, -3.816` | 890 000 | 2095 | 2150 |
+| 2 | **MERU-1** | Proxima Centauri | 60 | `-1.634, -1.366, -3.816` | 890 000 | 2095 | 2150 |
 | 3 | **TIANHE-1** | Gliese 832 | 12 | `-5.28, 14.52, -5.89` | 4 200 000 | 2098 | 2288 |
 | 4 | **HERACLES-1** | Lalande 21185 | 4 | `2.89, -7.42, -2.15` | 1 500 000 | 2112 | 2197 |
 | 5 | **CELESTIAL-DESTINY-1** | Epsilon Eridani | 9 | `5.89, -7.12, -4.58` | 3 100 000 | 2125 | 2172 |
@@ -108,7 +108,7 @@
 
 ---
 
-### 2. SVAROG-1 («Красный Форпост»)
+### 2. MERU-1 («Лал-Кот»)
 **Старт:** 2095 | **Прибытие:** 2150 | **Система:** Proxima Centauri (ID 60)
 **Координаты:** `-1.634, -1.366, -3.816`
 
@@ -880,7 +880,7 @@
 
 | Категория | Требуется | Фактически | Корабли |
 | :--- | :--- | :--- | :--- |
-| 🟢 Основные колонии | 13 | **13** | MAYFLOWER-2, SVAROG-1, TIANHE-1, HERACLES-1, CELESTIAL-DESTINY-1, IRON-SHIELD-1, VAKA-MOANA-1, EUROPA-1, HOMESTEAD-1, NEW-JERUSALEM-1, UHURU-2, ODYSSEY-1, AMAZONIA-1 |
+| 🟢 Основные колонии | 13 | **13** | MAYFLOWER-2, MERU-1, TIANHE-1, HERACLES-1, CELESTIAL-DESTINY-1, IRON-SHIELD-1, VAKA-MOANA-1, EUROPA-1, HOMESTEAD-1, NEW-JERUSALEM-1, UHURU-2, ODYSSEY-1, AMAZONIA-1 |
 | 🟡 Вторичные колонии | 5 | **5** | DHARMA-1, NEXT-1, DHARMA-2, CELESTIAL-DESTINY-2, HOMEWARD-1 |
 | 🟠 В полёте | 5 | **5** | NIRVANA-1, GAIA-2, FINAL-ARK-1, LEGACY-1, KEPLER-1 |
 | 🔴 Потеряны / Уничтожены | 7 | **7** | UBUNTU-1, GREEN-ARK-1, FREE-WORLD-1, IRON-SHIELD-2, DEEP-SEEK-1, FAREWELL-1, NOMAD-1 |

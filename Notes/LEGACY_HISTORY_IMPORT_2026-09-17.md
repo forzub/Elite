@@ -94,7 +94,7 @@ This archive should be treated as the primary **raw design-work corpus**, not ye
 | # | ID | Start | Population / crew | Primary target / type |
 |---:|---|---:|---:|---|
 | 1 | MAYFLOWER-2 | 2088 | 25,000 | Tau Ceti e |
-| 2 | SVAROG-1 | 2095 | 15,000 | Proxima Centauri b |
+| 2 | MERU-1 | 2095 | 15,000 | Proxima Centauri b |
 | 3 | TIANHE-1 | 2098 | 35,000 | Gliese 832 c |
 | 4 | UBUNTU-1 | 2105 | 25,000 | Gliese 667 Cc |
 | 5 | HERACLES-1 | 2112 | 12,000 | Lalande 21185 b |
@@ -325,7 +325,7 @@ HERACLES-1
 KEPLER-1
 MAYFLOWER-2
 NEW-HELLAS-1
-SVAROG-1
+MERU-1
 TIANHE-1
 UBUNTU-1
 UHURU-2

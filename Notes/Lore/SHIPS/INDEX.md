@@ -10,7 +10,7 @@
 | ID | Имя | Волна | Старт | Цель | Прибытие | Людей на старте | На прибытии | Итог | Колония | Статус |
 |---|---|---|---|---|---|---|---|---|---|---|
 | [MAYFLOWER-2](MAYFLOWER-2.md) | Мэйфлауэр II | I | 2088 | Tau Ceti | 2233 | 25 000 | 18 500 | arrived | [Синь-Шанхай](../COLONIES/tau_ceti_cognium.md) | CANON · PUBLIC |
-| [SVAROG-1](SVAROG-1.md) | Сварог | I | 2095 | Proxima Centauri | 2150 | 15 000 | 9 800 | arrived | [Красный Форпост](../COLONIES/proxima_outpost.md) | CANON · PUBLIC |
+| [MERU-1](MERU-1.md) | Меру | I | 2095 | Proxima Centauri | 2150 | 15 000 | 9 800 | arrived | [Лал-Кот](../COLONIES/proxima_outpost.md) | CANON · PUBLIC |
 | [TIANHE-1](TIANHE-1.md) | Тяньхэ | I | 2098 | Gliese 832 | 2288 | 35 000 | 28 400 | arrived | [Тяньхэ](../COLONIES/gj832_tianhe.md) | CANON · PUBLIC |
 | [UBUNTU-1](UBUNTU-1.md) | Убунту | I | 2105 | Gliese 667 (A+B+C) | — | 25 000 | — | [спойлер: см. досье] | — | CANON · PUBLIC |
 | [HERACLES-1](HERACLES-1.md) | Геракл | I | 2112 | Lalande 21185 | 2197 | 12 000 | 10 200 | arrived | [Агора](../COLONIES/lalande_hellas.md) | CANON · PUBLIC |

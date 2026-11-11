@@ -1187,7 +1187,7 @@ Status: PROPOSAL, offline-verified (deterministic lab), NOT author-accepted.
   migration only after 2750 over the beacon graph (Earth windows).
   Result: Earth 3126 6.0 bn (peak 13.35 bn 2100, collapse 2470-2540), off-Sol
   183.4 M (old targets 26.8 M); largest polities 15-33 M (New Karma 32.7,
-  Citadel 23.4, Strife Belt 21.5, Red Outpost 20.6, Harmony 18.7). Strong
+  Citadel 23.4, Strife Belt 21.5, Lal Kot 20.6, Harmony 18.7). Strong
   sensitivity: without assumptions F9 (inherited family propensity) + F10
   (automated childcare) off-Sol 28 M, Earth 0.22 bn. 18 colonies differ from
   the author's numbers by > 2x (kept as `pop_3126_authored`, decision open).
@@ -2734,7 +2734,7 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
   people_finance_data; 0 open, 1 licensed, 2 restricted, 3 sanctions/indirect = channel "black", 4 closed) = max(export
   seller, import buyer) -> exception caps (Kern finance, Agora transit hub, Mecca jump math for the Southern circle,
   Providence, Verde fuel; Karma excluded from caps) -> 8 sanctions, each tied to a relations_anchor record (Cognium-Citadel,
-  Cognium-Svarog, Harmony-Strife, Karma split, Maland-Firmament at unit level only, Hellas2-NewIndia, Kern-Hellas3 temporary,
+  Cognium-Meru, Harmony-Strife, Karma split, Maland-Firmament at unit level only, Hellas2-NewIndia, Kern-Hellas3 temporary,
   Europa-Freeclans); Zion-Kern = tension without measures (crisis of 3126, open).
 - Migrated: industry.json `blocs` + hand bloc matrix in economy_live.json (+ polity_overrides) REMOVED; industry.json now
   `industrial_schools` (design + core_source per unit, values carried over; Verde -> design none). The hidden
@@ -2755,7 +2755,7 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
   industry, economy_live (deterministic_rebuild), ship_designer (21 ships, 0 FAIL, 39 WARN), lore_md --check (pre-existing
   stale FLEET_MODELS / SHIP_EQUIPMENT blocks refreshed by the rewrite), lore_html --check (139), calibrate_population.
 - Known, NOT fixed (outside the bloc layer): the lab.py trade-flow model still sells "jump cores" from New Shanghai to
-  Mecca, Svarog and New Karma (STRATEGIC_DEPENDENCIES generated table) - contradicts own Mecca math / refused licence /
+  Mecca, Meru and New Karma (STRATEGIC_DEPENDENCIES generated table) - contradicts own Mecca math / refused licence /
   refused network. Free belts formally receive Cognium cores at "restricted" (2850 licence covered all but Citadel /
   Karma; no post-2862 sanction in the canon) - author question.
 - Next: author review of every bloc / actor / sanction / exception (open_questions in political_order.json); promote
@@ -2771,10 +2771,10 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
 - Design rule (author): Chekhov's gun - every political element carries `player_role` (blocs, non-aligned, province, zone,
   exceptions, licence, sanctions); political.py check every_element_has_player_role. No secret ruling societies.
 - Jump cores: new licence layer `licences.universal_jump_licence_2850` (holders = world.json jump_technology how=licensed +
-  Sol; non-holders get strategic 4 from Cognium: Citadel, Mecca, Svarog, Strife, Freeclans, Karma, Third Hellas, Novo-Thebaid).
+  Sol; non-holders get strategic 4 from Cognium: Citadel, Mecca, Meru, Strife, Freeclans, Karma, Third Hellas, Novo-Thebaid).
   trade.py flows are now gated by political.py (lab.PoliticalTradeAccess: category per good, level 4 = no flow, markups
   0 / 5 / 25 / 60 %, end-use-controlled strategic goods exported only by their producer). Result: Cognium cores no longer go
-  to Mecca, Svarog, Karma, Citadel, Strife, Freeclans; core resale by non-makers gone; Citadel munitions no longer reach
+  to Mecca, Meru, Karma, Citadel, Strife, Freeclans; core resale by non-makers gone; Citadel munitions no longer reach
   Cognium. industry.py reads the trade core flows (flow_sources) + checks trade_core_flows_legal / _from_makers_only;
   stolen lineage -> own pirated copies. Southern circle import strategic 1 -> 2.
   Model limit (not tuned): Mecca makes 15.3 core units/y and consumes them; New India / Maland still buy the bulk from Cognium
@@ -2803,7 +2803,7 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
   30 % of member core demand reserved for Mecca, overpay up to x1.6; Citadel pact 85 % for Citadel, x2.0.
   lab.core_autonomy_scenarios -> lab_state core_autonomy: peacetime Mecca share of the circle's external demand 0.53 (author
   guide 20-40 %), Cognium cut-off 0.12 coverage, mobilised 0.68 (Mecca civil output -22 %) -> survives. The flow model is
-  path-sensitive here (x2.2: share 0.19, mobilised 0.57 -> fails); kept 2.5 = lowest tested value that survives. Svarog: 100 %
+  path-sensitive here (x2.2: share 0.19, mobilised 0.57 -> fails); kept 2.5 = lowest tested value that survives. Meru: 100 %
   of imported cores from Citadel, own pirated copies tiny (emergency capability).
 - New data: interim_arrangements (83 Leonis status quo, unstable, outcome UNKNOWN; real lever = Kern operates beacon
   BCN-045-BR, so the supply corridor is revocable; arbitration seat itself disputed), licence accession (Third Hellas
@@ -2819,13 +2819,13 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
 - Narratives fixed (found by the lint or by hand): lalande_mecca (buyers incl. New Karma, monoculture), hd20794_newindia
   (Citadel cores / main buyer / collapse scenario), gj832_tianhe, eps_eri_harmony, hd69830_verde, lalande_hellas,
   hd20794_hellas2, delta_pav_karma (cores from Citadel / Mecca); POLITICAL_ORDER story (Mecca quota + mobilisation,
-  Svarog-Citadel lever, Kern / Agora / Providence / Verde self-interest, 83 Leonis interim order, Third Hellas accession).
+  Meru-Citadel lever, Kern / Agora / Providence / Verde self-interest, 83 Leonis interim order, Third Hellas accession).
 - Gates: all colonization_lab checks rc=0; lab.py twice sha256 75c06541... IDENTICAL. No C++ change.
 
 #### Acceptance pass 2026-11-05 s - POLITICAL/ECONOMIC ORDER 3126 ACCEPTED / CLOSED
 - Author accepted the structure: canon/political_order.json status = CANON (actors 21, units / province / zone, blocs,
   non-aligned, access profiles, licence layer incl. accession state, sanctions as now, Kern / Agora / Providence / Verde
-  roles, Southern-circle procurement policy, Citadel pact + Svarog dependency, 83 Leonis interim order as the 3126 start
+  roles, Southern-circle procurement policy, Citadel pact + Meru dependency, 83 Leonis interim order as the 3126 start
   state). Kept PROPOSAL: bloc genesis / dates (formed.*). Kept PROPOSAL/model: core_autonomy numbers, capacity_x,
   procurement floor / tolerance, trade.py shares and volumes, scenarios. Mecca own jump mathematics CANON everywhere.
 - Southern circle: peacetime_share_target [0.2, 0.4] replaced by expected_peacetime_share [0.45, 0.60] (accepted
@@ -2842,8 +2842,8 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
   (System Map, trade tabs, Detail map) - data loads, no JSON / economy errors; graceful close clean (a [CRASH] in opengl32
   appears only when the process is killed by timeout). Economy is lazily loaded only by the F8 Trade panel, so the data
   smoke is in EliteServicePagesCheck §6 (DEV tool, build/headless_server, run from build/): 37 goods, 538 hubs, names
-  New Shanghai / New Mecca / New India / Citadel / Red Outpost / Novo-Thebaid / Firmament found, no retired "Zion",
-  blocs Mecca + New India southern_circle (open), Citadel + Svarog citadel_compact, Firmament heavenly_pact,
+  New Shanghai / New Mecca / New India / Citadel / Lal Kot / Novo-Thebaid / Firmament found, no retired "Zion",
+  blocs Mecca + New India southern_circle (open), Citadel + Meru citadel_compact, Firmament heavenly_pact,
   Thebaid nonaligned, Cognium-Citadel licensed, quarantine zone closed -> PASS. Not done: visual check of other systems'
   owner labels in the System Map UI (the DEV map script works only in the start system Sol).
 - GUARD (technical debt, not a blocker): ActorIds::Player() = 1 collides with historical actor 1 = Cognium in
@@ -5328,7 +5328,7 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   Tau Ceti = Тяньцан (Celestial Granary) - grains, eps Eri = Тяньюань - flowers / heavenly steeds, Gliese 832 =
   Цюэцяо - the Cowherd and Weaver Girl (Чжинюй = Tianhe), Gliese 667 = Убунту (Zulu words), 61 Cygni = Бессель
   (minerals of Kern), HD 114783 = Гомер (the Odyssey, Итака = Third Hellas), 83 Leonis = Фиваида (Desert Fathers,
-  Скит = New Thebaid), Proxima = Сварог (Slavic gods, Китеж = Red Outpost), Cognium frontiers = birds (Owlery).
+  Скит = New Thebaid), Proxima = Меру (Slavic gods, Китеж = Lal Kot), Cognium frontiers = birds (Owlery).
   `python naming_series_3126.py --write` merges into canon/naming.json (CANON entries untouched), then
   `python naming.py --write` mirrors into names_3126.json. naming.py --check 29/29 OK; no duplicate ru names.
 - naming.py: t02 now resolves body entities against every system (was Fomalhaut only); body-file designations are
@@ -5367,3 +5367,24 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   ("Лукоморье A (Альфа Центавра A)", "卢科莫里耶 A (南门二 A)"); "A+B" tails stripped from the base.
 - Evidence: game LocalizationService probe over build/assets in all 5 locales (D:/tmp/naming/probe/out2.txt).
   NOT seen on a live map (offscreen captures black this evening, environment).
+
+## NO RUSSIA-LINKED NAMES; LATE ARRIVALS GET SYSTEMS 2026-11-12 (author)
+- Author: names linked to Russia are removed entirely. Series: Proxima = Улугбек (Silk Road cities, Central Asian
+  crew), Alpha Centauri = Айодхья («Рамаяна», Indian crew), Gliese 581 K1 Ладога -> Балатон. Canon rename
+  (precedent Al-Quds -> Kapehu): mission SVAROG-1 -> MERU-1 (Меру, world mountain of Indian / Buddhist cosmology;
+  missions.json id changed, former_ids SVAROG-1, author note file "02. MERU-1.md"), polity Сварог -> Меру
+  (须弥 / 須弥), colony Красный Форпост -> Лал-Кот (लाल कोट «Red Fort», the first fort of Delhi; keeps the meaning).
+  134 text files rewritten (all cases, demonym свароговцы -> меруанцы, anchors); old forms are in
+  retired_authoring_names.unique (naming.py t07 bans them). Machine ids proxima_outpost, svarog_fortress,
+  svarog_licence_revoked, svarog_serial_from_citadel_with_own_copies kept (not shown to the player). Crew
+  composition (40 % Russian) is history, unchanged.
+- Expeditions: late arrivals with nothing else keep the stars their generation ships watched first from afar
+  (<= 9 ly, earlier than the holder): Third Hellas - Gliese 514 = Арго (Argonauts; ODYSSEY-1, 2592, before
+  Cognium 2785), New Thebaid - Sirius = Вифлеем (archangels + Faith / Hope / Love; NEW-JERUSALEM-1, 2309, before
+  AMAZONIA-1 2370). Fairness cap 3. Every participant now has >= 1 system. These three ships are NOT lost
+  ships: SVAROG/MERU-1 arrived ~2150, ODYSSEY-1 3122, NEW-JERUSALEM-1 3126.
+- Checks after the rename: naming 29/29, lore_md OK, lore_html OK (144), world_sites OK, world_economy OK,
+  lab --check-dataset OK, lab --check-lore OK (after `python lab.py`: sha 80a9e3b0...). Seed drift from the new
+  mission id (the id seeds the model): MERU-1 unaccounted losses 3 230 -> 3 220, populations +-10, one filler
+  event; canon anchors unchanged. Old generated Notes/html/SHIPS/SVAROG-1.html replaced by MERU-1.html (copy
+  kept in D:/tmp/naming/old).

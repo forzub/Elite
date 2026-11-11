@@ -1,7 +1,7 @@
 # Naming series 3126 (PROPOSAL) - systems nobody lives in, named by their first visitors
 # (out/world_3126/expeditions_3126.json). Format: see inhabited_1.txt.
 
-@ 1 | sa | Красный Форпост (SVAROG-1): соседи по системе Альфы Центавра, 0.2 св. года, наблюдают её с 2150; имена дала индийская часть экипажа | «Рамаяна»: у A — Ланка и её воины, у B — Айодхья и её герои
+@ 1 | sa | Лал-Кот (MERU-1): соседи по системе Альфы Центавра, 0.2 св. года, наблюдают её с 2150; имена дала индийская часть экипажа | «Рамаяна»: у A — Ланка и её воины, у B — Айодхья и её герои
 * | अयोध्या | Айодхья | Ayodhya | Ayodhya | 阿逾陀 | アヨーディヤー | город Рамы | Ayodhyā
 Alpha Centauri A b | रावण | Равана | Ravana | Rávana | 罗波那 | ラーヴァナ | царь Ланки: самая горячая | Rāvaṇa
 Alpha Centauri A c | कुम्भकर्ण | Кумбхакарна | Kumbhakarna | = | 鸠槃羯叻拏 | クンバカルナ | спящий великан | Kumbhakarṇa

@@ -35,5 +35,5 @@
 | [Gliese 674](053_gliese_674.md) | 53 | 3 | Фронтир Gliese 674 |
 | [HD 85512](054_hd_85512.md) | 54 | 3 | Фронтир HD 85512 |
 | [HD 10360](057_hd_10360.md) | 57 | 3 | Реле HD 10360 |
-| [Proxima Centauri](060_proxima_centauri.md) | 60 | 7 | Красный Форпост |
+| [Proxima Centauri](060_proxima_centauri.md) | 60 | 7 | Лал-Кот |
 <!-- GENERATED:index END -->

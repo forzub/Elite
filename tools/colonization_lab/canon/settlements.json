@@ -1648,7 +1648,7 @@
   "proxima_outpost": [
    {
     "id": "proxima_outpost.capital",
-    "name": "Красный Форпост",
+    "name": "Лал-Кот",
     "role": "capital",
     "body": "Proxima Centauri j",
     "kind": "habitat_city",
@@ -1684,7 +1684,7 @@
    },
    {
     "id": "proxima_outpost.svarog_fortress",
-    "name": "Орбитальная крепость «Сварог»",
+    "name": "Орбитальная крепость «Меру»",
     "role": "fortress",
     "body": "Proxima Centauri j (орбита)",
     "kind": "military_site",

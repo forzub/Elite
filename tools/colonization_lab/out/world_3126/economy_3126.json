@@ -5957,7 +5957,7 @@
    "cities": [
     {
      "body": "Proxima Centauri j",
-     "name": "Красный Форпост",
+     "name": "Лал-Кот",
      "pop": 82711589,
      "role": "столица",
      "status": "PROPOSAL"
@@ -5978,7 +5978,7 @@
     },
     {
      "body": "Proxima Centauri j (орбита)",
-     "name": "Орбитальная крепость «Сварог»",
+     "name": "Орбитальная крепость «Меру»",
      "pop": 1378526,
      "role": "военная база",
      "status": "PROPOSAL"
@@ -6051,8 +6051,8 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.64
    },
-   "name": "Красный Форпост",
-   "polity": "Сварог",
+   "name": "Лал-Кот",
+   "polity": "Меру",
    "population": 725716924,
    "regime": "security_oligarchy",
    "settlement_structure": {

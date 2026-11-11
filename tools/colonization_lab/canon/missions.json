@@ -338,9 +338,9 @@
    }
   },
   {
-   "id": "SVAROG-1",
+   "id": "MERU-1",
    "aliases": [
-    "Сварог"
+    "Меру"
    ],
    "wave": "I",
    "canon_status": "canon",
@@ -433,7 +433,7 @@
      "knowledge": {
       "status": "CANON",
       "visibility": "PUBLIC_RECORD",
-      "basis": "год в 02. SVAROG-1.md, fate.md"
+      "basis": "год в 02. MERU-1.md, fate.md"
      }
     },
     {
@@ -466,12 +466,12 @@
    "fate": {
     "status": "arrived",
     "ship": "orbital_fortress",
-    "ship_note": "корпус — орбитальная крепость «Сварог» над Proxima Cen d",
+    "ship_note": "корпус — орбитальная крепость «Меру» над Proxima Cen d",
     "findable": true
    },
    "colony": "proxima_outpost",
    "sources": [
-    "02. SVAROG-1.md",
+    "02. MERU-1.md",
     "fate.md §2"
    ],
    "knowledge": {
@@ -483,7 +483,7 @@
     "launch_year": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
-     "basis": "год в 02. SVAROG-1.md"
+     "basis": "год в 02. MERU-1.md"
     },
     "population": {
      "status": "CANON",

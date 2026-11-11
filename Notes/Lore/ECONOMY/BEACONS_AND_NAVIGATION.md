@@ -105,7 +105,7 @@
 | Sol (Солнце) — 61 Cygni | 11.37 | 52.41 | 50.7 | trunk | — | Шахта Альфа, Солнечная Администрация (Sol Authority) | BCN-000-BR, BCN-031-BR | `PROPOSAL` (модель) |
 | Sol (Солнце) — Wolf 359 | 7.8 | 46.95 | 329.6 | trunk | — | Солнечная Администрация (Sol Authority), Цитадель | BCN-000-BR, BCN-003-BR | `PROPOSAL` (модель) |
 | Wolf 359 — Lalande 21185 | 4.06 | 42.50 | 42.8 | trunk | — | Агора, Цитадель | BCN-003-BR, BCN-004-BR | `PROPOSAL` (модель) |
-| Sol (Солнце) — Proxima Centauri | 4.23 | 42.41 | 399.5 | trunk | — | Красный Форпост, Солнечная Администрация (Sol Authority) | BCN-000-BR | `PROPOSAL` (модель) |
+| Sol (Солнце) — Proxima Centauri | 4.23 | 42.41 | 399.5 | trunk | — | Лал-Кот, Солнечная Администрация (Sol Authority) | BCN-000-BR | `PROPOSAL` (модель) |
 | Lalande 21185 — 61 Cygni | 15.27 | 35.54 | 12.7 | trunk | — | Шахта Альфа, Агора | BCN-004-BR, BCN-031-BR | `PROPOSAL` (модель) |
 | Sol (Солнце) — Gliese 832 | 16.16 | 31.52 | 579.5 | trunk | — | Тяньхэ, Солнечная Администрация (Sol Authority) | BCN-000-BR, BCN-012-BR | `PROPOSAL` (модель) |
 | Wolf 359 — Epsilon Eridani | 15.21 | 26.43 | 38.8 | trunk | — | Цветущая Гармония, Цитадель | BCN-003-BR, BCN-009-BR | `PROPOSAL` (модель) |
@@ -115,8 +115,8 @@
 | Lalande 21185 — Epsilon Eridani | 15.79 | 12.17 | 20.7 | trunk | — | Цветущая Гармония, Агора | BCN-004-BR, BCN-009-BR | `PROPOSAL` (модель) |
 | HD 69830 — Gliese 357 | 16.11 | 9.11 | 56.1 | trunk | — | Сельва-Верде | BCN-016-BR, BCN-025-BR | `PROPOSAL` (модель) |
 | Sol (Солнце) — Gliese 357 | 30.8 | 7.89 | 55.0 | trunk | — | Солнечная Администрация (Sol Authority) | BCN-000-BR, BCN-025-BR | `PROPOSAL` (модель) |
-| Epsilon Eridani — Proxima Centauri | 12.39 | 7.54 | 12.4 | trunk | — | Цветущая Гармония, Красный Форпост | BCN-009-BR | `PROPOSAL` (модель) |
-| Wolf 359 — Proxima Centauri | 8.24 | 7.31 | 7.6 | trunk | — | Красный Форпост, Цитадель | BCN-003-BR | `PROPOSAL` (модель) |
+| Epsilon Eridani — Proxima Centauri | 12.39 | 7.54 | 12.4 | trunk | — | Цветущая Гармония, Лал-Кот | BCN-009-BR | `PROPOSAL` (модель) |
+| Wolf 359 — Proxima Centauri | 8.24 | 7.31 | 7.6 | trunk | — | Лал-Кот, Цитадель | BCN-003-BR | `PROPOSAL` (модель) |
 | Epsilon Eridani — 61 Cygni | 16.87 | 6.34 | 7.2 | trunk | — | Шахта Альфа, Цветущая Гармония | BCN-009-BR, BCN-031-BR | `PROPOSAL` (модель) |
 | Epsilon Eridani — HD 20794 (82 G. Eridani) | 12.44 | 6.14 | 6.1 | trunk | — | Цветущая Гармония, Хомстед | BCN-009-BR, BCN-014-BR | `PROPOSAL` (модель) |
 | Sol (Солнце) — Delta Pavonis | 19.92 | 5.87 | 47.7 | trunk | — | Новая Карма, Солнечная Администрация (Sol Authority) | BCN-000-BR, BCN-022-BR | `PROPOSAL` (модель) |
@@ -125,7 +125,7 @@
 | Wolf 359 — Delta Pavonis | 24.19 | 1.64 | 1.5 | secondary | — | Новая Карма, Цитадель | BCN-003-BR, BCN-022-BR | `PROPOSAL` (модель) |
 | Wolf 359 — Gliese 357 | 24.8 | 1.22 | 1.1 | secondary | — | Цитадель | BCN-003-BR, BCN-025-BR | `PROPOSAL` (модель) |
 | Wolf 359 — 61 Cygni | 17.27 | 0.83 | 0.7 | secondary | — | Шахта Альфа, Цитадель | BCN-003-BR, BCN-031-BR | `PROPOSAL` (модель) |
-| Delta Pavonis — Proxima Centauri | 16.58 | 0.72 | 0.6 | secondary | — | Новая Карма, Красный Форпост | BCN-022-BR | `PROPOSAL` (модель) |
+| Delta Pavonis — Proxima Centauri | 16.58 | 0.72 | 0.6 | secondary | — | Новая Карма, Лал-Кот | BCN-022-BR | `PROPOSAL` (модель) |
 | HD 40307 — HD 85512 | 26.64 | 0.41 | 0.4 | feeder | — | Новая Маланд | BCN-015-BR, BCN-054-BR | `PROPOSAL` (модель) |
 | HD 69830 — HD 85512 | 24.67 | 0.41 | 0.4 | feeder | — | Сельва-Верде | BCN-016-BR, BCN-054-BR | `PROPOSAL` (модель) |
 | Gliese 876 — 61 Cygni | 13.48 | 0.16 | 0.1 | feeder | — | Шахта Альфа, Провидение | BCN-013-BR, BCN-031-BR | `PROPOSAL` (модель) |
@@ -139,15 +139,15 @@
 | Epsilon Eridani — Gliese 832 | 18.12 | 0.00 | 0.0 | feeder | — | Цветущая Гармония, Тяньхэ | BCN-009-BR, BCN-012-BR | `PROPOSAL` (модель) |
 | Epsilon Eridani — Delta Pavonis | 22.45 | 0.00 | 0.0 | feeder | — | Новая Карма, Цветущая Гармония | BCN-009-BR, BCN-022-BR | `PROPOSAL` (модель) |
 | HD 20794 (82 G. Eridani) — 61 Cygni | 26.91 | 0.00 | 0.0 | feeder | — | Шахта Альфа, Хомстед | BCN-014-BR, BCN-031-BR | `PROPOSAL` (модель) |
-| HD 20794 (82 G. Eridani) — Proxima Centauri | 18.97 | 0.00 | 0.0 | feeder | — | Хомстед, Красный Форпост | BCN-014-BR | `PROPOSAL` (модель) |
+| HD 20794 (82 G. Eridani) — Proxima Centauri | 18.97 | 0.00 | 0.0 | feeder | — | Хомстед, Лал-Кот | BCN-014-BR | `PROPOSAL` (модель) |
 | Gliese 436 — 83 Leonis | 30.75 | 0.00 | 0.0 | feeder | — | Ново-Фиваида | BCN-024-BR, BCN-045-BR | `PROPOSAL` (модель) |
 | Lalande 21185 — Gliese 436 | 25.03 | 0.00 | 0.0 | feeder | — | Агора | BCN-004-BR, BCN-024-BR | `PROPOSAL` (модель) |
 | HD 114783 — 83 Leonis | 30.41 | 0.00 | 0.0 | feeder | — | Третья Эллада, Ново-Фиваида | BCN-037-BR, BCN-045-BR | `PROPOSAL` (модель) |
 | Gliese 832 — Gliese 876 | 10.38 | 0.00 | 0.0 | feeder | — | Тяньхэ, Провидение | BCN-012-BR, BCN-013-BR | `PROPOSAL` (модель) |
-| Gliese 581 — Proxima Centauri | 18.23 | 0.00 | 0.0 | feeder | — | Новая Европа, Красный Форпост | BCN-010-BR | `PROPOSAL` (модель) |
+| Gliese 581 — Proxima Centauri | 18.23 | 0.00 | 0.0 | feeder | — | Новая Европа, Лал-Кот | BCN-010-BR | `PROPOSAL` (модель) |
 | Wolf 359 — Gliese 436 | 26.04 | 0.00 | 0.0 | feeder | — | Цитадель | BCN-003-BR, BCN-024-BR | `PROPOSAL` (модель) |
 | Gliese 581 — Gliese 436 | 29.89 | 0.00 | 0.0 | feeder | — | Новая Европа | BCN-010-BR, BCN-024-BR | `PROPOSAL` (модель) |
-| Gliese 357 — Proxima Centauri | 29.14 | 0.00 | 0.0 | feeder | — | Красный Форпост | BCN-025-BR | `PROPOSAL` (модель) |
+| Gliese 357 — Proxima Centauri | 29.14 | 0.00 | 0.0 | feeder | — | Лал-Кот | BCN-025-BR | `PROPOSAL` (модель) |
 <!-- GENERATED:beacons END -->
 
 ## Маяки в рассказе

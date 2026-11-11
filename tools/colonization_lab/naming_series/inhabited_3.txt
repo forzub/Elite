@@ -117,7 +117,7 @@ HD 10360 f | Machweo | Мачвео | Machweo | = | 马奇韦奥 | マチュウ�
 HD 10360 g | Usiku | Усику | Usiku | = | 乌西库 | ウシク | ночь
 HD 10360 K1 | Kesho | Кешо | Kesho | = | 凯绍 | ケショ | завтра
 
-@ 60 | uz | SVAROG-1 (Красный Форпост): имена дала среднеазиатская часть экипажа (Узбекистан, Казахстан) | Шёлковый путь: звезда — Улугбек, астроном Самарканда, планеты — города и реки Средней Азии
+@ 60 | uz | MERU-1 (Лал-Кот): имена дала среднеазиатская часть экипажа (Узбекистан, Казахстан) | Шёлковый путь: звезда — Улугбек, астроном Самарканда, планеты — города и реки Средней Азии
 * | Ulugʻbek | Улугбек | Ulugh Beg | Ulugh Beg | 兀鲁伯 | ウルグ・ベク | астроном Самарканда, составитель звёздного каталога 1437 г.
 Proxima Centauri c | Buxoro | Бухара | Bukhara | Bujará | 布哈拉 | ブハラ | Бухара: самая горячая
 Proxima Centauri e | Xiva | Хива | Khiva | Jiva | 希瓦 | ヒヴァ | Хива
@@ -127,6 +127,6 @@ Proxima Cen b | Fargʻona | Фергана | Fergana | Fergana | 费尔干纳 | 
 Proxima Centauri g | Turkiston | Туркестан | Turkestan | Turquestán | 突厥斯坦 | トルキスタン | город Ходжи Ахмеда Ясави
 Proxima Centauri h | Oʻtror | Отрар | Otrar | Otrar | 讹答剌 | オトラル | Отрар на Сырдарье
 Proxima Centauri i | Taroz | Тараз | Taraz | Taraz | 塔拉兹 | タラズ | Тараз
-Proxima Centauri j | Samarqand | Самарканд | Samarkand | Samarcanda | 撒马尔罕 | サマルカンド | Самарканд: столица Красного Форпоста
+Proxima Centauri j | Samarqand | Самарканд | Samarkand | Samarcanda | 撒马尔罕 | サマルカンド | Самарканд: столица Лал-Кота
 Proxima Centauri k | Toshkent | Ташкент | Tashkent | Taskent | 塔什干 | タシケント | Ташкент: поселение и фермы
 Proxima Centauri l | Orol | Арал | Aral | Aral | 咸海 | アラル | Аральское море: газовые платформы

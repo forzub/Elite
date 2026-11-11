@@ -15665,12 +15665,12 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 248134.8,
-   "name": "Красный Форпост",
+   "name": "Лал-Кот",
    "night_light": {
     "pop": 82711589,
     "source": "population"
    },
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -15703,8 +15703,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 413.6,
-   "name": "Красный Форпост: орбитальный порт",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: орбитальный порт",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 721
@@ -15737,7 +15737,7 @@
     "pop": 41355794,
     "source": "population"
    },
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -15771,7 +15771,7 @@
    "map_level": "system",
    "medical_beds": 206.8,
    "name": "Proxima Centauri k — поселение: орбитальный порт",
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 739
@@ -15804,7 +15804,7 @@
     "pop": 27570530,
     "source": "population"
    },
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -15838,7 +15838,7 @@
    "map_level": "system",
    "medical_beds": 137.9,
    "name": "Proxima Cen b — поселение: орбитальный порт",
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 859
@@ -15871,7 +15871,7 @@
     "pop": 20677897,
     "source": "population"
    },
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -15905,7 +15905,7 @@
    "map_level": "system",
    "medical_beds": 103.4,
    "name": "Агрокупола Alpha Centauri B l: орбитальный порт",
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 739
@@ -15938,7 +15938,7 @@
     "pop": 249583,
     "source": "population"
    },
-   "operator": "Красный Форпост",
+   "operator": "Лал-Кот",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -15975,8 +15975,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Красный Форпост: торговый хаб 1",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: торговый хаб 1",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 3961
@@ -16008,8 +16008,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Красный Форпост: горнодобывающий хаб 1",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: горнодобывающий хаб 1",
+   "operator": "Лал-Кот",
    "placement": {
     "belt": {
      "longitude_deg": 95.39,
@@ -16042,8 +16042,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Красный Форпост: горнодобывающий хаб 2",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: горнодобывающий хаб 2",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 6252
@@ -16075,8 +16075,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Красный Форпост: горнодобывающий хаб 3",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: горнодобывающий хаб 3",
+   "operator": "Лал-Кот",
    "placement": {
     "belt": {
      "longitude_deg": 93.21,
@@ -16109,8 +16109,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Красный Форпост: горнодобывающий хаб 4",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: горнодобывающий хаб 4",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 12277
@@ -16142,8 +16142,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Красный Форпост: горнодобывающий хаб 5",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: горнодобывающий хаб 5",
+   "operator": "Лал-Кот",
    "placement": {
     "belt": {
      "longitude_deg": 149.65,
@@ -16176,8 +16176,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Красный Форпост: горнодобывающий хаб 6",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: горнодобывающий хаб 6",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 11761
@@ -16209,8 +16209,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Красный Форпост: промышленный хаб 1",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: промышленный хаб 1",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 6326
@@ -16242,8 +16242,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Красный Форпост: промышленный хаб 2",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: промышленный хаб 2",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 11554
@@ -16275,8 +16275,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Красный Форпост: промышленный хаб 3",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: промышленный хаб 3",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 3044
@@ -16308,8 +16308,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Красный Форпост: военный хаб 1",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: военный хаб 1",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 9666
@@ -16341,8 +16341,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Красный Форпост: научный хаб 1",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: научный хаб 1",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 5888
@@ -16374,8 +16374,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Красный Форпост: научный хаб 2",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: научный хаб 2",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 18434
@@ -16403,8 +16403,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Красный Форпост: карантинная станция",
-   "operator": "Красный Форпост",
+   "name": "Лал-Кот: карантинная станция",
+   "operator": "Лал-Кот",
    "placement": {
     "orbit": {
      "altitude_km": 20972

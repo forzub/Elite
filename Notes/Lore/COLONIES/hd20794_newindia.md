@@ -180,7 +180,7 @@
 |---|---|---|---|---|---|
 | [Хомстед](hd20794_hellas2.md) | соперник | 8.0 | 49.7 | 55 | PROPOSAL · PUBLIC (модель) |
 | [Тауранга](lalande_mecca.md) | партнёр | 27.3 | 65.3 | 0 | PROPOSAL · PUBLIC (модель) |
-| [Красный Форпост](proxima_outpost.md) | партнёр | 19.9 | 78.6 | 0 | PROPOSAL · PUBLIC (модель) |
+| [Лал-Кот](proxima_outpost.md) | партнёр | 19.9 | 78.6 | 0 | PROPOSAL · PUBLIC (модель) |
 | [Цитадель](wolf359_citadel.md) | партнёр | 18.7 | 39.6 | 0 | PROPOSAL · PUBLIC (модель) |
 <!-- GENERATED:relations END -->
 
@@ -192,7 +192,7 @@
 | экспорт | [Синь-Шанхай](tau_ceti_cognium.md) | компоненты | major | 12453.1 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
 | экспорт | [Тауранга](lalande_mecca.md) | компоненты | major | 6395.4 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
 | экспорт | [Цитадель](wolf359_citadel.md) | компоненты | major | 4162.9 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
-| экспорт | [Красный Форпост](proxima_outpost.md) | компоненты | major | 4001.9 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
+| экспорт | [Лал-Кот](proxima_outpost.md) | компоненты | major | 4001.9 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
 | импорт | [Цветущая Гармония](eps_eri_harmony.md) | пища | major | 3966.3 | остаточный дефицит | PROPOSAL · PUBLIC (модель) |
 | экспорт | [Синь-Шанхай](tau_ceti_cognium.md) | изотопы | major | 3906.4 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
 | экспорт | [Новая Карма](delta_pav_karma.md) | компоненты | major | 3748.1 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |

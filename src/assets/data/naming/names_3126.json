@@ -7840,10 +7840,15 @@
    "ru": "Ново-Фиваида"
   },
   "colony:proxima_outpost": {
-   "en": "Red Outpost",
-   "native": "Красный Форпост",
-   "native_lang": "ru",
-   "ru": "Красный Форпост"
+   "en": "Lal Kot",
+   "es": "Lal Kot",
+   "ja": "ラール・コート",
+   "native": "लाल कोट",
+   "native_lang": "hi",
+   "pron": "[laːl koːʈ]",
+   "ru": "Лал-Кот",
+   "translit": "Lāl Koṭ",
+   "zh-Hans": "拉尔科特"
   },
   "colony:tau_ceti_cognium": {
    "en": "New Shanghai",
@@ -7891,6 +7896,13 @@
    "native": "Jernskjold",
    "native_lang": "nb",
    "ru": "Айрон Шилд-1"
+  },
+  "mission:MERU-1": {
+   "en": "Meru-1",
+   "native": "मेरु-1",
+   "native_lang": "sa",
+   "ru": "Меру-1",
+   "translit": "Meru-1"
   },
   "mission:TIANHE-1": {
    "en": "Tianhe-1",
@@ -8069,11 +8081,15 @@
    "ru": "Ново-Фиваида"
   },
   "polity:proxima_outpost": {
-   "en": "Svarog",
-   "label_ru": "Сварог (Красный Форпост)",
-   "native": "Сварог",
-   "native_lang": "ru",
-   "ru": "Сварог"
+   "en": "Meru",
+   "es": "Meru",
+   "ja": "須弥",
+   "label_ru": "Меру (Лал-Кот)",
+   "native": "मेरु",
+   "native_lang": "sa",
+   "ru": "Меру",
+   "translit": "Meru",
+   "zh-Hans": "须弥"
   },
   "polity:sol_authority": {
    "en": "Sol Authority",

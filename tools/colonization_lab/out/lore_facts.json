@@ -2207,7 +2207,7 @@
    "good": null,
    "id": "svarog_fortress",
    "importance": 0.9,
-   "name": "Орбитальная крепость «Сварог»",
+   "name": "Орбитальная крепость «Меру»",
    "output": 0.0,
    "owner": "proxima_outpost",
    "range": [
@@ -2739,7 +2739,7 @@
   },
   {
    "aliases": [
-    "Сварог"
+    "Меру"
    ],
    "arrival": {
     "authored_year": null,
@@ -2779,11 +2779,25 @@
      "year": 2112
     },
     {
-     "awake": 7950,
+     "awake": 8540,
+     "cryo": 5141,
+     "deaths": 0,
+     "event": "purge",
+     "population": 13681,
+     "regime": "олигархия",
+     "source": "simulated",
+     "status": "PROPOSAL",
+     "tech_state": 0.979,
+     "text": "чистка «неблагонадёжных» в администрации",
+     "visibility": "PUBLIC_RECORD",
+     "year": 2130
+    },
+    {
+     "awake": 7940,
      "cryo": 5110,
      "deaths": 600,
      "event": "clan_fragmentation",
-     "population": 13060,
+     "population": 13050,
      "regime": "олигархия",
      "source": "anchor",
      "status": "CANON",
@@ -2793,11 +2807,11 @@
      "year": 2135
     },
     {
-     "awake": 7950,
+     "awake": 7940,
      "cryo": 5080,
      "deaths": 0,
      "event": "reconciliation",
-     "population": 13030,
+     "population": 13020,
      "regime": "олигархия",
      "source": "anchor",
      "status": "CANON",
@@ -2828,13 +2842,13 @@
    },
    "duration_years": 55,
    "fate": {
-    "note": "корпус — орбитальная крепость «Сварог» над Proxima Cen d",
+    "note": "корпус — орбитальная крепость «Меру» над Proxima Cen d",
     "ship": "orbital_fortress",
     "state": "arrived",
     "status": "CANON",
     "visibility": "PUBLIC_RECORD"
    },
-   "id": "SVAROG-1",
+   "id": "MERU-1",
    "launch": {
     "status": "CANON",
     "visibility": "PUBLIC_RECORD",
@@ -2842,7 +2856,7 @@
    },
    "origin_system": 0,
    "sources": [
-    "02. SVAROG-1.md",
+    "02. MERU-1.md",
     "fate.md §2"
    ],
    "sponsor": "Eurasian cluster: Russia + India + Kazakhstan + Uzbekistan",
@@ -36028,7 +36042,7 @@
    "visibility": "PUBLIC_RECORD"
   },
   {
-   "basis": "основатель SVAROG-1: CANON",
+   "basis": "основатель MERU-1: CANON",
    "checkpoints": [
     {
      "automation": 0.693,
@@ -37183,7 +37197,7 @@
    "events": [
     {
      "people": 9800,
-     "ship": "SVAROG-1",
+     "ship": "MERU-1",
      "source": "anchor",
      "type": "arrival",
      "year": 2150
@@ -37191,7 +37205,7 @@
    ],
    "founded": {
     "founders": [
-     "SVAROG-1"
+     "MERU-1"
     ],
     "year": 2150
    },
@@ -37204,9 +37218,9 @@
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
-   "name": "Красный Форпост",
+   "name": "Лал-Кот",
    "owner": null,
-   "polity": "Сварог",
+   "polity": "Меру",
    "population_3126": {
     "authored": 890000,
     "authored_status": "CANON",
@@ -37230,7 +37244,7 @@
       "status": "PROPOSAL",
       "visibility": "PUBLIC_RECORD"
      },
-     "name": "Красный Форпост",
+     "name": "Лал-Кот",
      "population": 336468756,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
@@ -37272,7 +37286,7 @@
       "status": "PROPOSAL",
       "visibility": "PUBLIC_RECORD"
      },
-     "name": "Орбитальная крепость «Сварог»",
+     "name": "Орбитальная крепость «Меру»",
      "population": null,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "fortress"

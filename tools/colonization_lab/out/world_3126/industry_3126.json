@@ -9509,7 +9509,7 @@
   },
   {
    "check": "svarog_serial_from_citadel_with_own_copies",
-   "detail": "Citadel share 1.00 of Svarog core imports; own pirated copies (jump_technology how = stolen)",
+   "detail": "Citadel share 1.00 of Meru core imports; own pirated copies (jump_technology how = stolen)",
    "ok": true
   },
   {
@@ -9616,7 +9616,7 @@
    "main_maker_share": 0.523,
    "shares": {
     "Арсенал «Бастион»": 0.523,
-    "верфи Красный Форпост": 0.477
+    "верфи Лал-Кот": 0.477
    },
    "variety": "low"
   },

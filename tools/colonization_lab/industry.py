@@ -373,7 +373,7 @@ def checks(I, out):
     sv_cit = sum(c["value"] for c in sv if c["seller"] == "wolf359_citadel")
     sv_tot = sum(c["value"] for c in sv)
     add("svarog_serial_from_citadel_with_own_copies", sv_tot > 0 and sv_cit / sv_tot >= 0.6 and I.jt["proxima_outpost"]["how"] == "stolen",
-        f"Citadel share {sv_cit / sv_tot if sv_tot else 0:.2f} of Svarog core imports; own pirated copies (jump_technology how = stolen)")
+        f"Citadel share {sv_cit / sv_tot if sv_tot else 0:.2f} of Meru core imports; own pirated copies (jump_technology how = stolen)")
     mec = [c for c in I.strategic_flows if c["buyer"] == "lalande_mecca"]
     add("tauranga_core_technology_own", I.jt["lalande_mecca"]["how"] == "own" and "lalande_mecca" not in lic["holders"] and not mec,
         "own jump mathematics; not a licence holder; no imported cores")

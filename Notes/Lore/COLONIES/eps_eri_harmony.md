@@ -207,7 +207,7 @@
 |---|---|---|---|---|---|
 | [Пояс Раздора](eps_eri_strife.md) | враг-сосед | 4.9 | 19.1 | 70 | PROPOSAL · PUBLIC (модель) |
 | [Агора](lalande_hellas.md) | партнёр | 27.2 | 34.2 | 0 | PROPOSAL · PUBLIC (модель) |
-| [Красный Форпост](proxima_outpost.md) | партнёр | 18.5 | 56.0 | 0 | PROPOSAL · PUBLIC (модель) |
+| [Лал-Кот](proxima_outpost.md) | партнёр | 18.5 | 56.0 | 0 | PROPOSAL · PUBLIC (модель) |
 | [Синь-Шанхай](tau_ceti_cognium.md) | партнёр | 37.4 | 57.7 | 0 | PROPOSAL · PUBLIC (модель) |
 <!-- GENERATED:relations END -->
 
@@ -227,7 +227,7 @@
 | импорт | [Новая Маланд](hd40307_maland.md) | биотех | major | 3258.4 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
 | импорт | [Новая Индия](hd20794_newindia.md) | компоненты | major | 3157.3 | специализация: дорогой лёгкий товар | PROPOSAL · PUBLIC (модель) |
 | экспорт | [Агора](lalande_hellas.md) | металлы | major | 3123.0 | остаточный дефицит | PROPOSAL · PUBLIC (модель) |
-| экспорт | [Красный Форпост](proxima_outpost.md) | He-3 | major | 3118.8 | свой источник дороже доставленного импорта | PROPOSAL · PUBLIC (модель) |
+| экспорт | [Лал-Кот](proxima_outpost.md) | He-3 | major | 3118.8 | свой источник дороже доставленного импорта | PROPOSAL · PUBLIC (модель) |
 <!-- GENERATED:trade END -->
 
 ## Кризисы и войны
@@ -388,7 +388,7 @@
 | Солнечная Администрация (Sol Authority) | Заряд прыжка (изотопы привода) | 5.53 | 28.1 | Epsilon Eridani → Sol | поезд-танкер | 16.8 | официальный | `PROPOSAL` (модель) |
 | [Цитадель](wolf359_citadel.md) | Химия и полимеры | 11.59 | 20.9 | Epsilon Eridani → Wolf 359 | прыжковый поезд | 31.9 | официальный | `PROPOSAL` (модель) |
 | [Тауранга](lalande_mecca.md) | Химия и полимеры | 5.47 | 9.8 | Epsilon Eridani → Lalande 21185 | прыжковый поезд | 15.1 | официальный | `PROPOSAL` (модель) |
-| [Красный Форпост](proxima_outpost.md) | Химия и полимеры | 4.36 | 7.8 | Epsilon Eridani → Proxima Centauri | прыжковый поезд | 12.0 | официальный | `PROPOSAL` (модель) |
+| [Лал-Кот](proxima_outpost.md) | Химия и полимеры | 4.36 | 7.8 | Epsilon Eridani → Proxima Centauri | прыжковый поезд | 12.0 | официальный | `PROPOSAL` (модель) |
 | [Шахта Альфа](cyg61_kern.md) | Металлы и сплавы | 4.52 | 5.0 | Epsilon Eridani → 61 Cygni | прыжковый поезд | 12.4 | официальный | `PROPOSAL` (модель) |
 | [Синь-Шанхай](tau_ceti_cognium.md) | Руда и сырые минералы | 104.40 | 4.2 | Epsilon Eridani → Tau Ceti | прыжковый поезд | 287.3 | официальный | `PROPOSAL` (модель) |
 

@@ -129,11 +129,11 @@
   },
   {
    "id": "proxima_outpost",
-   "name": "Красный Форпост",
-   "polity": "Сварог",
+   "name": "Лал-Кот",
+   "polity": "Меру",
    "system": 60,
    "founders": [
-    "SVAROG-1"
+    "MERU-1"
    ],
    "founded": 2150,
    "regime_3126": "security_oligarchy",
@@ -147,7 +147,7 @@
     {
      "id": "svarog_fortress",
      "type": "fortress",
-     "name": "Орбитальная крепость «Сварог»",
+     "name": "Орбитальная крепость «Меру»",
      "importance": 0.9,
      "good": null
     },
@@ -187,7 +187,7 @@
    "knowledge": {
     "status": "CANON",
     "visibility": "PUBLIC_RECORD",
-    "basis": "основатель SVAROG-1: CANON"
+    "basis": "основатель MERU-1: CANON"
    },
    "field_status": {
     "pop_3126_authored": {
@@ -2781,7 +2781,7 @@
    "b": 3,
    "year": 2870,
    "cost_factor": 2.5,
-   "note": "нелицензионная линия Сварог — Цитадель: два отказника торгуют напрямую",
+   "note": "нелицензионная линия Меру — Цитадель: два отказника торгуют напрямую",
    "knowledge": {
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD",
@@ -2900,7 +2900,7 @@
   },
   {
    "year": 2850,
-   "event": "Технология лицензирована всем колониям, кроме Цитадели (отказ от инспекций) и Новой Кармы (отказ от контакта); Сварог отказывается от лицензии",
+   "event": "Технология лицензирована всем колониям, кроме Цитадели (отказ от инспекций) и Новой Кармы (отказ от контакта); Меру отказывается от лицензии",
    "knowledge": {
     "status": "CANON",
     "visibility": "PUBLIC_RECORD",

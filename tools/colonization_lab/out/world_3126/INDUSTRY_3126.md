@@ -54,7 +54,7 @@
 - OK cognium_core_flows_only_to_licence_holders: holders: cyg61_kern, delta_pav_freekarma, eps_eri_harmony, gj581_europa, gj832_tianhe, gj876_next, hd20794_hellas2, hd20794_newindia, hd40307_firmament, hd40307_maland, hd69830_verde, lalande_hellas, sol_authority, tau_ceti_cognium
 - OK new_karma_no_strategic_trade: ok
 - OK citadel_serial_cores_stay_in_pact: ok
-- OK svarog_serial_from_citadel_with_own_copies: Citadel share 1.00 of Svarog core imports; own pirated copies (jump_technology how = stolen)
+- OK svarog_serial_from_citadel_with_own_copies: Citadel share 1.00 of Meru core imports; own pirated copies (jump_technology how = stolen)
 - OK tauranga_core_technology_own: own jump mathematics; not a licence holder; no imported cores
 - OK southern_circle_survives_cognium_cutoff: Cognium cut-off: coverage 0.124, mobilised 0.678 (criterion >= survival_coverage)
 - OK southern_circle_peacetime_share_in_accepted_range: peacetime Tauranga share 0.533 in accepted range [0.45, 0.6] (author 2026-11-05)

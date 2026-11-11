@@ -1233,7 +1233,7 @@
     "ratio": 815.412
    },
    "knowledge": 0.975,
-   "name": "Красный Форпост",
+   "name": "Лал-Кот",
    "pop_3126": 725716924,
    "pop_3126_authored": 890000,
    "regime": "security_oligarchy",
@@ -24102,7 +24102,7 @@
     "events": [
      {
       "people": 9800,
-      "ship": "SVAROG-1",
+      "ship": "MERU-1",
       "source": "anchor",
       "type": "arrival",
       "year": 2150
@@ -24118,7 +24118,7 @@
     "kind": "colony",
     "migrants_in": 0,
     "migrants_out": 0,
-    "name": "Красный Форпост",
+    "name": "Лал-Кот",
     "owner": null,
     "pop_3126": 725716924,
     "system": 60,
@@ -33287,6 +33287,140 @@
    "required_watch": 372,
    "unrecorded_losses": 1657
   },
+  "MERU-1": {
+   "arrival_tendency": "oligarchic",
+   "avg_c": 0.0768,
+   "cohorts": {
+    "coerced": {
+     "grievance": 48.1,
+     "power": 0.3
+    },
+    "command": {
+     "grievance": 0.0,
+     "power": 4.0
+    },
+    "engineers": {
+     "grievance": 4.7,
+     "power": 2.0
+    },
+    "patricians": {
+     "grievance": 12.5,
+     "power": 3.0
+    },
+    "workers": {
+     "grievance": 9.2,
+     "power": 1.0
+    }
+   },
+   "culture": {
+    "clock_time": 53.3,
+    "collective_duty": 50.7,
+    "complaint_ritual": 69.2,
+    "formalism": 74.7,
+    "gallows_humor": 74.6,
+    "grievance_memory": 69.4,
+    "hardship_pride": 68.2,
+    "hospitality": 89.5,
+    "improvisation": 81.9,
+    "irony_to_power": 71.6,
+    "kin_first": 75.9,
+    "midday_pause": 34.3,
+    "night_life": 62.2,
+    "open_conflict": 44.0,
+    "order_love": 45.6,
+    "outsider_trust": 41.1,
+    "power_distance": 67.2,
+    "privacy": 42.0,
+    "risk": 55.1,
+    "rule_bending": 79.7,
+    "say_no": 37.1,
+    "state_trust": 22.1,
+    "status_display": 68.9,
+    "thrift": 57.4
+   },
+   "cycles_needed": 2.62,
+   "events": [
+    {
+     "awake": 9750,
+     "cryo": 5250,
+     "deaths": 0,
+     "knowledge": 1.0,
+     "pop": 15000,
+     "regime_tendency": "oligarchic",
+     "source": "canon",
+     "text": "старт: 15000 чел., крио 35 %",
+     "type": "launch",
+     "year": 2095
+    },
+    {
+     "awake": 8550,
+     "cryo": 5187,
+     "deaths": 1200,
+     "knowledge": 0.988,
+     "pop": 13737,
+     "regime_tendency": "oligarchic",
+     "source": "anchor",
+     "text": "Сбой криокапсул российского сегмента, 1 200 погибших; виновной объявлена индийская фракция",
+     "type": "sabotage_alleged",
+     "year": 2112
+    },
+    {
+     "awake": 8540,
+     "cryo": 5141,
+     "deaths": 0,
+     "knowledge": 0.979,
+     "pop": 13681,
+     "regime_tendency": "oligarchic",
+     "source": "simulated",
+     "text": "чистка «неблагонадёжных» в администрации",
+     "type": "purge",
+     "year": 2130
+    },
+    {
+     "awake": 7940,
+     "cryo": 5110,
+     "deaths": 600,
+     "knowledge": 0.973,
+     "pop": 13050,
+     "regime_tendency": "oligarchic",
+     "source": "anchor",
+     "text": "Раскол элит: убийства отключением капсул",
+     "type": "clan_fragmentation",
+     "year": 2135
+    },
+    {
+     "awake": 7940,
+     "cryo": 5080,
+     "deaths": 0,
+     "knowledge": 0.967,
+     "pop": 13020,
+     "regime_tendency": "oligarchic",
+     "source": "anchor",
+     "text": "Пакт Выживания: власть 50/50, военные технологии — приоритет",
+     "type": "reconciliation",
+     "year": 2145
+    },
+    {
+     "awake": 9800,
+     "cryo": 0,
+     "deaths": 0,
+     "knowledge": 0.967,
+     "pop": 9800,
+     "regime_tendency": "oligarchic",
+     "source": "anchor",
+     "text": "Проксима: орбитальные и подповерхностные поселения у Proxima Cen d",
+     "type": "arrival",
+     "year": 2150
+    }
+   ],
+   "flags": [],
+   "hereditary_watch": true,
+   "keeper_index": 17.3,
+   "knowledge": 0.967,
+   "owner_sleep_years": 0.0,
+   "required_watch": 305,
+   "unrecorded_losses": 3220
+  },
   "NEW-JERUSALEM-1": {
    "arrival_tendency": "party",
    "avg_c": 0.0676,
@@ -36641,128 +36775,6 @@
    "required_watch": 272,
    "unrecorded_losses": 1000
   },
-  "SVAROG-1": {
-   "arrival_tendency": "oligarchic",
-   "avg_c": 0.0768,
-   "cohorts": {
-    "coerced": {
-     "grievance": 44.1,
-     "power": 0.3
-    },
-    "command": {
-     "grievance": 0.0,
-     "power": 4.0
-    },
-    "engineers": {
-     "grievance": 0.7,
-     "power": 2.0
-    },
-    "patricians": {
-     "grievance": 8.5,
-     "power": 3.0
-    },
-    "workers": {
-     "grievance": 5.2,
-     "power": 1.0
-    }
-   },
-   "culture": {
-    "clock_time": 53.3,
-    "collective_duty": 50.7,
-    "complaint_ritual": 69.2,
-    "formalism": 74.7,
-    "gallows_humor": 74.6,
-    "grievance_memory": 69.4,
-    "hardship_pride": 68.2,
-    "hospitality": 89.5,
-    "improvisation": 81.9,
-    "irony_to_power": 71.6,
-    "kin_first": 75.9,
-    "midday_pause": 34.3,
-    "night_life": 62.2,
-    "open_conflict": 44.0,
-    "order_love": 45.6,
-    "outsider_trust": 41.1,
-    "power_distance": 67.2,
-    "privacy": 42.0,
-    "risk": 55.1,
-    "rule_bending": 79.7,
-    "say_no": 37.1,
-    "state_trust": 22.1,
-    "status_display": 68.9,
-    "thrift": 57.4
-   },
-   "cycles_needed": 2.62,
-   "events": [
-    {
-     "awake": 9750,
-     "cryo": 5250,
-     "deaths": 0,
-     "knowledge": 1.0,
-     "pop": 15000,
-     "regime_tendency": "oligarchic",
-     "source": "canon",
-     "text": "старт: 15000 чел., крио 35 %",
-     "type": "launch",
-     "year": 2095
-    },
-    {
-     "awake": 8550,
-     "cryo": 5187,
-     "deaths": 1200,
-     "knowledge": 0.988,
-     "pop": 13737,
-     "regime_tendency": "oligarchic",
-     "source": "anchor",
-     "text": "Сбой криокапсул российского сегмента, 1 200 погибших; виновной объявлена индийская фракция",
-     "type": "sabotage_alleged",
-     "year": 2112
-    },
-    {
-     "awake": 7950,
-     "cryo": 5110,
-     "deaths": 600,
-     "knowledge": 0.973,
-     "pop": 13060,
-     "regime_tendency": "oligarchic",
-     "source": "anchor",
-     "text": "Раскол элит: убийства отключением капсул",
-     "type": "clan_fragmentation",
-     "year": 2135
-    },
-    {
-     "awake": 7950,
-     "cryo": 5080,
-     "deaths": 0,
-     "knowledge": 0.967,
-     "pop": 13030,
-     "regime_tendency": "oligarchic",
-     "source": "anchor",
-     "text": "Пакт Выживания: власть 50/50, военные технологии — приоритет",
-     "type": "reconciliation",
-     "year": 2145
-    },
-    {
-     "awake": 9800,
-     "cryo": 0,
-     "deaths": 0,
-     "knowledge": 0.967,
-     "pop": 9800,
-     "regime_tendency": "oligarchic",
-     "source": "anchor",
-     "text": "Проксима: орбитальные и подповерхностные поселения у Proxima Cen d",
-     "type": "arrival",
-     "year": 2150
-    }
-   ],
-   "flags": [],
-   "hereditary_watch": true,
-   "keeper_index": 17.3,
-   "knowledge": 0.967,
-   "owner_sleep_years": 0.0,
-   "required_watch": 305,
-   "unrecorded_losses": 3230
-  },
   "TIANHE-1": {
    "arrival_tendency": "party",
    "avg_c": 0.085,
@@ -39944,6 +39956,32 @@
    ],
    "verdict": "fix"
   },
+  "MERU-1": {
+   "cruise_c": 0.083,
+   "design": {
+    "accel_g": 0.0067,
+    "boost_radiator_km2": 40.8457,
+    "claimed_dry_mt": 115,
+    "claimed_full_mt": 400,
+    "coast_power_gw": 0.348,
+    "coast_radiator_km2": 0.409,
+    "dry_mt": 3.7425,
+    "dry_vs_claim": 0.0325,
+    "dv_c": 0.098,
+    "era": "I",
+    "full_mt": 43.3657,
+    "full_vs_claim": 0.1084,
+    "giant_atmo_processed_t": 265440888811.6571,
+    "he3_mt": 6.1051,
+    "jet_power_pw": 6.0537,
+    "mass_ratio": 11.5874
+   },
+   "reasons": [
+    "полная масса 43 Мт против заявленных 400 Мт",
+    "сухая масса 3.7 Мт против заявленных 115 Мт"
+   ],
+   "verdict": "fix"
+  },
   "NEW-JERUSALEM-1": {
    "cruise_c": 0.0731,
    "design": {
@@ -40093,32 +40131,6 @@
    "reasons": [
     "полная масса 55 Мт против заявленных 450 Мт",
     "сухая масса 5.2 Мт против заявленных 450 Мт"
-   ],
-   "verdict": "fix"
-  },
-  "SVAROG-1": {
-   "cruise_c": 0.083,
-   "design": {
-    "accel_g": 0.0067,
-    "boost_radiator_km2": 40.8457,
-    "claimed_dry_mt": 115,
-    "claimed_full_mt": 400,
-    "coast_power_gw": 0.348,
-    "coast_radiator_km2": 0.409,
-    "dry_mt": 3.7425,
-    "dry_vs_claim": 0.0325,
-    "dv_c": 0.098,
-    "era": "I",
-    "full_mt": 43.3657,
-    "full_vs_claim": 0.1084,
-    "giant_atmo_processed_t": 265440888811.6571,
-    "he3_mt": 6.1051,
-    "jet_power_pw": 6.0537,
-    "mass_ratio": 11.5874
-   },
-   "reasons": [
-    "полная масса 43 Мт против заявленных 400 Мт",
-    "сухая масса 3.7 Мт против заявленных 115 Мт"
    ],
    "verdict": "fix"
   },
@@ -53806,7 +53818,7 @@
     "good": null,
     "id": "svarog_fortress",
     "importance": 0.9,
-    "name": "Орбитальная крепость «Сварог»",
+    "name": "Орбитальная крепость «Меру»",
     "output": 0.0,
     "owner": "proxima_outpost",
     "range": [

@@ -313,6 +313,36 @@ SystemMapRenderer::handleInput(
         return std::nullopt;
     }
 
+    // System map planet strip: it takes the pointer over it (wheel / drag scroll it, a click selects the
+    // planet the same way a click on the map does; DETAILS then opens it).
+    if (m_modeState.current() == Mode::System && m_planetCarousel.visible())
+    {
+        std::string picked;
+        const bool taken = m_planetCarousel.handlePointer(
+            inside ? localMx : -1.0e9, inside ? localMy : -1.0e9, leftDown, m_pendingScrollY, picked);
+        if (!picked.empty())
+        {
+            if (m_systemFramePrepared)
+            {
+                const game::system_map::SystemMapFrameInteractionContext context(
+                    m_systemSceneFrame.interaction, m_systemView.controls());
+                m_systemInteraction.focusBodySelection(m_systemView, context, picked, inputNowSeconds);
+            }
+            auto& state = m_systemView.state();
+            state.selectedBodyId = picked;
+            state.selectedHubId.clear();
+            state.selectedHubParentBodyId.clear();
+            m_objectOverlayState.clearActive();
+            m_systemSceneFrameDirty = true;
+        }
+        if (taken)
+        {
+            m_hoveredMapButton.clear();
+            m_systemView.suppressCameraGesture(leftDown, rightDown, mx, my);
+            return std::nullopt;
+        }
+    }
+
     // Map buttons (back, up, TRACK, LEVEL 0 - one row, the same in every
     // map) and the Galaxy / System breadcrumbs.
     const bool galaxyMode = m_modeState.current() == Mode::Galaxy;

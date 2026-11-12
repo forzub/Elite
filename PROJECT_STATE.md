@@ -5388,3 +5388,20 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   mission id (the id seeds the model): MERU-1 unaccounted losses 3 230 -> 3 220, populations +-10, one filler
   event; canon anchors unchanged. Old generated Notes/html/SHIPS/SVAROG-1.html replaced by MERU-1.html (copy
   kept in D:/tmp/naming/old).
+
+## SYSTEM MAP PLANET CAROUSEL + DETAIL MAP WITHOUT THE 1 S WAIT 2026-11-12 (author)
+- src/game/system_map/SystemMapPlanetCarousel.{h,cpp}: a strip at the bottom of the System map - the system's
+  planets (moons excluded) as lit textured globes (map albedo + CloudWeatherField clouds, the Detail map's own
+  textures), diameters in proportion (min 6 px at 1080), names underneath, ordered by star (snapshot order,
+  circumbinary after) then orbit size. Scroll: wheel, drag, triangle buttons at the ends; when all planets fit
+  the strip has no scrolling and no buttons. A click selects the planet the way a map click does
+  (focusBodySelection): the side panel shows it and its DETAILS button becomes active (no extra button - the
+  panel already has DETAILS). The selected planet's moons are prewarmed.
+- The 1 s wait: the strip requests every planet's albedo + clouds while the System map is open, so the Detail
+  map opens with them ready. LIVE: Venus Detail map - the first frame after `detail` (t 37.29 -> 37.3 s) equals
+  the frame 2 s later (20 px differ = rotation); before: ~1 s of untextured globe.
+- LIVE captures (D:/tmp/naming/car_33.png, c_sel.png, g667.png): Sol strip (Mercury..Neptune), Earth selected
+  (gold ring + label, panel «Земля», DETAILS active), Убунту / Gliese 667 32 planets with scroll arrows.
+- Live-run note: automated runs need `--dev-direct-flight` (without it the game waits in the WebView main menu
+  and every capture is black - the "environment" black frames of 2026-11-11 evening were this).
+  Map in another system: ELITE_DEV_START=body:<stem>@<id> and ONE `system` verb after the move.

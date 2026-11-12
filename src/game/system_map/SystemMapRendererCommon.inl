@@ -792,6 +792,29 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         );
     }
 
+    // System map planet strip: every planet's globe (its albedo + clouds requested here = the Detail map's
+    // textures are ready before a planet is opened); the selected planet's moons are prewarmed too.
+    if (m_modeState.current() == Mode::System && !system.bodies.empty())
+    {
+        const double cloudTime = m_mapResources.visualEffectTimeSeconds(system.universeTimeSeconds);
+        m_planetCarousel.draw(
+            viewport, system, m_systemView.state().selectedBodyId,
+            [&](const world::celestial::SystemMapBody& body, GLuint& albedo, GLuint& clouds) {
+                albedo = m_mapResources.globalAlbedoTextureForIdentity(system.systemId, body.id, body.name);
+                bool noClouds = false;
+                clouds = m_mapResources.fieldCloudTextureForIdentity(system.systemId, body.id, cloudTime, noClouds);
+            });
+        const std::string& selected = m_systemView.state().selectedBodyId;
+        if (!selected.empty())
+            for (const auto& body : system.bodies)
+                if (body.parentId == selected && body.type == world::celestial::BodyType::Moon)
+                    m_mapResources.prewarmBody(system.systemId, body.id, system.universeTimeSeconds);
+    }
+    else
+    {
+        m_planetCarousel.reset();
+    }
+
     // Map buttons: back, up, TRACK, LEVEL 0 (every map, where available).
     std::vector<render::navigation::NavigationOverlayButton> buttons;
     for (const auto& button : mapButtons(viewport))

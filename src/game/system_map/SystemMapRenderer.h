@@ -44,6 +44,7 @@
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapIntent.h"
 #include "src/game/system_map/MapContextMenu.h"
+#include "src/game/system_map/SystemMapPlanetCarousel.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/GalaxyMapInteraction.h"
@@ -987,6 +988,8 @@ private:
 
     // Map buttons and breadcrumbs (the hovered button id, "" = none).
     std::string m_hoveredMapButton;
+    // System map planet strip (bottom): globes in orbit order, a click selects the planet
+    game::system_map::SystemMapPlanetCarousel m_planetCarousel;
     int m_galaxyBreadcrumbHovered = -1;
 
     // Back history (previous maps with their views).

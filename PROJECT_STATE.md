@@ -5475,3 +5475,5 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   NOT yet seen live: the map context-menu rows themselves (same handler as the DEV verb), the star-in-the-way refusal.
 - J charge x0.1 (JChargeScale, "J must be much cheaper than a jump"): Earth -> Jupiter at full thrust ~0.1 mean jump.
   The NPC logistics calibration (logistics.py J legs) is not changed.
+- Author decision 2026-11-12: the medium's braking above 0.6 c is harmless to the crew - the J field's inertial
+  isolator absorbs it. No damage rule needed (the open question closed).

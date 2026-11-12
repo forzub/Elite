@@ -257,7 +257,8 @@ void GameSimulation::applyGlobalFlightCommand(EntityId shipId, Ship& ship, Activ
         if (glm::length(dv) > cap * dt)
             dv *= cap * dt / glm::length(dv);
         frame.linearVelocityMps += dv;
-        motion.jAccelMps2 = glm::length(dv) / dt;
+        f.jPushDvMps = glm::length(dv);
+        motion.jAccelMps2 = glm::length(dv) / dt * f.jCapEfficiency();
         jField = true;
         f.globalLogSeconds += dt;
         if (f.globalLogSeconds >= 2.0)
@@ -789,6 +790,7 @@ void GameSimulation::updateFreeFlights(double dt)
         // the rules (the ground frame flies on the ordinary controls)
         const auto& control = ship->core().control();
         const bool globalCommand = control.globalFlightCommandValid && !f.ground.active;
+        f.jPushDvMps = 0.0;
         if (globalCommand)
         {
             f.globalIdleSeconds = 0.0;
@@ -831,7 +833,7 @@ void GameSimulation::updateFreeFlights(double dt)
                         cmd = std::abs(cmd) / grow < g ? 0.0 : cmd / grow;
                     motion.jAccelCommandMps2 = cmd;
                 }
-                double a = motion.jAccelMps2;
+                double a = f.jFieldMps2;
                 if (std::abs(cmd) < 1.0e-6 || (a != 0.0 && (a > 0.0) != (cmd > 0.0)))
                 {
                     a /= std::exp2(dt * 2.0);                       // winding down (to zero or through it)
@@ -860,11 +862,15 @@ void GameSimulation::updateFreeFlights(double dt)
                     }
                 }
                 frame.linearVelocityMps += dv;
-                motion.jAccelMps2 = a;
+                f.jFieldMps2 = a;
+                f.jPushDvMps = glm::length(dv);
+                // the effective acceleration (shown, and what the charge pays for): at the 0.9 c cap the field
+                // only holds the speed, it does not accelerate
+                motion.jAccelMps2 = a * f.jCapEfficiency();
                 if (a != 0.0 && std::fmod(f.elapsedSeconds, 2.0) < dt)
-                    std::cerr << "[Flight] ship " << it->first.value << ": J engine " << a / g << " g (command " << motion.jAccelCommandMps2 / g
+                    std::cerr << "[Flight] ship " << it->first.value << ": J engine " << a / g << " g field, " << motion.jAccelMps2 / g << " g effective (command " << motion.jAccelCommandMps2 / g
                               << " g), speed vs reference " << glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps) / 1000.0
-                              << " km/s" << std::endl;
+                              << " km/s, charge " << motion.jChargeT << " t" << std::endl;
                 // switched off: normal flight once the field is down to the main engines' level
                 if (motion.jStopping && std::abs(a) <= mainEngineAccelMps2(*ship))
                 {
@@ -876,6 +882,9 @@ void GameSimulation::updateFreeFlights(double dt)
                 }
             }
         }
+
+        if (!motion.jEngine)
+            f.jFieldMps2 = 0.0;
 
         // ---- the J charge: the pilot's J field or the autopilot's J drive (not its main-engine de-orbit)
         {
@@ -1319,6 +1328,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 f.lastBasisBodyId = primary->id;
             }
             // the J speed cap: the field does not carry the ship above 0.9 c against the reference body
+            f.jCapCutDvMps = 0.0;
             if (primary && f.lastPrimaryId == primary->id && dt > 0.0 && !f.ground.active)
             {
                 const glm::dvec3 refVel = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
@@ -1328,7 +1338,10 @@ void GameSimulation::updateFreeFlights(double dt)
                 const double fieldCap = game::navigation::jdrive::SpeedCapMps *
                     std::max(0.5, game::navigation::jdrive::jFieldFactor(jFieldOf(*ship)));
                 if (glm::length(rel) > fieldCap)
+                {
+                    f.jCapCutDvMps = glm::length(rel) - fieldCap;
                     frame.linearVelocityMps = refVel + rel * (fieldCap / glm::length(rel));
+                }
             }
             f.lastPrimaryId = primary ? primary->id : std::string();
             f.lastPrimaryCenterMeters = primary ? primary->centerMeters : glm::dvec3(0.0);

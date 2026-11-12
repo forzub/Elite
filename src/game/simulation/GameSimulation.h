@@ -3,6 +3,7 @@
 #include "src/game/navigation/rules/CapsuleRules.h"
 
 #include "src/game/navigation/landing/LandingAutopilot.h"
+#include <algorithm>
 #include <functional>
 #include "src/game/simulation/ShipRefitSnapshot.h"
 #include <cstdint>
@@ -204,6 +205,17 @@ public:
         double globalRampSeconds = 0.0;
         double globalLogSeconds = 0.0;      // the plant's command log (every 2 s)
         double globalIdleSeconds = 0.0;     // no global command for this long: the ramp restarts after 0.5 s
+        // the J field against the 0.9 c cap (author 2026-11-12: at the cap the HUD showed ~75 000 g and the charge
+        // burned at that rate while the speed did not grow): the field's push this tick, what the cap took back
+        // last tick, and the pilot field's own level (its ramp state; motion.jAccelMps2 is the EFFECTIVE value)
+        double jPushDvMps = 0.0;
+        double jCapCutDvMps = 0.0;
+        double jFieldMps2 = 0.0;
+        // the share of the J push that really changed the speed (1 below the cap, ~0 cruising at it)
+        double jCapEfficiency() const
+        {
+            return jPushDvMps > 0.0 ? std::clamp((jPushDvMps - jCapCutDvMps) / jPushDvMps, 0.0, 1.0) : 1.0;
+        }
         // a route leg (hub / orbit / point) flown by the route autopilot
         // the sub-machines of a free flight (architecture audit item 3): one struct each
         struct GroundFrame     // the ground stabilization frame (landing / landed)

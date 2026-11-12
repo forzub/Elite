@@ -5416,3 +5416,23 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - DEV pointer: `pointer:click|dclick:carousel:<bodyId>` or `carousel:#N` (N-th globe; the DEV env is not UTF-8).
 - LIVE (D:/tmp/naming/dc/c.png): Sol, `pointer:dclick:carousel:#4` -> Jupiter selected, map S1 -> S2,
   66.846 AU -> 3.342 AU, Jupiter centred and followed (СЛЕЖЕНИЕ), panel «Юпитер» with DETAILS.
+
+### AUTHOR ACCEPTANCE 2026-11-12 (live, the author's own play)
+- ACCEPTED: System map planet carousel; carousel double click = approach the planet.
+- ACCEPTED: new star names with the catalogue name in brackets; new non-catalogue planet names
+  (the naming series of inhabited + explored systems).
+- Author reports from an Earth -> Jupiter J flight (being worked on):
+  1. HUD "J +75583 g" while the speed sat at 269 813 km/s (= the 0.9 c cap): diagnosed - the field kept pushing and the
+     cap clamp (GameSimulationFreeFlight, after gravity) silently cut the gain; jAccelMps2 and the J charge burn
+     (rate ~ (a/a_max)^1.5) stayed at the full field. FIX (source): ActiveFreeFlight jPushDvMps / jCapCutDvMps /
+     jFieldMps2 - motion.jAccelMps2 is the EFFECTIVE acceleration (field x the share the cap did not take back last
+     tick), the pilot field keeps its own ramp level, the charge pays for the effective value; HUD adds "0.9c" at the cap.
+  2. "How to jump from the map" - the jump lives only in the Galaxy map star's context menu (right click / Ctrl+click:
+     РАССЧИТАТЬ ПРЫЖОК -> ПРЫЖОК: СТАРТ); not discoverable.
+  3. J charge 2.729 t of 3 t left at 4.11 AU: by design a J leg costs 1/3..1/2 of a mean 22.8 ly jump (JDrive.h);
+     the cap burn of item 1 inflated it.
+  4. F12 in empty space at 0.9 c: the ship marker "jumps randomly inside the cube" - under investigation.
+  LIVE (item 1 fix, EliteGameJ.exe = the same sources linked aside while the author's game held EliteGame.exe;
+  D:/tmp/jcap/out.txt, f520.png): hub@50 -> J +100000 g -> 261 621 km/s with charge 3 -> 2.913 t, then at the cap
+  field 100000 g / EFFECTIVE 1.9..3.7 g, charge FLAT at 2.91057 t for the rest of the run; HUD "J +3.40 g (+100000 g)
+  0.9c", top line "УСКОРЕНИЕ J +3 g (задано +99966 g)". EliteGame.exe itself to be relinked when the author's game closes.

@@ -1,3 +1,4 @@
+#include "src/game/navigation/rules/JDrive.h"
 #include "src/game/presentation/ClientHudPresentation.h"
 
 #include <cmath>
@@ -129,8 +130,10 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
             const double a = motion.jAccelMps2;
             const double level = std::abs(a) < 9.80665 ? std::abs(a) / 9.80665 * 0.02 : std::log10(std::abs(a) / 9.80665) / 5.0;
             out.thrustFraction01 = static_cast<float>((a < 0.0 ? -1.0 : 1.0) * std::clamp(level, 0.0, 1.0));
+            // at the 0.9 c cap the field only holds the speed: the effective acceleration is ~0, say why
+            const bool atCap = out.speedMps >= game::navigation::jdrive::SpeedCapMps * 0.998;
             out.accelText = "J " + gText(a, true) + "  (" + gText(motion.jAccelCommandMps2, true) + ")" +
-                            (motion.jStopping ? "  выкл." : "");
+                            (atCap ? "  0.9c" : "") + (motion.jStopping ? "  выкл." : "");
         }
         else
         {

@@ -1,5 +1,7 @@
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
+#include "src/game/presentation/HudSteadyNumber.h"
+#include "src/game/navigation/rules/JDrive.h"
 #include <cstring>
 #include "src/game/navigation/rules/CapsuleRules.h"
 #include "src/game/presentation/DockingWidgetText.h"
@@ -1732,6 +1734,14 @@ std::string jSpeed(double mps, bool signedValue = false)
     return t;
 }
 
+// a speed for a steady HUD line: hysteresis (0.05 %, 0.5 m/s) and 4 significant digits above 10 000 km/s
+std::string jSpeedSteady(const char* key, double mps)
+{
+    using namespace game::presentation;
+    const double v = hudSteady(key, mps, 0.0005, 0.5);
+    return jSpeed(std::abs(v) >= 1.0e7 ? hudSignificant(v / 1000.0, 4) * 1000.0 : v);
+}
+
 std::string jDistance(double m)
 {
     char t[48];
@@ -1888,12 +1898,12 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             line1 << "СТАБИЛИЗАЦИЯ В ХАБЕ  ·  манёвровая скорость " << jSpeed(local) << " (предел 500 м/с)";
     }
     else if (kind == 0)
-        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeed(glm::length(relative)) << " отн. хаба " << reference;
+        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeedSteady("hud.line1.speed", glm::length(relative)) << " отн. хаба " << reference;
     else if (global)
-        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  глобальная скорость " << jSpeed(glm::length(relative))
+        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  глобальная скорость " << jSpeedSteady("hud.line1.speed", glm::length(relative))
               << "  ·  гравитация планет пренебрежима";
     else
-        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeed(glm::length(relative)) << " отн. " << reference
+        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeedSteady("hud.line1.speed", glm::length(relative)) << " отн. " << reference
               << " (в сфере её притяжения)";
     std::string thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
     // the autopilot flies on the J drive, not on the latched main-engine command
@@ -1910,10 +1920,21 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     }
     if (motion.jEngine && !(motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5))
     {
-        char j[96];
+        char j[160];
+        using game::presentation::hudSignificant;
+        using game::presentation::hudSteady;
         std::snprintf(j, sizeof j, "%s J %+.0f g (задано %+.0f g)", motion.jStopping ? "J ВЫКЛЮЧАЕТСЯ:" : "УСКОРЕНИЕ",
-                      motion.jAccelMps2 / 9.81, motion.jAccelCommandMps2 / 9.81);
+                      hudSignificant(hudSteady("hud.j.accel", motion.jAccelMps2 / 9.81, 0.01, 5.0), 3),
+                      hudSignificant(hudSteady("hud.j.command", motion.jAccelCommandMps2 / 9.81, 0.01, 1.0), 3));
         thrust = j;
+        // the medium (author 2026-11-12): above ~0.1 c the swept-up particles resist - say how much of the thrust
+        // goes into holding the speed
+        if (const double medium = game::navigation::jdrive::mediumResistanceMps2(glm::length(relative)); medium > 0.0)
+        {
+            std::snprintf(j, sizeof j, "  ·  сопротивление среды %.0f g",
+                          hudSignificant(hudSteady("hud.j.medium", medium / 9.81, 0.01, 5.0), 3));
+            thrust += j;
+        }
     }
     std::string routeHint;
     if (motion.routeState == 2)
@@ -2019,13 +2040,13 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         if (global)
         {
             std::snprintf(a, sizeof a, "1-я косм.  —");
-            std::snprintf(b, sizeof b, "V  %s  (глобальная)", jSpeed(motion.freeFlightOrbitSpeedMps).c_str());
+            std::snprintf(b, sizeof b, "V  %s  (глобальная)", jSpeedSteady("hud.v.speed", motion.freeFlightOrbitSpeedMps).c_str());
             std::snprintf(c, sizeof c, "H  —");
         }
         else
         {
             std::snprintf(a, sizeof a, "1-я косм.  %s", jSpeed(motion.freeFlightOrbitCircularMps).c_str());
-            std::snprintf(b, sizeof b, "V  %s   (%s верт.)", jSpeed(motion.freeFlightOrbitSpeedMps).c_str(),
+            std::snprintf(b, sizeof b, "V  %s   (%s верт.)", jSpeedSteady("hud.v.speed", motion.freeFlightOrbitSpeedMps).c_str(),
                           jSpeed(motion.freeFlightOrbitRadialMps, true).c_str());
             // near the ground the height that matters is above the ground (under the
             // hull); H over the mean radius (the Moon's highlands are +5 km) misled

@@ -108,7 +108,15 @@ bool SpaceState::buildLocalCubeTarget(
 
     game::navigation::SystemNavigationGrid grid;
     grid.activateSystem(systemId);
-    const int level = grid.maximumLevel();
+    // The cube level the object can be followed in (author 2026-11-12: at 0.9 c the ship crossed a hundred
+    // 2500 km terminal cubes a second and its marker "jumped randomly"): the finest cube the object stays in
+    // for at least LocalCubeTrackSeconds at its current speed.
+    constexpr double LocalCubeTrackSeconds = 60.0;
+    const double trackMeters = localCubeFocusSpeedMps(focusId) * LocalCubeTrackSeconds;
+    int level = grid.maximumLevel();
+    while (level > 1 && grid.cell(grid.nearestIndexForPosition(systemLocalAu, level), level).size *
+                            world::celestial::MetersPerAu < trackMeters)
+        --level;
     const auto cell = grid.cell(grid.nearestIndexForPosition(systemLocalAu, level), level);
 
     outTarget.sceneKind = DetailSceneKind::SpatialVolume;
@@ -150,6 +158,28 @@ bool SpaceState::resolveLocalCubeFocusAu(
         return true;
     }
     return false;
+}
+
+double SpaceState::localCubeFocusSpeedMps(const std::string& focusId) const
+{
+    if (!m_client)
+        return 0.0;
+    std::uint32_t id = 0;
+    if (focusId == "player")
+        id = m_playerId.value;
+    else if (focusId.rfind("entity:", 0) == 0)
+        id = static_cast<std::uint32_t>(std::strtoul(focusId.c_str() + 7, nullptr, 10));
+    else
+        return 0.0;
+    const auto& ships = m_client->world().ships();
+    const auto it = ships.find(id);
+    if (it == ships.end())
+        return 0.0;
+    const auto& motion = it->second.transform.motion;
+    if (!motion.travelFrame.valid)
+        return glm::length(motion.localVelocityMps);
+    // the velocity in the system frame (what crosses the system grid's cubes)
+    return glm::length(motion.travelFrame.linearVelocityMps + motion.travelFrame.localToWorldVector(motion.localVelocityMps));
 }
 
 void SpaceState::followLocalCubeFocus()
@@ -1556,13 +1586,17 @@ bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
             }
 
             world::celestial::DetailTarget target;
-            if (!buildPlayerDetailTarget(target, false) ||
-                !composeSystemMapSnapshot(target.systemId) ||
-                !composeDetailMapSnapshot(target))
+            const bool built = buildPlayerDetailTarget(target, false);
+            const bool systemReady = built && composeSystemMapSnapshot(target.systemId);
+            if (!built || !systemReady || !composeDetailMapSnapshot(target))
             {
+                static int logged = 0;
+                if (logged++ % 120 == 0)
+                    std::cerr << "[LocalMap] F12 not ready: target " << built << " system " << systemReady << " cube L"
+                              << target.spatialCell.level << std::endl;
                 return false;
             }
-            std::cerr << "[LocalMap] F12: the player's cube " << target.spatialCell.x << ','
+            std::cerr << "[LocalMap] F12: the player's cube L" << target.spatialCell.level << " edge " << target.spatialCell.edgeAu << " AU " << target.spatialCell.x << ','
                       << target.spatialCell.y << ',' << target.spatialCell.z << std::endl;
             m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
             return true;

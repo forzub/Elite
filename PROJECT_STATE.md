@@ -5436,3 +5436,24 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   D:/tmp/jcap/out.txt, f520.png): hub@50 -> J +100000 g -> 261 621 km/s with charge 3 -> 2.913 t, then at the cap
   field 100000 g / EFFECTIVE 1.9..3.7 g, charge FLAT at 2.91057 t for the rest of the run; HUD "J +3.40 g (+100000 g)
   0.9c", top line "УСКОРЕНИЕ J +3 g (задано +99966 g)". EliteGame.exe itself to be relinked when the author's game closes.
+
+## J SPEED = THE MEDIUM, F12 CUBE BY SPEED, STEADY HUD NUMBERS 2026-11-12 (author)
+- Author decision: no fixed J speed cap - "space is not a perfect vacuum", the resistance grows exponentially with the
+  speed, the top speed is the physics of thrust. JDrive.h mediumResistanceMps2 / mediumTerminalSpeedMps:
+  a(v) = A0 (e^((v - 0.1c)/0.1c) - 1), A0 = 1e5 g / (e^8 - 1) ~ 33.6 g; terminal 1e3 g 0.44 c, 1e4 g 0.67 c, 1e5 g 0.9 c;
+  against the dominant body's frame; damaged field: every speed halved. Replaces the cap clamp (GameSimulationFreeFlight).
+  The charge pays for the FIELD (holding the speed costs thrust: ActiveFreeFlight jChargeAccelMps2), motion.jAccelMps2 =
+  field - medium (net). HUD top line "сопротивление среды N g", cockpit "среда". JUMP_MECHANICS.md section rewritten.
+  LIVE (D:/tmp/jcap/med.txt, m380.png): full field 1e5 g, net 99 995 g at 34 000 km/s -> 8 700 g at 267 080 km/s,
+  charge burns steadily (~0.00033 t/s at full field; Earth -> Jupiter at full thrust ~0.9 t); J off at 0.79 c: the
+  medium brakes the hull 236 820 -> 229 584 km/s in 25 s.
+  OPEN for the author: is the hull braking with J off dangerous to the crew; J leg cost vs a jump ("J must be much
+  cheaper") - the logistics calibration (JDrive.h header, ship_economics.json) unchanged pending his figure.
+- F12 at speed: SpaceState::buildLocalCubeTarget picks the finest cube the object stays in >= 60 s at its system-frame
+  speed (localCubeFocusSpeedMps); DetailTarget::valid accepts a non-terminal cube for an object's local space.
+  DEV verb `local` (= F12). LIVE (l150/l152.png): at ~0.35 c F12 opens L2 (0.261 AU), the player marker steady between
+  frames 2 s apart, "player left cube 2,0,-3 -> shown in cube 3,0,-3".
+- Steady HUD numbers (author: twitching digits shake the line): src/game/presentation/HudSteadyNumber.h (hysteresis +
+  significant digits) on the top flight line speed, the J line (accel / command / medium), the "V" line, the cockpit
+  speed and J text. LIVE (D:/tmp/jcap/hstack.png, 4 frames 0.5 s apart at 0.88 c): "264500 км/с", "+16300 g",
+  "сопротивление среды 83600 g", the line width unchanged.

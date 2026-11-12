@@ -133,7 +133,9 @@ struct DetailTarget
                 // A spatial address may belong to a synthetic empty-sector
                 // System/Space map. Such maps intentionally use negative
                 // runtime ids because no authored star system owns them.
-                return spatialCell.terminal();
+                // An object's local space (F12, focus = a ship / hub) may be a coarser cube: the one the object
+                // can be followed in at its speed (author 2026-11-12).
+                return focusClass != DetailObjectClass::None ? spatialCell.valid() : spatialCell.terminal();
 
             case DetailSceneKind::CelestialBody:
             case DetailSceneKind::LocalObject:

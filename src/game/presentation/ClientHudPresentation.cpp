@@ -1,3 +1,4 @@
+#include "src/game/presentation/HudSteadyNumber.h"
 #include "src/game/navigation/rules/JDrive.h"
 #include "src/game/presentation/ClientHudPresentation.h"
 
@@ -104,17 +105,23 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
     if (motion.freeFlight)
     {
         std::ostringstream km;
-        if (out.speedMps < 1000.0)
-            km << std::fixed << std::setprecision(0) << out.speedMps << " m/s";
+        // steady (author 2026-11-12: twitching digits are noise): hysteresis + 4 significant digits at high speed
+        const double shownMps = hudSteady("cockpit.speed", out.speedMps, 0.0005, 0.5);
+        if (shownMps < 1000.0)
+            km << std::fixed << std::setprecision(0) << shownMps << " m/s";
+        else if (shownMps < 1.0e7)
+            km << std::fixed << std::setprecision(shownMps < 100000.0 ? 2 : 1) << shownMps / 1000.0 << " km/s";
         else
-            km << std::fixed << std::setprecision(out.speedMps < 100000.0 ? 2 : 1) << out.speedMps / 1000.0 << " km/s";
+            km << std::fixed << std::setprecision(0) << hudSignificant(shownMps / 1000.0, 4) << " km/s";
         out.speedText = km.str();
         out.speedFraction01 = 1.0f;
         if (motion.jEngine)
             out.modeText = "J " + out.modeText;   // the J engine, not the mode: normal flight shows the law alone
-        const auto gText = [](double mps2, bool sign) {
+        const auto gText = [](double mps2, bool sign, const char* key) {
             std::ostringstream t;
-            const double g = mps2 / 9.80665;
+            const double raw = mps2 / 9.80665;
+            const double g = std::abs(raw) < 10.0 ? hudSteady(key, raw, 0.02, 0.05)
+                                                  : hudSignificant(hudSteady(key, raw, 0.01, 5.0), 3);
             if (sign && g > 0.0)
                 t << '+';
             if (std::abs(g) < 10.0)
@@ -130,16 +137,16 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
             const double a = motion.jAccelMps2;
             const double level = std::abs(a) < 9.80665 ? std::abs(a) / 9.80665 * 0.02 : std::log10(std::abs(a) / 9.80665) / 5.0;
             out.thrustFraction01 = static_cast<float>((a < 0.0 ? -1.0 : 1.0) * std::clamp(level, 0.0, 1.0));
-            // at the 0.9 c cap the field only holds the speed: the effective acceleration is ~0, say why
-            const bool atCap = out.speedMps >= game::navigation::jdrive::SpeedCapMps * 0.998;
-            out.accelText = "J " + gText(a, true) + "  (" + gText(motion.jAccelCommandMps2, true) + ")" +
-                            (atCap ? "  0.9c" : "") + (motion.jStopping ? "  выкл." : "");
+            // the medium resists above ~0.1 c: the net acceleration falls while the thrust (in brackets) holds
+            const bool medium = game::navigation::jdrive::mediumResistanceMps2(out.speedMps) > 0.0;
+            out.accelText = "J " + gText(a, true, "cockpit.j.accel") + "  (" + gText(motion.jAccelCommandMps2, true, "cockpit.j.command") + ")" +
+                            (medium ? "  среда" : "") + (motion.jStopping ? "  выкл." : "");
         }
         else
         {
             const double a = glm::length(motion.mainEngineAccelerationMps2);
             out.thrustFraction01 = motion.mainEngineMaxMps2 > 0.0 ? static_cast<float>(std::clamp(a / motion.mainEngineMaxMps2, 0.0, 1.0)) : 0.0f;
-            out.accelText = gText(a, false);
+            out.accelText = gText(a, false, "cockpit.main.accel");
         }
     }
 

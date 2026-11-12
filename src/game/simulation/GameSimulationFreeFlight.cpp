@@ -257,8 +257,8 @@ void GameSimulation::applyGlobalFlightCommand(EntityId shipId, Ship& ship, Activ
         if (glm::length(dv) > cap * dt)
             dv *= cap * dt / glm::length(dv);
         frame.linearVelocityMps += dv;
-        f.jPushDvMps = glm::length(dv);
-        motion.jAccelMps2 = glm::length(dv) / dt * f.jCapEfficiency();
+        f.jChargeAccelMps2 = glm::length(dv) / dt;
+        motion.jAccelMps2 = f.jChargeAccelMps2 - f.jMediumMps2;   // net of the medium (shown)
         jField = true;
         f.globalLogSeconds += dt;
         if (f.globalLogSeconds >= 2.0)
@@ -790,7 +790,7 @@ void GameSimulation::updateFreeFlights(double dt)
         // the rules (the ground frame flies on the ordinary controls)
         const auto& control = ship->core().control();
         const bool globalCommand = control.globalFlightCommandValid && !f.ground.active;
-        f.jPushDvMps = 0.0;
+        f.jChargeAccelMps2 = 0.0;
         if (globalCommand)
         {
             f.globalIdleSeconds = 0.0;
@@ -863,10 +863,10 @@ void GameSimulation::updateFreeFlights(double dt)
                 }
                 frame.linearVelocityMps += dv;
                 f.jFieldMps2 = a;
-                f.jPushDvMps = glm::length(dv);
-                // the effective acceleration (shown, and what the charge pays for): at the 0.9 c cap the field
-                // only holds the speed, it does not accelerate
-                motion.jAccelMps2 = a * f.jCapEfficiency();
+                f.jChargeAccelMps2 = std::abs(a);
+                // shown: the net acceleration - the field minus the medium's resistance (holding the top speed the
+                // field works at full thrust and the ship does not accelerate; the charge pays for the field)
+                motion.jAccelMps2 = a - f.jMediumMps2;
                 if (a != 0.0 && std::fmod(f.elapsedSeconds, 2.0) < dt)
                     std::cerr << "[Flight] ship " << it->first.value << ": J engine " << a / g << " g field, " << motion.jAccelMps2 / g << " g effective (command " << motion.jAccelCommandMps2 / g
                               << " g), speed vs reference " << glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps) / 1000.0
@@ -899,7 +899,8 @@ void GameSimulation::updateFreeFlights(double dt)
             }
             // the pilot's J engine or a client's global-flight command (the plant's J field)
             // (the body autopilot and a client's command: the plant's J field, motion.jAccelMps2)
-            const double a = motion.jEngine || globalCommand ? motion.jAccelMps2 : 0.0;
+            // the charge pays for the FIELD (holding the top speed against the medium costs the full thrust)
+            const double a = motion.jEngine || globalCommand ? f.jChargeAccelMps2 : 0.0;
             if (a != 0.0 && motion.jChargeT > 0.0)
             {
                 const double massT = ship->core().effectivePhysics().massKg / 1000.0;
@@ -1327,20 +1328,24 @@ void GameSimulation::updateFreeFlights(double dt)
                 f.lastBasis = basis;
                 f.lastBasisBodyId = primary->id;
             }
-            // the J speed cap: the field does not carry the ship above 0.9 c against the reference body
-            f.jCapCutDvMps = 0.0;
+            // the medium (author 2026-11-12, replaces the fixed 0.9 c cap): above ~0.1 c against the dominant body
+            // the swept-up particles resist exponentially; the J thrust holds the speed where the two are equal
+            f.jMediumMps2 = 0.0;
             if (primary && f.lastPrimaryId == primary->id && dt > 0.0 && !f.ground.active)
             {
+                namespace jd = game::navigation::jdrive;
                 const glm::dvec3 refVel = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
                 const glm::dvec3 rel = frame.linearVelocityMps - refVel;
-                // the cap shrinks with the field (one emitter lost: half); no field: the J cap does not bind here,
-                // the ship is on its main engines
-                const double fieldCap = game::navigation::jdrive::SpeedCapMps *
-                    std::max(0.5, game::navigation::jdrive::jFieldFactor(jFieldOf(*ship)));
-                if (glm::length(rel) > fieldCap)
+                const double speed = glm::length(rel);
+                // an asymmetric field (one emitter lost) halves every speed of the law; no field: the hull alone
+                // keeps the damaged-field law
+                const double speedScale = std::max(0.5, jd::jFieldFactor(jFieldOf(*ship)));
+                const double resist = jd::mediumResistanceMps2(speed, speedScale);
+                if (resist > 0.0)
                 {
-                    f.jCapCutDvMps = glm::length(rel) - fieldCap;
-                    frame.linearVelocityMps = refVel + rel * (fieldCap / glm::length(rel));
+                    const double newSpeed = std::max(jd::MediumOnsetMps * speedScale, speed - resist * dt);
+                    f.jMediumMps2 = (speed - newSpeed) / dt;
+                    frame.linearVelocityMps = refVel + rel * (newSpeed / speed);
                 }
             }
             f.lastPrimaryId = primary ? primary->id : std::string();

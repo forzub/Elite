@@ -6,7 +6,8 @@
 // crew do not feel the drive's acceleration, the motion still follows gravity.
 //   - acceleration up to ~1e5 g, so the inner solar system is crossed within an
 //     hour (Earth -> Jupiter ~45-65 min);
-//   - speed cap 0.9 c against the J reference body (the field collapses above it);
+//   - no fixed speed cap: the medium resists above ~0.1 c (exponentially, against the dominant body's frame), the
+//     full thrust holds ~0.9 c (author 2026-11-12, see mediumResistanceMps2);
 //   - the field does not work near objects: within the keep-out of a hub,
 //     station, beacon (KeepOutObjectM) or another ship (KeepOutShipM) the drive
 //     is limited to a gentle main-drive-like push (GentleAccelMps2, GentleSpeedMps
@@ -39,7 +40,37 @@ namespace game::navigation::jdrive
 constexpr double StandardGravityMps2 = 9.80665;
 constexpr double LightSpeedMps = 299792458.0;
 constexpr double MaxAccelMps2 = 1.0e5 * StandardGravityMps2;   // ~980 km/s2
-constexpr double SpeedCapMps = 0.9 * LightSpeedMps;              // ~269 800 km/s
+// The top speed is not a fixed cap but the medium (author 2026-11-12): space is not a perfect vacuum - above
+// MediumOnsetMps the particles the ship (its J field) sweeps up resist, exponentially with the speed, against the
+// medium's rest frame (the dominant body / the star). The ship flies where the J thrust equals that resistance:
+// the terminal speed grows with the thrust, slowly (+MediumScaleMps per e-fold of thrust). The thrust that only holds
+// the speed still burns the J charge - that is where the energy goes.
+//   resistance(v) = MediumDragA0 * (exp((v - onset) / scale) - 1),  v > onset
+//   terminal(a)   = onset + scale * ln(1 + a / MediumDragA0)
+// Calibrated so that the full 1e5 g holds the old 0.9 c (SpeedCapMps, now the terminal speed at a_max):
+// 1e3 g -> 0.44 c, 1e4 g -> 0.67 c, 1e5 g -> 0.9 c.
+constexpr double SpeedCapMps = 0.9 * LightSpeedMps;              // ~269 800 km/s: the terminal speed at MaxAccelMps2
+constexpr double MediumOnsetMps = 0.1 * LightSpeedMps;           // ~30 000 km/s: below it the medium is negligible
+constexpr double MediumScaleMps = 0.1 * LightSpeedMps;
+// a_max / (e^((cap - onset) / scale) - 1) = 1e5 g / (e^8 - 1) ~ 33.6 g
+inline double mediumDragA0Mps2()
+{
+    return MaxAccelMps2 / (std::exp((SpeedCapMps - MediumOnsetMps) / MediumScaleMps) - 1.0);
+}
+// the medium's resistance (m/s2, against the motion) at `speedMps` relative to the medium; `speedScale` < 1 for an
+// asymmetric field (one emitter lost: every speed of the law halves)
+inline double mediumResistanceMps2(double speedMps, double speedScale = 1.0)
+{
+    const double onset = MediumOnsetMps * speedScale;
+    if (speedMps <= onset)
+        return 0.0;
+    return mediumDragA0Mps2() * (std::exp((speedMps - onset) / (MediumScaleMps * speedScale)) - 1.0);
+}
+// the speed the J thrust `accelMps2` holds against the medium
+inline double mediumTerminalSpeedMps(double accelMps2, double speedScale = 1.0)
+{
+    return speedScale * (MediumOnsetMps + MediumScaleMps * std::log1p(std::max(0.0, accelMps2) / mediumDragA0Mps2()));
+}
 constexpr double KeepOutObjectM = 20000.0;                       // hubs, stations, beacons
 constexpr double KeepOutShipM = 5000.0;                          // other ships
 constexpr double GentleAccelMps2 = 9.81;

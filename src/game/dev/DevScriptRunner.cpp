@@ -181,6 +181,9 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         if (s.m_systemMapRenderer.mode() != SystemMapRenderer::Mode::System)
             s.setSystemMapLoadedSystemMode();
     }
+    // F12: the local map (the player's hub, or the cube the player can be followed in)
+    else if (cmd == "local")
+        s.context().app->requestNavigationView(NavigationPresentationView::Local);
     else if (cmd == "grid")
         s.m_systemMapRenderer.toggleSystemGridOverlay();
     else if (cmd.rfind("body:", 0) == 0)

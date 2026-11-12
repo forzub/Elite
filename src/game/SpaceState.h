@@ -329,6 +329,8 @@ private:
         const std::string& focusId,
         world::celestial::DetailTarget& outTarget
     ) const;
+    // the speed (system frame) of the object a local cube follows: picks the cube level it can be followed in
+    double localCubeFocusSpeedMps(const std::string& focusId) const;
     // System-local AU of the object a local cube follows ("player", "entity:N").
     bool resolveLocalCubeFocusAu(const std::string& focusId, int systemId, glm::dvec3& outAu) const;
     // F12 from an open System / Detail map with a selected object: its hub

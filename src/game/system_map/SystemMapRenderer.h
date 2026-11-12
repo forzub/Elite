@@ -436,6 +436,9 @@ private:
     std::string m_devPointerSpec;
     int m_devPointerFrame = 0;
     glm::dvec2 m_devPointerAt {-1.0};
+    // the System map's presentation + scene frame for this input pass (picking / selection context)
+    void prepareSystemInputFrame(const Viewport& vp, const world::celestial::SystemMapSnapshot& system,
+                                 double nowSeconds);
     bool driveDevPointer(const Viewport& vp, double& mx, double& my, bool& leftDown, bool& rightDown,
                          const world::celestial::GalaxyMapSnapshot* galaxy = nullptr);
     // a hub / beacon picked from the panel list; kept a few frames until its marker exists
@@ -540,7 +543,8 @@ public:
     void devDetailOrbit(double yaw, double pitch) { m_detailView.camera().yaw += yaw; m_detailView.camera().pitch += pitch; }
     // DEV: a scripted pointer gesture on the current map, fed through the
     // production input path: "click:<objectId>", "dclick:<objectId>",
-    // "rclick:<objectId>" (right click = context menu), "menu:<command>"
+    // "rclick:<objectId>" (right click = context menu), "menu:<command>"; <objectId> may be
+    // "carousel:<bodyId>" / "carousel:#N" (a globe of the System map planet strip),
     // (left click on the open context-menu row with that command).
     void devPointer(const std::string& spec) { m_devPointerSpec = spec; m_devPointerFrame = 0; }
     // DEV: overlay objects of the current map (id, name, next-map hub, screen px).
@@ -990,6 +994,8 @@ private:
     std::string m_hoveredMapButton;
     // System map planet strip (bottom): globes in orbit order, a click selects the planet
     game::system_map::SystemMapPlanetCarousel m_planetCarousel;
+    // double click on a carousel planet = the map's own double click on it (approach + follow)
+    game::presentation::PointerClickTracker<std::string> m_carouselClickTracker;
     int m_galaxyBreadcrumbHovered = -1;
 
     // Back history (previous maps with their views).

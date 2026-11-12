@@ -322,17 +322,28 @@ SystemMapRenderer::handleInput(
             inside ? localMx : -1.0e9, inside ? localMy : -1.0e9, leftDown, m_pendingScrollY, picked);
         if (!picked.empty())
         {
-            if (m_systemFramePrepared)
-            {
-                const game::system_map::SystemMapFrameInteractionContext context(
-                    m_systemSceneFrame.interaction, m_systemView.controls());
-                m_systemInteraction.focusBodySelection(m_systemView, context, picked, inputNowSeconds);
-            }
+            // the selection / approach run in this pass's scene frame (the one picking uses)
+            prepareSystemInputFrame(vp, system, inputNowSeconds);
+            const game::system_map::SystemMapFrameInteractionContext context(
+                m_systemSceneFrame.interaction, m_systemView.controls());
+            m_systemInteraction.focusBodySelection(m_systemView, context, picked, inputNowSeconds);
             auto& state = m_systemView.state();
             state.selectedBodyId = picked;
             state.selectedHubId.clear();
             state.selectedHubParentBodyId.clear();
             m_objectOverlayState.clearActive();
+
+            // Double click: the camera approaches the planet exactly as a double click on it in the map does.
+            if (m_carouselClickTracker.registerClick(inputNowSeconds, localMx, localMy, picked))
+            {
+                game::system_map::SystemPointerTarget target;
+                target.kind = game::system_map::SystemPointerTarget::Kind::Body;
+                target.bodyId = picked;
+                game::system_map::SystemMapInputResult result;
+                if (m_systemInteraction.descendTarget(m_systemView, context, vp, target, inputNowSeconds, result) &&
+                    result.systemLevelChanged.has_value())
+                    announceNavigationLevel('S', result.systemLevelChanged.value());
+            }
             m_systemSceneFrameDirty = true;
         }
         if (taken)
@@ -438,30 +449,7 @@ SystemMapRenderer::handleInput(
 
     if (m_modeState.current() == Mode::System)
     {
-        m_systemPresentation =
-            m_systemPresentationBuilder.build(
-                m_systemView,
-                vp,
-                system,
-                inputNowSeconds,
-                false
-            );
-
-        updateSelectedBodyTracking(
-            m_systemPresentation
-        );
-
-        m_systemSceneFrame =
-            m_systemSceneFrameBuilder.build(
-                m_systemView,
-                *this,
-                vp,
-                system,
-                m_systemPresentation
-            );
-
-        m_systemFramePrepared = true;
-        m_systemSceneFrameDirty = false;
+        prepareSystemInputFrame(vp, system, inputNowSeconds);
 
         const auto cameraBefore =
             m_systemView.state().camera;
@@ -1283,6 +1271,16 @@ bool SystemMapRenderer::moveSystemCubeSelection(int dx, int dy, double nowSecond
 }
 
 
+void SystemMapRenderer::prepareSystemInputFrame(
+    const Viewport& vp, const world::celestial::SystemMapSnapshot& system, double nowSeconds)
+{
+    m_systemPresentation = m_systemPresentationBuilder.build(m_systemView, vp, system, nowSeconds, false);
+    updateSelectedBodyTracking(m_systemPresentation);
+    m_systemSceneFrame = m_systemSceneFrameBuilder.build(m_systemView, *this, vp, system, m_systemPresentation);
+    m_systemFramePrepared = true;
+    m_systemSceneFrameDirty = false;
+}
+
 // ============================================================================
 // DEV scripted pointer (ELITE_DEV_SOL_MAP_SCRIPT "pointer:<spec>")
 // ============================================================================
@@ -1335,6 +1333,13 @@ bool SystemMapRenderer::driveDevPointer(
                 if (clip.w > 0.0f)
                     at = glm::dvec2((clip.x / clip.w * 0.5f + 0.5f) * vp.width, (1.0f - (clip.y / clip.w * 0.5f + 0.5f)) * vp.height);
             }
+    }
+    else if (m_modeState.current() == Mode::System && arg.rfind("carousel:", 0) == 0)
+    {
+        // a planet's globe in the System map planet strip
+        const glm::vec2 c = m_planetCarousel.itemScreenCenter(arg.substr(9));
+        if (c.x >= 0.0f)
+            at = glm::dvec2(c.x, c.y);
     }
     else
     {

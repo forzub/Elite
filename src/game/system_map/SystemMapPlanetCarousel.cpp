@@ -1,6 +1,7 @@
 #include "src/game/system_map/SystemMapPlanetCarousel.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cmath>
 #include <filesystem>
 #include <map>
@@ -294,6 +295,23 @@ int SystemMapPlanetCarousel::itemAt(double x, double y) const
             return static_cast<int>(i);
     }
     return -1;
+}
+
+glm::vec2 SystemMapPlanetCarousel::itemScreenCenter(const std::string& bodyId) const
+{
+    if (!m_visible)
+        return glm::vec2(-1.0f);
+    // "#N" = the N-th globe of the strip (0-based; the DEV environment is not UTF-8, ids may be Cyrillic)
+    const int index = !bodyId.empty() && bodyId[0] == '#' ? std::atoi(bodyId.c_str() + 1) : -1;
+    for (std::size_t i = 0; i < m_items.size(); ++i)
+        if (const auto& it = m_items[i]; it.bodyId == bodyId || static_cast<int>(i) == index)
+        {
+            const float cx = m_content.x + it.centerX - m_scroll;
+            if (cx < m_content.x || cx > m_content.z)
+                return glm::vec2(-1.0f);
+            return glm::vec2(cx, m_globeRowY);
+        }
+    return glm::vec2(-1.0f);
 }
 
 bool SystemMapPlanetCarousel::handlePointer(double x, double y, bool leftDown, double& wheelY,

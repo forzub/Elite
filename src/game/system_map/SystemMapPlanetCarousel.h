@@ -52,6 +52,9 @@ public:
     // was clicked (press and release on it without dragging).
     bool handlePointer(double x, double y, bool leftDown, double& wheelY, std::string& clickedBodyId);
 
+    // DEV pointer: screen centre of a planet's globe when it is shown in the strip (else x < 0)
+    glm::vec2 itemScreenCenter(const std::string& bodyId) const;
+
     void reset();
     bool visible() const noexcept { return m_visible; }
 

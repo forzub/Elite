@@ -5405,3 +5405,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Live-run note: automated runs need `--dev-direct-flight` (without it the game waits in the WebView main menu
   and every capture is black - the "environment" black frames of 2026-11-11 evening were this).
   Map in another system: ELITE_DEV_START=body:<stem>@<id> and ONE `system` verb after the move.
+
+## PLANET CAROUSEL DOUBLE CLICK = APPROACH 2026-11-12 (author)
+- A double click on a carousel globe runs the map's own double-click action on that planet
+  (SystemMapInteraction::descendTarget: its cube becomes the parent, the camera approaches and follows it).
+- Root cause found on the way: the carousel pick ran before the input pass built the System scene frame
+  (m_systemFramePrepared is reset by every draw), so focusBodySelection was silently skipped - a single click
+  only set selectedBodyId. New SystemMapRenderer::prepareSystemInputFrame builds the frame; the carousel pick
+  and the regular input path both use it.
+- DEV pointer: `pointer:click|dclick:carousel:<bodyId>` or `carousel:#N` (N-th globe; the DEV env is not UTF-8).
+- LIVE (D:/tmp/naming/dc/c.png): Sol, `pointer:dclick:carousel:#4` -> Jupiter selected, map S1 -> S2,
+  66.846 AU -> 3.342 AU, Jupiter centred and followed (СЛЕЖЕНИЕ), panel «Юпитер» with DETAILS.

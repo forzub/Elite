@@ -1929,7 +1929,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         thrust = j;
         // the medium (author 2026-11-12): above ~0.1 c the swept-up particles resist - say how much of the thrust
         // goes into holding the speed
-        if (const double medium = game::navigation::jdrive::mediumResistanceMps2(glm::length(relative)); medium > 0.0)
+        if (const double medium = game::navigation::jdrive::mediumResistanceMps2(glm::length(relative)); medium >= 0.5 * 9.81)
         {
             std::snprintf(j, sizeof j, "  ·  сопротивление среды %.0f g",
                           hudSignificant(hudSteady("hud.j.medium", medium / 9.81, 0.01, 5.0), 3));

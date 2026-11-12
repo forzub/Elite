@@ -884,12 +884,15 @@ void SpaceState::handleInput()
             });
         }
         if (const auto jump = m_systemMapRenderer.consumeJumpRequest(); jump.kind != 0)
-            handleJumpRequest(jump.kind, jump.systemId);
+            handleJumpRequest(jump.kind, jump.systemId, jump.bodyId);
         if (m_client)
             if (const auto self = m_client->world().ships().find(m_playerId.value); self != m_client->world().ships().end())
             {
                 const auto& jm = self->second.transform.motion;
-                m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, jm.jumpState == 1 || jm.jumpState == 2 ? jm.jumpTargetSystemId : -1);
+                const bool charging = jm.jumpState == 1 || jm.jumpState == 2;
+                const bool inSystem = charging && jm.jumpTargetSystemId == jm.systemId;
+                m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, charging && !inSystem ? jm.jumpTargetSystemId : -1,
+                                                 m_jumpCalculatedBodyId, inSystem ? m_jumpRequestedBodyId : std::string());
             }
         if (const int launch = m_systemMapRenderer.consumeRouteLaunchRequest())
             launchPlannedRoute(launch != 2, launch != 3);

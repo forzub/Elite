@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <cmath>
 
+#include <glm/glm.hpp>
+
 #include "src/game/navigation/rules/JDrive.h"
 
 namespace game::navigation::jump
@@ -36,8 +38,78 @@ enum class Refusal : std::uint8_t
     Interrupted = 9,         // the ship left normal flight during the charge-up
     FieldIncomplete = 10,    // a jump-field emitter (or the core) is lost - repair first (author 2026-11-10)
     ShipDisabled = 11,       // the charge-up ended: the ship is out of the fight (cockpit / all reactors lost)
-    ShipDestroyed = 12       // the charge-up ended: the ship was destroyed (impact / dense atmosphere)
+    ShipDestroyed = 12,      // the charge-up ended: the ship was destroyed (impact / dense atmosphere)
+    StarInTheWay = 13,       // an in-system jump whose straight step crosses the star's capture sphere
+    TooClose = 14,           // an in-system jump shorter than InSystemMinAu: fly it in J
+    UnknownBody = 15         // an in-system jump to a body this system does not have
 };
+
+// ---- the in-system jump (author 2026-11-05 decision 3, implemented 2026-11-12: "inside a system one can and should
+// jump, but dearly - the payment is the charge and the risk where there are no beacons"; Pluto in J is ~8 h):
+//   charge   = q * (alpha + M) * (InSystemBaseLy + InSystemLyPerAu * d_AU): half a mean jump to tear the field at all,
+//              +5 % of a mean jump per AU (Earth -> Jupiter ~0.7, Earth -> Pluto ~2.5 mean jumps);
+//   charge-up 2..5 min by the distance (up to 40 AU);
+//   the exit error: InSystemErrorFraction of the distance (one sigma) / the beacon lock (no beacon: 4 AU -> ~600 000 km;
+//              both ends on beacons x200 -> ~3 000 km);
+//   the star catches the step (decision 8): a straight step through its capture sphere (StarCaptureAu x sqrt(M/Msun))
+//              is refused - jump around it through an intermediate point; shorter than InSystemMinAu: fly in J.
+constexpr double AuM = 1.495978707e11;
+constexpr double InSystemBaseLy = 0.5 * jdrive::MeanJumpLy;
+constexpr double InSystemLyPerAu = 0.05 * jdrive::MeanJumpLy;
+constexpr double InSystemMinAu = 0.05;
+constexpr double InSystemMinChargeSeconds = 120.0;
+constexpr double InSystemMaxChargeSeconds = 300.0;
+constexpr double InSystemFullChargeAu = 40.0;
+constexpr double InSystemErrorFraction = 1.0e-3;
+constexpr double StarCaptureAu = 0.3;
+constexpr double SunMuM3s2 = 1.32712440018e20;
+
+inline double inSystemChargeT(double distanceAu, double massT)
+{
+    return jdrive::JumpChargePerLyT * (InSystemBaseLy + InSystemLyPerAu * std::max(0.0, distanceAu)) *
+           (jdrive::JumpEnvelopeT + std::max(0.0, massT));
+}
+
+inline double inSystemChargeUpSeconds(double distanceAu)
+{
+    return InSystemMinChargeSeconds +
+           (InSystemMaxChargeSeconds - InSystemMinChargeSeconds) * std::clamp(distanceAu / InSystemFullChargeAu, 0.0, 1.0);
+}
+
+inline double inSystemExitSigmaM(double distanceAu, double lockFactor)
+{
+    return distanceAu * AuM * InSystemErrorFraction / std::max(1.0, lockFactor);
+}
+
+inline double starCaptureRadiusM(double starMuM3s2)
+{
+    return StarCaptureAu * AuM * std::sqrt(std::max(0.0, starMuM3s2) / SunMuM3s2);
+}
+
+// the closest approach of the segment a -> b to the point c (metres)
+inline double segmentDistanceM(const glm::dvec3& a, const glm::dvec3& b, const glm::dvec3& c)
+{
+    const glm::dvec3 ab = b - a;
+    const double len2 = glm::dot(ab, ab);
+    const double t = len2 > 0.0 ? std::clamp(glm::dot(c - a, ab) / len2, 0.0, 1.0) : 0.0;
+    return glm::length(a + ab * t - c);
+}
+
+// the in-system checks before START (the server repeats them); the star's position / mu for the capture rule
+inline Refusal checkInSystem(const glm::dvec3& fromM, const glm::dvec3& toM, const glm::dvec3& starM, double starMu,
+                             double massT, double coreRatingT, double chargeLeftT)
+{
+    const double d = glm::length(toM - fromM) / AuM;
+    if (d < InSystemMinAu)
+        return Refusal::TooClose;
+    if (coreRatingT <= 0.0 || massT > coreRatingT)
+        return Refusal::CoreOverloaded;
+    if (segmentDistanceM(fromM, toM, starM) < starCaptureRadiusM(starMu))
+        return Refusal::StarInTheWay;
+    if (chargeLeftT + 1.0e-9 < inSystemChargeT(d, massT))
+        return Refusal::NotEnoughCharge;
+    return Refusal::None;
+}
 
 inline double chargeT(double distanceLy, double massT)
 {
@@ -97,6 +169,9 @@ inline const char* refusalText(Refusal r)
     case Refusal::FieldIncomplete: return "поле прыжка неполное: повреждён излучатель поля или ядро - нужен ремонт";
     case Refusal::ShipDisabled: return "зарядка прервана: корабль выведен из строя";
     case Refusal::ShipDestroyed: return "зарядка прервана: корабль разрушен";
+    case Refusal::StarInTheWay: return "прямой шаг проходит через зону захвата звезды - прыгайте через промежуточную точку";
+    case Refusal::TooClose: return "цель ближе 0.05 а.е. - туда летят на J";
+    case Refusal::UnknownBody: return "тело не найдено в системе";
     default: return "";
     }
 }

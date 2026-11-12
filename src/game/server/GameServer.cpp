@@ -1073,7 +1073,8 @@ void GameServer::update(double dt)
                     // the exit body (unless the pilot named one): the planet with the most world sites,
                     // else the canon (observed / authored) planet, else the heaviest planet
                     std::string exitBody = shipCmd.detail;
-                    if (exitBody.empty() && to)
+                    // (an in-system jump names its body; without one the same system is refused)
+                    if (exitBody.empty() && to && from != to)
                         if (const auto* system = m_starAtlas.findSystem(to->id))
                         {
                             std::map<std::string, int> sitesOnBody;
@@ -1095,7 +1096,14 @@ void GameServer::update(double dt)
                                 }
                             }
                         }
-                    m_simulation.requestJump(id, to ? to->id : -1, to ? to->name : std::string(), distanceLy, exitBody);
+                    // an in-system jump is named after its body (the terminal shows "переход к <тело>")
+                    std::string targetName = to ? to->name : std::string();
+                    if (from && to && from == to && !exitBody.empty())
+                        if (const auto* system = m_starAtlas.findSystem(to->id))
+                            for (const auto& b : system->bodies)
+                                if (b.id == exitBody && !b.name.empty())
+                                    targetName = b.name;
+                    m_simulation.requestJump(id, to ? to->id : -1, targetName, distanceLy, exitBody);
                     break;
                 }
 

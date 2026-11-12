@@ -28,10 +28,15 @@ std::string minutes(double seconds)
 }
 }
 
-void SpaceState::handleJumpRequest(int kind, int systemId)
+void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bodyId)
 {
     if (!m_client)
         return;
+    if (!bodyId.empty() && kind != 3)
+    {
+        handleInSystemJumpRequest(kind, systemId, bodyId);
+        return;
+    }
     const auto& ships = m_client->world().ships();
     const auto it = ships.find(m_playerId.value);
     if (it == ships.end())
@@ -65,6 +70,7 @@ void SpaceState::handleJumpRequest(int kind, int systemId)
             std::snprintf(b, sizeof b, "ПРЫЖОК %s: %.1f св. лет, заряд %.2f из %.2f т, зарядка %s - можно СТАРТ", to->name.c_str(), d,
                           jr::chargeT(d, motion.shipMassT), motion.jChargeT, minutes(jr::chargeUpSeconds(d)).c_str());
             m_jumpCalculatedSystemId = systemId;
+            m_jumpCalculatedBodyId.clear();
         }
         else
         {
@@ -86,6 +92,81 @@ void SpaceState::handleJumpRequest(int kind, int systemId)
         msg.payload = command;
         m_client->sendMessage(msg);
         m_jumpCalculatedSystemId = -1;
+    }
+}
+
+void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::string& bodyId)
+{
+    const auto& ships = m_client->world().ships();
+    const auto it = ships.find(m_playerId.value);
+    if (it == ships.end())
+        return;
+    const auto& motion = it->second.transform.motion;
+    const auto* snap = m_client->celestialSnapshot();
+    if (systemId != motion.systemId || !snap || snap->systemId != motion.systemId)
+    {
+        m_pilotNotice = "ПРЫЖОК ВНУТРИ СИСТЕМЫ: только в системе, где корабль";
+        return;
+    }
+    const world::celestial::CelestialBodyState* target = nullptr;
+    const world::celestial::CelestialBodyState* star = nullptr;
+    for (const auto& b : snap->bodies)
+    {
+        if (b.id == bodyId)
+            target = &b;
+        if (b.type == world::celestial::BodyType::Star && b.parentId.empty() && !star)
+            star = &b;
+    }
+    if (!target || !star || target == star)
+    {
+        m_pilotNotice = std::string("ПРЫЖОК: нельзя - ") + jr::refusalText(jr::Refusal::UnknownBody);
+        return;
+    }
+    // the star's mass for its capture sphere (the atlas definition; the Sun's if unknown)
+    double starMu = jr::SunMuM3s2;
+    if (const auto* atlas = m_client->starAtlas())
+        if (const auto* system = atlas->findSystem(systemId))
+            for (const auto& b : system->bodies)
+                if (b.id == star->id && b.massKg > 0.0)
+                    starMu = 6.6743e-11 * b.massKg;
+    const glm::dvec3 from = world::coordinates::fullMeters(it->second.transform.worldPosition);
+    const double dAu = glm::length(target->worldMeters - from) / jr::AuM;
+    const double chargeLeft = motion.jChargeT < 0.0 ? motion.jChargeCapacityT : motion.jChargeT;
+    const auto r = jr::checkInSystem(from, target->worldMeters, star->worldMeters, starMu, motion.shipMassT,
+                                     motion.jumpCoreRatingT, chargeLeft);
+    const std::string name = target->name.empty() ? bodyId : target->name;
+    if (kind == 1)
+    {
+        char b[320];
+        if (r == jr::Refusal::None)
+        {
+            std::snprintf(b, sizeof b, "ПРЫЖОК К %s: %.2f а.е., заряд %.2f из %.2f т, зарядка %s - можно СТАРТ", name.c_str(), dAu,
+                          jr::inSystemChargeT(dAu, motion.shipMassT), chargeLeft, minutes(jr::inSystemChargeUpSeconds(dAu)).c_str());
+            m_jumpCalculatedSystemId = -1;   // the star menu's START is for other systems
+            m_jumpCalculatedBodyId = bodyId;
+        }
+        else
+        {
+            std::snprintf(b, sizeof b, "ПРЫЖОК К %s (%.2f а.е.): нельзя - %s", name.c_str(), dAu, jr::refusalText(r));
+            m_jumpCalculatedSystemId = -1;
+            m_jumpCalculatedBodyId.clear();
+        }
+        m_pilotNotice = b;
+        std::cerr << "[Jump] in-system calculated: " << m_pilotNotice << std::endl;
+        return;
+    }
+    if (kind == 2 && bodyId == m_jumpCalculatedBodyId)
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::RequestJump;
+        command.index = systemId;
+        command.detail = bodyId;
+        msg.payload = command;
+        m_client->sendMessage(msg);
+        m_jumpRequestedBodyId = bodyId;
+        m_jumpCalculatedSystemId = -1;
+        m_jumpCalculatedBodyId.clear();
     }
 }
 
@@ -244,11 +325,16 @@ void SpaceState::updateJumpPresentation()
         if (motion.jumpState == 1 && was != 1)
         {
             m_jumpTerminalLines.clear();
-            std::snprintf(b, sizeof b, "ПРЫЖОК: начата процедура - цель %s, %.1f св. лет", motion.jumpTargetName.c_str(), motion.jumpDistanceLy);
+            if (motion.jumpTargetSystemId == motion.systemId)
+                std::snprintf(b, sizeof b, "ПРЫЖОК ВНУТРИ СИСТЕМЫ: начата процедура - цель %s, %.2f а.е.", motion.jumpTargetName.c_str(),
+                              motion.jumpDistanceLy * jr::MetersPerLy / jr::AuM);
+            else
+                std::snprintf(b, sizeof b, "ПРЫЖОК: начата процедура - цель %s, %.1f св. лет", motion.jumpTargetName.c_str(), motion.jumpDistanceLy);
             addJumpTerminalLine(b);
             std::snprintf(b, sizeof b, "ЯДРО: зарядка %s, расход заряда %.2f т", minutes(motion.jumpChargeDurationS).c_str(), motion.jumpCostT);
             addJumpTerminalLine(b);
-            addJumpTerminalLine("отмена: карта галактики -> звезда -> ОТМЕНИТЬ ПРЫЖОК");
+            addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId ? "отмена: карта системы -> цель -> ОТМЕНИТЬ ПРЫЖОК"
+                                                                             : "отмена: карта галактики -> звезда -> ОТМЕНИТЬ ПРЫЖОК");
         }
         else if (motion.jumpState == 2)
             addJumpTerminalLine("ЯДРО ЗАРЯЖЕНО: прыжок ждёт - отойдите от объектов (20 км) и выше J-порога", true);
@@ -260,7 +346,8 @@ void SpaceState::updateJumpPresentation()
     {
         m_jumpSeenSerial = motion.jumpSerial;
         m_jumpFxStart = now;
-        addJumpTerminalLine("ПРЫЖОК: переход в систему " + motion.jumpTargetName);
+        addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId ? "ПРЫЖОК: переход к " + motion.jumpTargetName
+                                                                         : "ПРЫЖОК: переход в систему " + motion.jumpTargetName);
         std::cerr << "[Jump] client: jumped to " << motion.jumpTargetName << std::endl;
         // the rays: the brightest stars of either sky, their directions from the old and the new place
         m_jumpRays.clear();
@@ -328,7 +415,9 @@ void SpaceState::updateJumpPresentation()
             }
         const glm::dvec3 p = (world::coordinates::fullMeters(it->second.transform.worldPosition) - star) / AuM;
         char b[256];
-        addJumpTerminalLine("ПРЫЖОК ЗАВЕРШЁН: система " + motion.jumpTargetName);
+        addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId && !motion.jumpTargetName.empty()
+                                ? "ПРЫЖОК ЗАВЕРШЁН: " + motion.jumpTargetName
+                                : "ПРЫЖОК ЗАВЕРШЁН: система " + motion.jumpTargetName);
         const bool atStar = motion.jumpExitAltitudeM > 0.5 * AuM;
         if (atStar)
             addJumpTerminalLine("ВЫХОД: открытый космос, " + distanceText(motion.jumpExitAltitudeM) + " от звезды");
@@ -489,7 +578,12 @@ void SpaceState::renderHudJump(const Viewport& viewport)
     if (it == ships.end())
         return;
     const auto& motion = it->second.transform.motion;
-    m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, motion.jumpState == 1 || motion.jumpState == 2 ? motion.jumpTargetSystemId : -1);
+    {
+        const bool charging = motion.jumpState == 1 || motion.jumpState == 2;
+        const bool inSystem = charging && motion.jumpTargetSystemId == motion.systemId;
+        m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, charging && !inSystem ? motion.jumpTargetSystemId : -1,
+                                         m_jumpCalculatedBodyId, inSystem ? m_jumpRequestedBodyId : std::string());
+    }
 
     // DEV diagnosis for 5 s after a jump: what the client draws against (celestial snapshot, the
     // player's position against its bodies)

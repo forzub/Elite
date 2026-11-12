@@ -761,6 +761,8 @@ private:
         int waitTicks = 0;
         std::string exitSampleId;
         glm::dvec3 exitLastCentre {0.0};
+        bool inSystem = false;     // an in-system jump (JumpRules.h): no system change, the exit at exitBodyId
+        double distanceAu = 0.0;
     };
     std::unordered_map<EntityId, ActiveJump> m_jumps;
     void updateJumps(double dt);

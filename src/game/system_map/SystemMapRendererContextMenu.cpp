@@ -490,6 +490,16 @@ bool SystemMapRenderer::openContextMenu(
             }
             appendBodyFinishRows(target.bodyId);
             m_contextMenu.rows.push_back({text.contextDetails, "details", true});
+            // the in-system jump to this body (author 2026-11-12): calculate first, START only for the calculated body
+            m_contextMenu.systemId = system.systemId;
+            if (!m_jumpChargingBodyId.empty() && m_jumpChargingBodyId == target.bodyId)
+                m_contextMenu.rows.push_back({"ОТМЕНИТЬ ПРЫЖОК", "jump:cancel", true});
+            else
+            {
+                m_contextMenu.rows.push_back({"РАССЧИТАТЬ ПРЫЖОК", "jump:calc", true});
+                m_contextMenu.rows.push_back({"ПРЫЖОК: СТАРТ", "jump:start",
+                                              m_jumpCalculatedBodyId == target.bodyId && m_jumpChargingSystemId < 0});
+            }
         }
         else if (target.kind == Kind::Hub)
         {
@@ -593,6 +603,7 @@ std::optional<game::system_map::MapIntent> SystemMapRenderer::executeContextComm
     {
         m_pendingJump.kind = command == "jump:calc" ? 1 : command == "jump:start" ? 2 : 3;
         m_pendingJump.systemId = menu.systemId;
+        m_pendingJump.bodyId = menu.targetKind == Menu::TargetKind::Body ? menu.bodyId : std::string();
         return std::nullopt;
     }
 

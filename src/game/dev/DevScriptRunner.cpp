@@ -511,7 +511,17 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         const std::string rest = cmd.substr(7);
         const int kind = rest.rfind("calc", 0) == 0 ? 1 : rest.rfind("start", 0) == 0 ? 2 : 3;
         const auto colon = rest.find(':');
-        s.handleJumpRequest(kind, colon == std::string::npos ? -1 : std::atoi(rest.c_str() + colon + 1));
+        // "jumpui:calc|start:<system id>:<body>" - the in-system jump (the body: an ASCII alias or an id)
+        std::string body;
+        if (colon != std::string::npos)
+            if (const auto second = rest.find(':', colon + 1); second != std::string::npos)
+            {
+                body = rest.substr(second + 1);
+                for (const auto& [k, v] : FocusBodyAliases)
+                    if (body == k)
+                        body = v;
+            }
+        s.handleJumpRequest(kind, colon == std::string::npos ? -1 : std::atoi(rest.c_str() + colon + 1), body);
     }
     // the interstellar jump: "jump:<system id>[:<exit body id>]" (START), "jump:cancel"
     else if (cmd.rfind("jump:", 0) == 0)

@@ -350,13 +350,17 @@ private:
     // the presentation (author 2026-11-09, SpaceStateJump.cpp): the terminal's lines and charge bar,
     // the cockpit's shake and fish-eye swell while charging, the fling forward at the jump, the
     // star rays from the old sky to the new one, the report of the exit
-    void handleJumpRequest(int kind, int systemId);
+    void handleJumpRequest(int kind, int systemId, const std::string& bodyId = {});
+    // the in-system jump (author 2026-11-12): calculate / START to a body of the player's system
+    void handleInSystemJumpRequest(int kind, int systemId, const std::string& bodyId);
     void updateJumpPresentation();                       // renderUI, before the scene: events, the effect's frame
     void renderJumpStarRays(const Viewport& viewport);   // on the glass, under the cockpit frame
     void applyJumpScreenEffect();                        // over the cockpit and its instruments
     void renderHudJump(const Viewport& viewport);
     void addJumpTerminalLine(const std::string& text, bool warning = false);
     int m_jumpCalculatedSystemId = -1;
+    std::string m_jumpCalculatedBodyId;    // in-system: the calculated target body
+    std::string m_jumpRequestedBodyId;     // in-system: the body START was sent for (the charging one)
     std::uint16_t m_jumpSeenSerial = 0;
     std::uint16_t m_jumpSeenRefusalSerial = 0;
     std::uint16_t m_jumpSeenExitSerial = 0;

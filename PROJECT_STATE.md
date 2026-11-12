@@ -5457,3 +5457,21 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   significant digits) on the top flight line speed, the J line (accel / command / medium), the "V" line, the cockpit
   speed and J text. LIVE (D:/tmp/jcap/hstack.png, 4 frames 0.5 s apart at 0.88 c): "264500 км/с", "+16300 g",
   "сопротивление среды 83600 g", the line width unchanged.
+
+## MEDIUM CURVE 0.6 c + IN-SYSTEM JUMP + J 10x CHEAPER 2026-11-12 (author)
+- Author: free coasting up to 0.6 c, above it a steep curve so that near 0.9 c no thrust adds much; throttle off -> the
+  medium brakes along the curve down to 0.6 c, then inertia. JDrive.h: onset 0.6 c, scale 0.02 c, A0 ~0.03 g
+  (terminal 1 g 0.67 c, 1e3 g 0.81 c, 1e4 g 0.85 c, 1e5 g 0.9 c). HUD medium text from 0.5 g.
+  LIVE (D:/tmp/jcap/med2.txt): full 1e5 g net up to ~0.75 c, 88 000 g at 256 928 km/s, 43 g at 269 811 km/s; J off at
+  0.9 c -> ~0.84 c fast, then slowly (252 453 -> 251 452 km/s in 20 s).
+- Author: "inside a system one can and should jump, dearly - the charge and the risk without beacons". IMPLEMENTED
+  (JumpRules.h in-system section, GameSimulationJump inSystem branch, GameServer names the body, client
+  SpaceState::handleInSystemJumpRequest, System map body context menu РАССЧИТАТЬ ПРЫЖОК / ПРЫЖОК: СТАРТ / ОТМЕНИТЬ):
+  charge q(alpha+M)(0.5 + 0.05/AU) mean jumps, charge-up 2-5 min, exit = the target's orbit, error 0.1 % of d / lock,
+  refused through the star's capture sphere (0.3 AU sqrt(M/Msun)) and below 0.05 AU. DEV `jumpui:calc|start:<sys>:<body>`.
+  LIVE (D:/tmp/jcap/is.txt, is60.png; ELITE_DEV_JUMP_CHARGE_S=5): Earth hub @50 km: Moon -> "ближе 0.05 а.е.";
+  Jupiter -> "5.32 а.е., заряд 0.63 из 3.00 т, зарядка 2:24"; START -> IN-SYSTEM JUMP, charge 3 -> 2.365 t, EXIT orbit
+  of Jupiter at 5 569 km, 5 173 km off (sigma 3 979 km); terminal "ПРЫЖОК ЗАВЕРШЁН: Юпитер".
+  NOT yet seen live: the map context-menu rows themselves (same handler as the DEV verb), the star-in-the-way refusal.
+- J charge x0.1 (JChargeScale, "J must be much cheaper than a jump"): Earth -> Jupiter at full thrust ~0.1 mean jump.
+  The NPC logistics calibration (logistics.py J legs) is not changed.

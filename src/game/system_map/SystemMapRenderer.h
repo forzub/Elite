@@ -422,11 +422,14 @@ private:
     std::string m_transferTunnelBodyId;
     std::string m_pendingOrbitalTransferHubId;
 public:
-    struct JumpRequest { int kind = 0; int systemId = -1; };
+    // bodyId: an in-system jump to that body (systemId = the map's system)
+    struct JumpRequest { int kind = 0; int systemId = -1; std::string bodyId; };
 private:
     JumpRequest m_pendingJump;
     int m_jumpCalculatedSystemId = -1;
     int m_jumpChargingSystemId = -1;
+    std::string m_jumpCalculatedBodyId;   // in-system jumps: the calculated / charging target body
+    std::string m_jumpChargingBodyId;
     int m_pendingRouteLaunch = 0;   // 1 official, 2 unofficial, 3 calculate only (finish info window)
     int m_pendingRouteControl = 0;  // 1 pause, 2 resume
     std::string m_devFocusBodyId;
@@ -479,10 +482,13 @@ public:
     // The interstellar jump from a star's context menu (kind 1 calculate, 2 START, 3 cancel; the
     // target system); SpaceState consumes it and tells back what is calculated / charging.
     JumpRequest consumeJumpRequest() { return std::exchange(m_pendingJump, JumpRequest {}); }
-    void setJumpState(int calculatedSystemId, int chargingSystemId)
+    void setJumpState(int calculatedSystemId, int chargingSystemId, const std::string& calculatedBodyId = {},
+                      const std::string& chargingBodyId = {})
     {
         m_jumpCalculatedSystemId = calculatedSystemId;
         m_jumpChargingSystemId = chargingSystemId;
+        m_jumpCalculatedBodyId = calculatedBodyId;
+        m_jumpChargingBodyId = chargingBodyId;
     }
     // Route launch from the finish's info window: 1 official, 2 unofficial; consumed by SpaceState.
     int consumeRouteLaunchRequest() { return std::exchange(m_pendingRouteLaunch, 0); }

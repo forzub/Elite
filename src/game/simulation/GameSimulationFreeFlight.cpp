@@ -1328,7 +1328,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 f.lastBasis = basis;
                 f.lastBasisBodyId = primary->id;
             }
-            // the medium (author 2026-11-12, replaces the fixed 0.9 c cap): above ~0.1 c against the dominant body
+            // the medium (author 2026-11-12, replaces the fixed 0.9 c cap): above 0.6 c against the dominant body
             // the swept-up particles resist exponentially; the J thrust holds the speed where the two are equal
             f.jMediumMps2 = 0.0;
             if (primary && f.lastPrimaryId == primary->id && dt > 0.0 && !f.ground.active)

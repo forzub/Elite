@@ -6,8 +6,8 @@
 // crew do not feel the drive's acceleration, the motion still follows gravity.
 //   - acceleration up to ~1e5 g, so the inner solar system is crossed within an
 //     hour (Earth -> Jupiter ~45-65 min);
-//   - no fixed speed cap: the medium resists above ~0.1 c (exponentially, against the dominant body's frame), the
-//     full thrust holds ~0.9 c (author 2026-11-12, see mediumResistanceMps2);
+//   - no fixed speed cap: free coasting up to 0.6 c, above it the medium resists on a steep exponential (against the
+//     dominant body's frame), the full thrust holds ~0.9 c (author 2026-11-12, see mediumResistanceMps2);
 //   - the field does not work near objects: within the keep-out of a hub,
 //     station, beacon (KeepOutObjectM) or another ship (KeepOutShipM) the drive
 //     is limited to a gentle main-drive-like push (GentleAccelMps2, GentleSpeedMps
@@ -40,19 +40,20 @@ namespace game::navigation::jdrive
 constexpr double StandardGravityMps2 = 9.80665;
 constexpr double LightSpeedMps = 299792458.0;
 constexpr double MaxAccelMps2 = 1.0e5 * StandardGravityMps2;   // ~980 km/s2
-// The top speed is not a fixed cap but the medium (author 2026-11-12): space is not a perfect vacuum - above
-// MediumOnsetMps the particles the ship (its J field) sweeps up resist, exponentially with the speed, against the
-// medium's rest frame (the dominant body / the star). The ship flies where the J thrust equals that resistance:
-// the terminal speed grows with the thrust, slowly (+MediumScaleMps per e-fold of thrust). The thrust that only holds
-// the speed still burns the J charge - that is where the energy goes.
+// The top speed is not a fixed cap but the medium (author 2026-11-12): space is not a perfect vacuum. Up to
+// MediumOnsetMps (0.6 c) the ship coasts freely; above it the particles it sweeps up resist, on a steep exponential,
+// against the medium's rest frame (the dominant body / the star). The ship flies where the J thrust equals that
+// resistance; near 0.9 c no thrust adds much. With the throttle off the medium brakes the ship along the same curve
+// down to 0.6 c, and from there it coasts. The thrust that only holds the speed still burns the J charge.
 //   resistance(v) = MediumDragA0 * (exp((v - onset) / scale) - 1),  v > onset
 //   terminal(a)   = onset + scale * ln(1 + a / MediumDragA0)
-// Calibrated so that the full 1e5 g holds the old 0.9 c (SpeedCapMps, now the terminal speed at a_max):
-// 1e3 g -> 0.44 c, 1e4 g -> 0.67 c, 1e5 g -> 0.9 c.
+// Calibrated so that the full 1e5 g holds 0.9 c (SpeedCapMps, the terminal speed at a_max):
+// 1 g -> 0.67 c, 100 g -> 0.76 c, 1e3 g -> 0.81 c, 1e4 g -> 0.85 c, 1e5 g -> 0.9 c;
+// resistance 0.7 c 4.5 g, 0.75 c 55 g, 0.8 c 670 g, 0.85 c 8 200 g.
 constexpr double SpeedCapMps = 0.9 * LightSpeedMps;              // ~269 800 km/s: the terminal speed at MaxAccelMps2
-constexpr double MediumOnsetMps = 0.1 * LightSpeedMps;           // ~30 000 km/s: below it the medium is negligible
-constexpr double MediumScaleMps = 0.1 * LightSpeedMps;
-// a_max / (e^((cap - onset) / scale) - 1) = 1e5 g / (e^8 - 1) ~ 33.6 g
+constexpr double MediumOnsetMps = 0.6 * LightSpeedMps;           // ~180 000 km/s: below it the ship coasts freely
+constexpr double MediumScaleMps = 0.02 * LightSpeedMps;
+// a_max / (e^((cap - onset) / scale) - 1) = 1e5 g / (e^15 - 1) ~ 0.03 g
 inline double mediumDragA0Mps2()
 {
     return MaxAccelMps2 / (std::exp((SpeedCapMps - MediumOnsetMps) / MediumScaleMps) - 1.0);
@@ -124,11 +125,15 @@ inline double jLegRatio(double massT, double coreRatingT)
     return 1.0 / 3.0 + (1.0 / 6.0) * std::clamp((load - 0.4) / 0.5, 0.0, 1.0);
 }
 
+// J is much cheaper than a jump (author 2026-11-12): with the medium the field pays for holding the speed, and
+// Earth -> Jupiter at the full 1e5 g cost ~1 mean jump; x0.1 makes it ~0.1 (an in-system jump there ~0.7)
+constexpr double JChargeScale = 0.1;
+
 // tonnes of charge per second at the J acceleration `accelMps2`
 inline double jChargeRateTps(double accelMps2, double massT, double coreRatingT)
 {
     const double x = std::min(1.0, std::abs(accelMps2) / (1.0e5 * StandardGravityMps2));
-    return meanJumpChargeT(massT) * jLegRatio(massT, coreRatingT) / ReferenceLegSeconds * std::pow(x, 1.5);
+    return JChargeScale * meanJumpChargeT(massT) * jLegRatio(massT, coreRatingT) / ReferenceLegSeconds * std::pow(x, 1.5);
 }
 
 inline double floorAltitudeM(double radiusM, double atmosphereRadiusM)

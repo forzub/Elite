@@ -50,7 +50,8 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
     };
     if (targetSystemId < 0 || targetName.empty())
         return refuse(jr::Refusal::UnknownSystem);
-    if (targetSystemId == motion.systemId)
+    const bool inSystem = targetSystemId == motion.systemId;
+    if (inSystem && exitBodyId.empty())
         return refuse(jr::Refusal::SameSystem);
     if (!motion.freeFlight || m_freeFlights.count(shipId) == 0 || m_freeFlights.at(shipId).localFrame)
         return refuse(jr::Refusal::NotInNormalFlight);
@@ -64,16 +65,41 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
         motion.jChargeCapacityT = physics.jumpChargeCapacityT;
         motion.jChargeT = motion.jChargeCapacityT;
     }
-    if (const auto r = jr::check(distanceLy, massT, physics.jumpCoreRatingT, motion.jChargeT); r != jr::Refusal::None)
+    double distanceAu = 0.0;
+    if (inSystem)
+    {
+        // the in-system jump: to a body of this system, around the star (JumpRules.h checkInSystem)
+        const game::navigation::GravityBody* target = nullptr;
+        const game::navigation::GravityBody* star = nullptr;
+        for (const auto& b : m_gravityBodies)
+        {
+            if (b.id == exitBodyId)
+                target = &b;
+            if (!star || b.gravitationalParameterM3s2 > star->gravitationalParameterM3s2)
+                star = &b;
+        }
+        if (!target || !star || target == star)
+            return refuse(jr::Refusal::UnknownBody);
+        const glm::dvec3 from = motion.travelFrame.originMeters;
+        if (const auto r = jr::checkInSystem(from, target->centerMeters, star->centerMeters, star->gravitationalParameterM3s2,
+                                             massT, physics.jumpCoreRatingT, motion.jChargeT);
+            r != jr::Refusal::None)
+            return refuse(r);
+        distanceAu = glm::length(target->centerMeters - from) / jr::AuM;
+        distanceLy = distanceAu * jr::AuM / jr::MetersPerLy;
+    }
+    else if (const auto r = jr::check(distanceLy, massT, physics.jumpCoreRatingT, motion.jChargeT); r != jr::Refusal::None)
         return refuse(r);
 
     ActiveJump j;
+    j.inSystem = inSystem;
+    j.distanceAu = distanceAu;
     j.targetSystemId = targetSystemId;
     j.targetName = targetName;
     j.exitBodyId = exitBodyId;
     j.distanceLy = distanceLy;
-    j.costT = jr::chargeT(distanceLy, massT);
-    j.durationS = jr::chargeUpSeconds(distanceLy);
+    j.costT = inSystem ? jr::inSystemChargeT(distanceAu, massT) : jr::chargeT(distanceLy, massT);
+    j.durationS = inSystem ? jr::inSystemChargeUpSeconds(distanceAu) : jr::chargeUpSeconds(distanceLy);
     if (const char* dev = std::getenv("ELITE_DEV_JUMP_CHARGE_S"); dev && *dev)
         j.durationS = std::max(1.0, std::atof(dev));   // DEV: a short charge-up for the test runs
     m_jumps[shipId] = j;
@@ -172,6 +198,28 @@ void GameSimulation::updateJumps(double dt)
             }
             // ---- the jump: instant
             motion.jChargeT = std::max(0.0, motion.jChargeT - j.costT);
+            if (j.inSystem)
+            {
+                // in-system: the same system, the exit is placed at once (the bodies are here)
+                j.fromSystemId = motion.systemId;
+                motion.hubId.clear();
+                motion.parentBodyId.clear();
+                motion.freeFlightReferenceId.clear();
+                motion.freeFlightOrbitBodyId.clear();
+                m_freeFlights[id].lastPrimaryId.clear();
+                motion.jEngine = false;
+                motion.jStopping = false;
+                motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
+                motion.freeFlightThrust = 0;
+                motion.jumpState = 3;
+                ++motion.jumpSerial;
+                j.jumped = true;
+                j.waitTicks = 0;
+                std::cerr << "[Jump] ship " << id.value << ": IN-SYSTEM JUMP to " << j.exitBodyId << " (" << j.distanceAu
+                          << " AU), charge spent " << j.costT << " t, left " << motion.jChargeT << " t" << std::endl;
+                ++it;
+                continue;
+            }
             const int from = motion.systemId;
             j.fromSystemId = from;
             motion.systemId = j.targetSystemId;
@@ -297,7 +345,8 @@ void GameSimulation::updateJumps(double dt)
         // sigma of JumpRules.h exitSigmaM; the ship then holds a circular orbit at the radius it
         // came out at (kept above the floor and well inside the body's Hill sphere)
         const glm::dvec3 planned = exit->centerMeters + radial * r;
-        const double sigma = jr::exitSigmaM(j.distanceLy, jr::exitLockFactor(systemHasSites(j.fromSystemId), systemHasSites(j.targetSystemId)));
+        const double lock = jr::exitLockFactor(systemHasSites(j.fromSystemId), systemHasSites(j.targetSystemId));
+        const double sigma = j.inSystem ? jr::inSystemExitSigmaM(j.distanceAu, lock) : jr::exitSigmaM(j.distanceLy, lock);
         glm::dvec3 offset(0.0);
         // a zero-distance exit (DEV placement: ELITE_DEV_START / the load test) has no scatter;
         // std::normal_distribution requires sigma > 0 (debug libstdc++ asserts)

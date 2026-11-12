@@ -262,7 +262,8 @@ public:
     bool toggleStabilization(EntityId shipId);
     bool toggleJEngine(EntityId shipId);
     // the interstellar jump (GameSimulationJump.cpp): START (the charge-up) / cancel
-    bool requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy, const std::string& exitBodyId);
+    bool requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy, const std::string& exitBodyId,
+                     const glm::dvec3& interstellarDirWorld = glm::dvec3(0.0));
     void cancelJump(EntityId shipId, std::uint8_t why);
     // 0 = J may engage here; else the refusal code (7 an object too close, 8 below the J floor)
     int jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const;
@@ -763,7 +764,30 @@ private:
         glm::dvec3 exitLastCentre {0.0};
         bool inSystem = false;     // an in-system jump (JumpRules.h): no system change, the exit at exitBodyId
         double distanceAu = 0.0;
+        // ---- the procedure (JUMP_MECHANICS.md 10b): 0 to the start zone, 1 aim the nose, 2 charge; then the jump
+        int phase = 0;
+        std::string zoneBodyId;              // the zone is held against this body ("" = an absolute point)
+        glm::dvec3 zoneOffsetM {0.0};        // the zone point relative to it
+        glm::dvec3 interstellarDir {0.0};    // world direction to the target star (interstellar)
+        std::vector<glm::dvec3> waypointsStarRel;   // in-system intermediate step ends, relative to the star
+        std::string starId;
+        int legIndex = 0;
+        double totalCostT = 0.0;
+        double chargedHoldS = 0.0;
+        double lineCheckS = 0.0;
+        glm::dvec3 exitRadial {0.0};
+        glm::dvec3 lastStepFromM {0.0};      // where the last step started (its length scales the exit error)         // in-system final exit: the target's side facing the incoming line
+        std::unordered_map<std::string, glm::dvec3> lastCenters;   // body velocities by difference
+        std::unordered_map<std::string, glm::dvec3> velocities;
+        bool commandValid = false;
+        ShipControlState command;            // what the procedure flies (applied in the free-flight pass)
     };
+    // the procedure's helpers (GameSimulationJump.cpp)
+    std::string jumpLineBlockedBy(const glm::dvec3& from, const glm::dvec3& to, const std::string& excludeBodyId,
+                                  const std::string& excludeBodyId2 = {}) const;
+    bool planJumpZone(EntityId shipId, ActiveJump& j, const glm::dvec3& shipM, const glm::dvec3& legEndM);
+    glm::dvec3 jumpLegEnd(const ActiveJump& j, const glm::dvec3& shipM) const;
+    double jumpLegCostT(const ActiveJump& j, const glm::dvec3& fromM, double massT) const;
     std::unordered_map<EntityId, ActiveJump> m_jumps;
     void updateJumps(double dt);
     bool shipAwaitingJumpExit(EntityId shipId) const;   // automatic stabilization after the free-flight pass

@@ -1103,7 +1103,9 @@ void GameServer::update(double dt)
                             for (const auto& b : system->bodies)
                                 if (b.id == exitBody && !b.name.empty())
                                     targetName = b.name;
-                    m_simulation.requestJump(id, to ? to->id : -1, targetName, distanceLy, exitBody);
+                    // the interstellar step's line: toward the target star (the system frame shares the galactic axes)
+                    const glm::dvec3 dir = from && to ? glm::dvec3(to->positionLy - from->positionLy) : glm::dvec3(0.0);
+                    m_simulation.requestJump(id, to ? to->id : -1, targetName, distanceLy, exitBody, dir);
                     break;
                 }
 

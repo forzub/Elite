@@ -789,9 +789,18 @@ void GameSimulation::updateFreeFlights(double dt)
         // ---- the client's global-flight command (NAVIGATION_V2 §1): the plant executes it within
         // the rules (the ground frame flies on the ordinary controls)
         const auto& control = ship->core().control();
-        const bool globalCommand = control.globalFlightCommandValid && !f.ground.active;
+        // the jump procedure (JUMP_MECHANICS.md 10b) flies the ship to its start zone, holds it there and aims the nose:
+        // it supersedes the pilot's and the client autopilot's command while it runs
+        const auto jumpIt = m_jumps.find(it->first);
+        const bool jumpProcedure = jumpIt != m_jumps.end() && !jumpIt->second.jumped && jumpIt->second.commandValid && !f.ground.active;
+        const bool globalCommand = (control.globalFlightCommandValid || jumpProcedure) && !f.ground.active;
         f.jChargeAccelMps2 = 0.0;
-        if (globalCommand)
+        if (jumpProcedure)
+        {
+            f.globalIdleSeconds = 0.0;
+            applyGlobalFlightCommand(it->first, *ship, f, jumpIt->second.command, dt);
+        }
+        else if (globalCommand)
         {
             f.globalIdleSeconds = 0.0;
             applyGlobalFlightCommand(it->first, *ship, f, control, dt);

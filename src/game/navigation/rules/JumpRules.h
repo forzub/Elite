@@ -41,8 +41,24 @@ enum class Refusal : std::uint8_t
     ShipDestroyed = 12,      // the charge-up ended: the ship was destroyed (impact / dense atmosphere)
     StarInTheWay = 13,       // an in-system jump whose straight step crosses the star's capture sphere
     TooClose = 14,           // an in-system jump shorter than InSystemMinAu: fly it in J
-    UnknownBody = 15         // an in-system jump to a body this system does not have
+    UnknownBody = 15,        // an in-system jump to a body this system does not have
+    ZoneViolated = 16,       // during the charge-up an object entered the start zone / the nose left the line: lost
+    LineBlocked = 17         // the straight step is blocked by a body / the star (no way around found)
 };
+
+// ---- the jump procedure (author 2026-11-12, JUMP_MECHANICS.md 10b): a jump is an instant move along a straight line;
+// the planner takes the ship to a safe start zone (in J; under a J floor on the main engines), aims the nose at the
+// step's end, charges the core there and jumps 1 s after the charge is full. An object in the zone, a blocked line or
+// the nose off the line during the charge-up aborts it: the core discharges, the charge drawn is lost.
+constexpr double AlignToleranceRad = 0.5 * 3.14159265358979323846 / 180.0;
+constexpr double ChargeNoseToleranceRad = 3.0 * 3.14159265358979323846 / 180.0;
+constexpr double JumpDelayAfterChargeS = 1.0;
+constexpr double ZoneAboveFloorM = 300000.0;          // the start zone over a body: its J floor + 300 km
+constexpr double ZoneArrivalM = 2000.0;
+constexpr double ZoneArrivalSpeedMps = 100.0;
+constexpr double ZoneTransitAccelMps2 = 1000.0 * jdrive::StandardGravityMps2;
+constexpr double ZoneHoldAccelMps2 = 100.0 * jdrive::StandardGravityMps2;
+constexpr double LineCheckPeriodS = 1.0;
 
 // ---- the in-system jump (author 2026-11-05 decision 3, implemented 2026-11-12: "inside a system one can and should
 // jump, but dearly - the payment is the charge and the risk where there are no beacons"; Pluto in J is ~8 h):
@@ -172,6 +188,8 @@ inline const char* refusalText(Refusal r)
     case Refusal::StarInTheWay: return "прямой шаг проходит через зону захвата звезды - прыгайте через промежуточную точку";
     case Refusal::TooClose: return "цель ближе 0.05 а.е. - туда летят на J";
     case Refusal::UnknownBody: return "тело не найдено в системе";
+    case Refusal::ZoneViolated: return "срыв: в зону старта вошла помеха или нос ушёл с линии - ядро разряжено, заряд потерян";
+    case Refusal::LineBlocked: return "прямая к цели перекрыта телом - обхода не найдено";
     default: return "";
     }
 }

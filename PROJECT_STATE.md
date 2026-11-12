@@ -5477,3 +5477,31 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   The NPC logistics calibration (logistics.py J legs) is not changed.
 - Author decision 2026-11-12: the medium's braking above 0.6 c is harmless to the crew - the J field's inertial
   isolator absorbs it. No damage rule needed (the open question closed).
+
+## JUMP PROCEDURE: ZONE -> AIM -> CHARGE -> JUMP 1 s AFTER (author 2026-11-12)
+- Author: "charged, the hull shakes, no jump, 'waiting for free space' - nonsense". The rule is now written in
+  JUMP_MECHANICS.md 10b: a jump is an instant move along a straight line (never through a body with its J floor, the
+  star's capture sphere, a station); possible only in a safe start zone, with the line free, the nose on the step's end,
+  the core charged; the planner takes the ship to the zone (J; main engines under a J floor), aims, charges, jumps 1 s
+  after the charge. Anything entering the zone / the line blocked / the nose off during the charge-up aborts it: the
+  core discharges, the charge drawn is LOST (also on the pilot's cancel). A blocked way = several straight steps through
+  intermediate points, each step its own zone / aim / charge / cost.
+- Server (GameSimulationJump.cpp): ActiveJump phases 0 zone / 1 aim / 2 charge, the procedure's ShipControlState
+  (J velocity target + attitude target) applied in the free-flight pass over the pilot / client autopilot; planJumpZone
+  (over the dominant body: own radial if facing the step's end, else straight up until the line passes beside the body,
+  <= 17.5 deg aside when right behind it; above keep-outs), jumpLineBlockedBy, jumpLegEnd, jumpLegCostT; zone first,
+  then the way around from it; abort / cancel -> lost charge and a circular orbit at the zone (left at rest it fell).
+  jumpState 4 to zone, 5 aiming, 1 charging (2 "waiting" retired). JumpRules.h: tolerances 0.5 / 3 deg, 1 s delay,
+  ZoneViolated / LineBlocked. Client terminal: ПЛАНИРОВЩИК lines; calc shows steps (around the star) and the way's charge.
+- Root causes met live: (1) a zone on the planet's far side flown to in a straight line -> into the Earth ("корабль
+  разрушен"); then an arc at 200 km/s around it -> replaced by the radial-climb zone. (2) Waypoints planned from the ship
+  behind the Earth went around the Earth itself (a 14 000 km step for 0.41 t) -> the zone first, waypoints from it.
+- LIVE (ELITE_DEV_JUMP_CHARGE_S=5/60; D:/tmp/jcap/p.txt, c.txt, c95/c135.png, i.txt):
+  hub @5 km -> Jupiter: gentle out of the 20 km keep-out, J climb to the zone, "in the start zone, aiming", "aimed,
+  CHARGING", IN-SYSTEM JUMP 5.32 AU 0.63 t, EXIT orbit of Jupiter 5 621 km (5 172 km off, sigma 3 978 km).
+  Cancel mid charge (60 s): "core discharged, 0.366 t of charge lost", charge 3 -> 2.63, orbit stabilization takes the ship.
+  Interstellar to Tau Ceti: zone -> aim along the star's direction -> charge -> JUMP 0 -> 8 -> EXIT Tau_Ceti_m 418 km.
+  A 2-step way ran live (the first, wrong waypoint around the Earth: STEP 1 of 2 done -> final step -> exit); the
+  star-detour itself not seen live (no planet behind the Sun now).
+- Note for the author: an in-system jump to Jupiter (0.63 t) now costs more than 11.9 ly to Tau Ceti (0.43 t) - the
+  in-system base is half a mean jump by his "дорого".

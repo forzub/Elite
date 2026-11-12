@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <cstdio>
 
 #include "src/audio/AudioEngine.h"
@@ -132,16 +133,37 @@ void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::st
     const glm::dvec3 from = world::coordinates::fullMeters(it->second.transform.worldPosition);
     const double dAu = glm::length(target->worldMeters - from) / jr::AuM;
     const double chargeLeft = motion.jChargeT < 0.0 ? motion.jChargeCapacityT : motion.jChargeT;
-    const auto r = jr::checkInSystem(from, target->worldMeters, star->worldMeters, starMu, motion.shipMassT,
-                                     motion.jumpCoreRatingT, chargeLeft);
+    // the planner's way (the server's GameSimulationJump, JUMP_MECHANICS.md 10b): the start zone first, then straight
+    // steps; a step through the star's capture sphere goes around it through one intermediate point
+    auto r = jr::checkInSystem(from, target->worldMeters, star->worldMeters, 0.0, motion.shipMassT, motion.jumpCoreRatingT,
+                               std::numeric_limits<double>::max());
+    int steps = 1;
+    double wayCost = jr::inSystemChargeT(dAu, motion.shipMassT);
+    double wayAu = dAu;
+    const double capture = jr::starCaptureRadiusM(starMu);
+    if (r == jr::Refusal::None && jr::segmentDistanceM(from, target->worldMeters, star->worldMeters) < capture)
+    {
+        const glm::dvec3 line = glm::normalize(target->worldMeters - from);
+        glm::dvec3 perp = (from - star->worldMeters) - line * glm::dot(from - star->worldMeters, line);
+        if (glm::length(perp) < 1.0)
+            perp = glm::cross(line, glm::dvec3(0.0, 1.0, 0.0));
+        const glm::dvec3 w = star->worldMeters + glm::normalize(perp) * capture * 2.5;
+        const double a = glm::length(w - from) / jr::AuM, b = glm::length(target->worldMeters - w) / jr::AuM;
+        steps = 2;
+        wayAu = a + b;
+        wayCost = jr::inSystemChargeT(a, motion.shipMassT) + jr::inSystemChargeT(b, motion.shipMassT);
+    }
+    if (r == jr::Refusal::None && chargeLeft + 1.0e-9 < wayCost)
+        r = jr::Refusal::NotEnoughCharge;
     const std::string name = target->name.empty() ? bodyId : target->name;
     if (kind == 1)
     {
         char b[320];
         if (r == jr::Refusal::None)
         {
-            std::snprintf(b, sizeof b, "ПРЫЖОК К %s: %.2f а.е., заряд %.2f из %.2f т, зарядка %s - можно СТАРТ", name.c_str(), dAu,
-                          jr::inSystemChargeT(dAu, motion.shipMassT), chargeLeft, minutes(jr::inSystemChargeUpSeconds(dAu)).c_str());
+            std::snprintf(b, sizeof b, "ПРЫЖОК К %s: %.2f а.е., %s, заряд %.2f из %.2f т, зарядка %s - СТАРТ: зона старта, наведение, прыжок",
+                          name.c_str(), wayAu, steps > 1 ? "2 шага в обход звезды" : "1 шаг", wayCost, chargeLeft,
+                          minutes(jr::inSystemChargeUpSeconds(dAu)).c_str());
             m_jumpCalculatedSystemId = -1;   // the star menu's START is for other systems
             m_jumpCalculatedBodyId = bodyId;
         }
@@ -322,24 +344,33 @@ void SpaceState::updateJumpPresentation()
         const std::uint8_t was = m_jumpSeenState;
         m_jumpSeenState = motion.jumpState;
         char b[256];
-        if (motion.jumpState == 1 && was != 1)
+        const bool procedure = motion.jumpState == 4 || motion.jumpState == 5 || motion.jumpState == 1;
+        const bool started = procedure && (was == 0 || was == 3);
+        if (started && was == 0)
         {
             m_jumpTerminalLines.clear();
             if (motion.jumpTargetSystemId == motion.systemId)
-                std::snprintf(b, sizeof b, "ПРЫЖОК ВНУТРИ СИСТЕМЫ: начата процедура - цель %s, %.2f а.е.", motion.jumpTargetName.c_str(),
+                std::snprintf(b, sizeof b, "ПРЫЖОК ВНУТРИ СИСТЕМЫ: начата процедура - цель %s, путь %.2f а.е.", motion.jumpTargetName.c_str(),
                               motion.jumpDistanceLy * jr::MetersPerLy / jr::AuM);
             else
                 std::snprintf(b, sizeof b, "ПРЫЖОК: начата процедура - цель %s, %.1f св. лет", motion.jumpTargetName.c_str(), motion.jumpDistanceLy);
             addJumpTerminalLine(b);
-            std::snprintf(b, sizeof b, "ЯДРО: зарядка %s, расход заряда %.2f т", minutes(motion.jumpChargeDurationS).c_str(), motion.jumpCostT);
-            addJumpTerminalLine(b);
             addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId ? "отмена: карта системы -> цель -> ОТМЕНИТЬ ПРЫЖОК"
                                                                              : "отмена: карта галактики -> звезда -> ОТМЕНИТЬ ПРЫЖОК");
         }
-        else if (motion.jumpState == 2)
-            addJumpTerminalLine("ЯДРО ЗАРЯЖЕНО: прыжок ждёт - отойдите от объектов (20 км) и выше J-порога", true);
-        // 1/2 -> 0 with no jump made (a jump can pass 3 between two snapshots: then the serial moved)
-        else if (motion.jumpState == 0 && (was == 1 || was == 2) && motion.jumpSerial == m_jumpSeenSerial)
+        // the procedure's steps (JUMP_MECHANICS.md 10b): zone -> aim -> charge -> the jump 1 s after the charge
+        if (motion.jumpState == 4)
+            addJumpTerminalLine("ПЛАНИРОВЩИК: выход в безопасную зону старта (J)");
+        else if (motion.jumpState == 5)
+            addJumpTerminalLine("ПЛАНИРОВЩИК: зона старта - наведение носа на цель");
+        else if (motion.jumpState == 1)
+        {
+            std::snprintf(b, sizeof b, "ЯДРО: зарядка %s, расход заряда %.2f т - прыжок сразу после зарядки",
+                          minutes(motion.jumpChargeDurationS).c_str(), motion.jumpCostT);
+            addJumpTerminalLine(b);
+        }
+        // the procedure ended with no jump made (a jump can pass 3 between two snapshots: then the serial moved)
+        else if (motion.jumpState == 0 && (was == 1 || was == 4 || was == 5) && motion.jumpSerial == m_jumpSeenSerial)
             addJumpTerminalLine(std::string("ПРЫЖОК ПРЕРВАН: ") + jr::refusalText(static_cast<jr::Refusal>(motion.jumpRefusal ? motion.jumpRefusal : 8)), true);
     }
     if (motion.jumpSerial != m_jumpSeenSerial)
@@ -579,7 +610,7 @@ void SpaceState::renderHudJump(const Viewport& viewport)
         return;
     const auto& motion = it->second.transform.motion;
     {
-        const bool charging = motion.jumpState == 1 || motion.jumpState == 2;
+        const bool charging = motion.jumpState == 1 || motion.jumpState == 2 || motion.jumpState == 4 || motion.jumpState == 5;
         const bool inSystem = charging && motion.jumpTargetSystemId == motion.systemId;
         m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, charging && !inSystem ? motion.jumpTargetSystemId : -1,
                                          m_jumpCalculatedBodyId, inSystem ? m_jumpRequestedBodyId : std::string());

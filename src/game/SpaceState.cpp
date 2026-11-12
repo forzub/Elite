@@ -889,7 +889,7 @@ void SpaceState::handleInput()
             if (const auto self = m_client->world().ships().find(m_playerId.value); self != m_client->world().ships().end())
             {
                 const auto& jm = self->second.transform.motion;
-                const bool charging = jm.jumpState == 1 || jm.jumpState == 2;
+                const bool charging = jm.jumpState == 1 || jm.jumpState == 2 || jm.jumpState == 4 || jm.jumpState == 5;
                 const bool inSystem = charging && jm.jumpTargetSystemId == jm.systemId;
                 m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, charging && !inSystem ? jm.jumpTargetSystemId : -1,
                                                  m_jumpCalculatedBodyId, inSystem ? m_jumpRequestedBodyId : std::string());

@@ -5505,3 +5505,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   star-detour itself not seen live (no planet behind the Sun now).
 - Note for the author: an in-system jump to Jupiter (0.63 t) now costs more than 11.9 ly to Tau Ceti (0.43 t) - the
   in-system base is half a mean jump by his "дорого".
+- Sun detour LIVE (2026-11-12, D:/tmp/jcap/sun.txt): DEV start `point:3.73,-0.07,3.79` (AU from the star, new
+  ELITE_DEV_START kind; GameSimulation::devPlaceShipAtPoint) = opposite Jupiter: calc "10.74 а.е., 2 шага в обход
+  звезды, заряд 1.27 т"; procedure: zone here, aim, charge, STEP 1 of 2 (5.37 AU, 3 583 km off), aim, charge, IN-SYSTEM
+  JUMP, EXIT orbit of Jupiter (2 791 km off, sigma 4 017 km), charge 3 -> 1.727 t. Fix on the way: the preliminary zone
+  no longer demands a clear line (the star is the waypoints' job) - it refused "прямая перекрыта".
+  No natural Sun-blocked pair exists among the planets now (scan from 5 starts: the 0.3 AU capture sphere is small).
+- Interstellar hazards (author asked to check jumps around dangerous / gravity zones BETWEEN systems): NOT IMPLEMENTED.
+  The interstellar step is only aimed and charged; nothing checks its line. The data has candidates (objects_details
+  cells: 157 brown dwarfs, 554 rogue planets, 49 stellar remnants, 19 binary rogues with gameplay_gravity + mu;
+  2 237 medium regions, 50 icy debris fields; 10 cavities); JUMP_MECHANICS section 4 (sumps, author 2026-11-05:
+  unpredictable without beacons) is design only. Awaiting the author's parameters.

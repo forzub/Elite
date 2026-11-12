@@ -93,7 +93,7 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
             return refuse(r);
         // the start zone first (the departure body is its problem: the zone sees past it), then the way around from
         // there: up to two intermediate points beside whatever else blocks the line (the star, another body)
-        if (!planJumpZone(shipId, j, shipM, target->centerMeters))
+        if (!planJumpZone(shipId, j, shipM, target->centerMeters, false))
             return refuse(jr::Refusal::LineBlocked);
         glm::dvec3 from = shipM;
         for (const auto& b : m_gravityBodies)
@@ -733,7 +733,7 @@ double GameSimulation::jumpLegCostT(const ActiveJump& j, const glm::dvec3& fromM
 // The start zone: where the ship is if it is safe there and the step's line is free; else over the dominant body on the
 // side facing the step's end, above its J floor + ZoneAboveFloorM (higher if a hub's keep-out is there); in open
 // space beside the object that blocks it.
-bool GameSimulation::planJumpZone(EntityId shipId, ActiveJump& j, const glm::dvec3& shipM, const glm::dvec3& legEndM)
+bool GameSimulation::planJumpZone(EntityId shipId, ActiveJump& j, const glm::dvec3& shipM, const glm::dvec3& legEndM, bool lineMustBeClear)
 {
     const Ship* ship = getShip(shipId);
     if (!ship)
@@ -741,7 +741,7 @@ bool GameSimulation::planJumpZone(EntityId shipId, ActiveJump& j, const glm::dve
     const auto& motion = ship->core().transform().motion;
     std::string why;
     const bool safeHere = jEngineBlocked(shipId, motion.systemId, shipM, why) == 0;
-    const std::string blocked = jumpLineBlockedBy(shipM, legEndM, j.inSystem ? j.exitBodyId : std::string());
+    const std::string blocked = lineMustBeClear ? jumpLineBlockedBy(shipM, legEndM, j.inSystem ? j.exitBodyId : std::string()) : std::string();
     double starMu = 0.0;
     for (const auto& b : m_gravityBodies)
         starMu = std::max(starMu, b.gravitationalParameterM3s2);
@@ -795,7 +795,8 @@ bool GameSimulation::planJumpZone(EntityId shipId, ActiveJump& j, const glm::dve
         {
             const glm::dvec3 p = body->centerMeters + u * r;
             JKeepOutHit hit;
-            if (!jKeepOut(shipId, motion.systemId, p, hit) && jumpLineBlockedBy(p, legEndM, j.inSystem ? j.exitBodyId : std::string()).empty())
+            if (!jKeepOut(shipId, motion.systemId, p, hit) &&
+                (!lineMustBeClear || jumpLineBlockedBy(p, legEndM, j.inSystem ? j.exitBodyId : std::string(), body->id == j.zoneBodyId ? std::string() : std::string()).empty()))
             {
                 j.zoneBodyId = body->id;
                 j.zoneOffsetM = p - body->centerMeters;
@@ -815,7 +816,39 @@ bool GameSimulation::planJumpZone(EntityId shipId, ActiveJump& j, const glm::dve
     }
     j.zoneBodyId = body ? body->id : std::string();
     j.zoneOffsetM = body ? p - body->centerMeters : p;
-    return jumpLineBlockedBy(p, legEndM, j.inSystem ? j.exitBodyId : std::string()).empty();
+    return !lineMustBeClear || jumpLineBlockedBy(p, legEndM, j.inSystem ? j.exitBodyId : std::string()).empty();
+}
+
+bool GameSimulation::devPlaceShipAtPoint(EntityId id, const glm::dvec3& au)
+{
+    Ship* ship = getShip(id);
+    const game::navigation::GravityBody* star = nullptr;
+    for (const auto& b : m_gravityBodies)
+        if (!star || b.gravitationalParameterM3s2 > star->gravitationalParameterM3s2)
+            star = &b;
+    if (!ship || !star)
+        return false;
+    auto& tr = ship->core().transform();
+    auto& motion = tr.motion;
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+        (void)toggleFreeFlight(id);
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+        return false;
+    auto& frame = motion.travelFrame;
+    frame.originMeters = star->centerMeters + au * jr::AuM;
+    frame.linearVelocityMps = glm::dvec3(0.0);
+    frame.linearAccelerationMps2 = glm::dvec3(0.0);
+    motion.localPositionMeters = glm::dvec3(0.0);
+    motion.localVelocityMps = glm::dvec3(0.0);
+    tr.setWorldPositionMeters(frame.originMeters);
+    motion.freeFlightReferenceId.clear();
+    motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
+    m_shipReferenceBindings.erase(id);
+    motion.matchedToReferenceFrame = false;
+    m_freeFlights[id].localFrame = false;
+    std::cerr << "[DevStart] ship " << id.value << ": normal flight at (" << au.x << ", " << au.y << ", " << au.z << ") AU from "
+              << star->id << std::endl;
+    return true;
 }
 
 bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, double distanceKm)

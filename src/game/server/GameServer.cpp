@@ -701,6 +701,13 @@ void GameServer::applyDevStartPoint(double dt)
         ok = m_simulation.devPlaceShipNearHub(ship, arg, after.empty() ? 50.0 : std::atof(after.c_str()));
     else if (kind == "system")
         ok = devPlaceShipInSystem(ship, std::atoi(arg.c_str()), 0);
+    else if (kind == "point")
+    {
+        // point:<x>,<y>,<z> - AU from the star of the ship's system
+        glm::dvec3 au(0.0);
+        if (std::sscanf(arg.c_str(), "%lf,%lf,%lf", &au.x, &au.y, &au.z) == 3)
+            ok = m_simulation.devPlaceShipAtPoint(ship, au);
+    }
     else if (kind == "body")
     {
         const auto stemOf = [](const std::string& path) {

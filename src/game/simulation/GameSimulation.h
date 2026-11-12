@@ -262,6 +262,8 @@ public:
     bool toggleStabilization(EntityId shipId);
     bool toggleJEngine(EntityId shipId);
     // the interstellar jump (GameSimulationJump.cpp): START (the charge-up) / cancel
+    // DEV: normal flight at a point of the current system (AU from its star), at rest against the star
+    bool devPlaceShipAtPoint(EntityId id, const glm::dvec3& au);
     bool requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy, const std::string& exitBodyId,
                      const glm::dvec3& interstellarDirWorld = glm::dvec3(0.0));
     void cancelJump(EntityId shipId, std::uint8_t why);
@@ -785,7 +787,7 @@ private:
     // the procedure's helpers (GameSimulationJump.cpp)
     std::string jumpLineBlockedBy(const glm::dvec3& from, const glm::dvec3& to, const std::string& excludeBodyId,
                                   const std::string& excludeBodyId2 = {}) const;
-    bool planJumpZone(EntityId shipId, ActiveJump& j, const glm::dvec3& shipM, const glm::dvec3& legEndM);
+    bool planJumpZone(EntityId shipId, ActiveJump& j, const glm::dvec3& shipM, const glm::dvec3& legEndM, bool lineMustBeClear = true);
     glm::dvec3 jumpLegEnd(const ActiveJump& j, const glm::dvec3& shipM) const;
     double jumpLegCostT(const ActiveJump& j, const glm::dvec3& fromM, double massT) const;
     std::unordered_map<EntityId, ActiveJump> m_jumps;

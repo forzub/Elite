@@ -2232,6 +2232,7 @@ bool StarAtlasDatabase::load(
     m_distantSystems = std::move(distantSystems);
     m_details = std::move(details);
     m_objects = std::move(objects);
+    buildDeepSpacePlaces();
     m_contentFingerprint = computeCatalogFingerprint(galaxyDetailsRoot);
 
     const std::size_t skippedSystemFiles =
@@ -2308,7 +2309,57 @@ StarAtlasDatabase::findSystemSummary(
             return &system;
     }
 
+    if (isDeepSpace(systemId))
+    {
+        const std::size_t i = static_cast<std::size_t>(systemId - DeepSpaceIdBase);
+        if (i < m_deepSpace.size())
+            return &m_deepSpace[i];
+    }
+
     return nullptr;
+}
+
+void StarAtlasDatabase::buildDeepSpacePlaces()
+{
+    m_deepSpace.clear();
+    m_deepSpaceObject.clear();
+    std::vector<std::size_t> swarms;
+    for (std::size_t i = 0; i < m_objects.size(); ++i)
+        if (m_objects[i].objectType == "icy_debris_field" || m_objects[i].objectType == "debris_group")
+            swarms.push_back(i);
+    std::sort(swarms.begin(), swarms.end(), [this](std::size_t a, std::size_t b) { return m_objects[a].id < m_objects[b].id; });
+    for (std::size_t k = 0; k < swarms.size(); ++k)
+    {
+        const auto& o = m_objects[swarms[k]];
+        StarSystemSummary s;
+        s.id = DeepSpaceIdBase + static_cast<int>(k);
+        s.name = "Глубокий космос: " + (o.name.empty() ? o.id : o.name);
+        s.positionLy = o.positionLy;
+        s.starsCount = 0;
+        s.catalogScope = StarSystemCatalogScope::DeepSpace;
+        s.atlasVisible = false;
+        s.routeTarget = false;
+        m_deepSpace.push_back(s);
+        m_deepSpaceObject[s.id] = swarms[k];
+        CelestialSystemDefinition d;
+        d.systemId = s.id;
+        d.name = s.name;
+        m_details[s.id] = std::move(d);
+    }
+}
+
+int StarAtlasDatabase::deepSpaceIdForObject(const std::string& objectId) const
+{
+    for (const auto& [id, index] : m_deepSpaceObject)
+        if (m_objects[index].id == objectId)
+            return id;
+    return -1;
+}
+
+const GalaxyObjectDefinition* StarAtlasDatabase::deepSpaceObject(int systemId) const
+{
+    const auto it = m_deepSpaceObject.find(systemId);
+    return it == m_deepSpaceObject.end() ? nullptr : &m_objects[it->second];
 }
 
 

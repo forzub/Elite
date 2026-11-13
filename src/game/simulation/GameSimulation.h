@@ -265,8 +265,20 @@ public:
     // the interstellar jump (GameSimulationJump.cpp): START (the charge-up) / cancel
     // DEV: normal flight at a point of the current system (AU from its star), at rest against the star
     bool devPlaceShipAtPoint(EntityId id, const glm::dvec3& au);
+    // a ship into a deep-space place (StarAtlasDatabase::DeepSpaceIdBase.., no bodies): normal flight at rest in the
+    // place's frame at positionM from its centre (a sump catch between the systems; DEV start deep:<n>)
+    bool placeShipInDeepSpace(EntityId id, int systemId, const glm::dvec3& positionM);
+    // a sump catch between the systems decided at the request (the server's hidden field, JUMP_MECHANICS 8): the jump
+    // comes out in the deep-space place at positionM from its centre instead of the target
+    struct JumpDeepCatch
+    {
+        int placeId = -1;
+        glm::dvec3 positionM {0.0};
+        std::string name;
+    };
     bool requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy, const std::string& exitBodyId,
-                     const glm::dvec3& interstellarDirWorld = glm::dvec3(0.0));
+                     const glm::dvec3& interstellarDirWorld = glm::dvec3(0.0),
+                     const JumpDeepCatch* deepCatch = nullptr);
     void cancelJump(EntityId shipId, std::uint8_t why);
     // the jump sumps of a system (asteroid / debris swarms, JumpSumps.h), given by the server from the atlas
     void setJumpSumps(int systemId, const std::vector<game::navigation::jump::JumpSump>& sumps) { m_jumpSumps[systemId] = sumps; }
@@ -781,7 +793,8 @@ private:
         double chargedHoldS = 0.0;
         double lineCheckS = 0.0;
         glm::dvec3 exitRadial {0.0};
-        glm::dvec3 currentDriftM {0.0};      // the currents' drift of the steps so far (raw, before the beacons' compensation)
+        glm::dvec3 currentDriftM {0.0};
+        JumpDeepCatch deepCatch;             // placeId >= 0: caught by a swarm between the systems      // the currents' drift of the steps so far (raw, before the beacons' compensation)
         glm::dvec3 lastStepFromM {0.0};      // where the last step started (its length scales the exit error)         // in-system final exit: the target's side facing the incoming line
         std::unordered_map<std::string, glm::dvec3> lastCenters;   // body velocities by difference
         std::unordered_map<std::string, glm::dvec3> velocities;

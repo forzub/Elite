@@ -35,4 +35,35 @@ struct InterstellarRoute
 double gravityCaptureRadiusLy(double muM3s2);
 
 InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabase& atlas, int fromSystemId, int toSystemId);
+
+// ---- sumps between the systems (author 2026-11-13): the interstellar swarms - icy debris fields (ellipsoids, soft edge
+// 1 - r^2) and debris groups (spheres of extent_au). Scale-invariant calibration: a light-years-long step sees a swarm
+// as a few-AU step sees a belt - crossing the core of a swarm without beacons catches ~1 in 4, as Sol's main belt does
+// (JumpSumps.h). Depth = integral of the normalised density (0..1) along the way / (InterstellarSumpScaleLy x
+// sqrt(lock)); P = 1 - exp(-depth). A caught ship comes out in the swarm's deep-space place
+// (StarAtlasDatabase::deepSpaceIdForObject) at the catch point, at rest in its frame.
+constexpr double InterstellarSumpScaleLy = 2.0;
+
+struct InterstellarSumpCrossing
+{
+    std::string name;
+    int placeId = -1;
+    double depth = 0.0;        // before the beacons
+    double probability = 0.0;  // with the beacons' lock
+};
+
+struct InterstellarSumpCatch
+{
+    bool caught = false;
+    int placeId = -1;
+    std::string name;
+    glm::dvec3 pointLy {0.0};
+    glm::dvec3 centreLy {0.0};
+};
+
+std::vector<InterstellarSumpCrossing> interstellarSumpCrossings(const world::celestial::StarAtlasDatabase& atlas,
+                                                                const InterstellarRoute& route, double lockFactor);
+// the catch along the way for an exponential draw `e` (= -ln U)
+InterstellarSumpCatch interstellarSumpCatch(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
+                                            double lockFactor, double e);
 } // namespace game::navigation::jump

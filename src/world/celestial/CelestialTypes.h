@@ -47,7 +47,8 @@ inline std::string toString(BodyType type)
 enum class StarSystemCatalogScope
 {
     Local,
-    Distant
+    Distant,
+    DeepSpace   // a place between the systems (a jump sump's frame, JumpSumps.h): no star, never on the Galaxy map
 };
 
 struct StarSystemSummary

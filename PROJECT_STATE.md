@@ -5563,4 +5563,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     - Sol -> Tau Ceti: 4.84e6 km -> 24 000 km;
     - no beacons: exit 0.032 AU off Tau Ceti m, in open space.
   - Next: plan point 3 (a deep-space place between the systems).
+- Deep space + interstellar sumps: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/d1-d4.txt, deep60.png,
+  deep_caught100.png). JUMP_MECHANICS 10f.
+  - Deep-space places (StarAtlasDatabase):
+    - DeepSpaceIdBase 1000000 + swarm index (85 places); scope DeepSpace; never listed in systems();
+    - findSystem / findSystemSummary find them;
+    - GameSimulation::placeShipInDeepSpace; DEV start deep:<n>[@AU].
+  - Interstellar sumps (InterstellarJumpRoute):
+    - interstellarSumpCrossings / interstellarSumpCatch: analytic chord integral of (1 - r^2), scale 2 ly x sqrt(lock);
+    - GameServer RequestJump decides the catch (seeded draw, DEV ELITE_DEV_SUMP_DRAW);
+    - GameSimulation::JumpDeepCatch carries the catch; at the jump moment the ship goes into the place;
+    - the client calc lists the swarms (risk with beacons, "лотерея" without).
+  - Live:
+    - flight in a deep place OK;
+    - deep 18 -> TRAPPIST-1 jump OK;
+    - forced catch in Frost stream I-ZWLH8, 1 304 AU from its centre.
+  - FINDING: swarms are >= 2 ly from the catalogue systems; no route between the 61 systems crosses one (closest miss
+    2.25 ly). Asked the author: swarms along lanes, or the systems' comet clouds as the interstellar sump.
+  - Minor: a route out of a deep place starts at the swarm centre, not at the ship's point.
 

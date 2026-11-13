@@ -34,7 +34,7 @@ bool systemHasSites(int systemId)
 }
 
 bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy,
-                                 const std::string& exitBodyId, const glm::dvec3& interstellarDirWorld)
+                                 const std::string& exitBodyId, const glm::dvec3& interstellarDirWorld, const JumpDeepCatch* deepCatch)
 {
     Ship* ship = getShip(shipId);
     if (!ship)
@@ -69,6 +69,8 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
     j.targetSystemId = targetSystemId;
     j.targetName = targetName;
     j.exitBodyId = exitBodyId;
+    if (deepCatch)
+        j.deepCatch = *deepCatch;
     const glm::dvec3 shipM = motion.travelFrame.localToWorldPosition(motion.localPositionMeters);
     if (inSystem)
     {
@@ -490,6 +492,24 @@ void GameSimulation::updateJumps(double dt)
                 std::cerr << "[Jump] ship " << id.value << ": IN-SYSTEM JUMP to " << j.exitBodyId << " (" << j.distanceAu
                           << " AU), charge spent " << j.costT << " t, left " << motion.jChargeT << " t" << std::endl;
                 ++it;
+                continue;
+            }
+            if (j.deepCatch.placeId >= 0)
+            {
+                // caught by a swarm between the systems (InterstellarJumpRoute.h): out in its deep-space place, at rest
+                // in its frame; the charge is spent, the target sees a ghost arrival
+                const auto c = j.deepCatch;
+                const std::string target = j.targetName;
+                const double cost = j.costT;
+                it = m_jumps.erase(it);
+                placeShipInDeepSpace(id, c.placeId, c.positionM);
+                motion.jumpState = 0;
+                motion.jumpRefusal = static_cast<std::uint8_t>(jr::Refusal::SumpCaught);
+                ++motion.jumpRefusalSerial;
+                ++motion.jumpSerial;
+                std::cerr << "[Jump] ship " << id.value << ": CAUGHT between the systems by " << c.name << " (place " << c.placeId << ", "
+                          << glm::length(c.positionM) / jr::AuM << " AU from its centre), charge spent " << cost << " t, left "
+                          << motion.jChargeT << " t; ghost arrival at " << target << std::endl;
                 continue;
             }
             const int from = motion.systemId;
@@ -1077,3 +1097,46 @@ glm::dvec3 GameSimulation::jumpCurrentDriftHere(int systemId, const glm::dvec3& 
     const auto sumps = m_jumpSumps.find(systemId);
     return jr::jumpCurrentDrift(masses, sumps == m_jumpSumps.end() ? none : sumps->second, centres, from, to);
 }
+
+bool GameSimulation::placeShipInDeepSpace(EntityId id, int systemId, const glm::dvec3& positionM)
+{
+    Ship* ship = getShip(id);
+    if (!ship || systemId < 0)
+        return false;
+    auto& tr = ship->core().transform();
+    auto& motion = tr.motion;
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+        (void)toggleFreeFlight(id);
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+        return false;
+    m_freeFlights[id].localFrame = false;
+    auto& frame = motion.travelFrame;
+    motion.systemId = systemId;
+    frame.systemId = systemId;
+    motion.hubId.clear();
+    motion.parentBodyId.clear();
+    motion.freeFlightReferenceId.clear();
+    motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
+    motion.freeFlightOrbitBodyId.clear();
+    motion.jEngine = false;
+    motion.jStopping = false;
+    motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
+    motion.freeFlightThrust = 0;
+    frame.originMeters = positionM;
+    frame.linearVelocityMps = glm::dvec3(0.0);
+    frame.linearAccelerationMps2 = glm::dvec3(0.0);
+    motion.localPositionMeters = glm::dvec3(0.0);
+    motion.localVelocityMps = glm::dvec3(0.0);
+    tr.setWorldPositionMeters(frame.originMeters);
+    m_shipReferenceBindings.erase(id);
+    motion.matchedToReferenceFrame = false;
+    auto& f = m_freeFlights[id];
+    f.lastPrimaryId.clear();
+    f.primaryBodyId.clear();
+    f.autoStabilizeArmed = false;
+    m_jumps.erase(id);
+    std::cerr << "[Jump] ship " << id.value << ": in deep space (place " << systemId << "), " << glm::length(positionM) / jr::AuM
+              << " AU from its centre" << std::endl;
+    return true;
+}
+

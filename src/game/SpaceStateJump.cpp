@@ -72,10 +72,21 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
     if (from != to)
     {
         const auto route = jr::planInterstellarRoute(*atlas, from->id, to->id);
+        const bool beacons = jr::systemHasBeacons(from->id) && jr::systemHasBeacons(to->id);
+        for (const auto& c : jr::interstellarSumpCrossings(*atlas, route, jr::exitLockFactor(jr::systemHasBeacons(from->id),
+                                                                                              jr::systemHasBeacons(to->id))))
+        {
+            char t[200];
+            if (beacons)
+                std::snprintf(t, sizeof t, " · отстойник %s на пути: риск захвата %.1f%%", c.name.c_str(), 100.0 * c.probability);
+            else
+                std::snprintf(t, sizeof t, " · путь через рой %s: без маяков риск неизвестен - лотерея", c.name.c_str());
+            corrections += t;
+        }
         if (route.ok && route.pointsLy.size() > 2)
         {
             d = route.lengthLy;
-            corrections = " · " + std::to_string(route.pointsLy.size() - 2) + " коррекц. в обход:";
+            corrections += " · " + std::to_string(route.pointsLy.size() - 2) + " коррекц. в обход:";
             for (const auto& n : route.avoidedNames)
                 corrections += " " + n;
         }

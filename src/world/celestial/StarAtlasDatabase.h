@@ -80,6 +80,19 @@ public:
         return m_objects;
     }
 
+    /*
+        Deep-space places (2026-11-13, author: a jump caught by a sump between the systems comes out there): one per
+        interstellar swarm object (icy_debris_field, debris_group), ids DeepSpaceIdBase + its index in the objects
+        sorted by id - the same on the client and the server. A place is a system with no bodies at the object's
+        galactic position, the frame centred on the object; findSystem / findSystemSummary find it, systems() and
+        distantSystems() never list it.
+    */
+    static constexpr int DeepSpaceIdBase = 1000000;
+    static bool isDeepSpace(int systemId) { return systemId >= DeepSpaceIdBase; }
+    const std::vector<StarSystemSummary>& deepSpacePlaces() const { return m_deepSpace; }
+    int deepSpaceIdForObject(const std::string& objectId) const;
+    const GalaxyObjectDefinition* deepSpaceObject(int systemId) const;
+
     const CelestialSystemDefinition* findSystem(int systemId) const;
     const StarSystemSummary* findSystemSummary(int systemId) const;
 
@@ -88,6 +101,9 @@ private:
     std::vector<StarSystemSummary> m_distantSystems;
     std::unordered_map<int, CelestialSystemDefinition> m_details;
     std::vector<GalaxyObjectDefinition> m_objects;
+    std::vector<StarSystemSummary> m_deepSpace;
+    std::unordered_map<int, std::size_t> m_deepSpaceObject;   // place id -> m_objects index
+    void buildDeepSpacePlaces();
     std::uint64_t m_contentFingerprint = 0;
 };
 

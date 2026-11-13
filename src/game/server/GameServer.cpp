@@ -26,6 +26,8 @@
 #include "src/world/celestial/WorldSitesCatalog.h"
 #include "src/game/navigation/rules/InterstellarJumpRoute.h"
 #include "src/game/navigation/rules/JumpSumps.h"
+#include "src/game/navigation/rules/JumpRules.h"
+#include <random>
 #include "src/game/scene/GameSceneSetup.h"
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/economy/EconomyModel.h"
@@ -703,6 +705,13 @@ void GameServer::applyDevStartPoint(double dt)
         ok = m_simulation.devPlaceShipNearHub(ship, arg, after.empty() ? 50.0 : std::atof(after.c_str()));
     else if (kind == "system")
         ok = devPlaceShipInSystem(ship, std::atoi(arg.c_str()), 0);
+    else if (kind == "deep")
+    {
+        // deep:<n>[@<AU from the centre>] - the n-th deep-space place (a swarm between the systems), at rest
+        const int place = world::celestial::StarAtlasDatabase::DeepSpaceIdBase + std::atoi(arg.c_str());
+        if (m_starAtlas.findSystemSummary(place))
+            ok = m_simulation.placeShipInDeepSpace(ship, place, glm::dvec3(after.empty() ? 1000.0 : std::atof(after.c_str()), 0.0, 0.0) * 1.495978707e11);
+    }
     else if (kind == "point")
     {
         // point:<x>,<y>,<z> - AU from the star of the ship's system
@@ -1134,7 +1143,31 @@ void GameServer::update(double dt)
                         else if (!route.ok)
                             std::cerr << "[Jump] interstellar way to " << to->name << ": no way around found" << std::endl;
                     }
-                    m_simulation.requestJump(id, to ? to->id : -1, targetName, pathLy, exitBody, dir);
+                    // the sumps between the systems on the way: the server's hidden field decides the catch now
+                    GameSimulation::JumpDeepCatch deepCatch;
+                    if (from && to && from != to && jumper)
+                    {
+                        namespace jj = game::navigation::jump;
+                        const auto route = jj::planInterstellarRoute(m_starAtlas, from->id, to->id);
+                        const double lock = jj::exitLockFactor(jj::systemHasBeacons(from->id), jj::systemHasBeacons(to->id));
+                        std::mt19937_64 rng(static_cast<std::uint64_t>(id.value) * 0xA24BAED4963EE407ull +
+                                            jumper->core().transform().motion.jumpSerial * 15485863ull + 7ull);
+                        std::uniform_real_distribution<double> uniform(1.0e-12, 1.0);
+                        double draw = -std::log(uniform(rng));
+                        if (const char* dev = std::getenv("ELITE_DEV_SUMP_DRAW"); dev && *dev)
+                            draw = std::max(1.0e-9, std::atof(dev));
+                        for (const auto& c : jj::interstellarSumpCrossings(m_starAtlas, route, lock))
+                            std::cerr << "[Jump] the way to " << to->name << " crosses the swarm " << c.name << ": depth " << c.depth
+                                      << " ly, catch " << 100.0 * c.probability << " % (lock " << lock << ")" << std::endl;
+                        if (const auto c = jj::interstellarSumpCatch(m_starAtlas, route, lock, draw); c.caught)
+                        {
+                            deepCatch.placeId = c.placeId;
+                            deepCatch.positionM = (c.pointLy - c.centreLy) * jj::MetersPerLy;
+                            deepCatch.name = c.name;
+                        }
+                    }
+                    m_simulation.requestJump(id, to ? to->id : -1, targetName, pathLy, exitBody, dir,
+                                             deepCatch.placeId >= 0 ? &deepCatch : nullptr);
                     break;
                 }
 

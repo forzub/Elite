@@ -5587,5 +5587,15 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     often;
   - the way through = safe lanes that must be found (old scouts' records or own scouting).
   - Implementation proposal written (approach shells with drifting corridors, lane records with age, scout archives /
-    own probe). Awaiting the author's go.
+    own probe). Author's go given 2026-11-13 (JUMP_MECHANICS 10h).
+- Author 2026-11-13 decision (JUMP_MECHANICS 10h):
+  - the 10g scheme accepted; the pilot's procedure for reaching a hard place is written down ("how to fly yourself":
+    calc -> lane state; get a record from scout archives or by own probes fanned from a standoff outside the shell;
+    jump along the corridor; records age with the corridor drift; re-probe old lanes);
+  - the "Flying Dutchman" = NOMAD-1 (canon alias; drifting Sol-Barnard loop 3-5 ly from Sol, findable): hard to jump to,
+    wrapped in a low-visibility cloud ("like underwater") from six centuries of leaks/dumps co-moving with the ship; the
+    cloud catches jumps by the sump column law; corridor = the engine-swept channel;
+  - such clouds elsewhere later (candidates: FAREWELL-1, frost-stream cores, Lotus field).
+  - Next: implementation steps 1-4 of 10h (shells + corridors, lane records, record sources, the cloud starting at
+    NOMAD-1). Nothing implemented yet.
 

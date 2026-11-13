@@ -5515,4 +5515,19 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   The interstellar step is only aimed and charged; nothing checks its line. The data has candidates (objects_details
   cells: 157 brown dwarfs, 554 rogue planets, 49 stellar remnants, 19 binary rogues with gameplay_gravity + mu;
   2 237 medium regions, 50 icy debris fields; 10 cavities); JUMP_MECHANICS section 4 (sumps, author 2026-11-05:
-  unpredictable without beacons) is design only. Awaiting the author's parameters.
+  unpredictable without beacons) is design only. Author 2026-11-13: the scheme fits (gravity masses avoided by
+  the planner; dense clouds / icy fields = sumps, a lottery without beacons); sizes from known data, plausible with
+  allowed exaggerations; every mechanic needs an unproven but not absurd cause (like the 0.9 c medium).
+- Interstellar way around gravity masses: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/b.txt).
+  src/game/navigation/rules/InterstellarJumpRoute.{h,cpp} (client calc + server, one function): capture sphere of a
+  mass = where its pull beats the Galaxy's, R = sqrt(mu / 2.1e-10 m/s^2) (Sun 0.084 ly; masses under 10 AU skipped);
+  obstacles: other catalogue systems (sum of star masses), gameplay_gravity objects with mu (+ binary companion);
+  start / target systems excluded; up to 6 correction points at 2 R beside the mass. Per JUMP_MECHANICS section 2 the
+  corrections are instant micro-exits of ONE jump: the nose on the first step, the charge = chargeT(path length),
+  range check on the path. Live: Gliese 581 -> Proxima, calc "18.3 св. лет ... 1 коррекц. в обход: Alpha Centauri A+B",
+  server 18.2253 -> 18.301 ly, zone / aim / charge / JUMP, exit Proxima b (1 128 km off, sigma 866 km).
+  Pairs found by scan: Alpha Cen -> Sirius / Eps Eri / Gliese 229 pass near Proxima only with a solar-mass guess -
+  with Proxima's real mass (0.029 ly sphere) the line is clear (live: Alpha Cen -> Sirius, no correction).
+  OPEN: no way found -> the server still jumps straight (only logged); sumps (dense clouds, icy fields) NOT
+  IMPLEMENTED - a capture exits the ship on the sump's edge in deep space, and the game has no deep-space location
+  (every ship is in a system). Needs the author's go for a deep-space place.

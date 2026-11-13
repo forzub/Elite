@@ -24,6 +24,7 @@
 
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
+#include "src/game/navigation/rules/InterstellarJumpRoute.h"
 #include "src/game/scene/GameSceneSetup.h"
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/economy/EconomyModel.h"
@@ -1111,8 +1112,27 @@ void GameServer::update(double dt)
                                 if (b.id == exitBody && !b.name.empty())
                                     targetName = b.name;
                     // the interstellar step's line: toward the target star (the system frame shares the galactic axes)
-                    const glm::dvec3 dir = from && to ? glm::dvec3(to->positionLy - from->positionLy) : glm::dvec3(0.0);
-                    m_simulation.requestJump(id, to ? to->id : -1, targetName, distanceLy, exitBody, dir);
+                    glm::dvec3 dir = from && to ? glm::dvec3(to->positionLy - from->positionLy) : glm::dvec3(0.0);
+                    double pathLy = distanceLy;
+                    if (from && to && from != to)
+                    {
+                        // around the charted masses on the line (InterstellarJumpRoute.h): the nose on the first step,
+                        // the charge for the whole way; the steps after it are instant micro-exits of the same jump
+                        const auto route = game::navigation::jump::planInterstellarRoute(m_starAtlas, from->id, to->id);
+                        if (route.ok && route.pointsLy.size() > 2)
+                        {
+                            dir = route.pointsLy[1] - route.pointsLy[0];
+                            pathLy = route.lengthLy;
+                            std::string around;
+                            for (const auto& n : route.avoidedNames)
+                                around += (around.empty() ? "" : ", ") + n;
+                            std::cerr << "[Jump] interstellar way to " << to->name << ": " << route.pointsLy.size() - 2
+                                      << " correction(s) around " << around << ", " << distanceLy << " -> " << pathLy << " ly" << std::endl;
+                        }
+                        else if (!route.ok)
+                            std::cerr << "[Jump] interstellar way to " << to->name << ": no way around found" << std::endl;
+                    }
+                    m_simulation.requestJump(id, to ? to->id : -1, targetName, pathLy, exitBody, dir);
                     break;
                 }
 

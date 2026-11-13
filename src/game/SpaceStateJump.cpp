@@ -14,6 +14,7 @@
 #include "src/core/DevFrameCapture.h"
 
 #include "src/game/navigation/rules/JumpRules.h"
+#include "src/game/navigation/rules/InterstellarJumpRoute.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 
 namespace
@@ -61,7 +62,20 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
         m_pilotNotice = "ПРЫЖОК: система не найдена";
         return;
     }
-    const double d = glm::length(to->positionLy - from->positionLy);
+    double d = glm::length(to->positionLy - from->positionLy);
+    // the way around the charted masses on the line (InterstellarJumpRoute.h): the whole way is charged
+    std::string corrections;
+    if (from != to)
+    {
+        const auto route = jr::planInterstellarRoute(*atlas, from->id, to->id);
+        if (route.ok && route.pointsLy.size() > 2)
+        {
+            d = route.lengthLy;
+            corrections = " · " + std::to_string(route.pointsLy.size() - 2) + " коррекц. в обход:";
+            for (const auto& n : route.avoidedNames)
+                corrections += " " + n;
+        }
+    }
     if (kind == 1)
     {
         const auto r = jr::check(d, motion.shipMassT, motion.jumpCoreRatingT, motion.jChargeT < 0.0 ? motion.jChargeCapacityT : motion.jChargeT);
@@ -79,6 +93,7 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
             m_jumpCalculatedSystemId = -1;
         }
         m_pilotNotice = b;
+        m_pilotNotice += corrections;
         if (m_jumpCalculatedSystemId == systemId && !systemHasRescueService(systemId))
             m_pilotNotice += " · ВНИМАНИЕ: в системе нет спасательной службы - SOS услышат только случайные корабли";
         std::cerr << "[Jump] calculated: " << m_pilotNotice << std::endl;

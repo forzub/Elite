@@ -611,6 +611,7 @@ add_executable(EliteGame
     src/game/simulation/GameSimulationFreeFlight.cpp
     src/game/simulation/GameSimulationRoute.cpp
     src/game/simulation/GameSimulationJump.cpp
+    src/game/navigation/rules/InterstellarJumpRoute.cpp
     src/game/simulation/GameSimulationZones.cpp
     src/game/simulation/GameSimulationCombat.cpp
     src/game/combat/WeaponCatalog.cpp

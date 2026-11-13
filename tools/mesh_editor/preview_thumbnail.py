@@ -23,6 +23,12 @@ def render(folder, out):
             for f in sorted(files):
                 if f.endswith(".obj"):
                     bpy.ops.wm.obj_import(filepath=os.path.join(root, f), forward_axis="NEGATIVE_Z", up_axis="Y")
+    elif os.path.isdir(os.path.join(folder, "source", "geo")):
+        # the mock-up layout (tools/ships/ship_asset_source.py): source/geo/<part>.lod0.obj
+        geo = os.path.join(folder, "source", "geo")
+        for f in sorted(os.listdir(geo)):
+            if f.endswith(".lod0.obj"):
+                bpy.ops.wm.obj_import(filepath=os.path.join(geo, f), forward_axis="NEGATIVE_Z", up_axis="Y")
     else:
         for f in sorted(os.listdir(folder)):
             if f.endswith(".gltf") or f.endswith(".glb"):

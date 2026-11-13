@@ -5678,4 +5678,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   EliteShipMeshExport's authored default now map Cobrett-I N1 / A3 to cobrettymk1 (the two-Cobras question resolved by
   the move). ship_assets/cobrett-i explained to the author (compartment mock-up source + compiled copy; the game reads
   it only with ELITE_SHIP_MODEL_ASSETS=1).
+- 2026-11-13 COBRETT-I MOCK-UP INTO SHIPS: author wants to look at the compartment Cobra -> moved
+  assets_source/models/ship_assets/cobrett-i -> assets_source/models/ships/cobrett-i, `ship_assets` removed (empty);
+  ship_asset_source.py writes there. EliteMeshEditor reads the mock-up layout (source/ship_asset.json +
+  source/geo/<part>.lod<N>.obj) and ship shells/<name>/: catalog 150 models, the mock-up card with its preview
+  (D:/tmp/me_ships3.png), open -> LOD0..3 = 45/45/45/38 meshes. Shell storage proposal (shells/ inside the ship folder,
+  asset.json "use": traffic / lod / physics) in MESH_EDITOR_SPEC 14 - awaits the author; cobretty-mk1-traf stays in
+  D:/__elite/model_source until then.
 

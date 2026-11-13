@@ -28,10 +28,17 @@ std::string pathString(const fs::path& p)
     return p.generic_u8string();   // UTF-8 both ways: the folders may have Cyrillic names
 }
 
+// the mock-up layout of tools/ships/ship_asset_source.py: source/ship_asset.json + source/geo/<part>.lod<N>.obj
+bool isMockupFolder(const fs::path& dir)
+{
+    std::error_code ec;
+    return fs::is_regular_file(dir / "source" / "ship_asset.json", ec);
+}
+
 bool isModelFolder(const fs::path& dir)
 {
     std::error_code ec;
-    if (fs::is_directory(dir / "LOD0", ec))
+    if (fs::is_directory(dir / "LOD0", ec) || isMockupFolder(dir))
         return true;
     for (const auto& e : fs::directory_iterator(dir, ec))
     {
@@ -282,6 +289,18 @@ void Catalog::rescan()
                         ++card.meshFiles;
                         card.gltf = true;
                     }
+                }
+                if (card.lods == 0 && isMockupFolder(m))
+                {
+                    std::set<std::string> lods;
+                    for (const auto& f : fs::directory_iterator(m / "source" / "geo", ec))
+                    {
+                        const std::string stem = f.path().stem().string();   // <part>.lod<N>
+                        const auto dot = stem.rfind(".lod");
+                        if (dot != std::string::npos)
+                            lods.insert(stem.substr(dot + 1));
+                    }
+                    card.lods = static_cast<int>(lods.size());
                 }
                 card.sizeMb = static_cast<double>(bytes) / (1024.0 * 1024.0);
                 if (const auto n = notes.find(card.id); n != notes.end())

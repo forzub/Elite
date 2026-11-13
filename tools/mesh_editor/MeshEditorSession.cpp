@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <tuple>
 
 #include "src/ui/html/HtmlUiServer.h"
 
@@ -171,16 +173,44 @@ nlohmann::json Session::openModel(const ModelCard& c) const
         if (e.is_directory() && e.path().filename().string().rfind("LOD", 0) == 0)
             dirs.push_back(e.path());
     std::sort(dirs.begin(), dirs.end());
+    // groups: LOD<N> folders; the mock-up's source/geo/<part>.lod<N>.obj by N; the ship's shells/<name>/ (traffic)
+    std::vector<std::tuple<std::string, fs::path, std::vector<fs::path>>> groups;   // name, base folder, meshes
     for (const auto& d : dirs)
     {
-        nlohmann::json lod;
-        lod["name"] = d.filename().string();
-        nlohmann::json files = nlohmann::json::array();
-        long long vertsTotal = 0, facesTotal = 0;
         std::vector<fs::path> objs;
         for (const auto& f : fs::recursive_directory_iterator(d, ec))
             if (f.is_regular_file() && f.path().extension() == ".obj")
                 objs.push_back(f.path());
+        groups.push_back({d.filename().string(), d, objs});
+    }
+    if (dirs.empty())
+    {
+        std::map<std::string, std::vector<fs::path>> byLod;
+        for (const auto& f : fs::directory_iterator(c.folder / "source" / "geo", ec))
+        {
+            const std::string stem = f.path().stem().string();
+            const auto dot = stem.rfind(".lod");
+            if (f.path().extension() == ".obj" && dot != std::string::npos)
+                byLod["LOD" + stem.substr(dot + 4)].push_back(f.path());
+        }
+        for (auto& [name, objs] : byLod)
+            groups.push_back({name, c.folder / "source" / "geo", objs});
+    }
+    for (const auto& e : fs::directory_iterator(c.folder / "shells", ec))
+        if (e.is_directory())
+        {
+            std::vector<fs::path> objs;
+            for (const auto& f : fs::recursive_directory_iterator(e.path(), ec))
+                if (f.is_regular_file() && f.path().extension() == ".obj")
+                    objs.push_back(f.path());
+            groups.push_back({"скорлупа " + e.path().filename().u8string(), e.path(), objs});
+        }
+    for (auto& [groupName, d, objs] : groups)
+    {
+        nlohmann::json lod;
+        lod["name"] = groupName;
+        nlohmann::json files = nlohmann::json::array();
+        long long vertsTotal = 0, facesTotal = 0;
         std::sort(objs.begin(), objs.end());
         for (const auto& f : objs)
         {

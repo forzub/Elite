@@ -3,7 +3,7 @@
 compartments, interiors drawn only for a breached compartment").
 
 Input: the hand-made layout sketch (tools/ships/layout_sketch.py: equipment installs, cover plates, hull outline) and
-the equipment models (assets/models/equipment/<folder>/LOD1..3). Output: assets/models/ship_assets/<ship>/source/
+the equipment models (assets/models/equipment/<folder>/LOD1..3). Output: <assets_source>/models/ships/<ship>/source/
   ship_asset.json  - the semantic assembly (nodes, states, compartments, openings, portals, collision, render LODs)
   geo/*.obj        - one merged mesh per equipment model and LOD (instanced by render nodes), hull / plates / pads
 The C++ tool EliteShipAssetAssemble (tools/ship_asset_assemble) turns it into a compiled .elmodel through the
@@ -31,7 +31,7 @@ sys.path.insert(0, HERE)
 import layout_sketch as LS  # noqa: E402
 from layout_sketch import Part, EQ, ROOT, MATERIALS, PADS, SOURCE_MODELS  # noqa: E402
 
-OUT = os.path.join(SOURCE_MODELS, "ship_assets")
+OUT = os.path.join(SOURCE_MODELS, "ships")   # author 2026-11-13: the mock-up lives with the other ships
 EXTERIOR_HINTS = ("laser", "missiles", "field_emitter", "skid", "radar", "dock", "pd1", "escape_cockpit")
 # equipment LOD per asset render LOD: component LODs 0..2 use the units' LOD1 / LOD2 / LOD3, the shell LOD3 too
 EQ_LOD = (1, 2, 3)

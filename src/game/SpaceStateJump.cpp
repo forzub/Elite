@@ -517,7 +517,10 @@ void SpaceState::updateJumpPresentation()
                                 ? "ПРЫЖОК ЗАВЕРШЁН: " + motion.jumpTargetName
                                 : "ПРЫЖОК ЗАВЕРШЁН: система " + motion.jumpTargetName);
         const bool atStar = motion.jumpExitAltitudeM > 0.5 * AuM;
-        if (atStar)
+        if (motion.jumpExitAltitudeM < 0.0)
+            addJumpTerminalLine("ВЫХОД: открытый космос, " + distanceText(-motion.jumpExitAltitudeM) + " от " + body +
+                                " - снесло течениями (без маяков их не учесть), дальше в J");
+        else if (atStar)
             addJumpTerminalLine("ВЫХОД: открытый космос, " + distanceText(motion.jumpExitAltitudeM) + " от звезды");
         else
             addJumpTerminalLine("ВЫХОД: орбита " + body + ", высота " + distanceText(motion.jumpExitAltitudeM));

@@ -17,6 +17,7 @@
 
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/JumpRules.h"
+#include "src/game/navigation/rules/JumpCurrents.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
 
 namespace
@@ -28,9 +29,7 @@ constexpr double PlaceholderOrbitM = 4.5e11;   // ~3 AU from the new star until 
 // runtime yet, JumpRules.h exitLockFactor)
 bool systemHasSites(int systemId)
 {
-    static world::celestial::WorldSitesCatalog sites;
-    static const bool loaded = sites.loadFromRuntimeOrSource();
-    return loaded && systemId >= 0 && !sites.sitesInSystem(systemId).empty();
+    return jr::systemHasBeacons(systemId);   // JumpSumps.h (one rule for the client and the server)
 }
 }
 
@@ -431,6 +430,11 @@ void GameSimulation::updateJumps(double dt)
                     offset = glm::dvec3(n(rng), n(rng), n(rng));
                 }
                 const glm::dvec3 starVel = j.velocities.count(j.starId) ? j.velocities[j.starId] : glm::dvec3(0.0);
+                // the currents (JumpCurrents.h): the beacons compensate all but drift / lock
+                const glm::dvec3 drift = jumpCurrentDriftHere(motion.systemId, shipM, legEnd);
+                offset += drift / std::max(1.0, lock);
+                std::cerr << "[Jump] ship " << id.value << ": currents drift " << glm::length(drift) / 1000.0 << " km, after the beacons "
+                          << glm::length(drift) / std::max(1.0, lock) / 1000.0 << " km" << std::endl;
                 frame.originMeters = legEnd + offset;
                 frame.linearVelocityMps = starVel;
                 motion.localPositionMeters = glm::dvec3(0.0);
@@ -468,6 +472,7 @@ void GameSimulation::updateJumps(double dt)
                     if (b.id == j.exitBodyId && glm::length(shipM - b.centerMeters) > 1.0)
                         j.exitRadial = glm::normalize(shipM - b.centerMeters);
                 j.lastStepFromM = shipM;
+                j.currentDriftM = jumpCurrentDriftHere(motion.systemId, shipM, legEnd);
                 j.fromSystemId = motion.systemId;
                 motion.hubId.clear();
                 motion.parentBodyId.clear();
@@ -488,6 +493,8 @@ void GameSimulation::updateJumps(double dt)
                 continue;
             }
             const int from = motion.systemId;
+            // the currents of the departure system along the way out (the next 1000 AU of the line)
+            j.currentDriftM = jumpCurrentDriftHere(from, shipM, shipM + j.interstellarDir * (1000.0 * jr::AuM));
             j.fromSystemId = from;
             motion.systemId = j.targetSystemId;
             frame.systemId = j.targetSystemId;   // the replicated frame identity carries the system (the client's)
@@ -634,9 +641,30 @@ void GameSimulation::updateJumps(double dt)
             std::normal_distribution<double> n(0.0, sigma / std::sqrt(3.0));
             offset = glm::dvec3(n(rng), n(rng), n(rng));
         }
-        glm::dvec3 actual = planned + offset;
+        // the currents (JumpCurrents.h): the departure's (kept) plus the arrival's - the interstellar line comes in along
+        // the star direction; the beacons compensate all but drift / lock
+        glm::dvec3 drift = j.currentDriftM;
+        if (!j.inSystem)
+            drift += jumpCurrentDriftHere(j.targetSystemId, planned - j.interstellarDir * (1000.0 * jr::AuM), planned);
+        const glm::dvec3 residual = drift / std::max(1.0, lock);
+        std::cerr << "[Jump] ship " << id.value << ": currents drift " << glm::length(drift) / 1000.0 << " km, after the beacons (lock "
+                  << lock << ") " << glm::length(residual) / 1000.0 << " km" << std::endl;
+        glm::dvec3 actual = planned + offset + residual;
         double rActual = r;
+        bool farOff = false;
         if (!star)
+        {
+            const double hill = glm::length(toStar) * std::cbrt(exit->gravitationalParameterM3s2 / std::max(1.0, 3.0 * starMu));
+            const double rMaxFar = std::max((exit->radiusMeters + floor + jr::ExitOrbitAboveFloorM) * 1.5, 0.3 * hill);
+            farOff = glm::length(actual - exit->centerMeters) > rMaxFar;
+        }
+        if (farOff)
+        {
+            // carried off the planet's reach: out in space, moving with the planet's orbit (the local frame there)
+            rActual = glm::length(actual - exit->centerMeters);
+            radial = glm::normalize(actual - exit->centerMeters);
+        }
+        else if (!star)
         {
             const double hill = glm::length(toStar) * std::cbrt(exit->gravitationalParameterM3s2 / std::max(1.0, 3.0 * starMu));
             const double rMin = exit->radiusMeters + floor + jr::ExitOrbitAboveFloorM;
@@ -652,10 +680,11 @@ void GameSimulation::updateJumps(double dt)
         }
         motion.jumpExitDeviationM = glm::length(actual - planned);
         motion.jumpExitSigmaM = sigma;
-        motion.jumpExitAltitudeM = star ? rActual : rActual - exit->radiusMeters;
+        // negative = carried off the body's reach by the currents: in open space, that far from the body
+        motion.jumpExitAltitudeM = farOff ? -rActual : star ? rActual : rActual - exit->radiusMeters;
         motion.jumpExitBodyName = exit->id;   // the client shows the body's name from its snapshot
         frame.originMeters = actual;
-        frame.linearVelocityMps = bodyVel + (star ? glm::dvec3(0.0) : tangent * std::sqrt(exit->gravitationalParameterM3s2 / rActual));
+        frame.linearVelocityMps = bodyVel + (star || farOff ? glm::dvec3(0.0) : tangent * std::sqrt(exit->gravitationalParameterM3s2 / rActual));
         motion.localPositionMeters = glm::dvec3(0.0);
         motion.localVelocityMps = glm::dvec3(0.0);
         tr.setWorldPositionMeters(frame.originMeters);
@@ -1031,4 +1060,20 @@ bool GameSimulation::jumpSumpCatch(EntityId shipId, ActiveJump& j, const glm::dv
               << glm::length(point - centre) / jr::AuM << " AU from its centre (lock " << lock << "), charge spent " << j.costT
               << " t, left " << motion.jChargeT << " t; ghost arrival at " << j.targetName << std::endl;
     return true;
+}
+
+glm::dvec3 GameSimulation::jumpCurrentDriftHere(int systemId, const glm::dvec3& from, const glm::dvec3& to) const
+{
+    if (systemId != m_activeCelestialSystemId)
+        return glm::dvec3(0.0);
+    std::vector<jr::CurrentMass> masses;
+    std::unordered_map<std::string, glm::dvec3> centres;
+    for (const auto& b : m_gravityBodies)
+    {
+        masses.push_back({b.centerMeters, b.gravitationalParameterM3s2, b.radiusMeters});
+        centres[b.id] = b.centerMeters;
+    }
+    static const std::vector<jr::JumpSump> none;
+    const auto sumps = m_jumpSumps.find(systemId);
+    return jr::jumpCurrentDrift(masses, sumps == m_jumpSumps.end() ? none : sumps->second, centres, from, to);
 }

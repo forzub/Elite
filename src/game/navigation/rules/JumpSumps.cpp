@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <mutex>
 
@@ -122,6 +123,9 @@ const std::vector<JumpSump>& jumpSumpsOfSystem(const world::celestial::Celestial
 
 bool systemHasBeacons(int systemId)
 {
+    static const bool devNone = std::getenv("ELITE_DEV_NO_BEACONS") != nullptr;   // DEV: every system without beacons
+    if (devNone)
+        return false;
     static world::celestial::WorldSitesCatalog sites;
     static const bool loaded = sites.loadFromRuntimeOrSource();
     return loaded && systemId >= 0 && !sites.sitesInSystem(systemId).empty();

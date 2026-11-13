@@ -781,6 +781,7 @@ private:
         double chargedHoldS = 0.0;
         double lineCheckS = 0.0;
         glm::dvec3 exitRadial {0.0};
+        glm::dvec3 currentDriftM {0.0};      // the currents' drift of the steps so far (raw, before the beacons' compensation)
         glm::dvec3 lastStepFromM {0.0};      // where the last step started (its length scales the exit error)         // in-system final exit: the target's side facing the incoming line
         std::unordered_map<std::string, glm::dvec3> lastCenters;   // body velocities by difference
         std::unordered_map<std::string, glm::dvec3> velocities;
@@ -797,6 +798,8 @@ private:
     std::unordered_map<int, std::vector<game::navigation::jump::JumpSump>> m_jumpSumps;
     // the step from -> to may fall into a sump: true = caught, the ship is out at the catch point and the jump is over
     bool jumpSumpCatch(EntityId shipId, ActiveJump& j, const glm::dvec3& from, const glm::dvec3& to);
+    // the currents' drift of a straight step in the active system (JumpCurrents.h), raw
+    glm::dvec3 jumpCurrentDriftHere(int systemId, const glm::dvec3& from, const glm::dvec3& to) const;
     void updateJumps(double dt);
     bool shipAwaitingJumpExit(EntityId shipId) const;   // automatic stabilization after the free-flight pass
     struct ZoneWatch

@@ -5549,4 +5549,18 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - Offline model, Earth -> Jupiter / Saturn: 27-29 % without beacons, 12-13 % with a destination beacon only, 9 % with
     an origin beacon only, 2.2-2.4 % with both.
   - Sump contents (pirates etc.) not yet: plan point 4. Next: currents (plan point 2).
+- Jump currents: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/c1-c4.txt, far140b.png). JUMP_MECHANICS 10e.
+  - Model: src/game/navigation/rules/JumpCurrents.h: drift = 0.3 s^2/m * integral g_perp ds (lensing law, softened by
+    the body radius) + sump ridge pull 0.01 AU per depth; residual after the beacons = drift / lock.
+  - Where it applies:
+    - in-system intermediate and final steps;
+    - interstellar: the departure's 1000 AU plus the arrival's 1000 AU.
+  - Exit carried beyond 0.3 Hill = open space moving with the planet; jumpExitAltitudeM < 0 marks it; client text
+    "открытый космос ... снесло течениями".
+  - systemHasSites goes through jr::systemHasBeacons; DEV ELITE_DEV_NO_BEACONS.
+  - Live:
+    - Earth -> Jupiter: drift 309 000 km -> 1 547 km with Sol beacons;
+    - Sol -> Tau Ceti: 4.84e6 km -> 24 000 km;
+    - no beacons: exit 0.032 AU off Tau Ceti m, in open space.
+  - Next: plan point 3 (a deep-space place between the systems).
 

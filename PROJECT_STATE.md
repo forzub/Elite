@@ -5641,3 +5641,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     -> "компьютер не работает", server 57.9 %. Frame D:/tmp/jroute/nav44.png.
   - Not done: the scout probe (step 3 remainder), pilots' messages (no mail yet), clearances (no organisations / rep),
     radiation corruption of memory (faults not live), the cloud (step 4).
+- 2026-11-13 MESH EDITOR (docs/MESH_EDITOR_SPEC.md, draft): author: the open flow is confusing (a dropdown of ship /
+  station); wants a modal Open dialog (big category buttons -> folder cards: preview, what, where used, readiness);
+  every step window to be specified before code, incl. what happens when a mesh element is changed / removed / added
+  and the damaged-state replacements. Agreed: parts (own LOD / hits / physics) + assemblies by reference (frame + skin
+  + sockets); Blender input via glTF (author OK; skeletal animation possible). Survey: the old editor (23k lines, a
+  12.8k-line session, minified 293 KB page) and its .elmodel output are barely used by the game (hits/collision/damage
+  never read; catalog ships drawn as boxes). Proposal: new UI from scratch on the old core (format, LOD simplifier,
+  mesh repair, instance fitter). Verified headless with Blender 5.0.1: linked collection instances with an
+  elite_part custom property export to glTF as nodes with extras + transform, shared meshes (no copies), node rotation
+  animation kept (D:/tmp/gltf_test). Next: go through the windows with the author, one by one.

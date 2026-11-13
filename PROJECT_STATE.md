@@ -5596,6 +5596,7 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     wrapped in a low-visibility cloud ("like underwater") from six centuries of leaks/dumps co-moving with the ship; the
     cloud catches jumps by the sump column law; corridor = the engine-swept channel;
   - such clouds elsewhere later (candidates: FAREWELL-1, frost-stream cores, Lotus field).
+  - The scout probe is a bought consumable (author 2026-11-13); more drones, incl. large ones, later.
   - Next: implementation steps 1-4 of 10h (shells + corridors, lane records, record sources, the cloud starting at
     NOMAD-1). Nothing implemented yet.
 

@@ -705,7 +705,7 @@ inline bool decodeClientShipCommand(
     }
 
     if (type > static_cast<std::uint8_t>(
-            ClientShipCommand::RequestJump))
+            ClientShipCommand::NavData))
     {
         return false;
     }

@@ -78,7 +78,10 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
         const double universeS = m_client->lastSimulationMetadata().universeTimeSeconds;
         const double lock = jr::exitLockFactor(jr::systemHasBeacons(from->id), jr::systemHasBeacons(to->id));
         // the lane records the ship carries (JUMP_MECHANICS 10h): the way goes through the corridor
-        const auto records = jr::parseLaneRecords(motion.laneRecords);
+        // the records live in the onboard computer's memory (JUMP_MECHANICS 10k): a dead computer reads none
+        const auto records = jr::parseLaneRecords(motion.navComputerState == 2 ? std::string() : motion.laneRecords);
+        if (motion.navComputerState == 2 && !motion.laneRecords.empty())
+            corrections += " · бортовой компьютер не работает - записи трасс недоступны";
         const auto lanes = jr::applyLaneRecords(*atlas, route, from->id, to->id, records, universeS);
         for (const auto& use : lanes)
         {

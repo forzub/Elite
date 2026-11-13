@@ -26,7 +26,7 @@ TradePresentation buildTradePresentation(
     page.hubName = here->name;
     page.atHub = atHub;
     page.day = EconomyModel::dayOf(universeSeconds);
-    page.tab = std::clamp(tab, 0, 2);
+    page.tab = std::clamp(tab, 0, 3);
     page.market = model.market(hubId, page.day);
     page.events = model.events(hubId, page.day);
     page.hubs = model.hubsOfSystem(here->systemId);

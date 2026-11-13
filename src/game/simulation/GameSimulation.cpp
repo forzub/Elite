@@ -2661,6 +2661,7 @@ EntityId GameSimulation::spawnShip(
         m.jumpCoreRatingT = physics.jumpCoreRatingT;
         m.jChargeCapacityT = physics.jumpChargeCapacityT;
         m.jChargeT = m.jChargeCapacityT;
+        m.navComputerState = navComputerWorks(*ship) ? 1 : 2;
     }
 
     m_ships[id] = std::move(ship);

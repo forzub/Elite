@@ -11,6 +11,7 @@
 #include "src/input/Input.h"
 #include "src/game/client/GameClient.h"
 #include "src/game/network/ClientMessage.h"
+#include "src/game/navigation/rules/NavDataBanks.h"
 
 game::presentation::RepairRefitPresentation SpaceState::buildRepairRefitPage()
 {
@@ -122,8 +123,55 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
         }
         return {};
     };
-    return game::presentation::buildTradePresentation(hubId, atHub, m_client->universeTimeSeconds(), m_tradeTab, m_tradeHub,
-                                                      distanceText);
+    auto page = game::presentation::buildTradePresentation(hubId, atHub, m_client->universeTimeSeconds(), m_tradeTab, m_tradeHub,
+                                                           distanceText);
+    // the navigation data tab (JUMP_MECHANICS 10l)
+    namespace jr = game::navigation::jump;
+    auto& nav = page.nav;
+    nav.atHub = atHub;
+    nav.selected = m_navDataSelected;
+    const auto* atlas = m_client->starAtlas();
+    const double universeS = m_client->lastSimulationMetadata().universeTimeSeconds;
+    const auto describe = [&](const jr::LaneRecord& r, game::presentation::NavDataRow& row) {
+        row.ageYears = (universeS - r.surveyUniverseS) / (365.25 * 86400.0);
+        if (const auto* shell = atlas ? jr::approachShellOf(*atlas, r.systemId) : nullptr)
+        {
+            row.place = shell->name;
+            if (r.corridor >= 1 && r.corridor <= static_cast<int>(shell->corridors.size()))
+                row.corridor = shell->corridors[static_cast<std::size_t>(r.corridor - 1)].name;
+            row.stateText = jr::laneStateText(jr::laneState(*shell, r, universeS));
+        }
+    };
+    if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+    {
+        const auto& motion = it->second.transform.motion;
+        nav.computerState = motion.navComputerState;
+        for (const auto& r : jr::parseLaneRecords(motion.laneRecords))
+        {
+            game::presentation::NavDataRow row;
+            describe(r, row);
+            row.tierText = r.source;
+            nav.memory.push_back(row);
+        }
+        for (const auto& c : jr::parseDataCarriers(motion.dataCarriers))
+            nav.carriers.push_back(c.label + " (" + std::to_string(c.records.size()) + " зап.)");
+        if (const auto* bank = jr::navDataBankInSystem(playerSystem); bank && atlas)
+        {
+            nav.bankName = bank->name;
+            for (const auto& r : bank->records)
+            {
+                game::presentation::NavDataRow row;
+                describe(jr::laneRecordOf(*atlas, *bank, r), row);
+                row.id = r.id;
+                row.tierText = jr::dataTierText(r.tier);
+                row.open = r.tier == jr::DataTier::Public;
+                row.surveyYear = r.surveyYear;
+                row.priceCr = r.priceCr;
+                nav.bank.push_back(row);
+            }
+        }
+    }
+    return page;
 }
 
 void SpaceState::sendRefitCommand(bool apply, const game::ship::refit::RefitOperation& operation)
@@ -166,6 +214,22 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             m_tradeTab = std::atoi(action->text.c_str());
         else if (action->type == ServicePanelActionType::TradeSelectHub)
             m_tradeHub = action->text;
+        else if (action->type == ServicePanelActionType::NavDataSelect)
+            m_navDataSelected = action->text;
+        else if (action->type == ServicePanelActionType::NavDataLoad || action->type == ServicePanelActionType::NavDataCarrier ||
+                 action->type == ServicePanelActionType::NavDataInsert)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::NavData;
+            command.index = action->type == ServicePanelActionType::NavDataLoad ? 0 : action->type == ServicePanelActionType::NavDataCarrier ? 1 : 2;
+            if (command.index == 2)
+                command.amount = std::atof(action->text.c_str());
+            else
+                command.detail = action->text;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+        }
         else if (action->type == ServicePanelActionType::TradeShowOnMap && context().app)
         {
             // the System map focused on that hub (the same path as a list pick)

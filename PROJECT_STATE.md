@@ -5624,3 +5624,20 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - Live Sol -> Fortuna: 0.5 yr known 0% (server true 0.18%, jump through, exit at Lexie); 5 yr estimate 15%; 15 yr
     outdated 52%; 40 yr useless -> 58% as without a record.
   - Next: step 3 - record sources: scout archives (bought / found) and the scout probe (a bought consumable).
+- 2026-11-13 author decisions: (a) lane records must live in equipment - the onboard computer; carriers ("flash
+  drives") and pilots' messages feed it; colony data banks, partly public, the rest military / secret (JUMP_MECHANICS
+  10k); (b) no money until the market exists, but data is not free - prices shown and logged, not charged; after the
+  data storage is done, return to the mesh editor; (c) every equipment type gets a controller fault layer (power part /
+  control / power for each) with radiation degradation, the controller's bulge marked in meshes
+  (MAINTENANCE_LAYER_DESIGN.md section 14, not implemented).
+- 2026-11-13 JUMP_MECHANICS 10l - computer memory, colony banks, data carriers (source + live, NOT accepted yet):
+  - motion.navComputerState (1 working / 2 down) + motion.dataCarriers replicated (snapshot wire schema 45); a dead
+    computer reads no records (server and calc); a code-built hull without a catalog computer counts as having one;
+  - NavDataBanks (data galaxy/nav_data_banks.json, 7 banks by canon beacon operators; public / military / secret;
+    prices); ClientShipCommand::NavData (0 bank->computer, 1 bank->carrier, 2 carrier->computer), server checks hub,
+    bank, tier, computer; F8 Trade tab "НАВИГ. ДАННЫЕ" (trade tab clamp 0..3);
+  - Live at Sol "Высокий": public Fortuna-1 into the computer (2 000 Cr logged, not charged), military refused, carrier
+    written; calc Sol->Fortuna "устарела, 48%"; a carrier with a 0.5 yr record inserted -> "известна, 0%"; dead computer
+    -> "компьютер не работает", server 57.9 %. Frame D:/tmp/jroute/nav44.png.
+  - Not done: the scout probe (step 3 remainder), pilots' messages (no mail yet), clearances (no organisations / rep),
+    radiation corruption of memory (faults not live), the cloud (step 4).

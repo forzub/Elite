@@ -267,11 +267,28 @@ public:
     bool devPlaceShipAtPoint(EntityId id, const glm::dvec3& au);
     // a ship into a deep-space place (StarAtlasDatabase::DeepSpaceIdBase.., no bodies): normal flight at rest in the
     // place's frame at positionM from its centre (a sump catch between the systems; DEV start deep:<n>)
+    // the onboard computer holds the lane records (JUMP_MECHANICS 10k): alive, or DEV ELITE_DEV_NAV_COMPUTER_DEAD
+    static bool navComputerWorks(const Ship& ship)
+    {
+        static const bool devDead = std::getenv("ELITE_DEV_NAV_COMPUTER_DEAD") != nullptr;
+        // a hull built in code without a catalog computer (the legacy Cobra) has it integrated: it works
+        return !devDead && (ship.core().devices().computer || ship.core().descriptor().catalog.computerModuleIds.empty());
+    }
     // the lane records the ship carries (JUMP_MECHANICS 10h)
     void setLaneRecords(EntityId id, const std::string& records)
     {
         if (Ship* ship = getShip(id))
             ship->core().transform().motion.laneRecords = records;
+    }
+    void setDataCarriers(EntityId id, const std::string& carriers)
+    {
+        if (Ship* ship = getShip(id))
+            ship->core().transform().motion.dataCarriers = carriers;
+    }
+    void refreshNavComputerState(EntityId id)
+    {
+        if (Ship* ship = getShip(id))
+            ship->core().transform().motion.navComputerState = navComputerWorks(*ship) ? 1 : 2;
     }
     bool placeShipInDeepSpace(EntityId id, int systemId, const glm::dvec3& positionM);
     // a sump catch between the systems decided at the request (the server's hidden field, JUMP_MECHANICS 8): the jump

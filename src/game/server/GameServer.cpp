@@ -26,6 +26,7 @@
 #include "src/world/celestial/WorldSitesCatalog.h"
 #include "src/game/navigation/rules/InterstellarJumpRoute.h"
 #include "src/game/navigation/rules/JumpSumps.h"
+#include "src/game/navigation/rules/NavDataBanks.h"
 #include "src/game/navigation/rules/JumpRules.h"
 #include <random>
 #include "src/game/scene/GameSceneSetup.h"
@@ -810,8 +811,20 @@ void GameServer::applyDevStartPoint(double dt)
                 }
             pos = end + 1;
         }
-        m_simulation.setLaneRecords(ship, jj::formatLaneRecords(records));
-        std::cerr << "[DevStart] ELITE_DEV_LANES: " << records.size() << " lane record(s)" << std::endl;
+        if (const char* toCarrier = std::getenv("ELITE_DEV_LANES_ON_CARRIER"); toCarrier && *toCarrier)
+        {
+            // DEV: the same records on a data carrier "found" aboard, not in the computer
+            jj::DataCarrier c;
+            c.label = toCarrier;
+            c.records = records;
+            m_simulation.setDataCarriers(ship, jj::formatDataCarriers({c}));
+            std::cerr << "[DevStart] ELITE_DEV_LANES: " << records.size() << " lane record(s) on a carrier '" << toCarrier << "'" << std::endl;
+        }
+        else
+        {
+            m_simulation.setLaneRecords(ship, jj::formatLaneRecords(records));
+            std::cerr << "[DevStart] ELITE_DEV_LANES: " << records.size() << " lane record(s)" << std::endl;
+        }
     }
 }
 
@@ -1198,7 +1211,7 @@ void GameServer::update(double dt)
                         // the charge for the whole way; the steps after it are instant micro-exits of the same jump
                         auto route = game::navigation::jump::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
                         game::navigation::jump::applyLaneRecords(m_starAtlas, route, from->id, to->id,
-                                                                 game::navigation::jump::parseLaneRecords(jumper ? jumper->core().transform().motion.laneRecords : std::string()),
+                                                                 game::navigation::jump::parseLaneRecords(jumper && GameSimulation::navComputerWorks(*jumper) ? jumper->core().transform().motion.laneRecords : std::string()),
                                                                  m_universeClock.timeSeconds());
                         if (route.ok && route.pointsLy.size() > 2)
                         {
@@ -1221,7 +1234,8 @@ void GameServer::update(double dt)
                         auto route = jj::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
                         const double universeS = m_universeClock.timeSeconds();
                         for (const auto& use : jj::applyLaneRecords(m_starAtlas, route, from->id, to->id,
-                                                                    jj::parseLaneRecords(jumper->core().transform().motion.laneRecords), universeS))
+                                                                    jj::parseLaneRecords(GameSimulation::navComputerWorks(*jumper) ? jumper->core().transform().motion.laneRecords : std::string()),
+                                                                    universeS))
                             std::cerr << "[Jump] lane " << use.shell->corridors[use.record.corridor - 1].name << " ("
                                       << (use.arrival ? "entry" : "exit") << ", " << use.record.source << ", "
                                       << (universeS - use.record.surveyUniverseS) / (365.25 * 86400.0) << " yr): "
@@ -1249,6 +1263,10 @@ void GameServer::update(double dt)
                                              deepCatch.placeId >= 0 ? &deepCatch : nullptr);
                     break;
                 }
+
+                case ClientShipCommand::NavData:
+                    handleNavDataCommand(id, shipCmd.index, shipCmd.detail, static_cast<int>(shipCmd.amount));
+                    break;
 
                 case ClientShipCommand::SetFreeFlightThrust:
                     m_simulation.setFreeFlightThrust(id, shipCmd.index);
@@ -2818,4 +2836,75 @@ bool GameServer::terrainHeight(const std::string& bodyId, const glm::dvec3& worl
     ground.slopeDeg = g.slopeDeg;
     ground.feature = g.feature;
     return true;
+}
+
+// ---- navigation data (JUMP_MECHANICS 10k/10l): the colony bank, the onboard computer's memory, the data carriers.
+// Data is not free: the price is logged, nothing is charged until the market exists (author 2026-11-13).
+void GameServer::handleNavDataCommand(EntityId id, int op, const std::string& recordId, int carrier)
+{
+    namespace jj = game::navigation::jump;
+    Ship* ship = m_simulation.getShip(id);
+    if (!ship)
+        return;
+    auto& motion = ship->core().transform().motion;
+    m_simulation.refreshNavComputerState(id);
+    const bool computer = GameSimulation::navComputerWorks(*ship);
+    auto records = jj::parseLaneRecords(motion.laneRecords);
+    auto carriers = jj::parseDataCarriers(motion.dataCarriers);
+    if (op == 2)
+    {
+        if (!computer || carrier < 1 || carrier > static_cast<int>(carriers.size()))
+        {
+            std::cerr << "[NavData] ship " << id.value << ": carrier " << carrier << " NOT read ("
+                      << (computer ? "no such carrier" : "the onboard computer is down") << ")" << std::endl;
+            return;
+        }
+        int stored = 0;
+        for (const auto& r : carriers[static_cast<std::size_t>(carrier - 1)].records)
+            stored += jj::storeLaneRecord(records, r) ? 1 : 0;
+        motion.laneRecords = jj::formatLaneRecords(records);
+        std::cerr << "[NavData] ship " << id.value << ": carrier '" << carriers[static_cast<std::size_t>(carrier - 1)].label
+                  << "' read into the computer: " << stored << " new / fresher record(s), " << records.size() << " in memory" << std::endl;
+        return;
+    }
+    const jj::NavDataBank* bank = nullptr;
+    const jj::BankRecord* rec = jj::findBankRecord(recordId, &bank);
+    const bool atHub = !motion.hubId.empty() && !motion.freeFlight;
+    const char* why = nullptr;
+    if (!rec || !bank)
+        why = "no such record";
+    else if (!atHub || jj::navDataBankInSystem(motion.systemId) != bank)
+        why = "not docked at a hub of this bank";
+    else if (rec->tier != jj::DataTier::Public)
+        why = jj::dataTierText(rec->tier);
+    else if (op == 0 && !computer)
+        why = "the onboard computer is down";
+    if (why)
+    {
+        std::cerr << "[NavData] ship " << id.value << ": record " << recordId << " REFUSED (" << why << ")" << std::endl;
+        return;
+    }
+    const jj::LaneRecord lane = jj::laneRecordOf(m_starAtlas, *bank, *rec);
+    std::string corridorName = std::to_string(rec->corridor);
+    if (const auto* shell = jj::approachShellOf(m_starAtlas, rec->shellSystemId);
+        shell && rec->corridor >= 1 && rec->corridor <= static_cast<int>(shell->corridors.size()))
+        corridorName = shell->corridors[static_cast<std::size_t>(rec->corridor - 1)].name;
+    if (op == 0)
+    {
+        const bool stored = jj::storeLaneRecord(records, lane);
+        motion.laneRecords = jj::formatLaneRecords(records);
+        std::cerr << "[NavData] ship " << id.value << ": " << bank->name << " record " << recordId << " (" << corridorName
+                  << ", survey " << rec->surveyYear << ") " << (stored ? "into the computer" : "not newer than the one in memory")
+                  << "; price " << rec->priceCr << " Cr (not charged: no market yet)" << std::endl;
+    }
+    else
+    {
+        jj::DataCarrier c;
+        c.label = bank->name + ": " + corridorName;
+        c.records = {lane};
+        carriers.push_back(c);
+        motion.dataCarriers = jj::formatDataCarriers(carriers);
+        std::cerr << "[NavData] ship " << id.value << ": " << bank->name << " record " << recordId << " (" << corridorName
+                  << ") onto carrier " << carriers.size() << "; price " << rec->priceCr << " Cr (not charged: no market yet)" << std::endl;
+    }
 }

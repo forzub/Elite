@@ -506,6 +506,27 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         msg.payload = command;
         s.m_client->sendMessage(msg);
     }
+    // navigation data (JUMP_MECHANICS 10l): "navdata:load:<record id>" into the computer, "navdata:carrier:<record id>"
+    // onto a new carrier, "navdata:insert:<carrier number>"; "service:trade" opens F8
+    else if (cmd.rfind("navdata:", 0) == 0)
+    {
+        const std::string rest = cmd.substr(8);
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::NavData;
+        command.index = rest.rfind("load:", 0) == 0 ? 0 : rest.rfind("carrier:", 0) == 0 ? 1 : 2;
+        const std::string value = rest.substr(rest.find(':') + 1);
+        if (command.index == 2)
+            command.amount = std::atof(value.c_str());
+        else
+            command.detail = value;
+        msg.payload = command;
+        s.m_client->sendMessage(msg);
+    }
+    else if (cmd.rfind("navsel:", 0) == 0)
+        s.m_navDataSelected = cmd.substr(7);
+    else if (cmd == "service:trade")
+        s.context().app->requestServicePanel(ui::services::ServiceUiId::Trade);
     // the map menu's jump rows through the client's own handler: "jumpui:calc|start|cancel:<system id>"
     else if (cmd.rfind("jumpui:", 0) == 0)
     {

@@ -192,6 +192,10 @@ struct DynamicMotionState
     double jumpExitAltitudeM = 0.0;
     // the lane records the ship carries (JUMP_MECHANICS 10h; InterstellarJumpRoute.h parseLaneRecords)
     std::string laneRecords;
+    // the onboard computer that holds them: 0 unknown, 1 working, 2 failed / none (records unreadable)
+    std::uint8_t navComputerState = 0;
+    // the data carriers aboard (NavDataBanks.h parseDataCarriers)
+    std::string dataCarriers;
     // the client's route (display only, not on the wire): 0 none, 1 flying, 2 paused (manual flight
     // until RESUME), 3 a service stay, 4 landing (the landing autopilot); legIndex / legCount of it
     std::uint8_t routeState = 0;

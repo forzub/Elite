@@ -381,6 +381,8 @@ public:
     bool devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal);
     // DEV start point: ELITE_DEV_START applied once to the player ship after the start settles
     void applyDevStartPoint(double dt);
+    // navigation data (JUMP_MECHANICS 10l): a bank record into the computer / onto a carrier, a carrier into the computer
+    void handleNavDataCommand(EntityId id, int op, const std::string& recordId, int carrier);
     std::size_t orbitalHubCount() const { return m_simulation.orbitalHubs().size(); }
 private:
 };

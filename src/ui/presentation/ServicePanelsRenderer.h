@@ -28,7 +28,11 @@ enum class ServicePanelActionType
     RefitApply,
     TradeTab,                // text = "0" board / "1" market / "2" hubs
     TradeSelectHub,          // text = hub id
-    TradeShowOnMap           // text = hub id
+    TradeShowOnMap,          // text = hub id
+    NavDataSelect,           // text = bank record id
+    NavDataLoad,             // text = bank record id -> the onboard computer
+    NavDataCarrier,          // text = bank record id -> a new data carrier
+    NavDataInsert            // text = carrier number (1-based) -> the onboard computer
 };
 
 struct ServicePanelAction
@@ -45,6 +49,8 @@ public:
     void renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page);
 
     // Mouse in window pixels; returns the action of a fresh left press.
+    void renderNavData(const game::presentation::NavDataPage& nav, float listX, float listY, float listW, float listH, float w,
+                       float h, int px, int small, int big);
     std::optional<ServicePanelAction> handleInput(const Viewport& viewport, double mouseX, double mouseY, bool leftDown,
                                                   double scrollY);
 

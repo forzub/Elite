@@ -586,9 +586,9 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
 
     // ---- tabs
     const float tabY = 18.0f + big + 18.0f + 2.0f * small;
-    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ"};
+    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ"};
     float tx = 24.0f;
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         const float tw = t.measureTextPx(tabs[i], px) + 24.0f;
         t.solidRectPx(tx, tabY, tw, px * 1.8f, page.tab == i ? Selected : Panel);
@@ -599,6 +599,12 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
 
     // ---- left list
     const float listX = 24.0f, listY = tabY + px * 2.4f, listW = w * 0.58f, listH = h - listY - 40.0f;
+    if (page.tab == 3)
+    {
+        renderNavData(page.nav, listX, listY, listW, listH, w, h, px, small, big);
+        t.endFrame();
+        return;
+    }
     t.solidRectPx(listX, listY, listW, listH, Panel);
     m_zones.push_back({4, listX, listY, listX + listW, listY + listH});
     const float rowH = static_cast<float>(px) * 2.7f;
@@ -718,6 +724,119 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     }
     t.textDrawPx("Клик по заявке или хабу — карточка; колесо — прокрутка списка", 24, h - 26, small, Muted);
     t.endFrame();
+}
+
+// F8 tab 3: the colony's navigation data bank, the onboard computer's memory, the data carriers (JUMP_MECHANICS 10l)
+void ServicePanelsRenderer::renderNavData(const game::presentation::NavDataPage& nav, float listX, float listY, float listW, float listH,
+                                          float w, float h, int px, int small, int big)
+{
+    auto& t = TextRenderer::instance();
+    t.solidRectPx(listX, listY, listW, listH, Panel);
+    m_zones.push_back({4, listX, listY, listX + listW, listY + listH});
+    const float rowH = static_cast<float>(px) * 2.7f;
+    if (nav.bankName.empty())
+        t.textDrawPx("В этой системе нет банка навигационных данных (нет оператора маяков)", listX + 10, listY + 8, px, Muted);
+    else
+    {
+        t.textDrawPx(nav.bankName, listX + 10, listY + 6, px, Title);
+        const float maxScroll = std::max(0.0f, rowH * static_cast<float>(nav.bank.size()) - (listH - px * 2.0f));
+        m_tradeListScroll = std::clamp(m_tradeListScroll, 0.0f, maxScroll);
+        for (std::size_t i = 0; i < nav.bank.size(); ++i)
+        {
+            const auto& r = nav.bank[i];
+            const float y = listY + px * 2.0f + rowH * static_cast<float>(i) - m_tradeListScroll;
+            if (y < listY + px * 2.0f - 1.0f || y + rowH > listY + listH + 1.0f)
+                continue;
+            const bool sel = r.id == nav.selected;
+            if (sel)
+                t.solidRectPx(listX, y, listW, rowH, Selected);
+            t.textDrawPx("трасса " + r.corridor + "  ·  " + r.place, listX + 10, y + 4, px, sel ? Title : r.open ? Text : Muted);
+            char when[96];
+            std::snprintf(when, sizeof when, "съёмка %.1f (%.1f г. назад)  ·  сейчас: ", r.surveyYear, r.ageYears);
+            t.textDrawPx(std::string(when) + r.stateText + "  ·  " + r.tierText,
+                         listX + 10, y + 6 + static_cast<float>(px), small, r.open ? Muted : Warn);
+            const std::string price = grouped(r.priceCr) + " Cr";
+            t.textDrawPx(price, listX + listW - t.measureTextPx(price, px) - 10, y + 4, px, r.open ? Good : Muted);
+            m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::NavDataSelect, r.id}});
+            t.solidRectPx(listX, y + rowH - 1, listW, 1, glm::vec4(0.2f, 0.3f, 0.4f, 0.5f));
+        }
+    }
+
+    // ---- right card: the selected record, the computer, the carriers
+    const float cx = listX + listW + 24.0f, cw = w - cx - 24.0f;
+    float y = listY;
+    const auto button = [&](const std::string& label, bool enabled, ServicePanelActionType type, const std::string& text) {
+        const float bw = t.measureTextPx(label, px) + 28.0f, bh = px * 1.9f;
+        t.solidRectPx(cx, y, bw, bh, enabled ? Selected : Panel);
+        t.textDrawPx(label, cx + 14, y + px * 0.4f, px, enabled ? Title : Muted);
+        if (enabled)
+            m_hits.push_back({cx, y, cx + bw, y + bh, 0, {type, text}});
+        y += bh + 8.0f;
+    };
+    const game::presentation::NavDataRow* sel = nullptr;
+    for (const auto& r : nav.bank)
+        if (r.id == nav.selected)
+            sel = &r;
+    if (sel)
+    {
+        t.textDrawPx("Трасса " + sel->corridor, cx, y, big, Text);
+        y += static_cast<float>(big) + 6;
+        t.textDrawPx(sel->place + "  ·  " + sel->tierText, cx, y, small, sel->open ? Muted : Warn);
+        y += static_cast<float>(small) + 6;
+        t.textDrawPx("цена " + grouped(sel->priceCr) + " Cr - оплата появится вместе с рынком", cx, y, small, Muted);
+        y += static_cast<float>(small) + 10;
+        const bool can = sel->open && nav.atHub;
+        if (!sel->open)
+        {
+            t.textDrawPx("Закрыто: " + sel->tierText, cx, y, px, Warn);
+            y += static_cast<float>(px) + 10;
+        }
+        else if (!nav.atHub)
+        {
+            t.textDrawPx("Данные выдают только в хабе", cx, y, px, Warn);
+            y += static_cast<float>(px) + 10;
+        }
+        button("В БОРТОВОЙ КОМПЬЮТЕР", can && nav.computerState == 1, ServicePanelActionType::NavDataLoad, sel->id);
+        button("НА НОСИТЕЛЬ", can, ServicePanelActionType::NavDataCarrier, sel->id);
+        y += 8;
+    }
+    t.textDrawPx("Бортовой компьютер", cx, y, px, Title);
+    y += static_cast<float>(px) + 6;
+    if (nav.computerState != 1)
+    {
+        t.textDrawPx("не работает - записи трасс недоступны", cx, y, small, Bad);
+        y += static_cast<float>(small) + 6;
+    }
+    else if (nav.memory.empty())
+    {
+        t.textDrawPx("записей трасс нет", cx, y, small, Muted);
+        y += static_cast<float>(small) + 6;
+    }
+    for (const auto& m : nav.memory)
+    {
+        if (y > h - 120.0f)
+            break;
+        t.textDrawPx(m.corridor + fmt("  ·  %.1f г.  ·  ", m.ageYears) + m.stateText + "  ·  " + m.tierText, cx, y, small, Text);
+        y += static_cast<float>(small) + 5;
+    }
+    y += 8;
+    t.textDrawPx("Носители данных на борту", cx, y, px, Title);
+    y += static_cast<float>(px) + 6;
+    if (nav.carriers.empty())
+    {
+        t.textDrawPx("нет", cx, y, small, Muted);
+        y += static_cast<float>(small) + 6;
+    }
+    for (std::size_t i = 0; i < nav.carriers.size(); ++i)
+    {
+        if (y > h - 60.0f)
+            break;
+        t.textDrawPx(std::to_string(i + 1) + ". " + nav.carriers[i], cx, y, small, Text);
+        y += static_cast<float>(small) + 4;
+        button("ВСТАВИТЬ В КОМПЬЮТЕР", nav.computerState == 1, ServicePanelActionType::NavDataInsert, std::to_string(i + 1));
+    }
+    (void)cw;
+    t.textDrawPx("Клик по записи - карточка; открытые данные выдаёт банк колонии, остальное - по допуску", 24, h - 26, small, Muted);
 }
 
 std::optional<ServicePanelAction> ServicePanelsRenderer::handleInput(const Viewport& viewport, double mouseX, double mouseY, bool leftDown,

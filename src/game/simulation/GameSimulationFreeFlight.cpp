@@ -901,6 +901,7 @@ void GameSimulation::updateFreeFlights(double dt)
             const auto shipPhysics = ship->core().effectivePhysics();
             motion.shipMassT = shipPhysics.massKg / 1000.0;
             motion.jumpCoreRatingT = shipPhysics.jumpCoreRatingT;
+            motion.navComputerState = navComputerWorks(*ship) ? 1 : 2;
             if (motion.jChargeT < 0.0)
             {
                 motion.jChargeCapacityT = shipPhysics.jumpChargeCapacityT;

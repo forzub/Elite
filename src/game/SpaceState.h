@@ -787,6 +787,7 @@ private:
     game::ship::refit::RefitOperation m_refitLastOperation;
     // F8 Trade: tab (0 board / 1 market / 2 hubs) and the hub on the card
     int m_tradeTab = 0;
+    std::string m_navDataSelected;   // F8 navigation data: the selected bank record
     // J: camera shake state (impact pulses decay)
     std::uint32_t m_jImpactSerialSeen = 0;
     float m_jShakePulse = 0.0f;

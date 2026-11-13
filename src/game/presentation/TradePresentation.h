@@ -33,6 +33,31 @@ struct TradeHubCard
     std::string channel;
 };
 
+// the navigation data tab (JUMP_MECHANICS 10l): the colony bank, the onboard computer's memory, the data carriers
+struct NavDataRow
+{
+    std::string id;           // the bank record id ("" for a memory / carrier line)
+    std::string corridor;     // "Фортуна-1"
+    std::string place;        // the shell's place name
+    std::string tierText;
+    bool open = true;
+    double surveyYear = 0.0;
+    double ageYears = 0.0;
+    std::string stateText;    // known / estimate / outdated / unknown now
+    int priceCr = 0;
+};
+
+struct NavDataPage
+{
+    std::string bankName;                 // "" = no bank in this system
+    bool atHub = false;
+    int computerState = 0;                // 0 unknown, 1 working, 2 down
+    std::vector<NavDataRow> bank;
+    std::vector<NavDataRow> memory;
+    std::vector<std::string> carriers;    // "label (N rec.)"
+    std::string selected;                 // the selected bank record id
+};
+
 struct TradePresentation
 {
     bool valid = false;
@@ -40,13 +65,14 @@ struct TradePresentation
     std::string hubName;
     bool atHub = false;
     int day = 0;
-    int tab = 0;                        // 0 board, 1 market, 2 hubs
+    int tab = 0;                        // 0 board, 1 market, 2 hubs, 3 navigation data
     std::vector<TradeBoardRow> board;
     std::vector<game::economy::MarketQuote> market;
     std::vector<game::economy::ActiveEvent> events;
     std::vector<const game::economy::HubEconomyInfo*> hubs;
     std::string selectedHub;
     TradeHubCard card;
+    NavDataPage nav;
 };
 
 // distanceText(hubId) -> "12 400 km" / "4.3 ly" / "" (unknown)

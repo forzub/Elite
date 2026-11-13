@@ -66,18 +66,25 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
         m_pilotNotice = "ПРЫЖОК: система не найдена";
         return;
     }
-    double d = glm::length(to->positionLy - from->positionLy);
+    // the way starts at the ship's own point in an open-space place (a deep-space place, a system's approaches)
+    const glm::dvec3 startLy = jr::jumpStartPointLy(*atlas, from->id, it->second.transform.fullWorldMeters());
+    double d = glm::length(to->positionLy - startLy);
     // the way around the charted masses on the line (InterstellarJumpRoute.h): the whole way is charged
     std::string corrections;
     if (from != to)
     {
-        const auto route = jr::planInterstellarRoute(*atlas, from->id, to->id);
+        const auto route = jr::planInterstellarRoute(*atlas, from->id, to->id, &startLy);
         const bool beacons = jr::systemHasBeacons(from->id) && jr::systemHasBeacons(to->id);
+        const double universeS = m_client->lastSimulationMetadata().universeTimeSeconds;
         for (const auto& c : jr::interstellarSumpCrossings(*atlas, route, jr::exitLockFactor(jr::systemHasBeacons(from->id),
-                                                                                              jr::systemHasBeacons(to->id))))
+                                                                                              jr::systemHasBeacons(to->id)),
+                                                           universeS))
         {
             char t[200];
-            if (beacons)
+            if (c.shell)
+                std::snprintf(t, sizeof t, " · оболочка подступов %s: без записи трассы риск захвата %.0f%%", c.name.c_str(),
+                              100.0 * c.probability);
+            else if (beacons)
                 std::snprintf(t, sizeof t, " · отстойник %s на пути: риск захвата %.1f%%", c.name.c_str(), 100.0 * c.probability);
             else
                 std::snprintf(t, sizeof t, " · путь через рой %s: без маяков риск неизвестен - лотерея", c.name.c_str());

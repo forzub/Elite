@@ -91,6 +91,13 @@ public:
     static bool isDeepSpace(int systemId) { return systemId >= DeepSpaceIdBase; }
     const std::vector<StarSystemSummary>& deepSpacePlaces() const { return m_deepSpace; }
     int deepSpaceIdForObject(const std::string& objectId) const;
+    // The approaches of a system (JUMP_MECHANICS 10h): open space around a catalogue system, the frame centred on its
+    // star, no bodies - where a jump caught by the system's approach shell comes out. A jump from there into the system
+    // is an interstellar jump of a fraction of a light year (an in-system step of thousands of AU is unaffordable).
+    static constexpr int ApproachIdBase = 2000000;
+    static bool isApproach(int systemId) { return systemId >= ApproachIdBase; }
+    static int approachIdOf(int systemId) { return ApproachIdBase + systemId; }
+    static int systemOfApproach(int placeId) { return placeId - ApproachIdBase; }
     const GalaxyObjectDefinition* deepSpaceObject(int systemId) const;
 
     const CelestialSystemDefinition* findSystem(int systemId) const;
@@ -102,6 +109,7 @@ private:
     std::unordered_map<int, CelestialSystemDefinition> m_details;
     std::vector<GalaxyObjectDefinition> m_objects;
     std::vector<StarSystemSummary> m_deepSpace;
+    std::vector<StarSystemSummary> m_approaches;
     std::unordered_map<int, std::size_t> m_deepSpaceObject;   // place id -> m_objects index
     void buildDeepSpacePlaces();
     std::uint64_t m_contentFingerprint = 0;

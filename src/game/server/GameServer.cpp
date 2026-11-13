@@ -712,6 +712,28 @@ void GameServer::applyDevStartPoint(double dt)
         if (m_starAtlas.findSystemSummary(place))
             ok = m_simulation.placeShipInDeepSpace(ship, place, glm::dvec3(after.empty() ? 1000.0 : std::atof(after.c_str()), 0.0, 0.0) * 1.495978707e11);
     }
+    else if (kind == "approach")
+    {
+        // approach:<systemId>[@<AU from the star>[:c<k>]] - the system's approaches (JUMP_MECHANICS 10h), at rest; :c<k> = on
+        // the axis of the shell's corridor k (1-based) as it lies now, else along +x
+        const int system = std::atoi(arg.c_str());
+        const int place = world::celestial::StarAtlasDatabase::approachIdOf(system);
+        double au = 20000.0;
+        int corridor = 0;
+        if (!after.empty())
+        {
+            au = std::atof(after.c_str());
+            if (const auto c = after.find(":c"); c != std::string::npos)
+                corridor = std::atoi(after.c_str() + c + 2);
+        }
+        glm::dvec3 dir(1.0, 0.0, 0.0);
+        if (const auto* shell = game::navigation::jump::approachShellOf(m_starAtlas, system);
+            shell && corridor >= 1 && corridor <= static_cast<int>(shell->corridors.size()))
+            dir = game::navigation::jump::corridorDirAt(*shell, shell->corridors[static_cast<std::size_t>(corridor - 1)],
+                                                        m_universeClock.timeSeconds());
+        if (m_starAtlas.findSystemSummary(place))
+            ok = m_simulation.placeShipInDeepSpace(ship, place, dir * au * 1.495978707e11);
+    }
     else if (kind == "point")
     {
         // point:<x>,<y>,<z> - AU from the star of the ship's system
@@ -1125,11 +1147,20 @@ void GameServer::update(double dt)
                     // the interstellar step's line: toward the target star (the system frame shares the galactic axes)
                     glm::dvec3 dir = from && to ? glm::dvec3(to->positionLy - from->positionLy) : glm::dvec3(0.0);
                     double pathLy = distanceLy;
+                    // the way starts at the ship's own point in an open-space place (a deep-space place, a system's approaches)
+                    glm::dvec3 startLy = from ? from->positionLy : glm::dvec3(0.0);
+                    if (from && jumper)
+                        startLy = game::navigation::jump::jumpStartPointLy(m_starAtlas, from->id, jumper->core().transform().fullWorldMeters());
+                    if (from && to && from != to && world::celestial::StarAtlasDatabase::isDeepSpace(from->id))
+                    {
+                        dir = to->positionLy - startLy;
+                        pathLy = glm::length(to->positionLy - startLy);
+                    }
                     if (from && to && from != to)
                     {
                         // around the charted masses on the line (InterstellarJumpRoute.h): the nose on the first step,
                         // the charge for the whole way; the steps after it are instant micro-exits of the same jump
-                        const auto route = game::navigation::jump::planInterstellarRoute(m_starAtlas, from->id, to->id);
+                        const auto route = game::navigation::jump::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
                         if (route.ok && route.pointsLy.size() > 2)
                         {
                             dir = route.pointsLy[1] - route.pointsLy[0];
@@ -1148,7 +1179,8 @@ void GameServer::update(double dt)
                     if (from && to && from != to && jumper)
                     {
                         namespace jj = game::navigation::jump;
-                        const auto route = jj::planInterstellarRoute(m_starAtlas, from->id, to->id);
+                        const auto route = jj::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
+                        const double universeS = m_universeClock.timeSeconds();
                         const double lock = jj::exitLockFactor(jj::systemHasBeacons(from->id), jj::systemHasBeacons(to->id));
                         std::mt19937_64 rng(static_cast<std::uint64_t>(id.value) * 0xA24BAED4963EE407ull +
                                             jumper->core().transform().motion.jumpSerial * 15485863ull + 7ull);
@@ -1156,10 +1188,11 @@ void GameServer::update(double dt)
                         double draw = -std::log(uniform(rng));
                         if (const char* dev = std::getenv("ELITE_DEV_SUMP_DRAW"); dev && *dev)
                             draw = std::max(1.0e-9, std::atof(dev));
-                        for (const auto& c : jj::interstellarSumpCrossings(m_starAtlas, route, lock))
-                            std::cerr << "[Jump] the way to " << to->name << " crosses the swarm " << c.name << ": depth " << c.depth
-                                      << " ly, catch " << 100.0 * c.probability << " % (lock " << lock << ")" << std::endl;
-                        if (const auto c = jj::interstellarSumpCatch(m_starAtlas, route, lock, draw); c.caught)
+                        for (const auto& c : jj::interstellarSumpCrossings(m_starAtlas, route, lock, universeS))
+                            std::cerr << "[Jump] the way to " << to->name << " crosses " << (c.shell ? "the approach shell " : "the swarm ")
+                                      << c.name << ": depth " << c.depth << " ly, catch " << 100.0 * c.probability << " % (lock " << lock
+                                      << ")" << std::endl;
+                        if (const auto c = jj::interstellarSumpCatch(m_starAtlas, route, lock, draw, universeS); c.caught)
                         {
                             deepCatch.placeId = c.placeId;
                             deepCatch.positionM = (c.pointLy - c.centreLy) * jj::MetersPerLy;

@@ -2309,6 +2309,13 @@ StarAtlasDatabase::findSystemSummary(
             return &system;
     }
 
+    if (isApproach(systemId))
+    {
+        for (const auto& a : m_approaches)
+            if (a.id == systemId)
+                return &a;
+        return nullptr;
+    }
     if (isDeepSpace(systemId))
     {
         const std::size_t i = static_cast<std::size_t>(systemId - DeepSpaceIdBase);
@@ -2341,6 +2348,23 @@ void StarAtlasDatabase::buildDeepSpacePlaces()
         s.routeTarget = false;
         m_deepSpace.push_back(s);
         m_deepSpaceObject[s.id] = swarms[k];
+        CelestialSystemDefinition d;
+        d.systemId = s.id;
+        d.name = s.name;
+        m_details[s.id] = std::move(d);
+    }
+    m_approaches.clear();
+    for (const auto& sys : m_systems)
+    {
+        StarSystemSummary s;
+        s.id = approachIdOf(sys.id);
+        s.name = "Подступы: " + sys.name;
+        s.positionLy = sys.positionLy;
+        s.starsCount = 0;
+        s.catalogScope = StarSystemCatalogScope::DeepSpace;
+        s.atlasVisible = false;
+        s.routeTarget = false;
+        m_approaches.push_back(s);
         CelestialSystemDefinition d;
         d.systemId = s.id;
         d.name = s.name;

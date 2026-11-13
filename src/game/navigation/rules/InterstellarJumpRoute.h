@@ -34,7 +34,12 @@ struct InterstellarRoute
 
 double gravityCaptureRadiusLy(double muM3s2);
 
-InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabase& atlas, int fromSystemId, int toSystemId);
+// startLy: where the way starts (a ship in a deep-space place or a system's approaches is not at the place's centre);
+// nullptr = the start system's position
+InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabase& atlas, int fromSystemId, int toSystemId,
+                                        const glm::dvec3* startLy = nullptr);
+// the start of an interstellar way: a catalogue system's star, or the ship's own point in an open-space place
+glm::dvec3 jumpStartPointLy(const world::celestial::StarAtlasDatabase& atlas, int systemId, const glm::dvec3& shipPositionM);
 
 // ---- sumps between the systems (author 2026-11-13): the interstellar swarms - icy debris fields (ellipsoids, soft edge
 // 1 - r^2) and debris groups (spheres of extent_au). Scale-invariant calibration: a light-years-long step sees a swarm
@@ -44,10 +49,43 @@ InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabas
 // (StarAtlasDatabase::deepSpaceIdForObject) at the catch point, at rest in its frame.
 constexpr double InterstellarSumpScaleLy = 2.0;
 
+// ---- approach shells (JUMP_MECHANICS 10g/10h, data galaxy/jump_approach_shells.json): an authored spherical layer of
+// sumps around a hard-to-reach system - a dense, stirred comet cloud - with a few narrow safe corridors (radial cones)
+// that drift with time. Depth along the way = tau x the integral of the profile (triangle inner..peak..outer) x the
+// corridor factor (1 - exp(-(angle/halfWidth)^2) per corridor) / the half thickness; one dumb radial crossing without
+// beacons is tau. Caught: out in the system's approaches (StarAtlasDatabase::approachIdOf).
+struct ApproachCorridor
+{
+    std::string name;
+    glm::dvec3 dir {1.0, 0.0, 0.0};   // galactic axes, at the file's epoch
+    glm::dvec3 axis {0.0, 0.0, 1.0};  // the drift turns dir about this axis
+    double halfWidthRad = 0.02;
+    double driftRadPerS = 0.0;
+};
+
+struct ApproachShell
+{
+    int systemId = -1;
+    std::string name;
+    std::string cause;
+    glm::dvec3 centreLy {0.0};
+    double innerLy = 0.0, peakLy = 0.0, outerLy = 0.0;
+    double tau = 0.0;
+    double epochUniverseS = 0.0;
+    std::vector<ApproachCorridor> corridors;
+};
+
+const std::vector<ApproachShell>& approachShells(const world::celestial::StarAtlasDatabase& atlas);
+const ApproachShell* approachShellOf(const world::celestial::StarAtlasDatabase& atlas, int systemId);
+glm::dvec3 corridorDirAt(const ApproachShell& shell, const ApproachCorridor& c, double universeTimeS);
+// the shell's normalised density factor (0..1, before tau) at a galactic point
+double approachShellFactor(const ApproachShell& shell, const glm::dvec3& pointLy, double universeTimeS);
+
 struct InterstellarSumpCrossing
 {
     std::string name;
     int placeId = -1;
+    bool shell = false;        // an approach shell (else a swarm)
     double depth = 0.0;        // before the beacons
     double probability = 0.0;  // with the beacons' lock
 };
@@ -55,6 +93,7 @@ struct InterstellarSumpCrossing
 struct InterstellarSumpCatch
 {
     bool caught = false;
+    bool shell = false;
     int placeId = -1;
     std::string name;
     glm::dvec3 pointLy {0.0};
@@ -62,8 +101,9 @@ struct InterstellarSumpCatch
 };
 
 std::vector<InterstellarSumpCrossing> interstellarSumpCrossings(const world::celestial::StarAtlasDatabase& atlas,
-                                                                const InterstellarRoute& route, double lockFactor);
+                                                                const InterstellarRoute& route, double lockFactor,
+                                                                double universeTimeS = 0.0);
 // the catch along the way for an exponential draw `e` (= -ln U)
 InterstellarSumpCatch interstellarSumpCatch(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
-                                            double lockFactor, double e);
+                                            double lockFactor, double e, double universeTimeS = 0.0);
 } // namespace game::navigation::jump

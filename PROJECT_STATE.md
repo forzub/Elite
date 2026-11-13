@@ -5599,4 +5599,18 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - The scout probe is a bought consumable (author 2026-11-13); more drones, incl. large ones, later.
   - Next: implementation steps 1-4 of 10h (shells + corridors, lane records, record sources, the cloud starting at
     NOMAD-1). Nothing implemented yet.
-
+- 2026-11-13 JUMP_MECHANICS 10i - step 1 of 10h: approach shells + drifting corridors (source + live, NOT accepted
+  by the author yet):
+  - data galaxy/jump_approach_shells.json (PROPOSAL): Fortuna 61 tau 3, World's Ass 19 tau 6, Gate 41 tau 3, Kern 37
+    tau 5; 3 corridors each (radial cones, script-placed >= 8 deg from every catalogue system, drift from 3126-01-01);
+  - InterstellarJumpRoute: approachShells / corridorDirAt / approachShellFactor; shells join the swarms in
+    interstellarSumpCrossings / interstellarSumpCatch (universe time); jumpStartPointLy + planInterstellarRoute(startLy):
+    a way out of an open-space place starts at the ship's point (closes the 10f minor);
+  - StarAtlasDatabase approaches places (2000000 + id): a shell catch comes out there (an in-system step of thousands of
+    AU is unaffordable; from the approaches a 0.3 ly interstellar jump costs ~0.01 t);
+  - client calc: "оболочка подступов X: без записи трассы риск захвата N%"; DEV start approach:<id>[@AU[:c<k>]].
+  - Live: Fortuna approaches off-corridor 95% -> caught at 8 470 AU into the approaches; on corridor 1: 0% -> exit at
+    Lexie; dumb calcs Sol->Fortuna 58%, 83 Leo->Gate 19%, ->Kern 30% (beacons), 95 / 99% without beacons.
+  - Noted: hopping through the shell from the approaches is cheap (time + sump contents are the price); beacons cut the
+    risk a lot (World's Ass 35%) - tau is the tuning knob.
+  - Next: step 2 - lane records with age (route via the corridor entry point, state known/estimate/outdated/unknown).

@@ -2,11 +2,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
+#include <iostream>
 #include <mutex>
 #include <unordered_map>
 
 #include "src/game/navigation/rules/JumpRules.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
+
+#include <nlohmann/json.hpp>
 
 namespace game::navigation::jump
 {
@@ -157,13 +161,175 @@ Chord chordOf(const Swarm& s, const glm::dvec3& a, const glm::dvec3& b)
     c.any = c.hi > c.lo;
     return c;
 }
+constexpr double YearS = 365.25 * 86400.0;
+constexpr int ShellSamples = 600;
+
+double shellProfile(const ApproachShell& s, double r)
+{
+    if (r <= s.innerLy || r >= s.outerLy)
+        return 0.0;
+    if (r <= s.peakLy)
+        return (r - s.innerLy) / std::max(1e-12, s.peakLy - s.innerLy);
+    return (s.outerLy - r) / std::max(1e-12, s.outerLy - s.peakLy);
+}
+
+// the part [lo, hi] of the segment a..b inside the shell's outer sphere
+bool shellSpan(const ApproachShell& s, const glm::dvec3& a, const glm::dvec3& b, double& lo, double& hi)
+{
+    const glm::dvec3 d = b - a, x0 = a - s.centreLy;
+    const double A = glm::dot(d, d), B = 2.0 * glm::dot(x0, d), C = glm::dot(x0, x0) - s.outerLy * s.outerLy;
+    if (A <= 0.0)
+        return false;
+    const double disc = B * B - 4.0 * A * C;
+    if (disc <= 0.0)
+        return false;
+    const double q = std::sqrt(disc);
+    lo = std::max(0.0, (-B - q) / (2.0 * A));
+    hi = std::min(1.0, (-B + q) / (2.0 * A));
+    return hi > lo;
+}
+
+const char* const ShellFiles[] = {"assets/data/galaxy/jump_approach_shells.json", "../assets/data/galaxy/jump_approach_shells.json",
+                                  "../src/assets/data/galaxy/jump_approach_shells.json", "src/assets/data/galaxy/jump_approach_shells.json"};
+
+glm::dvec3 vec3Of(const nlohmann::json& j, const glm::dvec3& fallback)
+{
+    if (!j.is_array() || j.size() != 3)
+        return fallback;
+    return glm::dvec3(j[0].get<double>(), j[1].get<double>(), j[2].get<double>());
+}
+
+double shellDepthTau(const ApproachShell& s, const glm::dvec3& a, const glm::dvec3& b, double lo, double hi, double t);
+} // namespace
+
+const std::vector<ApproachShell>& approachShells(const world::celestial::StarAtlasDatabase& atlas)
+{
+    static std::mutex lock;
+    static std::unordered_map<const void*, std::vector<ApproachShell>> cache;
+    std::lock_guard<std::mutex> guard(lock);
+    auto [it, inserted] = cache.try_emplace(&atlas);
+    if (!inserted)
+        return it->second;
+    for (const char* path : ShellFiles)
+    {
+        std::ifstream in(path);
+        if (!in)
+            continue;
+        const nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+        if (j.is_discarded() || !j.contains("shells"))
+            continue;
+        const double epoch = j.value("epochUniverseS", 0.0);
+        constexpr double DegToRad = 3.14159265358979323846 / 180.0;
+        const double auLy = AuM / MetersPerLy;
+        for (const auto& e : j["shells"])
+        {
+            ApproachShell s;
+            s.systemId = e.value("systemId", -1);
+            const auto* sys = atlas.findSystemSummary(s.systemId);
+            if (!sys)
+                continue;
+            s.name = e.value("name", sys->name);
+            s.cause = e.value("cause", std::string());
+            s.centreLy = sys->positionLy;
+            s.innerLy = e.value("innerAu", 0.0) * auLy;
+            s.peakLy = e.value("peakAu", 0.0) * auLy;
+            s.outerLy = e.value("outerAu", 0.0) * auLy;
+            s.tau = e.value("tau", 0.0);
+            s.epochUniverseS = epoch;
+            if (s.outerLy <= s.innerLy || s.tau <= 0.0)
+                continue;
+            if (e.contains("corridors"))
+                for (const auto& c : e["corridors"])
+                {
+                    ApproachCorridor k;
+                    k.name = c.value("name", std::string());
+                    k.dir = glm::normalize(vec3Of(c.contains("dir") ? c["dir"] : nlohmann::json(), glm::dvec3(1.0, 0.0, 0.0)));
+                    k.axis = glm::normalize(vec3Of(c.contains("axis") ? c["axis"] : nlohmann::json(), glm::dvec3(0.0, 0.0, 1.0)));
+                    k.halfWidthRad = c.value("halfWidthDeg", 1.0) * DegToRad;
+                    k.driftRadPerS = c.value("driftDegPerYear", 0.0) * DegToRad / YearS;
+                    s.corridors.push_back(k);
+                }
+            it->second.push_back(std::move(s));
+        }
+        std::cerr << "[Jump] approach shells: " << it->second.size() << " from " << path << std::endl;
+        break;
+    }
+    return it->second;
+}
+
+const ApproachShell* approachShellOf(const world::celestial::StarAtlasDatabase& atlas, int systemId)
+{
+    for (const auto& s : approachShells(atlas))
+        if (s.systemId == systemId)
+            return &s;
+    return nullptr;
+}
+
+glm::dvec3 corridorDirAt(const ApproachShell& shell, const ApproachCorridor& c, double universeTimeS)
+{
+    // Rodrigues: dir turned about the axis (perpendicular to it) by the drift since the epoch
+    const double a = c.driftRadPerS * (universeTimeS - shell.epochUniverseS);
+    return glm::normalize(c.dir * std::cos(a) + glm::cross(c.axis, c.dir) * std::sin(a) +
+                          c.axis * glm::dot(c.axis, c.dir) * (1.0 - std::cos(a)));
+}
+
+double approachShellFactor(const ApproachShell& shell, const glm::dvec3& pointLy, double universeTimeS)
+{
+    const glm::dvec3 rel = pointLy - shell.centreLy;
+    const double r = glm::length(rel);
+    const double radial = shellProfile(shell, r);
+    if (radial <= 0.0)
+        return 0.0;
+    const glm::dvec3 u = rel / r;
+    double f = radial;
+    for (const auto& c : shell.corridors)
+    {
+        const double angle = std::acos(std::clamp(glm::dot(u, corridorDirAt(shell, c, universeTimeS)), -1.0, 1.0)) / c.halfWidthRad;
+        f *= 1.0 - std::exp(-angle * angle);
+    }
+    return f;
+}
+
+namespace
+{
+// tau units: one radial crossing of the whole shell outside the corridors = tau
+double shellDepthTau(const ApproachShell& s, const glm::dvec3& a, const glm::dvec3& b, double lo, double hi, double t)
+{
+    const double len = glm::length(b - a) * (hi - lo);
+    const double half = 0.5 * (s.outerLy - s.innerLy);
+    double sum = 0.0;
+    for (int i = 0; i < ShellSamples; ++i)
+        sum += approachShellFactor(s, a + (b - a) * (lo + (hi - lo) * (i + 0.5) / ShellSamples), t);
+    return s.tau * sum * len / ShellSamples / std::max(1e-12, half);
+}
 } // namespace
 
 std::vector<InterstellarSumpCrossing> interstellarSumpCrossings(const world::celestial::StarAtlasDatabase& atlas,
-                                                                const InterstellarRoute& route, double lockFactor)
+                                                                const InterstellarRoute& route, double lockFactor,
+                                                                double universeTimeS)
 {
     std::vector<InterstellarSumpCrossing> out;
     const double scale = InterstellarSumpScaleLy * std::sqrt(std::max(1.0, lockFactor));
+    for (const auto& s : approachShells(atlas))
+    {
+        double tau = 0.0;
+        for (std::size_t i = 1; i < route.pointsLy.size(); ++i)
+        {
+            double lo = 0.0, hi = 0.0;
+            if (shellSpan(s, route.pointsLy[i - 1], route.pointsLy[i], lo, hi))
+                tau += shellDepthTau(s, route.pointsLy[i - 1], route.pointsLy[i], lo, hi, universeTimeS);
+        }
+        if (tau > 0.0)
+        {
+            InterstellarSumpCrossing c;
+            c.name = s.name;
+            c.placeId = world::celestial::StarAtlasDatabase::approachIdOf(s.systemId);
+            c.shell = true;
+            c.depth = tau * InterstellarSumpScaleLy;
+            c.probability = 1.0 - std::exp(-c.depth / scale);
+            out.push_back(c);
+        }
+    }
     for (const auto& s : swarms(atlas))
     {
         double depth = 0.0;
@@ -174,29 +340,63 @@ std::vector<InterstellarSumpCrossing> interstellarSumpCrossings(const world::cel
                 depth += c.integral(c.lo, c.hi);
         }
         if (depth > 0.0)
-            out.push_back({s.name, s.placeId, depth, 1.0 - std::exp(-depth / scale)});
+            out.push_back({s.name, s.placeId, false, depth, 1.0 - std::exp(-depth / scale)});
     }
     return out;
 }
 
 InterstellarSumpCatch interstellarSumpCatch(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
-                                            double lockFactor, double e)
+                                            double lockFactor, double e, double universeTimeS)
 {
     InterstellarSumpCatch out;
     const double scale = InterstellarSumpScaleLy * std::sqrt(std::max(1.0, lockFactor));
     double need = e * scale;   // the depth (ly) at which the step is caught
     const auto& all = swarms(atlas);
+    const auto& shells = approachShells(atlas);
     for (std::size_t i = 1; i < route.pointsLy.size(); ++i)
     {
         const glm::dvec3 a = route.pointsLy[i - 1], b = route.pointsLy[i];
-        std::vector<std::pair<double, const Swarm*>> met;   // the swarms on this leg in the order the line meets them
+        struct Met
+        {
+            double lo;
+            const Swarm* swarm;
+            const ApproachShell* shell;
+            double hi;
+        };
+        std::vector<Met> met;   // the swarms and the shells on this leg in the order the line meets them
         for (const auto& s : all)
             if (const Chord c = chordOf(s, a, b); c.any)
-                met.push_back({c.lo, &s});
-        std::sort(met.begin(), met.end(), [](const auto& x, const auto& y) { return x.first < y.first; });
+                met.push_back({c.lo, &s, nullptr, c.hi});
+        for (const auto& s : shells)
+            if (double lo = 0.0, hi = 0.0; shellSpan(s, a, b, lo, hi))
+                met.push_back({lo, nullptr, &s, hi});
+        std::sort(met.begin(), met.end(), [](const auto& x, const auto& y) { return x.lo < y.lo; });
         for (const auto& entry : met)
         {
-            const Swarm* s = entry.second;
+            if (entry.shell)
+            {
+                // walk the samples to the catch point
+                const ApproachShell& sh = *entry.shell;
+                const double half = 0.5 * (sh.outerLy - sh.innerLy);
+                const double dl = glm::length(b - a) * (entry.hi - entry.lo) / ShellSamples;
+                for (int k = 0; k < ShellSamples; ++k)
+                {
+                    const glm::dvec3 p = a + (b - a) * (entry.lo + (entry.hi - entry.lo) * (k + 0.5) / ShellSamples);
+                    need -= sh.tau * approachShellFactor(sh, p, universeTimeS) * dl / std::max(1e-12, half) * InterstellarSumpScaleLy;
+                    if (need <= 0.0)
+                    {
+                        out.caught = true;
+                        out.shell = true;
+                        out.placeId = world::celestial::StarAtlasDatabase::approachIdOf(sh.systemId);
+                        out.name = sh.name;
+                        out.pointLy = p;
+                        out.centreLy = sh.centreLy;
+                        return out;
+                    }
+                }
+                continue;
+            }
+            const Swarm* s = entry.swarm;
             const Chord c = chordOf(*s, a, b);
             const double total = c.integral(c.lo, c.hi);
             if (total < need)
@@ -229,7 +429,18 @@ double gravityCaptureRadiusLy(double muM3s2)
     return std::sqrt(std::max(0.0, muM3s2) / GalacticFieldMps2) / MetersPerLy;
 }
 
-InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabase& atlas, int fromSystemId, int toSystemId)
+glm::dvec3 jumpStartPointLy(const world::celestial::StarAtlasDatabase& atlas, int systemId, const glm::dvec3& shipPositionM)
+{
+    const auto* s = atlas.findSystemSummary(systemId);
+    if (!s)
+        return glm::dvec3(0.0);
+    if (world::celestial::StarAtlasDatabase::isDeepSpace(systemId))
+        return s->positionLy + shipPositionM / MetersPerLy;
+    return s->positionLy;
+}
+
+InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabase& atlas, int fromSystemId, int toSystemId,
+                                        const glm::dvec3* startLy)
 {
     InterstellarRoute route;
     const auto* from = atlas.findSystemSummary(fromSystemId);
@@ -237,13 +448,17 @@ InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabas
     if (!from || !to)
         return route;
     const auto& masses = chartedMasses(atlas);
+    // from a system's approaches its own star is the start's neighbour, not an obstacle
+    const int fromStar = world::celestial::StarAtlasDatabase::isApproach(fromSystemId)
+                             ? world::celestial::StarAtlasDatabase::systemOfApproach(fromSystemId)
+                             : fromSystemId;
     // the first mass a segment passes inside the capture sphere of (closest to the segment's start)
     const auto blockerOf = [&](const glm::dvec3& a, const glm::dvec3& b) -> const Mass* {
         const Mass* best = nullptr;
         double bestAlong = 0.0;
         for (const auto& m : masses)
         {
-            if (m.systemId == fromSystemId || m.systemId == toSystemId)
+            if (m.systemId == fromSystemId || m.systemId == fromStar || m.systemId == toSystemId)
                 continue;
             if (segmentDistanceLy(a, b, m.positionLy) >= m.radiusLy)
                 continue;
@@ -256,7 +471,7 @@ InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabas
         }
         return best;
     };
-    route.pointsLy = {from->positionLy};
+    route.pointsLy = {startLy ? *startLy : from->positionLy};
     const glm::dvec3 target = to->positionLy;
     for (int pass = 0; pass < 6; ++pass)
     {

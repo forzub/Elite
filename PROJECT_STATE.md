@@ -5651,3 +5651,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   mesh repair, instance fitter). Verified headless with Blender 5.0.1: linked collection instances with an
   elite_part custom property export to glTF as nodes with extras + transform, shared meshes (no copies), node rotation
   animation kept (D:/tmp/gltf_test). Next: go through the windows with the author, one by one.
+- 2026-11-13 MESH EDITOR slice 1 (docs/MESH_EDITOR_SPEC.md 12; author accepted the scheme): new EliteMeshEditor
+  (tools/mesh_editor, always-built CMake target, WebView on HtmlUiServer, --serve for headless checks), page from scratch
+  (src/assets/webui/mesh_editor), settings file, catalog by the author's categories with cards (title / description
+  from the ship catalog, where used, readiness status), Blender preview thumbnails in batches, the Open dialog and the
+  opened-model header + step row + source table. Verified with headless Edge screenshots (D:/tmp/me_*.png). Not
+  accepted by the author yet. Next: go through window 6.1 "Проверка элементов" with the author.

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Elite — мешэдитор</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="bar">
+  <button id="openBtn" class="primary">Открыть</button>
+  <div id="current">Модель не открыта</div>
+  <div id="conn" class="muted">нет связи</div>
+</header>
+
+<main id="workspace">
+  <div id="empty" class="empty">
+    <p>Нажмите «Открыть», чтобы выбрать модель.</p>
+  </div>
+  <section id="model" hidden>
+    <div class="model-head">
+      <img id="modelPreview" alt="">
+      <div>
+        <h1 id="modelTitle"></h1>
+        <div id="modelMeta" class="muted"></div>
+        <div id="modelDesc"></div>
+        <div id="modelUsed" class="muted"></div>
+      </div>
+    </div>
+    <nav id="steps"></nav>
+    <div id="stepBody"></div>
+  </section>
+</main>
+
+<div id="dialog" class="modal" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <button id="backBtn" class="ghost" hidden>← Разделы</button>
+      <h2 id="dialogTitle">Открыть модель</h2>
+      <button id="closeBtn" class="ghost">✕</button>
+    </div>
+    <div id="categories" class="categories"></div>
+    <div id="filterRow" class="filter-row" hidden>
+      <input id="filter" type="search" placeholder="поиск по имени, описанию, кораблю">
+      <span id="countInfo" class="muted"></span>
+    </div>
+    <div id="cards" class="cards" hidden></div>
+    <div id="dialogFoot" class="muted"></div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

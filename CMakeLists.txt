@@ -485,6 +485,26 @@ endfunction()
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 
 if(ELITE_BUILD_CLIENT)
+# The new mesh editor (docs/MESH_EDITOR_SPEC.md): built from scratch step by step with the author; light - no libigl.
+set(ELITE_MESH_EDITOR_ROOT "${CMAKE_SOURCE_DIR}/build/tools/mesh_editor")
+add_executable(EliteMeshEditor
+    tools/mesh_editor/main.cpp
+    tools/mesh_editor/MeshEditorCatalog.cpp
+    tools/mesh_editor/MeshEditorSession.cpp
+    src/ui/html/HtmlUiServer.cpp
+    src/ui/platform/UiResourcePack.cpp
+)
+target_include_directories(EliteMeshEditor PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+target_compile_definitions(EliteMeshEditor PRIVATE
+    ELITE_SOURCE_ROOT=\"${CMAKE_SOURCE_DIR}\"
+    ELITE_MESH_EDITOR_ROOT=\"${ELITE_MESH_EDITOR_ROOT}\"
+)
+target_link_libraries(EliteMeshEditor PRIVATE nlohmann_json::nlohmann_json Threads::Threads webview::core_static)
+if(WIN32)
+    target_link_libraries(EliteMeshEditor PRIVATE ws2_32 mswsock iphlpapi shell32)
+endif()
+set_target_properties(EliteMeshEditor PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${ELITE_MESH_EDITOR_ROOT}/bin")
+
 add_executable(EliteGame
     src/main.cpp
     src/platform/RuntimeRoot.cpp

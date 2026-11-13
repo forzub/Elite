@@ -5531,3 +5531,8 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   OPEN: no way found -> the server still jumps straight (only logged); sumps (dense clouds, icy fields) NOT
   IMPLEMENTED - a capture exits the ship on the sump's edge in deep space, and the game has no deep-space location
   (every ship is in a system). Needs the author's go for a deep-space place.
+- Author 2026-11-13, the meaning of "sump" agreed (JUMP_MECHANICS section 4, new clarification):
+  - currents are the gradient of the jump's gravity field (they deflect the step);
+  - sumps are places of stronger pull, can be wide, sit at asteroid / debris concentrations;
+  - dense gas is NOT a sump;
+  - contents vary: pirates, wrecks, abandoned containers, ships without escape pods, or just rocks.

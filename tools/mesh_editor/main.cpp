@@ -39,6 +39,10 @@ int main(int argc, char** argv)
     for (const auto& e : fs::directory_iterator(sourceTree / "src/assets/webui/mesh_editor", ec))
         if (e.is_regular_file())
             fs::copy_file(e.path(), web / e.path().filename(), fs::copy_options::overwrite_existing, ec);
+    // three.js for the 3D view (the same vendored copy as the old editor)
+    fs::create_directories(web / "vendor", ec);
+    fs::copy(sourceTree / "src/assets/webui/vendor/three", web / "vendor/three",
+             fs::copy_options::recursive | fs::copy_options::overwrite_existing, ec);
 
     using namespace elite::mesh_editor;
     const fs::path settingsFile = root / "mesh_editor.settings.json";

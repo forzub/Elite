@@ -8,6 +8,7 @@
 #include <tuple>
 
 #include "src/ui/html/HtmlUiServer.h"
+#include "tools/mesh_editor/MeshEditorInspect.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -333,6 +334,18 @@ void Session::handleMessage(const std::string& text)
         send(out);
         if (cmd == "list")
             enqueuePreviews(category);
+        return;
+    }
+    if (cmd == "inspect" || cmd == "setKind")
+    {
+        // step 1 "Загрузка и проверка": the repaired geometry for the viewer + the part table; commit = "Проверить"
+        if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+        {
+            const fs::path stateDir = m_catalog.settings().workRoot / c->category / c->id;
+            if (cmd == "setKind")
+                Inspector::setKind(stateDir, m.value("part", std::string()), m.value("kind", std::string()));
+            send(Inspector::inspect(*c, m_webRoot, stateDir, m.value("commit", false)));
+        }
         return;
     }
     if (cmd == "open")

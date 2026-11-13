@@ -8,9 +8,9 @@ const state = { ws: null, categories: [], category: null, cards: [], model: null
 const UNUSED = '__none__';   // the object list entry 'used nowhere'
 
 // the step windows (MESH_EDITOR_SPEC 6 / 7): to be built one by one, after each is gone through with the author
-const PART_STEPS = ['Проверка элементов', 'Состав', 'LOD', 'Материалы', 'Физика и хитвалумы', 'Повреждения',
+const PART_STEPS = ['Загрузка и проверка', 'Состав', 'LOD', 'Материалы', 'Физика и хитвалумы', 'Повреждения',
   'Подключения и анимация', 'Проверка и сборка'];
-const ASSEMBLY_STEPS = ['Проверка элементов', 'Гнёзда', 'Корпус', 'LOD корпуса', 'Повреждения корпуса', 'Проверка и сборка'];
+const ASSEMBLY_STEPS = ['Загрузка и проверка', 'Гнёзда', 'Корпус', 'LOD корпуса', 'Повреждения корпуса', 'Проверка и сборка'];
 const ASSEMBLY_CATEGORIES = new Set(['ships', 'stations', 'hub_modules']);
 
 function send(obj) {
@@ -37,6 +37,7 @@ function connect() {
     else if (m.type === 'opened') onOpened(m);
     else if (m.type === 'settings') onSettings(m);
     else if (m.type === 'picked') onPicked(m);
+    else if (m.type === 'inspection') onInspection(m);
   };
 }
 
@@ -177,11 +178,10 @@ function onOpened(m) {
   $('current').textContent = `${m.title}  ·  ${m.category}/${m.id}`;
   $('empty').hidden = true;
   $('model').hidden = false;
-  $('modelPreview').src = m.preview || '';
   $('modelTitle').textContent = m.title;
-  $('modelMeta').textContent = `${m.id} · ${m.statusText} · ${m.folder}`;
-  $('modelDesc').textContent = m.description || '';
-  $('modelUsed').textContent = m.usedBy && m.usedBy.length ? 'Используется: ' + m.usedBy.join(', ') : 'Нигде не используется';
+  $('modelMeta').textContent = `${m.id} · ${m.statusText}`;
+  $('modelMeta').title = m.folder;
+  $('modelUsed').textContent = m.usedBy && m.usedBy.length ? 'где: ' + m.usedBy.join(', ') : 'нигде не используется';
   const steps = ASSEMBLY_CATEGORIES.has(m.category) ? ASSEMBLY_STEPS : PART_STEPS;
   const nav = $('steps');
   nav.innerHTML = '';
@@ -192,19 +192,137 @@ function onOpened(m) {
     else { b.classList.add('later'); b.title = 'окно ещё не разобрано с автором'; }
     nav.appendChild(b);
   });
-  renderSource(m);
+  insp.data = null;
+  insp.selected = null;
+  insp.group = 0;
+  $('parts').innerHTML = '<tr><td class="muted">загрузка мешей…</td></tr>';
+  $('detail').innerHTML = '';
+  $('summary').textContent = '';
+  send({ cmd: 'inspect', category: m.category, id: m.id });
 }
-function renderSource(m) {
-  // until the element check (6.1) is agreed: what the source holds, LOD by LOD
-  const body = $('stepBody');
-  let html = '<p class="muted">Окно «Проверка элементов» ещё не разобрано. Пока — что лежит в источнике.</p>';
-  for (const lod of m.lodList || []) {
-    html += `<div class="lod-title">${esc(lod.name)} — ${lod.files.length} ${plural(lod.files.length, 'меш', 'меша', 'мешей')}, ${fmt(lod.vertices)} вершин, ${fmt(lod.faces)} граней</div>`;
-    html += '<table><tr><th>Файл</th><th class="num">Вершины</th><th class="num">Грани</th></tr>';
-    for (const f of lod.files) html += `<tr><td>${esc(f.name)}</td><td class="num">${fmt(f.vertices)}</td><td class="num">${fmt(f.faces)}</td></tr>`;
-    html += '</table>';
+
+// ---- step 1 "Загрузка и проверка" (MESH_EDITOR_SPEC 6.1): 3D view 2/3, parts table 1/3
+const insp = { data: null, selected: null, group: 0, sameModel: false };
+const KIND = { volume: 'объём', sheet: 'лист' };
+function whenViewer(fn) {
+  if (window.MeshViewer) fn(window.MeshViewer);
+  else window.addEventListener('viewer-ready', () => fn(window.MeshViewer), { once: true });
+}
+function partStatus(p) {
+  if (!insp.data.checked) return 'unchecked';
+  if (p.result === 'error') return 'error';
+  if (p.change === 'changed') return 'changed';
+  if (p.change === 'new') return 'new';
+  return 'ok';
+}
+const STATUS_TEXT = { unchecked: 'не проверена', ok: 'годна', error: 'ошибка', changed: 'изменена в источнике', new: 'новая деталь' };
+function onInspection(m) {
+  if (!state.model || m.id !== state.model.id || m.category !== state.model.category) return;
+  const same = !!insp.data;
+  insp.data = m;
+  if (insp.group >= m.groups.length) insp.group = 0;
+  renderLodBar();
+  renderSummary();
+  renderParts();
+  renderDetail();
+  whenViewer(async (v) => {
+    v.onPick((key) => selectPart(key, false));
+    insp.group = await v.load(m.groups, same);
+    v.setErrors(m.parts.filter((p) => p.result === 'error').map((p) => p.key));
+    v.select(insp.selected, false);
+    renderLodBar();
+    renderParts();
+    if (params.get('part') && !insp.selected) selectPart(params.get('part'), true);
+  });
+}
+function renderLodBar() {
+  const bar = $('lodBar');
+  bar.innerHTML = '';
+  insp.data.groups.forEach((g, i) => {
+    const b = document.createElement('button');
+    b.textContent = g.name;
+    b.title = `${fmt(g.tris)} треугольников, ${g.parts.length} ${plural(g.parts.length, 'деталь', 'детали', 'деталей')}`;
+    if (i === insp.group) b.classList.add('active');
+    b.onclick = () => { insp.group = i; whenViewer((v) => v.showGroup(i)); renderLodBar(); renderParts(); };
+    bar.appendChild(b);
+  });
+}
+function renderSummary() {
+  const s = insp.data.summary;
+  const parts = [`<b>${s.parts}</b> ${plural(s.parts, 'деталь', 'детали', 'деталей')}`];
+  if (!insp.data.checked) parts.push('<span class="muted">ещё не проверялась — нажмите «Проверить»</span>');
+  else {
+    parts.push(`<span style="color:var(--good)">${s.ok} годны</span>`);
+    if (s.error) parts.push(`<span style="color:var(--bad)">${s.error} с ошибками</span>`);
+    if (s.changed) parts.push(`<span style="color:var(--warn)">${s.changed} изменены</span>`);
+    if (s.new) parts.push(`<span style="color:var(--info)">${s.new} новых</span>`);
+    if (s.missing) parts.push(`<span style="color:var(--bad)">${s.missing} пропали</span>`);
   }
-  body.innerHTML = html;
+  const fixed = insp.data.parts.filter((p) => p.fixedTotal > 0).length;
+  if (fixed) parts.push(`<span class="muted">${fixed} ${plural(fixed, 'починена', 'починены', 'починено')} сами</span>`);
+  $('summary').innerHTML = parts.join(' · ');
+}
+function renderParts() {
+  const lods = insp.data.groups.filter((g) => !g.name.startsWith('скорлупа')).map((g) => g.name);
+  const gname = insp.data.groups[insp.group] ? insp.data.groups[insp.group].name : '';
+  let html = `<tr><th></th><th>Деталь</th><th>Вид</th><th class="num">Треуг. ${esc(gname)}</th><th>LOD</th></tr>`;
+  for (const p of insp.data.parts) {
+    const st = partStatus(p);
+    const here = p.lods[gname];
+    const chips = lods.map((l) => `<span class="${p.lods[l] ? 'on' : ''}">${esc(l.replace('LOD', ''))}</span>`).join('');
+    html += `<tr class="prow ${here ? '' : 'absent'} ${p.key === insp.selected ? 'sel' : ''}" data-key="${esc(p.key)}">
+      <td><i class="dot st-${st}" title="${STATUS_TEXT[st]}"></i></td><td>${esc(p.key)}${p.fixedTotal ? ' <span class="muted" title="починено само">✓</span>' : ''}</td>
+      <td>${KIND[p.kind]}${p.kindSet ? '*' : ''}</td><td class="num">${here ? fmt(here.tris) : '—'}</td><td class="lodchips">${chips}</td></tr>`;
+  }
+  for (const k of insp.data.missing) html += `<tr class="gone"><td><i class="dot st-error"></i></td><td colspan="4">${esc(k)} — пропала из источника</td></tr>`;
+  $('parts').innerHTML = html;
+  for (const tr of $('parts').querySelectorAll('tr.prow')) {
+    tr.onclick = () => selectPart(tr.dataset.key, true);
+    tr.onmouseenter = () => whenViewer((v) => v.hover(tr.dataset.key));
+    tr.onmouseleave = () => whenViewer((v) => v.hover(null));
+  }
+}
+function selectPart(key, fit) {
+  insp.selected = key;
+  whenViewer((v) => v.select(key, fit));
+  renderParts();
+  renderDetail();
+  if (key) {
+    const tr = $('parts').querySelector(`tr[data-key="${CSS.escape(key)}"]`);
+    if (tr) tr.scrollIntoView({ block: 'nearest' });
+  }
+}
+function renderDetail() {
+  const box = $('detail');
+  const p = insp.data && insp.data.parts.find((x) => x.key === insp.selected);
+  if (!p) {
+    box.innerHTML = '<span class="muted">Щёлкните деталь в таблице или на модели.</span>';
+    return;
+  }
+  const st = partStatus(p);
+  const f = p.fixed;
+  const fixed = [];
+  if (f.welded) fixed.push(`спаяно двойных вершин: ${f.welded}`);
+  if (f.degenerate) fixed.push(`убрано вырожденных треугольников: ${f.degenerate}`);
+  if (f.repeated) fixed.push(`убрано повторных граней: ${f.repeated}`);
+  if (f.flipped) fixed.push('деталь была вывернута целиком — развёрнута наружу');
+  const size = p.size.map((x) => x.toFixed(2)).join(' × ');
+  const lodLine = Object.entries(p.lods).map(([n, l]) => `${n}: ${fmt(l.tris)}`).join(' · ');
+  box.innerHTML = `<h3><i class="dot st-${st}"></i> ${esc(p.key)}</h3>
+    <div class="muted">${STATUS_TEXT[st]}${p.changeText ? ' — ' + esc(p.changeText) : ''} · ${size} м</div>
+    <div class="muted">треугольники — ${esc(lodLine)}</div>
+    <div style="margin-top:6px">Вид: <select id="kindSel">
+      <option value="">авто (${KIND[p.kindAuto]})</option><option value="volume">объём — должен быть замкнут</option><option value="sheet">лист — края открыты</option>
+    </select></div>
+    <ul>${p.issues.map((i) => `<li class="${i.sev}">${esc(i.text)}${i.sev === 'error' ? ' — поправить в Blender' : ''}</li>`).join('')}
+    ${fixed.map((t) => `<li class="fixed">${esc(t)}</li>`).join('')}
+    ${!p.issues.length && !fixed.length ? '<li class="fixed">замечаний нет</li>' : ''}</ul>`;
+  $('kindSel').value = p.kindSet ? p.kind : '';
+  $('kindSel').onchange = () => send({ cmd: 'setKind', category: state.model.category, id: state.model.id, part: p.key, kind: $('kindSel').value });
+}
+function runCheck() {
+  if (!state.model) return;
+  send({ cmd: 'inspect', category: state.model.category, id: state.model.id, commit: true });
 }
 
 // ---- settings: the source folder, the result folder, Blender (MESH_EDITOR_SPEC 4)
@@ -255,6 +373,10 @@ $('objectFilter').onchange = () => {
   renderCards();
 };
 $('settingsBtn').onclick = showSettings;
+$('checkBtn').onclick = runCheck;
+$('fitBtn').onclick = () => whenViewer((v) => v.fitAll());
+for (const [id, opt] of [['optProblems', 'problems'], ['optBack', 'backfaces'], ['optWire', 'wire'], ['optIsolate', 'isolate']])
+  $(id).onchange = () => whenViewer((v) => v.set(opt, $(id).checked));
 $('settingsClose').onclick = hideSettings;
 $('settingsCancel').onclick = hideSettings;
 $('settingsSave').onclick = saveSettings;

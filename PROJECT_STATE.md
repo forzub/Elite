@@ -5687,3 +5687,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   D:/__elite/model_source until then.
 
 - 2026-11-13 SHELL traf: author approved MESH_EDITOR_SPEC 14 - cobretty-mk1-traf (ship_body 203 v + ship_cockpit 38 v) moved from D:/__elite/model_source to assets_source/models/ships/cobrettymk1/shells/traf; cobrettymk1/asset.json "shells": {"traf": {"use": ["traffic"]}}. Editor open of cobrettymk1 lists LOD0, LOD1 and "скорлупа traf" (checked over the socket). The game does not draw it yet (traffic still uses the full Cobra assembly).
+- 2026-11-13 MESH EDITOR step 1 "Загрузка и проверка" (MESH_EDITOR_SPEC 15, author agreed): 3D view 2/3 (three.js) +
+  table 1/3; MeshEditorInspect: auto recipe (weld 0.1 mm, degenerate / repeated triangles, inside-out closed part),
+  errors for the author (holes in a volume, 3+ face edges, partly flipped), notes (no material, LOD gaps, LOD not
+  lighter); volume/sheet guess + override; check.json keeps the last check -> changed / new / gone. Evidence: the game
+  Cobra 35 parts, 6 errors, 6 auto-fixed (D:/tmp/me_step1b.png, me_step1c.png); temp copy: radar moved 12 cm ->
+  "сдвинута на 12 см", extra part -> new, removed part -> gone (temp copy deleted). Not yet seen by the author.
+

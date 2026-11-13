@@ -2,7 +2,8 @@
 
 // The mesh editor's backend (docs/MESH_EDITOR_SPEC.md): the page's commands over the WebSocket, JSON both ways.
 // Commands: categories | list {category} | previews {category} | open {category, id} | rescan |
-//           settings | saveSettings {sourceRoot, outputRoot, blender} | pick {field, kind: folder|file, current}.
+//           settings | saveSettings {sourceRoot, outputRoot, blender} | pick {field, kind: folder|file, current} |
+//           inspect {category, id, commit} | setKind {category, id, part, kind: volume|sheet|""}.
 #include <atomic>
 #include <condition_variable>
 #include <deque>

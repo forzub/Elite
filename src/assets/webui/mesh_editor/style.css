@@ -25,12 +25,51 @@ button.ghost { background: transparent; border-color: transparent; }
   border-bottom: 1px solid var(--line); }
 #current { font-weight: 600; flex: 1; }
 
-#workspace { padding: 20px; }
+#workspace { padding: 12px 16px; height: calc(100vh - 59px); }
+#model:not([hidden]) { display: flex; flex-direction: column; height: 100%; }
 .empty { color: var(--muted); padding: 80px; text-align: center; font-size: 16px; }
-.model-head { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 16px; }
-.model-head img { width: 240px; height: 170px; object-fit: cover; background: var(--panel); border-radius: 8px; }
-.model-head h1 { margin: 0 0 6px; font-size: 22px; }
-#steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.model-head { display: flex; gap: 14px; align-items: baseline; margin-bottom: 8px; white-space: nowrap; overflow: hidden; }
+.model-head h1 { margin: 0; font-size: 19px; }
+#steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+#steps button { padding: 5px 11px; font-size: 13px; }
+#split { flex: 1; min-height: 0; display: flex; gap: 12px; }
+#viewWrap { flex: 2; position: relative; min-width: 0; border-radius: 8px; overflow: hidden; background: #0a0c0f; }
+#viewport { position: absolute; inset: 0; }
+.overlay { position: absolute; display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.overlay.top { top: 10px; left: 10px; flex-wrap: wrap; }
+.overlay.bottom { bottom: 10px; left: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 14px; }
+.overlay.right { bottom: 10px; right: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 12px; color: var(--muted); }
+.overlay label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
+#lodBar button { padding: 4px 11px; font-size: 13px; background: rgba(28, 35, 44, 0.9); }
+#lodBar button.active { border-color: var(--accent); color: var(--accent); }
+button.small { padding: 3px 9px; font-size: 12px; }
+.sw { display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; }
+.sw.open { background: #ff4a3a; } .sw.bad { background: #ff3fd8; } .sw.back { background: #d13fd1; height: 8px; }
+#side { flex: 1; min-width: 360px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.side-head { display: flex; gap: 10px; align-items: center; }
+.summary { flex: 1; font-size: 13px; line-height: 1.5; }
+.summary b { font-weight: 600; }
+.table-wrap { flex: 1; min-height: 0; overflow-y: auto; border-radius: 8px; background: var(--panel); }
+#parts { font-size: 13px; }
+#parts th { position: sticky; top: 0; background: var(--panel); z-index: 1; }
+#parts td, #parts th { padding: 4px 8px; }
+#parts tr.prow { cursor: pointer; }
+#parts tr.prow:hover td { background: #222b36; }
+#parts tr.prow.sel td { background: #3a2e1a; }
+#parts tr.absent td { opacity: 0.4; }
+#parts tr.gone td { text-decoration: line-through; color: var(--bad); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.st-unchecked { background: var(--muted); } .st-ok { background: var(--good); } .st-error { background: var(--bad); }
+.st-changed { background: var(--warn); } .st-new { background: var(--info); }
+.lodchips span { display: inline-block; min-width: 14px; text-align: center; font-size: 11px; color: #3a4552; }
+.lodchips span.on { color: var(--text); }
+.detail { background: var(--panel); border-radius: 8px; padding: 10px 12px; font-size: 13px; max-height: 38%; overflow-y: auto; }
+.detail h3 { margin: 0 0 6px; font-size: 15px; }
+.detail ul { margin: 6px 0; padding-left: 18px; }
+.detail li.error { color: var(--bad); }
+.detail li.note { color: var(--muted); }
+.detail li.fixed { color: var(--good); }
+.detail select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; font: inherit; }
 #steps button.active { border-color: var(--accent); color: var(--accent); }
 #steps button.later { color: var(--muted); }
 table { border-collapse: collapse; width: 100%; background: var(--panel); border-radius: 8px; overflow: hidden; }

@@ -491,6 +491,7 @@ add_executable(EliteMeshEditor
     tools/mesh_editor/main.cpp
     tools/mesh_editor/MeshEditorCatalog.cpp
     tools/mesh_editor/MeshEditorSession.cpp
+    tools/mesh_editor/MeshEditorInspect.cpp
     src/ui/html/HtmlUiServer.cpp
     src/ui/platform/UiResourcePack.cpp
 )

@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <title>Elite — мешэдитор</title>
 <link rel="stylesheet" href="style.css">
+<script type="importmap">
+{"imports": {"three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/examples/jsm/"}}
+</script>
 </head>
 <body>
 <header id="bar">
@@ -19,16 +22,35 @@
   </div>
   <section id="model" hidden>
     <div class="model-head">
-      <img id="modelPreview" alt="">
-      <div>
-        <h1 id="modelTitle"></h1>
-        <div id="modelMeta" class="muted"></div>
-        <div id="modelDesc"></div>
-        <div id="modelUsed" class="muted"></div>
-      </div>
+      <h1 id="modelTitle"></h1>
+      <span id="modelMeta" class="muted"></span>
+      <span id="modelUsed" class="muted"></span>
     </div>
     <nav id="steps"></nav>
-    <div id="stepBody"></div>
+    <div id="split">
+      <div id="viewWrap">
+        <div id="viewport"></div>
+        <div id="lodBar" class="overlay top"></div>
+        <div id="viewTools" class="overlay bottom">
+          <label><input type="checkbox" id="optProblems" checked> проблемы</label>
+          <label><input type="checkbox" id="optBack"> изнанка</label>
+          <label><input type="checkbox" id="optWire"> каркас</label>
+          <label><input type="checkbox" id="optIsolate"> только выбранная</label>
+          <button id="fitBtn" class="small">показать всё</button>
+        </div>
+        <div id="legend" class="overlay right">
+          <span><i class="sw open"></i>дыра</span><span><i class="sw bad"></i>3+ граней / вывернуто</span><span><i class="sw back"></i>изнанка</span>
+        </div>
+      </div>
+      <aside id="side">
+        <div class="side-head">
+          <div id="summary" class="summary"></div>
+          <button id="checkBtn" class="primary">Проверить</button>
+        </div>
+        <div class="table-wrap"><table id="parts"></table></div>
+        <div id="detail" class="detail"></div>
+      </aside>
+    </div>
   </section>
 </main>
 
@@ -81,5 +103,6 @@
   </div>
 </div>
 <script src="app.js"></script>
+<script type="module" src="viewer.js"></script>
 </body>
 </html>

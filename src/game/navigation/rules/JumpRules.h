@@ -43,7 +43,8 @@ enum class Refusal : std::uint8_t
     TooClose = 14,           // an in-system jump shorter than InSystemMinAu: fly it in J
     UnknownBody = 15,        // an in-system jump to a body this system does not have
     ZoneViolated = 16,       // during the charge-up an object entered the start zone / the nose left the line: lost
-    LineBlocked = 17         // the straight step is blocked by a body / the star (no way around found)
+    LineBlocked = 17,        // the straight step is blocked by a body / the star (no way around found)
+    SumpCaught = 18          // the step fell into a sump (asteroid / debris swarm, JumpSumps.h): out at the catch point
 };
 
 // ---- the jump procedure (author 2026-11-12, JUMP_MECHANICS.md 10b): a jump is an instant move along a straight line;
@@ -190,6 +191,7 @@ inline const char* refusalText(Refusal r)
     case Refusal::UnknownBody: return "тело не найдено в системе";
     case Refusal::ZoneViolated: return "срыв: в зону старта вошла помеха или нос ушёл с линии - ядро разряжено, заряд потерян";
     case Refusal::LineBlocked: return "прямая к цели перекрыта телом - обхода не найдено";
+    case Refusal::SumpCaught: return "прыжок захвачен отстойником - корабль вышел раньше цели, заряд шага потрачен";
     default: return "";
     }
 }

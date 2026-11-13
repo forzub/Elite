@@ -1,6 +1,7 @@
 #pragma once
 
 #include "src/game/navigation/rules/CapsuleRules.h"
+#include "src/game/navigation/rules/JumpSumps.h"
 
 #include "src/game/navigation/landing/LandingAutopilot.h"
 #include <algorithm>
@@ -267,6 +268,8 @@ public:
     bool requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy, const std::string& exitBodyId,
                      const glm::dvec3& interstellarDirWorld = glm::dvec3(0.0));
     void cancelJump(EntityId shipId, std::uint8_t why);
+    // the jump sumps of a system (asteroid / debris swarms, JumpSumps.h), given by the server from the atlas
+    void setJumpSumps(int systemId, const std::vector<game::navigation::jump::JumpSump>& sumps) { m_jumpSumps[systemId] = sumps; }
     // 0 = J may engage here; else the refusal code (7 an object too close, 8 below the J floor)
     int jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const;
     // J terrain contact: ground (terrain or sea surface) height above the body
@@ -791,6 +794,9 @@ private:
     glm::dvec3 jumpLegEnd(const ActiveJump& j, const glm::dvec3& shipM) const;
     double jumpLegCostT(const ActiveJump& j, const glm::dvec3& fromM, double massT) const;
     std::unordered_map<EntityId, ActiveJump> m_jumps;
+    std::unordered_map<int, std::vector<game::navigation::jump::JumpSump>> m_jumpSumps;
+    // the step from -> to may fall into a sump: true = caught, the ship is out at the catch point and the jump is over
+    bool jumpSumpCatch(EntityId shipId, ActiveJump& j, const glm::dvec3& from, const glm::dvec3& to);
     void updateJumps(double dt);
     bool shipAwaitingJumpExit(EntityId shipId) const;   // automatic stabilization after the free-flight pass
     struct ZoneWatch

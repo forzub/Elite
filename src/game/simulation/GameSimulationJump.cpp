@@ -410,6 +410,12 @@ void GameSimulation::updateJumps(double dt)
             j.commandValid = false;
             // ---- the jump: instant
             motion.jChargeT = std::max(0.0, motion.jChargeT - j.costT);
+            // the step may fall into a sump on its way (asteroid / debris swarms, JumpSumps.h): out there, jump over
+            if (j.inSystem && jumpSumpCatch(id, j, shipM, legEnd))
+            {
+                it = m_jumps.erase(it);
+                continue;
+            }
             if (j.inSystem && j.legIndex < static_cast<int>(j.waypointsStarRel.size()))
             {
                 // an intermediate step: out at the step's end (with the exit error) at rest against the star; the
@@ -945,5 +951,84 @@ bool GameSimulation::devPlaceShipInSystem(EntityId id, int systemId, const std::
     motion.jumpState = 3;
     motion.jumpTargetSystemId = systemId;
     motion.jumpTargetName = systemName;
+    return true;
+}
+
+bool GameSimulation::jumpSumpCatch(EntityId shipId, ActiveJump& j, const glm::dvec3& from, const glm::dvec3& to)
+{
+    Ship* ship = getShip(shipId);
+    if (!ship)
+        return false;
+    auto& tr = ship->core().transform();
+    auto& motion = tr.motion;
+    auto& frame = motion.travelFrame;
+    const auto sumps = m_jumpSumps.find(motion.systemId);
+    if (sumps == m_jumpSumps.end() || sumps->second.empty())
+        return false;
+    std::unordered_map<std::string, glm::dvec3> centres;
+    std::unordered_map<std::string, double> mus;
+    for (const auto& b : m_gravityBodies)
+    {
+        centres[b.id] = b.centerMeters;
+        mus[b.id] = b.gravitationalParameterM3s2;
+    }
+    const bool beacons = jr::systemHasBeacons(motion.systemId);
+    const double lock = jr::exitLockFactor(beacons, beacons);
+    std::mt19937_64 rng(static_cast<std::uint64_t>(shipId.value) * 0xD1B54A32D192ED03ull + motion.jumpSerial * 104729ull + 131ull);
+    std::uniform_real_distribution<double> uniform(1.0e-12, 1.0);
+    double draw = -std::log(uniform(rng));
+    if (const char* dev = std::getenv("ELITE_DEV_SUMP_DRAW"); dev && *dev)
+        draw = std::max(1.0e-9, std::atof(dev));   // DEV: force the catch draw (small = caught early) for the test runs
+    glm::dvec3 point(0.0);
+    const jr::JumpSump* sump = nullptr;
+    if (!jr::sumpCatch(sumps->second, centres, from, to, lock, draw, point, sump) || !sump)
+        return false;
+    // out at the catch point (with the exit error of the way travelled), moving with the swarm: a circular orbit around
+    // its centre body, prograde like the system's planets
+    const double travelledAu = glm::length(point - from) / jr::AuM;
+    const double sigma = jr::inSystemExitSigmaM(travelledAu, lock);
+    if (sigma > 0.0)
+    {
+        std::normal_distribution<double> n(0.0, sigma / std::sqrt(3.0));
+        point += glm::dvec3(n(rng), n(rng), n(rng));
+    }
+    const glm::dvec3 centre = centres.count(sump->centreBodyId) ? centres[sump->centreBodyId] : glm::dvec3(0.0);
+    const double mu = mus.count(sump->centreBodyId) ? mus[sump->centreBodyId] : 0.0;
+    const glm::dvec3 centreVel = j.velocities.count(sump->centreBodyId) ? j.velocities[sump->centreBodyId] : glm::dvec3(0.0);
+    glm::dvec3 up(0.0, 1.0, 0.0);
+    if (j.velocities.count(j.exitBodyId) && centres.count(j.exitBodyId))
+    {
+        const glm::dvec3 h = glm::cross(centres[j.exitBodyId] - centre, j.velocities[j.exitBodyId] - centreVel);
+        if (h.y < 0.0)
+            up = -up;
+    }
+    glm::dvec3 rp = point - centre;
+    rp.y = 0.0;
+    glm::dvec3 velocity = centreVel;
+    if (glm::length(rp) > 1.0 && mu > 0.0)
+        velocity += glm::normalize(glm::cross(up, rp)) * std::sqrt(mu / glm::length(rp));
+    frame.originMeters = point;
+    frame.linearVelocityMps = velocity;
+    frame.linearAccelerationMps2 = glm::dvec3(0.0);
+    motion.localPositionMeters = glm::dvec3(0.0);
+    motion.localVelocityMps = glm::dvec3(0.0);
+    tr.setWorldPositionMeters(frame.originMeters);
+    motion.hubId.clear();
+    motion.parentBodyId.clear();
+    motion.freeFlightReferenceId.clear();
+    motion.freeFlightOrbitBodyId.clear();
+    m_freeFlights[shipId].lastPrimaryId.clear();
+    motion.jEngine = false;
+    motion.jStopping = false;
+    motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
+    motion.freeFlightThrust = 0;
+    motion.jumpState = 0;
+    motion.jumpRefusal = static_cast<std::uint8_t>(jr::Refusal::SumpCaught);
+    ++motion.jumpRefusalSerial;
+    ++motion.jumpSerial;
+    std::cerr << "[Jump] ship " << shipId.value << ": CAUGHT by the sump " << sump->name << " (" << sump->kind << ") "
+              << travelledAu << " AU into the " << glm::length(to - from) / jr::AuM << " AU step, "
+              << glm::length(point - centre) / jr::AuM << " AU from its centre (lock " << lock << "), charge spent " << j.costT
+              << " t, left " << motion.jChargeT << " t; ghost arrival at " << j.targetName << std::endl;
     return true;
 }

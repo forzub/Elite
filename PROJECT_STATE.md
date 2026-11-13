@@ -5536,3 +5536,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - sumps are places of stronger pull, can be wide, sit at asteroid / debris concentrations;
   - dense gas is NOT a sump;
   - contents vary: pirates, wrecks, abandoned containers, ships without escape pods, or just rocks.
+- In-system jump sumps: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/s1-s3.txt, caught100.png). JUMP_MECHANICS 10d.
+  - Code:
+    - src/game/navigation/rules/JumpSumps.{h,cpp}: reservoir geometry, column, catch draw, systemHasBeacons;
+    - GameServer::applyCelestialOrbitParentParameters -> GameSimulation::setJumpSumps;
+    - GameSimulation::jumpSumpCatch at every in-system step;
+    - Refusal 18 SumpCaught;
+    - client calc shows the risk with beacons ("лотерея" without); terminal "шаг захвачен отстойником";
+    - DEV ELITE_DEV_SUMP_DRAW forces the draw.
+  - Earth -> Jupiter: calc risk 2.4 % (Sol lock 200); forced catch 2.49 AU into the step; the ship moves with the belt
+    (18.47 km/s); the next calc runs from the belt (1.4 %).
+  - Offline model, Earth -> Jupiter / Saturn: 27-29 % without beacons, 12-13 % with a destination beacon only, 9 % with
+    an origin beacon only, 2.2-2.4 % with both.
+  - Sump contents (pirates etc.) not yet: plan point 4. Next: currents (plan point 2).
+

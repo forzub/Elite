@@ -15,6 +15,10 @@
 
 #include "src/game/navigation/rules/JumpRules.h"
 #include "src/game/navigation/rules/InterstellarJumpRoute.h"
+#include "src/game/navigation/rules/JumpSumps.h"
+#include <map>
+#include <optional>
+#include <unordered_map>
 #include "src/world/celestial/StarAtlasDatabase.h"
 
 namespace
@@ -156,6 +160,7 @@ void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::st
     double wayCost = jr::inSystemChargeT(dAu, motion.shipMassT);
     double wayAu = dAu;
     const double capture = jr::starCaptureRadiusM(starMu);
+    std::optional<glm::dvec3> wayPoint;
     if (r == jr::Refusal::None && jr::segmentDistanceM(from, target->worldMeters, star->worldMeters) < capture)
     {
         const glm::dvec3 line = glm::normalize(target->worldMeters - from);
@@ -165,12 +170,47 @@ void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::st
         const glm::dvec3 w = star->worldMeters + glm::normalize(perp) * capture * 2.5;
         const double a = glm::length(w - from) / jr::AuM, b = glm::length(target->worldMeters - w) / jr::AuM;
         steps = 2;
+        wayPoint = w;
         wayAu = a + b;
         wayCost = jr::inSystemChargeT(a, motion.shipMassT) + jr::inSystemChargeT(b, motion.shipMassT);
     }
     if (r == jr::Refusal::None && chargeLeft + 1.0e-9 < wayCost)
         r = jr::Refusal::NotEnoughCharge;
     const std::string name = target->name.empty() ? bodyId : target->name;
+    // the sumps on the way (JumpSumps.h): with beacons the planner knows them and their risk; without - a lottery
+    std::string sumpNote;
+    if (const auto* atlas = m_client->starAtlas())
+        if (const auto* system = atlas->findSystem(systemId))
+            if (const auto& sumps = jr::jumpSumpsOfSystem(*system); !sumps.empty())
+            {
+                std::unordered_map<std::string, glm::dvec3> centres;
+                for (const auto& body : snap->bodies)
+                    centres[body.id] = body.worldMeters;
+                const bool beacons = jr::systemHasBeacons(systemId);
+                const double lock = jr::exitLockFactor(beacons, beacons);
+                std::map<std::string, double> keep;   // name -> probability of NOT being caught
+                const auto add = [&](const glm::dvec3& a, const glm::dvec3& b) {
+                    for (const auto& c : jr::sumpCrossings(sumps, centres, a, b, lock))
+                        keep.try_emplace(c.name, 1.0).first->second *= 1.0 - c.probability;
+                };
+                if (wayPoint)
+                {
+                    add(from, *wayPoint);
+                    add(*wayPoint, target->worldMeters);
+                }
+                else
+                    add(from, target->worldMeters);
+                for (const auto& [sumpName, k] : keep)
+                    if (1.0 - k >= 0.001)
+                    {
+                        char t[160];
+                        if (beacons)
+                            std::snprintf(t, sizeof t, " · отстойник %s: риск захвата %.1f%%", sumpName.c_str(), 100.0 * (1.0 - k));
+                        else
+                            std::snprintf(t, sizeof t, " · путь через %s: без маяков риск отстойника неизвестен - лотерея", sumpName.c_str());
+                        sumpNote += t;
+                    }
+            }
     if (kind == 1)
     {
         char b[320];
@@ -189,6 +229,8 @@ void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::st
             m_jumpCalculatedBodyId.clear();
         }
         m_pilotNotice = b;
+        if (r == jr::Refusal::None)
+            m_pilotNotice += sumpNote;
         std::cerr << "[Jump] in-system calculated: " << m_pilotNotice << std::endl;
         return;
     }
@@ -392,9 +434,19 @@ void SpaceState::updateJumpPresentation()
     {
         m_jumpSeenSerial = motion.jumpSerial;
         m_jumpFxStart = now;
-        addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId ? "ПРЫЖОК: переход к " + motion.jumpTargetName
-                                                                         : "ПРЫЖОК: переход в систему " + motion.jumpTargetName);
-        std::cerr << "[Jump] client: jumped to " << motion.jumpTargetName << std::endl;
+        if (motion.jumpState == 0 && static_cast<jr::Refusal>(motion.jumpRefusal) == jr::Refusal::SumpCaught)
+        {
+            // the step fell into a sump on its way (JumpSumps.h): out short of the target, the jump is over
+            addJumpTerminalLine("ПРЫЖОК: шаг захвачен отстойником - выход раньше цели (" + motion.jumpTargetName +
+                                    " не достигнут), заряд шага потрачен. Осмотритесь и рассчитайте прыжок заново", true);
+            std::cerr << "[Jump] client: caught by a sump on the way to " << motion.jumpTargetName << std::endl;
+        }
+        else
+        {
+            addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId ? "ПРЫЖОК: переход к " + motion.jumpTargetName
+                                                                             : "ПРЫЖОК: переход в систему " + motion.jumpTargetName);
+            std::cerr << "[Jump] client: jumped to " << motion.jumpTargetName << std::endl;
+        }
         // the rays: the brightest stars of either sky, their directions from the old and the new place
         m_jumpRays.clear();
         const glm::dvec3 from = m_jumpObserverPrevLy;

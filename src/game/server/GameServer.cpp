@@ -25,6 +25,7 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
 #include "src/game/navigation/rules/InterstellarJumpRoute.h"
+#include "src/game/navigation/rules/JumpSumps.h"
 #include "src/game/scene/GameSceneSetup.h"
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/economy/EconomyModel.h"
@@ -808,6 +809,7 @@ void GameServer::applyCelestialOrbitParentParameters(int systemId)
         );
     }
 
+    m_simulation.setJumpSumps(systemId, game::navigation::jump::jumpSumpsOfSystem(*system));
     m_appliedSimulationContextSystemId = systemId;
 }
 

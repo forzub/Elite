@@ -5581,4 +5581,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - FINDING: swarms are >= 2 ly from the catalogue systems; no route between the 61 systems crosses one (closest miss
     2.25 ly). Asked the author: swarms along lanes, or the systems' comet clouds as the interstellar sump.
   - Minor: a route out of a deep place starts at the swarm centre, not at the ship's point.
+- Author 2026-11-13 decision (JUMP_MECHANICS 10g):
+  - interstellar sumps: variant 3 (no generic change);
+  - MORE sumps around hard-to-reach places (Fortuna, World's Ass, others): a dumb jump there comes out elsewhere more
+    often;
+  - the way through = safe lanes that must be found (old scouts' records or own scouting).
+  - Implementation proposal written (approach shells with drifting corridors, lane records with age, scout archives /
+    own probe). Awaiting the author's go.
 

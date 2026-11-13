@@ -73,17 +73,36 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
     std::string corrections;
     if (from != to)
     {
-        const auto route = jr::planInterstellarRoute(*atlas, from->id, to->id, &startLy);
+        auto route = jr::planInterstellarRoute(*atlas, from->id, to->id, &startLy);
         const bool beacons = jr::systemHasBeacons(from->id) && jr::systemHasBeacons(to->id);
         const double universeS = m_client->lastSimulationMetadata().universeTimeSeconds;
-        for (const auto& c : jr::interstellarSumpCrossings(*atlas, route, jr::exitLockFactor(jr::systemHasBeacons(from->id),
-                                                                                              jr::systemHasBeacons(to->id)),
-                                                           universeS))
+        const double lock = jr::exitLockFactor(jr::systemHasBeacons(from->id), jr::systemHasBeacons(to->id));
+        // the lane records the ship carries (JUMP_MECHANICS 10h): the way goes through the corridor
+        const auto records = jr::parseLaneRecords(motion.laneRecords);
+        const auto lanes = jr::applyLaneRecords(*atlas, route, from->id, to->id, records, universeS);
+        for (const auto& use : lanes)
+        {
+            char t[260];
+            std::snprintf(t, sizeof t, " · трасса %s (%s, %.1f г.): %s - ожидаемый риск захвата %.0f%%",
+                          use.shell->corridors[static_cast<std::size_t>(use.record.corridor - 1)].name.c_str(), use.record.source.c_str(),
+                          (universeS - use.record.surveyUniverseS) / (365.25 * 86400.0), jr::laneStateText(use.state),
+                          100.0 * jr::laneExpectedRisk(*use.shell, use.record, universeS, lock));
+            corrections += t;
+        }
+        for (const auto& c : jr::interstellarSumpCrossings(*atlas, route, lock, universeS))
         {
             char t[200];
+            const bool viaLane = std::any_of(lanes.begin(), lanes.end(), [&](const jr::LaneUse& u) {
+                return world::celestial::StarAtlasDatabase::approachIdOf(u.shell->systemId) == c.placeId;
+            });
+            const bool uselessRecord = std::any_of(records.begin(), records.end(), [&](const jr::LaneRecord& r) {
+                return world::celestial::StarAtlasDatabase::approachIdOf(r.systemId) == c.placeId;
+            });
+            if (c.shell && viaLane)
+                continue;   // told by the lane line (the pilot knows the record, not the field)
             if (c.shell)
-                std::snprintf(t, sizeof t, " · оболочка подступов %s: без записи трассы риск захвата %.0f%%", c.name.c_str(),
-                              100.0 * c.probability);
+                std::snprintf(t, sizeof t, " · оболочка подступов %s: %s риск захвата %.0f%%", c.name.c_str(),
+                              uselessRecord ? "запись трассы бесполезна (коридор ушёл) -" : "без записи трассы", 100.0 * c.probability);
             else if (beacons)
                 std::snprintf(t, sizeof t, " · отстойник %s на пути: риск захвата %.1f%%", c.name.c_str(), 100.0 * c.probability);
             else

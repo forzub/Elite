@@ -106,4 +106,53 @@ std::vector<InterstellarSumpCrossing> interstellarSumpCrossings(const world::cel
 // the catch along the way for an exponential draw `e` (= -ln U)
 InterstellarSumpCatch interstellarSumpCatch(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
                                             double lockFactor, double e, double universeTimeS = 0.0);
+
+// ---- lane records (JUMP_MECHANICS 10h, step 2): what a pilot knows of a corridor - the direction as surveyed, when, how
+// well, from whom. The corridor drifts on; the record does not. Expected offset now = the record's error + the drift
+// since the survey; its state against the corridor's half-width: known < 0.3, estimate < 1, outdated < 2.5, else
+// unknown (useless). A jump to (or from) a shell's system with a usable record goes through the corridor: one more
+// micro-exit of the same jump at the corridor's entry point outside the shell (LaneEntryFactor x the outer radius), the
+// last leg along the record's direction. Text on the wire: "sys,corridor,surveyS,dx,dy,dz,errDeg,source;..." (source
+// without ',' and ';').
+constexpr double LaneEntryFactor = 1.5;
+
+enum class LaneState : int
+{
+    Known = 0,
+    Estimate = 1,
+    Outdated = 2,
+    Unknown = 3
+};
+
+struct LaneRecord
+{
+    int systemId = -1;
+    int corridor = 0;              // 1-based index in the shell's corridors
+    double surveyUniverseS = 0.0;
+    glm::dvec3 dir {1.0, 0.0, 0.0};
+    double errorDeg = 0.0;
+    std::string source;
+};
+
+std::vector<LaneRecord> parseLaneRecords(const std::string& text);
+std::string formatLaneRecords(const std::vector<LaneRecord>& records);
+// the expected offset of the record from its corridor now, in the corridor's half-widths
+double laneExpectedOffset(const ApproachShell& shell, const LaneRecord& r, double universeTimeS);
+LaneState laneState(const ApproachShell& shell, const LaneRecord& r, double universeTimeS);
+const char* laneStateText(LaneState s);
+// the risk the pilot expects of one crossing along the record (the expected offset in the cone, the lock's beacons)
+double laneExpectedRisk(const ApproachShell& shell, const LaneRecord& r, double universeTimeS, double lockFactor);
+
+struct LaneUse
+{
+    const ApproachShell* shell = nullptr;
+    LaneRecord record;
+    bool arrival = true;   // the target's shell (else the start's)
+    LaneState state = LaneState::Unknown;
+};
+
+// the best usable record (not Unknown) of each end's shell put into the way: the start's exit point after the start, the
+// target's entry point before the target
+std::vector<LaneUse> applyLaneRecords(const world::celestial::StarAtlasDatabase& atlas, InterstellarRoute& route, int fromSystemId,
+                                      int toSystemId, const std::vector<LaneRecord>& records, double universeTimeS);
 } // namespace game::navigation::jump

@@ -318,6 +318,7 @@ ELITE_WIRE_SCHEMA(
     v.jumpExitDeviationM,
     v.jumpExitSigmaM,
     v.jumpExitAltitudeM,
+    v.laneRecords,
     v.zoneFinesTotalCr,
     v.zoneViolationSerial,
     v.zoneViolationKind,

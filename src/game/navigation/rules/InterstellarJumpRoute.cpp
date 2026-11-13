@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -500,5 +501,142 @@ InterstellarRoute planInterstellarRoute(const world::celestial::StarAtlasDatabas
     for (std::size_t i = 1; i < route.pointsLy.size(); ++i)
         route.lengthLy += glm::length(route.pointsLy[i] - route.pointsLy[i - 1]);
     return route;
+}
+
+std::vector<LaneRecord> parseLaneRecords(const std::string& text)
+{
+    std::vector<LaneRecord> out;
+    std::size_t pos = 0;
+    while (pos < text.size())
+    {
+        std::size_t end = text.find(';', pos);
+        if (end == std::string::npos)
+            end = text.size();
+        const std::string item = text.substr(pos, end - pos);
+        pos = end + 1;
+        LaneRecord r;
+        char source[128] = {0};
+        if (std::sscanf(item.c_str(), "%d,%d,%lf,%lf,%lf,%lf,%lf,%127[^;]", &r.systemId, &r.corridor, &r.surveyUniverseS, &r.dir.x,
+                        &r.dir.y, &r.dir.z, &r.errorDeg, source) >= 7 &&
+            glm::length(r.dir) > 0.0)
+        {
+            r.dir = glm::normalize(r.dir);
+            r.source = source;
+            out.push_back(r);
+        }
+    }
+    return out;
+}
+
+std::string formatLaneRecords(const std::vector<LaneRecord>& records)
+{
+    std::string out;
+    for (const auto& r : records)
+    {
+        char b[320];
+        std::string src = r.source;
+        for (char& ch : src)
+            if (ch == ',' || ch == ';')
+                ch = ' ';
+        std::snprintf(b, sizeof b, "%d,%d,%.1f,%.9f,%.9f,%.9f,%.4f,%s", r.systemId, r.corridor, r.surveyUniverseS, r.dir.x, r.dir.y,
+                      r.dir.z, r.errorDeg, src.c_str());
+        out += (out.empty() ? "" : ";") + std::string(b);
+    }
+    return out;
+}
+
+double laneExpectedOffset(const ApproachShell& shell, const LaneRecord& r, double universeTimeS)
+{
+    if (r.corridor < 1 || r.corridor > static_cast<int>(shell.corridors.size()))
+        return 1.0e9;
+    const auto& c = shell.corridors[static_cast<std::size_t>(r.corridor - 1)];
+    constexpr double DegToRad = 3.14159265358979323846 / 180.0;
+    const double ageS = std::max(0.0, universeTimeS - r.surveyUniverseS);
+    return (r.errorDeg * DegToRad + c.driftRadPerS * ageS) / std::max(1e-12, c.halfWidthRad);
+}
+
+LaneState laneState(const ApproachShell& shell, const LaneRecord& r, double universeTimeS)
+{
+    const double k = laneExpectedOffset(shell, r, universeTimeS);
+    if (k < 0.3)
+        return LaneState::Known;
+    if (k < 1.0)
+        return LaneState::Estimate;
+    if (k < 2.5)
+        return LaneState::Outdated;
+    return LaneState::Unknown;
+}
+
+const char* laneStateText(LaneState s)
+{
+    switch (s)
+    {
+    case LaneState::Known: return "известна";
+    case LaneState::Estimate: return "оценка";
+    case LaneState::Outdated: return "устарела";
+    default: return "неизвестна";
+    }
+}
+
+double laneExpectedRisk(const ApproachShell& shell, const LaneRecord& r, double universeTimeS, double lockFactor)
+{
+    const double k = laneExpectedOffset(shell, r, universeTimeS);
+    const double g = 1.0 - std::exp(-k * k);   // the cone's factor at the expected offset (the other corridors ignored)
+    return 1.0 - std::exp(-shell.tau * g / std::sqrt(std::max(1.0, lockFactor)));
+}
+
+std::vector<LaneUse> applyLaneRecords(const world::celestial::StarAtlasDatabase& atlas, InterstellarRoute& route, int fromSystemId,
+                                      int toSystemId, const std::vector<LaneRecord>& records, double universeTimeS)
+{
+    std::vector<LaneUse> used;
+    if (route.pointsLy.size() < 2)
+        return used;
+    const auto best = [&](int systemId, LaneUse& out) {
+        const ApproachShell* shell = approachShellOf(atlas, systemId);
+        if (!shell)
+            return false;
+        bool any = false;
+        double bestK = 1.0e18;
+        for (const auto& r : records)
+        {
+            if (r.systemId != systemId || laneState(*shell, r, universeTimeS) == LaneState::Unknown)
+                continue;
+            const double k = laneExpectedOffset(*shell, r, universeTimeS);
+            if (k < bestK)
+            {
+                bestK = k;
+                out.shell = shell;
+                out.record = r;
+                out.state = laneState(*shell, r, universeTimeS);
+                any = true;
+            }
+        }
+        return any;
+    };
+    // the start's own shell: only from the system itself (from its approaches the ship is already in the shell)
+    LaneUse start;
+    if (!world::celestial::StarAtlasDatabase::isDeepSpace(fromSystemId) && fromSystemId != toSystemId && best(fromSystemId, start))
+    {
+        start.arrival = false;
+        route.pointsLy.insert(route.pointsLy.begin() + 1, start.shell->centreLy + start.record.dir * start.shell->outerLy * LaneEntryFactor);
+        route.avoidedNames.insert(route.avoidedNames.begin(), "выход по трассе " + start.shell->corridors[start.record.corridor - 1].name);
+        used.push_back(start);
+    }
+    LaneUse arrive;
+    if (fromSystemId != toSystemId && best(toSystemId, arrive))
+    {
+        // the entry point; from inside the shell (its approaches) only when the ship is not already deeper than it
+        const glm::dvec3 entry = arrive.shell->centreLy + arrive.record.dir * arrive.shell->outerLy * LaneEntryFactor;
+        route.pointsLy.insert(route.pointsLy.end() - 1, entry);
+        route.avoidedNames.push_back("вход по трассе " + arrive.shell->corridors[arrive.record.corridor - 1].name);
+        used.push_back(arrive);
+    }
+    if (!used.empty())
+    {
+        route.lengthLy = 0.0;
+        for (std::size_t i = 1; i < route.pointsLy.size(); ++i)
+            route.lengthLy += glm::length(route.pointsLy[i] - route.pointsLy[i - 1]);
+    }
+    return used;
 }
 } // namespace game::navigation::jump

@@ -5614,3 +5614,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - Noted: hopping through the shell from the approaches is cheap (time + sump contents are the price); beacons cut the
     risk a lot (World's Ass 35%) - tau is the tuning knob.
   - Next: step 2 - lane records with age (route via the corridor entry point, state known/estimate/outdated/unknown).
+- 2026-11-13 JUMP_MECHANICS 10j - step 2 of 10h: lane records with age (source + live, NOT accepted by the author yet):
+  - DynamicMotionState::laneRecords (text, replicated; snapshot wire schema 43 -> 44);
+  - InterstellarJumpRoute: LaneRecord parse/format, laneExpectedOffset (error + drift x age, in half-widths), laneState
+    known/estimate/outdated/unknown (0.3 / 1 / 2.5), laneExpectedRisk, applyLaneRecords (entry point 1.5 x outer radius,
+    a micro-exit of the same jump; the start's exit point too);
+  - server RequestJump uses the ship's records (log "lane ..."); client calc shows the lane state and the expected risk;
+  - DEV ELITE_DEV_LANES=<sys>:<corridor>:<age yr>[:<err deg>],...
+  - Live Sol -> Fortuna: 0.5 yr known 0% (server true 0.18%, jump through, exit at Lexie); 5 yr estimate 15%; 15 yr
+    outdated 52%; 40 yr useless -> 58% as without a record.
+  - Next: step 3 - record sources: scout archives (bought / found) and the scout probe (a bought consumable).

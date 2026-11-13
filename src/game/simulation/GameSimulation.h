@@ -267,6 +267,12 @@ public:
     bool devPlaceShipAtPoint(EntityId id, const glm::dvec3& au);
     // a ship into a deep-space place (StarAtlasDatabase::DeepSpaceIdBase.., no bodies): normal flight at rest in the
     // place's frame at positionM from its centre (a sump catch between the systems; DEV start deep:<n>)
+    // the lane records the ship carries (JUMP_MECHANICS 10h)
+    void setLaneRecords(EntityId id, const std::string& records)
+    {
+        if (Ship* ship = getShip(id))
+            ship->core().transform().motion.laneRecords = records;
+    }
     bool placeShipInDeepSpace(EntityId id, int systemId, const glm::dvec3& positionM);
     // a sump catch between the systems decided at the request (the server's hidden field, JUMP_MECHANICS 8): the jump
     // comes out in the deep-space place at positionM from its centre instead of the target

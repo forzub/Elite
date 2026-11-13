@@ -777,6 +777,42 @@ void GameServer::applyDevStartPoint(double dt)
         }
     }
     std::cerr << "[DevStart] ELITE_DEV_START=" << spec << (ok ? " applied" : " NOT applied (unknown target)") << std::endl;
+    // ELITE_DEV_LANES=<system>:<corridor>:<age years>[:<error deg>],... - lane records surveyed that long ago (the true
+    // corridor direction then, plus the error turned about the corridor's drift axis)
+    if (const char* lanes = std::getenv("ELITE_DEV_LANES"); lanes && *lanes)
+    {
+        namespace jj = game::navigation::jump;
+        std::vector<jj::LaneRecord> records;
+        std::string all = lanes;
+        std::size_t pos = 0;
+        while (pos < all.size())
+        {
+            std::size_t end = all.find(',', pos);
+            if (end == std::string::npos)
+                end = all.size();
+            int system = -1, corridor = 0;
+            double ageYears = 0.0, errorDeg = 0.0;
+            if (std::sscanf(all.substr(pos, end - pos).c_str(), "%d:%d:%lf:%lf", &system, &corridor, &ageYears, &errorDeg) >= 3)
+                if (const auto* shell = jj::approachShellOf(m_starAtlas, system);
+                    shell && corridor >= 1 && corridor <= static_cast<int>(shell->corridors.size()))
+                {
+                    const auto& c = shell->corridors[static_cast<std::size_t>(corridor - 1)];
+                    jj::LaneRecord r;
+                    r.systemId = system;
+                    r.corridor = corridor;
+                    r.surveyUniverseS = m_universeClock.timeSeconds() - ageYears * 365.25 * 86400.0;
+                    const glm::dvec3 d = jj::corridorDirAt(*shell, c, r.surveyUniverseS);
+                    const double e = glm::radians(errorDeg);
+                    r.dir = glm::normalize(d * std::cos(e) + glm::cross(c.axis, d) * std::sin(e));
+                    r.errorDeg = errorDeg;
+                    r.source = "DEV";
+                    records.push_back(r);
+                }
+            pos = end + 1;
+        }
+        m_simulation.setLaneRecords(ship, jj::formatLaneRecords(records));
+        std::cerr << "[DevStart] ELITE_DEV_LANES: " << records.size() << " lane record(s)" << std::endl;
+    }
 }
 
 bool GameServer::devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal)
@@ -1160,7 +1196,10 @@ void GameServer::update(double dt)
                     {
                         // around the charted masses on the line (InterstellarJumpRoute.h): the nose on the first step,
                         // the charge for the whole way; the steps after it are instant micro-exits of the same jump
-                        const auto route = game::navigation::jump::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
+                        auto route = game::navigation::jump::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
+                        game::navigation::jump::applyLaneRecords(m_starAtlas, route, from->id, to->id,
+                                                                 game::navigation::jump::parseLaneRecords(jumper ? jumper->core().transform().motion.laneRecords : std::string()),
+                                                                 m_universeClock.timeSeconds());
                         if (route.ok && route.pointsLy.size() > 2)
                         {
                             dir = route.pointsLy[1] - route.pointsLy[0];
@@ -1179,8 +1218,15 @@ void GameServer::update(double dt)
                     if (from && to && from != to && jumper)
                     {
                         namespace jj = game::navigation::jump;
-                        const auto route = jj::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
+                        auto route = jj::planInterstellarRoute(m_starAtlas, from->id, to->id, &startLy);
                         const double universeS = m_universeClock.timeSeconds();
+                        for (const auto& use : jj::applyLaneRecords(m_starAtlas, route, from->id, to->id,
+                                                                    jj::parseLaneRecords(jumper->core().transform().motion.laneRecords), universeS))
+                            std::cerr << "[Jump] lane " << use.shell->corridors[use.record.corridor - 1].name << " ("
+                                      << (use.arrival ? "entry" : "exit") << ", " << use.record.source << ", "
+                                      << (universeS - use.record.surveyUniverseS) / (365.25 * 86400.0) << " yr): "
+                                      << jj::laneStateText(use.state) << ", offset "
+                                      << jj::laneExpectedOffset(*use.shell, use.record, universeS) << " half-widths" << std::endl;
                         const double lock = jj::exitLockFactor(jj::systemHasBeacons(from->id), jj::systemHasBeacons(to->id));
                         std::mt19937_64 rng(static_cast<std::uint64_t>(id.value) * 0xA24BAED4963EE407ull +
                                             jumper->core().transform().motion.jumpSerial * 15485863ull + 7ull);

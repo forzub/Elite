@@ -7,12 +7,74 @@
 
 #include "src/ui/html/HtmlUiServer.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <shobjidl.h>
+#endif
+
 namespace elite::mesh_editor
 {
 namespace fs = std::filesystem;
 
-Session::Session(Catalog& catalog, HtmlUiServer& server, fs::path webRoot, fs::path sourceTree)
-    : m_catalog(catalog), m_server(server), m_webRoot(std::move(webRoot)), m_sourceTree(std::move(sourceTree))
+namespace
+{
+// the Windows folder / file chooser (runs on its own thread: COM wants a single-threaded apartment); "" = cancelled
+std::string pickPath(bool folder, const std::string& currentUtf8)
+{
+#ifdef _WIN32
+    std::string out;
+    if (FAILED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)))
+        return out;
+    IFileOpenDialog* dlg = nullptr;
+    if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&dlg))))
+    {
+        DWORD opts = 0;
+        dlg->GetOptions(&opts);
+        dlg->SetOptions(opts | FOS_FORCEFILESYSTEM | (folder ? FOS_PICKFOLDERS : FOS_FILEMUSTEXIST));
+        dlg->SetTitle(folder ? L"Выбор папки" : L"Выбор файла");
+        std::error_code ec;
+        fs::path start = fs::u8path(currentUtf8);
+        if (!folder)
+            start = start.parent_path();
+        while (!start.empty() && !fs::is_directory(start, ec) && start.has_parent_path() && start.parent_path() != start)
+            start = start.parent_path();
+        IShellItem* at = nullptr;
+        if (!start.empty() && fs::is_directory(start, ec) &&
+            SUCCEEDED(SHCreateItemFromParsingName(start.make_preferred().wstring().c_str(), nullptr, IID_IShellItem,
+                                                  reinterpret_cast<void**>(&at))))
+        {
+            dlg->SetFolder(at);
+            at->Release();
+        }
+        if (SUCCEEDED(dlg->Show(GetForegroundWindow())))
+        {
+            IShellItem* item = nullptr;
+            if (SUCCEEDED(dlg->GetResult(&item)))
+            {
+                PWSTR name = nullptr;
+                if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &name)))
+                {
+                    out = fs::path(name).generic_u8string();
+                    CoTaskMemFree(name);
+                }
+                item->Release();
+            }
+        }
+        dlg->Release();
+    }
+    CoUninitialize();
+    return out;
+#else
+    (void)folder;
+    (void)currentUtf8;
+    return std::string();
+#endif
+}
+} // namespace
+
+Session::Session(Catalog& catalog, HtmlUiServer& server, fs::path webRoot, fs::path sourceTree, fs::path settingsFile)
+    : m_catalog(catalog), m_server(server), m_webRoot(std::move(webRoot)), m_sourceTree(std::move(sourceTree)),
+      m_settingsFile(std::move(settingsFile)), m_blender(catalog.settings().blender)
 {
     m_worker = std::thread([this] { previewWorker(); });
 }
@@ -34,7 +96,7 @@ std::string Session::previewUrl(const ModelCard& c) const
 {
     const fs::path rel = fs::path("previews") / c.category / (c.id + ".png");
     std::error_code ec;
-    return fs::exists(m_webRoot / rel, ec) ? rel.generic_string() : std::string();
+    return fs::exists(m_webRoot / rel, ec) ? rel.generic_u8string() : std::string();
 }
 
 void Session::enqueuePreviews(const std::string& category)
@@ -61,6 +123,7 @@ void Session::previewWorker()
     {
         // a batch: one Blender start renders up to 20 models (a start costs ~10 s)
         std::vector<ModelCard> batch;
+        fs::path blender;
         {
             std::unique_lock<std::mutex> g(m_lock);
             m_wake.wait(g, [&] { return m_stop || !m_queue.empty(); });
@@ -71,6 +134,7 @@ void Session::previewWorker()
                 batch.push_back(m_queue.front());
                 m_queue.pop_front();
             }
+            blender = m_blender;
         }
         std::error_code ec;
         const fs::path list = m_webRoot / "previews" / "batch.txt";
@@ -81,10 +145,10 @@ void Session::previewWorker()
             {
                 const fs::path out = m_webRoot / "previews" / c.category / (c.id + ".png");
                 fs::create_directories(out.parent_path(), ec);
-                f << c.folder.string() << '\t' << out.string() << '\n';
+                f << c.folder.generic_u8string() << '\t' << out.generic_u8string() << '\n';
             }
         }
-        const std::string cmd = "\"\"" + m_catalog.settings().blender.string() + "\" -b --factory-startup -P \"" + script.string() +
+        const std::string cmd = "\"\"" + blender.string() + "\" -b --factory-startup -P \"" + script.string() +
                                 "\" -- --list \"" + list.string() + "\" > NUL 2>&1\"";
         const int rc = std::system(cmd.c_str());
         int ok = 0;
@@ -133,7 +197,7 @@ nlohmann::json Session::openModel(const ModelCard& c) const
             vertsTotal += v;
             facesTotal += faces;
             nlohmann::json fj;
-            fj["name"] = fs::relative(f, d, ec).generic_string();
+            fj["name"] = fs::relative(f, d, ec).generic_u8string();
             fj["vertices"] = v;
             fj["faces"] = faces;
             files.push_back(fj);
@@ -145,6 +209,34 @@ nlohmann::json Session::openModel(const ModelCard& c) const
     }
     j["lodList"] = lods;
     return j;
+}
+
+nlohmann::json Session::settingsJson() const
+{
+    const Settings& s = m_catalog.settings();
+    std::error_code ec;
+    nlohmann::json j;
+    j["type"] = "settings";
+    j["sourceRoot"] = s.sourceRoot.generic_u8string();
+    j["outputRoot"] = s.outputRoot.generic_u8string();
+    j["blender"] = s.blender.generic_u8string();
+    j["sourceExists"] = fs::is_directory(s.sourceRoot, ec);
+    j["outputExists"] = fs::is_directory(s.outputRoot, ec);
+    j["blenderExists"] = fs::is_regular_file(s.blender, ec);
+    j["file"] = m_settingsFile.generic_u8string();
+    return j;
+}
+
+void Session::sendCategories()
+{
+    nlohmann::json out;
+    out["type"] = "categories";
+    out["items"] = nlohmann::json::array();
+    for (const auto& c : m_catalog.settings().categories)
+        out["items"].push_back({{"id", c.id}, {"title", c.title}, {"count", m_catalog.count(c.id)}});
+    out["sourceRoot"] = m_catalog.settings().sourceRoot.generic_u8string();
+    out["outputRoot"] = m_catalog.settings().outputRoot.generic_u8string();
+    send(out);
 }
 
 void Session::handleMessage(const std::string& text)
@@ -160,14 +252,42 @@ void Session::handleMessage(const std::string& text)
     }
     if (cmd == "categories")
     {
-        nlohmann::json out;
-        out["type"] = "categories";
-        out["items"] = nlohmann::json::array();
-        for (const auto& c : m_catalog.settings().categories)
-            out["items"].push_back({{"id", c.id}, {"title", c.title}, {"count", m_catalog.count(c.id)}});
-        out["sourceRoot"] = m_catalog.settings().sourceRoot.generic_string();
-        out["outputRoot"] = m_catalog.settings().outputRoot.generic_string();
-        send(out);
+        sendCategories();
+        return;
+    }
+    if (cmd == "settings")
+    {
+        send(settingsJson());
+        return;
+    }
+    if (cmd == "saveSettings")
+    {
+        Settings s = m_catalog.settings();
+        s.sourceRoot = fs::u8path(m.value("sourceRoot", s.sourceRoot.generic_u8string()));
+        s.outputRoot = fs::u8path(m.value("outputRoot", s.outputRoot.generic_u8string()));
+        s.blender = fs::u8path(m.value("blender", s.blender.generic_u8string()));
+        saveSettings(m_settingsFile, s);
+        {
+            std::lock_guard<std::mutex> g(m_lock);
+            m_queue.clear();   // previews of the old folders
+            m_blender = s.blender;
+        }
+        m_catalog.applySettings(s);
+        std::cerr << "[MeshEditor] settings saved: source " << s.sourceRoot.generic_u8string() << ", output "
+                  << s.outputRoot.generic_u8string() << std::endl;
+        send(settingsJson());
+        sendCategories();
+        return;
+    }
+    if (cmd == "pick")
+    {
+        const std::string field = m.value("field", std::string());
+        const bool folder = m.value("kind", std::string("folder")) != "file";
+        const std::string current = m.value("current", std::string());
+        std::thread([this, field, folder, current] {
+            const std::string path = pickPath(folder, current);
+            send({{"type", "picked"}, {"field", field}, {"path", path}});
+        }).detach();
         return;
     }
     const std::string category = m.value("category", std::string());

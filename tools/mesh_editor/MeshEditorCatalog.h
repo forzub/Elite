@@ -42,8 +42,10 @@ struct Settings
     std::vector<CategoryDef> categories;
 };
 
-// the settings file (created with the defaults when missing)
+// the settings file (created with the defaults when missing). Defaults (author 2026-11-13): the raw sources outside the
+// repository - ELITE_ASSETS_SOURCE or <repo>/../assets_source, + /models; the result - the game's target <repo>/assets
 Settings loadSettings(const std::filesystem::path& file, const std::filesystem::path& sourceTree);
+void saveSettings(const std::filesystem::path& file, const Settings& s);
 
 class Catalog
 {
@@ -54,11 +56,14 @@ public:
     const ModelCard* find(const std::string& category, const std::string& id) const;
     int count(const std::string& category) const;
     void rescan();
+    // new folders from the settings window: usage and cards are read again
+    void applySettings(Settings settings);
 
 private:
     void loadUsage(const std::filesystem::path& sourceTree);
     void describe(ModelCard& card) const;
     Settings m_settings;
+    std::filesystem::path m_sourceTree;
     std::vector<ModelCard> m_cards;
     // equipment/<folder> -> product name + the ships that carry it; ship folder -> the designations built on it
     struct Usage

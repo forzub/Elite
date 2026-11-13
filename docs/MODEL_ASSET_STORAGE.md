@@ -1,5 +1,11 @@
 # Где хранятся меши и модели (аудит 2026-11-11)
 
+> **2026-11-13 (автор): сырьё вынесено из репозитория.** Источник для редакторов и генераторов —
+> `D:/__elite/assets_source/models/` (`ELITE_ASSETS_SOURCE`); `work/assets` — таргет игры, в `assets/models` осталось
+> только то, что игра грузит (Cobra `ships/cobrettymk1`, `hub/*`, `stations/LOD0`, `stations/LOD1`). Ниже везде, где
+> сказано `assets/models/<группа>` про исходники (equipment, layout_sketches, ship_assets, ships кроме cobrettymk1),
+> читать `assets_source/models/<группа>`. Подробно — MESH_EDITOR_SPEC.md 4 и 13.
+
 Автор: «разобраться, где хранятся меши модулей кораблей, где сборки кораблей из модулей, где макет Cobra; навести
 порядок». Ниже - что есть сейчас (по коду и диску), что опасно, и план.
 

@@ -4,7 +4,7 @@
 Kernel: tools/models/eqlib.py (primitives, LOD policy, shared builders, hit-volume helpers, OBJ/MTL writers).
 Units:  tools/models/units/<maker>.py - one module per maker, each with ASSETS = {folder: parts_fn(lod)},
         HITS = {folder: hits_fn()} and MODEL_ASSETS = {part_id: folder}. Design schools: tools/models/DESIGN_SCHOOLS.md.
-Output: assets/models/equipment/<folder>/LOD0..LOD3/<part>.obj + .mtl (src/assets/models/SOURCE_LAYOUT.md) and
+Output: <assets_source>/models/equipment/<folder>/LOD0..LOD3/<part>.obj + .mtl (src/assets/models/SOURCE_LAYOUT.md) and
         <folder>/hit_volumes.json. LOD0 = close inspection (eqlib.close() True), LOD1 = the 20-30 m look, LOD2, LOD3.
 
 usage: python tools/models/build_equipment_models.py [--check] [--only <folder-substring>]

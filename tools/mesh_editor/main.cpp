@@ -41,10 +41,11 @@ int main(int argc, char** argv)
             fs::copy_file(e.path(), web / e.path().filename(), fs::copy_options::overwrite_existing, ec);
 
     using namespace elite::mesh_editor;
-    Catalog catalog(loadSettings(root / "mesh_editor.settings.json", sourceTree), sourceTree);
+    const fs::path settingsFile = root / "mesh_editor.settings.json";
+    Catalog catalog(loadSettings(settingsFile, sourceTree), sourceTree);
     HtmlUiServer server;
     const std::uint16_t port = server.start(0, web.string());
-    Session session(catalog, server, web, sourceTree);
+    Session session(catalog, server, web, sourceTree, settingsFile);
     server.setOnMessage([&session](const std::string& m) { session.handleMessage(m); });
     const auto nonce = std::chrono::steady_clock::now().time_since_epoch().count();
     const std::string url = "http://localhost:" + std::to_string(port) + "/index.html?s=" + std::to_string(nonce);

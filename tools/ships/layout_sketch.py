@@ -40,8 +40,10 @@ register_materials({
     "sk_skid": ((0.85, 0.75, 0.20), (0.1, 0.1, 0.1), 10),
 })
 
-EQ = os.path.join(ROOT, "assets", "models", "equipment")
-OUT = os.path.join(ROOT, "assets", "models", "layout_sketches")
+# raw model sources live outside the repository (author 2026-11-13): ELITE_ASSETS_SOURCE or <repo>/../assets_source
+SOURCE_MODELS = os.path.join(os.environ.get("ELITE_ASSETS_SOURCE") or os.path.normpath(os.path.join(ROOT, "..", "assets_source")), "models")
+EQ = os.path.join(SOURCE_MODELS, "equipment")
+OUT = os.path.join(SOURCE_MODELS, "layout_sketches")
 
 
 def load_obj(folder, lod=2, only=None, skip=None):

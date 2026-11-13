@@ -13,7 +13,9 @@ import json
 import os
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-SIZES = os.path.join(ROOT, "assets", "models", "layout_sketches", "sketch_sizes.json")
+# raw model sources live outside the repository (author 2026-11-13): ELITE_ASSETS_SOURCE or <repo>/../assets_source
+SOURCE_MODELS = os.path.join(os.environ.get("ELITE_ASSETS_SOURCE") or os.path.normpath(os.path.join(ROOT, "..", "assets_source")), "models")
+SIZES = os.path.join(SOURCE_MODELS, "layout_sketches", "sketch_sizes.json")
 DOC = os.path.join(ROOT, "docs", "SHIP_PASSPORT_REVISION.md")
 
 

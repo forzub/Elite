@@ -29,9 +29,9 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import layout_sketch as LS  # noqa: E402
-from layout_sketch import Part, EQ, ROOT, MATERIALS, PADS  # noqa: E402
+from layout_sketch import Part, EQ, ROOT, MATERIALS, PADS, SOURCE_MODELS  # noqa: E402
 
-OUT = os.path.join(ROOT, "assets", "models", "ship_assets")
+OUT = os.path.join(SOURCE_MODELS, "ship_assets")
 EXTERIOR_HINTS = ("laser", "missiles", "field_emitter", "skid", "radar", "dock", "pd1", "escape_cockpit")
 # equipment LOD per asset render LOD: component LODs 0..2 use the units' LOD1 / LOD2 / LOD3, the shell LOD3 too
 EQ_LOD = (1, 2, 3)

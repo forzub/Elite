@@ -18,7 +18,9 @@ import math
 import os
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-OUT = os.path.join(ROOT, "assets", "models", "equipment")
+# raw model sources live outside the repository (author 2026-11-13): ELITE_ASSETS_SOURCE or <repo>/../assets_source
+SOURCE_MODELS = os.path.join(os.environ.get("ELITE_ASSETS_SOURCE") or os.path.normpath(os.path.join(ROOT, "..", "assets_source")), "models")
+OUT = os.path.join(SOURCE_MODELS, "equipment")
 
 # Visibility floor (author 2026-11-09: the models must stay light). LOD0 is the look from ~20-30 m, where one pixel
 # (1080p, 60 deg FOV) is ~3 cm: chamfers below MIN_FEATURE and fasteners below MIN_BOLT across are not built at all.

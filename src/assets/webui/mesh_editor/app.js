@@ -4,7 +4,8 @@
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const state = { ws: null, categories: [], category: null, cards: [], model: null, pollTimer: null };
+const state = { ws: null, categories: [], category: null, cards: [], model: null, pollTimer: null, object: {}, settings: null };
+const UNUSED = '__none__';   // the object list entry 'used nowhere'
 
 // the step windows (MESH_EDITOR_SPEC 6 / 7): to be built one by one, after each is gone through with the author
 const PART_STEPS = ['Проверка элементов', 'Состав', 'LOD', 'Материалы', 'Физика и хитвалумы', 'Повреждения',
@@ -21,6 +22,7 @@ function connect() {
   state.ws.onopen = () => {
     $('conn').textContent = 'связь есть';
     send({ cmd: 'categories' });
+    if (params.get('settings')) send({ cmd: 'settings' });
   };
   state.ws.onclose = () => {
     $('conn').textContent = 'нет связи';
@@ -33,6 +35,8 @@ function connect() {
     else if (m.type === 'list') onList(m);
     else if (m.type === 'previews') onPreviews(m);
     else if (m.type === 'opened') onOpened(m);
+    else if (m.type === 'settings') onSettings(m);
+    else if (m.type === 'picked') onPicked(m);
   };
 }
 
@@ -84,11 +88,13 @@ function onCategories(m) {
   state.outputRoot = m.outputRoot;
   renderCategories();
   if (params.get('dialog') && $('dialog').hidden) showDialog();
+  if (params.get('obj') && params.get('cat')) state.object[params.get('cat')] = params.get('obj');
   if (params.get('cat') && !state.category) openCategory(params.get('cat'));
 }
 function onList(m) {
   if (m.category !== state.category) return;
   state.cards = m.items;
+  renderObjectFilter();
   renderCards();
   if (state.cards.some((c) => !c.preview)) startPolling();
   if (params.get('open') && !state.model) {
@@ -119,11 +125,29 @@ function stopPolling() {
   if (state.pollTimer) clearInterval(state.pollTimer);
   state.pollTimer = null;
 }
+// the object list (author 2026-11-13): pick a ship / station / hub module - only what is used on it stays
+function renderObjectFilter() {
+  const sel = $('objectFilter');
+  const counts = new Map();
+  for (const c of state.cards) for (const u of c.usedBy || []) counts.set(u, (counts.get(u) || 0) + 1);
+  const names = [...counts.keys()].sort((a, b) => a.localeCompare(b, 'ru', { numeric: true }));
+  sel.hidden = names.length === 0;
+  const current = state.object[state.category] || '';
+  const unused = state.cards.filter((c) => !(c.usedBy || []).length).length;
+  sel.innerHTML = '<option value="">все объекты</option>' +
+    names.map((n) => `<option value="${esc(n)}">${esc(n)} — ${counts.get(n)}</option>`).join('') +
+    (unused ? `<option value="${UNUSED}">нигде не используется — ${unused}</option>` : '');
+  sel.value = names.includes(current) || (current === UNUSED && unused) ? current : '';
+  sel.classList.toggle('on', !!sel.value);
+}
 function renderCards() {
   const q = $('filter').value.trim().toLowerCase();
+  const obj = $('objectFilter').hidden ? '' : $('objectFilter').value;
   const box = $('cards');
   box.innerHTML = '';
-  const shown = state.cards.filter((c) => !q || [c.id, c.title, c.description, ...(c.usedBy || [])].join(' ').toLowerCase().includes(q));
+  const shown = state.cards
+    .filter((c) => !obj || (obj === UNUSED ? !(c.usedBy || []).length : (c.usedBy || []).includes(obj)))
+    .filter((c) => !q || [c.id, c.title, c.description, ...(c.usedBy || [])].join(' ').toLowerCase().includes(q));
   $('countInfo').textContent = `${shown.length} из ${state.cards.length}`;
   if (!state.cards.length) box.innerHTML = '<div class="muted">В этом разделе пока нет моделей.</div>';
   for (const c of shown) {
@@ -183,6 +207,32 @@ function renderSource(m) {
   body.innerHTML = html;
 }
 
+// ---- settings: the source folder, the result folder, Blender (MESH_EDITOR_SPEC 4)
+function showSettings() {
+  $('settings').hidden = false;
+  send({ cmd: 'settings' });
+}
+function hideSettings() { $('settings').hidden = true; }
+function onSettings(m) {
+  state.settings = m;
+  $('setSource').value = m.sourceRoot;
+  $('setOutput').value = m.outputRoot;
+  $('setBlender').value = m.blender;
+  $('setFile').textContent = 'файл настроек: ' + m.file;
+  $('setSourceWarn').textContent = m.sourceExists ? '' : 'Такой папки нет — разделы будут пустыми.';
+  $('setOutputWarn').textContent = m.outputExists ? '' : 'Такой папки пока нет — будет создана при первой сборке.';
+  $('setBlenderWarn').textContent = m.blenderExists ? '' : 'Файл не найден — снимки моделей рисоваться не будут.';
+  if (params.get('settings')) $('settings').hidden = false;
+}
+function onPicked(m) {
+  if (m.path && $(m.field)) $(m.field).value = m.path;
+}
+function saveSettings() {
+  send({ cmd: 'saveSettings', sourceRoot: $('setSource').value.trim(), outputRoot: $('setOutput').value.trim(),
+    blender: $('setBlender').value.trim() });
+  hideSettings();
+}
+
 // ---- helpers
 function esc(s) {
   return String(s ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -199,5 +249,20 @@ $('openBtn').onclick = showDialog;
 $('closeBtn').onclick = hideDialog;
 $('backBtn').onclick = showCategories;
 $('filter').oninput = renderCards;
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('dialog').hidden) hideDialog(); });
+$('objectFilter').onchange = () => {
+  state.object[state.category] = $('objectFilter').value;
+  $('objectFilter').classList.toggle('on', !!$('objectFilter').value);
+  renderCards();
+};
+$('settingsBtn').onclick = showSettings;
+$('settingsClose').onclick = hideSettings;
+$('settingsCancel').onclick = hideSettings;
+$('settingsSave').onclick = saveSettings;
+for (const b of document.querySelectorAll('[data-pick]'))
+  b.onclick = () => send({ cmd: 'pick', field: b.dataset.pick, kind: b.dataset.kind, current: $(b.dataset.pick).value });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!$('settings').hidden) hideSettings();
+  else if (!$('dialog').hidden) hideDialog();
+});
 connect();

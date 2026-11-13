@@ -10,6 +10,7 @@
   <button id="openBtn" class="primary">Открыть</button>
   <div id="current">Модель не открыта</div>
   <div id="conn" class="muted">нет связи</div>
+  <button id="settingsBtn">Настройки</button>
 </header>
 
 <main id="workspace">
@@ -40,11 +41,43 @@
     </div>
     <div id="categories" class="categories"></div>
     <div id="filterRow" class="filter-row" hidden>
+      <select id="objectFilter" title="показать только то, что стоит на этом объекте"></select>
       <input id="filter" type="search" placeholder="поиск по имени, описанию, кораблю">
       <span id="countInfo" class="muted"></span>
     </div>
     <div id="cards" class="cards" hidden></div>
     <div id="dialogFoot" class="muted"></div>
+  </div>
+</div>
+<div id="settings" class="modal" hidden>
+  <div class="modal-box settings-box">
+    <div class="modal-head">
+      <h2>Настройки</h2>
+      <button id="settingsClose" class="ghost">✕</button>
+    </div>
+    <div class="set-row">
+      <label for="setSource">Папка-источник</label>
+      <div class="set-line"><input id="setSource" type="text"><button data-pick="setSource" data-kind="folder">Выбрать…</button></div>
+      <div class="hint">Сырые модели: что пришло из Blender или сгенерировано. Внутри — разделы <code>equipment</code>, <code>ships</code>, <code>stations</code>, <code>hub</code>, <code>objects</code>…</div>
+      <div class="set-warn" id="setSourceWarn"></div>
+    </div>
+    <div class="set-row">
+      <label for="setOutput">Папка-результат</label>
+      <div class="set-line"><input id="setOutput" type="text"><button data-pick="setOutput" data-kind="folder">Выбрать…</button></div>
+      <div class="hint">Куда редактор кладёт готовые модели для игры.</div>
+      <div class="set-warn" id="setOutputWarn"></div>
+    </div>
+    <div class="set-row">
+      <label for="setBlender">Blender</label>
+      <div class="set-line"><input id="setBlender" type="text"><button data-pick="setBlender" data-kind="file">Выбрать…</button></div>
+      <div class="hint">blender.exe — им рисуются снимки моделей.</div>
+      <div class="set-warn" id="setBlenderWarn"></div>
+    </div>
+    <div class="set-foot">
+      <span id="setFile" class="muted"></span>
+      <button id="settingsCancel">Отмена</button>
+      <button id="settingsSave" class="primary">Сохранить</button>
+    </div>
   </div>
 </div>
 <script src="app.js"></script>

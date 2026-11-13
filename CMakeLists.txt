@@ -501,7 +501,7 @@ target_compile_definitions(EliteMeshEditor PRIVATE
 )
 target_link_libraries(EliteMeshEditor PRIVATE nlohmann_json::nlohmann_json Threads::Threads webview::core_static)
 if(WIN32)
-    target_link_libraries(EliteMeshEditor PRIVATE ws2_32 mswsock iphlpapi shell32)
+    target_link_libraries(EliteMeshEditor PRIVATE ws2_32 mswsock iphlpapi shell32 ole32 uuid)
 endif()
 set_target_properties(EliteMeshEditor PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${ELITE_MESH_EDITOR_ROOT}/bin")
 elite_configure_executable_runtime(EliteMeshEditor)   # the MinGW runtime DLLs beside it: starts by double click

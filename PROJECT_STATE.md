@@ -5657,3 +5657,18 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   from the ship catalog, where used, readiness status), Blender preview thumbnails in batches, the Open dialog and the
   opened-model header + step row + source table. Verified with headless Edge screenshots (D:/tmp/me_*.png). Not
   accepted by the author yet. Next: go through window 6.1 "Проверка элементов" with the author.
+- 2026-11-13 ASSET SOURCES MOVED + MESH EDITOR slice 2 (docs/MESH_EDITOR_SPEC.md 4, 13): author: "`work/assets` - это
+  таргет", raw models -> `D:/__elite/assets_source`; source folder chosen in the editor; an object list over the cards.
+  Done: `assets/models` -> `D:/__elite/assets_source/models` (16 214 files, 882 MB, incl. 243 that lived only in
+  `build/assets/models`); `assets/models` keeps what the game loads (ships/cobrettymk1, hub/*, stations/LOD0, LOD1 -
+  LOD1 rescued from build/, it was referenced by ObjectAssemblyRegistry but existed only there); git: 6519 deletions.
+  Generators (tools/models/eqlib.py, tools/ships/layout_sketch|ship_asset_source|passport_revision.py,
+  EliteShipMeshExport --source) write to `ELITE_ASSETS_SOURCE` or `<repo>/../assets_source`; old editor settings file
+  repointed. EliteMeshEditor: Settings window (source / result / Blender, Windows folder chooser, save -> rescan),
+  object filter (ship / station / module -> only its models, plus "used nowhere"), UTF-8 paths. Evidence: catalog
+  118/26/0/2/0/4/5 from the new source; "Cobrett-I A3" -> 17 of 118 (D:/tmp/me_obj.png); settings window
+  (D:/tmp/me_settings.png); saveSettings over the socket rescans; the game from a clean build/assets/models (59 files; stations keeps only the 6+6 meshes the code names)
+  starts at the hub, 61 parts drawn, all 49 mesh paths of the code present and byte-identical to the old copy.
+  NOT verified: the Windows folder chooser itself (needs a screen). Old copy set aside as
+  build/assets_models_before_move (CLEANUP_CANDIDATES #9). Note: assets_source is not under version control.
+  Next: the author tries Settings / object list; then window 6.1 "Проверка элементов".

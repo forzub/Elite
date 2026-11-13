@@ -1,6 +1,7 @@
 #include "tools/mesh_editor/MeshEditorCatalog.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -24,7 +25,7 @@ nlohmann::json readJson(const fs::path& p)
 
 std::string pathString(const fs::path& p)
 {
-    return p.generic_string();
+    return p.generic_u8string();   // UTF-8 both ways: the folders may have Cyrillic names
 }
 
 bool isModelFolder(const fs::path& dir)
@@ -79,8 +80,9 @@ fs::file_time_type newestFile(const fs::path& dir)
 Settings loadSettings(const fs::path& file, const fs::path& sourceTree)
 {
     Settings s;
-    s.sourceRoot = sourceTree / "assets/models";
-    s.outputRoot = sourceTree / "src/assets/compiled/mesh_editor";
+    const char* env = std::getenv("ELITE_ASSETS_SOURCE");
+    s.sourceRoot = (env && *env ? fs::path(env) : (sourceTree / ".." / "assets_source").lexically_normal()) / "models";
+    s.outputRoot = sourceTree / "assets/compiled";
     s.workRoot = sourceTree / "build/tools/mesh_editor/work";
     s.blender = "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe";
     // the author's categories (MESH_EDITOR_SPEC 4); today's folders map onto them
@@ -97,13 +99,13 @@ Settings loadSettings(const fs::path& file, const fs::path& sourceTree)
     if (j.is_object())
     {
         if (j.contains("sourceRoot"))
-            s.sourceRoot = j["sourceRoot"].get<std::string>();
+            s.sourceRoot = fs::u8path(j["sourceRoot"].get<std::string>());
         if (j.contains("outputRoot"))
-            s.outputRoot = j["outputRoot"].get<std::string>();
+            s.outputRoot = fs::u8path(j["outputRoot"].get<std::string>());
         if (j.contains("workRoot"))
-            s.workRoot = j["workRoot"].get<std::string>();
+            s.workRoot = fs::u8path(j["workRoot"].get<std::string>());
         if (j.contains("blender"))
-            s.blender = j["blender"].get<std::string>();
+            s.blender = fs::u8path(j["blender"].get<std::string>());
         if (j.contains("categories") && j["categories"].is_array())
         {
             s.categories.clear();
@@ -113,14 +115,19 @@ Settings loadSettings(const fs::path& file, const fs::path& sourceTree)
                 d.id = c.value("id", std::string());
                 d.title = c.value("title", d.id);
                 for (const auto& p : c.value("sourceDirs", nlohmann::json::array()))
-                    d.sourceDirs.push_back(p.get<std::string>());
+                    d.sourceDirs.push_back(fs::u8path(p.get<std::string>()));
                 s.categories.push_back(d);
             }
         }
     }
     else
+        saveSettings(file, s);   // the defaults, so the author sees and edits them
+    return s;
+}
+
+void saveSettings(const fs::path& file, const Settings& s)
+{
     {
-        // write the defaults so the author sees and edits them
         nlohmann::json out;
         out["sourceRoot"] = pathString(s.sourceRoot);
         out["outputRoot"] = pathString(s.outputRoot);
@@ -141,12 +148,19 @@ Settings loadSettings(const fs::path& file, const fs::path& sourceTree)
         fs::create_directories(file.parent_path(), ec);
         std::ofstream(file) << out.dump(2);
     }
-    return s;
 }
 
-Catalog::Catalog(Settings settings, const fs::path& sourceTree) : m_settings(std::move(settings))
+Catalog::Catalog(Settings settings, const fs::path& sourceTree) : m_settings(std::move(settings)), m_sourceTree(sourceTree)
 {
     loadUsage(sourceTree);
+    rescan();
+}
+
+void Catalog::applySettings(Settings settings)
+{
+    m_settings = std::move(settings);
+    m_usage.clear();
+    loadUsage(m_sourceTree);
     rescan();
 }
 
@@ -337,7 +351,7 @@ nlohmann::json cardJson(const ModelCard& c, const std::string& previewUrl)
     j["meshFiles"] = c.meshFiles;
     j["sizeMb"] = c.sizeMb;
     j["gltf"] = c.gltf;
-    j["folder"] = c.folder.generic_string();
+    j["folder"] = c.folder.generic_u8string();
     j["preview"] = previewUrl;
     return j;
 }

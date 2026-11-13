@@ -2,9 +2,11 @@
 // the runtime descriptors (ShipDescriptor::primitiveBlocks - the same boxes the
 // game draws for a ship without an authored mesh), one OBJ per module:
 //
-//   assets/models/ships/<folder>/LOD0/<module>.obj   boxes of that module
-//   assets/models/ships/<folder>/LOD0/primitive.mtl  category materials
-//   assets/models/ships/ship_models.json             folder <-> passport index
+//   <assets_source>/models/ships/<folder>/LOD0/<module>.obj   boxes of that module
+//   <assets_source>/models/ships/<folder>/LOD0/primitive.mtl  category materials
+//   <assets_source>/models/ships/ship_models.json             folder <-> passport index
+// <assets_source> (raw sources, outside the repository - author 2026-11-13): --source <dir>, else the environment
+// variable ELITE_ASSETS_SOURCE, else <root>/../assets_source
 //
 // The Model Asset Editor lists every ships/<folder>/LOD<N>/*.obj and names it
 // from the index. Folders are written ONLY for index entries with
@@ -17,6 +19,7 @@
 //
 //   EliteShipMeshExport [--root <repo>]          write
 //   EliteShipMeshExport [--root <repo>] --check  verify, write nothing (exit 1 on drift)
+#include <cstdlib>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -197,6 +200,7 @@ void emit(const fs::path& p, const std::string& text, bool check)
 int main(int argc, char** argv)
 {
     fs::path root = ".";
+    fs::path source;
     bool check = false;
     for (int i = 1; i < argc; ++i)
     {
@@ -205,8 +209,15 @@ int main(int argc, char** argv)
             check = true;
         else if (a == "--root" && i + 1 < argc)
             root = argv[++i];
+        else if (a == "--source" && i + 1 < argc)
+            source = argv[++i];
     }
-    const fs::path shipsRoot = root / "assets" / "models" / "ships";
+    if (source.empty())
+    {
+        const char* env = std::getenv("ELITE_ASSETS_SOURCE");
+        source = env && *env ? fs::path(env) : fs::absolute(root).lexically_normal() / ".." / "assets_source";
+    }
+    const fs::path shipsRoot = source / "models" / "ships";
     const fs::path indexPath = shipsRoot / "ship_models.json";
 
     json index = json::object();

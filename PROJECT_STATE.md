@@ -5672,3 +5672,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   NOT verified: the Windows folder chooser itself (needs a screen). Old copy set aside as
   build/assets_models_before_move (CLEANUP_CANDIDATES #9). Note: assets_source is not under version control.
   Next: the author tries Settings / object list; then window 6.1 "Проверка элементов".
+- 2026-11-13 UNUSED COBRAS OUT: author: move every Cobra the game does not use to `D:/__elite/model_source`. Moved
+  assets_source/models/ships/{cobretty-mk1-int, cobretty-mk1-traf, cobra-mk1, cobra-mk1-elite, cobra-mk3-elite,
+  cobramk1T} -> D:/__elite/model_source/ships (README there). Kept: cobrettymk1 (the game's Cobra). ship_models.json and
+  EliteShipMeshExport's authored default now map Cobrett-I N1 / A3 to cobrettymk1 (the two-Cobras question resolved by
+  the move). ship_assets/cobrett-i explained to the author (compartment mock-up source + compiled copy; the game reads
+  it only with ELITE_SHIP_MODEL_ASSETS=1).
+

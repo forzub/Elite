@@ -241,7 +241,7 @@ int main(int argc, char** argv)
         // a ship flying an existing hand-made descriptor keeps its authored mesh folder
         // (assets/ is untracked: the default must survive a lost index)
         const bool existingRuntime = s.runtime.rfind("existing:", 0) == 0;
-        const std::string authoredDefault = s.runtime.rfind("existing:EliteCobraMk1:", 0) == 0 ? "cobretty-mk1-int" : folderOf(s.id);
+        const std::string authoredDefault = s.runtime.rfind("existing:EliteCobraMk1:", 0) == 0 ? "cobrettymk1" : folderOf(s.id);   // the Cobra the game draws (others moved to D:/__elite/model_source, author 2026-11-13)
         const std::string folder = entry.value("folder", existingRuntime ? authoredDefault : folderOf(s.id));
         const std::string source = entry.value("source", existingRuntime ? "authored" : "primitive");
         entry["folder"] = folder;

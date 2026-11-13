@@ -504,6 +504,7 @@ if(WIN32)
     target_link_libraries(EliteMeshEditor PRIVATE ws2_32 mswsock iphlpapi shell32)
 endif()
 set_target_properties(EliteMeshEditor PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${ELITE_MESH_EDITOR_ROOT}/bin")
+elite_configure_executable_runtime(EliteMeshEditor)   # the MinGW runtime DLLs beside it: starts by double click
 
 add_executable(EliteGame
     src/main.cpp

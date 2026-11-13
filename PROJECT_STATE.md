@@ -5686,3 +5686,4 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   asset.json "use": traffic / lod / physics) in MESH_EDITOR_SPEC 14 - awaits the author; cobretty-mk1-traf stays in
   D:/__elite/model_source until then.
 
+- 2026-11-13 SHELL traf: author approved MESH_EDITOR_SPEC 14 - cobretty-mk1-traf (ship_body 203 v + ship_cockpit 38 v) moved from D:/__elite/model_source to assets_source/models/ships/cobrettymk1/shells/traf; cobrettymk1/asset.json "shells": {"traf": {"use": ["traffic"]}}. Editor open of cobrettymk1 lists LOD0, LOD1 and "скорлупа traf" (checked over the socket). The game does not draw it yet (traffic still uses the full Cobra assembly).

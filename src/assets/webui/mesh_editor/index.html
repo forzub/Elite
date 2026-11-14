@@ -26,6 +26,7 @@
       <span id="modelMeta" class="muted"></span>
       <span id="modelUsed" class="muted"></span>
     </div>
+    <div id="trail" class="trail" hidden></div>
     <nav id="steps"></nav>
     <div id="split">
       <div id="viewWrap">
@@ -37,9 +38,10 @@
           <label><input type="checkbox" id="optWire"> каркас</label>
           <label><input type="checkbox" id="optIsolate"> только выбранная</label>
           <button id="fitBtn" class="small">показать всё</button>
+          <button id="blenderBtn" class="small" title="этот уровень в окне Blender">Открыть в Blender</button>
         </div>
         <div id="legend" class="overlay right">
-          <span><i class="sw open"></i>дыра</span><span><i class="sw bad"></i>3+ граней / вывернуто</span><span><i class="sw back"></i>изнанка</span>
+          <span><i class="sw open"></i>дыра</span><span><i class="sw bad"></i>3+ граней / вывернуто</span><span><i class="sw back"></i>изнанка</span><span><i class="sw link"></i>модуль-ссылка</span>
         </div>
       </div>
       <aside id="side">
@@ -102,6 +104,7 @@
     </div>
   </div>
 </div>
+<div id="notice" class="notice" hidden></div>
 <script src="app.js"></script>
 <script type="module" src="viewer.js"></script>
 </body>

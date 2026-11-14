@@ -161,13 +161,8 @@ void Session::previewWorker()
     }
 }
 
-nlohmann::json Session::openModel(const ModelCard& c) const
+std::vector<Session::MeshGroup> Session::modelGroups(const ModelCard& c)
 {
-    // the first look: what the source holds, LOD by LOD, file by file (the element check of MESH_EDITOR_SPEC 6.1 comes
-    // after the author has gone through that window)
-    nlohmann::json j = cardJson(c, previewUrl(c));
-    j["type"] = "opened";
-    nlohmann::json lods = nlohmann::json::array();
     std::error_code ec;
     std::vector<fs::path> dirs;
     for (const auto& e : fs::directory_iterator(c.folder, ec))
@@ -175,7 +170,7 @@ nlohmann::json Session::openModel(const ModelCard& c) const
             dirs.push_back(e.path());
     std::sort(dirs.begin(), dirs.end());
     // groups: LOD<N> folders; the mock-up's source/geo/<part>.lod<N>.obj by N; the ship's shells/<name>/ (traffic)
-    std::vector<std::tuple<std::string, fs::path, std::vector<fs::path>>> groups;   // name, base folder, meshes
+    std::vector<MeshGroup> groups;
     for (const auto& d : dirs)
     {
         std::vector<fs::path> objs;
@@ -206,6 +201,18 @@ nlohmann::json Session::openModel(const ModelCard& c) const
                     objs.push_back(f.path());
             groups.push_back({"скорлупа " + e.path().filename().u8string(), e.path(), objs});
         }
+    return groups;
+}
+
+nlohmann::json Session::openModel(const ModelCard& c) const
+{
+    // the first look: what the source holds, LOD by LOD, file by file (the element check of MESH_EDITOR_SPEC 6.1 comes
+    // after the author has gone through that window)
+    nlohmann::json j = cardJson(c, previewUrl(c));
+    j["type"] = "opened";
+    nlohmann::json lods = nlohmann::json::array();
+    std::error_code ec;
+    std::vector<MeshGroup> groups = modelGroups(c);
     for (auto& [groupName, d, objs] : groups)
     {
         nlohmann::json lod;
@@ -240,6 +247,65 @@ nlohmann::json Session::openModel(const ModelCard& c) const
     }
     j["lodList"] = lods;
     return j;
+}
+
+// parts of an assembly that are library models (a mock-up part named like an equipment folder, later a glTF socket
+// with elite_part): shown as links; their own errors are fixed in their card, not counted against the assembly
+nlohmann::json Session::withLinks(nlohmann::json j) const
+{
+    static const char* libraries[] = {"equipment_ship", "equipment_station", "equipment_hub_module"};
+    int links = 0, linkErrors = 0;
+    for (auto& p : j["parts"])
+    {
+        const std::string key = p.value("key", std::string());
+        for (const char* cat : libraries)
+            if (cat != j.value("category", std::string()))
+                if (const ModelCard* c = m_catalog.find(cat, key))
+                {
+                    p["link"] = {{"category", c->category}, {"id", c->id}, {"title", c->title}};
+                    ++links;
+                    if (p.value("result", std::string()) == "error")
+                        ++linkErrors;
+                    break;
+                }
+    }
+    j["summary"]["links"] = links;
+    j["summary"]["linkErrors"] = linkErrors;
+    j["summary"]["error"] = j["summary"].value("error", 0) - linkErrors;
+    j["summary"]["ok"] = j["summary"].value("parts", 0) - links - j["summary"].value("error", 0);
+    return j;
+}
+
+// "Открыть в Blender": a Blender window with the chosen group's meshes (or the model's glTF), the editor stays open
+void Session::openInBlender(const ModelCard& card, const std::string& group, const std::string& part)
+{
+    fs::path blender;
+    {
+        std::lock_guard<std::mutex> g(m_lock);
+        blender = m_blender;
+    }
+    std::error_code ec;
+    if (!fs::is_regular_file(blender, ec))
+    {
+        send({{"type", "notice"}, {"text", "Blender не найден — укажите его в «Настройках»."}});
+        return;
+    }
+    const fs::path script = m_sourceTree / "tools/mesh_editor/blender_open.py";
+    const fs::path list = m_catalog.settings().workRoot / card.category / card.id / "blender_open.json";
+    fs::create_directories(list.parent_path(), ec);
+    nlohmann::json files = nlohmann::json::array();
+    for (const auto& [name, base, groupFiles] : modelGroups(card))
+        if (group.empty() || name == group)
+            for (const auto& f : groupFiles)
+                files.push_back(f.generic_u8string());
+    for (const auto& e : fs::directory_iterator(card.folder, ec))
+        if (e.path().extension() == ".gltf" || e.path().extension() == ".glb")
+            files = nlohmann::json::array({e.path().generic_u8string()});
+    std::ofstream(list) << nlohmann::json {{"files", files}, {"select", part}, {"title", card.title}}.dump(1);
+    const std::string cmd = "start \"\" \"" + blender.string() + "\" -P \"" + script.string() + "\" -- \"" + list.string() + "\"";
+    std::cerr << "[MeshEditor] blender: " << card.category << "/" << card.id << " " << group << " (" << files.size() << " files)" << std::endl;
+    std::thread([cmd] { std::system(cmd.c_str()); }).detach();
+    send({{"type", "notice"}, {"text", "Blender открывается: " + card.title + (group.empty() ? "" : ", " + group) + "."}});
 }
 
 nlohmann::json Session::settingsJson() const
@@ -336,7 +402,7 @@ void Session::handleMessage(const std::string& text)
             enqueuePreviews(category);
         return;
     }
-    if (cmd == "inspect" || cmd == "setKind")
+    if (cmd == "inspect" || cmd == "setKind" || cmd == "setCaps")
     {
         // step 1 "Загрузка и проверка": the repaired geometry for the viewer + the part table; commit = "Проверить"
         if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
@@ -344,8 +410,17 @@ void Session::handleMessage(const std::string& text)
             const fs::path stateDir = m_catalog.settings().workRoot / c->category / c->id;
             if (cmd == "setKind")
                 Inspector::setKind(stateDir, m.value("part", std::string()), m.value("kind", std::string()));
-            send(Inspector::inspect(*c, m_webRoot, stateDir, m.value("commit", false)));
+            if (cmd == "setCaps")
+                for (const auto& part : m.value("parts", std::vector<std::string> {}))
+                    Inspector::setCaps(stateDir, part, m.value("on", true));
+            send(withLinks(Inspector::inspect(*c, m_webRoot, stateDir, m.value("commit", false))));
         }
+        return;
+    }
+    if (cmd == "blender")
+    {
+        if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+            openInBlender(*c, m.value("group", std::string()), m.value("part", std::string()));
         return;
     }
     if (cmd == "open")

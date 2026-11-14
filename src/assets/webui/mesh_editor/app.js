@@ -1,10 +1,12 @@
 // Elite mesh editor page (docs/MESH_EDITOR_SPEC.md). Talks JSON to the C++ backend over the WebSocket.
-// URL parameters for headless checks: ?dialog=1 opens "Открыть", &cat=<category> shows its cards, &open=<id> opens one.
+// URL parameters for headless checks: ?dialog=1 opens "Открыть", &cat=<category> shows its cards, &open=<id> opens one,
+// &part=<key> selects a part, &follow=1 then opens that part's link (the trail back).
 'use strict';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const state = { ws: null, categories: [], category: null, cards: [], model: null, pollTimer: null, object: {}, settings: null };
+const state = { ws: null, categories: [], category: null, cards: [], model: null, pollTimer: null, object: {}, settings: null,
+  stack: [], pendingBack: null };   // stack: the models a link was opened from (SolidWorks-like 'back to the assembly')
 const UNUSED = '__none__';   // the object list entry 'used nowhere'
 
 // the step windows (MESH_EDITOR_SPEC 6 / 7): to be built one by one, after each is gone through with the author
@@ -38,6 +40,7 @@ function connect() {
     else if (m.type === 'settings') onSettings(m);
     else if (m.type === 'picked') onPicked(m);
     else if (m.type === 'inspection') onInspection(m);
+    else if (m.type === 'notice') notice(m.text);
   };
 }
 
@@ -166,7 +169,7 @@ function renderCards() {
         <div class="d">${esc(c.description || '')}</div>
         <div class="u">${esc(used)}</div>
       </div>`;
-    el.onclick = () => send({ cmd: 'open', category: c.category, id: c.id });
+    el.onclick = () => { state.stack = []; send({ cmd: 'open', category: c.category, id: c.id }); };
     box.appendChild(el);
   }
 }
@@ -195,6 +198,12 @@ function onOpened(m) {
   insp.data = null;
   insp.selected = null;
   insp.group = 0;
+  if (state.pendingBack) {   // back from a link: the assembly comes back where it was left
+    insp.selected = state.pendingBack.selected;
+    insp.group = state.pendingBack.group;
+    state.pendingBack = null;
+  }
+  renderTrail();
   $('parts').innerHTML = '<tr><td class="muted">загрузка мешей…</td></tr>';
   $('detail').innerHTML = '';
   $('summary').textContent = '';
@@ -209,13 +218,15 @@ function whenViewer(fn) {
   else window.addEventListener('viewer-ready', () => fn(window.MeshViewer), { once: true });
 }
 function partStatus(p) {
+  if (p.link) return 'link';
   if (!insp.data.checked) return 'unchecked';
   if (p.result === 'error') return 'error';
   if (p.change === 'changed') return 'changed';
   if (p.change === 'new') return 'new';
   return 'ok';
 }
-const STATUS_TEXT = { unchecked: 'не проверена', ok: 'годна', error: 'ошибка', changed: 'изменена в источнике', new: 'новая деталь' };
+const STATUS_TEXT = { unchecked: 'не проверена', ok: 'годна', error: 'ошибка', changed: 'изменена в источнике', new: 'новая деталь',
+  link: 'ссылка на модель из библиотеки' };
 function onInspection(m) {
   if (!state.model || m.id !== state.model.id || m.category !== state.model.category) return;
   const same = !!insp.data;
@@ -227,12 +238,17 @@ function onInspection(m) {
   renderDetail();
   whenViewer(async (v) => {
     v.onPick((key) => selectPart(key, false));
-    insp.group = await v.load(m.groups, same);
-    v.setErrors(m.parts.filter((p) => p.result === 'error').map((p) => p.key));
+    insp.group = await v.load(m.groups, same, insp.group);
+    v.setErrors(m.parts.filter((p) => p.result === 'error' && !p.link).map((p) => p.key));
+    v.setLinks(m.parts.filter((p) => p.link).map((p) => p.key));
     v.select(insp.selected, false);
     renderLodBar();
     renderParts();
-    if (params.get('part') && !insp.selected) selectPart(params.get('part'), true);
+    if (params.get('part') && !insp.selected) {
+      selectPart(params.get('part'), true);
+      const p = m.parts.find((x) => x.key === params.get('part'));
+      if (params.get('follow') && p && p.link) openLink(p);   // headless check of the trail
+    }
   });
 }
 function renderLodBar() {
@@ -258,9 +274,14 @@ function renderSummary() {
     if (s.new) parts.push(`<span style="color:var(--info)">${s.new} новых</span>`);
     if (s.missing) parts.push(`<span style="color:var(--bad)">${s.missing} пропали</span>`);
   }
+  if (s.links) parts.push(`<span style="color:var(--link)">${s.links} ${plural(s.links, 'ссылка', 'ссылки', 'ссылок')} на модули</span>` +
+    (s.linkErrors ? ` <span class="muted">(у ${s.linkErrors} ошибки — чинятся в самом модуле)</span>` : ''));
+  const cappable = insp.data.parts.filter((p) => !p.link && p.holes > 0 && !p.caps);
+  if (cappable.length) parts.push(`<button id="capAll" class="small">Закрыть дыры у всех объёмов (${cappable.length})</button>`);
   const fixed = insp.data.parts.filter((p) => p.fixedTotal > 0).length;
   if (fixed) parts.push(`<span class="muted">${fixed} ${plural(fixed, 'починена', 'починены', 'починено')} сами</span>`);
   $('summary').innerHTML = parts.join(' · ');
+  if ($('capAll')) $('capAll').onclick = () => setCaps(cappable.map((p) => p.key), true);
 }
 function renderParts() {
   const lods = insp.data.groups.filter((g) => !g.name.startsWith('скорлупа')).map((g) => g.name);
@@ -271,7 +292,7 @@ function renderParts() {
     const here = p.lods[gname];
     const chips = lods.map((l) => `<span class="${p.lods[l] ? 'on' : ''}">${esc(l.replace('LOD', ''))}</span>`).join('');
     html += `<tr class="prow ${here ? '' : 'absent'} ${p.key === insp.selected ? 'sel' : ''}" data-key="${esc(p.key)}">
-      <td><i class="dot st-${st}" title="${STATUS_TEXT[st]}"></i></td><td>${esc(p.key)}${p.fixedTotal ? ' <span class="muted" title="починено само">✓</span>' : ''}</td>
+      <td><i class="dot st-${st}" title="${STATUS_TEXT[st]}"></i></td><td>${p.link ? '<span class="lnk" title="ссылка на модуль">⧉</span> ' : ''}${esc(p.key)}${p.fixedTotal ? ' <span class="muted" title="починено само">✓</span>' : ''}</td>
       <td>${KIND[p.kind]}${p.kindSet ? '*' : ''}</td><td class="num">${here ? fmt(here.tris) : '—'}</td><td class="lodchips">${chips}</td></tr>`;
   }
   for (const k of insp.data.missing) html += `<tr class="gone"><td><i class="dot st-error"></i></td><td colspan="4">${esc(k)} — пропала из источника</td></tr>`;
@@ -305,20 +326,68 @@ function renderDetail() {
   if (f.welded) fixed.push(`спаяно двойных вершин: ${f.welded}`);
   if (f.degenerate) fixed.push(`убрано вырожденных треугольников: ${f.degenerate}`);
   if (f.repeated) fixed.push(`убрано повторных граней: ${f.repeated}`);
-  if (f.flipped) fixed.push('деталь была вывернута целиком — развёрнута наружу');
+  if (f.flipped) fixed.push(`вывернутых целиком кусков развёрнуто наружу: ${f.flipped}`);
+  if (f.reoriented) fixed.push(`граней развёрнуто по соседям / наружу: ${fmt(f.reoriented)}`);
+  if (f.split) fixed.push(`разведено касаний кусков по ребру: ${f.split}`);
+  if (f.capped) fixed.push(`закрыто дыр: ${f.capped}`);
   const size = p.size.map((x) => x.toFixed(2)).join(' × ');
   const lodLine = Object.entries(p.lods).map(([n, l]) => `${n}: ${fmt(l.tris)}`).join(' · ');
-  box.innerHTML = `<h3><i class="dot st-${st}"></i> ${esc(p.key)}</h3>
+  const g = insp.data.groups[insp.group];
+  const linkBox = p.link ? `<div class="linkbox">Модуль из библиотеки: <b>${esc(p.link.title)}</b>
+      <span class="muted">${esc(p.link.category)}/${esc(p.link.id)}</span>
+      <div class="muted">Его сетка правится и проверяется в его карточке — один раз для всех кораблей, где он стоит.</div>
+      <button id="openLink" class="primary small">Открыть модуль</button></div>` : '';
+  box.innerHTML = `<h3><i class="dot st-${st}"></i> ${esc(p.key)}</h3>${linkBox}
     <div class="muted">${STATUS_TEXT[st]}${p.changeText ? ' — ' + esc(p.changeText) : ''} · ${size} м</div>
+    <div class="muted">рендер: ${esc(p.render || '')}</div>
     <div class="muted">треугольники — ${esc(lodLine)}</div>
     <div style="margin-top:6px">Вид: <select id="kindSel">
       <option value="">авто (${KIND[p.kindAuto]})</option><option value="volume">объём — должен быть замкнут</option><option value="sheet">лист — края открыты</option>
     </select></div>
-    <ul>${p.issues.map((i) => `<li class="${i.sev}">${esc(i.text)}${i.sev === 'error' ? ' — поправить в Blender' : ''}</li>`).join('')}
+    <div class="btnrow">${p.canCap && !p.link ? `<label><input type="checkbox" id="capSel" ${p.caps ? 'checked' : ''}> закрыть дыры (простые кольца)</label>` : ''}
+      <button id="partBlender" class="small">Открыть в Blender</button></div>
+    <ul>${p.issues.map((i) => `<li class="${i.sev}">${esc(i.text)}${i.sev === 'error' ? (p.link ? ' — в модуле' : p.holes && !p.caps ? ' — «закрыть дыры» или Blender' : ' — поправить в Blender') : ''}</li>`).join('')}
     ${fixed.map((t) => `<li class="fixed">${esc(t)}</li>`).join('')}
     ${!p.issues.length && !fixed.length ? '<li class="fixed">замечаний нет</li>' : ''}</ul>`;
   $('kindSel').value = p.kindSet ? p.kind : '';
   $('kindSel').onchange = () => send({ cmd: 'setKind', category: state.model.category, id: state.model.id, part: p.key, kind: $('kindSel').value });
+  if ($('capSel')) $('capSel').onchange = () => setCaps([p.key], $('capSel').checked);
+  if ($('openLink')) $('openLink').onclick = () => openLink(p);
+  $('partBlender').onclick = () => p.link
+    ? send({ cmd: 'blender', category: p.link.category, id: p.link.id, group: '', part: '' })
+    : send({ cmd: 'blender', category: state.model.category, id: state.model.id, group: g ? g.name : '', part: p.key });
+}
+function setCaps(parts, on) {
+  send({ cmd: 'setCaps', category: state.model.category, id: state.model.id, parts, on });
+}
+// links (SolidWorks-like): open the referenced model, the trail above the steps leads back, any depth
+function openLink(p) {
+  state.stack.push({ category: state.model.category, id: state.model.id, title: state.model.title, selected: p.key, group: insp.group });
+  send({ cmd: 'open', category: p.link.category, id: p.link.id });
+}
+function goBack(depth) {
+  const target = state.stack[depth];
+  state.stack = state.stack.slice(0, depth);
+  state.pendingBack = target;
+  send({ cmd: 'open', category: target.category, id: target.id });
+}
+function renderTrail() {
+  const box = $('trail');
+  if (!state.stack.length) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  const last = state.stack[state.stack.length - 1];
+  box.innerHTML = `<button id="backModel" class="small">← назад к «${esc(last.title)}»</button> ` +
+    state.stack.map((s, i) => `<a href="#" data-depth="${i}">${esc(s.title)}</a>`).join(' › ') + ` › <b>${esc(state.model.title)}</b>`;
+  $('backModel').onclick = () => goBack(state.stack.length - 1);
+  for (const a of box.querySelectorAll('a')) a.onclick = (e) => { e.preventDefault(); goBack(Number(a.dataset.depth)); };
+}
+let noticeTimer = null;
+function notice(text) {
+  const n = $('notice');
+  n.textContent = text;
+  n.hidden = false;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { n.hidden = true; }, 5000);
 }
 function runCheck() {
   if (!state.model) return;
@@ -375,6 +444,11 @@ $('objectFilter').onchange = () => {
 $('settingsBtn').onclick = showSettings;
 $('checkBtn').onclick = runCheck;
 $('fitBtn').onclick = () => whenViewer((v) => v.fitAll());
+$('blenderBtn').onclick = () => {
+  if (!state.model) return;
+  const g = insp.data && insp.data.groups[insp.group];
+  send({ cmd: 'blender', category: state.model.category, id: state.model.id, group: g ? g.name : '', part: insp.selected || '' });
+};
 for (const [id, opt] of [['optProblems', 'problems'], ['optBack', 'backfaces'], ['optWire', 'wire'], ['optIsolate', 'isolate']])
   $(id).onchange = () => whenViewer((v) => v.set(opt, $(id).checked));
 $('settingsClose').onclick = hideSettings;

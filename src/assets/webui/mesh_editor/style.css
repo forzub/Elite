@@ -38,7 +38,7 @@ button.ghost { background: transparent; border-color: transparent; }
 .overlay { position: absolute; display: flex; gap: 6px; align-items: center; font-size: 13px; }
 .overlay.top { top: 10px; left: 10px; flex-wrap: wrap; }
 .overlay.bottom { bottom: 10px; left: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 14px; }
-.overlay.right { bottom: 10px; right: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 12px; color: var(--muted); }
+.overlay.right { top: 10px; right: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 12px; color: var(--muted); }
 .overlay label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
 #lodBar button { padding: 4px 11px; font-size: 13px; background: rgba(28, 35, 44, 0.9); }
 #lodBar button.active { border-color: var(--accent); color: var(--accent); }
@@ -123,3 +123,15 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .set-warn { color: var(--warn); font-size: 12px; }
 .set-foot { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
 .set-foot .muted { flex: 1; font-size: 12px; }
+
+/* links and the trail back (MESH_EDITOR_SPEC 16) */
+:root { --link: #8f7cf0; }
+.dot.st-link { background: var(--link); }
+.sw.link { background: var(--link); }
+.lnk { color: var(--link); }
+.trail { padding: 4px 12px; font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.trail a { color: var(--link); text-decoration: none; }
+.linkbox { border: 1px solid var(--link); border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
+.btnrow { display: flex; gap: 10px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
+.notice { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #22303f; color: #e8eef4;
+  padding: 8px 14px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.4); z-index: 50; }

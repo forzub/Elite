@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <set>
@@ -85,14 +86,271 @@ struct PartGeo
     std::vector<Tri> t;
     int rawVerts = 0, rawTris = 0;
     int welded = 0, degenerate = 0, repeated = 0, flipped = 0;
+    int split = 0, reoriented = 0, capped = 0;   // touching pieces parted, faces turned to their neighbours, holes closed
     std::vector<std::array<Vec3, 2>> openEdges, badEdges;
     int boundary = 0, nonManifold = 0, inconsistent = 0, edgeCount = 0;
+    int holes = 0;            // simple boundary loops left open
+    double holeMax = 0.0;     // the biggest open loop, metres
+    int pieces = 0, closedPieces = 0;
     bool material = false;
     Vec3 lo {1e30, 1e30, 1e30}, hi {-1e30, -1e30, -1e30};
     std::uint64_t hash = 0;
 };
 
-PartGeo repair(const RawMesh& raw)
+struct RepairOptions
+{
+    bool capHoles = false;        // the author's "Закрыть дыры": every simple open loop gets a fan cap
+    Vec3 modelCentre {0, 0, 0};   // open pieces face away from it (hull plates look outward)
+};
+
+using EdgeKey = std::pair<int, int>;
+EdgeKey edgeKey(int a, int b) { return {std::min(a, b), std::max(a, b)}; }
+
+std::map<EdgeKey, std::vector<int>> edgeFaces(const std::vector<Tri>& t)
+{
+    std::map<EdgeKey, std::vector<int>> m;
+    for (int i = 0; i < static_cast<int>(t.size()); ++i)
+        for (int k = 0; k < 3; ++k)
+            m[edgeKey(t[i][k], t[i][(k + 1) % 3])].push_back(i);
+    return m;
+}
+
+// pieces: triangles joined through edges with exactly two faces (a 3+ face edge does not join)
+std::vector<int> pieceOf(const std::vector<Tri>& t, const std::map<EdgeKey, std::vector<int>>& ef, int& count)
+{
+    std::vector<int> parent(t.size());
+    for (std::size_t i = 0; i < t.size(); ++i)
+        parent[i] = static_cast<int>(i);
+    std::function<int(int)> root = [&](int x) { return parent[x] == x ? x : parent[x] = root(parent[x]); };
+    for (const auto& [e, f] : ef)
+        if (f.size() == 2)
+            parent[root(f[0])] = root(f[1]);
+    std::map<int, int> ids;
+    std::vector<int> piece(t.size());
+    for (std::size_t i = 0; i < t.size(); ++i)
+    {
+        const auto it = ids.emplace(root(static_cast<int>(i)), static_cast<int>(ids.size())).first;
+        piece[i] = it->second;
+    }
+    count = static_cast<int>(ids.size());
+    return piece;
+}
+
+bool hasDirected(const Tri& t, int a, int b)
+{
+    for (int k = 0; k < 3; ++k)
+        if (t[k] == a && t[(k + 1) % 3] == b)
+            return true;
+    return false;
+}
+
+// every piece wound one way (faces follow their neighbours); a closed piece then faces outward (positive volume),
+// an open one away from the model centre. Returns faces whose final winding differs from the source.
+void orient(PartGeo& g, const Vec3& centre)
+{
+    const auto ef = edgeFaces(g.t);
+    int count = 0;
+    const std::vector<int> piece = pieceOf(g.t, ef, count);
+    const std::vector<Tri> before = g.t;
+    std::vector<char> done(g.t.size(), 0);
+    std::vector<std::vector<int>> members(count);
+    for (std::size_t i = 0; i < g.t.size(); ++i)
+        members[piece[i]].push_back(static_cast<int>(i));
+    std::map<EdgeKey, int> uses;
+    for (const auto& [e, f] : ef)
+        uses[e] = static_cast<int>(f.size());
+    g.pieces = count;
+    g.closedPieces = 0;
+    for (int p = 0; p < count; ++p)
+    {
+        // breadth-first from the first face: a neighbour across a shared edge must run it the other way
+        std::vector<int> queue {members[p][0]};
+        done[members[p][0]] = 1;
+        for (std::size_t q = 0; q < queue.size(); ++q)
+        {
+            const Tri& a = g.t[queue[q]];
+            for (int k = 0; k < 3; ++k)
+            {
+                const int u = a[k], v = a[(k + 1) % 3];
+                const auto& f = ef.at(edgeKey(u, v));
+                if (f.size() != 2)
+                    continue;
+                const int n = f[0] == queue[q] ? f[1] : f[0];
+                if (done[n])
+                    continue;
+                if (hasDirected(g.t[n], u, v))
+                    std::swap(g.t[n][1], g.t[n][2]);
+                done[n] = 1;
+                queue.push_back(n);
+            }
+        }
+        bool closed = true;
+        double vol = 0.0, facing = 0.0;
+        for (int i : members[p])
+        {
+            const Tri& t = g.t[i];
+            for (int k = 0; k < 3; ++k)
+                closed = closed && uses[edgeKey(t[k], t[(k + 1) % 3])] == 2;
+            vol += dot(g.v[t[0]], cross(g.v[t[1]], g.v[t[2]]));
+            const Vec3 n = cross(sub(g.v[t[1]], g.v[t[0]]), sub(g.v[t[2]], g.v[t[0]]));
+            const Vec3 c {(g.v[t[0]][0] + g.v[t[1]][0] + g.v[t[2]][0]) / 3 - centre[0], (g.v[t[0]][1] + g.v[t[1]][1] + g.v[t[2]][1]) / 3 - centre[1],
+                          (g.v[t[0]][2] + g.v[t[1]][2] + g.v[t[2]][2]) / 3 - centre[2]};
+            facing += dot(n, c);
+        }
+        g.closedPieces += closed ? 1 : 0;
+        if (closed ? vol < 0.0 : facing < 0.0)
+            for (int i : members[p])
+                std::swap(g.t[i][1], g.t[i][2]);
+        int changed = 0;
+        for (int i : members[p])
+            changed += hasDirected(g.t[i], before[i][0], before[i][1]) ? 0 : 1;
+        if (changed == static_cast<int>(members[p].size()) && closed)
+            ++g.flipped;   // a closed piece inside out as a whole
+        else
+            g.reoriented += changed;
+    }
+}
+
+// pieces that only touch (along an edge or at a vertex) get their own vertices, so a shared edge stops being a 3+ face edge
+void splitTouching(PartGeo& g)
+{
+    const auto ef = edgeFaces(g.t);
+    int count = 0;
+    const std::vector<int> piece = pieceOf(g.t, ef, count);
+    if (count < 2)
+        return;
+    std::map<std::pair<int, int>, int> copy;   // (piece, vertex) -> new vertex
+    std::vector<Vec3> v;
+    for (std::size_t i = 0; i < g.t.size(); ++i)
+        for (int k = 0; k < 3; ++k)
+        {
+            const auto key = std::make_pair(piece[i], g.t[i][k]);
+            auto it = copy.find(key);
+            if (it == copy.end())
+            {
+                it = copy.emplace(key, static_cast<int>(v.size())).first;
+                v.push_back(g.v[g.t[i][k]]);
+            }
+            g.t[i][k] = it->second;
+        }
+    int before = 0, after = 0;
+    for (const auto& [e, f] : ef)
+        before += f.size() > 2 ? 1 : 0;
+    for (const auto& [e, f] : edgeFaces(g.t))
+        after += f.size() > 2 ? 1 : 0;
+    g.v = std::move(v);
+    g.split = before - after;
+}
+
+// "Закрыть дыры": a fan from the loop centre for every simple open loop (each loop vertex starts one open edge)
+void capHoles(PartGeo& g)
+{
+    const auto ef = edgeFaces(g.t);
+    std::map<int, std::vector<int>> next;   // open half-edge a->b as the face runs it
+    for (const auto& [e, f] : ef)
+        if (f.size() == 1)
+        {
+            const Tri& t = g.t[f[0]];
+            const bool fwd = hasDirected(t, e.first, e.second);
+            next[fwd ? e.first : e.second].push_back(fwd ? e.second : e.first);
+        }
+    std::set<int> used;
+    for (const auto& [start, outs] : next)
+    {
+        if (used.count(start) || outs.size() != 1)
+            continue;
+        std::vector<int> loop {start};
+        int cur = outs[0];
+        bool ok = true;
+        while (cur != start)
+        {
+            const auto it = next.find(cur);
+            if (it == next.end() || it->second.size() != 1 || used.count(cur) || loop.size() > 100000)
+            {
+                ok = false;
+                break;
+            }
+            loop.push_back(cur);
+            cur = it->second[0];
+        }
+        for (int x : loop)
+            used.insert(x);
+        if (!ok || loop.size() < 3)
+            continue;
+        Vec3 c {0, 0, 0};
+        for (int x : loop)
+            for (int k = 0; k < 3; ++k)
+                c[k] += g.v[x][k] / static_cast<double>(loop.size());
+        const int ci = static_cast<int>(g.v.size());
+        g.v.push_back(c);
+        for (std::size_t i = 0; i < loop.size(); ++i)
+        {
+            const int a = loop[i], b = loop[(i + 1) % loop.size()];
+            g.t.push_back({b, a, ci});   // the cap runs the open edge the other way
+        }
+        ++g.capped;
+    }
+}
+
+// open edges, 3+ face edges and badly wound edges of the final mesh, plus the simple open loops
+void analyse(PartGeo& g)
+{
+    g.openEdges.clear();
+    g.badEdges.clear();
+    g.boundary = g.nonManifold = g.inconsistent = 0;
+    const auto ef = edgeFaces(g.t);
+    g.edgeCount = static_cast<int>(ef.size());
+    std::map<int, std::vector<int>> adj;
+    for (const auto& [e, f] : ef)
+    {
+        const std::array<Vec3, 2> seg {g.v[e.first], g.v[e.second]};
+        if (f.size() == 1)
+        {
+            ++g.boundary;
+            g.openEdges.push_back(seg);
+            adj[e.first].push_back(e.second);
+            adj[e.second].push_back(e.first);
+        }
+        else if (f.size() > 2)
+        {
+            ++g.nonManifold;
+            g.badEdges.push_back(seg);
+        }
+        else if (hasDirected(g.t[f[0]], e.first, e.second) == hasDirected(g.t[f[1]], e.first, e.second))
+        {
+            ++g.inconsistent;
+            g.badEdges.push_back(seg);
+        }
+    }
+    g.holes = 0;
+    g.holeMax = 0.0;
+    std::set<int> seen;
+    for (const auto& [s, n] : adj)
+    {
+        if (seen.count(s))
+            continue;
+        std::vector<int> stack {s};
+        Vec3 lo {1e30, 1e30, 1e30}, hi {-1e30, -1e30, -1e30};
+        while (!stack.empty())
+        {
+            const int x = stack.back();
+            stack.pop_back();
+            if (!seen.insert(x).second)
+                continue;
+            for (int k = 0; k < 3; ++k)
+            {
+                lo[k] = std::min(lo[k], g.v[x][k]);
+                hi[k] = std::max(hi[k], g.v[x][k]);
+            }
+            for (int y : adj[x])
+                stack.push_back(y);
+        }
+        ++g.holes;
+        g.holeMax = std::max({g.holeMax, hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]});
+    }
+}
+
+PartGeo repair(const RawMesh& raw, const RepairOptions& opt)
 {
     PartGeo g;
     g.rawVerts = static_cast<int>(raw.v.size());
@@ -153,53 +411,19 @@ PartGeo repair(const RawMesh& raw)
         }
         g.t.push_back(t);
     }
-    // edges
-    struct Use
+    if (g.t.empty())
+        return g;
+    splitTouching(g);
+    orient(g, opt.modelCentre);
+    if (opt.capHoles)
     {
-        int count = 0, fwd = 0;
-    };
-    std::map<std::pair<int, int>, Use> edges;
-    for (const auto& t : g.t)
-        for (int k = 0; k < 3; ++k)
-        {
-            const int a = t[k], b = t[(k + 1) % 3];
-            auto& u = edges[{std::min(a, b), std::max(a, b)}];
-            ++u.count;
-            u.fwd += a < b ? 1 : 0;
-        }
-    g.edgeCount = static_cast<int>(edges.size());
-    for (const auto& [e, u] : edges)
-    {
-        const std::array<Vec3, 2> seg {g.v[e.first], g.v[e.second]};
-        if (u.count == 1)
-        {
-            ++g.boundary;
-            g.openEdges.push_back(seg);
-        }
-        else if (u.count > 2)
-        {
-            ++g.nonManifold;
-            g.badEdges.push_back(seg);
-        }
-        else if (u.fwd != 1)
-        {
-            ++g.inconsistent;
-            g.badEdges.push_back(seg);
-        }
+        capHoles(g);
+        const int flipped = g.flipped, reoriented = g.reoriented;
+        orient(g, opt.modelCentre);   // the capped pieces are closed now: outward by volume
+        g.flipped = flipped;
+        g.reoriented = reoriented;
     }
-    // a closed, consistently wound part that is inside out as a whole: turn it outward
-    if (g.boundary == 0 && g.nonManifold == 0 && g.inconsistent == 0 && !g.t.empty())
-    {
-        double vol = 0.0;
-        for (const auto& t : g.t)
-            vol += dot(g.v[t[0]], cross(g.v[t[1]], g.v[t[2]]));
-        if (vol < 0.0)
-        {
-            for (auto& t : g.t)
-                std::swap(t[1], t[2]);
-            g.flipped = 1;
-        }
-    }
+    analyse(g);
     return g;
 }
 
@@ -320,11 +544,30 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
         parts.push_back({key, {}});
         return parts.back();
     };
+    if (!state.contains("caps"))
+        state["caps"] = nlohmann::json::object();
     for (std::size_t gi = 0; gi < groups.size(); ++gi)
+    {
+        std::vector<RawMesh> raws;
+        Vec3 lo {1e30, 1e30, 1e30}, hi {-1e30, -1e30, -1e30};
         for (const auto& [key, file] : groups[gi].files)
         {
+            raws.push_back(readObj(file));
+            for (const auto& v : raws.back().v)
+                for (int k = 0; k < 3; ++k)
+                {
+                    lo[k] = std::min(lo[k], v[k]);
+                    hi[k] = std::max(hi[k], v[k]);
+                }
+        }
+        RepairOptions opt;
+        opt.modelCentre = {(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2};
+        for (std::size_t fi = 0; fi < groups[gi].files.size(); ++fi)
+        {
+            const std::string& key = groups[gi].files[fi].first;
             PartInfo& p = partOf(key);
-            PartGeo g = repair(readObj(file));
+            opt.capHoles = state["caps"].value(key, false);
+            PartGeo g = repair(raws[fi], opt);
             // two files with one key in a group (rare): merge into one part
             auto same = std::find_if(p.geo.begin(), p.geo.end(), [&](const auto& x) { return x.first == static_cast<int>(gi); });
             if (same == p.geo.end())
@@ -345,6 +588,14 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                 a.degenerate += g.degenerate;
                 a.repeated += g.repeated;
                 a.flipped += g.flipped;
+                a.split += g.split;
+                a.reoriented += g.reoriented;
+                a.capped += g.capped;
+                a.holes += g.holes;
+                a.holeMax = std::max(a.holeMax, g.holeMax);
+                a.pieces += g.pieces;
+                a.closedPieces += g.closedPieces;
+                a.edgeCount += g.edgeCount;
                 a.rawVerts += g.rawVerts;
                 a.rawTris += g.rawTris;
                 a.hash = a.hash * 31 + g.hash;
@@ -355,6 +606,7 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                 }
             }
         }
+    }
 
     // LOD groups that are real per-part LODs (a whole-ship proxy of one mesh is not compared part by part)
     std::vector<int> partLods;
@@ -379,23 +631,30 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
 
         nlohmann::json issues = nlohmann::json::array();
         nlohmann::json lods = nlohmann::json::object();
-        nlohmann::json fixed = {{"welded", 0}, {"degenerate", 0}, {"repeated", 0}, {"flipped", 0}};
+        nlohmann::json fixed = {{"welded", 0}, {"degenerate", 0}, {"repeated", 0}, {"flipped", 0}, {"split", 0}, {"reoriented", 0}, {"capped", 0}};
         bool error = false;
+        bool openVolume = false;
+        int holes = 0;
         std::uint64_t hash = 1469598103934665603ull;
         const bool several = p.geo.size() > 1;
+        const bool caps = state["caps"].value(p.key, false);
         for (const auto& [gi, g] : p.geo)
         {
             const std::string at = several ? groups[gi].name + ": " : std::string();
             lods[groups[gi].name] = {{"tris", g.t.size()}, {"verts", g.v.size()}};
-            fixed["welded"] = fixed["welded"].get<int>() + g.welded;
-            fixed["degenerate"] = fixed["degenerate"].get<int>() + g.degenerate;
-            fixed["repeated"] = fixed["repeated"].get<int>() + g.repeated;
-            fixed["flipped"] = fixed["flipped"].get<int>() + g.flipped;
+            for (const auto& [name, n] : std::initializer_list<std::pair<const char*, int>> {
+                     {"welded", g.welded}, {"degenerate", g.degenerate}, {"repeated", g.repeated}, {"flipped", g.flipped},
+                     {"split", g.split}, {"reoriented", g.reoriented}, {"capped", g.capped}})
+                fixed[name] = fixed[name].get<int>() + n;
             hash = (hash ^ g.hash) * 1099511628211ull;
             if (kind == "volume" && g.boundary > 0)
             {
-                issues.push_back({{"sev", "error"}, {"text", at + "дыры: " + std::to_string(g.boundary) + " открытых рёбер"}});
+                issues.push_back({{"sev", "error"},
+                                  {"text", at + "дыры: " + std::to_string(g.holes) + " (" + std::to_string(g.boundary) + " открытых рёбер, самая большая " +
+                                               cm(g.holeMax) + ")" + (caps ? " — эти не закрываются сами" : "")}});
                 error = true;
+                openVolume = true;
+                holes += g.holes;
             }
             if (g.nonManifold > 0)
             {
@@ -442,7 +701,19 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                 s += (s.empty() ? "" : ", ") + a;
             issues.push_back({{"sev", "note"}, {"text", "нет в " + s}});
         }
-        const int fixedTotal = fixed["welded"].get<int>() + fixed["degenerate"].get<int>() + fixed["repeated"].get<int>() + fixed["flipped"].get<int>();
+        int fixedTotal = 0;
+        for (const auto& [name, n] : fixed.items())
+            fixedTotal += n.get<int>();
+        // how the game draws it: a closed volume with outward normals - one side (back faces culled); a sheet - both sides
+        bool consistent = true;
+        for (const auto& [gi, g] : p.geo)
+            consistent = consistent && g.nonManifold == 0 && g.inconsistent == 0;
+        const int sides = kind == "sheet" || openVolume ? 2 : 1;
+        std::string render = kind == "sheet" ? "двусторонний: лист, нормали от центра модели"
+                                             : openVolume ? "двусторонний, пока есть дыры (иначе сквозь них видна пустота)"
+                                                          : "односторонний: замкнут, нормали наружу";
+        if (!consistent)
+            render += "; грани местами не согласованы — свет может лечь пятнами";
 
         // against the last check
         const Vec3 centre {(first.lo[0] + first.hi[0]) / 2, (first.lo[1] + first.hi[1]) / 2, (first.lo[2] + first.hi[2]) / 2};
@@ -486,6 +757,11 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                             {"issues", issues},
                             {"fixed", fixed},
                             {"fixedTotal", fixedTotal},
+                            {"sides", sides},
+                            {"render", render},
+                            {"holes", holes},
+                            {"caps", caps},
+                            {"canCap", holes > 0 || caps},
                             {"lods", lods},
                             {"size", {ext[0], ext[1], ext[2]}}});
     }
@@ -521,6 +797,9 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                                    (!state["kinds"].contains(p.key) &&
                                     std::any_of(outParts.begin(), outParts.end(), [&](const nlohmann::json& o) { return o["key"] == p.key && o["kind"] == "sheet"; }));
                 r["open"] = {open.size() / 6, sheet ? 0 : geo.openEdges.size()};
+                for (const auto& o : outParts)
+                    if (o["key"] == p.key)
+                        r["sides"] = o["sides"];
                 if (!sheet)
                     for (const auto& s : geo.openEdges)
                         for (const auto& v : s)
@@ -577,6 +856,19 @@ void Inspector::setKind(const fs::path& stateDir, const std::string& part, const
         state["kinds"].erase(part);
     else
         state["kinds"][part] = kind;
+    std::error_code ec;
+    fs::create_directories(stateDir, ec);
+    std::ofstream(stateDir / "check.json") << state.dump(1);
+}
+void Inspector::setCaps(const fs::path& stateDir, const std::string& part, bool on)
+{
+    nlohmann::json state = readJson(stateDir / "check.json");
+    if (!state.contains("caps"))
+        state["caps"] = nlohmann::json::object();
+    if (on)
+        state["caps"][part] = true;
+    else
+        state["caps"].erase(part);
     std::error_code ec;
     fs::create_directories(stateDir, ec);
     std::ofstream(stateDir / "check.json") << state.dump(1);

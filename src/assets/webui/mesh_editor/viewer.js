@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const COLORS = { base: 0x9aa6b4, hover: 0xd8dee6, selected: 0xe8a33d, error: 0xc0584a, back: 0xd13fd1, open: 0xff4a3a, bad: 0xff3fd8 };
+const COLORS = { link: 0x8f7cf0, base: 0x9aa6b4, hover: 0xd8dee6, selected: 0xe8a33d, error: 0xc0584a, back: 0xd13fd1, open: 0xff4a3a, bad: 0xff3fd8 };
 
 const host = document.getElementById('viewport');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -28,6 +28,7 @@ const state = {
   selected: null,
   hover: null,
   errors: new Set(),
+  links: new Set(),
   wire: false, problems: true, backfaces: false, isolate: false,
   onPick: null,
 };
@@ -63,7 +64,10 @@ async function buildGroup(g) {
       geo.computeVertexNormals();
       geo.computeBoundingBox();
       entry.box.copy(geo.boundingBox);
+      // a sheet (or a volume with holes) is drawn from both sides, like the game will; a closed volume - front only
+      entry.sides = r.sides || 1;
       entry.front = new THREE.Mesh(geo, partMaterial());
+      if (entry.sides === 2) entry.front.material.side = THREE.DoubleSide;
       entry.front.userData.key = r.key;
       entry.back = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: COLORS.back, side: THREE.BackSide }));
       entry.back.visible = state.backfaces;
@@ -117,12 +121,13 @@ function restyle() {
       e.front.visible = visible;
       e.front.material.wireframe = state.wire;
       const c = key === state.selected ? COLORS.selected : key === state.hover ? COLORS.hover
-        : state.problems && state.errors.has(key) ? COLORS.error : COLORS.base;
+        : state.problems && state.errors.has(key) ? COLORS.error : state.links.has(key) ? COLORS.link : COLORS.base;
       e.front.material.color.setHex(c);
-      e.back.visible = visible && state.backfaces;
+      e.back.visible = visible && state.backfaces && e.sides === 1;
     }
-    if (e.open) e.open.visible = visible && state.problems;
-    if (e.bad) e.bad.visible = visible && state.problems;
+    const own = !state.links.has(key);   // a link's problems belong to its own card
+    if (e.open) e.open.visible = visible && state.problems && own;
+    if (e.bad) e.bad.visible = visible && state.problems && own;
   }
 }
 
@@ -183,8 +188,9 @@ loop();
 
 window.MeshViewer = {
   // groups from the "inspection" message; keeps the current group index when the model is the same
-  async load(groups, keepGroup) {
-    const gi = keepGroup && state.current >= 0 && state.current < groups.length ? state.current : 0;
+  async load(groups, keepGroup, wantGroup) {
+    const gi = keepGroup && state.current >= 0 && state.current < groups.length ? state.current
+      : wantGroup > 0 && wantGroup < groups.length ? wantGroup : 0;
     const refit = !keepGroup;
     dispose();
     state.groups = groups.map((g) => ({ ...g }));
@@ -194,6 +200,7 @@ window.MeshViewer = {
   },
   showGroup: (gi) => showGroup(gi, false),
   setErrors(keys) { state.errors = new Set(keys); restyle(); },
+  setLinks(keys) { state.links = new Set(keys); restyle(); },
   select(key, fit) {
     state.selected = key;
     restyle();

@@ -525,6 +525,8 @@ std::string Assembly::materialId(const json& doc, const json& library, const std
     return libraryId(d, library, partKey, source);
 }
 
+std::vector<std::array<float, 3>> Assembly::cornerNormals(const RepairedPart& p) { return elite::mesh_editor::cornerNormals(p); }
+
 void Assembly::writeMeshObj(const fs::path& file, const std::vector<const RepairedPart*>& parts, const json& library)
 {
     std::set<std::string> used;

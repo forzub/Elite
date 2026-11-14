@@ -497,6 +497,7 @@ add_executable(EliteMeshEditor
     tools/mesh_editor/MeshEditorAssembly.cpp
     tools/mesh_editor/MeshEditorShell.cpp
     tools/mesh_editor/MeshEditorGltf.cpp
+    tools/mesh_editor/MeshEditorModule.cpp
     tools/ship_asset_assemble/ShipAssetAssemble.cpp
     src/ui/html/HtmlUiServer.cpp
     src/ui/platform/UiResourcePack.cpp

@@ -172,6 +172,8 @@ glm::mat3 rotationXYZ(glm::vec3 deg)
 
 namespace elite::ship_asset
 {
+void buildLineEdges(MeshLod& m) { buildEdges(m); }
+
 bool assembleShipAsset(const std::string& dir, const std::string& productionPath, const std::string& workingPath, std::string& report)
 {
     try

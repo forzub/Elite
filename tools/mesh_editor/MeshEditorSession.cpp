@@ -15,6 +15,7 @@
 #include "tools/mesh_editor/MeshEditorAssembly.h"
 #include "tools/mesh_editor/MeshEditorGltf.h"
 #include "tools/mesh_editor/MeshEditorShell.h"
+#include "tools/mesh_editor/MeshEditorModule.h"
 #include "src/model_asset/ModelAssetBinary.h"
 
 #ifdef _WIN32
@@ -404,15 +405,20 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
         return {{"type", "shell"}, {"category", c.category}, {"id", c.id}, {"ok", false}, {"text", "нет LOD для скорлупы"}};
     const auto links = Shell::rig(c.folder, *first);
     const fs::path modelOut = m_catalog.settings().outputRoot / c.category / c.id;
-    const fs::path out = modelOut / "shell";
     const fs::path cache = m_webRoot / "cache" / c.category / c.id;
     std::error_code ec;
-    fs::remove_all(out, ec);   // only the shell folder this command owns
+    fs::remove_all(modelOut / "shell", ec);   // the OBJ shells of the first version (2026-11-14): no longer written
     fs::create_directories(cache, ec);
+    ModuleShell module;
+    module.id = c.id;
+    module.category = c.category;
+    module.title = c.title;
+    module.links = links;
+    module.hitVolumes = doc.value("hit_volumes", nlohmann::json::array());
+    module.library = library;
     const std::string stamp = std::to_string(
         std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-    nlohmann::json viewGroups = nlohmann::json::array(), stats = nlohmann::json::array(), lods = nlohmann::json::array();
-    std::set<std::string> used;
+    nlohmann::json viewGroups = nlohmann::json::array(), stats = nlohmann::json::array();
     std::set<std::string> clearIds;   // library materials marked "transparent": true (glass seen through)
     for (const auto& m : library["materials"])
         if (m.value("transparent", false))
@@ -430,18 +436,12 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
             return Assembly::materialId(doc, library, part, src);
         }, [&](const std::string& id) { return clearIds.count(id) > 0; }, st);
         tVisible += std::chrono::duration<double>(clock::now() - tv).count();
-        nlohmann::json files = nlohmann::json::array();
         std::vector<float> tris;
         nlohmann::json ranges = nlohmann::json::array();
         for (const auto& p : s.parts)
         {
             if (p.t.empty())
                 continue;
-            const fs::path f = out / g.name / (p.key + ".obj");
-            Assembly::writeMeshObj(f, {&p}, library);
-            files.push_back(f.generic_u8string());
-            for (const auto& m : p.mtl)
-                used.insert(m);
             ranges.push_back({{"key", p.key}, {"tri", {tris.size() / 9, p.t.size()}}, {"open", {0, 0}}, {"bad", {0, 0}}, {"sides", 2}});
             for (const auto& t : p.t)
                 for (int k = 0; k < 3; ++k)
@@ -455,22 +455,25 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
                               {"url", (fs::path("cache") / c.category / c.id / file).generic_u8string() + "?v=" + stamp},
                               {"tris", tris.size() / 9}, {"open", 0}, {"bad", 0}, {"parts", ranges}});
         stats.push_back({{"lod", g.name}, {"in", st.trisIn}, {"out", st.trisOut}});
-        lods.push_back({{"name", g.name}, {"files", files}});
+        RepairedGroup named = s;
+        named.name = g.name;
+        module.lods.push_back(std::move(named));
     }
+    // the module's binary package (game, editor) and the glTF Blender reads for the module's .blend
+    const fs::path elmodel = modelOut / (c.id + ".elmodel");
+    std::string packageReport;
+    const bool packaged = ModuleFiles::writePackage(module, elmodel, packageReport);
+    const fs::path gltf = state / "blender" / (c.id + ".gltf");
+    ModuleFiles::writeGltf(module, gltf);
     nlohmann::json rig = nlohmann::json::array();
     for (const auto& l : links)
         rig.push_back({{"id", l.id}, {"parts", l.parts}, {"parent", l.parent}, {"joint", l.joint}});
-    nlohmann::json mats = nlohmann::json::array();
-    for (const auto& m : library["materials"])
-        if (used.count(m.value("id", std::string())))
-            mats.push_back(m);
     const fs::path blend = modelOut / (c.id + ".blend");
     blendJob = {{"id", c.id}, {"ref", c.category + "/" + c.id}, {"title", c.title}, {"source", c.folder.generic_u8string()},
-                {"blend", blend.generic_u8string()}, {"lods", lods}, {"links", rig}, {"materials", mats},
-                {"hit_volumes", doc.value("hit_volumes", nlohmann::json::array())},
-                {"mounts", doc.value("mounts", nlohmann::json::array())}};
+                {"blend", blend.generic_u8string()}, {"gltf", gltf.generic_u8string()}};
     nlohmann::json saved = {{"groups", viewGroups}, {"stats", stats}, {"links", rig.size()}, {"at", stamp},
-                            {"blend", blend.generic_u8string()}, {"folder", out.generic_u8string()}};
+                            {"blend", blend.generic_u8string()}, {"package", packaged ? elmodel.generic_u8string() : std::string()},
+                            {"packageReport", packageReport}, {"folder", modelOut.generic_u8string()}};
     fs::create_directories(state, ec);
     std::ofstream(state / "shell.json") << saved.dump(1);
     std::size_t in = 0, kept = 0;
@@ -480,13 +483,13 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
         kept += s["out"].get<std::size_t>();
     }
     std::cerr << "[MeshEditor] shell " << c.category << "/" << c.id << ": " << kept << " of " << in << " triangles, "
-              << links.size() << " links; s: repair " << std::chrono::duration<double>(t1 - t0).count() << " doc "
+              << links.size() << " links; package " << packageReport << "; s: repair " << std::chrono::duration<double>(t1 - t0).count() << " doc "
               << std::chrono::duration<double>(t2 - t1).count() << " visible " << tVisible << " total "
               << std::chrono::duration<double>(clock::now() - t0).count() << std::endl;
     saved["type"] = "shell";
     saved["category"] = c.category;
     saved["id"] = c.id;
-    saved["ok"] = true;
+    saved["ok"] = packaged;
     return saved;
 }
 
@@ -499,6 +502,7 @@ nlohmann::json Session::withShell(nlohmann::json j) const
         for (const auto& g : s["groups"])
             j["groups"].push_back(g);
         j["shell"] = {{"stats", s["stats"]}, {"links", s.value("links", 0)}, {"blend", s.value("blend", std::string())},
+                      {"package", s.value("package", std::string())}, {"packageReport", s.value("packageReport", std::string())},
                       {"folder", s.value("folder", std::string())}, {"at", s.value("at", std::string())}};
     }
     return j;

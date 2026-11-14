@@ -52,6 +52,8 @@ public:
     // the library id of a part's source material (the part's own choice, the document's map, the name itself, default)
     static std::string materialId(const nlohmann::json& doc, const nlohmann::json& library, const std::string& partKey,
                                   const std::string& source);
+    // per triangle corner: smooth inside 35 deg, hard across (what the game's normals are)
+    static std::vector<std::array<float, 3>> cornerNormals(const RepairedPart& p);
     // one OBJ of the given parts (merged; corner normals inside 35 deg; usemtl = library ids, mtl names taken as ids)
     static void writeMeshObj(const std::filesystem::path& file, const std::vector<const RepairedPart*>& parts,
                              const nlohmann::json& library);

@@ -18,8 +18,11 @@
     коллекция "<id>.LOD1…3" скорлупы дальних LOD (выключены, в ассет не входят)
     коллекция "<id>.hits"   хитвалумы элементов (пустышки CUBE, elite_hit = элемент), скрыты
     материалы               из глобальной библиотеки (Principled BSDF, elite_material = id)
-  assets/compiled/<раздел>/<id>/shell/LOD<N>/<звено>.obj   те же скорлупы для сборки пакета
+  assets/compiled/<раздел>/<id>/<id>.elmodel + .lod<N>.elmesh   пакет модуля (игра, редактор), двоичный
   ```
+
+  Скорлупу Blender получает от редактора в **glTF**, а не в OBJ: `<work>/<раздел>/<id>/blender/<id>.gltf`. Соглашения
+  те же, что у сцены корабля: меш `<звено>__lod<N>`, хитвалум — узел с `elite_hit`, точка установки — `<id>.mount`.
 
   В Blender: Edit → Preferences → File Paths → Asset Libraries → добавить `D:/__elite/work/assets/compiled`
   (назвать «Elite»). Все модули видны в Asset Browser; их перетаскивают в сцену, или «Поставить модуль» со свойством

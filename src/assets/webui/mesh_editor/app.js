@@ -308,8 +308,9 @@ function renderSummary() {
     if (sh) {
       const s0 = sh.stats[0];
       const cut = s0 && s0.in ? Math.round(100 * (1 - s0.out / s0.in)) : 0;
-      parts.push(`<span title="${esc(sh.folder)}\n${esc(sh.blend)}">скорлупа: ${s0 ? `${esc(s0.lod)} ${fmt(s0.out)} из ${fmt(s0.in)} треуг. (−${cut}%)` : ''}, ` +
-        `${sh.links} ${plural(sh.links, 'звено', 'звена', 'звеньев')}</span>`);
+      parts.push(`<span title="${esc(sh.package || sh.packageReport || '')}\n${esc(sh.blend)}">скорлупа: ${s0 ? `${esc(s0.lod)} ${fmt(s0.out)} из ${fmt(s0.in)} треуг. (−${cut}%)` : ''}, ` +
+        `${sh.links} ${plural(sh.links, 'звено', 'звена', 'звеньев')}` +
+        `${sh.package ? ', пакет .elmodel' : sh.packageReport ? ', <b class="bad">пакет не записан</b>' : ''}</span>`);
     }
     parts.push(`<button id="shellOne" class="small">${sh ? 'Перестроить скорлупу' : 'Построить скорлупу'}</button>`);
     parts.push(`<button id="shellAll" class="small" title="все модели раздела; файлы Blender — рядом с пакетами">Скорлупы всех модулей</button>`);

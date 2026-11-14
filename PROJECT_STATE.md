@@ -5738,4 +5738,12 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   -O2 for the geometry sources; material lookup cached (41 s -> 3.6 s per module). Open: cockpit seats hidden by the
   generator's closed hull under the canopy; glass is opaque in the library (author's call). Next: plan step 2/3
   (ship assembly from shells by id; rig.json for skid / container / robot).
+- 2026-11-14 MODULE PACKAGE .elmodel + glTF EXCHANGE (MESH_EDITOR_SPEC 17.2; author: OBJ was the wrong format, modules
+  stay separate, .elmodel holds everything of a module in binary). The shell step now writes per module
+  assets/compiled/<cat>/<id>/<id>.elmodel + .lodN.elmesh (tools/mesh_editor/MeshEditorModule.*: node per rig link with
+  joint, shell per LOD two-sided, library materials, hit volumes as collision, socket "mount" equipment_mount) and a
+  glTF in the work folder that make_module_blend.py imports for <id>.blend. Shell OBJ and shell/ folders removed.
+  LIVE: equipment_ship 118 in ~5 min, 0 failures, same shells (LOD0 926 051 / 1 203 248); all 118 packages load
+  (EliteModelAssetInfo, 1 793 hit volumes); CR-1 blend hit empties oriented as the source. Game does not load module
+  packages yet. Glass stays opaque (author's call). Next: plan step 3 (rig.json) / step 2 (ship from shells by id).
 

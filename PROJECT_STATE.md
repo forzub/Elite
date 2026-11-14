@@ -5704,4 +5704,19 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   tube ends capped; regenerated (1843 files). Equipment parts with open edges in LOD0: 476 -> 53 of 774 (old output in
   assets_source/_prev/equipment_2026-11-14, CLEANUP #10). Editor check over 118 equipment models: 31 still with errors
   (68 parts: radar / comm dishes, fans, thrusters - other primitives, list in D:/tmp/eq_after.txt).
+- 2026-11-14 MESH EDITOR ASSEMBLY + BLENDER + BUILD (MESH_EDITOR_SPEC 16, docs/BLENDER_ASSEMBLY.md; author away,
+  decisions mine). assembly.json (nodes / links / hit volumes / zones / mounts / seams / buses / damage /
+  calibration) seeded from Blender glTF, the mock-up, hit_volumes.json or automatically; global material library
+  assets/materials/material_library.json (187); Blender add-on tools/blender/elite_tools.py (library of modules as
+  collection assets, links via elite_part, elite_hit / elite_zone / elite_mount / elite_seam / elite_feeds, glTF
+  export) + editor glTF import (MeshEditorGltf); steps 2..6 in the page (hierarchy + explode slider + bus lines,
+  volumes / zones, mounts / seams / buses, damage, build). Build -> assets/compiled/<cat>/<id>/ via the shared
+  assembler (now a library; PBR library materials, sockets link / nav_zone, calibration, line edges).
+  ROOT CAUSE found live: a package without MeshLod.edges is invisible in the game's line styles (first station build
+  loaded but drew nothing; the raw-mesh variant too) -> the assembler builds boundary / crease / material-seam edges.
+  LIVE (nav-stress:simple, offscreen, ELITE_DEV_MODEL_ASSET_PLACE_M): editor-built station visible
+  (D:/tmp/final_stations.png, scale 0.905077 vs shipped 0.905076, size 5548 m), Cobra cobrettymk1 / blender_demo /
+  Cobrett-I packages load and draw. New DEV env ELITE_STATION_MODEL_ASSET=<path>; tool EliteModelAssetInfo.
+  Commits 42f99220, 554b2c76. Not done: LOD generation, animation, the game reading hits / zones / seams / buses from
+  the package, instancing of repeated station meshes, mouse dragging of volumes.
 

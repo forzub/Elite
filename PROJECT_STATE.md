@@ -5719,4 +5719,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   Cobrett-I packages load and draw. New DEV env ELITE_STATION_MODEL_ASSET=<path>; tool EliteModelAssetInfo.
   Commits 42f99220, 554b2c76. Not done: LOD generation, animation, the game reading hits / zones / seams / buses from
   the package, instancing of repeated station meshes, mouse dragging of volumes.
+- 2026-11-14 MODULE = SHELL (author, MESH_EDITOR_SPEC 17; design only, not implemented). A module in the game is never
+  opened: it is stored as a shell (outside-visible faces, thin two-sided), elements merged per rigid link; animated
+  modules keep one shell per moving link with a hinge; visibility over all animation poses. The ship is a skeleton;
+  modules fall off only whole. Element hit volumes stay. Ship traffic shell computed over the whole assembly.
+  Measured: CR-1 LOD0 >= 72% of 15362 faces visible from outside. Open: link / hinge description source, damaged looks.
 

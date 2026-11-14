@@ -135,3 +135,26 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .btnrow { display: flex; gap: 10px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
 .notice { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #22303f; color: #e8eef4;
   padding: 8px 14px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.4); z-index: 50; }
+
+/* steps 2..6 (MESH_EDITOR_SPEC 16) */
+.asm-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
+.step-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; }
+.asm-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.small { font-size: 12px; }
+.table-wrap.short { max-height: 230px; }
+table.tree td { padding: 3px 6px; cursor: pointer; }
+table.tree tr.sel td, tr[data-item].sel td { background: rgba(232, 163, 61, 0.18); }
+tr[data-item] td { cursor: pointer; }
+.form { display: grid; grid-template-columns: 130px 1fr; gap: 4px 8px; align-items: center; margin-top: 6px; }
+.form select, .form input { width: 100%; }
+.vec { display: flex; gap: 4px; }
+.vec input { width: 33%; min-width: 0; }
+i.sw { display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+table.mats td { padding: 2px 6px; }
+.good { color: var(--good); }
+.bad { color: var(--bad); }
+.warn { color: var(--warn); }
+button.danger { color: var(--bad); }
+#asmTools input[type=range] { width: 160px; vertical-align: middle; }
+.libtable input[type=number] { width: 60px; }
+.libtable input:not([type]) { width: 160px; }

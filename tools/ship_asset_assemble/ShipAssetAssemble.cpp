@@ -6,6 +6,7 @@
 // files shared by instances), builds a WORKING ModelAsset in metres (explicit 1:1 calibration), then runs the
 // engine's own BUILD (makeProductionCopy: metric copy + per-node LOD error) and validation, and writes the package.
 
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <exception>
@@ -39,6 +40,63 @@ std::vector<std::string> strings(const json& j)
     std::vector<std::string> out;
     for (const auto& s : j) out.push_back(s.get<std::string>());
     return out;
+}
+
+// the line edges the game's Elite / Technical styles draw (ModelAssetGpuLibrary lineEdge): boundaries, creases
+// sharper than 30 degrees, material seams, 3+ face edges. Corners are welded by position (0.1 mm) first, since the OBJ
+// reader keeps one vertex per corner. Without edges a package draws no lines - the station was invisible in the game.
+void buildEdges(MeshLod& m)
+{
+    std::map<std::array<long long, 3>, std::uint32_t> cell;
+    std::vector<std::uint32_t> point(m.vertices.size());
+    for (std::size_t i = 0; i < m.vertices.size(); ++i)
+    {
+        const glm::vec3& p = m.vertices[i].position;
+        const std::array<long long, 3> k {std::llround(p.x / 1e-4), std::llround(p.y / 1e-4), std::llround(p.z / 1e-4)};
+        point[i] = cell.emplace(k, static_cast<std::uint32_t>(i)).first->second;   // the first corner at that point
+    }
+    std::map<std::pair<std::uint32_t, std::uint32_t>, std::vector<std::int32_t>> faces;
+    for (std::size_t t = 0; t < m.triangles.size(); ++t)
+    {
+        const Triangle& tr = m.triangles[t];
+        const std::uint32_t c[3] = {point[tr.a], point[tr.b], point[tr.c]};
+        for (int k = 0; k < 3; ++k)
+        {
+            const std::uint32_t a = c[k], b = c[(k + 1) % 3];
+            if (a != b)
+                faces[{std::min(a, b), std::max(a, b)}].push_back(static_cast<std::int32_t>(t));
+        }
+    }
+    auto normal = [&](std::int32_t t) {
+        const Triangle& tr = m.triangles[static_cast<std::size_t>(t)];
+        const glm::vec3 n = glm::cross(m.vertices[tr.b].position - m.vertices[tr.a].position, m.vertices[tr.c].position - m.vertices[tr.a].position);
+        const float l = glm::length(n);
+        return l > 1e-12f ? n / l : glm::vec3(0, 0, 1);
+    };
+    const float crease = std::cos(glm::radians(30.0f));
+    m.edges.clear();
+    for (const auto& [key, f] : faces)
+    {
+        Edge e;
+        e.a = key.first;
+        e.b = key.second;
+        e.triangleA = f[0];
+        e.triangleB = f.size() > 1 ? f[1] : -1;
+        if (f.size() == 1)
+            e.flags = EdgeBoundary;
+        else if (f.size() > 2)
+            e.flags = EdgeCrease | EdgeNonManifold;
+        else
+        {
+            if (glm::dot(normal(f[0]), normal(f[1])) < crease)
+                e.flags |= EdgeCrease;
+            if (m.triangles[static_cast<std::size_t>(f[0])].materialIndex != m.triangles[static_cast<std::size_t>(f[1])].materialIndex)
+                e.flags |= EdgeMaterialSeam | EdgeCrease;
+            if (!e.flags)
+                continue;   // a smooth interior edge is no line
+        }
+        m.edges.push_back(e);
+    }
 }
 
 MeshLod readObj(const std::string& path, const std::map<std::string, std::int32_t>& materials)
@@ -91,6 +149,7 @@ MeshLod readObj(const std::string& path, const std::map<std::string, std::int32_
         }
     }
     if (m.vertices.empty()) throw std::runtime_error("empty mesh " + path);
+    buildEdges(m);
     m.minBounds = m.maxBounds = m.vertices[0].position;
     for (const auto& vx : m.vertices)
     {
@@ -130,7 +189,18 @@ bool assembleShipAsset(const std::string& dir, const std::string& productionPath
             MaterialDefinition m;
             m.id = name;
             m.sourceName = name;
-            m.baseColor = glm::vec4(vec3(kd), 1.0f);
+            if (kd.is_object())
+            {
+                // a global-library material (the mesh editor): PBR values, not just the diffuse colour
+                m.baseColor = glm::vec4(vec3(kd.at("baseColor")), 1.0f);
+                m.metallic = kd.value("metallic", 0.0f);
+                m.roughness = kd.value("roughness", 0.65f);
+                if (kd.contains("emissive")) m.emissiveColor = vec3(kd.at("emissive"));
+                m.emissiveStrength = kd.value("emissiveStrength", glm::length(m.emissiveColor) > 0.0f ? 1.0f : 0.0f);
+                m.twoSided = kd.value("twoSided", false);
+            }
+            else
+                m.baseColor = glm::vec4(vec3(kd), 1.0f);
             mat[name] = static_cast<std::int32_t>(a.materials.size());
             a.materials.push_back(m);
         }
@@ -254,6 +324,7 @@ bool assembleShipAsset(const std::string& dir, const std::string& productionPath
             s.localPosition = vec3(j.at("position"));
             s.localRotationDeg = vec3(j.value("rotation_deg", json::array({0, 0, 0})));
             if (j.contains("extent")) s.extent = vec3(j.at("extent"));
+            s.interfaceProfile = j.value("profile", std::string());   // a link: "<category>/<id>"
             a.sockets.push_back(s);
         }
         if (src.contains("object_frame"))
@@ -323,12 +394,24 @@ bool assembleShipAsset(const std::string& dir, const std::string& productionPath
             a.renderLods.push_back(std::move(lod));
         }
 
-        // explicit 1:1 calibration (the source is already in metres), then the engine's BUILD
+        // explicit calibration: 1:1 (the source is already in metres), or "calibration": {axis x|y|z, targetMeters} -
+        // the source extent along that axis is that many metres (a station modelled in kilometres); then the BUILD
         a.physicalSize.enabled = true;
         a.physicalSize.axis = PhysicalSizeAxis::Z;
         a.physicalSize.sourceExtent = a.maxBounds.z - a.minBounds.z;
         a.physicalSize.targetMeters = a.physicalSize.sourceExtent;
         a.physicalSize.sourceToMeters = 1.0f;
+        if (src.contains("calibration") && src["calibration"].value("targetMeters", 0.0f) > 0.0f)
+        {
+            const std::string axis = src["calibration"].value("axis", std::string("z"));
+            const int k = axis == "x" ? 0 : axis == "y" ? 1 : 2;
+            a.physicalSize.axis = k == 0 ? PhysicalSizeAxis::X : k == 1 ? PhysicalSizeAxis::Y : PhysicalSizeAxis::Z;
+            a.physicalSize.sourceExtent = a.maxBounds[k] - a.minBounds[k];
+            a.physicalSize.targetMeters = src["calibration"]["targetMeters"].get<float>();
+            if (src["calibration"].contains("sourceExtent"))
+                a.physicalSize.sourceExtent = src["calibration"]["sourceExtent"].get<float>();
+            a.physicalSize.sourceToMeters = a.physicalSize.targetMeters / a.physicalSize.sourceExtent;
+        }
         a.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
         std::string error;
         if (!ModelAssetBinary::validate(a, &error)) throw std::runtime_error("working asset invalid: " + error);

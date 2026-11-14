@@ -1,0 +1,3558 @@
+{
+ "schema": "elite.material_library.v1",
+ "materials": [
+  {
+   "id": "eq_agora_blue",
+   "name": "agora blue",
+   "baseColor": [
+    0.18,
+    0.36,
+    0.52
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_brass",
+   "name": "agora brass",
+   "baseColor": [
+    0.72,
+    0.56,
+    0.26
+   ],
+   "metallic": 0.7,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_casting",
+   "name": "agora casting",
+   "baseColor": [
+    0.26,
+    0.26,
+    0.27
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_glass",
+   "name": "agora glass",
+   "baseColor": [
+    0.08,
+    0.12,
+    0.16
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_hole",
+   "name": "agora hole",
+   "baseColor": [
+    0.04,
+    0.04,
+    0.045
+   ],
+   "metallic": 0.0,
+   "roughness": 0.98,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_rm2_brass",
+   "name": "agora rm2 brass",
+   "baseColor": [
+    0.72,
+    0.56,
+    0.28
+   ],
+   "metallic": 0.7,
+   "roughness": 0.6,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_rm2_iris",
+   "name": "agora rm2 iris",
+   "baseColor": [
+    0.25,
+    0.66,
+    0.8
+   ],
+   "metallic": 0.7,
+   "roughness": 0.4,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_rm2_lens",
+   "name": "agora rm2 lens",
+   "baseColor": [
+    0.03,
+    0.04,
+    0.06
+   ],
+   "metallic": 0.7,
+   "roughness": 0.2,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_rm2_sea",
+   "name": "agora rm2 sea",
+   "baseColor": [
+    0.18,
+    0.36,
+    0.52
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_rm2_terracotta",
+   "name": "agora rm2 terracotta",
+   "baseColor": [
+    0.62,
+    0.33,
+    0.22
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_rm2_white",
+   "name": "agora rm2 white",
+   "baseColor": [
+    0.86,
+    0.84,
+    0.78
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_rubber",
+   "name": "agora rubber",
+   "baseColor": [
+    0.09,
+    0.09,
+    0.09
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_sand",
+   "name": "agora sand",
+   "baseColor": [
+    0.68,
+    0.63,
+    0.5
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_terracotta",
+   "name": "agora terracotta",
+   "baseColor": [
+    0.62,
+    0.33,
+    0.22
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_agora_white",
+   "name": "agora white",
+   "baseColor": [
+    0.86,
+    0.84,
+    0.78
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bastion_armour",
+   "name": "bastion armour",
+   "baseColor": [
+    0.22,
+    0.25,
+    0.28
+   ],
+   "metallic": 0.15,
+   "roughness": 0.82,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bastion_dark",
+   "name": "bastion dark",
+   "baseColor": [
+    0.12,
+    0.13,
+    0.15
+   ],
+   "metallic": 0.15,
+   "roughness": 0.86,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bastion_hazard",
+   "name": "bastion hazard",
+   "baseColor": [
+    0.75,
+    0.62,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bharat_beacon",
+   "name": "bharat beacon",
+   "baseColor": [
+    0.85,
+    0.22,
+    0.12
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bharat_glass",
+   "name": "bharat glass",
+   "baseColor": [
+    0.1,
+    0.14,
+    0.18
+   ],
+   "metallic": 0.7,
+   "roughness": 0.28,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bharat_green",
+   "name": "bharat green",
+   "baseColor": [
+    0.1,
+    0.42,
+    0.22
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bharat_patch",
+   "name": "bharat patch",
+   "baseColor": [
+    0.55,
+    0.55,
+    0.52
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bharat_saffron",
+   "name": "bharat saffron",
+   "baseColor": [
+    0.9,
+    0.52,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bharat_seal",
+   "name": "bharat seal",
+   "baseColor": [
+    0.09,
+    0.09,
+    0.09
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_bharat_white",
+   "name": "bharat white",
+   "baseColor": [
+    0.82,
+    0.82,
+    0.8
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_cob_csic",
+   "name": "cob csic",
+   "baseColor": [
+    0.13,
+    0.13,
+    0.14
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_cob_lens",
+   "name": "cob lens",
+   "baseColor": [
+    0.08,
+    0.12,
+    0.18
+   ],
+   "metallic": 0.7,
+   "roughness": 0.2,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_copper",
+   "name": "copper",
+   "baseColor": [
+    0.66,
+    0.38,
+    0.2
+   ],
+   "metallic": 0.7,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_eurohab_blue",
+   "name": "eurohab blue",
+   "baseColor": [
+    0.12,
+    0.22,
+    0.48
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_eurohab_dark",
+   "name": "eurohab dark",
+   "baseColor": [
+    0.14,
+    0.15,
+    0.17
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_eurohab_glass",
+   "name": "eurohab glass",
+   "baseColor": [
+    0.12,
+    0.17,
+    0.22
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_eurohab_grey",
+   "name": "eurohab grey",
+   "baseColor": [
+    0.52,
+    0.55,
+    0.58
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_eurohab_white",
+   "name": "eurohab white",
+   "baseColor": [
+    0.85,
+    0.86,
+    0.86
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_eurohab_yellow",
+   "name": "eurohab yellow",
+   "baseColor": [
+    0.86,
+    0.72,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fa_dark",
+   "name": "fa dark",
+   "baseColor": [
+    0.1,
+    0.11,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fa_green",
+   "name": "fa green",
+   "baseColor": [
+    0.24,
+    0.28,
+    0.22
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fa_gun",
+   "name": "fa gun",
+   "baseColor": [
+    0.4,
+    0.4,
+    0.38
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fa_lens",
+   "name": "fa lens",
+   "baseColor": [
+    0.08,
+    0.12,
+    0.16
+   ],
+   "metallic": 0.7,
+   "roughness": 0.2,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fa_tile",
+   "name": "fa tile",
+   "baseColor": [
+    0.3,
+    0.34,
+    0.27
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_bn_armour",
+   "name": "fe bn armour",
+   "baseColor": [
+    0.22,
+    0.25,
+    0.28
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_bn_dark",
+   "name": "fe bn dark",
+   "baseColor": [
+    0.12,
+    0.13,
+    0.15
+   ],
+   "metallic": 0.15,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_bn_hazard",
+   "name": "fe bn hazard",
+   "baseColor": [
+    0.75,
+    0.62,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_he_cream",
+   "name": "fe he cream",
+   "baseColor": [
+    0.84,
+    0.8,
+    0.68
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_he_gold",
+   "name": "fe he gold",
+   "baseColor": [
+    0.72,
+    0.56,
+    0.22
+   ],
+   "metallic": 0.7,
+   "roughness": 0.2,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_he_jade",
+   "name": "fe he jade",
+   "baseColor": [
+    0.24,
+    0.42,
+    0.36
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_kp_bone",
+   "name": "fe kp bone",
+   "baseColor": [
+    0.86,
+    0.82,
+    0.72
+   ],
+   "metallic": 0.15,
+   "roughness": 0.9,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_kp_teal",
+   "name": "fe kp teal",
+   "baseColor": [
+    0.12,
+    0.42,
+    0.42
+   ],
+   "metallic": 0.7,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_kp_wood",
+   "name": "fe kp wood",
+   "baseColor": [
+    0.42,
+    0.28,
+    0.18
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_zp_black",
+   "name": "fe zp black",
+   "baseColor": [
+    0.03,
+    0.03,
+    0.04
+   ],
+   "metallic": 0.15,
+   "roughness": 0.4,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_zp_red",
+   "name": "fe zp red",
+   "baseColor": [
+    0.55,
+    0.12,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_zp_socket",
+   "name": "fe zp socket",
+   "baseColor": [
+    0.16,
+    0.15,
+    0.18
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_fe_zp_violet",
+   "name": "fe zp violet",
+   "baseColor": [
+    0.3,
+    0.18,
+    0.45
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_field_coil",
+   "name": "field coil",
+   "baseColor": [
+    0.32,
+    0.23,
+    0.14
+   ],
+   "metallic": 0.15,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_glass",
+   "name": "glass",
+   "baseColor": [
+    0.1,
+    0.28,
+    0.38
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_c20_blue",
+   "name": "harmony c20 blue",
+   "baseColor": [
+    0.18,
+    0.3,
+    0.48
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_c20_grey",
+   "name": "harmony c20 grey",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.48
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_c20_red",
+   "name": "harmony c20 red",
+   "baseColor": [
+    0.55,
+    0.2,
+    0.15
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_cognium",
+   "name": "harmony cognium",
+   "baseColor": [
+    0.03,
+    0.03,
+    0.04
+   ],
+   "metallic": 0.15,
+   "roughness": 0.56,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_cognium_seal",
+   "name": "harmony cognium seal",
+   "baseColor": [
+    0.55,
+    0.12,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_cognium_violet",
+   "name": "harmony cognium violet",
+   "baseColor": [
+    0.3,
+    0.18,
+    0.45
+   ],
+   "metallic": 0.15,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_cream",
+   "name": "harmony cream",
+   "baseColor": [
+    0.84,
+    0.8,
+    0.68
+   ],
+   "metallic": 0.15,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_dark",
+   "name": "harmony dark",
+   "baseColor": [
+    0.07,
+    0.08,
+    0.08
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_gold",
+   "name": "harmony gold",
+   "baseColor": [
+    0.72,
+    0.56,
+    0.22
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_jade",
+   "name": "harmony jade",
+   "baseColor": [
+    0.24,
+    0.42,
+    0.36
+   ],
+   "metallic": 0.7,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_harmony_lens",
+   "name": "harmony lens",
+   "baseColor": [
+    0.06,
+    0.1,
+    0.16
+   ],
+   "metallic": 0.7,
+   "roughness": 0.2,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hole",
+   "name": "hole",
+   "baseColor": [
+    0.035,
+    0.035,
+    0.04
+   ],
+   "metallic": 0.0,
+   "roughness": 0.98,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyp_rd1_carbon",
+   "name": "hyp rd1 carbon",
+   "baseColor": [
+    0.15,
+    0.15,
+    0.16
+   ],
+   "metallic": 0.15,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyp_rd1_foil",
+   "name": "hyp rd1 foil",
+   "baseColor": [
+    0.8,
+    0.62,
+    0.25
+   ],
+   "metallic": 0.7,
+   "roughness": 0.56,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyp_rd1_lens",
+   "name": "hyp rd1 lens",
+   "baseColor": [
+    0.03,
+    0.04,
+    0.07
+   ],
+   "metallic": 0.7,
+   "roughness": 0.2,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyp_rd1_white",
+   "name": "hyp rd1 white",
+   "baseColor": [
+    0.87,
+    0.88,
+    0.89
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyperion_carbon",
+   "name": "hyperion carbon",
+   "baseColor": [
+    0.15,
+    0.15,
+    0.16
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyperion_gold",
+   "name": "hyperion gold",
+   "baseColor": [
+    0.8,
+    0.62,
+    0.25
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyperion_seam",
+   "name": "hyperion seam",
+   "baseColor": [
+    0.62,
+    0.46,
+    0.17
+   ],
+   "metallic": 0.15,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyperion_ti",
+   "name": "hyperion ti",
+   "baseColor": [
+    0.55,
+    0.56,
+    0.58
+   ],
+   "metallic": 0.7,
+   "roughness": 0.56,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyperion_tile",
+   "name": "hyperion tile",
+   "baseColor": [
+    0.16,
+    0.18,
+    0.26
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hyperion_white",
+   "name": "hyperion white",
+   "baseColor": [
+    0.86,
+    0.87,
+    0.88
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_insulator",
+   "name": "insulator",
+   "baseColor": [
+    0.8,
+    0.78,
+    0.72
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kapehu_bone",
+   "name": "kapehu bone",
+   "baseColor": [
+    0.86,
+    0.82,
+    0.72
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kapehu_glow",
+   "name": "kapehu glow",
+   "baseColor": [
+    0.3,
+    0.85,
+    0.8
+   ],
+   "metallic": 0.7,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kapehu_rope",
+   "name": "kapehu rope",
+   "baseColor": [
+    0.62,
+    0.52,
+    0.36
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kapehu_teal",
+   "name": "kapehu teal",
+   "baseColor": [
+    0.12,
+    0.42,
+    0.42
+   ],
+   "metallic": 0.15,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kapehu_wood",
+   "name": "kapehu wood",
+   "baseColor": [
+    0.42,
+    0.28,
+    0.18
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kern_black",
+   "name": "kern black",
+   "baseColor": [
+    0.1,
+    0.1,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.9,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kern_rust",
+   "name": "kern rust",
+   "baseColor": [
+    0.42,
+    0.24,
+    0.14
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_kern_yellow",
+   "name": "kern yellow",
+   "baseColor": [
+    0.78,
+    0.6,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.86,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_metal_band",
+   "name": "metal band",
+   "baseColor": [
+    0.2,
+    0.21,
+    0.23
+   ],
+   "metallic": 0.15,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_metal_graphite",
+   "name": "metal graphite",
+   "baseColor": [
+    0.34,
+    0.36,
+    0.38
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_metal_panel",
+   "name": "metal panel",
+   "baseColor": [
+    0.47,
+    0.48,
+    0.49
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_ofu_ablator",
+   "name": "ofu ablator",
+   "baseColor": [
+    0.2,
+    0.15,
+    0.11
+   ],
+   "metallic": 0.0,
+   "roughness": 0.968,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_ofu_orange",
+   "name": "ofu orange",
+   "baseColor": [
+    0.8,
+    0.38,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_ofu_tile",
+   "name": "ofu tile",
+   "baseColor": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_ofu_truss",
+   "name": "ofu truss",
+   "baseColor": [
+    0.42,
+    0.43,
+    0.44
+   ],
+   "metallic": 0.15,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_ofu_white",
+   "name": "ofu white",
+   "baseColor": [
+    0.78,
+    0.79,
+    0.76
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_ofu_window",
+   "name": "ofu window",
+   "baseColor": [
+    0.1,
+    0.14,
+    0.18
+   ],
+   "metallic": 0.7,
+   "roughness": 0.4,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_pad_ceramic",
+   "name": "pad ceramic",
+   "baseColor": [
+    0.07,
+    0.07,
+    0.075
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_seat",
+   "name": "seat",
+   "baseColor": [
+    0.3,
+    0.16,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.9,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_csic",
+   "name": "smy csic",
+   "baseColor": [
+    0.13,
+    0.13,
+    0.14
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_dark",
+   "name": "smy dark",
+   "baseColor": [
+    0.2,
+    0.21,
+    0.22
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_mli",
+   "name": "smy mli",
+   "baseColor": [
+    0.66,
+    0.63,
+    0.52
+   ],
+   "metallic": 0.7,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_mp8_missile",
+   "name": "smy mp8 missile",
+   "baseColor": [
+    0.72,
+    0.72,
+    0.68
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_mp8_regolith",
+   "name": "smy mp8 regolith",
+   "baseColor": [
+    0.55,
+    0.55,
+    0.53
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_mp8_slate",
+   "name": "smy mp8 slate",
+   "baseColor": [
+    0.28,
+    0.34,
+    0.42
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_regolith",
+   "name": "smy regolith",
+   "baseColor": [
+    0.55,
+    0.55,
+    0.53
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_slate",
+   "name": "smy slate",
+   "baseColor": [
+    0.28,
+    0.34,
+    0.42
+   ],
+   "metallic": 0.15,
+   "roughness": 0.82,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_window",
+   "name": "smy window",
+   "baseColor": [
+    0.1,
+    0.14,
+    0.18
+   ],
+   "metallic": 0.7,
+   "roughness": 0.4,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_srw_coil",
+   "name": "srw coil",
+   "baseColor": [
+    0.12,
+    0.17,
+    0.3
+   ],
+   "metallic": 0.15,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_srw_white",
+   "name": "srw white",
+   "baseColor": [
+    0.8,
+    0.81,
+    0.8
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_status_amber",
+   "name": "status amber",
+   "baseColor": [
+    0.95,
+    0.62,
+    0.15
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_steel",
+   "name": "steel",
+   "baseColor": [
+    0.58,
+    0.59,
+    0.61
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_terra_beige",
+   "name": "terra beige",
+   "baseColor": [
+    0.8,
+    0.74,
+    0.62
+   ],
+   "metallic": 0.15,
+   "roughness": 0.86,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_terra_cream",
+   "name": "terra cream",
+   "baseColor": [
+    0.9,
+    0.88,
+    0.82
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_terra_glass",
+   "name": "terra glass",
+   "baseColor": [
+    0.12,
+    0.2,
+    0.24
+   ],
+   "metallic": 0.7,
+   "roughness": 0.36,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_terra_rubber",
+   "name": "terra rubber",
+   "baseColor": [
+    0.1,
+    0.1,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.968,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_terra_sage",
+   "name": "terra sage",
+   "baseColor": [
+    0.35,
+    0.48,
+    0.38
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_th_coil",
+   "name": "th coil",
+   "baseColor": [
+    0.45,
+    0.16,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_th_csic",
+   "name": "th csic",
+   "baseColor": [
+    0.11,
+    0.11,
+    0.12
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_th_steel",
+   "name": "th steel",
+   "baseColor": [
+    0.33,
+    0.36,
+    0.31
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_th_steel_dark",
+   "name": "th steel dark",
+   "baseColor": [
+    0.22,
+    0.25,
+    0.2
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_uh_cream",
+   "name": "uh cream",
+   "baseColor": [
+    0.86,
+    0.82,
+    0.7
+   ],
+   "metallic": 0.0,
+   "roughness": 0.9,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_uh_glass",
+   "name": "uh glass",
+   "baseColor": [
+    0.16,
+    0.36,
+    0.2
+   ],
+   "metallic": 0.7,
+   "roughness": 0.4,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_uh_hose",
+   "name": "uh hose",
+   "baseColor": [
+    0.14,
+    0.15,
+    0.13
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_uh_leaf",
+   "name": "uh leaf",
+   "baseColor": [
+    0.3,
+    0.52,
+    0.2
+   ],
+   "metallic": 0.0,
+   "roughness": 0.9,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_uh_ochre",
+   "name": "uh ochre",
+   "baseColor": [
+    0.62,
+    0.3,
+    0.16
+   ],
+   "metallic": 0.0,
+   "roughness": 0.9,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_uh_weave",
+   "name": "uh weave",
+   "baseColor": [
+    0.46,
+    0.25,
+    0.13
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_xinzhi_black",
+   "name": "xinzhi black",
+   "baseColor": [
+    0.06,
+    0.07,
+    0.08
+   ],
+   "metallic": 0.7,
+   "roughness": 0.28,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_xinzhi_cyan",
+   "name": "xinzhi cyan",
+   "baseColor": [
+    0.1,
+    0.7,
+    0.8
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_xinzhi_fin",
+   "name": "xinzhi fin",
+   "baseColor": [
+    0.2,
+    0.21,
+    0.23
+   ],
+   "metallic": 0.7,
+   "roughness": 0.6,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_xinzhi_seal",
+   "name": "xinzhi seal",
+   "baseColor": [
+    0.3,
+    0.31,
+    0.33
+   ],
+   "metallic": 0.15,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_xinzhi_white",
+   "name": "xinzhi white",
+   "baseColor": [
+    0.88,
+    0.89,
+    0.9
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_zeropoint_black",
+   "name": "zeropoint black",
+   "baseColor": [
+    0.03,
+    0.03,
+    0.04
+   ],
+   "metallic": 0.15,
+   "roughness": 0.4,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_zeropoint_matte",
+   "name": "zeropoint matte",
+   "baseColor": [
+    0.07,
+    0.07,
+    0.085
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_zeropoint_red",
+   "name": "zeropoint red",
+   "baseColor": [
+    0.55,
+    0.12,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_zeropoint_socket",
+   "name": "zeropoint socket",
+   "baseColor": [
+    0.16,
+    0.15,
+    0.18
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_zeropoint_violet",
+   "name": "zeropoint violet",
+   "baseColor": [
+    0.3,
+    0.18,
+    0.45
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_smy_pb8_regolith",
+   "name": "smy pb8 regolith",
+   "baseColor": [
+    0.55,
+    0.55,
+    0.53
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/equipment/smy_pb8_rack/LOD0/pb8_hatch_1.mtl"
+  },
+  {
+   "id": "eq_smy_pb8_slate",
+   "name": "smy pb8 slate",
+   "baseColor": [
+    0.28,
+    0.34,
+    0.42
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/equipment/smy_pb8_rack/LOD0/pb8_hatch_1.mtl"
+  },
+  {
+   "id": "eq_smy_pb8_missile",
+   "name": "smy pb8 missile",
+   "baseColor": [
+    0.72,
+    0.72,
+    0.68
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/equipment/smy_pb8_rack/LOD0/pb8_missile_1.mtl"
+  },
+  {
+   "id": "sk_cover",
+   "name": "sk cover",
+   "baseColor": [
+    0.16,
+    0.18,
+    0.2
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/agora.ship.pc-30ak.akritas/LOD0/cover_0.mtl"
+  },
+  {
+   "id": "sk_hull",
+   "name": "sk hull",
+   "baseColor": [
+    0.55,
+    0.62,
+    0.7
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/agora.ship.pc-30ak.akritas/LOD0/ghost_hull.mtl"
+  },
+  {
+   "id": "sk_c20",
+   "name": "sk c20",
+   "baseColor": [
+    0.62,
+    0.36,
+    0.2
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/bastion.ship.b-12l.heis/LOD0/c20_cargo.mtl"
+  },
+  {
+   "id": "sk_hatch",
+   "name": "sk hatch",
+   "baseColor": [
+    0.85,
+    0.7,
+    0.15
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/cobrett-i/LOD0/hatch_0.mtl"
+  },
+  {
+   "id": "sk_glass",
+   "name": "sk glass",
+   "baseColor": [
+    0.1,
+    0.3,
+    0.42
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/cobrett-i/LOD0/proxy_escape_cockpit.mtl"
+  },
+  {
+   "id": "sk_proxy",
+   "name": "sk proxy",
+   "baseColor": [
+    0.7,
+    0.3,
+    0.6
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/cobrett-i/LOD0/proxy_escape_cockpit.mtl"
+  },
+  {
+   "id": "sk_shaft",
+   "name": "sk shaft",
+   "baseColor": [
+    0.3,
+    0.6,
+    0.75
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/cobrett-i/LOD0/shaft_spine.mtl"
+  },
+  {
+   "id": "sk_skid",
+   "name": "sk skid",
+   "baseColor": [
+    0.85,
+    0.75,
+    0.2
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/layout_sketches/cobrett-i/LOD0/skid_set.mtl"
+  },
+  {
+   "id": "Land.001",
+   "name": "Land.001",
+   "baseColor": [
+    0.6,
+    0.6,
+    0.6
+   ],
+   "metallic": 0.7,
+   "roughness": 0.961,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/planets/Earth/Earth II.mtl"
+  },
+  {
+   "id": "Object001_mtl.001",
+   "name": "Object001 mtl.001",
+   "baseColor": [
+    0.6,
+    0.6,
+    0.6
+   ],
+   "metallic": 0.7,
+   "roughness": 0.961,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/planets/Earth/Earth II.mtl"
+  },
+  {
+   "id": "Ocean.001",
+   "name": "Ocean.001",
+   "baseColor": [
+    0.6,
+    0.6,
+    0.6
+   ],
+   "metallic": 0.7,
+   "roughness": 0.08,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/planets/Earth/Earth II.mtl"
+  },
+  {
+   "id": "Snow.001",
+   "name": "Snow.001",
+   "baseColor": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "metallic": 0.7,
+   "roughness": 0.08,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/planets/Earth/Earth II.mtl"
+  },
+  {
+   "id": "cat_armour",
+   "name": "cat armour",
+   "baseColor": [
+    0.11,
+    0.15,
+    0.2
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_comm",
+   "name": "cat comm",
+   "baseColor": [
+    0.09,
+    0.57,
+    0.43
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_computer",
+   "name": "cat computer",
+   "baseColor": [
+    0.05,
+    0.52,
+    0.33
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_coolant_loop",
+   "name": "cat coolant loop",
+   "baseColor": [
+    0.05,
+    0.27,
+    0.66
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_drive",
+   "name": "cat drive",
+   "baseColor": [
+    0.82,
+    0.3,
+    0.06
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_escape_capsule",
+   "name": "cat escape capsule",
+   "baseColor": [
+    0.26,
+    0.56,
+    0.16
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_hull",
+   "name": "cat hull",
+   "baseColor": [
+    0.42,
+    0.45,
+    0.5
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_life_support",
+   "name": "cat life support",
+   "baseColor": [
+    0.1,
+    0.36,
+    0.06
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_radar",
+   "name": "cat radar",
+   "baseColor": [
+    0.03,
+    0.38,
+    0.25
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_radiator",
+   "name": "cat radiator",
+   "baseColor": [
+    0.22,
+    0.48,
+    0.79
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_reactor",
+   "name": "cat reactor",
+   "baseColor": [
+    0.66,
+    0.1,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_service_reactor",
+   "name": "cat service reactor",
+   "baseColor": [
+    0.55,
+    0.22,
+    0.22
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_tank",
+   "name": "cat tank",
+   "baseColor": [
+    0.43,
+    0.25,
+    0.67
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_transponder",
+   "name": "cat transponder",
+   "baseColor": [
+    0.09,
+    0.57,
+    0.43
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_weapon",
+   "name": "cat weapon",
+   "baseColor": [
+    0.52,
+    0.04,
+    0.03
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-4-sokol/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_docking_port",
+   "name": "cat docking port",
+   "baseColor": [
+    0.63,
+    0.63,
+    0.63
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-90-tsitadel/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_drone_bay",
+   "name": "cat drone bay",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-90-tsitadel/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_hangar",
+   "name": "cat hangar",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-90-tsitadel/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_jump_core",
+   "name": "cat jump core",
+   "baseColor": [
+    0.33,
+    0.1,
+    0.63
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-90-tsitadel/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_lifeboat",
+   "name": "cat lifeboat",
+   "baseColor": [
+    0.26,
+    0.56,
+    0.16
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-90-tsitadel/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_medbay",
+   "name": "cat medbay",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-90-tsitadel/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_rcs",
+   "name": "cat rcs",
+   "baseColor": [
+    0.67,
+    0.43,
+    0.05
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/b-90-tsitadel/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_container_rack",
+   "name": "cat container rack",
+   "baseColor": [
+    0.26,
+    0.26,
+    0.26
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/c-120-konveyer/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_cryo_tank",
+   "name": "cat cryo tank",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/gt-3000-titan/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_boat_bay",
+   "name": "cat boat bay",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/he-f22-dun/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_workshop",
+   "name": "cat workshop",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/he-s240-tylovik/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_train_module",
+   "name": "cat train module",
+   "baseColor": [
+    0.26,
+    0.26,
+    0.26
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/he-t12-lokomotiv/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_tow_rig",
+   "name": "cat tow rig",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/ht-20k-mul/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_bulk_hold",
+   "name": "cat bulk hold",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/l-900-piligrim/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_passenger_module",
+   "name": "cat passenger module",
+   "baseColor": [
+    0.36,
+    0.35,
+    0.19
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/l-900-piligrim/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_ecm",
+   "name": "cat ecm",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/r-7-argus/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_sensor_mast",
+   "name": "cat sensor mast",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/r-7-argus/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_heat_shield",
+   "name": "cat heat shield",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/sl-12-podyomnik/LOD0/primitive.mtl"
+  },
+  {
+   "id": "cat_landing_gear",
+   "name": "cat landing gear",
+   "baseColor": [
+    0.5,
+    0.5,
+    0.52
+   ],
+   "metallic": 0.0,
+   "roughness": 0.936,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/ships/sl-12-podyomnik/LOD0/primitive.mtl"
+  },
+  {
+   "id": "Material.001",
+   "name": "Material.001",
+   "baseColor": [
+    0.8,
+    0.8,
+    0.8
+   ],
+   "metallic": 0.7,
+   "roughness": 1.0,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/stations/LOD0/SolPet_X0_Ym.mtl"
+  },
+  {
+   "id": "window",
+   "name": "window",
+   "baseColor": [
+    0.01,
+    0.08,
+    0.15
+   ],
+   "metallic": 0.7,
+   "roughness": 0.08,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/stations/LOD0/station_Habitat_Module_S1.mtl"
+  },
+  {
+   "id": "structure",
+   "name": "structure",
+   "baseColor": [
+    0.2,
+    0.055,
+    0.018
+   ],
+   "metallic": 0.7,
+   "roughness": 0.08,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/stations/LOD0/variants/station_Habitat_Module_S1_Damaged_01.mtl"
+  },
+  {
+   "id": "default",
+   "name": "default",
+   "baseColor": [
+    0.8,
+    0.8,
+    0.8
+   ],
+   "metallic": 0.7,
+   "roughness": 1.0,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/stations/stantion-001/LOD0/stantion-001.mtl"
+  }
+ ]
+}

@@ -41,6 +41,8 @@ struct RawMesh
 {
     std::vector<Vec3> v;
     std::vector<Tri> t;
+    std::vector<int> tm;              // material per triangle (index in mtl, -1 none)
+    std::vector<std::string> mtl;     // usemtl names in order of first use
     bool material = false;
     std::uint64_t hash = 1469598103934665603ull;
 };
@@ -48,6 +50,7 @@ struct RawMesh
 RawMesh readObj(const fs::path& file)
 {
     RawMesh m;
+    int cur = -1;
     std::ifstream in(file, std::ios::binary);
     std::string line;
     while (std::getline(in, line))
@@ -71,9 +74,24 @@ RawMesh readObj(const fs::path& file)
                 poly.push_back(i < 0 ? static_cast<int>(m.v.size()) + i : i - 1);
             }
             for (std::size_t k = 1; k + 1 < poly.size(); ++k)
+            {
                 m.t.push_back({poly[0], poly[k], poly[k + 1]});
+                m.tm.push_back(cur);
+            }
         }
-        else if (line.rfind("usemtl", 0) == 0 || line.rfind("mtllib", 0) == 0)
+        else if (line.rfind("usemtl", 0) == 0)
+        {
+            std::string name = line.substr(6);
+            name.erase(0, name.find_first_not_of(" \t"));
+            while (!name.empty() && (name.back() == '\r' || name.back() == ' '))
+                name.pop_back();
+            const auto it = std::find(m.mtl.begin(), m.mtl.end(), name);
+            cur = static_cast<int>(it - m.mtl.begin());
+            if (it == m.mtl.end())
+                m.mtl.push_back(name);
+            m.material = true;
+        }
+        else if (line.rfind("mtllib", 0) == 0)
             m.material = true;
     }
     return m;
@@ -84,6 +102,8 @@ struct PartGeo
 {
     std::vector<Vec3> v;
     std::vector<Tri> t;
+    std::vector<int> tm;              // material per triangle (index in mtl; caps: the "eq_hole" entry)
+    std::vector<std::string> mtl;
     int rawVerts = 0, rawTris = 0;
     int welded = 0, degenerate = 0, repeated = 0, flipped = 0;
     int split = 0, reoriented = 0, capped = 0;   // touching pieces parted, faces turned to their neighbours, holes closed
@@ -360,10 +380,18 @@ void capHoles(PartGeo& g)
                 c[k] += g.v[x][k] / static_cast<double>(loop.size());
         const int ci = static_cast<int>(g.v.size());
         g.v.push_back(c);
+        auto hole = std::find(g.mtl.begin(), g.mtl.end(), std::string("eq_hole"));
+        if (hole == g.mtl.end())
+        {
+            g.mtl.push_back("eq_hole");
+            hole = g.mtl.end() - 1;
+        }
+        const int holeMat = static_cast<int>(hole - g.mtl.begin());
         for (std::size_t i = 0; i < loop.size(); ++i)
         {
             const int a = loop[i], b = loop[(i + 1) % loop.size()];
             g.t.push_back({b, a, ci});   // the cap runs the open edge the other way
+            g.tm.push_back(holeMat);
         }
         ++g.capped;
     }
@@ -437,6 +465,7 @@ PartGeo repair(const RawMesh& raw, const RepairOptions& opt)
     g.rawVerts = static_cast<int>(raw.v.size());
     g.rawTris = static_cast<int>(raw.t.size());
     g.material = raw.material;
+    g.mtl = raw.mtl;
     g.hash = raw.hash;
     // weld
     std::map<std::array<long long, 3>, int> cells;
@@ -464,8 +493,9 @@ PartGeo repair(const RawMesh& raw, const RepairOptions& opt)
     // degenerate and repeated triangles
     std::map<std::array<int, 3>, int> seenAt;   // sorted corners -> first face
     std::map<int, int> opposite;                // face -> its back-to-back twin
-    for (const auto& t0 : raw.t)
+    for (std::size_t ti = 0; ti < raw.t.size(); ++ti)
     {
+        const Tri& t0 = raw.t[ti];
         bool bad = false;
         Tri t {};
         for (int k = 0; k < 3; ++k)
@@ -500,6 +530,7 @@ PartGeo repair(const RawMesh& raw, const RepairOptions& opt)
         else
             seenAt[key] = static_cast<int>(g.t.size());
         g.t.push_back(t);
+        g.tm.push_back(ti < raw.tm.size() ? raw.tm[ti] : -1);
     }
     // a membrane between two touching volumes (two lathed bodies meeting at a disc: the disc twice, back to back) - both
     // copies go, the volumes become one closed body. A free double-faced plate (its rim edges have no other faces) stays.
@@ -530,12 +561,17 @@ PartGeo repair(const RawMesh& raw, const RepairOptions& opt)
             if (attached.count(root(a)) && attached[root(a)])
                 drop[a] = drop[b] = 1;
         std::vector<Tri> kept;
+        std::vector<int> keptMat;
         for (std::size_t i = 0; i < g.t.size(); ++i)
             if (drop[i])
                 ++g.membrane;
             else
+            {
                 kept.push_back(g.t[i]);
+                keptMat.push_back(g.tm[i]);
+            }
         g.t = std::move(kept);
+        g.tm = std::move(keptMat);
     }
     if (g.t.empty())
         return g;
@@ -647,21 +683,15 @@ std::string cm(double metres)
         std::snprintf(buf, sizeof buf, "%.2f м", metres);
     return buf;
 }
-} // namespace
-
-nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot, const fs::path& stateDir, bool commitCheck)
+struct PartInfo
 {
-    const std::vector<Group> groups = collectGroups(card);
-    nlohmann::json state = readJson(stateDir / "check.json");
-    if (!state.contains("kinds"))
-        state["kinds"] = nlohmann::json::object();
-    const bool everChecked = state.contains("parts");
+    std::string key;
+    std::vector<std::pair<int, PartGeo>> geo;   // group index, geometry
+};
 
-    struct PartInfo
-    {
-        std::string key;
-        std::vector<std::pair<int, PartGeo>> geo;   // group index, geometry
-    };
+// every mesh of every group through the recipe; state: check.json (caps)
+std::vector<PartInfo> loadParts(const std::vector<Group>& groups, const nlohmann::json& state)
+{
     std::vector<PartInfo> parts;
     auto partOf = [&](const std::string& key) -> PartInfo& {
         for (auto& p : parts)
@@ -670,8 +700,6 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
         parts.push_back({key, {}});
         return parts.back();
     };
-    if (!state.contains("caps"))
-        state["caps"] = nlohmann::json::object();
     for (std::size_t gi = 0; gi < groups.size(); ++gi)
     {
         std::vector<RawMesh> raws;
@@ -703,8 +731,24 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                 PartGeo& a = same->second;
                 const int base = static_cast<int>(a.v.size());
                 a.v.insert(a.v.end(), g.v.begin(), g.v.end());
-                for (auto t : g.t)
+                for (std::size_t i = 0; i < g.t.size(); ++i)
+                {
+                    const Tri& t = g.t[i];
                     a.t.push_back({t[0] + base, t[1] + base, t[2] + base});
+                    int m = -1;
+                    if (g.tm[i] >= 0)
+                    {
+                        const std::string& name = g.mtl[static_cast<std::size_t>(g.tm[i])];
+                        auto it = std::find(a.mtl.begin(), a.mtl.end(), name);
+                        if (it == a.mtl.end())
+                        {
+                            a.mtl.push_back(name);
+                            it = a.mtl.end() - 1;
+                        }
+                        m = static_cast<int>(it - a.mtl.begin());
+                    }
+                    a.tm.push_back(m);
+                }
                 a.openEdges.insert(a.openEdges.end(), g.openEdges.begin(), g.openEdges.end());
                 a.badEdges.insert(a.badEdges.end(), g.badEdges.begin(), g.badEdges.end());
                 a.boundary += g.boundary;
@@ -735,6 +779,32 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
         }
     }
 
+    return parts;
+}
+
+// the automatic kind: closed -> volume; open along much of its edges, or thin -> sheet; else a volume with holes
+std::string autoKindOf(const PartGeo& first)
+{
+    const double ext[3] = {first.hi[0] - first.lo[0], first.hi[1] - first.lo[1], first.hi[2] - first.lo[2]};
+    const double minExt = std::min({ext[0], ext[1], ext[2]}), maxExt = std::max({ext[0], ext[1], ext[2]});
+    const bool openMuch = first.boundary >= 0.2 * std::max(first.edgeCount, 1);
+    return first.boundary == 0 ? "volume" : (openMuch || minExt <= 0.05 * maxExt || minExt < 0.02 ? "sheet" : "volume");
+}
+
+} // namespace
+
+nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot, const fs::path& stateDir, bool commitCheck)
+{
+    const std::vector<Group> groups = collectGroups(card);
+    nlohmann::json state = readJson(stateDir / "check.json");
+    if (!state.contains("kinds"))
+        state["kinds"] = nlohmann::json::object();
+    const bool everChecked = state.contains("parts");
+
+    if (!state.contains("caps"))
+        state["caps"] = nlohmann::json::object();
+    std::vector<PartInfo> parts = loadParts(groups, state);
+
     // LOD groups that are real per-part LODs (a whole-ship proxy of one mesh is not compared part by part)
     std::vector<int> partLods;
     for (std::size_t gi = 0; gi < groups.size(); ++gi)
@@ -752,8 +822,9 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
         const double ext[3] = {first.hi[0] - first.lo[0], first.hi[1] - first.lo[1], first.hi[2] - first.lo[2]};
         const double minExt = std::min({ext[0], ext[1], ext[2]}), maxExt = std::max({ext[0], ext[1], ext[2]});
         // a sheet: open along much of its edges (a hull plate, bent or flat) or thin; a volume with a few holes stays a volume
-        const bool openMuch = first.boundary >= 0.2 * std::max(first.edgeCount, 1);
-        const std::string autoKind = first.boundary == 0 ? "volume" : (openMuch || minExt <= 0.05 * maxExt || minExt < 0.02 ? "sheet" : "volume");
+        (void)minExt;
+        (void)maxExt;
+        const std::string autoKind = autoKindOf(first);
         const std::string kind = state["kinds"].value(p.key, autoKind);
 
         nlohmann::json issues = nlohmann::json::array();
@@ -890,7 +961,8 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                             {"caps", caps},
                             {"canCap", holes > 0 || caps},
                             {"lods", lods},
-                            {"size", {ext[0], ext[1], ext[2]}}});
+                            {"size", {ext[0], ext[1], ext[2]}},
+                            {"centre", {centre[0], centre[1], centre[2]}}});
     }
     nlohmann::json missing = nlohmann::json::array();
     if (everChecked && !commitCheck)
@@ -999,5 +1071,49 @@ void Inspector::setCaps(const fs::path& stateDir, const std::string& part, bool 
     std::error_code ec;
     fs::create_directories(stateDir, ec);
     std::ofstream(stateDir / "check.json") << state.dump(1);
+}
+
+std::vector<RepairedGroup> Inspector::repaired(const ModelCard& card, const fs::path& stateDir)
+{
+    const std::vector<Group> groups = collectGroups(card);
+    nlohmann::json state = readJson(stateDir / "check.json");
+    if (!state.contains("caps"))
+        state["caps"] = nlohmann::json::object();
+    if (!state.contains("kinds"))
+        state["kinds"] = nlohmann::json::object();
+    const std::vector<PartInfo> parts = loadParts(groups, state);
+    std::vector<RepairedGroup> out(groups.size());
+    for (std::size_t gi = 0; gi < groups.size(); ++gi)
+    {
+        out[gi].name = groups[gi].name;
+        out[gi].lod = groups[gi].lod;
+        out[gi].shell = !groups[gi].lod;
+    }
+    for (const auto& p : parts)
+    {
+        const std::string kind = state["kinds"].value(p.key, autoKindOf(p.geo.front().second));
+        for (const auto& [gi, g] : p.geo)
+        {
+            RepairedPart r;
+            r.key = p.key;
+            r.kind = kind;
+            r.sides = kind == "sheet" || g.boundary > 0 ? 2 : 1;
+            for (const auto& v : g.v)
+                r.v.push_back({static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2])});
+            r.t = g.t;
+            r.tm = g.tm;
+            r.mtl = g.mtl;
+            for (int k = 0; k < 3; ++k)
+            {
+                r.lo[k] = static_cast<float>(g.lo[k]);
+                r.hi[k] = static_cast<float>(g.hi[k]);
+            }
+            for (const auto& e : g.openEdges)
+                r.open.push_back({static_cast<float>(e[0][0]), static_cast<float>(e[0][1]), static_cast<float>(e[0][2]),
+                                  static_cast<float>(e[1][0]), static_cast<float>(e[1][1]), static_cast<float>(e[1][2])});
+            out[static_cast<std::size_t>(gi)].parts.push_back(std::move(r));
+        }
+    }
+    return out;
 }
 } // namespace elite::mesh_editor

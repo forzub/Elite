@@ -82,7 +82,16 @@ const char* packageFor(ObjectType type)
 {
     switch (type)
     {
-        case ObjectType::Station: return "assets/compiled/models/station/station.elmodel";
+        case ObjectType::Station:
+        {
+            // ELITE_STATION_MODEL_ASSET=<path to .elmodel>: a station package from the mesh editor's build (MESH_EDITOR_SPEC
+            // 16) for a side-by-side check; without it the shipped package
+            static const std::string station = [] {
+                const char* v = std::getenv("ELITE_STATION_MODEL_ASSET");
+                return v && *v ? std::string(v) : std::string("assets/compiled/models/station/station.elmodel");
+            }();
+            return station.c_str();
+        }
         case ObjectType::CobraMk1:
         {
             // Step 3 S3 (author 2026-11-10, option "a"): the compartment asset built from the Cobrett-I layout

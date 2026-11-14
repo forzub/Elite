@@ -118,6 +118,8 @@ target_include_directories(EliteModelAsset PUBLIC
 # Headless BUILD (WORKING authoring package -> metric production package) and
 # the runtime presentation check (ladder, per-component LOD, HLOD, interiors).
 add_executable(EliteModelAssetBuild tools/model_asset_build/main.cpp)
+add_executable(EliteModelAssetInfo tools/model_asset_build/ModelAssetInfo.cpp)
+target_link_libraries(EliteModelAssetInfo PRIVATE EliteModelAsset)
 target_link_libraries(EliteModelAsset PUBLIC Threads::Threads) # parallel LOD error measurement
 # Offline geometry kernels stay optimized in Debug trees (same precedent as
 # EliteCelestialSurface): LOD error measurement and the libigl decimation.
@@ -492,15 +494,19 @@ add_executable(EliteMeshEditor
     tools/mesh_editor/MeshEditorCatalog.cpp
     tools/mesh_editor/MeshEditorSession.cpp
     tools/mesh_editor/MeshEditorInspect.cpp
+    tools/mesh_editor/MeshEditorAssembly.cpp
+    tools/mesh_editor/MeshEditorGltf.cpp
+    tools/ship_asset_assemble/ShipAssetAssemble.cpp
     src/ui/html/HtmlUiServer.cpp
     src/ui/platform/UiResourcePack.cpp
 )
 target_include_directories(EliteMeshEditor PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
 target_compile_definitions(EliteMeshEditor PRIVATE
+    JSON_DIAGNOSTICS=1
     ELITE_SOURCE_ROOT=\"${CMAKE_SOURCE_DIR}\"
     ELITE_MESH_EDITOR_ROOT=\"${ELITE_MESH_EDITOR_ROOT}\"
 )
-target_link_libraries(EliteMeshEditor PRIVATE nlohmann_json::nlohmann_json Threads::Threads webview::core_static)
+target_link_libraries(EliteMeshEditor PRIVATE EliteModelAsset nlohmann_json::nlohmann_json Threads::Threads webview::core_static)
 if(WIN32)
     target_link_libraries(EliteMeshEditor PRIVATE ws2_32 mswsock iphlpapi shell32 ole32 uuid)
 endif()

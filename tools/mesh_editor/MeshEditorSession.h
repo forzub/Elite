@@ -4,7 +4,8 @@
 // Commands: categories | list {category} | previews {category} | open {category, id} | rescan |
 //           settings | saveSettings {sourceRoot, outputRoot, blender} | pick {field, kind: folder|file, current} |
 //           inspect {category, id, commit} | setKind {category, id, part, kind: volume|sheet|""} |
-//           setCaps {category, id, parts[], on} | blender {category, id, group, part}.
+//           setCaps {category, id, parts[], on} | blender {category, id, group, part} |
+//           assembly {category, id} | saveAssembly {category, id, doc} | build {category, id} | library | saveLibrary {lib}.
 #include <atomic>
 #include <condition_variable>
 #include <deque>
@@ -32,6 +33,9 @@ public:
     void handleMessage(const std::string& text);
 
 private:
+    void handleCommand(const std::string& text);
+
+private:
     void send(const nlohmann::json& j);
     std::string previewUrl(const ModelCard& c) const;
     void enqueuePreviews(const std::string& category);
@@ -41,6 +45,13 @@ private:
     static std::vector<MeshGroup> modelGroups(const ModelCard& c);
     nlohmann::json withLinks(nlohmann::json j) const;
     void openInBlender(const ModelCard& card, const std::string& group, const std::string& part);
+    std::string libraryRef(const std::string& partKey, const std::string& ownCategory) const;
+    std::filesystem::path stateDir(const ModelCard& c) const;
+    nlohmann::json assemblyJson(const ModelCard& c);
+    // a Blender glTF model is read from its converted working copy (MeshEditorGltf); other models as they are
+    ModelCard effective(const ModelCard& c);
+    // what a fresh assembly document starts from besides the meshes: the glTF scene, the shipped package's calibration
+    nlohmann::json seedFor(const ModelCard& c);
     nlohmann::json settingsJson() const;
     void sendCategories();
 

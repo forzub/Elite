@@ -9,6 +9,9 @@
 
 #include "src/ui/html/HtmlUiServer.h"
 #include "tools/mesh_editor/MeshEditorInspect.h"
+#include "tools/mesh_editor/MeshEditorAssembly.h"
+#include "tools/mesh_editor/MeshEditorGltf.h"
+#include "src/model_asset/ModelAssetBinary.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -308,6 +311,82 @@ void Session::openInBlender(const ModelCard& card, const std::string& group, con
     send({{"type", "notice"}, {"text", "Blender открывается: " + card.title + (group.empty() ? "" : ", " + group) + "."}});
 }
 
+fs::path Session::stateDir(const ModelCard& c) const { return m_catalog.settings().workRoot / c.category / c.id; }
+
+// a part of an assembly named like a library model ("equipment_ship/<id>"), or ""
+std::string Session::libraryRef(const std::string& partKey, const std::string& ownCategory) const
+{
+    static const char* libraries[] = {"equipment_ship", "equipment_station", "equipment_hub_module"};
+    for (const char* cat : libraries)
+        if (cat != ownCategory)
+            if (const ModelCard* c = m_catalog.find(cat, partKey))
+                return c->category + "/" + c->id;
+    return std::string();
+}
+
+ModelCard Session::effective(const ModelCard& c)
+{
+    if (GltfSource::find(c.folder).empty())
+        return c;
+    std::string error;
+    const fs::path dir = GltfSource::convert(c, stateDir(c), error);
+    if (dir.empty())
+    {
+        std::cerr << "[MeshEditor] glTF " << c.id << ": " << error << std::endl;
+        return c;
+    }
+    // the author's "volume / sheet" from Blender (elite_kind) unless chosen in the editor
+    const nlohmann::json scene = GltfSource::scene(stateDir(c));
+    std::ifstream in(stateDir(c) / "check.json");
+    nlohmann::json state = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json::object();
+    in.close();
+    const nlohmann::json kinds = scene.value("kinds", nlohmann::json::object());
+    for (const auto& [part, kind] : kinds.items())
+        if (state.is_discarded() || !state.value("kinds", nlohmann::json::object()).contains(part))
+            Inspector::setKind(stateDir(c), part, kind.get<std::string>());
+    ModelCard e = c;
+    e.folder = dir;
+    return e;
+}
+
+nlohmann::json Session::seedFor(const ModelCard& c)
+{
+    nlohmann::json seed = GltfSource::scene(stateDir(c));
+    if (!seed.is_object())
+        seed = nlohmann::json::object();
+    // the shipped package this model replaces (src/assets/compiled/models/<id or singular category>/): its calibration
+    std::string singular = c.category;
+    if (!singular.empty() && singular.back() == 's')
+        singular.pop_back();
+    for (const std::string& name : {c.id, singular})
+    {
+        const fs::path pkg = m_sourceTree / "src/assets/compiled/models" / name / (name + ".elmodel");
+        std::error_code ec;
+        if (!fs::is_regular_file(pkg, ec))
+            continue;
+        elite::model_asset::ModelAsset a;
+        std::string error;
+        bool legacy = false;
+        if (!elite::model_asset::ModelAssetBinary::loadManifest(pkg.string(), a, &legacy, &error) || !a.physicalSize.enabled ||
+            std::abs(a.physicalSize.sourceToMeters - 1.0f) < 1e-4f)
+            continue;
+        const int axis = static_cast<int>(a.physicalSize.axis);
+        seed["calibration"] = {{"axis", axis == 0 ? "x" : axis == 1 ? "y" : "z"}, {"targetMeters", a.physicalSize.targetMeters},
+                               {"sourceExtent", a.physicalSize.sourceExtent},
+                               {"from", "calibration of " + fs::relative(pkg, m_sourceTree, ec).generic_u8string()}};
+        break;
+    }
+    return seed;
+}
+
+nlohmann::json Session::assemblyJson(const ModelCard& c0)
+{
+    const ModelCard c = effective(c0);
+    const auto groups = Inspector::repaired(c, stateDir(c));
+    nlohmann::json doc = Assembly::load(c0, groups, [&](const std::string& key) { return libraryRef(key, c.category); }, seedFor(c0));
+    return {{"type", "assembly"}, {"category", c.category}, {"id", c.id}, {"doc", doc}, {"file", Assembly::file(c0).generic_u8string()}};
+}
+
 nlohmann::json Session::settingsJson() const
 {
     const Settings& s = m_catalog.settings();
@@ -337,6 +416,20 @@ void Session::sendCategories()
 }
 
 void Session::handleMessage(const std::string& text)
+{
+    // one bad command must not stop the server: report it to the log and the page
+    try
+    {
+        handleCommand(text);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[MeshEditor] command failed: " << text.substr(0, 120) << ": " << e.what() << std::endl;
+        send({{"type", "notice"}, {"text", std::string("Ошибка редактора: ") + e.what()}});
+    }
+}
+
+void Session::handleCommand(const std::string& text)
 {
     const nlohmann::json m = nlohmann::json::parse(text, nullptr, false);
     if (m.is_discarded() || !m.is_object())
@@ -413,7 +506,44 @@ void Session::handleMessage(const std::string& text)
             if (cmd == "setCaps")
                 for (const auto& part : m.value("parts", std::vector<std::string> {}))
                     Inspector::setCaps(stateDir, part, m.value("on", true));
-            send(withLinks(Inspector::inspect(*c, m_webRoot, stateDir, m.value("commit", false))));
+            send(withLinks(Inspector::inspect(effective(*c), m_webRoot, stateDir, m.value("commit", false))));
+        }
+        return;
+    }
+    if (cmd == "library")
+    {
+        nlohmann::json lib = Assembly::loadLibrary(m_sourceTree);
+        send({{"type", "library"}, {"lib", lib}, {"file", Assembly::libraryFile(m_sourceTree).generic_u8string()}});
+        return;
+    }
+    if (cmd == "saveLibrary")
+    {
+        if (m.contains("lib") && m["lib"].is_object())
+            Assembly::saveLibrary(m_sourceTree, m["lib"]);
+        send({{"type", "library"}, {"lib", Assembly::loadLibrary(m_sourceTree)}, {"file", Assembly::libraryFile(m_sourceTree).generic_u8string()}});
+        return;
+    }
+    if (cmd == "assembly" || cmd == "saveAssembly" || cmd == "build")
+    {
+        if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+        {
+            if (cmd == "saveAssembly" && m.contains("doc") && m["doc"].is_object())
+                Assembly::save(*c, m["doc"]);
+            if (cmd == "build")
+            {
+                // the build reads the saved document (or the seed) and the repaired meshes; links come from their cards
+                const auto groups = Inspector::repaired(effective(*c), stateDir(*c));
+                const nlohmann::json doc =
+                    Assembly::load(*c, groups, [&](const std::string& key) { return libraryRef(key, c->category); }, seedFor(*c));
+                const nlohmann::json lib = Assembly::loadLibrary(m_sourceTree);
+                send(Assembly::build(*c, doc, groups, m_catalog.settings().outputRoot, lib, [&](const std::string& ref) {
+                    const auto slash = ref.find('/');
+                    const ModelCard* l = slash == std::string::npos ? nullptr : m_catalog.find(ref.substr(0, slash), ref.substr(slash + 1));
+                    return l ? Inspector::repaired(effective(*l), stateDir(*l)) : std::vector<RepairedGroup> {};
+                }));
+                return;
+            }
+            send(assemblyJson(*c));
         }
         return;
     }
@@ -428,7 +558,9 @@ void Session::handleMessage(const std::string& text)
         if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
         {
             std::cerr << "[MeshEditor] open " << category << "/" << c->id << std::endl;
-            send(openModel(*c));
+            nlohmann::json j = openModel(effective(*c));
+            j["folder"] = c->folder.generic_u8string();
+            send(j);
         }
         return;
     }

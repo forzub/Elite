@@ -57,6 +57,8 @@ src/assets/generated/**/*.TGA
 !/assets/models/hub/
 !/assets/models/ships/
 !/assets/models/stations/
+# the global material library (MESH_EDITOR_SPEC 16.4) is authoring data shared by every model
+!/assets/materials/
 /build/assets/generated/
 
 __pycache__/

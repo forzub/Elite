@@ -9,11 +9,9 @@ const state = { ws: null, categories: [], category: null, cards: [], model: null
   stack: [], pendingBack: null };   // stack: the models a link was opened from (SolidWorks-like 'back to the assembly')
 const UNUSED = '__none__';   // the object list entry 'used nowhere'
 
-// the step windows (MESH_EDITOR_SPEC 6 / 7): to be built one by one, after each is gone through with the author
-const PART_STEPS = ['Загрузка и проверка', 'Состав', 'LOD', 'Материалы', 'Физика и хитвалумы', 'Повреждения',
-  'Подключения и анимация', 'Проверка и сборка'];
-const ASSEMBLY_STEPS = ['Загрузка и проверка', 'Гнёзда', 'Корпус', 'LOD корпуса', 'Повреждения корпуса', 'Проверка и сборка'];
-const ASSEMBLY_CATEGORIES = new Set(['ships', 'stations', 'hub_modules']);
+// the step windows (MESH_EDITOR_SPEC 15 / 16): one list for a module and an assembly (2026-11-14, author away:
+// "решение по вопросам - за тобой"); LOD generation and animation are later steps
+const STEPS = ['Загрузка и проверка', 'Состав и материалы', 'Хитвалумы и зоны', 'Крепления, швы, шины', 'Повреждения', 'Сборка'];
 
 function send(obj) {
   if (state.ws && state.ws.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify(obj));
@@ -41,6 +39,9 @@ function connect() {
     else if (m.type === 'picked') onPicked(m);
     else if (m.type === 'inspection') onInspection(m);
     else if (m.type === 'notice') notice(m.text);
+    else if (m.type === 'assembly') Asm.onAssembly(m);
+    else if (m.type === 'library') { Asm.onLibrary(m); if (!$('library').hidden) renderLibrary(); }
+    else if (m.type === 'built') { Asm.onBuilt(m); notice(m.ok ? 'Собрано: ' + m.output : 'Сборка не удалась'); }
   };
 }
 
@@ -185,14 +186,18 @@ function onOpened(m) {
   $('modelMeta').textContent = `${m.id} · ${m.statusText}`;
   $('modelMeta').title = m.folder;
   $('modelUsed').textContent = m.usedBy && m.usedBy.length ? 'где: ' + m.usedBy.join(', ') : 'нигде не используется';
-  const steps = ASSEMBLY_CATEGORIES.has(m.category) ? ASSEMBLY_STEPS : PART_STEPS;
   const nav = $('steps');
   nav.innerHTML = '';
-  steps.forEach((s, i) => {
+  Asm.reset();
+  Asm.close();
+  STEPS.forEach((s, i) => {
     const b = document.createElement('button');
     b.textContent = `${i + 1}. ${s}`;
     if (i === 0) b.classList.add('active');
-    else { b.classList.add('later'); b.title = 'окно ещё не разобрано с автором'; }
+    b.onclick = () => {
+      for (const x of nav.children) x.classList.toggle('active', x === b);
+      if (i === 0) { Asm.close(); whenViewer((v) => v.showGroup(insp.group)); } else Asm.open(i);
+    };
     nav.appendChild(b);
   });
   insp.data = null;
@@ -248,6 +253,12 @@ function onInspection(m) {
       selectPart(params.get('part'), true);
       const p = m.parts.find((x) => x.key === params.get('part'));
       if (params.get('follow') && p && p.link) openLink(p);   // headless check of the trail
+    }
+    if (params.get('step') && !insp.stepped) {   // headless check of a step window: &step=<2..6>
+      insp.stepped = true;
+      const b = $('steps').children[Number(params.get('step')) - 1];
+      if (b) b.click();
+      if (params.get('explode')) setTimeout(() => { $('explode').value = params.get('explode'); $('explode').oninput(); }, 1500);
     }
   });
 }
@@ -445,6 +456,12 @@ $('objectFilter').onchange = () => {
 $('settingsBtn').onclick = showSettings;
 $('checkBtn').onclick = runCheck;
 $('fitBtn').onclick = () => whenViewer((v) => v.fitAll());
+$('asmFit').onclick = () => whenViewer((v) => v.fitAssembly());
+$('explode').oninput = () => whenViewer((v) => v.setExplode(Number($('explode').value)));
+for (const el of document.querySelectorAll('[data-ov]')) el.onchange = () => whenViewer((v) => v.setOverlay(el.dataset.ov, el.checked));
+$('libClose').onclick = () => { $('library').hidden = true; };
+$('libFilter').oninput = () => renderLibrary();
+$('libSave').onclick = () => { send({ cmd: 'saveLibrary', lib: Asm.library }); Asm.libDirty = false; notice('Библиотека материалов сохранена'); };
 $('blenderBtn').onclick = () => {
   if (!state.model) return;
   const g = insp.data && insp.data.groups[insp.group];

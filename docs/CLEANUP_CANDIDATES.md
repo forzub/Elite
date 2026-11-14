@@ -17,6 +17,7 @@ Sizes are disk sizes on 2026-11-11.
 | 7 | `build-relwithdebinfo/` | 8.0 GB | no | check | Second build tree (last used 2026-11-09 for RelWithDebInfo live runs). Rebuildable; delete if that build is not needed. |
 | 8 | `assets/generated/**/lod/map`, `preview*.tga`, duplicate `albedo.tga` copies | inside #1 | no | check | Several uncompressed copies of the same albedo per body; go with #1. |
 | 9 | `build/assets_models_before_move/` | ~880 MB | no | ready | The old runtime copy of `assets/models`, set aside 2026-11-13 when the raw sources moved to `D:/__elite/assets_source`. Every file in it is in `assets_source/models` (or in `assets` / `src/assets`); the game ran from a clean `build/assets/models` and all 49 mesh paths of the code matched it byte for byte. |
+| 10 | `D:/__elite/assets_source/_prev/equipment_2026-11-14/` | 204 MB | no | check | The equipment OBJs before the generator closed lathe and tube ends (2026-11-14). Kept for comparison until the author has seen the new ones; nothing reads it. |
 
 Already removed (author-authorized): root `headless_server/` (6.1 GB, stale build), stray `$' '` file, root and
 `tools/navigation_runtime/` traces / logs, `third_party/asio-1-24-0.tar.gz`, all `lod/tiles` (7.88 GB).

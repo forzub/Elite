@@ -5693,4 +5693,15 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   lighter); volume/sheet guess + override; check.json keeps the last check -> changed / new / gone. Evidence: the game
   Cobra 35 parts, 6 errors, 6 auto-fixed (D:/tmp/me_step1b.png, me_step1c.png); temp copy: radar moved 12 cm ->
   "сдвинута на 12 см", extra part -> new, removed part -> gone (temp copy deleted). Not yet seen by the author.
+- 2026-11-14 MESH EDITOR + GENERATOR (author away, "делай все три пункта", decisions mine): (1) editor auto repair:
+  touching pieces parted / faces at 3+ face edges paired by angle, back-to-back membranes between touching volumes
+  removed, every piece wound by its neighbours, closed pieces outward, open ones away from the model centre;
+  "Закрыть дыры" per part / for all volumes (fan caps, kept in check.json caps); render sides per part (closed volume
+  one-sided, sheet / open volume two-sided, viewer draws the same); assembly parts named like a library model are links
+  (violet, errors counted in the module), "Открыть модуль" + trail "← назад к ..." any depth; "Открыть в Blender"
+  (tools/mesh_editor/blender_open.py, checked in Blender 5.0.1 background). Commits 9b5853a2, d5efc776.
+  (2) eqlib: full-revolution open lathe ends closed (eq_hole dark disc, or an annulus when both ends share a plane),
+  tube ends capped; regenerated (1843 files). Equipment parts with open edges in LOD0: 476 -> 53 of 774 (old output in
+  assets_source/_prev/equipment_2026-11-14, CLEANUP #10). Editor check over 118 equipment models: 31 still with errors
+  (68 parts: radar / comm dishes, fans, thrusters - other primitives, list in D:/tmp/eq_after.txt).
 

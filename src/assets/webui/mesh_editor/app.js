@@ -14,6 +14,9 @@ const UNUSED = '__none__';   // the object list entry 'used nowhere'
 const STEPS = ['Загрузка и проверка', 'Состав и материалы', 'Хитвалумы и зоны', 'Крепления, швы, шины', 'Повреждения', 'Сборка'];
 
 function send(obj) {
+  // a command about the open model works on the open variant (MESH_EDITOR_SPEC 18)
+  if (state.model && obj.id === state.model.id && obj.category === state.model.category && obj.cmd !== 'open' && !('variant' in obj))
+    obj = { ...obj, variant: state.variant || 'intact' };
   if (state.ws && state.ws.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify(obj));
 }
 
@@ -40,8 +43,9 @@ function connect() {
     else if (m.type === 'picked') onPicked(m);
     else if (m.type === 'inspection') onInspection(m);
     else if (m.type === 'notice') notice(m.text);
+    else if (m.type === 'variants') onVariants(m);
     else if (m.type === 'shellDone') {
-      if (state.model && m.id === state.model.id && m.category === state.model.category) {
+      if (state.model && m.id === state.model.id && m.category === state.model.category && (m.variant || 'intact') === state.variant) {
         insp.group = Math.max(0, insp.data ? insp.data.groups.filter((g) => !g.name.startsWith('скорлупа')).length : 0);
         send({ cmd: 'inspect', category: m.category, id: m.id });
       }
@@ -185,7 +189,10 @@ function renderCards() {
 // ---- the opened model
 function onOpened(m) {
   state.model = m;
+  state.variant = params.get('variant') && !state.variantTried ? params.get('variant') : 'intact';   // headless: &variant=<id>
+  state.variantTried = true;
   hideDialog();
+  renderVariants();
   $('current').textContent = `${m.title}  ·  ${m.category}/${m.id}`;
   $('empty').hidden = true;
   $('model').hidden = false;
@@ -207,22 +214,58 @@ function onOpened(m) {
     };
     nav.appendChild(b);
   });
-  insp.data = null;
-  insp.selected = null;
-  insp.group = 0;
+  loadVariant();
   if (state.pendingBack) {   // back from a link: the assembly comes back where it was left
     insp.selected = state.pendingBack.selected;
     insp.group = state.pendingBack.group;
     state.pendingBack = null;
   }
   renderTrail();
+  if (!Asm.library) send({ cmd: 'library' });
+}
+// ---- variants (MESH_EDITOR_SPEC 18): "Целая" and the damaged ones; each has its assembly and its shell with LODs
+function renderVariants() {
+  const nav = $('variants');
+  const vs = state.model.variants && state.model.variants.length ? state.model.variants : [{ id: 'intact', title: 'Целая', inGame: 'shell' }];
+  nav.innerHTML = '';
+  for (const v of vs) {
+    const b = document.createElement('button');
+    b.innerHTML = `${esc(v.title)}<span class="tag">${v.inGame === 'assembly+shell' ? 'сборка + скорлупа' : 'скорлупа'}</span>`;
+    b.title = v.id === 'intact' ? 'целая модель' : `повреждённый вариант (damaged/${v.id})`;
+    if (v.id === state.variant) b.classList.add('active');
+    b.onclick = () => { if (v.id !== state.variant) { state.variant = v.id; renderVariants(); loadVariant(); } };
+    nav.appendChild(b);
+  }
+  const add = document.createElement('button');
+  add.className = 'add';
+  add.textContent = '+ вариант';
+  add.title = 'новый повреждённый вариант: копия сборки целой модели, на которой рисуются повреждения';
+  add.onclick = () => {
+    const title = prompt('Название варианта (например «Пробоина в корпусе»):', '');
+    if (title === null) return;
+    send({ cmd: 'addVariant', category: state.model.category, id: state.model.id, variant: 'intact', title: title.trim() });
+  };
+  nav.appendChild(add);
+}
+function loadVariant() {
+  const m = state.model;
+  insp.data = null;
+  insp.selected = null;
+  insp.group = 0;
   $('parts').innerHTML = '<tr><td class="muted">загрузка мешей…</td></tr>';
   $('detail').innerHTML = '';
   $('summary').textContent = '';
+  Asm.reset();
   send({ cmd: 'inspect', category: m.category, id: m.id });
-  // the assembly document and the material library come in the background: the steps 2..6 open at once
+  // the assembly document comes in the background: the steps 2..6 open at once
   send({ cmd: 'assembly', category: m.category, id: m.id });
-  if (!Asm.library) send({ cmd: 'library' });
+}
+function onVariants(m) {
+  if (!state.model || m.id !== state.model.id || m.category !== state.model.category) return;
+  state.model.variants = m.variants;
+  if (m.select) { state.variant = m.select; renderVariants(); loadVariant(); notice('Вариант создан: копия сборки целой модели.'); }
+  else renderVariants();
+  if (insp.data) renderSummary();
 }
 
 // ---- step 1 "Загрузка и проверка" (MESH_EDITOR_SPEC 6.1): 3D view 2/3, parts table 1/3
@@ -244,6 +287,7 @@ const STATUS_TEXT = { unchecked: 'не проверена', ok: 'годна', er
   link: 'ссылка на модель из библиотеки' };
 function onInspection(m) {
   if (!state.model || m.id !== state.model.id || m.category !== state.model.category) return;
+  if ((m.variant || 'intact') !== state.variant) return;   // an answer for the tab left meanwhile
   const same = !!insp.data;
   insp.data = m;
   if (!same && params.get('group')) insp.group = Number(params.get('group'));   // headless check: &group=<index>
@@ -274,16 +318,29 @@ function onInspection(m) {
   });
 }
 function renderLodBar() {
+  // two sections of the variant (MESH_EDITOR_SPEC 18): the assembly and its shell, each with its LODs
   const bar = $('lodBar');
   bar.innerHTML = '';
-  insp.data.groups.forEach((g, i) => {
-    const b = document.createElement('button');
-    b.textContent = g.name;
-    b.title = `${fmt(g.tris)} треугольников, ${g.parts.length} ${plural(g.parts.length, 'деталь', 'детали', 'деталей')}`;
-    if (i === insp.group) b.classList.add('active');
-    b.onclick = () => { insp.group = i; whenViewer((v) => v.showGroup(i)); renderLodBar(); renderParts(); };
-    bar.appendChild(b);
-  });
+  const st = insp.data.shellStatus || 'none';
+  const rows = [
+    { label: 'Сборка', cls: '', groups: [] },
+    { label: { none: 'Скорлупа: нет', built: 'Скорлупа', stale: 'Скорлупа: устарела', manual: 'Скорлупа (ручная)' }[st], cls: st === 'stale' ? 'stale' : '', groups: [] },
+  ];
+  insp.data.groups.forEach((g, i) => rows[g.name.startsWith('скорлупа') ? 1 : 0].groups.push([g, i]));
+  for (const r of rows) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<span class="row-label ${r.cls}">${r.label}</span>`;
+    for (const [g, i] of r.groups) {
+      const b = document.createElement('button');
+      b.textContent = g.name.replace(/^скорлупа /, '');
+      b.title = `${g.name}: ${fmt(g.tris)} треугольников, ${g.parts.length} ${plural(g.parts.length, 'деталь', 'детали', 'деталей')}`;
+      if (i === insp.group) b.classList.add('active');
+      b.onclick = () => { insp.group = i; whenViewer((v) => v.showGroup(i)); renderLodBar(); renderParts(); };
+      row.appendChild(b);
+    }
+    bar.appendChild(row);
+  }
 }
 function renderSummary() {
   const s = insp.data.summary;
@@ -302,21 +359,31 @@ function renderSummary() {
   if (cappable.length) parts.push(`<button id="capAll" class="small">Закрыть дыры у всех объёмов (${cappable.length})</button>`);
   const fixed = insp.data.parts.filter((p) => p.fixedTotal > 0).length;
   if (fixed) parts.push(`<span class="muted">${fixed} ${plural(fixed, 'починена', 'починены', 'починено')} сами</span>`);
-  // the module's shell (MESH_EDITOR_SPEC 17): what the game and the Blender library use
-  if (state.model.category.startsWith('equipment')) {
+  // what this variant puts into the game (MESH_EDITOR_SPEC 18)
+  const inGame = insp.data.inGame || 'shell';
+  parts.push(`<span class="ingame">в игру: <label><input type="radio" name="inGame" value="shell" ${inGame === 'shell' ? 'checked' : ''}> только скорлупа</label>` +
+    `<label><input type="radio" name="inGame" value="assembly+shell" ${inGame === 'assembly+shell' ? 'checked' : ''}> сборка + скорлупа</label></span>`);
+  // the shell (MESH_EDITOR_SPEC 17, 18): what the game and the Blender library use
+  {
     const sh = insp.data.shell;
+    const st = insp.data.shellStatus || 'none';
+    if (st === 'stale') parts.push('<span style="color:var(--warn)">скорлупа устарела: сборка изменилась</span>');
+    if (st === 'manual') parts.push('<span class="muted">скорлупа ручная — редактор её не перестраивает</span>');
     if (sh) {
       const s0 = sh.stats[0];
       const cut = s0 && s0.in ? Math.round(100 * (1 - s0.out / s0.in)) : 0;
       parts.push(`<span title="${esc(sh.package || sh.packageReport || '')}\n${esc(sh.blend)}">скорлупа: ${s0 ? `${esc(s0.lod)} ${fmt(s0.out)} из ${fmt(s0.in)} треуг. (−${cut}%)` : ''}, ` +
         `${sh.links} ${plural(sh.links, 'звено', 'звена', 'звеньев')}` +
-        `${sh.package ? ', пакет .elmodel' : sh.packageReport ? ', <b class="bad">пакет не записан</b>' : ''}</span>`);
+        `${sh.package ? ', пакет .elmodel' : state.variant !== 'intact' ? '' : sh.packageReport ? ', <b class="bad">пакет не записан</b>' : ''}</span>`);
     }
     parts.push(`<button id="shellOne" class="small">${sh ? 'Перестроить скорлупу' : 'Построить скорлупу'}</button>`);
-    parts.push(`<button id="shellAll" class="small" title="все модели раздела; файлы Blender — рядом с пакетами">Скорлупы всех модулей</button>`);
+    if (state.model.category.startsWith('equipment') && state.variant === 'intact')
+      parts.push(`<button id="shellAll" class="small" title="все модели раздела; файлы Blender — рядом с пакетами">Скорлупы всех модулей</button>`);
   }
   $('summary').innerHTML = parts.join(' · ');
   if ($('capAll')) $('capAll').onclick = () => setCaps(cappable.map((p) => p.key), true);
+  for (const r of document.querySelectorAll('input[name=inGame]'))
+    r.onchange = () => send({ cmd: 'setInGame', category: state.model.category, id: state.model.id, inGame: r.value });
   if ($('shellOne')) $('shellOne').onclick = () => { notice('Строю скорлупу…'); send({ cmd: 'shell', category: state.model.category, id: state.model.id }); };
   if ($('shellAll')) $('shellAll').onclick = () => { notice('Строю скорлупы всех модулей раздела…'); send({ cmd: 'shellAll', category: state.model.category }); };
 }

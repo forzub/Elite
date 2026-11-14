@@ -5760,4 +5760,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   NOT VERIFIED: EliteShipMeshExport does not link (41 undefined refs, pre-existing). Game unaffected (reads
   work/assets/models). Next: 18.6 step 2 - screen 1 tabs by variant, Сборка / Скорлупа sections, shell into
   <variant>/shell/.
+- 2026-11-15 SCREEN 1 BY VARIANT (MESH_EDITOR_SPEC 18.8). Variant tabs (Целая / damaged / + вариант), assembly and
+  shell LOD rows, "в игру" per variant (passport), shell written to the source <variant>/shell/LOD<N>/<id>.gltf +
+  shell.json (built / stale / manual). "+ вариант" = copy of the intact assembly. Package/.blend for intact only.
+  LIVE: CR-1 over the socket + headless page shot (tabs, rows, stale after touching the assembly); test variant
+  removed; equipment_ship shells rebuilt into the source: 118 из 118 за ~5 мин, LOD0 926 051 из 1 203 248, 118 файлов Blender. Fixed: MinGW file-clock stamp was written as 0.
+  Next: 18.6 step 3 (damaged variants in the generator and the package; repeats).
 

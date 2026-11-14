@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <deque>
 #include <filesystem>
+#include <optional>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -51,7 +52,13 @@ private:
     // for <id>.blend; the viewer groups "скорлупа LOD<N>" kept in <state>/shell.json
     nlohmann::json buildShell(const ModelCard& card, nlohmann::json& blendJob);
     // the saved shell groups added to an inspection
-    nlohmann::json withShell(nlohmann::json j) const;
+    nlohmann::json withShell(nlohmann::json j, const ModelCard& c) const;
+    // MESH_EDITOR_SPEC 18: the card of a command ("variant": intact or a damaged/<variant>); none when unknown
+    std::optional<ModelCard> cardFor(const nlohmann::json& m) const;
+    // the model's passport (model.json): read / write; the catalog is rescanned after a write
+    nlohmann::json passport(const ModelCard& c) const;
+    void savePassport(const ModelCard& c, const nlohmann::json& p);
+    nlohmann::json variantsJson(const ModelCard& c, const std::string& select = std::string()) const;
     // Blender, headless: tools/blender/make_module_blend.py over the jobs; true when it ran
     bool runBlendJobs(const nlohmann::json& jobs, const std::string& name);
     void openInBlender(const ModelCard& card, const std::string& group, const std::string& part);

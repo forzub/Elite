@@ -310,7 +310,7 @@ bool ModuleFiles::writePackage(const ModuleShell& m, const fs::path& elmodel, st
     }
 }
 
-void ModuleFiles::writeGltf(const ModuleShell& m, const fs::path& gltf)
+void ModuleFiles::writeGltf(const ModuleShell& m, const fs::path& gltf, bool extras)
 {
     std::vector<char> bin;
     json views = json::array(), accessors = json::array(), meshes = json::array(), nodes = json::array(), materials = json::array();
@@ -390,7 +390,7 @@ void ModuleFiles::writeGltf(const ModuleShell& m, const fs::path& gltf)
                 roots.push_back(ni);
         }
     }
-    for (const auto& h : m.hitVolumes)
+    for (const auto& h : extras ? m.hitVolumes : json::array())
     {
         const bool cyl = h.value("shape", std::string("box")) == "cylinder";
         const auto q = quatXYZ(h.value("rotation_deg", json()));
@@ -403,8 +403,11 @@ void ModuleFiles::writeGltf(const ModuleShell& m, const fs::path& gltf)
                          {"extras", {{"elite_hit", h.value("node", std::string())}, {"elite_shape", cyl ? "cylinder" : "box"}}}});
         roots.push_back(nodes.size() - 1);
     }
-    nodes.push_back({{"name", m.id + ".mount"}, {"extras", {{"elite_mount_point", true}}}});
-    roots.push_back(nodes.size() - 1);
+    if (extras)
+    {
+        nodes.push_back({{"name", m.id + ".mount"}, {"extras", {{"elite_mount_point", true}}}});
+        roots.push_back(nodes.size() - 1);
+    }
 
     const fs::path binPath = fs::path(gltf).replace_extension(".bin");
     json doc = {{"asset", {{"version", "2.0"}, {"generator", "Elite mesh editor (MeshEditorModule)"}}},

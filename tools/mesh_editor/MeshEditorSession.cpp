@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <tuple>
 
@@ -335,7 +336,87 @@ void Session::openInBlender(const ModelCard& card, const std::string& group, con
     send({{"type", "notice"}, {"text", "Blender открывается: " + card.title + (group.empty() ? "" : ", " + group) + "."}});
 }
 
-fs::path Session::stateDir(const ModelCard& c) const { return m_catalog.settings().workRoot / c.category / c.id; }
+fs::path Session::stateDir(const ModelCard& c) const
+{
+    const fs::path base = m_catalog.settings().workRoot / c.category / c.id;
+    return c.variant == "intact" ? base : base / "variants" / c.variant;
+}
+
+namespace
+{
+// <root>/intact or <root>/damaged/<variant>
+fs::path variantDir(const ModelCard& c)
+{
+    return c.variant == "intact" ? c.root / "intact" : c.root / "damaged" / c.variant;
+}
+
+// the newest mesh file of an assembly (what a built shell is compared with), seconds of the file clock (MinGW's file
+// clock counts from an epoch where today is negative: the stamp is compared, never shown)
+long long assemblyStamp(const fs::path& assembly)
+{
+    fs::file_time_type t = fs::file_time_type::min();
+    std::error_code ec;
+    for (fs::recursive_directory_iterator it(assembly, ec), end; !ec && it != end; it.increment(ec))
+    {
+        const std::string ext = it->path().extension().string();
+        const std::string name = it->path().filename().string();
+        if (it->is_regular_file(ec) && (ext == ".obj" || ext == ".mtl" || ext == ".gltf" || ext == ".glb" || ext == ".bin" ||
+                                        name == "rig.json"))
+            t = std::max(t, fs::last_write_time(it->path(), ec));
+    }
+    if (t == fs::file_time_type::min())
+        return std::numeric_limits<long long>::min();
+    return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
+}
+
+nlohmann::json readJsonFile(const fs::path& p)
+{
+    std::ifstream in(p);
+    const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    return j.is_discarded() ? nlohmann::json() : j;
+}
+} // namespace
+
+std::optional<ModelCard> Session::cardFor(const nlohmann::json& m) const
+{
+    const ModelCard* c = m_catalog.find(m.value("category", std::string()), m.value("id", std::string()));
+    if (!c)
+        return std::nullopt;
+    ModelCard v = *c;
+    const std::string variant = m.value("variant", std::string("intact"));
+    if (variant != "intact")
+    {
+        const bool known = std::any_of(c->variants.begin(), c->variants.end(), [&](const ModelVariant& x) { return x.id == variant; });
+        if (!known)
+            return std::nullopt;
+        v.variant = variant;
+        v.folder = c->root / "damaged" / variant / "assembly";
+    }
+    return v;
+}
+
+nlohmann::json Session::passport(const ModelCard& c) const
+{
+    nlohmann::json p = readJsonFile(c.root / "model.json");
+    return p.is_object() ? p : nlohmann::json {{"schema", "elite.model.v1"}, {"id", c.id}, {"title", c.title}};
+}
+
+void Session::savePassport(const ModelCard& c, const nlohmann::json& p)
+{
+    std::ofstream(c.root / "model.json", std::ios::binary) << p.dump(1) << "\n";
+    m_catalog.rescan();
+}
+
+nlohmann::json Session::variantsJson(const ModelCard& c, const std::string& select) const
+{
+    nlohmann::json out = {{"type", "variants"}, {"category", c.category}, {"id", c.id}, {"variants", nlohmann::json::array()}};
+    if (const ModelCard* fresh = m_catalog.find(c.category, c.id))
+        for (const auto& v : fresh->variants)
+            out["variants"].push_back({{"id", v.id}, {"title", v.title}, {"inGame", v.inGame}});
+    if (!select.empty())
+        out["select"] = select;
+    return out;
+}
 
 // a part of an assembly named like a library model ("equipment_ship/<id>"), or ""
 std::string Session::libraryRef(const std::string& partKey, const std::string& ownCategory) const
@@ -422,6 +503,15 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
         }
     if (!first)
         return {{"type", "shell"}, {"category", c.category}, {"id", c.id}, {"ok", false}, {"text", "нет LOD для скорлупы"}};
+    // the shell lives in the source beside the assembly (MESH_EDITOR_SPEC 18): <variant>/shell/LOD<N>/<id>.gltf +
+    // shell.json; a hand-made shell ("source": "manual") is never overwritten
+    const fs::path shellDir = variantDir(c0) / "shell";
+    const nlohmann::json oldShell = readJsonFile(shellDir / "shell.json");
+    if (oldShell.is_object() && oldShell.value("source", std::string()) == "manual")
+    {
+        send({{"type", "notice"}, {"text", "Скорлупа «" + c.id + "» сделана вручную — редактор её не перестраивает."}});
+        return {{"type", "shell"}, {"category", c.category}, {"id", c.id}, {"ok", false}, {"text", "ручная скорлупа"}};
+    }
     const auto links = Shell::rig(c.folder, *first);
     const fs::path modelOut = m_catalog.settings().outputRoot / c.category / c.id;
     const fs::path cache = m_webRoot / "cache" / c.category / c.id;
@@ -467,7 +557,7 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
                     for (int x = 0; x < 3; ++x)
                         tris.push_back(p.v[static_cast<std::size_t>(t[k])][x]);
         }
-        const std::string file = "s" + std::to_string(n++) + ".bin";
+        const std::string file = "s" + (c.variant == "intact" ? std::string() : "_" + c.variant + "_") + std::to_string(n++) + ".bin";
         std::ofstream(cache / file, std::ios::binary)
             .write(reinterpret_cast<const char*>(tris.data()), static_cast<std::streamsize>(tris.size() * sizeof(float)));
         viewGroups.push_back({{"name", s.name},
@@ -478,21 +568,40 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
         named.name = g.name;
         module.lods.push_back(std::move(named));
     }
-    // the module's binary package (game, editor) and the glTF Blender reads for the module's .blend
+    // the shell in the source: one glTF per LOD folder, and its stamp
+    fs::remove_all(shellDir, ec);
+    for (const auto& g : module.lods)
+    {
+        ModuleShell one = module;
+        one.lods = {g};
+        ModuleFiles::writeGltf(one, shellDir / g.name / (c.id + ".gltf"), false);
+    }
+    const long long fromStamp = assemblyStamp(c0.folder);
+    std::ofstream(shellDir / "shell.json", std::ios::binary)
+        << nlohmann::json {{"schema", "elite.shell.v1"}, {"source", "built"}, {"assemblyStamp", fromStamp}, {"builtAt", stamp},
+                           {"lods", stats}, {"links", links.size()}}
+               .dump(1)
+        << "\n";
+    // the module's binary package (game, editor) and the glTF Blender reads for the module's .blend: the intact model
+    // (damaged variants join the package as states - MESH_EDITOR_SPEC 18.6 step 3)
+    const bool intact = c.variant == "intact";
     const fs::path elmodel = modelOut / (c.id + ".elmodel");
-    std::string packageReport;
-    const bool packaged = ModuleFiles::writePackage(module, elmodel, packageReport);
+    std::string packageReport = intact ? std::string() : std::string("повреждённый вариант: в пакет войдёт состоянием (позже)");
+    const bool packaged = intact ? ModuleFiles::writePackage(module, elmodel, packageReport) : true;
     const fs::path gltf = state / "blender" / (c.id + ".gltf");
-    ModuleFiles::writeGltf(module, gltf);
+    if (intact)
+        ModuleFiles::writeGltf(module, gltf);
     nlohmann::json rig = nlohmann::json::array();
     for (const auto& l : links)
         rig.push_back({{"id", l.id}, {"parts", l.parts}, {"parent", l.parent}, {"joint", l.joint}});
     const fs::path blend = modelOut / (c.id + ".blend");
-    blendJob = {{"id", c.id}, {"ref", c.category + "/" + c.id}, {"title", c.title}, {"source", c.folder.generic_u8string()},
-                {"blend", blend.generic_u8string()}, {"gltf", gltf.generic_u8string()}};
+    if (intact)
+        blendJob = {{"id", c.id}, {"ref", c.category + "/" + c.id}, {"title", c.title}, {"source", c.folder.generic_u8string()},
+                    {"blend", blend.generic_u8string()}, {"gltf", gltf.generic_u8string()}};
     nlohmann::json saved = {{"groups", viewGroups}, {"stats", stats}, {"links", rig.size()}, {"at", stamp},
-                            {"blend", blend.generic_u8string()}, {"package", packaged ? elmodel.generic_u8string() : std::string()},
-                            {"packageReport", packageReport}, {"folder", modelOut.generic_u8string()}};
+                            {"blend", intact ? blend.generic_u8string() : std::string()},
+                            {"package", intact && packaged ? elmodel.generic_u8string() : std::string()},
+                            {"packageReport", packageReport}, {"folder", shellDir.generic_u8string()}};
     fs::create_directories(state, ec);
     std::ofstream(state / "shell.json") << saved.dump(1);
     std::size_t in = 0, kept = 0;
@@ -512,10 +621,19 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
     return saved;
 }
 
-nlohmann::json Session::withShell(nlohmann::json j) const
+nlohmann::json Session::withShell(nlohmann::json j, const ModelCard& c) const
 {
-    std::ifstream in(m_catalog.settings().workRoot / j.value("category", std::string()) / j.value("id", std::string()) / "shell.json");
-    const nlohmann::json s = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    const nlohmann::json s = readJsonFile(stateDir(c) / "shell.json");
+    // the source shell (MESH_EDITOR_SPEC 18): built from which assembly, or hand-made
+    const nlohmann::json src = readJsonFile(variantDir(c) / "shell" / "shell.json");
+    std::string status = "none";
+    if (src.is_object())
+    {
+        if (src.value("source", std::string()) == "manual")
+            status = "manual";
+        else
+            status = src.contains("assemblyStamp") && src["assemblyStamp"].get<long long>() >= assemblyStamp(c.folder) ? "built" : "stale";
+    }
     if (s.is_object() && s.contains("groups"))
     {
         for (const auto& g : s["groups"])
@@ -524,6 +642,10 @@ nlohmann::json Session::withShell(nlohmann::json j) const
                       {"package", s.value("package", std::string())}, {"packageReport", s.value("packageReport", std::string())},
                       {"folder", s.value("folder", std::string())}, {"at", s.value("at", std::string())}};
     }
+    j["shellStatus"] = status;
+    for (const auto& v : c.variants)
+        if (v.id == c.variant)
+            j["inGame"] = v.inGame;
     return j;
 }
 
@@ -671,17 +793,65 @@ void Session::handleCommand(const std::string& text)
     if (cmd == "inspect" || cmd == "setKind" || cmd == "setCaps")
     {
         // step 1 "Загрузка и проверка": the repaired geometry for the viewer + the part table; commit = "Проверить"
-        if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+        if (const auto c = cardFor(m))
         {
-            const fs::path stateDir = m_catalog.settings().workRoot / c->category / c->id;
+            const fs::path state = stateDir(*c);
             if (cmd == "setKind")
-                Inspector::setKind(stateDir, m.value("part", std::string()), m.value("kind", std::string()));
+                Inspector::setKind(state, m.value("part", std::string()), m.value("kind", std::string()));
             if (cmd == "setCaps")
                 for (const auto& part : m.value("parts", std::vector<std::string> {}))
-                    Inspector::setCaps(stateDir, part, m.value("on", true));
-            send(withShell(withLinks(Inspector::inspect(effective(*c), m_webRoot, stateDir, m.value("commit", false)))));
+                    Inspector::setCaps(state, part, m.value("on", true));
+            nlohmann::json j = withLinks(Inspector::inspect(effective(*c), m_webRoot, state, m.value("commit", false)));
+            j["variant"] = c->variant;
+            send(withShell(j, *c));
         }
         return;
+    }
+    if (cmd == "setInGame" || cmd == "addVariant")
+    {
+        // MESH_EDITOR_SPEC 18: the passport's variants - what goes into the game; a new damaged variant
+        const auto c = cardFor(m);
+        if (!c)
+            return;
+        nlohmann::json p = passport(*c);
+        if (!p.contains("variants") || !p["variants"].is_array())
+            p["variants"] = nlohmann::json::array();
+        auto entry = [&](const std::string& id) -> nlohmann::json& {
+            for (auto& v : p["variants"])
+                if (v.value("id", std::string()) == id)
+                    return v;
+            p["variants"].push_back({{"id", id}, {"title", id == "intact" ? "Целая" : id}, {"inGame", "shell"}});
+            return p["variants"].back();
+        };
+        std::string select;
+        if (cmd == "setInGame")
+        {
+            const std::string v = m.value("inGame", std::string("shell"));
+            entry(c->variant)["inGame"] = v == "assembly+shell" ? v : std::string("shell");
+        }
+        else
+        {
+            // the next free damaged_<n>; it starts as a copy of the intact assembly (author: "берется модель и на ней
+            // рисуются повреждения")
+            int n = 1;
+            std::error_code ec;
+            while (fs::exists(c->root / "damaged" / ("damaged_" + std::to_string(n)), ec))
+                ++n;
+            select = "damaged_" + std::to_string(n);
+            const fs::path to = c->root / "damaged" / select / "assembly";
+            fs::create_directories(to, ec);
+            fs::copy(c->root / "intact" / "assembly", to, fs::copy_options::recursive, ec);
+            if (ec)
+            {
+                send({{"type", "notice"}, {"text", "Не удалось скопировать сборку: " + ec.message()}});
+                return;
+            }
+            const std::string title = m.value("title", std::string());
+            entry(select)["title"] = title.empty() ? "Повреждённая " + std::to_string(n) : title;
+            std::cerr << "[MeshEditor] variant " << c->category << "/" << c->id << " " << select << " (copy of intact)" << std::endl;
+        }
+        savePassport(*c, p);
+        send(variantsJson(*c, select));
     }
     if (cmd == "shell" || cmd == "shellAll")
     {
@@ -694,7 +864,7 @@ void Session::handleCommand(const std::string& text)
         std::vector<ModelCard> cards;
         if (cmd == "shell")
         {
-            if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+            if (const auto c = cardFor(m))
                 cards.push_back(*c);
         }
         else
@@ -725,10 +895,10 @@ void Session::handleCommand(const std::string& text)
                 if (all && ++done % 10 == 0)
                     send({{"type", "notice"}, {"text", "Скорлупы: " + std::to_string(done) + " из " + std::to_string(cards.size()) + "…"}});
             }
-            send({{"type", "notice"}, {"text", "Скорлупы построены, пишу файлы Blender (" + std::to_string(jobs.size()) + ")…"}});
-            const bool ok = runBlendJobs(jobs, all ? category : (cards.empty() ? std::string("none") : cards[0].id));
+            // a damaged variant has no .blend of its own (it joins the module's package as a state later)
+            const bool ok = jobs.empty() ? true : runBlendJobs(jobs, all ? category : (cards.empty() ? std::string("none") : cards[0].id));
             std::string text = ok ? "Готово: " : "Скорлупы готовы, но Blender не отработал (журнал в рабочей папке): ";
-            text += std::to_string(jobs.size()) + (jobs.size() == 1 ? " модуль" : " модулей");
+            text += std::to_string(cards.size()) + (cards.size() == 1 ? " модель" : " моделей");
             if (in)
                 text += ", LOD0 " + std::to_string(kept) + " из " + std::to_string(in) + " треугольников (" +
                         std::to_string(static_cast<int>(std::lround(100.0 * static_cast<double>(kept) / static_cast<double>(in)))) + "%)";
@@ -736,7 +906,7 @@ void Session::handleCommand(const std::string& text)
             enqueuePreviews(category);   // the cards now show the package (stale previews are re-rendered)
             for (const auto& c : cards)
                 if (!all)
-                    send({{"type", "shellDone"}, {"category", c.category}, {"id", c.id}, {"blend", ok}});
+                    send({{"type", "shellDone"}, {"category", c.category}, {"id", c.id}, {"variant", c.variant}, {"blend", ok}});
             m_shellBusy = false;
         }).detach();
         return;
@@ -756,7 +926,8 @@ void Session::handleCommand(const std::string& text)
     }
     if (cmd == "assembly" || cmd == "saveAssembly" || cmd == "build")
     {
-        if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+        const auto picked = cardFor(m);
+        if (const ModelCard* c = picked ? &*picked : nullptr)
         {
             if (cmd == "saveAssembly" && m.contains("doc") && m["doc"].is_object())
                 Assembly::save(*c, m["doc"]);
@@ -780,7 +951,8 @@ void Session::handleCommand(const std::string& text)
     }
     if (cmd == "blender")
     {
-        if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+        const auto picked = cardFor(m);
+        if (const ModelCard* c = picked ? &*picked : nullptr)
             openInBlender(*c, m.value("group", std::string()), m.value("part", std::string()));
         return;
     }

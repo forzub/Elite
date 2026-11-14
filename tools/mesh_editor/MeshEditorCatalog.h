@@ -33,7 +33,8 @@ struct ModelCard
     std::string category;
     std::string id;
     std::filesystem::path root;
-    std::filesystem::path folder;
+    std::filesystem::path folder;   // the assembly of `variant`
+    std::string variant = "intact";
     std::string kind;     // module / ship / station / hub_module / object
     std::vector<ModelVariant> variants;
     std::string title;

@@ -31,6 +31,17 @@ button.ghost { background: transparent; border-color: transparent; }
 .model-head { display: flex; gap: 14px; align-items: baseline; margin-bottom: 8px; white-space: nowrap; overflow: hidden; }
 .model-head h1 { margin: 0; font-size: 19px; }
 #steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+/* variants of the model (MESH_EDITOR_SPEC 18): tabs above the steps, kept on every step */
+.variants { display: flex; gap: 0; flex-wrap: wrap; margin-bottom: 8px; border-bottom: 1px solid var(--line, #2c3542); }
+.variants button { border-radius: 6px 6px 0 0; border-bottom: none; margin-right: 4px; padding: 5px 14px; font-size: 13px; }
+.variants button.active { border-color: var(--accent); color: var(--accent); background: rgba(40, 52, 66, 0.9); }
+.variants button .tag { margin-left: 6px; font-size: 11px; color: var(--muted); }
+.variants button.add { color: var(--muted); }
+#lodBar .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+#lodBar .row-label { font-size: 12px; color: var(--muted); min-width: 64px; text-shadow: 0 0 3px #000; }
+#lodBar .row-label.stale { color: var(--warn); }
+.ingame { display: inline-flex; gap: 8px; align-items: center; }
+.ingame label { font-size: 12px; }
 #steps button { padding: 5px 11px; font-size: 13px; }
 #split { flex: 1; min-height: 0; display: flex; gap: 12px; }
 #viewWrap { flex: 2; position: relative; min-width: 0; border-radius: 8px; overflow: hidden; background: #0a0c0f; }

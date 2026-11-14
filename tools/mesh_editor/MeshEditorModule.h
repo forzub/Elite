@@ -36,6 +36,7 @@ class ModuleFiles
 public:
     // true on success; report: the one-line summary or the error
     static bool writePackage(const ModuleShell& m, const std::filesystem::path& elmodel, std::string& report);
-    static void writeGltf(const ModuleShell& m, const std::filesystem::path& gltf);
+    // extras: the hit volumes and the mount point (the Blender exchange); a source shell LOD has only meshes
+    static void writeGltf(const ModuleShell& m, const std::filesystem::path& gltf, bool extras = true);
 };
 } // namespace elite::mesh_editor

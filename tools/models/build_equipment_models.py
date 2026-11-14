@@ -4,8 +4,11 @@
 Kernel: tools/models/eqlib.py (primitives, LOD policy, shared builders, hit-volume helpers, OBJ/MTL writers).
 Units:  tools/models/units/<maker>.py - one module per maker, each with ASSETS = {folder: parts_fn(lod)},
         HITS = {folder: hits_fn()} and MODEL_ASSETS = {part_id: folder}. Design schools: tools/models/DESIGN_SCHOOLS.md.
-Output: <assets_source>/models/equipment/<folder>/LOD0..LOD3/<part>.obj + .mtl (src/assets/models/SOURCE_LAYOUT.md) and
-        <folder>/hit_volumes.json. LOD0 = close inspection (eqlib.close() True), LOD1 = the 20-30 m look, LOD2, LOD3.
+Output: <assets_source>/models/equipment/<folder>/intact/assembly/LOD0..LOD3/<part>.obj + .mtl and
+        <folder>/intact/assembly/hit_volumes.json (the source layout: tools/models/source_layout.py, MESH_EDITOR_SPEC 18),
+        plus a minimal passport <folder>/model.json when there is none. LOD0 = close inspection (eqlib.close() True),
+        LOD1 = the 20-30 m look, LOD2, LOD3. Only the intact assembly is the generator's: shells and damaged variants in
+        the same folder are never touched.
 
 usage: python tools/models/build_equipment_models.py [--check] [--only <folder-substring>]
 """
@@ -17,6 +20,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import eqlib  # noqa: E402
+import source_layout  # noqa: E402
 import units  # noqa: E402
 
 
@@ -52,13 +56,13 @@ def build(only=None):
             for name, part in parts.items():
                 if not part.tris():          # a detail dropped at this LOD: no empty OBJ
                     continue
-                base = os.path.join(eqlib.OUT, asset, f"LOD{lod}", name)
+                base = os.path.join(source_layout.lod_dir(os.path.join(eqlib.OUT, asset), lod), name)
                 files[base + ".obj"] = eqlib.obj_text(part, name + ".mtl")
                 files[base + ".mtl"] = eqlib.mtl_text(part.faces.keys())
                 total += part.tris()
             stats[(asset, lod)] = (total, {k: v.tris() for k, v in parts.items()})
         if asset in hits:
-            files[os.path.join(eqlib.OUT, asset, "hit_volumes.json")] = eqlib.hits_text(asset, hits[asset])
+            files[os.path.join(source_layout.assembly_dir(os.path.join(eqlib.OUT, asset)), "hit_volumes.json")] = eqlib.hits_text(asset, hits[asset])
     return files, stats
 
 
@@ -73,7 +77,7 @@ def main():
     produced = {os.path.normcase(p) for p in files}
     orphans = []
     for asset in {k[0] for k in stats}:
-        for dp, _, fs in os.walk(os.path.join(eqlib.OUT, asset)):
+        for dp, _, fs in os.walk(source_layout.assembly_dir(os.path.join(eqlib.OUT, asset))):
             for f in fs:
                 p = os.path.join(dp, f)
                 if f.endswith((".obj", ".mtl")) and os.path.normcase(p) not in produced:
@@ -91,6 +95,8 @@ def main():
         open(p, "w", encoding="utf-8", newline="\n").write(files[p])
     for p in orphans:
         os.remove(p)
+    for asset in {k[0] for k in stats}:
+        source_layout.passport(os.path.join(eqlib.OUT, asset), asset)
     print(f"written {len(stale)} of {len(files)} files, removed {len(orphans)} orphans")
 
 

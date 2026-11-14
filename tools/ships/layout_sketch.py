@@ -24,6 +24,7 @@ from eqlib import (Part, box, cyl, lathe, crect, rot_x, rot_y, rot_z, apply, nor
                    register_materials, I3, ROOT)
 import importlib  # noqa: E402
 import pkgutil  # noqa: E402
+import source_layout  # noqa: E402  (MESH_EDITOR_SPEC 18: <model>/intact/assembly/LOD<N>)
 import units  # noqa: E402
 
 for m in pkgutil.iter_modules(units.__path__):            # register every maker palette (the OBJ copies reference them)
@@ -48,7 +49,7 @@ OUT = os.path.join(SOURCE_MODELS, "layout_sketches")
 
 def load_obj(folder, lod=2, only=None, skip=None):
     """parts of an equipment model at one LOD (all, or only / except the named OBJ parts), merged"""
-    d = os.path.join(EQ, folder, f"LOD{lod}")
+    d = source_layout.lod_dir(os.path.join(EQ, folder), lod)
     V, N, F = [], [], {}
     for fn in sorted(os.listdir(d)):
         if not fn.endswith(".obj"):
@@ -79,7 +80,7 @@ PADS = ("reactor_cooling_pad",)       # hull-skin parts kept as their own sketch
 
 def place(P, name, folder, pos, yaw_deg=0.0, lod=2, _sub=None):
     """an equipment model instance: rotated about Y by yaw, translated to pos; a reactor pad becomes <name>_pad"""
-    if _sub is None and os.path.exists(os.path.join(EQ, folder, f"LOD{lod}", PADS[0] + ".obj")):
+    if _sub is None and os.path.exists(os.path.join(source_layout.lod_dir(os.path.join(EQ, folder), lod), PADS[0] + ".obj")):
         place(P, name + "_pad", folder, pos, yaw_deg, lod, _sub="pad")
     key = (folder, lod, _sub)
     if key not in _CACHE:
@@ -275,7 +276,7 @@ def ship_hits():
                          "half_size": list(hs)})
         rules["plates"].append({"plate": name, "seams": seams, "rule": "all seams destroyed -> the plate is free (can be torn off)"})
     for name, folder, R, pos in INSTALLS:
-        hp = os.path.join(EQ, folder, "hit_volumes.json")
+        hp = os.path.join(source_layout.assembly_dir(os.path.join(EQ, folder)), "hit_volumes.json")
         if not os.path.exists(hp):
             continue
         lo, hi = [1e9] * 3, [-1e9] * 3

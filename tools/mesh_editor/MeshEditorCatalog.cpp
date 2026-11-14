@@ -35,18 +35,34 @@ bool isMockupFolder(const fs::path& dir)
     return fs::is_regular_file(dir / "source" / "ship_asset.json", ec);
 }
 
+// a model = a folder with its passport (author 2026-11-15: "подхватывает то, у чего есть паспорт")
 bool isModelFolder(const fs::path& dir)
 {
     std::error_code ec;
-    if (fs::is_directory(dir / "LOD0", ec) || isMockupFolder(dir))
-        return true;
-    for (const auto& e : fs::directory_iterator(dir, ec))
-    {
-        const auto ext = e.path().extension().string();
-        if (ext == ".gltf" || ext == ".glb")
-            return true;
-    }
-    return false;
+    return fs::is_regular_file(dir / "model.json", ec);
+}
+
+// the passport's variants, plus damaged/<variant>/ folders it does not list yet; "intact" first
+std::vector<ModelVariant> variantsOf(const fs::path& root, const nlohmann::json& passport)
+{
+    std::vector<ModelVariant> out;
+    for (const auto& v : passport.value("variants", nlohmann::json::array()))
+        out.push_back({v.value("id", std::string()), v.value("title", v.value("id", std::string())), v.value("inGame", std::string("shell"))});
+    auto has = [&](const std::string& id) {
+        return std::any_of(out.begin(), out.end(), [&](const ModelVariant& v) { return v.id == id; });
+    };
+    if (!has("intact"))
+        out.insert(out.begin(), {"intact", "Целая", "shell"});
+    std::error_code ec;
+    std::vector<std::string> found;
+    for (const auto& e : fs::directory_iterator(root / "damaged", ec))
+        if (e.is_directory())
+            found.push_back(e.path().filename().u8string());
+    std::sort(found.begin(), found.end());
+    for (const auto& id : found)
+        if (!has(id))
+            out.push_back({id, id, "shell"});
+    return out;
 }
 
 // "- `<folder>/` - text" lines of a category README
@@ -262,21 +278,23 @@ void Catalog::rescan()
                 continue;
             const auto notes = readmeNotes(dir);
             std::vector<fs::path> models;
-            if (isModelFolder(dir))
-                models.push_back(dir);
             for (const auto& e : fs::directory_iterator(dir, ec))
-                if (e.is_directory() && e.path().filename().string().rfind("LOD", 0) != 0 && isModelFolder(e.path()))
+                if (e.is_directory() && isModelFolder(e.path()))
                     models.push_back(e.path());
             for (const auto& m : models)
             {
                 ModelCard card;
                 card.category = c.id;
-                card.id = m.filename().string();
-                card.folder = m;
+                card.root = m;
+                card.folder = m / "intact" / "assembly";
+                const nlohmann::json passport = readJson(m / "model.json");
+                card.id = m.filename().u8string();   // the folder names the model (links, packages)
+                card.kind = passport.value("kind", std::string());
+                card.variants = variantsOf(m, passport);
                 std::uintmax_t bytes = 0;
                 for (const auto& f : fs::recursive_directory_iterator(m, ec))
                 {
-                    if (f.is_directory() && f.path().filename().string().rfind("LOD", 0) == 0 && f.path().parent_path() == m)
+                    if (f.is_directory() && f.path().filename().string().rfind("LOD", 0) == 0 && f.path().parent_path() == card.folder)
                         ++card.lods;
                     if (!f.is_regular_file())
                         continue;
@@ -290,10 +308,10 @@ void Catalog::rescan()
                         card.gltf = true;
                     }
                 }
-                if (card.lods == 0 && isMockupFolder(m))
+                if (card.lods == 0 && isMockupFolder(card.folder))
                 {
                     std::set<std::string> lods;
-                    for (const auto& f : fs::directory_iterator(m / "source" / "geo", ec))
+                    for (const auto& f : fs::directory_iterator(card.folder / "source" / "geo", ec))
                     {
                         const std::string stem = f.path().stem().string();   // <part>.lod<N>
                         const auto dot = stem.rfind(".lod");
@@ -306,8 +324,11 @@ void Catalog::rescan()
                 if (const auto n = notes.find(card.id); n != notes.end())
                     card.description = n->second;
                 describe(card);
+                card.title = passport.value("title", card.title);
+                if (passport.contains("description"))
+                    card.description = passport.value("description", card.description);
                 // readiness: the built package against the newest source file; a work folder = in progress
-                const fs::path built = m_settings.outputRoot / c.id / (card.id + ".elmodel");
+                const fs::path built = m_settings.outputRoot / c.id / card.id / (card.id + ".elmodel");
                 if (fs::exists(built, ec))
                     card.status = fs::last_write_time(built, ec) >= newestFile(m) ? "ready" : "stale";
                 else if (fs::exists(m_settings.workRoot / c.id / card.id, ec))
@@ -371,6 +392,11 @@ nlohmann::json cardJson(const ModelCard& c, const std::string& previewUrl)
     j["sizeMb"] = c.sizeMb;
     j["gltf"] = c.gltf;
     j["folder"] = c.folder.generic_u8string();
+    j["root"] = c.root.generic_u8string();
+    j["kind"] = c.kind;
+    j["variants"] = nlohmann::json::array();
+    for (const auto& v : c.variants)
+        j["variants"].push_back({{"id", v.id}, {"title", v.title}, {"inGame", v.inGame}});
     j["preview"] = previewUrl;
     return j;
 }

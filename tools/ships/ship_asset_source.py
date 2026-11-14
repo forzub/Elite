@@ -29,6 +29,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import layout_sketch as LS  # noqa: E402
+import source_layout  # noqa: E402  (on the path through layout_sketch: tools/models)
 from layout_sketch import Part, EQ, ROOT, MATERIALS, PADS, SOURCE_MODELS  # noqa: E402
 
 OUT = os.path.join(SOURCE_MODELS, "ships")   # author 2026-11-13: the mock-up lives with the other ships
@@ -128,7 +129,9 @@ def build(name):
     installs = list(LS.INSTALLS)
     plates = list(LS.PLATES)
     H2 = LS.H2
-    base = os.path.join(OUT, name, "source")
+    # the mock-up is the ship's intact assembly (MESH_EDITOR_SPEC 18); a passport for a new ship
+    source_layout.passport(os.path.join(OUT, name), name, kind="ship")
+    base = os.path.join(source_layout.assembly_dir(os.path.join(OUT, name)), "source")
     geo = os.path.join(base, "geo")
     os.makedirs(geo, exist_ok=True)
     for f in os.listdir(geo):
@@ -220,7 +223,7 @@ def build(name):
     # ---- equipment
     for nm, folder, R, pos in installs:
         # only the propulsion reactor's pad is hull skin (the back of its bay); service reactor pads stay inside
-        has_pad = folder == "cobretty_er5_reactor" and os.path.exists(os.path.join(EQ, folder, "LOD1", PADS[0] + ".obj"))
+        has_pad = folder == "cobretty_er5_reactor" and os.path.exists(os.path.join(source_layout.lod_dir(os.path.join(EQ, folder), 1), PADS[0] + ".obj"))
         exterior = any(h in nm for h in EXTERIOR_HINTS)
         ci = None if exterior else compartment_of(*pos)
         if folder == "cobretty_er5_reactor":

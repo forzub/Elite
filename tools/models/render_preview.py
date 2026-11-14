@@ -17,7 +17,7 @@ view = argv[3] if len(argv) > 3 else "pad"
 hide = set(argv[4].split(",")) if len(argv) > 4 else set()   # part names left out (e.g. the pad, to see the body)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-folder = os.path.join(asset, f"LOD{lod}")
+folder = os.path.join(asset, "intact", "assembly", f"LOD{lod}")   # source layout, MESH_EDITOR_SPEC 18
 for f in sorted(os.listdir(folder)):
     if f.endswith(".obj"):
         bpy.ops.wm.obj_import(filepath=os.path.join(folder, f), forward_axis="NEGATIVE_Z", up_axis="Y")

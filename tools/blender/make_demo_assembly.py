@@ -19,7 +19,7 @@ et.build_library(os.path.join(models, "equipment"), lib, ("cobretty_fl2_laser", 
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 hull = et._collection("Корпус")
-cobra = os.path.join(models, "ships", "cobrettymk1", "LOD0")
+cobra = os.path.join(models, "ships", "cobrettymk1", "intact", "assembly", "LOD0")   # MESH_EDITOR_SPEC 18
 keep = [f for f in sorted(os.listdir(cobra)) if f.endswith(".obj") and ("frame" in f or "panel" in f or "cockpit" in f)]
 parts = {}
 for f in keep:

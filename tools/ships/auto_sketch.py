@@ -25,6 +25,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import layout_sketch as LS  # noqa: E402
+import source_layout  # noqa: E402  (on the path through layout_sketch: tools/models)
 from layout_sketch import Part, box, cyl, place, plate, quad, OUT, EQ, ROOT  # noqa: E402
 
 PRINCIPLE = {"mfr.cobretty": "monolithic", "mfr.hyperion": "monolithic", "mfr.bastion": "monolithic", "mfr.eurohab": "monolithic",
@@ -62,7 +63,7 @@ def models():
 
 def size_of(folder):
     """the model's extent from its hit volumes (x, y, z) and the centre offset"""
-    d = json.load(open(os.path.join(EQ, folder, "hit_volumes.json"), encoding="utf-8"))
+    d = json.load(open(os.path.join(source_layout.assembly_dir(os.path.join(EQ, folder)), "hit_volumes.json"), encoding="utf-8"))
     lo, hi = [1e9] * 3, [-1e9] * 3
     for v in d["volumes"]:
         ext = v.get("half_size") or [v.get("radius", 0.0), v.get("half_height", 0.0), v.get("radius", 0.0)]

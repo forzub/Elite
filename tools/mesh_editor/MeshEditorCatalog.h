@@ -18,11 +18,24 @@ struct CategoryDef
     std::vector<std::filesystem::path> sourceDirs;
 };
 
+// One model of the source tree (MESH_EDITOR_SPEC 18): a folder with a passport model.json;
+//   root   = <category>/<id>/ (model.json, intact/, damaged/<variant>/)
+//   folder = the intact assembly root/intact/assembly (LOD<N>/, hit_volumes.json, rig.json, assembly.json)
+struct ModelVariant
+{
+    std::string id;       // "intact" or the damaged/<variant> folder
+    std::string title;
+    std::string inGame;   // "shell" | "assembly+shell"
+};
+
 struct ModelCard
 {
     std::string category;
     std::string id;
+    std::filesystem::path root;
     std::filesystem::path folder;
+    std::string kind;     // module / ship / station / hub_module / object
+    std::vector<ModelVariant> variants;
     std::string title;
     std::string description;
     std::vector<std::string> usedBy;

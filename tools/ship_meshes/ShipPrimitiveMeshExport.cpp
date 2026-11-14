@@ -2,8 +2,9 @@
 // the runtime descriptors (ShipDescriptor::primitiveBlocks - the same boxes the
 // game draws for a ship without an authored mesh), one OBJ per module:
 //
-//   <assets_source>/models/ships/<folder>/LOD0/<module>.obj   boxes of that module
-//   <assets_source>/models/ships/<folder>/LOD0/primitive.mtl  category materials
+//   <assets_source>/models/ships/<folder>/intact/assembly/LOD0/<module>.obj   boxes of that module
+//   <assets_source>/models/ships/<folder>/intact/assembly/LOD0/primitive.mtl  category materials
+//   <assets_source>/models/ships/<folder>/model.json   the passport, when missing (MESH_EDITOR_SPEC 18 source layout)
 //   <assets_source>/models/ships/ship_models.json             folder <-> passport index
 // <assets_source> (raw sources, outside the repository - author 2026-11-13): --source <dir>, else the environment
 // variable ELITE_ASSETS_SOURCE, else <root>/../assets_source
@@ -298,7 +299,7 @@ int main(int argc, char** argv)
             categories.insert(b.category);
         }
         std::set<fs::path> produced;
-        const fs::path lod0 = dir / "LOD0";
+        const fs::path lod0 = dir / "intact" / "assembly" / "LOD0";   // MESH_EDITOR_SPEC 18
         for (const auto& [moduleId, blocks] : byModule)
         {
             const fs::path p = lod0 / (stemOf(blocks.front()->category, moduleId) + ".obj");
@@ -310,6 +311,12 @@ int main(int argc, char** argv)
             emit(p, boxesObj(moduleId, blocks), check);
         }
         emit(lod0 / "primitive.mtl", materialsMtl(categories), check);
+        if (!fs::exists(dir / "model.json", ec))   // a passport is the author's once it exists: never rewritten
+            emit(dir / "model.json",
+                 json {{"schema", "elite.model.v1"}, {"id", folder}, {"title", s.name.rfind(s.designation, 0) == 0 ? s.name : s.designation + " " + s.name}, {"kind", "ship"},
+                       {"variants", json::array({{{"id", "intact"}, {"title", "Целая"}, {"inGame", "shell"}}})}}
+                         .dump(1) + "\n",
+                 check);
         // stale module files of this generated folder only
         if (fs::is_directory(lod0, ec))
             for (const auto& f : fs::directory_iterator(lod0))

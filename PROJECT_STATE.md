@@ -5751,4 +5751,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   shell builds queue the category; preview URL carries the render time. Fixed: package glTF previews drew all LODs on
   top of each other (wrong look, e.g. reactor radiator). LIVE: 118 equipment_ship previews re-rendered in ~40 s;
   4 checked against the source: match except smoothing. Package colours = source Kd for all 136 materials.
+- 2026-11-15 SOURCE LAYOUT + PASSPORTS (MESH_EDITOR_SPEC 18; author: variants as groups, shell and LOD inside each,
+  editor picks up what has a passport). assets_source/models moved (backup CLEANUP #11): <cat>/<id>/model.json +
+  intact/assembly/{LOD<N>, hit_volumes.json, ...}; damaged/<variant>/{assembly,shell} reserved; stations/ and drones/
+  became <cat>/<cat>/. Editor catalog: model = folder with model.json (root, kind, variants). Generators / tools on
+  the new layout via tools/models/source_layout.py. LIVE: equipment generator --check up to date; cobrett-i mock-up
+  byte-identical to the old script on the old layout; editor lists 151 (118/22/2/4/5), CR-1 shell unchanged.
+  NOT VERIFIED: EliteShipMeshExport does not link (41 undefined refs, pre-existing). Game unaffected (reads
+  work/assets/models). Next: 18.6 step 2 - screen 1 tabs by variant, Сборка / Скорлупа sections, shell into
+  <variant>/shell/.
 

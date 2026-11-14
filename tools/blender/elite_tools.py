@@ -151,9 +151,9 @@ def build_library(equipment_root, out_blend, only=()):
     for mid in sorted(os.listdir(equipment_root)):
         if only and not any(o in mid for o in only):
             continue
-        lod = os.path.join(equipment_root, mid, "LOD1")
+        lod = os.path.join(equipment_root, mid, "intact", "assembly", "LOD1")   # MESH_EDITOR_SPEC 18
         if not os.path.isdir(lod):
-            lod = os.path.join(equipment_root, mid, "LOD0")
+            lod = os.path.join(equipment_root, mid, "intact", "assembly", "LOD0")
         if not os.path.isdir(lod):
             continue
         coll = bpy.data.collections.new(mid)

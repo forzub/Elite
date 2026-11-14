@@ -129,7 +129,7 @@ target_link_libraries(EliteModelAssetBuild PRIVATE EliteModelAsset)
 add_executable(EliteModelAssetPresentationCheck tests/model_asset_presentation/PresentationCheck.cpp)
 target_link_libraries(EliteModelAssetPresentationCheck PRIVATE EliteModelAsset)
 # Step 3 (ship compartments): ship asset assembler (tools/ships/ship_asset_source.py -> .elmodel) and its check
-add_executable(EliteShipAssetAssemble tools/ship_asset_assemble/main.cpp)
+add_executable(EliteShipAssetAssemble tools/ship_asset_assemble/main.cpp tools/ship_asset_assemble/ShipAssetAssemble.cpp)
 target_link_libraries(EliteShipAssetAssemble PRIVATE EliteModelAsset nlohmann_json::nlohmann_json)
 add_executable(EliteShipAssetCheck tests/ship_asset/ShipAssetCheck.cpp)
 target_link_libraries(EliteShipAssetCheck PRIVATE EliteModelAsset)

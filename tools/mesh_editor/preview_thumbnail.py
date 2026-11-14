@@ -2,7 +2,8 @@
 
 usage: blender -b --factory-startup -P tools/mesh_editor/preview_thumbnail.py -- <model folder> <out.png>
        blender -b --factory-startup -P tools/mesh_editor/preview_thumbnail.py -- --list <file>   (lines: folder<TAB>out.png)
-The folder: LOD0/*.obj (the source layout), else *.gltf / *.glb in it.
+The folder: LOD0/*.obj (the source layout), else *.gltf / *.glb in it (a module's package glTF from the mesh editor:
+only its LOD0 is drawn - the glTF carries every LOD and the hit volumes).
 """
 import os
 import sys
@@ -34,6 +35,10 @@ def render(folder, out):
             if f.endswith(".gltf") or f.endswith(".glb"):
                 bpy.ops.import_scene.gltf(filepath=os.path.join(folder, f))
                 break
+        lods = sorted({o.get("elite_lod") for o in bpy.context.scene.objects if o.get("elite_lod")})
+        for o in list(bpy.context.scene.objects):
+            if lods and o.type == "MESH" and o.get("elite_lod") != lods[0]:
+                bpy.data.objects.remove(o)
 
     for m in bpy.data.materials:
         if m.use_nodes and m.node_tree:

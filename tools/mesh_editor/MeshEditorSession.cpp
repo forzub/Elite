@@ -103,11 +103,30 @@ void Session::send(const nlohmann::json& j)
     m_server.broadcastText(j.dump());
 }
 
+fs::path Session::previewSource(const ModelCard& c) const
+{
+    const fs::path gltf = m_catalog.settings().workRoot / c.category / c.id / "blender" / (c.id + ".gltf");
+    std::error_code ec;
+    return fs::exists(gltf, ec) ? gltf.parent_path() : c.folder;
+}
+
 std::string Session::previewUrl(const ModelCard& c) const
 {
     const fs::path rel = fs::path("previews") / c.category / (c.id + ".png");
     std::error_code ec;
-    return fs::exists(m_webRoot / rel, ec) ? rel.generic_u8string() : std::string();
+    const auto shot = fs::last_write_time(m_webRoot / rel, ec);
+    if (ec)
+        return {};
+    // stale when any mesh it shows is newer (the generator ran again, the shell was rebuilt)
+    for (fs::recursive_directory_iterator it(previewSource(c), ec), end; !ec && it != end; it.increment(ec))
+    {
+        const std::string ext = it->path().extension().string();
+        if (it->is_regular_file(ec) && (ext == ".obj" || ext == ".mtl" || ext == ".gltf" || ext == ".glb" || ext == ".bin") &&
+            fs::last_write_time(it->path(), ec) > shot)
+            return {};
+    }
+    const auto stamp = std::chrono::duration_cast<std::chrono::seconds>(shot.time_since_epoch()).count();
+    return rel.generic_u8string() + "?v=" + std::to_string(stamp);
 }
 
 void Session::enqueuePreviews(const std::string& category)
@@ -156,7 +175,7 @@ void Session::previewWorker()
             {
                 const fs::path out = m_webRoot / "previews" / c.category / (c.id + ".png");
                 fs::create_directories(out.parent_path(), ec);
-                f << c.folder.generic_u8string() << '\t' << out.generic_u8string() << '\n';
+                f << previewSource(c).generic_u8string() << '\t' << out.generic_u8string() << '\n';
             }
         }
         const std::string cmd = "\"\"" + blender.string() + "\" -b --factory-startup -P \"" + script.string() +
@@ -714,6 +733,7 @@ void Session::handleCommand(const std::string& text)
                 text += ", LOD0 " + std::to_string(kept) + " из " + std::to_string(in) + " треугольников (" +
                         std::to_string(static_cast<int>(std::lround(100.0 * static_cast<double>(kept) / static_cast<double>(in)))) + "%)";
             send({{"type", "notice"}, {"text", text + "."}});
+            enqueuePreviews(category);   // the cards now show the package (stale previews are re-rendered)
             for (const auto& c : cards)
                 if (!all)
                     send({{"type", "shellDone"}, {"category", c.category}, {"id", c.id}, {"blend", ok}});

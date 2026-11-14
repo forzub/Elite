@@ -119,11 +119,11 @@ function onPreviews(m) {
   let changed = false;
   for (const p of m.items) {
     const c = state.cards.find((x) => x.id === p.id);
-    if (c && p.preview && !c.preview) {
+    if (c && p.preview && p.preview !== c.preview) {
       c.preview = p.preview;
       changed = true;
       const img = document.querySelector(`.card[data-id="${CSS.escape(c.id)}"] .pic`);
-      if (img) img.innerHTML = `<img src="${p.preview}?t=${Date.now()}" alt="">`;
+      if (img) img.innerHTML = `<img src="${p.preview}" alt="">`;   // the URL carries the render time
     }
   }
   if (!state.cards.some((c) => !c.preview)) stopPolling();

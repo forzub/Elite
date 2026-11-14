@@ -5746,4 +5746,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   LIVE: equipment_ship 118 in ~5 min, 0 failures, same shells (LOD0 926 051 / 1 203 248); all 118 packages load
   (EliteModelAssetInfo, 1 793 hit volumes); CR-1 blend hit empties oriented as the source. Game does not load module
   packages yet. Glass stays opaque (author's call). Next: plan step 3 (rig.json) / step 2 (ship from shells by id).
+- 2026-11-14 MODULE PREVIEWS FROM THE PACKAGE (MESH_EDITOR_SPEC 17.3). Card preview = Blender render of the module's
+  package glTF (LOD0 only) once the shell exists, else the source; re-rendered when any mesh file it shows is newer;
+  shell builds queue the category; preview URL carries the render time. Fixed: package glTF previews drew all LODs on
+  top of each other (wrong look, e.g. reactor radiator). LIVE: 118 equipment_ship previews re-rendered in ~40 s;
+  4 checked against the source: match except smoothing. Package colours = source Kd for all 136 materials.
 

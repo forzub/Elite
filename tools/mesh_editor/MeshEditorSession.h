@@ -37,7 +37,10 @@ private:
 
 private:
     void send(const nlohmann::json& j);
+    // "previews/<cat>/<id>.png?v=<time>"; empty while missing or older than what it shows (then it is re-rendered)
     std::string previewUrl(const ModelCard& c) const;
+    // what the preview shows: a module's package glTF once its shell is built (what the game gets), else the source
+    std::filesystem::path previewSource(const ModelCard& c) const;
     void enqueuePreviews(const std::string& category);
     void previewWorker();
     nlohmann::json openModel(const ModelCard& c) const;

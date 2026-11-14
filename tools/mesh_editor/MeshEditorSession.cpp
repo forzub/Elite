@@ -435,6 +435,8 @@ void Session::handleCommand(const std::string& text)
     if (m.is_discarded() || !m.is_object())
         return;
     const std::string cmd = m.value("cmd", std::string());
+    if (cmd != "previews" && cmd != "list" && cmd != "categories")
+        std::cerr << "[MeshEditor] cmd " << cmd << " " << m.value("category", std::string()) << "/" << m.value("id", std::string()) << std::endl;
     if (cmd == "rescan")
     {
         m_catalog.rescan();

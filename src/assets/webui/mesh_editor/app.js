@@ -30,7 +30,8 @@ function connect() {
   };
   state.ws.onmessage = (e) => {
     let m;
-    try { m = JSON.parse(e.data); } catch { return; }
+    try { m = JSON.parse(e.data); } catch (err) { if (params.get('trace')) $('conn').textContent += ' BADJSON(' + e.data.length + ')'; return; }
+    if (params.get('trace')) $('conn').textContent += ' ' + m.type;   // headless check: which messages arrived
     if (m.type === 'categories') onCategories(m);
     else if (m.type === 'list') onList(m);
     else if (m.type === 'previews') onPreviews(m);
@@ -213,6 +214,9 @@ function onOpened(m) {
   $('detail').innerHTML = '';
   $('summary').textContent = '';
   send({ cmd: 'inspect', category: m.category, id: m.id });
+  // the assembly document and the material library come in the background: the steps 2..6 open at once
+  send({ cmd: 'assembly', category: m.category, id: m.id });
+  if (!Asm.library) send({ cmd: 'library' });
 }
 
 // ---- step 1 "Загрузка и проверка" (MESH_EDITOR_SPEC 6.1): 3D view 2/3, parts table 1/3

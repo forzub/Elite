@@ -28,10 +28,15 @@ const Asm = {
     if (!this.library) send({ cmd: 'library' });
     if (!this.doc || this.doc.model !== `${state.model.category}/${state.model.id}`) {
       $('asmSide').innerHTML = '<div class="muted">загрузка документа сборки…</div>';
-      send({ cmd: 'assembly', category: state.model.category, id: state.model.id });
-    } else this.render();
+      if (!this.pending) send({ cmd: 'assembly', category: state.model.category, id: state.model.id });
+      this.pending = true;
+    } else {
+      this.render();
+      whenViewer(async (v) => { v.onPickNode((id) => this.pick(id)); await v.showAssembly(this.doc); v.fitAssembly(); v.selectNode(this.selected, false); });
+    }
   },
   close() {
+    this.step = 0;
     $('asmSide').hidden = true;
     $('stepSide').hidden = false;
     $('asmTools').hidden = true;
@@ -39,12 +44,14 @@ const Asm = {
     $('lodBar').hidden = false;
     whenViewer((v) => v.hideAssembly());
   },
-  reset() { this.doc = null; this.dirty = false; this.selected = null; this.built = null; this.sel = null; },
+  reset() { this.doc = null; this.dirty = false; this.selected = null; this.built = null; this.sel = null; this.pending = false; this.step = 0; },
   onAssembly(m) {
     if (!state.model || m.id !== state.model.id) return;
     this.doc = m.doc;
     this.file = m.file;
     this.dirty = false;
+    this.pending = false;
+    if (!this.step) return;   // fetched in the background; shown when a step 2..6 opens
     whenViewer(async (v) => { v.onPickNode((id) => this.pick(id)); await v.showAssembly(this.doc); v.fitAssembly(); });
     this.render();
   },

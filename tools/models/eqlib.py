@@ -69,6 +69,9 @@ MATERIALS = {
     "eq_copper": ((0.66, 0.38, 0.20), (0.60, 0.45, 0.35), 90),
     "eq_insulator": ((0.80, 0.78, 0.72), (0.10, 0.10, 0.10), 20),
     "eq_status_amber": ((0.95, 0.62, 0.15), (0.20, 0.20, 0.20), 30),
+    # the dark disc that closes an opening (a muzzle, a nozzle exit, a duct): reads as depth, keeps the part a closed
+    # volume for the render check (MESH_EDITOR_SPEC 16)
+    "eq_hole": ((0.035, 0.035, 0.04), (0.02, 0.02, 0.02), 5),
 }
 
 
@@ -155,11 +158,14 @@ class Part:
         return sum(len(f) - 2 for fl in self.faces.values() for f in fl)
 
 
-def lathe(part, mat, profile, seg, R=I3, t=(0, 0, 0), a0=0.0, a1=2 * math.pi, smooth=True, cap=False, soft=0.0):
+def lathe(part, mat, profile, seg, R=I3, t=(0, 0, 0), a0=0.0, a1=2 * math.pi, smooth=True, cap=False, soft=0.0,
+          ends="hole"):
     """revolve a (r, z) profile about local Z. Profile order: outward normal = (dz, -dr) of each segment
     (bottom -> outer -> top for solids on the axis; counter-clockwise loops for rings). Every profile segment is its
     own strip (hard edges at profile corners). cap: close the ends of a partial revolution (convex profile).
-    soft (degrees): profile corners flatter than this get shared (averaged) normals - a rounded profile reads smooth."""
+    soft (degrees): profile corners flatter than this get shared (averaged) normals - a rounded profile reads smooth.
+    ends (full revolution, open profile): an end off the axis leaves a hole; "hole" closes it with a dark eq_hole disc
+    (both ends in one plane: an annulus between them, in mat), "mat" - with mat, None - leave it open."""
     full = abs(a1 - a0 - 2 * math.pi) < 1e-9
     na = seg if full else seg + 1
     angs = [a0 + (a1 - a0) * i / seg for i in range(na)]
@@ -211,12 +217,45 @@ def lathe(part, mat, profile, seg, R=I3, t=(0, 0, 0), a0=0.0, a1=2 * math.pi, sm
                     fn = (-fn[0], -fn[1], -fn[2])
                 ids = [part.vert(p, fn, R, t) for p in pts]
                 part.face(mat, ids, W(fn))
+    if full and ends and profile[0] != profile[-1]:
+        close_lathe_ends(part, mat if ends == "mat" else "eq_hole", mat, profile, angs, R, t)
     if cap and not full:
         pts = profile[:-1] if profile[0] == profile[-1] else profile
         for a, sgn in ((a0, -1), (a1, 1)):
             n = (-math.sin(a) * sgn, math.cos(a) * sgn, 0.0)
             ids = [part.vert((r * math.cos(a), r * math.sin(a), z), n, R, t) for r, z in pts]
             part.face(mat, ids, W(n))
+
+
+def close_lathe_ends(part, hole_mat, mat, profile, angs, R, t):
+    """the open ends of a full revolution: a disc at an off-axis end, or one annulus when both ends lie in one plane"""
+    eps = 1e-6
+    (rs, zs), (re, ze) = profile[0], profile[-1]
+    zc = sum(z for _, z in profile) / len(profile)
+    W = lambda v: apply(R, v)
+    if rs > eps and re > eps and abs(zs - ze) < eps:
+        # a channel / dish profile: the two end rings bound one flat annulus
+        n = (0.0, 0.0, 1.0 if zs >= zc else -1.0)
+        if abs(zs - zc) < eps:
+            return
+        outer = [part.vert((rs * math.cos(a), rs * math.sin(a), zs), n, R, t) for a in angs]
+        inner = [part.vert((re * math.cos(a), re * math.sin(a), ze), n, R, t) for a in angs]
+        for i in range(len(angs)):
+            j = (i + 1) % len(angs)
+            part.face(mat, [outer[i], outer[j], inner[j], inner[i]], W(n))
+        return
+    for r, z in ((rs, zs), (re, ze)):
+        if r <= eps:
+            continue
+        sgn = 1.0 if z > zc else -1.0
+        if abs(z - zc) < eps:
+            continue
+        n = (0.0, 0.0, sgn)
+        ring = [part.vert((r * math.cos(a), r * math.sin(a), z), n, R, t) for a in angs]
+        centre = part.vert((0.0, 0.0, z), n, R, t)
+        for i in range(len(angs)):
+            j = (i + 1) % len(angs)
+            part.face(hole_mat, [ring[i], ring[j], centre], W(n))
 
 
 def facet_normal(pts):
@@ -587,8 +626,8 @@ def sag(p0, p1, droop, n, down=(0.0, -1.0, 0.0)):
     return out
 
 
-def tube(part, mat, pts, r, seg=8):
-    """a smooth tube swept along a polyline (parallel-transport frames, open ends)"""
+def tube(part, mat, pts, r, seg=8, caps=True):
+    """a smooth tube swept along a polyline (parallel-transport frames); caps: flat end discs (a closed volume)"""
     if len(pts) < 2:
         return
     def sub(a, b): return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
@@ -617,6 +656,14 @@ def tube(part, mat, pts, r, seg=8):
             (a, da), (b, db) = rings[i][j], rings[i][j2]
             (c, _), (e, _) = rings[i + 1][j2], rings[i + 1][j]
             part.face(mat, [a, b, c, e], norm(tuple(da[k] + db[k] for k in range(3))))
+    if caps:
+        for ring, p, t in ((rings[0], pts[0], tans[0]), (rings[-1], pts[-1], tans[-1])):
+            sgn = -1.0 if ring is rings[0] else 1.0
+            n = tuple(t[k] * sgn for k in range(3))
+            ids = [part.vert(part.v[v], n) for v, _ in ring]
+            centre = part.vert(p, n)
+            for j in range(seg):
+                part.face(mat, [ids[j], ids[(j + 1) % seg], centre], n)
 
 
 def harness(part, pts, r=0.025, n=3, mats=("eq_insulator",), ties="eq_steel", tie_every=4, seg=6):

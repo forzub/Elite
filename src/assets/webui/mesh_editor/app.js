@@ -330,6 +330,7 @@ function renderDetail() {
   if (f.reoriented) fixed.push(`граней развёрнуто по соседям / наружу: ${fmt(f.reoriented)}`);
   if (f.split) fixed.push(`разведено касаний кусков по ребру: ${f.split}`);
   if (f.capped) fixed.push(`закрыто дыр: ${f.capped}`);
+  if (f.membrane) fixed.push(`убрано граней-перегородок между сросшимися объёмами: ${f.membrane}`);
   const size = p.size.map((x) => x.toFixed(2)).join(' × ');
   const lodLine = Object.entries(p.lods).map(([n, l]) => `${n}: ${fmt(l.tris)}`).join(' · ');
   const g = insp.data.groups[insp.group];

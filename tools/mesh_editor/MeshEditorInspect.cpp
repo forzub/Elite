@@ -87,6 +87,7 @@ struct PartGeo
     int rawVerts = 0, rawTris = 0;
     int welded = 0, degenerate = 0, repeated = 0, flipped = 0;
     int split = 0, reoriented = 0, capped = 0;   // touching pieces parted, faces turned to their neighbours, holes closed
+    int membrane = 0;                            // back-to-back faces between two touching volumes, removed
     std::vector<std::array<Vec3, 2>> openEdges, badEdges;
     int boundary = 0, nonManifold = 0, inconsistent = 0, edgeCount = 0;
     int holes = 0;            // simple boundary loops left open
@@ -115,16 +116,95 @@ std::map<EdgeKey, std::vector<int>> edgeFaces(const std::vector<Tri>& t)
     return m;
 }
 
-// pieces: triangles joined through edges with exactly two faces (a 3+ face edge does not join)
-std::vector<int> pieceOf(const std::vector<Tri>& t, const std::map<EdgeKey, std::vector<int>>& ef, int& count)
+bool hasDirected(const Tri& t, int a, int b);
+
+// an edge and the face pairs that meet across it: two faces - one pair; 4, 6... faces (pieces that touch along the
+// edge: a washer under a bolt head, two boxes sharing an edge) - neighbours by angle around the edge, paired so that
+// each pair runs the edge both ways; an odd count or no such pairing - no pairs (a real 3+ face edge)
+struct EdgeInfo
+{
+    std::vector<int> faces;
+    std::vector<std::pair<int, int>> pairs;
+};
+
+std::map<EdgeKey, EdgeInfo> edgeTable(const std::vector<Vec3>& v, const std::vector<Tri>& t)
+{
+    std::map<EdgeKey, EdgeInfo> m;
+    for (int i = 0; i < static_cast<int>(t.size()); ++i)
+        for (int k = 0; k < 3; ++k)
+            m[edgeKey(t[i][k], t[i][(k + 1) % 3])].faces.push_back(i);
+    for (auto& [e, info] : m)
+    {
+        const auto& f = info.faces;
+        if (f.size() == 2)
+        {
+            info.pairs.push_back({f[0], f[1]});
+            continue;
+        }
+        if (f.size() < 4 || f.size() % 2 != 0)
+            continue;
+        const Vec3 a = v[e.first], d0 = sub(v[e.second], a);
+        const double len = std::sqrt(dot(d0, d0));
+        if (len <= 0.0)
+            continue;
+        const Vec3 d {d0[0] / len, d0[1] / len, d0[2] / len};
+        Vec3 u1 = std::abs(d[0]) < 0.9 ? Vec3 {1, 0, 0} : Vec3 {0, 1, 0};
+        const double pr = dot(u1, d);
+        u1 = {u1[0] - d[0] * pr, u1[1] - d[1] * pr, u1[2] - d[2] * pr};
+        const Vec3 u2 = cross(d, u1);
+        std::vector<std::pair<double, int>> around;
+        for (int fi : f)
+        {
+            int c = t[fi][0];
+            for (int k = 0; k < 3; ++k)
+                if (t[fi][k] != e.first && t[fi][k] != e.second)
+                    c = t[fi][k];
+            const Vec3 w = sub(v[c], a);
+            around.push_back({std::atan2(dot(w, u2), dot(w, u1)), fi});
+        }
+        std::sort(around.begin(), around.end());
+        const std::size_t n = around.size();
+        for (std::size_t offset = 0; offset < 2 && info.pairs.empty(); ++offset)
+        {
+            std::vector<std::pair<int, int>> pairs;
+            for (std::size_t i = 0; i < n; i += 2)
+            {
+                const int x = around[(i + offset) % n].second, y = around[(i + offset + 1) % n].second;
+                if (hasDirected(t[x], e.first, e.second) == hasDirected(t[y], e.first, e.second))
+                    break;
+                pairs.push_back({x, y});
+            }
+            if (pairs.size() == n / 2)
+                info.pairs = pairs;
+        }
+        if (info.pairs.empty())   // windings not settled yet: neighbours by angle, the winding follows in orient()
+            for (std::size_t i = 0; i < n; i += 2)
+                info.pairs.push_back({around[i].second, around[i + 1].second});
+    }
+    return m;
+}
+
+// a pairing that a settled winding agrees with (each pair runs the edge both ways)
+bool pairedWell(const EdgeInfo& info, const std::vector<Tri>& t, const EdgeKey& e)
+{
+    if (info.pairs.empty() || info.pairs.size() * 2 != info.faces.size())
+        return false;
+    for (const auto& [x, y] : info.pairs)
+        if (hasDirected(t[x], e.first, e.second) == hasDirected(t[y], e.first, e.second))
+            return false;
+    return true;
+}
+
+// pieces: triangles joined through the face pairs of their edges
+std::vector<int> pieceOf(const std::vector<Tri>& t, const std::map<EdgeKey, EdgeInfo>& et, int& count)
 {
     std::vector<int> parent(t.size());
     for (std::size_t i = 0; i < t.size(); ++i)
         parent[i] = static_cast<int>(i);
     std::function<int(int)> root = [&](int x) { return parent[x] == x ? x : parent[x] = root(parent[x]); };
-    for (const auto& [e, f] : ef)
-        if (f.size() == 2)
-            parent[root(f[0])] = root(f[1]);
+    for (const auto& [e, info] : et)
+        for (const auto& [x, y] : info.pairs)
+            parent[root(x)] = root(y);
     std::map<int, int> ids;
     std::vector<int> piece(t.size());
     for (std::size_t i = 0; i < t.size(); ++i)
@@ -148,17 +228,14 @@ bool hasDirected(const Tri& t, int a, int b)
 // an open one away from the model centre. Returns faces whose final winding differs from the source.
 void orient(PartGeo& g, const Vec3& centre)
 {
-    const auto ef = edgeFaces(g.t);
+    const auto et = edgeTable(g.v, g.t);
     int count = 0;
-    const std::vector<int> piece = pieceOf(g.t, ef, count);
+    const std::vector<int> piece = pieceOf(g.t, et, count);
     const std::vector<Tri> before = g.t;
     std::vector<char> done(g.t.size(), 0);
     std::vector<std::vector<int>> members(count);
     for (std::size_t i = 0; i < g.t.size(); ++i)
         members[piece[i]].push_back(static_cast<int>(i));
-    std::map<EdgeKey, int> uses;
-    for (const auto& [e, f] : ef)
-        uses[e] = static_cast<int>(f.size());
     g.pieces = count;
     g.closedPieces = 0;
     for (int p = 0; p < count; ++p)
@@ -172,11 +249,10 @@ void orient(PartGeo& g, const Vec3& centre)
             for (int k = 0; k < 3; ++k)
             {
                 const int u = a[k], v = a[(k + 1) % 3];
-                const auto& f = ef.at(edgeKey(u, v));
-                if (f.size() != 2)
-                    continue;
-                const int n = f[0] == queue[q] ? f[1] : f[0];
-                if (done[n])
+                int n = -1;
+                for (const auto& [x, y] : et.at(edgeKey(u, v)).pairs)
+                    n = x == queue[q] ? y : y == queue[q] ? x : n;
+                if (n < 0 || done[n])
                     continue;
                 if (hasDirected(g.t[n], u, v))
                     std::swap(g.t[n][1], g.t[n][2]);
@@ -190,7 +266,10 @@ void orient(PartGeo& g, const Vec3& centre)
         {
             const Tri& t = g.t[i];
             for (int k = 0; k < 3; ++k)
-                closed = closed && uses[edgeKey(t[k], t[(k + 1) % 3])] == 2;
+            {
+                const auto& info = et.at(edgeKey(t[k], t[(k + 1) % 3]));
+                closed = closed && !info.pairs.empty() && info.pairs.size() * 2 == info.faces.size();
+            }
             vol += dot(g.v[t[0]], cross(g.v[t[1]], g.v[t[2]]));
             const Vec3 n = cross(sub(g.v[t[1]], g.v[t[0]]), sub(g.v[t[2]], g.v[t[0]]));
             const Vec3 c {(g.v[t[0]][0] + g.v[t[1]][0] + g.v[t[2]][0]) / 3 - centre[0], (g.v[t[0]][1] + g.v[t[1]][1] + g.v[t[2]][1]) / 3 - centre[1],
@@ -214,9 +293,13 @@ void orient(PartGeo& g, const Vec3& centre)
 // pieces that only touch (along an edge or at a vertex) get their own vertices, so a shared edge stops being a 3+ face edge
 void splitTouching(PartGeo& g)
 {
-    const auto ef = edgeFaces(g.t);
+    const auto et = edgeTable(g.v, g.t);
     int count = 0;
-    const std::vector<int> piece = pieceOf(g.t, ef, count);
+    const std::vector<int> piece = pieceOf(g.t, et, count);
+    int touching = 0;
+    for (const auto& [e, info] : et)
+        touching += info.faces.size() > 2 ? 1 : 0;
+    g.split = touching;   // edges where pieces touch: parted (own vertices) or paired face to face
     if (count < 2)
         return;
     std::map<std::pair<int, int>, int> copy;   // (piece, vertex) -> new vertex
@@ -233,13 +316,7 @@ void splitTouching(PartGeo& g)
             }
             g.t[i][k] = it->second;
         }
-    int before = 0, after = 0;
-    for (const auto& [e, f] : ef)
-        before += f.size() > 2 ? 1 : 0;
-    for (const auto& [e, f] : edgeFaces(g.t))
-        after += f.size() > 2 ? 1 : 0;
     g.v = std::move(v);
-    g.split = before - after;
 }
 
 // "Закрыть дыры": a fan from the loop centre for every simple open loop (each loop vertex starts one open edge)
@@ -299,6 +376,7 @@ void analyse(PartGeo& g)
     g.badEdges.clear();
     g.boundary = g.nonManifold = g.inconsistent = 0;
     const auto ef = edgeFaces(g.t);
+    const auto et = edgeTable(g.v, g.t);
     g.edgeCount = static_cast<int>(ef.size());
     std::map<int, std::vector<int>> adj;
     for (const auto& [e, f] : ef)
@@ -313,8 +391,11 @@ void analyse(PartGeo& g)
         }
         else if (f.size() > 2)
         {
-            ++g.nonManifold;
-            g.badEdges.push_back(seg);
+            if (!pairedWell(et.at(e), g.t, e))
+            {
+                ++g.nonManifold;
+                g.badEdges.push_back(seg);
+            }
         }
         else if (hasDirected(g.t[f[0]], e.first, e.second) == hasDirected(g.t[f[1]], e.first, e.second))
         {
@@ -381,7 +462,8 @@ PartGeo repair(const RawMesh& raw, const RepairOptions& opt)
     }
     g.welded = g.rawVerts - static_cast<int>(g.v.size());
     // degenerate and repeated triangles
-    std::set<std::array<int, 3>> seen;
+    std::map<std::array<int, 3>, int> seenAt;   // sorted corners -> first face
+    std::map<int, int> opposite;                // face -> its back-to-back twin
     for (const auto& t0 : raw.t)
     {
         bool bad = false;
@@ -404,12 +486,56 @@ PartGeo repair(const RawMesh& raw, const RepairOptions& opt)
         }
         std::array<int, 3> key = t;
         std::sort(key.begin(), key.end());
-        if (!seen.insert(key).second)
+        const auto it = seenAt.find(key);
+        if (it != seenAt.end())
         {
-            ++g.repeated;
-            continue;
+            if (hasDirected(g.t[it->second], t[1], t[0]) && opposite.count(it->second) == 0)
+                opposite[it->second] = static_cast<int>(g.t.size());   // the same face turned the other way
+            else
+            {
+                ++g.repeated;
+                continue;
+            }
         }
+        else
+            seenAt[key] = static_cast<int>(g.t.size());
         g.t.push_back(t);
+    }
+    // a membrane between two touching volumes (two lathed bodies meeting at a disc: the disc twice, back to back) - both
+    // copies go, the volumes become one closed body. A free double-faced plate (its rim edges have no other faces) stays.
+    if (!opposite.empty())
+    {
+        const auto ef = edgeFaces(g.t);
+        std::map<EdgeKey, std::vector<int>> repEdges;   // edges of the membrane faces (first copies)
+        for (const auto& [a, b] : opposite)
+            for (int k = 0; k < 3; ++k)
+                repEdges[edgeKey(g.t[a][k], g.t[a][(k + 1) % 3])].push_back(a);
+        std::map<int, int> parent;
+        for (const auto& [a, b] : opposite)
+            parent[a] = a;
+        std::function<int(int)> root = [&](int x) { return parent[x] == x ? x : parent[x] = root(parent[x]); };
+        for (const auto& [e, f] : repEdges)
+            for (std::size_t i = 1; i < f.size(); ++i)
+                parent[root(f[0])] = root(f[i]);
+        std::map<int, bool> attached;   // membrane -> every rim edge has faces besides the two copies
+        for (const auto& [e, f] : repEdges)
+            if (f.size() == 1)
+            {
+                const int r = root(f[0]);
+                const bool more = ef.at(e).size() > 2;
+                attached[r] = attached.count(r) ? attached[r] && more : more;
+            }
+        std::vector<char> drop(g.t.size(), 0);
+        for (const auto& [a, b] : opposite)
+            if (attached.count(root(a)) && attached[root(a)])
+                drop[a] = drop[b] = 1;
+        std::vector<Tri> kept;
+        for (std::size_t i = 0; i < g.t.size(); ++i)
+            if (drop[i])
+                ++g.membrane;
+            else
+                kept.push_back(g.t[i]);
+        g.t = std::move(kept);
     }
     if (g.t.empty())
         return g;
@@ -591,6 +717,7 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
                 a.split += g.split;
                 a.reoriented += g.reoriented;
                 a.capped += g.capped;
+                a.membrane += g.membrane;
                 a.holes += g.holes;
                 a.holeMax = std::max(a.holeMax, g.holeMax);
                 a.pieces += g.pieces;
@@ -631,7 +758,7 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
 
         nlohmann::json issues = nlohmann::json::array();
         nlohmann::json lods = nlohmann::json::object();
-        nlohmann::json fixed = {{"welded", 0}, {"degenerate", 0}, {"repeated", 0}, {"flipped", 0}, {"split", 0}, {"reoriented", 0}, {"capped", 0}};
+        nlohmann::json fixed = {{"welded", 0}, {"degenerate", 0}, {"repeated", 0}, {"flipped", 0}, {"split", 0}, {"reoriented", 0}, {"capped", 0}, {"membrane", 0}};
         bool error = false;
         bool openVolume = false;
         int holes = 0;
@@ -644,7 +771,7 @@ nlohmann::json Inspector::inspect(const ModelCard& card, const fs::path& webRoot
             lods[groups[gi].name] = {{"tris", g.t.size()}, {"verts", g.v.size()}};
             for (const auto& [name, n] : std::initializer_list<std::pair<const char*, int>> {
                      {"welded", g.welded}, {"degenerate", g.degenerate}, {"repeated", g.repeated}, {"flipped", g.flipped},
-                     {"split", g.split}, {"reoriented", g.reoriented}, {"capped", g.capped}})
+                     {"split", g.split}, {"reoriented", g.reoriented}, {"capped", g.capped}, {"membrane", g.membrane}})
                 fixed[name] = fixed[name].get<int>() + n;
             hash = (hash ^ g.hash) * 1099511628211ull;
             if (kind == "volume" && g.boundary > 0)

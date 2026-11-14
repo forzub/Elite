@@ -40,6 +40,12 @@ function connect() {
     else if (m.type === 'picked') onPicked(m);
     else if (m.type === 'inspection') onInspection(m);
     else if (m.type === 'notice') notice(m.text);
+    else if (m.type === 'shellDone') {
+      if (state.model && m.id === state.model.id && m.category === state.model.category) {
+        insp.group = Math.max(0, insp.data ? insp.data.groups.filter((g) => !g.name.startsWith('скорлупа')).length : 0);
+        send({ cmd: 'inspect', category: m.category, id: m.id });
+      }
+    }
     else if (m.type === 'assembly') Asm.onAssembly(m);
     else if (m.type === 'library') { Asm.onLibrary(m); if (!$('library').hidden) renderLibrary(); }
     else if (m.type === 'built') { Asm.onBuilt(m); notice(m.ok ? 'Собрано: ' + m.output : 'Сборка не удалась'); }
@@ -240,6 +246,7 @@ function onInspection(m) {
   if (!state.model || m.id !== state.model.id || m.category !== state.model.category) return;
   const same = !!insp.data;
   insp.data = m;
+  if (!same && params.get('group')) insp.group = Number(params.get('group'));   // headless check: &group=<index>
   if (insp.group >= m.groups.length) insp.group = 0;
   renderLodBar();
   renderSummary();
@@ -295,8 +302,22 @@ function renderSummary() {
   if (cappable.length) parts.push(`<button id="capAll" class="small">Закрыть дыры у всех объёмов (${cappable.length})</button>`);
   const fixed = insp.data.parts.filter((p) => p.fixedTotal > 0).length;
   if (fixed) parts.push(`<span class="muted">${fixed} ${plural(fixed, 'починена', 'починены', 'починено')} сами</span>`);
+  // the module's shell (MESH_EDITOR_SPEC 17): what the game and the Blender library use
+  if (state.model.category.startsWith('equipment')) {
+    const sh = insp.data.shell;
+    if (sh) {
+      const s0 = sh.stats[0];
+      const cut = s0 && s0.in ? Math.round(100 * (1 - s0.out / s0.in)) : 0;
+      parts.push(`<span title="${esc(sh.folder)}\n${esc(sh.blend)}">скорлупа: ${s0 ? `${esc(s0.lod)} ${fmt(s0.out)} из ${fmt(s0.in)} треуг. (−${cut}%)` : ''}, ` +
+        `${sh.links} ${plural(sh.links, 'звено', 'звена', 'звеньев')}</span>`);
+    }
+    parts.push(`<button id="shellOne" class="small">${sh ? 'Перестроить скорлупу' : 'Построить скорлупу'}</button>`);
+    parts.push(`<button id="shellAll" class="small" title="все модели раздела; файлы Blender — рядом с пакетами">Скорлупы всех модулей</button>`);
+  }
   $('summary').innerHTML = parts.join(' · ');
   if ($('capAll')) $('capAll').onclick = () => setCaps(cappable.map((p) => p.key), true);
+  if ($('shellOne')) $('shellOne').onclick = () => { notice('Строю скорлупу…'); send({ cmd: 'shell', category: state.model.category, id: state.model.id }); };
+  if ($('shellAll')) $('shellAll').onclick = () => { notice('Строю скорлупы всех модулей раздела…'); send({ cmd: 'shellAll', category: state.model.category }); };
 }
 function renderParts() {
   const lods = insp.data.groups.filter((g) => !g.name.startsWith('скорлупа')).map((g) => g.name);

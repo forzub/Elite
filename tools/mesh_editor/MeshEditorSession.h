@@ -44,6 +44,13 @@ private:
     using MeshGroup = std::tuple<std::string, std::filesystem::path, std::vector<std::filesystem::path>>;   // name, base, meshes
     static std::vector<MeshGroup> modelGroups(const ModelCard& c);
     nlohmann::json withLinks(nlohmann::json j) const;
+    // the module's shell (MESH_EDITOR_SPEC 17): <output>/<category>/<id>/shell/LOD<N>/<link>.obj + a Blender job entry
+    // for <id>.blend; the viewer groups "скорлупа LOD<N>" kept in <state>/shell.json
+    nlohmann::json buildShell(const ModelCard& card, nlohmann::json& blendJob);
+    // the saved shell groups added to an inspection
+    nlohmann::json withShell(nlohmann::json j) const;
+    // Blender, headless: tools/blender/make_module_blend.py over the jobs; true when it ran
+    bool runBlendJobs(const nlohmann::json& jobs, const std::string& name);
     void openInBlender(const ModelCard& card, const std::string& group, const std::string& part);
     std::string libraryRef(const std::string& partKey, const std::string& ownCategory) const;
     std::filesystem::path stateDir(const ModelCard& c) const;
@@ -66,6 +73,7 @@ private:
     std::condition_variable m_wake;
     std::deque<ModelCard> m_queue;
     std::atomic<bool> m_stop {false};
+    std::atomic<bool> m_shellBusy {false};
     std::thread m_worker;
 };
 } // namespace elite::mesh_editor

@@ -8,9 +8,14 @@
 # The scheme (everything the mesh editor needs travels as glTF node extras = Blender custom properties):
 #   hull / frame / plates  - ordinary meshes; the object name is the part key; optional elite_role, elite_kind
 #                            (volume | sheet), elite_material (a global library id)
-#   a module               - an Empty instancing a library collection (linked from parts_library.blend) with
-#                            elite_part = "equipment_ship/<id>"; its meshes are NOT exported (the editor takes the
-#                            module's own checked mesh from its card)
+#   a module               - an Empty instancing a module's collection with elite_part = "equipment_ship/<id>"; its
+#                            meshes are NOT exported (the editor takes the module's own checked mesh from its card).
+#                            The library (MESH_EDITOR_SPEC 17): the mesh editor writes one file per module,
+#                            <output>/<category>/<id>/<id>.blend (asset collection "<id>" = the LOD0 shell + the mount
+#                            point at the origin); point a Blender asset library at <output> and drag modules in, or
+#                            "Поставить модуль" with the scene property elite_library = <output> (a folder) or an old
+#                            parts_library.blend. An instance dragged from the Asset Browser gets elite_part from its
+#                            collection at export.
 #   hit volume             - Empty CUBE, elite_hit = "<node>" (the part / module it belongs to), elite_shape = box |
 #                            cylinder; box half size = the empty's scale; cylinder: radius = scale X, half height =
 #                            scale Z (Blender Z = the cylinder axis)
@@ -106,7 +111,9 @@ def add_seam(a, b, centre, half_length, rotation=(0, 0, 0)):
 
 def place_part(library, ref, location=(0, 0, 0)):
     """link the module collection <id> from the library .blend and instance it; elite_part = ref"""
-    cid = ref.split("/", 1)[1]
+    cat, cid = ref.split("/", 1)
+    if os.path.isdir(library):   # the mesh editor's output: one .blend per module
+        library = os.path.join(library, cat, cid, cid + ".blend")
     coll = bpy.data.collections.get(cid)
     if not coll or not coll.library:
         with bpy.data.libraries.load(library, link=True) as (src, dst):
@@ -126,6 +133,11 @@ def place_part(library, ref, location=(0, 0, 0)):
 def export_gltf(path):
     """glTF (separate .bin) with custom properties as extras; library instances become nodes with elite_part"""
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    # a module dragged from the Asset Browser: the instance has no elite_part of its own, its collection has
+    for o in bpy.data.objects:
+        c = o.instance_collection if o.instance_type == "COLLECTION" else None
+        if c is not None and "elite_part" not in o and c.get("elite_part"):
+            o["elite_part"] = c["elite_part"]
     # the exporter writes an instanced collection's meshes as children of the instance node; the editor skips them
     bpy.ops.export_scene.gltf(filepath=path, export_format="GLTF_SEPARATE", export_extras=True, export_apply=False,
                               use_visible=False, export_yup=True)

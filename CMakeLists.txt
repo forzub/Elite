@@ -495,12 +495,19 @@ add_executable(EliteMeshEditor
     tools/mesh_editor/MeshEditorSession.cpp
     tools/mesh_editor/MeshEditorInspect.cpp
     tools/mesh_editor/MeshEditorAssembly.cpp
+    tools/mesh_editor/MeshEditorShell.cpp
     tools/mesh_editor/MeshEditorGltf.cpp
     tools/ship_asset_assemble/ShipAssetAssemble.cpp
     src/ui/html/HtmlUiServer.cpp
     src/ui/platform/UiResourcePack.cpp
 )
 target_include_directories(EliteMeshEditor PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+# the geometry passes (repair, shell visibility) are optimized even in a Debug build: unoptimized, a shell of one
+# module took ~40 s
+if(NOT MSVC)
+    set_source_files_properties(tools/mesh_editor/MeshEditorShell.cpp tools/mesh_editor/MeshEditorInspect.cpp
+        PROPERTIES COMPILE_OPTIONS "-O2")
+endif()
 target_compile_definitions(EliteMeshEditor PRIVATE
     JSON_DIAGNOSTICS=1
     ELITE_SOURCE_ROOT=\"${CMAKE_SOURCE_DIR}\"

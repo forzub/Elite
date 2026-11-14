@@ -517,6 +517,20 @@ fs::path Assembly::file(const ModelCard& card) { return card.folder / "assembly.
 
 fs::path Assembly::libraryFile(const fs::path& sourceTree) { return sourceTree / "assets/materials/material_library.json"; }
 
+std::string Assembly::materialId(const json& doc, const json& library, const std::string& partKey, const std::string& source)
+{
+    json d = doc.is_object() ? doc : json::object();
+    if (!d.contains("parts"))
+        d["parts"] = json::object();
+    return libraryId(d, library, partKey, source);
+}
+
+void Assembly::writeMeshObj(const fs::path& file, const std::vector<const RepairedPart*>& parts, const json& library)
+{
+    std::set<std::string> used;
+    writeObj(file, parts, json {{"parts", json::object()}, {"materials", json::object()}}, library, used);
+}
+
 json Assembly::loadLibrary(const fs::path& sourceTree)
 {
     json j = readJson(libraryFile(sourceTree));

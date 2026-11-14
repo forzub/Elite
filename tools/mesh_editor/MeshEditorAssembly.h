@@ -49,5 +49,11 @@ public:
     static std::filesystem::path libraryFile(const std::filesystem::path& sourceTree);
     static nlohmann::json loadLibrary(const std::filesystem::path& sourceTree);
     static void saveLibrary(const std::filesystem::path& sourceTree, const nlohmann::json& lib);
+    // the library id of a part's source material (the part's own choice, the document's map, the name itself, default)
+    static std::string materialId(const nlohmann::json& doc, const nlohmann::json& library, const std::string& partKey,
+                                  const std::string& source);
+    // one OBJ of the given parts (merged; corner normals inside 35 deg; usemtl = library ids, mtl names taken as ids)
+    static void writeMeshObj(const std::filesystem::path& file, const std::vector<const RepairedPart*>& parts,
+                             const nlohmann::json& library);
 };
 } // namespace elite::mesh_editor

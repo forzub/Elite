@@ -5728,4 +5728,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   passport; the minimal assembly object is the shell; the mesh editor converts elementary models to shells into a
   Blender library used for ship assembly by id; a damaged module is another model with its own LODs. Rig (links /
   hinges / poses) in rig.json beside hit_volumes.json (my call). MESH_EDITOR_SPEC 17. Not implemented yet.
+- 2026-11-14 SHELL + BLENDER MODULE LIBRARY (MESH_EDITOR_SPEC 17.1; step 1 of the agreed plan). Mesh editor builds
+  each module's shell (depth-buffer visibility, 256 directions, 768 px; per rig link; library "transparent" materials
+  do not occlude) for every LOD -> assets/compiled/<cat>/<id>/shell/LOD<N>/<link>.obj and <id>.blend (asset
+  collection = LOD0 shell + mount point; LOD1..3, hit volumes, library materials). Blender add-on: library folder +
+  Asset Browser drag gets elite_part at export. LIVE: whole equipment_ship (118) in ~6 min, 0 failures, LOD0 77% of
+  triangles kept; render compare on 12 modules: 0 lost silhouette pixels, shade differences <= 2.2% (normals), cockpit
+  23% (normals). Fixes on the way: hit empties via matrix_basis + view_layer.update (were all at the origin);
+  -O2 for the geometry sources; material lookup cached (41 s -> 3.6 s per module). Open: cockpit seats hidden by the
+  generator's closed hull under the canopy; glass is opaque in the library (author's call). Next: plan step 2/3
+  (ship assembly from shells by id; rig.json for skid / container / robot).
 

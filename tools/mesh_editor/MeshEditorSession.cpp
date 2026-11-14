@@ -1,6 +1,9 @@
 #include "tools/mesh_editor/MeshEditorSession.h"
 
 #include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <set>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -11,6 +14,7 @@
 #include "tools/mesh_editor/MeshEditorInspect.h"
 #include "tools/mesh_editor/MeshEditorAssembly.h"
 #include "tools/mesh_editor/MeshEditorGltf.h"
+#include "tools/mesh_editor/MeshEditorShell.h"
 #include "src/model_asset/ModelAssetBinary.h"
 
 #ifdef _WIN32
@@ -379,6 +383,150 @@ nlohmann::json Session::seedFor(const ModelCard& c)
     return seed;
 }
 
+nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob)
+{
+    const ModelCard c = effective(c0);
+    const fs::path state = stateDir(c);
+    using clock = std::chrono::steady_clock;
+    const auto t0 = clock::now();
+    const auto groups = Inspector::repaired(c, state);
+    const auto t1 = clock::now();
+    const nlohmann::json doc = Assembly::load(c0, groups, [&](const std::string& key) { return libraryRef(key, c.category); }, seedFor(c0));
+    const nlohmann::json library = Assembly::loadLibrary(m_sourceTree);
+    const RepairedGroup* first = nullptr;
+    for (const auto& g : groups)
+        if (g.lod && !g.shell)
+        {
+            first = &g;
+            break;
+        }
+    if (!first)
+        return {{"type", "shell"}, {"category", c.category}, {"id", c.id}, {"ok", false}, {"text", "нет LOD для скорлупы"}};
+    const auto links = Shell::rig(c.folder, *first);
+    const fs::path modelOut = m_catalog.settings().outputRoot / c.category / c.id;
+    const fs::path out = modelOut / "shell";
+    const fs::path cache = m_webRoot / "cache" / c.category / c.id;
+    std::error_code ec;
+    fs::remove_all(out, ec);   // only the shell folder this command owns
+    fs::create_directories(cache, ec);
+    const std::string stamp = std::to_string(
+        std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    nlohmann::json viewGroups = nlohmann::json::array(), stats = nlohmann::json::array(), lods = nlohmann::json::array();
+    std::set<std::string> used;
+    std::set<std::string> clearIds;   // library materials marked "transparent": true (glass seen through)
+    for (const auto& m : library["materials"])
+        if (m.value("transparent", false))
+            clearIds.insert(m.value("id", std::string()));
+    int n = 0;
+    double tVisible = 0;
+    const auto t2 = clock::now();
+    for (const auto& g : groups)
+    {
+        if (!g.lod || g.shell)
+            continue;
+        ShellStats st;
+        const auto tv = clock::now();
+        const RepairedGroup s = Shell::build(g, links, [&](const std::string& part, const std::string& src) {
+            return Assembly::materialId(doc, library, part, src);
+        }, [&](const std::string& id) { return clearIds.count(id) > 0; }, st);
+        tVisible += std::chrono::duration<double>(clock::now() - tv).count();
+        nlohmann::json files = nlohmann::json::array();
+        std::vector<float> tris;
+        nlohmann::json ranges = nlohmann::json::array();
+        for (const auto& p : s.parts)
+        {
+            if (p.t.empty())
+                continue;
+            const fs::path f = out / g.name / (p.key + ".obj");
+            Assembly::writeMeshObj(f, {&p}, library);
+            files.push_back(f.generic_u8string());
+            for (const auto& m : p.mtl)
+                used.insert(m);
+            ranges.push_back({{"key", p.key}, {"tri", {tris.size() / 9, p.t.size()}}, {"open", {0, 0}}, {"bad", {0, 0}}, {"sides", 2}});
+            for (const auto& t : p.t)
+                for (int k = 0; k < 3; ++k)
+                    for (int x = 0; x < 3; ++x)
+                        tris.push_back(p.v[static_cast<std::size_t>(t[k])][x]);
+        }
+        const std::string file = "s" + std::to_string(n++) + ".bin";
+        std::ofstream(cache / file, std::ios::binary)
+            .write(reinterpret_cast<const char*>(tris.data()), static_cast<std::streamsize>(tris.size() * sizeof(float)));
+        viewGroups.push_back({{"name", s.name},
+                              {"url", (fs::path("cache") / c.category / c.id / file).generic_u8string() + "?v=" + stamp},
+                              {"tris", tris.size() / 9}, {"open", 0}, {"bad", 0}, {"parts", ranges}});
+        stats.push_back({{"lod", g.name}, {"in", st.trisIn}, {"out", st.trisOut}});
+        lods.push_back({{"name", g.name}, {"files", files}});
+    }
+    nlohmann::json rig = nlohmann::json::array();
+    for (const auto& l : links)
+        rig.push_back({{"id", l.id}, {"parts", l.parts}, {"parent", l.parent}, {"joint", l.joint}});
+    nlohmann::json mats = nlohmann::json::array();
+    for (const auto& m : library["materials"])
+        if (used.count(m.value("id", std::string())))
+            mats.push_back(m);
+    const fs::path blend = modelOut / (c.id + ".blend");
+    blendJob = {{"id", c.id}, {"ref", c.category + "/" + c.id}, {"title", c.title}, {"source", c.folder.generic_u8string()},
+                {"blend", blend.generic_u8string()}, {"lods", lods}, {"links", rig}, {"materials", mats},
+                {"hit_volumes", doc.value("hit_volumes", nlohmann::json::array())},
+                {"mounts", doc.value("mounts", nlohmann::json::array())}};
+    nlohmann::json saved = {{"groups", viewGroups}, {"stats", stats}, {"links", rig.size()}, {"at", stamp},
+                            {"blend", blend.generic_u8string()}, {"folder", out.generic_u8string()}};
+    fs::create_directories(state, ec);
+    std::ofstream(state / "shell.json") << saved.dump(1);
+    std::size_t in = 0, kept = 0;
+    for (const auto& s : stats)
+    {
+        in += s["in"].get<std::size_t>();
+        kept += s["out"].get<std::size_t>();
+    }
+    std::cerr << "[MeshEditor] shell " << c.category << "/" << c.id << ": " << kept << " of " << in << " triangles, "
+              << links.size() << " links; s: repair " << std::chrono::duration<double>(t1 - t0).count() << " doc "
+              << std::chrono::duration<double>(t2 - t1).count() << " visible " << tVisible << " total "
+              << std::chrono::duration<double>(clock::now() - t0).count() << std::endl;
+    saved["type"] = "shell";
+    saved["category"] = c.category;
+    saved["id"] = c.id;
+    saved["ok"] = true;
+    return saved;
+}
+
+nlohmann::json Session::withShell(nlohmann::json j) const
+{
+    std::ifstream in(m_catalog.settings().workRoot / j.value("category", std::string()) / j.value("id", std::string()) / "shell.json");
+    const nlohmann::json s = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    if (s.is_object() && s.contains("groups"))
+    {
+        for (const auto& g : s["groups"])
+            j["groups"].push_back(g);
+        j["shell"] = {{"stats", s["stats"]}, {"links", s.value("links", 0)}, {"blend", s.value("blend", std::string())},
+                      {"folder", s.value("folder", std::string())}, {"at", s.value("at", std::string())}};
+    }
+    return j;
+}
+
+bool Session::runBlendJobs(const nlohmann::json& jobs, const std::string& name)
+{
+    fs::path blender;
+    {
+        std::lock_guard<std::mutex> g(m_lock);
+        blender = m_blender;
+    }
+    std::error_code ec;
+    if (jobs.empty() || !fs::is_regular_file(blender, ec))
+        return false;
+    const fs::path file = m_catalog.settings().workRoot / ("blend_jobs_" + name + ".json");
+    fs::create_directories(file.parent_path(), ec);
+    std::ofstream(file) << nlohmann::json {{"jobs", jobs}}.dump(1);
+    const fs::path script = m_sourceTree / "tools/blender/make_module_blend.py";
+    const fs::path log = m_catalog.settings().workRoot / ("blend_jobs_" + name + ".log");
+    // cmd.exe strips the outer quotes of the whole line
+    const std::string cmd = "\"\"" + blender.string() + "\" -b --factory-startup -P \"" + script.string() + "\" -- \"" +
+                            file.string() + "\" > \"" + log.string() + "\" 2>&1\"";
+    const int rc = std::system(cmd.c_str());
+    std::cerr << "[MeshEditor] blender jobs " << name << ": " << jobs.size() << " rc=" << rc << " log " << log.generic_u8string() << std::endl;
+    return rc == 0;
+}
+
 nlohmann::json Session::assemblyJson(const ModelCard& c0)
 {
     const ModelCard c = effective(c0);
@@ -508,8 +656,65 @@ void Session::handleCommand(const std::string& text)
             if (cmd == "setCaps")
                 for (const auto& part : m.value("parts", std::vector<std::string> {}))
                     Inspector::setCaps(stateDir, part, m.value("on", true));
-            send(withLinks(Inspector::inspect(effective(*c), m_webRoot, stateDir, m.value("commit", false))));
+            send(withShell(withLinks(Inspector::inspect(effective(*c), m_webRoot, stateDir, m.value("commit", false)))));
         }
+        return;
+    }
+    if (cmd == "shell" || cmd == "shellAll")
+    {
+        // MESH_EDITOR_SPEC 17: the shells and the module's .blend; the work runs aside, the page gets notices
+        if (m_shellBusy.exchange(true))
+        {
+            send({{"type", "notice"}, {"text", "Скорлупы уже строятся — дождитесь конца."}});
+            return;
+        }
+        std::vector<ModelCard> cards;
+        if (cmd == "shell")
+        {
+            if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
+                cards.push_back(*c);
+        }
+        else
+            cards = m_catalog.list(category);
+        const bool all = cmd == "shellAll";
+        std::thread([this, cards, category, all] {
+            nlohmann::json jobs = nlohmann::json::array();
+            std::size_t in = 0, kept = 0, done = 0;
+            for (const auto& c : cards)
+            {
+                try
+                {
+                    nlohmann::json job;
+                    nlohmann::json r = buildShell(c, job);
+                    if (!job.is_null())
+                        jobs.push_back(job);
+                    for (const auto& s : r.value("stats", nlohmann::json::array()))
+                        if (s["lod"] == "LOD0")
+                        {
+                            in += s["in"].get<std::size_t>();
+                            kept += s["out"].get<std::size_t>();
+                        }
+                }
+                catch (const std::exception& e)
+                {
+                    std::cerr << "[MeshEditor] shell " << c.id << " failed: " << e.what() << std::endl;
+                }
+                if (all && ++done % 10 == 0)
+                    send({{"type", "notice"}, {"text", "Скорлупы: " + std::to_string(done) + " из " + std::to_string(cards.size()) + "…"}});
+            }
+            send({{"type", "notice"}, {"text", "Скорлупы построены, пишу файлы Blender (" + std::to_string(jobs.size()) + ")…"}});
+            const bool ok = runBlendJobs(jobs, all ? category : (cards.empty() ? std::string("none") : cards[0].id));
+            std::string text = ok ? "Готово: " : "Скорлупы готовы, но Blender не отработал (журнал в рабочей папке): ";
+            text += std::to_string(jobs.size()) + (jobs.size() == 1 ? " модуль" : " модулей");
+            if (in)
+                text += ", LOD0 " + std::to_string(kept) + " из " + std::to_string(in) + " треугольников (" +
+                        std::to_string(static_cast<int>(std::lround(100.0 * static_cast<double>(kept) / static_cast<double>(in)))) + "%)";
+            send({{"type", "notice"}, {"text", text + "."}});
+            for (const auto& c : cards)
+                if (!all)
+                    send({{"type", "shellDone"}, {"category", c.category}, {"id", c.id}, {"blend", ok}});
+            m_shellBusy = false;
+        }).detach();
         return;
     }
     if (cmd == "library")

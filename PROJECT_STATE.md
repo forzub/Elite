@@ -5724,4 +5724,8 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   modules keep one shell per moving link with a hinge; visibility over all animation poses. The ship is a skeleton;
   modules fall off only whole. Element hit volumes stay. Ship traffic shell computed over the whole assembly.
   Measured: CR-1 LOD0 >= 72% of 15362 faces visible from outside. Open: link / hinge description source, damaged looks.
+- 2026-11-14 author: everything a ship is built from (equipment, frame pieces, hull panels) is a module with id and
+  passport; the minimal assembly object is the shell; the mesh editor converts elementary models to shells into a
+  Blender library used for ship assembly by id; a damaged module is another model with its own LODs. Rig (links /
+  hinges / poses) in rig.json beside hit_volumes.json (my call). MESH_EDITOR_SPEC 17. Not implemented yet.
 

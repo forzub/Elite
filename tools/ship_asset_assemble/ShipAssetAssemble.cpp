@@ -274,7 +274,12 @@ bool assembleShipAsset(const std::string& dir, const std::string& productionPath
             c.localPosition = vec3(j.at("position"));
             c.localRotationDeg = vec3(j.at("rotation_deg"));
             if (c.shape == CollisionShape::Box) c.halfSize = vec3(j.at("half_size"));
-            else { c.radius = j.at("radius").get<float>(); c.halfHeight = j.at("half_height").get<float>(); }
+            else
+            {
+                c.radius = j.at("radius").get<float>();
+                c.halfHeight = j.at("half_height").get<float>();
+                c.radiusTop = j.value("radius_top", -1.0f);   // a frustum (a conical pad)
+            }
             c.activeStates = strings(j.value("active_states", json::array()));
             a.collisionVolumes.push_back(c);
         }

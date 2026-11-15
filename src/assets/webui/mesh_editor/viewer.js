@@ -215,8 +215,10 @@ function boxMesh(half, colour, opts = {}) {
   }
   return new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: colour, depthTest: opts.depthTest !== false }));
 }
-function cylMesh(radius, halfH, colour) {
-  const geo = new THREE.CylinderGeometry(radius, radius, halfH * 2, 16);   // three's cylinder axis is Y
+function cylMesh(radius, halfH, colour, radiusTop) {
+  // three's cylinder axis is Y; radiusTop (a frustum, a conical pad) is the radius at +Y
+  const top = radiusTop >= 0 ? radiusTop : radius;
+  const geo = new THREE.CylinderGeometry(top, radius, halfH * 2, 16);
   return new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), new THREE.LineBasicMaterial({ color: colour }));
 }
 function placed(obj, pos, rot) {
@@ -278,7 +280,7 @@ function buildAssembly(doc) {
   asm.free = free;
   const into = (nodeId) => (asm.nodes.get(nodeId) || { overlays: free }).overlays;
   for (const h of doc.hit_volumes || []) {
-    const o = h.shape === 'cylinder' ? cylMesh(h.radius, h.half_height, 0x3fd0d8) : boxMesh(h.half_size, 0x3fd0d8);
+    const o = h.shape === 'cylinder' ? cylMesh(h.radius, h.half_height, 0x3fd0d8, h.radius_top) : boxMesh(h.half_size, 0x3fd0d8);
     o.userData = { kind: 'hit', id: h.id };
     into(h.node).add(placed(o, h.position, h.rotation_deg));
   }

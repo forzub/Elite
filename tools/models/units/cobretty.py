@@ -4,6 +4,25 @@ import math
 from eqlib import *  # noqa: F401,F403 - the unit kernel (geometry, LOD policy, shared builders)
 
 # ---------------------------------------------------------------- Cobretty CR-1 Vector
+
+def cone_pad_hits(d, r_cone, r_hub):
+    """the pad's hit volumes: the clamp rim (a flat drum pad_z0..pad_z1) and, for a conical pad, a frustum over the cone
+    (author 2026-11-15: «не логичнее хитвалум построить в виде круглой призмы по форме пятака?») - its top radius the
+    smallest that still covers the ceramic (r_cone at pad_z1 down to the tip), the seam bars and the hub (r_hub)"""
+    z0, z1, pr, H = d["pad_z0"], d["pad_z1"], d["pad_r"], d.get("cone_h", 0.0)
+    if H <= 0:
+        return [hcyl("engine_hot_emitter_annulus", (0, 0, z0), (0, 0, z1 + 0.05), pr)]
+    top = H + 0.06                                           # the hub's cap and bolt over the tip
+    pad = 0.06                                               # seam bars / bolts stand off the cone surface
+    need = [(H * (1.0 - r / r_cone) + pad, r + pad) for r in (r_cone * k / 20 for k in range(21))]
+    need += [(H * (1.0 - r_hub / r_cone) + 0.02, r_hub + 0.02), (top, 0.16)]
+    rt = 0.0                                                 # radius at the top so the frustum r(h) covers every need
+    for h, r in need:
+        if h > 1e-6:
+            rt = max(rt, pr - (pr - r) * top / h)
+    return [hcyl("engine_hot_emitter_annulus", (0, 0, z0), (0, 0, z1), pr),
+            hcyl("engine_hot_emitter_annulus", (0, 0, z1), (0, 0, z1 + top), pr, max(rt, 0.05))]
+
 CR1 = dict(length=6.5, pad_r=2.5, shell_r=2.05, band_r=2.15, flange_r=2.25, flange_t=0.35,
            coil_z0=5.30, coil_z1=6.15, pad_z0=6.15, pad_z1=6.50)
 
@@ -479,7 +498,7 @@ def cr1_hits():
          hcyl("cr1_flange", (0, 0, -0.08), (0, 0, ft), d["flange_r"]),
          hcyl("cr1_housing", (0, 0, ft), (0, 0, d["coil_z0"]), br),
          hcyl("cr1_coil_ring", (0, 0, d["coil_z0"]), (0, 0, d["coil_z1"]), 2.47),
-         hcyl("engine_hot_emitter_annulus", (0, 0, d["pad_z0"]), (0, 0, d["pad_z1"] + max(0.05, d.get("cone_h", 0.0))), d["pad_r"]),
+         *cone_pad_hits(d, 2.36, 0.48),
          hbox("cr1_service_module", ((sr + sx + 0.31) / 2, 0, sz), (sx + 0.31 - sr, 1.30, 2.10)),
          hbox("cr1_service_module", (sx + 0.50, 0, sz - 0.62), (0.38, 1.10, 0.34))]   # coolant ports
     for a, zz in ((math.pi * 3 / 4, 1.05), (-math.pi * 3 / 4, 1.05), (math.pi * 3 / 4, 3.85), (-math.pi * 3 / 4, 3.85)):
@@ -797,7 +816,7 @@ def n1_hits():
          hcyl("n1_housing", (0, 0, 0.35), (0, 0, 0.90), 1.85),
          hcyl("n1_housing", (0, 0, 0.90), (0, 0, d["pad_z0"]), cr),
          hcyl("n1_housing", (0, 0, d["rings"][-1][0] + hw), (0, 0, d["pad_z0"]), 2.0),
-         hcyl("engine_hot_emitter_annulus", (0, 0, d["pad_z0"]), (0, 0, d["pad_z1"] + max(0.03, d.get("cone_h", 0.0))), d["pad_r"]),
+         *cone_pad_hits(d, 2.38, 0.55),
          hbox("n1_field_ctl", (-1.97, 0, zb), (0.80, 1.10, 0.86)),
          hbox("n1_backup_hx", (1.97, 0, zb), (0.80, 1.10, 0.86)),
          hbox("n1_backup_hx", (2.45, 0, zb), (0.18, 0.80, 0.24)),

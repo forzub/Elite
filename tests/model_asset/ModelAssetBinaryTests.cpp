@@ -1413,6 +1413,13 @@ int main()
         drum.radius = 2.25f;
         drum.halfHeight = 0.4f;
         asset.collisionVolumes.push_back(drum);
+        // a frustum (a conical pad): the cylinder with radiusTop, written as a trailing block of COLL
+        CollisionVolume cone = drum;
+        cone.id = "hit.src.cone.1";
+        cone.radius = 1.75f;
+        cone.halfHeight = 0.67f;
+        cone.radiusTop = 0.16f;
+        asset.collisionVolumes.push_back(cone);
 
         const auto path = std::filesystem::temp_directory_path() / "elite_model_asset_v4_roundtrip.elmodel";
         std::string error;
@@ -1434,6 +1441,12 @@ int main()
             require(it != manifestOnly.collisionVolumes.end() && it->shape == CollisionShape::Cylinder &&
                     near(it->radius, 2.25f) && near(it->halfHeight, 0.4f) && near(it->localRotationDeg.x, 90.0f),
                 "cylinder collision volume did not survive the manifest roundtrip");
+            require(it->radiusTop < 0.0f, "a straight cylinder gained a top radius in the manifest roundtrip");
+            const auto cone = std::find_if(manifestOnly.collisionVolumes.begin(), manifestOnly.collisionVolumes.end(),
+                [](const CollisionVolume& c) { return c.id == "hit.src.cone.1"; });
+            require(cone != manifestOnly.collisionVolumes.end() && cone->shape == CollisionShape::Cylinder &&
+                    near(cone->radius, 1.75f) && near(cone->halfHeight, 0.67f) && near(cone->radiusTop, 0.16f),
+                "frustum collision volume did not survive the manifest roundtrip");
         }
         require(manifestOnly.formatVersion == 4 && manifestOnly.renderLods.size() == 3,
             "v4 manifest did not preserve render LOD descriptors");
@@ -1510,7 +1523,7 @@ int main()
             "state transform/pivot override lost");
         require(loaded.stateVariants[0].physicsOverride && near(loaded.stateVariants[0].physics.massKg, 980.0f),
             "state rigid-body override lost");
-        require(loaded.collisionVolumes.size() == 3 && loaded.collisionVolumes[1].activeStates.size() == 1 && // + the cylinder drum
+        require(loaded.collisionVolumes.size() == 4 && loaded.collisionVolumes[1].activeStates.size() == 1 && // + drum, cone
                 loaded.collisionVolumes[1].activeStates[0] == "breached",
             "state-scoped collision lost");
         require(loaded.physicalSize.enabled && loaded.physicalSize.axis == PhysicalSizeAxis::Z &&

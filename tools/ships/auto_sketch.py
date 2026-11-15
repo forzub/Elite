@@ -66,7 +66,8 @@ def size_of(folder):
     d = json.load(open(os.path.join(source_layout.assembly_dir(os.path.join(EQ, folder)), "hit_volumes.json"), encoding="utf-8"))
     lo, hi = [1e9] * 3, [-1e9] * 3
     for v in d["volumes"]:
-        ext = v.get("half_size") or [v.get("radius", 0.0), v.get("half_height", 0.0), v.get("radius", 0.0)]
+        ext = v.get("half_size") or [max(v.get("radius", 0.0), v.get("radius_top", 0.0)), v.get("half_height", 0.0),
+                                        max(v.get("radius", 0.0), v.get("radius_top", 0.0))]
         R = LS._euler_xyz(v["rotation_deg"])
         for cx in (-1, 1):
             for cy in (-1, 1):

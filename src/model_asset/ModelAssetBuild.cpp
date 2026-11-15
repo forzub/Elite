@@ -30,6 +30,7 @@ void scaleAuthoringDistancesUniform(ModelAsset& asset, float scale)
     for (auto& c : asset.collisionVolumes)
     {
         c.localPosition *= scale; c.halfSize *= scale; c.radius *= scale; c.halfHeight *= scale;
+        if (c.radiusTop >= 0.0f) c.radiusTop *= scale;
     }
     for (auto& socket : asset.sockets)
     {

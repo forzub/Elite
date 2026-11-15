@@ -263,6 +263,7 @@ bool ModuleFiles::writePackage(const ModuleShell& m, const fs::path& elmodel, st
             {
                 c.radius = h.value("radius", 0.5f);
                 c.halfHeight = h.value("half_height", 0.5f);
+                c.radiusTop = h.value("radius_top", -1.0f);   // a frustum (a conical pad)
             }
             else
                 c.halfSize = vec3(h.value("half_size", json()), glm::vec3(0.5f));
@@ -401,6 +402,8 @@ void ModuleFiles::writeGltf(const ModuleShell& m, const fs::path& gltf, bool ext
                          {"rotation", {q[0], q[1], q[2], q[3]}},
                          {"scale", scale},
                          {"extras", {{"elite_hit", h.value("node", std::string())}, {"elite_shape", cyl ? "cylinder" : "box"}}}});
+        if (cyl && h.contains("radius_top"))   // a frustum: the top radius relative to the bottom one (the scale)
+            nodes.back()["extras"]["elite_radius_top"] = h["radius_top"];
         roots.push_back(nodes.size() - 1);
     }
     if (extras)

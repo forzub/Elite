@@ -271,6 +271,8 @@ fs::path GltfSource::convert(const ModelCard& card, const fs::path& workDir, std
             {
                 h["radius"] = scl[0];
                 h["half_height"] = scl[1];   // Blender Z (the cylinder axis) is glTF Y
+                if (ex.contains("elite_radius_top"))
+                    h["radius_top"] = ex["elite_radius_top"];
             }
             else
                 h["half_size"] = scl;

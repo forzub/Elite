@@ -534,15 +534,18 @@ def cooling_pad(pd, lod, py0, pt, L, frame="eq_metal_band", ceramic="eq_pad_cera
 # Author 2026-11-09: hit volumes are drawn together with the model, as close to its shape as boxes and cylinders allow;
 # gameplay keeps the hit volumes, not the render mesh. Format = the engine CollisionVolume (src/model_asset/ModelAsset.h):
 # localPosition, localRotationDeg (applied as T * Rx * Ry * Rz), halfSize for a box; radius + halfHeight along local +Y
-# for a cylinder (CollisionShape::Cylinder). The editor imports the file in PHYSICS ("SOURCE HITS").
+# for a cylinder (CollisionShape::Cylinder); a cylinder with radius_top is a frustum: radius at -half_height, radius_top
+# at +half_height (author 2026-11-15: a conical pad gets a hit volume of its shape, not a drum around it).
+# The editor imports the file in PHYSICS ("SOURCE HITS").
 # "part" = the OBJ part (semantic node / module) the volume belongs to; same OBJ frame and metres as the model.
 def hbox(part, center, size, rot=(0.0, 0.0, 0.0)):
     return {"part": part, "shape": "box", "position": list(center), "rotation_deg": list(rot),
             "half_size": [size[0] / 2, size[1] / 2, size[2] / 2]}
 
 
-def hcyl(part, p0, p1, r):
-    """a cylinder between two points; only axis-aligned (X/Y/Z) or XY-plane radial axes are needed here"""
+def hcyl(part, p0, p1, r, r1=None):
+    """a cylinder between two points (radius r; with r1 - a frustum, radius r at p0 and r1 at p1); only axis-aligned
+    (X/Y/Z) or XY-plane radial axes are needed here"""
     c = [(a + b) / 2 for a, b in zip(p0, p1)]
     dx, dy, dz = (b - a for a, b in zip(p0, p1))
     L = math.sqrt(dx * dx + dy * dy + dz * dz)
@@ -552,7 +555,10 @@ def hcyl(part, p0, p1, r):
         rot = (0.0, 0.0, math.degrees(math.atan2(dy, dx)) - 90.0)  # local +Y -> (dx, dy, 0)
     else:
         raise ValueError("hcyl: axis must be along Z or in the XY plane")
-    return {"part": part, "shape": "cylinder", "position": c, "rotation_deg": list(rot), "radius": r, "half_height": L / 2}
+    v = {"part": part, "shape": "cylinder", "position": c, "rotation_deg": list(rot), "radius": r, "half_height": L / 2}
+    if r1 is not None:
+        v["radius_top"] = r1
+    return v
 
 
 
@@ -594,7 +600,7 @@ def scaled_hits(base_hits, D, s, pad_side, rename=None):
             v["position"] = [x * s for x in v["position"]]
             if "half_size" in v:
                 v["half_size"] = [x * s for x in v["half_size"]]
-            for k in ("radius", "half_height"):
+            for k in ("radius", "half_height", "radius_top"):
                 if k in v:
                     v[k] *= s
             for a, b in (rename or {}).items():
@@ -712,13 +718,15 @@ def hits_text(asset, hits_fn):
         for k in ("position", "rotation_deg", "half_size"):
             if k in v:
                 v[k] = [round(x, 4) + 0.0 for x in v[k]]
-        for k in ("radius", "half_height"):
+        for k in ("radius", "half_height", "radius_top"):
             if k in v:
                 v[k] = round(v[k], 4)
     doc = {"asset": asset, "generator": "tools/models/build_equipment_models.py (do not edit)",
            "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
-           "shapes": {"box": "half_size", "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"},
-           "volumes": [{k: v[k] for k in ("id", "part", "shape", "position", "rotation_deg", "half_size", "radius", "half_height") if k in v}
+           "shapes": {"box": "half_size", "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder); "
+                      "with radius_top - a frustum: radius at -half_height, radius_top at +half_height"},
+           "volumes": [{k: v[k] for k in ("id", "part", "shape", "position", "rotation_deg", "half_size", "radius", "half_height",
+                                          "radius_top") if k in v}
                        for v in vols]}
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
 

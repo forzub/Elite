@@ -25,7 +25,8 @@ enum class CollisionShape : std::uint8_t
     Sphere = 1,
     Capsule = 2,
     ConvexHull = 3, // Reserved for a later compiler stage.
-    Cylinder = 4    // Flat-ended cylinder: radius + halfHeight along local +Y (equipment drums, flanges, pads).
+    Cylinder = 4    // Flat-ended cylinder: radius + halfHeight along local +Y (equipment drums, flanges, pads);
+                    // with radiusTop >= 0 a frustum (a conical pad): radius at -halfHeight, radiusTop at +halfHeight.
 };
 
 enum class AxisDirection : std::int8_t
@@ -366,6 +367,7 @@ struct CollisionVolume
     glm::vec3 halfSize {0.5f};
     float radius = 0.5f;
     float halfHeight = 0.5f; // Capsule cylindrical half-length; local +Y axis.
+    float radiusTop = -1.0f; // Cylinder only: the radius at +halfHeight; < 0 = radius (a straight cylinder).
 
     // Empty means active in every semantic state. For destructive variants,
     // intact and breached collision sets can coexist and switch atomically.

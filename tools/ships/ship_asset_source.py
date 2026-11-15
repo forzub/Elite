@@ -274,6 +274,8 @@ def build(name):
             c["half_size"] = v["half_size"]
         else:
             c["radius"], c["half_height"] = v["radius"], v["half_height"]
+            if "radius_top" in v:                                # a frustum (a conical pad)
+                c["radius_top"] = v["radius_top"]
         if v.get("role") == "plate":
             c["node"] = f"plate_{v['part']}"
             c["active_states"] = ["intact"]

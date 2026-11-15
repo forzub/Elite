@@ -5805,4 +5805,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - 2026-11-15 Mesh editor preview race fixed (author: the previous module stayed in the preview, sometimes no way back).
   A stale async mesh load is dropped instead of being added to the scene. LIVE: headless Edge fast switching -
   old code 2 roots in scene + TypeError in groupBox, new code 1 root, no exceptions.
+- 2026-11-15 MESH EDITOR STEPS + FRUSTUM HIT VOLUMES (MESH_EDITOR_SPEC 18.14). Steps 2..6 show only their own overlay
+  layers. Assembly view no longer applies node transforms to the model's own meshes (set pads were rotated twice).
+  CollisionVolume::radiusTop (cylinder -> frustum, COLL trailing block, backward compatible); CR-1 / N-1AX conical
+  pads: rim drum + frustum. LIVE: headless editor steps 2-6 layer flags, step 3 shows the cone hugging the pad
+  (D:/tmp/hit_cones.png); packages carry radius_top 0.16; model_asset tests PASS; Cobrett-I SHIP ASSET CHECK PASS.
 

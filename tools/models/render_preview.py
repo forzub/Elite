@@ -52,7 +52,10 @@ if mode == "hits":
             S = Matrix.Diagonal((*v["half_size"], 1))
             A = Matrix.Identity(4)
         else:
-            bpy.ops.mesh.primitive_cylinder_add(radius=1, depth=2, vertices=32)
+            if v.get("radius_top", -1) >= 0:                                    # a frustum (a conical pad)
+                bpy.ops.mesh.primitive_cone_add(radius1=1, radius2=v["radius_top"] / max(v["radius"], 1e-6), depth=2, vertices=32)
+            else:
+                bpy.ops.mesh.primitive_cylinder_add(radius=1, depth=2, vertices=32)
             S = Matrix.Diagonal((v["radius"], v["half_height"], v["radius"], 1))
             A = Matrix.Rotation(math.radians(-90), 4, "X")                       # Blender cylinder Z -> local +Y
         o = bpy.context.object

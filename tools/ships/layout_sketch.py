@@ -326,7 +326,8 @@ def ship_hits():
             q["module_part"] = v["part"]
             q["position"] = [a + b for a, b in zip(apply(R, v["position"]), pos)]
             q["rotation_deg"] = _to_euler_xyz(_mat(R, _euler_xyz(v["rotation_deg"])))
-            ext = v.get("half_size") or [v.get("radius", 0.0), v.get("half_height", 0.0), v.get("radius", 0.0)]
+            ext = v.get("half_size") or [max(v.get("radius", 0.0), v.get("radius_top", 0.0)), v.get("half_height", 0.0),
+                                        max(v.get("radius", 0.0), v.get("radius_top", 0.0))]
             RW = _mat(R, _euler_xyz(v["rotation_deg"]))
             for cx in (-1, 1):                                   # true corners of the volume's local box
                 for cy in (-1, 1):

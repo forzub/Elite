@@ -852,6 +852,8 @@ json Assembly::build(const ModelCard& card, const json& doc, const std::vector<R
         {
             c["radius"] = h["radius"];
             c["half_height"] = h["half_height"];
+            if (h.contains("radius_top"))
+                c["radius_top"] = h["radius_top"];
         }
         else
             c["half_size"] = h["half_size"];

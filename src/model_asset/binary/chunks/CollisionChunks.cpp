@@ -14,6 +14,8 @@ void writeCollisionsV4(Writer& w, const ModelAsset& a)
         w.pod(c.radius); w.pod(c.halfHeight); writeStrings(w, c.activeStates);
         w.pod(static_cast<std::uint8_t>(c.enabled ? 1 : 0));
     }
+    // trailing block (older readers stop before it): the top radius of each volume, < 0 = a straight cylinder
+    for (const auto& c : a.collisionVolumes) w.pod(c.radiusTop);
 }
 
 void readCollisionsV4(Reader& r, ModelAsset& a)
@@ -29,6 +31,8 @@ void readCollisionsV4(Reader& r, ModelAsset& a)
         r.pod(c.radius); r.pod(c.halfHeight); readStrings(r, c.activeStates);
         std::uint8_t enabled = 0; r.pod(enabled); c.enabled = enabled != 0;
     }
+    if (r.atEnd()) return; // written before frustum volumes existed
+    for (auto& c : a.collisionVolumes) r.pod(c.radiusTop);
 }
 
 } // namespace elite::model_asset::binary

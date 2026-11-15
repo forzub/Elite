@@ -37,6 +37,22 @@ import eqlib  # noqa: E402
 import source_layout  # noqa: E402
 
 VARIANTS = [("hole", "Пробоина"), ("torn", "Разворочен"), ("broken", "Сорван кусок")]
+# a drive also gets its nozzle end (+Z, where the pad sits) torn up / torn off (author 2026-11-15: «сейчас у тебя
+# двигатель разворочен больше теми частями, которые ближе к реактору. надо хотя бы один с развороченным соплом, а
+# лучше - два»)
+DRIVE_VARIANTS = [("nozzle_torn", "Разворочено сопло"), ("nozzle_off", "Сорвано сопло")]
+
+
+def is_drive(asset_dir):
+    """a drive: its pad mount (mounts.json, MESH_EDITOR_SPEC 18.11) turns the pad's +Y onto the unit's +Z"""
+    mp = os.path.join(source_layout.assembly_dir(asset_dir), "mounts.json")
+    if not os.path.exists(mp):
+        return False
+    return any(m.get("rotation_deg") == [90.0, 0.0, 0.0] for m in json.load(open(mp, encoding="utf-8")).get("mounts", []))
+
+
+def variants_for(asset_dir):
+    return VARIANTS + (DRIVE_VARIANTS if is_drive(asset_dir) else [])
 DMG_MATERIALS = {
     # torn bright metal at the rim, scorch next to it, soot fading out
     "eq_dmg_torn": ((0.44, 0.43, 0.41), (0.55, 0.55, 0.55), 140),
@@ -434,7 +450,26 @@ def make_plan(kind, rng, lods, info):
     tris = surface_samples(ref, info, D) or surface_samples(lods[min(lods)], info, 0.0)
     occ = occluders(ref)
     feats, removed_parts, moved_parts = [], set(), {}
-    if kind == "hole":
+    if kind == "nozzle_torn":
+        # the nozzle end: the aft third along +Z (the pad's side) - a big wound there, often a second one beside it
+        aft = [t for t in tris if t[1][2] > hi[2] - 0.33 * size[2]]
+        p, n = pick_surface(rng, aft or tris, centre, occ=occ)
+        rc = max(0.12, rng.uniform(0.11, 0.15) * D)
+        w = Wound(rng, p, n, rc, rc * rng.uniform(2.0, 2.4), +1, rng.uniform(1.0, 1.3), rng.randint(5, 8))
+        feats.append(w)
+        if rng.random() < 0.6:
+            q, m = pick_surface(rng, aft or tris, centre, [p], 0.3 * D, occ)
+            r2 = max(0.06, rng.uniform(0.05, 0.07) * D)
+            feats.append(Wound(rng, q, m, r2, r2 * 2.1, +1, rng.uniform(0.8, 1.1), rng.randint(3, 5)))
+        for name in sorted(info):
+            c, diag = info[name]
+            if diag < 0.2 * D and length(sub(c, p)) < w.ro:
+                if rng.random() < 0.6:
+                    removed_parts.add(name)
+                else:
+                    axis = unit((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1)))
+                    moved_parts[name] = (c, axis, math.radians(rng.uniform(15, 40)), mul(w.d, rng.uniform(0.3, 0.8) * rc))
+    elif kind == "hole":
         p, n = pick_surface(rng, tris, centre, occ=occ)
         rc = max(0.05, rng.uniform(0.035, 0.055) * D)
         feats.append(Wound(rng, p, n, rc, rc * rng.uniform(1.9, 2.3), +1, rng.uniform(0.6, 0.9), rng.randint(2, 4)))
@@ -459,15 +494,19 @@ def make_plan(kind, rng, lods, info):
                 else:
                     axis = unit((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1)))
                     moved_parts[name] = (c, axis, math.radians(rng.uniform(12, 38)), mul(w.d, rng.uniform(0.25, 0.7) * rc))
-    else:   # broken
+    else:   # broken / nozzle_off
         order = sorted(range(3), key=lambda k: -size[k])
         ax = order[0] if rng.random() < 0.7 else order[1]
         side = 1 if rng.random() < 0.5 else -1
+        if kind == "nozzle_off":                        # the nozzle end (+Z) torn off
+            ax, side = 2, 1
         n = [0.0, 0.0, 0.0]
         n[ax] = float(side)
         tilt = math.radians(rng.uniform(10, 28))
         n = unit(rotate(tuple(n), unit(cross(tuple(n), (0.3, 0.9, 0.2) if ax != 1 else (0.9, 0.2, 0.3))), tilt))
         frac = rng.uniform(0.58, 0.74)                  # the kept share along the axis
+        if kind == "nozzle_off":
+            frac = rng.uniform(0.80, 0.88)
         c = list(centre)
         c[ax] = (lo[ax] if side > 0 else hi[ax]) + side * frac * size[ax]
         band = max(0.08, rng.uniform(0.07, 0.10) * D)
@@ -893,7 +932,7 @@ def process(asset_dir):
     hits_path = os.path.join(source_layout.assembly_dir(asset_dir), "hit_volumes.json")
     hits = json.load(open(hits_path, encoding="utf-8")) if os.path.exists(hits_path) else None
     report = []
-    for vid, title in VARIANTS:
+    for vid, title in variants_for(asset_dir):
         vdir = source_layout.variant_dir(asset_dir, vid)
         if not is_generated(vdir):
             report.append(f"{vid}: the author's own, skipped")
@@ -955,7 +994,7 @@ def update_passport(asset_dir, asset):
     vs = doc.setdefault("variants", [])
     if not any(v.get("id") == "intact" for v in vs):
         vs.insert(0, {"id": "intact", "title": "Целая", "inGame": "shell"})
-    for vid, title in VARIANTS:
+    for vid, title in variants_for(asset_dir):
         e = next((v for v in vs if v.get("id") == vid), None)
         if e is None:
             vs.append({"id": vid, "title": title, "inGame": "shell", "generated": True})

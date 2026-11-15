@@ -5794,4 +5794,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - 2026-11-15 Mesh editor object filter: pads and sets inherit the ships of their unit / linked modules
   (Catalog::inheritUsage; author noticed the Cobra filter did not list the pads). LIVE: socket list - filter
   "Cobrett-I N1" shows er5 / n1ax / sr150 with their _pad and _set.
+- 2026-11-15 DRIVE NOZZLE DAMAGE (MESH_EDITOR_SPEC 18.12; author: wounds sat mostly at the reactor end, wants the
+  nozzle torn up). build_damage_variants: drives (pad mount +Y -> +Z) get nozzle_torn (big wound in the aft third)
+  and nozzle_off (break across Z at 80-88 % length) on top of hole / torn / broken. 10 drives x 2 = 20 variants,
+  shells built, cards 160/160 "ready". LIVE: Blender shots D:/tmp/noz_{cobretty_cr1_vector,ofu_u70_drive,
+  tianhe_tz28v_drive}.png show the aft end torn / torn off.
 

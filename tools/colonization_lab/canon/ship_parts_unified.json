@@ -5527,7 +5527,7 @@
       "overhaul_h": 6000,
       "life_h": 25000,
       "model_asset": "agora_rm2_drone",
-      "notes": "Mantis-like repair drone: raptorial front arms (left = 2-jaw claw on a roll wrist, right = plasma cutter with gas/power cartridge), a fine-work tool arm under the head (driver bit, micro-gripper, work lamp), expressive sensor head with two eyes, three ocelli, lidar mandible and feelers; four walking legs on magnetic pads; abdomen = power pack with Agora corner castings for the std.bay.drone4 cradle twist locks (native fit). Field-coupled thruster pods on the thorax and abdomen fly it around obstacles. Patchwork palette (warm white / terracotta / sea blue) with brass joints. Every moving part is a separate OBJ part modelled in the rest pose; pivots in 'rig'. Stowed envelope assumes legs folded up along the body (femur +60, knee -80) and arms folded (elbow -110) - not modelled yet.",
+      "notes": "Mantis-like repair drone: front arms with hands (two fingers and a thumb each; folded like a mantis's raptorial legs in the rest pose, unfolded for work; right forearm carries the plasma cutter with gas/power cartridge), a fine-work tool arm under the head (driver bit, micro-gripper, work lamp), binocular sensor head (two camera barrels in one housing, a movable brow plate over each, lidar in the chin; author 2026-11-15); four walking legs on magnetic pads; abdomen = one long power-pack section with Agora corner castings for the std.bay.drone4 cradle twist locks (native fit). Field-coupled thruster pods on the thorax and abdomen fly it around obstacles. Patchwork palette (warm white / terracotta / sea blue) with brass joints. Every moving part is a separate OBJ part modelled in the rest pose; pivots in 'rig'. Stowed envelope assumes legs folded up along the body (femur +60, knee -80) and arms in the mantis fold (the rest pose); the test clips (intact/assembly/rig.json) show the fold and the walk.",
       "geometry": {
         "status": "ACCEPTED/model",
         "envelope_m": [
@@ -5566,12 +5566,12 @@
         "id": "drone.repair",
         "ru": "ремонтный дрон",
         "srus": {
-          "manipulator": "клешня с запястьем (rm2_arm_l_*, rm2_claw_jaw_a/b)",
+          "manipulator": "руки с кистями и пальцами (rm2_arm_*, rm2_hand_*)",
           "cutter": "плазменный резак (rm2_cutter)",
           "tool": "манипулятор тонких работ (rm2_tool_*)",
           "legs": "ноги и магнитные опоры (rm2_leg_*)",
           "thrust": "полевые движители (rm2_thrusters_fore/aft)",
-          "sensors": "сенсорная голова (rm2_head, rm2_antenna_l/r)",
+          "sensors": "сенсорная голова-бинокль с подвижными бровями (rm2_head, rm2_brow_l/r)",
           "power": "силовой блок-брюшко (rm2_abdomen)"
         }
       },
@@ -5696,42 +5696,42 @@
             "joint": "head pitch (+ = look down)"
           },
           {
-            "part": "rm2_antenna_l",
+            "part": "rm2_brow_l",
             "parent": "rm2_head",
             "pivot_m": [
-              0.045,
-              0.955,
-              0.735
+              0.135,
+              0.969,
+              0.808
             ],
             "axis": [
-              1.0,
               0.0,
-              0.0
+              0.0,
+              -1.0
             ],
             "range_deg": [
-              -30,
-              45
+              -25,
+              25
             ],
-            "joint": "feeler sweep"
+            "joint": "brow (+ = inner end up)"
           },
           {
-            "part": "rm2_antenna_r",
+            "part": "rm2_brow_r",
             "parent": "rm2_head",
             "pivot_m": [
-              -0.045,
-              0.955,
-              0.735
+              -0.135,
+              0.969,
+              0.808
             ],
             "axis": [
-              1.0,
               0.0,
-              0.0
+              0.0,
+              1.0
             ],
             "range_deg": [
-              -30,
-              45
+              -25,
+              25
             ],
-            "joint": "feeler sweep"
+            "joint": "brow (+ = inner end up)"
           },
           {
             "part": "rm2_leg_fl_coxa",
@@ -6071,9 +6071,9 @@
             ],
             "range_deg": [
               -70,
-              60
+              40
             ],
-            "joint": "shoulder pitch"
+            "joint": "shoulder pitch (- = arm forward / up)"
           },
           {
             "part": "rm2_arm_l_fore",
@@ -6089,13 +6089,13 @@
               0.0
             ],
             "range_deg": [
-              -110,
-              40
+              -20,
+              110
             ],
-            "joint": "elbow (mantis fold)"
+            "joint": "elbow (0 = the mantis fold, + = unfold)"
           },
           {
-            "part": "rm2_arm_l_wrist",
+            "part": "rm2_hand_l",
             "parent": "rm2_arm_l_fore",
             "pivot_m": [
               0.19,
@@ -6103,21 +6103,21 @@
               1.0
             ],
             "axis": [
+              1.0,
               0.0,
-              -0.6644,
-              0.7474
+              0.0
             ],
             "range_deg": [
-              -180,
-              180
+              -60,
+              60
             ],
-            "joint": "wrist roll (pitch about X also possible: -60..60)"
+            "joint": "wrist pitch"
           },
           {
-            "part": "rm2_claw_jaw_a",
-            "parent": "rm2_arm_l_wrist",
+            "part": "rm2_hand_l_f1",
+            "parent": "rm2_hand_l",
             "pivot_m": [
-              0.19,
+              0.212,
               0.7102,
               1.0561
             ],
@@ -6128,28 +6128,47 @@
             ],
             "range_deg": [
               -10,
-              40
+              90
             ],
-            "joint": "jaw open (+ = open)"
+            "joint": "finger curl (+ = grip)"
           },
           {
-            "part": "rm2_claw_jaw_b",
-            "parent": "rm2_arm_l_wrist",
+            "part": "rm2_hand_l_f2",
+            "parent": "rm2_hand_l",
             "pivot_m": [
-              0.19,
+              0.168,
               0.7102,
               1.0561
             ],
             "axis": [
-              -1.0,
+              1.0,
               0.0,
               0.0
             ],
             "range_deg": [
               -10,
-              40
+              90
             ],
-            "joint": "jaw open (+ = open)"
+            "joint": "finger curl (+ = grip)"
+          },
+          {
+            "part": "rm2_hand_l_thumb",
+            "parent": "rm2_hand_l",
+            "pivot_m": [
+              0.145,
+              0.7341,
+              1.0171
+            ],
+            "axis": [
+              -0.0,
+              0.7474,
+              0.6644
+            ],
+            "range_deg": [
+              -10,
+              60
+            ],
+            "joint": "thumb (+ = close)"
           },
           {
             "part": "rm2_arm_r_shoulder",
@@ -6185,9 +6204,9 @@
             ],
             "range_deg": [
               -70,
-              60
+              40
             ],
-            "joint": "shoulder pitch"
+            "joint": "shoulder pitch (- = arm forward / up)"
           },
           {
             "part": "rm2_arm_r_fore",
@@ -6203,13 +6222,13 @@
               0.0
             ],
             "range_deg": [
-              -110,
-              40
+              -20,
+              110
             ],
-            "joint": "elbow (mantis fold)"
+            "joint": "elbow (0 = the mantis fold, + = unfold)"
           },
           {
-            "part": "rm2_cutter",
+            "part": "rm2_hand_r",
             "parent": "rm2_arm_r_fore",
             "pivot_m": [
               -0.19,
@@ -6222,10 +6241,86 @@
               0.0
             ],
             "range_deg": [
-              -70,
-              70
+              -60,
+              60
             ],
-            "joint": "torch pitch (roll about the torch axis: -180..180)"
+            "joint": "wrist pitch"
+          },
+          {
+            "part": "rm2_hand_r_f1",
+            "parent": "rm2_hand_r",
+            "pivot_m": [
+              -0.168,
+              0.7102,
+              1.0561
+            ],
+            "axis": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "range_deg": [
+              -10,
+              90
+            ],
+            "joint": "finger curl (+ = grip)"
+          },
+          {
+            "part": "rm2_hand_r_f2",
+            "parent": "rm2_hand_r",
+            "pivot_m": [
+              -0.212,
+              0.7102,
+              1.0561
+            ],
+            "axis": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "range_deg": [
+              -10,
+              90
+            ],
+            "joint": "finger curl (+ = grip)"
+          },
+          {
+            "part": "rm2_hand_r_thumb",
+            "parent": "rm2_hand_r",
+            "pivot_m": [
+              -0.145,
+              0.7341,
+              1.0171
+            ],
+            "axis": [
+              0.0,
+              -0.7474,
+              -0.6644
+            ],
+            "range_deg": [
+              -10,
+              60
+            ],
+            "joint": "thumb (+ = close)"
+          },
+          {
+            "part": "rm2_cutter",
+            "parent": "rm2_arm_r_fore",
+            "pivot_m": [
+              -0.251,
+              0.557,
+              0.804
+            ],
+            "axis": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "range_deg": [
+              -40,
+              40
+            ],
+            "joint": "torch pitch along the forearm"
           },
           {
             "part": "rm2_tool_upper",

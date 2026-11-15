@@ -41,6 +41,14 @@
           <button id="fitBtn" class="small">показать всё</button>
           <button id="blenderBtn" class="small" title="этот уровень в окне Blender">Открыть в Blender</button>
         </div>
+        <div id="animBar" class="overlay anim" hidden title="пробная анимация по скелету модели (rig.json)">
+          <select id="animClip"></select>
+          <button id="animPlay" class="small" title="играть / пауза (пробел)">▶</button>
+          <input type="range" id="animTime" min="0" max="1000" step="1" value="0">
+          <span id="animLabel" class="muted">0.0 / 0.0 с</span>
+          <label title="повторять клип"><input type="checkbox" id="animLoop" checked> повтор</label>
+          <button id="animRest" class="small" title="вернуть исходную позу (как смоделировано)">исходная поза</button>
+        </div>
         <div id="asmTools" class="overlay bottom" hidden>
           <label class="explode">разнос <input type="range" id="explode" min="0" max="1" step="0.01" value="0"></label>
           <label><input type="checkbox" data-ov="tree" checked> иерархия</label>

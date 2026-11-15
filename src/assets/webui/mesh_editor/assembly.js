@@ -36,6 +36,7 @@ const Asm = {
     $('stepSide').hidden = true;
     $('asmTools').hidden = false;
     $('viewTools').hidden = true;
+    $('animBar').hidden = true;   // the player poses the step-1 view only
     $('lodBar').hidden = true;
     if (!this.library) send({ cmd: 'library' });
     if (!this.doc || this.doc.model !== `${state.model.category}/${state.model.id}`) {
@@ -53,6 +54,7 @@ const Asm = {
     $('stepSide').hidden = false;
     $('asmTools').hidden = true;
     $('viewTools').hidden = false;
+    $('animBar').hidden = !Anim.rig;
     $('lodBar').hidden = false;
     whenViewer((v) => v.hideAssembly());
   },

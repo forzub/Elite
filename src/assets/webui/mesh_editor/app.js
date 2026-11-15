@@ -305,6 +305,7 @@ function onInspection(m) {
     v.setErrors(m.parts.filter((p) => p.result === 'error' && !p.link).map((p) => p.key));
     v.setLinks(m.parts.filter((p) => p.link).map((p) => p.key));
     v.select(insp.selected, false);
+    Anim.setup(m.rig || null);
     renderLodBar();
     renderParts();
     if (params.get('part') && !insp.selected) {
@@ -491,6 +492,85 @@ function renderTrail() {
   $('backModel').onclick = () => goBack(state.stack.length - 1);
   for (const a of box.querySelectorAll('a')) a.onclick = (e) => { e.preventDefault(); goBack(Number(a.dataset.depth)); };
 }
+// ---- the test animation player (rig.json, elite.rig.v1): clip, play / pause, the time slider, loop, rest pose
+const Anim = {
+  rig: null, clip: null, t: 0, playing: false, last: 0,
+  setup(rig) {
+    const same = this.rig && rig && JSON.stringify(this.rig) === JSON.stringify(rig);
+    if (same) { this.apply(); return; }
+    this.stop();
+    this.rig = rig && rig.joints && rig.joints.length ? rig : null;
+    $('animBar').hidden = !this.rig;
+    if (!this.rig) { whenViewer((v) => v.setPose(null)); return; }
+    const clips = this.rig.clips || [];
+    $('animClip').innerHTML = clips.map((c, i) => `<option value="${i}">${esc(c.title || c.id)}</option>`).join('') ||
+      '<option value="">нет клипов</option>';
+    this.pick(clips.length ? 0 : -1);
+  },
+  pick(i) {
+    this.stop();
+    this.clip = i >= 0 ? (this.rig.clips || [])[i] : null;
+    if (i >= 0) $('animClip').value = String(i);
+    this.t = 0;
+    if (this.clip) $('animLoop').checked = this.clip.loop !== false;
+    this.apply();
+  },
+  dur() { return this.clip ? Math.max(0.01, this.clip.duration_s || 1) : 1; },
+  // angle of a part at time t: keys [[t, deg], ...], eased between neighbours (smoothstep)
+  angles(t) {
+    const out = {};
+    if (!this.clip) return out;
+    for (const [part, keys] of Object.entries(this.clip.keys || {})) {
+      if (!keys.length) continue;
+      let a = keys[0][1];
+      if (t >= keys[keys.length - 1][0]) a = keys[keys.length - 1][1];
+      else for (let k = 0; k + 1 < keys.length; k++) {
+        const [t0, a0] = keys[k], [t1, a1] = keys[k + 1];
+        if (t >= t0 && t <= t1) { const u = t1 > t0 ? (t - t0) / (t1 - t0) : 1; const s = u * u * (3 - 2 * u); a = a0 + (a1 - a0) * s; break; }
+      }
+      out[part] = a;
+    }
+    return out;
+  },
+  apply() {
+    const d = this.dur();
+    $('animTime').value = String(Math.round((this.t / d) * 1000));
+    $('animLabel').textContent = `${this.t.toFixed(1)} / ${d.toFixed(1)} с`;
+    $('animPlay').textContent = this.playing ? '⏸' : '▶';
+    const angles = this.angles(this.t);
+    whenViewer((v) => v.setPose(this.rig, angles));
+  },
+  play() {
+    if (!this.clip) return;
+    if (this.t >= this.dur()) this.t = 0;
+    this.playing = true;
+    this.last = performance.now();
+    const step = (now) => {
+      if (!this.playing) return;
+      this.t += (now - this.last) / 1000;
+      this.last = now;
+      if (this.t >= this.dur()) {
+        if ($('animLoop').checked) this.t %= this.dur();
+        else { this.t = this.dur(); this.playing = false; }
+      }
+      this.apply();
+      if (this.playing) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    this.apply();
+  },
+  stop() { this.playing = false; if (this.rig) $('animPlay').textContent = '▶'; },
+};
+$('animClip').onchange = () => Anim.pick(Number($('animClip').value));
+$('animPlay').onclick = () => (Anim.playing ? (Anim.stop(), Anim.apply()) : Anim.play());
+$('animTime').oninput = () => { Anim.stop(); Anim.t = (Number($('animTime').value) / 1000) * Anim.dur(); Anim.apply(); };
+$('animRest').onclick = () => { Anim.stop(); Anim.t = 0; $('animTime').value = '0'; whenViewer((v) => v.setPose(null)); $('animPlay').textContent = '▶'; };
+document.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space' || $('animBar').hidden || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  e.preventDefault();
+  $('animPlay').click();
+});
+
 let noticeTimer = null;
 function notice(text) {
   const n = $('notice');

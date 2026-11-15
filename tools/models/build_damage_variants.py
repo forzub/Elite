@@ -800,7 +800,14 @@ def is_pad(asset_dir):
     return os.path.basename(asset_dir.rstrip("/\\")).endswith("_pad")
 
 
-def wound_innards(part, w, rng, lod, lo, hi, bare=False):
+def is_craft(asset_dir):
+    """a drone: a thin-skinned airframe, no compartment behind the skin - a wound shows frame members, pipes and
+    cables, not a dark back wall with boxes on it (author 2026-11-15: «пластина с торчащими трубками ... не везде
+    уместна, например на дроне»)"""
+    return os.path.basename(asset_dir.rstrip("/\\")).endswith("_drone")
+
+
+def wound_innards(part, w, rng, lod, lo, hi, bare=False, plate=True):
     """what shows through a hole: a dark back wall, frame members (one broken, its ends bent out), a pipe with a torn
     end sticking out, cables hanging out of the hole, a couple of boxes on the back wall"""
     rc = w.rc
@@ -811,7 +818,7 @@ def wound_innards(part, w, rng, lod, lo, hi, bare=False):
     R = frame(e1, e2, d)
     P = lambda x, y, z: to_world(w.c, e1, e2, d, x, y, z)
     th = max(0.01, 0.03 * rc)
-    if not bare:
+    if not bare and plate:
         eqlib.box(part, "eq_dmg_interior", P(0, 0, -depth), (1.9 * rc, 1.9 * rc, th), R)
     if lod >= 3:
         return
@@ -862,12 +869,14 @@ def wound_innards(part, w, rng, lod, lo, hi, bare=False):
               max(0.004, 0.02 * rc), lod)
     for _ in range(rng.randint(1, 3)):                       # boxes on the back wall
         x, y = rng.uniform(-0.6, 0.6) * rc, rng.uniform(-0.6, 0.6) * rc
+        if not plate:
+            continue
         h = rng.uniform(0.12, 0.3) * rc
         eqlib.box(part, rng.choice(("eq_metal_panel", "eq_metal_graphite", "eq_dmg_scorch")), P(x, y, -depth + h / 2),
                   (rng.uniform(0.2, 0.45) * rc, rng.uniform(0.2, 0.45) * rc, h), R)
 
 
-def break_innards(part, br, rng, lod, lo, hi, bare=False):
+def break_innards(part, br, rng, lod, lo, hi, bare=False, plate=True):
     """the broken end: an inner bulkhead a little behind the break, longerons and pipes sticking out of it with bent
     ends, cables hanging out"""
     n, e1, e2 = br.n, br.e1, br.e2
@@ -880,7 +889,7 @@ def break_innards(part, br, rng, lod, lo, hi, bare=False):
         return
     b = br.band
     P = lambda x, y, z: to_world(br.c, e1, e2, n, x + uc, y + vc, z)
-    if not bare:
+    if not bare and plate:
         eqlib.box(part, "eq_dmg_interior", P(0, 0, -0.9 * b - br.amp), (2 * hx, 2 * hy, max(0.01, 0.03 * b)), R)
     if lod >= 3:
         return
@@ -912,16 +921,16 @@ def break_innards(part, br, rng, lod, lo, hi, bare=False):
               max(0.004, 0.035 * b), lod)
 
 
-def innards(plan, lod, bare=False):
+def innards(plan, lod, bare=False, plate=True):
     """one extra part per LOD, the same for every LOD (seeded from the plan), coarser LODs drop the small things"""
     part = eqlib.Part("dmg_innards")
     rng = random.Random(plan["seed"])
     for f in plan["features"]:
         sub_rng = random.Random(rng.randrange(1 << 30))
         if isinstance(f, Break):
-            break_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"], bare)
+            break_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"], bare, plate)
         elif f.sign > 0:
-            wound_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"], bare)
+            wound_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"], bare, plate)
     return part
 
 
@@ -987,7 +996,7 @@ def process(asset_dir):
                 open(os.path.join(d, name + ".obj"), "w", encoding="utf-8", newline="\n").write(obj_text(out, name + ".mtl", vid))
                 mats = {k for k, v in out["faces"].items() if v}
                 open(os.path.join(d, name + ".mtl"), "w", encoding="utf-8", newline="\n").write(mtl_text(mats, m["mtl"]))
-            inn = innards(plan, lod, is_pad(asset_dir))
+            inn = innards(plan, lod, is_pad(asset_dir), not is_craft(asset_dir))
             if inn.tris():
                 open(os.path.join(d, "dmg_innards.obj"), "w", encoding="utf-8", newline="\n").write(eqlib.obj_text(inn, "dmg_innards.mtl"))
                 open(os.path.join(d, "dmg_innards.mtl"), "w", encoding="utf-8", newline="\n").write(eqlib.mtl_text(inn.faces.keys()))

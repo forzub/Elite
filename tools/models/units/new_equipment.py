@@ -2,8 +2,10 @@
   Sol Mass Yards LM-MP8   light external missile rack (8 cells, blow-out covers, end reload hatch, launch-control unit);
   Hyperion Yards RD-1   recon drone (gimballed camera turret, deployable antenna, power block, 4 field-coupled thrusters,
                         3-point kinematic docking latch);
-  Agora Modular RM-2 "Mantide"  repair drone, a mantis on four magnetic feet: every limb segment / joint is its own part
-                        with its pivot at a joint (RM2_RIG below; the rig goes into the proposal passport).
+  Agora Modular RM-2 "Mantide"  repair drone on four magnetic feet: arms with hands that fold like a mantis's, a
+                        binocular head with brow plates (author 2026-11-15), one long abdomen; every limb segment / joint
+                        is its own part with its pivot at a joint (RM2_RIG below; the rig goes into the proposal passport
+                        and into intact/assembly/rig.json with test clips for the mesh editor's player).
 """
 import math
 
@@ -451,9 +453,43 @@ def rm2_arm(s):
 
 
 RM2_TOOL = ((0.0, 0.67, 0.50), (0.0, 0.52, 0.61), (0.0, 0.56, 0.79), (0.0, 0.51, 0.91))   # base, elbow, wrist, tip
-RM2_EYES = [(s, (s * 0.12, 0.925, 0.735), norm((s * 0.35, 0.08, 1.0))) for s in (1, -1)]
-RM2_ANT = {s: [(s * 0.045, 0.955, 0.735), (s * 0.06, 1.08, 0.78), (s * 0.13, 1.20, 0.84), (s * 0.22, 1.22, 0.96)] for s in (1, -1)}
+RM2_HEAD = (0.0, 0.90, 0.71)                                    # centre of the binocular head housing
+RM2_EYES = [(s, (s * 0.078, 0.905, 0.785), norm((0.0, -0.06, 1.0))) for s in (1, -1)]   # barrel base on the front, axis
+RM2_BROW = {s: (s * 0.078, 0.969, 0.808) for s in (1, -1)}      # brow plate centre (over each barrel)
+RM2_BROW_PIVOT = {s: (s * 0.135, 0.969, 0.808) for s in (1, -1)}   # hinge at the outer end, axis (0, 0, -s): + = inner end up
+RM2_PALM = 0.075
 
+
+def rm2_hand_axes(s):
+    """the hand's direction (wrist -> fingertips) and its back normal (the palm faces -nup)"""
+    S, E, Wp, T = rm2_arm(s)
+    dw = norm(_sub(T, Wp))
+    return dw, norm(_cross(dw, (1, 0, 0)))
+
+
+def rm2_fingers(s):
+    """(id, knuckle, middle joint, tip) of the two fingers and the thumb (thumb on the inner side, -s X)"""
+    S, E, Wp, T = rm2_arm(s)
+    dw, nup = rm2_hand_axes(s)
+    out = []
+    for fid, x in (("f1", 0.022), ("f2", -0.022)):
+        k0 = _add(_add(Wp, _mul(dw, RM2_PALM)), (x, 0.0, 0.0))
+        k1 = _add(k0, _mul(dw, 0.05))
+        k2 = _add(_add(k1, _mul(dw, 0.04)), _mul(nup, -0.012))
+        out.append((fid, k0, k1, k2))
+    k0 = _add(_add(_add(Wp, _mul(dw, 0.03)), (-s * 0.045, 0.0, 0.0)), _mul(nup, -0.008))
+    k1 = _add(_add(k0, _mul(dw, 0.035)), (-s * 0.012, 0.0, 0.0))
+    k2 = _add(_add(k1, _mul(dw, 0.03)), _add((s * 0.008, 0.0, 0.0), _mul(nup, -0.01)))
+    out.append(("thumb", k0, k1, k2))
+    return out
+
+
+def rm2_cutter_axis():
+    """the plasma cutter along the outer side of the right forearm: mount point and the nozzle end"""
+    S, E, Wp, T = rm2_arm(-1)
+    fd = norm(_sub(Wp, E))
+    c0 = _add(_lerp(E, Wp, 0.30), (-0.075, 0.0, 0.0))
+    return c0, _add(c0, _mul(fd, 0.29))
 
 def _pod(part, attach, c, axis, small, lod):
     """Agora field-coupled thruster pod: sea-blue strut, white housing, coil ring, ceramic emitter face"""
@@ -515,47 +551,44 @@ def rm2_parts(lod):
     for s in (-1, 1):
         _pod(tf, (s * 0.12, 0.74, 0.0), (s * 0.27, 0.84, 0.0), (s * 0.5, 0.86, 0.0), small, lod)
 
-    # --- neck (yaw) and head (pitch): skull, face plate, sensor eyes with brows, lidar mandible
+    # --- neck (yaw) and head (pitch): a binocular sensor head - two camera barrels side by side in one housing, a movable
+    #     brow plate over each (author 2026-11-15: «голова похожа на бинокль, собранныей в одном корпусе и над камерами -
+    #     пластины как брови»); no feelers, no mandible - nothing insect-like left on the head
     nk = part("rm2_neck")
     seg_lathe(nk, S_, d["pro1"], d["head"], [(0.0, 0.0), (0.06, 0.0), (0.055, 0.09), (0.0, 0.09)], ks)
     if lod == 0:
         knuckle(nk, B_, d["head"], (1, 0, 0), 0.042, 0.13, ks, cap_mat=S_)
     hd = part("rm2_head")
-    box(hd, W_, (0, 0.89, 0.705), (0.24, 0.14, 0.15), chamfer=0.045 if lod < 2 else 0.0)
-    box(hd, T_, (0, 0.80, 0.735), (0.10, 0.07, 0.09), chamfer=ch(0.02))                              # mandible
+    hc = RM2_HEAD
+    box(hd, W_, hc, (0.30, 0.11, 0.15), chamfer=0.035 if lod < 2 else 0.0)                         # one housing
+    box(hd, T_, (0, hc[1] - 0.07, hc[2] - 0.01), (0.10, 0.04, 0.10), chamfer=ch(0.012))             # chin block (lidar)
     if lod < 2:
-        box(hd, S_, (0, 0.875, 0.783), (0.13, 0.085, 0.014), chamfer=ch(0.006))                      # face plate
-        box(hd, "eq_agora_rm2_lens", (0, 0.795, 0.781), (0.075, 0.018, 0.006))                          # lidar window
-        box(hd, T_, (0, 0.962, 0.70), (0.12, 0.012, 0.11), chamfer=ch(0.004))                         # crest panel
-    for s, ec, de in RM2_EYES:
-        p0 = _sub(ec, _mul(de, 0.045))
-        p1 = _add(ec, de)
-        es = small * 2 if lod == 0 else small
-        seg_lathe(hd, W_, p0, p1, [(0.0, 0.0), (0.07, 0.0), (0.078, 0.02), (0.078, 0.05), (0.07, 0.058)], es, soft=40)
-        if lod == 2:
-            seg_lathe(hd, "eq_agora_rm2_iris", p0, p1, [(0.07, 0.058), (0.0, 0.09)], es)
-            continue
-        seg_lathe(hd, "eq_agora_rm2_lens", p0, p1, [(0.07, 0.058), (0.062, 0.072), (0.05, 0.082)], es, soft=50)
-        seg_lathe(hd, "eq_agora_rm2_iris", p0, p1, [(0.05, 0.082), (0.034, 0.091), (0.02, 0.0955)], es, soft=50)
-        seg_lathe(hd, "eq_agora_rm2_lens", p0, p1, [(0.02, 0.0955), (0.0, 0.098)], es, soft=50)
-        if lod < 2:
-            seg_lathe(hd, B_, p0, p1, crect(0.074, 0.084, 0.040, 0.052), es)                         # bezel ring
-            bc = _add(ec, (s * 0.005, 0.072, 0.0))
-            box(hd, T_, bc, (0.13, 0.018, 0.06), rot_z(-s * 0.22), chamfer=ch(0.006))                  # brow plate
-    if lod == 0:
-        for k in range(3):                                                                           # three ocelli
-            p = ((k - 1) * 0.035, 0.955 - abs(k - 1) * 0.008, 0.775)
-            seg_lathe(hd, "eq_agora_rm2_lens", p, _add(p, (0, 0.3, 1.0)), [(0.0, 0.0), (0.012, 0.0), (0.0, 0.008)], 8)
+        box(hd, S_, (0, hc[1] + 0.058, hc[2] - 0.025), (0.20, 0.012, 0.09), chamfer=ch(0.004))      # sea-blue top panel
+        box(hd, "eq_agora_rm2_lens", (0, hc[1] - 0.07, hc[2] + 0.041), (0.06, 0.014, 0.004))       # lidar window
         for s in (-1, 1):
-            hex_bolt(hd, B_, (s * 0.09, 0.835, 0.781), (0, 0, 1), 0.016, 0.006)
-
-    # --- feelers (charm + near-field sensors): thin tubes with amber tip lamps
-    for s, side in ((1, "l"), (-1, "r")):
-        an = part(f"rm2_antenna_{side}")
+            box(hd, S_, (s * 0.153, hc[1], hc[2] - 0.01), (0.008, 0.08, 0.11), chamfer=0.0)       # cheek plates
+            cyl(hd, B_, (s * 0.157, hc[1], hc[2] - 0.01), (s * 0.172, hc[1], hc[2] - 0.01), 0.022, ks)   # side focus knobs
+    es = small * 2 if lod == 0 else small
+    for s, ec, de in RM2_EYES:
+        p1 = _add(ec, de)
+        seg_lathe(hd, W_, ec, p1, [(0.0, 0.0), (0.052, 0.0), (0.052, 0.05), (0.047, 0.06)], es, soft=40)   # barrel
+        if lod == 2:
+            seg_lathe(hd, "eq_agora_rm2_iris", ec, p1, [(0.047, 0.06), (0.0, 0.075)], es)
+            continue
+        seg_lathe(hd, "eq_agora_rm2_lens", ec, p1, [(0.047, 0.06), (0.04, 0.07), (0.03, 0.077)], es, soft=50)
+        seg_lathe(hd, "eq_agora_rm2_iris", ec, p1, [(0.03, 0.077), (0.019, 0.083), (0.011, 0.086)], es, soft=50)
+        seg_lathe(hd, "eq_agora_rm2_lens", ec, p1, [(0.011, 0.086), (0.0, 0.088)], es, soft=50)
         if lod < 2:
-            tube(an, S_, bezier(*RM2_ANT[s], 10 if lod == 0 else 5), 0.008, 6 if lod == 0 else 4)
-            ball(an, "eq_status_amber", RM2_ANT[s][3], 0.018, 8)
-            cyl(an, B_, _sub(RM2_ANT[s][0], (0, 0.01, 0)), _add(RM2_ANT[s][0], (0, 0.02, 0)), 0.016, 8)
+            seg_lathe(hd, B_, ec, p1, crect(0.052, 0.058, 0.032, 0.044), es)                         # focus ring
+    if lod == 0:
+        for s in (-1, 1):
+            hex_bolt(hd, B_, (s * 0.12, hc[1] - 0.035, hc[2] + 0.075), (0, 0, 1), 0.016, 0.006)
+    for s, side in ((1, "l"), (-1, "r")):                                                             # the brows
+        br = part(f"rm2_brow_{side}")
+        c = RM2_BROW[s]
+        box(br, T_, c, (0.115, 0.014, 0.055), chamfer=ch(0.004))
+        if lod < 2:
+            cyl(br, B_, _add(RM2_BROW_PIVOT[s], (0, 0, -0.025)), _add(RM2_BROW_PIVOT[s], (0, 0, 0.025)), 0.009, 8)   # hinge pin
 
     # --- legs: coxa (yaw) -> femur -> tibia -> foot with magnetic pad
     for key in d["legs"]:
@@ -597,7 +630,10 @@ def rm2_parts(lod):
                 p = _lerp(C, K, t)
                 lathe(fm, B_, crect(0.036, 0.046, -0.008, 0.008), 6, frame_along(C, K), p, smooth=False)
 
-    # --- raptorial arms: shoulder housing, upper arm, forearm; left ends in the claw, right in the plasma cutter
+    # --- arms (author 2026-11-15: «передние лапы ... больше похожие на руки. но в сложенном состоянии пусть будут как у
+    #     богомола»): shoulder, upper arm, forearm, a hand with two fingers and a thumb on each; the modelled pose is the
+    #     mantis fold (forearm folded up against the upper arm, hands tucked), the test clip unfolds them. The plasma
+    #     cutter rides on the right forearm.
     for s, side in ((1, "l"), (-1, "r")):
         S, E, Wp, T = rm2_arm(s)
         sh = part(f"rm2_arm_{side}_shoulder")
@@ -605,51 +641,53 @@ def rm2_parts(lod):
         if lod == 0:
             knuckle(sh, B_, S, (1, 0, 0), 0.045, 0.14, ks, cap_mat=T_)
         up_ = part(f"rm2_arm_{side}_upper")
-        hex_limb(up_, W_, S, E, 0.045, 0.038)
+        hex_limb(up_, W_, S, E, 0.045, 0.040)
+        if lod < 2:                                                                                 # biceps actuator
+            off = (0.0, 0.0, 0.0)
+            dn = norm(_cross((1, 0, 0), _sub(E, S)))
+            cyl(up_, S_, _add(_lerp(S, E, 0.18), _mul(dn, -0.05)), _add(_lerp(S, E, 0.62), _mul(dn, -0.05)), 0.018, 8)
+            cyl(up_, B_, _add(_lerp(S, E, 0.62), _mul(dn, -0.05)), _add(_lerp(S, E, 0.88), _mul(dn, -0.05)), 0.010, 6)
         fo = part(f"rm2_arm_{side}_fore")
         if lod == 0:
-            knuckle(fo, B_, E, (1, 0, 0), 0.042, 0.11, ks, cap_mat=S_)
-        hex_limb(fo, T_, E, Wp, 0.042, 0.034, a0=math.pi / 6)
-        if lod < 2 and s > 0:                                                                       # mantis spines on the claw arm
-            dn = norm(_cross((1, 0, 0), _sub(Wp, E)))
-            for t in (0.3, 0.5, 0.7, 0.88):
-                p = _add(_lerp(E, Wp, t), _mul(dn, 0.03))
-                cyl(fo, W_, p, _add(p, _add(_mul(dn, 0.05), _mul(norm(_sub(Wp, E)), -0.02))), 0.009, 4)
-        dw = norm(_sub(T, Wp))
-        nup = norm(_cross(dw, (1, 0, 0)))
-        if s > 0:
-            wr = part("rm2_arm_l_wrist")
+            knuckle(fo, B_, E, (1, 0, 0), 0.044, 0.11, ks, cap_mat=S_)
+        hex_limb(fo, T_, E, Wp, 0.044, 0.036, a0=math.pi / 6)
+        if lod < 2:                                                                                 # forearm guard plate
+            fd = norm(_sub(Wp, E))
+            gn = norm(_cross((1, 0, 0), fd))
+            obox(fo, W_, _add(_lerp(E, Wp, 0.18), _mul(gn, 0.042)), _add(_lerp(E, Wp, 0.85), _mul(gn, 0.038)), 0.07, 0.012, up=gn, chamfer=ch(0.004))
+        # the hand: wrist knuckle + palm (rm2_hand_<side>), fingers f1 / f2 and the thumb, each its own part
+        dw, nup = rm2_hand_axes(s)
+        hn = part(f"rm2_hand_{side}")
+        if lod == 0:
+            knuckle(hn, B_, Wp, (1, 0, 0), 0.034, 0.09, ks, cap_mat=W_)
+        obox(hn, W_, Wp, _add(Wp, _mul(dw, RM2_PALM)), 0.08, 0.03, up=nup, chamfer=ch(0.008))
+        if lod < 2:
+            box(hn, S_, _add(_add(Wp, _mul(dw, RM2_PALM * 0.55)), _mul(nup, 0.016)), (0.06, 0.006, 0.045), frame_along(Wp, _add(Wp, dw), nup))
+        for fid, k0, k1, k2 in rm2_fingers(s):
+            fg = part(f"rm2_hand_{side}_{fid}")
+            r = 0.013 if fid != "thumb" else 0.014
             if lod == 0:
-                knuckle(wr, B_, Wp, (1, 0, 0), 0.036, 0.10, ks, cap_mat=W_)
-            J = _add(Wp, _mul(dw, 0.075))
-            seg_lathe(wr, S_, Wp, J, [(0.0, 0.0), (0.04, 0.0), (0.042, 0.06), (0.0, 0.075)], ks)
-            for sgn, jn in ((1, "a"), (-1, "b")):
-                jw = part(f"rm2_claw_jaw_{jn}")
-                q0 = J
-                q1 = _add(J, _add(_mul(dw, 0.08), _mul(nup, sgn * 0.045)))
-                q2 = _add(J, _add(_mul(dw, 0.17), _mul(nup, sgn * 0.012)))
-                obox(jw, W_, q0, q1, 0.035, 0.022, up=nup, chamfer=ch(0.005))
-                obox(jw, T_, q1, q2, 0.03, 0.02, up=nup, chamfer=ch(0.005))
-                if lod < 2:
-                    box(jw, "eq_metal_band", _add(q2, _mul(nup, -sgn * 0.012)), (0.032, 0.008, 0.03), frame_along(q1, q2, nup))  # grip pad
-                    knuckle(jw, B_, J, (1, 0, 0), 0.02, 0.05, ks)
-        else:
-            ct = part("rm2_cutter")
-            if lod == 0:
-                knuckle(ct, B_, Wp, (1, 0, 0), 0.036, 0.10, ks, cap_mat=W_)
-            tip = _add(Wp, _mul(dw, 0.22))
-            seg_lathe(ct, W_, Wp, tip, [(0.0, 0.0), (0.04, 0.0), (0.044, 0.02), (0.044, 0.12), (0.032, 0.15), (0.0, 0.15)], ks)
-            seg_lathe(ct, "eq_copper", Wp, tip, [(0.0, 0.15), (0.024, 0.15), (0.018, 0.205), (0.009, 0.22), (0.0, 0.22)], ks)
+                knuckle(fg, B_, k0, (1, 0, 0) if fid != "thumb" else nup, r + 0.003, 0.024, 8)
+            hex_limb(fg, W_ if fid != "thumb" else T_, k0, k1, r, r * 0.9)
+            hex_limb(fg, T_ if fid != "thumb" else W_, k1, k2, r * 0.9, r * 0.75)
             if lod < 2:
-                seg_lathe(ct, S_, Wp, tip, crect(0.044, 0.05, 0.05, 0.08), ks)                          # sea-blue band
-                side_off = (-0.055, 0.0, 0.0)                                                              # gas / power cartridge
-                c0 = _add(_add(Wp, _mul(dw, 0.02)), side_off)
-                c1 = _add(_add(Wp, _mul(dw, 0.12)), side_off)
-                cyl(ct, T_, c0, c1, 0.022, 8, chamfer=ch(0.006))
+                ball(fg, "eq_metal_band", k2, r * 0.8, 6)                                           # grip tip
+        if s < 0:
+            ct = part("rm2_cutter")
+            c0, c1 = rm2_cutter_axis()
+            fd = norm(_sub(c1, c0))
+            seg_lathe(ct, W_, c0, c1, [(0.0, 0.0), (0.03, 0.0), (0.034, 0.02), (0.034, 0.2), (0.026, 0.23), (0.0, 0.23)], ks)
+            seg_lathe(ct, "eq_copper", c0, c1, [(0.0, 0.23), (0.02, 0.23), (0.015, 0.275), (0.008, 0.29), (0.0, 0.29)], ks)
+            for t in (0.06, 0.17):                                                                  # brackets to the forearm
+                p = _add(c0, _mul(fd, t))
+                q = _lerp(E, Wp, 0.30 + t * 1.6)
+                obox(ct, S_, p, q, 0.03, 0.03, chamfer=ch(0.004))
+            if lod < 2:
+                seg_lathe(ct, S_, c0, c1, crect(0.034, 0.04, 0.09, 0.12), ks)                       # sea-blue band
+                cyl(ct, T_, _add(_add(c0, _mul(fd, 0.03)), (-0.045, 0.0, 0.0)), _add(_add(c0, _mul(fd, 0.13)), (-0.045, 0.0, 0.0)), 0.018, 8, chamfer=ch(0.005))
             if close():
-                tube(ct, B_, bezier(_add(_add(Wp, _mul(dw, 0.10)), (-0.055, 0.0, 0.0)), _add(_add(Wp, _mul(dw, 0.15)), (-0.06, 0.0, 0.0)),
-                                    _add(_add(Wp, _mul(dw, 0.13)), (-0.03, 0.0, 0.0)), _add(Wp, _mul(dw, 0.135)), 8), 0.007, 6)
-                seg_lathe(ct, "eq_steel", Wp, tip, crect(0.044, 0.05, 0.135, 0.145), ks)
+                tube(ct, B_, bezier(_add(_add(c0, _mul(fd, 0.13)), (-0.045, 0.0, 0.0)), _add(_add(c0, _mul(fd, 0.17)), (-0.05, 0.0, 0.0)),
+                                    _add(_add(c0, _mul(fd, 0.16)), (-0.025, 0.0, 0.0)), _add(c0, _mul(fd, 0.165)), 8), 0.006, 6)
 
     # --- fine-work tool arm under the head: upper, fore, tool head (driver, micro-gripper, work lamp)
     b0, m1, m2, tp = RM2_TOOL
@@ -681,29 +719,31 @@ def rm2_parts(lod):
     ap = d["abd"]
     if lod == 0:
         knuckle(ab, B_, ap, (1, 0, 0), 0.06, 0.18, ks, cap_mat=S_)
-    box(ab, S_, (0, 0.625, -0.38), (0.28, 0.23, 0.24), chamfer=0.03 if lod < 2 else 0.0)
-    box(ab, S_, (0, 0.635, -0.63), (0.34, 0.27, 0.24), chamfer=0.03 if lod < 2 else 0.0)
-    box(ab, T_, (0, 0.635, -0.88), (0.28, 0.22, 0.24), chamfer=0.03 if lod < 2 else 0.0)
+    # one long section (author 2026-11-15: «задний корпус можно сделать односекционный, продолговатый»)
+    zc, L = -0.64, 0.80
+    box(ab, S_, (0, 0.635, zc), (0.32, 0.25, L), chamfer=0.06 if lod < 2 else 0.0)
+    cyl(ab, W_, (0, 0.635, -0.26), (0, 0.635, -0.30), 0.075, ks)                                         # neck to the hinge
     if lod < 2:
-        for z in (-0.505, -0.755):                                                                  # white frame rings
-            box(ab, W_, (0, 0.635, z), (0.35, 0.28, 0.04), chamfer=ch(0.01))
-        box(ab, W_, (0, 0.635, -1.01), (0.20, 0.15, 0.03), chamfer=ch(0.01))                           # end cap
-        cyl(ab, B_, (0, 0.635, -1.025), (0, 0.635, -1.055), 0.03, ks)                                  # charge / data socket
+        box(ab, T_, (0, 0.766, zc), (0.10, 0.012, L - 0.16), chamfer=ch(0.004))                        # terracotta spine stripe
+        box(ab, W_, (0, 0.635, zc - L / 2 - 0.008), (0.22, 0.16, 0.03), chamfer=ch(0.01))                 # end cap
+        cyl(ab, B_, (0, 0.635, zc - L / 2 - 0.02), (0, 0.635, zc - L / 2 - 0.05), 0.03, ks)              # charge / data socket
         for sx in (-1, 1):                                                                             # corner castings (bay twist locks)
-            for z in (-0.54, -0.72):
-                box(ab, B_, (sx * 0.15, 0.785, z), (0.05, 0.04, 0.05), chamfer=ch(0.006))
-        box(ab, W_, (0, 0.773, -0.63), (0.18, 0.012, 0.16), chamfer=ch(0.004))                        # top hatch
+            for z in (-0.36, -0.92):
+                box(ab, B_, (sx * 0.13, 0.770, z), (0.05, 0.04, 0.05), chamfer=ch(0.006))
+        box(ab, W_, (0, 0.770, -0.52), (0.16, 0.012, 0.14), chamfer=ch(0.004))                        # top hatch
     if lod == 0:
         for sx in (-1, 1):
-            for z in (-0.54, -0.72):
-                box(ab, "eq_metal_band", (sx * 0.15, 0.806, z), (0.025, 0.003, 0.015))                 # casting slots
-            box(ab, W_, (sx * 0.172, 0.635, -0.63), (0.006, 0.12, 0.16))                               # side placards
-            box(ab, "eq_status_amber", (sx * 0.176, 0.67, -0.60), (0.004, 0.015, 0.04))
+            for z in (-0.36, -0.92):
+                box(ab, "eq_metal_band", (sx * 0.13, 0.791, z), (0.025, 0.003, 0.015))                 # casting slots
+            box(ab, W_, (sx * 0.162, 0.635, zc), (0.006, 0.12, 0.30))                                  # side placards
+            box(ab, "eq_status_amber", (sx * 0.166, 0.67, zc + 0.10), (0.004, 0.015, 0.04))
+            for z in (-0.40, -0.88):                                                                   # side seams of the shell
+                box(ab, "eq_metal_band", (sx * 0.161, 0.635, z), (0.004, 0.20, 0.006))
         for sx in (-1, 1):
             for sz in (-1, 1):
-                hex_bolt(ab, B_, (sx * 0.075, 0.779, -0.63 + sz * 0.065), (0, 1, 0), 0.016, 0.006)
+                hex_bolt(ab, B_, (sx * 0.065, 0.776, -0.52 + sz * 0.06), (0, 1, 0), 0.016, 0.006)
     if close():
-        harness(ab, bezier((0.06, 0.70, -0.25), (0.08, 0.76, -0.30), (0.10, 0.76, -0.40), (0.12, 0.75, -0.48), 8),
+        harness(ab, bezier((0.06, 0.70, -0.25), (0.08, 0.76, -0.30), (0.10, 0.78, -0.40), (0.11, 0.775, -0.48), 8),
                 0.008, 2, (S_, "eq_insulator"), ties=B_, tie_every=3)
     for s in (-1, 1):
         _pod(ta, (s * 0.13, 0.70, -0.88), (s * 0.24, 0.78, -0.88), (s * 0.5, 0.86, 0.0), small, lod)
@@ -725,14 +765,14 @@ def rm2_hits():
     H = [hbox("rm2_thorax", (0, y0, (d["th_z0"] + d["th_z1"]) / 2), (2 * r, 2 * r * math.sin(math.pi / 3), d["th_z1"] - d["th_z0"])),
          hobox("rm2_thorax", d["pro0"], d["pro1"], 0.22, 0.20),
          hobox("rm2_neck", d["pro1"], d["head"], 0.12, 0.12),
-         hbox("rm2_head", (0, 0.89, 0.705), (0.24, 0.14, 0.15)),
-         hbox("rm2_head", (0, 0.80, 0.735), (0.10, 0.07, 0.09))]
+         hbox("rm2_head", RM2_HEAD, (0.30, 0.11, 0.15)),
+         hbox("rm2_head", (0, RM2_HEAD[1] - 0.07, RM2_HEAD[2] - 0.01), (0.10, 0.04, 0.10))]
     for s, ec, de in RM2_EYES:
-        H.append(hobox("rm2_head", _sub(ec, _mul(de, 0.045)), _add(ec, _mul(de, 0.055)), 0.16, 0.16))
+        H.append(hobox("rm2_head", ec, _add(ec, _mul(de, 0.088)), 0.11, 0.11))
+    for s, side in ((1, "l"), (-1, "r")):
+        H.append(hbox(f"rm2_brow_{side}", RM2_BROW[s], (0.115, 0.02, 0.055)))
     for s in (1, -1):
         H.append(hbox("rm2_thrusters_fore", (s * 0.25, 0.83, 0.0), (0.17, 0.12, 0.16)))
-        a = RM2_ANT[s]
-        H.append(hobox(f"rm2_antenna_{'l' if s > 0 else 'r'}", a[0], a[3], 0.04, 0.04))
     for key in d["legs"]:
         Hp, C, K, A, F, ax = rm2_leg(key)
         H += [hobox(f"rm2_leg_{key}_coxa", Hp, C, 0.10, 0.10, ext=0.03),
@@ -742,28 +782,23 @@ def rm2_hits():
               hcyl(f"rm2_leg_{key}_foot", F, _add(F, (0, 0.05, 0)), 0.09)]
     for s, side in ((1, "l"), (-1, "r")):
         S, E, Wp, T = rm2_arm(s)
-        dw = norm(_sub(T, Wp))
+        dw, nup = rm2_hand_axes(s)
         H += [hobox(f"rm2_arm_{side}_shoulder", _sub(S, (0.07, 0, 0)), _add(S, (0.07, 0, 0)), 0.12, 0.12),
-              hobox(f"rm2_arm_{side}_upper", S, E, 0.09, 0.09),
-              hobox(f"rm2_arm_{side}_fore", E, Wp, 0.09, 0.12 if s > 0 else 0.09, ext=0.02)]
-        if s > 0:
-            J = _add(Wp, _mul(dw, 0.075))
-            nup = norm(_cross(dw, (1, 0, 0)))
-            H.append(hobox("rm2_arm_l_wrist", Wp, J, 0.09, 0.09))
-            for sgn, jn in ((1, "a"), (-1, "b")):
-                q1 = _add(J, _add(_mul(dw, 0.08), _mul(nup, sgn * 0.045)))
-                q2 = _add(J, _add(_mul(dw, 0.17), _mul(nup, sgn * 0.012)))
-                H += [hobox(f"rm2_claw_jaw_{jn}", J, q1, 0.04, 0.03, up=nup), hobox(f"rm2_claw_jaw_{jn}", q1, q2, 0.04, 0.03, up=nup)]
-        else:
-            H.append(hobox("rm2_cutter", Wp, _add(Wp, _mul(dw, 0.22)), 0.14, 0.09, up=(1, 0, 0)))
+              hobox(f"rm2_arm_{side}_upper", S, E, 0.10, 0.10),
+              hobox(f"rm2_arm_{side}_fore", E, Wp, 0.10, 0.10, ext=0.02),
+              hobox(f"rm2_hand_{side}", Wp, _add(Wp, _mul(dw, RM2_PALM)), 0.09, 0.04, up=nup)]
+        for fid, k0, k1, k2 in rm2_fingers(s):
+            H.append(hobox(f"rm2_hand_{side}_{fid}", k0, k2, 0.03, 0.03, ext=0.01))
+    c0, c1 = rm2_cutter_axis()
+    H.append(hobox("rm2_cutter", c0, c1, 0.075, 0.075))
     b0, m1, m2, tp = RM2_TOOL
     H += [hobox("rm2_tool_upper", b0, m1, 0.06, 0.06), hobox("rm2_tool_fore", m1, m2, 0.05, 0.05),
           hobox("rm2_tool_head", m2, tp, 0.07, 0.07)]
     # abdomen + aft thrusters (tilted with the abdomen)
     R = rot_x(d["abd_tilt"])
     rot = euler_xyz(R)
-    H += [hbox("rm2_abdomen", _rm2_abd_point((0, 0.635, -0.635)), (0.35, 0.28, 0.80), rot),
-          hbox("rm2_abdomen", _rm2_abd_point((0, 0.635, -1.03)), (0.20, 0.15, 0.06), rot)]
+    H += [hbox("rm2_abdomen", _rm2_abd_point((0, 0.635, -0.64)), (0.33, 0.26, 0.82), rot),
+          hbox("rm2_abdomen", _rm2_abd_point((0, 0.635, -1.07)), (0.22, 0.16, 0.06), rot)]
     for s in (-1, 1):
         H.append(hbox("rm2_thrusters_aft", _rm2_abd_point((s * 0.23, 0.78, -0.88)), (0.17, 0.12, 0.16), rot))
     return H
@@ -783,8 +818,8 @@ def rm2_rig():
          _j("rm2_thrusters_aft", "rm2_abdomen", _rm2_abd_point((0, 0.78, -0.88)), UPV, (0, 0), "fixed"),
          _j("rm2_neck", "rm2_thorax", d["neck"], UPV, (-60, 60), "neck yaw"),
          _j("rm2_head", "rm2_neck", d["head"], (1, 0, 0), (-35, 40), "head pitch (+ = look down)"),
-         _j("rm2_antenna_l", "rm2_head", RM2_ANT[1][0], (1, 0, 0), (-30, 45), "feeler sweep"),
-         _j("rm2_antenna_r", "rm2_head", RM2_ANT[-1][0], (1, 0, 0), (-30, 45), "feeler sweep")]
+         _j("rm2_brow_l", "rm2_head", RM2_BROW_PIVOT[1], (0, 0, -1), (-25, 25), "brow (+ = inner end up)"),
+         _j("rm2_brow_r", "rm2_head", RM2_BROW_PIVOT[-1], (0, 0, 1), (-25, 25), "brow (+ = inner end up)")]
     for key in d["legs"]:
         Hp, C, K, A, F, ax = rm2_leg(key)
         G += [_j(f"rm2_leg_{key}_coxa", "rm2_thorax", Hp, UPV, (-40, 40), "hip yaw"),
@@ -793,17 +828,18 @@ def rm2_rig():
               _j(f"rm2_leg_{key}_foot", f"rm2_leg_{key}_tibia", A, ax, (-45, 45), "ankle (pad stays flat on the hull)")]
     for s, side in ((1, "l"), (-1, "r")):
         S, E, Wp, T = rm2_arm(s)
-        dw = norm(_sub(T, Wp))
+        dw, nup = rm2_hand_axes(s)
         G += [_j(f"rm2_arm_{side}_shoulder", "rm2_thorax", S, UPV, (-35, 35), "shoulder yaw"),
-              _j(f"rm2_arm_{side}_upper", f"rm2_arm_{side}_shoulder", S, (1, 0, 0), (-70, 60), "shoulder pitch"),
-              _j(f"rm2_arm_{side}_fore", f"rm2_arm_{side}_upper", E, (1, 0, 0), (-110, 40), "elbow (mantis fold)")]
-        if s > 0:
-            J = _add(Wp, _mul(dw, 0.075))
-            G += [_j("rm2_arm_l_wrist", "rm2_arm_l_fore", Wp, dw, (-180, 180), "wrist roll (pitch about X also possible: -60..60)"),
-                  _j("rm2_claw_jaw_a", "rm2_arm_l_wrist", J, (1, 0, 0), (-10, 40), "jaw open (+ = open)"),
-                  _j("rm2_claw_jaw_b", "rm2_arm_l_wrist", J, (-1, 0, 0), (-10, 40), "jaw open (+ = open)")]
-        else:
-            G.append(_j("rm2_cutter", "rm2_arm_r_fore", Wp, (1, 0, 0), (-70, 70), "torch pitch (roll about the torch axis: -180..180)"))
+              _j(f"rm2_arm_{side}_upper", f"rm2_arm_{side}_shoulder", S, (1, 0, 0), (-70, 40), "shoulder pitch (- = arm forward / up)"),
+              _j(f"rm2_arm_{side}_fore", f"rm2_arm_{side}_upper", E, (1, 0, 0), (-20, 110), "elbow (0 = the mantis fold, + = unfold)"),
+              _j(f"rm2_hand_{side}", f"rm2_arm_{side}_fore", Wp, (1, 0, 0), (-60, 60), "wrist pitch")]
+        for fid, k0, k1, k2 in rm2_fingers(s):
+            if fid == "thumb":
+                G.append(_j(f"rm2_hand_{side}_thumb", f"rm2_hand_{side}", k0, _mul(nup, s), (-10, 60), "thumb (+ = close)"))
+            else:
+                G.append(_j(f"rm2_hand_{side}_{fid}", f"rm2_hand_{side}", k0, (1, 0, 0), (-10, 90), "finger curl (+ = grip)"))
+    c0, c1 = rm2_cutter_axis()
+    G.append(_j("rm2_cutter", "rm2_arm_r_fore", c0, (1, 0, 0), (-40, 40), "torch pitch along the forearm"))
     b0, m1, m2, tp = RM2_TOOL
     G += [_j("rm2_tool_upper", "rm2_thorax", b0, (1, 0, 0), (-60, 50), "tool arm base pitch"),
           _j("rm2_tool_fore", "rm2_tool_upper", m1, (1, 0, 0), (-90, 60), "tool arm elbow"),
@@ -812,6 +848,65 @@ def rm2_rig():
 
 
 RM2_RIG = rm2_rig()
+
+
+def _sym(left, right):
+    return {**left, **right}
+
+
+def rm2_clips():
+    """test animations for the mesh editor's player (elite.rig.v1 clips; angles in degrees, 0 = the modelled pose)"""
+    C = []
+    # 1. arms: the mantis fold -> reach out, grip, back
+    k = {}
+    for side in ("l", "r"):
+        k[f"rm2_arm_{side}_upper"] = [[0, 0], [1.4, -40], [2.8, -40], [4.0, 0]]
+        k[f"rm2_arm_{side}_fore"] = [[0, 0], [1.4, 80], [2.8, 80], [4.0, 0]]
+        k[f"rm2_hand_{side}"] = [[0, 0], [1.4, -15], [2.8, -15], [4.0, 0]]
+        for f in ("f1", "f2"):
+            k[f"rm2_hand_{side}_{f}"] = [[0, 0], [1.4, -5], [1.9, 70], [2.4, 70], [2.8, -5], [4.0, 0]]
+        k[f"rm2_hand_{side}_thumb"] = [[0, 0], [1.4, -5], [1.9, 45], [2.4, 45], [2.8, -5], [4.0, 0]]
+    k["rm2_cutter"] = [[0, 0], [1.4, 0], [2.0, -25], [2.6, -25], [3.2, 0], [4.0, 0]]
+    C.append({"id": "arms_reach", "title": "Руки: из сложенных — вперёд, хват", "duration_s": 4.0, "loop": True, "keys": k})
+    # 2. walking in place: diagonal pairs (fl + rr, fr + rl), the coxa swings, the femur lifts the leg, the knee bends
+    k = {}
+    T = 1.6
+    for key, phase in (("fl", 0.0), ("rr", 0.0), ("fr", 0.5), ("rl", 0.5)):
+        s = 1 if key[1] == "l" else -1
+        sw = 14.0
+        pts = [(0.0, s * sw, 0, 0), (0.25, 0.0, 24, -18), (0.5, -s * sw, 0, 0), (1.0, s * sw, 0, 0)]  # back, lift, forward, sweep back
+        cx, fm, tb = [], [], []
+        for u, a, b, c in pts:
+            t = ((u + phase) % 1.0) * T
+            cx.append([t, a]); fm.append([t, b]); tb.append([t, c])
+        for lst in (cx, fm, tb):
+            lst.sort()
+            if lst[0][0] > 0:                                    # the loop's start / end from the wrap-around value
+                lst.insert(0, [0.0, lst[-1][1] + (lst[0][1] - lst[-1][1]) * (T - lst[-1][0]) / (T - lst[-1][0] + lst[0][0])])
+            lst.append([T, lst[0][1]])
+        k[f"rm2_leg_{key}_coxa"], k[f"rm2_leg_{key}_femur"], k[f"rm2_leg_{key}_tibia"] = cx, fm, tb
+    k["rm2_abdomen"] = [[0, 0], [0.4, 3], [0.8, 0], [1.2, 3], [1.6, 0]]
+    C.append({"id": "walk", "title": "Шаг на месте", "duration_s": T, "loop": True, "keys": k})
+    # 3. looking around: the neck turns, the head nods, the brows move
+    C.append({"id": "look", "title": "Осмотр: голова и брови", "duration_s": 4.0, "loop": True, "keys": {
+        "rm2_neck": [[0, 0], [1.0, 40], [2.0, 0], [3.0, -40], [4.0, 0]],
+        "rm2_head": [[0, 0], [1.0, 12], [2.0, -18], [3.0, 12], [4.0, 0]],
+        "rm2_brow_l": [[0, 0], [0.8, 20], [1.4, 0], [2.6, -18], [3.2, 0], [4.0, 0]],
+        "rm2_brow_r": [[0, 0], [0.8, 20], [1.4, 0], [2.6, -18], [3.2, 0], [4.0, 0]]}})
+    # 4. stowing for the bay: legs fold up, arms tucked tighter, head down, tail down
+    k = {"rm2_head": [[0, 0], [1.5, 30], [2.5, 30], [4.0, 0]],
+         "rm2_abdomen": [[0, 0], [1.5, -12], [2.5, -12], [4.0, 0]]}
+    for key in RM2["legs"]:
+        k[f"rm2_leg_{key}_femur"] = [[0, 0], [1.5, 60], [2.5, 60], [4.0, 0]]
+        k[f"rm2_leg_{key}_tibia"] = [[0, 0], [1.5, -75], [2.5, -75], [4.0, 0]]
+        k[f"rm2_leg_{key}_foot"] = [[0, 0], [1.5, 20], [2.5, 20], [4.0, 0]]
+    for side in ("l", "r"):
+        k[f"rm2_arm_{side}_upper"] = [[0, 0], [1.5, 20], [2.5, 20], [4.0, 0]]
+    C.append({"id": "stow", "title": "Сложиться в отсек", "duration_s": 4.0, "loop": True, "keys": k})
+    return C
+
+
+RIGS = {"agora_rm2_drone": lambda: {"joints": RM2_RIG, "clips": rm2_clips()}}
 
 ASSETS = {"smy_mp8_pod": mp8_parts, "hyperion_rd1_drone": rd1_parts, "agora_rm2_drone": rm2_parts}
 HITS = {"smy_mp8_pod": mp8_hits, "hyperion_rd1_drone": rd1_hits, "agora_rm2_drone": rm2_hits}

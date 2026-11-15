@@ -5812,3 +5812,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   (D:/tmp/hit_cones.png); packages carry radius_top 0.16; model_asset tests PASS; Cobrett-I SHIP ASSET CHECK PASS.
 
 - 2026-11-15 ALL MODULES STEP 1 + SHELLS (author: run the automatic check and shell generation on every non-ship module). Editor socket: equipment_ship 160, hub_modules 4, other 5 - 606 variants checked (inspect commit), 33 missing/stale shells built (8 drives' hole/torn/broken after the pad split, hub_modules, other), 0 failures. 33 intact models still have open holes (smy_pb8_rack 19 parts, N-1AX housing end 3.26 m where the pad was, the rest 2-56 cm) - capping and saving the step-2 seeds await the author.
+- 2026-11-15 RIG + ANIMATION PLAYER (MESH_EDITOR_SPEC 18.15). rig.json (elite.rig.v1) from unit RIGS; editor step 1 has a
+  player (clip, play/pause, time slider, loop, rest pose). RM-2 remodelled (arms with hands folding like a mantis,
+  binocular head with brow plates, one-section abdomen), 42 joints, 4 clips; Hold-100 door leaves split + hinge rig +
+  open/close clip; drones' damage innards without the back plate. LIVE: headless editor frames D:/tmp/rm2_arms.png,
+  rm2_walk.png, rm2_head.png, hold_doors.png; drone wounds D:/tmp/drone_wounds.png; shells + packages rebuilt for
+  RM-2, Hold-100, RD-1, Klegg-3. Open: Hold-100 has no interior behind the doors; conteiner20ft is one solid mesh;
+  OD-4 / AP-4 doors unrigged; 33 intact modules with open holes (capping awaits the author).
+

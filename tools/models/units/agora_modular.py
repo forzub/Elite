@@ -232,10 +232,11 @@ def hold_parts(lod):
                 brass_fitting(sh, (-1.4 + 0.18 * i, -0.9, zf - 0.03), (0, 0, -1), 0.025 + 0.006 * (i % 2), lod)
             box(sh, "eq_steel", (-1.13, -0.9, zf - 0.035), (0.8, 0.25, 0.01))      # adapter plate
 
-    dr = P["hold100_door"] = Part("hold100_door")
+    # two door leaves, each its own part hinged on its outer edge (rig: hold100_rig, the editor's player opens them)
     zd = hz - sk
     lw = hx - b - 0.02
     for s in (-1, 1):
+        dr = P[f"hold100_door_{'l' if s > 0 else 'r'}"] = Part(f"hold100_door_{'l' if s > 0 else 'r'}")
         pan(dr, TC if s < 0 else SD, 2, 1, zd, s * (lw / 2 + 0.01), 0.0, lw - 0.02, 2 * (hy - b) - 0.04, 0.06)
         if lod < 2:
             for xb in (0.30, lw - 0.55):                                            # locking bars, keepers, handles
@@ -268,6 +269,24 @@ def hold_parts(lod):
     return P
 
 
+def hold_rig():
+    """the door leaves swing out on the hinges of their outer edges (axis (0, s, 0): + = open); the door is recessed in
+    the frame, so a leaf stops at ~95 degrees against the corner post"""
+    d = HOLD
+    hx, b, sk, hz = d["hx"], d["b"], d["sk"], d["hz"]
+    lw = hx - b - 0.02
+    J = [{"part": "hold100_frame", "parent": None, "pivot_m": [0.0, 0.0, 0.0], "axis": [0.0, 1.0, 0.0], "range_deg": [0, 0],
+          "joint": "root (fixed)"}]
+    for s in (-1, 1):
+        J.append({"part": f"hold100_door_{'l' if s > 0 else 'r'}", "parent": "hold100_frame",
+                  "pivot_m": [round(s * (lw - 0.02), 4), 0.0, round(hz - sk + 0.09, 4)], "axis": [0.0, float(s), 0.0],
+                  "range_deg": [0, 95], "joint": "door hinge (+ = open)"})
+    clip = {"id": "doors", "title": "Двери: открыть и закрыть", "duration_s": 6.0, "loop": True, "keys": {
+        "hold100_door_l": [[0, 0], [0.3, 0], [2.3, 95], [3.7, 95], [5.7, 0], [6.0, 0]],
+        "hold100_door_r": [[0, 0], [0.6, 0], [2.6, 95], [3.4, 95], [5.4, 0], [6.0, 0]]}}
+    return {"joints": J, "clips": [clip]}
+
+
 def hold_hits():
     d = HOLD
     hx, hy, hz, b, sk = d["hx"], d["hy"], d["hz"], d["b"], d["sk"]
@@ -277,7 +296,8 @@ def hold_hits():
             H.append(hbox("hold100_frame", (sx * (hx - b / 2), sy * (hy - b / 2), 0), (b, b, 2 * hz)))
         H.append(hbox("hold100_frame", (sx * (hx - b / 2), 0, hz - b / 2), (b, 2 * hy, b)))
         H.append(hbox("hold100_frame", (sx * (hx - b / 2), 0, -hz + b / 2), (b, 2 * hy, b)))
-    H.append(hbox("hold100_door", (0, 0, hz - sk + 0.08), (2 * (hx - b), 2 * (hy - b), 0.16)))
+    for s in (-1, 1):
+        H.append(hbox(f"hold100_door_{'l' if s > 0 else 'r'}", (s * (hx - b) / 2, 0, hz - sk + 0.08), (hx - b, 2 * (hy - b), 0.16)))
     for y in (-1, 1):
         H.append(hbox("hold100_seal", (0, y * (hy - b - 0.005), hz - sk + 0.03), (2 * (hx - b), 0.05, 0.08)))
     for x in (-1, 1):
@@ -1109,6 +1129,7 @@ ASSETS = {"agora_hold100_hold": hold_parts, "agora_c20r_rack": c20_parts, "agora
           "agora_od4_dronebay": drone_parts, "agora_sk4_pod": pod_parts, "agora_sh20_lifeboat": boat_parts,
           "agora_ps100_passenger": pax_parts, "agora_rcs4_cluster": rcs_parts, "agora_bz1_jumptank": jc_parts,
           "agora_bt1_pellettank": pt_parts}
+RIGS = {"agora_hold100_hold": hold_rig}
 HITS = {"agora_hold100_hold": hold_hits, "agora_c20r_rack": c20_hits, "agora_su1_collar": collar_hits,
         "agora_od4_dronebay": drone_hits, "agora_sk4_pod": pod_hits, "agora_sh20_lifeboat": boat_hits,
         "agora_ps100_passenger": pax_hits, "agora_rcs4_cluster": rcs_hits, "agora_bz1_jumptank": jc_hits,

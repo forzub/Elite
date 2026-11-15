@@ -644,6 +644,10 @@ nlohmann::json Session::withShell(nlohmann::json j, const ModelCard& c) const
                       {"folder", s.value("folder", std::string())}, {"at", s.value("at", std::string())}};
     }
     j["shellStatus"] = status;
+    // the skeleton and test animations of the model (elite.rig.v1, eqlib.rig_text): the player under the 3D view
+    const nlohmann::json rig = readJsonFile(c.root / "intact" / "assembly" / "rig.json");
+    if (rig.is_object() && rig.contains("joints"))
+        j["rig"] = rig;
     for (const auto& v : c.variants)
         if (v.id == c.variant)
             j["inGame"] = v.inGame;

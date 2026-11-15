@@ -3,7 +3,8 @@
 
 Kernel: tools/models/eqlib.py (primitives, LOD policy, shared builders, hit-volume helpers, OBJ/MTL writers).
 Units:  tools/models/units/<maker>.py - one module per maker, each with ASSETS = {folder: parts_fn(lod)},
-        HITS = {folder: hits_fn()} and MODEL_ASSETS = {part_id: folder}. Design schools: tools/models/DESIGN_SCHOOLS.md.
+        HITS = {folder: hits_fn()}, RIGS = {folder: rig_fn() -> {"joints": [...], "clips": [...]}} (optional: the skeleton
+        and test animations, intact/assembly/rig.json, eqlib.rig_text) and MODEL_ASSETS = {part_id: folder}. Design schools: tools/models/DESIGN_SCHOOLS.md.
 Output: <assets_source>/models/equipment/<folder>/intact/assembly/LOD0..LOD3/<part>.obj + .mtl and
         <folder>/intact/assembly/hit_volumes.json (the source layout: tools/models/source_layout.py, MESH_EDITOR_SPEC 18),
         plus a minimal passport <folder>/model.json when there is none. LOD0 = close inspection (eqlib.close() True),
@@ -30,6 +31,7 @@ import units  # noqa: E402
 
 def collect():
     assets, hits, models = {}, {}, {}
+    RIGS.clear()
     for m in sorted(pkgutil.iter_modules(units.__path__), key=lambda x: x.name):
         mod = importlib.import_module(f"units.{m.name}")
         for k, v in getattr(mod, "ASSETS", {}).items():
@@ -37,6 +39,7 @@ def collect():
                 raise ValueError(f"asset folder {k} defined twice ({m.name})")
             assets[k] = v
         hits.update(getattr(mod, "HITS", {}))
+        RIGS.update(getattr(mod, "RIGS", {}))
         for pid, folder in getattr(mod, "MODEL_ASSETS", {}).items():
             if pid in models:
                 raise ValueError(f"part {pid} has two models")
@@ -44,6 +47,7 @@ def collect():
     return assets, hits, models
 
 
+RIGS = {}        # model folder -> rig_fn() (collect)
 PASSPORTS = {}   # model id -> (title, kind, description) of a model the split creates (pads, sets)
 
 
@@ -103,6 +107,8 @@ def build(only=None):
                 put(asset + "_set", "assembly.json", pads.set_doc(asset, ms, unit_v, pad_v))
             else:
                 put(asset, "hit_volumes.json", eqlib.hits_text(asset, lambda: vols))
+        if asset in RIGS:
+            put(asset, "rig.json", eqlib.rig_text(asset, RIGS[asset]()))
         if ms:
             put(asset, "mounts.json", pads.mounts_text(asset, ms, asset + "_pad"))
             put(asset + "_pad", "mounts.json", pads.pad_mounts_text(asset + "_pad", asset))

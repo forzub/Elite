@@ -132,6 +132,41 @@ function restyle() {
   }
 }
 
+// ---- the skeleton (elite.rig.v1): a joint turns its part and every part below it about its axis through its pivot;
+// angle 0 = the modelled pose. A part without a joint stays where it is.
+function poseWorld(rig, angles) {
+  const byPart = new Map(rig.joints.map((j) => [j.part, j]));
+  const cache = new Map();
+  const T = (p, k) => new THREE.Matrix4().makeTranslation(p[0] * k, p[1] * k, p[2] * k);
+  const world = (part, depth = 0) => {
+    if (cache.has(part)) return cache.get(part);
+    const j = byPart.get(part);
+    const M = new THREE.Matrix4();
+    if (j && depth < 64) {
+      if (j.parent && j.parent !== part) M.copy(world(j.parent, depth + 1));
+      const a = THREE.MathUtils.degToRad(angles[part] || 0);
+      if (a) M.multiply(T(j.pivot_m, 1)).multiply(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(...j.axis).normalize(), a)).multiply(T(j.pivot_m, -1));
+    }
+    cache.set(part, M);
+    return M;
+  };
+  return world;
+}
+function applyPose() {
+  const g = state.groups[state.current];
+  if (!g || !g.meshes) return;
+  const world = state.pose ? poseWorld(state.pose.rig, state.pose.angles) : null;
+  for (const [key, e] of g.meshes) {
+    const M = world ? world(key) : null;
+    for (const o of [e.front, e.back, e.open, e.bad]) {
+      if (!o) continue;
+      o.matrixAutoUpdate = false;
+      if (M) o.matrix.copy(M); else o.matrix.identity();
+      o.matrixWorldNeedsUpdate = true;
+    }
+  }
+}
+
 async function showGroup(gi, refit) {
   const g = state.groups[gi];
   if (!g) return;
@@ -147,6 +182,7 @@ async function showGroup(gi, refit) {
   const first = state.current < 0;
   state.current = gi;
   restyle();
+  applyPose();   // another LOD keeps the pose of the player
   if (first || refit) frame(groupBox(gi));
 }
 
@@ -441,6 +477,8 @@ window.MeshViewer = {
   },
   onPickNode(cb) { asm.onPick = cb; },
   fitAssembly() { if (asm.root) frame(new THREE.Box3().setFromObject(asm.root)); },
+  // the player (app.js Anim): angles in degrees per part; null = the modelled pose
+  setPose(rig, angles) { state.pose = rig && angles ? { rig, angles } : null; applyPose(); },
   // check: the model roots in the scene (a stale load used to leave the previous model there)
   stats() { return { inScene: scene.children.filter((o) => o.isGroup).length, groups: state.groups.length }; },
 };

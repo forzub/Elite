@@ -190,7 +190,15 @@ def hold_parts(lod):
                 brass_fitting(fr, (sx * (hx - 0.08), -hy + b + 0.02, sz * (hz - cs - 0.10)), (sx, 0, 0), 0.02, lod)
 
     sh = P["hold100_shell"] = Part("hold100_shell")
-    box(sh, WH, (0, 0, -0.03), (2 * (hx - sk), 2 * (hy - sk), 2 * hz - 0.18))
+    # a hollow shell open towards the door: floor, roof, two sides and the forward end wall, 6 cm thick - a plain cargo
+    # space behind the doors, no ribs inside (author 2026-11-15: «сделай трюму простенький внутренний объем без лишних
+    # ребер»)
+    W, H, L, tw, zc = 2 * (hx - sk), 2 * (hy - sk), 2 * hz - 0.18, 0.06, -0.03
+    box(sh, WH, (0, -H / 2 + tw / 2, zc), (W, tw, L))                          # floor
+    box(sh, WH, (0, H / 2 - tw / 2, zc), (W, tw, L))                           # roof
+    for sx in (-1, 1):
+        box(sh, WH, (sx * (W / 2 - tw / 2), 0, zc), (tw, H - 2 * tw, L))       # sides
+    box(sh, WH, (0, 0, zc - L / 2 + tw / 2), (W - 2 * tw, H - 2 * tw, tw))     # forward end wall
     if lod < 2:
         edges = [-hz + cs] + stations + [hz - cs]
         for k in range(6):
@@ -493,20 +501,23 @@ def drone_parts(lod):
                 zc = -hz + 0.2 + (k + 0.5) * (2 * hz - 0.4) / 3
                 bolt_grid(fr, 0, 1, hx - 0.002, -0.55, 0.5, zc - 0.5, zc + 0.5, 2 + k, 2, 0.04)
 
-    dr = P["drone4_doors"] = Part("drone4_doors")
+    # the roof: leaf A (fixed over the rear half) and leaf B on the rails, modelled slid back over A = the bay open;
+    # B slides forward (drone4_rig: a slider) and closes the front half
+    da = P["drone4_door_a"] = Part("drone4_door_a")
+    db = P["drone4_door_b"] = Part("drone4_door_b")
     dw, dl = 2 * hx - 0.30, hz - 0.18
-    box(dr, SD, (0, hy - 0.115, -hz / 2 + 0.05), (dw, 0.04, dl))                                         # leaf A (closed)
-    box(dr, TC, (0, hy - 0.07, -hz / 2 + 0.17), (dw - 0.04, 0.04, dl))                                    # leaf B slid over A
+    box(da, SD, (0, hy - 0.115, -hz / 2 + 0.05), (dw, 0.04, dl))                                         # leaf A
+    box(db, TC, (0, hy - 0.07, -hz / 2 + 0.17), (dw - 0.04, 0.04, dl))                                    # leaf B over A
     if lod < 2:
         for k in range(4):
-            box(dr, TC, (0, hy - 0.04, -hz + 0.45 + k * 0.48), (dw - 0.3, 0.025, 0.08))
+            box(db, TC, (0, hy - 0.04, -hz + 0.45 + k * 0.48), (dw - 0.3, 0.025, 0.08))
         for s in (-1, 1):
-            box(dr, BR, (s * 0.6, hy - 0.035, -0.12), (0.30, 0.03, 0.05))                                 # pull handles
+            box(db, BR, (s * 0.6, hy - 0.035, -0.12), (0.30, 0.03, 0.05))                                 # pull handles
     if lod == 0:
         for s in (-1, 1):
             for z in (-hz + 0.3, -0.25):
-                cyl(dr, "eq_steel", (s * (hx - 0.16), hy - 0.09, z), (s * (hx - 0.16), hy - 0.09, z + 0.12), 0.03, 8)
-        box(dr, BL, (-0.8, hy - 0.048, -1.4), (0.5, 0.01, 0.16))
+                cyl(da, "eq_steel", (s * (hx - 0.16), hy - 0.09, z), (s * (hx - 0.16), hy - 0.09, z + 0.12), 0.03, 8)
+        box(da, BL, (-0.8, hy - 0.048, -1.4), (0.5, 0.01, 0.16))
 
     cr = P["drone4_cradle"] = Part("drone4_cradle")
     yf = -hy + 0.12
@@ -553,6 +564,21 @@ def drone_parts(lod):
     return P
 
 
+def drone_rig():
+    """leaf B rolls forward on the rails (a slider along +Z) and closes the roof's front half; A stays"""
+    d = DRONE
+    travel = round(d["hz"] - 0.18 - 0.05, 3)
+    J = [{"part": "drone4_frame", "parent": None, "pivot_m": [0.0, 0.0, 0.0], "axis": [0.0, 1.0, 0.0], "range_deg": [0, 0],
+          "joint": "root (fixed)"},
+         {"part": "drone4_door_a", "parent": "drone4_frame", "pivot_m": [0.0, 0.0, 0.0], "axis": [0.0, 1.0, 0.0],
+          "range_deg": [0, 0], "joint": "fixed leaf"},
+         {"part": "drone4_door_b", "parent": "drone4_frame", "type": "slide", "pivot_m": [0.0, 0.0, 0.0], "axis": [0.0, 0.0, 1.0],
+          "range_m": [0.0, travel], "joint": "sliding leaf (+ = forward, closes the bay)"}]
+    clip = {"id": "roof", "title": "Крыша: закрыть и открыть (ползун)", "duration_s": 6.0, "loop": True, "keys": {
+        "drone4_door_b": [[0, 0.0], [0.4, 0.0], [2.6, travel], [3.4, travel], [5.6, 0.0], [6.0, 0.0]]}}
+    return {"joints": J, "clips": [clip]}
+
+
 def drone_hits():
     d = DRONE
     hx, hy, hz, b = d["hx"], d["hy"], d["hz"], d["b"]
@@ -560,7 +586,8 @@ def drone_hits():
     for s in (-1, 1):
         H.append(hbox("drone4_frame", (s * (hx - 0.06), 0, 0), (0.12, 2 * hy, 2 * hz)))
         H.append(hbox("drone4_frame", (0, 0, s * (hz - 0.06)), (2 * hx - 0.24, 2 * hy, 0.12)))
-    H.append(hbox("drone4_doors", (0, hy - 0.09, -hz / 2 + 0.11), (2 * hx - 0.30, 0.10, hz - 0.06)))
+    H.append(hbox("drone4_door_a", (0, hy - 0.115, -hz / 2 + 0.05), (2 * hx - 0.30, 0.05, hz - 0.18)))
+    H.append(hbox("drone4_door_b", (0, hy - 0.06, -hz / 2 + 0.17), (2 * hx - 0.34, 0.07, hz - 0.18)))
     for sx in (-1, 1):
         for sz in (-1, 1):
             H.append(hbox("drone4_cradle", (sx * 0.80, -hy + 0.30, sz * 1.0), (1.2, 0.36, 1.4)))
@@ -1129,7 +1156,7 @@ ASSETS = {"agora_hold100_hold": hold_parts, "agora_c20r_rack": c20_parts, "agora
           "agora_od4_dronebay": drone_parts, "agora_sk4_pod": pod_parts, "agora_sh20_lifeboat": boat_parts,
           "agora_ps100_passenger": pax_parts, "agora_rcs4_cluster": rcs_parts, "agora_bz1_jumptank": jc_parts,
           "agora_bt1_pellettank": pt_parts}
-RIGS = {"agora_hold100_hold": hold_rig}
+RIGS = {"agora_hold100_hold": hold_rig, "agora_od4_dronebay": drone_rig}
 HITS = {"agora_hold100_hold": hold_hits, "agora_c20r_rack": c20_hits, "agora_su1_collar": collar_hits,
         "agora_od4_dronebay": drone_hits, "agora_sk4_pod": pod_hits, "agora_sh20_lifeboat": boat_hits,
         "agora_ps100_passenger": pax_hits, "agora_rcs4_cluster": rcs_hits, "agora_bz1_jumptank": jc_hits,

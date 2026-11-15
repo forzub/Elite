@@ -735,7 +735,8 @@ def rig_text(asset, rig):
     """intact/assembly/rig.json (elite.rig.v1): the skeleton of the moving parts and test animations for the mesh editor's
     player (author 2026-11-15: «надо двть ему какой-то скелет и в мешэдиторе сделать проигрватель для запуска пробной
     анимации»). joints: {part, parent, pivot_m, axis, range_deg, joint} - the part (an OBJ part) turns about axis through
-    pivot_m, its children with it; angle 0 = the modelled pose. clips: {id, title, duration_s, loop, keys: {part:
+    pivot_m, its children with it; angle 0 = the modelled pose; a joint with "type": "slide" is a slider - the part
+    moves along axis, range_m / key values in metres (author 2026-11-15: «сделай сустав-ползун»). clips: {id, title, duration_s, loop, keys: {part:
     [[t_s, angle_deg], ...]}} - angles between keys are eased (smoothstep); a part without keys stays at 0."""
     doc = {"schema": "elite.rig.v1", "asset": asset, "generator": "tools/models/build_equipment_models.py (do not edit)",
            "frame": "OBJ frame of the LOD meshes, metres, +Y up; a joint turns its part and the parts below it",

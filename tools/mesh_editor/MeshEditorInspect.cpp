@@ -340,6 +340,16 @@ void splitTouching(PartGeo& g)
 }
 
 // "Закрыть дыры": a fan from the loop centre for every simple open loop (each loop vertex starts one open edge)
+// one open loop for capping: its vertices in the order the open edges run, centroid, unit normal (Newell), mean radius
+struct OpenLoop
+{
+    std::vector<int> v;
+    Vec3 c {0, 0, 0};
+    Vec3 n {0, 0, 0};
+    double r = 0.0;
+    int pair = -1;   // the loop it bridges with (an annulus), -1 = a fan of its own
+};
+
 void capHoles(PartGeo& g)
 {
     const auto ef = edgeFaces(g.t);
@@ -352,6 +362,7 @@ void capHoles(PartGeo& g)
             next[fwd ? e.first : e.second].push_back(fwd ? e.second : e.first);
         }
     std::set<int> used;
+    std::vector<OpenLoop> loops;
     for (const auto& [start, outs] : next)
     {
         if (used.count(start) || outs.size() != 1)
@@ -374,24 +385,166 @@ void capHoles(PartGeo& g)
             used.insert(x);
         if (!ok || loop.size() < 3)
             continue;
-        Vec3 c {0, 0, 0};
+        OpenLoop L;
+        L.v = loop;
         for (int x : loop)
             for (int k = 0; k < 3; ++k)
-                c[k] += g.v[x][k] / static_cast<double>(loop.size());
-        const int ci = static_cast<int>(g.v.size());
-        g.v.push_back(c);
+                L.c[k] += g.v[x][k] / static_cast<double>(loop.size());
+        for (std::size_t i = 0; i < loop.size(); ++i)
+        {
+            const Vec3& p = g.v[loop[i]];
+            const Vec3& q = g.v[loop[(i + 1) % loop.size()]];
+            L.n[0] += (p[1] - q[1]) * (p[2] + q[2]);
+            L.n[1] += (p[2] - q[2]) * (p[0] + q[0]);
+            L.n[2] += (p[0] - q[0]) * (p[1] + q[1]);
+        }
+        const double nl = std::sqrt(dot(L.n, L.n));
+        if (nl > 1e-12)
+            for (double& x : L.n)
+                x /= nl;
+        for (int x : loop)
+        {
+            const Vec3 d = sub(g.v[x], L.c);
+            L.r += std::sqrt(dot(d, d)) / static_cast<double>(loop.size());
+        }
+        loops.push_back(std::move(L));
+    }
+    // an annulus (the end of a ring / a thick-walled tube): two flat loops in one plane about one centre, one inside
+    // the other, running opposite ways - bridged by a band, so the centre stays open (a fan per loop would cover it)
+    auto flat = [&](const OpenLoop& L) {
+        for (int x : L.v)
+            if (std::fabs(dot(sub(g.v[x], L.c), L.n)) > 0.02 * L.r + 1e-4)
+                return false;
+        return true;
+    };
+    for (std::size_t i = 0; i < loops.size(); ++i)
+    {
+        if (loops[i].pair >= 0 || !flat(loops[i]))
+            continue;
+        int best = -1;
+        for (std::size_t j = 0; j < loops.size(); ++j)
+        {
+            if (j == i || loops[j].pair >= 0 || !flat(loops[j]))
+                continue;
+            const OpenLoop &A = loops[i], &B = loops[j];
+            const double rmax = std::max(A.r, B.r);
+            const Vec3 dc = sub(A.c, B.c);
+            if (dot(A.n, B.n) > -0.98 || std::sqrt(dot(dc, dc)) > 0.05 * rmax || std::fabs(dot(dc, A.n)) > 0.02 * rmax ||
+                std::fabs(A.r - B.r) < 0.05 * rmax)
+                continue;
+            if (best >= 0)   // two candidates: ambiguous, fans
+            {
+                best = -2;
+                break;
+            }
+            best = static_cast<int>(j);
+        }
+        if (best >= 0)
+        {
+            loops[i].pair = best;
+            loops[best].pair = static_cast<int>(i);
+        }
+    }
+    auto holeMat = [&]() {
         auto hole = std::find(g.mtl.begin(), g.mtl.end(), std::string("eq_hole"));
         if (hole == g.mtl.end())
         {
             g.mtl.push_back("eq_hole");
             hole = g.mtl.end() - 1;
         }
-        const int holeMat = static_cast<int>(hole - g.mtl.begin());
-        for (std::size_t i = 0; i < loop.size(); ++i)
+        return static_cast<int>(hole - g.mtl.begin());
+    };
+    for (std::size_t i = 0; i < loops.size(); ++i)
+    {
+        const OpenLoop& L = loops[i];
+        if (L.pair >= 0)
         {
-            const int a = loop[i], b = loop[(i + 1) % loop.size()];
-            g.t.push_back({b, a, ci});   // the cap runs the open edge the other way
-            g.tm.push_back(holeMat);
+            if (static_cast<int>(i) > L.pair)
+                continue;
+            // the band: the outer loop as it runs, the inner one reversed (both then turn the same way about the
+            // centre); a merge walk by angle - each triangle takes one loop edge the other way round (as the fan does)
+            const OpenLoop& O = L.r > loops[L.pair].r ? L : loops[L.pair];
+            const OpenLoop& I = L.r > loops[L.pair].r ? loops[L.pair] : L;
+            std::vector<int> in(I.v.rbegin(), I.v.rend());
+            Vec3 e1 = sub(g.v[O.v[0]], O.c);
+            const double el = std::sqrt(dot(e1, e1));
+            for (double& x : e1)
+                x /= el;
+            const Vec3 e2 = cross(O.n, e1);
+            auto ang = [&](int x) {
+                const Vec3 d = sub(g.v[x], O.c);
+                return std::atan2(dot(d, e2), dot(d, e1));
+            };
+            auto unwrap = [&](const std::vector<int>& lp, double from) {
+                std::vector<double> a(lp.size());
+                double prev = from;
+                for (std::size_t k = 0; k < lp.size(); ++k)
+                {
+                    double x = ang(lp[k]);
+                    while (x < prev - M_PI)
+                        x += 2 * M_PI;
+                    while (x > prev + M_PI)
+                        x -= 2 * M_PI;
+                    a[k] = prev = x;
+                }
+                return a;
+            };
+            // start the inner loop at its vertex nearest in angle to the outer start
+            std::size_t s0 = 0;
+            double bestD = 1e9;
+            for (std::size_t k = 0; k < in.size(); ++k)
+            {
+                const double d = std::fabs(std::remainder(ang(in[k]), 2 * M_PI));
+                if (d < bestD)
+                {
+                    bestD = d;
+                    s0 = k;
+                }
+            }
+            std::rotate(in.begin(), in.begin() + static_cast<std::ptrdiff_t>(s0), in.end());
+            const std::vector<double> ao = unwrap(O.v, 0.0), ai = unwrap(in, ang(in[0]));
+            const double so = ao.back() - ao.front(), si = ai.back() - ai.front();
+            if (so * si <= 0.0 || std::fabs(so) < M_PI || std::fabs(si) < M_PI)
+            {
+                loops[L.pair].pair = -1;   // the loops do not turn together: fans after all
+                const_cast<OpenLoop&>(L).pair = -1;
+            }
+            else
+            {
+                const double dir = so > 0 ? 1.0 : -1.0;
+                const int mat = holeMat();
+                std::size_t io = 0, ii = 0;
+                const std::size_t no = O.v.size(), ni = in.size();
+                while (io < no || ii < ni)
+                {
+                    const double nextO = io < no ? (ao[(io + 1) % no] + (io + 1 == no ? dir * 2 * M_PI : 0.0)) : 1e18 * dir;
+                    const double nextI = ii < ni ? (ai[(ii + 1) % ni] + (ii + 1 == ni ? dir * 2 * M_PI : 0.0)) : 1e18 * dir;
+                    if (ii >= ni || (io < no && dir * (nextO - nextI) <= 0.0))
+                    {
+                        g.t.push_back({O.v[(io + 1) % no], O.v[io], in[ii % ni]});
+                        ++io;
+                    }
+                    else
+                    {
+                        g.t.push_back({in[ii], in[(ii + 1) % ni], O.v[io % no]});
+                        ++ii;
+                    }
+                    g.tm.push_back(mat);
+                }
+                ++g.capped;
+                continue;
+            }
+        }
+        if (loops[i].pair >= 0)
+            continue;
+        const int ci = static_cast<int>(g.v.size());
+        g.v.push_back(L.c);
+        const int mat = holeMat();
+        for (std::size_t k = 0; k < L.v.size(); ++k)
+        {
+            const int a = L.v[k], bb = L.v[(k + 1) % L.v.size()];
+            g.t.push_back({bb, a, ci});   // the cap runs the open edge the other way
+            g.tm.push_back(mat);
         }
         ++g.capped;
     }

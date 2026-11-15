@@ -144,8 +144,14 @@ function poseWorld(rig, angles) {
     const M = new THREE.Matrix4();
     if (j && depth < 64) {
       if (j.parent && j.parent !== part) M.copy(world(j.parent, depth + 1));
-      const a = THREE.MathUtils.degToRad(angles[part] || 0);
-      if (a) M.multiply(T(j.pivot_m, 1)).multiply(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(...j.axis).normalize(), a)).multiply(T(j.pivot_m, -1));
+      const v = angles[part] || 0;
+      if (v && j.type === 'slide') {   // a slider: the part moves v metres along its axis
+        const ax = new THREE.Vector3(...j.axis).normalize().multiplyScalar(v);
+        M.multiply(new THREE.Matrix4().makeTranslation(ax.x, ax.y, ax.z));
+      } else if (v) {                  // a hinge: the part turns v degrees about its axis through the pivot
+        M.multiply(T(j.pivot_m, 1)).multiply(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(...j.axis).normalize(),
+          THREE.MathUtils.degToRad(v))).multiply(T(j.pivot_m, -1));
+      }
     }
     cache.set(part, M);
     return M;

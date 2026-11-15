@@ -5527,33 +5527,33 @@
       "overhaul_h": 6000,
       "life_h": 25000,
       "model_asset": "agora_rm2_drone",
-      "notes": "Mantis-like repair drone: front arms with hands (two fingers and a thumb each; folded like a mantis's raptorial legs in the rest pose, unfolded for work; right forearm carries the plasma cutter with gas/power cartridge), a fine-work tool arm under the head (driver bit, micro-gripper, work lamp), binocular sensor head (two camera barrels in one housing, a movable brow plate over each, lidar in the chin; author 2026-11-15); four walking legs on magnetic pads; abdomen = one long power-pack section with Agora corner castings for the std.bay.drone4 cradle twist locks (native fit). Field-coupled thruster pods on the thorax and abdomen fly it around obstacles. Patchwork palette (warm white / terracotta / sea blue) with brass joints. Every moving part is a separate OBJ part modelled in the rest pose; pivots in 'rig'. Stowed envelope assumes legs folded up along the body (femur +60, knee -80) and arms in the mantis fold (the rest pose); the test clips (intact/assembly/rig.json) show the fold and the walk.",
+      "notes": "Mantis-like repair drone: front arms with hands (two fingers and a thumb each; folded like a mantis's raptorial legs in the rest pose, unfolded for work; right forearm carries the plasma cutter with gas/power cartridge), a fine-work tool arm under the head (driver bit, micro-gripper, work lamp), binocular sensor head (two camera barrels in one housing, a movable brow plate over each, lidar in the chin; author 2026-11-15); four walking legs on magnetic pads with a gimballed field thruster on each knee (it flies like a quadcopter to a drifting part and tows it home - the repair job MovingToFragment -> CapturingFragment -> towing); no tail (author 2026-11-15): a compact power pack behind the thorax carries the main field thruster (emitter aft) and the Agora corner castings for the std.bay.drone4 cradle twist locks (native fit); field-coupled pods on the thorax shoulders. Patchwork palette (warm white / terracotta / sea blue) with brass joints. Every moving part is a separate OBJ part modelled in the rest pose; pivots in 'rig'. Stowed envelope assumes legs folded up along the body (femur +60, knee -80) and arms in the mantis fold (the rest pose); the test clips (intact/assembly/rig.json) show the fold and the walk.",
       "geometry": {
         "status": "ACCEPTED/model",
         "envelope_m": [
           2.384,
-          1.238,
-          2.248
+          0.978,
+          2.018
         ],
         "service_clearance_m": [
           2.67,
-          1.39,
-          2.52
+          1.1,
+          2.26
         ],
         "bounds_m": {
           "min": [
             -1.192,
-            -0.0,
-            -1.048
+            0.0,
+            -0.892
           ],
           "max": [
             1.192,
-            1.238,
-            1.2
+            0.978,
+            1.126
           ]
         },
         "basis": [
-          "measured from the LOD1 model (tools/models/units/new_equipment.py)"
+          "measured from the LOD1 model (tools/models/units/new_equipment.py), 2026-11-15 (no tail, knee thrusters)"
         ],
         "frame": "walking on the hull: feet at y = 0, head +Z, +X = drone's left",
         "stowed_envelope_m": [
@@ -5570,9 +5570,9 @@
           "cutter": "плазменный резак (rm2_cutter)",
           "tool": "манипулятор тонких работ (rm2_tool_*)",
           "legs": "ноги и магнитные опоры (rm2_leg_*)",
-          "thrust": "полевые движители (rm2_thrusters_fore/aft)",
+          "thrust": "полевые двигатели: плечевые, маршевый на блоке питания, четыре поворотных в коленях (rm2_thrusters_fore, rm2_engine, rm2_leg_*_thruster)",
           "sensors": "сенсорная голова-бинокль с подвижными бровями (rm2_head, rm2_brow_l/r)",
-          "power": "силовой блок-брюшко (rm2_abdomen)"
+          "power": "блок питания с маршевым двигателем за грудью (rm2_engine)"
         }
       },
       "carried_in": [
@@ -5620,31 +5620,12 @@
             "joint": "fixed"
           },
           {
-            "part": "rm2_abdomen",
+            "part": "rm2_engine",
             "parent": "rm2_thorax",
             "pivot_m": [
-              0.0,
-              0.62,
-              -0.24
-            ],
-            "axis": [
-              1.0,
-              0.0,
-              0.0
-            ],
-            "range_deg": [
-              -25,
-              35
-            ],
-            "joint": "abdomen pitch (+ = tail up)"
-          },
-          {
-            "part": "rm2_thrusters_aft",
-            "parent": "rm2_abdomen",
-            "pivot_m": [
-              0.0,
-              0.8738,
-              -0.8489
+              0,
+              0.6,
+              -0.2
             ],
             "axis": [
               0.0,
@@ -5655,7 +5636,7 @@
               0,
               0
             ],
-            "joint": "fixed"
+            "joint": "fixed (power pack + main thruster)"
           },
           {
             "part": "rm2_neck",
@@ -5810,6 +5791,25 @@
             "joint": "ankle (pad stays flat on the hull)"
           },
           {
+            "part": "rm2_leg_fl_thruster",
+            "parent": "rm2_leg_fl_tibia",
+            "pivot_m": [
+              0.8128,
+              0.945,
+              0.4447
+            ],
+            "axis": [
+              -0.4755,
+              0.0,
+              0.8797
+            ],
+            "range_deg": [
+              -90,
+              90
+            ],
+            "joint": "knee thruster gimbal"
+          },
+          {
             "part": "rm2_leg_fr_coxa",
             "parent": "rm2_thorax",
             "pivot_m": [
@@ -5884,6 +5884,25 @@
               45
             ],
             "joint": "ankle (pad stays flat on the hull)"
+          },
+          {
+            "part": "rm2_leg_fr_thruster",
+            "parent": "rm2_leg_fr_tibia",
+            "pivot_m": [
+              -0.8128,
+              0.945,
+              0.4447
+            ],
+            "axis": [
+              -0.4755,
+              0.0,
+              -0.8797
+            ],
+            "range_deg": [
+              -90,
+              90
+            ],
+            "joint": "knee thruster gimbal"
           },
           {
             "part": "rm2_leg_rl_coxa",
@@ -5962,6 +5981,25 @@
             "joint": "ankle (pad stays flat on the hull)"
           },
           {
+            "part": "rm2_leg_rl_thruster",
+            "parent": "rm2_leg_rl_tibia",
+            "pivot_m": [
+              0.7669,
+              0.945,
+              -0.5786
+            ],
+            "axis": [
+              0.5774,
+              -0.0,
+              0.8165
+            ],
+            "range_deg": [
+              -90,
+              90
+            ],
+            "joint": "knee thruster gimbal"
+          },
+          {
             "part": "rm2_leg_rr_coxa",
             "parent": "rm2_thorax",
             "pivot_m": [
@@ -6036,6 +6074,25 @@
               45
             ],
             "joint": "ankle (pad stays flat on the hull)"
+          },
+          {
+            "part": "rm2_leg_rr_thruster",
+            "parent": "rm2_leg_rr_tibia",
+            "pivot_m": [
+              -0.7669,
+              0.945,
+              -0.5786
+            ],
+            "axis": [
+              0.5774,
+              0.0,
+              -0.8165
+            ],
+            "range_deg": [
+              -90,
+              90
+            ],
+            "joint": "knee thruster gimbal"
           },
           {
             "part": "rm2_arm_l_shoulder",

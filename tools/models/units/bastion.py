@@ -406,6 +406,27 @@ AP4 = dict(hx=5.96, ex=6.2145, yb=-2.86, yt=2.85, ey=3.107, z0=-7.70, z1=7.30, z
            cells=[(-2.55, 1.35), (2.55, 1.35), (-2.55, -1.45), (2.55, -1.45)], cw=4.0, ch=2.0, fr=0.25)
 
 
+def ap4_leaf(ci, s):
+    """the door leaf part of cell ci (0..3), s = -1 left / +1 right"""
+    return f"ap4_door_{ci + 1}{'l' if s < 0 else 'r'}"
+
+
+def ap4_rig():
+    """each leaf swings forward on the hinge of its outer edge (axis (0, s, 0), + = open), the cells open one after
+    another"""
+    d = AP4
+    J = [{"part": "ap4_hull", "parent": None, "pivot_m": [0.0, 0.0, 0.0], "axis": [0.0, 1.0, 0.0], "range_deg": [0, 0],
+          "joint": "root (fixed)"}]
+    keys = {}
+    for ci, (cx, cy) in enumerate(d["cells"]):
+        for s in (-1, 1):
+            J.append({"part": ap4_leaf(ci, s), "parent": "ap4_hull", "pivot_m": [round(cx + s * d["cw"] / 2, 4), cy, round(d["z1"] + 0.10, 4)],
+                      "axis": [0.0, float(s), 0.0], "range_deg": [0, 100], "joint": "blast door hinge (+ = open forward)"})
+            t0 = 0.3 + ci * 0.5
+            keys[ap4_leaf(ci, s)] = [[0, 0], [t0, 0], [t0 + 1.8, 95], [7.0 - t0 - 1.8, 95], [7.0 - t0, 0], [8.0, 0]]
+    return {"joints": J, "clips": [{"id": "doors", "title": "Створки ячеек: открыть и закрыть", "duration_s": 8.0, "loop": True, "keys": keys}]}
+
+
 def ap4_section():
     d = AP4
     hx, yb, yt = d["hx"], d["yb"], d["yt"]
@@ -436,25 +457,26 @@ def ap4_parts(lod):
     dr = P["ap4_doors"] = Part("ap4_doors")
     zf, fr = d["zf"], d["fr"]
     Rf = rot_x(math.pi / 2)                                              # local +Y -> world +Z
-    for cx, cy in d["cells"]:
+    for ci, (cx, cy) in enumerate(d["cells"]):
         w, hh = d["cw"], d["ch"]
         for (x0, x1, y0, y1) in ((cx - w / 2 - fr, cx + w / 2 + fr, cy + hh / 2, cy + hh / 2 + fr),
                                  (cx - w / 2 - fr, cx + w / 2 + fr, cy - hh / 2 - fr, cy - hh / 2),
                                  (cx - w / 2 - fr, cx - w / 2, cy - hh / 2, cy + hh / 2),
                                  (cx + w / 2, cx + w / 2 + fr, cy - hh / 2, cy + hh / 2)):
             fbox(dr, ARM, ((x0 + x1) / 2, (y0 + y1) / 2, d["z1"]), (x1 - x0, y1 - y0), (x1 - x0 - 0.05, y1 - y0 - 0.05), zf - d["z1"], Rf)
-        for s in (-1, 1):                                                # two door leaves
+        for s in (-1, 1):                                                # two door leaves, each its own part (ap4_rig)
+            lf = P.setdefault(ap4_leaf(ci, s), Part(ap4_leaf(ci, s)))
             xm = cx + s * w / 4
-            fbox(dr, DRK, (xm, cy, d["z1"]), (w / 2 - 0.02, hh), (w / 2 - 0.08, hh - 0.06), 0.10, Rf)
+            fbox(lf, DRK, (xm, cy, d["z1"]), (w / 2 - 0.02, hh), (w / 2 - 0.08, hh - 0.06), 0.10, Rf)
             if lod < 2:
                 for yy in (cy - hh * 0.28, cy + hh * 0.28):              # wedge stiffeners on the leaves
-                    fbox(dr, ARM, (xm, yy, d["z1"] + 0.10), (w / 2 - 0.35, 0.24), (w / 2 - 0.45, 0.12), 0.07, Rf)
+                    fbox(lf, ARM, (xm, yy, d["z1"] + 0.10), (w / 2 - 0.35, 0.24), (w / 2 - 0.45, 0.12), 0.07, Rf)
         if lod < 2:
-            box(dr, HAZ, (cx, cy, d["z1"] + 0.11), (0.05, hh - 0.12, 0.02))          # door seam
+            box(P[ap4_leaf(ci, -1)], HAZ, (cx - 0.03, cy, d["z1"] + 0.11), (0.05, hh - 0.12, 0.02))   # door seam (left leaf edge)
             for yy in (cy + hh / 2 + fr / 2, cy - hh / 2 - fr / 2):                   # hazard strips on the frame face
                 for k in range(5):
                     box(dr, HAZ, (cx - w / 2 + 0.3 + k * (w - 0.6) / 4, yy, zf), (0.30, 0.10, 0.01))
-            tlock(dr, (cx + 0.20, cy, d["z1"] + 0.10), (0, 0, 1), 0.16)
+            tlock(P[ap4_leaf(ci, 1)], (cx + 0.20, cy, d["z1"] + 0.10), (0, 0, 1), 0.16)
     # cradle: rail tongues in the cell sills + two armoured carriage-drive fairings along the roof
     cr = P["ap4_cradle"] = Part("ap4_cradle")
     for cx, cy in d["cells"]:
@@ -490,6 +512,9 @@ def ap4_hits():
     H = [hbox("ap4_hull", (0, (d["yb"] + d["yt"]) / 2, (d["z0"] + d["z1"]) / 2), (2 * d["hx"], d["yt"] - d["yb"], d["z1"] - d["z0"]))]
     for cx, cy in d["cells"]:
         H.append(hbox("ap4_doors", (cx, cy, (d["z1"] + d["zf"]) / 2), (d["cw"] + 2 * d["fr"], d["ch"] + 2 * d["fr"], d["zf"] - d["z1"])))
+        ci = d["cells"].index((cx, cy))
+        for s in (-1, 1):
+            H.append(hbox(ap4_leaf(ci, s), (cx + s * d["cw"] / 4, cy, d["z1"] + 0.085), (d["cw"] / 2 - 0.02, d["ch"], 0.17)))
         H.append(hbox("ap4_cradle", (cx, cy - d["ch"] / 2 + 0.3, 0.0), (d["cw"] - 0.4, 0.6, 14.0)))   # rails inside the cells
     for cx in (-2.55, 2.55):
         H.append(hbox("ap4_cradle", (cx, (d["yt"] + d["ey"]) / 2, -0.1), (1.7, d["ey"] - d["yt"], 13.4)))
@@ -883,6 +908,7 @@ def vpu16_hits():
     return H
 
 
+RIGS = {"bastion_ap4_hangar": ap4_rig}
 ASSETS = {"bastion_bt1_armour": bt1_parts, "bastion_bs1_comm": bs1_parts, "bastion_bv1_computer": bv1_parts,
           "bastion_ap4_hangar": ap4_parts, "bastion_b12_core": b12_parts, "bastion_s50_radar": s50_parts,
           "bastion_bp10_coilgun": bp10_parts, "bastion_bt4_pd": bt4_parts, "bastion_vpu16_vls": vpu16_parts}

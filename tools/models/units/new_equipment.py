@@ -3,7 +3,8 @@
   Hyperion Yards RD-1   recon drone (gimballed camera turret, deployable antenna, power block, 4 field-coupled thrusters,
                         3-point kinematic docking latch);
   Agora Modular RM-2 "Mantide"  repair drone on four magnetic feet: arms with hands that fold like a mantis's, a
-                        binocular head with brow plates (author 2026-11-15), one long abdomen; every limb segment / joint
+                        binocular head with brow plates, no tail - a compact power pack with the main thruster behind the
+                        thorax and gimballed thruster pods on the knees (author 2026-11-15); every limb segment / joint
                         is its own part with its pivot at a joint (RM2_RIG below; the rig goes into the proposal passport
                         and into intact/assembly/rig.json with test clips for the mesh editor's player).
 """
@@ -429,7 +430,7 @@ def rd1_hits():
 W_, T_, S_, B_ = "eq_agora_rm2_white", "eq_agora_rm2_terracotta", "eq_agora_rm2_sea", "eq_agora_rm2_brass"
 UPV = (0.0, 1.0, 0.0)
 RM2 = dict(th_y=0.60, th_r=0.19, th_z0=-0.24, th_z1=0.22, pro0=(0.0, 0.63, 0.16), pro1=(0.0, 0.80, 0.55),
-           neck=(0.0, 0.80, 0.56), head=(0.0, 0.85, 0.64), abd=(0.0, 0.62, -0.24), abd_tilt=0.15,
+           neck=(0.0, 0.80, 0.56), head=(0.0, 0.85, 0.64),
            legs={"fl": (1, 0.10, (1.10, 0.60)), "fr": (-1, 0.10, (-1.10, 0.60)),
                  "rl": (1, -0.16, (1.08, -0.80)), "rr": (-1, -0.16, (-1.08, -0.80))})
 
@@ -458,6 +459,18 @@ RM2_EYES = [(s, (s * 0.078, 0.905, 0.785), norm((0.0, -0.06, 1.0))) for s in (1,
 RM2_BROW = {s: (s * 0.078, 0.969, 0.808) for s in (1, -1)}      # brow plate centre (over each barrel)
 RM2_BROW_PIVOT = {s: (s * 0.135, 0.969, 0.808) for s in (1, -1)}   # hinge at the outer end, axis (0, 0, -s): + = inner end up
 RM2_PALM = 0.075
+
+
+def rm2_knee_pod(key):
+    """the gimballed field thruster on the knee (author 2026-11-15: «мелкие двигатели в суставы лап - тогда будет летать
+    как квадрокоптер»): strut from the knee, pod just outboard, emitter down in the rest pose"""
+    Hp, C, K, A, F, ax = rm2_leg(key)
+    u = norm(_sub(K, C))
+    uh = norm((u[0], 0.0, u[2]))
+    return K, _add(_add(K, _mul(uh, 0.075)), (0.0, 0.035, 0.0)), ax
+
+
+RM2_PACK = dict(z0=-0.20, z1=-0.42, y=0.60, w=0.30, h=0.22)   # the power pack behind the thorax (instead of the tail)
 
 
 def rm2_hand_axes(s):
@@ -629,6 +642,11 @@ def rm2_parts(lod):
             for t in (0.25, 0.75):
                 p = _lerp(C, K, t)
                 lathe(fm, B_, crect(0.036, 0.046, -0.008, 0.008), 6, frame_along(C, K), p, smooth=False)
+        kp = part(f"rm2_leg_{key}_thruster")
+        k0, kc, kax = rm2_knee_pod(key)
+        _pod(kp, k0, kc, (0.0, -1.0, 0.0), small, lod)
+        if lod == 0:
+            knuckle(kp, B_, kc, kax, 0.02, 0.1, ks)                                                 # gimbal trunnion
 
     # --- arms (author 2026-11-15: «передние лапы ... больше похожие на руки. но в сложенном состоянии пусть будут как у
     #     богомола»): shoulder, upper arm, forearm, a hand with two fingers and a thumb on each; the modelled pose is the
@@ -713,51 +731,31 @@ def rm2_parts(lod):
         lp = _add(_add(m2, _mul(dt, 0.04)), _mul(nt, 0.032))
         seg_lathe(tl, "eq_status_amber", lp, _add(lp, nt), [(0.0, 0.0), (0.012, 0.0), (0.012, 0.006), (0.0, 0.008)], 8)  # work lamp
 
-    # --- abdomen (power pack) hinged at the thorax rear, tail slightly raised; aft field thrusters ride on it
-    ab = Part("rm2_abdomen")
-    ta = Part("rm2_thrusters_aft")
-    ap = d["abd"]
-    if lod == 0:
-        knuckle(ab, B_, ap, (1, 0, 0), 0.06, 0.18, ks, cap_mat=S_)
-    # one long section (author 2026-11-15: «задний корпус можно сделать односекционный, продолговатый»)
-    zc, L = -0.64, 0.80
-    box(ab, S_, (0, 0.635, zc), (0.32, 0.25, L), chamfer=0.06 if lod < 2 else 0.0)
-    cyl(ab, W_, (0, 0.635, -0.26), (0, 0.635, -0.30), 0.075, ks)                                         # neck to the hinge
+    # --- no tail (author 2026-11-15: «убери у него хвост»): a compact power pack right behind the thorax carries the
+    #     main field thruster (emitter aft, pushes the drone forward) and the bay castings on its top
+    pk = part("rm2_engine")
+    k = RM2_PACK
+    zc, L = (k["z0"] + k["z1"]) / 2, k["z0"] - k["z1"]
+    box(pk, S_, (0, k["y"], zc), (k["w"], k["h"], L), chamfer=0.04 if lod < 2 else 0.0)
+    p0, p1 = (0, k["y"], k["z1"] + 0.01), (0, k["y"], k["z1"] - 1.0)
+    seg_lathe(pk, W_, p0, p1, [(0.0, 0.0), (0.10, 0.0), (0.115, 0.02), (0.115, 0.075), (0.0, 0.075)], small * 2 if lod == 0 else small)
+    seg_lathe(pk, "eq_pad_ceramic", p0, p1, [(0.098, 0.076), (0.0, 0.076)], small * 2 if lod == 0 else small)
     if lod < 2:
-        box(ab, T_, (0, 0.766, zc), (0.10, 0.012, L - 0.16), chamfer=ch(0.004))                        # terracotta spine stripe
-        box(ab, W_, (0, 0.635, zc - L / 2 - 0.008), (0.22, 0.16, 0.03), chamfer=ch(0.01))                 # end cap
-        cyl(ab, B_, (0, 0.635, zc - L / 2 - 0.02), (0, 0.635, zc - L / 2 - 0.05), 0.03, ks)              # charge / data socket
-        for sx in (-1, 1):                                                                             # corner castings (bay twist locks)
-            for z in (-0.36, -0.92):
-                box(ab, B_, (sx * 0.13, 0.770, z), (0.05, 0.04, 0.05), chamfer=ch(0.006))
-        box(ab, W_, (0, 0.770, -0.52), (0.16, 0.012, 0.14), chamfer=ch(0.004))                        # top hatch
+        seg_lathe(pk, "eq_field_coil", p0, p1, crect(0.115, 0.13, 0.03, 0.055), small * 2)                  # coil ring
+        box(pk, T_, (0, k["y"] + k["h"] / 2 + 0.006, zc), (0.10, 0.012, L - 0.06), chamfer=ch(0.004))       # terracotta stripe
+        for sx in (-1, 1):                                                                               # bay castings
+            for z in (k["z0"] - 0.04, k["z1"] + 0.04):
+                box(pk, B_, (sx * 0.11, k["y"] + k["h"] / 2 + 0.02, z), (0.05, 0.04, 0.05), chamfer=ch(0.006))
     if lod == 0:
+        seg_lathe(pk, B_, p0, p1, crect(0.115, 0.122, 0.0, 0.012), small * 2)                              # brass adapter
         for sx in (-1, 1):
-            for z in (-0.36, -0.92):
-                box(ab, "eq_metal_band", (sx * 0.13, 0.791, z), (0.025, 0.003, 0.015))                 # casting slots
-            box(ab, W_, (sx * 0.162, 0.635, zc), (0.006, 0.12, 0.30))                                  # side placards
-            box(ab, "eq_status_amber", (sx * 0.166, 0.67, zc + 0.10), (0.004, 0.015, 0.04))
-            for z in (-0.40, -0.88):                                                                   # side seams of the shell
-                box(ab, "eq_metal_band", (sx * 0.161, 0.635, z), (0.004, 0.20, 0.006))
-        for sx in (-1, 1):
-            for sz in (-1, 1):
-                hex_bolt(ab, B_, (sx * 0.065, 0.776, -0.52 + sz * 0.06), (0, 1, 0), 0.016, 0.006)
+            box(pk, W_, (sx * (k["w"] / 2 + 0.003), k["y"], zc), (0.006, 0.12, 0.14))                       # placards
+            box(pk, "eq_status_amber", (sx * (k["w"] / 2 + 0.006), k["y"] + 0.03, zc + 0.03), (0.004, 0.015, 0.04))
+        cyl(pk, B_, (0.0, k["y"] - k["h"] / 2, zc), (0.0, k["y"] - k["h"] / 2 - 0.02, zc), 0.025, ks)   # charge / data socket
     if close():
-        harness(ab, bezier((0.06, 0.70, -0.25), (0.08, 0.76, -0.30), (0.10, 0.78, -0.40), (0.11, 0.775, -0.48), 8),
-                0.008, 2, (S_, "eq_insulator"), ties=B_, tie_every=3)
-    for s in (-1, 1):
-        _pod(ta, (s * 0.13, 0.70, -0.88), (s * 0.24, 0.78, -0.88), (s * 0.5, 0.86, 0.0), small, lod)
-    R = rot_x(d["abd_tilt"])
-    P["rm2_abdomen"] = pivoted(ab, ap, R)
-    P["rm2_thrusters_aft"] = pivoted(ta, ap, R)
+        harness(pk, bezier((0.06, 0.66, -0.16), (0.08, 0.70, -0.20), (0.09, 0.71, -0.24), (0.09, 0.70, -0.28), 6),
+                0.007, 2, (S_, "eq_insulator"), ties=B_, tie_every=3)
     return P
-
-
-def _rm2_abd_point(p):
-    R = rot_x(RM2["abd_tilt"])
-    ap = RM2["abd"]
-    return _add(ap, apply(R, _sub(p, ap)))
-
 
 def rm2_hits():
     d = RM2
@@ -794,13 +792,12 @@ def rm2_hits():
     b0, m1, m2, tp = RM2_TOOL
     H += [hobox("rm2_tool_upper", b0, m1, 0.06, 0.06), hobox("rm2_tool_fore", m1, m2, 0.05, 0.05),
           hobox("rm2_tool_head", m2, tp, 0.07, 0.07)]
-    # abdomen + aft thrusters (tilted with the abdomen)
-    R = rot_x(d["abd_tilt"])
-    rot = euler_xyz(R)
-    H += [hbox("rm2_abdomen", _rm2_abd_point((0, 0.635, -0.64)), (0.33, 0.26, 0.82), rot),
-          hbox("rm2_abdomen", _rm2_abd_point((0, 0.635, -1.07)), (0.22, 0.16, 0.06), rot)]
-    for s in (-1, 1):
-        H.append(hbox("rm2_thrusters_aft", _rm2_abd_point((s * 0.23, 0.78, -0.88)), (0.17, 0.12, 0.16), rot))
+    k = RM2_PACK
+    H += [hbox("rm2_engine", (0, k["y"], (k["z0"] + k["z1"]) / 2), (k["w"] + 0.02, k["h"] + 0.06, k["z0"] - k["z1"])),
+          hcyl("rm2_engine", (0, k["y"], k["z1"]), (0, k["y"], k["z1"] - 0.09), 0.13)]
+    for key in d["legs"]:
+        k0, kc, kax = rm2_knee_pod(key)
+        H.append(hbox(f"rm2_leg_{key}_thruster", _add(kc, (0, -0.02, 0)), (0.16, 0.12, 0.16)))
     return H
 
 
@@ -814,8 +811,7 @@ def rm2_rig():
     d = RM2
     G = [_j("rm2_thorax", None, (0, d["th_y"], 0), UPV, (-180, 180), "root (body frame)"),
          _j("rm2_thrusters_fore", "rm2_thorax", (0, 0.80, 0.0), UPV, (0, 0), "fixed"),
-         _j("rm2_abdomen", "rm2_thorax", d["abd"], (1, 0, 0), (-25, 35), "abdomen pitch (+ = tail up)"),
-         _j("rm2_thrusters_aft", "rm2_abdomen", _rm2_abd_point((0, 0.78, -0.88)), UPV, (0, 0), "fixed"),
+         _j("rm2_engine", "rm2_thorax", (0, RM2_PACK["y"], RM2_PACK["z0"]), UPV, (0, 0), "fixed (power pack + main thruster)"),
          _j("rm2_neck", "rm2_thorax", d["neck"], UPV, (-60, 60), "neck yaw"),
          _j("rm2_head", "rm2_neck", d["head"], (1, 0, 0), (-35, 40), "head pitch (+ = look down)"),
          _j("rm2_brow_l", "rm2_head", RM2_BROW_PIVOT[1], (0, 0, -1), (-25, 25), "brow (+ = inner end up)"),
@@ -825,7 +821,8 @@ def rm2_rig():
         G += [_j(f"rm2_leg_{key}_coxa", "rm2_thorax", Hp, UPV, (-40, 40), "hip yaw"),
               _j(f"rm2_leg_{key}_femur", f"rm2_leg_{key}_coxa", C, ax, (-50, 70), "hip pitch (fold up for the bay)"),
               _j(f"rm2_leg_{key}_tibia", f"rm2_leg_{key}_femur", K, ax, (-80, 60), "knee"),
-              _j(f"rm2_leg_{key}_foot", f"rm2_leg_{key}_tibia", A, ax, (-45, 45), "ankle (pad stays flat on the hull)")]
+              _j(f"rm2_leg_{key}_foot", f"rm2_leg_{key}_tibia", A, ax, (-45, 45), "ankle (pad stays flat on the hull)"),
+              _j(f"rm2_leg_{key}_thruster", f"rm2_leg_{key}_tibia", rm2_knee_pod(key)[1], ax, (-90, 90), "knee thruster gimbal")]
     for s, side in ((1, "l"), (-1, "r")):
         S, E, Wp, T = rm2_arm(s)
         dw, nup = rm2_hand_axes(s)
@@ -885,7 +882,6 @@ def rm2_clips():
                 lst.insert(0, [0.0, lst[-1][1] + (lst[0][1] - lst[-1][1]) * (T - lst[-1][0]) / (T - lst[-1][0] + lst[0][0])])
             lst.append([T, lst[0][1]])
         k[f"rm2_leg_{key}_coxa"], k[f"rm2_leg_{key}_femur"], k[f"rm2_leg_{key}_tibia"] = cx, fm, tb
-    k["rm2_abdomen"] = [[0, 0], [0.4, 3], [0.8, 0], [1.2, 3], [1.6, 0]]
     C.append({"id": "walk", "title": "Шаг на месте", "duration_s": T, "loop": True, "keys": k})
     # 3. looking around: the neck turns, the head nods, the brows move
     C.append({"id": "look", "title": "Осмотр: голова и брови", "duration_s": 4.0, "loop": True, "keys": {
@@ -894,8 +890,7 @@ def rm2_clips():
         "rm2_brow_l": [[0, 0], [0.8, 20], [1.4, 0], [2.6, -18], [3.2, 0], [4.0, 0]],
         "rm2_brow_r": [[0, 0], [0.8, 20], [1.4, 0], [2.6, -18], [3.2, 0], [4.0, 0]]}})
     # 4. stowing for the bay: legs fold up, arms tucked tighter, head down, tail down
-    k = {"rm2_head": [[0, 0], [1.5, 30], [2.5, 30], [4.0, 0]],
-         "rm2_abdomen": [[0, 0], [1.5, -12], [2.5, -12], [4.0, 0]]}
+    k = {"rm2_head": [[0, 0], [1.5, 30], [2.5, 30], [4.0, 0]]}
     for key in RM2["legs"]:
         k[f"rm2_leg_{key}_femur"] = [[0, 0], [1.5, 60], [2.5, 60], [4.0, 0]]
         k[f"rm2_leg_{key}_tibia"] = [[0, 0], [1.5, -75], [2.5, -75], [4.0, 0]]
@@ -903,6 +898,26 @@ def rm2_clips():
     for side in ("l", "r"):
         k[f"rm2_arm_{side}_upper"] = [[0, 0], [1.5, 20], [2.5, 20], [4.0, 0]]
     C.append({"id": "stow", "title": "Сложиться в отсек", "duration_s": 4.0, "loop": True, "keys": k})
+    # 5. flight: legs tucked, the knee thrusters swing to steer (a quadcopter of four gimballed pods + the main thruster)
+    k = {}
+    for i, key in enumerate(RM2["legs"]):
+        k[f"rm2_leg_{key}_femur"] = [[0, 0], [1.0, 55], [5.0, 55], [6.0, 0]]
+        k[f"rm2_leg_{key}_tibia"] = [[0, 0], [1.0, -70], [5.0, -70], [6.0, 0]]
+        sw = 1 if i % 2 == 0 else -1
+        k[f"rm2_leg_{key}_thruster"] = [[0, 0], [1.0, 15], [2.0, 15 + sw * 30], [3.0, 15 - sw * 30], [4.0, 15 + sw * 30],
+                                        [5.0, 15], [6.0, 0]]
+    k["rm2_head"] = [[0, 0], [1.0, -10], [5.0, -10], [6.0, 0]]
+    C.append({"id": "fly", "title": "Полёт: ноги поджаты, двигатели в коленях рулят", "duration_s": 6.0, "loop": True, "keys": k})
+    # 6. capture and tow (the repair job: CapturingFragment -> towing back): reach, grip, pull the part to the chest
+    k = {}
+    for side in ("l", "r"):
+        k[f"rm2_arm_{side}_upper"] = [[0, 0], [1.2, -45], [2.0, -45], [3.2, -10], [4.6, -10], [5.6, 0]]
+        k[f"rm2_arm_{side}_fore"] = [[0, 0], [1.2, 85], [2.0, 85], [3.2, 40], [4.6, 40], [5.6, 0]]
+        k[f"rm2_hand_{side}"] = [[0, 0], [1.2, -10], [3.2, 10], [4.6, 10], [5.6, 0]]
+        for f in ("f1", "f2"):
+            k[f"rm2_hand_{side}_{f}"] = [[0, 0], [1.2, -5], [1.8, 75], [4.6, 75], [5.6, 0]]
+        k[f"rm2_hand_{side}_thumb"] = [[0, 0], [1.2, -5], [1.8, 50], [4.6, 50], [5.6, 0]]
+    C.append({"id": "capture", "title": "Захват детали и буксировка", "duration_s": 6.0, "loop": True, "keys": k})
     return C
 
 

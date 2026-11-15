@@ -966,12 +966,20 @@ def update_passport(asset_dir, asset):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--only")
+    ap.add_argument("--only", help="folder substrings, comma-separated")
     ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 2))
     a = ap.parse_args()
+    only = [x for x in (a.only or "").split(",") if x]
+
+    def module(d):
+        """a module of the equipment (not a set "drive + pad": kind assembly, its parts have their own variants)"""
+        m = os.path.join(eqlib.OUT, d)
+        if not os.path.isdir(source_layout.assembly_dir(m)):
+            return False
+        return source_layout.passport(m, d, write=False).get("kind", "module") == "module"
+
     assets = sorted(os.path.join(eqlib.OUT, d) for d in os.listdir(eqlib.OUT)
-                    if os.path.isdir(os.path.join(eqlib.OUT, d)) and (not a.only or a.only in d)
-                    and os.path.isdir(source_layout.assembly_dir(os.path.join(eqlib.OUT, d))))
+                    if os.path.isdir(os.path.join(eqlib.OUT, d)) and (not only or any(x in d for x in only)) and module(d))
     bad = 0
     with Pool(min(a.jobs, len(assets) or 1)) as pool:
         for asset, err, report in pool.imap_unordered(process, assets):

@@ -223,7 +223,7 @@ def build(name):
     # ---- equipment
     for nm, folder, R, pos in installs:
         # only the propulsion reactor's pad is hull skin (the back of its bay); service reactor pads stay inside
-        has_pad = folder == "cobretty_er5_reactor" and os.path.exists(os.path.join(source_layout.lod_dir(os.path.join(EQ, folder), 1), PADS[0] + ".obj"))
+        has_pad = folder == "cobretty_er5_reactor" and any(fn == PADS[0] + ".obj" for fn, _, _ in LS.unit_files(folder, 1))
         exterior = any(h in nm for h in EXTERIOR_HINTS)
         ci = None if exterior else compartment_of(*pos)
         if folder == "cobretty_er5_reactor":

@@ -18,6 +18,10 @@ Passport data per maker: `briefs/<maker>.json` (envelope, mass, ratings, notes, 
   structure (housing, mounts, flange). Prefix with the unit prefix (`u33_field_ctl`). Every main drive names its
   cooling pad `engine_hot_emitter_annulus` (the runtime thermal-emitter mesh id); every propulsion / service reactor
   pad is `reactor_cooling_pad`. One OBJ per part; empty parts at far LODs are dropped automatically.
+- The pad is still built with its unit (sized from the passport), but the generator splits it off
+  (`tools/models/pads.py`, MESH_EDITOR_SPEC 18.11): `<unit>` without it + `mounts.json`, `<unit>_pad` (the pad alone,
+  mating face at y = 0, outward +Y) and `<unit>_set` (kind assembly: unit + pad(s) by reference). A pad is a
+  consumable that sticks out through the hull while its unit sits inside.
 - `hits_fn()` returns a list of `hbox(part, center, size, rot_deg)` / `hcyl(part, p0, p1, r)` volumes that follow
   the shape closely (boxes and cylinders only; cylinder axis along Z or in the XY plane). Every part with gameplay
   meaning gets at least one volume.

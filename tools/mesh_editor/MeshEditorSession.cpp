@@ -418,12 +418,13 @@ nlohmann::json Session::variantsJson(const ModelCard& c, const std::string& sele
     return out;
 }
 
-// a part of an assembly named like a library model ("equipment_ship/<id>"), or ""
-std::string Session::libraryRef(const std::string& partKey, const std::string& ownCategory) const
+// a part of an assembly named like a library model ("equipment_ship/<id>"), or "". The same category counts too (a
+// set "drive + pad" in the equipment links the drive and the pad, MESH_EDITOR_SPEC 18.11) - only the model itself not.
+std::string Session::libraryRef(const std::string& partKey, const std::string& ownCategory, const std::string& ownId) const
 {
     static const char* libraries[] = {"equipment_ship", "equipment_station", "equipment_hub_module"};
     for (const char* cat : libraries)
-        if (cat != ownCategory)
+        if (!(cat == ownCategory && partKey == ownId))
             if (const ModelCard* c = m_catalog.find(cat, partKey))
                 return c->category + "/" + c->id;
     return std::string();
@@ -492,7 +493,7 @@ nlohmann::json Session::buildShell(const ModelCard& c0, nlohmann::json& blendJob
     const auto t0 = clock::now();
     const auto groups = Inspector::repaired(c, state);
     const auto t1 = clock::now();
-    const nlohmann::json doc = Assembly::load(c0, groups, [&](const std::string& key) { return libraryRef(key, c.category); }, seedFor(c0));
+    const nlohmann::json doc = Assembly::load(c0, groups, [&](const std::string& key) { return libraryRef(key, c.category, c.id); }, seedFor(c0));
     const nlohmann::json library = Assembly::loadLibrary(m_sourceTree);
     const RepairedGroup* first = nullptr;
     for (const auto& g : groups)
@@ -676,7 +677,7 @@ nlohmann::json Session::assemblyJson(const ModelCard& c0)
 {
     const ModelCard c = effective(c0);
     const auto groups = Inspector::repaired(c, stateDir(c));
-    nlohmann::json doc = Assembly::load(c0, groups, [&](const std::string& key) { return libraryRef(key, c.category); }, seedFor(c0));
+    nlohmann::json doc = Assembly::load(c0, groups, [&](const std::string& key) { return libraryRef(key, c.category, c.id); }, seedFor(c0));
     return {{"type", "assembly"}, {"category", c.category}, {"id", c.id}, {"doc", doc}, {"file", Assembly::file(c0).generic_u8string()}};
 }
 
@@ -963,7 +964,7 @@ void Session::handleCommand(const std::string& text)
                 // the build reads the saved document (or the seed) and the repaired meshes; links come from their cards
                 const auto groups = Inspector::repaired(effective(*c), stateDir(*c));
                 const nlohmann::json doc =
-                    Assembly::load(*c, groups, [&](const std::string& key) { return libraryRef(key, c->category); }, seedFor(*c));
+                    Assembly::load(*c, groups, [&](const std::string& key) { return libraryRef(key, c->category, c->id); }, seedFor(*c));
                 const nlohmann::json lib = Assembly::loadLibrary(m_sourceTree);
                 send(Assembly::build(*c, doc, groups, m_catalog.settings().outputRoot, lib, [&](const std::string& ref) {
                     const auto slash = ref.find('/');

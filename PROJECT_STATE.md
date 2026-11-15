@@ -5778,4 +5778,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   (internal ventilation). Editor: damaged tab hides "close holes"; card readiness fixed (was always "stale").
   LIVE: Blender wound shots of 8 modules, editor page shot D:/tmp/me_damage.png, 118/118 "ready".
   Next: variants as states in the .elmodel package; repeats.
+- 2026-11-15 PADS SPLIT OFF (MESH_EDITOR_SPEC 18.11; author: pads are the consumable part of drive and reactor, the
+  unit sits under the hull, the pad sticks out). build_equipment_models + tools/models/pads.py split the 21 units
+  with a pad (10 drives engine_hot_emitter_annulus, 11 reactors reactor_cooling_pad) into <unit> (+ mounts.json),
+  <unit>_pad (own frame: mating face y = 0, outward +Y; ER-5: one pad module, two mounts) and <unit>_set (kind
+  assembly, assembly.json nodes ref'ing unit + pad). Damaged variants redone for the 21 units, new for the 21 pads
+  (sets get none). layout_sketch.load_obj / unit_volumes re-attach pads by mounts; editor libraryRef resolves refs
+  within the same category (except self).
+  LIVE: pads placed by mounts match the old geometry to 10 um, triangle counts equal at all LODs; Cobrett-I mock-up
+  meshes identical triangle by triangle, 562 hit volumes the same; Blender shots D:/tmp/pad_sheet.png,
+  D:/tmp/dmg_*_pad.png. Open: variable-length insert (heat pipes / spacer) between a unit under the hull and its pad;
+  generic innards look too big inside a thin pad.
+  Editor: shells of all 189 variants (units, pads, sets) built (883 s, 0 timeouts); packages of the 63 models built
+  (sets: nodes by ref, ER-5 set preview from its package shows both plates); equipment cards 160/160 "ready".
 

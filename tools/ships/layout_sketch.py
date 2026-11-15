@@ -15,6 +15,7 @@ Parts:
 
 usage: python tools/ships/layout_sketch.py [cobrett-i]
 """
+import json
 import math
 import os
 import sys
@@ -25,6 +26,7 @@ from eqlib import (Part, box, cyl, lathe, crect, rot_x, rot_y, rot_z, apply, nor
 import importlib  # noqa: E402
 import pkgutil  # noqa: E402
 import source_layout  # noqa: E402  (MESH_EDITOR_SPEC 18: <model>/intact/assembly/LOD<N>)
+import pads  # noqa: E402  (MESH_EDITOR_SPEC 18.11: a drive's / reactor's pad is its own module, placed by mounts.json)
 import units  # noqa: E402
 
 for m in pkgutil.iter_modules(units.__path__):            # register every maker palette (the OBJ copies reference them)
@@ -47,22 +49,58 @@ EQ = os.path.join(SOURCE_MODELS, "equipment")
 OUT = os.path.join(SOURCE_MODELS, "layout_sketches")
 
 
-def load_obj(folder, lod=2, only=None, skip=None):
-    """parts of an equipment model at one LOD (all, or only / except the named OBJ parts), merged"""
+def unit_files(folder, lod):
+    """(OBJ name, path, mount or None) of an equipment unit at one LOD: its own parts plus the pad module(s) its
+    mounts.json places (the pad was split off into <unit>_pad, MESH_EDITOR_SPEC 18.11) - the unit as it was"""
     d = source_layout.lod_dir(os.path.join(EQ, folder), lod)
+    out = [(fn, os.path.join(d, fn), None) for fn in os.listdir(d) if fn.endswith(".obj")]
+    mp = os.path.join(source_layout.assembly_dir(os.path.join(EQ, folder)), "mounts.json")
+    if os.path.exists(mp):
+        for m in json.load(open(mp, encoding="utf-8"))["mounts"]:
+            pd = source_layout.lod_dir(os.path.join(EQ, m["module"]), lod)
+            out += [(fn, os.path.join(pd, fn), m) for fn in sorted(os.listdir(pd)) if fn.endswith(".obj")]
+    return sorted(out, key=lambda e: e[0])
+
+
+def unit_volumes(folder):
+    """an equipment unit's hit volumes in its frame, its pad modules' placed by mounts.json (MESH_EDITOR_SPEC 18.11);
+    ids numbered per part over all mounts, as before the split"""
+    hp = os.path.join(source_layout.assembly_dir(os.path.join(EQ, folder)), "hit_volumes.json")
+    if not os.path.exists(hp):
+        return None
+    vols = list(json.load(open(hp, encoding="utf-8"))["volumes"])
+    mp = os.path.join(source_layout.assembly_dir(os.path.join(EQ, folder)), "mounts.json")
+    if os.path.exists(mp):
+        count = {}
+        for m in json.load(open(mp, encoding="utf-8"))["mounts"]:
+            pp = os.path.join(source_layout.assembly_dir(os.path.join(EQ, m["module"])), "hit_volumes.json")
+            R = pads.euler(m["rotation_deg"])
+            for v in json.load(open(pp, encoding="utf-8"))["volumes"]:
+                q = dict(v)
+                count[v["part"]] = count.get(v["part"], 0) + 1
+                q["id"] = f'{v["part"]}.{count[v["part"]]}'
+                q["position"] = [round(a + b, 4) + 0.0 for a, b in zip(apply(R, v["position"]), m["position"])]
+                q["rotation_deg"] = pads.to_euler(pads._mat(R, pads.euler(v.get("rotation_deg", [0, 0, 0]))))
+                vols.append(q)
+    return vols
+
+
+def load_obj(folder, lod=2, only=None, skip=None):
+    """parts of an equipment model at one LOD (all, or only / except the named OBJ parts), merged; pads included"""
     V, N, F = [], [], {}
-    for fn in sorted(os.listdir(d)):
-        if not fn.endswith(".obj"):
-            continue
+    for fn, path, m in unit_files(folder, lod):
         if (only and fn[:-4] not in only) or (skip and fn[:-4] in skip):
             continue
+        R = pads.euler(m["rotation_deg"]) if m else None
         base_v, base_n = len(V), len(N)
         mat = "sk_proxy"
-        for line in open(os.path.join(d, fn), encoding="utf-8"):
+        for line in open(path, encoding="utf-8"):
             if line.startswith("v "):
-                V.append(tuple(map(float, line.split()[1:4])))
+                v = tuple(map(float, line.split()[1:4]))
+                V.append(tuple(a + b for a, b in zip(apply(R, v), m["position"])) if m else v)
             elif line.startswith("vn "):
-                N.append(tuple(map(float, line.split()[1:4])))
+                n = tuple(map(float, line.split()[1:4]))
+                N.append(apply(R, n) if m else n)
             elif line.startswith("usemtl "):
                 mat = line.split()[1].strip()
             elif line.startswith("f "):
@@ -80,7 +118,7 @@ PADS = ("reactor_cooling_pad",)       # hull-skin parts kept as their own sketch
 
 def place(P, name, folder, pos, yaw_deg=0.0, lod=2, _sub=None):
     """an equipment model instance: rotated about Y by yaw, translated to pos; a reactor pad becomes <name>_pad"""
-    if _sub is None and os.path.exists(os.path.join(source_layout.lod_dir(os.path.join(EQ, folder), lod), PADS[0] + ".obj")):
+    if _sub is None and any(fn == PADS[0] + ".obj" for fn, _, _ in unit_files(folder, lod)):
         place(P, name + "_pad", folder, pos, yaw_deg, lod, _sub="pad")
     key = (folder, lod, _sub)
     if key not in _CACHE:
@@ -276,11 +314,11 @@ def ship_hits():
                          "half_size": list(hs)})
         rules["plates"].append({"plate": name, "seams": seams, "rule": "all seams destroyed -> the plate is free (can be torn off)"})
     for name, folder, R, pos in INSTALLS:
-        hp = os.path.join(source_layout.assembly_dir(os.path.join(EQ, folder)), "hit_volumes.json")
-        if not os.path.exists(hp):
+        uv = unit_volumes(folder)
+        if uv is None:
             continue
         lo, hi = [1e9] * 3, [-1e9] * 3
-        for v in json.load(open(hp, encoding="utf-8"))["volumes"]:
+        for v in uv:
             q = dict(v)
             q["id"] = f"{name}.{v['id']}"
             q["part"] = name

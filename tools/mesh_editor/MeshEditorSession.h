@@ -62,7 +62,7 @@ private:
     // Blender, headless: tools/blender/make_module_blend.py over the jobs; true when it ran
     bool runBlendJobs(const nlohmann::json& jobs, const std::string& name);
     void openInBlender(const ModelCard& card, const std::string& group, const std::string& part);
-    std::string libraryRef(const std::string& partKey, const std::string& ownCategory) const;
+    std::string libraryRef(const std::string& partKey, const std::string& ownCategory, const std::string& ownId) const;
     std::filesystem::path stateDir(const ModelCard& c) const;
     nlohmann::json assemblyJson(const ModelCard& c);
     // a Blender glTF model is read from its converted working copy (MeshEditorGltf); other models as they are

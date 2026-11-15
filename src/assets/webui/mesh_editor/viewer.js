@@ -135,7 +135,12 @@ function restyle() {
 async function showGroup(gi, refit) {
   const g = state.groups[gi];
   if (!g) return;
-  if (!g.meshes) Object.assign(g, await buildGroup(g));
+  if (!g.meshes) {
+    const built = await buildGroup(g);
+    // another model / variant was loaded while the meshes came: drop them, else they stay in the scene for good
+    if (!state.groups.includes(g)) { disposeRoot(built.root); return; }
+    Object.assign(g, built);
+  }
   for (const other of state.groups) if (other.root) other.root.visible = false;
   if (!g.root.parent) scene.add(g.root);
   g.root.visible = true;
@@ -145,12 +150,13 @@ async function showGroup(gi, refit) {
   if (first || refit) frame(groupBox(gi));
 }
 
+function disposeRoot(root) {
+  if (!root) return;
+  scene.remove(root);
+  root.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+}
 function dispose() {
-  for (const g of state.groups) {
-    if (!g.root) continue;
-    scene.remove(g.root);
-    g.root.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
-  }
+  for (const g of state.groups) disposeRoot(g.root);
   state.groups = [];
 }
 
@@ -405,7 +411,11 @@ window.MeshViewer = {
   // the assembly view
   async showAssembly(doc) {
     const g = state.groups[0];
-    if (g && !g.meshes) Object.assign(g, await buildGroup(g));
+    if (g && !g.meshes) {
+      const built = await buildGroup(g);
+      if (!state.groups.includes(g)) { disposeRoot(built.root); return; }   // a newer load meanwhile
+      Object.assign(g, built);
+    }
     buildAssembly(doc);
   },
   hideAssembly() {
@@ -426,5 +436,7 @@ window.MeshViewer = {
   },
   onPickNode(cb) { asm.onPick = cb; },
   fitAssembly() { if (asm.root) frame(new THREE.Box3().setFromObject(asm.root)); },
+  // check: the model roots in the scene (a stale load used to leave the previous model there)
+  stats() { return { inScene: scene.children.filter((o) => o.isGroup).length, groups: state.groups.length }; },
 };
 window.dispatchEvent(new Event('viewer-ready'));

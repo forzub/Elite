@@ -5799,4 +5799,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   and nozzle_off (break across Z at 80-88 % length) on top of hole / torn / broken. 10 drives x 2 = 20 variants,
   shells built, cards 160/160 "ready". LIVE: Blender shots D:/tmp/noz_{cobretty_cr1_vector,ofu_u70_drive,
   tianhe_tz28v_drive}.png show the aft end torn / torn off.
+- 2026-11-15 PADS WITHOUT INNARDS (MESH_EDITOR_SPEC 18.13; author: torn ceramic and frame only). build_damage_variants:
+  *_pad wounds / breaks get only frame members (eq_metal_band) clipped to the plate box. 63 pad variants regenerated,
+  shells rebuilt 63/63. LIVE: D:/tmp/pad_dmg_bare.png; check: innards = frame only, overshoot <= 4.6 cm.
+- 2026-11-15 Mesh editor preview race fixed (author: the previous module stayed in the preview, sometimes no way back).
+  A stale async mesh load is dropped instead of being added to the scene. LIVE: headless Edge fast switching -
+  old code 2 roots in scene + TypeError in groupBox, new code 1 root, no exceptions.
 

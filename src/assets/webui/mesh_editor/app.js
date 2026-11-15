@@ -301,6 +301,7 @@ function onInspection(m) {
   whenViewer(async (v) => {
     v.onPick((key) => selectPart(key, false));
     insp.group = await v.load(m.groups, same, insp.group);
+    if (insp.data !== m) return;   // another model / variant was opened while the meshes came
     v.setErrors(m.parts.filter((p) => p.result === 'error' && !p.link).map((p) => p.key));
     v.setLinks(m.parts.filter((p) => p.link).map((p) => p.key));
     v.select(insp.selected, false);

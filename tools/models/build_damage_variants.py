@@ -773,6 +773,17 @@ def ray_extent(c, d, lo, hi):
     return max(t, 0.0)
 
 
+def inside(c, lo, hi, m=1e-4):
+    return all(lo[k] - m <= c[k] <= hi[k] + m for k in range(3))
+
+
+def span_in(c, a, lo, hi, want):
+    """how far a member through c along a may reach each way and stay inside the box (0: c itself is outside)"""
+    if not inside(c, lo, hi):
+        return 0.0
+    return min(want, ray_extent(c, a, lo, hi), ray_extent(c, mul(a, -1.0), lo, hi))
+
+
 CABLE_MATS = ("eq_insulator", "eq_copper", "eq_status_amber", "eq_dmg_interior")
 
 
@@ -783,7 +794,13 @@ def cable(part, rng, pts, r, lod):
     eqlib.tube(part, rng.choice(CABLE_MATS), path, r, 6 if lod == 0 else 4)
 
 
-def wound_innards(part, w, rng, lod, lo, hi):
+def is_pad(asset_dir):
+    """a pad (MESH_EDITOR_SPEC 18.11): a thin ceramic plate on a metal frame - no innards behind a wound (author
+    2026-11-15: «для пятаков убери начинку, оставь рваную керамику и каркас»)"""
+    return os.path.basename(asset_dir.rstrip("/\\")).endswith("_pad")
+
+
+def wound_innards(part, w, rng, lod, lo, hi, bare=False):
     """what shows through a hole: a dark back wall, frame members (one broken, its ends bent out), a pipe with a torn
     end sticking out, cables hanging out of the hole, a couple of boxes on the back wall"""
     rc = w.rc
@@ -794,7 +811,8 @@ def wound_innards(part, w, rng, lod, lo, hi):
     R = frame(e1, e2, d)
     P = lambda x, y, z: to_world(w.c, e1, e2, d, x, y, z)
     th = max(0.01, 0.03 * rc)
-    eqlib.box(part, "eq_dmg_interior", P(0, 0, -depth), (1.9 * rc, 1.9 * rc, th), R)
+    if not bare:
+        eqlib.box(part, "eq_dmg_interior", P(0, 0, -depth), (1.9 * rc, 1.9 * rc, th), R)
     if lod >= 3:
         return
     for k in range(rng.randint(2, 3)):                       # frame members across the hole
@@ -802,21 +820,28 @@ def wound_innards(part, w, rng, lod, lo, hi):
         off = rng.uniform(-0.6, 0.6) * rc
         z = -depth * rng.uniform(0.35, 0.75)
         s = 0.07 * rc
+        # a pad (bare): a member keeps inside the plate - cut to its box, dropped when it is outside
+        reach = rc
+        if bare:
+            reach = span_in(P(0 if along_x else off, off if along_x else 0, z), e1 if along_x else e2, lo, hi, rc)
+            if reach < 0.3 * rc:
+                continue
         if k == 0:                                           # broken: two stubs, the torn ends bent outward
-            gap = rng.uniform(0.15, 0.35) * rc
+            gap = rng.uniform(0.15, 0.35) * reach
             for sgn in (-1, 1):
-                a0, a1 = sgn * gap, sgn * 1.0 * rc
+                a0, a1 = sgn * gap, sgn * 1.0 * reach
                 mid = (a0 + a1) / 2
                 ax = (1, 0, 0) if along_x else (0, 1, 0)
-                bend = eqlib.rot_y(-sgn * 0.45) if along_x else eqlib.rot_x(sgn * 0.45)
+                tilt = 0.12 if bare else 0.45                # a pad: the plate is thin, the stubs barely bent
+                bend = eqlib.rot_y(-sgn * tilt) if along_x else eqlib.rot_x(sgn * tilt)
                 Rl = eqlib.mat_mul(R, bend)
-                c = P(mid if along_x else off, off if along_x else mid, z + 0.15 * rc)
+                c = P(mid if along_x else off, off if along_x else mid, z + (0.0 if bare else 0.15 * rc))
                 size = (abs(a1 - a0), s, s) if along_x else (s, abs(a1 - a0), s)
                 eqlib.box(part, "eq_metal_band", c, size, Rl)
         else:
             c = P(0 if along_x else off, off if along_x else 0, z)
-            eqlib.box(part, "eq_metal_band", c, (2.0 * rc, s, s) if along_x else (s, 2.0 * rc, s), R)
-    if lod >= 2:
+            eqlib.box(part, "eq_metal_band", c, (2.0 * reach, s, s) if along_x else (s, 2.0 * reach, s), R)
+    if lod >= 2 or bare:
         return
     seg = 8 if lod == 0 else 6
     a = rng.uniform(0, math.pi)                              # a pipe across, torn: one end sticks out of the hole
@@ -842,7 +867,7 @@ def wound_innards(part, w, rng, lod, lo, hi):
                   (rng.uniform(0.2, 0.45) * rc, rng.uniform(0.2, 0.45) * rc, h), R)
 
 
-def break_innards(part, br, rng, lod, lo, hi):
+def break_innards(part, br, rng, lod, lo, hi, bare=False):
     """the broken end: an inner bulkhead a little behind the break, longerons and pipes sticking out of it with bent
     ends, cables hanging out"""
     n, e1, e2 = br.n, br.e1, br.e2
@@ -855,7 +880,8 @@ def break_innards(part, br, rng, lod, lo, hi):
         return
     b = br.band
     P = lambda x, y, z: to_world(br.c, e1, e2, n, x + uc, y + vc, z)
-    eqlib.box(part, "eq_dmg_interior", P(0, 0, -0.9 * b - br.amp), (2 * hx, 2 * hy, max(0.01, 0.03 * b)), R)
+    if not bare:
+        eqlib.box(part, "eq_dmg_interior", P(0, 0, -0.9 * b - br.amp), (2 * hx, 2 * hy, max(0.01, 0.03 * b)), R)
     if lod >= 3:
         return
     s = max(0.02, 0.12 * b)
@@ -864,11 +890,13 @@ def break_innards(part, br, rng, lod, lo, hi):
         x, y = hx * 0.85 * math.cos(a), hy * 0.85 * math.sin(a)
         L = rng.uniform(0.6, 1.4) * b
         z1 = rng.uniform(-0.2, 0.5) * b
+        if bare and not (inside(P(x, y, z1), lo, hi) and inside(P(x, y, z1 - L - br.amp), lo, hi)):
+            continue                                         # a pad: no member outside the plate
         eqlib.box(part, "eq_metal_band", P(x, y, z1 - L / 2 - br.amp * 0.5), (s, s, L + br.amp), R)
-        if lod < 2 and rng.random() < 0.6:                   # its torn tip bent off
+        if lod < 2 and not bare and rng.random() < 0.6:      # its torn tip bent off
             tip = eqlib.mat_mul(R, eqlib.rot_x(rng.uniform(-0.9, 0.9)))
             eqlib.box(part, "eq_metal_band", P(x, y, z1 + 0.2 * b), (s, s, 0.45 * b), tip)
-    if lod >= 2:
+    if lod >= 2 or bare:
         return
     seg = 8 if lod == 0 else 6
     for _ in range(rng.randint(1, 3)):                       # pipes, torn ends
@@ -884,16 +912,16 @@ def break_innards(part, br, rng, lod, lo, hi):
               max(0.004, 0.035 * b), lod)
 
 
-def innards(plan, lod):
+def innards(plan, lod, bare=False):
     """one extra part per LOD, the same for every LOD (seeded from the plan), coarser LODs drop the small things"""
     part = eqlib.Part("dmg_innards")
     rng = random.Random(plan["seed"])
     for f in plan["features"]:
         sub_rng = random.Random(rng.randrange(1 << 30))
         if isinstance(f, Break):
-            break_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"])
+            break_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"], bare)
         elif f.sign > 0:
-            wound_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"])
+            wound_innards(part, f, sub_rng, lod, plan["lo"], plan["hi"], bare)
     return part
 
 
@@ -959,7 +987,7 @@ def process(asset_dir):
                 open(os.path.join(d, name + ".obj"), "w", encoding="utf-8", newline="\n").write(obj_text(out, name + ".mtl", vid))
                 mats = {k for k, v in out["faces"].items() if v}
                 open(os.path.join(d, name + ".mtl"), "w", encoding="utf-8", newline="\n").write(mtl_text(mats, m["mtl"]))
-            inn = innards(plan, lod)
+            inn = innards(plan, lod, is_pad(asset_dir))
             if inn.tris():
                 open(os.path.join(d, "dmg_innards.obj"), "w", encoding="utf-8", newline="\n").write(eqlib.obj_text(inn, "dmg_innards.mtl"))
                 open(os.path.join(d, "dmg_innards.mtl"), "w", encoding="utf-8", newline="\n").write(eqlib.mtl_text(inn.faces.keys()))

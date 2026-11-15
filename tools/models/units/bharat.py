@@ -346,16 +346,11 @@ def bunk500_parts(lod):
         for z in (-2.85, 0.85):
             box(cl, PAT, (x, hh + 0.04, z), (0.30, 0.08, 0.30))
     if lod < 2:
-        for z in (-2.0, 0.0):                                             # fans on the top
-            ylathe(cl, "eq_bharat_seal", [(0, yc1), (0.55, yc1), (0.55, yc1 + 0.004), (0, yc1 + 0.004)], seg, t=(-0.6, 0, z))
-            ylathe(cl, PAT, crect(0.55, 0.62, yc1 - 0.002, yc1 + 0.012), seg, t=(-0.6, 0, z))
-            ylathe(cl, PAT, [(0, yc1), (0.12, yc1), (0.12, yc1 + 0.012), (0, yc1 + 0.012)], small, t=(-0.6, 0, z))
+        for i in range(8):                                                # radiator fins on the top (no fans:
+            box(cl, PAT, (-1.30 + 0.20 * i, yc1 + 0.07, -1.0), (0.035, 0.14, 3.0))  # useless in vacuum, 2026-11-15)
         for k in range(6):                                                # louvres on the +X end
             box(cl, PAT, (1.61, yc0 + 0.06 + 0.045 * k, -1.0), (0.012, 0.025, 3.0))
     if lod == 0:
-        for z in (-2.0, 0.0):
-            for k in range(4):
-                box(cl, PAT, (-0.6, yc1 + 0.008, z), (1.0, 0.012, 0.06), rot_y(k * math.pi / 4))
         for x in (-1.45, 1.45):
             for z in (-2.85, 0.85):
                 for dx in (-0.09, 0.09):
@@ -411,7 +406,7 @@ def bunk500_hits():
          hbox("bunk500_hull", (0, 0, 0), (2 * (hw - r * 0.3), 2 * hh, 2 * d["ze"]))]
     for s in (-1, 1):
         H.append(hbox("bunk500_hatches", (s * (hw + 0.04), -1.05, 0), (0.08, 2.2, 1.34)))
-    H += [hbox("bunk500_climate", (0, (hh + 4.4695) / 2, -1.0), (3.2, 4.4695 - hh, 4.2)),
+    H += [hbox("bunk500_climate", (0, (hh + 4.605) / 2, -1.0), (3.2, 4.605 - hh, 4.2)),
           hbox("bunk500_power", (0, -hh - 0.22, 0.6), (2.6, 0.44, 3.4))]
     for x in (-3.6, 3.6):
         for z in (-6.0, 6.0):

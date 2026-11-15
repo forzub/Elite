@@ -91,7 +91,7 @@ std::map<std::string, std::string> readmeNotes(const fs::path& dir)
 
 fs::file_time_type newestFile(const fs::path& dir)
 {
-    fs::file_time_type t {};
+    fs::file_time_type t = fs::file_time_type::min();   // MinGW: file times are negative to the clock epoch
     std::error_code ec;
     for (const auto& e : fs::recursive_directory_iterator(dir, ec))
         if (e.is_regular_file(ec))
@@ -327,10 +327,11 @@ void Catalog::rescan()
                 card.title = passport.value("title", card.title);
                 if (passport.contains("description"))
                     card.description = passport.value("description", card.description);
-                // readiness: the built package against the newest source file; a work folder = in progress
+                // readiness: the built package against the newest file of the intact model (the package holds the
+                // intact model only for now; damaged variants join it as states later); a work folder = in progress
                 const fs::path built = m_settings.outputRoot / c.id / card.id / (card.id + ".elmodel");
                 if (fs::exists(built, ec))
-                    card.status = fs::last_write_time(built, ec) >= newestFile(m) ? "ready" : "stale";
+                    card.status = fs::last_write_time(built, ec) >= newestFile(m / "intact") ? "ready" : "stale";
                 else if (fs::exists(m_settings.workRoot / c.id / card.id, ec))
                     card.status = "working";
                 else

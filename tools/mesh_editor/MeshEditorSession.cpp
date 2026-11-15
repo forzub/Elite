@@ -931,10 +931,10 @@ void Session::handleCommand(const std::string& text)
                         std::to_string(static_cast<int>(std::lround(100.0 * static_cast<double>(kept) / static_cast<double>(in)))) + "%)";
             send({{"type", "notice"}, {"text", text + "."}});
             enqueuePreviews(category);   // the cards now show the package (stale previews are re-rendered)
+            m_shellBusy = false;         // before shellDone: a page may start the next build on it
             for (const auto& c : cards)
                 if (!all)
                     send({{"type", "shellDone"}, {"category", c.category}, {"id", c.id}, {"variant", c.variant}, {"blend", ok}});
-            m_shellBusy = false;
         }).detach();
         return;
     }

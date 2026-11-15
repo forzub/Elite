@@ -358,7 +358,9 @@ function renderSummary() {
   if (s.links) parts.push(`<span style="color:var(--link)">${s.links} ${plural(s.links, 'ссылка', 'ссылки', 'ссылок')} на модули</span>` +
     (s.linkErrors ? ` <span class="muted">(у ${s.linkErrors} ошибки — чинятся в самом модуле)</span>` : ''));
   const cappable = insp.data.parts.filter((p) => !p.link && p.holes > 0 && !p.caps);
-  if (cappable.length) parts.push(`<button id="capAll" class="small">Закрыть дыры у всех объёмов (${cappable.length})</button>`);
+  // a damaged variant: its holes are the damage itself - no "close the holes" offer (it would patch the wounds)
+  if (state.variant !== 'intact') parts.push('<span class="muted">повреждённый вариант: дыры — это повреждения, не ошибки</span>');
+  else if (cappable.length) parts.push(`<button id="capAll" class="small">Закрыть дыры у всех объёмов (${cappable.length})</button>`);
   const fixed = insp.data.parts.filter((p) => p.fixedTotal > 0).length;
   if (fixed) parts.push(`<span class="muted">${fixed} ${plural(fixed, 'починена', 'починены', 'починено')} сами</span>`);
   // what this variant puts into the game (MESH_EDITOR_SPEC 18)

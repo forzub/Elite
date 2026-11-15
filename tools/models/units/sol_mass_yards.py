@@ -327,9 +327,8 @@ def kz6_parts(lod):
     cl = P["kz6_climate"] = Part("kz6_climate")                                 # roof climate unit with louvres
     ribbed_box(cl, G, SL, (0, h / 2 + 0.07, -0.5), (1.4, 0.16, 1.6), 0, 0.46, lod, 0.05, 0.02)
     if lod < 2:
-        for k in range(5):
-            box(cl, DK, (0.45, h / 2 + 0.155, -1.0 + 0.25 * k), (0.4, 0.01, 0.06))
-        cyl(cl, DK, (-0.35, h / 2 + 0.15, -0.5), (-0.35, h / 2 + 0.17, -0.5), 0.26, small)
+        for k in range(7):                                                      # radiator fins (no fan: 2026-11-15)
+            box(cl, SL, (0.0, h / 2 + 0.19, -1.15 + 0.217 * k), (1.2, 0.08, 0.03))
     pw = P["kz6_power"] = Part("kz6_power")                                     # power distribution box on -X
     pc = (-w / 2 - 0.10, -0.15, -0.9)
     box(pw, SL, pc, (0.18, 0.80, 1.10), chamfer=0.02 if lod == 0 else 0.0)
@@ -351,7 +350,7 @@ def kz6_hits():
     w, h, L = 2.50, 1.66, 3.80
     return [hbox("kz6_cell", (0, 0, 0), (w + 0.09, h + 0.09, L)),
             hbox("kz6_hatch", (0, -0.05, L / 2 + 0.07), (1.10, 1.40, 0.14)),
-            hbox("kz6_climate", (0, h / 2 + 0.085, -0.5), (1.45, 0.20, 1.6)),
+            hbox("kz6_climate", (0, h / 2 + 0.115, -0.5), (1.45, 0.26, 1.6)),
             hbox("kz6_power", (-w / 2 - 0.10, -0.15, -0.9), (0.20, 0.80, 1.10)),
             hbox("kz6_mounts", (0, -h / 2 - 0.10, 0), (1.86, 0.18, L - 0.2))]
 

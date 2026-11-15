@@ -17,7 +17,7 @@ view = argv[3] if len(argv) > 3 else "pad"
 hide = set(argv[4].split(",")) if len(argv) > 4 else set()   # part names left out (e.g. the pad, to see the body)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-folder = os.path.join(asset, "intact", "assembly", f"LOD{lod}")   # source layout, MESH_EDITOR_SPEC 18
+folder = os.path.join(asset, *(("damaged", os.environ["ELITE_VARIANT"]) if os.environ.get("ELITE_VARIANT") else ("intact",)), "assembly", f"LOD{lod}")   # source layout, MESH_EDITOR_SPEC 18; ELITE_VARIANT = a damaged variant
 for f in sorted(os.listdir(folder)):
     if f.endswith(".obj"):
         bpy.ops.wm.obj_import(filepath=os.path.join(folder, f), forward_axis="NEGATIVE_Z", up_axis="Y")
@@ -109,6 +109,19 @@ cam = bpy.data.objects.new("cam", cam_data)
 sc.collection.objects.link(cam)
 cam.location = centre + d * size * 1.75
 direction = centre - cam.location
+if view == "wound":   # a damaged variant: look into its first wound / break (damage.json next to the LOD folders)
+    import json
+    doc = json.load(open(os.path.join(os.path.dirname(folder), "damage.json"), encoding="utf-8"))
+    f = doc["features"][0]
+    c = f.get("center") or f.get("point")
+    n = f["normal"]
+    wc = Vector((c[0], -c[2], c[1]))
+    wn = Vector((n[0], -n[2], n[1])).normalized()
+    side = wn.cross(Vector((0, 0, 1)))
+    side = side.normalized() if side.length > 1e-3 else Vector((1, 0, 0))
+    dist = max(f.get("zone_radius", 0) * 5.0, f.get("band", 0) * 9.0, size * 0.45)
+    cam.location = wc + (wn * 0.85 + side * 0.45 + Vector((0, 0, 0.25))).normalized() * dist
+    direction = wc - cam.location
 cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 sc.camera = cam
 sc.render.filepath = out

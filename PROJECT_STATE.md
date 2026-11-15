@@ -5770,4 +5770,12 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   refresh) rescans the source, damaged/<v>/ folders become variant tabs and passport entries, the open variant is
   re-read; a folder without assembly/ gets a hint. LIVE: CR-1 with dropped-in probe/bad folders over the socket +
   headless shot D:/tmp/me_refresh.png; test folders removed, passport restored.
+- 2026-11-15 DAMAGED VARIANTS (MESH_EDITOR_SPEC 18.10). tools/models/build_damage_variants.py: 3 variants per
+  equipment module (hole / torn / broken: peeled-out petals, tears, broken-off end, generic innards behind the
+  wounds), source damaged/<v>/assembly + passport entries. 118 x 3 = 354 variants, LOD0 6.40 M tris (1.8x intact);
+  shells of all 354 built through the editor socket. Fans removed from the passenger modules (Agora PS-100, Bharat
+  SP-500, SMY KZ-6, OFU P20; radiator fins instead), their intact shells/packages rebuilt; life-support fans kept
+  (internal ventilation). Editor: damaged tab hides "close holes"; card readiness fixed (was always "stale").
+  LIVE: Blender wound shots of 8 modules, editor page shot D:/tmp/me_damage.png, 118/118 "ready".
+  Next: variants as states in the .elmodel package; repeats.
 

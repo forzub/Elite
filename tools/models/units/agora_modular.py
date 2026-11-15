@@ -822,12 +822,12 @@ def pax_parts(lod):
     for k, z in enumerate((-2.6, 2.6)):
         mat = SD if k == 0 else WH
         box(cl, mat, (0, yt + 0.21, z), (2.8, 0.42, 2.2), chamfer=0.04 if lod == 0 else 0.0)
-        for x in (-0.7, 0.7):
-            ylathe(cl, CA, crect(0.38, 0.48, yt + 0.42, yt + 0.48), small * 2, t=(x, 0, z))
-            ylathe(cl, "eq_agora_hole", [(0, yt + 0.43), (0.38, yt + 0.43)][::-1], small * 2, t=(x, 0, z))
-            if lod == 0:
-                for i in range(3):
-                    box(cl, CA, (x, yt + 0.445, z), (0.76, 0.02, 0.03), rot_y(i * math.pi / 3))
+        # radiator fins on the roof (no fans: useless in vacuum, author 2026-11-15)
+        if lod < 2:
+            for i in range(9):
+                box(cl, CA, (-1.12 + 0.28 * i, yt + 0.48, z), (0.035, 0.12, 1.7))
+        else:
+            box(cl, CA, (0, yt + 0.46, z), (2.3, 0.08, 1.7))
         if lod < 2:
             box(cl, BL if k == 0 else TC, (0, yt + 0.21, z + (1.12 if k == 0 else -1.12)), (2.4, 0.26, 0.04))  # louvre band
             for s in (-1, 1):
@@ -870,7 +870,7 @@ def pax_hits():
         for y0 in (-hy + b + 0.10, -hy + 2.50):
             H.append(hbox("pax100_seal", (0, y0 + 1.0, s * (hz - 0.04)), (1.10, 2.06, 0.10)))
     for z in (-2.6, 2.6):
-        H.append(hbox("pax100_climate", (0, yt + 0.24, z), (2.8, 0.48, 2.3)))
+        H.append(hbox("pax100_climate", (0, yt + 0.27, z), (2.8, 0.54, 2.3)))
     H.append(hbox("pax100_power", (-(hx - sk) - 0.12, -hy + 1.15, -2.6), (0.24, 1.10, 1.30)))
     return H
 

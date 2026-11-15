@@ -732,7 +732,6 @@ def p20_parts(lod):
     if lod < 2:
         for k in range(6):
             box(cl, TR, (-0.6 + 0.24 * k, h / 2 + 0.16, z0 + 1.4), (0.08, 0.03, 1.3))
-        cyl(cl, TR, (0.45, h / 2 + 0.15, z0 + 0.85), (0.45, h / 2 + 0.20, z0 + 0.85), 0.20, small)
     pw = P["p20_power"] = Part("p20_power")                                  # power distribution under the floor
     box(pw, W, (0.0, -h / 2 - 0.04, 0.6), (1.2, 0.20, 1.8), chamfer=0.04 if lod == 0 else 0.0)
     if lod < 2:

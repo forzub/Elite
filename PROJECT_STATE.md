@@ -5811,3 +5811,4 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   pads: rim drum + frustum. LIVE: headless editor steps 2-6 layer flags, step 3 shows the cone hugging the pad
   (D:/tmp/hit_cones.png); packages carry radius_top 0.16; model_asset tests PASS; Cobrett-I SHIP ASSET CHECK PASS.
 
+- 2026-11-15 ALL MODULES STEP 1 + SHELLS (author: run the automatic check and shell generation on every non-ship module). Editor socket: equipment_ship 160, hub_modules 4, other 5 - 606 variants checked (inspect commit), 33 missing/stale shells built (8 drives' hole/torn/broken after the pad split, hub_modules, other), 0 failures. 33 intact models still have open holes (smy_pb8_rack 19 parts, N-1AX housing end 3.26 m where the pad was, the rest 2-56 cm) - capping and saving the step-2 seeds await the author.

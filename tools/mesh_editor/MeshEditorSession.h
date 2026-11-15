@@ -1,7 +1,7 @@
 #pragma once
 
 // The mesh editor's backend (docs/MESH_EDITOR_SPEC.md): the page's commands over the WebSocket, JSON both ways.
-// Commands: categories | list {category} | previews {category} | open {category, id} | rescan |
+// Commands: categories | list {category} | previews {category} | open {category, id} | rescan | refresh {category, id} |
 //           settings | saveSettings {sourceRoot, outputRoot, blender} | pick {field, kind: folder|file, current} |
 //           inspect {category, id, commit} | setKind {category, id, part, kind: volume|sheet|""} |
 //           setCaps {category, id, parts[], on} | blender {category, id, group, part} |

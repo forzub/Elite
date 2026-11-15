@@ -735,6 +735,57 @@ void Session::handleCommand(const std::string& text)
         m_catalog.rescan();
         return;
     }
+    if (cmd == "refresh")
+    {
+        // MESH_EDITOR_SPEC 18.9: the author drops files into the source and presses "Обновить": the catalog is read
+        // again (new models with a passport), the open model's damaged/<variant>/ folders become its variants
+        m_catalog.rescan();
+        sendCategories();
+        const ModelCard* c = m_catalog.find(m.value("category", std::string()), m.value("id", std::string()));
+        if (!c)
+            return;
+        nlohmann::json p = passport(*c);
+        if (!p.contains("variants") || !p["variants"].is_array())
+            p["variants"] = nlohmann::json::array();
+        std::vector<std::string> added, noAssembly;
+        std::error_code ec;
+        for (const auto& v : c->variants)
+        {
+            if (v.id == "intact")
+                continue;
+            const bool listed = std::any_of(p["variants"].begin(), p["variants"].end(),
+                                            [&](const nlohmann::json& x) { return x.value("id", std::string()) == v.id; });
+            if (!listed && fs::is_directory(c->root / "damaged" / v.id, ec))
+            {
+                p["variants"].push_back({{"id", v.id}, {"title", v.title}, {"inGame", "shell"}});
+                added.push_back(v.id);
+            }
+            if (!fs::is_directory(c->root / "damaged" / v.id / "assembly", ec))
+                noAssembly.push_back(v.id);
+        }
+        if (!added.empty())
+        {
+            if (!std::any_of(p["variants"].begin(), p["variants"].end(),
+                             [](const nlohmann::json& x) { return x.value("id", std::string()) == "intact"; }))
+                p["variants"].insert(p["variants"].begin(), {{"id", "intact"}, {"title", "Целая"}, {"inGame", "shell"}});
+            savePassport(*c, p);
+        }
+        std::string text = "Обновлено.";
+        if (!added.empty())
+        {
+            text += " Новые варианты:";
+            for (const auto& id : added)
+                text += " " + id;
+            text += ".";
+        }
+        for (const auto& id : noAssembly)
+            text += " В damaged/" + id + " нет папки assembly — меши кладутся в damaged/" + id + "/assembly/LOD0.";
+        nlohmann::json out = variantsJson(*c, std::string());
+        out["refresh"] = true;
+        send(out);
+        send({{"type", "notice"}, {"text", text}});
+        return;
+    }
     if (cmd == "categories")
     {
         sendCategories();
@@ -807,9 +858,9 @@ void Session::handleCommand(const std::string& text)
         }
         return;
     }
-    if (cmd == "setInGame" || cmd == "addVariant")
+    if (cmd == "setInGame")
     {
-        // MESH_EDITOR_SPEC 18: the passport's variants - what goes into the game; a new damaged variant
+        // MESH_EDITOR_SPEC 18: the passport's variants - what goes into the game
         const auto c = cardFor(m);
         if (!c)
             return;
@@ -824,32 +875,8 @@ void Session::handleCommand(const std::string& text)
             return p["variants"].back();
         };
         std::string select;
-        if (cmd == "setInGame")
-        {
-            const std::string v = m.value("inGame", std::string("shell"));
-            entry(c->variant)["inGame"] = v == "assembly+shell" ? v : std::string("shell");
-        }
-        else
-        {
-            // the next free damaged_<n>; it starts as a copy of the intact assembly (author: "берется модель и на ней
-            // рисуются повреждения")
-            int n = 1;
-            std::error_code ec;
-            while (fs::exists(c->root / "damaged" / ("damaged_" + std::to_string(n)), ec))
-                ++n;
-            select = "damaged_" + std::to_string(n);
-            const fs::path to = c->root / "damaged" / select / "assembly";
-            fs::create_directories(to, ec);
-            fs::copy(c->root / "intact" / "assembly", to, fs::copy_options::recursive, ec);
-            if (ec)
-            {
-                send({{"type", "notice"}, {"text", "Не удалось скопировать сборку: " + ec.message()}});
-                return;
-            }
-            const std::string title = m.value("title", std::string());
-            entry(select)["title"] = title.empty() ? "Повреждённая " + std::to_string(n) : title;
-            std::cerr << "[MeshEditor] variant " << c->category << "/" << c->id << " " << select << " (copy of intact)" << std::endl;
-        }
+        const std::string v = m.value("inGame", std::string("shell"));
+        entry(c->variant)["inGame"] = v == "assembly+shell" ? v : std::string("shell");
         savePassport(*c, p);
         send(variantsJson(*c, select));
     }

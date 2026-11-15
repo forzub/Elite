@@ -5766,4 +5766,8 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   LIVE: CR-1 over the socket + headless page shot (tabs, rows, stale after touching the assembly); test variant
   removed; equipment_ship shells rebuilt into the source: 118 из 118 за ~5 мин, LOD0 926 051 из 1 203 248, 118 файлов Blender. Fixed: MinGW file-clock stamp was written as 0.
   Next: 18.6 step 3 (damaged variants in the generator and the package; repeats).
+- 2026-11-15 MESH EDITOR "Обновить" (MESH_EDITOR_SPEC 18.9). "+ вариант" removed per the author; "⟳ Обновить" (cmd
+  refresh) rescans the source, damaged/<v>/ folders become variant tabs and passport entries, the open variant is
+  re-read; a folder without assembly/ gets a hint. LIVE: CR-1 with dropped-in probe/bad folders over the socket +
+  headless shot D:/tmp/me_refresh.png; test folders removed, passport restored.
 

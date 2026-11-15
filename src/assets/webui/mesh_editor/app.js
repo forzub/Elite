@@ -238,13 +238,10 @@ function renderVariants() {
   }
   const add = document.createElement('button');
   add.className = 'add';
-  add.textContent = '+ вариант';
-  add.title = 'новый повреждённый вариант: копия сборки целой модели, на которой рисуются повреждения';
-  add.onclick = () => {
-    const title = prompt('Название варианта (например «Пробоина в корпусе»):', '');
-    if (title === null) return;
-    send({ cmd: 'addVariant', category: state.model.category, id: state.model.id, variant: 'intact', title: title.trim() });
-  };
+  add.textContent = '⟳ Обновить';
+  add.title = 'перечитать папку модели: повреждённые варианты — это папки damaged/<вариант>/assembly/LOD<N>; '
+    + 'положите файлы туда и нажмите «Обновить»';
+  add.onclick = () => send({ cmd: 'refresh', category: state.model.category, id: state.model.id });
   nav.appendChild(add);
 }
 function loadVariant() {
@@ -263,8 +260,13 @@ function loadVariant() {
 function onVariants(m) {
   if (!state.model || m.id !== state.model.id || m.category !== state.model.category) return;
   state.model.variants = m.variants;
-  if (m.select) { state.variant = m.select; renderVariants(); loadVariant(); notice('Вариант создан: копия сборки целой модели.'); }
-  else renderVariants();
+  if (m.refresh) {   // "Обновить": the files may have changed; a variant whose folder is gone falls back to "Целая"
+    if (!m.variants.some((v) => v.id === state.variant)) state.variant = 'intact';
+    renderVariants();
+    loadVariant();
+    return;
+  }
+  renderVariants();
   if (insp.data) renderSummary();
 }
 

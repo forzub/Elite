@@ -327,6 +327,7 @@ function nodeAt(id) {
 }
 
 function drawLines() {
+  if (!asm.root) return;   // a layer switched before the assembly is built: drawn with it later
   if (asm.lines) { asm.root.remove(asm.lines); asm.lines.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
   asm.lines = new THREE.Group();
   asm.root.add(asm.lines);

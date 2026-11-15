@@ -14,12 +14,24 @@ const BUS_CSS = { propulsion_power: '#ff8a3d', service_power: '#ffd84a', coolant
   fuel: '#c77dff', jump_charge: '#8ab4ff' };
 const ZONES = { keep_out: 'красная — не входить', keep_in: 'синяя — коридор', prefer: 'зелёная — желательно' };
 
+// the overlay layers of each step (index = step: 1 composition, 2 volumes, 3 links, 4 damage, 5 build)
+const STEP_LAYERS = [[], ['tree'], ['hit', 'zones'], ['mounts', 'seams', 'buses'], ['tree', 'mounts', 'seams'],
+  ['tree', 'buses', 'hit', 'zones', 'mounts', 'seams']];
+
 const Asm = {
   doc: null, file: '', dirty: false, step: 0, selected: null, library: null, built: null, sel: null,
 
   // ---- wiring from app.js
   open(step) {
     this.step = step;
+    // each step shows only its own layers, so nothing from another step gets in the way (author 2026-11-15: «надо,
+    // что бы в каждом окне отображалость то, за что это окно отвечает»); "Сборка" shows all of them
+    const own = STEP_LAYERS[step] || [];
+    for (const el of document.querySelectorAll('[data-ov]')) {
+      el.checked = own.includes(el.dataset.ov);
+      el.parentElement.hidden = !el.checked;
+      whenViewer((v) => v.setOverlay(el.dataset.ov, el.checked));
+    }
     $('asmSide').hidden = false;
     $('stepSide').hidden = true;
     $('asmTools').hidden = false;

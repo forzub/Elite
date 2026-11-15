@@ -266,6 +266,50 @@ void Catalog::describe(ModelCard& card) const
         card.title = card.id;
 }
 
+// the ships of a model that is not a catalog product inherit from what it belongs to (MESH_EDITOR_SPEC 18.11): a pad
+// from its unit (the unit's mounts.json names it), a set "unit + pad" (kind assembly) from the modules it links -
+// so the object filter ("Cobrett-I") shows the pads and the sets of its drives and reactors too
+void Catalog::inheritUsage()
+{
+    auto add = [](ModelCard& to, const std::vector<std::string>& from) {
+        for (const auto& u : from)
+            if (std::find(to.usedBy.begin(), to.usedBy.end(), u) == to.usedBy.end())
+                to.usedBy.push_back(u);
+    };
+    auto card = [&](const std::string& category, const std::string& id) -> ModelCard* {
+        for (auto& c : m_cards)
+            if (c.category == category && c.id == id)
+                return &c;
+        return nullptr;
+    };
+    for (auto& unit : m_cards)
+    {
+        const nlohmann::json mounts = readJson(unit.folder / "mounts.json");
+        if (mounts.is_object())
+            for (const auto& m : mounts.value("mounts", nlohmann::json::array()))
+                if (ModelCard* pad = card(unit.category, m.value("module", std::string())))
+                    if (pad != &unit)
+                        add(*pad, unit.usedBy);
+    }
+    for (auto& set : m_cards)
+    {
+        if (set.kind != "assembly")
+            continue;
+        const nlohmann::json doc = readJson(set.folder / "assembly.json");
+        if (!doc.is_object())
+            continue;
+        for (const auto& n : doc.value("nodes", nlohmann::json::array()))
+        {
+            const std::string ref = n.value("ref", std::string());
+            const auto slash = ref.find('/');
+            if (slash != std::string::npos)
+                if (const ModelCard* m = card(ref.substr(0, slash), ref.substr(slash + 1)))
+                    if (m != &set)
+                        add(set, std::vector<std::string>(m->usedBy));
+        }
+    }
+}
+
 void Catalog::rescan()
 {
     m_cards.clear();
@@ -342,6 +386,7 @@ void Catalog::rescan()
     std::sort(m_cards.begin(), m_cards.end(), [](const ModelCard& a, const ModelCard& b) {
         return a.category != b.category ? a.category < b.category : a.id < b.id;
     });
+    inheritUsage();
     std::cerr << "[MeshEditor] catalog: " << m_cards.size() << " model(s)" << std::endl;
 }
 

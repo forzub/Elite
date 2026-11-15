@@ -75,6 +75,7 @@ public:
 
 private:
     void loadUsage(const std::filesystem::path& sourceTree);
+    void inheritUsage();
     void describe(ModelCard& card) const;
     Settings m_settings;
     std::filesystem::path m_sourceTree;

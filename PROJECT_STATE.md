@@ -5791,4 +5791,7 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   generic innards look too big inside a thin pad.
   Editor: shells of all 189 variants (units, pads, sets) built (883 s, 0 timeouts); packages of the 63 models built
   (sets: nodes by ref, ER-5 set preview from its package shows both plates); equipment cards 160/160 "ready".
+- 2026-11-15 Mesh editor object filter: pads and sets inherit the ships of their unit / linked modules
+  (Catalog::inheritUsage; author noticed the Cobra filter did not list the pads). LIVE: socket list - filter
+  "Cobrett-I N1" shows er5 / n1ax / sr150 with their _pad and _set.
 

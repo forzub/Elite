@@ -249,7 +249,9 @@ function buildAssembly(doc) {
   for (const n of doc.nodes) {
     const offset = new THREE.Group();   // the explode offset of this node and everything that belongs to it
     asm.root.add(offset);
-    const holder = placed(new THREE.Group(), n.position, n.rotation_deg);
+    // the model's own meshes are in the model frame, like its hit volumes: a node's position / rotation says where the
+    // referenced module goes in the package (a set "unit + pad" carries placed copies) - not applied to them again
+    const holder = new THREE.Group();
     offset.add(holder);
     const part = g.meshes.get(n.part);
     let centre = new THREE.Vector3();

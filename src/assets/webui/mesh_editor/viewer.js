@@ -454,6 +454,12 @@ window.MeshViewer = {
   hover(key) { state.hover = key; restyle(); },
   set(option, value) { state[option] = value; restyle(); },
   fitAll() { frame(groupBox(state.current)); },
+  // camera from direction (x, y, z) onto the current model, re-fitted (scripted shots: top / side / front views)
+  viewFrom(x, y, z) {
+    camera.position.copy(controls.target.clone().add(new THREE.Vector3(x, y, z)));
+    frame(groupBox(state.current));
+    controls.update();
+  },
   onPick(cb) { state.onPick = cb; },
   // the assembly view
   async showAssembly(doc) {

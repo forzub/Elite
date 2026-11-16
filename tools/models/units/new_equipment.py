@@ -470,6 +470,20 @@ def rm2_knee_pod(key):
     return K, _add(_add(K, _mul(uh, 0.075)), (0.0, 0.035, 0.0)), ax
 
 
+def ray_pose(H, C, K, A, target):
+    """flight pose of a walking leg (author 2026-11-16: «для полета ноги надо складывать так, что бы вид был как у
+    квадрокоптера - вытягивать в лучи под 45 град»): the coxa yaws the leg onto the plan direction `target`, the femur
+    and the tibia straighten into one horizontal ray. Returns (coxa yaw, femur pitch, tibia, level) in degrees; `level`
+    turns a tibia child (foot pad, knee thruster) back to its rest attitude (pad flat, emitter down)."""
+    u = norm((K[0] - H[0], 0.0, K[2] - H[2]))
+    t = norm(target)
+    c = _cross(u, t)
+    yaw = math.atan2(c[1], u[0] * t[0] + u[2] * t[2])
+    phf = math.atan2(K[1] - C[1], (K[0] - C[0]) * u[0] + (K[2] - C[2]) * u[2])
+    pht = math.atan2(A[1] - K[1], (A[0] - K[0]) * u[0] + (A[2] - K[2]) * u[2])
+    return tuple(round(math.degrees(a), 1) for a in (yaw, -phf, phf - pht, pht))
+
+
 RM2_PACK = dict(z0=-0.20, z1=-0.42, y=0.60, w=0.30, h=0.22)   # the power pack behind the thorax (instead of the tail)
 
 
@@ -818,11 +832,11 @@ def rm2_rig():
          _j("rm2_brow_r", "rm2_head", RM2_BROW_PIVOT[-1], (0, 0, 1), (-25, 25), "brow (+ = inner end up)")]
     for key in d["legs"]:
         Hp, C, K, A, F, ax = rm2_leg(key)
-        G += [_j(f"rm2_leg_{key}_coxa", "rm2_thorax", Hp, UPV, (-40, 40), "hip yaw"),
-              _j(f"rm2_leg_{key}_femur", f"rm2_leg_{key}_coxa", C, ax, (-50, 70), "hip pitch (fold up for the bay)"),
-              _j(f"rm2_leg_{key}_tibia", f"rm2_leg_{key}_femur", K, ax, (-80, 60), "knee"),
-              _j(f"rm2_leg_{key}_foot", f"rm2_leg_{key}_tibia", A, ax, (-45, 45), "ankle (pad stays flat on the hull)"),
-              _j(f"rm2_leg_{key}_thruster", f"rm2_leg_{key}_tibia", rm2_knee_pod(key)[1], ax, (-90, 90), "knee thruster gimbal")]
+        G += [_j(f"rm2_leg_{key}_coxa", "rm2_thorax", Hp, UPV, (-45, 45), "hip yaw"),
+              _j(f"rm2_leg_{key}_femur", f"rm2_leg_{key}_coxa", C, ax, (-50, 70), "hip pitch (fold up for the bay, down for the flight ray)"),
+              _j(f"rm2_leg_{key}_tibia", f"rm2_leg_{key}_femur", K, ax, (-80, 130), "knee (straightens into the flight ray)"),
+              _j(f"rm2_leg_{key}_foot", f"rm2_leg_{key}_tibia", A, ax, (-90, 45), "ankle (pad stays flat on the hull)"),
+              _j(f"rm2_leg_{key}_thruster", f"rm2_leg_{key}_tibia", rm2_knee_pod(key)[1], ax, (-120, 90), "knee thruster gimbal")]
     for s, side in ((1, "l"), (-1, "r")):
         S, E, Wp, T = rm2_arm(s)
         dw, nup = rm2_hand_axes(s)
@@ -898,16 +912,23 @@ def rm2_clips():
     for side in ("l", "r"):
         k[f"rm2_arm_{side}_upper"] = [[0, 0], [1.5, 20], [2.5, 20], [4.0, 0]]
     C.append({"id": "stow", "title": "Сложиться в отсек", "duration_s": 4.0, "loop": True, "keys": k})
-    # 5. flight: legs tucked, the knee thrusters swing to steer (a quadcopter of four gimballed pods + the main thruster)
+    # 5. flight: the four legs straighten into horizontal rays at 45 degrees (a quadcopter X), emitters down; the knee
+    #    thrusters swing to steer (author 2026-11-16)
     k = {}
     for i, key in enumerate(RM2["legs"]):
-        k[f"rm2_leg_{key}_femur"] = [[0, 0], [1.0, 55], [5.0, 55], [6.0, 0]]
-        k[f"rm2_leg_{key}_tibia"] = [[0, 0], [1.0, -70], [5.0, -70], [6.0, 0]]
+        s = RM2["legs"][key][0]
+        H, Cp, K, A, F, ax = rm2_leg(key)
+        yaw, fm, tb, lv = ray_pose(H, Cp, K, A, (s, 0.0, 1.0 if key[0] == "f" else -1.0))
+        k[f"rm2_leg_{key}_coxa"] = [[0, 0], [1.2, yaw], [4.8, yaw], [6.0, 0]]
+        k[f"rm2_leg_{key}_femur"] = [[0, 0], [1.2, fm], [4.8, fm], [6.0, 0]]
+        k[f"rm2_leg_{key}_tibia"] = [[0, 0], [1.2, tb], [4.8, tb], [6.0, 0]]
+        k[f"rm2_leg_{key}_foot"] = [[0, 0], [1.2, lv], [4.8, lv], [6.0, 0]]
         sw = 1 if i % 2 == 0 else -1
-        k[f"rm2_leg_{key}_thruster"] = [[0, 0], [1.0, 15], [2.0, 15 + sw * 30], [3.0, 15 - sw * 30], [4.0, 15 + sw * 30],
-                                        [5.0, 15], [6.0, 0]]
-    k["rm2_head"] = [[0, 0], [1.0, -10], [5.0, -10], [6.0, 0]]
-    C.append({"id": "fly", "title": "Полёт: ноги поджаты, двигатели в коленях рулят", "duration_s": 6.0, "loop": True, "keys": k})
+        k[f"rm2_leg_{key}_thruster"] = [[0, 0], [1.2, lv], [2.2, lv + sw * 25], [3.2, lv - sw * 25], [4.2, lv + sw * 25],
+                                        [4.8, lv], [6.0, 0]]
+    k["rm2_head"] = [[0, 0], [1.2, -10], [4.8, -10], [6.0, 0]]
+    C.append({"id": "fly", "title": "Полёт: ноги лучами под 45° (квадрокоптер), двигатели в коленях рулят", "duration_s": 6.0,
+              "loop": True, "keys": k})
     # 6. capture and tow (the repair job: CapturingFragment -> towing back): reach, grip, pull the part to the chest
     k = {}
     for side in ("l", "r"):

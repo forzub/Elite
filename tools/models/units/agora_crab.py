@@ -14,14 +14,40 @@ import math
 
 from eqlib import *  # noqa: F401,F403 - the unit kernel (geometry, LOD policy, shared builders)
 from units.new_equipment import (W_, T_, S_, B_, UPV, _add, _sub, _mul, _cross, _lerp, _pod, ball, frame_along, hex_limb,  # noqa: F401
-                                 hobox, knuckle, obox, seg_lathe, euler_xyz)
+                                 hobox, knuckle, obox, seg_lathe, euler_xyz, ray_pose)
 
-RC3 = dict(body_y=0.40, body=(1.10, 0.20, 0.78), carapace=(0.98, 0.035, 0.66))
+# author 2026-11-16: «крабу надо корпус сделать повыше и руки - побольше и подлиннее ... что бы общая форма стремилась к
+# крабьей»: a taller hull (0.29 .. 0.51) under a crab carapace - a wide-fronted hexagonal shell that overhangs the hips and
+# domes up to 0.73 m in lofted tiers
+RC3 = dict(body_y=0.40, body=(0.92, 0.22, 0.70))
+RC3_SHELL = [(0.36, 0.43), (0.68, 0.22), (0.58, -0.20), (0.27, -0.40)]          # the left half (x, z), front to rear
+RC3_SHELL = RC3_SHELL + [(-x, z) for x, z in reversed(RC3_SHELL)]
+RC3_TIERS = ((0.0, 0.51), (0.0, 0.575), (0.11, 0.675), (0.24, 0.73))            # (inset, y): edge band, then the dome
 # legs: key -> (side, hip z, foot (x, z)); 1 = front, 3 = rear
 RC3_LEGS = {f"{'l' if s > 0 else 'r'}{i + 1}": (s, hz, (s * fx, fz))
-            for s in (1, -1) for i, (hz, fx, fz) in enumerate(((0.22, 0.98, 0.58), (0.0, 1.08, 0.02), (-0.22, 0.98, -0.52)))}
+            for s in (1, -1) for i, (hz, fx, fz) in enumerate(((0.22, 1.02, 0.66), (0.0, 1.16, 0.02), (-0.20, 1.00, -0.60)))}
 RC3_POD_LEGS = ("l1", "r1", "l3", "r3")          # the legs with a knee thruster (four: a quadcopter)
-RC3_EYES = {s: ((s * 0.14, 0.50, 0.33), (s * 0.15, 0.62, 0.36)) for s in (1, -1)}   # stalk base, camera centre
+RC3_EYES = {s: ((s * 0.15, 0.66, 0.30), (s * 0.17, 0.83, 0.37)) for s in (1, -1)}   # stalk base, camera centre
+
+
+def loft(part, mat, tiers, poly, cap_top=True, cap_bottom=True):
+    """a convex shell through (inset, y) tiers of one (x, z) polygon, flat facets"""
+    rings = [[(x, y, z) for x, z in (inset(poly, dd) if dd > 0 else poly)] for dd, y in tiers]
+    n = len(poly)
+    cx, cz = sum(q[0] for q in poly) / n, sum(q[1] for q in poly) / n
+    for a, b in zip(rings, rings[1:]):
+        for i in range(n):
+            q = [a[i], a[(i + 1) % n], b[(i + 1) % n], b[i]]
+            m = _lerp(q[0], q[2], 0.5)
+            hint = (m[0] - cx, 0.25, m[2] - cz)
+            fn = facet_normal(q) or (0.0, 1.0, 0.0)
+            if fn[0] * hint[0] + fn[1] * hint[1] + fn[2] * hint[2] < 0:
+                fn = _mul(fn, -1)
+            part.face(mat, [part.vert(v, fn) for v in q], fn)
+    if cap_top:
+        part.face(mat, [part.vert(v, (0, 1, 0)) for v in rings[-1]], (0, 1, 0))
+    if cap_bottom:
+        part.face(mat, [part.vert(v, (0, -1, 0)) for v in rings[0]], (0, -1, 0))
 
 
 def rc3_leg(key):
@@ -30,7 +56,7 @@ def rc3_leg(key):
     H = (s * RC3["body"][0] / 2, RC3["body_y"], hz)
     u = norm((fx - H[0], 0.0, fz - H[2]))
     C = _add(H, _mul(u, 0.08))
-    K = _add(_add(C, _mul(u, 0.38)), (0.0, 0.24, 0.0))
+    K = _add(_add(C, _mul(u, 0.42)), (0.0, 0.30, 0.0))
     A = (fx, 0.12, fz)
     F = (fx, 0.0, fz)
     return H, C, K, A, F, norm(_cross(u, UPV))
@@ -45,10 +71,10 @@ def rc3_knee_pod(key):
 
 def rc3_arm(s):
     """shoulder S (front corner), elbow E, wrist W, hand tip T - the rest pose: forearms raised in front like a crab's"""
-    return (s * 0.34, 0.42, 0.36), (s * 0.50, 0.36, 0.56), (s * 0.42, 0.56, 0.84), (s * 0.38, 0.52, 0.98)
+    return (s * 0.30, 0.42, 0.36), (s * 0.68, 0.36, 0.68), (s * 0.48, 0.60, 1.16), (s * 0.44, 0.57, 1.40)
 
 
-RC3_PALM = 0.07
+RC3_PALM = 0.10
 
 
 def rc3_hand(s):
@@ -56,14 +82,14 @@ def rc3_hand(s):
     dw = norm(_sub(T, W))
     nup = norm(_cross(dw, (1, 0, 0)))
     fingers = []
-    for fid, x in (("f1", 0.025), ("f2", -0.025)):
+    for fid, x in (("f1", 0.035), ("f2", -0.035)):
         k0 = _add(_add(W, _mul(dw, RC3_PALM)), (x, 0.0, 0.0))
-        k1 = _add(k0, _mul(dw, 0.055))
-        k2 = _add(_add(k1, _mul(dw, 0.045)), _mul(nup, -0.014))
+        k1 = _add(k0, _mul(dw, 0.08))
+        k2 = _add(_add(k1, _mul(dw, 0.065)), _mul(nup, -0.02))
         fingers.append((fid, k0, k1, k2))
-    k0 = _add(_add(_add(W, _mul(dw, 0.03)), (-s * 0.05, 0.0, 0.0)), _mul(nup, -0.01))
-    k1 = _add(_add(k0, _mul(dw, 0.04)), (-s * 0.012, 0.0, 0.0))
-    k2 = _add(_add(k1, _mul(dw, 0.035)), _add((s * 0.008, 0.0, 0.0), _mul(nup, -0.012)))
+    k0 = _add(_add(_add(W, _mul(dw, 0.04)), (-s * 0.07, 0.0, 0.0)), _mul(nup, -0.014))
+    k1 = _add(_add(k0, _mul(dw, 0.06)), (-s * 0.016, 0.0, 0.0))
+    k2 = _add(_add(k1, _mul(dw, 0.05)), _add((s * 0.012, 0.0, 0.0), _mul(nup, -0.016)))
     fingers.append(("thumb", k0, k1, k2))
     return dw, nup, fingers
 
@@ -78,29 +104,32 @@ def rc3_parts(lod):
     def part(name):
         return P.setdefault(name, Part(name))
 
-    # --- the carapace: a flat wide body, terracotta shell plate, sea-blue skirts, belly plate, rear thruster
+    # --- the hull and the crab carapace: white hull, terracotta dome over a sea-blue edge band, skirts, belly plate,
+    #     bay castings on the dome, the main thruster in the back
     by = d["body_y"]
     bw, bh, bl = d["body"]
+    top = RC3_TIERS[-1][1]
     bd = part("rc3_body")
-    box(bd, W_, (0, by, 0), (bw, bh, bl), chamfer=0.07 if lod < 2 else 0.0)
-    box(bd, T_, (0, by + bh / 2 + 0.012, -0.02), d["carapace"], chamfer=0.05 if lod < 2 else 0.0)
+    box(bd, W_, (0, by, 0), (bw, bh, bl), chamfer=0.06 if lod < 2 else 0.0)
+    loft(bd, S_, RC3_TIERS[:2], RC3_SHELL, cap_top=False)
+    loft(bd, T_, RC3_TIERS[1:], RC3_SHELL, cap_bottom=False)
     if lod < 2:
         for s in (-1, 1):
-            box(bd, S_, (s * (bw / 2 + 0.004), by - 0.02, 0), (0.012, 0.10, bl - 0.22), chamfer=0.0)        # side skirts
+            box(bd, S_, (s * (bw / 2 + 0.004), by - 0.03, 0), (0.012, 0.10, bl - 0.22), chamfer=0.0)        # side skirts
         box(bd, S_, (0, by - bh / 2 - 0.006, 0), (bw - 0.3, 0.012, bl - 0.2))                                # belly plate
-        for z in (-0.18, 0.06):                                                                            # carapace seams
-            box(bd, "eq_metal_band", (0, by + bh / 2 + 0.031, z), (0.90, 0.004, 0.012))
+        for z in (-0.12, 0.10):                                                                            # carapace seams
+            box(bd, "eq_metal_band", (0, top + 0.002, z), (0.40, 0.004, 0.012))
         for sx in (-1, 1):                                                                                 # bay castings
-            for z in (-0.26, 0.20):
-                box(bd, B_, (sx * 0.30, by + bh / 2 + 0.045, z), (0.06, 0.04, 0.06), chamfer=ch(0.006))
+            for z in (-0.12, 0.14):
+                box(bd, B_, (sx * 0.16, top + 0.02, z), (0.06, 0.04, 0.06), chamfer=ch(0.006))
     if lod == 0:
         for sx in (-1, 1):
             for sz in (-1, 1):
-                hex_bolt(bd, B_, (sx * 0.40, by + bh / 2 + 0.031, sz * 0.25 - 0.02), (0, 1, 0), 0.018, 0.007)
-        box(bd, "eq_status_amber", (0.0, by + bh / 2 + 0.032, 0.27), (0.06, 0.004, 0.02))
+                hex_bolt(bd, B_, (sx * 0.26, top + 0.002, sz * 0.04 + 0.01), (0, 1, 0), 0.018, 0.007)
+        box(bd, "eq_status_amber", (0.0, top + 0.002, 0.20), (0.06, 0.004, 0.02))
         cyl(bd, B_, (0, by - bh / 2, -0.15), (0, by - bh / 2 - 0.02, -0.15), 0.03, ks)                    # charge / data socket
-    # the main field thruster in the back (emitter aft)
-    p0, p1 = (0, by, -bl / 2 + 0.02), (0, by, -bl / 2 - 1.0)
+    # the main field thruster in the back (emitter aft, under the carapace's rear edge)
+    p0, p1 = (0, by - 0.02, -bl / 2 + 0.02), (0, by - 0.02, -bl / 2 - 1.0)
     seg_lathe(bd, W_, p0, p1, [(0.0, 0.0), (0.11, 0.0), (0.125, 0.02), (0.125, 0.08), (0.0, 0.08)], small * 2 if lod == 0 else small)
     seg_lathe(bd, "eq_pad_ceramic", p0, p1, [(0.108, 0.081), (0.0, 0.081)], small * 2 if lod == 0 else small)
     if lod < 2:
@@ -114,7 +143,7 @@ def rc3_parts(lod):
     for s, side in ((1, "l"), (-1, "r")):
         ey = part(f"rc3_eye_{side}")
         b0, ec = RC3_EYES[s]
-        cyl(ey, S_, b0, _add(ec, (0, -0.03, -0.01)), 0.022, 8)
+        cyl(ey, S_, b0, _add(ec, (0, -0.03, -0.01)), 0.024, 8)
         box(ey, W_, ec, (0.09, 0.08, 0.09), chamfer=0.02 if lod < 2 else 0.0)
         de = norm((0.0, -0.08, 1.0))
         c0 = _add(ec, (0, 0, 0.04))
@@ -136,7 +165,7 @@ def rc3_parts(lod):
         fm = part(f"rc3_leg_{key}_femur")
         if lod == 0:
             knuckle(fm, B_, C, ax, 0.042, 0.10, ks, cap_mat=W_)
-        hex_limb(fm, W_, C, K, 0.040, 0.032, a0=math.pi / 6)
+        hex_limb(fm, W_, C, K, 0.044, 0.034, a0=math.pi / 6)
         tb = part(f"rc3_leg_{key}_tibia")
         if lod == 0:
             knuckle(tb, B_, K, ax, 0.036, 0.09, ks, cap_mat=T_)
@@ -157,23 +186,23 @@ def rc3_parts(lod):
     for s, side in ((1, "l"), (-1, "r")):
         S, E, W, T = rc3_arm(s)
         sh = part(f"rc3_arm_{side}_shoulder")
-        ball(sh, W_, S, 0.055, ks)
+        ball(sh, W_, S, 0.07, ks)
         if lod == 0:
-            knuckle(sh, B_, S, (1, 0, 0), 0.04, 0.12, ks, cap_mat=T_)
+            knuckle(sh, B_, S, (1, 0, 0), 0.05, 0.15, ks, cap_mat=T_)
         up_ = part(f"rc3_arm_{side}_upper")
-        hex_limb(up_, S_, S, E, 0.035, 0.032)
+        hex_limb(up_, S_, S, E, 0.048, 0.042)
         fo = part(f"rc3_arm_{side}_fore")
         if lod == 0:
-            knuckle(fo, B_, E, (1, 0, 0), 0.045, 0.10, ks, cap_mat=S_)
+            knuckle(fo, B_, E, (1, 0, 0), 0.056, 0.13, ks, cap_mat=S_)
         L = math.dist(E, W)
-        seg_lathe(fo, W_, E, W, [(0.0, 0.0), (0.05, 0.0), (0.095, 0.25 * L), (0.115, 0.5 * L), (0.10, 0.75 * L),
-                                 (0.065, 0.95 * L), (0.05, L), (0.0, L)], small * 2 if lod == 0 else small)
+        seg_lathe(fo, W_, E, W, [(0.0, 0.0), (0.06, 0.0), (0.12, 0.25 * L), (0.145, 0.5 * L), (0.125, 0.75 * L),
+                                 (0.08, 0.95 * L), (0.065, L), (0.0, L)], small * 2 if lod == 0 else small)
         if lod < 2:
-            seg_lathe(fo, T_, E, W, crect(0.112, 0.12, 0.42 * L, 0.58 * L), small * 2)                       # terracotta band
-            seg_lathe(fo, B_, E, W, crect(0.068, 0.075, 0.9 * L, 0.95 * L), small * 2)                       # wrist ring
+            seg_lathe(fo, T_, E, W, crect(0.141, 0.15, 0.42 * L, 0.58 * L), small * 2)                       # terracotta band
+            seg_lathe(fo, B_, E, W, crect(0.083, 0.09, 0.9 * L, 0.95 * L), small * 2)                        # wrist ring
         if s < 0:                                                                                          # welding torch
             fd = norm(_sub(W, E))
-            t0 = _add(_lerp(E, W, 0.55), (-0.115, 0.03, 0.0))
+            t0 = _add(_lerp(E, W, 0.55), (-0.145, 0.03, 0.0))
             t1 = _add(t0, _mul(fd, 0.30))
             cyl(fo, S_, _lerp(E, W, 0.5), t0, 0.015, 6)
             seg_lathe(fo, W_, t0, t1, [(0.0, 0.0), (0.025, 0.0), (0.025, 0.2), (0.0, 0.2)], ks)
@@ -182,10 +211,10 @@ def rc3_parts(lod):
         hn = part(f"rc3_hand_{side}")
         if lod == 0:
             knuckle(hn, B_, W, (1, 0, 0), 0.035, 0.09, ks, cap_mat=W_)
-        obox(hn, W_, W, _add(W, _mul(dw, RC3_PALM)), 0.09, 0.035, up=nup, chamfer=ch(0.008))
+        obox(hn, W_, W, _add(W, _mul(dw, RC3_PALM)), 0.12, 0.05, up=nup, chamfer=ch(0.008))
         for fid, k0, k1, k2 in fingers:
             fg = part(f"rc3_hand_{side}_{fid}")
-            r = 0.015
+            r = 0.02
             hex_limb(fg, T_ if fid == "thumb" else W_, k0, k1, r, r * 0.9)
             hex_limb(fg, W_ if fid == "thumb" else T_, k1, k2, r * 0.9, r * 0.75)
             if lod < 2:
@@ -198,15 +227,17 @@ def rc3_hits():
     by = d["body_y"]
     bw, bh, bl = d["body"]
     H = [hbox("rc3_body", (0, by, 0), (bw, bh, bl)),
-         hbox("rc3_body", (0, by + bh / 2 + 0.03, -0.02), (d["carapace"][0], 0.06, d["carapace"][2])),
-         hcyl("rc3_body", (0, by, -bl / 2), (0, by, -bl / 2 - 0.09), 0.14)]
+         hbox("rc3_body", (0, 0.543, 0.03), (1.24, 0.065, 0.62)),                     # carapace edge band
+         hbox("rc3_body", (0, 0.543, 0.0), (0.66, 0.065, 0.82)),
+         hbox("rc3_body", (0, 0.645, 0.01), (0.98, 0.14, 0.56)),                      # the dome
+         hcyl("rc3_body", (0, by - 0.02, -bl / 2), (0, by - 0.02, -bl / 2 - 0.09), 0.14)]
     for s, side in ((1, "l"), (-1, "r")):
         b0, ec = RC3_EYES[s]
         H += [hobox(f"rc3_eye_{side}", b0, ec, 0.05, 0.05), hbox(f"rc3_eye_{side}", _add(ec, (0, 0, 0.02)), (0.10, 0.09, 0.14))]
     for key in RC3_LEGS:
         Hp, C, K, A, F, ax = rc3_leg(key)
         H += [hobox(f"rc3_leg_{key}_coxa", Hp, C, 0.09, 0.09, ext=0.03),
-              hobox(f"rc3_leg_{key}_femur", C, K, 0.09, 0.09, ext=0.02),
+              hobox(f"rc3_leg_{key}_femur", C, K, 0.10, 0.10, ext=0.02),
               hobox(f"rc3_leg_{key}_tibia", K, A, 0.07, 0.07, ext=0.02),
               hcyl(f"rc3_leg_{key}_tibia", F, _add(F, (0, 0.045, 0)), 0.08)]
         if key in RC3_POD_LEGS:
@@ -215,11 +246,11 @@ def rc3_hits():
         S, E, W, T = rc3_arm(s)
         dw, nup, fingers = rc3_hand(s)
         H += [hobox(f"rc3_arm_{side}_shoulder", _sub(S, (0.06, 0, 0)), _add(S, (0.06, 0, 0)), 0.11, 0.11),
-              hobox(f"rc3_arm_{side}_upper", S, E, 0.08, 0.08),
-              hobox(f"rc3_arm_{side}_fore", E, W, 0.23, 0.23),
-              hobox(f"rc3_hand_{side}", W, _add(W, _mul(dw, RC3_PALM)), 0.10, 0.045, up=nup)]
+              hobox(f"rc3_arm_{side}_upper", S, E, 0.10, 0.10),
+              hobox(f"rc3_arm_{side}_fore", E, W, 0.29, 0.29),
+              hobox(f"rc3_hand_{side}", W, _add(W, _mul(dw, RC3_PALM)), 0.13, 0.06, up=nup)]
         for fid, k0, k1, k2 in fingers:
-            H.append(hobox(f"rc3_hand_{side}_{fid}", k0, k2, 0.034, 0.034, ext=0.01))
+            H.append(hobox(f"rc3_hand_{side}_{fid}", k0, k2, 0.045, 0.045, ext=0.01))
     return H
 
 
@@ -236,11 +267,11 @@ def rc3_rig():
         G.append(_j(f"rc3_eye_{side}", "rc3_body", b0, _sub(ec, b0), (-70, 70), "eye pan about its stalk"))
     for key in RC3_LEGS:
         Hp, C, K, A, F, ax = rc3_leg(key)
-        G += [_j(f"rc3_leg_{key}_coxa", "rc3_body", Hp, UPV, (-40, 40), "hip yaw"),
-              _j(f"rc3_leg_{key}_femur", f"rc3_leg_{key}_coxa", C, ax, (-40, 75), "hip pitch (+ = leg up)"),
-              _j(f"rc3_leg_{key}_tibia", f"rc3_leg_{key}_femur", K, ax, (-90, 50), "knee")]
+        G += [_j(f"rc3_leg_{key}_coxa", "rc3_body", Hp, UPV, (-45, 45), "hip yaw"),
+              _j(f"rc3_leg_{key}_femur", f"rc3_leg_{key}_coxa", C, ax, (-45, 75), "hip pitch (+ = leg up, - = flight ray)"),
+              _j(f"rc3_leg_{key}_tibia", f"rc3_leg_{key}_femur", K, ax, (-120, 130), "knee (straightens into the flight ray)")]
         if key in RC3_POD_LEGS:
-            G.append(_j(f"rc3_leg_{key}_thruster", f"rc3_leg_{key}_tibia", rc3_knee_pod(key)[1], ax, (-90, 90), "knee thruster gimbal"))
+            G.append(_j(f"rc3_leg_{key}_thruster", f"rc3_leg_{key}_tibia", rc3_knee_pod(key)[1], ax, (-120, 90), "knee thruster gimbal"))
     for s, side in ((1, "l"), (-1, "r")):
         S, E, W, T = rc3_arm(s)
         dw, nup, fingers = rc3_hand(s)
@@ -286,19 +317,29 @@ def rc3_clips():
             k[f"rc3_hand_{side}_{f}"] = _loop_keys([(0.0, 60), (0.3, 0), (0.5, 60), (1.0, 60)], 2.0, ph)
         k[f"rc3_hand_{side}_thumb"] = _loop_keys([(0.0, 40), (0.3, 0), (0.5, 40), (1.0, 40)], 2.0, ph)
     C.append({"id": "repair", "title": "Ремонт: руки работают по очереди", "duration_s": 2.0, "loop": True, "keys": k})
-    # 3. flight: legs tucked, knee thrusters steer
+    # 3. flight (author 2026-11-16: «для полета ноги надо складывать так, что бы вид был как у квадрокоптера - вытягивать
+    #    в лучи под 45 град»): the four pod legs straighten into horizontal rays at 45 degrees, emitters down; the middle
+    #    pair tucks up under the shell; the arms fold in; the knee thrusters swing to steer
     k = {}
-    for i, key in enumerate(RC3_LEGS):
-        k[f"rc3_leg_{key}_femur"] = [[0, 0], [1.0, 55], [5.0, 55], [6.0, 0]]
-        k[f"rc3_leg_{key}_tibia"] = [[0, 0], [1.0, -80], [5.0, -80], [6.0, 0]]
+    for key in RC3_LEGS:
+        s = RC3_LEGS[key][0]
         if key in RC3_POD_LEGS:
-            sw = 1 if key[0] == "l" else -1
-            k[f"rc3_leg_{key}_thruster"] = [[0, 0], [1.0, 25], [2.0, 25 + sw * 30], [3.0, 25 - sw * 30], [4.0, 25 + sw * 30],
-                                            [5.0, 25], [6.0, 0]]
+            Hp, Cp, K, A, F, ax = rc3_leg(key)
+            yaw, fm, tb, lv = ray_pose(Hp, Cp, K, A, (s, 0.0, 1.0 if key[1] == "1" else -1.0))
+            sw = 1 if key in ("l1", "r3") else -1
+            k[f"rc3_leg_{key}_coxa"] = [[0, 0], [1.2, yaw], [4.8, yaw], [6.0, 0]]
+            k[f"rc3_leg_{key}_femur"] = [[0, 0], [1.2, fm], [4.8, fm], [6.0, 0]]
+            k[f"rc3_leg_{key}_tibia"] = [[0, 0], [1.2, tb], [4.8, tb], [6.0, 0]]
+            k[f"rc3_leg_{key}_thruster"] = [[0, 0], [1.2, lv], [2.2, lv + sw * 25], [3.2, lv - sw * 25], [4.2, lv + sw * 25],
+                                            [4.8, lv], [6.0, 0]]
+        else:
+            k[f"rc3_leg_{key}_femur"] = [[0, 0], [1.2, 30], [4.8, 30], [6.0, 0]]
+            k[f"rc3_leg_{key}_tibia"] = [[0, 0], [1.2, -100], [4.8, -100], [6.0, 0]]
     for side in ("l", "r"):
-        k[f"rc3_arm_{side}_upper"] = [[0, 0], [1.0, 25], [5.0, 25], [6.0, 0]]
-        k[f"rc3_arm_{side}_fore"] = [[0, 0], [1.0, -30], [5.0, -30], [6.0, 0]]
-    C.append({"id": "fly", "title": "Полёт: лапы поджаты, двигатели в коленях рулят", "duration_s": 6.0, "loop": True, "keys": k})
+        k[f"rc3_arm_{side}_upper"] = [[0, 0], [1.2, 20], [4.8, 20], [6.0, 0]]
+        k[f"rc3_arm_{side}_fore"] = [[0, 0], [1.2, -25], [4.8, -25], [6.0, 0]]
+    C.append({"id": "fly", "title": "Полёт: ноги лучами под 45° (квадрокоптер), двигатели в коленях рулят", "duration_s": 6.0,
+              "loop": True, "keys": k})
     # 4. capture and tow: reach forward, grip the part, pull it in
     k = {}
     for side in ("l", "r"):

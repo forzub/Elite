@@ -5728,8 +5728,8 @@
               0.0
             ],
             "range_deg": [
-              -40,
-              40
+              -45,
+              45
             ],
             "joint": "hip yaw"
           },
@@ -5750,7 +5750,7 @@
               -50,
               70
             ],
-            "joint": "hip pitch (fold up for the bay)"
+            "joint": "hip pitch (fold up for the bay, down for the flight ray)"
           },
           {
             "part": "rm2_leg_fl_tibia",
@@ -5767,9 +5767,9 @@
             ],
             "range_deg": [
               -80,
-              60
+              130
             ],
-            "joint": "knee"
+            "joint": "knee (straightens into the flight ray)"
           },
           {
             "part": "rm2_leg_fl_foot",
@@ -5785,7 +5785,7 @@
               0.8797
             ],
             "range_deg": [
-              -45,
+              -90,
               45
             ],
             "joint": "ankle (pad stays flat on the hull)"
@@ -5804,7 +5804,7 @@
               0.8797
             ],
             "range_deg": [
-              -90,
+              -120,
               90
             ],
             "joint": "knee thruster gimbal"
@@ -5823,8 +5823,8 @@
               0.0
             ],
             "range_deg": [
-              -40,
-              40
+              -45,
+              45
             ],
             "joint": "hip yaw"
           },
@@ -5845,7 +5845,7 @@
               -50,
               70
             ],
-            "joint": "hip pitch (fold up for the bay)"
+            "joint": "hip pitch (fold up for the bay, down for the flight ray)"
           },
           {
             "part": "rm2_leg_fr_tibia",
@@ -5862,9 +5862,9 @@
             ],
             "range_deg": [
               -80,
-              60
+              130
             ],
-            "joint": "knee"
+            "joint": "knee (straightens into the flight ray)"
           },
           {
             "part": "rm2_leg_fr_foot",
@@ -5880,7 +5880,7 @@
               -0.8797
             ],
             "range_deg": [
-              -45,
+              -90,
               45
             ],
             "joint": "ankle (pad stays flat on the hull)"
@@ -5899,7 +5899,7 @@
               -0.8797
             ],
             "range_deg": [
-              -90,
+              -120,
               90
             ],
             "joint": "knee thruster gimbal"
@@ -5918,8 +5918,8 @@
               0.0
             ],
             "range_deg": [
-              -40,
-              40
+              -45,
+              45
             ],
             "joint": "hip yaw"
           },
@@ -5940,7 +5940,7 @@
               -50,
               70
             ],
-            "joint": "hip pitch (fold up for the bay)"
+            "joint": "hip pitch (fold up for the bay, down for the flight ray)"
           },
           {
             "part": "rm2_leg_rl_tibia",
@@ -5957,9 +5957,9 @@
             ],
             "range_deg": [
               -80,
-              60
+              130
             ],
-            "joint": "knee"
+            "joint": "knee (straightens into the flight ray)"
           },
           {
             "part": "rm2_leg_rl_foot",
@@ -5975,7 +5975,7 @@
               0.8165
             ],
             "range_deg": [
-              -45,
+              -90,
               45
             ],
             "joint": "ankle (pad stays flat on the hull)"
@@ -5994,7 +5994,7 @@
               0.8165
             ],
             "range_deg": [
-              -90,
+              -120,
               90
             ],
             "joint": "knee thruster gimbal"
@@ -6013,8 +6013,8 @@
               0.0
             ],
             "range_deg": [
-              -40,
-              40
+              -45,
+              45
             ],
             "joint": "hip yaw"
           },
@@ -6035,7 +6035,7 @@
               -50,
               70
             ],
-            "joint": "hip pitch (fold up for the bay)"
+            "joint": "hip pitch (fold up for the bay, down for the flight ray)"
           },
           {
             "part": "rm2_leg_rr_tibia",
@@ -6052,9 +6052,9 @@
             ],
             "range_deg": [
               -80,
-              60
+              130
             ],
-            "joint": "knee"
+            "joint": "knee (straightens into the flight ray)"
           },
           {
             "part": "rm2_leg_rr_foot",
@@ -6070,7 +6070,7 @@
               -0.8165
             ],
             "range_deg": [
-              -45,
+              -90,
               45
             ],
             "joint": "ankle (pad stays flat on the hull)"
@@ -6089,7 +6089,7 @@
               -0.8165
             ],
             "range_deg": [
-              -90,
+              -120,
               90
             ],
             "joint": "knee thruster gimbal"

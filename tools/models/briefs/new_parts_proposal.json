@@ -20,30 +20,30 @@
    "overhaul_h": 6000,
    "life_h": 25000,
    "model_asset": "agora_rc3_drone",
-   "notes": "Hull repair drone, a crab: flat wide carapace on six magnetic legs, two arms with a thin upper arm and a massive forearm (\"Popeye\") ending in hands with two fingers and a thumb, a welding torch on the right forearm, two camera eyes on stalks (no feelers), the main field thruster in the back and four gimballed field thrusters on the knees of the front and rear legs - flies like a quadcopter to a drifting part and tows it home (repair job MovingToFragment -> CapturingFragment -> towing). Agora patchwork palette, brass joints, corner castings on the carapace for the std.bay.drone4 cradle. Every moving part is its own OBJ part; skeleton and test clips in intact/assembly/rig.json.",
+   "notes": "Hull repair drone, a crab: a raised hull under a wide-fronted domed crab carapace (author 2026-11-16: taller body, bigger and longer arms to reach inside), six magnetic legs, two long arms (reach ~1.1 m) with an upper arm and a massive forearm (\"Popeye\") ending in hands with two fingers and a thumb, a welding torch on the right forearm, two camera eyes on stalks (no feelers), the main field thruster in the back and four gimballed field thrusters on the knees of the front and rear legs - in flight those four legs straighten into horizontal rays at 45 degrees and it flies like a quadcopter to a drifting part and tows it home (repair job MovingToFragment -> CapturingFragment -> towing). Agora patchwork palette, brass joints, corner castings on the carapace for the std.bay.drone4 cradle. Every moving part is its own OBJ part; skeleton and test clips in intact/assembly/rig.json.",
    "geometry": {
     "status": "PROPOSAL/model",
     "envelope_m": [
-     2.32,
-     0.7,
-     1.607
+     2.48,
+     0.871,
+     2.093
     ],
     "bounds_m": {
      "min": [
-      -1.16,
+      -1.24,
       0.0,
-      -0.601
+      -0.68
      ],
      "max": [
-      1.16,
-      0.7,
-      1.006
+      1.24,
+      0.871,
+      1.413
      ]
     },
     "service_clearance_m": [
-     2.6,
-     0.78,
-     1.8
+     2.78,
+     0.98,
+     2.34
     ],
     "basis": [
      "measured from the LOD1 model (tools/models/units/agora_crab.py), 2026-11-15"
@@ -91,14 +91,14 @@
       "part": "rc3_eye_l",
       "parent": "rc3_body",
       "pivot_m": [
-       0.14,
-       0.5,
-       0.33
+       0.15,
+       0.66,
+       0.3
       ],
       "axis": [
-       0.0806,
-       0.967,
-       0.2417
+       0.1081,
+       0.9193,
+       0.3785
       ],
       "range_deg": [
        -70,
@@ -110,14 +110,14 @@
       "part": "rc3_eye_r",
       "parent": "rc3_body",
       "pivot_m": [
-       -0.14,
-       0.5,
-       0.33
+       -0.15,
+       0.66,
+       0.3
       ],
       "axis": [
-       -0.0806,
-       0.967,
-       0.2417
+       -0.1081,
+       0.9193,
+       0.3785
       ],
       "range_deg": [
        -70,
@@ -129,7 +129,7 @@
       "part": "rc3_leg_l1_coxa",
       "parent": "rc3_body",
       "pivot_m": [
-       0.55,
+       0.46,
        0.4,
        0.22
       ],
@@ -139,8 +139,8 @@
        0.0
       ],
       "range_deg": [
-       -40,
-       40
+       -45,
+       45
       ],
       "joint": "hip yaw"
      },
@@ -148,55 +148,55 @@
       "part": "rc3_leg_l1_femur",
       "parent": "rc3_leg_l1_coxa",
       "pivot_m": [
-       0.6113,
+       0.5229,
        0.4,
-       0.2714
+       0.2694
       ],
       "axis": [
-       -0.6419,
+       -0.6178,
        0.0,
-       0.7668
+       0.7863
       ],
       "range_deg": [
-       -40,
+       -45,
        75
       ],
-      "joint": "hip pitch (+ = leg up)"
+      "joint": "hip pitch (+ = leg up, - = flight ray)"
      },
      {
       "part": "rc3_leg_l1_tibia",
       "parent": "rc3_leg_l1_femur",
       "pivot_m": [
-       0.9027,
-       0.64,
-       0.5153
+       0.8532,
+       0.7,
+       0.5289
       ],
       "axis": [
-       -0.6419,
+       -0.6178,
        0.0,
-       0.7668
+       0.7863
       ],
       "range_deg": [
-       -90,
-       50
+       -120,
+       130
       ],
-      "joint": "knee"
+      "joint": "knee (straightens into the flight ray)"
      },
      {
       "part": "rc3_leg_l1_thruster",
       "parent": "rc3_leg_l1_tibia",
       "pivot_m": [
-       0.9564,
-       0.67,
-       0.5602
+       0.9082,
+       0.73,
+       0.5722
       ],
       "axis": [
-       -0.6419,
+       -0.6178,
        0.0,
-       0.7668
+       0.7863
       ],
       "range_deg": [
-       -90,
+       -120,
        90
       ],
       "joint": "knee thruster gimbal"
@@ -205,7 +205,7 @@
       "part": "rc3_leg_l2_coxa",
       "parent": "rc3_body",
       "pivot_m": [
-       0.55,
+       0.46,
        0.4,
        0.0
       ],
@@ -215,8 +215,8 @@
        0.0
       ],
       "range_deg": [
-       -40,
-       40
+       -45,
+       45
       ],
       "joint": "hip yaw"
      },
@@ -224,47 +224,47 @@
       "part": "rc3_leg_l2_femur",
       "parent": "rc3_leg_l2_coxa",
       "pivot_m": [
-       0.6299,
+       0.54,
        0.4,
-       0.003
+       0.0023
       ],
       "axis": [
-       -0.0377,
+       -0.0286,
        0.0,
-       0.9993
+       0.9996
       ],
       "range_deg": [
-       -40,
+       -45,
        75
       ],
-      "joint": "hip pitch (+ = leg up)"
+      "joint": "hip pitch (+ = leg up, - = flight ray)"
      },
      {
       "part": "rc3_leg_l2_tibia",
       "parent": "rc3_leg_l2_femur",
       "pivot_m": [
-       1.0097,
-       0.64,
-       0.0173
+       0.9598,
+       0.7,
+       0.0143
       ],
       "axis": [
-       -0.0377,
+       -0.0286,
        0.0,
-       0.9993
+       0.9996
       ],
       "range_deg": [
-       -90,
-       50
+       -120,
+       130
       ],
-      "joint": "knee"
+      "joint": "knee (straightens into the flight ray)"
      },
      {
       "part": "rc3_leg_l3_coxa",
       "parent": "rc3_body",
       "pivot_m": [
-       0.55,
+       0.46,
        0.4,
-       -0.22
+       -0.2
       ],
       "axis": [
        0.0,
@@ -272,8 +272,8 @@
        0.0
       ],
       "range_deg": [
-       -40,
-       40
+       -45,
+       45
       ],
       "joint": "hip yaw"
      },
@@ -281,55 +281,55 @@
       "part": "rc3_leg_l3_femur",
       "parent": "rc3_leg_l3_coxa",
       "pivot_m": [
-       0.6156,
+       0.5243,
        0.4,
-       -0.2658
+       -0.2476
       ],
       "axis": [
-       0.5722,
+       0.5952,
        -0.0,
-       0.8201
+       0.8036
       ],
       "range_deg": [
-       -40,
+       -45,
        75
       ],
-      "joint": "hip pitch (+ = leg up)"
+      "joint": "hip pitch (+ = leg up, - = flight ray)"
      },
      {
       "part": "rc3_leg_l3_tibia",
       "parent": "rc3_leg_l3_femur",
       "pivot_m": [
-       0.9273,
-       0.64,
-       -0.4832
+       0.8618,
+       0.7,
+       -0.4976
       ],
       "axis": [
-       0.5722,
+       0.5952,
        -0.0,
-       0.8201
+       0.8036
       ],
       "range_deg": [
-       -90,
-       50
+       -120,
+       130
       ],
-      "joint": "knee"
+      "joint": "knee (straightens into the flight ray)"
      },
      {
       "part": "rc3_leg_l3_thruster",
       "parent": "rc3_leg_l3_tibia",
       "pivot_m": [
-       0.9847,
-       0.67,
-       -0.5233
+       0.918,
+       0.73,
+       -0.5393
       ],
       "axis": [
-       0.5722,
+       0.5952,
        -0.0,
-       0.8201
+       0.8036
       ],
       "range_deg": [
-       -90,
+       -120,
        90
       ],
       "joint": "knee thruster gimbal"
@@ -338,7 +338,7 @@
       "part": "rc3_leg_r1_coxa",
       "parent": "rc3_body",
       "pivot_m": [
-       -0.55,
+       -0.46,
        0.4,
        0.22
       ],
@@ -348,8 +348,8 @@
        0.0
       ],
       "range_deg": [
-       -40,
-       40
+       -45,
+       45
       ],
       "joint": "hip yaw"
      },
@@ -357,55 +357,55 @@
       "part": "rc3_leg_r1_femur",
       "parent": "rc3_leg_r1_coxa",
       "pivot_m": [
-       -0.6113,
+       -0.5229,
        0.4,
-       0.2714
+       0.2694
       ],
       "axis": [
-       -0.6419,
+       -0.6178,
        0.0,
-       -0.7668
+       -0.7863
       ],
       "range_deg": [
-       -40,
+       -45,
        75
       ],
-      "joint": "hip pitch (+ = leg up)"
+      "joint": "hip pitch (+ = leg up, - = flight ray)"
      },
      {
       "part": "rc3_leg_r1_tibia",
       "parent": "rc3_leg_r1_femur",
       "pivot_m": [
-       -0.9027,
-       0.64,
-       0.5153
+       -0.8532,
+       0.7,
+       0.5289
       ],
       "axis": [
-       -0.6419,
+       -0.6178,
        0.0,
-       -0.7668
+       -0.7863
       ],
       "range_deg": [
-       -90,
-       50
+       -120,
+       130
       ],
-      "joint": "knee"
+      "joint": "knee (straightens into the flight ray)"
      },
      {
       "part": "rc3_leg_r1_thruster",
       "parent": "rc3_leg_r1_tibia",
       "pivot_m": [
-       -0.9564,
-       0.67,
-       0.5602
+       -0.9082,
+       0.73,
+       0.5722
       ],
       "axis": [
-       -0.6419,
+       -0.6178,
        0.0,
-       -0.7668
+       -0.7863
       ],
       "range_deg": [
-       -90,
+       -120,
        90
       ],
       "joint": "knee thruster gimbal"
@@ -414,7 +414,7 @@
       "part": "rc3_leg_r2_coxa",
       "parent": "rc3_body",
       "pivot_m": [
-       -0.55,
+       -0.46,
        0.4,
        0.0
       ],
@@ -424,8 +424,8 @@
        0.0
       ],
       "range_deg": [
-       -40,
-       40
+       -45,
+       45
       ],
       "joint": "hip yaw"
      },
@@ -433,47 +433,47 @@
       "part": "rc3_leg_r2_femur",
       "parent": "rc3_leg_r2_coxa",
       "pivot_m": [
-       -0.6299,
+       -0.54,
        0.4,
-       0.003
+       0.0023
       ],
       "axis": [
-       -0.0377,
+       -0.0286,
        0.0,
-       -0.9993
+       -0.9996
       ],
       "range_deg": [
-       -40,
+       -45,
        75
       ],
-      "joint": "hip pitch (+ = leg up)"
+      "joint": "hip pitch (+ = leg up, - = flight ray)"
      },
      {
       "part": "rc3_leg_r2_tibia",
       "parent": "rc3_leg_r2_femur",
       "pivot_m": [
-       -1.0097,
-       0.64,
-       0.0173
+       -0.9598,
+       0.7,
+       0.0143
       ],
       "axis": [
-       -0.0377,
+       -0.0286,
        0.0,
-       -0.9993
+       -0.9996
       ],
       "range_deg": [
-       -90,
-       50
+       -120,
+       130
       ],
-      "joint": "knee"
+      "joint": "knee (straightens into the flight ray)"
      },
      {
       "part": "rc3_leg_r3_coxa",
       "parent": "rc3_body",
       "pivot_m": [
-       -0.55,
+       -0.46,
        0.4,
-       -0.22
+       -0.2
       ],
       "axis": [
        0.0,
@@ -481,8 +481,8 @@
        0.0
       ],
       "range_deg": [
-       -40,
-       40
+       -45,
+       45
       ],
       "joint": "hip yaw"
      },
@@ -490,55 +490,55 @@
       "part": "rc3_leg_r3_femur",
       "parent": "rc3_leg_r3_coxa",
       "pivot_m": [
-       -0.6156,
+       -0.5243,
        0.4,
-       -0.2658
+       -0.2476
       ],
       "axis": [
-       0.5722,
+       0.5952,
        0.0,
-       -0.8201
+       -0.8036
       ],
       "range_deg": [
-       -40,
+       -45,
        75
       ],
-      "joint": "hip pitch (+ = leg up)"
+      "joint": "hip pitch (+ = leg up, - = flight ray)"
      },
      {
       "part": "rc3_leg_r3_tibia",
       "parent": "rc3_leg_r3_femur",
       "pivot_m": [
-       -0.9273,
-       0.64,
-       -0.4832
+       -0.8618,
+       0.7,
+       -0.4976
       ],
       "axis": [
-       0.5722,
+       0.5952,
        0.0,
-       -0.8201
+       -0.8036
       ],
       "range_deg": [
-       -90,
-       50
+       -120,
+       130
       ],
-      "joint": "knee"
+      "joint": "knee (straightens into the flight ray)"
      },
      {
       "part": "rc3_leg_r3_thruster",
       "parent": "rc3_leg_r3_tibia",
       "pivot_m": [
-       -0.9847,
-       0.67,
-       -0.5233
+       -0.918,
+       0.73,
+       -0.5393
       ],
       "axis": [
-       0.5722,
+       0.5952,
        0.0,
-       -0.8201
+       -0.8036
       ],
       "range_deg": [
-       -90,
+       -120,
        90
       ],
       "joint": "knee thruster gimbal"
@@ -547,7 +547,7 @@
       "part": "rc3_arm_l_shoulder",
       "parent": "rc3_body",
       "pivot_m": [
-       0.34,
+       0.3,
        0.42,
        0.36
       ],
@@ -566,7 +566,7 @@
       "part": "rc3_arm_l_upper",
       "parent": "rc3_arm_l_shoulder",
       "pivot_m": [
-       0.34,
+       0.3,
        0.42,
        0.36
       ],
@@ -585,9 +585,9 @@
       "part": "rc3_arm_l_fore",
       "parent": "rc3_arm_l_upper",
       "pivot_m": [
-       0.5,
+       0.68,
        0.36,
-       0.56
+       0.68
       ],
       "axis": [
        1.0,
@@ -604,9 +604,9 @@
       "part": "rc3_hand_l",
       "parent": "rc3_arm_l_fore",
       "pivot_m": [
-       0.42,
-       0.56,
-       0.84
+       0.48,
+       0.6,
+       1.16
       ],
       "axis": [
        1.0,
@@ -623,9 +623,9 @@
       "part": "rc3_hand_l_f1",
       "parent": "rc3_hand_l",
       "pivot_m": [
-       0.4265,
-       0.5415,
-       0.9049
+       0.4987,
+       0.5878,
+       1.2579
       ],
       "axis": [
        1.0,
@@ -642,9 +642,9 @@
       "part": "rc3_hand_l_f2",
       "parent": "rc3_hand_l",
       "pivot_m": [
-       0.3765,
-       0.5415,
-       0.9049
+       0.4287,
+       0.5878,
+       1.2579
       ],
       "axis": [
        1.0,
@@ -661,14 +661,14 @@
       "part": "rc3_hand_l_thumb",
       "parent": "rc3_hand_l",
       "pivot_m": [
-       0.3621,
-       0.5424,
-       0.8651
+       0.4035,
+       0.5812,
+       1.1974
       ],
       "axis": [
        -0.0,
-       0.9615,
-       0.2747
+       0.9923,
+       0.124
       ],
       "range_deg": [
        -10,
@@ -680,7 +680,7 @@
       "part": "rc3_arm_r_shoulder",
       "parent": "rc3_body",
       "pivot_m": [
-       -0.34,
+       -0.3,
        0.42,
        0.36
       ],
@@ -699,7 +699,7 @@
       "part": "rc3_arm_r_upper",
       "parent": "rc3_arm_r_shoulder",
       "pivot_m": [
-       -0.34,
+       -0.3,
        0.42,
        0.36
       ],
@@ -718,9 +718,9 @@
       "part": "rc3_arm_r_fore",
       "parent": "rc3_arm_r_upper",
       "pivot_m": [
-       -0.5,
+       -0.68,
        0.36,
-       0.56
+       0.68
       ],
       "axis": [
        1.0,
@@ -737,9 +737,9 @@
       "part": "rc3_hand_r",
       "parent": "rc3_arm_r_fore",
       "pivot_m": [
-       -0.42,
-       0.56,
-       0.84
+       -0.48,
+       0.6,
+       1.16
       ],
       "axis": [
        1.0,
@@ -756,9 +756,9 @@
       "part": "rc3_hand_r_f1",
       "parent": "rc3_hand_r",
       "pivot_m": [
-       -0.3765,
-       0.5415,
-       0.9049
+       -0.4287,
+       0.5878,
+       1.2579
       ],
       "axis": [
        1.0,
@@ -775,9 +775,9 @@
       "part": "rc3_hand_r_f2",
       "parent": "rc3_hand_r",
       "pivot_m": [
-       -0.4265,
-       0.5415,
-       0.9049
+       -0.4987,
+       0.5878,
+       1.2579
       ],
       "axis": [
        1.0,
@@ -794,14 +794,14 @@
       "part": "rc3_hand_r_thumb",
       "parent": "rc3_hand_r",
       "pivot_m": [
-       -0.3621,
-       0.5424,
-       0.8651
+       -0.4035,
+       0.5812,
+       1.1974
       ],
       "axis": [
        0.0,
-       -0.9615,
-       -0.2747
+       -0.9923,
+       -0.124
       ],
       "range_deg": [
        -10,

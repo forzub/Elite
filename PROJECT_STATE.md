@@ -5821,3 +5821,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   OD-4 / AP-4 doors unrigged; 33 intact modules with open holes (capping awaits the author).
 
 - 2026-11-15 SLIDER + DOORS + HOLES + DRONES (MESH_EDITOR_SPEC 18.16). Rig slider joints (type slide, metres). OD-4 roof leaf B slides, AP-4 cell leaves hinged, Hold-100 hollow shell (5 walls), objects/conteiner20ft cut open (liner + 2 door leaves, 270 deg; original in assets_source/_backup, CLEANUP #12). Intact holes: 70 parts / 33 models were generator ends, no breaches; editor caps on 79 parts (incl. new drone pods), annulus-aware capping (two coplanar nested loops -> band). RM-2: tail removed, power pack + main thruster, gimballed knee thrusters, clips fly / capture; canon updated. New PROPOSAL Agora RC-3 Granchio crab drone (units/agora_crab.py, new_parts_proposal.json), 39 joints, 5 clips. LIVE: headless editor frames D:/tmp/doors_all.png, caps.png, drones2.png; 601 module variants checked, 0 errors except bastion_bv1_computer/bv1_vault (a 3+ face edge, not a hole); shells + packages rebuilt for 40 models (crab variants after a catalog rescan).
+
+- 2026-11-16 CRAB RESHAPE + FLIGHT RAYS (MESH_EDITOR_SPEC 18.17). Author: crab body taller, arms bigger and longer (to
+  work inside), overall crab shape; in flight the legs straighten into rays at 45 deg like a quadcopter, the mantis too.
+  RC-3: hull 0.29..0.51 m under a lofted wide-fronted hexagonal carapace (edge band + dome to 0.73 m), longer legs, arms
+  reach ~1.1 m with a massive forearm and bigger hands; envelope [2.48, 0.871, 2.093] (proposal updated). new_equipment
+  ray_pose(): coxa yaw onto the 45 deg diagonal, femur + tibia into one horizontal ray, pads / knee emitters levelled;
+  used by the fly clips of RM-2 (4 legs) and RC-3 (4 pod legs, the middle pair tucks); knee / gimbal ranges widened.
+  Viewer: MeshViewer.viewFrom(x, y, z) for scripted views. LIVE: headless editor frames D:/tmp/flyrays.png (crab rest /
+  repair / flight iso + top + side, RM-2 flight transition + top); step 1 on all variants of both drones (intact 0
+  errors, damaged = open wounds by design); shells + packages rebuilt (2 packages, 0 failures).
+

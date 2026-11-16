@@ -723,6 +723,8 @@ void ObjectAssemblyRegistry::init()
              glm::vec3(0.40f, 0.41f, 0.43f)},
             {ObjectType::HubKitRock, "hubk_rock_body", "hubk_rock", "assets/models/hub/hubk_rock/LOD0/hubk_rock.obj", 60000.0f, "hub_kit",
              glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubMegaProto, "hub_proto_mega_body", "hub_proto_mega",
+             "assets/models/hub/hubk_rock/LOD0/hubk_rock.obj", 60000.0f, "hub_kit", glm::vec3(0.40f, 0.41f, 0.43f)},
             {ObjectType::HubDistrictProto, "hub_proto_district_body", "hub_proto_district",
              "assets/models/hub/hubk_rock/LOD0/hubk_rock.obj", 60000.0f, "hub_kit", glm::vec3(0.40f, 0.41f, 0.43f)},
         };

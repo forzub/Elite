@@ -48,6 +48,9 @@ game::ship::geometry::MeshData toMeshData(const ma::MeshLod& mesh, const std::ve
             // colour + 2 in the face colour: large_object_fill.frag draws such faces unlit, bright (bloom picks them up)
             if (m.emissiveStrength > 0.0f && glm::length(m.emissiveColor) > 0.0f)
                 tri.baseColor = m.emissiveColor * m.emissiveStrength + glm::vec3(2.0f);
+            // a facade (hub megastructure): base colour + 4 - the shader draws a procedural window grid on it
+            else if (m.id.rfind("eq_hub_facade", 0) == 0 || m.sourceName.rfind("eq_hub_facade", 0) == 0)
+                tri.baseColor = glm::vec3(m.baseColor) + glm::vec3(4.0f);
             tri.hasMaterialColor = true;
         }
         out.triangles.push_back(tri);
@@ -121,6 +124,7 @@ const char* packageFor(ObjectType type)
         case ObjectType::HubKitTanks: return "assets/compiled/hub_modules/hubk_tanks/hubk_tanks.elmodel";
         case ObjectType::HubKitRock: return "assets/compiled/hub_modules/hubk_rock/hubk_rock.elmodel";
         case ObjectType::HubDistrictProto: return "assets/compiled/hub_modules/hub_proto_district/hub_proto_district.elmodel";
+        case ObjectType::HubMegaProto: return "assets/compiled/hub_modules/hub_proto_mega/hub_proto_mega.elmodel";
         default: return nullptr;
     }
 }

@@ -181,6 +181,7 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
             {"hubk_tanks", ObjectType::HubKitTanks},
             {"hubk_rock", ObjectType::HubKitRock},
             {"hub_proto_district", ObjectType::HubDistrictProto},
+            {"hub_proto_mega", ObjectType::HubMegaProto},
         };
         const auto kit = kHubKit.find(dock.type);
         const ObjectType type = kit != kHubKit.end()                  ? kit->second

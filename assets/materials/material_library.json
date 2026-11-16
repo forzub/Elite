@@ -3857,6 +3857,44 @@
    "twoSided": false,
    "physical": null,
    "source": "assets_source/models/equipment/agora_bt1_pellettank/damaged/broken/assembly/LOD0/pellet_frame.mtl"
+  },
+  {
+   "id": "eq_hub_facade",
+   "name": "hub facade",
+   "baseColor": [
+    0.22,
+    0.23,
+    0.25
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_light",
+   "name": "hub facade light",
+   "baseColor": [
+    0.4,
+    0.41,
+    0.42
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
   }
  ]
 }

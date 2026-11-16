@@ -15,6 +15,8 @@ out vec3 vColor;
 out vec3 vWorldPos;
 out vec3 vViewPos;
 out vec3 vObjectPos;
+out vec3 vObjectNormal;  // the mesh's own normal (facade windows run along the module's axes)
+out float vInstSeed;     // per instance (its position): which windows of this building are lit
 
 void main()
 {
@@ -23,6 +25,8 @@ void main()
     gl_Position = VP * worldPos;
     vViewPos = gl_Position.xyz;
     vObjectPos = position;
+    vObjectNormal = normal;
+    vInstSeed = fract(dot(instanceModel[3].xyz, vec3(0.0131, 0.0173, 0.0197)) + 0.371);
 
     mat3 normalMat = transpose(inverse(mat3(instanceModel)));
     vNormal = normalize(normalMat * normal);

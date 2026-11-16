@@ -14,6 +14,8 @@ out vec3 vColor;
 out vec3 vWorldPos;
 out vec3 vViewPos;
 out vec3 vObjectPos;
+out vec3 vObjectNormal;
+out float vInstSeed;
 
 void main()
 {
@@ -21,6 +23,8 @@ void main()
     vWorldPos = worldPos.xyz;
     vViewPos = (MVP * vec4(position, 1.0)).xyz;
     vObjectPos = position;
+    vObjectNormal = normal;
+    vInstSeed = fract(dot(M[3].xyz, vec3(0.0131, 0.0173, 0.0197)) + 0.371);
     
     gl_Position = MVP * vec4(position, 1.0);
 

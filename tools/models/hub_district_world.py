@@ -32,14 +32,18 @@ def main():
     # single (default): the district is one object (ObjectType::HubDistrictProto, its package merges the modules);
     # modules: every node its own object (the first measurement - ~11 ms of CPU per frame for 404 objects)
     ap.add_argument("--mode", choices=("single", "modules"), default="single")
+    # which assembly / hub: the district (default) or the megastructure (--asm hub_proto_mega --hub proto_mega)
+    ap.add_argument("--asm", default="hub_proto_district")
+    ap.add_argument("--hub", default="proto_district")
+    ap.add_argument("--name", default="Район-прототип (пояс)")
     a = ap.parse_args()
     raw = open(WORLD, encoding="utf-8").read()
     world = json.loads(raw)
-    asm = json.load(open(ASM, encoding="utf-8"))
+    asm = json.load(open(ASM.replace("hub_proto_district", a.asm), encoding="utf-8"))
     hubs = world["orbital_hubs"]
     ceres = next(h for h in hubs if h["id"] == "site.000.sol.ceres")
     hub = {
-        "id": "proto_district", "name": "Район-прототип (пояс)", "owner": "prototype", "operator": "prototype",
+        "id": a.hub, "name": a.name, "owner": "prototype", "operator": "prototype",
         "role": "прототип района хаба: город на астероиде, сотни модулей (tools/models/units/hub_district.py)",
         "system_id": ceres["system_id"], "parent_body_id": ceres["parent_body_id"], "map_object_module_id": "",
         "model_family": "hub_district", "traffic_profile": {"profile": "mining", "arrivals_day": 0, "dock_sectors": 0},
@@ -49,17 +53,19 @@ def main():
     hub["motion"]["initial_phase_deg"] = round(ceres["motion"]["initial_phase_deg"] + a.phase_deg, 7)
     hub["motion"]["self_rotation_period_seconds"] = 1.0e7      # must be positive: one slow turn in ~115 days
     for n in (asm["nodes"] if a.mode == "modules" else
-              [{"id": "district", "part": "hub_proto_district", "position": [0, 0, 0], "rotation_deg": [0, 0, 0]}]):
+              [{"id": "district", "part": a.asm, "position": [0, 0, 0], "rotation_deg": [0, 0, 0]}]):
         p, r = n["position"], n["rotation_deg"]
-        hub["dock_modules"].append({"id": f"proto_district.{n['id']}", "type": n["part"], "name": n["id"],
+        hub["dock_modules"].append({"id": f"{a.hub}.{n['id']}", "type": n["part"], "name": n["id"],
                                     "offset_m": {"x": p[0], "y": p[1], "z": p[2]},
                                     "rotation_deg": {"x": r[0], "y": r[1], "z": r[2]}})
-    world["orbital_hubs"] = [h for h in hubs if h["id"] != "proto_district"] + [hub]
+    world["orbital_hubs"] = [h for h in hubs if h["id"] != a.hub] + [hub]
     open(WORLD, "w", encoding="utf-8", newline="\n").write(json.dumps(world, ensure_ascii=False, indent=2) + "\n")
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "units"))
     from units.hub_district import DISTRICT_HAZE   # noqa: E402
-    open(HAZE, "w", encoding="utf-8", newline="\n").write(json.dumps(
-        {"schema": "elite.hub_haze.v1", "hub": "proto_district", "frame": "hub local metres (the dock modules' frame)",
+    if a.asm == "hub_proto_mega":
+        from units.hub_mega import MEGA_HAZE as DISTRICT_HAZE   # noqa: F811
+    open(HAZE.replace("hub_district_haze", f"{a.hub}_haze"), "w", encoding="utf-8", newline="\n").write(json.dumps(
+        {"schema": "elite.hub_haze.v1", "hub": a.hub, "frame": "hub local metres (the dock modules' frame)",
          "sources": DISTRICT_HAZE}, indent=1) + "\n")
     # the legacy fallback proxy of every kit module (ObjectAssemblyRegistry): its coarse LOD3 OBJ as
     # <repo>/assets/models/hub/<id>/LOD0/<id>.obj (the package is what draws)
@@ -71,7 +77,7 @@ def main():
         dst = os.path.join(ROOT, "assets", "models", "hub", kid, "LOD0")
         os.makedirs(dst, exist_ok=True)
         shutil.copyfile(src, os.path.join(dst, kid + ".obj"))
-    print(f"proto_district: {len(hub['dock_modules'])} dock modules, {len(DISTRICT_HAZE)} haze sources -> {WORLD}")
+    print(f"{a.hub}: {len(hub['dock_modules'])} dock modules, {len(DISTRICT_HAZE)} haze sources -> {WORLD}")
 
 
 if __name__ == "__main__":

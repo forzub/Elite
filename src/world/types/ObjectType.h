@@ -32,5 +32,6 @@ enum class ObjectType : uint16_t
     HubKitFactory,
     HubKitTanks,
     HubKitRock,
-    HubDistrictProto   // the whole district as one object (its package merges the kit modules)
+    HubDistrictProto,  // the whole district as one object (its package merges the kit modules)
+    HubMegaProto       // the megastructure prototype as one object (tools/models/units/hub_mega.py)
 };

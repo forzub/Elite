@@ -944,7 +944,17 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
     motion.localVelocityMps = glm::dvec3(0.0);
     tr.setWorldPositionMeters(frame.originMeters);
     // DEV: ELITE_DEV_START_FACE=1 turns the nose to the hub (scripted captures of a hub, e.g. the district prototype)
-    if (std::getenv("ELITE_DEV_START_FACE"))
+    // ELITE_DEV_START_FACE=along: the nose along the hub's local +X (its normalAxis), the hub's radial up - looking
+    // down a canyon of the hub megastructure instead of at its centre
+    if (const char* face = std::getenv("ELITE_DEV_START_FACE"); face && face[0] == 'a')
+    {
+        const glm::dvec3 fwd = glm::normalize(hub->normalAxis);
+        const glm::dvec3 right = glm::normalize(glm::cross(fwd, hub->radialAxis));
+        const glm::dvec3 shipUp = glm::cross(right, fwd);
+        tr.orientation = glm::mat4(glm::mat3(glm::dmat3(right, shipUp, -fwd)));
+        tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
+    }
+    else if (std::getenv("ELITE_DEV_START_FACE"))
     {
         const glm::dvec3 fwd = -up;
         glm::dvec3 side = glm::cross(fwd, glm::dvec3(0.0, 0.0, 1.0));

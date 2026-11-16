@@ -85,6 +85,7 @@ void ObjectDescriptorRegistry::init()
     registry[ObjectType::HubKitMushroom] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_mushroom", glm::vec3(96.0f, 112.0f, 96.0f));
     registry[ObjectType::HubKitFactory] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_factory", glm::vec3(70.0f, 63.0f, 52.0f));
     registry[ObjectType::HubKitTanks] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_tanks", glm::vec3(50.0f, 23.0f, 34.0f));
+    registry[ObjectType::HubMegaProto] = std::make_unique<game::station::HubKitModuleDescriptor>("hub_proto_mega", glm::vec3(12000.0f, 11000.0f, 12000.0f));
     registry[ObjectType::HubDistrictProto] = std::make_unique<game::station::HubKitModuleDescriptor>("hub_proto_district", glm::vec3(2900.0f, 1010.0f, 1150.0f));
     registry[ObjectType::HubKitRock] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_rock", glm::vec3(760.0f, 760.0f, 760.0f));
 }

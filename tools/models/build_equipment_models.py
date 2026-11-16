@@ -144,7 +144,16 @@ def build(only=None):
                 view, cache = {}, {}
                 for nid, folder, pos, rot, role, parent in spec["nodes"]:
                     if folder not in cache:
-                        cache[folder] = pads.merged(folder, list(assets[folder](mlod).values()))
+                        m = pads.merged(folder, list(assets[folder](mlod).values()))
+                        if spec.get("view_mode") == "boxes":
+                            # thousands of nodes (a megastructure): the editor's view of each node is its module's
+                            # bounding box - the package still instances the modules' own LODs
+                            lo = [min(v[i] for v in m.v) for i in range(3)]
+                            hi = [max(v[i] for v in m.v) for i in range(3)]
+                            m = eqlib.Part(folder)
+                            eqlib.box(m, "eq_hub_hull", tuple((a + b) / 2 for a, b in zip(lo, hi)),
+                                      tuple(max(b - a, 0.5) for a, b in zip(lo, hi)))
+                        cache[folder] = m
                     view.setdefault(folder, []).append(eqlib.placed(cache[folder], pads.euler(rot), pos))
                 view = {k: pads.merged(k, v) for k, v in view.items()}
             finally:

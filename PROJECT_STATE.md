@@ -5926,3 +5926,20 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   shared module meshes, instanced, 2 LODs): p50 13.0 Classic / 14.2 Modern / 14.3-14.6 Anime, GPU ~5.9 ms. Frames
   D:/tmp/hub/styles.png, D:/tmp/hub_district_styles.png. Next: local volumetric haze at the vent sources; near
   detail (module LOD0 by node distance inside the one object); the asteroid has no Classic edges.
+
+- 2026-11-17 HUB MEGASTRUCTURE PROTOTYPE, STEP 1 (author: «начинай с мегаструктуры. самое плохое в этом - нет ощущения
+  расстояния ... на десятки км? ... более тесной, что бы чувствовался размер?» + «светящихся окон надо сделать меньше.
+  полностью засвеченные только некоторые здания»). tools/models/units/hub_mega.py: modules hubm_* (shaft 160x160x1000
+  segment, cap with mast, annex, canyon bridge 140 m, deck 600x600, pipe bundle, asteroid r 4 km) + the small kit as the
+  ruler; assembly hub_proto_mega: 8884 nodes, 12 x 12 km deck, shafts 300 m apart (140 m canyons), up to 8 km tall,
+  industrial quarter with 231 factories (462 vent haze sources -> src/assets/data/proto_mega_haze.json; the district's
+  file renamed proto_district_haze.json). Editor view of big assemblies: node boxes (SETS view_mode "boxes"); the
+  package instances the modules' own LODs (assembly LOD k <- module LOD k+1). Facade windows: material eq_hub_facade*
+  travels as colour + 4, large_object_fill.frag draws a procedural window grid in the module frame (floors 4 m, pitch
+  3 m; most buildings 5-15 % lit, one in ten 60-80 %; far: averaged glow), vertex shaders pass the object normal and a
+  per-instance seed; the district's habitat blocks switched to the facade (no window quads). Hub proto_mega (one
+  object, ObjectType::HubMegaProto) 2900 km ahead of the Ceres hub; ELITE_DEV_START_FACE=along noses the ship along the
+  hub's local +X; build/run_mega.bat. LIVE: canyon start p50 26.5 Classic / 27.2 Modern / 25.4 Anime ms (1925 instances
+  drawn, GPU 13 ms), from 14 km above p50 50 ms (scene_main_render 37 ms): the whole object picks one LOD and draws
+  every node - next: per-node LOD + culling inside the object. Frames D:/tmp/hub/mega_modern.png, mega3.png.
+

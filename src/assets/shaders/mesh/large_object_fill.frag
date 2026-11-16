@@ -5,6 +5,8 @@ in vec3 vColor; // material base colour of this face (model data)
 in vec3 vWorldPos;
 in vec3 vViewPos;
 in vec3 vObjectPos;
+in vec3 vObjectNormal;
+in float vInstSeed;
 out vec4 FragColor;
 
 // ===== UNIFORMS =====
@@ -43,11 +45,63 @@ uniform float fogIntensity;
 uniform vec3 cameraPos;
 uniform int uSceneStyle; // 0 Elite Classic, 1 Modern, 2 Anime
 
+// ===== FACADE WINDOWS (hub megastructure, 2026-11-16) =====
+// A facade material (id eq_hub_facade*) travels as its base colour + 4 (ModelAssetGpuLibrary): its vertical faces get a
+// procedural grid of windows in the module's own frame (floors 4 m, pitch 3 m) - no geometry per window. Most buildings
+// are dim (5..15 % of the windows lit, author: «светящихся окон надо сделать меньше. полностью засвеченные только
+// некоторые здания»), about one in ten is lit up (60..80 %). Far away the grid averages to its mean glow (no shimmer).
+float hash12(vec2 p)
+{
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+vec3 facadeWindows(vec3 nObj)
+{
+    if (abs(nObj.y) > 0.6)
+        return vec3(0.0);                                   // roofs / floors: no windows
+    float u = abs(nObj.x) > abs(nObj.z) ? vObjectPos.z : vObjectPos.x;
+    vec2 g = vec2(u / 3.0, vObjectPos.y / 4.0);
+    vec2 cell = floor(g);
+    vec2 f = fract(g);
+    float building = hash12(vec2(vInstSeed * 913.0, 17.0));
+    float litFrac = building < 0.10 ? mix(0.60, 0.80, hash12(vec2(vInstSeed * 71.0, 3.0)))
+                                    : mix(0.05, 0.15, hash12(vec2(vInstSeed * 37.0, 9.0)));
+    float floorBias = hash12(vec2(cell.y, vInstSeed * 53.0)) < 0.18 ? 2.2 : 1.0;   // some floors busier
+    float h = hash12(cell + vec2(vInstSeed * 131.0, vInstSeed * 977.0));
+    float lit = step(h, litFrac * floorBias);
+    vec3 warm = vec3(1.0, 0.72, 0.40), cool = vec3(0.55, 0.75, 1.0);
+    vec3 col = mix(warm, cool, step(0.78, hash12(cell * 1.7 + 5.0)));
+    float pane = step(0.2, f.x) * step(f.x, 0.8) * step(0.3, f.y) * step(f.y, 0.75);
+    vec2 fw = fwidth(g);
+    float far = smoothstep(0.25, 0.9, max(fw.x, fw.y));      // a window under a pixel: its average instead
+    vec3 nearGlow = col * lit * pane;
+    vec3 farGlow = mix(warm, cool, 0.22) * litFrac * 0.27 * 1.2;
+    return mix(nearGlow, farGlow, far);
+}
+
 void main()
 {
     // Emissive faces (window lights, beacons, floodlights): ModelAssetGpuLibrary passes their glow colour + 2 as the
     // face colour. Unlit and bright in every style (Classic: points of light on the black structure).
-    if (max(vColor.r, max(vColor.g, vColor.b)) >= 1.5)
+    float colourMax = max(vColor.r, max(vColor.g, vColor.b));
+    if (colourMax >= 3.5)
+    {
+        // a facade: its own colour, lit like any hull (below), plus the window grid
+        vec3 base = vColor - vec3(4.0);
+        vec3 win = facadeWindows(normalize(vObjectNormal));
+        vec3 nn = normalize(vNormal);
+        vec3 l2 = normalize(lightDir);
+        float wrap2 = clamp((dot(nn, l2) + 0.42) / 1.42, 0.0, 1.0);
+        vec3 hull = base * (ambientColor * 0.45 + lightColor * wrap2 * 0.6);
+        if (uSceneStyle == 0)
+            hull = vec3(0.012);                                  // Classic: black structure, the lights only
+        else if (uSceneStyle == 2)
+            hull = base * mix(0.30, 0.75, step(0.0, dot(nn, l2)));   // Anime: two flat masses
+        FragColor = vec4(pow(max(hull, vec3(0.0)), vec3(1.0 / 1.08)) + win * (uSceneStyle == 1 ? 1.5 : 1.1), 1.0);
+        return;
+    }
+    if (colourMax >= 1.5)
     {
         vec3 glow = max(vColor - vec3(2.0), vec3(0.0));
         FragColor = vec4(glow * (uSceneStyle == 1 ? 1.6 : uSceneStyle == 2 ? 1.15 : 0.95), 1.0);

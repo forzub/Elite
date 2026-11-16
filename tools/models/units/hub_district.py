@@ -81,37 +81,10 @@ def hab_builder(w, hgt, d, seed, roof=True):
         rng = random.Random(seed)
         P = {}
         b = P.setdefault("hubk_hab", Part("hubk_hab"))
-        box(b, HULL, (0, hgt / 2, 0), (w, hgt, d), chamfer=0.8 if lod == 0 else 0.0)
+        box(b, "eq_hub_facade", (0, hgt / 2, 0), (w, hgt, d), chamfer=0.8 if lod == 0 else 0.0)
         box(b, LIGHT, (0, 1.5, 0), (w + 1.0, 3.0, d + 1.0))                                           # plinth / clamp
-        floors = int((hgt - 6) / 3.6)
-        for face, (n, u_ax, width) in enumerate((((0, 0, 1), (1, 0, 0), w), ((0, 0, -1), (-1, 0, 0), w),
-                                                 ((1, 0, 0), (0, 0, -1), d), ((-1, 0, 0), (0, 0, 1), d))):
-            cols = int(width / 3.0)
-            off = (n[0] * (w / 2 + 0.06), 0, n[2] * (d / 2 + 0.06))
-            for f in range(floors):
-                y = 5.0 + f * 3.6
-                row = [rng.random() for _ in range(cols)]
-                lit = [WARM if r < 0.33 else COOL if r < 0.42 else DARK for r in row]
-                if lod == 0:
-                    for c, m in enumerate(lit):
-                        x = -width / 2 + (c + 0.5) * width / cols
-                        cc = (off[0] + u_ax[0] * x, y, off[2] + u_ax[2] * x)
-                        quad(b, m, cc, tuple(a * 0.9 for a in u_ax), (0, 0.65, 0), n)
-                else:                       # runs of lit windows merged into one strip (dark ones are just hull)
-                    c = 0
-                    while c < cols:
-                        if lit[c] == DARK or (lod == 2 and f % 2):
-                            c += 1
-                            continue
-                        e = c
-                        while e + 1 < cols and lit[e + 1] == lit[c]:
-                            e += 1
-                        x0 = -width / 2 + c * width / cols + 0.15
-                        x1 = -width / 2 + (e + 1) * width / cols - 0.15
-                        xm, hw = (x0 + x1) / 2, (x1 - x0) / 2
-                        cc = (off[0] + u_ax[0] * xm, y, off[2] + u_ax[2] * xm)
-                        quad(b, lit[c], cc, tuple(a * hw for a in u_ax), (0, 0.65 if lod == 1 else 1.3, 0), n)
-                        c = e + 1
+        # windows: the facade material's procedural grid (large_object_fill.frag) - most blocks dim, a few lit up
+        # (author 2026-11-16: «светящихся окон надо сделать меньше. полностью засвеченные только некоторые здания»)
         if roof and lod < 2:
             for k in range(3):                                                                        # roof plant
                 box(b, LIGHT, (rng.uniform(-w / 3, w / 3), hgt + 2.0, rng.uniform(-d / 3, d / 3)), (6.0, 4.0, 5.0))
@@ -258,13 +231,17 @@ def tanks_hits():
 
 
 # ---------------------------------------------------------------- the anchor asteroid (radius ~350 m)
-def rock_parts(lod):
-    P = {"hubk_rock": Part("hubk_rock")}
-    r = P["hubk_rock"]
-    rng = random.Random(11)
+def rock_builder(radius, seed, name):
+    return lambda lod: rock_parts(lod, radius, seed, name)
+
+
+def rock_parts(lod, radius=350.0, seed=11, name="hubk_rock"):
+    P = {name: Part(name)}
+    r = P[name]
+    rng = random.Random(seed)
     bumps = [(norm((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1))), rng.uniform(0.04, 0.12)) for _ in range(14)]
     def rad(v):
-        return 350.0 * (1.0 + sum(h * max(0.0, sum(a * b for a, b in zip(v, d)) - 0.6) / 0.4 for d, h in bumps)
+        return radius * (1.0 + sum(h * max(0.0, sum(a * b for a, b in zip(v, d)) - 0.6) / 0.4 for d, h in bumps)
                         - 0.06 * math.sin(3 * v[0] + 2 * v[1]) * math.cos(2 * v[2]))
     # an icosphere, subdivided
     t = (1 + 5 ** 0.5) / 2
@@ -304,7 +281,7 @@ KIT = {"hubk_truss": (truss_parts, truss_hits, "Ферма-балка 100 м"),
        "hubk_mushroom": (mushroom_parts, mushroom_hits, "Гриб-платформа на стволе"),
        "hubk_factory": (factory_parts, factory_hits, "Завод со сбросными трубами"),
        "hubk_tanks": (tanks_parts, tanks_hits, "Резервуарный парк"),
-       "hubk_rock": (rock_parts, rock_hits, "Астероид-якорь 700 м")}
+       "hubk_rock": (rock_builder(350.0, 11, "hubk_rock"), rock_hits, "Астероид-якорь 700 м")}
 
 
 # ---------------------------------------------------------------- the district layout (assembly by reference)

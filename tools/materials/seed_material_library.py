@@ -26,6 +26,11 @@ PASSPORTS = {   # mesh material id -> physical passport (UniverseMaterials.h)
     "mat_radiator_aster_c_sic": "elite.material.radiator.c-sic.v1",
     "mat_engine_vanta_hfc_c": "elite.material.engine.hfc-c.v1",
 }
+# new ids that glow (window lights, beacons, floodlights of the hub district, 2026-11-16): emissive colour on first seed
+EMISSIVE = {
+    "eq_hub_window_warm": [1.0, 0.72, 0.40], "eq_hub_window_cool": [0.55, 0.75, 1.0],
+    "eq_hub_beacon": [1.0, 0.10, 0.05], "eq_hub_flood": [0.85, 0.92, 1.0],
+}
 
 
 def from_phong(kd, ks, ns):
@@ -47,7 +52,7 @@ def main():
         nonlocal added
         if mid in have:
             return
-        e = {"id": mid, "name": mid.replace("eq_", "").replace("_", " "), **from_phong(*phong), "emissive": [0, 0, 0],
+        e = {"id": mid, "name": mid.replace("eq_", "").replace("_", " "), **from_phong(*phong), "emissive": EMISSIVE.get(mid, [0, 0, 0]),
              "twoSided": False, "physical": PASSPORTS.get(mid), "source": source}
         lib["materials"].append(e)
         have.add(mid)

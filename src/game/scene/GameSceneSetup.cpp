@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
@@ -169,7 +170,21 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
 {
     for (const auto& dock : hub.dockModules)
     {
-        const ObjectType type = dock.type == "hub_hex_dock"           ? ObjectType::HubHexDock
+        static const std::unordered_map<std::string, ObjectType> kHubKit {   // hub district prototype kit
+            {"hubk_truss", ObjectType::HubKitTruss},
+            {"hubk_hab_a", ObjectType::HubKitHabA},
+            {"hubk_hab_b", ObjectType::HubKitHabB},
+            {"hubk_hab_c", ObjectType::HubKitHabC},
+            {"hubk_tower", ObjectType::HubKitTower},
+            {"hubk_mushroom", ObjectType::HubKitMushroom},
+            {"hubk_factory", ObjectType::HubKitFactory},
+            {"hubk_tanks", ObjectType::HubKitTanks},
+            {"hubk_rock", ObjectType::HubKitRock},
+            {"hub_proto_district", ObjectType::HubDistrictProto},
+        };
+        const auto kit = kHubKit.find(dock.type);
+        const ObjectType type = kit != kHubKit.end()                  ? kit->second
+                              : dock.type == "hub_hex_dock"           ? ObjectType::HubHexDock
                               : dock.type == "dock_service_block"     ? ObjectType::HubDockServiceBlock
                               : dock.type == "guidance_dock_cylinder" ? ObjectType::GuidanceDockCylinder
                                                                       : ObjectType::Station;

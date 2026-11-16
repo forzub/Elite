@@ -3553,6 +3553,310 @@
    "twoSided": false,
    "physical": null,
    "source": "assets_source/models/stations/stantion-001/LOD0/stantion-001.mtl"
+  },
+  {
+   "id": "eq_hub_beacon",
+   "name": "hub beacon",
+   "baseColor": [
+    1.0,
+    0.12,
+    0.06
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    1.0,
+    0.1,
+    0.05
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_flood",
+   "name": "hub flood",
+   "baseColor": [
+    0.85,
+    0.92,
+    1.0
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0.85,
+    0.92,
+    1.0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_hazard",
+   "name": "hub hazard",
+   "baseColor": [
+    0.78,
+    0.58,
+    0.1
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_hull",
+   "name": "hub hull",
+   "baseColor": [
+    0.3,
+    0.31,
+    0.33
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_hull_light",
+   "name": "hub hull light",
+   "baseColor": [
+    0.5,
+    0.51,
+    0.52
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_rock",
+   "name": "hub rock",
+   "baseColor": [
+    0.26,
+    0.24,
+    0.22
+   ],
+   "metallic": 0.0,
+   "roughness": 0.968,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_steel",
+   "name": "hub steel",
+   "baseColor": [
+    0.17,
+    0.18,
+    0.19
+   ],
+   "metallic": 0.15,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_window_cool",
+   "name": "hub window cool",
+   "baseColor": [
+    0.6,
+    0.78,
+    1.0
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0.55,
+    0.75,
+    1.0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_window_dark",
+   "name": "hub window dark",
+   "baseColor": [
+    0.05,
+    0.06,
+    0.07
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_window_warm",
+   "name": "hub window warm",
+   "baseColor": [
+    1.0,
+    0.74,
+    0.42
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    1.0,
+    0.72,
+    0.4
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_toolbox_rubber",
+   "name": "toolbox rubber",
+   "baseColor": [
+    0.1,
+    0.1,
+    0.11
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_toolbox_yellow",
+   "name": "toolbox yellow",
+   "baseColor": [
+    0.86,
+    0.66,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_dmg_interior",
+   "name": "dmg interior",
+   "baseColor": [
+    0.13,
+    0.13,
+    0.14
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/equipment/agora_bt1_pellettank/damaged/broken/assembly/LOD0/dmg_innards.mtl"
+  },
+  {
+   "id": "eq_dmg_scorch",
+   "name": "dmg scorch",
+   "baseColor": [
+    0.055,
+    0.048,
+    0.042
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/equipment/agora_bt1_pellettank/damaged/broken/assembly/LOD0/dmg_innards.mtl"
+  },
+  {
+   "id": "eq_dmg_torn",
+   "name": "dmg torn",
+   "baseColor": [
+    0.44,
+    0.43,
+    0.41
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/equipment/agora_bt1_pellettank/damaged/broken/assembly/LOD0/pellet_auger.mtl"
+  },
+  {
+   "id": "eq_dmg_soot",
+   "name": "dmg soot",
+   "baseColor": [
+    0.17,
+    0.16,
+    0.15
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "assets_source/models/equipment/agora_bt1_pellettank/damaged/broken/assembly/LOD0/pellet_frame.mtl"
   }
  ]
 }

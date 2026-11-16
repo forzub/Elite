@@ -42,7 +42,12 @@ game::ship::geometry::MeshData toMeshData(const ma::MeshLod& mesh, const std::ve
                                                 t.sourcePolygonId};
         if (t.materialIndex >= 0 && static_cast<std::size_t>(t.materialIndex) < materials.size())
         {
-            tri.baseColor = glm::vec3(materials[static_cast<std::size_t>(t.materialIndex)].baseColor);
+            const auto& m = materials[static_cast<std::size_t>(t.materialIndex)];
+            tri.baseColor = glm::vec3(m.baseColor);
+            // an emissive material (windows, beacons, floodlights - the hub district, 2026-11-16) travels as its glow
+            // colour + 2 in the face colour: large_object_fill.frag draws such faces unlit, bright (bloom picks them up)
+            if (m.emissiveStrength > 0.0f && glm::length(m.emissiveColor) > 0.0f)
+                tri.baseColor = m.emissiveColor * m.emissiveStrength + glm::vec3(2.0f);
             tri.hasMaterialColor = true;
         }
         out.triangles.push_back(tri);
@@ -105,6 +110,17 @@ const char* packageFor(ObjectType type)
             }();
             return ship.empty() ? nullptr : ship.c_str();
         }
+        // hub district prototype kit: the mesh editor's hub module packages
+        case ObjectType::HubKitTruss: return "assets/compiled/hub_modules/hubk_truss/hubk_truss.elmodel";
+        case ObjectType::HubKitHabA: return "assets/compiled/hub_modules/hubk_hab_a/hubk_hab_a.elmodel";
+        case ObjectType::HubKitHabB: return "assets/compiled/hub_modules/hubk_hab_b/hubk_hab_b.elmodel";
+        case ObjectType::HubKitHabC: return "assets/compiled/hub_modules/hubk_hab_c/hubk_hab_c.elmodel";
+        case ObjectType::HubKitTower: return "assets/compiled/hub_modules/hubk_tower/hubk_tower.elmodel";
+        case ObjectType::HubKitMushroom: return "assets/compiled/hub_modules/hubk_mushroom/hubk_mushroom.elmodel";
+        case ObjectType::HubKitFactory: return "assets/compiled/hub_modules/hubk_factory/hubk_factory.elmodel";
+        case ObjectType::HubKitTanks: return "assets/compiled/hub_modules/hubk_tanks/hubk_tanks.elmodel";
+        case ObjectType::HubKitRock: return "assets/compiled/hub_modules/hubk_rock/hubk_rock.elmodel";
+        case ObjectType::HubDistrictProto: return "assets/compiled/hub_modules/hub_proto_district/hub_proto_district.elmodel";
         default: return nullptr;
     }
 }

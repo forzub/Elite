@@ -9,6 +9,7 @@
 #include "src/game/station/descriptors/GuidanceTestDockDescriptor.h"
 #include "src/game/station/descriptors/HubHexDockDescriptor.h"
 #include "src/game/ship/descriptors/OrbitalCargoShuttleDescriptor.h"
+#include "src/game/station/descriptors/HubKitDescriptor.h"
 
 #include <mutex>
 
@@ -74,4 +75,16 @@ void ObjectDescriptorRegistry::init()
     // ===== OCS-4 ORBITAL CARGO SHUTTLE (dock traffic) =====
     registry[ObjectType::OrbitalCargoShuttle] =
         std::make_unique<ShipDescriptor>(game::ship::descriptors::orbitalCargoShuttleDescriptor());
+
+    // ===== HUB DISTRICT PROTOTYPE KIT (static decoration, packages drawn in their own metres) =====
+    registry[ObjectType::HubKitTruss] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_truss", glm::vec3(9.0f, 9.0f, 100.0f));
+    registry[ObjectType::HubKitHabA] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_hab_a", glm::vec3(41.0f, 92.0f, 31.0f));
+    registry[ObjectType::HubKitHabB] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_hab_b", glm::vec3(25.0f, 150.0f, 25.0f));
+    registry[ObjectType::HubKitHabC] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_hab_c", glm::vec3(61.0f, 46.0f, 37.0f));
+    registry[ObjectType::HubKitTower] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_tower", glm::vec3(22.0f, 187.0f, 22.0f));
+    registry[ObjectType::HubKitMushroom] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_mushroom", glm::vec3(96.0f, 112.0f, 96.0f));
+    registry[ObjectType::HubKitFactory] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_factory", glm::vec3(70.0f, 63.0f, 52.0f));
+    registry[ObjectType::HubKitTanks] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_tanks", glm::vec3(50.0f, 23.0f, 34.0f));
+    registry[ObjectType::HubDistrictProto] = std::make_unique<game::station::HubKitModuleDescriptor>("hub_proto_district", glm::vec3(2900.0f, 1010.0f, 1150.0f));
+    registry[ObjectType::HubKitRock] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_rock", glm::vec3(760.0f, 760.0f, 760.0f));
 }

@@ -186,13 +186,13 @@ def set_doc(unit, ms, unit_hits, pad_hits):
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
 
 
-def ref_set_doc(set_id, nodes, hits_by_node):
+def ref_set_doc(set_id, nodes, hits_by_node, category_of=lambda folder: "equipment_ship"):
     """assembly.json of a set of whole models by reference (std.drone.toolbox carry sets, 2026-11-16): nodes =
     [(node id, model folder, position, rotation_deg, role, parent)], hits_by_node = {node id: [hit dicts in the model's
     frame]} - placed into the set frame; mounts link each child to its parent"""
     out_nodes, hv, mts = [], [], []
     for nid, folder, pos, rot, role, parent in nodes:
-        out_nodes.append({"id": nid, "part": folder, "parent": parent, "role": role, "ref": "equipment_ship/" + folder,
+        out_nodes.append({"id": nid, "part": folder, "parent": parent, "role": role, "ref": category_of(folder) + "/" + folder,
                           "position": [round(x, 4) + 0.0 for x in pos], "rotation_deg": [round(x, 4) + 0.0 for x in rot]})
         R = euler(rot)
         counts = {}
@@ -209,7 +209,7 @@ def ref_set_doc(set_id, nodes, hits_by_node):
             mts.append({"id": f"mount_{nid}", "a": parent, "b": nid, "kind": role + "_mount", "load_bearing": False,
                         "position": [round(x, 4) + 0.0 for x in pos], "rotation_deg": [round(x, 4) + 0.0 for x in rot],
                         "half_size": [0.15, 0.02, 0.12], "source": "generator"})
-    doc = {"schema": "elite.assembly.v1", "model": f"equipment_ship/{set_id}", "generator": GEN,
+    doc = {"schema": "elite.assembly.v1", "model": f"{category_of(set_id)}/{set_id}", "generator": GEN,
            "seededFrom": ["generator"], "parts": {}, "nodes": out_nodes, "materials": {}, "hit_volumes": hv, "zones": [],
            "mounts": mts, "seams": [], "connections": [],
            "damage": {"states": [], "detachable": [n[0] for n in nodes if n[5]]}}

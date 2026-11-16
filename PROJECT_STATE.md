@@ -5907,3 +5907,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   at the ventilation-spine ends (not asked). LIVE: headless editor frames D:/tmp/no_fans.png; step 1 clean (intact);
   damaged variants, shells, packages rebuilt (3 / 0 failures).
 
+- 2026-11-16 HUB DISTRICT PROTOTYPE, STEP 1 (author: «начинай прототип района хаба» + «сразу добавляй макеты в модули хаба
+  для эдитора» + «и где-то должна быть собственно - сборка хаба»). Kit tools/models/units/hub_district.py -> the editor's
+  hub modules (<assets_source>/models/hub/hubk_*: truss 100 m, habitat blocks a/b/c with window grids, lattice tower
+  160 m, mushroom platform, factory with vent stacks, tank farm, anchor asteroid 700 m) + the assembly
+  hub_proto_district (kind assembly, 404 nodes by reference, ~2.9 x 1.0 x 1.15 km, the industrial quarter at the far end,
+  80 vent haze sources -> src/assets/data/hub_district_haze.json). Generator: units may declare ROOTS (source sub-root,
+  "hub") and PASSPORTS; SETS gain "view_lods" and reference hub modules (pads.ref_set_doc category_of). Emissive
+  materials (eq_hub_window_warm / cool, beacon, flood) seeded into the material library (seed EMISSIVE). Game: ObjectType
+  HubKit* (9) + HubDistrictProto, HubKitModuleDescriptor (logical scaling off), packageFor -> assets/compiled/hub_modules,
+  legacy proxies assets/models/hub/hubk_*/LOD0 (coarse OBJ), GameSceneSetup maps dock module types; hub proto_district
+  co-orbits the Ceres hub (tools/models/hub_district_world.py writes it into initial_world_state.json; not in the canon -
+  rerun after a colonization_lab regeneration). Emissive faces: ModelAssetGpuLibrary passes glow + 2 as the face colour,
+  large_object_fill.frag draws them unlit in all three styles. DEV: ELITE_DEV_START_FACE=1 noses the ship to the hub.
+  LIVE (offscreen, ELITE_DEV_START=hub:proto_district@1.6..4): 404 modules as separate world objects: p50 23-27 ms vs
+  13.0 ms without the district - the CPU per-object cost (replication / navigation / radar / scene prep ~11 ms), while
+  drawing them took 4.2 ms GPU (instancing 404 -> 9 draws); the district as ONE object (its package: 404 nodes on 9
+  shared module meshes, instanced, 2 LODs): p50 13.0 Classic / 14.2 Modern / 14.3-14.6 Anime, GPU ~5.9 ms. Frames
+  D:/tmp/hub/styles.png, D:/tmp/hub_district_styles.png. Next: local volumetric haze at the vent sources; near
+  detail (module LOD0 by node distance inside the one object); the asteroid has no Classic edges.

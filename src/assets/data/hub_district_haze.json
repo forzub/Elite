@@ -1,0 +1,727 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "proto_district",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    1798.0,
+    24.0,
+    42.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1798.0,
+    12.0,
+    42.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1798.0,
+    24.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1798.0,
+    12.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1798.0,
+    24.0,
+    242.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1798.0,
+    12.0,
+    242.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1898.0,
+    -132.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1898.0,
+    -144.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1898.0,
+    24.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1898.0,
+    12.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1898.0,
+    24.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1898.0,
+    12.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    80.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    68.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    380.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    368.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1906.0,
+    468.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1918.0,
+    468.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    -132.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    -144.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1906.0,
+    -468.0,
+    14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1918.0,
+    -468.0,
+    14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    24.0,
+    -170.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1998.0,
+    12.0,
+    -170.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1906.0,
+    -14.0,
+    -268.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1918.0,
+    -14.0,
+    -268.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    80.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    68.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    180.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    168.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2006.0,
+    268.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2018.0,
+    268.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    -132.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    -144.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2006.0,
+    -468.0,
+    14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2018.0,
+    -468.0,
+    14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    24.0,
+    42.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    12.0,
+    42.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2006.0,
+    14.0,
+    368.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2018.0,
+    14.0,
+    368.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    24.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2098.0,
+    12.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2006.0,
+    -14.0,
+    -168.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2018.0,
+    -14.0,
+    -168.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    80.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    68.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2106.0,
+    268.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2118.0,
+    268.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    -32.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    -44.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    -132.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    -144.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2106.0,
+    -368.0,
+    14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2118.0,
+    -368.0,
+    14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    24.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    12.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    24.0,
+    242.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    12.0,
+    242.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    24.0,
+    342.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    12.0,
+    342.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    24.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    12.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    24.0,
+    -170.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2198.0,
+    12.0,
+    -170.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    80.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    68.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    180.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    168.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    280.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    268.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    -132.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    -144.0,
+    -14.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    24.0,
+    42.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    12.0,
+    42.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    24.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    12.0,
+    142.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    24.0,
+    242.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    12.0,
+    242.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    24.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2298.0,
+    12.0,
+    -70.0
+   ],
+   "radius_m": 260.0,
+   "density": 1.0
+  }
+ ]
+}

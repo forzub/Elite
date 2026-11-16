@@ -33,6 +33,7 @@ def collect():
     assets, hits, models = {}, {}, {}
     RIGS.clear()
     SETS.clear()
+    ROOTS.clear()
     for m in sorted(pkgutil.iter_modules(units.__path__), key=lambda x: x.name):
         mod = importlib.import_module(f"units.{m.name}")
         for k, v in getattr(mod, "ASSETS", {}).items():
@@ -42,6 +43,8 @@ def collect():
         hits.update(getattr(mod, "HITS", {}))
         RIGS.update(getattr(mod, "RIGS", {}))
         SETS.update(getattr(mod, "SETS", {}))
+        ROOTS.update(getattr(mod, "ROOTS", {}))
+        PASSPORTS.update(getattr(mod, "PASSPORTS", {}))
         for pid, folder in getattr(mod, "MODEL_ASSETS", {}).items():
             if pid in models:
                 raise ValueError(f"part {pid} has two models")
@@ -51,12 +54,18 @@ def collect():
 
 RIGS = {}        # model folder -> rig_fn() (collect)
 SETS = {}        # set folder -> spec of whole models by reference (collect)
+ROOTS = {}       # model folder -> source sub-root when not "equipment" (collect): "hub" = the editor's hub modules
+
+
+def out_dir(asset):
+    """<assets_source>/models/<root>/<asset>: equipment by default, a unit's ROOTS entry otherwise"""
+    return os.path.join(eqlib.SOURCE_MODELS, ROOTS.get(asset, "equipment"), asset)
 PASSPORTS = {}   # model id -> (title, kind, description) of a model the split creates (pads, sets)
 
 
 def _short(asset):
     """the unit's short title for its pad / set ("CR-1 · Cobretty CR-1 Vector Main Drive" -> ("CR-1", the rest))"""
-    p = source_layout.passport(os.path.join(eqlib.OUT, asset), asset, write=False)
+    p = source_layout.passport(out_dir(asset), asset, write=False)
     t = p.get("title", asset)
     return tuple(t.split(" · ", 1)) if " · " in t else (t, "")
 
@@ -70,14 +79,14 @@ def build(only=None):
         for name, part in parts.items():
             if not part.tris():          # a detail dropped at this LOD: no empty OBJ
                 continue
-            base = os.path.join(source_layout.lod_dir(os.path.join(eqlib.OUT, asset), lod), name)
+            base = os.path.join(source_layout.lod_dir(out_dir(asset), lod), name)
             files[base + ".obj"] = eqlib.obj_text(part, name + ".mtl")
             files[base + ".mtl"] = eqlib.mtl_text(part.faces.keys())
             total += part.tris()
         stats[(asset, lod)] = (total, {k: v.tris() for k, v in parts.items() if v.tris()})
 
     def put(asset, name, text):
-        files[os.path.join(source_layout.assembly_dir(os.path.join(eqlib.OUT, asset)), name)] = text
+        files[os.path.join(source_layout.assembly_dir(out_dir(asset)), name)] = text
 
     for asset, fn in assets.items():
         if only and only not in asset:
@@ -127,17 +136,23 @@ def build(only=None):
     for sid, spec in SETS.items():
         if only and only not in sid and not any(only in n[1] for n in spec["nodes"]):
             continue
-        for lod in (0, 1, 2, 3):
-            eqlib._CLOSE[0] = lod == 0
+        # a big assembly (a hub district: hundreds of nodes) views only some LOD levels, from the modules' coarse levels
+        # (spec "view_lods": {set LOD: module lod}); every node's placed copy merges into one part per module folder
+        for lod, mlod in spec.get("view_lods", {0: 0, 1: 0, 2: 1, 3: 2}).items():
+            eqlib._CLOSE[0] = lod == 0 and "view_lods" not in spec
             try:
-                view = {}
+                view, cache = {}, {}
                 for nid, folder, pos, rot, role, parent in spec["nodes"]:
-                    m = pads.merged(folder, list(assets[folder](max(0, lod - 1)).values()))
-                    view[folder] = eqlib.placed(m, pads.euler(rot), pos)
+                    if folder not in cache:
+                        cache[folder] = pads.merged(folder, list(assets[folder](mlod).values()))
+                    view.setdefault(folder, []).append(eqlib.placed(cache[folder], pads.euler(rot), pos))
+                view = {k: pads.merged(k, v) for k, v in view.items()}
             finally:
                 eqlib._CLOSE[0] = False
             emit(sid, lod, view)
-        put(sid, "assembly.json", pads.ref_set_doc(sid, spec["nodes"], {n[0]: hits[n[1]]() for n in spec["nodes"] if n[1] in hits}))
+        category_of = lambda f: {"hub": "hub_modules"}.get(ROOTS.get(f, "equipment"), "equipment_ship")
+        put(sid, "assembly.json", pads.ref_set_doc(sid, spec["nodes"], {n[0]: hits[n[1]]() for n in spec["nodes"] if n[1] in hits},
+                                                   category_of))
         PASSPORTS[sid] = (spec["title"], "assembly", spec["description"])
     return files, stats
 
@@ -153,7 +168,7 @@ def main():
     produced = {os.path.normcase(p) for p in files}
     orphans = []
     for asset in {k[0] for k in stats}:
-        for dp, _, fs in os.walk(source_layout.assembly_dir(os.path.join(eqlib.OUT, asset))):
+        for dp, _, fs in os.walk(source_layout.assembly_dir(out_dir(asset))):
             for f in fs:
                 p = os.path.join(dp, f)
                 if f.endswith((".obj", ".mtl")) and os.path.normcase(p) not in produced:
@@ -172,7 +187,7 @@ def main():
     for p in orphans:
         os.remove(p)
     for asset in {k[0] for k in stats}:
-        source_layout.passport(os.path.join(eqlib.OUT, asset), asset, *PASSPORTS.get(asset, ()))
+        source_layout.passport(out_dir(asset), asset, *PASSPORTS.get(asset, ()))
     print(f"written {len(stale)} of {len(files)} files, removed {len(orphans)} orphans")
 
 

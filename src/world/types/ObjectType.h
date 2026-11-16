@@ -20,5 +20,17 @@ enum class ObjectType : uint16_t
     HubDockServiceBlock,
 
     // OCS-4 orbital cargo shuttle (dock traffic).
-    OrbitalCargoShuttle
+    OrbitalCargoShuttle,
+
+    // Hub district prototype kit (tools/models/units/hub_district.py, game/station/descriptors/HubKitDescriptor.h).
+    HubKitTruss,
+    HubKitHabA,
+    HubKitHabB,
+    HubKitHabC,
+    HubKitTower,
+    HubKitMushroom,
+    HubKitFactory,
+    HubKitTanks,
+    HubKitRock,
+    HubDistrictProto   // the whole district as one object (its package merges the kit modules)
 };

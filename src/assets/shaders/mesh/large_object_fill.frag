@@ -45,6 +45,14 @@ uniform int uSceneStyle; // 0 Elite Classic, 1 Modern, 2 Anime
 
 void main()
 {
+    // Emissive faces (window lights, beacons, floodlights): ModelAssetGpuLibrary passes their glow colour + 2 as the
+    // face colour. Unlit and bright in every style (Classic: points of light on the black structure).
+    if (max(vColor.r, max(vColor.g, vColor.b)) >= 1.5)
+    {
+        vec3 glow = max(vColor - vec3(2.0), vec3(0.0));
+        FragColor = vec4(glow * (uSceneStyle == 1 ? 1.6 : uSceneStyle == 2 ? 1.15 : 0.95), 1.0);
+        return;
+    }
     vec3 n = normalize(vNormal);
     vec3 l = normalize(lightDir);
     vec3 v = normalize(cameraPos - vWorldPos);

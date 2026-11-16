@@ -703,6 +703,28 @@ void ObjectAssemblyRegistry::init()
             {ObjectType::OrbitalCargoShuttle, "ocs4_hull", "orbital_cargo_shuttle",
              "assets/models/ships/orbital_cargo_shuttle.obj", 8000.0f, "ocs4",
              glm::vec3(0.66f, 0.64f, 0.58f)},
+            // hub district prototype kit: the legacy assembly is only the fallback proxy (the coarse LOD3 OBJ,
+            // tools/models/hub_district_world.py) - the mesh editor package draws them (ModelAssetGpuLibrary)
+            {ObjectType::HubKitTruss, "hubk_truss_body", "hubk_truss", "assets/models/hub/hubk_truss/LOD0/hubk_truss.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitHabA, "hubk_hab_a_body", "hubk_hab_a", "assets/models/hub/hubk_hab_a/LOD0/hubk_hab_a.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitHabB, "hubk_hab_b_body", "hubk_hab_b", "assets/models/hub/hubk_hab_b/LOD0/hubk_hab_b.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitHabC, "hubk_hab_c_body", "hubk_hab_c", "assets/models/hub/hubk_hab_c/LOD0/hubk_hab_c.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitTower, "hubk_tower_body", "hubk_tower", "assets/models/hub/hubk_tower/LOD0/hubk_tower.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitMushroom, "hubk_mushroom_body", "hubk_mushroom", "assets/models/hub/hubk_mushroom/LOD0/hubk_mushroom.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitFactory, "hubk_factory_body", "hubk_factory", "assets/models/hub/hubk_factory/LOD0/hubk_factory.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitTanks, "hubk_tanks_body", "hubk_tanks", "assets/models/hub/hubk_tanks/LOD0/hubk_tanks.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubKitRock, "hubk_rock_body", "hubk_rock", "assets/models/hub/hubk_rock/LOD0/hubk_rock.obj", 60000.0f, "hub_kit",
+             glm::vec3(0.40f, 0.41f, 0.43f)},
+            {ObjectType::HubDistrictProto, "hub_proto_district_body", "hub_proto_district",
+             "assets/models/hub/hubk_rock/LOD0/hubk_rock.obj", 60000.0f, "hub_kit", glm::vec3(0.40f, 0.41f, 0.43f)},
         };
         for (const auto& e : entries)
         {

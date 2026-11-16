@@ -186,7 +186,8 @@ def set_doc(unit, ms, unit_hits, pad_hits):
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
 
 
-def ref_set_doc(set_id, nodes, hits_by_node, category_of=lambda folder: "equipment_ship"):
+def ref_set_doc(set_id, nodes, hits_by_node, category_of=lambda folder: "equipment_ship", module_of=None, module_proxies=None,
+                proxy_error_m=40.0):
     """assembly.json of a set of whole models by reference (std.drone.toolbox carry sets, 2026-11-16): nodes =
     [(node id, model folder, position, rotation_deg, role, parent)], hits_by_node = {node id: [hit dicts in the model's
     frame]} - placed into the set frame; mounts link each child to its parent"""
@@ -194,6 +195,8 @@ def ref_set_doc(set_id, nodes, hits_by_node, category_of=lambda folder: "equipme
     for nid, folder, pos, rot, role, parent in nodes:
         out_nodes.append({"id": nid, "part": folder, "parent": parent, "role": role, "ref": category_of(folder) + "/" + folder,
                           "position": [round(x, 4) + 0.0 for x in pos], "rotation_deg": [round(x, 4) + 0.0 for x in rot]})
+        if module_of and nid in module_of:
+            out_nodes[-1]["module"] = module_of[nid]       # a node group (a city block) with one far proxy
         R = euler(rot)
         counts = {}
         for h in hits_by_node.get(nid, []):
@@ -213,4 +216,7 @@ def ref_set_doc(set_id, nodes, hits_by_node, category_of=lambda folder: "equipme
            "seededFrom": ["generator"], "parts": {}, "nodes": out_nodes, "materials": {}, "hit_volumes": hv, "zones": [],
            "mounts": mts, "seams": [], "connections": [],
            "damage": {"states": [], "detachable": [n[0] for n in nodes if n[5]]}}
+    if module_proxies:
+        doc["module_proxies"] = module_proxies
+        doc["hlod"] = {"proxy_error_m": proxy_error_m}
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"

@@ -239,6 +239,41 @@ def mega_layout(seed=7, half=20):
 
 MEGA_NODES, MEGA_HAZE = mega_layout()
 
+CELL = 1200.0     # a city block: its nodes collapse into one simplified mesh far away (module HLOD)
+
+
+def mega_proxies(nodes):
+    """(node -> block, block -> (simplified mesh in the hub frame, a node of the block)): a shaft column = one prism from
+    the deck to the cap (facade - its windows stay as averaged glow), annexes and factories = their boxes, the deck =
+    its tiles; bridges, tank farms, masts, pipes and caps are left out (sub-pixel there)"""
+    import pads
+    module_of, parts, rep, cols = {}, {}, {}, {}
+    for nid, folder, pos, rot, role, parent in nodes:
+        if parent is None:
+            continue                                     # the rock: always its own LODs
+        cell = f"blk_{int(math.floor(pos[0] / CELL))}_{int(math.floor(pos[2] / CELL))}"
+        module_of[nid] = cell
+        rep.setdefault(cell, nid)
+        p = parts.setdefault(cell, Part(cell))
+        R = pads.euler(rot)
+        place = lambda c: tuple(a + b for a, b in zip(apply(R, c), pos))
+        if folder == "hubm_shaft":
+            key = (cell, round(pos[0], 1), round(pos[2], 1))
+            lo, hi = cols.get(key, (pos[1], pos[1]))
+            cols[key] = (min(lo, pos[1]), max(hi, pos[1] + SEG_H + 68.0))
+        elif folder == "hubm_annex":
+            box(p, FACADE, place((0, 65.0, 27.0)), (110.0, 130.0, 54.0), R)
+        elif folder == "hubm_deck":
+            box(p, HULL, place((0, -20.0, 0)), (600.0, 40.0, 600.0), R)
+        elif folder == "hubk_factory":
+            box(p, HULL, place((0, 14.0, 0)), (70.0, 28.0, 45.0), R)
+    for (cell, x, z), (lo, hi) in cols.items():
+        box(parts[cell], FACADE, (x, (lo + hi) / 2, z), (SHAFT_W, hi - lo, SHAFT_W))
+    return module_of, {c: (parts[c], rep[c]) for c in parts if parts[c].tris()}
+
+
+MEGA_MODULE_OF, MEGA_PROXIES = mega_proxies(MEGA_NODES)
+
 ASSETS = {k: v[0] for k, v in KIT.items()}
 HITS = {k: v[1] for k, v in KIT.items()}
 ROOTS = {k: "hub" for k in KIT}
@@ -250,4 +285,7 @@ SETS = {"hub_proto_mega": {
     "description": f"Город на астероиде: {len(MEGA_NODES)} узлов по ссылкам, ущелья 140 м между стенами до 8 км; дымка у {len(MEGA_HAZE)} труб.",
     "nodes": MEGA_NODES,
     "view_mode": "boxes",
+    "modules": MEGA_MODULE_OF,
+    "proxies": MEGA_PROXIES,
+    "proxy_error_m": 40.0,     # the biggest things a block proxy leaves out: bridges, masts, tank farms
     "view_lods": {0: 1, 1: 2, 2: 2}}}

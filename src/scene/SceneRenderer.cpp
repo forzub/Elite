@@ -487,7 +487,9 @@ namespace
                 }
             }
 
-            for (const render::MeshGPU* gpu : order)
+            // DEV: ELITE_DEV_NO_EDGES=1 skips the edge pass of instanced model assets (cost A/B, hub megastructure)
+            static const bool devNoEdges = std::getenv("ELITE_DEV_NO_EDGES") != nullptr;
+            for (const render::MeshGPU* gpu : devNoEdges ? std::vector<const render::MeshGPU*>() : order)
             {
                 const auto& group = groups[gpu];
                 if (group.size() > 1 && edgeInstancedShader != 0)

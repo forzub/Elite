@@ -351,6 +351,16 @@ bool assembleShipAsset(const std::string& dir, const std::string& productionPath
             a.sockets.push_back(frame);
         }
 
+        if (src.contains("hlod") && src.at("hlod").is_object())
+        {
+            // module HLOD by error: the proxies' absolute geometric error, metres (ModelAssetPresentation)
+            Socket h;
+            h.id = "hlod";
+            h.kind = "hlod";
+            h.extent = glm::vec3(src.at("hlod").value("proxy_error_m", 0.0f), 0.0f, 0.0f);
+            a.sockets.push_back(h);
+        }
+
         bool first = true;
         for (const auto& jl : src.at("render_lods"))
         {
@@ -358,7 +368,8 @@ bool assembleShipAsset(const std::string& dir, const std::string& productionPath
             lod.level = jl.at("level").get<std::uint32_t>();
             lod.sourceKind = "generated";
             const std::string role = jl.at("role").get<std::string>();
-            lod.role = role == "shell" ? RenderLodRole::Shell : role == "proxy" ? RenderLodRole::Proxy : RenderLodRole::Component;
+            lod.role = role == "shell" ? RenderLodRole::Shell : role == "proxy" ? RenderLodRole::Proxy
+                     : role == "module_proxy" ? RenderLodRole::ModuleProxy : RenderLodRole::Component;
             // LOD0 error is 0 by definition; coarser levels get a positive placeholder, BUILD measures per node
             lod.relativeGeometricError = lod.level == 0 ? 0.0f : 0.004f * static_cast<float>(lod.level * lod.level);
             std::map<std::string, std::int32_t> gidx;

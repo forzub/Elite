@@ -160,8 +160,15 @@ def build(only=None):
                 eqlib._CLOSE[0] = False
             emit(sid, lod, view)
         category_of = lambda f: {"hub": "hub_modules"}.get(ROOTS.get(f, "equipment"), "equipment_ship")
+        # node groups with a simplified far mesh each (spec "proxies": {module: (Part in the set frame, node id)},
+        # spec "modules": {node id: module}) -> <set>/intact/assembly/proxies/<module>.obj
+        mp = []
+        for mod, (part, rep) in sorted(spec.get("proxies", {}).items()):
+            put(sid, f"proxies/{mod}.obj", eqlib.obj_text(part, f"{mod}.mtl"))
+            put(sid, f"proxies/{mod}.mtl", eqlib.mtl_text(part.faces.keys()))
+            mp.append({"module": mod, "obj": f"proxies/{mod}.obj", "node": rep})
         put(sid, "assembly.json", pads.ref_set_doc(sid, spec["nodes"], {n[0]: hits[n[1]]() for n in spec["nodes"] if n[1] in hits},
-                                                   category_of))
+                                                   category_of, spec.get("modules"), mp, spec.get("proxy_error_m", 40.0)))
         PASSPORTS[sid] = (spec["title"], "assembly", spec["description"])
     return files, stats
 

@@ -281,6 +281,9 @@ Index buildIndex(const ModelAsset& asset)
         index.maxBounds = asset.maxBounds;
     }
     index.characteristicM = lodCharacteristicSize(glm::max(index.maxBounds - index.minBounds, glm::vec3(0.0f)));
+    for (const auto& socket : asset.sockets)
+        if (socket.kind == "hlod" && socket.extent.x > 0.0f)
+            index.moduleProxyErrorM = socket.extent.x;
 
     std::map<std::string, std::size_t> groupOf;
     for (auto& c : index.components)
@@ -464,11 +467,21 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
                 expand(gMin, gMax, any, movedMin[static_cast<std::size_t>(c)], movedMax[static_cast<std::size_t>(c)]);
         }
         bool collapse = false;
-        if (rep == Representation::Component && !g.proxyRenderNodes.empty())
+        // error-based groups (moduleProxyErrorM) also collapse in Full: a city you are inside of is always "full"
+        if ((rep == Representation::Component || (rep == Representation::Full && index.moduleProxyErrorM > 0.0f)) &&
+            !g.proxyRenderNodes.empty())
         {
             const float px = projectedPx(view, gMin, gMax);
             const float h = fresh ? 1.0f : t.hysteresis;
-            collapse = selection.groupCollapsed[gi] ? px < t.moduleCollapsePx * h : px < t.moduleCollapsePx / h;
+            if (index.moduleProxyErrorM > 0.0f)
+            {
+                // the proxy's error in pixels: the group's pixels per metre times the error
+                const float diag = std::max(glm::length(gMax - gMin), 1.0f);
+                const float errPx = px * index.moduleProxyErrorM / diag;
+                collapse = selection.groupCollapsed[gi] ? errPx < t.sseRefinePx * h : errPx < t.sseCoarsenPx / h;
+            }
+            else
+                collapse = selection.groupCollapsed[gi] ? px < t.moduleCollapsePx * h : px < t.moduleCollapsePx / h;
         }
         selection.groupCollapsed[gi] = collapse ? 1 : 0;
         if (!collapse) continue;

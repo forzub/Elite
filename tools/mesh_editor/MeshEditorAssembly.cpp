@@ -827,6 +827,32 @@ json Assembly::build(const ModelCard& card, const json& doc, const std::vector<R
                 ++level;
             }
         }
+        // module proxies (the hub megastructure's HLOD, 2026-11-17: «надо сделать упрощённые меши»): one simplified
+        // mesh per node group ("module" of the nodes - a city block); ModelAssetPresentation draws it instead of the
+        // group's nodes once the group is small on screen. doc.module_proxies = [{module, obj (in the assembly
+        // folder), node (a node of the group)}]; the meshes are in the object frame.
+        if (doc.contains("module_proxies") && doc["module_proxies"].is_array() && !doc["module_proxies"].empty())
+        {
+            json lod = {{"level", level}, {"role", "module_proxy"}, {"geometries", json::array()}, {"nodes", json::array()}};
+            for (const auto& p : doc["module_proxies"])
+            {
+                const std::string gid = "mp." + p.value("module", std::string());
+                std::error_code cec;
+                fs::copy_file(card.folder / p.value("obj", std::string()), geo / (gid + ".obj"), fs::copy_options::overwrite_existing, cec);
+                if (cec)
+                    continue;
+                std::ifstream in(geo / (gid + ".obj"));
+                for (std::string line; std::getline(in, line);)
+                    if (line.rfind("usemtl ", 0) == 0)
+                        used.insert(line.substr(7));
+                lod["geometries"].push_back({{"id", gid}, {"obj", "geo/" + gid + ".obj"}, {"two_sided", false}});
+                lod["nodes"].push_back({{"id", gid}, {"geometry", gid}, {"node", p["node"]}, {"position", {0, 0, 0}}, {"rotation_deg", {0, 0, 0}}});
+            }
+            if (!lod["nodes"].empty())
+                lods.push_back(lod);
+            if (doc.contains("hlod"))
+                src["hlod"] = doc["hlod"];
+        }
         if (needWhole)
             nodes.push_back({{"id", "whole"}, {"module", "whole"}});
         src["nodes"] = nodes;

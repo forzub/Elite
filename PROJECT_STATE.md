@@ -5943,3 +5943,16 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   drawn, GPU 13 ms), from 14 km above p50 50 ms (scene_main_render 37 ms): the whole object picks one LOD and draws
   every node - next: per-node LOD + culling inside the object. Frames D:/tmp/hub/mega_modern.png, mega3.png.
 
+- 2026-11-17 MEGASTRUCTURE HLOD (author: «надо сделать упрощённые меши, сэкономим кучу точек»). Correction of my earlier
+  claim: per-node LOD + culling already worked (canyon: 6959 of 8884 culled, LOD draws 31/399/1495). Added city-block
+  proxies: hub_mega.py cuts the city into 1.2 km blocks (nodes get "module" = block), a simplified mesh per block
+  (a shaft column = one facade prism deck-to-cap, annex / factory / deck boxes; bridges, masts, tank farms, pipes, caps
+  left out) -> assembly proxies/<block>.obj + doc module_proxies + hlod.proxy_error_m 40; the mesh editor package gets a
+  module_proxy render LOD (ShipAssetAssemble role "module_proxy" -> RenderLodRole::ModuleProxy) and an "hlod" socket
+  (extent.x = error m); ModelAssetPresentation collapses a group when the proxy error projects under the SSE target
+  (moduleProxyErrorM, also in the Full representation). 100 proxies, 53.6k triangles in all. LIVE: from 14 km 65 of
+  100 blocks collapse, 1.10 M -> 0.67 M triangles, GPU 27.8 -> 20.3 ms; canyon unchanged (far blocks were culled).
+  A/B ELITE_DEV_NO_EDGES=1 (new DEV switch, instanced edge pass off): GPU top 20.3 -> 13.5 ms, canyon -> 11.8 ms; frame
+  p50 still 27 ms in the canyon: the remaining cost is pixel fill of the huge overlapping walls (fill shader +
+  overdraw), not triangles. Next: cheaper far shading / draw order (front-to-back, depth prepass), edges only near.
+

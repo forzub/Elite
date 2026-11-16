@@ -103,6 +103,10 @@ struct Index
     glm::vec3 minBounds {0.0f};
     glm::vec3 maxBounds {0.0f};
     float characteristicM = 1.0f; // lodCharacteristicSize(asset bounds)
+    // Module HLOD by error (an asset socket kind "hlod", extent.x = metres): a group collapses to its proxy once
+    // the proxy's absolute geometric error projects under the coarsen target - a big group (a city block of the
+    // hub megastructure) goes to its simplified mesh by what the eye can tell apart, not by its own size.
+    float moduleProxyErrorM = 0.0f;
 };
 
 Index buildIndex(const ModelAsset& asset);

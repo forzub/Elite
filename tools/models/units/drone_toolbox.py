@@ -324,26 +324,118 @@ def prop_point(joints, prop, p_box):
     return at(fk(joints, {}), prop["part"], q)
 
 
-def take_clip(joints, prop, arm, tool, work, cid, title):
-    """a clip where the drone opens the box on its back, takes `tool` out with the arm's hand, works with it (`work` =
-    [(dt, target point) | (dt, "wrist", degrees)]) and puts it back (MESH_EDITOR_SPEC 18.18). arm = {chain, bounds, hand,
-    grip (rest point between the fingers), up (the hand's back normal, rest), fingers {part: closed angle}, wrist}.
+def _box_aabb(joints, place, m):
+    """the box (lid closed) at a placement, axis-aligned in the drone frame, grown by m"""
+    cs = [prop_point(joints, place, (sx * TB_SIZE[0] / 2, y, sz * TB_SIZE[2] / 2))
+          for sx in (-1, 1) for sz in (-1, 1) for y in (-TB_PLATE, TB_SIZE[1] + TB_LID)]
+    return (tuple(min(c[i] for c in cs) - m for i in range(3)), tuple(max(c[i] for c in cs) + m for i in range(3)))
+
+
+def take_clip(joints, prop, arm, ground, tool, work, cid, title):
+    """a tool clip (MESH_EDITOR_SPEC 18.18; author 2026-11-16: «рука дрона проходит сквозь ящик. я думаю ему следует
+    снимать его прежде чем что-то доставать»): the hand takes the box by its handle off the saddle, sets it down on the
+    hull at `ground` ({point_m, rotation_deg} in the drone frame, base on the hull), the lid opens, the hand takes `tool`
+    out, works (`work` = [(dt, target point) | (dt, "wrist", degrees)]), puts the tool back, the lid closes, the box goes
+    back onto the saddle. arm = {chain, bounds, hand, grip (rest point between the fingers), up (the hand's back normal),
+    fingers {part: closed angle}, wrist, avoid (forearm part, rest points, radius)}. Arm angles by IK.
     Returns (clip, used angles per chain joint, worst IK miss in metres)."""
+    pid = prop["id"]
+    chain, bounds, hand = arm["chain"], arm["bounds"], arm["hand"]
+    gplace = {"part": prop["part"], "point_m": list(ground["point_m"]), "rotation_deg": list(ground["rotation_deg"])}
+    handle = (0.0, TB_HANDLE_Y, 0.0)
+    h_s, h_g = prop_point(joints, prop, handle), prop_point(joints, gplace, handle)
+    t_g = prop_point(joints, gplace, TB_TOOLS[tool][2])
+    av = {}
+    if arm.get("avoid"):
+        part, pts, m = arm["avoid"]
+        av = {"saddle": {"part": part, "pts": pts, "box": _box_aabb(joints, prop, m)},
+              "ground": {"part": part, "pts": pts, "box": _box_aabb(joints, gplace, m)}}
+    errs = []
+
+    def solve(tgt, w_up, seed=None, where=None):
+        a, e = ik(joints, {}, chain, bounds, hand, arm["grip"], tgt, arm["up"], (0, 1, 0), w_up,
+                  [[seed[c] for c in chain]] if seed else (), av.get(where))
+        errs.append(e)
+        return a
+
+    rest = {c: 0.0 for c in chain}
+    # 1. the box off the saddle onto the hull
+    s_above = solve(_add3(h_s, (0, 0.12, 0)), 0.002, None, "saddle")
+    s_at = solve(h_s, 0.002, s_above, "saddle")
+    s_lift = solve(_add3(h_s, (0, 0.22, 0)), 0.0, s_at)
+    g_above = solve(_add3(h_g, (0, 0.18, 0)), 0.0, s_lift)
+    g_at = solve(h_g, 0.002, g_above)
+    g_up = solve(_add3(h_g, (0, 0.18, 0)), 0.002, g_at, "ground")
+    # 2. the tool out of the box on the hull
+    t_above = solve(_add3(t_g, (0, 0.18, 0)), 0.002, g_up, "ground")
+    t_at = solve(t_g, 0.002, t_above, "ground")
+    t_lift = solve(_add3(t_g, (0, 0.38, 0)), 0.0, t_at)
+    P = [(0.0, rest), (1.0, s_above), (1.5, s_at), (1.8, s_at), (2.4, s_lift), (3.4, g_above), (4.0, g_at), (4.3, g_at),
+         (4.8, g_up), (5.8, t_above), (6.4, t_at), (6.7, t_at), (7.3, t_lift)]
+    take_box, put_box, take_tool = 1.8, 4.3, 6.7
+    t, last = 7.3, t_lift
+    for dt, *what in work:
+        t += dt
+        if what[0] == "wrist":
+            a = dict(last)
+            a[arm["wrist"]] = round(a.get(arm["wrist"], 0.0) + what[1], 1)
+        else:
+            a = solve(what[0], 0.0, last)
+            last = a
+        P.append((t, a))
+    # 3. back: the tool into the foam, the lid closes, the box onto the saddle
+    t += 0.9
+    P += [(t, t_lift), (t + 0.6, t_above), (t + 1.1, t_at), (t + 1.4, t_at), (t + 2.0, t_above), (t + 2.6, g_up)]
+    stow, lid_shut = t + 1.4, t + 3.3
+    t = lid_shut
+    P += [(t + 0.5, g_at), (t + 0.8, g_at), (t + 1.4, g_above), (t + 2.4, s_lift), (t + 3.0, s_at), (t + 3.3, s_at),
+          (t + 3.9, s_above), (t + 4.8, rest)]
+    take_box2, dock = t + 0.8, t + 3.3
+    T = t + 5.2
+    keys = {c: [[round(tt, 2), p.get(c, 0.0)] for tt, p in P] + [[round(T, 2), 0.0]] for c in chain}
+    r = lambda x: round(x, 2)
+    for f, closed in arm["fingers"].items():
+        keys[f] = [[0, 0], [1.0, -5], [1.5, -5], [1.8, closed], [4.3, closed], [4.6, -5], [6.4, -5], [6.7, closed],
+                   [r(stow), closed], [r(stow + 0.3), -5], [r(take_box2 - 0.3), -5], [r(take_box2), closed],
+                   [r(dock), closed], [r(dock + 0.3), -5], [r(T - 0.4), 0], [r(T), 0]]
+    keys[f"{pid}/tb_handle"] = [[0, 0], [4.8, 0], [5.1, 90], [r(lid_shut - 0.2), 90], [r(lid_shut + 0.2), 0], [r(T), 0]]
+    keys[f"{pid}/tb_lid"] = [[0, 0], [5.0, 0], [5.7, 105], [r(stow + 0.8), 105], [r(lid_shut - 0.2), 0], [r(T), 0]]
+    grip = [round(v, 4) for v in arm["grip"]]
+    events = [{"t": take_box, "take": pid, "hand": hand, "grip": grip, "handle": list(handle)},
+              {"t": put_box, "put": pid, "point_m": gplace["point_m"], "rotation_deg": gplace["rotation_deg"]},
+              {"t": take_tool, "take": f"{pid}/{tool}", "hand": hand},
+              {"t": r(stow), "stow": f"{pid}/{tool}"},
+              {"t": r(take_box2), "take": pid, "hand": hand, "grip": grip, "handle": list(handle)},
+              {"t": r(dock), "dock": pid}]
+    clip = {"id": cid, "title": title, "duration_s": r(T), "loop": True, "props": [pid], "keys": keys, "events": events,
+            "ik_miss_m": [round(e, 3) for e in errs]}
+    used = {c: [min(p.get(c, 0.0) for _, p in P), max(p.get(c, 0.0) for _, p in P)] for c in chain}
+    return clip, used, max(errs)
+
+
+def take_from_saddle(joints, prop, arm, tool, work, cid, title):
+    """a tool clip straight from the box on the saddle (the mantis: its arms reach the box over the shoulder without
+    passing through it - author 2026-11-16: «а вот богомол - берет хорошо»): the lid opens, the hand takes `tool`, works,
+    puts it back, the lid closes. Same arguments as take_clip without `ground`."""
     pid = prop["id"]
     gp = prop_point(joints, prop, TB_TOOLS[tool][2])
     chain, bounds, hand = arm["chain"], arm["bounds"], arm["hand"]
     avoid = None
-    if arm.get("avoid"):                           # the box in the drone frame (rest), grown by the forearm's radius
+    if arm.get("avoid"):
         part, pts, m = arm["avoid"]
-        cs = [prop_point(joints, prop, (sx * TB_SIZE[0] / 2, y, sz * TB_SIZE[2] / 2))
-              for sx in (-1, 1) for sz in (-1, 1) for y in (0.0, TB_SIZE[1] + TB_LID)]
-        avoid = {"part": part, "pts": pts, "box": (tuple(min(c[i] for c in cs) - m for i in range(3)),
-                                                    tuple(max(c[i] for c in cs) + m for i in range(3)))}
-    solve = lambda tgt, w_up, seeds=(): ik(joints, {}, chain, bounds, hand, arm["grip"], tgt, arm["up"], (0, 1, 0), w_up, seeds, avoid)
-    above, e1 = solve(_add3(gp, (0, 0.16, 0)), 0.002)
-    grip, e2 = solve(gp, 0.002, [[above[c] for c in chain]])
-    lift, e3 = solve(_add3(gp, (0, 0.34, 0)), 0.0, [[grip[c] for c in chain]])
-    poses, errs = [(1.6, above), (2.2, grip), (2.5, grip), (3.1, lift)], [e1, e2, e3]
+        avoid = {"part": part, "pts": pts, "box": _box_aabb(joints, prop, m)}
+    errs = []
+
+    def solve(tgt, w_up, seed=None):
+        a, e = ik(joints, {}, chain, bounds, hand, arm["grip"], tgt, arm["up"], (0, 1, 0), w_up,
+                  [[seed[c] for c in chain]] if seed else (), avoid)
+        errs.append(e)
+        return a
+
+    above = solve(_add3(gp, (0, 0.16, 0)), 0.002)
+    grip = solve(gp, 0.002, above)
+    lift = solve(_add3(gp, (0, 0.34, 0)), 0.0, grip)
+    P = [(0.0, {c: 0.0 for c in chain}), (1.6, above), (2.2, grip), (2.5, grip), (3.1, lift)]
     t, last = 3.1, lift
     for dt, *what in work:
         t += dt
@@ -351,23 +443,23 @@ def take_clip(joints, prop, arm, tool, work, cid, title):
             a = dict(last)
             a[arm["wrist"]] = round(a.get(arm["wrist"], 0.0) + what[1], 1)
         else:
-            a, e = solve(what[0], 0.0, [[last[c] for c in chain]])
-            errs.append(e)
+            a = solve(what[0], 0.0, last)
             last = a
-        poses.append((t, a))
+        P.append((t, a))
     t += 0.9
-    poses += [(t, lift), (t + 0.6, above), (t + 1.1, grip), (t + 1.6, above), (t + 2.4, {c: 0.0 for c in chain})]
+    P += [(t, lift), (t + 0.6, above), (t + 1.1, grip), (t + 1.6, above), (t + 2.4, {c: 0.0 for c in chain})]
     stow, T = t + 1.15, t + 3.4
-    keys = {c: [[0, 0.0]] + [[round(tt, 2), p.get(c, 0.0)] for tt, p in poses] + [[round(T, 2), 0.0]] for c in chain}
+    r = lambda x: round(x, 2)
+    keys = {c: [[r(tt), p.get(c, 0.0)] for tt, p in P] + [[r(T), 0.0]] for c in chain}
     for f, closed in arm["fingers"].items():
-        keys[f] = [[0, 0], [1.6, -5], [2.2, -5], [2.5, closed], [round(stow, 2), closed], [round(stow + 0.3, 2), -5],
-                   [round(t + 2.4, 2), 0], [round(T, 2), 0]]
-    keys[f"{pid}/tb_handle"] = [[0, 0], [0.5, 90], [round(T - 0.5, 2), 90], [round(T, 2), 0]]
-    keys[f"{pid}/tb_lid"] = [[0, 0], [0.5, 0], [1.2, 105], [round(t + 2.4, 2), 105], [round(T - 0.5, 2), 0], [round(T, 2), 0]]
-    clip = {"id": cid, "title": title, "duration_s": round(T, 2), "loop": True, "props": [pid], "keys": keys,
-            "events": [{"t": 2.5, "take": f"{pid}/{tool}", "hand": hand}, {"t": round(stow, 2), "stow": f"{pid}/{tool}"}]}
-    used = {c: [min(p.get(c, 0.0) for _, p in poses + [(0, {})]), max(p.get(c, 0.0) for _, p in poses + [(0, {})])] for c in chain}
-    clip["ik_miss_m"] = [round(e, 3) for e in errs]
+        keys[f] = [[0, 0], [1.6, -5], [2.2, -5], [2.5, closed], [r(stow), closed], [r(stow + 0.3), -5],
+                   [r(t + 2.4), 0], [r(T), 0]]
+    keys[f"{pid}/tb_handle"] = [[0, 0], [0.5, 90], [r(T - 0.5), 90], [r(T), 0]]
+    keys[f"{pid}/tb_lid"] = [[0, 0], [0.5, 0], [1.2, 105], [r(t + 2.4), 105], [r(T - 0.5), 0], [r(T), 0]]
+    clip = {"id": cid, "title": title, "duration_s": r(T), "loop": True, "props": [pid], "keys": keys,
+            "events": [{"t": 2.5, "take": f"{pid}/{tool}", "hand": hand}, {"t": r(stow), "stow": f"{pid}/{tool}"}],
+            "ik_miss_m": [round(e, 3) for e in errs]}
+    used = {c: [min(p.get(c, 0.0) for _, p in P), max(p.get(c, 0.0) for _, p in P)] for c in chain}
     return clip, used, max(errs)
 
 

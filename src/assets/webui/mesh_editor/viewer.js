@@ -160,8 +160,7 @@ function poseWorld(rig, angles) {
 }
 // props of the rig (MESH_EDITOR_SPEC 18.18): another model shown with this one - a repair drone's toolbox on its saddle.
 // rig.props[i] = {id, ref, part, point_m, rotation_deg, parts: [{key, tris}], rig}; clip keys "<prop id>/<part>" pose the
-// prop's own joints (the lid); extra.held = [{tool: "<prop id>/<part>", hand: <part>, at: angles at the take}] - from
-// the take on, the tool keeps the offset to the hand it had at that moment (no jump), until it is stowed
+// prop's own joints (the lid); extra = {props: shown ids, t, events: the clip's events, anglesAt(t)} - see propBase
 const propsState = { rig: null, root: null, items: [] };
 function propsFor(rig) {
   if (propsState.rig === rig) return propsState;
@@ -192,33 +191,81 @@ function propsFor(rig) {
   }
   return propsState;
 }
+// events of a clip (MESH_EDITOR_SPEC 18.18): {t, take: "<prop>", hand, grip, handle} - the hand carries the whole prop
+// by its handle (position from the hand, orientation eased from the pose at the take to the pose of the next put /
+// dock); {t, put: "<prop>", point_m, rotation_deg} - set down in the frame of the prop's drone part; {t, dock: "<prop>"}
+// - back on its saddle; {t, take: "<prop>/<part>", hand} / {t, stow} - a tool in the hand (the offset to the hand it
+// had at the take) and back into the prop
+function placeMatrix(point, rotDeg) {
+  const r = (rotDeg || [0, 0, 0]).map((a) => THREE.MathUtils.degToRad(a));
+  return new THREE.Matrix4().makeTranslation(...(point || [0, 0, 0]))
+    .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(r[0], r[1], r[2], 'XYZ')));
+}
+function propBase(it, t, ctx, depth = 0) {
+  const evs = ctx.events.filter((e) => e.take === it.p.id || e.put === it.p.id || e.dock === it.p.id);
+  let k = -1;
+  for (let i = 0; i < evs.length; i++) if (evs[i].t <= t) k = i;
+  const w = ctx.worldAt(t);
+  const saddle = () => w(it.p.part).clone().multiply(it.place);
+  if (k < 0 || depth > 16) return saddle();
+  const e = evs[k];
+  if (e.dock) return saddle();
+  if (e.put) return w(it.p.part).clone().multiply(placeMatrix(e.point_m, e.rotation_deg));
+  // carried: from the pose just before the take to the pose of the next put / dock
+  const start = propBase(it, e.t - 1e-4, ctx, depth + 1);
+  const nx = evs[k + 1];
+  let end = start, u = 0;
+  if (nx) {
+    const we = ctx.worldAt(nx.t);
+    end = nx.put ? we(it.p.part).clone().multiply(placeMatrix(nx.point_m, nx.rotation_deg)) : we(it.p.part).clone().multiply(it.place);
+    u = Math.min(1, Math.max(0, (t - e.t) / Math.max(1e-6, nx.t - e.t)));
+    u = u * u * (3 - 2 * u);
+  }
+  const q0 = new THREE.Quaternion().setFromRotationMatrix(start), q1 = new THREE.Quaternion().setFromRotationMatrix(end);
+  const q = q0.clone().slerp(q1, u);
+  const hp = new THREE.Vector3(...(e.grip || [0, 0, 0])).applyMatrix4(w(e.hand));
+  const off = new THREE.Vector3(...(e.handle || [0, 0, 0])).applyQuaternion(q);
+  return new THREE.Matrix4().compose(hp.sub(off), q, new THREE.Vector3(1, 1, 1));
+}
 function applyProps(world) {
   const pose = state.pose;
   const ps = propsFor(pose ? pose.rig : null);
   if (!ps.root) return;
-  const shown = new Set((pose && pose.extra && pose.extra.props) || []);
+  const extra = (pose && pose.extra) || {};
+  const shown = new Set(extra.props || []);
   ps.root.visible = shown.size > 0;
   if (!ps.root.visible) return;
   if (!ps.root.parent) scene.add(ps.root);
   const angles = pose.angles || {};
-  const placeOf = (it, w) => w(it.p.part).clone().multiply(it.place);
+  const t = extra.t || 0;
+  const cache = new Map();
+  const worldAt = (tt) => {
+    if (Math.abs(tt - t) < 1e-9 || !extra.anglesAt) return world;
+    const key = tt.toFixed(5);
+    if (!cache.has(key)) cache.set(key, poseWorld(pose.rig, extra.anglesAt(tt)));
+    return cache.get(key);
+  };
+  const ctx = { events: [...(extra.events || [])].sort((a, b) => a.t - b.t), worldAt };
+  const ownPose = (it, ang) => {
+    const own = {};
+    for (const [k, v] of Object.entries(ang)) if (k.startsWith(it.p.id + '/')) own[k.slice(it.p.id.length + 1)] = v;
+    return it.p.rig && it.p.rig.joints ? poseWorld(it.p.rig, own) : () => new THREE.Matrix4();
+  };
   for (const it of ps.items) {
     const on = shown.has(it.p.id);
-    const own = {};
-    for (const [k, v] of Object.entries(angles)) if (k.startsWith(it.p.id + '/')) own[k.slice(it.p.id.length + 1)] = v;
-    const pw = it.p.rig && it.p.rig.joints ? poseWorld(it.p.rig, own) : () => new THREE.Matrix4();
-    const base = placeOf(it, world);
+    const pw = ownPose(it, angles);
+    const base = propBase(it, t, ctx);
     for (const [key, m] of it.meshes) {
       m.visible = on;
-      const held = ((pose.extra && pose.extra.held) || []).find((h) => h.tool === `${it.p.id}/${key}`);
-      if (held) {
-        // the tool's world at the take (box pose then, rest pose of the tool) relative to the hand then
-        const w0 = poseWorld(pose.rig, held.at);
-        const own0 = {};
-        for (const [k, v] of Object.entries(held.at)) if (k.startsWith(it.p.id + '/')) own0[k.slice(it.p.id.length + 1)] = v;
-        const toolAt = placeOf(it, w0).multiply((it.p.rig && it.p.rig.joints ? poseWorld(it.p.rig, own0) : () => new THREE.Matrix4())(key));
-        const offset = w0(held.hand).clone().invert().multiply(toolAt);
-        m.matrix.copy(world(held.hand)).multiply(offset);
+      const full = `${it.p.id}/${key}`;
+      let last = null;
+      for (const e of ctx.events) if (e.t <= t && (e.take === full || e.stow === full)) last = e;
+      if (last && last.take) {
+        const a0 = extra.anglesAt ? extra.anglesAt(last.t) : angles;
+        const toolAt = propBase(it, last.t, ctx).multiply(ownPose(it, a0)(key));
+        const w0 = worldAt(last.t);
+        const offset = w0(last.hand).clone().invert().multiply(toolAt);
+        m.matrix.copy(world(last.hand)).multiply(offset);
       } else {
         m.matrix.copy(base).multiply(pw(key));
       }

@@ -387,14 +387,15 @@ def rc3_tool_clips():
            "fingers": {"rc3_hand_l_f1": 70, "rc3_hand_l_f2": 70, "rc3_hand_l_thumb": 50},
            "avoid": ("rc3_arm_l_fore", [_lerp(E, W, u) for u in (0.0, 0.2, 0.4, 0.6)], 0.10)}
     prop = dict(RC3_PROP)
-    raise_, hit = (0.42, 1.30, 0.80), (0.30, 0.12, 1.25)
-    clip, used, err = take_clip(RC3_RIG, prop, arm, "tb_tool_hammer",
+    raise_, hit = (0.58, 1.20, 0.90), (0.66, 0.10, 1.15)
+    ground = {"point_m": (0.08, 0.0, 1.05), "rotation_deg": (0.0, 0.0, 0.0)}     # the box set down on the hull ahead
+    clip, used, err = take_clip(RC3_RIG, prop, arm, ground, "tb_tool_hammer",
                                 [(0.8, raise_), (0.35, hit), (0.6, raise_), (0.35, hit), (0.6, raise_)],
-                                "hammer", "Кувалда: достать из ящика, два удара по обшивке, убрать")
+                                "hammer", "Кувалда: снять ящик, достать, два удара по обшивке, убрать, ящик на спину")
     widen(RC3_RIG, used)
-    clip2, used2, err2 = take_clip(RC3_RIG, prop, arm, "tb_tool_bar",
-                                   [(0.9, (0.36, 0.16, 1.05)), (0.6, (0.36, 0.40, 1.00)), (0.6, (0.36, 0.16, 1.05)),
-                                    (0.6, (0.36, 0.40, 1.00))], "bar", "Лом: достать, поддеть панель, убрать")
+    clip2, used2, err2 = take_clip(RC3_RIG, prop, arm, ground, "tb_tool_bar",
+                                   [(0.9, (0.64, 0.16, 1.15)), (0.6, (0.64, 0.40, 1.10)), (0.6, (0.64, 0.16, 1.15)),
+                                    (0.6, (0.64, 0.40, 1.10))], "bar", "Лом: снять ящик, достать, поддеть панель, убрать, ящик на спину")
     widen(RC3_RIG, used2)
     return [clip, clip2], max(err, err2)
 

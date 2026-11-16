@@ -5846,3 +5846,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   D:/tmp/toolbox_tools.png; step 1 clean on the 5 models; shells + packages 5 / 0 failures. Open: the arm-vs-carapace
   collision is not checked (only forearm vs box); the toolbox has no damaged variants yet.
 
+- 2026-11-16 CRAB TAKES THE BOX OFF FIRST (MESH_EDITOR_SPEC 18.18). Author: «рука дрона проходит сквозь ящик. я думаю
+  ему следует снимать его прежде чем что-то доставать» + «а вот богомол - берет хорошо». RC-3 clips (hammer, bar):
+  the hand takes the box by its handle off the saddle, sets it on the hull ahead, the lid opens, the tool comes out,
+  works, goes back, the lid closes, the box goes back onto the saddle (drone_toolbox.take_clip with `ground`; IK grip
+  error <= 7 mm). RM-2 keeps the take straight from the box on its back (take_from_saddle). Clip events gain take of a
+  whole prop (by its handle) / put / dock; the player carries the box with the hand (orientation eased between the
+  poses). LIVE: headless editor frames D:/tmp/crab_boxdown.png; step 1 clean; shells + packages rebuilt.

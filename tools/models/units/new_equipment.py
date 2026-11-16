@@ -11,7 +11,7 @@
 import math
 
 from eqlib import *  # noqa: F401,F403 - the unit kernel (geometry, LOD policy, shared builders)
-from units.drone_toolbox import carry_set, take_clip, tb_saddle, toolbox_prop, widen
+from units.drone_toolbox import carry_set, take_from_saddle, tb_saddle, toolbox_prop, widen
 
 register_materials({
     # Sol Mass Yards (serial school)
@@ -972,9 +972,9 @@ def rm2_tool_clips():
            "fingers": {"rm2_hand_l_f1": 70, "rm2_hand_l_f2": 70, "rm2_hand_l_thumb": 45},
            "avoid": ("rm2_arm_l_fore", [_lerp(E, Wp, u) for u in (0.0, 0.3, 0.6)], 0.05)}
     nut = (0.12, 0.30, 1.20)
-    clip, used, err = take_clip(RM2_RIG, RM2_PROP, arm, "tb_tool_wrench",
+    clip, used, err = take_from_saddle(RM2_RIG, RM2_PROP, arm, "tb_tool_wrench",
                                 [(0.9, nut), (0.5, "wrist", 35), (0.5, "wrist", -35), (0.5, "wrist", 35), (0.5, "wrist", -35)],
-                                "wrench", "Ключ: достать из ящика, повернуть гайку, убрать")
+                                "wrench", "Ключ: достать из ящика на спине, повернуть гайку, убрать")
     widen(RM2_RIG, used)
     return [clip], err
 

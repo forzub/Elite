@@ -543,20 +543,13 @@ const Anim = {
     const angles = this.angles(this.t);
     whenViewer((v) => v.setPose(this.rig, angles, this.extra(this.t)));
   },
-  // props shown (the checkbox, or the clip uses them) and the tools held at time t (clip events take / stow)
+  // props shown (the checkbox, or the clip uses them); the clip's events (take / put / dock / stow) and the angles at any
+  // time - the viewer places the carried box and the held tool from them (MESH_EDITOR_SPEC 18.18)
   extra(t) {
     const props = new Set();
     if ($('animProps').checked) for (const p of this.rig.props || []) props.add(p.id);
     for (const id of (this.clip && this.clip.props) || []) props.add(id);
-    const last = new Map();
-    for (const e of [...((this.clip && this.clip.events) || [])].sort((a, b) => a.t - b.t)) {
-      if (e.t > t) break;
-      const tool = e.take || e.stow;
-      if (tool) last.set(tool, e);
-    }
-    const held = [];
-    for (const [tool, e] of last) if (e.take) held.push({ tool, hand: e.hand, at: this.angles(e.t) });
-    return { props: [...props], held };
+    return { props: [...props], t, events: (this.clip && this.clip.events) || [], anglesAt: (tt) => this.angles(tt) };
   },
   play() {
     if (!this.clip) return;

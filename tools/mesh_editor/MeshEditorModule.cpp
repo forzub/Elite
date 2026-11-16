@@ -266,7 +266,10 @@ bool ModuleFiles::writePackage(const ModuleShell& m, const fs::path& elmodel, st
                 c.radiusTop = h.value("radius_top", -1.0f);   // a frustum (a conical pad)
             }
             else
+            {
                 c.halfSize = vec3(h.value("half_size", json()), glm::vec3(0.5f));
+                c.hexTop = h.value("hex_top", -1.0f);   // a hexagonal prism
+            }
             a.collisionVolumes.push_back(c);
         }
         // the mounting point: the module's origin (the generators put the flange there)
@@ -404,6 +407,8 @@ void ModuleFiles::writeGltf(const ModuleShell& m, const fs::path& gltf, bool ext
                          {"extras", {{"elite_hit", h.value("node", std::string())}, {"elite_shape", cyl ? "cylinder" : "box"}}}});
         if (cyl && h.contains("radius_top"))   // a frustum: the top radius relative to the bottom one (the scale)
             nodes.back()["extras"]["elite_radius_top"] = h["radius_top"];
+        if (!cyl && h.contains("hex_top"))      // a hexagonal prism inside the box
+            nodes.back()["extras"]["elite_hex_top"] = h["hex_top"];
         roots.push_back(nodes.size() - 1);
     }
     if (extras)

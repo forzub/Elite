@@ -1420,6 +1420,13 @@ int main()
         cone.halfHeight = 0.67f;
         cone.radiusTop = 0.16f;
         asset.collisionVolumes.push_back(cone);
+        // a hexagonal prism: a box with hexTop (second trailing block of COLL)
+        CollisionVolume hex;
+        hex.id = "hit.src.hex.1";
+        hex.shape = CollisionShape::Box;
+        hex.halfSize = glm::vec3(0.62f, 0.54f, 1.2f);
+        hex.hexTop = 0.31f;
+        asset.collisionVolumes.push_back(hex);
 
         const auto path = std::filesystem::temp_directory_path() / "elite_model_asset_v4_roundtrip.elmodel";
         std::string error;
@@ -1447,6 +1454,12 @@ int main()
             require(cone != manifestOnly.collisionVolumes.end() && cone->shape == CollisionShape::Cylinder &&
                     near(cone->radius, 1.75f) && near(cone->halfHeight, 0.67f) && near(cone->radiusTop, 0.16f),
                 "frustum collision volume did not survive the manifest roundtrip");
+            const auto hex = std::find_if(manifestOnly.collisionVolumes.begin(), manifestOnly.collisionVolumes.end(),
+                [](const CollisionVolume& c) { return c.id == "hit.src.hex.1"; });
+            require(hex != manifestOnly.collisionVolumes.end() && hex->shape == CollisionShape::Box &&
+                    near(hex->halfSize.x, 0.62f) && near(hex->halfSize.z, 1.2f) && near(hex->hexTop, 0.31f),
+                "hexagonal prism collision volume did not survive the manifest roundtrip");
+            require(it->hexTop < 0.0f && cone->hexTop < 0.0f, "a cylinder gained a hexagon top in the manifest roundtrip");
         }
         require(manifestOnly.formatVersion == 4 && manifestOnly.renderLods.size() == 3,
             "v4 manifest did not preserve render LOD descriptors");
@@ -1523,7 +1536,7 @@ int main()
             "state transform/pivot override lost");
         require(loaded.stateVariants[0].physicsOverride && near(loaded.stateVariants[0].physics.massKg, 980.0f),
             "state rigid-body override lost");
-        require(loaded.collisionVolumes.size() == 4 && loaded.collisionVolumes[1].activeStates.size() == 1 && // + drum, cone
+        require(loaded.collisionVolumes.size() == 5 && loaded.collisionVolumes[1].activeStates.size() == 1 && // + drum, cone, hex
                 loaded.collisionVolumes[1].activeStates[0] == "breached",
             "state-scoped collision lost");
         require(loaded.physicalSize.enabled && loaded.physicalSize.axis == PhysicalSizeAxis::Z &&

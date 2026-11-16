@@ -543,6 +543,16 @@ def hbox(part, center, size, rot=(0.0, 0.0, 0.0)):
             "half_size": [size[0] / 2, size[1] / 2, size[2] / 2]}
 
 
+def hhex(part, center, half, top, rot=(0.0, 0.0, 0.0)):
+    """a hexagonal prism (author 2026-11-16: «у тебя есть модули шестиугольной формы, а хитвалумы у них -
+    параллелепипеды. может сделать - шестигранной призмой?»): a box (CollisionShape::Box) with hex_top - the section in
+    the local XY plane has vertices (+-half[0], 0) and (+-top, +-half[1]), the prism runs along local Z (half[2]); a
+    regular hexagon: top = half[0] / 2, half[1] = half[0] * sin 60. rot (T * Rx * Ry * Rz) turns it like any box."""
+    v = hbox(part, center, (2 * half[0], 2 * half[1], 2 * half[2]), rot)
+    v["hex_top"] = top
+    return v
+
+
 def hcyl(part, p0, p1, r, r1=None):
     """a cylinder between two points (radius r; with r1 - a frustum, radius r at p0 and r1 at p1); only axis-aligned
     (X/Y/Z) or XY-plane radial axes are needed here"""
@@ -600,7 +610,7 @@ def scaled_hits(base_hits, D, s, pad_side, rename=None):
             v["position"] = [x * s for x in v["position"]]
             if "half_size" in v:
                 v["half_size"] = [x * s for x in v["half_size"]]
-            for k in ("radius", "half_height", "radius_top"):
+            for k in ("radius", "half_height", "radius_top", "hex_top"):
                 if k in v:
                     v[k] *= s
             for a, b in (rename or {}).items():
@@ -718,15 +728,17 @@ def hits_text(asset, hits_fn):
         for k in ("position", "rotation_deg", "half_size"):
             if k in v:
                 v[k] = [round(x, 4) + 0.0 for x in v[k]]
-        for k in ("radius", "half_height", "radius_top"):
+        for k in ("radius", "half_height", "radius_top", "hex_top"):
             if k in v:
                 v[k] = round(v[k], 4)
     doc = {"asset": asset, "generator": "tools/models/build_equipment_models.py (do not edit)",
            "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
            "shapes": {"box": "half_size", "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder); "
-                      "with radius_top - a frustum: radius at -half_height, radius_top at +half_height"},
+                      "with radius_top - a frustum: radius at -half_height, radius_top at +half_height",
+                      "box + hex_top": "a hexagonal prism: section in local XY with vertices (+-half_size.x, 0) and "
+                      "(+-hex_top, +-half_size.y), along local Z"},
            "volumes": [{k: v[k] for k in ("id", "part", "shape", "position", "rotation_deg", "half_size", "radius", "half_height",
-                                          "radius_top") if k in v}
+                                          "radius_top", "hex_top") if k in v}
                        for v in vols]}
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
 

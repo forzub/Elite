@@ -273,7 +273,11 @@ bool assembleShipAsset(const std::string& dir, const std::string& productionPath
             c.shape = shape == "cylinder" ? CollisionShape::Cylinder : CollisionShape::Box;
             c.localPosition = vec3(j.at("position"));
             c.localRotationDeg = vec3(j.at("rotation_deg"));
-            if (c.shape == CollisionShape::Box) c.halfSize = vec3(j.at("half_size"));
+            if (c.shape == CollisionShape::Box)
+            {
+                c.halfSize = vec3(j.at("half_size"));
+                c.hexTop = j.value("hex_top", -1.0f);   // a hexagonal prism inside the box
+            }
             else
             {
                 c.radius = j.at("radius").get<float>();

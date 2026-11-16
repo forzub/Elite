@@ -5885,3 +5885,15 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   slider x (distance + 15 % of the size). Was: radial from the box centre of node centres, scaled by hierarchy depth.
   LIVE: headless editor step 2 frames D:/tmp/explode.png (CR-1 at 0 and 0.7, RC-3, RM-2, AP-4).
 
+- 2026-11-16 HEXAGONAL PRISM HIT VOLUMES (MESH_EDITOR_SPEC 18.22). Author: «у тебя есть модули шестиугольной формы, а
+  хитвалумы у них - параллелепипеды. может сделать - шестигранной призмой?». CollisionVolume.hexTop (Box only; < 0 = a
+  plain box): the section in local XY has vertices (+-halfSize.x, 0), (+-hexTop, +-halfSize.y), the prism runs along
+  local Z; stretched hexagons too (the Agora survival craft), a regular one: hexTop = hx / 2, hy = hx sin 60. Code
+  that ignores it sees the enclosing box (conservative). COLL: second trailing block (older packages read as before).
+  Carried through ModelAsset / Build scale / CollisionChunks / mesh editor package + glTF extras (elite_hex_top) +
+  assembly doc / ShipAssetAssemble / eqlib.hhex + hits_text + scaled_hits / pads / the editor (hexMesh edges, table
+  «шестигранник», form field «полуширина грани»). Applied: Agora SK-4 pod (hull, nose, pyro ring), SSh-20 lifeboat
+  (hull, nose), Bastion MJ-FE2 emitter (2, turned 90 deg), RM-2 thorax. Gates: model_asset_tests PASS (hex round trip,
+  cylinders keep hexTop < 0); EliteModelAssetInfo now lists the volumes - the rebuilt packages carry the prisms
+  (sk4: 3 hexprism, mjfe2: 2). LIVE: headless editor step 3 frames D:/tmp/hex_hits.png. The game still does not read
+  collision volumes from packages (open item).

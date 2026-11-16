@@ -856,7 +856,11 @@ json Assembly::build(const ModelCard& card, const json& doc, const std::vector<R
                 c["radius_top"] = h["radius_top"];
         }
         else
+        {
             c["half_size"] = h["half_size"];
+            if (h.contains("hex_top"))
+                c["hex_top"] = h["hex_top"];
+        }
         collision.push_back(c);
     }
     src["collision"] = collision;

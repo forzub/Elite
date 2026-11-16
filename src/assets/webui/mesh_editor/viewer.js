@@ -401,6 +401,21 @@ function cylMesh(radius, halfH, colour, radiusTop) {
   const geo = new THREE.CylinderGeometry(top, radius, halfH * 2, 16);
   return new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), new THREE.LineBasicMaterial({ color: colour }));
 }
+// a hexagonal prism hit volume (a box with hex_top): section in local XY with vertices (+-hx, 0), (+-top, +-hy),
+// along local Z - drawn as its 18 edges
+function hexMesh(half, top, colour) {
+  const [hx, hy, hz] = half;
+  const ring = [[hx, 0], [top, hy], [-top, hy], [-hx, 0], [-top, -hy], [top, -hy]];
+  const pts = [];
+  for (let i = 0; i < 6; i++) {
+    const [x0, y0] = ring[i], [x1, y1] = ring[(i + 1) % 6];
+    for (const z of [-hz, hz]) pts.push(x0, y0, z, x1, y1, z);
+    pts.push(x0, y0, -hz, x0, y0, hz);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  return new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: colour }));
+}
 function placed(obj, pos, rot) {
   obj.position.set(...(pos || [0, 0, 0]));
   obj.rotation.copy(eulerDeg(rot));
@@ -462,7 +477,8 @@ function buildAssembly(doc) {
   asm.free = free;
   const into = (nodeId) => (asm.nodes.get(nodeId) || { overlays: free }).overlays;
   for (const h of doc.hit_volumes || []) {
-    const o = h.shape === 'cylinder' ? cylMesh(h.radius, h.half_height, 0x3fd0d8, h.radius_top) : boxMesh(h.half_size, 0x3fd0d8);
+    const o = h.shape === 'cylinder' ? cylMesh(h.radius, h.half_height, 0x3fd0d8, h.radius_top)
+      : h.hex_top >= 0 ? hexMesh(h.half_size, h.hex_top, 0x3fd0d8) : boxMesh(h.half_size, 0x3fd0d8);
     o.userData = { kind: 'hit', id: h.id };
     into(h.node).add(placed(o, h.position, h.rotation_deg));
   }

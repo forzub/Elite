@@ -187,8 +187,8 @@ def bn_parts(lod):
 def bn_hits():
     L, r, xc = BN["L"], BN["r"], BN["xc"]
     x1 = xc - r * 0.80
-    return [hbox("mjfe_emitter", (xc, 0, 0), (2 * r * 0.866 * 1.0, 2 * r, L - 1.0)),
-            hbox("mjfe_emitter", (xc, -0.05, 0), (r * 1.2, r * 1.2, L)),
+    return [hhex("mjfe_emitter", (xc, 0, 0), (r, r * 0.866, (L - 1.0) / 2), r / 2, (0, 0, 90)),        # hexagonal prisms
+            hhex("mjfe_emitter", (xc, -0.05, 0), (r * 0.6, r * 0.6 * 0.866, L / 2), r * 0.3, (0, 0, 90)),
             hbox("mjfe_pylon", ((x1 + 0.07) / 2, 0, 0), (x1 + 0.03, 0.32, 1.70)),
             hbox("mjfe_mount", (0.04, 0, 0), (0.08, 0.76, 1.70))]
 

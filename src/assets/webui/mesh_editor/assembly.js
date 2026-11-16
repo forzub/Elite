@@ -166,7 +166,7 @@ const Asm = {
     const d = this.doc;
     const s = this.sel && this.sel.list;
     const hit = d.hit_volumes.map((h) => `<tr data-item="${esc(h.id)}" data-list="hit_volumes" class="${s === 'hit_volumes' && this.sel.id === h.id ? 'sel' : ''}">
-      <td>${esc(h.id)}</td><td>${esc(h.node || '')}</td><td>${h.shape === 'cylinder' ? (h.radius_top >= 0 ? 'конус' : 'цилиндр') : 'коробка'}</td><td class="muted">${esc(h.source || '')}</td></tr>`).join('');
+      <td>${esc(h.id)}</td><td>${esc(h.node || '')}</td><td>${h.shape === 'cylinder' ? (h.radius_top >= 0 ? 'конус' : 'цилиндр') : h.hex_top >= 0 ? 'шестигранник' : 'коробка'}</td><td class="muted">${esc(h.source || '')}</td></tr>`).join('');
     const zones = d.zones.map((z) => `<tr data-item="${esc(z.id)}" data-list="zones" class="${s === 'zones' && this.sel.id === z.id ? 'sel' : ''}">
       <td><i class="sw" style="background:${{ keep_out: '#e0402c', keep_in: '#3d6dff', prefer: '#3ccf5a' }[z.kind]}"></i>${esc(z.id)}</td><td colspan="3">${esc(ZONES[z.kind] || z.kind)}</td></tr>`).join('');
     return `<div class="btnrow"><button class="small" data-act="hitFromSel">+ хитвалум по выбранному узлу</button>
@@ -252,7 +252,8 @@ const Asm = {
         ${it.shape === 'cylinder' ? `<label>радиус</label><input type="number" step="0.01" value="${it.radius}" data-set="num" data-list="${L}" data-id="${esc(id)}" data-field="radius">
           <label>полувысота</label><input type="number" step="0.01" value="${it.half_height}" data-set="num" data-list="${L}" data-id="${esc(id)}" data-field="half_height">
           ${it.radius_top >= 0 ? `<label>радиус вверху</label><input type="number" step="0.01" value="${it.radius_top}" data-set="num" data-list="${L}" data-id="${esc(id)}" data-field="radius_top">` : ''}`
-          : `<label>полуразмер</label>${this.vecInputs(L, id, 'half_size', it.half_size)}`}`;
+          : `<label>полуразмер</label>${this.vecInputs(L, id, 'half_size', it.half_size)}
+          ${it.hex_top >= 0 ? `<label title="шестигранная призма: полуширина граней по ±Y (вершины на ±X, призма вдоль Z)">полуширина грани</label><input type="number" step="0.01" value="${it.hex_top}" data-set="num" data-list="${L}" data-id="${esc(id)}" data-field="hex_top">` : ''}`}`;
     } else if (L === 'zones') {
       f = `<label>вид</label><select data-set="field" data-list="${L}" data-id="${esc(id)}" data-field="kind">${Object.entries(ZONES).map(([k, t]) => `<option value="${k}" ${k === it.kind ? 'selected' : ''}>${t}</option>`).join('')}</select>
         <label>центр</label>${this.vecInputs(L, id, 'position', it.position)}<label>поворот, °</label>${this.vecInputs(L, id, 'rotation_deg', it.rotation_deg)}

@@ -700,9 +700,10 @@ def pod_parts(lod):
 
 def pod_hits():
     d = POD
-    H = [hbox("pod4_hull", (0, 0, (d["z0"] + d["z1"]) / 2), (2 * d["ax"] + 0.06, 2 * d["ay"], d["z1"] - d["z0"])),
-         hbox("pod4_hull", (0, 0, (d["z1"] + d["ze"]) / 2), (2 * d["ax"] * 0.8, 2 * d["ay"] * 0.8, d["ze"] - d["z1"])),
-         hbox("pod4_pyro", (0, 0, -1.04), (2 * d["ax"] * d["rs"], 2 * d["ay"] * d["rs"], 0.25)),
+    # hexagonal prisms (author 2026-11-16: «модули шестиугольной формы ... может сделать - шестигранной призмой?»)
+    H = [hhex("pod4_hull", (0, 0, (d["z0"] + d["z1"]) / 2), (d["ax"] + 0.03, d["ay"], (d["z1"] - d["z0"]) / 2), d["bx"] + 0.03),
+         hhex("pod4_hull", (0, 0, (d["z1"] + d["ze"]) / 2), (d["ax"] * 0.8, d["ay"] * 0.8, (d["ze"] - d["z1"]) / 2), d["bx"] * 0.8),
+         hhex("pod4_pyro", (0, 0, -1.04), (d["ax"] * d["rs"], d["ay"] * d["rs"], 0.125), d["bx"] * d["rs"]),
          hcyl("pod4_seal", (0, 0, d["z0"] - 0.09), (0, 0, d["z0"]), 0.53),
          hbox("pod4_battery", (0, -d["ay"] - 0.035, -0.15), (0.62, 0.07, 1.10)),
          hbox("pod4_beacon", (0, d["ay"] + 0.035, 0.25), (0.30, 0.07, 0.30))]
@@ -782,8 +783,8 @@ def boat_parts(lod):
 def boat_hits():
     d = BOAT
     ay = d["ay"]
-    H = [hbox("boat20_hull", (0, 0, (d["zs"] + d["z1"]) / 2), (2 * d["ax"] + 0.12, 2 * ay, d["z1"] - d["zs"])),
-         hbox("boat20_hull", (0, 0, (d["z1"] + d["ze"]) / 2), (2 * d["ax"] * 0.75, 2 * ay * 0.75, d["ze"] - d["z1"])),
+    H = [hhex("boat20_hull", (0, 0, (d["zs"] + d["z1"]) / 2), (d["ax"] + 0.06, ay, (d["z1"] - d["zs"]) / 2), d["bx"] + 0.06),
+         hhex("boat20_hull", (0, 0, (d["z1"] + d["ze"]) / 2), (d["ax"] * 0.75, ay * 0.75, (d["ze"] - d["z1"]) / 2), d["bx"] * 0.75),
          hcyl("boat20_hull", (0, 0, d["zs"] - 0.18), (0, 0, d["zs"]), 0.62)]
     for sx in (-1, 1):
         for z in (-1.9, 1.9):

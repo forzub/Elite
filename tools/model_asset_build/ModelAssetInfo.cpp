@@ -34,6 +34,16 @@ int main(int argc, char** argv)
         std::printf("    node %s pos (%.2f %.2f %.2f) rot (%.1f %.1f %.1f)\n", a.nodes[i].id.c_str(), a.nodes[i].localPosition.x,
                     a.nodes[i].localPosition.y, a.nodes[i].localPosition.z, a.nodes[i].localRotationDeg.x, a.nodes[i].localRotationDeg.y,
                     a.nodes[i].localRotationDeg.z);
+    for (std::size_t i = 0; i < a.collisionVolumes.size() && i < 24; ++i)
+    {
+        const auto& c = a.collisionVolumes[i];
+        if (c.shape == elite::model_asset::CollisionShape::Cylinder)
+            std::printf("    collision %s %s r %.3f h/2 %.3f%s\n", c.id.c_str(), c.radiusTop >= 0.0f ? "frustum" : "cylinder", c.radius,
+                        c.halfHeight, c.radiusTop >= 0.0f ? (" top " + std::to_string(c.radiusTop)).c_str() : "");
+        else
+            std::printf("    collision %s %s half (%.3f %.3f %.3f)%s\n", c.id.c_str(), c.hexTop >= 0.0f ? "hexprism" : "box", c.halfSize.x,
+                        c.halfSize.y, c.halfSize.z, c.hexTop >= 0.0f ? (" hexTop " + std::to_string(c.hexTop)).c_str() : "");
+    }
     for (const auto& lod : a.renderLods)
     {
         std::size_t tris = 0;

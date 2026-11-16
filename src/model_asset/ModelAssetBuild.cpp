@@ -31,6 +31,7 @@ void scaleAuthoringDistancesUniform(ModelAsset& asset, float scale)
     {
         c.localPosition *= scale; c.halfSize *= scale; c.radius *= scale; c.halfHeight *= scale;
         if (c.radiusTop >= 0.0f) c.radiusTop *= scale;
+        if (c.hexTop >= 0.0f) c.hexTop *= scale;
     }
     for (auto& socket : asset.sockets)
     {

@@ -275,7 +275,11 @@ fs::path GltfSource::convert(const ModelCard& card, const fs::path& workDir, std
                     h["radius_top"] = ex["elite_radius_top"];
             }
             else
+            {
                 h["half_size"] = scl;
+                if (ex.contains("elite_hex_top"))
+                    h["hex_top"] = ex["elite_hex_top"];
+            }
             scene["hit_volumes"].push_back(h);
         }
         else if (ex.contains("elite_zone"))

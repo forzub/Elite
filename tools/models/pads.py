@@ -198,7 +198,7 @@ def ref_set_doc(set_id, nodes, hits_by_node):
         counts = {}
         for h in hits_by_node.get(nid, []):
             counts[h["part"]] = counts.get(h["part"], 0) + 1
-            q = {k: h[k] for k in ("part", "shape", "half_size", "radius", "half_height", "radius_top") if k in h}
+            q = {k: h[k] for k in ("part", "shape", "half_size", "radius", "half_height", "radius_top", "hex_top") if k in h}
             q["id"] = f'{nid}.{h["part"]}.{counts[h["part"]]}'
             q["node"] = nid
             q["position"] = [round(a + b, 4) + 0.0 for a, b in zip(apply(R, h["position"]), pos)]

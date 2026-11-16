@@ -21,7 +21,8 @@ enum class SurfaceMode : std::uint8_t
 
 enum class CollisionShape : std::uint8_t
 {
-    Box = 0,       // Oriented box: localRotationDeg makes this an OBB.
+    Box = 0,       // Oriented box: localRotationDeg makes this an OBB; with hexTop >= 0 a hexagonal prism inside
+                   // that box: section in local XY with vertices (+-halfSize.x, 0) and (+-hexTop, +-halfSize.y), along local Z.
     Sphere = 1,
     Capsule = 2,
     ConvexHull = 3, // Reserved for a later compiler stage.
@@ -368,6 +369,8 @@ struct CollisionVolume
     float radius = 0.5f;
     float halfHeight = 0.5f; // Capsule cylindrical half-length; local +Y axis.
     float radiusTop = -1.0f; // Cylinder only: the radius at +halfHeight; < 0 = radius (a straight cylinder).
+    float hexTop = -1.0f;    // Box only: the half width of the +-Y faces of a hexagonal prism; < 0 = a plain box.
+                             // A regular hexagon: hexTop = halfSize.x / 2, halfSize.y = halfSize.x * sin 60.
 
     // Empty means active in every semantic state. For destructive variants,
     // intact and breached collision sets can coexist and switch atomically.

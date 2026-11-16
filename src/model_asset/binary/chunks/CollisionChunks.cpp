@@ -16,6 +16,8 @@ void writeCollisionsV4(Writer& w, const ModelAsset& a)
     }
     // trailing block (older readers stop before it): the top radius of each volume, < 0 = a straight cylinder
     for (const auto& c : a.collisionVolumes) w.pod(c.radiusTop);
+    // second trailing block: the hexagonal prism's top half width of each volume, < 0 = a plain box
+    for (const auto& c : a.collisionVolumes) w.pod(c.hexTop);
 }
 
 void readCollisionsV4(Reader& r, ModelAsset& a)
@@ -33,6 +35,8 @@ void readCollisionsV4(Reader& r, ModelAsset& a)
     }
     if (r.atEnd()) return; // written before frustum volumes existed
     for (auto& c : a.collisionVolumes) r.pod(c.radiusTop);
+    if (r.atEnd()) return; // written before hexagonal prisms existed
+    for (auto& c : a.collisionVolumes) r.pod(c.hexTop);
 }
 
 } // namespace elite::model_asset::binary

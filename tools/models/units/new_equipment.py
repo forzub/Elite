@@ -780,7 +780,7 @@ def rm2_parts(lod):
 def rm2_hits():
     d = RM2
     y0, r = d["th_y"], d["th_r"]
-    H = [hbox("rm2_thorax", (0, y0, (d["th_z0"] + d["th_z1"]) / 2), (2 * r, 2 * r * math.sin(math.pi / 3), d["th_z1"] - d["th_z0"])),
+    H = [hhex("rm2_thorax", (0, y0, (d["th_z0"] + d["th_z1"]) / 2), (r, r * math.sin(math.pi / 3), (d["th_z1"] - d["th_z0"]) / 2), r / 2),
          hobox("rm2_thorax", d["pro0"], d["pro1"], 0.22, 0.20),
          hobox("rm2_neck", d["pro1"], d["head"], 0.12, 0.12),
          hbox("rm2_head", RM2_HEAD, (0.30, 0.11, 0.15)),

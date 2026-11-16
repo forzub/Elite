@@ -376,8 +376,8 @@ loop();
 
 
 // ---- the assembly view (steps 2..6, MESH_EDITOR_SPEC 16): nodes = instances of the LOD0 parts with their transforms,
-// overlays (hit volumes, zones, mounts, seams, buses, hierarchy) and the explode slider: every node moves away from
-// the root's centre in proportion to its depth, the overlays that belong to it move with it.
+// overlays (hit volumes, zones, mounts, seams, buses, hierarchy) and the explode slider (applyExplode: the parts fly
+// apart from the model's centre - along the main axis or straight away from it), the overlays move with their node.
 const BUS_COLOURS = { propulsion_power: 0xff8a3d, service_power: 0xffd84a, coolant: 0x4ac8ff, heat_rejection: 0xff4a8a,
   data: 0x6dff8a, fuel: 0xc77dff, jump_charge: 0x8ab4ff };
 const ZONE_COLOURS = { keep_out: 0xe0402c, keep_in: 0x3d6dff, prefer: 0x3ccf5a };
@@ -437,6 +437,7 @@ function buildAssembly(doc) {
     offset.add(holder);
     const part = g.meshes.get(n.part);
     let centre = new THREE.Vector3();
+    let nbox = null;
     if (part && part.front) {
       const m = new THREE.Mesh(part.front.geometry, partMaterial());
       m.geometry.userData = m.geometry.userData || {};
@@ -445,6 +446,7 @@ function buildAssembly(doc) {
       holder.add(m);
       holder.updateMatrixWorld(true);
       centre = part.box.getCenter(new THREE.Vector3()).applyMatrix4(holder.matrix);
+      nbox = part.box.clone().applyMatrix4(holder.matrix);
     } else {
       // a link without a mesh in this model (a Blender module): a violet marker the size of a metre
       const mk = boxMesh([0.5, 0.5, 0.5], COLORS.link, { solid: true, opacity: 0.35 });
@@ -452,7 +454,7 @@ function buildAssembly(doc) {
       holder.add(mk);
       centre = new THREE.Vector3(...(n.position || [0, 0, 0]));
     }
-    asm.nodes.set(n.id, { node: n, offset, holder, centre, depth: depth(n), overlays: new THREE.Group() });
+    asm.nodes.set(n.id, { node: n, offset, holder, centre, box: nbox, depth: depth(n), overlays: new THREE.Group() });
     offset.add(asm.nodes.get(n.id).overlays);
   }
   const free = new THREE.Group();   // overlays not tied to a node (zones)
@@ -491,16 +493,40 @@ function rootCentre() {
   return box.isEmpty() ? new THREE.Vector3() : box.getCenter(new THREE.Vector3());
 }
 
+// the explode (author 2026-11-16: «все объекты на главной оси разъезжаются по этой оси, то, что сбоку - отлетает в сторону
+// по прямой, по которой оно соединяется с центральной осью. все запчасти как бы разлетаются от 0 в разные стороны»):
+// the main axis = the longest extent of the model, through the centre of its box; a part the axis passes through moves
+// along the axis (away from the centre; the one at the centre stays); any other part moves straight away from the axis,
+// perpendicular to it. The offset grows with the distance from the centre (+ a little for everyone), so the parts keep
+// their order and fly apart from one point.
+function explodeFrame() {
+  const box = new THREE.Box3();
+  for (const v of asm.nodes.values()) if (v.box) box.union(v.box); else box.expandByPoint(v.centre);
+  if (box.isEmpty()) return { c: new THREE.Vector3(), axis: 2, size: 1 };
+  const s = box.getSize(new THREE.Vector3());
+  const axis = s.x >= s.y && s.x >= s.z ? 0 : s.y >= s.z ? 1 : 2;
+  return { c: box.getCenter(new THREE.Vector3()), axis, size: Math.max(s.x, s.y, s.z) };
+}
 function applyExplode() {
   if (!asm.root) return;
-  const c = rootCentre();
-  const size = (() => { const b = new THREE.Box3(); for (const v of asm.nodes.values()) b.expandByPoint(v.centre); return b.isEmpty() ? 1 : b.getSize(new THREE.Vector3()).length(); })();
+  const { c, axis, size } = explodeFrame();
+  const k = asm.explode;
+  const others = [0, 1, 2].filter((i) => i !== axis);
   for (const v of asm.nodes.values()) {
-    const dir = v.centre.clone().sub(c);
-    if (dir.lengthSq() < 1e-8) dir.set(0, 1, 0);
-    dir.normalize();
-    // depth 0 (the root) stays; deeper nodes travel further; the slider is 0..1 of the model size
-    v.offset.position.copy(dir.multiplyScalar(asm.explode * size * 0.6 * (0.6 + 0.4 * Math.min(v.depth, 3))));
+    const d = v.centre.clone().sub(c).toArray();
+    // on the axis: the axis line (through c) crosses the part's box in both cross coordinates
+    const onAxis = v.box ? others.every((i) => v.box.min.getComponent(i) <= c.getComponent(i) + 1e-6 &&
+                                               v.box.max.getComponent(i) >= c.getComponent(i) - 1e-6)
+                         : others.every((i) => Math.abs(d[i]) < size * 0.02);
+    const off = [0, 0, 0];
+    if (onAxis) {
+      const a = d[axis];
+      if (Math.abs(a) > size * 0.01) off[axis] = k * (a + Math.sign(a) * size * 0.15);
+    } else {
+      const r = Math.hypot(d[others[0]], d[others[1]]) || 1;
+      for (const i of others) off[i] = k * (d[i] + (d[i] / r) * size * 0.15);
+    }
+    v.offset.position.set(...off);
   }
   drawLines();
 }

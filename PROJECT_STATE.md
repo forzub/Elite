@@ -5878,3 +5878,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   joints. Checks: arms 0.7 cm max (upper arm at the compartment wall margin), the hammer head never enters the body,
   strikes reach the hull (head 6 cm above it). LIVE: headless editor frames D:/tmp/crab_bighammer.png; step 1 clean;
   variants, shells, package rebuilt. Wrench lift is not perfectly straight (IK miss up to 7 cm on the lift pose).
+
+- 2026-11-16 EXPLODE FROM THE CENTRE (MESH_EDITOR_SPEC 18.21). Author: parts on the main axis slide along it, side parts
+  fly off perpendicular to it, everything apart from the centre. viewer.js applyExplode: main axis = longest extent
+  through the model box centre; a part the axis passes through moves along it, others straight away from it; offset =
+  slider x (distance + 15 % of the size). Was: radial from the box centre of node centres, scaled by hierarchy depth.
+  LIVE: headless editor step 2 frames D:/tmp/explode.png (CR-1 at 0 and 0.7, RC-3, RM-2, AP-4).
+

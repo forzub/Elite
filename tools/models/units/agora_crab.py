@@ -32,6 +32,11 @@ RC3_LEGS = {f"{'l' if s > 0 else 'r'}{i + 1}": (s, hz, (s * fx, fz))
 RC3_BAY = dict(cz=-0.01, floor=0.73, top=0.85, hx=0.27, hz=0.16, t=0.012)
 RC3_TOOL_OFF = (0.0, 0.69, -0.01)                 # std.drone.toolbox frame -> drone frame (foam top at 0.76)
 RC3_TOOLS = {"rc3_" + k[3:]: v for k, v in TB_TOOLS.items()}      # rc3_tool_hammer / wrench / bar
+# the sledgehammer is telescopic (author 2026-11-16: «пусть теперь достанет из ящика здоровенную кувалду - которая больше
+# чем сам ящик»): folded it lies in the foam like the others (0.4 m); out of the compartment the handle runs out in two
+# sections (+0.30 m each, 1.0 m in all) and the head cheeks slide apart (head 0.16 -> 0.33 m) - bigger than the box
+RC3_BIGHAMMER = dict(y=0.09, z=0.075, ext=0.30, cheek=0.10)
+RC3_TOOLS["rc3_tool_hammer"] = ("телескопическая кувалда", None, (-0.16, 0.09, 0.075), (1, 0, 0))
 RC3_POD_LEGS = ("l1", "r1", "l3", "r3")          # the legs with a knee thruster (four: a quadcopter)
 RC3_EYES = {s: ((s * 0.15, 0.66, 0.30), (s * 0.17, 0.83, 0.37)) for s in (1, -1)}   # stalk base, camera centre
 
@@ -124,9 +129,42 @@ def rc3_bay(P, bd, lod, small, ch):
         box(ld, B_, (0, y1 + 0.012, cz + hz + 0.01), (0.12, 0.02, 0.02), chamfer=ch(0.003))              # pull tab
         cyl(ld, "eq_metal_graphite", (-0.05, y1, cz - hz), (0.05, y1, cz - hz), 0.012, 8)                # hinge knuckle
     for key, (title, fn, grip, axis) in RC3_TOOLS.items():
+        if fn is None:
+            continue
         tmp = Part(key)
         fn(tmp, lod, small, ch)
         P[key] = placed(tmp, I3, RC3_TOOL_OFF)
+    for key, part in rc3_bighammer(lod, small, ch).items():
+        P[key] = placed(part, I3, RC3_TOOL_OFF)
+
+
+def rc3_bighammer(lod, small, ch):
+    """the telescopic sledgehammer, folded, in the std.drone.toolbox frame: grip tube (yellow rubber grip), two inner
+    sections, the head core and its two sliding cheeks (striking faces)"""
+    h = RC3_BIGHAMMER
+    y, z = h["y"], h["z"]
+    sg = 8 if lod < 2 else 6
+    P = {k: Part(k) for k in ("rc3_tool_hammer", "rc3_tool_hammer_t1", "rc3_tool_hammer_t2", "rc3_tool_hammer_head",
+                              "rc3_tool_hammer_head_a", "rc3_tool_hammer_head_b")}
+    g = P["rc3_tool_hammer"]
+    cyl(g, "eq_steel", (-0.225, y, z), (0.09, y, z), 0.020, sg)
+    cyl(g, "eq_toolbox_yellow", (-0.225, y, z), (-0.07, y, z), 0.024, sg)
+    cyl(g, B_, (0.07, y, z), (0.09, y, z), 0.025, sg)                                      # lock collar
+    t1 = P["rc3_tool_hammer_t1"]
+    cyl(t1, "eq_metal_graphite", (-0.18, y, z), (0.10, y, z), 0.016, sg)
+    cyl(t1, B_, (0.085, y, z), (0.10, y, z), 0.020, sg)
+    t2 = P["rc3_tool_hammer_t2"]
+    cyl(t2, "eq_steel", (-0.14, y, z), (0.115, y, z), 0.012, sg)
+    hd = P["rc3_tool_hammer_head"]
+    box(hd, "eq_steel", (0.15, y, z), (0.07, 0.07, 0.09), chamfer=ch(0.006))
+    for k, sz in (("rc3_tool_hammer_head_a", 1), ("rc3_tool_hammer_head_b", -1)):
+        c = P[k]
+        box(c, "eq_steel", (0.15, y, z + sz * 0.03), (0.085, 0.085, 0.07), chamfer=ch(0.008))
+        box(c, "eq_metal_graphite", (0.15, y, z + sz * 0.067), (0.075, 0.075, 0.006))           # striking face
+        box(c, "eq_metal_graphite", (0.15, y + sz * 0.015, z - sz * 0.015), (0.03, 0.025, 0.09))   # guide bar into the core
+        if lod < 2:
+            box(c, B_, (0.15, y + 0.044, z + sz * 0.03), (0.05, 0.004, 0.05))                   # brass wear plate
+    return P
 
 
 def rc3_parts(lod):
@@ -319,6 +357,17 @@ def rc3_rig():
     for key, (title, fn, grip, axis) in RC3_TOOLS.items():
         G.append({**_j(key, "rc3_body", _add(grip, RC3_TOOL_OFF), UPV, (0, 0), f"{title}: lifts out of the foam (metres)"),
                   "type": "slide", "range_m": [0, 0.35]})
+    h = RC3_BIGHAMMER
+    o = lambda x: _add((x, h["y"], h["z"]), RC3_TOOL_OFF)
+    G += [{**_j("rc3_tool_hammer_t1", "rc3_tool_hammer", o(0.09), (1, 0, 0), (0, 0), "handle section 1 runs out (metres)"),
+           "type": "slide", "range_m": [0, h["ext"]]},
+          {**_j("rc3_tool_hammer_t2", "rc3_tool_hammer_t1", o(0.10), (1, 0, 0), (0, 0), "handle section 2 runs out (metres)"),
+           "type": "slide", "range_m": [0, h["ext"]]},
+          _j("rc3_tool_hammer_head", "rc3_tool_hammer_t2", o(0.15), (1, 0, 0), (0, 0), "fixed (head core on section 2)"),
+          {**_j("rc3_tool_hammer_head_a", "rc3_tool_hammer_head", o(0.15), (0, 0, 1), (0, 0), "head cheek slides out (metres)"),
+           "type": "slide", "range_m": [0, h["cheek"]]},
+          {**_j("rc3_tool_hammer_head_b", "rc3_tool_hammer_head", o(0.15), (0, 0, -1), (0, 0), "head cheek slides out (metres)"),
+           "type": "slide", "range_m": [0, h["cheek"]]}]
     for s, side in ((1, "l"), (-1, "r")):
         S, E, W, T = rc3_arm(s)
         dw, nup, fingers = rc3_hand(s)
@@ -450,6 +499,14 @@ def rc3_collision(sides=("l", "r")):
     return {"segs": segs, "solids": solids, "free": free}
 
 
+def rc3_bighammer_keys(t_out, t_in, T):
+    """the telescopic hammer runs out right after the lift and folds before it goes back into the compartment"""
+    h = RC3_BIGHAMMER
+    ext = [[0, 0], [t_out, 0], [t_out + 0.8, h["ext"]], [t_in - 1.0, h["ext"]], [t_in - 0.2, 0], [T, 0]]
+    chk = [[0, 0], [t_out + 0.3, 0], [t_out + 0.9, h["cheek"]], [t_in - 1.2, h["cheek"]], [t_in - 0.6, 0], [T, 0]]
+    return {"rc3_tool_hammer_t1": ext, "rc3_tool_hammer_t2": ext, "rc3_tool_hammer_head_a": chk, "rc3_tool_hammer_head_b": chk}
+
+
 def rc3_tool_clips():
     """tool clips (author 2026-11-16: «можно ли сделать, что бы дроид вытягивал из ящика например - кувалду ...» +
     «попробуй вмонтировать ящик ему в спину, и проконтролируй длину рук и сочленений, что бы он мог делать все без
@@ -459,21 +516,24 @@ def rc3_tool_clips():
     dw, nup, fingers = rc3_hand(1)
     arm = {"chain": ["rc3_arm_l_shoulder", "rc3_arm_l_upper", "rc3_arm_l_fore", "rc3_hand_l"],
            "bounds": {"rc3_arm_l_shoulder": (-110, 110), "rc3_arm_l_upper": (-170, 70), "rc3_arm_l_fore": (-130, 160),
-                      "rc3_hand_l": (-100, 100)},
+                      "rc3_hand_l": (-140, 100)},
            "hand": "rc3_hand_l", "grip": _add(W, _mul(dw, RC3_PALM + 0.06)), "up": nup, "wrist": "rc3_hand_l",
            "fingers": {"rc3_hand_l_f1": 70, "rc3_hand_l_f2": 70, "rc3_hand_l_thumb": 50}}
     model = rc3_collision(("l",))
     out, miss = [], 0.0
     for key, cid, title, work in (
-            ("rc3_tool_hammer", "hammer", "Кувалда: достать из отсека в спине, два удара по обшивке, убрать",
-             [(0.8, (0.55, 1.25, 0.85)), (0.35, (0.62, 0.16, 1.15)), (0.6, (0.55, 1.25, 0.85)), (0.35, (0.62, 0.16, 1.15)),
-              (0.6, (0.55, 1.25, 0.85))]),
+            ("rc3_tool_hammer", "hammer", "Кувалда: достать, раздвинуть (больше ящика), два удара, сложить, убрать",
+             [(1.2, (0.55, 1.55, 0.80), "tip"), (0.45, (0.62, 0.07, 1.30), "tip"), (0.8, (0.55, 1.55, 0.80), "tip"),
+              (0.45, (0.62, 0.07, 1.30), "tip"), (0.8, (0.55, 1.55, 0.80), "tip")]),
             ("rc3_tool_bar", "bar", "Лом: достать из отсека, поддеть панель, убрать",
              [(0.9, (0.64, 0.22, 1.15)), (0.6, (0.64, 0.42, 1.10)), (0.6, (0.64, 0.22, 1.15)), (0.6, (0.64, 0.42, 1.10))]),
             ("rc3_tool_wrench", "wrench", "Ключ: достать из отсека, повернуть гайку, убрать",
              [(0.9, (0.55, 0.30, 1.20)), (0.5, "wrist", 35), (0.5, "wrist", -35), (0.5, "wrist", 35), (0.5, "wrist", -35)])):
         grip = _add(RC3_TOOLS[key][2], RC3_TOOL_OFF)
-        clip, used, err = take_builtin(RC3_RIG, arm, "rc3_tool_lid", key, grip, work, cid, title, model)
+        clip, used, err = take_builtin(RC3_RIG, arm, "rc3_tool_lid", key, grip, work, cid, title, model,
+                                       rc3_bighammer_keys if key == "rc3_tool_hammer" else None,
+                                       _add((0.15 + 2 * RC3_BIGHAMMER["ext"], RC3_BIGHAMMER["y"], RC3_BIGHAMMER["z"]), RC3_TOOL_OFF)
+                                       if key == "rc3_tool_hammer" else None)
         widen(RC3_RIG, used)
         out.append(clip)
         miss = max(miss, err)

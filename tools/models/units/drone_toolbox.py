@@ -269,7 +269,7 @@ def at(world, part, p):
 
 
 def ik(joints, base, chain, bounds, hand, grip, target, up_local=None, up=(0.0, 1.0, 0.0), w_up=0.0, seeds=(), avoid=None,
-       collide=None):
+       collide=None, extra=()):
     """angles of the `chain` joints that bring the hand's grip point (rest frame) to `target` (coordinate descent from
     the base pose, the seeds and a few seeded random starts; w_up > 0 also turns the hand's up_local towards `up`)"""
     import random
@@ -292,6 +292,8 @@ def ik(joints, base, chain, bounds, hand, grip, target, up_local=None, up=(0.0, 
                     c += 4.0 * d * d
         if collide:                                # the arm out of the body (collide_cost)
             c += collide_cost(w, collide)
+        for pl, tg in extra:                       # more points of the hand to targets (a tool held level)
+            c += 20.0 * sum((u - v) ** 2 for u, v in zip(at(w, hand, pl), tg))
         return c
 
     starts = [[base.get(c, 0.0) for c in chain]] + [list(s) for s in seeds]
@@ -582,7 +584,8 @@ def audit_clip(joints, clip, model, step=0.05):
     return worst
 
 
-def take_builtin(joints, arm, lid, tool, grip_pt, work, cid, title, model):
+def take_builtin(joints, arm, lid, tool, grip_pt, work, cid, title, model, tool_keys=None, tool_tip=None,
+                 tool_axis=(1, 0, 0)):
     """a tool clip from a compartment built into the drone (RC-3; author 2026-11-16: «попробуй вмонтировать ящик ему в
     спину»): the lid opens, the hand comes down into the compartment, takes `tool` (a part of the drone itself), lifts it
     straight out, works (`work` = [(dt, target) | (dt, "wrist", degrees)]), puts it back, the lid closes. Arm angles by
@@ -590,23 +593,42 @@ def take_builtin(joints, arm, lid, tool, grip_pt, work, cid, title, model):
     chain, bounds, hand = arm["chain"], arm["bounds"], arm["hand"]
     errs = []
 
-    def solve(tgt, w_up, seed=None):
-        a, e = ik(joints, {}, chain, bounds, hand, arm["grip"], tgt, arm["up"], (0, 1, 0), w_up,
-                  [[seed[c] for c in chain]] if seed else (), None, model)
+    def solve(tgt, w_up, seed=None, eff=None, mdl=None, extra=()):
+        a, e = ik(joints, {}, chain, bounds, hand, eff or arm["grip"], tgt, arm["up"], (0, 1, 0), w_up,
+                  [[seed[c] for c in chain]] if seed else (), None, mdl or model, extra)
         errs.append(e)
         return a
 
     high = solve(_add3(grip_pt, (0, 0.40, 0.05)), 0.002)
     above = solve(_add3(grip_pt, (0, 0.17, 0)), 0.004, high)
     grip = solve(grip_pt, 0.004, above)
-    lift = solve(_add3(grip_pt, (0, 0.36, 0)), 0.0, grip)
+    # the tool goes straight up / down out of its slot: a second point along it keeps the hand's attitude of the grip
+    R0, t0 = fk(joints, dict(grip))(hand)
+    R0t = [[R0[j][i] for j in range(3)] for i in range(3)]
+    far = _add3(grip_pt, tuple(0.2 * v for v in norm(tool_axis)))
+    far_h = _mv(R0t, tuple(a - b for a, b in zip(far, t0)))
+    above = solve(_add3(grip_pt, (0, 0.17, 0)), 0.0, grip, extra=[(far_h, _add3(far, (0, 0.17, 0)))])
+    lift = solve(_add3(grip_pt, (0, 0.36, 0)), 0.0, grip, extra=[(far_h, _add3(far, (0, 0.36, 0)))])
     P = [(0.0, {c: 0.0 for c in chain}), (1.2, high), (1.9, above), (2.4, grip), (2.7, grip), (3.3, lift)]
+    tip_h = tool_model = None
+    if tool_tip:
+        # the tool's working end (extended) carried by the hand: its point in the hand's rest frame at the take, and the
+        # tool as a capsule of the hand for the collision model - a work target (dt, point, "tip") places the tip
+        R, tt = fk(joints, dict(grip))(hand)
+        Rt = [[R[j][i] for j in range(3)] for i in range(3)]
+        to_hand = lambda p: _mv(Rt, tuple(a - b for a, b in zip(p, tt)))
+        tip_h = to_hand(tool_tip)
+        tool_model = dict(model)
+        tool_model["segs"] = list(model["segs"]) + [(hand, to_hand(grip_pt), tip_h, 0.03, 0.06, 8)]
     t, last = 3.3, lift
     for dt, *what in work:
         t += dt
         if what[0] == "wrist":
             a = dict(last)
             a[arm["wrist"]] = round(a.get(arm["wrist"], 0.0) + what[1], 1)
+        elif len(what) > 1 and what[1] == "tip" and tip_h:
+            a = solve(what[0], 0.0, last, tip_h, tool_model)
+            last = a
         else:
             a = solve(what[0], 0.0, last)
             last = a
@@ -620,6 +642,9 @@ def take_builtin(joints, arm, lid, tool, grip_pt, work, cid, title, model):
         keys[f] = [[0, 0], [1.9, -5], [2.4, -5], [2.7, closed], [r(stow), closed], [r(stow + 0.3), -5],
                    [r(t + 3.2), 0], [r(T), 0]]
     keys[lid] = [[0, 0], [0.2, 0], [1.0, 110], [r(t + 2.2), 110], [r(t + 3.0), 0], [r(T), 0]]
+    if tool_keys:                                  # the tool's own joints (a telescopic handle): out after the lift, in before the return
+        for k, v in tool_keys(3.3, t, T).items():
+            keys[k] = [[r(a), b] for a, b in v]
     clip = {"id": cid, "title": title, "duration_s": r(T), "loop": True, "keys": keys,
             "events": [{"t": 2.7, "take": tool, "hand": hand}, {"t": r(stow), "stow": tool}],
             "ik_miss_m": [round(e, 3) for e in errs]}

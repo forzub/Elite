@@ -288,11 +288,17 @@ function applyPose() {
     const k = e.take || e.stow;
     if (k && !k.includes('/') && g.meshes.has(k)) heldBy.set(k, e.take ? e : null);
   }
+  // the held part and the parts hanging from it (a telescopic tool's sections, its head cheeks): they keep their own
+  // joints' motion relative to the held part
+  const parentOf = new Map(((state.pose && state.pose.rig.joints) || []).map((j) => [j.part, j.parent]));
   const heldMatrix = (key) => {
-    const e = heldBy.get(key);
+    let root = key;
+    for (let i = 0; root && i < 64 && !heldBy.get(root); i++) root = parentOf.get(root);
+    const e = root ? heldBy.get(root) : null;
     if (!e || !extra.anglesAt) return null;
     const w0 = poseWorld(state.pose.rig, extra.anglesAt(e.t));
-    return world(e.hand).clone().multiply(w0(e.hand).clone().invert().multiply(w0(key)));
+    const H = world(e.hand).clone().multiply(w0(e.hand).clone().invert().multiply(w0(root)));
+    return root === key ? H : H.multiply(world(root).clone().invert().multiply(world(key)));
   };
   for (const [key, e] of g.meshes) {
     const M = world ? (heldMatrix(key) || world(key)) : null;

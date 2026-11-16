@@ -5867,3 +5867,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   «Лом», «Ключ». The player moves a model's own part into the hand by take / stow events. Not checked: arm vs legs,
   arm vs arm, the held tool vs the body. LIVE: headless editor frames D:/tmp/crab_bay.png; step 1 clean (intact);
   damaged variants, shells, package rebuilt.
+
+- 2026-11-16 RC-3 TELESCOPIC SLEDGEHAMMER (MESH_EDITOR_SPEC 18.20). Author: «пусть теперь достанет из ящика здоровенную
+  кувалду - которая больше чем сам ящик». The compartment's hammer is telescopic (plausible-physics: folded 0.4 m in the
+  foam; the handle runs out in two sections to 1.0 m, the head cheeks slide apart on guide bars, head 0.16 -> 0.33 m):
+  parts rc3_tool_hammer (+ _t1, _t2 sliders, _head, _head_a/_b sliders). Clip «Кувалда»: take, lift straight out, run
+  out, two strikes on the hull ahead (IK places the head: work targets (dt, point, "tip"); the held hammer is a capsule
+  of the hand in the collision model), fold, back into the slot. The tool lifts / lowers straight (a second point along
+  the tool in the IK); the left wrist range -140..100. Player: parts hanging from a held part follow it with their own
+  joints. Checks: arms 0.7 cm max (upper arm at the compartment wall margin), the hammer head never enters the body,
+  strikes reach the hull (head 6 cm above it). LIVE: headless editor frames D:/tmp/crab_bighammer.png; step 1 clean;
+  variants, shells, package rebuilt. Wrench lift is not perfectly straight (IK miss up to 7 cm on the lift pose).

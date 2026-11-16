@@ -268,7 +268,8 @@ def at(world, part, p):
     return tuple(a + b for a, b in zip(_mv(R, p), t))
 
 
-def ik(joints, base, chain, bounds, hand, grip, target, up_local=None, up=(0.0, 1.0, 0.0), w_up=0.0, seeds=(), avoid=None):
+def ik(joints, base, chain, bounds, hand, grip, target, up_local=None, up=(0.0, 1.0, 0.0), w_up=0.0, seeds=(), avoid=None,
+       collide=None):
     """angles of the `chain` joints that bring the hand's grip point (rest frame) to `target` (coordinate descent from
     the base pose, the seeds and a few seeded random starts; w_up > 0 also turns the hand's up_local towards `up`)"""
     import random
@@ -289,6 +290,8 @@ def ik(joints, base, chain, bounds, hand, grip, target, up_local=None, up=(0.0, 
                 d = min(min(q[i] - lo[i], hi[i] - q[i]) for i in range(3))
                 if d > 0:
                     c += 4.0 * d * d
+        if collide:                                # the arm out of the body (collide_cost)
+            c += collide_cost(w, collide)
         return c
 
     starts = [[base.get(c, 0.0) for c in chain]] + [list(s) for s in seeds]
@@ -477,3 +480,148 @@ def toolbox_prop(drone_part, saddle):
     return {"id": "toolbox", "title": "ящик", "ref": "equipment_ship/std_drone_toolbox", "part": drone_part,
             "point_m": list(_add3(saddle["point_m"], (0.0, TB_PLATE, 0.0))),
             "rotation_deg": [0.0, round(math.degrees(math.atan2(f[0], f[2])), 4), 0.0], "attach": "saddle", "fits": "base"}
+
+
+# ---------------------------------------------------------------- arm-vs-body collision (author 2026-11-16: «у краба очень
+# неуклюжие руки, они проходят через корпус ... проконтролируй длину рук и сочленений, что бы он мог делать все без
+# погружения рук в меши»): the arm's limbs as capsules sampled along their axes (rest-frame segments of their parts),
+# the body as solid boxes in the drone frame (the body is the root and stays put in the clips), "free" boxes are open
+# (a compartment's mouth); depth = how far a capsule sample is inside a solid
+def _depth(q, r, lo, hi):
+    return min(min(q[i] - lo[i] + r, hi[i] + r - q[i]) for i in range(3))
+
+
+def _solid_depth(sol, q, r):
+    """a solid: (name, lo, hi) - a box; (name, "loft", tiers, poly) - a convex shell through (inset, y) tiers of an (x, z)
+    polygon (the crab's carapace): the depth is the smallest way out, through a side or the top / bottom"""
+    if sol[1] != "loft":
+        return _depth(q, r, sol[1], sol[2])
+    tiers, poly = sol[2], sol[3]
+    y0, y1 = tiers[0][1], tiers[-1][1]
+    if not (y0 - r < q[1] < y1 + r):
+        return 0.0
+    yy = min(max(q[1], y0), y1)
+    d = tiers[-1][0]
+    for (da, ya), (db, yb) in zip(tiers, tiers[1:]):
+        if ya <= yy <= yb:
+            d = da + (db - da) * ((yy - ya) / (yb - ya) if yb > ya else 0.0)
+            break
+    n = len(poly)
+    cx, cz = sum(p[0] for p in poly) / n, sum(p[1] for p in poly) / n
+    inside = 1e9
+    for i in range(n):
+        (x0, z0), (x1, z1) = poly[i], poly[(i + 1) % n]
+        ex, ez = x1 - x0, z1 - z0
+        L = math.hypot(ex, ez)
+        nx, nz = ez / L, -ex / L
+        if (cx - x0) * nx + (cz - z0) * nz < 0:
+            nx, nz = -nx, -nz
+        inside = min(inside, (q[0] - x0) * nx + (q[2] - z0) * nz)
+    return min(inside - d + r, q[1] - y0 + r, y1 + r - q[1])
+
+
+def collide_depth(world, model):
+    """the deepest penetration of the model's limb samples into its solids (metres, 0 = clear) and where"""
+    worst, where = 0.0, None
+    for part, p0, p1, r0, r1, n in model["segs"]:
+        for k in range(n + 1):
+            u = k / n
+            q = at(world, part, tuple(a + (b - a) * u for a, b in zip(p0, p1)))
+            if any(all(lo[i] <= q[i] <= hi[i] for i in range(3)) for lo, hi in model.get("free", ())):
+                continue
+            r = r0 + (r1 - r0) * u
+            for sol in model["solids"]:
+                d = _solid_depth(sol, q, r)
+                if d > worst:
+                    worst, where = d, f"{part} u={u:.2f} in {sol[0]}"
+    return worst, where
+
+
+def collide_cost(world, model):
+    c = 0.0
+    for part, p0, p1, r0, r1, n in model["segs"]:
+        for k in range(n + 1):
+            u = k / n
+            q = at(world, part, tuple(a + (b - a) * u for a, b in zip(p0, p1)))
+            if any(all(lo[i] <= q[i] <= hi[i] for i in range(3)) for lo, hi in model.get("free", ())):
+                continue
+            r = r0 + (r1 - r0) * u
+            for sol in model["solids"]:
+                d = _solid_depth(sol, q, r)
+                if d > 0:
+                    c += 40.0 * d * d
+    return c
+
+
+def clip_angles(clip, t):
+    """the player's eased angles of a clip at time t (smoothstep between keys)"""
+    out = {}
+    for part, keys in clip.get("keys", {}).items():
+        a = keys[0][1]
+        if t >= keys[-1][0]:
+            a = keys[-1][1]
+        else:
+            for (t0, a0), (t1, a1) in zip(keys, keys[1:]):
+                if t0 <= t <= t1:
+                    u = (t - t0) / (t1 - t0) if t1 > t0 else 1.0
+                    a = a0 + (a1 - a0) * u * u * (3 - 2 * u)
+                    break
+        out[part] = a
+    return out
+
+
+def audit_clip(joints, clip, model, step=0.05):
+    """(worst depth, time, where) over a clip, sampled every `step` seconds"""
+    worst = (0.0, 0.0, None)
+    t = 0.0
+    while t <= clip["duration_s"] + 1e-9:
+        d, w = collide_depth(fk(joints, clip_angles(clip, t)), model)
+        if d > worst[0]:
+            worst = (d, round(t, 2), w)
+        t += step
+    return worst
+
+
+def take_builtin(joints, arm, lid, tool, grip_pt, work, cid, title, model):
+    """a tool clip from a compartment built into the drone (RC-3; author 2026-11-16: «попробуй вмонтировать ящик ему в
+    спину»): the lid opens, the hand comes down into the compartment, takes `tool` (a part of the drone itself), lifts it
+    straight out, works (`work` = [(dt, target) | (dt, "wrist", degrees)]), puts it back, the lid closes. Arm angles by
+    IK with the arm kept out of the body (`model`, collide_cost). Returns (clip, used angles, worst IK miss)."""
+    chain, bounds, hand = arm["chain"], arm["bounds"], arm["hand"]
+    errs = []
+
+    def solve(tgt, w_up, seed=None):
+        a, e = ik(joints, {}, chain, bounds, hand, arm["grip"], tgt, arm["up"], (0, 1, 0), w_up,
+                  [[seed[c] for c in chain]] if seed else (), None, model)
+        errs.append(e)
+        return a
+
+    high = solve(_add3(grip_pt, (0, 0.40, 0.05)), 0.002)
+    above = solve(_add3(grip_pt, (0, 0.17, 0)), 0.004, high)
+    grip = solve(grip_pt, 0.004, above)
+    lift = solve(_add3(grip_pt, (0, 0.36, 0)), 0.0, grip)
+    P = [(0.0, {c: 0.0 for c in chain}), (1.2, high), (1.9, above), (2.4, grip), (2.7, grip), (3.3, lift)]
+    t, last = 3.3, lift
+    for dt, *what in work:
+        t += dt
+        if what[0] == "wrist":
+            a = dict(last)
+            a[arm["wrist"]] = round(a.get(arm["wrist"], 0.0) + what[1], 1)
+        else:
+            a = solve(what[0], 0.0, last)
+            last = a
+        P.append((t, a))
+    t += 0.9
+    P += [(t, lift), (t + 0.6, above), (t + 1.1, grip), (t + 1.6, above), (t + 2.2, high), (t + 3.2, {c: 0.0 for c in chain})]
+    stow, T = t + 1.15, t + 3.8
+    r = lambda x: round(x, 2)
+    keys = {c: [[r(tt), p.get(c, 0.0)] for tt, p in P] + [[r(T), 0.0]] for c in chain}
+    for f, closed in arm["fingers"].items():
+        keys[f] = [[0, 0], [1.9, -5], [2.4, -5], [2.7, closed], [r(stow), closed], [r(stow + 0.3), -5],
+                   [r(t + 3.2), 0], [r(T), 0]]
+    keys[lid] = [[0, 0], [0.2, 0], [1.0, 110], [r(t + 2.2), 110], [r(t + 3.0), 0], [r(T), 0]]
+    clip = {"id": cid, "title": title, "duration_s": r(T), "loop": True, "keys": keys,
+            "events": [{"t": 2.7, "take": tool, "hand": hand}, {"t": r(stow), "stow": tool}],
+            "ik_miss_m": [round(e, 3) for e in errs]}
+    used = {c: [min(p.get(c, 0.0) for _, p in P), max(p.get(c, 0.0) for _, p in P)] for c in chain}
+    return clip, used, max(errs)

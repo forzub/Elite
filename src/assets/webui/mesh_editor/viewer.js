@@ -279,8 +279,23 @@ function applyPose() {
   if (!g || !g.meshes) return;
   const world = state.pose ? poseWorld(state.pose.rig, state.pose.angles) : null;
   applyProps(world || (() => new THREE.Matrix4()));
+  // a part of the model itself taken into a hand by a clip event (the crab's tools in its back compartment):
+  // {t, take: "<part>", hand} .. {t, stow: "<part>"} - the part keeps the offset to the hand it had at the take
+  const extra = (state.pose && state.pose.extra) || {};
+  const evs = [...(extra.events || [])].filter((e) => e.t <= (extra.t || 0)).sort((a, b) => a.t - b.t);
+  const heldBy = new Map();
+  for (const e of evs) {
+    const k = e.take || e.stow;
+    if (k && !k.includes('/') && g.meshes.has(k)) heldBy.set(k, e.take ? e : null);
+  }
+  const heldMatrix = (key) => {
+    const e = heldBy.get(key);
+    if (!e || !extra.anglesAt) return null;
+    const w0 = poseWorld(state.pose.rig, extra.anglesAt(e.t));
+    return world(e.hand).clone().multiply(w0(e.hand).clone().invert().multiply(w0(key)));
+  };
   for (const [key, e] of g.meshes) {
-    const M = world ? world(key) : null;
+    const M = world ? (heldMatrix(key) || world(key)) : null;
     for (const o of [e.front, e.back, e.open, e.bad]) {
       if (!o) continue;
       o.matrixAutoUpdate = false;

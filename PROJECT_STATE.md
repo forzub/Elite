@@ -5853,3 +5853,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   error <= 7 mm). RM-2 keeps the take straight from the box on its back (take_from_saddle). Clip events gain take of a
   whole prop (by its handle) / put / dock; the player carries the box with the hand (orientation eased between the
   poses). LIVE: headless editor frames D:/tmp/crab_boxdown.png; step 1 clean; shells + packages rebuilt.
+
+- 2026-11-16 RC-3 TOOL COMPARTMENT + ARM REACH WITHOUT CLIPPING (MESH_EDITOR_SPEC 18.19). Author: «у краба очень
+  неуклюжие руки, они проходят через корпус. если он поставит ящик перед собой - он не сможет ремонтировать. попробуй
+  вмонтировать ящик ему в спину, и проконтролируй длину рук и сочленений, что бы он мог делать все без погружения рук в
+  меши». RC-3: a compartment built into the dome (terracotta housing, brass corner castings = OD-4 cradle locks, foam,
+  hinged lid rc3_tool_lid), the tools are the crab's own parts (rc3_tool_hammer / wrench / bar, slide joints, grip attach
+  points); no saddle / no carried std.drone.toolbox any more (the set agora_rc3_drone_toolbox_set -> CLEANUP #13). Arms:
+  shoulders on the carapace front corners (y 0.70), upper arm 0.52 m, forearm 0.52 m (max radius 0.12). Collision
+  model (drone_toolbox.collide_*): the body as solids (hull box, the carapace as its exact lofted shell, the compartment,
+  the eye stalks), the arms as capsules; the tool clips' IK keeps the arm out (take_builtin), audit_clip samples every
+  clip every 0.05 s. Result: all 8 RC-3 clips, both arms: 0.0 cm penetration; grip IK error <= 2 mm. Clips «Кувалда»,
+  «Лом», «Ключ». The player moves a model's own part into the hand by take / stow events. Not checked: arm vs legs,
+  arm vs arm, the held tool vs the body. LIVE: headless editor frames D:/tmp/crab_bay.png; step 1 clean (intact);
+  damaged variants, shells, package rebuilt.

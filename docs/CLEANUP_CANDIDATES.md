@@ -20,6 +20,7 @@ Sizes are disk sizes on 2026-11-11.
 | 10 | `D:/__elite/assets_source/_prev/equipment_2026-11-14/` | 204 MB | no | check | The equipment OBJs before the generator closed lathe and tube ends (2026-11-14). Kept for comparison until the author has seen the new ones; nothing reads it. |
 | 11 | `D:/__elite/assets_source_backup_2026-11-15_models/` | 894 MB | no | check | Full copy of `assets_source/models` taken before the move to the MESH_EDITOR_SPEC 18 layout (2026-11-15). The moved tree was checked (generators up to date, editor lists all 151); delete once the author is happy with the new layout. |
 | 12 | `D:/__elite/assets_source/_backup/conteiner20ft_2026-11-15/` | <1 MB | no | check | The author's `conteiner20ft.obj` before the door end was cut open (liner + two door leaves, 2026-11-15). Delete once the author is happy with the doors. |
+| 13 | `D:/__elite/assets_source/models/equipment/agora_rc3_drone_toolbox_set/` | <5 MB | no | check | The carry set "RC-3 + toolbox" (2026-11-16): the crab now has the tools in a compartment built into its back, the generator no longer declares this set; also its outputs (shell, .elmodel) under build/models if any. |
 
 Already removed (author-authorized): root `headless_server/` (6.1 GB, stale build), stray `$' '` file, root and
 `tools/navigation_runtime/` traces / logs, `third_party/asio-1-24-0.tar.gz`, all `lod/tiles` (7.88 GB).

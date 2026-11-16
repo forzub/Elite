@@ -22,10 +22,9 @@
     "grip": "fold-down top handle; every tool has its grip point (rig attach grip_<tool>)"
    },
    "carried_by": [
-    "agora.drone.rm2",
-    "agora.drone.rc3"
+    "agora.drone.rm2"
    ],
-   "notes": "A separate object: the drone may carry it on its saddle or leave it. Signal-yellow hollow box 0.52 x 0.20 x 0.32 m, hinged lid, fold-down handle, foam insert with a sledgehammer, an adjustable wrench and a crowbar (each its own part). Drone clips take a tool out by an event (take / stow) and work with it; the mesh editor's player shows the box on the drone and the tool in the hand (MESH_EDITOR_SPEC 18.18).",
+   "notes": "A separate object: the drone may carry it on its saddle or leave it. Signal-yellow hollow box 0.52 x 0.20 x 0.32 m, hinged lid, fold-down handle, foam insert with a sledgehammer, an adjustable wrench and a crowbar (each its own part). Drone clips take a tool out by an event (take / stow) and work with it; the mesh editor's player shows the box on the drone and the tool in the hand (MESH_EDITOR_SPEC 18.18). RC-3 has the same tools in a compartment built into its back instead (author 2026-11-16: «попробуй вмонтировать ящик ему в спину»).",
    "geometry": {
     "status": "PROPOSAL/model",
     "envelope_m": [
@@ -55,13 +54,13 @@
    "overhaul_h": 6000,
    "life_h": 25000,
    "model_asset": "agora_rc3_drone",
-   "notes": "Hull repair drone, a crab: a raised hull under a wide-fronted domed crab carapace (author 2026-11-16: taller body, bigger and longer arms to reach inside), six magnetic legs, two long arms (reach ~1.1 m) with an upper arm and a massive forearm (\"Popeye\") ending in hands with two fingers and a thumb, a welding torch on the right forearm, two camera eyes on stalks (no feelers), the main field thruster in the back and four gimballed field thrusters on the knees of the front and rear legs - in flight those four legs straighten into horizontal rays at 45 degrees and it flies like a quadcopter to a drifting part and tows it home (repair job MovingToFragment -> CapturingFragment -> towing). Agora patchwork palette, brass joints, corner castings on the carapace for the std.bay.drone4 cradle. Every moving part is its own OBJ part; skeleton and test clips in intact/assembly/rig.json.",
+   "notes": "Hull repair drone, a crab: a raised hull under a wide-fronted domed crab carapace (author 2026-11-16: taller body, bigger and longer arms to reach inside), six magnetic legs, a tool compartment built into the back of the carapace (hinged lid; sledgehammer, wrench, crowbar - the drone takes them out over the dome, author 2026-11-16), two long arms on the carapace front corners (upper 0.52 m, forearm 0.52 m) with an upper arm and a massive forearm (\"Popeye\") ending in hands with two fingers and a thumb, a welding torch on the right forearm, two camera eyes on stalks (no feelers), the main field thruster in the back and four gimballed field thrusters on the knees of the front and rear legs - in flight those four legs straighten into horizontal rays at 45 degrees and it flies like a quadcopter to a drifting part and tows it home (repair job MovingToFragment -> CapturingFragment -> towing). Agora patchwork palette, brass joints, corner castings on the carapace for the std.bay.drone4 cradle. Every moving part is its own OBJ part; skeleton and test clips in intact/assembly/rig.json.",
    "geometry": {
     "status": "PROPOSAL/model",
     "envelope_m": [
      2.48,
-     0.871,
-     2.093
+     0.886,
+     2.013
     ],
     "bounds_m": {
      "min": [
@@ -71,14 +70,14 @@
      ],
      "max": [
       1.24,
-      0.871,
-      1.413
+      0.886,
+      1.333
      ]
     },
     "service_clearance_m": [
      2.78,
-     0.98,
-     2.34
+     0.99,
+     2.25
     ],
     "basis": [
      "measured from the LOD1 model (tools/models/units/agora_crab.py), 2026-11-15"
@@ -579,12 +578,103 @@
       "joint": "knee thruster gimbal"
      },
      {
+      "part": "rc3_tool_lid",
+      "parent": "rc3_body",
+      "pivot_m": [
+       0,
+       0.85,
+       -0.17
+      ],
+      "axis": [
+       -1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       0,
+       115
+      ],
+      "joint": "tool compartment lid (+ = open)"
+     },
+     {
+      "part": "rc3_tool_hammer",
+      "parent": "rc3_body",
+      "pivot_m": [
+       0.02,
+       0.78,
+       0.065
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       0,
+       0
+      ],
+      "joint": "кувалда: lifts out of the foam (metres)",
+      "type": "slide",
+      "range_m": [
+       0,
+       0.35
+      ]
+     },
+     {
+      "part": "rc3_tool_wrench",
+      "parent": "rc3_body",
+      "pivot_m": [
+       -0.04,
+       0.768,
+       -0.03
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       0,
+       0
+      ],
+      "joint": "разводной ключ: lifts out of the foam (metres)",
+      "type": "slide",
+      "range_m": [
+       0,
+       0.35
+      ]
+     },
+     {
+      "part": "rc3_tool_bar",
+      "parent": "rc3_body",
+      "pivot_m": [
+       0.0,
+       0.77,
+       -0.115
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       0,
+       0
+      ],
+      "joint": "лом-гвоздодёр: lifts out of the foam (metres)",
+      "type": "slide",
+      "range_m": [
+       0,
+       0.35
+      ]
+     },
+     {
       "part": "rc3_arm_l_shoulder",
       "parent": "rc3_body",
       "pivot_m": [
-       0.3,
-       0.42,
-       0.36
+       0.36,
+       0.7,
+       0.3
       ],
       "axis": [
        0.0,
@@ -593,7 +683,7 @@
       ],
       "range_deg": [
        -40,
-       61
+       82
       ],
       "joint": "shoulder yaw"
      },
@@ -601,9 +691,9 @@
       "part": "rc3_arm_l_upper",
       "parent": "rc3_arm_l_shoulder",
       "pivot_m": [
-       0.3,
-       0.42,
-       0.36
+       0.36,
+       0.7,
+       0.3
       ],
       "axis": [
        1.0,
@@ -611,8 +701,8 @@
        0.0
       ],
       "range_deg": [
-       -150,
-       59
+       -137,
+       50
       ],
       "joint": "shoulder pitch (- = arm up / forward)"
      },
@@ -620,9 +710,9 @@
       "part": "rc3_arm_l_fore",
       "parent": "rc3_arm_l_upper",
       "pivot_m": [
-       0.68,
-       0.36,
-       0.68
+       0.72,
+       0.5,
+       0.62
       ],
       "axis": [
        1.0,
@@ -630,8 +720,8 @@
        0.0
       ],
       "range_deg": [
-       -66,
-       142
+       -68,
+       100
       ],
       "joint": "elbow"
      },
@@ -639,9 +729,9 @@
       "part": "rc3_hand_l",
       "parent": "rc3_arm_l_fore",
       "pivot_m": [
-       0.48,
-       0.6,
-       1.16
+       0.52,
+       0.62,
+       1.08
       ],
       "axis": [
        1.0,
@@ -649,8 +739,8 @@
        0.0
       ],
       "range_deg": [
-       -81,
-       90
+       -100,
+       60
       ],
       "joint": "wrist pitch"
      },
@@ -658,9 +748,9 @@
       "part": "rc3_hand_l_f1",
       "parent": "rc3_hand_l",
       "pivot_m": [
-       0.4987,
-       0.5878,
-       1.2579
+       0.5387,
+       0.6078,
+       1.1779
       ],
       "axis": [
        1.0,
@@ -677,9 +767,9 @@
       "part": "rc3_hand_l_f2",
       "parent": "rc3_hand_l",
       "pivot_m": [
-       0.4287,
-       0.5878,
-       1.2579
+       0.4687,
+       0.6078,
+       1.1779
       ],
       "axis": [
        1.0,
@@ -696,9 +786,9 @@
       "part": "rc3_hand_l_thumb",
       "parent": "rc3_hand_l",
       "pivot_m": [
-       0.4035,
-       0.5812,
-       1.1974
+       0.4435,
+       0.6012,
+       1.1174
       ],
       "axis": [
        -0.0,
@@ -715,9 +805,9 @@
       "part": "rc3_arm_r_shoulder",
       "parent": "rc3_body",
       "pivot_m": [
-       -0.3,
-       0.42,
-       0.36
+       -0.36,
+       0.7,
+       0.3
       ],
       "axis": [
        0.0,
@@ -734,9 +824,9 @@
       "part": "rc3_arm_r_upper",
       "parent": "rc3_arm_r_shoulder",
       "pivot_m": [
-       -0.3,
-       0.42,
-       0.36
+       -0.36,
+       0.7,
+       0.3
       ],
       "axis": [
        1.0,
@@ -753,9 +843,9 @@
       "part": "rc3_arm_r_fore",
       "parent": "rc3_arm_r_upper",
       "pivot_m": [
-       -0.68,
-       0.36,
-       0.68
+       -0.72,
+       0.5,
+       0.62
       ],
       "axis": [
        1.0,
@@ -772,9 +862,9 @@
       "part": "rc3_hand_r",
       "parent": "rc3_arm_r_fore",
       "pivot_m": [
-       -0.48,
-       0.6,
-       1.16
+       -0.52,
+       0.62,
+       1.08
       ],
       "axis": [
        1.0,
@@ -791,9 +881,9 @@
       "part": "rc3_hand_r_f1",
       "parent": "rc3_hand_r",
       "pivot_m": [
-       -0.4287,
-       0.5878,
-       1.2579
+       -0.4687,
+       0.6078,
+       1.1779
       ],
       "axis": [
        1.0,
@@ -810,9 +900,9 @@
       "part": "rc3_hand_r_f2",
       "parent": "rc3_hand_r",
       "pivot_m": [
-       -0.4987,
-       0.5878,
-       1.2579
+       -0.5387,
+       0.6078,
+       1.1779
       ],
       "axis": [
        1.0,
@@ -829,9 +919,9 @@
       "part": "rc3_hand_r_thumb",
       "parent": "rc3_hand_r",
       "pivot_m": [
-       -0.4035,
-       0.5812,
-       1.1974
+       -0.4435,
+       0.6012,
+       1.1174
       ],
       "axis": [
        0.0,

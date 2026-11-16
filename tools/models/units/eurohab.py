@@ -204,6 +204,31 @@ def ytank(p, mat, x, z, y0, y1, r, seg):
     ylathe(p, mat, [(0, y0), (r, y0), (r, y1 - d), (r * 0.88, y1 - d * 0.45), (r * 0.55, y1 - d * 0.1), (0, y1)], seg, t=(x, 0, z), soft=40)
 
 
+def duct_port(p, c, axis, sign, r, depth, lod):
+    """a closed air-loop port (author 2026-11-16: no open fans on the roof - «мы в космосе»; the air still has to be
+    moved - there is no convection in free fall - so the fan sits inside the duct): base flange, a short duct stub with
+    a bellows band, a blind end flange with a bolt circle where the ship's cabin duct is coupled"""
+    small = small_for(lod)
+    seg = max(small * 2, 12) if lod < 2 else 8
+    d = [0.0] * 3
+    d[axis] = sign
+    Rm = axis_to(tuple(d))
+    h = depth * 2.2
+    lathe(p, BL, [(0, 0), (r + 0.05, 0), (r + 0.05, 0.025), (r, 0.025)], seg, Rm, c)                           # base flange
+    lathe(p, WH, [(r, 0.025), (r, h - 0.03), (r + 0.05, h - 0.03), (r + 0.05, h), (0, h)], seg, Rm, c)          # stub + end flange
+    if lod < 2:
+        for k in range(3):                                                                                     # bellows band
+            y = 0.06 + k * 0.035
+            lathe(p, GR, crect(r, r + 0.014, y, y + 0.02), seg, Rm, c)
+        lathe(p, YE, crect(r, r + 0.006, h - 0.07, h - 0.05), seg, Rm, c)                                     # train stripe
+    if lod == 0:
+        for k in range(8):                                                                                     # bolt circle
+            a = 2 * math.pi * k / 8
+            q = apply(Rm, ((r + 0.025) * math.cos(a), (r + 0.025) * math.sin(a), h + 0.004))
+            cyl(p, GR, (c[0] + q[0], c[1] + q[1], c[2] + q[2]),
+                tuple(c[i] + q[i] + d[i] * 0.012 for i in range(3)), 0.009, 6)
+
+
 def fan_disc(p, c, axis, sign, r, depth, lod, rim=BL):
     """round fan housing: rim, dark grille, hub; close: grille bars"""
     small = small_for(lod)
@@ -283,9 +308,9 @@ def l4_parts(lod):
         for y in (-0.22, 0.18):
             lathe(wa, YE, crect(0.18, 0.185, -0.02, 0.02), 16, axis_to((1, 0, 0)), (-0.70, y, -0.62))
 
-    fn = P["l4_fan"] = Part("l4_fan")                                                                # twin fans on top
+    fn = P["l4_duct"] = Part("l4_duct")                                                              # twin air-loop ports on top
     for s in (-1, 1):
-        fan_disc(fn, (s * 0.50, yt, zc), 1, 1, 0.24, 0.06, lod)
+        duct_port(fn, (s * 0.50, yt, zc), 1, 1, 0.20, 0.06, lod)
     return P
 
 
@@ -298,7 +323,7 @@ def l4_hits():
     for s in (-1, 1):
         H.append(hcyl("l4_scrubber", (s * 0.50, 0.12, z1), (s * 0.50, 0.12, z1 + 0.13), 0.26))
         H.append(hbox("l4_o2", (s * (cx + 0.045), 0.02, zc), (0.09, 0.72, 0.82)))
-        H.append(hcyl("l4_fan", (s * 0.50, yt, zc), (s * 0.50, yt + 0.067, zc), 0.24))
+        H.append(hcyl("l4_duct", (s * 0.50, yt, zc), (s * 0.50, yt + 0.135, zc), 0.25))
     for y in (-0.22, 0.18):
         H.append(hcyl("l4_water", (-0.88, y, -0.62), (0.88, y, -0.62), 0.17))
     return H
@@ -377,9 +402,9 @@ def l20_parts(lod):
         for z in (-0.65, 0.05):
             hatch(wa, 2, 1, z + 0.28, 0, ys + 0.45, 0.20, 0.24, 0, 0 if z < 0 else 1, mat=GR, t=0.01)
 
-    fn = P["l20_fan"] = Part("l20_fan")                                                              # twin fans on the bridge duct
+    fn = P["l20_duct"] = Part("l20_duct")                                                            # twin air-loop ports on the bridge duct
     for s in (-1, 1):
-        fan_disc(fn, (s * 0.45, duct_y1, -0.30), 1, 1, 0.26, 0.10, lod)
+        duct_port(fn, (s * 0.45, duct_y1, -0.30), 1, 1, 0.22, 0.10, lod)
     if close():
         for s in (-1, 1):
             harness(fn, bezier((s * 0.75, duct_y1 + 0.02, -0.30), (s * 1.0, duct_y1 + 0.1, -0.30), (s * 1.3, duct_y1, -0.1),
@@ -396,7 +421,7 @@ def l20_hits():
     for s in (-1, 1):
         H.append(hbox("l20_frame", (s * cxm, (ys + yt) / 2, cz), (cw + 0.06, ch, cd)))
         H.append(hbox("l20_o2", (s * cxm, yt + 0.13, 0.225), (0.90, 0.26, 0.42)))
-        H.append(hcyl("l20_fan", (s * 0.45, yt + 0.34, -0.30), (s * 0.45, yt + 0.44, -0.30), 0.26))
+        H.append(hcyl("l20_duct", (s * 0.45, yt + 0.34, -0.30), (s * 0.45, yt + 0.56, -0.30), 0.27))
         for xx in (0.72, 1.32):
             H.append(hcyl("l20_scrubber", (s * xx, ys, d["can_z"]), (s * xx, ys + 1.15, d["can_z"]), 0.16))
     for z in (-0.65, 0.05):

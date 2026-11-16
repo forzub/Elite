@@ -5897,3 +5897,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   cylinders keep hexTop < 0); EliteModelAssetInfo now lists the volumes - the rebuilt packages carry the prisms
   (sk4: 3 hexprism, mjfe2: 2). LIVE: headless editor step 3 frames D:/tmp/hex_hits.png. The game still does not read
   collision volumes from packages (open item).
+
+- 2026-11-16 NO ROOF VENTILATION (PS-100, L-20, L-4). Author: «PS-100 ... вентиляция на крыше - она не нужна. мы в
+  космосе. L-20 ... вентиляторы на крыше. L-4 ... то же самое». PS-100: the two roof climate units (radiator fins,
+  louvre bands) removed with their hit volumes - the cabin air is the ship life support's job. L-4 / L-20: the open fan
+  discs replaced by closed air-loop ports (eurohab.duct_port: base flange, duct stub with a bellows band, blind end
+  flange with a bolt circle where the cabin duct couples; the fan sits inside the duct - in free fall there is no
+  convection, the air must still be moved); parts l4_fan / l20_fan -> l4_duct / l20_duct. L-200 still has its twin fans
+  at the ventilation-spine ends (not asked). LIVE: headless editor frames D:/tmp/no_fans.png; step 1 clean (intact);
+  damaged variants, shells, packages rebuilt (3 / 0 failures).
+

@@ -866,26 +866,8 @@ def pax_parts(lod):
             if close():
                 bolt_grid(se, 2, s, zf + s * 0.07, -0.42, 0.42, yc - 0.90, yc + 0.90, 2, 5, 0.035)
 
-    cl = P["pax100_climate"] = Part("pax100_climate")                      # two roof climate units (different makers)
-    for k, z in enumerate((-2.6, 2.6)):
-        mat = SD if k == 0 else WH
-        box(cl, mat, (0, yt + 0.21, z), (2.8, 0.42, 2.2), chamfer=0.04 if lod == 0 else 0.0)
-        # radiator fins on the roof (no fans: useless in vacuum, author 2026-11-15)
-        if lod < 2:
-            for i in range(9):
-                box(cl, CA, (-1.12 + 0.28 * i, yt + 0.48, z), (0.035, 0.12, 1.7))
-        else:
-            box(cl, CA, (0, yt + 0.46, z), (2.3, 0.08, 1.7))
-        if lod < 2:
-            box(cl, BL if k == 0 else TC, (0, yt + 0.21, z + (1.12 if k == 0 else -1.12)), (2.4, 0.26, 0.04))  # louvre band
-            for s in (-1, 1):
-                box(cl, CA, (s * 1.2, yt + 0.03, z), (0.25, 0.06, 2.3))                                           # feet rails
-        if lod == 0:
-            for i in range(8):
-                box(cl, CA, (-1.05 + i * 0.3, yt + 0.21, z + (1.15 if k == 0 else -1.15)), (0.04, 0.22, 0.03))
-        if close():
-            pipe_run(cl, "eq_steel", [(1.4, yt + 0.15, z), (1.7, yt + 0.15, z), (1.7, yt - 0.02, z)], 0.05)
-            brass_fitting(cl, (-1.4, yt + 0.3, z + 0.5), (-1, 0, 0), 0.025, lod)
+    # no roof climate units (author 2026-11-16: «вентиляция на крыше - она не нужна. мы в космосе»): the cabin air is
+    # handled inside the pressure hull by the ship's life support (Euro-Habitat L-*)
 
     pw = P["pax100_power"] = Part("pax100_power")                          # power distribution cabinet + conduits, -X side
     xc = -(hx - sk) - 0.12
@@ -917,8 +899,6 @@ def pax_hits():
     for s in (-1, 1):
         for y0 in (-hy + b + 0.10, -hy + 2.50):
             H.append(hbox("pax100_seal", (0, y0 + 1.0, s * (hz - 0.04)), (1.10, 2.06, 0.10)))
-    for z in (-2.6, 2.6):
-        H.append(hbox("pax100_climate", (0, yt + 0.27, z), (2.8, 0.54, 2.3)))
     H.append(hbox("pax100_power", (-(hx - sk) - 0.12, -hy + 1.15, -2.6), (0.24, 1.10, 1.30)))
     return H
 

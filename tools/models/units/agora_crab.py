@@ -319,7 +319,7 @@ def rc3_clips():
     C.append({"id": "repair", "title": "Ремонт: руки работают по очереди", "duration_s": 2.0, "loop": True, "keys": k})
     # 3. flight (author 2026-11-16: «для полета ноги надо складывать так, что бы вид был как у квадрокоптера - вытягивать
     #    в лучи под 45 град»): the four pod legs straighten into horizontal rays at 45 degrees, emitters down; the middle
-    #    pair tucks up under the shell; the arms fold in; the knee thrusters swing to steer
+    #    pair straightens into side rays; the arms fold in; the knee thrusters swing to steer
     k = {}
     for key in RC3_LEGS:
         s = RC3_LEGS[key][0]
@@ -332,9 +332,12 @@ def rc3_clips():
             k[f"rc3_leg_{key}_tibia"] = [[0, 0], [1.2, tb], [4.8, tb], [6.0, 0]]
             k[f"rc3_leg_{key}_thruster"] = [[0, 0], [1.2, lv], [2.2, lv + sw * 25], [3.2, lv - sw * 25], [4.2, lv + sw * 25],
                                             [4.8, lv], [6.0, 0]]
-        else:
-            k[f"rc3_leg_{key}_femur"] = [[0, 0], [1.2, 30], [4.8, 30], [6.0, 0]]
-            k[f"rc3_leg_{key}_tibia"] = [[0, 0], [1.2, -100], [4.8, -100], [6.0, 0]]
+        else:   # the middle pair: extra rays straight out to the sides (author 2026-11-16: tucked, they sank into the hull)
+            Hp, Cp, K, A, F, ax = rc3_leg(key)
+            yaw, fm, tb, lv = ray_pose(Hp, Cp, K, A, (s, 0.0, 0.0))
+            k[f"rc3_leg_{key}_coxa"] = [[0, 0], [1.2, yaw], [4.8, yaw], [6.0, 0]]
+            k[f"rc3_leg_{key}_femur"] = [[0, 0], [1.2, fm], [4.8, fm], [6.0, 0]]
+            k[f"rc3_leg_{key}_tibia"] = [[0, 0], [1.2, tb], [4.8, tb], [6.0, 0]]
     for side in ("l", "r"):
         k[f"rc3_arm_{side}_upper"] = [[0, 0], [1.2, 20], [4.8, 20], [6.0, 0]]
         k[f"rc3_arm_{side}_fore"] = [[0, 0], [1.2, -25], [4.8, -25], [6.0, 0]]

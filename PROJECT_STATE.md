@@ -5827,7 +5827,7 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   RC-3: hull 0.29..0.51 m under a lofted wide-fronted hexagonal carapace (edge band + dome to 0.73 m), longer legs, arms
   reach ~1.1 m with a massive forearm and bigger hands; envelope [2.48, 0.871, 2.093] (proposal updated). new_equipment
   ray_pose(): coxa yaw onto the 45 deg diagonal, femur + tibia into one horizontal ray, pads / knee emitters levelled;
-  used by the fly clips of RM-2 (4 legs) and RC-3 (4 pod legs, the middle pair tucks); knee / gimbal ranges widened.
+  used by the fly clips of RM-2 (4 legs) and RC-3 (4 pod legs at 45 deg + the middle pair as side rays: tucked they sank into the hull, author 2026-11-16; D:/tmp/crab_hexa.png); knee / gimbal ranges widened.
   Viewer: MeshViewer.viewFrom(x, y, z) for scripted views. LIVE: headless editor frames D:/tmp/flyrays.png (crab rest /
   repair / flight iso + top + side, RM-2 flight transition + top); step 1 on all variants of both drones (intact 0
   errors, damaged = open wounds by design); shells + packages rebuilt (2 packages, 0 failures).

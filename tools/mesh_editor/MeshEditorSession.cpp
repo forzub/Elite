@@ -10,6 +10,9 @@
 #include <limits>
 #include <map>
 #include <tuple>
+#include <array>
+#include <sstream>
+#include <cstdio>
 
 #include "src/ui/html/HtmlUiServer.h"
 #include "tools/mesh_editor/MeshEditorInspect.h"
@@ -344,6 +347,54 @@ fs::path Session::stateDir(const ModelCard& c) const
 
 namespace
 {
+// a rig prop's meshes for the player: every <part>.obj of a LOD folder as a flat triangle list (fan-triangulated
+// faces, millimetre-rounded) - {key, tris: [x, y, z, ...]}
+nlohmann::json propParts(const fs::path& lodDir)
+{
+    nlohmann::json out = nlohmann::json::array();
+    std::error_code ec;
+    std::vector<fs::path> files;
+    for (fs::directory_iterator it(lodDir, ec), end; !ec && it != end; it.increment(ec))
+        if (it->is_regular_file(ec) && it->path().extension() == ".obj")
+            files.push_back(it->path());
+    std::sort(files.begin(), files.end());
+    for (const auto& f : files)
+    {
+        std::ifstream in(f, std::ios::binary);
+        std::vector<std::array<double, 3>> v;
+        std::vector<double> tris;
+        std::string line;
+        while (std::getline(in, line))
+        {
+            if (line.size() > 2 && line[0] == 'v' && line[1] == ' ')
+            {
+                std::array<double, 3> p {};
+                std::sscanf(line.c_str() + 2, "%lf %lf %lf", &p[0], &p[1], &p[2]);
+                v.push_back(p);
+            }
+            else if (line.size() > 2 && line[0] == 'f' && line[1] == ' ')
+            {
+                std::istringstream s(line.substr(2));
+                std::string tok;
+                std::vector<int> poly;
+                while (s >> tok)
+                {
+                    int i = std::atoi(tok.c_str());
+                    poly.push_back(i < 0 ? static_cast<int>(v.size()) + i : i - 1);
+                }
+                for (std::size_t k = 1; k + 1 < poly.size(); ++k)
+                    for (int idx : {poly[0], poly[k], poly[k + 1]})
+                        if (idx >= 0 && idx < static_cast<int>(v.size()))
+                            for (int x = 0; x < 3; ++x)
+                                tris.push_back(std::round(v[static_cast<std::size_t>(idx)][x] * 1000.0) / 1000.0);
+            }
+        }
+        if (!tris.empty())
+            out.push_back({{"key", f.stem().generic_u8string()}, {"tris", tris}});
+    }
+    return out;
+}
+
 // <root>/intact or <root>/damaged/<variant>
 fs::path variantDir(const ModelCard& c)
 {
@@ -647,7 +698,24 @@ nlohmann::json Session::withShell(nlohmann::json j, const ModelCard& c) const
     // the skeleton and test animations of the model (elite.rig.v1, eqlib.rig_text): the player under the 3D view
     const nlohmann::json rig = readJsonFile(c.root / "intact" / "assembly" / "rig.json");
     if (rig.is_object() && rig.contains("joints"))
+    {
         j["rig"] = rig;
+        // props of the rig (another model the player shows with this one: a repair drone's toolbox on its saddle and
+        // the tools its hands take out - MESH_EDITOR_SPEC 18.18): the prop's LOD1 parts as triangles + its own rig
+        if (rig.contains("props") && rig["props"].is_array())
+            for (auto& p : j["rig"]["props"])
+            {
+                const std::string ref = p.value("ref", std::string());
+                const auto slash = ref.find('/');
+                const ModelCard* pc = slash == std::string::npos ? nullptr : m_catalog.find(ref.substr(0, slash), ref.substr(slash + 1));
+                if (!pc)
+                    continue;
+                p["parts"] = propParts(pc->root / "intact" / "assembly" / "LOD1");
+                const nlohmann::json prig = readJsonFile(pc->root / "intact" / "assembly" / "rig.json");
+                if (prig.is_object())
+                    p["rig"] = prig;
+            }
+    }
     for (const auto& v : c.variants)
         if (v.id == c.variant)
             j["inGame"] = v.inGame;

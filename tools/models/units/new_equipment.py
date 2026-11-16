@@ -11,6 +11,7 @@
 import math
 
 from eqlib import *  # noqa: F401,F403 - the unit kernel (geometry, LOD policy, shared builders)
+from units.drone_toolbox import carry_set, take_clip, tb_saddle, toolbox_prop, widen
 
 register_materials({
     # Sol Mass Yards (serial school)
@@ -459,6 +460,7 @@ RM2_EYES = [(s, (s * 0.078, 0.905, 0.785), norm((0.0, -0.06, 1.0))) for s in (1,
 RM2_BROW = {s: (s * 0.078, 0.969, 0.808) for s in (1, -1)}      # brow plate centre (over each barrel)
 RM2_BROW_PIVOT = {s: (s * 0.135, 0.969, 0.808) for s in (1, -1)}   # hinge at the outer end, axis (0, 0, -s): + = inner end up
 RM2_PALM = 0.075
+RM2_SADDLE = (0.0, 0.857, -0.03)                                # std.drone.toolbox saddle: castings' tops, box along Z
 
 
 def rm2_knee_pod(key):
@@ -572,6 +574,10 @@ def rm2_parts(lod):
         for s in (-1, 1):                                                                           # harnesses to the hips / arms
             harness(th, bezier((s * 0.08, y0 + 0.05, -0.18), (s * 0.17, y0 + 0.02, -0.10), (s * 0.17, y0 + 0.0, 0.05), (s * 0.11, 0.70, 0.40), 12),
                     0.008, 2, (S_, "eq_insulator"), ties=B_, tie_every=4)
+
+    # --- the std.drone.toolbox saddle on the thorax roof (the box rides along the body, clear of the shoulder pods)
+    box(th, S_, (0, RM2_SADDLE[1] - 0.081, RM2_SADDLE[2]), (0.19, 0.03, 0.34), chamfer=ch(0.004))
+    tb_saddle(th, RM2_SADDLE, lod, rotated=True, plate=S_)
 
     # --- field thrusters on the thorax shoulders
     tf = part("rm2_thrusters_fore")
@@ -942,8 +948,44 @@ def rm2_clips():
     return C
 
 
-RIGS = {"agora_rm2_drone": lambda: {"joints": RM2_RIG, "clips": rm2_clips()}}
+def rm2_attach():
+    """the toolbox saddle on the thorax and a grip point in each hand (std.drone.toolbox)"""
+    A = [{"id": "saddle", "part": "rm2_thorax", **tb_saddle(Part("probe"), RM2_SADDLE, 3, rotated=True)}]
+    for s, side in ((1, "l"), (-1, "r")):
+        S, E, Wp, T = rm2_arm(s)
+        dw, nup = rm2_hand_axes(s)
+        A.append({"id": f"grip_{side}", "part": f"rm2_hand_{side}", "point_m": [round(v, 4) for v in _add(Wp, _mul(dw, RM2_PALM + 0.05))],
+                  "up": [round(v, 4) for v in nup], "forward": [round(v, 4) for v in dw], "fits": "grip",
+                  "note": "between the fingers and the thumb (fingers closed ~70 deg)"})
+    return A
+
+
+def rm2_tool_clips():
+    """tool clips (author 2026-11-16): the left hand (the cutter rides on the right forearm) reaches back over the
+    shoulder into the box on the thorax saddle, takes the wrench, turns a nut in front, puts it back (IK)"""
+    S, E, Wp, T = rm2_arm(1)
+    dw, nup = rm2_hand_axes(1)
+    arm = {"chain": ["rm2_arm_l_shoulder", "rm2_arm_l_upper", "rm2_arm_l_fore", "rm2_hand_l"],
+           "bounds": {"rm2_arm_l_shoulder": (-110, 110), "rm2_arm_l_upper": (-160, 60), "rm2_arm_l_fore": (-60, 160),
+                      "rm2_hand_l": (-90, 90)},
+           "hand": "rm2_hand_l", "grip": _add(Wp, _mul(dw, RM2_PALM + 0.05)), "up": nup, "wrist": "rm2_hand_l",
+           "fingers": {"rm2_hand_l_f1": 70, "rm2_hand_l_f2": 70, "rm2_hand_l_thumb": 45},
+           "avoid": ("rm2_arm_l_fore", [_lerp(E, Wp, u) for u in (0.0, 0.3, 0.6)], 0.05)}
+    nut = (0.12, 0.30, 1.20)
+    clip, used, err = take_clip(RM2_RIG, RM2_PROP, arm, "tb_tool_wrench",
+                                [(0.9, nut), (0.5, "wrist", 35), (0.5, "wrist", -35), (0.5, "wrist", 35), (0.5, "wrist", -35)],
+                                "wrench", "Ключ: достать из ящика, повернуть гайку, убрать")
+    widen(RM2_RIG, used)
+    return [clip], err
+
+
+RM2_PROP = toolbox_prop("rm2_thorax", tb_saddle(Part("probe"), RM2_SADDLE, 3, rotated=True))
+RM2_TOOL_CLIPS, RM2_IK_MISS = rm2_tool_clips()
+RIGS = {"agora_rm2_drone": lambda: {"joints": RM2_RIG, "clips": rm2_clips() + RM2_TOOL_CLIPS, "attach": rm2_attach(),
+                                    "props": [RM2_PROP]}}
 
 ASSETS = {"smy_mp8_pod": mp8_parts, "hyperion_rd1_drone": rd1_parts, "agora_rm2_drone": rm2_parts}
 HITS = {"smy_mp8_pod": mp8_hits, "hyperion_rd1_drone": rd1_hits, "agora_rm2_drone": rm2_hits}
 MODEL_ASSETS = {"sol.wpn.mp8": "smy_mp8_pod", "hyp.drone.rd1": "hyperion_rd1_drone", "agora.drone.rm2": "agora_rm2_drone"}
+
+SETS = carry_set("agora_rm2_drone", "RM-2 Mantide", tb_saddle(Part("probe"), RM2_SADDLE, 3, rotated=True))

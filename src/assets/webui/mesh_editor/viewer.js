@@ -158,10 +158,80 @@ function poseWorld(rig, angles) {
   };
   return world;
 }
+// props of the rig (MESH_EDITOR_SPEC 18.18): another model shown with this one - a repair drone's toolbox on its saddle.
+// rig.props[i] = {id, ref, part, point_m, rotation_deg, parts: [{key, tris}], rig}; clip keys "<prop id>/<part>" pose the
+// prop's own joints (the lid); extra.held = [{tool: "<prop id>/<part>", hand: <part>, at: angles at the take}] - from
+// the take on, the tool keeps the offset to the hand it had at that moment (no jump), until it is stowed
+const propsState = { rig: null, root: null, items: [] };
+function propsFor(rig) {
+  if (propsState.rig === rig) return propsState;
+  if (propsState.root) disposeRoot(propsState.root);
+  propsState.rig = rig;
+  propsState.root = null;
+  propsState.items = [];
+  if (!rig || !rig.props || !rig.props.length) return propsState;
+  propsState.root = new THREE.Group();
+  for (const p of rig.props) {
+    const meshes = new Map();
+    for (const part of p.parts || []) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(part.tris), 3));
+      geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, partMaterial());
+      m.material.color.set(0xd8b04a);
+      m.material.side = THREE.DoubleSide;
+      m.matrixAutoUpdate = false;
+      m.userData.prop = p.id;
+      propsState.root.add(m);
+      meshes.set(part.key, m);
+    }
+    const r = (p.rotation_deg || [0, 0, 0]).map((a) => THREE.MathUtils.degToRad(a));
+    const place = new THREE.Matrix4().makeTranslation(...(p.point_m || [0, 0, 0]))
+      .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(r[0], r[1], r[2], 'XYZ')));
+    propsState.items.push({ p, meshes, place });
+  }
+  return propsState;
+}
+function applyProps(world) {
+  const pose = state.pose;
+  const ps = propsFor(pose ? pose.rig : null);
+  if (!ps.root) return;
+  const shown = new Set((pose && pose.extra && pose.extra.props) || []);
+  ps.root.visible = shown.size > 0;
+  if (!ps.root.visible) return;
+  if (!ps.root.parent) scene.add(ps.root);
+  const angles = pose.angles || {};
+  const placeOf = (it, w) => w(it.p.part).clone().multiply(it.place);
+  for (const it of ps.items) {
+    const on = shown.has(it.p.id);
+    const own = {};
+    for (const [k, v] of Object.entries(angles)) if (k.startsWith(it.p.id + '/')) own[k.slice(it.p.id.length + 1)] = v;
+    const pw = it.p.rig && it.p.rig.joints ? poseWorld(it.p.rig, own) : () => new THREE.Matrix4();
+    const base = placeOf(it, world);
+    for (const [key, m] of it.meshes) {
+      m.visible = on;
+      const held = ((pose.extra && pose.extra.held) || []).find((h) => h.tool === `${it.p.id}/${key}`);
+      if (held) {
+        // the tool's world at the take (box pose then, rest pose of the tool) relative to the hand then
+        const w0 = poseWorld(pose.rig, held.at);
+        const own0 = {};
+        for (const [k, v] of Object.entries(held.at)) if (k.startsWith(it.p.id + '/')) own0[k.slice(it.p.id.length + 1)] = v;
+        const toolAt = placeOf(it, w0).multiply((it.p.rig && it.p.rig.joints ? poseWorld(it.p.rig, own0) : () => new THREE.Matrix4())(key));
+        const offset = w0(held.hand).clone().invert().multiply(toolAt);
+        m.matrix.copy(world(held.hand)).multiply(offset);
+      } else {
+        m.matrix.copy(base).multiply(pw(key));
+      }
+      m.matrixWorldNeedsUpdate = true;
+    }
+  }
+}
+
 function applyPose() {
   const g = state.groups[state.current];
   if (!g || !g.meshes) return;
   const world = state.pose ? poseWorld(state.pose.rig, state.pose.angles) : null;
+  applyProps(world || (() => new THREE.Matrix4()));
   for (const [key, e] of g.meshes) {
     const M = world ? world(key) : null;
     for (const o of [e.front, e.back, e.open, e.bad]) {
@@ -490,7 +560,7 @@ window.MeshViewer = {
   onPickNode(cb) { asm.onPick = cb; },
   fitAssembly() { if (asm.root) frame(new THREE.Box3().setFromObject(asm.root)); },
   // the player (app.js Anim): angles in degrees per part; null = the modelled pose
-  setPose(rig, angles) { state.pose = rig && angles ? { rig, angles } : null; applyPose(); },
+  setPose(rig, angles, extra) { state.pose = rig && angles ? { rig, angles, extra } : null; if (!state.pose) applyProps(() => new THREE.Matrix4()); applyPose(); },
   // check: the model roots in the scene (a stale load used to leave the previous model there)
   stats() { return { inScene: scene.children.filter((o) => o.isGroup).length, groups: state.groups.length }; },
 };

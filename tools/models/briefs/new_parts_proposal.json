@@ -558,7 +558,7 @@
       ],
       "range_deg": [
        -40,
-       40
+       69
       ],
       "joint": "shoulder yaw"
      },
@@ -576,8 +576,8 @@
        0.0
       ],
       "range_deg": [
-       -60,
-       50
+       -100,
+       60
       ],
       "joint": "shoulder pitch (- = arm up / forward)"
      },
@@ -595,7 +595,7 @@
        0.0
       ],
       "range_deg": [
-       -60,
+       -92,
        100
       ],
       "joint": "elbow"
@@ -812,6 +812,41 @@
     ]
    },
    "official_name": "Agora RC-3 Granchio"
+  },
+  {
+   "id": "std.drone.toolbox",
+   "cat": "drone_accessory",
+   "mfr": "open standard (any maker)",
+   "name": "Ящик с инструментами для ремонтного дрона (стандарт)",
+   "model": "std.drone.toolbox",
+   "status": "PROPOSAL (author 2026-11-16: «отдельный ящик с инструментами, он его может брать а может и не брать. можно взваливать на себя сверху ... то же самое у богомола и вообще у любого дрона-ремонтника»)",
+   "mass_t": 0.03,
+   "price_cr": 9000,
+   "model_asset": "std_drone_toolbox",
+   "contents": [
+    "sledgehammer (tb_tool_hammer)",
+    "adjustable wrench (tb_tool_wrench)",
+    "crowbar (tb_tool_bar)",
+    "spare torch tips"
+   ],
+   "interface": {
+    "saddle": "four twist-lock castings at 0.28 x 0.22 m on the drone's back; the box's lock plates sit on them",
+    "grip": "fold-down top handle; every tool has its grip point (rig attach grip_<tool>)"
+   },
+   "carried_by": [
+    "agora.drone.rm2",
+    "agora.drone.rc3"
+   ],
+   "notes": "A separate object: the drone may carry it on its saddle or leave it. Signal-yellow hollow box 0.52 x 0.20 x 0.32 m, hinged lid, fold-down handle, foam insert with a sledgehammer, an adjustable wrench and a crowbar (each its own part). Drone clips take a tool out by an event (take / stow) and work with it; the mesh editor's player shows the box on the drone and the tool in the hand (MESH_EDITOR_SPEC 18.18).",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     0.58,
+     0.27,
+     0.36
+    ],
+    "frame": "base (lock plates' underside) at y = -0.008, long side X, front (latches) +Z"
+   }
   }
  ],
  "naming": "names follow tools/colonization_lab/canon/ship_naming.json (maker language; display_name_ru = name)",

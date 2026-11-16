@@ -32,6 +32,7 @@ import units  # noqa: E402
 def collect():
     assets, hits, models = {}, {}, {}
     RIGS.clear()
+    SETS.clear()
     for m in sorted(pkgutil.iter_modules(units.__path__), key=lambda x: x.name):
         mod = importlib.import_module(f"units.{m.name}")
         for k, v in getattr(mod, "ASSETS", {}).items():
@@ -40,6 +41,7 @@ def collect():
             assets[k] = v
         hits.update(getattr(mod, "HITS", {}))
         RIGS.update(getattr(mod, "RIGS", {}))
+        SETS.update(getattr(mod, "SETS", {}))
         for pid, folder in getattr(mod, "MODEL_ASSETS", {}).items():
             if pid in models:
                 raise ValueError(f"part {pid} has two models")
@@ -48,6 +50,7 @@ def collect():
 
 
 RIGS = {}        # model folder -> rig_fn() (collect)
+SETS = {}        # set folder -> spec of whole models by reference (collect)
 PASSPORTS = {}   # model id -> (title, kind, description) of a model the split creates (pads, sets)
 
 
@@ -118,6 +121,24 @@ def build(only=None):
                                          f"{what} {short}: сменная расходная часть, отдельный модуль (MESH_EDITOR_SPEC 18.11).")
             PASSPORTS[asset + "_set"] = (f"{short} + пятак" + (f" · {rest}" if rest else ""), "assembly",
                                          f"Сборка: {short} и его пятак по ссылкам (MESH_EDITOR_SPEC 18.11).")
+    # sets of whole models by reference declared by the units (SETS = {set folder: {title, description, nodes: [(node id,
+    # model folder, position, rotation_deg, role, parent)]}}, e.g. a repair drone + std.drone.toolbox on its saddle):
+    # the view meshes are the models placed, the package takes the referenced modules' own meshes
+    for sid, spec in SETS.items():
+        if only and only not in sid and not any(only in n[1] for n in spec["nodes"]):
+            continue
+        for lod in (0, 1, 2, 3):
+            eqlib._CLOSE[0] = lod == 0
+            try:
+                view = {}
+                for nid, folder, pos, rot, role, parent in spec["nodes"]:
+                    m = pads.merged(folder, list(assets[folder](max(0, lod - 1)).values()))
+                    view[folder] = eqlib.placed(m, pads.euler(rot), pos)
+            finally:
+                eqlib._CLOSE[0] = False
+            emit(sid, lod, view)
+        put(sid, "assembly.json", pads.ref_set_doc(sid, spec["nodes"], {n[0]: hits[n[1]]() for n in spec["nodes"] if n[1] in hits}))
+        PASSPORTS[sid] = (spec["title"], "assembly", spec["description"])
     return files, stats
 
 

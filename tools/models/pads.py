@@ -184,3 +184,33 @@ def set_doc(unit, ms, unit_hits, pad_hits):
            "mounts": mts, "seams": [], "connections": conns,
            "damage": {"states": [], "detachable": [m["id"] for m in ms]}}
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
+
+
+def ref_set_doc(set_id, nodes, hits_by_node):
+    """assembly.json of a set of whole models by reference (std.drone.toolbox carry sets, 2026-11-16): nodes =
+    [(node id, model folder, position, rotation_deg, role, parent)], hits_by_node = {node id: [hit dicts in the model's
+    frame]} - placed into the set frame; mounts link each child to its parent"""
+    out_nodes, hv, mts = [], [], []
+    for nid, folder, pos, rot, role, parent in nodes:
+        out_nodes.append({"id": nid, "part": folder, "parent": parent, "role": role, "ref": "equipment_ship/" + folder,
+                          "position": [round(x, 4) + 0.0 for x in pos], "rotation_deg": [round(x, 4) + 0.0 for x in rot]})
+        R = euler(rot)
+        counts = {}
+        for h in hits_by_node.get(nid, []):
+            counts[h["part"]] = counts.get(h["part"], 0) + 1
+            q = {k: h[k] for k in ("part", "shape", "half_size", "radius", "half_height", "radius_top") if k in h}
+            q["id"] = f'{nid}.{h["part"]}.{counts[h["part"]]}'
+            q["node"] = nid
+            q["position"] = [round(a + b, 4) + 0.0 for a, b in zip(apply(R, h["position"]), pos)]
+            q["rotation_deg"] = to_euler(_mat(R, euler(h.get("rotation_deg", [0, 0, 0]))))
+            q["source"] = "hit_volumes.json"
+            hv.append(q)
+        if parent:
+            mts.append({"id": f"mount_{nid}", "a": parent, "b": nid, "kind": role + "_mount", "load_bearing": False,
+                        "position": [round(x, 4) + 0.0 for x in pos], "rotation_deg": [round(x, 4) + 0.0 for x in rot],
+                        "half_size": [0.15, 0.02, 0.12], "source": "generator"})
+    doc = {"schema": "elite.assembly.v1", "model": f"equipment_ship/{set_id}", "generator": GEN,
+           "seededFrom": ["generator"], "parts": {}, "nodes": out_nodes, "materials": {}, "hit_volumes": hv, "zones": [],
+           "mounts": mts, "seams": [], "connections": [],
+           "damage": {"states": [], "detachable": [n[0] for n in nodes if n[5]]}}
+    return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"

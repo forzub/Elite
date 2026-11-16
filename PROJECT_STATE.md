@@ -5832,3 +5832,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   repair / flight iso + top + side, RM-2 flight transition + top); step 1 on all variants of both drones (intact 0
   errors, damaged = open wounds by design); shells + packages rebuilt (2 packages, 0 failures).
 
+- 2026-11-16 REPAIR-DRONE TOOLBOX + TOOL CLIPS (MESH_EDITOR_SPEC 18.18). Author: a separate toolbox the drone may or may
+  not carry on its back, for every repair drone; it opens; the drone pulls a sledgehammer or other tools out, depending
+  on the animation. PROPOSAL std.drone.toolbox (units/drone_toolbox.py, model std_drone_toolbox): hollow box, hinged
+  lid, fold-down handle, foam insert, tools as parts (tb_tool_hammer / wrench / bar, slide joints, grip attach points).
+  Saddle standard: four twist-lock castings at 0.28 x 0.22 m (tb_saddle) on RC-3 (dome) and RM-2 (thorax roof, box
+  along Z); rig.json gains "attach" (saddle, grips) and "props" (the toolbox placed on the saddle); clips gain "props"
+  and "events" (take / stow a tool into a hand). Arm poses by IK (drone_toolbox.ik: grip error <= 11 mm, forearm kept
+  out of the box). Clips: RC-3 «Кувалда» and «Лом» (left hand), RM-2 «Ключ». Carry sets agora_rc3/rm2_drone_toolbox_set
+  (generic SETS hook in build_equipment_models, pads.ref_set_doc). Mesh editor: server sends the props' LOD1 meshes +
+  rig (propParts), the player shows the box (checkbox) and the held tool (offset kept from the take). LIVE: headless
+  editor frames D:/tmp/toolbox.png (sets), D:/tmp/tools_clips.png (take / lift / strike / bar / wrench),
+  D:/tmp/toolbox_tools.png; step 1 clean on the 5 models; shells + packages 5 / 0 failures. Open: the arm-vs-carapace
+  collision is not checked (only forearm vs box); the toolbox has no damaged variants yet.
+

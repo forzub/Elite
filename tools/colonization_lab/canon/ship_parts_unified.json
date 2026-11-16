@@ -6127,7 +6127,7 @@
               0.0
             ],
             "range_deg": [
-              -70,
+              -160,
               40
             ],
             "joint": "shoulder pitch (- = arm forward / up)"
@@ -6165,7 +6165,7 @@
               0.0
             ],
             "range_deg": [
-              -60,
+              -90,
               60
             ],
             "joint": "wrist pitch"

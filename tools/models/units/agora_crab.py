@@ -13,6 +13,7 @@ Every moving part is its own OBJ part modelled in the rest pose; RC3_RIG + test 
 import math
 
 from eqlib import *  # noqa: F401,F403 - the unit kernel (geometry, LOD policy, shared builders)
+from units.drone_toolbox import carry_set, take_clip, tb_saddle, toolbox_prop, widen
 from units.new_equipment import (W_, T_, S_, B_, UPV, _add, _sub, _mul, _cross, _lerp, _pod, ball, frame_along, hex_limb,  # noqa: F401
                                  hobox, knuckle, obox, seg_lathe, euler_xyz, ray_pose)
 
@@ -26,6 +27,7 @@ RC3_TIERS = ((0.0, 0.51), (0.0, 0.575), (0.11, 0.675), (0.24, 0.73))            
 # legs: key -> (side, hip z, foot (x, z)); 1 = front, 3 = rear
 RC3_LEGS = {f"{'l' if s > 0 else 'r'}{i + 1}": (s, hz, (s * fx, fz))
             for s in (1, -1) for i, (hz, fx, fz) in enumerate(((0.22, 1.02, 0.66), (0.0, 1.16, 0.02), (-0.20, 1.00, -0.60)))}
+RC3_SADDLE = (0.0, 0.765, 0.01)                  # the toolbox saddle: castings' tops on the dome (std.drone.toolbox)
 RC3_POD_LEGS = ("l1", "r1", "l3", "r3")          # the legs with a knee thruster (four: a quadcopter)
 RC3_EYES = {s: ((s * 0.15, 0.66, 0.30), (s * 0.17, 0.83, 0.37)) for s in (1, -1)}   # stalk base, camera centre
 
@@ -119,9 +121,7 @@ def rc3_parts(lod):
         box(bd, S_, (0, by - bh / 2 - 0.006, 0), (bw - 0.3, 0.012, bl - 0.2))                                # belly plate
         for z in (-0.12, 0.10):                                                                            # carapace seams
             box(bd, "eq_metal_band", (0, top + 0.002, z), (0.40, 0.004, 0.012))
-        for sx in (-1, 1):                                                                                 # bay castings
-            for z in (-0.12, 0.14):
-                box(bd, B_, (sx * 0.16, top + 0.02, z), (0.06, 0.04, 0.06), chamfer=ch(0.006))
+    tb_saddle(bd, RC3_SADDLE, lod)          # std.drone.toolbox saddle; its castings also take the OD-4 cradle locks
     if lod == 0:
         for sx in (-1, 1):
             for sz in (-1, 1):
@@ -362,5 +362,47 @@ def rc3_clips():
 RC3_RIG = rc3_rig()
 ASSETS = {"agora_rc3_drone": rc3_parts}
 HITS = {"agora_rc3_drone": rc3_hits}
-RIGS = {"agora_rc3_drone": lambda: {"joints": RC3_RIG, "clips": rc3_clips()}}
+def rc3_attach():
+    """the toolbox saddle on the dome and a grip point in each hand (where std.drone.toolbox's handle closes)"""
+    A = [{"id": "saddle", "part": "rc3_body", **tb_saddle(Part("probe"), RC3_SADDLE, 3)}]
+    for s, side in ((1, "l"), (-1, "r")):
+        S, E, W, T = rc3_arm(s)
+        dw, nup, fingers = rc3_hand(s)
+        A.append({"id": f"grip_{side}", "part": f"rc3_hand_{side}", "point_m": [round(v, 4) for v in _add(W, _mul(dw, RC3_PALM + 0.06))],
+                  "up": [round(v, 4) for v in nup], "forward": [round(v, 4) for v in dw], "fits": "grip",
+                  "note": "between the fingers and the thumb (fingers closed ~70 deg)"})
+    return A
+
+
+def rc3_tool_clips():
+    """tool clips (author 2026-11-16: «можно ли сделать, что бы дроид вытягивал из ящика например - кувалду или другие
+    инструменты ... в зависимости от анимации»): the left hand (the right forearm carries the torch) reaches over the
+    carapace into the box on the saddle, takes the tool, works, puts it back - arm angles by IK (drone_toolbox.ik)"""
+    S, E, W, T = rc3_arm(1)
+    dw, nup, fingers = rc3_hand(1)
+    arm = {"chain": ["rc3_arm_l_shoulder", "rc3_arm_l_upper", "rc3_arm_l_fore", "rc3_hand_l"],
+           "bounds": {"rc3_arm_l_shoulder": (-110, 110), "rc3_arm_l_upper": (-150, 60), "rc3_arm_l_fore": (-110, 150),
+                      "rc3_hand_l": (-90, 90)},
+           "hand": "rc3_hand_l", "grip": _add(W, _mul(dw, RC3_PALM + 0.06)), "up": nup, "wrist": "rc3_hand_l",
+           "fingers": {"rc3_hand_l_f1": 70, "rc3_hand_l_f2": 70, "rc3_hand_l_thumb": 50},
+           "avoid": ("rc3_arm_l_fore", [_lerp(E, W, u) for u in (0.0, 0.2, 0.4, 0.6)], 0.10)}
+    prop = dict(RC3_PROP)
+    raise_, hit = (0.42, 1.30, 0.80), (0.30, 0.12, 1.25)
+    clip, used, err = take_clip(RC3_RIG, prop, arm, "tb_tool_hammer",
+                                [(0.8, raise_), (0.35, hit), (0.6, raise_), (0.35, hit), (0.6, raise_)],
+                                "hammer", "Кувалда: достать из ящика, два удара по обшивке, убрать")
+    widen(RC3_RIG, used)
+    clip2, used2, err2 = take_clip(RC3_RIG, prop, arm, "tb_tool_bar",
+                                   [(0.9, (0.36, 0.16, 1.05)), (0.6, (0.36, 0.40, 1.00)), (0.6, (0.36, 0.16, 1.05)),
+                                    (0.6, (0.36, 0.40, 1.00))], "bar", "Лом: достать, поддеть панель, убрать")
+    widen(RC3_RIG, used2)
+    return [clip, clip2], max(err, err2)
+
+
+RC3_PROP = toolbox_prop("rc3_body", tb_saddle(Part("probe"), RC3_SADDLE, 3))
+RC3_TOOL_CLIPS, RC3_IK_MISS = rc3_tool_clips()
+RIGS = {"agora_rc3_drone": lambda: {"joints": RC3_RIG, "clips": rc3_clips() + RC3_TOOL_CLIPS, "attach": rc3_attach(),
+                                    "props": [RC3_PROP]}}
 MODEL_ASSETS = {"agora.drone.rc3": "agora_rc3_drone"}
+
+SETS = carry_set("agora_rc3_drone", "RC-3 Granchio", tb_saddle(Part("probe"), RC3_SADDLE, 3))

@@ -741,6 +741,15 @@ def rig_text(asset, rig):
     doc = {"schema": "elite.rig.v1", "asset": asset, "generator": "tools/models/build_equipment_models.py (do not edit)",
            "frame": "OBJ frame of the LOD meshes, metres, +Y up; a joint turns its part and the parts below it",
            "joints": rig["joints"], "clips": rig.get("clips", [])}
+    if rig.get("attach"):
+        # attach points (std.drone.toolbox, 2026-11-16): {id, part, point_m, up, forward, fits, note} - a point in the
+        # part's rest frame that moves with the part; objects whose points "fit" each other dock there
+        doc["attach"] = rig["attach"]
+    if rig.get("props"):
+        # props (MESH_EDITOR_SPEC 18.18): other models carried with this one, e.g. std.drone.toolbox on the saddle -
+        # {id, title, ref, part, point_m, rotation_deg, attach, fits}; clip keys "<prop id>/<part>" pose their joints,
+        # clip events {t, take: "<prop id>/<part>", hand} / {t, stow} move a tool into a hand and back
+        doc["props"] = rig["props"]
     return json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
 
 

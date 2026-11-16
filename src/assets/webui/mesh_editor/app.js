@@ -502,6 +502,9 @@ const Anim = {
     this.rig = rig && rig.joints && rig.joints.length ? rig : null;
     $('animBar').hidden = !this.rig;
     if (!this.rig) { whenViewer((v) => v.setPose(null)); return; }
+    const props = this.rig.props || [];
+    $('animPropsLabel').hidden = !props.length;
+    $('animPropsName').textContent = props.map((p) => p.title || p.id).join(', ');
     const clips = this.rig.clips || [];
     $('animClip').innerHTML = clips.map((c, i) => `<option value="${i}">${esc(c.title || c.id)}</option>`).join('') ||
       '<option value="">нет клипов</option>';
@@ -538,7 +541,22 @@ const Anim = {
     $('animLabel').textContent = `${this.t.toFixed(1)} / ${d.toFixed(1)} с`;
     $('animPlay').textContent = this.playing ? '⏸' : '▶';
     const angles = this.angles(this.t);
-    whenViewer((v) => v.setPose(this.rig, angles));
+    whenViewer((v) => v.setPose(this.rig, angles, this.extra(this.t)));
+  },
+  // props shown (the checkbox, or the clip uses them) and the tools held at time t (clip events take / stow)
+  extra(t) {
+    const props = new Set();
+    if ($('animProps').checked) for (const p of this.rig.props || []) props.add(p.id);
+    for (const id of (this.clip && this.clip.props) || []) props.add(id);
+    const last = new Map();
+    for (const e of [...((this.clip && this.clip.events) || [])].sort((a, b) => a.t - b.t)) {
+      if (e.t > t) break;
+      const tool = e.take || e.stow;
+      if (tool) last.set(tool, e);
+    }
+    const held = [];
+    for (const [tool, e] of last) if (e.take) held.push({ tool, hand: e.hand, at: this.angles(e.t) });
+    return { props: [...props], held };
   },
   play() {
     if (!this.clip) return;
@@ -562,6 +580,7 @@ const Anim = {
   stop() { this.playing = false; if (this.rig) $('animPlay').textContent = '▶'; },
 };
 $('animClip').onchange = () => Anim.pick(Number($('animClip').value));
+$('animProps').onchange = () => Anim.apply();
 $('animPlay').onclick = () => (Anim.playing ? (Anim.stop(), Anim.apply()) : Anim.play());
 $('animTime').oninput = () => { Anim.stop(); Anim.t = (Number($('animTime').value) / 1000) * Anim.dur(); Anim.apply(); };
 $('animRest').onclick = () => { Anim.stop(); Anim.t = 0; $('animTime').value = '0'; whenViewer((v) => v.setPose(null)); $('animPlay').textContent = '▶'; };

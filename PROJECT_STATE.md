@@ -6135,3 +6135,20 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   lanes at +-290 m, r 45 m, 150 m/s) + 34 pier red zones (layout "lanes" / "red_zones"); plan D:/tmp/plane_lanes.png.
   Engine side (per-hub graph, lane choice by cost search from the ship, red OBB obstacles, connector obstacle
   subsets, id hard-codes removed) not started.
+- 2026-11-17 HUB ROADMAP (author, recorded; order: corridors first):
+  1. CORRIDORS in the engine (in progress): per-hub traffic graph (green lanes pre-written, blue mandatory, red =
+     cargo berths + the oncoming direction of one-way lanes for this ship), lane chain by cost search from the ship,
+     red zones as obstacles for the free legs, connector legs see only nearby obstacles; docking to capture.
+  2. HUB EDITOR as a new mode of the model (mesh) editor: layers = floors (top / under / 2nd, 3rd tier), SimCity-like
+     module cards on grid cells, any 2D outline (square, disc, free), streets / green lanes with arrows / red zones on
+     the same map; the generator builds the hub from the map; a generated start layout can be edited.
+  3. NEW MEGASTRUCTURE MODULES: reactors; orbital defence - missile racks (large missiles), railguns, military lasers,
+     each with its own reactor; every block (an administrative unit) gets its own reactor and its own landing pads.
+  4. INSTANCING: split repeating meshes into components so a base mesh is shared (as discussed earlier).
+  5. Habitat buildings ROTATING (gravity); the same for the toroids / rings.
+  6. DAMAGED BUILDINGS from the start: residential / office blocks burnt through by lasers, missiles, railguns; where
+     the facade is gone the sections, floors and single rooms / flats must show; LOD0 interiors with furniture (desks
+     with computers, beds, fridges, small things) - household items as a separate group.
+  7. LATER, NOT NOW: per colony an external architectural look of the modules and their ways of joining that fits the
+     colony's national type ("запиши это но разный дизайн хабов пока не делай").
+  8. Then the same layered / corridor principle for ground settlements.

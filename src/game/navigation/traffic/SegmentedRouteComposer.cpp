@@ -406,6 +406,27 @@ planner::RoutePlan failedComposite(
 
 } // namespace
 
+// A free leg sees only the obstacles near it: those whose bounding sphere comes within a margin of the leg's
+// straight segment (the margin: half the leg length, at least 1.5 km - room for its turns). A generated settlement
+// has thousands of hit volumes; a short connector between two lanes must not search all of them.
+static planner::RoutePlanRequest withLocalObstacles(const planner::RoutePlanRequest& leg)
+{
+    planner::RoutePlanRequest out = leg;
+    const glm::dvec3 a = leg.startMeters, b = leg.goalMeters;
+    const glm::dvec3 ab = b - a;
+    const double len2 = glm::dot(ab, ab);
+    const double margin = std::max(1500.0, 0.5 * std::sqrt(len2));
+    out.obstacles.clear();
+    for (const auto& o : leg.obstacles)
+    {
+        const double t = len2 > 1.0e-9 ? std::clamp(glm::dot(o.centerMeters - a, ab) / len2, 0.0, 1.0) : 0.0;
+        const double d = glm::length(o.centerMeters - (a + ab * t));
+        if (d <= margin + o.conservativeRadiusMeters() + o.requiredClearanceMeters)
+            out.obstacles.push_back(o);
+    }
+    return out;
+}
+
 static planner::RoutePlan composeOnce(
     const planner::RoutePlanRequest& terminalRequest,
     const CompiledTrafficRoute& trafficRoute
@@ -605,7 +626,7 @@ static planner::RoutePlan composeOnce(
 
         const double inboundStarted = diagnosticNowMs();
         const auto inbound =
-            planner::RoutePlanner::plan(legRequest);
+            planner::RoutePlanner::plan(withLocalObstacles(legRequest));
         const double inboundMs = diagnosticNowMs() - inboundStarted;
         freeLegTotalMs += inboundMs;
         freeLegDiagnostics +=
@@ -847,7 +868,7 @@ static planner::RoutePlan composeOnce(
 
     const double terminalLegStarted = diagnosticNowMs();
     const auto finalLeg =
-        planner::RoutePlanner::plan(finalRequest);
+        planner::RoutePlanner::plan(withLocalObstacles(finalRequest));
     const double finalLegMs = diagnosticNowMs() - terminalLegStarted;
     freeLegTotalMs += finalLegMs;
     freeLegDiagnostics +=

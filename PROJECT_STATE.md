@@ -6152,3 +6152,21 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   7. LATER, NOT NOW: per colony an external architectural look of the modules and their ways of joining that fits the
      colony's national type ("запиши это но разный дизайн хабов пока не делай").
   8. Then the same layered / corridor principle for ground settlements.
+- 2026-11-17 HUB LANES, ENGINE STEP 1 (opt-in ELITE_HUB_LANES=1). New game::navigation::traffic::HubLaneNetwork
+  (src/game/navigation/traffic/HubLaneNetwork.{h,cpp}, EliteGame sources): loads
+  assets/data/navigation/hub_lanes/<hub>.json (written by hub_belt_world.py: lanes with stations at every crossing,
+  red zones), Dijkstra ship -> lane spans (join/leave at any station, lane metre = 0.35 free metre, transfers
+  <= 1.6 km) -> goal, emits a CompiledTrafficRoute (VolumeTransit PreferInside stages, sections, centreline, join
+  300 m / leave 200 m mandatory straights) that SegmentedRouteComposer flies unchanged; red zones -> OBB obstacles.
+  SegmentedRouteComposer: every free leg now sees only obstacles near it (withLocalObstacles: within max(1.5 km,
+  half the leg) of the leg segment). LIVE (lane_run2): the network picks green.x2.5.0.top.p 0->7 (cost 6404 vs
+  direct 8919) but the inbound free leg is INFEASIBLE every time ("continuous optimizer did not reach a feasible
+  path", ~2 min per attempt). ROOT CAUSES (analysis): (1) the lanes run inside 226 m street canyons, 50 m off centre;
+  the hub infrastructure clearance (80 m, HubNavigationClearancePolicy) + the hull leaves no feasible free leg
+  ending at a join point inside a canyon; (2) the docking request flies at route_max 500 m/s -> 1275 m turn radius at
+  150 m/s and an 8.85 km terminal straight (the dock slot faces up -> the last leg must start ~9 km above the city).
+  Default (no env): behaviour as before (direct planned route, flown in dock_run12).
+  NEXT (design): free legs only in open sky - the lane network itself must carry the turns at crossings, the ramps
+  from the canyons up to open sky / the plaza, and the dock approach (a BLUE pre-written descent onto the dock); a
+  hub speed limit (lanes 150 m/s, dock approach ~30 m/s) so the terminal straight is hundreds of metres, not 9 km;
+  lanes centred in the gap, the two directions stacked in height.

@@ -575,9 +575,15 @@ def _plane_lanes(runs, ci, cj):
                         a, b = (c_line - off, y, c0), (c_line - off, y, c1)
                     else:
                         a, b = (c0, y, c_line + off), (c1, y, c_line + off)
+                    # stations: the lane ends + every street crossing on the way (a ship may join / leave there)
+                    nodes_c = [(gr[0] - (cj if ax == "z" else ci)) * PITCH - PITCH / 2 + k * PITCH for k in range(len(gr) + 1)]
+                    along = [c0] + nodes_c + [c1]
+                    st = [(c_line - off, y, v) if ax == "z" else (v, y, c_line + off) for v in along]
                     if sgn < 0:
                         a, b = b, a
+                        st = st[::-1]
                     lanes.append({"id": f"green.{ax}{line:g}.{gi}.{level}.{'p' if sgn > 0 else 'n'}", "a": a, "b": b,
+                                  "stations": [tuple(round(c, 2) for c in q) for q in st],
                                   "radius": LANE_R, "speed": LANE_SPEED, "level": level})
     return lanes
 

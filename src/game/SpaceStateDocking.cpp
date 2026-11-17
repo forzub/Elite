@@ -2,6 +2,8 @@
 
 #include "src/core/ThreadPriority.h"
 #include "src/game/SpaceStateInternal.h"
+#include "src/game/navigation/traffic/HubLaneNetwork.h"
+#include <memory>
 
 
 
@@ -2723,6 +2725,68 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         } l {snapshot, localPort, assisted, request, compiledTrafficRoute};
         if (!compileDockingTrafficRoute(f, l))
             return;
+    }
+
+    // A generated settlement's own lane network (assets/data/navigation/hub_lanes/<hub>.json): the cheapest chain of
+    // GREEN lane spans to the dock becomes the compiled traffic route (lane interiors pre-written, only the free legs
+    // planned); its RED zones (cargo berths) join the obstacles of every free leg.
+    // OPT-IN until the lane network carries its own turns, ramps and dock approaches: ELITE_HUB_LANES=1
+    static const bool hubLanesEnabled = [] { const char* v = std::getenv("ELITE_HUB_LANES"); return v && *v == '1'; }();
+    if (hubLanesEnabled && !lateEntryRebind && !compiledTrafficRoute.valid)
+    {
+        std::string hubId;
+        for (const auto& object : snapshot.objects)
+            if (object.hubAttachment.valid && object.hubAttachment.moduleId == pending.target.stableObjectId)
+                hubId = object.hubAttachment.hubId;
+        static std::unordered_map<std::string, std::shared_ptr<game::navigation::traffic::HubLaneNetwork>> networks;
+        auto& network = networks[hubId];
+        if (!hubId.empty() && !network)
+        {
+            network = std::make_shared<game::navigation::traffic::HubLaneNetwork>();
+            if (!network->load("assets/data/navigation/hub_lanes/" + hubId + ".json"))
+                std::cerr << "[HubLanes] " << hubId << ": " << network->failure() << std::endl;
+            else
+                std::cerr << "[HubLanes] " << hubId << ": " << network->lanes().size() << " lanes, "
+                          << network->redZones().size() << " red zones" << std::endl;
+        }
+        const auto frameObject = std::find_if(
+            snapshot.objects.begin(), snapshot.objects.end(), [&](const auto& object) {
+                return network && network->loaded() && object.hubAttachment.valid &&
+                       object.hubAttachment.moduleId == network->frameModuleId();
+            });
+        if (frameObject != snapshot.objects.end())
+        {
+            const auto& attachment = frameObject->hubAttachment;
+            const glm::dvec3 angles = attachment.localRotationDeg +
+                                      attachment.localAngularVelocityDegPerSecond * snapshot.epoch.universeTimeSeconds;
+            const glm::dmat3 visualRotation(glm::mat3(game::navigation::hubLocalEulerDegToMatrix(angles)));
+            game::navigation::traffic::NavigationReferenceFramePose framePose;
+            framePose.originWorldMeters = game::navigation::hubVisualToTacticalVector(attachment.localOffsetMeters);
+            framePose.localToWorldBasis = glm::dmat3(
+                game::navigation::hubVisualToTacticalVector(visualRotation * glm::dvec3(1.0, 0.0, 0.0)),
+                game::navigation::hubVisualToTacticalVector(visualRotation * glm::dvec3(0.0, 1.0, 0.0)),
+                game::navigation::hubVisualToTacticalVector(visualRotation * glm::dvec3(0.0, 0.0, 1.0)));
+            for (auto& red : network->redZoneObstacles(framePose))
+                request.obstacles.push_back(std::move(red));
+            std::string summary;
+            auto laneRoute = network->chooseRoute(framePose, request.startMeters, request.goalMeters, &summary);
+            std::cerr << "[HubLanes] request=" << pending.serial << " " << summary << std::endl;
+            if (laneRoute.valid)
+            {
+                compiledTrafficRoute = std::move(laneRoute);
+                request.requiredViaPointsMeters = compiledTrafficRoute.requiredViaPointsMeters;
+                request.mandatoryTangentStraights.clear();
+                for (const auto& straight : compiledTrafficRoute.mandatoryTangentStraights)
+                {
+                    game::navigation::planner::MandatoryTangentStraightConstraint constraint;
+                    constraint.startMeters = straight.startWorldMeters;
+                    constraint.endMeters = straight.endWorldMeters;
+                    constraint.minimumStraightMeters = straight.lengthMeters;
+                    constraint.inbound = straight.inbound;
+                    request.mandatoryTangentStraights.push_back(constraint);
+                }
+            }
+        }
     }
 
     bool hasPreferredEntryAnchor = false;

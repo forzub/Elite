@@ -15,7 +15,7 @@ out vec3 vWorldPos;
 out vec3 vViewPos;
 out vec3 vObjectPos;
 out vec3 vObjectNormal;
-out float vInstSeed;
+flat out float vInstSeed;
 
 void main()
 {

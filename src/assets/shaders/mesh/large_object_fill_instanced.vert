@@ -16,7 +16,7 @@ out vec3 vWorldPos;
 out vec3 vViewPos;
 out vec3 vObjectPos;
 out vec3 vObjectNormal;  // the mesh's own normal (facade windows run along the module's axes)
-out float vInstSeed;     // per instance (its position): which windows of this building are lit
+flat out float vInstSeed;     // per instance (its position): which windows of this building are lit
 
 void main()
 {

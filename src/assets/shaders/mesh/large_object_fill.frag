@@ -6,7 +6,7 @@ in vec3 vWorldPos;
 in vec3 vViewPos;
 in vec3 vObjectPos;
 in vec3 vObjectNormal;
-in float vInstSeed;
+flat in float vInstSeed;   // flat: an interpolated constant drifts in its last bits and the hashes amplify it (windows broke into flickering slivers)
 out vec4 FragColor;
 
 // ===== UNIFORMS =====
@@ -56,6 +56,18 @@ float hash12(vec2 p)
     p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
 }
+// A periodic pulse (1 on [a, b) of every unit cell) averaged over a pixel footprint w (cells): the window pane's
+// coverage of the pixel instead of a hard in/out test - a 1..3 px window no longer breaks into slivers that change
+// with every sub-pixel camera move (author 2026-11-17: «окна беспорядочно блымают»).
+float pulseIntegral(float x, float a, float b)
+{
+    return floor(x) * (b - a) + clamp(fract(x) - a, 0.0, b - a);
+}
+float filteredPulse(float x, float a, float b, float w)
+{
+    w = max(w, 1.0e-4);
+    return (pulseIntegral(x + 0.5 * w, a, b) - pulseIntegral(x - 0.5 * w, a, b)) / w;
+}
 vec3 facadeWindows(vec3 nObj)
 {
     if (abs(nObj.y) > 0.6)
@@ -72,9 +84,11 @@ vec3 facadeWindows(vec3 nObj)
     float lit = step(h, litFrac * floorBias);
     vec3 warm = vec3(1.0, 0.72, 0.40), cool = vec3(0.55, 0.75, 1.0);
     vec3 col = mix(warm, cool, step(0.78, hash12(cell * 1.7 + 5.0)));
-    float pane = step(0.2, f.x) * step(f.x, 0.8) * step(0.3, f.y) * step(f.y, 0.75);
     vec2 fw = fwidth(g);
-    float far = smoothstep(0.25, 0.9, max(fw.x, fw.y));      // a window under a pixel: its average instead
+    float pane = filteredPulse(g.x, 0.2, 0.8, fw.x) * filteredPulse(g.y, 0.3, 0.75, fw.y);
+    // a cell under ~4 px (grazing walls too: the larger axis): the whole facade's average, before the per-window
+    // lit / unlit choice starts to alias
+    float far = smoothstep(0.12, 0.40, max(fw.x, fw.y));
     vec3 nearGlow = col * lit * pane;
     vec3 farGlow = mix(warm, cool, 0.22) * litFrac * 0.27 * 1.2;
     return mix(nearGlow, farGlow, far);

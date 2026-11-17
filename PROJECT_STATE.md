@@ -5975,3 +5975,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     build (Debug) before the select fixes: canyon 28 / 27.8 / 28.5 ms, far 13.9 / 14.5 / 14.8 ms.
   build/run_mega.bat and run_district.bat now start the build-relwithdebinfo exe when it exists.
   Next (author's order): traffic inside the megastructure, haze at the vents, canyon lighting, 3D cockpit sample.
+
+- 2026-11-17 WINDOW FLICKER, real cause (author after a live flight: «окна почему-то беспорядочно блымают»). The
+  per-building seed reached the fragment shader as an interpolated varying: an interpolated constant drifts in its
+  last bits across a triangle and the hashes amplify it, so the lit / unlit choice (even the building's lit-up regime)
+  changed from pixel to pixel - windows broke into slivers that flickered with any camera move. Now `flat` in
+  large_object_fill.vert / _instanced.vert / .frag. Also: the window pane is box-filtered over the pixel footprint
+  (filteredPulse) and the far average starts at 0.12..0.40 cells per pixel. Diagnosed with a grid-coordinate debug
+  render (the grid was smooth, so the noise came from the seed). LIVE (release build, offscreen): two frames 1 s apart
+  from one start: 4.5 % changed pixels before -> 0.00 % after; windows whole (D:/tmp/flab_pair.png).
+  Author's verdict on the megastructure: "a piece of a megapolis, not an orbital megastructure like in the video; it has
+  a base with skyscrapers on it" -> concept rework pending.

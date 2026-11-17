@@ -184,7 +184,20 @@ namespace
             // Aft end of the part (model space): the nozzle pad region.
             glm::vec3 aftPoint = glm::vec3(0.0f);
             float padDepth = 0.0f;
+            // Facade window seed (which windows of this building are lit), from the node's place in its OWN asset
+            // frame: the render frame's origin is the player, so a seed from the world-frame position reshuffled
+            // the windows every frame of flight - building faces blinked (author, 2026-11-17: «торцы зданий
+            // блымают»). It travels to the fill shader in the model matrix's unused [0][3] slot (fillModel); the
+            // large_object_fill vertex shaders read it and clear the slot. 0 = not a facade carrier.
+            float seed = 0.0f;
         };
+
+        glm::mat4 fillModel(const QueuedMeshDraw& draw)
+        {
+            glm::mat4 m = draw.model;
+            m[0][3] = draw.seed;
+            return m;
+        }
 
         // Executed thrust of the engine slot owning a mesh part (semantic
         // binding: descriptor module meshPartIds -> physicalControl slot).
@@ -395,7 +408,7 @@ namespace
                     fillShader,
                     0,
                     draw.mvp,
-                    draw.model,
+                    fillModel(draw),
                     params,
                     cameraLocalPosition
                 );
@@ -469,20 +482,25 @@ namespace
                 for (const QueuedMeshDraw* draw : group)
                     models.push_back(draw->model);
             };
+            const auto collectFillModels = [&](const std::vector<const QueuedMeshDraw*>& group) {
+                models.clear();
+                for (const QueuedMeshDraw* draw : group)
+                    models.push_back(fillModel(*draw));
+            };
 
             for (const render::MeshGPU* gpu : order)
             {
                 const auto& group = groups[gpu];
                 if (group.size() > 1 && fillInstancedShader != 0)
                 {
-                    collectModels(group);
+                    collectFillModels(group);
                     meshRenderer.drawInstanced(*gpu, fillInstancedShader, vp, models, params, cameraLocalPosition);
                     ++stats.fillDraws;
                     continue;
                 }
                 for (const QueuedMeshDraw* draw : group)
                 {
-                    meshRenderer.draw(*gpu, fillShader, 0, draw->mvp, draw->model, params, cameraLocalPosition);
+                    meshRenderer.draw(*gpu, fillShader, 0, draw->mvp, fillModel(*draw), params, cameraLocalPosition);
                     ++stats.fillDraws;
                 }
             }
@@ -526,7 +544,7 @@ namespace
                     fillShader,
                     0,
                     draw.mvp,
-                    draw.model,
+                    fillModel(draw),
                     params,
                     cameraLocalPosition
                 );
@@ -3650,7 +3668,10 @@ if (policy.drawObjects)
                         continue;
                     // d.assetTransform already carries the node motion.
                     const glm::mat4 model = assetModel * d.assetTransform;
-                    queuedModelAssetStationDraws.push_back(QueuedMeshDraw {gpu, proj * renderView * model, model});
+                    QueuedMeshDraw qd {gpu, proj * renderView * model, model};
+                    const glm::vec3 at = glm::vec3(d.assetTransform[3]);   // stable: the node in its asset frame
+                    qd.seed = glm::fract(glm::dot(at, glm::vec3(0.0131f, 0.0173f, 0.0197f)) + 0.371f);
+                    queuedModelAssetStationDraws.push_back(qd);
                     m_lastStats.partsDrawn++;
                 }
                 if (logNow)

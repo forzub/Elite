@@ -20,15 +20,18 @@ out float vInstSeed;     // per instance (its position): which windows of this b
 
 void main()
 {
-    vec4 worldPos = instanceModel * vec4(position, 1.0);
+    // the facade seed rides in the unused [0][3] slot (SceneRenderer fillModel): read it, then a clean affine matrix
+    vInstSeed = instanceModel[0].w;
+    mat4 M = instanceModel;
+    M[0].w = 0.0;
+    vec4 worldPos = M * vec4(position, 1.0);
     vWorldPos = worldPos.xyz;
     gl_Position = VP * worldPos;
     vViewPos = gl_Position.xyz;
     vObjectPos = position;
     vObjectNormal = normal;
-    vInstSeed = fract(dot(instanceModel[3].xyz, vec3(0.0131, 0.0173, 0.0197)) + 0.371);
 
-    mat3 normalMat = transpose(inverse(mat3(instanceModel)));
+    mat3 normalMat = transpose(inverse(mat3(M)));
     vNormal = normalize(normalMat * normal);
     vColor = materialColor;
 }

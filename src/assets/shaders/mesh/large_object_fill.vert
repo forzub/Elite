@@ -19,12 +19,15 @@ out float vInstSeed;
 
 void main()
 {
-    vec4 worldPos = M * vec4(position, 1.0);
+    // the facade seed rides in the unused [0][3] slot of M (SceneRenderer fillModel); MVP is built from the clean model
+    vInstSeed = M[0].w;
+    mat4 Mc = M;
+    Mc[0].w = 0.0;
+    vec4 worldPos = Mc * vec4(position, 1.0);
     vWorldPos = worldPos.xyz;
     vViewPos = (MVP * vec4(position, 1.0)).xyz;
     vObjectPos = position;
     vObjectNormal = normal;
-    vInstSeed = fract(dot(M[3].xyz, vec3(0.0131, 0.0173, 0.0197)) + 0.371);
     
     gl_Position = MVP * vec4(position, 1.0);
 

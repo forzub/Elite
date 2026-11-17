@@ -465,6 +465,20 @@ def compute(I, earth_rows, pax_model):
 
 
 # ---------------------------------------------------------------- runtime exports
+# The physical docking modules of Высокий (earth_orbital_hub) - spawned by GameSceneSetup from orbital_hubs[].dock_modules
+# (a LIST here; traffic_profile.dock_modules is the sector COUNT of the capacity model). Lost from the runtime file when
+# runtime_hubs rebuilt the Earth hubs (429488bf2); found 2026-11-18 (the DEV docking target hub_hex_dock_a missing).
+EARTH_ORBITAL_HUB_DOCK_MODULES = [
+    {"id": "hub_hex_dock_a", "type": "hub_hex_dock", "name": "EARTH ORBITAL HUB DOCK",
+     "offset_m": {"x": 3000.0, "y": 350.0, "z": 0.0}, "rotation_deg": {"x": 0.0, "y": 27.0, "z": 0.0},
+     "angular_velocity_deg_s": {"x": 0.0, "y": 0.0, "z": 2.0}},
+    {"id": "hub_hex_dock_base", "type": "dock_service_block", "name": "HUB DOCK SERVICE BLOCK",
+     "offset_m": {"x": 3231.535154867169, "y": 350.0, "z": 454.41332733606765}, "rotation_deg": {"x": 0.0, "y": 27.0, "z": 0.0}},
+    {"id": "guidance_dock_cylinder_b", "type": "guidance_dock_cylinder", "name": "GUIDANCE DOCK CYLINDER B",
+     "offset_m": {"x": -3000.0, "y": -250.0, "z": 0.0}},
+]
+
+
 def runtime_hubs(net, template):
     """initial_world_state.orbital_hubs: the 12 Earth hubs + the Ceres hub (one station ModelAsset family, many instances)."""
     out = []
@@ -480,6 +494,8 @@ def runtime_hubs(net, template):
                                     self_rotation_period_seconds=180, inclination_deg=h["inclination_deg"], longitude_of_ascending_node_deg=h["lan_deg"],
                                     argument_of_periapsis_deg=0, initial_phase_deg=h["phase_deg"], epoch_seconds=0, orbital_period_mode="kepler"),
                         modules=[dict(base_mod, id=mod_id, name=h["name"])]))
+        if h["id"] == "earth_orbital_hub":
+            out[-1]["dock_modules"] = [dict(m) for m in EARTH_ORBITAL_HUB_DOCK_MODULES]
     ce = next(s for s in net["hubs"] if s["id"] == "site.000.sol.ceres")
     anc = next(a for a in net["belt_anchors"] if a["id"] == ce["belt_anchor"])
     lan, inc, phase = heliocentric_motion(anc)

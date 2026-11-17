@@ -2475,6 +2475,10 @@ void SpaceState::updateDockingStabilizing(Frame& f)
             );
     if (!snapshot.ready())
     {
+        std::cerr << "[DockClient] request=" << pending.serial << " planning snapshot not ready: status="
+                  << static_cast<int>(snapshot.status) << " source_epoch=" << snapshot.sourceEpoch.valid()
+                  << " epoch=" << snapshot.epoch.valid() << " frame=" << snapshot.planningFrame.valid
+                  << " target_kinematics=" << snapshot.targetModuleKinematics.valid << std::endl;
         fail("authoritative planning snapshot unavailable");
         return;
     }
@@ -2736,8 +2740,9 @@ void SpaceState::updateDockingStabilizing(Frame& f)
     // A generated settlement's own lane network (assets/data/navigation/hub_lanes/<hub>.json): the cheapest chain of
     // GREEN lane spans to the dock becomes the compiled traffic route (lane interiors pre-written, only the free legs
     // planned); its RED zones (cargo berths) join the obstacles of every free leg.
-    // OPT-IN until the lane network carries its own turns, ramps and dock approaches: ELITE_HUB_LANES=1
-    static const bool hubLanesEnabled = [] { const char* v = std::getenv("ELITE_HUB_LANES"); return v && *v == '1'; }();
+    // ON by default since the network carries its own pre-written turns / plaza connectors and the ship joins and
+    // leaves it only beyond the rim (2026-11-17); ELITE_HUB_LANES=0 switches it off (A/B diagnostics).
+    static const bool hubLanesEnabled = [] { const char* v = std::getenv("ELITE_HUB_LANES"); return !(v && *v == '0'); }();
     if (hubLanesEnabled && !lateEntryRebind && !compiledTrafficRoute.valid)
     {
         std::string hubId;
@@ -2774,8 +2779,20 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                 game::navigation::hubVisualToTacticalVector(visualRotation * glm::dvec3(0.0, 0.0, 1.0)));
             for (auto& red : network->redZoneObstacles(framePose))
                 request.obstacles.push_back(std::move(red));
+            // the hub speed limit for a route INTO the hub (its goal within the zone; the lanes carry their own limits)
+            if (network->speedLimitMps() > 0.0 &&
+                glm::length(request.goalMeters - framePose.originWorldMeters) <= network->speedLimitZoneMeters() &&
+                request.maxSpeedMps > network->speedLimitMps())
+            {
+                std::cerr << "[HubLanes] hub speed limit " << network->speedLimitMps() << " m/s (route max was "
+                          << request.maxSpeedMps << ")" << std::endl;
+                request.maxSpeedMps = network->speedLimitMps();
+            }
             std::string summary;
-            auto laneRoute = network->chooseRoute(framePose, request.startMeters, request.goalMeters, &summary);
+            auto laneRoute = network->chooseRoute(
+                framePose, request.startMeters, request.goalMeters, request.vehicleLengthMeters,
+                request.hasInitialForward ? request.initialForward : glm::dvec3(0.0), request.initialForwardLeadMeters,
+                -request.terminalOutward, &summary);
             std::cerr << "[HubLanes] request=" << pending.serial << " " << summary << std::endl;
             if (laneRoute.valid)
             {
@@ -2845,6 +2862,11 @@ void SpaceState::updateDockingStabilizing(Frame& f)
 
             hasPreferredEntryAnchor = true;
             preferredEntryForward = traversalForward;
+            // a stage with turns: its entry direction is the inbound straight's, not from -> to
+            for (const auto& straight : compiledTrafficRoute.mandatoryTangentStraights)
+                if (straight.inbound && straight.portalId == stage.fromPortalId &&
+                    glm::length(straight.forwardWorld) > 1.0e-9)
+                    preferredEntryForward = glm::normalize(straight.forwardWorld);
             break;
         }
     }

@@ -6223,3 +6223,40 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   GATE: EliteServer --self-test PASS ("boot + two-session authoritative routing smoke final_tick=12", exit 0).
   Running EliteServer with no arguments terminates by design ("local server runtime started without client identity
   hello"; use --listen / --self-test).
+- 2026-11-18 HUB CORRIDORS: PRE-WRITTEN NETWORK (turns, plaza, blue dock approaches, hub speed limit) - LIVE DOCKED.
+  Data (tools/models/units/hub_plane.py -> hub_lanes/<hub>.json, still elite.hub_lanes.v1 + new keys):
+  - CONNECTORS (pre-written polylines lane station -> lane station): crossing TURNS (every lane -> each perpendicular
+    lane of its side at every crossing: 150 m climb run + r 100 m quarter arc inside the crossing square + 150 m run,
+    height eased; 336 in plane_demo, max slope 47 deg); the PLAZA: a one-way ring under the canopy disc (r = avenue
+    line - 150 m, y +/-265, stations 0..630 deg so every diverge is ahead of every merge) with S-curve merges from /
+    diverges to the avenue lane running its way at its four axis points (22 connectors).
+  - BLUE dock approaches (kind "blue"): from the end of every lane within 3 km of a hex dock, a Dubins CSC path (r 400
+    m) onto the dock's axis, ending with an exact 300 m axis straight at 3.3 km out (12 in plane_demo); a zero-length
+    connector lane end -> approach.
+  - hub speed limit 150 m/s for a route whose goal lies within speed_limit_zone_m (city reach + 2 km).
+  Runtime: HubLaneNetwork - Dijkstra over (lane, station) with lane / connector metres at 0.35; the ship ENTERS only at a
+  lane's first station and LEAVES only at a lane's last (both beyond the rim); every continuous piece is ONE
+  VolumeTransit stage (PreferInside) over the whole pre-written polyline; lanes / connectors filtered by the ship's
+  length; free legs costed with their geometry (the ship's 1 km start lead, a 700 m terminal approach before the join,
+  400 m / rad turn penalty, infeasible when shorter than 600 m + 1.5 km x total turn unless straight, the goal's arrival
+  direction). SegmentedRouteComposer: entry / exit direction of a stage = its inbound / outbound straight (a stage
+  with turns is not from -> to); SpaceStateDocking: lanes ON by default (ELITE_HUB_LANES=0 = off). HUD: connectors as
+  faint centre lines, blue approaches blue, any lane / connector running against the player's travel RED (author:
+  «тунели для встречного движения делать красными зонами в зависимости от направления движения игрока»). Hub map:
+  blue approaches as CorridorBlue, plaza connectors drawn.
+  Diagnostics added: the failed inbound leg's request geometry + planner summary; the search's entries_ok / exits_ok,
+  goal / arrival in the city frame; the assisted reverse-flight rejection's route time, position and hull forward.
+  LIVE (release, start 3.4 km north of plane_demo, ELITE_DEV_DOCK_TARGET=plane_demo.dock): failed runs 1-14 with
+  their causes, each fixed: (1-2) a lane start behind the ship's 1 km start lead; (3-7) the join S-curve too tight
+  for the 700 m terminal approach + turn radius (the hub limit was not the cause - the slower retries failed alike);
+  (8) the final leg needed a U-turn (the dock faces out like the lanes) -> BLUE approaches; (9-11) the approach's
+  last segment 5 deg off the axis -> exact axis straight; (12-14) a 1.1 km final axis leg squeezed its curve into a
+  loop (assisted reverse flight) -> approach ends 3.3 km out. RUN 15: chain green.z3.5 (past the canopy plaza) ->
+  blue approach, plan valid, flown, "captured by station control at plane_demo.dock -> P4". Shots D:/tmp/lanes_a..d.png
+  (in the lane under the canopy, plaza ring visible; the blue approach; oncoming lanes red).
+  Regression: Высокий automatic docking (BLUE transit, 3 traffic stages) flown and captured at hub_hex_dock_a -> P4.
+  FOUND + FIXED (pre-existing since 429488bf2): Высокий had NO dock - tools/colonization_lab/sol_network.py
+  runtime_hubs rebuilt the Earth hubs without the dock_modules LIST (the DEV docking target "authoritative planning
+  snapshot unavailable" = TargetModuleNotFound); the list is now part of runtime_hubs (EARTH_ORBITAL_HUB_DOCK_MODULES)
+  and restored in initial_world_state.json. EliteServer --self-test PASS. NOT author-accepted.
+  Next: the hub editor (a mode of the model editor) - layers, module cards on a grid, corridors editable on the map.

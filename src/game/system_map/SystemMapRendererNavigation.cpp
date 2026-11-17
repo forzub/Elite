@@ -1767,7 +1767,20 @@ void SystemMapRenderer::decorateTrafficRoutes(
                 std::vector<glm::dvec3> points;
                 for (const auto& p : lane.stationsLocal)
                     points.push_back(toScene(p));
-                addPolyline("corridor:" + hubId + ":" + lane.id, game::system_map::MapTrajectoryKind::CorridorGreen, points);
+                addPolyline("corridor:" + hubId + ":" + lane.id,
+                            lane.blue ? game::system_map::MapTrajectoryKind::CorridorBlue
+                                      : game::system_map::MapTrajectoryKind::CorridorGreen,
+                            points);
+            }
+            // the plaza's merges / diverges (the crossing turns stay off the map: hundreds of short arcs)
+            for (const auto& cn : network->connectors())
+            {
+                if (cn.id.rfind("plaza.", 0) != 0)
+                    continue;
+                std::vector<glm::dvec3> points;
+                for (const auto& p : cn.pointsLocal)
+                    points.push_back(toScene(p));
+                addPolyline("corridor:" + hubId + ":" + cn.id, game::system_map::MapTrajectoryKind::CorridorGreen, points);
             }
             for (const auto& zone : network->redZones())
             {

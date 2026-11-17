@@ -40,6 +40,11 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
     if (viewport.width <= 0 || viewport.height <= 0)
         return;
     const glm::dvec3 playerMeters = world::coordinates::fullMeters(player.renderTransform.worldPosition);
+    // the player's direction of travel (velocity relative to the frame; the nose when nearly at rest): a lane running
+    // against it is drawn RED (author 2026-11-17: «тунели для встречного движения делать красными зонами в
+    // зависимости от направления движения игрока»)
+    glm::dvec3 travel(player.renderTransform.relativeVelocityMetersPerSecond);
+    travel = glm::length(travel) > 5.0 ? glm::normalize(travel) : glm::dvec3(player.renderTransform.forward());
     bool begun = false;
     const auto alphaAt = [&](const glm::dvec3& w, double peak) {
         const double d = glm::length(w - playerMeters);
@@ -112,17 +117,21 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                     }
                     if (alpha > 0.005)
                     {
-                        const glm::vec4 col(0.40f, 1.00f, 0.50f, static_cast<float>(alpha * 0.55));
+                        const bool oncoming = glm::dot(ab, travel) < -0.3;
+                        const glm::vec3 tint = oncoming    ? glm::vec3(1.00f, 0.32f, 0.26f)
+                                               : lane.blue ? glm::vec3(0.35f, 0.62f, 1.00f)
+                                                           : glm::vec3(0.40f, 1.00f, 0.50f);
+                        const glm::vec4 col(tint, static_cast<float>(alpha * 0.55));
                         for (int i = 0; i < RingSides; ++i)
                             seg(ring[i], ring[(i + 1) % RingSides], col, 1.0f);
                         if (havePrev)
                         {
-                            const glm::vec4 rail(0.40f, 1.00f, 0.50f, static_cast<float>(alpha * 0.35));
+                            const glm::vec4 rail(tint, static_cast<float>(alpha * 0.35));
                             for (int i = 0; i < RingSides; i += RingSides / 4)
                                 seg(prevRing[i], ring[i], rail, 1.0f);
                             // the direction: a faint chevron on the lane floor every ring
                             const glm::dvec3 tip = c - vert * (r * 0.9);
-                            const glm::vec4 chev(0.55f, 1.00f, 0.60f, static_cast<float>(alpha * 0.6));
+                            const glm::vec4 chev(tint, static_cast<float>(alpha * 0.6));
                             seg(tip, tip - ab * 25.0 + side * 15.0, chev, 1.2f);
                             seg(tip, tip - ab * 25.0 - side * 15.0, chev, 1.2f);
                         }
@@ -130,6 +139,25 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                     prevRing = ring;
                     havePrev = alpha > 0.005;
                 }
+            }
+        }
+        // CONNECTORS (pre-written turns, plaza merges): a faint centre line only
+        for (const auto& cn : network->connectors())
+        {
+            const glm::dvec3 mid = toWorld(cn.pointsLocal[cn.pointsLocal.size() / 2]);
+            if (glm::length(mid - playerMeters) > FadeMeters + cn.lengthMeters)
+                continue;
+            for (std::size_t i = 0; i + 1 < cn.pointsLocal.size(); ++i)
+            {
+                const glm::dvec3 a = toWorld(cn.pointsLocal[i]);
+                const glm::dvec3 b = toWorld(cn.pointsLocal[i + 1]);
+                const double alpha = alphaAt(a, 0.18);
+                if (alpha <= 0.005)
+                    continue;
+                const double len = glm::length(b - a);
+                const bool oncoming = len > 1.0e-6 && glm::dot((b - a) / len, travel) < -0.3;
+                const glm::vec3 tint = oncoming ? glm::vec3(1.00f, 0.32f, 0.26f) : glm::vec3(0.40f, 1.00f, 0.50f);
+                seg(a, b, glm::vec4(tint, static_cast<float>(alpha * 0.45)), 1.0f);
             }
         }
         // RED zones: faint box edges

@@ -6,6 +6,7 @@
 #include <limits>
 #include <queue>
 #include <sstream>
+#include <unordered_map>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <nlohmann/json.hpp>
@@ -27,13 +28,21 @@ void appendUnique(std::vector<glm::dvec3>& points, const glm::dvec3& p)
         points.push_back(p);
 }
 
+constexpr int EdgeFromShip = -1;
+constexpr int EdgeLane = -2;
+constexpr int EdgeTransfer = -3;
+constexpr int EdgeExit = -4;
+
 } // namespace
 
 bool HubLaneNetwork::load(const std::string& path)
 {
     m_lanes.clear();
+    m_connectors.clear();
     m_redZones.clear();
     m_failure.clear();
+    m_speedLimitMps = 0.0;
+    m_speedLimitZoneMeters = 0.0;
     std::ifstream in(path);
     if (!in)
     {
@@ -50,16 +59,53 @@ bool HubLaneNetwork::load(const std::string& path)
             return false;
         }
         m_frameModuleId = doc.at("frame_module_id").get<std::string>();
+        m_speedLimitMps = doc.value("speed_limit_mps", 0.0);
+        m_speedLimitZoneMeters = doc.value("speed_limit_zone_m", 0.0);
+        std::unordered_map<std::string, std::size_t> index;
         for (const auto& item : doc.at("lanes"))
         {
             Lane lane;
             lane.id = item.at("id").get<std::string>();
             lane.radiusMeters = item.value("radius_m", 45.0);
             lane.maxSpeedMps = item.value("max_speed_mps", 150.0);
+            lane.maxShipLengthMeters = item.value("max_ship_length_m", 1.0e9);
+            lane.blue = item.value("kind", std::string("green")) == "blue";
             for (const auto& p : item.at("stations_local_m"))
                 lane.stationsLocal.push_back(vec3Of(p));
             if (lane.stationsLocal.size() >= 2)
+            {
+                index[lane.id] = m_lanes.size();
                 m_lanes.push_back(std::move(lane));
+            }
+        }
+        for (const auto& item : doc.value("connectors", nlohmann::json::array()))
+        {
+            const auto from = index.find(item.at("from_lane").get<std::string>());
+            const auto to = index.find(item.at("to_lane").get<std::string>());
+            if (from == index.end() || to == index.end())
+                continue;
+            Connector c;
+            c.id = item.at("id").get<std::string>();
+            c.fromLane = from->second;
+            c.toLane = to->second;
+            c.fromStation = item.at("from_station").get<std::size_t>();
+            c.toStation = item.at("to_station").get<std::size_t>();
+            if (c.fromStation >= m_lanes[c.fromLane].stationsLocal.size() ||
+                c.toStation >= m_lanes[c.toLane].stationsLocal.size())
+                continue;
+            c.radiusMeters = item.value("radius_m", 45.0);
+            c.maxSpeedMps = item.value("max_speed_mps", 100.0);
+            c.maxShipLengthMeters = item.value("max_ship_length_m", 1.0e9);
+            for (const auto& p : item.at("points_local_m"))
+                c.pointsLocal.push_back(vec3Of(p));
+            if (c.pointsLocal.size() < 2)
+                continue;
+            // the ends ARE the stations (the file rounds the points coarser than the stations)
+            c.pointsLocal.front() = m_lanes[c.fromLane].stationsLocal[c.fromStation];
+            c.pointsLocal.back() = m_lanes[c.toLane].stationsLocal[c.toStation];
+            for (std::size_t i = 1; i < c.pointsLocal.size(); ++i)
+                c.lengthMeters += glm::length(c.pointsLocal[i] - c.pointsLocal[i - 1]);
+            m_connectors.push_back(std::move(c));
         }
         for (const auto& item : doc.value("red_zones", nlohmann::json::array()))
         {
@@ -75,6 +121,7 @@ bool HubLaneNetwork::load(const std::string& path)
     {
         m_failure = std::string("lane file parse error: ") + e.what();
         m_lanes.clear();
+        m_connectors.clear();
         return false;
     }
     if (m_lanes.empty())
@@ -86,155 +133,254 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     const NavigationReferenceFramePose& frame,
     const glm::dvec3& shipWorld,
     const glm::dvec3& goalWorld,
+    double shipLengthMeters,
+    const glm::dvec3& initialForward,
+    double startLeadMeters,
+    const glm::dvec3& goalArriveForward,
     std::string* summary
 ) const
 {
     CompiledTrafficRoute out;
-    // world stations and per-station travel directions
-    struct LaneW
-    {
-        std::vector<glm::dvec3> p;
-        std::vector<glm::dvec3> fwd;    // fwd[k]: direction of the segment k -> k+1 (last: the previous one)
-    };
-    std::vector<LaneW> lw(m_lanes.size());
-    for (std::size_t l = 0; l < m_lanes.size(); ++l)
+    const std::size_t laneCount = m_lanes.size();
+    // world stations, per-station travel directions, the global station index base of every lane
+    std::vector<std::vector<glm::dvec3>> P(laneCount), F(laneCount);
+    std::vector<char> usable(laneCount, 0);
+    std::vector<std::size_t> sbase(laneCount + 1, 0);
+    for (std::size_t l = 0; l < laneCount; ++l)
     {
         for (const auto& s : m_lanes[l].stationsLocal)
-            lw[l].p.push_back(frame.pointToWorld(s));
-        const auto n = lw[l].p.size();
-        lw[l].fwd.resize(n);
+            P[l].push_back(frame.pointToWorld(s));
+        const auto n = P[l].size();
+        F[l].resize(n);
         for (std::size_t k = 0; k + 1 < n; ++k)
-            lw[l].fwd[k] = glm::normalize(lw[l].p[k + 1] - lw[l].p[k]);
-        lw[l].fwd[n - 1] = lw[l].fwd[n - 2];
+            F[l][k] = glm::normalize(P[l][k + 1] - P[l][k]);
+        F[l][n - 1] = F[l][n - 2];
+        usable[l] = m_lanes[l].maxShipLengthMeters >= shipLengthMeters ? 1 : 0;
+        sbase[l + 1] = sbase[l] + n;
     }
-    const auto joinStart = [&](std::size_t l, std::size_t k) { return lw[l].p[k] - lw[l].fwd[k] * JoinStraightMeters; };
-    const auto leaveDir = [&](std::size_t l, std::size_t k) { return lw[l].fwd[k == 0 ? 0 : k - 1]; };
-    const auto leaveEnd = [&](std::size_t l, std::size_t k) { return lw[l].p[k] + leaveDir(l, k) * LeaveStraightMeters; };
+    std::vector<std::vector<glm::dvec3>> C(m_connectors.size());
+    std::vector<std::vector<std::size_t>> outgoing(sbase[laneCount]);
+    for (std::size_t c = 0; c < m_connectors.size(); ++c)
+    {
+        const auto& cn = m_connectors[c];
+        if (!usable[cn.fromLane] || !usable[cn.toLane] || cn.maxShipLengthMeters < shipLengthMeters)
+            continue;
+        for (const auto& p : cn.pointsLocal)
+            C[c].push_back(frame.pointToWorld(p));
+        outgoing[sbase[cn.fromLane] + cn.fromStation].push_back(c);
+    }
+    const auto joinStart = [&](std::size_t l) { return P[l][0] - F[l][0] * JoinStraightMeters; };
+    // where a free leg into lane l really ends: the start of the planner's hard terminal approach before the join
+    const auto joinApproach = [&](std::size_t l) { return joinStart(l) - F[l][0] * JoinApproachMeters; };
+    const auto leaveEnd = [&](std::size_t l) { return P[l].back() + F[l].back() * LeaveStraightMeters; };
 
-    // states: (lane, station, ridden) + the goal
-    std::vector<std::size_t> base(m_lanes.size() + 1, 0);
-    for (std::size_t l = 0; l < m_lanes.size(); ++l)
-        base[l + 1] = base[l] + 2 * lw[l].p.size();
-    const std::size_t goal = base.back();
+    // states: (global station, ridden) + the goal
+    const std::size_t goal = 2 * sbase[laneCount];
     const std::size_t count = goal + 1;
-    const auto state = [&](std::size_t l, std::size_t k, int ridden) { return base[l] + 2 * k + ridden; };
+    const auto state = [&](std::size_t l, std::size_t k, int ridden) { return 2 * (sbase[l] + k) + ridden; };
+    const auto laneOf = [&](std::size_t globalStation) {
+        return static_cast<std::size_t>(std::upper_bound(sbase.begin(), sbase.end(), globalStation) - sbase.begin()) - 1;
+    };
     constexpr double Inf = std::numeric_limits<double>::infinity();
     std::vector<double> dist(count, Inf);
-    std::vector<std::size_t> prev(count, count);   // count = from the ship
+    std::vector<std::size_t> prevState(count, count);   // count = from the ship
+    std::vector<int> prevEdge(count, EdgeFromShip);
     using Item = std::pair<double, std::size_t>;
     std::priority_queue<Item, std::vector<Item>, std::greater<>> open;
-    const auto relax = [&](std::size_t to, double d, std::size_t from)
+    const auto relax = [&](std::size_t to, double d, std::size_t from, int edge)
     {
         if (d < dist[to])
         {
             dist[to] = d;
-            prev[to] = from;
+            prevState[to] = from;
+            prevEdge[to] = edge;
             open.push({d, to});
         }
     };
-    const double direct = glm::length(goalWorld - shipWorld);
-    relax(goal, direct, count);
-    for (std::size_t l = 0; l < m_lanes.size(); ++l)
-        for (std::size_t k = 0; k + 1 < lw[l].p.size(); ++k)
-            relax(state(l, k, 0), glm::length(joinStart(l, k) - shipWorld) + JoinStraightMeters, count);
+    const auto angle = [](const glm::dvec3& a, const glm::dvec3& b) {
+        const double la = glm::length(a), lb = glm::length(b);
+        return la < 1.0e-9 || lb < 1.0e-9 ? 0.0 : std::acos(std::clamp(glm::dot(a, b) / (la * lb), -1.0, 1.0));
+    };
+    // the ship's own start: its committed heading flown for the start lead first
+    const bool hasHeading = glm::length(initialForward) > 1.0e-9;
+    const glm::dvec3 heading = hasHeading ? glm::normalize(initialForward) : glm::dvec3(0.0);
+    const glm::dvec3 leadEnd = hasHeading ? shipWorld + heading * startLeadMeters : shipWorld;
+    const double leadLength = hasHeading ? startLeadMeters : 0.0;
+    // a free leg from `from` (heading fromForward, or none) to `target` (arriving along arriveForward, or free):
+    // its length + the turn penalty, or Inf when it has no room for its turns
+    const auto freeLeg = [&](const glm::dvec3& from, const glm::dvec3& fromForward, const glm::dvec3& target,
+                             const glm::dvec3& arriveForward) {
+        const glm::dvec3 d = target - from;
+        const double turn = (glm::length(fromForward) > 1.0e-9 ? angle(fromForward, d) : 0.0) +
+                            (glm::length(arriveForward) > 1.0e-9 ? angle(d, arriveForward) : 0.0);
+        // a leg that is (nearly) one straight - e.g. a blue approach's end on the dock axis -> the goal - needs no room
+        if (turn > glm::radians(5.0) && glm::length(d) < MinFreeLegMeters + FreeTurnRadiusMeters * turn)
+            return Inf;
+        return glm::length(d) + TurnPenaltyMeters * turn;
+    };
+    // the goal is reached along goalArriveForward after a hard straight: a free leg into it ends that far out
+    const bool goalHasDirection = glm::length(goalArriveForward) > 1.0e-9;
+    const glm::dvec3 goalDirection = goalHasDirection ? glm::normalize(goalArriveForward) : glm::dvec3(0.0);
+    const glm::dvec3 goalApproach = goalWorld - goalDirection * (goalHasDirection ? JoinApproachMeters : 0.0);
+    const double goalApproachLength = goalHasDirection ? JoinApproachMeters : 0.0;
+    const double direct = leadLength + freeLeg(leadEnd, heading, goalApproach, goalDirection) + goalApproachLength;
+    relax(goal, std::isfinite(direct) ? direct : glm::length(goalWorld - shipWorld) + 1.0e6, count, EdgeFromShip);
+    int entriesOk = 0, exitsTried = 0, exitsOk = 0;
+    for (std::size_t l = 0; l < laneCount; ++l)
+        if (usable[l])
+        {
+            const double c = freeLeg(leadEnd, heading, joinApproach(l), F[l][0]);
+            entriesOk += std::isfinite(c) ? 1 : 0;
+            if (std::isfinite(c))
+                relax(state(l, 0, 0), leadLength + c + JoinApproachMeters + JoinStraightMeters, count, EdgeFromShip);
+        }
     while (!open.empty())
     {
         const auto [d, s] = open.top();
         open.pop();
         if (d > dist[s] || s == goal)
             continue;
-        const std::size_t l = static_cast<std::size_t>(std::upper_bound(base.begin(), base.end(), s) - base.begin()) - 1;
-        const std::size_t k = (s - base[l]) / 2;
-        const int ridden = static_cast<int>((s - base[l]) % 2);
-        if (k + 1 < lw[l].p.size())
-            relax(state(l, k + 1, 1), d + LaneCostFactor * glm::length(lw[l].p[k + 1] - lw[l].p[k]), s);
+        const std::size_t g = s / 2;
+        const int ridden = static_cast<int>(s % 2);
+        const std::size_t l = laneOf(g);
+        const std::size_t k = g - sbase[l];
+        const std::size_t n = P[l].size();
+        if (k + 1 < n)
+            relax(state(l, k + 1, 1), d + LaneCostFactor * glm::length(P[l][k + 1] - P[l][k]), s, EdgeLane);
         if (!ridden)
             continue;
-        const glm::dvec3 out0 = leaveEnd(l, k);
-        relax(goal, d + LeaveStraightMeters + glm::length(goalWorld - out0), s);
-        for (std::size_t m = 0; m < m_lanes.size(); ++m)
+        for (const std::size_t c : outgoing[g])
         {
-            if (m == l)
+            const auto& cn = m_connectors[c];
+            relax(state(cn.toLane, cn.toStation, 1), d + LaneCostFactor * cn.lengthMeters, s, static_cast<int>(c));
+        }
+        if (k + 1 != n)
+            continue;
+        // the lane's end beyond the rim: leave for the goal or transfer (open sky) to another lane's start
+        const glm::dvec3 out0 = leaveEnd(l);
+        const double exitLeg = freeLeg(out0, F[l].back(), goalApproach, goalDirection);
+        ++exitsTried;
+        exitsOk += std::isfinite(exitLeg) ? 1 : 0;
+        if (std::isfinite(exitLeg))
+            relax(goal, d + LeaveStraightMeters + exitLeg + goalApproachLength, s, EdgeExit);
+        for (std::size_t m = 0; m < laneCount; ++m)
+        {
+            if (m == l || !usable[m] || glm::length(joinStart(m) - out0) > MaxTransferMeters)
                 continue;
-            for (std::size_t j = 0; j + 1 < lw[m].p.size(); ++j)
-            {
-                const double t = glm::length(joinStart(m, j) - out0);
-                if (t <= MaxTransferMeters)
-                    relax(state(m, j, 0), d + LeaveStraightMeters + t + JoinStraightMeters, s);
-            }
+            const double hop = freeLeg(out0, F[l].back(), joinApproach(m), F[m][0]);
+            if (std::isfinite(hop))
+                relax(state(m, 0, 0), d + LeaveStraightMeters + hop + JoinApproachMeters + JoinStraightMeters, s,
+                      EdgeTransfer);
         }
     }
-    // the chain: walk back from the goal
-    struct Span
-    {
-        std::size_t lane, from, to;
-    };
-    std::vector<Span> spans;
-    for (std::size_t s = prev[goal]; s != count;)
-    {
-        const std::size_t l = static_cast<std::size_t>(std::upper_bound(base.begin(), base.end(), s) - base.begin()) - 1;
-        const std::size_t to = (s - base[l]) / 2;
-        std::size_t from = to;
-        std::size_t c = s;
-        // walk back along the lane to its join state (ridden = 0)
-        while ((c - base[l]) % 2 == 1)
-        {
-            c = prev[c];
-            from = (c - base[l]) / 2;
-        }
-        spans.push_back({l, from, to});
-        s = prev[c];
-    }
-    std::reverse(spans.begin(), spans.end());
     std::ostringstream text;
-    text << "direct_m=" << direct << " chain_cost=" << dist[goal] << " spans=" << spans.size();
-    if (spans.empty())
+    const glm::dmat3 toLocal = glm::transpose(frame.localToWorldBasis);
+    const glm::dvec3 goalLocal = toLocal * (goalWorld - frame.originWorldMeters);
+    const glm::dvec3 arriveLocal = toLocal * goalDirection;
+    text << "direct_m=" << direct << " chain_cost=" << dist[goal] << " entries_ok=" << entriesOk << " exits_ok=" << exitsOk
+         << "/" << exitsTried << " goal_local=(" << goalLocal.x << "," << goalLocal.y << "," << goalLocal.z << ") arrive_local=("
+         << arriveLocal.x << "," << arriveLocal.y << "," << arriveLocal.z << ")";
+    if (prevState[goal] == count)
     {
         out.failure = "no lane chain beats the direct leg";
         if (summary)
             *summary = text.str();
         return out;
     }
-    const glm::dvec3 up = frame.directionToWorld(glm::dvec3(0.0, 1.0, 0.0));
-    for (const auto& sp : spans)
+    // the chain, ship -> goal: (state, the edge that reached it)
+    std::vector<std::pair<std::size_t, int>> chain;
+    for (std::size_t s = prevState[goal]; s != count; s = prevState[s])
+        chain.push_back({s, prevEdge[s]});
+    std::reverse(chain.begin(), chain.end());
+
+    // continuous pieces (a piece starts where the ship joins from open sky) -> one stage each
+    struct Piece
     {
-        const auto& lane = m_lanes[sp.lane];
-        const auto& w = lw[sp.lane];
-        text << " [" << lane.id << " " << sp.from << "->" << sp.to << "]";
+        std::vector<glm::dvec3> points;
+        std::vector<double> radii;
+        double speed = Inf;
+        std::string from, to, ids;
+    };
+    std::vector<Piece> pieces;
+    for (const auto& [s, edge] : chain)
+    {
+        const std::size_t g = s / 2;
+        const std::size_t l = laneOf(g);
+        const std::size_t k = g - sbase[l];
+        const auto addPoint = [&](Piece& piece, const glm::dvec3& p, double radius) {
+            if (piece.points.empty() || glm::length(piece.points.back() - p) > 1.0e-6)
+            {
+                piece.points.push_back(p);
+                piece.radii.push_back(radius);
+            }
+        };
+        if (edge == EdgeFromShip || edge == EdgeTransfer)
+        {
+            pieces.emplace_back();
+            pieces.back().from = m_lanes[l].id + "@" + std::to_string(k);
+            pieces.back().ids = m_lanes[l].id;
+            addPoint(pieces.back(), P[l][k], m_lanes[l].radiusMeters);
+        }
+        else if (edge == EdgeLane)
+            addPoint(pieces.back(), P[l][k], m_lanes[l].radiusMeters);
+        else if (edge >= 0)
+        {
+            const auto& cn = m_connectors[static_cast<std::size_t>(edge)];
+            for (const auto& p : C[static_cast<std::size_t>(edge)])
+                addPoint(pieces.back(), p, cn.radiusMeters);
+            pieces.back().speed = std::min(pieces.back().speed, cn.maxSpeedMps);
+            pieces.back().ids += " > " + cn.id + " > " + m_lanes[l].id;
+        }
+        pieces.back().speed = std::min(pieces.back().speed, m_lanes[l].maxSpeedMps);
+        pieces.back().to = m_lanes[l].id + "@" + std::to_string(k);
+    }
+    text << " stages=" << pieces.size();
+    const glm::dvec3 up = frame.directionToWorld(glm::dvec3(0.0, 1.0, 0.0));
+    for (const auto& piece : pieces)
+    {
+        if (piece.points.size() < 2)
+        {
+            out.failure = "degenerate lane piece " + piece.from;
+            if (summary)
+                *summary = text.str();
+            return out;
+        }
+        text << " [" << piece.ids << "]";
+        const std::size_t n = piece.points.size();
         CompiledTrafficStage stage;
         stage.kind = TrafficRouteStageKind::VolumeTransit;
-        stage.laneId = lane.id;
-        stage.fromPortalId = lane.id + "@" + std::to_string(sp.from);
-        stage.toPortalId = lane.id + "@" + std::to_string(sp.to);
-        stage.fromWorldMeters = w.p[sp.from];
-        stage.toWorldMeters = w.p[sp.to];
-        stage.volumeConstraint.volumeId = lane.id;
+        stage.laneId = piece.from;
+        stage.fromPortalId = piece.from;
+        stage.toPortalId = piece.to;
+        stage.fromWorldMeters = piece.points.front();
+        stage.toWorldMeters = piece.points.back();
+        stage.volumeConstraint.volumeId = piece.from + ">" + piece.to;
         stage.volumeConstraint.policy = world::navigation::NavigationVolumePolicy::PreferInside;
-        stage.volumeConstraint.maxSpeedMps = lane.maxSpeedMps;
-        for (std::size_t k = sp.from; k <= sp.to; ++k)
+        stage.volumeConstraint.maxSpeedMps = piece.speed;
+        for (std::size_t i = 0; i < n; ++i)
         {
             CompiledNavigationVolumeSection section;
-            section.centerWorldMeters = w.p[k];
-            section.forwardWorld = k < sp.to ? w.fwd[k] : w.fwd[sp.to - 1];
+            section.centerWorldMeters = piece.points[i];
+            section.forwardWorld = glm::normalize(i + 1 < n ? piece.points[i + 1] - piece.points[i] : piece.points[i] - piece.points[i - 1]);
             glm::dvec3 u = up - section.forwardWorld * glm::dot(up, section.forwardWorld);
             section.upWorld = glm::length(u) > 1.0e-6 ? glm::normalize(u) : glm::dvec3(0.0, 1.0, 0.0);
             section.crossSection = world::navigation::NavigationCrossSectionKind::Circle;
-            section.radiusMeters = lane.radiusMeters;
+            section.radiusMeters = piece.radii[i];
             stage.volumeSections.push_back(section);
-            if (k > sp.from && k < sp.to)
-                stage.requiredCenterlineMeters.push_back(w.p[k]);
+            if (i > 0 && i + 1 < n)
+                stage.requiredCenterlineMeters.push_back(piece.points[i]);
         }
         CompiledMandatoryTangentStraight in;
         in.portalId = stage.fromPortalId;
         in.inbound = true;
-        in.forwardWorld = w.fwd[sp.from];
+        in.forwardWorld = glm::normalize(piece.points[1] - piece.points[0]);
         in.lengthMeters = JoinStraightMeters;
         in.endWorldMeters = stage.fromWorldMeters;
         in.startWorldMeters = stage.fromWorldMeters - in.forwardWorld * JoinStraightMeters;
         CompiledMandatoryTangentStraight leave;
         leave.portalId = stage.toPortalId;
         leave.inbound = false;
-        leave.forwardWorld = w.fwd[sp.to - 1];
+        leave.forwardWorld = glm::normalize(piece.points[n - 1] - piece.points[n - 2]);
         leave.lengthMeters = LeaveStraightMeters;
         leave.startWorldMeters = stage.toWorldMeters;
         leave.endWorldMeters = stage.toWorldMeters + leave.forwardWorld * LeaveStraightMeters;

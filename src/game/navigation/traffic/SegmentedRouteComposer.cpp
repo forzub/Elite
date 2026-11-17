@@ -557,6 +557,16 @@ static planner::RoutePlan composeOnce(
             inboundBoundaryFor(stage);
         const auto* outboundBoundary =
             outboundBoundaryFor(stage);
+        // A stage whose centreline turns (a hub lane chain through pre-written turns) enters and leaves along its
+        // boundary straights, not along from -> to.
+        const glm::dvec3 entryForward =
+            inboundBoundary && glm::length(inboundBoundary->forwardWorld) > 1.0e-9
+                ? glm::normalize(inboundBoundary->forwardWorld)
+                : traversalForward;
+        const glm::dvec3 exitForward =
+            outboundBoundary && glm::length(outboundBoundary->forwardWorld) > 1.0e-9
+                ? glm::normalize(outboundBoundary->forwardWorld)
+                : traversalForward;
 
         const glm::dvec3 blockStart =
             inboundBoundary
@@ -576,7 +586,7 @@ static planner::RoutePlan composeOnce(
 
         legRequest.startMeters = currentStart;
         legRequest.goalMeters = blockStart;
-        legRequest.terminalOutward = -traversalForward;
+        legRequest.terminalOutward = -entryForward;
         legRequest.initialSpeedMps = currentSpeed;
         legRequest.terminalSpeedMps = handoffSpeed;
         legRequest.hasInitialForward = currentHasForward;
@@ -640,10 +650,31 @@ static planner::RoutePlan composeOnce(
             std::to_string(legRequest.terminalApproachLengthMeters) +
             " inbound_detail={ " + inbound.diagnosticSummary + " }";
         if (!inbound.valid())
-            return failedComposite(
-                inbound,
-                "segmented inbound leg failed: "
-            );
+        {
+            // the failed leg's geometry and the planner's own diagnostics (live 2026-11-17: a hub lane join failing
+            // with only "did not reach a feasible path" in the log)
+            const auto v = [](const glm::dvec3& p) {
+                return "(" + std::to_string(p.x) + "," + std::to_string(p.y) + "," + std::to_string(p.z) + ")";
+            };
+            planner::RoutePlan failed = failedComposite(inbound, "segmented inbound leg failed: ");
+            failed.diagnosticSummary =
+                "inbound_leg{ start=" + v(legRequest.startMeters) + " goal=" + v(legRequest.goalMeters) +
+                " terminal_outward=" + v(legRequest.terminalOutward) +
+                " initial_forward=" + v(legRequest.initialForward) +
+                " has_forward=" + std::to_string(legRequest.hasInitialForward) +
+                " lead_m=" + std::to_string(legRequest.initialForwardLeadMeters) +
+                " terminal_approach_m=" + std::to_string(legRequest.terminalApproachLengthMeters) +
+                " terminal_ref_m=" + std::to_string(legRequest.terminalReferenceDistanceMeters) +
+                " max_mps=" + std::to_string(legRequest.maxSpeedMps) +
+                " terminal_mps=" + std::to_string(legRequest.terminalSpeedMps) +
+                " lat=" + std::to_string(legRequest.lateralMps2) +
+                " brake=" + std::to_string(legRequest.brakingMps2) +
+                " terminal_turn_r=" + std::to_string(legRequest.preferredTerminalTurnRadiusMeters) +
+                " derive_turn_r=" + std::to_string(legRequest.deriveTerminalTurnRadiusFromVehicle) +
+                " obstacles=" + std::to_string(withLocalObstacles(legRequest).obstacles.size()) +
+                " } planner{ " + inbound.diagnosticSummary + " }";
+            return failed;
+        }
 
         appendPlanSamples(
             out,
@@ -796,7 +827,7 @@ static planner::RoutePlan composeOnce(
         }
 
         currentStart = blockEnd;
-        currentForward = traversalForward;
+        currentForward = exitForward;
         currentHasForward = true;
         currentSpeed = handoffSpeed;
     }

@@ -425,7 +425,13 @@ public:
                                 std::to_string(sample.timeOffsetSeconds) +
                             " forward_mps=" +
                                 std::to_string(forwardSpeed) +
-                            " speed_mps=" + std::to_string(speed)
+                            " speed_mps=" + std::to_string(speed) +
+                            " route_t_s=" + std::to_string(page.sequenceStartOffsetSeconds + sample.timeOffsetSeconds) +
+                            " pos=(" + std::to_string(sample.positionMapMeters.x) + "," +
+                                std::to_string(sample.positionMapMeters.y) + "," +
+                                std::to_string(sample.positionMapMeters.z) + ")" +
+                            " fwd=(" + std::to_string(forward.x) + "," + std::to_string(forward.y) + "," +
+                                std::to_string(forward.z) + ")"
                         );
                     }
 

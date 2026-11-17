@@ -182,9 +182,13 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
             {"hubk_rock", ObjectType::HubKitRock},
             {"hub_proto_district", ObjectType::HubDistrictProto},
             {"hub_proto_mega", ObjectType::HubMegaProto},
+            {"hubb_ring_core", ObjectType::HubBeltRing},
+            {"hubb_hab_drum", ObjectType::HubBeltDrum},
+            {"hubb_hotel_hex", ObjectType::HubBeltHotel},
         };
         const auto kit = kHubKit.find(dock.type);
         const ObjectType type = kit != kHubKit.end()                  ? kit->second
+                              : dock.type == "hub_belt_city"          ? ObjectType::HubBeltCity
                               : dock.type == "hub_hex_dock"           ? ObjectType::HubHexDock
                               : dock.type == "dock_service_block"     ? ObjectType::HubDockServiceBlock
                               : dock.type == "guidance_dock_cylinder" ? ObjectType::GuidanceDockCylinder

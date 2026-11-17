@@ -1553,7 +1553,7 @@ void SceneRenderer::prepareScene(
             // Production ModelAsset v4 package (all components, all LODs):
             // per-component screen-space LOD at draw time. Rotating modules
             // keep the legacy replicated module angles.
-            if (const auto* modelAsset = render::geometry::ModelAssetGpuLibrary::get(obj.type))
+            if (const auto* modelAsset = render::geometry::ModelAssetGpuLibrary::get(obj.type, obj.hubAttachment.hubId))
             {
                 PreparedScene::ModelAssetObjectItem item;
                 item.type = obj.type;

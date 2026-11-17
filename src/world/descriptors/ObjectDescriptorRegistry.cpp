@@ -86,6 +86,10 @@ void ObjectDescriptorRegistry::init()
     registry[ObjectType::HubKitFactory] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_factory", glm::vec3(70.0f, 63.0f, 52.0f));
     registry[ObjectType::HubKitTanks] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_tanks", glm::vec3(50.0f, 23.0f, 34.0f));
     registry[ObjectType::HubMegaProto] = std::make_unique<game::station::HubKitModuleDescriptor>("hub_proto_mega", glm::vec3(12000.0f, 11000.0f, 12000.0f));
+    registry[ObjectType::HubBeltCity] = std::make_unique<game::station::HubKitModuleDescriptor>("hub_belt_city", glm::vec3(18000.0f, 18000.0f, 18000.0f));
+    registry[ObjectType::HubBeltRing] = std::make_unique<game::station::HubKitModuleDescriptor>("hubb_ring_core", glm::vec3(1900.0f, 1900.0f, 320.0f));
+    registry[ObjectType::HubBeltDrum] = std::make_unique<game::station::HubKitModuleDescriptor>("hubb_hab_drum", glm::vec3(310.0f, 310.0f, 580.0f));
+    registry[ObjectType::HubBeltHotel] = std::make_unique<game::station::HubKitModuleDescriptor>("hubb_hotel_hex", glm::vec3(210.0f, 180.0f, 300.0f));
     registry[ObjectType::HubDistrictProto] = std::make_unique<game::station::HubKitModuleDescriptor>("hub_proto_district", glm::vec3(2900.0f, 1010.0f, 1150.0f));
     registry[ObjectType::HubKitRock] = std::make_unique<game::station::HubKitModuleDescriptor>("hubk_rock", glm::vec3(760.0f, 760.0f, 760.0f));
 }

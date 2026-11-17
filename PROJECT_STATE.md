@@ -5986,3 +5986,25 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   from one start: 4.5 % changed pixels before -> 0.00 % after; windows whole (D:/tmp/flab_pair.png).
   Author's verdict on the megastructure: "a piece of a megapolis, not an orbital megastructure like in the video; it has
   a base with skyscrapers on it" -> concept rework pending.
+
+- 2026-11-17 BELT SETTLEMENT KIT + GENERATOR (author: gas/fuel tank farms; «можем начать пробовать делать поселение в
+  астероидном поясе» - central rotating ring, warehouses, fuel stores, industrial zones, rotating and static habitat
+  clusters, docks as railway platforms sized for the haulers, repair / refuel / hotel (rotating hex barrels) docks,
+  parking, everything linked by truss-braced tube tunnels with roads and monorails; «каждый хаб уникален, повторяемость -
+  один и тот же хаб имеет одинаковый вид»). PROPOSAL, not accepted.
+  Kit tools/models/units/hub_belt.py (hubb_*, <assets_source>/models/hub): gas_battery (6 bullets 36x156 m, galleries,
+  manifolds), fuel_spheres (4 x 64 m), pier_l (300 m, berths 260x64 both sides - T-5000 220x50 fits), pier_m (160 m,
+  140x44), fuel_dock, repair_dock (cage 260x90x80, gantries), parking (8 pads 90x60), warehouse (240x120x50 + container
+  yard), works (300x140, furnaces = haze sources, radiator wings), hab_tower, hab_slab, hab_drum (300x500, spins),
+  hotel_hex (spins), ring_core (1.8 km, spins), girder (30x30 spine, 100 m), tube, junction, monorail, road. Ship sizes
+  from ship_catalog_3126.json (no dedicated ore hauler class exists; HT-20K tug 60 m).
+  Generator belt_layout(hub_id): seed = sha1(hub id) -> 14..19 districts of 11 kinds on girder spines in a 2.6..8.2 km
+  shell (docks outside), MST + short cross links of tubes + girders, roads where a wheeled district is at an end,
+  monorail where a passenger one is; node groups (district / 1.2 km of a link) with OBB proxies (HLOD). The static city is
+  ONE assembly hub_<id> (BELT_HUBS); spinning bodies are separate hub dock modules with angular_velocity_deg_s about
+  their own Z. Engine: ObjectType HubBeltCity (package hub_modules/hub_<hubId> chosen per object by
+  hubAttachment.hubId - ModelAssetGpuLibrary::get(type, hubId)), HubBeltRing / Drum / Hotel. World:
+  tools/models/hub_belt_world.py --hub belt_demo (co-orbits Ceres, phase +0.0006). render_preview.py camera clip 1e6.
+  LIVE (release, offscreen): belt_demo 15 districts, 2692 city nodes + 34 spinning bodies spawned, frame p50 4.6 ms at
+  4 km (D:/tmp/belt_g_modern.png). Same id -> identical layout (checked twice), another id -> another settlement.
+  Next: the author asked to watch the WHOLE 8 h video (structures at 4:39:40 and later) and reproduce them.

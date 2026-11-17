@@ -125,6 +125,9 @@ const char* packageFor(ObjectType type)
         case ObjectType::HubKitRock: return "assets/compiled/hub_modules/hubk_rock/hubk_rock.elmodel";
         case ObjectType::HubDistrictProto: return "assets/compiled/hub_modules/hub_proto_district/hub_proto_district.elmodel";
         case ObjectType::HubMegaProto: return "assets/compiled/hub_modules/hub_proto_mega/hub_proto_mega.elmodel";
+        case ObjectType::HubBeltRing: return "assets/compiled/hub_modules/hubb_ring_core/hubb_ring_core.elmodel";
+        case ObjectType::HubBeltDrum: return "assets/compiled/hub_modules/hubb_hab_drum/hubb_hab_drum.elmodel";
+        case ObjectType::HubBeltHotel: return "assets/compiled/hub_modules/hubb_hotel_hex/hubb_hotel_hex.elmodel";
         default: return nullptr;
     }
 }
@@ -140,11 +143,10 @@ std::string legacyModuleFor(ObjectType type, const std::string& nodeId)
     return "station_solar_panels";
 }
 
-std::unique_ptr<ModelAssetGpu> load(ObjectType type)
+std::unique_ptr<ModelAssetGpu> load(ObjectType type, const char* path)
 {
     if (const char* legacy = std::getenv("ELITE_LEGACY_MODEL_ASSETS"); legacy && *legacy && *legacy != '0')
         return nullptr;
-    const char* path = packageFor(type);
     if (!path || !std::filesystem::exists(path))
     {
         if (path)
@@ -392,10 +394,25 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type)
     if (!tried[key])
     {
         tried[key] = true;
-        cache[key] = load(type);
+        cache[key] = load(type, packageFor(type));
     }
     const auto it = cache.find(key);
     return it == cache.end() ? nullptr : it->second.get();
+}
+
+const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::string& hubId)
+{
+    if (type != ObjectType::HubBeltCity)
+        return get(type);
+    // a belt settlement: one package per hub, generated from its id (tools/models/units/hub_belt.py belt_layout)
+    static std::unordered_map<std::string, std::unique_ptr<ModelAssetGpu>> cache;
+    const auto [it, inserted] = cache.try_emplace(hubId);
+    if (inserted)
+    {
+        const std::string path = "assets/compiled/hub_modules/hub_" + hubId + "/hub_" + hubId + ".elmodel";
+        it->second = load(type, path.c_str());
+    }
+    return it->second.get();
 }
 
 } // namespace render::geometry

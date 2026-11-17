@@ -33,5 +33,11 @@ enum class ObjectType : uint16_t
     HubKitTanks,
     HubKitRock,
     HubDistrictProto,  // the whole district as one object (its package merges the kit modules)
-    HubMegaProto       // the megastructure prototype as one object (tools/models/units/hub_mega.py)
+    HubMegaProto,      // the megastructure prototype as one object (tools/models/units/hub_mega.py)
+    // belt settlement (tools/models/units/hub_belt.py): the generated city of ONE hub (its package is
+    // hub_modules/hub_<hub id> - one type for every settlement) + the spinning bodies, separate objects each
+    HubBeltCity,
+    HubBeltRing,
+    HubBeltDrum,
+    HubBeltHotel
 };

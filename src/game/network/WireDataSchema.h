@@ -80,7 +80,7 @@ ELITE_WIRE_ENUM_RANGE(
     game::simulation::ShipMaterializedFidelity::Response,
     game::simulation::ShipMaterializedFidelity::Detailed
 );
-ELITE_WIRE_ENUM_RANGE(ObjectType, ObjectType::None, ObjectType::HubMegaProto);
+ELITE_WIRE_ENUM_RANGE(ObjectType, ObjectType::None, ObjectType::HubBeltHotel);
 ELITE_WIRE_ENUM_RANGE(
     game::diagnostics::HubMotionLabActorKind,
     game::diagnostics::HubMotionLabActorKind::None,

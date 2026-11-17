@@ -78,6 +78,8 @@ public:
     // nullptr when the object type has no production package (or
     // ELITE_LEGACY_MODEL_ASSETS=1): the caller keeps the legacy assembly path.
     static const ModelAssetGpu* get(ObjectType type);
+    // the per-hub packages (ObjectType::HubBeltCity: hub_modules/hub_<hubId>); other types ignore hubId
+    static const ModelAssetGpu* get(ObjectType type, const std::string& hubId);
 };
 
 } // namespace render::geometry

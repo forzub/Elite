@@ -108,6 +108,8 @@ dirs = {"pad": Vector((0.9, -1.25, 0.55)), "flange": Vector((-0.9, 1.25, 0.5)), 
 d = dirs.get(view, dirs["pad"]).normalized()
 cam_data = bpy.data.cameras.new("cam")
 cam_data.lens = 60
+cam_data.clip_end = 1.0e6   # hub modules are kilometres across (the default 100 m clipped them)
+cam_data.clip_start = 0.05
 cam = bpy.data.objects.new("cam", cam_data)
 sc.collection.objects.link(cam)
 cam.location = centre + d * size * 1.75

@@ -591,18 +591,438 @@
           }
         },
         {
-          "id": "belt_demo.d2_hotel_m3_0",
+          "id": "belt_demo.d12_hab_rot_m0_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2909.691,
+            "y": 1095.222,
+            "z": 2089.952
+          },
+          "rotation_deg": {
+            "x": -93.9418,
+            "y": -39.835,
+            "z": -36.9754
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hab_rot_m1_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2743.42,
+            "y": 1213.828,
+            "z": 1793.495
+          },
+          "rotation_deg": {
+            "x": -93.9418,
+            "y": -39.835,
+            "z": -36.9754
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hab_rot_m2_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2577.148,
+            "y": 1332.433,
+            "z": 1497.039
+          },
+          "rotation_deg": {
+            "x": -93.9418,
+            "y": -39.835,
+            "z": -36.9754
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hab_rot_m3_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2410.877,
+            "y": 1451.039,
+            "z": 1200.582
+          },
+          "rotation_deg": {
+            "x": -93.9418,
+            "y": -39.835,
+            "z": -36.9754
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hab_rot_b0m0_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2220.598,
+            "y": 890.873,
+            "z": 1541.231
+          },
+          "rotation_deg": {
+            "x": -158.1947,
+            "y": 27.5075,
+            "z": -46.2386
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hab_rot_b0m1_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -1989.99,
+            "y": 615.085,
+            "z": 1560.234
+          },
+          "rotation_deg": {
+            "x": -158.1947,
+            "y": 27.5075,
+            "z": -46.2386
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d13_hab_rot_m0_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -3286.402,
+            "y": 4617.577,
+            "z": 1638.949
+          },
+          "rotation_deg": {
+            "x": -70.4635,
+            "y": -33.9122,
+            "z": -93.9566
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d13_hab_rot_m1_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2988.353,
+            "y": 4798.107,
+            "z": 1729.366
+          },
+          "rotation_deg": {
+            "x": -70.4635,
+            "y": -33.9122,
+            "z": -93.9566
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d13_hab_rot_m2_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2690.303,
+            "y": 4978.638,
+            "z": 1819.783
+          },
+          "rotation_deg": {
+            "x": -70.4635,
+            "y": -33.9122,
+            "z": -93.9566
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d13_hab_rot_m3_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2392.254,
+            "y": 5159.169,
+            "z": 1910.199
+          },
+          "rotation_deg": {
+            "x": -70.4635,
+            "y": -33.9122,
+            "z": -93.9566
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d13_hab_rot_b0m0_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -3116.384,
+            "y": 4633.404,
+            "z": 1936.143
+          },
+          "rotation_deg": {
+            "x": -70.4635,
+            "y": -33.9122,
+            "z": 176.0434
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d13_hab_rot_b0m1_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -3136.999,
+            "y": 4500.243,
+            "z": 2269.974
+          },
+          "rotation_deg": {
+            "x": -70.4635,
+            "y": -33.9122,
+            "z": 176.0434
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d13_hab_rot_b0m2_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -3157.613,
+            "y": 4367.082,
+            "z": 2603.805
+          },
+          "rotation_deg": {
+            "x": -70.4635,
+            "y": -33.9122,
+            "z": 176.0434
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_m0_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 963.195,
+            "y": 4163.66,
+            "z": -3928.451
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -8.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_m1_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 1015.272,
+            "y": 3983.672,
+            "z": -4235.847
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -8.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_m2_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 1067.349,
+            "y": 3803.683,
+            "z": -4543.242
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -8.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_m3_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 1119.426,
+            "y": 3623.695,
+            "z": -4850.638
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -8.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_m4_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 1171.503,
+            "y": 3443.706,
+            "z": -5158.034
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -8.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_m5_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 1223.58,
+            "y": 3263.718,
+            "z": -5465.43
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -8.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_b0m0_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 1282.764,
+            "y": 3928.3,
+            "z": -4260.318
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -98.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d18_hab_rot_b0m1_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 1635.657,
+            "y": 3912.05,
+            "z": -4191.018
+          },
+          "rotation_deg": {
+            "x": -119.2106,
+            "y": 7.7464,
+            "z": -98.3946
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d28_hotel_m2_0",
           "type": "hubb_hotel_hex",
           "name": "Гостиничные доки",
           "offset_m": {
-            "x": 2584.843,
-            "y": -233.926,
-            "z": -581.357
+            "x": -3487.42,
+            "y": -4455.823,
+            "z": -1296.663
           },
           "rotation_deg": {
-            "x": -165.7569,
-            "y": 61.838,
-            "z": -64.4621
+            "x": 169.0267,
+            "y": -41.607,
+            "z": 16.1998
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -611,683 +1031,43 @@
           }
         },
         {
-          "id": "belt_demo.d2_hotel_m5_0",
+          "id": "belt_demo.d28_hotel_m4_0",
           "type": "hubb_hotel_hex",
           "name": "Гостиничные доки",
           "offset_m": {
-            "x": 2767.96,
-            "y": -497.763,
-            "z": -295.424
+            "x": -3577.12,
+            "y": -4846.036,
+            "z": -1139.86
           },
           "rotation_deg": {
-            "x": -165.7569,
-            "y": 61.838,
-            "z": -64.4621
+            "x": 169.0267,
+            "y": -41.607,
+            "z": 16.1998
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "belt_demo.d28_hotel_b0m0_0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -3655.508,
+            "y": -4448.085,
+            "z": -1146.111
+          },
+          "rotation_deg": {
+            "x": 169.0267,
+            "y": -41.607,
+            "z": 106.1998
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
             "y": 0.0,
             "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 1938.475,
-            "y": 4093.357,
-            "z": -524.404
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": -29.2495
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_m1_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2074.901,
-            "y": 3839.598,
-            "z": -740.261
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": -29.2495
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2211.327,
-            "y": 3585.839,
-            "z": -956.119
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": -29.2495
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_m3_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2347.752,
-            "y": 3332.08,
-            "z": -1171.976
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": -29.2495
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_m4_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2484.178,
-            "y": 3078.321,
-            "z": -1387.834
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": -29.2495
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_m5_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2620.604,
-            "y": 2824.562,
-            "z": -1603.691
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": -29.2495
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_b0m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2453.954,
-            "y": 3044.141,
-            "z": -1369.868
-          },
-          "rotation_deg": {
-            "x": 130.3858,
-            "y": 22.2693,
-            "z": -136.9902
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_b0m1_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2681.203,
-            "y": 3285.589,
-            "z": -1510.086
-          },
-          "rotation_deg": {
-            "x": 130.3858,
-            "y": 22.2693,
-            "z": -136.9902
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_b0m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2908.452,
-            "y": 3527.037,
-            "z": -1650.303
-          },
-          "rotation_deg": {
-            "x": 130.3858,
-            "y": 22.2693,
-            "z": -136.9902
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_b1m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 1957.225,
-            "y": 3791.254,
-            "z": -1014.222
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": 60.7505
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_b1m1_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 1713.614,
-            "y": 3874.377,
-            "z": -1265.905
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": 60.7505
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_b1m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 1470.004,
-            "y": 3957.499,
-            "z": -1517.589
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": 60.7505
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d4_hab_rot_b1m3_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 1226.393,
-            "y": 4040.621,
-            "z": -1769.272
-          },
-          "rotation_deg": {
-            "x": -120.1453,
-            "y": 39.1421,
-            "z": 60.7505
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 3263.811,
-            "y": 3594.988,
-            "z": 4389.869
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 49.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_m1_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2997.049,
-            "y": 3784.641,
-            "z": 4239.969
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 49.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2730.288,
-            "y": 3974.294,
-            "z": 4090.069
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 49.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_m3_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2463.526,
-            "y": 4163.947,
-            "z": 3940.168
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 49.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_m4_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2196.765,
-            "y": 4353.6,
-            "z": 3790.268
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 49.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_m5_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 1930.004,
-            "y": 4543.253,
-            "z": 3640.368
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 49.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_b0m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2326.085,
-            "y": 3710.644,
-            "z": 3624.86
-          },
-          "rotation_deg": {
-            "x": -128.3226,
-            "y": -47.817,
-            "z": 21.7595
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_b0m1_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2236.469,
-            "y": 3425.734,
-            "z": 3423.874
-          },
-          "rotation_deg": {
-            "x": -128.3226,
-            "y": -47.817,
-            "z": 21.7595
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_b0m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2146.852,
-            "y": 3140.825,
-            "z": 3222.887
-          },
-          "rotation_deg": {
-            "x": -128.3226,
-            "y": -47.817,
-            "z": 21.7595
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_b0m3_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2057.236,
-            "y": 2855.915,
-            "z": 3021.901
-          },
-          "rotation_deg": {
-            "x": -128.3226,
-            "y": -47.817,
-            "z": 21.7595
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_b1m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2716.653,
-            "y": 3788.096,
-            "z": 4360.095
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 139.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_b1m1_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2492.137,
-            "y": 3676.479,
-            "z": 4618.425
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 139.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d6_hab_rot_b1m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 2267.621,
-            "y": 3564.863,
-            "z": 4876.756
-          },
-          "rotation_deg": {
-            "x": -54.7994,
-            "y": 14.4144,
-            "z": 139.9149
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d19_hab_rot_m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": -2524.218,
-            "y": -5520.365,
-            "z": 238.64
-          },
-          "rotation_deg": {
-            "x": 45.0529,
-            "y": -60.5479,
-            "z": 31.7391
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d19_hab_rot_m1_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": -2617.335,
-            "y": -5187.363,
-            "z": 338.832
-          },
-          "rotation_deg": {
-            "x": 45.0529,
-            "y": -60.5479,
-            "z": 31.7391
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d19_hab_rot_m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": -2710.451,
-            "y": -4854.36,
-            "z": 439.024
-          },
-          "rotation_deg": {
-            "x": 45.0529,
-            "y": -60.5479,
-            "z": 31.7391
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d19_hab_rot_m3_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": -2803.568,
-            "y": -4521.357,
-            "z": 539.216
-          },
-          "rotation_deg": {
-            "x": 45.0529,
-            "y": -60.5479,
-            "z": 31.7391
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d19_hab_rot_m4_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": -2896.685,
-            "y": -4188.355,
-            "z": 639.409
-          },
-          "rotation_deg": {
-            "x": 45.0529,
-            "y": -60.5479,
-            "z": 31.7391
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d19_hab_rot_m5_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": -2989.802,
-            "y": -3855.352,
-            "z": 739.601
-          },
-          "rotation_deg": {
-            "x": 45.0529,
-            "y": -60.5479,
-            "z": 31.7391
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -9.0
-          }
-        },
-        {
-          "id": "belt_demo.d19_hab_rot_b0m0_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": -2503.942,
-            "y": -5243.714,
-            "z": 566.631
-          },
-          "rotation_deg": {
-            "x": 45.0529,
-            "y": -60.5479,
-            "z": -58.2609
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
           }
         }
       ]

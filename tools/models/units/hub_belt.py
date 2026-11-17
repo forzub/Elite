@@ -699,11 +699,11 @@ import hashlib  # noqa: E402
 import random  # noqa: E402
 
 DISTRICT_KINDS = ["docks_l", "docks_m", "refuel", "repair", "parking", "hotel", "storage", "fuel", "industry",
-                  "hab_static", "hab_rot", "landmark"]
+                  "hab_static", "hab_rot", "landmark", "canopy"]
 EXTRA_KINDS = ["storage", "industry", "hab_static", "hab_rot", "docks_m", "fuel", "hab_static", "industry", "parking",
                "refinery", "rig", "landmark", "refinery", "rig"]
 WHEELED = {"docks_l", "docks_m", "refuel", "repair", "parking", "storage", "fuel", "industry", "refinery", "rig"}
-PASSENGER = {"hotel", "hab_static", "hab_rot", "core", "landmark"}
+PASSENGER = {"hotel", "hab_static", "hab_rot", "core", "landmark", "canopy"}
 RING_AXLE = 420.0
 SPIN_CAP = 36              # spinning bodies per hub (each one a separate world object)          # the fixed axle junctions in front of / behind the ring hub
 
@@ -755,8 +755,10 @@ DISTRICT_MODULES = {
                    ("hubv_gallery_tower", 140.0, "face", 0.0), ("hubv_saucer_tower", 300.0, "face", 0.0)],
     "hab_rot": [("hubb_hab_drum", 360.0, "axial", 9.0)],
     # after the reference video (hub_vista.py)
-    "landmark": [("hubv_crown_spire", 170.0, "face", 0.0), ("hubv_crown_spire", 170.0, "face", 0.0), ("hubv_mast", 80.0, "face", 0.0),
-                 ("hubv_water_tower", 120.0, "face", 0.0)],
+    "landmark": [("hubv_crown_spire", 170.0, "face", 0.0), ("hubv_crown_spire_b", 170.0, "face", 0.0),
+                 ("hubv_crown_spire_c", 170.0, "face", 0.0), ("hubv_mast", 80.0, "face", 0.0), ("hubv_water_tower", 120.0, "face", 0.0)],
+    # the disc canopy (video 0:03): one per district, on top of a short spine only (it is 1.4 km across)
+    "canopy": [("hubv_canopy", 1500.0, "top", 0.0)],
     "refinery": [("hubv_refinery", 180.0, "face", 0.0), ("hubb_gas_battery", 170.0, "face", 0.0), ("hubv_mast", 80.0, "face", 0.0)],
     "rig": [("hubv_rig", 200.0, "face", 0.0), ("hubv_pad_star", 180.0, "face", 0.0), ("hubv_cage_gantry", 240.0, "face", 0.0)],
 }
@@ -765,7 +767,7 @@ AXIAL_OFFSET = {"hubb_hotel_hex": HX_L / 2 + 40.0 + GIRDER_H + 4.0, "hubb_hab_dr
 DISTRICT_TITLE = {"docks_l": "Грузовые перроны L", "docks_m": "Грузовые перроны M", "refuel": "Заправочные доки",
                   "repair": "Ремонтные доки", "parking": "Стоянки", "hotel": "Гостиничные доки", "storage": "Склады",
                   "fuel": "Склады горючего", "industry": "Промзона", "hab_static": "Жилой квартал",
-                  "hab_rot": "Жилые барабаны", "landmark": "Шпили", "refinery": "НПЗ", "rig": "Платформы"}
+                  "hab_rot": "Жилые барабаны", "landmark": "Шпили", "refinery": "НПЗ", "rig": "Платформы", "canopy": "Диск"}
 
 
 def belt_layout(hub_id):
@@ -808,6 +810,8 @@ def belt_layout(hub_id):
             t += pitch
             # a spinning body is a whole object in the game (~0.03 ms of CPU each): one per slot, at most SPIN_CAP per hub
             use = faces if mount == "face" else [side, _mul(side, -1.0)] if mount == "comb" else [up]
+            if mount == "top":
+                use = [up]
             if mount == "axial" and len(spinning) >= SPIN_CAP:
                 use = []
             for fi, f in enumerate(use):
@@ -815,7 +819,7 @@ def belt_layout(hub_id):
                     continue                                                    # some side faces stay bare
                 nid = f"{dname}_{tag}m{si}_{fi}"
                 base = _add(mid, _mul(f, GIRDER_H + 2.0))
-                if mount == "face":
+                if mount in ("face", "top"):
                     add(nid, folder, base, _frame(spine, f), "module", dname)
                     if folder in ("hubb_works", "hubv_refinery"):
                         import pads
@@ -836,10 +840,10 @@ def belt_layout(hub_id):
     for kind in kinds:
         mods = DISTRICT_MODULES[kind]
         pick = lambda k: [mods[rng.randrange(len(mods))] for _ in range(k)]
-        plan = pick(rng.randint(4, 8))
+        plan = pick(1 if kind == "canopy" else rng.randint(4, 8))
         L = sum(m[1] for m in plan) + 80.0
-        branches = [pick(rng.randint(2, 4)) for _ in range(rng.randint(1, 3))]
-        BL = max(sum(m[1] for m in bp) + 80.0 for bp in branches)
+        branches = [] if kind == "canopy" else [pick(rng.randint(2, 4)) for _ in range(rng.randint(1, 3))]
+        BL = max([sum(m[1] for m in bp) + 80.0 for bp in branches] + [0.0])
         rad = max(L / 2, BL + 40.0) + 450.0                                      # the district's sphere (modules stick out)
         outer = kind.startswith("docks") or kind in ("refuel", "repair", "parking")
         lo, hi = (5000.0, 8000.0) if outer else (2000.0, 6000.0)

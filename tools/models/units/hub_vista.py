@@ -57,63 +57,115 @@ def lattice_column(p, mat, y0, y1, h0, h1, bays, chord=1.2, brace=0.6, cs=6, cx=
                 cyl(p, mat, at(y, *a), at(y2, *b), brace * 0.8, 4)
 
 
-def arc_tube(p, mat, centre, r, a0, a1, plane_angle, rt, n=14, seg=6):
-    """a tube along a circular arc of radius r in the vertical plane at plane_angle (radians about Y) through centre"""
+def arc_tube(p, mat, centre, r, a0, a1, plane_angle, rt, n=14, seg=6, sy=1.0):
+    """a tube along a circular arc of radius r (stretched sy times vertically) in the vertical plane at plane_angle
+    (radians about Y) through centre"""
     pts = []
     ca, sa = math.cos(plane_angle), math.sin(plane_angle)
     for k in range(n + 1):
         a = a0 + (a1 - a0) * k / n
-        u, v = r * math.cos(a), r * math.sin(a)
+        u, v = r * math.cos(a), r * math.sin(a) * sy
         pts.append((centre[0] + u * ca, centre[1] + v, centre[2] + u * sa))
     tube(p, mat, pts, rt, seg)
 
 
-# ---------------------------------------------------------------- 1 crowned spire
-def crown_spire_parts(lod):
-    P = {"hubv_crown_spire": Part("hubv_crown_spire")}
-    s = P["hubv_crown_spire"]
-    seg = _seg(lod, 24)
-    box(s, STEEL, (0, 4.0, 0), (40.0, 8.0, 40.0))
-    cyl(s, HULL, (0, 8.0, 0), (0, 60.0, 0), 14.0, max(8, seg // 2))                       # the root stem
-    ylathe(s, HULL, [(0.0, 52.0), (16.0, 52.0), (60.0, 74.0), (72.0, 80.0), (72.0, 86.0), (0.0, 86.0)], seg, soft=30)  # the skirt
-    if lod < 3:
-        for k in range(18 if lod < 2 else 9):                                          # pipework hanging off the skirt
-            a = 2 * math.pi * k / (18 if lod < 2 else 9)
-            r = 30.0 + 36.0 * ((k * 7) % 5) / 4.0
-            L = 18.0 + 30.0 * ((k * 3) % 4) / 3.0
-            y0 = 52.0 + 22.0 * (r - 16.0) / 56.0
-            cyl(s, STEEL, (r * math.cos(a), y0, r * math.sin(a)), (r * math.cos(a), y0 - L, r * math.sin(a)), 1.6, 6)
-            if k % 3 == 0:
-                box(s, WARM, (r * math.cos(a), y0 - L - 1.0, r * math.sin(a)), (2.0, 2.0, 2.0))
-    if lod < 2:
-        for k in range(24):
-            a = 2 * math.pi * k / 24
-            box(s, WARM, (71.0 * math.cos(a), 83.0, 71.0 * math.sin(a)), (3.0, 2.0, 3.0))  # rim lights
-        for k in range(6):                                                              # deck houses on the skirt
-            a = 2 * math.pi * k / 6 + 0.3
-            box(s, LIGHT, (46.0 * math.cos(a), 92.0, 46.0 * math.sin(a)), (14.0, 12.0, 10.0), rot_y(-a))
-    lattice_column(s, STEEL, 86.0, 250.0, 12.0, 8.0, 8 if lod < 2 else 4, 1.4, 0.7)        # the shaft
-    # the crown: two horizontal rings and three vertical arcs round the top of the shaft, spikes
-    ring_y(s, STEEL, (0, 236.0, 0), 22.0, 3.0, 3.0, seg)
-    ring_y(s, STEEL, (0, 292.0, 0), 16.0, 2.5, 2.5, seg)
-    if lod < 3:
-        for k in range(3):
-            arc_tube(s, STEEL, (0, 262.0, 0), 30.0, -0.95, math.pi + 0.95, math.pi / 3 * k, 1.3, 16 if lod < 2 else 8)
-        for k in range(6):
-            a = 2 * math.pi * k / 6
-            cyl(s, STEEL, (18.0 * math.cos(a), 292.0, 18.0 * math.sin(a)), (12.0 * math.cos(a), 330.0 + 10.0 * (k % 2), 12.0 * math.sin(a)), 0.7, 4)
-    cyl(s, STEEL, (0, 250.0, 0), (0, 360.0, 0), 1.2, 6)                                   # the central needle
-    beacon(s, (0, 361.0, 0), 2.0)
-    if lod < 2:
-        for k in range(8):
-            a = 2 * math.pi * k / 8
-            box(s, WARM, (24.0 * math.cos(a), 236.0, 24.0 * math.sin(a)), (1.6, 1.6, 1.6))
-    return P
+# ---------------------------------------------------------------- 1 crowned spire (rework 2026-11-17, author: «начинай с
+# диска-потолка и шпиля»): the video's spires (4:39:42) are dense - a wide skirt platform heaped with plant and hanging
+# pipe "roots", a lattice shaft with boxy clusters ringing it at mid height, and a heavy crown: a cage of arcs round a
+# core, stacked rings, a vertical wheel on top, needles. Three height variants (a / b / c) so a group of them differs.
+import random as _random  # noqa: E402
 
 
-def crown_spire_hits():
-    return [hcyl("hubv_crown_spire", (0, 52.0, 0), (0, 86.0, 0), 72.0), hbox("hubv_crown_spire", (0, 170.0, 0), (26.0, 170.0, 26.0)),
-            hcyl("hubv_crown_spire", (0, 230.0, 0), (0, 300.0, 0), 32.0)]
+def crown_spire_builder(name, H, seed):
+    """H: the shaft top (m); the crown sits above it"""
+    def build(lod):
+        P = {name: Part(name)}
+        s = P[name]
+        rng = _random.Random(seed)
+        seg = _seg(lod, 24)
+        hi = lod < 2
+        box(s, STEEL, (0, 4.0, 0), (44.0, 8.0, 44.0))
+        cyl(s, HULL, (0, 8.0, 0), (0, 60.0, 0), 16.0, max(8, seg // 2))                   # the root stem
+        # two dishes: a small lower one, the wide skirt platform above
+        ylathe(s, HULL, [(0.0, 34.0), (16.0, 34.0), (40.0, 46.0), (42.0, 50.0), (0.0, 50.0)], seg, soft=30)
+        ylathe(s, HULL, [(0.0, 52.0), (18.0, 52.0), (62.0, 74.0), (76.0, 80.0), (76.0, 87.0), (0.0, 87.0)], seg, soft=30)
+        if lod < 3:
+            n = 40 if hi else 14
+            for k in range(n):                                                       # hanging pipe "roots"
+                a = 2 * math.pi * (k + rng.random() * 0.5) / n
+                r = rng.uniform(22.0, 72.0)
+                y0 = 52.0 + 22.0 * max(0.0, r - 18.0) / 58.0
+                L = rng.uniform(14.0, 60.0)
+                cyl(s, STEEL, (r * math.cos(a), y0, r * math.sin(a)), (r * math.cos(a), y0 - L, r * math.sin(a)),
+                    rng.uniform(0.8, 2.2), 6 if hi else 4)
+                if k % 4 == 0:
+                    box(s, WARM, (r * math.cos(a), y0 - L - 1.2, r * math.sin(a)), (2.0, 2.0, 2.0))
+            for k in range(16 if hi else 6):                                         # plant heaped on the skirt
+                a = rng.uniform(0, 2 * math.pi)
+                r = rng.uniform(24.0, 66.0)
+                w, h, d = rng.uniform(6, 18), rng.uniform(5, 20), rng.uniform(6, 14)
+                box(s, rng.choice((LIGHT, HULL, STEEL)), (r * math.cos(a), 87.0 + h / 2, r * math.sin(a)), (w, h, d), rot_y(-a))
+                if hi and k % 2 == 0:
+                    box(s, WARM, ((r + d / 2 + 0.1) * math.cos(a), 87.0 + h * 0.6, (r + d / 2 + 0.1) * math.sin(a)), (2.0, 1.4, 2.0))
+            if hi:
+                for k in range(4):                                                   # tanks on the skirt
+                    a = math.pi / 2 * k + 0.6
+                    cyl(s, LIGHT, (54.0 * math.cos(a), 87.0, 54.0 * math.sin(a)), (54.0 * math.cos(a), 105.0, 54.0 * math.sin(a)), 6.0, 10)
+        if hi:
+            for k in range(32):
+                a = 2 * math.pi * k / 32
+                box(s, WARM, (75.0 * math.cos(a), 84.0, 75.0 * math.sin(a)), (3.0, 2.0, 3.0))   # rim lights
+            ring_y(s, GRATE, (0, 88.0, 0), 74.0, 2.0, 1.2, seg)                      # rail
+        # the shaft and its mid-height clusters
+        lattice_column(s, STEEL, 87.0, H, 19.0, 12.0, 10 if hi else 4, 1.8, 0.8)
+        cyl(s, HULL, (0, 87.0, 0), (0, H, 0), 8.0, 8)                                  # a lift core inside the lattice
+        for yc, rr, nb in ((87.0 + (H - 87.0) * 0.45, 20.0, 10), (87.0 + (H - 87.0) * 0.62, 17.0, 8)):
+            ring_y(s, HULL, (0, yc - 10.0, 0), 8.0, rr, 3.0, seg)
+            for k in range(nb if lod < 3 else nb // 2):
+                a = 2 * math.pi * k / nb
+                w = rng.uniform(8, 13)
+                box(s, rng.choice((HULL, LIGHT)), ((rr - 2) * math.cos(a), yc, (rr - 2) * math.sin(a)), (w, rng.uniform(14, 22), 9.0), rot_y(-a))
+                if hi:
+                    box(s, WARM if k % 3 else COOL, ((rr + 2.6) * math.cos(a), yc + 2.0, (rr + 2.6) * math.sin(a)), (1.6, 1.6, 1.6))
+        # the crown: a core, stacked rings, a cage of arcs, a vertical wheel on top, needles
+        C = H + 34.0
+        cyl(s, HULL, (0, H - 6.0, 0), (0, C + 26.0, 0), 9.0, max(8, seg // 2))
+        for dy, rr in ((-30.0, 26.0), (-14.0, 32.0), (2.0, 34.0), (18.0, 30.0), (32.0, 22.0)):
+            ring_y(s, STEEL, (0, C + dy, 0), rr - 2.0, 3.0, 2.4, seg)
+        if lod < 3:
+            narc = 8 if hi else 4
+            for k in range(narc):
+                arc_tube(s, STEEL, (0, C + 10.0, 0), 34.0, -1.1, math.pi + 1.1, math.pi * k / narc, 1.4, 18 if hi else 8, sy=1.7)
+            for k in range(6):                                                       # boxes inside the cage
+                a = 2 * math.pi * k / 6 + 0.3
+                box(s, LIGHT, (16.0 * math.cos(a), C + rng.uniform(-18, 14), 16.0 * math.sin(a)), (8.0, 10.0, 6.0), rot_y(-a))
+            # the vertical wheel on top, facing out (+Z)
+            lathe(s, STEEL, [(20.0, -1.0), (23.0, -1.0), (23.0, 1.0), (20.0, 1.0), (20.0, -1.0)], seg, t=(0.0, C + 64.0, 0.0))
+            for k in range(8):
+                a = 2 * math.pi * k / 8
+                cyl(s, STEEL, (0, C + 64.0, 0), (21.0 * math.cos(a), C + 64.0 + 21.0 * math.sin(a), 0), 0.6, 4)
+            cyl(s, STEEL, (0, C + 26.0, 0), (0, C + 43.0, 0), 2.0, 6)
+            for k in range(8):                                                       # needles
+                a = 2 * math.pi * k / 8
+                r0 = 30.0
+                cyl(s, STEEL, (r0 * math.cos(a), C + 30.0, r0 * math.sin(a)),
+                    (r0 * 0.6 * math.cos(a), C + 60.0 + 18.0 * (k % 3), r0 * 0.6 * math.sin(a)), 0.6, 4)
+                if hi:
+                    box(s, WARM, (34.5 * math.cos(a), C + 2.0, 34.5 * math.sin(a)), (1.8, 1.8, 1.8))
+        cyl(s, STEEL, (0, C + 86.0, 0), (0, C + 140.0, 0), 1.0, 6)                       # the central needle
+        beacon(s, (0, C + 141.0, 0), 2.2)
+        return P
+    return build
+
+
+def crown_spire_hits_for(name, H):
+    C = H + 34.0
+    return lambda: [hcyl(name, (0, 34.0, 0), (0, 87.0, 0), 76.0), hbox(name, (0, (87.0 + H) / 2, 0), (40.0, H - 87.0, 40.0)),
+                    hcyl(name, (0, C - 34.0, 0), (0, C + 88.0, 0), 36.0)]
+
+
+crown_spire_parts = crown_spire_builder("hubv_crown_spire", 250.0, 31)
+crown_spire_hits = crown_spire_hits_for("hubv_crown_spire", 250.0)
 
 
 # ---------------------------------------------------------------- 2 saucer tower
@@ -457,7 +509,104 @@ def pad_star_hits():
     return [hcyl("hubv_pad_star", (0, -6.0, 0), (0, 0.0, 0), 80.0)]
 
 
-KIT = {"hubv_crown_spire": (crown_spire_parts, crown_spire_hits, "Шпиль с короной 360 м (по ролику, 4:39:42)"),
+# ---------------------------------------------------------------- 12 the disc canopy ("диск-потолок", video 0:03 / 4:02)
+# A lattice trumpet rises out of the district and flares into a disc 1.4 km across: its underside coffered (radial ribs,
+# rings, lit panels) with towers hanging from it, a quarter of skyscrapers on its top, lights round the rim.
+CANOPY_R, CANOPY_Y = 700.0, 600.0
+
+
+def canopy_parts(lod):
+    P = {"hubv_canopy": Part("hubv_canopy")}
+    c = P["hubv_canopy"]
+    rng = _random.Random(7)
+    hi = lod < 2
+    seg = _seg(lod, 48)
+    R, Y = CANOPY_R, CANOPY_Y
+    box(c, STEEL, (0, 5.0, 0), (130.0, 10.0, 130.0))
+    # the solid trumpet core
+    ylathe(c, HULL, [(0.0, 10.0), (42.0, 10.0), (26.0, 260.0), (34.0, 380.0), (70.0, 470.0), (150.0, 545.0),
+                     (250.0, 590.0), (262.0, Y), (0.0, Y)], seg, soft=35)
+    # the lattice skin of the trumpet: curved, twisted members + stiffening rings
+    rad = lambda y: 52.0 - 22.0 * (y / 260.0) if y < 260.0 else 30.0 + 240.0 * ((y - 260.0) / 340.0) ** 2.2
+    nm = 32 if hi else 12
+    for k in range(nm):
+        for sgn in ((1, -1) if hi else (1,)):
+            pts = []
+            for j in range(0, 21):
+                y = 10.0 + (Y - 14.0) * j / 20.0
+                a = 2 * math.pi * k / nm + sgn * 0.9 * (y / Y)
+                rr = rad(y) + 4.0
+                pts.append((rr * math.cos(a), y, rr * math.sin(a)))
+            tube(c, STEEL, pts, 1.6 if hi else 2.2, 4)
+    if lod < 3:
+        for y in (60.0, 140.0, 220.0, 300.0, 380.0, 450.0, 510.0, 560.0):
+            ring_y(c, STEEL, (0, y, 0), rad(y) + 3.0, 3.0, 3.0, seg)
+            if hi:
+                for k in range(12):
+                    a = 2 * math.pi * k / 12 + y
+                    box(c, WARM, ((rad(y) + 6.5) * math.cos(a), y + 2.0, (rad(y) + 6.5) * math.sin(a)), (2.0, 2.0, 2.0))
+    # the disc
+    ylathe(c, HULL, [(0.0, Y), (R - 40.0, Y), (R, Y + 18.0), (R, Y + 40.0), (R - 30.0, Y + 50.0), (0.0, Y + 50.0)], seg, soft=20)
+    # its underside: radial ribs, rings, coffer panels (some lit), hanging towers
+    nr = 48 if hi else 16
+    for k in range(nr):
+        a = 2 * math.pi * k / nr
+        mid = (R + 262.0) / 2
+        box(c, STEEL, (mid * math.cos(a), Y - 5.0, mid * math.sin(a)), (R - 262.0, 10.0, 4.0), rot_y(-a))
+    if lod < 3:
+        for rr in (330.0, 420.0, 510.0, 600.0, 680.0):
+            ring_y(c, STEEL, (0, Y - 5.0, 0), rr, 5.0, 10.0, seg)
+    if hi:
+        bands = [(262.0, 330.0), (335.0, 420.0), (425.0, 510.0), (515.0, 600.0), (605.0, 680.0)]
+        for k in range(nr):
+            for r0, r1 in bands:
+                if rng.random() < 0.35:
+                    a = 2 * math.pi * (k + 0.5) / nr
+                    rm = (r0 + r1) / 2
+                    w = 2 * math.pi * rm / nr * 0.7
+                    box(c, WARM if rng.random() < 0.8 else COOL, (rm * math.cos(a), Y - 0.6, rm * math.sin(a)),
+                        ((r1 - r0) * 0.75, 0.4, w), rot_y(-a))
+    nt = 20 if hi else 8
+    for k in range(nt):                                                         # towers hanging under the disc
+        a = rng.uniform(0, 2 * math.pi)
+        rr = rng.uniform(330.0, 640.0)
+        h = rng.uniform(50.0, 170.0)
+        w = rng.uniform(26.0, 44.0)
+        box(c, FACADE, (rr * math.cos(a), Y - 10.0 - h / 2, rr * math.sin(a)), (w, h, w * rng.uniform(0.7, 1.2)), rot_y(-a))
+        if lod < 3:
+            beacon(c, (rr * math.cos(a), Y - 12.0 - h, rr * math.sin(a)), 1.6)
+    # the quarter on top
+    nb = 46 if hi else 18
+    for k in range(nb):
+        a = rng.uniform(0, 2 * math.pi)
+        rr = rng.uniform(40.0, 600.0) ** 1.0
+        h = rng.uniform(30.0, 120.0) * (1.6 - rr / R)
+        w = rng.uniform(30.0, 60.0)
+        box(c, FACADE if k % 4 else FACADE_L, (rr * math.cos(a), Y + 50.0 + h / 2, rr * math.sin(a)), (w, h, w * rng.uniform(0.6, 1.3)),
+            rot_y(-a))
+    cyl(c, STEEL, (0, Y + 50.0, 0), (0, Y + 330.0, 0), 3.0, 8)                       # the mast on the axis
+    beacon(c, (0, Y + 332.0, 0), 3.0)
+    if lod < 3:
+        n = 96 if hi else 24
+        for k in range(n):                                                      # rim lights
+            a = 2 * math.pi * k / n
+            box(c, FLOOD if k % 2 else WARM, ((R + 0.5) * math.cos(a), Y + 30.0, (R + 0.5) * math.sin(a)), (3.0, 3.0, 3.0))
+        for k in range(12):
+            a = 2 * math.pi * k / 12
+            beacon(c, ((R - 6.0) * math.cos(a), Y + 46.0, (R - 6.0) * math.sin(a)), 3.0)
+    return P
+
+
+def canopy_hits():
+    return [hcyl("hubv_canopy", (0, 10.0, 0), (0, 470.0, 0), 70.0), hcyl("hubv_canopy", (0, 470.0, 0), (0, CANOPY_Y, 0), 262.0),
+            hcyl("hubv_canopy", (0, CANOPY_Y - 180.0, 0), (0, CANOPY_Y + 50.0, 0), CANOPY_R)]
+
+
+KIT = {"hubv_crown_spire": (crown_spire_parts, crown_spire_hits, "Шпиль с короной 425 м (по ролику, 4:39:42)"),
+       "hubv_crown_spire_b": (crown_spire_builder("hubv_crown_spire_b", 340.0, 57), crown_spire_hits_for("hubv_crown_spire_b", 340.0),
+                              "Шпиль с короной, высокий 515 м"),
+       "hubv_crown_spire_c": (crown_spire_builder("hubv_crown_spire_c", 180.0, 83), crown_spire_hits_for("hubv_crown_spire_c", 180.0),
+                              "Шпиль с короной, низкий 355 м"),
        "hubv_saucer_tower": (saucer_tower_parts, saucer_tower_hits, "Башня-гриб со светящимся диском 200 м"),
        "hubv_rig": (rig_parts, rig_hits, "Буровая платформа-пирамида"),
        "hubv_cage_gantry": (cage_gantry_parts, cage_gantry_hits, "Решётчатая сфера в портальном кране"),
@@ -467,7 +616,8 @@ KIT = {"hubv_crown_spire": (crown_spire_parts, crown_spire_hits, "Шпиль с 
        "hubv_mast": (mast_parts, mast_hits, "Решётчатая мачта 450 м"),
        "hubv_cantilever": (cantilever_parts, cantilever_hits, "Консольная ферма-стрела 500 м"),
        "hubv_refinery": (refinery_parts, refinery_hits, "НПЗ: колонны, эстакады, факел"),
-       "hubv_pad_star": (pad_star_parts, pad_star_hits, "Площадка-звезда с огнями 160 м")}
+       "hubv_pad_star": (pad_star_parts, pad_star_hits, "Площадка-звезда с огнями 160 м"),
+       "hubv_canopy": (canopy_parts, canopy_hits, "Диск-потолок 1,4 км на раструбе 600 м (по ролику, 0:03)")}
 
 ASSETS = {k: v[0] for k, v in KIT.items()}
 HITS = {k: v[1] for k, v in KIT.items()}

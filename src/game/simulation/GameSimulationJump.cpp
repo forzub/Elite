@@ -965,6 +965,33 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
         tr.orientation = glm::mat4(glm::mat3(glm::dmat3(right, shipUp, -fwd)));
         tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
     }
+    // DEV: ELITE_DEV_START_AT="x,y,z[;tx,ty,tz]" - the ship at a point of the hub's city assembly (its asset frame,
+    // metres: a district of a generated belt settlement), the nose to the target point (default: the city origin).
+    // Uses the city object's current transform (the hub's self-rotation included).
+    if (const char* at = std::getenv("ELITE_DEV_START_AT"); at && *at)
+    {
+        glm::dvec3 p(0.0), t(0.0);
+        const int n = std::sscanf(at, "%lf,%lf,%lf;%lf,%lf,%lf", &p.x, &p.y, &p.z, &t.x, &t.y, &t.z);
+        for (const auto& [oid, obj] : m_staticObjects)
+        {
+            if (obj.hubId != hubId || obj.hubModuleId.size() < 5 || obj.hubModuleId.compare(obj.hubModuleId.size() - 5, 5, ".city") != 0)
+                continue;
+            const glm::dmat3 R(glm::mat3(obj.orientation));
+            const glm::dvec3 o = world::coordinates::fullMeters(obj.worldPosition);
+            const glm::dvec3 pos = o + R * p;
+            const glm::dvec3 fwd = glm::normalize((o + R * (n >= 6 ? t : glm::dvec3(0.0))) - pos);
+            glm::dvec3 side = glm::cross(fwd, R * glm::dvec3(0.0, 1.0, 0.0));
+            if (glm::length(side) < 1e-6)
+                side = glm::cross(fwd, glm::dvec3(1.0, 0.0, 0.0));
+            const glm::dvec3 right = glm::normalize(side);
+            frame.originMeters = pos;
+            tr.setWorldPositionMeters(pos);
+            tr.orientation = glm::mat4(glm::mat3(glm::dmat3(right, glm::cross(right, fwd), -fwd)));
+            tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
+            std::cerr << "[DevStart] at city point " << p.x << "," << p.y << "," << p.z << std::endl;
+            break;
+        }
+    }
     motion.freeFlightReferenceId = hubId;
     motion.freeFlightReferenceVelocityMps = hub->velocityMetersPerSecond;
     m_shipReferenceBindings.erase(id);

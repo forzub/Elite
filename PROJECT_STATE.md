@@ -6035,3 +6035,15 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   frame p50 16 km 7.3 ms / 9 km 7.4 ms / 3 km 10.0 ms (city GPU 1.9 / 3.2 / 5.0 ms; 155 of 300+ groups collapsed).
   Known: Elite Classic draws stations by edges only, so beyond 1.6 km the city is invisible there (pre-existing
   station edge fade) - Classic needs a far presentation for hub cities. build/run_belt.bat added.
+
+- 2026-11-17 DISC CANOPY + SPIRE REWORK (author: «да, начинай с диска-потолка и шпиля»). hub_vista.py:
+  hubv_canopy (video 0:03 / 4:02): a twisted lattice trumpet 600 m over a solid core flaring into a 1.4 km disc;
+  underside coffered (48 radial ribs, 5 rings, ~35 % of the coffers lit), 20 windowed towers hanging under it, a quarter
+  of towers on top, rim lights. Generator: district kind "canopy" (one per hub, mount "top", no branches).
+  hubv_crown_spire reworked denser (two dishes, plant + tanks heaped on the skirt, 40 hanging pipe roots, thicker lattice
+  shaft with a lift core and two ring clusters of blocks, a crown cage of 8 vertically stretched arcs, 5 rings, a
+  vertical wheel, needles) + height variants _b (515 m) / _c (355 m) in the landmark districts.
+  DEV ELITE_DEV_START_AT="x,y,z[;tx,ty,tz]" (GameSimulationJump devPlaceShipNearHub): start at a point of the hub's city
+  assembly, nose to a target point (the city object's current transform).
+  LIVE (release, Modern): canopy and two spire districts, D:/tmp/sc.png, frame p50 4.6-4.8 ms; previews vs video
+  D:/tmp/spire_canopy.png. Mesh editor --serve takes SECONDS (an hour ran out mid-build once - use 14400).

@@ -34,7 +34,7 @@ def main():
     ap.add_argument("--name", default="Поселение «Пояс» (генератор)")
     ap.add_argument("--phase-deg", type=float, default=0.0006)   # ~4300 km ahead of the Ceres hub on its orbit
     a = ap.parse_args()
-    from units.hub_belt import belt_layout
+    from units.hub_plane import hub_layout as belt_layout   # the planar cities (PLANE_HUBS) or the belt settlement
     L = belt_layout(a.hub)
     world = json.loads(open(WORLD, encoding="utf-8").read())
     hubs = world["orbital_hubs"]

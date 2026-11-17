@@ -6064,3 +6064,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   rails with rungs (~250 deg) with a short ladder hanging off its open end; asymmetric, each variant turned its own way.
   The sphere in the portal (0:34) is a different structure (it does have a ball). LIVE (release, Modern + Classic):
   close and district views D:/tmp/sp.png.
+- 2026-11-17 PLANAR FLOATING CITY (author: «нужно ощущение города ... ряды контейнеров, вокзал для грузовиков ... сделаем
+  все в одной плоскости. пусть будет парящая мегаструктура но в одной плоскости ... без центральной плоскости»).
+  New unit tools/models/units/hub_plane.py: kit hubp_container_yard (7 container blocks 7x12 stacks 0..5 high, RTG
+  cranes, mast lights), hubp_truck_station (10 drive-through bays under a roof, platforms, trucks, concourse),
+  hubp_crossing; generator plane_layout(hub_id) (pure in the id): grid of 600 m blocks, 226 m gaps with road bridges on
+  girders (crossings, access bridges, avenues with 2 tunnels + monorail), every block on its own girder lattice, no base
+  plate; zoning canopy centre -> downtown -> residential (+ drums / hotel barrels lying in the plane, spinning) ->
+  industry / storage, the port on ONE waterfront (piers out of open rim sides only into free space). Hub plane_demo
+  (39 blocks, 7.4 x 5.0 km, 3714 nodes, 5 spinning): set hub_plane_demo, hub_belt_world.py now uses
+  hub_plane.hub_layout (phase +0.0012 in initial_world_state). Top-down plan D:/tmp/plane_plan.png (scratch
+  plane_plan.py). Launcher build/run_plane.bat. Packaged (mesh editor serve hung once on hubp_truck_station - restarted, then OK). LIVE (release, Modern, offscreen): loads, 6.0-6.4 ms p50 at 2.8 km and 5 km; D:/tmp/plane1.png, plane3.png.

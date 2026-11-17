@@ -937,11 +937,14 @@ def _module_obb():
     builders = dict(ASSETS)
     builders.update(hv.ASSETS)
     builders["hubk_truss"] = hd.truss_parts
+    import units.hub_plane as hp                     # the planar city kit + the small district blocks it uses
+    builders.update(getattr(hp, "ASSETS", {}))      # (absent while hub_plane itself is importing hub_belt)
+    builders.update({k: hd.ASSETS[k] for k in ("hubk_hab_a", "hubk_hab_b", "hubk_hab_c")})
     for k, fn in builders.items():
         vs = [v for part in fn(2).values() for v in part.v]
         lo = tuple(min(v[i] for v in vs) for i in range(3))
         hi = tuple(max(v[i] for v in vs) for i in range(3))
-        out[k] = (lo, hi, FACADE if k.startswith("hubb_hab") or k in ("hubb_hotel_hex", "hubb_ring_core") else HULL)
+        out[k] = (lo, hi, FACADE if k.startswith(("hubb_hab", "hubk_hab")) or k in ("hubb_hotel_hex", "hubb_ring_core") else HULL)
     return out
 
 

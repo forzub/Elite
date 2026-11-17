@@ -1,0 +1,151 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "plane_demo",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -3257.3,
+    130.0,
+    373.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -3357.3,
+    130.0,
+    373.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -3457.3,
+    130.0,
+    373.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2324.7,
+    130.0,
+    237.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2424.7,
+    130.0,
+    237.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2524.7,
+    130.0,
+    237.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -779.3,
+    130.0,
+    -1382.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -879.3,
+    130.0,
+    -1382.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -979.3,
+    130.0,
+    -1382.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    786.0,
+    130.0,
+    -2258.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    786.0,
+    130.0,
+    -2158.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    786.0,
+    130.0,
+    -2058.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    886.0,
+    182.0,
+    -1932.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1692.0,
+    130.0,
+    1236.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1692.0,
+    130.0,
+    1136.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1692.0,
+    130.0,
+    1036.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

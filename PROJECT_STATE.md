@@ -6047,3 +6047,12 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   assembly, nose to a target point (the city object's current transform).
   LIVE (release, Modern): canopy and two spire districts, D:/tmp/sc.png, frame p50 4.6-4.8 ms; previews vs video
   D:/tmp/spire_canopy.png. Mesh editor --serve takes SECONDS (an hour ran out mid-build once - use 14400).
+
+- 2026-11-17 GALLERY TOWER + SPHERE REWORK (author: «давай, продолжай с башней и сферой»). hub_vista.py:
+  hubv_gallery_tower is now the video's pod tower (0:23 / 1:01 / 5:01): a barrel of 6 windowed tiers (r 60..74 m) with
+  overhanging deck slabs, lit bands under them, posts and machinery between tiers, a rounded bottom, a lip deck with
+  roof plant and antennas, a smaller 3-tier pod lower, a heavy lattice mast through both continuing above as a 4-post
+  frame (650 m in all). hubv_cage_gantry (0:34 / 3:05): a faceted core shingled with 110 modules (some lit), scaffold
+  of 10 meridians + 11 parallels + straight poles, sphere r 132 filling a portal of lattice legs and a 580 m box-truss
+  beam running past one leg as a crane jib with a king post, ties and a trolley. LIVE (release, Modern, dev start
+  at the districts): D:/tmp/ts.png, frame p50 4.4 / 5.1 ms; previews vs video D:/tmp/tower_sphere.png.

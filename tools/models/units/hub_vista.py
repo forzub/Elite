@@ -251,42 +251,75 @@ def rig_hits():
             hbox("hubv_rig", (0, 215.0, 0), (24.0, 130.0, 24.0))]
 
 
-# ---------------------------------------------------------------- 4 lattice sphere in a portal gantry
+# ---------------------------------------------------------------- 4 lattice sphere in a portal gantry (rework 2026-11-17):
+# the video's sphere (0:34, 3:05) is lumpy - a faceted core shingled with modules and wrapped in scaffolding, held in a
+# heavy portal whose truss beam runs on past one leg as a crane jib.
 def cage_gantry_parts(lod):
     P = {"hubv_cage_gantry": Part("hubv_cage_gantry")}
     g = P["hubv_cage_gantry"]
+    rng = _random.Random(23)
+    hi = lod < 2
     seg = _seg(lod, 24)
-    box(g, STEEL, (0, 4.0, 0), (360.0, 8.0, 80.0))
-    for sx in (-1, 1):
-        lattice_column(g, STEEL, 8.0, 280.0, 14.0, 12.0, 9 if lod < 2 else 4, 1.6, 0.8, cx=sx * 165.0)   # the legs
-    box(g, STEEL, (0, 286.0, 0), (360.0, 14.0, 28.0))                                     # the portal beam
-    box(g, LIGHT, (40.0, 296.0, 0), (30.0, 8.0, 34.0))                                    # its trolley
-    cyl(g, STEEL, (40.0, 286.0, 0), (40.0, 250.0, 0), 0.6, 4)
-    # the sphere: a dark core and a scaffold of meridians + parallels
-    C, R = (0.0, 140.0, 0.0), 108.0
-    sphere(g, HULL, C, R - 8.0, max(12, seg))
+    box(g, STEEL, (0, 4.0, 0), (380.0, 8.0, 90.0))
+    for sx in (-1, 1):                                                                    # the legs
+        lattice_column(g, STEEL, 8.0, 300.0, 20.0, 16.0, 10 if hi else 4, 2.2, 1.0, cx=sx * 170.0)
+    # the portal beam: a box truss 380 m + a jib 200 m past the left leg, tie rods from a king post
+    for y in (292.0, 316.0):
+        for z in (-12.0, 12.0):
+            box(g, STEEL, (-100.0, y, z), (580.0, 3.0, 3.0))
     if lod < 3:
-        n = 8 if lod < 2 else 4
-        for k in range(n):
-            arc_tube(g, STEEL, C, R, -math.pi / 2, math.pi / 2, math.pi * k / n, 1.4, 16 if lod < 2 else 8)
-            arc_tube(g, STEEL, C, R, math.pi / 2, 3 * math.pi / 2, math.pi * k / n, 1.4, 16 if lod < 2 else 8)
-        for y in (-80.0, -40.0, 0.0, 40.0, 80.0):
-            rr = math.sqrt(R * R - y * y)
-            ring_y(g, STEEL, (0, C[1] + y, 0), rr - 1.0, 2.0, 2.0, seg)
-    if lod < 2:
-        for k in range(40):
-            a, b = 2 * math.pi * ((k * 0.618) % 1.0), math.asin(2 * ((k * 0.381) % 1.0) - 1)
-            box(g, WARM if k % 3 else COOL, (R * math.cos(b) * math.cos(a), C[1] + R * math.sin(b), R * math.cos(b) * math.sin(a)),
-                (2.0, 2.0, 2.0))
+        for k in range(30 if hi else 12):
+            x0 = -390.0 + 580.0 * k / (30 if hi else 12)
+            x1 = x0 + 580.0 / (30 if hi else 12)
+            for z in (-12.0, 12.0):
+                cyl(g, STEEL, (x0, 292.0, z), (x1, 316.0, z), 0.8, 4)
+                cyl(g, STEEL, (x0, 292.0, z), (x0, 316.0, z), 0.6, 4)
+    cyl(g, STEEL, (-170.0, 316.0, 0), (-170.0, 370.0, 0), 2.0, 6)                           # king post + ties
+    cyl(g, STEEL, (-170.0, 370.0, 0), (-390.0, 316.0, 0), 0.6, 4)
+    cyl(g, STEEL, (-170.0, 370.0, 0), (60.0, 316.0, 0), 0.6, 4)
+    box(g, LIGHT, (-330.0, 300.0, 0), (24.0, 14.0, 30.0))                                  # the jib trolley
+    cyl(g, STEEL, (-330.0, 292.0, 0), (-330.0, 200.0, 0), 0.5, 4)
+    box(g, HAZ, (-330.0, 198.0, 0), (6.0, 4.0, 6.0))
+    beacon(g, (-390.0, 318.0, 0), 2.0)
+    # the sphere: a faceted core shingled with modules, wrapped in scaffold
+    C, R = (0.0, 160.0, 0.0), 132.0
+    sphere(g, HULL, C, R - 10.0, 10 if hi else 8)
+    nm = 110 if hi else 30
+    for k in range(nm):
+        z = 2 * ((k + 0.5) / nm) - 1
+        a = k * 2.39996
+        n = (math.sqrt(1 - z * z) * math.cos(a), z, math.sqrt(1 - z * z) * math.sin(a))
+        rr = R - 10.0 + rng.uniform(-2.0, 6.0)
+        c = (C[0] + n[0] * rr, C[1] + n[1] * rr, C[2] + n[2] * rr)
+        w = rng.uniform(16.0, 34.0)
+        box(g, rng.choice((HULL, LIGHT, STEEL)), c, (w, w * rng.uniform(0.5, 1.0), rng.uniform(5.0, 14.0)), axis_to(n))
+        if hi and rng.random() < 0.4:
+            box(g, WARM if rng.random() < 0.8 else COOL, tuple(c[i] + n[i] * 7.5 for i in range(3)), (2.0, 2.0, 0.4), axis_to(n))
+    if lod < 3:
+        n = 10 if hi else 5
+        for k in range(n):                                                            # scaffold meridians
+            arc_tube(g, STEEL, C, R + 4.0, -math.pi / 2, math.pi / 2, math.pi * k / n, 1.0, 16 if hi else 8)
+            arc_tube(g, STEEL, C, R + 4.0, math.pi / 2, 3 * math.pi / 2, math.pi * k / n, 1.0, 16 if hi else 8)
+        for y in (-110.0, -88.0, -66.0, -44.0, -22.0, 0.0, 22.0, 44.0, 66.0, 88.0, 110.0):
+            rr = math.sqrt((R + 4.0) ** 2 - y * y)
+            ring_y(g, STEEL, (0, C[1] + y, 0), rr - 0.8, 1.6, 1.6, seg)
+        if hi:                                                                        # straight scaffold poles on one side
+            for k in range(14):
+                x = -60.0 + 120.0 * k / 13
+                h = math.sqrt(max(0.0, (R + 10.0) ** 2 - x * x))
+                cyl(g, STEEL, (x, C[1] - h * 0.9, -R * 0.55), (x, C[1] + h * 0.9, -R * 0.55), 0.5, 4)
+    for sx in (-1, 1):                                                                # the sphere's holders on the legs
+        cyl(g, STEEL, (sx * 152.0, C[1], 0), (sx * (R - 6.0), C[1], 0), 4.0, 8)
+        cyl(g, STEEL, (sx * 150.0, C[1] + 70.0, 0), (sx * (R - 30.0), C[1] + 50.0, 0), 1.6, 6)
     for sx in (-1, 1):
-        beacon(g, (sx * 165.0, 296.0, 0), 2.0)
+        beacon(g, (sx * 170.0, 318.0, 0), 2.0)
     return P
 
 
 def cage_gantry_hits():
-    return [hbox("hubv_cage_gantry", (0, 4.0, 0), (360.0, 8.0, 80.0)), hbox("hubv_cage_gantry", (0, 286.0, 0), (360.0, 14.0, 28.0))] + [
-        hbox("hubv_cage_gantry", (sx * 165.0, 144.0, 0), (30.0, 272.0, 30.0)) for sx in (-1, 1)] + [
-        hcyl("hubv_cage_gantry", (0, 32.0, 0), (0, 248.0, 0), 108.0)]
+    return [hbox("hubv_cage_gantry", (0, 4.0, 0), (380.0, 8.0, 90.0)), hbox("hubv_cage_gantry", (-100.0, 304.0, 0), (580.0, 28.0, 28.0))] + [
+        hbox("hubv_cage_gantry", (sx * 170.0, 154.0, 0), (42.0, 292.0, 42.0)) for sx in (-1, 1)] + [
+        hcyl("hubv_cage_gantry", (0, 28.0, 0), (0, 292.0, 0), 138.0)]
 
 
 # ---------------------------------------------------------------- 5 lit ring wheel
@@ -350,30 +383,75 @@ def water_tower_hits():
     return [hcyl("hubv_water_tower", (0, 0.0, 0), (0, 150.0, 0), 42.0), hcyl("hubv_water_tower", (0, 146.0, 0), (0, 182.0, 0), 48.0)]
 
 
-# ---------------------------------------------------------------- 7 gallery tower
+# ---------------------------------------------------------------- 7 gallery tower (rework 2026-11-17, author: «давай,
+# продолжай с башней и сферой»): the video's tower (0:23, 1:01, 5:01) is an onion pod of stacked decks widening upward
+# to an overhanging lip, bands of lit windows under every deck, machinery between the tiers, all threaded on a heavy
+# lattice mast that rises on above the pod with antennas; a smaller pod lower down.
 def gallery_tower_parts(lod):
     P = {"hubv_gallery_tower": Part("hubv_gallery_tower")}
     t = P["hubv_gallery_tower"]
+    rng = _random.Random(11)
+    hi = lod < 2
     seg = _seg(lod, 32)
-    box(t, STEEL, (0, 4.0, 0), (110.0, 8.0, 110.0))
-    ylathe(t, FACADE, [(0.0, 8.0), (44.0, 8.0), (44.0, 220.0), (36.0, 260.0), (30.0, 300.0), (0.0, 300.0)], seg)
-    gaps = 14 if lod < 2 else 6
-    for k in range(gaps):
-        y = 20.0 + k * (270.0 / gaps)
-        rr = 44.0 if y < 220.0 else 44.0 - (y - 220.0) * 0.2
-        ring_y(t, GRATE if k % 3 else LIGHT, (0, y, 0), rr - 0.5, 9.0 if k % 4 else 14.0, 2.0, seg)
-        if lod < 2 and k % 2 == 0:
-            for j in range(16):
-                a = 2 * math.pi * (j + 0.5 * k) / 16
-                box(t, WARM, ((rr + 8.0) * math.cos(a), y + 1.6, (rr + 8.0) * math.sin(a)), (1.2, 1.2, 1.2))
-    cyl(t, STEEL, (0, 300.0, 0), (0, 380.0, 0), 2.0, 6)
-    cyl(t, STEEL, (0, 340.0, -14.0), (0, 340.0, 14.0), 0.6, 4)
-    beacon(t, (0, 381.0, 0), 2.0)
+    box(t, STEEL, (0, 4.0, 0), (90.0, 8.0, 90.0))
+    lattice_column(t, STEEL, 8.0, 480.0, 22.0, 15.0, 12 if hi else 5, 2.2, 1.0)            # the mast through the pods
+    cyl(t, HULL, (0, 8.0, 0), (0, 470.0, 0), 9.0, 8)
+
+    def pod(yb, tiers, lip):
+        """tiers: [(radius, height)] from the bottom up; a cone under them, a lip deck + roof plant on top"""
+        r0 = tiers[0][0]
+        ylathe(t, HULL, [(0.0, yb - 16.0), (r0 * 0.55, yb - 16.0), (r0 * 0.85, yb - 8.0), (r0, yb)], seg, soft=40)   # rounded bottom
+        y = yb
+        for i, (r, h) in enumerate(tiers):
+            ylathe(t, FACADE, [(0.0, y), (r, y), (r, y + h), (0.0, y + h)], seg)
+            ring_y(t, HULL, (0, y + h + 1.0, 0), r - 1.0, 5.0, 2.0, seg)                    # the deck slab (overhang)
+            if hi:
+                n = int(2 * math.pi * r / 7.0)
+                for k in range(n):                                                     # the lit band under the slab
+                    if rng.random() < 0.55:
+                        a = 2 * math.pi * k / n
+                        box(t, WARM if rng.random() < 0.85 else COOL, ((r + 0.2) * math.cos(a), y + h - 2.5, (r + 0.2) * math.sin(a)),
+                            (1.4, 1.6, 2.6), rot_y(-a))
+                for k in range(10):                                                    # machinery on the deck edge
+                    a = rng.uniform(0, 2 * math.pi)
+                    box(t, rng.choice((STEEL, LIGHT)), ((r + 1.5) * math.cos(a), y + h + 4.0, (r + 1.5) * math.sin(a)),
+                        (rng.uniform(3, 7), rng.uniform(3, 6), rng.uniform(3, 6)), rot_y(-a))
+                ring_y(t, GRATE, (0, y + h + 3.2, 0), r + 3.6, 0.5, 1.2, seg)          # rail
+                for k in range(16):                                                    # posts between the tiers
+                    a = 2 * math.pi * (k + 0.5) / 16
+                    box(t, STEEL, ((r + 2.0) * math.cos(a), y + h / 2, (r + 2.0) * math.sin(a)), (1.4, h, 1.4))
+            y += h + 2.0
+        ylathe(t, HULL, [(0.0, y), (lip, y), (lip, y + 6.0), (lip - 12.0, y + 10.0), (0.0, y + 10.0)], seg)   # the lip deck
+        if hi:
+            n = int(2 * math.pi * lip / 6.0)
+            for k in range(n):
+                a = 2 * math.pi * k / n
+                box(t, FLOOD if k % 3 == 0 else WARM, ((lip + 0.2) * math.cos(a), y + 3.0, (lip + 0.2) * math.sin(a)), (1.2, 1.2, 1.2))
+        for k in range(8 if hi else 4):                                                # roof plant + antennas
+            a = 2 * math.pi * k / (8 if hi else 4) + 0.2
+            rr = lip * rng.uniform(0.45, 0.8)
+            box(t, LIGHT, (rr * math.cos(a), y + 15.0, rr * math.sin(a)), (rng.uniform(6, 12), 10.0, rng.uniform(6, 10)), rot_y(-a))
+            cyl(t, STEEL, ((lip - 4.0) * math.cos(a), y + 10.0, (lip - 4.0) * math.sin(a)),
+                ((lip - 6.0) * math.cos(a), y + 10.0 + rng.uniform(20.0, 45.0), (lip - 6.0) * math.sin(a)), 0.7, 4)
+        return y + 10.0
+
+    top = pod(290.0, [(60.0, 14.0), (68.0, 16.0), (72.0, 16.0), (74.0, 16.0), (72.0, 16.0), (68.0, 12.0)], 84.0)   # a barrel
+    pod(150.0, [(30.0, 10.0), (34.0, 10.0), (34.0, 10.0)], 42.0)                          # the smaller pod lower down
+    # the mast frame above the pod: four posts, cross beams, beacons
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            cyl(t, STEEL, (sx * 16.0, top, sz * 16.0), (sx * 10.0, top + 120.0, sz * 10.0), 1.6, 6)
+            beacon(t, (sx * 10.0, top + 121.0, sz * 10.0), 1.4)
+    for y in (top + 40.0, top + 80.0, top + 118.0):
+        ring_y(t, STEEL, (0, y, 0), 12.0, 2.0, 1.5, 8)
+    cyl(t, STEEL, (0, top + 118.0, 0), (0, top + 190.0, 0), 1.2, 6)
+    beacon(t, (0, top + 191.0, 0), 2.0)
     return P
 
 
 def gallery_tower_hits():
-    return [hcyl("hubv_gallery_tower", (0, 8.0, 0), (0, 300.0, 0), 58.0)]
+    return [hbox("hubv_gallery_tower", (0, 240.0, 0), (44.0, 480.0, 44.0)), hcyl("hubv_gallery_tower", (0, 270.0, 0), (0, 400.0, 0), 86.0),
+            hcyl("hubv_gallery_tower", (0, 120.0, 0), (0, 190.0, 0), 44.0)]
 
 
 # ---------------------------------------------------------------- 8 lattice mast
@@ -612,7 +690,7 @@ KIT = {"hubv_crown_spire": (crown_spire_parts, crown_spire_hits, "Шпиль с 
        "hubv_cage_gantry": (cage_gantry_parts, cage_gantry_hits, "Решётчатая сфера в портальном кране"),
        "hubv_ring_wheel": (ring_wheel_parts, ring_wheel_hits, "Кольцо-колесо с огнями 150 м"),
        "hubv_water_tower": (water_tower_parts, water_tower_hits, "Решётчатая водонапорная башня (гиперболоид)"),
-       "hubv_gallery_tower": (gallery_tower_parts, gallery_tower_hits, "Башня с кольцевыми галереями 380 м"),
+       "hubv_gallery_tower": (gallery_tower_parts, gallery_tower_hits, "Башня-капсула с ярусами-галереями на мачте 650 м"),
        "hubv_mast": (mast_parts, mast_hits, "Решётчатая мачта 450 м"),
        "hubv_cantilever": (cantilever_parts, cantilever_hits, "Консольная ферма-стрела 500 м"),
        "hubv_refinery": (refinery_parts, refinery_hits, "НПЗ: колонны, эстакады, факел"),

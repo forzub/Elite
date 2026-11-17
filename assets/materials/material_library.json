@@ -3895,6 +3895,215 @@
    "twoSided": false,
    "physical": null,
    "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_container_a",
+   "name": "hub container a",
+   "baseColor": [
+    0.55,
+    0.18,
+    0.12
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_container_b",
+   "name": "hub container b",
+   "baseColor": [
+    0.16,
+    0.3,
+    0.45
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_container_c",
+   "name": "hub container c",
+   "baseColor": [
+    0.45,
+    0.42,
+    0.16
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_flare",
+   "name": "hub flare",
+   "baseColor": [
+    1.0,
+    0.48,
+    0.14
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    1.0,
+    0.48,
+    0.14
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_grating",
+   "name": "hub grating",
+   "baseColor": [
+    0.2,
+    0.21,
+    0.22
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_marking",
+   "name": "hub marking",
+   "baseColor": [
+    0.85,
+    0.8,
+    0.55
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_mast_red",
+   "name": "hub mast red",
+   "baseColor": [
+    0.55,
+    0.12,
+    0.09
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_radiator",
+   "name": "hub radiator",
+   "baseColor": [
+    0.3,
+    0.2,
+    0.16
+   ],
+   "metallic": 0.7,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_road",
+   "name": "hub road",
+   "baseColor": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_tank_fuel",
+   "name": "hub tank fuel",
+   "baseColor": [
+    0.55,
+    0.47,
+    0.3
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_tank_white",
+   "name": "hub tank white",
+   "baseColor": [
+    0.7,
+    0.71,
+    0.7
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
   }
  ]
 }

@@ -699,10 +699,11 @@ import hashlib  # noqa: E402
 import random  # noqa: E402
 
 DISTRICT_KINDS = ["docks_l", "docks_m", "refuel", "repair", "parking", "hotel", "storage", "fuel", "industry",
-                  "hab_static", "hab_rot"]
-EXTRA_KINDS = ["storage", "industry", "hab_static", "hab_rot", "docks_m", "fuel", "hab_static", "industry", "parking"]
-WHEELED = {"docks_l", "docks_m", "refuel", "repair", "parking", "storage", "fuel", "industry"}
-PASSENGER = {"hotel", "hab_static", "hab_rot", "core"}
+                  "hab_static", "hab_rot", "landmark"]
+EXTRA_KINDS = ["storage", "industry", "hab_static", "hab_rot", "docks_m", "fuel", "hab_static", "industry", "parking",
+               "refinery", "rig", "landmark", "refinery", "rig"]
+WHEELED = {"docks_l", "docks_m", "refuel", "repair", "parking", "storage", "fuel", "industry", "refinery", "rig"}
+PASSENGER = {"hotel", "hab_static", "hab_rot", "core", "landmark"}
 RING_AXLE = 420.0          # the fixed axle junctions in front of / behind the ring hub
 
 
@@ -743,20 +744,27 @@ DISTRICT_MODULES = {
     "docks_m": [("hubb_pier_m", 140.0, "comb", 0.0)],
     "refuel": [("hubb_fuel_dock", 140.0, "comb", 0.0), ("hubb_fuel_spheres", 200.0, "face", 0.0)],
     "repair": [("hubb_repair_dock", 300.0, "face", 0.0), ("hubb_parking", 320.0, "face", 0.0)],
-    "parking": [("hubb_parking", 320.0, "face", 0.0)],
-    "hotel": [("hubb_hotel_hex", 260.0, "axial", 4.0), ("hubb_hab_slab", 260.0, "face", 0.0)],
-    "storage": [("hubb_warehouse", 280.0, "face", 0.0)],
+    "parking": [("hubb_parking", 320.0, "face", 0.0), ("hubv_pad_star", 180.0, "face", 0.0)],
+    "hotel": [("hubb_hotel_hex", 260.0, "axial", 4.0), ("hubb_hab_slab", 260.0, "face", 0.0), ("hubv_ring_wheel", 170.0, "face", 0.0)],
+    "storage": [("hubb_warehouse", 280.0, "face", 0.0), ("hubv_cantilever", 100.0, "comb", 0.0)],
     "fuel": [("hubb_gas_battery", 170.0, "face", 0.0), ("hubb_fuel_spheres", 200.0, "face", 0.0)],
-    "industry": [("hubb_works", 360.0, "face", 0.0), ("hubb_gas_battery", 170.0, "face", 0.0), ("hubb_warehouse", 280.0, "face", 0.0)],
-    "hab_static": [("hubb_hab_tower", 140.0, "face", 0.0), ("hubb_hab_slab", 260.0, "face", 0.0)],
+    "industry": [("hubb_works", 360.0, "face", 0.0), ("hubb_gas_battery", 170.0, "face", 0.0), ("hubb_warehouse", 280.0, "face", 0.0),
+                 ("hubv_cantilever", 100.0, "comb", 0.0)],
+    "hab_static": [("hubb_hab_tower", 140.0, "face", 0.0), ("hubb_hab_slab", 260.0, "face", 0.0),
+                   ("hubv_gallery_tower", 140.0, "face", 0.0), ("hubv_saucer_tower", 300.0, "face", 0.0)],
     "hab_rot": [("hubb_hab_drum", 360.0, "axial", 9.0)],
+    # after the reference video (hub_vista.py)
+    "landmark": [("hubv_crown_spire", 170.0, "face", 0.0), ("hubv_crown_spire", 170.0, "face", 0.0), ("hubv_mast", 80.0, "face", 0.0),
+                 ("hubv_water_tower", 120.0, "face", 0.0)],
+    "refinery": [("hubv_refinery", 180.0, "face", 0.0), ("hubb_gas_battery", 170.0, "face", 0.0), ("hubv_mast", 80.0, "face", 0.0)],
+    "rig": [("hubv_rig", 200.0, "face", 0.0), ("hubv_pad_star", 180.0, "face", 0.0), ("hubv_cage_gantry", 240.0, "face", 0.0)],
 }
 # the out-of-spine offset of an axial body's centre (its axle starts at the spine side)
 AXIAL_OFFSET = {"hubb_hotel_hex": HX_L / 2 + 40.0 + GIRDER_H + 4.0, "hubb_hab_drum": DRUM_L / 2 + 40.0 + GIRDER_H + 4.0}
 DISTRICT_TITLE = {"docks_l": "Грузовые перроны L", "docks_m": "Грузовые перроны M", "refuel": "Заправочные доки",
                   "repair": "Ремонтные доки", "parking": "Стоянки", "hotel": "Гостиничные доки", "storage": "Склады",
                   "fuel": "Склады горючего", "industry": "Промзона", "hab_static": "Жилой квартал",
-                  "hab_rot": "Жилые барабаны"}
+                  "hab_rot": "Жилые барабаны", "landmark": "Шпили", "refinery": "НПЗ", "rig": "Платформы"}
 
 
 def belt_layout(hub_id):
@@ -825,11 +833,12 @@ def belt_layout(hub_id):
                 base = _add(mid, _mul(f, GIRDER_H + 2.0))
                 if mount == "face":
                     add(nid, folder, base, _frame(spine, f), "module", dname)
-                    if folder == "hubb_works":
+                    if folder in ("hubb_works", "hubv_refinery"):
                         import pads
+                        from units.hub_vista import REFINERY_FLARE
                         R = pads.euler(_frame(spine, f))
                         haze += [{"position": [round(x, 1) for x in _add(apply(R, v), base)], "radius_m": 300.0, "density": 1.0}
-                                 for v in WORKS_VENTS]
+                                 for v in (WORKS_VENTS if folder == "hubb_works" else [REFINERY_FLARE])]
                 elif mount == "comb":
                     add(nid, folder, base, _frame(f, _cross(f, spine)), "dock", dname)
                 else:
@@ -888,8 +897,10 @@ def belt_layout(hub_id):
 def _module_obb():
     """per module: its local bounds (from the coarsest LOD) and the proxy material"""
     import units.hub_district as hd
+    import units.hub_vista as hv
     out = {}
     builders = dict(ASSETS)
+    builders.update(hv.ASSETS)
     builders["hubk_truss"] = hd.truss_parts
     for k, fn in builders.items():
         vs = [v for part in fn(2).values() for v in part.v]

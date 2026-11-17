@@ -591,358 +591,18 @@
           }
         },
         {
-          "id": "belt_demo.d3_hotel_m0_0",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4697.34,
-            "y": 1898.182,
-            "z": -269.408
-          },
-          "rotation_deg": {
-            "x": -89.1147,
-            "y": 74.5542,
-            "z": -117.477
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m0_1",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4538.391,
-            "y": 1766.399,
-            "z": -439.144
-          },
-          "rotation_deg": {
-            "x": 154.2618,
-            "y": 7.0584,
-            "z": -13.7738
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m0_2",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4491.942,
-            "y": 1929.305,
-            "z": -101.227
-          },
-          "rotation_deg": {
-            "x": -25.7382,
-            "y": -7.0584,
-            "z": -166.2262
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m1_0",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4758.774,
-            "y": 1674.015,
-            "z": -152.895
-          },
-          "rotation_deg": {
-            "x": -89.1147,
-            "y": 74.5542,
-            "z": -117.477
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m1_1",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4599.825,
-            "y": 1542.232,
-            "z": -322.632
-          },
-          "rotation_deg": {
-            "x": 154.2618,
-            "y": 7.0584,
-            "z": -13.7738
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m1_2",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4553.376,
-            "y": 1705.138,
-            "z": 15.286
-          },
-          "rotation_deg": {
-            "x": -25.7382,
-            "y": -7.0584,
-            "z": -166.2262
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m2_0",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4820.208,
-            "y": 1449.848,
-            "z": -36.383
-          },
-          "rotation_deg": {
-            "x": -89.1147,
-            "y": 74.5542,
-            "z": -117.477
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m2_1",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4661.259,
-            "y": 1318.065,
-            "z": -206.119
-          },
-          "rotation_deg": {
-            "x": 154.2618,
-            "y": 7.0584,
-            "z": -13.7738
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m2_2",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4614.81,
-            "y": 1480.971,
-            "z": 131.798
-          },
-          "rotation_deg": {
-            "x": -25.7382,
-            "y": -7.0584,
-            "z": -166.2262
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m3_0",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4881.642,
-            "y": 1225.682,
-            "z": 80.13
-          },
-          "rotation_deg": {
-            "x": -89.1147,
-            "y": 74.5542,
-            "z": -117.477
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m3_1",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4722.693,
-            "y": 1093.899,
-            "z": -89.606
-          },
-          "rotation_deg": {
-            "x": 154.2618,
-            "y": 7.0584,
-            "z": -13.7738
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m3_2",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4676.244,
-            "y": 1256.805,
-            "z": 248.311
-          },
-          "rotation_deg": {
-            "x": -25.7382,
-            "y": -7.0584,
-            "z": -166.2262
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m5_0",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 5004.51,
-            "y": 777.348,
-            "z": 313.155
-          },
-          "rotation_deg": {
-            "x": -89.1147,
-            "y": 74.5542,
-            "z": -117.477
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m5_1",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4845.561,
-            "y": 645.566,
-            "z": 143.419
-          },
-          "rotation_deg": {
-            "x": 154.2618,
-            "y": 7.0584,
-            "z": -13.7738
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": -4.0
-          }
-        },
-        {
-          "id": "belt_demo.d3_hotel_m5_2",
-          "type": "hubb_hotel_hex",
-          "name": "Гостиничные доки",
-          "offset_m": {
-            "x": 4799.111,
-            "y": 808.471,
-            "z": 481.336
-          },
-          "rotation_deg": {
-            "x": -25.7382,
-            "y": -7.0584,
-            "z": -166.2262
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m0_0",
+          "id": "belt_demo.d10_hab_rot_m0_0",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 4482.405,
-            "y": -2620.303,
-            "z": -1535.993
+            "x": -187.453,
+            "y": 1029.957,
+            "z": 3760.647
           },
           "rotation_deg": {
-            "x": 120.5859,
-            "y": 55.4782,
-            "z": 106.2225
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m0_1",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 4276.739,
-            "y": -2257.354,
-            "z": -1666.116
-          },
-          "rotation_deg": {
-            "x": -135.9336,
-            "y": 9.1096,
-            "z": 33.4429
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m0_2",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 4178.895,
-            "y": -2681.747,
-            "z": -1227.662
-          },
-          "rotation_deg": {
-            "x": 44.0664,
-            "y": -9.1096,
-            "z": 146.5571
+            "x": -36.2844,
+            "y": 2.9055,
+            "z": -14.9196
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -951,98 +611,18 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m1_0",
+          "id": "belt_demo.d10_hab_rot_m0_1",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 4286.51,
-            "y": -2814.302,
-            "z": -1767.487
+            "x": -501.315,
+            "y": 920.414,
+            "z": 3477.005
           },
           "rotation_deg": {
-            "x": 120.5859,
-            "y": 55.4782,
-            "z": 106.2225
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m1_1",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 4080.843,
-            "y": -2451.353,
-            "z": -1897.609
-          },
-          "rotation_deg": {
-            "x": -135.9336,
-            "y": 9.1096,
-            "z": 33.4429
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m1_2",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 3982.999,
-            "y": -2875.746,
-            "z": -1459.156
-          },
-          "rotation_deg": {
-            "x": 44.0664,
-            "y": -9.1096,
-            "z": 146.5571
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m2_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 4090.614,
-            "y": -3008.301,
-            "z": -1998.98
-          },
-          "rotation_deg": {
-            "x": 120.5859,
-            "y": 55.4782,
-            "z": 106.2225
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m2_1",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 3884.947,
-            "y": -2645.352,
-            "z": -2129.103
-          },
-          "rotation_deg": {
-            "x": -135.9336,
-            "y": 9.1096,
-            "z": 33.4429
+            "x": -115.513,
+            "y": -74.8064,
+            "z": -78.8481
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -1051,18 +631,18 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m2_2",
+          "id": "belt_demo.d10_hab_rot_m0_2",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 3787.103,
-            "y": -3069.745,
-            "z": -1690.649
+            "x": 95.083,
+            "y": 774.241,
+            "z": 3546.766
           },
           "rotation_deg": {
-            "x": 44.0664,
-            "y": -9.1096,
-            "z": 146.5571
+            "x": 64.487,
+            "y": 74.8064,
+            "z": -101.1519
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -1071,38 +651,18 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m3_0",
+          "id": "belt_demo.d10_hab_rot_m1_0",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 3894.718,
-            "y": -3202.3,
-            "z": -2230.474
+            "x": -94.885,
+            "y": 1307.586,
+            "z": 3550.996
           },
           "rotation_deg": {
-            "x": 120.5859,
-            "y": 55.4782,
-            "z": 106.2225
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m3_1",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 3689.051,
-            "y": -2839.351,
-            "z": -2360.596
-          },
-          "rotation_deg": {
-            "x": -135.9336,
-            "y": 9.1096,
-            "z": 33.4429
+            "x": -36.2844,
+            "y": 2.9055,
+            "z": -14.9196
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -1111,38 +671,18 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m3_2",
+          "id": "belt_demo.d10_hab_rot_m1_1",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 3591.207,
-            "y": -3263.744,
-            "z": -1922.143
+            "x": -408.748,
+            "y": 1198.043,
+            "z": 3267.354
           },
           "rotation_deg": {
-            "x": 44.0664,
-            "y": -9.1096,
-            "z": 146.5571
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m4_0",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 3698.822,
-            "y": -3396.299,
-            "z": -2461.967
-          },
-          "rotation_deg": {
-            "x": 120.5859,
-            "y": 55.4782,
-            "z": 106.2225
+            "x": -115.513,
+            "y": -74.8064,
+            "z": -78.8481
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -1151,18 +691,38 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m4_1",
+          "id": "belt_demo.d10_hab_rot_m1_2",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 3493.156,
-            "y": -3033.35,
-            "z": -2592.089
+            "x": 187.651,
+            "y": 1051.87,
+            "z": 3337.116
           },
           "rotation_deg": {
-            "x": -135.9336,
-            "y": 9.1096,
-            "z": 33.4429
+            "x": 64.487,
+            "y": 74.8064,
+            "z": -101.1519
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m2_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -2.318,
+            "y": 1585.215,
+            "z": 3341.346
+          },
+          "rotation_deg": {
+            "x": -36.2844,
+            "y": 2.9055,
+            "z": -14.9196
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -1171,18 +731,18 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m4_2",
+          "id": "belt_demo.d10_hab_rot_m2_1",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 3395.312,
-            "y": -3457.743,
-            "z": -2153.636
+            "x": -316.18,
+            "y": 1475.672,
+            "z": 3057.704
           },
           "rotation_deg": {
-            "x": 44.0664,
-            "y": -9.1096,
-            "z": 146.5571
+            "x": -115.513,
+            "y": -74.8064,
+            "z": -78.8481
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -1191,18 +751,18 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m5_0",
+          "id": "belt_demo.d10_hab_rot_m2_2",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 3502.926,
-            "y": -3590.298,
-            "z": -2693.461
+            "x": 280.218,
+            "y": 1329.499,
+            "z": 3127.465
           },
           "rotation_deg": {
-            "x": 120.5859,
-            "y": 55.4782,
-            "z": 106.2225
+            "x": 64.487,
+            "y": 74.8064,
+            "z": -101.1519
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
@@ -1211,43 +771,363 @@
           }
         },
         {
-          "id": "belt_demo.d13_hab_rot_m5_1",
+          "id": "belt_demo.d10_hab_rot_m3_0",
           "type": "hubb_hab_drum",
           "name": "Жилые барабаны",
           "offset_m": {
-            "x": 3297.26,
-            "y": -3227.349,
-            "z": -2823.583
+            "x": 90.25,
+            "y": 1862.843,
+            "z": 3131.695
           },
           "rotation_deg": {
-            "x": -135.9336,
-            "y": 9.1096,
-            "z": 33.4429
-          },
-          "angular_velocity_deg_s": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 9.0
-          }
-        },
-        {
-          "id": "belt_demo.d13_hab_rot_m5_2",
-          "type": "hubb_hab_drum",
-          "name": "Жилые барабаны",
-          "offset_m": {
-            "x": 3199.416,
-            "y": -3651.742,
-            "z": -2385.13
-          },
-          "rotation_deg": {
-            "x": 44.0664,
-            "y": -9.1096,
-            "z": 146.5571
+            "x": -36.2844,
+            "y": 2.9055,
+            "z": -14.9196
           },
           "angular_velocity_deg_s": {
             "x": 0.0,
             "y": 0.0,
             "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m3_1",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -223.612,
+            "y": 1753.301,
+            "z": 2848.053
+          },
+          "rotation_deg": {
+            "x": -115.513,
+            "y": -74.8064,
+            "z": -78.8481
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m3_2",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 372.786,
+            "y": 1607.128,
+            "z": 2917.814
+          },
+          "rotation_deg": {
+            "x": 64.487,
+            "y": 74.8064,
+            "z": -101.1519
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m4_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 182.818,
+            "y": 2140.472,
+            "z": 2922.044
+          },
+          "rotation_deg": {
+            "x": -36.2844,
+            "y": 2.9055,
+            "z": -14.9196
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m4_1",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -131.045,
+            "y": 2030.929,
+            "z": 2638.402
+          },
+          "rotation_deg": {
+            "x": -115.513,
+            "y": -74.8064,
+            "z": -78.8481
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m4_2",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 465.354,
+            "y": 1884.757,
+            "z": 2708.164
+          },
+          "rotation_deg": {
+            "x": 64.487,
+            "y": 74.8064,
+            "z": -101.1519
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m5_0",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 275.385,
+            "y": 2418.101,
+            "z": 2712.394
+          },
+          "rotation_deg": {
+            "x": -36.2844,
+            "y": 2.9055,
+            "z": -14.9196
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m5_1",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": -38.477,
+            "y": 2308.558,
+            "z": 2428.751
+          },
+          "rotation_deg": {
+            "x": -115.513,
+            "y": -74.8064,
+            "z": -78.8481
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d10_hab_rot_m5_2",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "offset_m": {
+            "x": 557.922,
+            "y": 2162.386,
+            "z": 2498.513
+          },
+          "rotation_deg": {
+            "x": 64.487,
+            "y": 74.8064,
+            "z": -101.1519
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m2_0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -649.465,
+            "y": -266.575,
+            "z": -2898.773
+          },
+          "rotation_deg": {
+            "x": 168.6886,
+            "y": -16.6277,
+            "z": 33.851
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m2_1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -745.782,
+            "y": -119.01,
+            "z": -2697.801
+          },
+          "rotation_deg": {
+            "x": -78.2071,
+            "y": -52.7272,
+            "z": 118.1968
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m2_2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -444.984,
+            "y": -343.099,
+            "z": -2744.586
+          },
+          "rotation_deg": {
+            "x": 101.7929,
+            "y": 52.7272,
+            "z": 61.8032
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m4_0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -927.011,
+            "y": -673.784,
+            "z": -2732.792
+          },
+          "rotation_deg": {
+            "x": 168.6886,
+            "y": -16.6277,
+            "z": 33.851
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m4_1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -1023.328,
+            "y": -526.219,
+            "z": -2531.82
+          },
+          "rotation_deg": {
+            "x": -78.2071,
+            "y": -52.7272,
+            "z": 118.1968
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m4_2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -722.53,
+            "y": -750.308,
+            "z": -2578.606
+          },
+          "rotation_deg": {
+            "x": 101.7929,
+            "y": 52.7272,
+            "z": 61.8032
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m5_0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -1065.785,
+            "y": -877.388,
+            "z": -2649.802
+          },
+          "rotation_deg": {
+            "x": 168.6886,
+            "y": -16.6277,
+            "z": 33.851
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m5_1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -1162.101,
+            "y": -729.823,
+            "z": -2448.83
+          },
+          "rotation_deg": {
+            "x": -78.2071,
+            "y": -52.7272,
+            "z": 118.1968
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "belt_demo.d12_hotel_m5_2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "offset_m": {
+            "x": -861.303,
+            "y": -953.912,
+            "z": -2495.615
+          },
+          "rotation_deg": {
+            "x": 101.7929,
+            "y": 52.7272,
+            "z": 61.8032
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
           }
         }
       ]

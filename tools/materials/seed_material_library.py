@@ -30,6 +30,7 @@ PASSPORTS = {   # mesh material id -> physical passport (UniverseMaterials.h)
 EMISSIVE = {
     "eq_hub_window_warm": [1.0, 0.72, 0.40], "eq_hub_window_cool": [0.55, 0.75, 1.0],
     "eq_hub_beacon": [1.0, 0.10, 0.05], "eq_hub_flood": [0.85, 0.92, 1.0],
+    "eq_hub_flare": [1.0, 0.48, 0.14],
 }
 
 

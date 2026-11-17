@@ -6008,3 +6008,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   LIVE (release, offscreen): belt_demo 15 districts, 2692 city nodes + 34 spinning bodies spawned, frame p50 4.6 ms at
   4 km (D:/tmp/belt_g_modern.png). Same id -> identical layout (checked twice), another id -> another settlement.
   Next: the author asked to watch the WHOLE 8 h video (structures at 4:39:40 and later) and reproduce them.
+
+- 2026-11-17 VIDEO REVIEW + LANDMARK KIT (author: «просмотри еще раз видео ... на 4:39:40 видны очень интересные
+  конструкции и дальше тоже. их надо повторить»; «судя по всему тебе таки надо просмотреть его все»). The whole 8 h video
+  (yt-dlp 360p, D:/tmp/yt/full360.mp4) reviewed at one frame per minute (24 sheets D:/tmp/yt/s60): a pool of ~60 shots
+  repeated in shuffle; catalogue of 16 structure types D:/tmp/yt/catalog.jpg. 4:39:40 = crowned spires (skirt platform
+  with hanging pipework, lattice shaft, crown of arcs) and at 4:39:57 a curved cantilever truss boom.
+  New kit tools/models/units/hub_vista.py (hubv_*): crown_spire, saucer_tower, rig (offshore pyramid), cage_gantry
+  (lattice sphere in a portal), ring_wheel, water_tower (hyperboloid), gallery_tower, mast, cantilever (500 m),
+  refinery (flare = new emissive eq_hub_flare, haze source), pad_star. Generator: new district kinds landmark (mandatory),
+  refinery, rig; habitat / hotel / parking / storage / industry districts also take the landmark modules. Material library
+  reseeded (216 materials) - the hubb_* materials were missing from it; all 31 packages rebuilt after an editor restart.
+  LIVE: belt_demo 15 districts, 2121 city nodes + 28 spinning bodies, captures D:/tmp/belt2_*.png. Verdict (mine): from
+  8-14 km the settlement reads as sparse clusters on thin threads - it needs density (closer, bigger districts, braided
+  link bundles). Next: densify the layout, then show the author.

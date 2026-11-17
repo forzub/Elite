@@ -21,6 +21,14 @@
 
 #ifdef _WIN32
 #include <windows.h>
+// Hybrid-graphics laptops (NVIDIA Optimus / AMD PowerXpress): these exported symbols ask the driver to run the game on
+// the discrete GPU. Without them Windows gave the game the integrated one (2026-11-17: the author's machine ran it on
+// Intel UHD 630 next to an idle Quadro RTX 3000 - the hub megastructure cost ~19 ms of GPU per frame there).
+extern "C"
+{
+__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 #endif
 #include "core/Application.h"
 #include "src/platform/RuntimeRoot.h"

@@ -92,6 +92,10 @@ Window::Window(int width, int height, const char* title)
     }
 
         glfwMakeContextCurrent(m_window);
+        // DEV: ELITE_DEV_NO_VSYNC=1 - swap without vertical sync, so performance runs measure the real frame cost
+        // instead of the 16.7 / 33.3 ms steps of a 60 Hz display (the driver's default keeps vsync on).
+        if (const char* v = std::getenv("ELITE_DEV_NO_VSYNC"); v && *v == '1')
+            glfwSwapInterval(0);
 
         glfwSetScrollCallback(m_window, Input::scrollCallback);
 

@@ -392,7 +392,16 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
     }
 
     // ---- interiors: visible open exterior portals -> compartments (BFS) ----
-    const ActiveSets active = resolveActiveSets(asset, state);
+    // Only the openings matter here (portals): resolving every collision volume / hit region / socket of a big
+    // assembly cost 3 ms per frame on the hub megastructure (8884 nodes, Debug build).
+    ActiveSets active;
+    for (std::size_t i = 0; i < asset.openings.size(); ++i)
+    {
+        const auto& o = asset.openings[i];
+        if (o.enabled && !(o.parentNodeIndex != NoIndex && nodeHidden(state, o.parentNodeIndex)) &&
+            stateScopedActive(o.activeStates, currentState(asset, state, o.parentNodeIndex)))
+            active.openings.push_back(static_cast<std::int32_t>(i));
+    }
     frame.activeOpenings = active.openings;
     std::vector<std::uint8_t> compartmentVisible(asset.compartments.size(), 0);
     if (rep == Representation::Full && !asset.compartments.empty())
@@ -456,6 +465,7 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
 
     // ---- module HLOD collapse (Component representation only) ----
     std::vector<std::uint8_t> collapsedComponent(index.components.size(), 0);
+    std::vector<std::uint8_t> offScreenComponent(index.components.size(), 0);
     for (std::size_t gi = 0; gi < index.groups.size(); ++gi)
     {
         const auto& g = index.groups[gi];
@@ -484,7 +494,12 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
                 collapse = selection.groupCollapsed[gi] ? px < t.moduleCollapsePx * h : px < t.moduleCollapsePx / h;
         }
         selection.groupCollapsed[gi] = collapse ? 1 : 0;
-        if (!collapse) continue;
+        if (!collapse)
+        {
+            if (!aabbInFrustum(view, gMin, gMax))
+                for (const std::int32_t c : g.components) offScreenComponent[static_cast<std::size_t>(c)] = 1;
+            continue;
+        }
         ++frame.collapsedGroups;
         if (aabbInFrustum(view, gMin, gMax))
             for (const std::int32_t rn : g.proxyRenderNodes)
@@ -513,6 +528,14 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
         {
             report.collapsed = true;
             selection.componentLod[ci] = NoIndex;
+            frame.components.push_back(report);
+            continue;
+        }
+        if (offScreenComponent[ci])
+        {
+            // its whole group is off screen (the per-component test below would say the same)
+            report.culled = true;
+            ++frame.culledComponents;
             frame.components.push_back(report);
             continue;
         }

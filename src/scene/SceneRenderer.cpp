@@ -3542,6 +3542,7 @@ if (policy.drawObjects)
             m_lastStats.drawCalls += 2;
         }
 
+        if (cameraName == "mainCam") core::hitch::mark("r_obj_prepared");
         // ModelAsset objects: representation ladder + per-component SSE LOD
         // + HLOD for THIS camera (the one main flight camera).
         if (!prepared.modelAssetObjects.empty())
@@ -3699,6 +3700,7 @@ if (policy.drawObjects)
             );
         }
 
+        if (cameraName == "mainCam") core::hitch::mark("r_ma_select");
         // ModelAsset stations: instance batches (ELITE_MODEL_ASSET_INSTANCING=0
         // = one submission per instance, for A/B). CPU submission and GPU
         // time (timestamp queries, main camera) go to the LOD telemetry.
@@ -3773,6 +3775,7 @@ if (policy.drawObjects)
             }
         }
 
+        if (cameraName == "mainCam") core::hitch::mark("r_ma_draw");
         if (!queuedPreparedAsteroidDraws.empty())
         {
             drawQueuedMeshPasses(
@@ -3953,6 +3956,7 @@ if (policy.drawObjects)
         }
     }
 
+    if (cameraName == "mainCam") core::hitch::mark("r_obj_rest");
     profileAfterObjectsMs = renderProfileNowMs();
 
     if (policy.drawDebug)

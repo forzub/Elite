@@ -5956,3 +5956,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   p50 still 27 ms in the canyon: the remaining cost is pixel fill of the huge overlapping walls (fill shader +
   overdraw), not triangles. Next: cheaper far shading / draw order (front-to-back, depth prepass), edges only near.
 
+- 2026-11-17 FACADE FLICKER + PERFORMANCE ROOT CAUSES (author: «торцы зданий блымают»; «надо разобраться с
+  производительностью»; «прогони по всем трем видам рендера»).
+  FLICKER: the facade window seed came from the instance's world-frame translation, whose origin is the player, so the
+  lit-window pattern reshuffled every frame of flight. Now from the node's asset-frame position (SceneRenderer
+  QueuedMeshDraw::seed), carried to large_object_fill(.vert/_instanced.vert) in the model matrix's unused [0][3] slot
+  (fillModel; edge passes get the clean matrix). LIVE: two starts 30 m apart show the same lit buildings (commit b46d53f84).
+  PERF ROOT CAUSES (the "pixel fill" conclusion of the HLOD entry above was WRONG - it was measured on the iGPU in Debug):
+  1) the game ran on the integrated Intel UHD 630, not the Quadro RTX 3000 (no Optimus export) -> src/main.cpp exports
+     NvOptimusEnablement / AmdPowerXpressRequestHighPerformance; nvidia-smi now lists EliteGame.exe;
+  2) build/ is Debug -O0: the remaining ~14 ms canyon CPU cost was mp::select over 8884 nodes in Debug;
+  3) frame stats were quantised by vsync (16.7 / 33.3 ms) -> DEV ELITE_DEV_NO_VSYNC=1 (Window.cpp, glfwSwapInterval 0).
+  select also got cheaper: only the active openings are resolved (not every collision volume / hit region / socket:
+  3.2 ms Debug), and a node group (city block) wholly off screen culls its components in one test.
+  LIVE (offscreen 1280x720, Quadro, no vsync, p50 frame / megastructure GPU):
+    build-relwithdebinfo: canyon Elite 4.5 / Modern 4.6 / Anime 4.8 ms (GPU 1.3-1.4 ms, select 0.5 ms);
+    top from 14 km 6.0 / 6.0 / 6.1 ms (GPU 1.5 ms); far from the hub 3.7 ms in all styles.
+    build (Debug) before the select fixes: canyon 28 / 27.8 / 28.5 ms, far 13.9 / 14.5 / 14.8 ms.
+  build/run_mega.bat and run_district.bat now start the build-relwithdebinfo exe when it exists.
+  Next (author's order): traffic inside the megastructure, haze at the vents, canyon lighting, 3D cockpit sample.

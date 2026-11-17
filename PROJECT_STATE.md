@@ -6109,3 +6109,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   * Perf not re-measured: the GPU was 100 % busy with an external process (ai-studio python) during these runs.
   Next: planner acceleration (coarse obstacles: per-block group boxes far from the route, exact volumes near it /
   spatial index), the stuck securing-course hand-off, restoring Vysokiy's dock as the reference.
+- 2026-11-17 DOCKING ROUTE IN THE PLANAR CITY (author: «я же тебе говорил - в гигаструктурном новом хабе поставь док. и
+  посмотрим как автопилот просчитает маршрут» - the dock is plane_demo.dock; no Vysokiy reference wanted).
+  LIVE (release, offscreen, dock_run9): the route IS computed through the city: 5271 obstacles, worker 104-106 s,
+  "route-ready": length 25.0 km for a direct 8.9 km, ETA 133 s, min turn radius 955 m, terminal approach 8.85 km
+  straight along the dock axis (the slot faces up -> the route climbs and comes straight down onto the dock), 251
+  execution gates; "plan ready: adopting (valid=1)" -> "phase=executing", DockClientTrack following it (cross-track
+  0..15 m, 41 -> 277 m/s). Earlier "stuck" runs: stdout was silenced (core::disableRuntimeStdoutNoise) - nothing was
+  logged, not a hang. FLAKY: in dock_run10/11 the pre-route safe-course turn never settled (pitch command +-1, omega
+  0.5-0.8 rad/s limit cycle); in those runs the game ran at 4 fps from t=12 s (p50 250 ms) - the GPU at 100 % with an
+  external process (ai-studio python) - the client attitude loop at 4 Hz. Not judged until a run on a free GPU.
+  DEV added: ELITE_DEV_CITY_TRACK=<file> (player position in the city frame, 2 Hz), [AssistedSafeCourse] steer trace
+  (2 s), [DockClient] plan-ready / adopting lines. Launcher build/run_plane_dock.bat (console stays open).
+  Open: planner speed (100 s for 5271 obstacles - needs coarse far obstacles / a spatial index), docking end-to-end
+  (capture by a dock without the dispatcher: only hub_hex_dock_a has dispatcher / capture / pads).

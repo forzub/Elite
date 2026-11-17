@@ -3351,7 +3351,18 @@ bool SpaceState::updateDockingPlanning(Frame& f)
     // transition to its ballistic handoff state. Keep the ready result,
     // but do not adopt/validate it until motion settling is real.
     if (automatic && !automaticMotionSettled)
+    {
+        static double lastTrace = -1.0e9;
+        if (authoritativeServerSeconds - lastTrace >= 2.0)
+        {
+            lastTrace = authoritativeServerSeconds;
+            std::cerr << "[DockClient] request=" << pending.serial << " plan ready, waiting for the motion to settle"
+                      << std::endl;
+        }
         return false;
+    }
+    std::cerr << "[DockClient] request=" << pending.serial << " plan ready: adopting (valid=" << m_dockAdviceJob->plan.valid()
+              << ")" << std::endl;
 
     auto job = std::move(m_dockAdviceJob);
 
@@ -4066,6 +4077,20 @@ void SpaceState::updateDockingSecuringCourse(Frame& f)
         {
             fail("Assisted safe-course executor input invalid");
             return;
+        }
+        {
+            // DEV trace (ELITE_DEV_STDOUT runs): the safe-course acquisition, every 2 s
+            static double lastTrace = -1.0e9;
+            if (authoritativeServerSeconds - lastTrace >= 2.0)
+            {
+                lastTrace = authoritativeServerSeconds;
+                std::cerr << "[AssistedSafeCourse] request=" << pending.serial << " phase=steer course_err_deg="
+                          << glm::degrees(safeOutput.courseErrorRad) << " hull_err_deg="
+                          << glm::degrees(safeOutput.hullToVelocityErrorRad) << " speed_mps=" << speedMps
+                          << " omega_radps=" << angularSpeedRadPerSec << " ctl_pitch=" << safeOutput.control.pitchInput
+                          << " ctl_yaw=" << safeOutput.control.yawInput << " planner_running=" << (m_dockAdviceJob ? 1 : 0)
+                          << std::endl;
+            }
         }
 
         if (safeOutput.acquired)

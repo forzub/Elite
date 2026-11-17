@@ -1461,6 +1461,37 @@ double obbOverlap(const WorldBox& a, const WorldBox& b)
 void GameSimulation::collideShips(double dt)
 {
     (void)dt;
+    // DEV: ELITE_DEV_CITY_TRACK=<file> - the player's position in its hub's city frame (the .city object, metres) twice a
+    // second: a docking route through a generated settlement drawn over its plan
+    if (static const char* trackPath = std::getenv("ELITE_DEV_CITY_TRACK"); trackPath && *trackPath)
+    {
+        static double acc = 0.0, t = 0.0;
+        acc += dt;
+        t += dt;
+        if (acc >= 0.5)
+        {
+            acc = 0.0;
+            static std::ofstream track(trackPath);
+            for (auto& [pid, ps] : m_ships)
+            {
+                if (ps->core().role() != ShipRole::Player)
+                    continue;
+                const auto& tr = ps->core().transform();
+                for (const auto& [oid, obj] : m_staticObjects)
+                {
+                    if (obj.hubId.empty() || obj.hubId != tr.motion.hubId || obj.hubModuleId.size() < 5 ||
+                        obj.hubModuleId.compare(obj.hubModuleId.size() - 5, 5, ".city") != 0)
+                        continue;
+                    const glm::dmat3 R(glm::mat3(obj.orientation));
+                    const glm::dvec3 p = glm::transpose(R) * (world::coordinates::fullMeters(tr.worldPosition) -
+                                                              world::coordinates::fullMeters(obj.worldPosition));
+                    track << t << ' ' << p.x << ' ' << p.y << ' ' << p.z << '\n';
+                    track.flush();
+                    break;
+                }
+            }
+        }
+    }
     const auto& cat = weaponCatalog();
     struct Body
     {

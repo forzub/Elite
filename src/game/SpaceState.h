@@ -230,7 +230,9 @@ public:
     void requestFreeFlightAutopilot(const std::string& bodyId, const std::string& landingSpec = {});
     // rescue zones (navigation/rules/RescueRules.h, SpaceStateRescue.cpp): where an SOS is heard
     bool systemHasRescueService(int systemId) const;
-    game::navigation::rescue::Estimate rescueAt(const glm::dvec3& worldM, int systemId, std::string* nearestHubName = nullptr) const;
+    // nearestHubName: the replicated (naming layer) name; nearestHubId: for the localized display name
+    game::navigation::rescue::Estimate rescueAt(const glm::dvec3& worldM, int systemId, std::string* nearestHubName = nullptr,
+                                                std::string* nearestHubId = nullptr) const;
     std::string rescueWarningAt(const glm::dvec3& worldM, int systemId, const char* what) const;
     // the body autopilot flown by the client (SpaceStateBodyAutopilot.cpp, NAVIGATION_V2 §1)
     void updateClientBodyAutopilot();

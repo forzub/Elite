@@ -870,7 +870,7 @@ static planner::RoutePlan composeOnce(
     // retain the full dynamic lead as TURN BUDGET so the first curve does not
     // collapse to a small radius.
     finalRequest.initialProtectedStraightMeters =
-        currentHasForward ? 150.0 : 0.0;
+        currentHasForward ? SegmentedRouteComposer::ReleaseProtectedStraightMeters : 0.0;
 
     // Assisted final free leg is geometrically independent of the initial
     // high-speed ballistic ship entry. The authoritative BLUE release is

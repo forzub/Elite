@@ -32,6 +32,38 @@ std::string minutes(double seconds)
     std::snprintf(b, sizeof b, "%d:%02d", s / 60, s % 60);
     return b;
 }
+
+// the jump's player-visible text in the active UI language (cockpit.jump.* in
+// src/assets/localization/ui/cockpit/flight.json); numbers are formatted here
+std::string jumpText(const Application* app, const char* key, std::initializer_list<std::string> args = {})
+{
+    return game::presentation::TerminalLocalizedText::render(
+        [app](const char* k) { return localizedUiText(app, k, k); }, key, args);
+}
+
+std::string jumpNumber(const char* format, double value)
+{
+    char b[48];
+    std::snprintf(b, sizeof b, format, value);
+    return b;
+}
+
+std::string refusalLine(const Application* app, jr::Refusal r)
+{
+    const char* key = jr::refusalKey(r);
+    return key ? jumpText(app, key) : std::string();
+}
+
+const char* laneStateKey(jr::LaneState s)
+{
+    switch (s)
+    {
+    case jr::LaneState::Known: return "cockpit.jump.lane_state.known";
+    case jr::LaneState::Estimate: return "cockpit.jump.lane_state.estimate";
+    case jr::LaneState::Outdated: return "cockpit.jump.lane_state.outdated";
+    default: return "cockpit.jump.lane_state.unknown";
+    }
+}
 }
 
 void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bodyId)
@@ -63,7 +95,7 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
     const auto* to = atlas ? atlas->findSystemSummary(systemId) : nullptr;
     if (!from || !to)
     {
-        m_pilotNotice = "ПРЫЖОК: система не найдена";
+        m_pilotNotice = jumpText(context().app, "cockpit.jump.system_not_found");
         return;
     }
     // the way starts at the ship's own point in an open-space place (a deep-space place, a system's approaches)
@@ -81,20 +113,16 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
         // the records live in the onboard computer's memory (JUMP_MECHANICS 10k): a dead computer reads none
         const auto records = jr::parseLaneRecords(motion.navComputerState == 2 ? std::string() : motion.laneRecords);
         if (motion.navComputerState == 2 && !motion.laneRecords.empty())
-            corrections += " · бортовой компьютер не работает - записи трасс недоступны";
+            corrections += " · " + jumpText(context().app, "cockpit.jump.nav_computer_down");
         const auto lanes = jr::applyLaneRecords(*atlas, route, from->id, to->id, records, universeS);
         for (const auto& use : lanes)
-        {
-            char t[260];
-            std::snprintf(t, sizeof t, " · трасса %s (%s, %.1f г.): %s - ожидаемый риск захвата %.0f%%",
-                          use.shell->corridors[static_cast<std::size_t>(use.record.corridor - 1)].name.c_str(), use.record.source.c_str(),
-                          (universeS - use.record.surveyUniverseS) / (365.25 * 86400.0), jr::laneStateText(use.state),
-                          100.0 * jr::laneExpectedRisk(*use.shell, use.record, universeS, lock));
-            corrections += t;
-        }
+            corrections += " · " + jumpText(context().app, "cockpit.jump.lane",
+                                            {use.shell->corridors[static_cast<std::size_t>(use.record.corridor - 1)].name, use.record.source,
+                                             jumpNumber("%.1f", (universeS - use.record.surveyUniverseS) / (365.25 * 86400.0)),
+                                             jumpText(context().app, laneStateKey(use.state)),
+                                             jumpNumber("%.0f", 100.0 * jr::laneExpectedRisk(*use.shell, use.record, universeS, lock))});
         for (const auto& c : jr::interstellarSumpCrossings(*atlas, route, lock, universeS))
         {
-            char t[200];
             const bool viaLane = std::any_of(lanes.begin(), lanes.end(), [&](const jr::LaneUse& u) {
                 return world::celestial::StarAtlasDatabase::approachIdOf(u.shell->systemId) == c.placeId;
             });
@@ -104,18 +132,18 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
             if (c.shell && viaLane)
                 continue;   // told by the lane line (the pilot knows the record, not the field)
             if (c.shell)
-                std::snprintf(t, sizeof t, " · оболочка подступов %s: %s риск захвата %.0f%%", c.name.c_str(),
-                              uselessRecord ? "запись трассы бесполезна (коридор ушёл) -" : "без записи трассы", 100.0 * c.probability);
+                corrections += " · " + jumpText(context().app,
+                                                uselessRecord ? "cockpit.jump.shell_record_useless" : "cockpit.jump.shell_no_record",
+                                                {c.name, jumpNumber("%.0f", 100.0 * c.probability)});
             else if (beacons)
-                std::snprintf(t, sizeof t, " · отстойник %s на пути: риск захвата %.1f%%", c.name.c_str(), 100.0 * c.probability);
+                corrections += " · " + jumpText(context().app, "cockpit.jump.sump_on_way", {c.name, jumpNumber("%.1f", 100.0 * c.probability)});
             else
-                std::snprintf(t, sizeof t, " · путь через рой %s: без маяков риск неизвестен - лотерея", c.name.c_str());
-            corrections += t;
+                corrections += " · " + jumpText(context().app, "cockpit.jump.swarm_lottery", {c.name});
         }
         if (route.ok && route.pointsLy.size() > 2)
         {
             d = route.lengthLy;
-            corrections += " · " + std::to_string(route.pointsLy.size() - 2) + " коррекц. в обход:";
+            corrections += " · " + jumpText(context().app, "cockpit.jump.detours", {std::to_string(route.pointsLy.size() - 2)});
             for (const auto& n : route.avoidedNames)
                 corrections += " " + n;
         }
@@ -123,23 +151,23 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
     if (kind == 1)
     {
         const auto r = jr::check(d, motion.shipMassT, motion.jumpCoreRatingT, motion.jChargeT < 0.0 ? motion.jChargeCapacityT : motion.jChargeT);
-        char b[256];
+        const std::string distance = jumpText(context().app, "cockpit.unit.distance_ly", {jumpNumber("%.1f", d)});
         if (r == jr::Refusal::None)
         {
-            std::snprintf(b, sizeof b, "ПРЫЖОК %s: %.1f св. лет, заряд %.2f из %.2f т, зарядка %s - можно СТАРТ", to->name.c_str(), d,
-                          jr::chargeT(d, motion.shipMassT), motion.jChargeT, minutes(jr::chargeUpSeconds(d)).c_str());
+            m_pilotNotice = jumpText(context().app, "cockpit.jump.calc_ok",
+                                     {to->name, distance, jumpNumber("%.2f", jr::chargeT(d, motion.shipMassT)), jumpNumber("%.2f", motion.jChargeT),
+                                      minutes(jr::chargeUpSeconds(d))});
             m_jumpCalculatedSystemId = systemId;
             m_jumpCalculatedBodyId.clear();
         }
         else
         {
-            std::snprintf(b, sizeof b, "ПРЫЖОК %s (%.1f св. лет): нельзя - %s", to->name.c_str(), d, jr::refusalText(r));
+            m_pilotNotice = jumpText(context().app, "cockpit.jump.calc_refused", {to->name, distance, refusalLine(context().app, r)});
             m_jumpCalculatedSystemId = -1;
         }
-        m_pilotNotice = b;
         m_pilotNotice += corrections;
         if (m_jumpCalculatedSystemId == systemId && !systemHasRescueService(systemId))
-            m_pilotNotice += " · ВНИМАНИЕ: в системе нет спасательной службы - SOS услышат только случайные корабли";
+            m_pilotNotice += " · " + jumpText(context().app, "cockpit.jump.no_rescue_warning");
         std::cerr << "[Jump] calculated: " << m_pilotNotice << std::endl;
         return;
     }
@@ -165,7 +193,7 @@ void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::st
     const auto* snap = m_client->celestialSnapshot();
     if (systemId != motion.systemId || !snap || snap->systemId != motion.systemId)
     {
-        m_pilotNotice = "ПРЫЖОК ВНУТРИ СИСТЕМЫ: только в системе, где корабль";
+        m_pilotNotice = jumpText(context().app, "cockpit.jump.in_system_only_here");
         return;
     }
     const world::celestial::CelestialBodyState* target = nullptr;
@@ -179,7 +207,7 @@ void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::st
     }
     if (!target || !star || target == star)
     {
-        m_pilotNotice = std::string("ПРЫЖОК: нельзя - ") + jr::refusalText(jr::Refusal::UnknownBody);
+        m_pilotNotice = jumpText(context().app, "cockpit.jump.refused", {refusalLine(context().app, jr::Refusal::UnknownBody)});
         return;
     }
     // the star's mass for its capture sphere (the atlas definition; the Sun's if unknown)
@@ -243,32 +271,31 @@ void SpaceState::handleInSystemJumpRequest(int kind, int systemId, const std::st
                 for (const auto& [sumpName, k] : keep)
                     if (1.0 - k >= 0.001)
                     {
-                        char t[160];
                         if (beacons)
-                            std::snprintf(t, sizeof t, " · отстойник %s: риск захвата %.1f%%", sumpName.c_str(), 100.0 * (1.0 - k));
+                            sumpNote += " · " + jumpText(context().app, "cockpit.jump.sump_named", {sumpName, jumpNumber("%.1f", 100.0 * (1.0 - k))});
                         else
-                            std::snprintf(t, sizeof t, " · путь через %s: без маяков риск отстойника неизвестен - лотерея", sumpName.c_str());
-                        sumpNote += t;
+                            sumpNote += " · " + jumpText(context().app, "cockpit.jump.path_lottery", {sumpName});
                     }
             }
     if (kind == 1)
     {
-        char b[320];
         if (r == jr::Refusal::None)
         {
-            std::snprintf(b, sizeof b, "ПРЫЖОК К %s: %.2f а.е., %s, заряд %.2f из %.2f т, зарядка %s - СТАРТ: зона старта, наведение, прыжок",
-                          name.c_str(), wayAu, steps > 1 ? "2 шага в обход звезды" : "1 шаг", wayCost, chargeLeft,
-                          minutes(jr::inSystemChargeUpSeconds(dAu)).c_str());
+            m_pilotNotice = jumpText(context().app, "cockpit.jump.in_system_calc_ok",
+                                     {name, jumpText(context().app, "cockpit.unit.distance_au", {jumpNumber("%.2f", wayAu)}),
+                                      jumpText(context().app, steps > 1 ? "cockpit.jump.steps_two" : "cockpit.jump.steps_one"),
+                                      jumpNumber("%.2f", wayCost), jumpNumber("%.2f", chargeLeft), minutes(jr::inSystemChargeUpSeconds(dAu))});
             m_jumpCalculatedSystemId = -1;   // the star menu's START is for other systems
             m_jumpCalculatedBodyId = bodyId;
         }
         else
         {
-            std::snprintf(b, sizeof b, "ПРЫЖОК К %s (%.2f а.е.): нельзя - %s", name.c_str(), dAu, jr::refusalText(r));
+            m_pilotNotice = jumpText(context().app, "cockpit.jump.in_system_calc_refused",
+                                     {name, jumpText(context().app, "cockpit.unit.distance_au", {jumpNumber("%.2f", dAu)}),
+                                      refusalLine(context().app, r)});
             m_jumpCalculatedSystemId = -1;
             m_jumpCalculatedBodyId.clear();
         }
-        m_pilotNotice = b;
         if (r == jr::Refusal::None)
             m_pilotNotice += sumpNote;
         std::cerr << "[Jump] in-system calculated: " << m_pilotNotice << std::endl;
@@ -363,15 +390,14 @@ std::string bar(double frac, int cells)
     return "[" + std::string(static_cast<std::size_t>(full), '#') + std::string(static_cast<std::size_t>(cells - full), '-') + "]";
 }
 
-std::string distanceText(double meters)
+std::string distanceText(const Application* app, double meters)
 {
-    char b[64];
     const double km = meters / 1000.0;
     if (km < 10.0)
-        std::snprintf(b, sizeof b, "%.1f км", km);
-    else if (meters < 0.01 * AuM)
+        return jumpText(app, "cockpit.unit.distance_km", {jumpNumber("%.1f", km)});
+    if (meters < 0.01 * AuM)
     {
-        // 1 234 567 км
+        // 1 234 567 km
         std::string digits = std::to_string(static_cast<long long>(km + 0.5));
         std::string out;
         for (std::size_t i = 0; i < digits.size(); ++i)
@@ -380,11 +406,9 @@ std::string distanceText(double meters)
                 out += ' ';
             out += digits[i];
         }
-        std::snprintf(b, sizeof b, "%s км", out.c_str());
+        return jumpText(app, "cockpit.unit.distance_km", {out});
     }
-    else
-        std::snprintf(b, sizeof b, "%.3f а.е.", meters / AuM);
-    return b;
+    return jumpText(app, "cockpit.unit.distance_au", {jumpNumber("%.3f", meters / AuM)});
 }
 } // namespace
 
@@ -434,41 +458,44 @@ void SpaceState::updateJumpPresentation()
     {
         m_jumpSeenRefusalSerial = motion.jumpRefusalSerial;
         if (motion.jumpRefusal != 0 && static_cast<jr::Refusal>(motion.jumpRefusal) != jr::Refusal::NearObjects)
-            m_pilotNotice = std::string("ПРЫЖОК: ") + jr::refusalText(static_cast<jr::Refusal>(motion.jumpRefusal));
+            m_pilotNotice = jumpText(context().app, "cockpit.jump.notice",
+                                     {refusalLine(context().app, static_cast<jr::Refusal>(motion.jumpRefusal))});
     }
+    const Application* app = context().app;
     if (motion.jumpState != m_jumpSeenState)
     {
         const std::uint8_t was = m_jumpSeenState;
         m_jumpSeenState = motion.jumpState;
-        char b[256];
         const bool procedure = motion.jumpState == 4 || motion.jumpState == 5 || motion.jumpState == 1;
         const bool started = procedure && (was == 0 || was == 3);
         if (started && was == 0)
         {
             m_jumpTerminalLines.clear();
             if (motion.jumpTargetSystemId == motion.systemId)
-                std::snprintf(b, sizeof b, "ПРЫЖОК ВНУТРИ СИСТЕМЫ: начата процедура - цель %s, путь %.2f а.е.", motion.jumpTargetName.c_str(),
-                              motion.jumpDistanceLy * jr::MetersPerLy / jr::AuM);
+                addJumpTerminalLine(jumpText(app, "cockpit.jump.started_in_system",
+                                             {motion.jumpTargetName,
+                                              jumpText(app, "cockpit.unit.distance_au",
+                                                       {jumpNumber("%.2f", motion.jumpDistanceLy * jr::MetersPerLy / jr::AuM)})}));
             else
-                std::snprintf(b, sizeof b, "ПРЫЖОК: начата процедура - цель %s, %.1f св. лет", motion.jumpTargetName.c_str(), motion.jumpDistanceLy);
-            addJumpTerminalLine(b);
-            addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId ? "отмена: карта системы -> цель -> ОТМЕНИТЬ ПРЫЖОК"
-                                                                             : "отмена: карта галактики -> звезда -> ОТМЕНИТЬ ПРЫЖОК");
+                addJumpTerminalLine(jumpText(app, "cockpit.jump.started",
+                                             {motion.jumpTargetName,
+                                              jumpText(app, "cockpit.unit.distance_ly", {jumpNumber("%.1f", motion.jumpDistanceLy)})}));
+            addJumpTerminalLine(jumpText(app, motion.jumpTargetSystemId == motion.systemId ? "cockpit.jump.cancel_hint_system"
+                                                                                           : "cockpit.jump.cancel_hint_galaxy"));
         }
         // the procedure's steps (JUMP_MECHANICS.md 10b): zone -> aim -> charge -> the jump 1 s after the charge
         if (motion.jumpState == 4)
-            addJumpTerminalLine("ПЛАНИРОВЩИК: выход в безопасную зону старта (J)");
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.planner_zone"));
         else if (motion.jumpState == 5)
-            addJumpTerminalLine("ПЛАНИРОВЩИК: зона старта - наведение носа на цель");
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.planner_aim"));
         else if (motion.jumpState == 1)
-        {
-            std::snprintf(b, sizeof b, "ЯДРО: зарядка %s, расход заряда %.2f т - прыжок сразу после зарядки",
-                          minutes(motion.jumpChargeDurationS).c_str(), motion.jumpCostT);
-            addJumpTerminalLine(b);
-        }
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.core_charge",
+                                         {minutes(motion.jumpChargeDurationS), jumpNumber("%.2f", motion.jumpCostT)}));
         // the procedure ended with no jump made (a jump can pass 3 between two snapshots: then the serial moved)
         else if (motion.jumpState == 0 && (was == 1 || was == 4 || was == 5) && motion.jumpSerial == m_jumpSeenSerial)
-            addJumpTerminalLine(std::string("ПРЫЖОК ПРЕРВАН: ") + jr::refusalText(static_cast<jr::Refusal>(motion.jumpRefusal ? motion.jumpRefusal : 8)), true);
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.aborted",
+                                         {refusalLine(app, static_cast<jr::Refusal>(motion.jumpRefusal ? motion.jumpRefusal : 8))}),
+                                true);
     }
     if (motion.jumpSerial != m_jumpSeenSerial)
     {
@@ -477,14 +504,14 @@ void SpaceState::updateJumpPresentation()
         if (motion.jumpState == 0 && static_cast<jr::Refusal>(motion.jumpRefusal) == jr::Refusal::SumpCaught)
         {
             // the step fell into a sump on its way (JumpSumps.h): out short of the target, the jump is over
-            addJumpTerminalLine("ПРЫЖОК: шаг захвачен отстойником - выход раньше цели (" + motion.jumpTargetName +
-                                    " не достигнут), заряд шага потрачен. Осмотритесь и рассчитайте прыжок заново", true);
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.sump_caught", {motion.jumpTargetName}), true);
             std::cerr << "[Jump] client: caught by a sump on the way to " << motion.jumpTargetName << std::endl;
         }
         else
         {
-            addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId ? "ПРЫЖОК: переход к " + motion.jumpTargetName
-                                                                             : "ПРЫЖОК: переход в систему " + motion.jumpTargetName);
+            addJumpTerminalLine(jumpText(app, motion.jumpTargetSystemId == motion.systemId ? "cockpit.jump.transit_body"
+                                                                                           : "cockpit.jump.transit_system",
+                                         {motion.jumpTargetName}));
             std::cerr << "[Jump] client: jumped to " << motion.jumpTargetName << std::endl;
         }
         // the rays: the brightest stars of either sky, their directions from the old and the new place
@@ -552,28 +579,25 @@ void SpaceState::updateJumpPresentation()
                     star = b.worldMeters;
             }
         const glm::dvec3 p = (world::coordinates::fullMeters(it->second.transform.worldPosition) - star) / AuM;
-        char b[256];
-        addJumpTerminalLine(motion.jumpTargetSystemId == motion.systemId && !motion.jumpTargetName.empty()
-                                ? "ПРЫЖОК ЗАВЕРШЁН: " + motion.jumpTargetName
-                                : "ПРЫЖОК ЗАВЕРШЁН: система " + motion.jumpTargetName);
+        addJumpTerminalLine(jumpText(app, motion.jumpTargetSystemId == motion.systemId && !motion.jumpTargetName.empty()
+                                              ? "cockpit.jump.complete_body"
+                                              : "cockpit.jump.complete_system",
+                                     {motion.jumpTargetName}));
         const bool atStar = motion.jumpExitAltitudeM > 0.5 * AuM;
         if (motion.jumpExitAltitudeM < 0.0)
-            addJumpTerminalLine("ВЫХОД: открытый космос, " + distanceText(-motion.jumpExitAltitudeM) + " от " + body +
-                                " - снесло течениями (без маяков их не учесть), дальше в J");
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.exit_drifted", {distanceText(app, -motion.jumpExitAltitudeM), body}));
         else if (atStar)
-            addJumpTerminalLine("ВЫХОД: открытый космос, " + distanceText(motion.jumpExitAltitudeM) + " от звезды");
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.exit_star", {distanceText(app, motion.jumpExitAltitudeM)}));
         else
-            addJumpTerminalLine("ВЫХОД: орбита " + body + ", высота " + distanceText(motion.jumpExitAltitudeM));
-        std::snprintf(b, sizeof b, "КООРДИНАТЫ: %+.4f  %+.4f  %+.4f а.е. от звезды", p.x, p.y, p.z);
-        addJumpTerminalLine(b);
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.exit_orbit", {body, distanceText(app, motion.jumpExitAltitudeM)}));
+        addJumpTerminalLine(jumpText(app, "cockpit.jump.coordinates",
+                                     {jumpNumber("%+.4f", p.x), jumpNumber("%+.4f", p.y), jumpNumber("%+.4f", p.z)}));
         const double box = jr::ExitFarOffSigmas * motion.jumpExitSigmaM;
         if (motion.jumpExitDeviationM > box)
-            addJumpTerminalLine("ВНИМАНИЕ: корабль снесло - " + distanceText(motion.jumpExitDeviationM) + " от расчётной точки выхода (норма до " +
-                                    distanceText(box) + ")",
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.far_off", {distanceText(app, motion.jumpExitDeviationM), distanceText(app, box)}),
                                 true);
         else
-            addJumpTerminalLine("ОТКЛОНЕНИЕ: " + distanceText(motion.jumpExitDeviationM) + " от расчётной точки (в пределах расчётных " +
-                                distanceText(box) + ")");
+            addJumpTerminalLine(jumpText(app, "cockpit.jump.deviation", {distanceText(app, motion.jumpExitDeviationM), distanceText(app, box)}));
     }
 
     // ---- the frame of the effect
@@ -589,16 +613,15 @@ void SpaceState::updateJumpPresentation()
         m_jumpScreen.zoom = c.zoom;
         m_jumpScreen.bulge = c.bulge;
         audio::AudioEngine::instance().setJumpHum(static_cast<float>(0.12 + 0.88 * std::pow(frac, 1.5)));
-        char b[160];
         if (motion.jumpState == 1)
-            std::snprintf(b, sizeof b, "ЗАРЯД ЯДРА %s %3d%%  %s / %s", bar(frac, 16).c_str(), static_cast<int>(frac * 100.0),
-                          minutes(motion.jumpChargeElapsedS).c_str(), minutes(motion.jumpChargeDurationS).c_str());
+            m_jumpTerminalLive = jumpText(app, "cockpit.jump.charge_bar",
+                                          {bar(frac, 16), jumpNumber("%3.0f", static_cast<double>(static_cast<int>(frac * 100.0))),
+                                           minutes(motion.jumpChargeElapsedS), minutes(motion.jumpChargeDurationS)});
         else
-            std::snprintf(b, sizeof b, "ЗАРЯД ЯДРА %s 100%%  ГОТОВ - ждём чистого пространства", bar(1.0, 16).c_str());
-        m_jumpTerminalLive = b;
+            m_jumpTerminalLive = jumpText(app, "cockpit.jump.charge_ready", {bar(1.0, 16)});
     }
     else if (motion.jumpState == 3)
-        m_jumpTerminalLive = "ВЫХОД: определяем положение...";
+        m_jumpTerminalLive = jumpText(app, "cockpit.jump.exit_locating");
 
     if (tj >= 0.0 && tj < FxEndS)
     {

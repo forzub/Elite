@@ -6260,3 +6260,44 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   snapshot unavailable" = TargetModuleNotFound); the list is now part of runtime_hubs (EARTH_ORBITAL_HUB_DOCK_MODULES)
   and restored in initial_world_state.json. EliteServer --self-test PASS. NOT author-accepted.
   Next: the hub editor (a mode of the model editor) - layers, module cards on a grid, corridors editable on the map.
+- 2026-11-18 SHORT ARCHITECTURE AUDIT of the hub corridor / dock-site work (author: «сделай краткий аудит чистоты
+  архитектуры»). Findings (not yet fixed): (1) HubLaneNetwork loaded + cached in 3 places (SpaceStateDocking static
+  map, HubCorridorHudRenderer member, SystemMapRendererNavigation static) with the path string repeated -> one
+  catalog like TrafficRouteGraphCatalog; (2) the city frame is resolved 3 ways (docking: hubAttachment angles +
+  hubVisualToTactical; HUD: renderOrientation; map: scene axes) and HUD / map find it by the ".city" suffix instead of
+  the file's frame_module_id (also GameSimulationCombat / Jump); (3) the HubLanes block is inline in the 4.5k-line
+  SpaceStateDocking.cpp next to the hub_hex_dock_a-keyed BLUE transit (string literal in 5 files); (4) the search's
+  feasibility numbers (JoinApproachMeters 700, FreeTurnRadius 1.5 km) and the generator's DOCK_AXIS_OUT 3.3 km copy
+  planner policy (OrdinaryRoutePolicy terminal approach, final-leg straights) instead of deriving from it;
+  (5) hub_plane.py (947 lines) mixes the module kit, the city layout and the lane / connector / Dubins network;
+  (6) initial_world_state.json has 6 writer scripts with no section ownership - the lost Высокий dock was a symptom.
+- 2026-11-18 AUDIT FIXES + HUD (author: «давай исправим архитектуру и HUD»):
+  - Architecture: HubLaneCatalog (one load of every hub_lanes/*.json, lookup by hub id / frame module id) used by the
+    docking planner, the flight HUD and the Hub map (no more 3 caches, no ".city" suffix guessing); the docking lane
+    logic moved out of SpaceStateDocking into navigation/traffic/HubLaneRouting (hubModulePlanningFrame,
+    freeLegModelFor, applyHubLanes); the search's free-leg demands are DERIVED from OrdinaryRoutePolicy + the
+    composer's SegmentedRouteComposer::ReleaseProtectedStraightMeters (live: join_approach 700, turn r 1275, exit_min
+    2050 m - the hand constants are gone; an exit shorter than exit_min is now rejected at search time);
+    tools/models/units/hub_lanes.py split out of hub_plane.py (regenerated data byte-identical);
+    tests/architecture_contracts/check_world_state_hub_docks.py (dock_modules is a module list, Высокий keeps
+    hub_hex_dock_a, every lane file names an existing hub + frame module).
+  - Elite Classic render style: the city "disappeared" (black fill, edges gone beyond ~1.9 km) -> large_object_fill
+    turns the black fill into a dim monochrome grey with a simple light from 0.9..2.2 km (LIVE D:/tmp/elite_far.png:
+    the city's silhouette at 3+ km; close up unchanged, D:/tmp/elite_lane.png).
+  - HUD terminal: font -20 % (0.0156 x height, 11..21 px), alpha ~-40 %. HUD localization (subagent pass): ~210
+    hard-coded strings of SpaceStateHud.cpp, DockingWidgetText.h, SpaceStateJump.cpp, SpaceStateRoute.cpp, JumpRules.h
+    (refusalKey) -> 232 new keys in ui/cockpit/flight.json x 5 locales; "RECOVERED:" prefix localized; the SOS line
+    shows the hub's localized name (rescueAt returns the hub id); 12 Sol hubs got display names in
+    world/star_systems/sol.json (earth_orbital_hub's stale ru "Орбитальный хаб Земли" -> "Высокий"). LIVE es:
+    D:/tmp/es_b.png (docking widget ATRAQUE / ENTRADA AUTORIZADA), D:/tmp/es_c_zoom.png (terminal all Spanish).
+    Left: DockDispatcherTerminalText.h (English, fallback only), server-supplied alert texts, map buttons, service
+    panels / shipyard / repair / system-map texts (~500 literals) - next localization pass.
+  - Spanish accents: the HUD (Roboto via FreeType), the WebUI (Noto Sans) and the es catalog (1850 strings, 1 word
+    unaccented) all carry them - no font defect found; waiting for the author's example.
+  - Rotation: the 5 spinning bodies of plane_demo do turn (D:/tmp/spin_pair.png); every other ring / tower is part of
+    the static city assembly - rotating habitats / toroids are roadmap item (5), not built yet.
+  - LIVE: docking via lanes after the refactor captured at plane_demo.dock -> P4 (run 16, Elite style).
+  - Gates: 212: 201 pass, 6 known red, 5 new red -> 2 were mine (text checks of GameServer's session navigation after
+    25bb22b20: updated, pass), 3 PRE-EXISTING (fail at 8cd8521a2~1 too, not in the allow-list):
+    check_client_galaxy_map_catalog (source.description), check_ui_platform_fonts (mesh_editor/index.html lacks the
+    shared font layer), tests/system_map/check_architecture (System CPU frame before input/picking). Not fixed here.

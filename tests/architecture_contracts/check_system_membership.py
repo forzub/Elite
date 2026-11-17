@@ -320,7 +320,7 @@ if "systemMembershipRadiusAu" not in navigation_config_text:
 
 navigation_for_entity = function_body(
     server_text,
-    "GameServer::navigationStateForEntity(EntityId entityId) const",
+    "GameServer::navigationStateForEntity(EntityId entityId, const ShipTransform* publishedTransform) const",
 )
 if navigation_for_entity is None:
     fail(server_cpp, "could not locate per-entity navigation-state resolver")
@@ -351,7 +351,9 @@ else:
         navigation_for_session,
         (
             "controlledEntityForSession(sessionId)",
-            "navigationStateForEntity(controlledEntityId)",
+            "navigationStateForEntity(controlledEntityId, published)",
+            # the session view is derived from the pose of the snapshot it travels with (2026-11-18, self-test)
+            "m_lastSnapshot.ships",
         ),
         "server per-session navigation is not derived from session authority",
     )

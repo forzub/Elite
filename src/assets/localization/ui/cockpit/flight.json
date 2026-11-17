@@ -722,6 +722,1637 @@
       "zh-Hans": "反应堆",
       "es": "REACTORES",
       "ja": "原子炉"
+    },
+    "cockpit.unit.speed_mps": {
+      "en": "{0} m/s",
+      "ru": "{0} м/с",
+      "zh-Hans": "{0} 米/秒",
+      "es": "{0} m/s",
+      "ja": "{0} m/s"
+    },
+    "cockpit.unit.speed_kmps": {
+      "en": "{0} km/s",
+      "ru": "{0} км/с",
+      "zh-Hans": "{0} 公里/秒",
+      "es": "{0} km/s",
+      "ja": "{0} km/s"
+    },
+    "cockpit.unit.distance_m": {
+      "en": "{0} m",
+      "ru": "{0} м",
+      "zh-Hans": "{0} 米",
+      "es": "{0} m",
+      "ja": "{0} m"
+    },
+    "cockpit.unit.distance_km": {
+      "en": "{0} km",
+      "ru": "{0} км",
+      "zh-Hans": "{0} 公里",
+      "es": "{0} km",
+      "ja": "{0} km"
+    },
+    "cockpit.unit.distance_thousand_km": {
+      "en": "{0}k km",
+      "ru": "{0} тыс. км",
+      "zh-Hans": "{0} 千公里",
+      "es": "{0} mil km",
+      "ja": "{0} 千km"
+    },
+    "cockpit.unit.distance_million_km": {
+      "en": "{0}M km",
+      "ru": "{0} млн км",
+      "zh-Hans": "{0} 百万公里",
+      "es": "{0} mill. km",
+      "ja": "{0} 百万km"
+    },
+    "cockpit.unit.distance_au": {
+      "en": "{0} AU",
+      "ru": "{0} а.е.",
+      "zh-Hans": "{0} 天文单位",
+      "es": "{0} UA",
+      "ja": "{0} AU"
+    },
+    "cockpit.unit.distance_ly": {
+      "en": "{0} ly",
+      "ru": "{0} св. лет",
+      "zh-Hans": "{0} 光年",
+      "es": "{0} a. l.",
+      "ja": "{0} 光年"
+    },
+    "cockpit.unit.time_s": {
+      "en": "{0} s",
+      "ru": "{0} с",
+      "zh-Hans": "{0} 秒",
+      "es": "{0} s",
+      "ja": "{0} 秒"
+    },
+    "cockpit.unit.time_min": {
+      "en": "{0} min",
+      "ru": "{0} мин",
+      "zh-Hans": "{0} 分钟",
+      "es": "{0} min",
+      "ja": "{0} 分"
+    },
+    "cockpit.unit.mass_t": {
+      "en": "{0} t",
+      "ru": "{0} т",
+      "zh-Hans": "{0} 吨",
+      "es": "{0} t",
+      "ja": "{0} t"
+    },
+    "cockpit.terminal.sos.inside": {
+      "en": "SOS: rescue zone '{0}' - pickup in 10-20 min",
+      "ru": "SOS: зона спасения «{0}» - подберут через 10-20 мин",
+      "zh-Hans": "SOS：救援区“{0}” - 10-20 分钟内获救",
+      "es": "SOS: zona de rescate «{0}» - te recogerán en 10-20 min",
+      "ja": "SOS：救助圏「{0}」 - 10〜20分で回収"
+    },
+    "cockpit.terminal.sos.outside": {
+      "en": "SOS: outside the rescue zone - the signal may go unheard (nearest zone '{0}')",
+      "ru": "SOS: вне зоны спасения - сигнал могут не услышать (ближайшая зона «{0}»)",
+      "zh-Hans": "SOS：不在救援区内 - 信号可能无人收到（最近的救援区“{0}”）",
+      "es": "SOS: fuera de la zona de rescate - puede que nadie oiga la señal (zona más cercana: «{0}»)",
+      "ja": "SOS：救助圏外 - 信号が届かない可能性あり（最寄りの救助圏「{0}」）"
+    },
+    "cockpit.terminal.sos.no_service": {
+      "en": "SOS: no rescue service in this system - only passing ships will hear it",
+      "ru": "SOS: в системе нет спасательной службы - услышат только случайные корабли",
+      "zh-Hans": "SOS：本星系没有救援服务 - 只有路过的飞船能收到",
+      "es": "SOS: no hay servicio de rescate en el sistema - solo lo oirán naves de paso",
+      "ja": "SOS：この星系には救助サービスがない - 偶然通る船にしか届かない"
+    },
+    "cockpit.terminal.reactor.off": {
+      "en": "REACTORS OFF / main and RCS thrust disabled",
+      "ru": "РЕАКТОРЫ ВЫКЛ / маршевая и RCS-тяга отключены",
+      "zh-Hans": "反应堆关闭 / 主推力与RCS推力已禁用",
+      "es": "REACTORES APAGADOS / empuje principal y RCS desactivado",
+      "ja": "リアクター停止 / メイン推力・RCS推力無効"
+    },
+    "cockpit.terminal.reactor.starting": {
+      "en": "REACTORS STARTING / {0} s remaining",
+      "ru": "ЗАПУСК РЕАКТОРОВ / осталось {0} с",
+      "zh-Hans": "反应堆启动中 / 剩余 {0} 秒",
+      "es": "ARRANQUE DE REACTORES / quedan {0} s",
+      "ja": "リアクター起動中 / 残り {0} 秒"
+    },
+    "cockpit.terminal.reactor.ready_simulated": {
+      "en": "REACTORS READY / diagnostic simulated 5 GW",
+      "ru": "РЕАКТОРЫ ГОТОВЫ / диагностика: имитация 5 ГВт",
+      "zh-Hans": "反应堆就绪 / 诊断模拟 5 GW",
+      "es": "REACTORES LISTOS / diagnóstico: 5 GW simulados",
+      "ja": "リアクター準備完了 / 診断用模擬 5 GW"
+    },
+    "cockpit.terminal.reactor.error": {
+      "en": "REACTOR ERROR / no functional installed ER-5",
+      "ru": "ОШИБКА РЕАКТОРА / нет исправного установленного ER-5",
+      "zh-Hans": "反应堆故障 / 没有可用的已安装 ER-5",
+      "es": "ERROR DE REACTOR / ningún ER-5 instalado operativo",
+      "ja": "リアクターエラー / 稼働可能なER-5が搭載されていない"
+    },
+    "cockpit.terminal.reactor.ready": {
+      "en": "REACTORS READY / propulsion power enabled",
+      "ru": "РЕАКТОРЫ ГОТОВЫ / питание двигателей включено",
+      "zh-Hans": "反应堆就绪 / 推进动力已启用",
+      "es": "REACTORES LISTOS / energía de propulsión activada",
+      "ja": "リアクター準備完了 / 推進電力オン"
+    },
+    "cockpit.notice.station_released": {
+      "en": "DEPARTURE: the station released the ship",
+      "ru": "ВЫЛЕТ: станция отпустила корабль",
+      "zh-Hans": "离港：空间站已释放飞船",
+      "es": "SALIDA: la estación ha liberado la nave",
+      "ja": "出港：ステーションが船を解放"
+    },
+    "cockpit.flight.engine_j": {
+      "en": "J drive",
+      "ru": "двигатель J",
+      "zh-Hans": "J 引擎",
+      "es": "motor J",
+      "ja": "Jドライブ"
+    },
+    "cockpit.flight.engine_main": {
+      "en": "main engines",
+      "ru": "маршевые двигатели",
+      "zh-Hans": "主引擎",
+      "es": "motores principales",
+      "ja": "メインエンジン"
+    },
+    "cockpit.flight.stab_orbit": {
+      "en": "ORBIT STABILIZATION {0}  ·  manoeuvre speed {1} (limit 500 m/s)  ·  no hub reference: the orbit may drift",
+      "ru": "СТАБИЛИЗАЦИЯ ОРБИТЫ {0}  ·  манёвровая скорость {1} (предел 500 м/с)  ·  нет хаба-ориентира: орбита может уйти",
+      "zh-Hans": "轨道稳定 {0}  ·  机动速度 {1}（上限 500 米/秒）  ·  无参照枢纽：轨道可能漂移",
+      "es": "ESTABILIZACIÓN ORBITAL {0}  ·  velocidad de maniobra {1} (límite 500 m/s)  ·  sin hub de referencia: la órbita puede desviarse",
+      "ja": "軌道安定化 {0}  ·  機動速度 {1}（上限 500 m/s）  ·  基準ハブなし：軌道がずれる可能性"
+    },
+    "cockpit.flight.stab_ground": {
+      "en": "GROUND STABILIZATION {0}  ·  ground speed {1} (limit 500 m/s)",
+      "ru": "СТАБИЛИЗАЦИЯ НАД ГРУНТОМ {0}  ·  скорость над грунтом {1} (предел 500 м/с)",
+      "zh-Hans": "地面稳定 {0}  ·  对地速度 {1}（上限 500 米/秒）",
+      "es": "ESTABILIZACIÓN SOBRE EL SUELO {0}  ·  velocidad sobre el suelo {1} (límite 500 m/s)",
+      "ja": "地表安定化 {0}  ·  対地速度 {1}（上限 500 m/s）"
+    },
+    "cockpit.flight.stab_hub": {
+      "en": "HUB STABILIZATION  ·  manoeuvre speed {0} (limit 500 m/s)",
+      "ru": "СТАБИЛИЗАЦИЯ В ХАБЕ  ·  манёвровая скорость {0} (предел 500 м/с)",
+      "zh-Hans": "枢纽稳定  ·  机动速度 {0}（上限 500 米/秒）",
+      "es": "ESTABILIZACIÓN EN EL HUB  ·  velocidad de maniobra {0} (límite 500 m/s)",
+      "ja": "ハブ内安定化  ·  機動速度 {0}（上限 500 m/s）"
+    },
+    "cockpit.flight.normal_hub": {
+      "en": "NORMAL FLIGHT  ·  {0}  ·  speed {1} rel. to hub {2}",
+      "ru": "НОРМАЛЬНЫЙ ПОЛЁТ  ·  {0}  ·  скорость {1} отн. хаба {2}",
+      "zh-Hans": "常规飞行  ·  {0}  ·  相对枢纽 {2} 速度 {1}",
+      "es": "VUELO NORMAL  ·  {0}  ·  velocidad {1} resp. al hub {2}",
+      "ja": "通常飛行  ·  {0}  ·  ハブ {2} に対する速度 {1}"
+    },
+    "cockpit.flight.normal_global": {
+      "en": "NORMAL FLIGHT  ·  {0}  ·  global speed {1}  ·  planetary gravity negligible",
+      "ru": "НОРМАЛЬНЫЙ ПОЛЁТ  ·  {0}  ·  глобальная скорость {1}  ·  гравитация планет пренебрежима",
+      "zh-Hans": "常规飞行  ·  {0}  ·  全局速度 {1}  ·  行星引力可忽略",
+      "es": "VUELO NORMAL  ·  {0}  ·  velocidad global {1}  ·  gravedad planetaria despreciable",
+      "ja": "通常飛行  ·  {0}  ·  全体速度 {1}  ·  惑星重力は無視できる"
+    },
+    "cockpit.flight.normal_body": {
+      "en": "NORMAL FLIGHT  ·  {0}  ·  speed {1} rel. to {2} (inside its sphere of influence)",
+      "ru": "НОРМАЛЬНЫЙ ПОЛЁТ  ·  {0}  ·  скорость {1} отн. {2} (в сфере её притяжения)",
+      "zh-Hans": "常规飞行  ·  {0}  ·  相对 {2} 速度 {1}（在其引力范围内）",
+      "es": "VUELO NORMAL  ·  {0}  ·  velocidad {1} resp. a {2} (dentro de su esfera de influencia)",
+      "ja": "通常飛行  ·  {0}  ·  {2} に対する速度 {1}（その重力圏内）"
+    },
+    "cockpit.flight.j_charge": {
+      "en": "J charge {0} / {1} t",
+      "ru": "заряд J {0} / {1} т",
+      "zh-Hans": "J 充能 {0} / {1} 吨",
+      "es": "carga J {0} / {1} t",
+      "ja": "Jチャージ {0} / {1} t"
+    },
+    "cockpit.flight.thrust_full": {
+      "en": "THRUST FULL",
+      "ru": "ТЯГА ПОЛНАЯ",
+      "zh-Hans": "全推力",
+      "es": "EMPUJE MÁXIMO",
+      "ja": "推力最大"
+    },
+    "cockpit.flight.thrust_brake": {
+      "en": "BRAKING",
+      "ru": "ТОРМОЖЕНИЕ",
+      "zh-Hans": "制动",
+      "es": "FRENADO",
+      "ja": "制動"
+    },
+    "cockpit.flight.thrust_off": {
+      "en": "THRUST OFF",
+      "ru": "ТЯГА ВЫКЛ",
+      "zh-Hans": "推力关闭",
+      "es": "EMPUJE APAGADO",
+      "ja": "推力オフ"
+    },
+    "cockpit.flight.autopilot_main_drive": {
+      "en": "AUTOPILOT MAIN ENGINES {0} g",
+      "ru": "МАРШЕВЫЕ АВТОПИЛОТА {0} g",
+      "zh-Hans": "自动驾驶主引擎 {0} g",
+      "es": "MOTORES PRINCIPALES DEL AUTOPILOTO {0} g",
+      "ja": "自動操縦メインエンジン {0} g"
+    },
+    "cockpit.flight.autopilot_j_drive": {
+      "en": "AUTOPILOT J DRIVE {0} g",
+      "ru": "J-ПРИВОД АВТОПИЛОТА {0} g",
+      "zh-Hans": "自动驾驶 J 驱动 {0} g",
+      "es": "PROPULSOR J DEL AUTOPILOTO {0} g",
+      "ja": "自動操縦Jドライブ {0} g"
+    },
+    "cockpit.flight.braking_paren": {
+      "en": "(braking)",
+      "ru": "(торможение)",
+      "zh-Hans": "（制动）",
+      "es": "(frenando)",
+      "ja": "（減速）"
+    },
+    "cockpit.flight.accelerating_paren": {
+      "en": "(accelerating)",
+      "ru": "(разгон)",
+      "zh-Hans": "（加速）",
+      "es": "(acelerando)",
+      "ja": "（加速）"
+    },
+    "cockpit.flight.j_accel": {
+      "en": "ACCELERATION J {0} g (set {1} g)",
+      "ru": "УСКОРЕНИЕ J {0} g (задано {1} g)",
+      "zh-Hans": "加速度 J {0} g（设定 {1} g）",
+      "es": "ACELERACIÓN J {0} g (fijada {1} g)",
+      "ja": "加速度 J {0} g（設定 {1} g）"
+    },
+    "cockpit.flight.j_stopping": {
+      "en": "J SHUTTING DOWN: J {0} g (set {1} g)",
+      "ru": "J ВЫКЛЮЧАЕТСЯ: J {0} g (задано {1} g)",
+      "zh-Hans": "J 正在关闭：J {0} g（设定 {1} g）",
+      "es": "J APAGÁNDOSE: J {0} g (fijada {1} g)",
+      "ja": "J停止中：J {0} g（設定 {1} g）"
+    },
+    "cockpit.flight.medium_drag": {
+      "en": "medium drag {0} g",
+      "ru": "сопротивление среды {0} g",
+      "zh-Hans": "介质阻力 {0} g",
+      "es": "resistencia del medio {0} g",
+      "ja": "媒質抵抗 {0} g"
+    },
+    "cockpit.flight.route_paused": {
+      "en": "ROUTE PAUSED (point {0} of {1}): manual mode  ·  to resume: map → finish → RESUME ROUTE",
+      "ru": "МАРШРУТ НА ПАУЗЕ (точка {0} из {1}): ручной режим  ·  продолжить: карта → финиш → ПРОДОЛЖИТЬ МАРШРУТ",
+      "zh-Hans": "航线已暂停（第 {0} 点，共 {1} 点）：手动模式  ·  继续：地图 → 终点 → 继续航线",
+      "es": "RUTA EN PAUSA (punto {0} de {1}): modo manual  ·  para continuar: mapa → destino → REANUDAR RUTA",
+      "ja": "ルート一時停止（地点 {0}/{1}）：手動モード  ·  再開：マップ → 終点 → ルート再開"
+    },
+    "cockpit.flight.keys_j": {
+      "en": "HOME +max · END -max · INSERT 0 · +/- acceleration · Ctrl+J J off · Ctrl+K stabilization",
+      "ru": "HOME +макс · END -макс · INSERT 0 · +/- ускорение · Ctrl+J выкл J · Ctrl+K стабилизация",
+      "zh-Hans": "HOME +最大 · END -最大 · INSERT 0 · +/- 加速度 · Ctrl+J 关闭 J · Ctrl+K 稳定",
+      "es": "HOME +máx · END -máx · INSERT 0 · +/- aceleración · Ctrl+J apagar J · Ctrl+K estabilización",
+      "ja": "HOME +最大 · END -最大 · INSERT 0 · +/- 加速度 · Ctrl+J J停止 · Ctrl+K 安定化"
+    },
+    "cockpit.flight.keys_main": {
+      "en": "HOME thrust · END brake · INSERT off · PgDn land · Ctrl+J J drive · Ctrl+K stabilization",
+      "ru": "HOME тяга · END торм. · INSERT выкл · PgDn посадка · Ctrl+J двигатель J · Ctrl+K стабилизация",
+      "zh-Hans": "HOME 推力 · END 制动 · INSERT 关闭 · PgDn 着陆 · Ctrl+J J 引擎 · Ctrl+K 稳定",
+      "es": "HOME empuje · END freno · INSERT apagar · PgDn aterrizar · Ctrl+J motor J · Ctrl+K estabilización",
+      "ja": "HOME 推力 · END 制動 · INSERT オフ · PgDn 着陸 · Ctrl+J Jドライブ · Ctrl+K 安定化"
+    },
+    "cockpit.flight.keys_stabilized": {
+      "en": "Ctrl+K normal flight (no speed limit)  ·  Ctrl+J J drive",
+      "ru": "Ctrl+K нормальный полёт (без предела скорости)  ·  Ctrl+J двигатель J",
+      "zh-Hans": "Ctrl+K 常规飞行（无速度上限）  ·  Ctrl+J J 引擎",
+      "es": "Ctrl+K vuelo normal (sin límite de velocidad)  ·  Ctrl+J motor J",
+      "ja": "Ctrl+K 通常飛行（速度上限なし）  ·  Ctrl+J Jドライブ"
+    },
+    "cockpit.flight.refusal.no_local_frame": {
+      "en": "No local reference frame available (the hub is beyond capture range)",
+      "ru": "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)",
+      "zh-Hans": "没有可用的局部参照系（枢纽超出捕获范围）",
+      "es": "No hay sistema de referencia local disponible (el hub está fuera de la zona de captura)",
+      "ja": "利用できる局所基準系がない（ハブが捕捉範囲外）"
+    },
+    "cockpit.flight.refusal.capture_too_fast": {
+      "en": "Capture impossible: speed relative to the hub too high",
+      "ru": "Захват невозможен: слишком высокая скорость относительно хаба",
+      "zh-Hans": "无法捕获：相对枢纽速度过高",
+      "es": "Captura imposible: velocidad demasiado alta respecto al hub",
+      "ja": "捕捉不可：ハブに対する速度が高すぎる"
+    },
+    "cockpit.flight.refusal.j_dropped_near_object": {
+      "en": "J off: object nearby",
+      "ru": "J выключен: рядом объект",
+      "zh-Hans": "J 已关闭：附近有物体",
+      "es": "J apagado: objeto cercano",
+      "ja": "J停止：近くに物体"
+    },
+    "cockpit.flight.refusal.below_j_floor_main": {
+      "en": "Below the J floor: main engines",
+      "ru": "Ниже пола J: маршевые двигатели",
+      "zh-Hans": "低于 J 下限：使用主引擎",
+      "es": "Por debajo del suelo J: motores principales",
+      "ja": "J下限より下：メインエンジン"
+    },
+    "cockpit.flight.refusal.j_refused_near_object": {
+      "en": "J will not engage: object nearby (hub / station 20 km, ship 5 km)",
+      "ru": "J не включается: рядом объект (хаб / станция 20 км, корабль 5 км)",
+      "zh-Hans": "J 无法启动：附近有物体（枢纽 / 空间站 20 公里，飞船 5 公里）",
+      "es": "J no se activa: objeto cercano (hub / estación 20 km, nave 5 km)",
+      "ja": "Jが起動しない：近くに物体（ハブ / ステーション 20 km、船 5 km）"
+    },
+    "cockpit.flight.refusal.j_charge_empty": {
+      "en": "J: jump drive charge depleted",
+      "ru": "J: заряд прыжкового двигателя исчерпан",
+      "zh-Hans": "J：跃迁引擎充能耗尽",
+      "es": "J: carga del motor de salto agotada",
+      "ja": "J：ジャンプドライブのチャージ切れ"
+    },
+    "cockpit.flight.refusal.j_refused_below_floor": {
+      "en": "J will not engage: below the J floor",
+      "ru": "J не включается: ниже пола J",
+      "zh-Hans": "J 无法启动：低于 J 下限",
+      "es": "J no se activa: por debajo del suelo J",
+      "ja": "Jが起動しない：J下限より下"
+    },
+    "cockpit.flight.refusal.landing_thrust_too_low": {
+      "en": "Landing impossible: main engine thrust is too low to land and take off",
+      "ru": "Посадка невозможна: тяги маршевых не хватит, чтобы сесть и взлететь",
+      "zh-Hans": "无法着陆：主引擎推力不足以着陆和起飞",
+      "es": "Aterrizaje imposible: el empuje principal no basta para aterrizar y despegar",
+      "ja": "着陸不可：メインエンジンの推力が着陸・離陸に足りない"
+    },
+    "cockpit.flight.refusal.landing_atmosphere": {
+      "en": "Landing impossible: atmosphere - only shuttles land here",
+      "ru": "Посадка невозможна: атмосфера - садятся только челноки",
+      "zh-Hans": "无法着陆：有大气层 - 仅穿梭机可着陆",
+      "es": "Aterrizaje imposible: atmósfera - aquí solo aterrizan lanzaderas",
+      "ja": "着陸不可：大気あり - 着陸できるのはシャトルのみ"
+    },
+    "cockpit.autopilot.phase.leave_body": {
+      "en": "leaving the body",
+      "ru": "уход от тела",
+      "zh-Hans": "离开天体",
+      "es": "alejándose del cuerpo",
+      "ja": "天体から離脱"
+    },
+    "cockpit.autopilot.phase.transfer": {
+      "en": "transfer",
+      "ru": "перелёт",
+      "zh-Hans": "转移",
+      "es": "tránsito",
+      "ja": "移動"
+    },
+    "cockpit.autopilot.phase.approach": {
+      "en": "approach",
+      "ru": "подход",
+      "zh-Hans": "接近",
+      "es": "aproximación",
+      "ja": "接近"
+    },
+    "cockpit.autopilot.phase.descend_pad": {
+      "en": "descending to the pad",
+      "ru": "снижение на площадку",
+      "zh-Hans": "下降至着陆台",
+      "es": "descenso a la plataforma",
+      "ja": "着陸パッドへ降下"
+    },
+    "cockpit.autopilot.phase.on_surface": {
+      "en": "on the surface",
+      "ru": "на поверхности",
+      "zh-Hans": "已在地表",
+      "es": "en la superficie",
+      "ja": "地表"
+    },
+    "cockpit.autopilot.phase.to_pad": {
+      "en": "to the pad",
+      "ru": "к площадке",
+      "zh-Hans": "前往着陆台",
+      "es": "hacia la plataforma",
+      "ja": "パッドへ"
+    },
+    "cockpit.autopilot.phase.choose_pad": {
+      "en": "choosing a pad",
+      "ru": "выбор площадки",
+      "zh-Hans": "选择着陆点",
+      "es": "eligiendo plataforma",
+      "ja": "着陸地点を選択"
+    },
+    "cockpit.autopilot.phase.orbit_search": {
+      "en": "orbit: no level pad, searching",
+      "ru": "орбита: нет ровной площадки, поиск",
+      "zh-Hans": "轨道：没有平坦着陆点，搜索中",
+      "es": "órbita: no hay zona llana, buscando",
+      "ja": "軌道：平坦な地点なし、探索中"
+    },
+    "cockpit.autopilot.phase.leave_hub": {
+      "en": "leaving the hub zone (soft J)",
+      "ru": "выход из зоны хаба (J мягко)",
+      "zh-Hans": "离开枢纽区（J 柔和）",
+      "es": "saliendo de la zona del hub (J suave)",
+      "ja": "ハブ圏から離脱（J穏やか）"
+    },
+    "cockpit.autopilot.phase.ground_stab": {
+      "en": "ground stabilization",
+      "ru": "стабилизация над грунтом",
+      "zh-Hans": "地面稳定",
+      "es": "estabilización sobre el suelo",
+      "ja": "地表安定化"
+    },
+    "cockpit.autopilot.phase.deorbit": {
+      "en": "de-orbit (normal flight, main engines)",
+      "ru": "сход с орбиты (нормальный полёт, маршевые)",
+      "zh-Hans": "脱离轨道（常规飞行，主引擎）",
+      "es": "salida de órbita (vuelo normal, motores principales)",
+      "ja": "軌道離脱（通常飛行、メインエンジン）"
+    },
+    "cockpit.autopilot.phase.orbit_wait": {
+      "en": "in orbit (stabilization), waiting to de-orbit",
+      "ru": "на орбите (стабилизация), ждём схода",
+      "zh-Hans": "在轨道上（稳定），等待脱离",
+      "es": "en órbita (estabilización), esperando la salida",
+      "ja": "軌道上（安定化）、離脱待ち"
+    },
+    "cockpit.autopilot.line_short": {
+      "en": "AUTOPILOT -> {0}:  {1}",
+      "ru": "АВТОПИЛОТ -> {0}:  {1}",
+      "zh-Hans": "自动驾驶 -> {0}：  {1}",
+      "es": "AUTOPILOTO -> {0}:  {1}",
+      "ja": "自動操縦 -> {0}：  {1}"
+    },
+    "cockpit.autopilot.line": {
+      "en": "AUTOPILOT -> {0}:  {1}   ·   {2} {3}   ·   speed {4}   ·   acceleration {5} g",
+      "ru": "АВТОПИЛОТ -> {0}:  {1}   ·   {2} {3}   ·   скорость {4}   ·   ускорение {5} g",
+      "zh-Hans": "自动驾驶 -> {0}：  {1}   ·   {2} {3}   ·   速度 {4}   ·   加速度 {5} g",
+      "es": "AUTOPILOTO -> {0}:  {1}   ·   {2} {3}   ·   velocidad {4}   ·   aceleración {5} g",
+      "ja": "自動操縦 -> {0}：  {1}   ·   {2} {3}   ·   速度 {4}   ·   加速度 {5} g"
+    },
+    "cockpit.autopilot.to_pad": {
+      "en": "to the pad",
+      "ru": "до площадки",
+      "zh-Hans": "距着陆台",
+      "es": "a la plataforma",
+      "ja": "パッドまで"
+    },
+    "cockpit.autopilot.to_surface": {
+      "en": "to the surface",
+      "ru": "до поверхности",
+      "zh-Hans": "距地表",
+      "es": "a la superficie",
+      "ja": "地表まで"
+    },
+    "cockpit.orbit_panel.circular": {
+      "en": "Circular V  {0}",
+      "ru": "1-я косм.  {0}",
+      "zh-Hans": "第一宇宙速度  {0}",
+      "es": "1.ª cósmica  {0}",
+      "ja": "第一宇宙速度  {0}"
+    },
+    "cockpit.orbit_panel.v_global": {
+      "en": "V  {0}  (global)",
+      "ru": "V  {0}  (глобальная)",
+      "zh-Hans": "V  {0}  （全局）",
+      "es": "V  {0}  (global)",
+      "ja": "V  {0}  （全体）"
+    },
+    "cockpit.orbit_panel.v_radial": {
+      "en": "V  {0}   ({1} vert.)",
+      "ru": "V  {0}   ({1} верт.)",
+      "zh-Hans": "V  {0}   （垂直 {1}）",
+      "es": "V  {0}   ({1} vert.)",
+      "ja": "V  {0}   （垂直 {1}）"
+    },
+    "cockpit.orbit_panel.h_ground": {
+      "en": "H  {0} above ground   ({1} above mean radius)",
+      "ru": "H  {0} над грунтом   ({1} над ср. радиусом)",
+      "zh-Hans": "H  离地 {0}   （高于平均半径 {1}）",
+      "es": "H  {0} sobre el suelo   ({1} sobre el radio medio)",
+      "ja": "H  対地 {0}   （平均半径から {1}）"
+    },
+    "cockpit.orbit_panel.h_min": {
+      "en": "H  {0}   min. {1}",
+      "ru": "H  {0}   мин. {1}",
+      "zh-Hans": "H  {0}   最低 {1}",
+      "es": "H  {0}   mín. {1}",
+      "ja": "H  {0}   最低 {1}"
+    },
+    "cockpit.orbit_panel.dense": {
+      "en": "dense layers {0} km   drag {1} m/s2",
+      "ru": "плотные слои {0} км   сопр. {1} м/с2",
+      "zh-Hans": "稠密层 {0} 公里   阻力 {1} 米/秒2",
+      "es": "capas densas {0} km   resist. {1} m/s2",
+      "ja": "高密度層 {0} km   抵抗 {1} m/s2"
+    },
+    "cockpit.orbit_panel.dense_hint": {
+      "en": "min.: drag 0.1 m/s2 at orbital speed · dense: 1 g",
+      "ru": "мин.: сопр. 0.1 м/с2 на орб. скорости · плотные: 1 g",
+      "zh-Hans": "最低：轨道速度下阻力 0.1 米/秒2 · 稠密：1 g",
+      "es": "mín.: resist. 0.1 m/s2 a velocidad orbital · densas: 1 g",
+      "ja": "最低：軌道速度で抵抗 0.1 m/s2 · 高密度：1 g"
+    },
+    "cockpit.ground.material.rock": {
+      "en": "rock",
+      "ru": "скала",
+      "zh-Hans": "岩石",
+      "es": "roca",
+      "ja": "岩盤"
+    },
+    "cockpit.ground.material.basalt": {
+      "en": "basalt",
+      "ru": "базальт",
+      "zh-Hans": "玄武岩",
+      "es": "basalto",
+      "ja": "玄武岩"
+    },
+    "cockpit.ground.material.regolith": {
+      "en": "regolith",
+      "ru": "реголит",
+      "zh-Hans": "风化层",
+      "es": "regolito",
+      "ja": "レゴリス"
+    },
+    "cockpit.ground.material.sand": {
+      "en": "sand / dunes",
+      "ru": "песок / барханы",
+      "zh-Hans": "沙 / 沙丘",
+      "es": "arena / dunas",
+      "ja": "砂 / 砂丘"
+    },
+    "cockpit.ground.material.soil": {
+      "en": "soil",
+      "ru": "грунт",
+      "zh-Hans": "土壤",
+      "es": "suelo",
+      "ja": "土壌"
+    },
+    "cockpit.ground.material.vegetation": {
+      "en": "vegetation",
+      "ru": "растительность",
+      "zh-Hans": "植被",
+      "es": "vegetación",
+      "ja": "植生"
+    },
+    "cockpit.ground.material.ice": {
+      "en": "ice",
+      "ru": "лёд",
+      "zh-Hans": "冰",
+      "es": "hielo",
+      "ja": "氷"
+    },
+    "cockpit.ground.material.snow": {
+      "en": "snow",
+      "ru": "снег",
+      "zh-Hans": "雪",
+      "es": "nieve",
+      "ja": "雪"
+    },
+    "cockpit.ground.material.salt": {
+      "en": "salt",
+      "ru": "соль",
+      "zh-Hans": "盐",
+      "es": "sal",
+      "ja": "塩"
+    },
+    "cockpit.ground.material.lava": {
+      "en": "lava",
+      "ru": "лава",
+      "zh-Hans": "熔岩",
+      "es": "lava",
+      "ja": "溶岩"
+    },
+    "cockpit.ground.material.water": {
+      "en": "water",
+      "ru": "вода",
+      "zh-Hans": "水",
+      "es": "agua",
+      "ja": "水"
+    },
+    "cockpit.ground.feature.crater": {
+      "en": "crater",
+      "ru": "кратер",
+      "zh-Hans": "陨石坑",
+      "es": "cráter",
+      "ja": "クレーター"
+    },
+    "cockpit.ground.feature.mountains": {
+      "en": "mountains",
+      "ru": "горы",
+      "zh-Hans": "山地",
+      "es": "montañas",
+      "ja": "山岳"
+    },
+    "cockpit.ground.feature.volcano": {
+      "en": "volcano",
+      "ru": "вулкан",
+      "zh-Hans": "火山",
+      "es": "volcán",
+      "ja": "火山"
+    },
+    "cockpit.ground.line": {
+      "en": "below: {0}, slope {1}°{2}  ·  {3} m above terrain",
+      "ru": "под нами: {0}, уклон {1}°{2}  ·  над рельефом {3} м",
+      "zh-Hans": "下方：{0}，坡度 {1}°{2}  ·  离地形 {3} 米",
+      "es": "debajo: {0}, pendiente {1}°{2}  ·  {3} m sobre el relieve",
+      "ja": "直下：{0}、傾斜 {1}°{2}  ·  地形から {3} m"
+    },
+    "cockpit.warning.destroyed_impact": {
+      "en": "SHIP DESTROYED: surface impact",
+      "ru": "КОРАБЛЬ РАЗРУШЕН: удар о поверхность",
+      "zh-Hans": "飞船损毁：撞击地表",
+      "es": "NAVE DESTRUIDA: impacto contra la superficie",
+      "ja": "船体破壊：地表に衝突"
+    },
+    "cockpit.warning.disabled_combat": {
+      "en": "SHIP DISABLED: cockpit or reactors lost in combat",
+      "ru": "КОРАБЛЬ ВЫВЕДЕН ИЗ СТРОЯ: кабина или реакторы потеряны в бою",
+      "zh-Hans": "飞船失去战斗力：驾驶舱或反应堆在战斗中损失",
+      "es": "NAVE INUTILIZADA: cabina o reactores perdidos en combate",
+      "ja": "船体戦闘不能：戦闘でコックピットまたはリアクターを喪失"
+    },
+    "cockpit.warning.destroyed_collision": {
+      "en": "SHIP DESTROYED: collision",
+      "ru": "КОРАБЛЬ РАЗРУШЕН: столкновение",
+      "zh-Hans": "飞船损毁：碰撞",
+      "es": "NAVE DESTRUIDA: colisión",
+      "ja": "船体破壊：衝突"
+    },
+    "cockpit.warning.destroyed_overload": {
+      "en": "SHIP DESTROYED: overload in the dense atmosphere",
+      "ru": "КОРАБЛЬ РАЗРУШЕН: перегрузка в плотных слоях атмосферы",
+      "zh-Hans": "飞船损毁：在稠密大气层中过载",
+      "es": "NAVE DESTRUIDA: sobrecarga en las capas densas de la atmósfera",
+      "ja": "船体破壊：高密度大気中での過負荷"
+    },
+    "cockpit.capsule.g_tail": {
+      "en": "{0} ({1} g, limit {2} g)",
+      "ru": "{0} ({1} g, предел {2} g)",
+      "zh-Hans": "{0}（{1} g，上限 {2} g）",
+      "es": "{0} ({1} g, límite {2} g)",
+      "ja": "{0}（{1} g、上限 {2} g）"
+    },
+    "cockpit.capsule.survival_mode": {
+      "en": "capsule survival mode",
+      "ru": "режим выживания в капсуле",
+      "zh-Hans": "救生舱生存模式",
+      "es": "modo de supervivencia en la cápsula",
+      "ja": "カプセル生存モード"
+    },
+    "cockpit.capsule.state.pilot_alive": {
+      "en": "capsule intact, pilot alive",
+      "ru": "капсула цела, пилот жив",
+      "zh-Hans": "救生舱完好，飞行员存活",
+      "es": "cápsula intacta, piloto con vida",
+      "ja": "カプセル無事、パイロット生存"
+    },
+    "cockpit.capsule.state.pilot_killed": {
+      "en": "capsule intact, pilot killed by the g-load",
+      "ru": "капсула цела, пилот погиб от перегрузки",
+      "zh-Hans": "救生舱完好，飞行员死于过载",
+      "es": "cápsula intacta, el piloto murió por la sobrecarga",
+      "ja": "カプセル無事、パイロットは過負荷で死亡"
+    },
+    "cockpit.capsule.state.destroyed": {
+      "en": "capsule destroyed",
+      "ru": "капсула разрушена",
+      "zh-Hans": "救生舱已损毁",
+      "es": "cápsula destruida",
+      "ja": "カプセル破壊"
+    },
+    "cockpit.capsule.state.no_capsule": {
+      "en": "no escape capsule",
+      "ru": "спасательной капсулы нет",
+      "zh-Hans": "没有救生舱",
+      "es": "no hay cápsula de escape",
+      "ja": "脱出カプセルなし"
+    },
+    "cockpit.warning.crash_impact": {
+      "en": "CRASH: surface impact",
+      "ru": "КРУШЕНИЕ: удар о поверхность",
+      "zh-Hans": "坠毁：撞击地表",
+      "es": "ACCIDENTE: impacto contra la superficie",
+      "ja": "墜落：地表に衝突"
+    },
+    "cockpit.warning.on_surface": {
+      "en": "ON THE SURFACE   HOME - take off",
+      "ru": "НА ПОВЕРХНОСТИ   HOME - взлёт",
+      "zh-Hans": "已在地表   HOME - 起飞",
+      "es": "EN LA SUPERFICIE   HOME - despegar",
+      "ja": "地表   HOME - 離陸"
+    },
+    "cockpit.warning.dense_atmosphere": {
+      "en": "DENSE ATMOSPHERE: heating and hull stress",
+      "ru": "ПЛОТНЫЕ СЛОИ АТМОСФЕРЫ: нагрев и удар по корпусу",
+      "zh-Hans": "稠密大气层：加热与船体冲击",
+      "es": "CAPAS DENSAS DE LA ATMÓSFERA: calentamiento y castigo al casco",
+      "ja": "高密度大気：加熱と船体への衝撃"
+    },
+    "cockpit.warning.descent": {
+      "en": "DESCENT: {0} m/s down  (landing < 8, survival < 34 m/s)",
+      "ru": "СНИЖЕНИЕ: {0} м/с вниз  (посадка < 8, выживание < 34 м/с)",
+      "zh-Hans": "下降：向下 {0} 米/秒  （着陆 < 8，生存 < 34 米/秒）",
+      "es": "DESCENSO: {0} m/s hacia abajo  (aterrizaje < 8, supervivencia < 34 m/s)",
+      "ja": "降下：毎秒 {0} m 下降  （着陸 < 8、生存 < 34 m/s）"
+    },
+    "cockpit.warning.atmosphere_entry": {
+      "en": "ATMOSPHERE ENTRY: drag {0} m/s2 - speed dropping",
+      "ru": "ВХОД В АТМОСФЕРУ: сопротивление {0} м/с2 - скорость падает",
+      "zh-Hans": "进入大气层：阻力 {0} 米/秒2 - 速度下降",
+      "es": "ENTRADA EN LA ATMÓSFERA: resistencia {0} m/s2 - la velocidad cae",
+      "ja": "大気圏突入：抵抗 {0} m/s2 - 速度低下"
+    },
+    "cockpit.warning.stall": {
+      "en": "STALL DANGER: periapsis below safe altitude - raise speed",
+      "ru": "ОПАСНОСТЬ СВАЛИВАНИЯ: перицентр ниже безопасной высоты - поднимите скорость",
+      "zh-Hans": "失速危险：近拱点低于安全高度 - 请提高速度",
+      "es": "PELIGRO DE CAÍDA: periapsis por debajo de la altitud segura - aumenta la velocidad",
+      "ja": "失速の危険：近点が安全高度より低い - 速度を上げよ"
+    },
+    "cockpit.containment.line": {
+      "en": "{0}   ·   core {1} K   ·   {2} s",
+      "ru": "{0}   ·   ядро {1} K   ·   {2} с",
+      "zh-Hans": "{0}   ·   核心 {1} K   ·   {2} 秒",
+      "es": "{0}   ·   núcleo {1} K   ·   {2} s",
+      "ja": "{0}   ·   コア {1} K   ·   {2} 秒"
+    },
+    "cockpit.dock_widget.title_departure": {
+      "en": "DEPARTURE",
+      "ru": "ВЫЛЕТ",
+      "zh-Hans": "离港",
+      "es": "SALIDA",
+      "ja": "出港"
+    },
+    "cockpit.dock_widget.title_docking": {
+      "en": "DOCKING",
+      "ru": "СТЫКОВКА",
+      "zh-Hans": "对接",
+      "es": "ATRAQUE",
+      "ja": "ドッキング"
+    },
+    "cockpit.dock_widget.chip_your_control": {
+      "en": "YOUR CONTROL",
+      "ru": "УПРАВЛЕНИЕ ВАШЕ",
+      "zh-Hans": "控制权归你",
+      "es": "CONTROL TUYO",
+      "ja": "操縦権あり"
+    },
+    "cockpit.dock_widget.console_released": {
+      "en": "DEPARTURE: the pilot has control",
+      "ru": "ВЫЛЕТ: управление у пилота",
+      "zh-Hans": "离港：飞行员已接管控制",
+      "es": "SALIDA: el piloto tiene el control",
+      "ja": "出港：操縦はパイロットへ"
+    },
+    "cockpit.dock_widget.field_speed": {
+      "en": "SPEED",
+      "ru": "СКОРОСТЬ",
+      "zh-Hans": "速度",
+      "es": "VELOCIDAD",
+      "ja": "速度"
+    },
+    "cockpit.dock_widget.status_stabilizing": {
+      "en": "preparing: killing speed",
+      "ru": "подготовка: гасим скорость",
+      "zh-Hans": "准备：减速中",
+      "es": "preparación: reduciendo velocidad",
+      "ja": "準備：減速中"
+    },
+    "cockpit.dock_widget.status_planning": {
+      "en": "calculating the route",
+      "ru": "идёт расчёт маршрута",
+      "zh-Hans": "正在计算航线",
+      "es": "calculando la ruta",
+      "ja": "経路計算中"
+    },
+    "cockpit.dock_widget.status_executing": {
+      "en": "moving to the dock",
+      "ru": "движемся к доку",
+      "zh-Hans": "正在驶向船坞",
+      "es": "en camino al dique",
+      "ja": "ドックへ移動中"
+    },
+    "cockpit.dock_widget.status_securing": {
+      "en": "aligning the course",
+      "ru": "выравниваем курс",
+      "zh-Hans": "正在校正航向",
+      "es": "alineando el rumbo",
+      "ja": "針路を調整中"
+    },
+    "cockpit.dock_widget.status_request": {
+      "en": "requesting the dispatcher",
+      "ru": "запрос диспетчеру",
+      "zh-Hans": "正在请求调度",
+      "es": "solicitud al controlador",
+      "ja": "管制へ要求中"
+    },
+    "cockpit.dock_widget.status_queued": {
+      "en": "in the queue: waiting for a holding point",
+      "ru": "в очереди: ждём точку ожидания",
+      "zh-Hans": "排队中：等待分配等候点",
+      "es": "en cola: esperando un punto de espera",
+      "ja": "待機列：待機点の割当待ち"
+    },
+    "cockpit.dock_widget.status_hold_assigned": {
+      "en": "dock busy - flying to holding point {0}",
+      "ru": "док занят - летим в точку ожидания {0}",
+      "zh-Hans": "船坞占用 - 正飞往等候点 {0}",
+      "es": "dique ocupado - volando al punto de espera {0}",
+      "ja": "ドック使用中 - 待機点 {0} へ移動"
+    },
+    "cockpit.dock_widget.status_at_hold": {
+      "en": "holding at point {0}",
+      "ru": "ожидание в точке {0}",
+      "zh-Hans": "在等候点 {0} 等待",
+      "es": "en espera en el punto {0}",
+      "ja": "待機点 {0} で待機中"
+    },
+    "cockpit.dock_widget.status_entry_cleared": {
+      "en": "entry cleared: {0}",
+      "ru": "вход разрешён: {0}",
+      "zh-Hans": "准许进入：{0}",
+      "es": "entrada autorizada: {0}",
+      "ja": "進入許可：{0}"
+    },
+    "cockpit.dock_widget.status_station_control": {
+      "en": "the station is guiding the ship to {0}, the station has the helm",
+      "ru": "станция ведёт на {0}, руль у станции",
+      "zh-Hans": "空间站正引导至 {0}，由空间站操控",
+      "es": "la estación guía la nave a {0}, el timón lo lleva la estación",
+      "ja": "ステーションが {0} へ誘導中、操縦はステーション"
+    },
+    "cockpit.dock_widget.status_docked": {
+      "en": "docked, pad {0}  ·  Ctrl+L - depart",
+      "ru": "пристыкован, площадка {0}  ·  Ctrl+L - вылет",
+      "zh-Hans": "已对接，泊位 {0}  ·  Ctrl+L - 离港",
+      "es": "atracado, plataforma {0}  ·  Ctrl+L - salir",
+      "ja": "ドッキング完了、パッド {0}  ·  Ctrl+L - 出港"
+    },
+    "cockpit.dock_widget.status_departure_queued": {
+      "en": "departure queued: #{0}",
+      "ru": "вылет в очереди: {0}-й",
+      "zh-Hans": "离港排队：第 {0} 位",
+      "es": "salida en cola: n.º {0}",
+      "ja": "出港待ち：{0}番目"
+    },
+    "cockpit.dock_widget.status_beyond_gate": {
+      "en": "past the gate; helm 3 s - take control",
+      "ru": "за воротами; руль 3 с - взять управление",
+      "zh-Hans": "已出闸门；操纵舵 3 秒 - 接管控制",
+      "es": "fuera de la compuerta; timón 3 s - tomar el control",
+      "ja": "ゲート通過；操縦桿 3 秒 - 操縦を引き継ぐ"
+    },
+    "cockpit.dock_widget.status_station_departing": {
+      "en": "the station is taking the ship out of the dock",
+      "ru": "станция выводит корабль из дока",
+      "zh-Hans": "空间站正将飞船引出船坞",
+      "es": "la estación saca la nave del dique",
+      "ja": "ステーションが船をドックから出している"
+    },
+    "cockpit.dock_widget.status_error": {
+      "en": "error: {0}",
+      "ru": "ошибка: {0}",
+      "zh-Hans": "错误：{0}",
+      "es": "error: {0}",
+      "ja": "エラー：{0}"
+    },
+    "cockpit.dock_widget.line_distance": {
+      "en": "to entry {0}  ·  speed {1}",
+      "ru": "до входа {0}  ·  скорость {1}",
+      "zh-Hans": "距入口 {0}  ·  速度 {1}",
+      "es": "a la entrada {0}  ·  velocidad {1}",
+      "ja": "入口まで {0}  ·  速度 {1}"
+    },
+    "cockpit.dock_widget.line_queue": {
+      "en": "dock queue: #{0} of {1}",
+      "ru": "очередь в док: {0}-й из {1}",
+      "zh-Hans": "船坞排队：第 {0} 位，共 {1} 位",
+      "es": "cola del dique: n.º {0} de {1}",
+      "ja": "ドック待ち：{1}隻中 {0}番目"
+    },
+    "cockpit.dock_widget.line_ahead": {
+      "en": "manoeuvres ahead: {0}  ·  wait {1}",
+      "ru": "впереди манёвров: {0}  ·  ожидание {1}",
+      "zh-Hans": "前方机动：{0}  ·  等待 {1}",
+      "es": "maniobras por delante: {0}  ·  espera {1}",
+      "ja": "先行の機動：{0}  ·  待ち時間 {1}"
+    },
+    "cockpit.dock_widget.line_pad": {
+      "en": "pad {0}",
+      "ru": "площадка {0}",
+      "zh-Hans": "泊位 {0}",
+      "es": "plataforma {0}",
+      "ja": "パッド {0}"
+    },
+    "cockpit.dock_widget.console_departure": {
+      "en": "DEPARTURE: {0}",
+      "ru": "ВЫЛЕТ: {0}",
+      "zh-Hans": "离港：{0}",
+      "es": "SALIDA: {0}",
+      "ja": "出港：{0}"
+    },
+    "cockpit.dock_widget.console_docking": {
+      "en": "DOCKING: {0}",
+      "ru": "СТЫКОВКА: {0}",
+      "zh-Hans": "对接：{0}",
+      "es": "ATRAQUE: {0}",
+      "ja": "ドッキング：{0}"
+    },
+    "cockpit.dock_widget.chip_calculating": {
+      "en": "CALCULATING",
+      "ru": "РАСЧЁТ",
+      "zh-Hans": "计算中",
+      "es": "CALCULANDO",
+      "ja": "計算中"
+    },
+    "cockpit.dock_widget.chip_en_route": {
+      "en": "EN ROUTE",
+      "ru": "В ПУТИ",
+      "zh-Hans": "途中",
+      "es": "EN CAMINO",
+      "ja": "移動中"
+    },
+    "cockpit.dock_widget.chip_request": {
+      "en": "REQUEST",
+      "ru": "ЗАПРОС",
+      "zh-Hans": "请求",
+      "es": "SOLICITUD",
+      "ja": "要求"
+    },
+    "cockpit.dock_widget.chip_queue": {
+      "en": "QUEUE",
+      "ru": "ОЧЕРЕДЬ",
+      "zh-Hans": "排队",
+      "es": "COLA",
+      "ja": "待機列"
+    },
+    "cockpit.dock_widget.chip_to_point": {
+      "en": "TO POINT {0}",
+      "ru": "К ТОЧКЕ {0}",
+      "zh-Hans": "前往 {0}",
+      "es": "AL PUNTO {0}",
+      "ja": "{0} へ"
+    },
+    "cockpit.dock_widget.chip_holding": {
+      "en": "HOLDING {0}",
+      "ru": "ОЖИДАНИЕ {0}",
+      "zh-Hans": "等候 {0}",
+      "es": "EN ESPERA {0}",
+      "ja": "待機 {0}"
+    },
+    "cockpit.dock_widget.chip_entry_cleared": {
+      "en": "ENTRY CLEARED",
+      "ru": "ВХОД РАЗРЕШЁН",
+      "zh-Hans": "准许进入",
+      "es": "ENTRADA AUTORIZADA",
+      "ja": "進入許可"
+    },
+    "cockpit.dock_widget.chip_station": {
+      "en": "STATION",
+      "ru": "СТАНЦИЯ",
+      "zh-Hans": "空间站",
+      "es": "ESTACIÓN",
+      "ja": "ステーション"
+    },
+    "cockpit.dock_widget.chip_dock": {
+      "en": "DOCK {0}",
+      "ru": "ДОК {0}",
+      "zh-Hans": "船坞 {0}",
+      "es": "DIQUE {0}",
+      "ja": "ドック {0}"
+    },
+    "cockpit.dock_widget.chip_departure_queue": {
+      "en": "DEPARTURE: QUEUE",
+      "ru": "ВЫЛЕТ: ОЧЕРЕДЬ",
+      "zh-Hans": "离港：排队",
+      "es": "SALIDA: COLA",
+      "ja": "出港：待機列"
+    },
+    "cockpit.dock_widget.chip_station_guiding": {
+      "en": "STATION GUIDING",
+      "ru": "СТАНЦИЯ ВЕДЁТ",
+      "zh-Hans": "空间站引导",
+      "es": "GUÍA LA ESTACIÓN",
+      "ja": "ステーション誘導"
+    },
+    "cockpit.dock_widget.chip_error": {
+      "en": "ERROR",
+      "ru": "ОШИБКА",
+      "zh-Hans": "错误",
+      "es": "ERROR",
+      "ja": "エラー"
+    },
+    "cockpit.dock_widget.chip_takeover": {
+      "en": "TAKEOVER {0}",
+      "ru": "ПЕРЕХВАТ {0}",
+      "zh-Hans": "接管 {0}",
+      "es": "TOMA DE CONTROL {0}",
+      "ja": "引継ぎ {0}"
+    },
+    "cockpit.dock_widget.field_to_release": {
+      "en": "TO RELEASE",
+      "ru": "ДО ВЫПУСКА",
+      "zh-Hans": "距释放",
+      "es": "HASTA LIBERACIÓN",
+      "ja": "解放まで"
+    },
+    "cockpit.dock_widget.field_takeover": {
+      "en": "TAKEOVER",
+      "ru": "ПЕРЕХВАТ",
+      "zh-Hans": "接管",
+      "es": "TOMA DE CONTROL",
+      "ja": "引継ぎ"
+    },
+    "cockpit.dock_widget.value_takeover": {
+      "en": "helm 3 s",
+      "ru": "руль 3 с",
+      "zh-Hans": "操纵舵 3 秒",
+      "es": "timón 3 s",
+      "ja": "操縦桿 3 秒"
+    },
+    "cockpit.dock_widget.field_to_entry": {
+      "en": "TO ENTRY",
+      "ru": "ДО ВХОДА",
+      "zh-Hans": "距入口",
+      "es": "A LA ENTRADA",
+      "ja": "入口まで"
+    },
+    "cockpit.dock_widget.field_queue": {
+      "en": "QUEUE",
+      "ru": "ОЧЕРЕДЬ",
+      "zh-Hans": "排队",
+      "es": "COLA",
+      "ja": "待機列"
+    },
+    "cockpit.dock_widget.field_ahead": {
+      "en": "AHEAD",
+      "ru": "ВПЕРЕДИ",
+      "zh-Hans": "前方",
+      "es": "DELANTE",
+      "ja": "先行"
+    },
+    "cockpit.dock_widget.field_wait": {
+      "en": "WAIT",
+      "ru": "ЖДАТЬ",
+      "zh-Hans": "等待",
+      "es": "ESPERA",
+      "ja": "待ち"
+    },
+    "cockpit.dock_widget.field_place": {
+      "en": "PLACE",
+      "ru": "МЕСТО",
+      "zh-Hans": "位置",
+      "es": "LUGAR",
+      "ja": "場所"
+    },
+    "cockpit.dock_widget.field_departure": {
+      "en": "DEPART",
+      "ru": "ВЫЛЕТ",
+      "zh-Hans": "离港",
+      "es": "SALIDA",
+      "ja": "出港"
+    },
+    "cockpit.jump.system_not_found": {
+      "en": "JUMP: system not found",
+      "ru": "ПРЫЖОК: система не найдена",
+      "zh-Hans": "跃迁：未找到星系",
+      "es": "SALTO: sistema no encontrado",
+      "ja": "ジャンプ：星系が見つからない"
+    },
+    "cockpit.jump.nav_computer_down": {
+      "en": "onboard computer down - lane records unavailable",
+      "ru": "бортовой компьютер не работает - записи трасс недоступны",
+      "zh-Hans": "机载计算机故障 - 航道记录不可用",
+      "es": "ordenador de a bordo averiado - registros de rutas no disponibles",
+      "ja": "搭載コンピューター故障 - 航路記録が使えない"
+    },
+    "cockpit.jump.lane": {
+      "en": "lane {0} ({1}, {2} yr): {3} - expected capture risk {4}%",
+      "ru": "трасса {0} ({1}, {2} г.): {3} - ожидаемый риск захвата {4}%",
+      "zh-Hans": "航道 {0}（{1}，{2} 年）：{3} - 预计捕获风险 {4}%",
+      "es": "ruta {0} ({1}, {2} años): {3} - riesgo de captura previsto {4}%",
+      "ja": "航路 {0}（{1}、{2} 年）：{3} - 予想捕捉リスク {4}%"
+    },
+    "cockpit.jump.lane_state.known": {
+      "en": "known",
+      "ru": "известна",
+      "zh-Hans": "已知",
+      "es": "conocida",
+      "ja": "既知"
+    },
+    "cockpit.jump.lane_state.estimate": {
+      "en": "estimate",
+      "ru": "оценка",
+      "zh-Hans": "估计",
+      "es": "estimación",
+      "ja": "推定"
+    },
+    "cockpit.jump.lane_state.outdated": {
+      "en": "outdated",
+      "ru": "устарела",
+      "zh-Hans": "已过时",
+      "es": "desactualizada",
+      "ja": "古い"
+    },
+    "cockpit.jump.lane_state.unknown": {
+      "en": "unknown",
+      "ru": "неизвестна",
+      "zh-Hans": "未知",
+      "es": "desconocida",
+      "ja": "不明"
+    },
+    "cockpit.jump.shell_record_useless": {
+      "en": "approach shell {0}: lane record useless (the corridor has moved) - capture risk {1}%",
+      "ru": "оболочка подступов {0}: запись трассы бесполезна (коридор ушёл) - риск захвата {1}%",
+      "zh-Hans": "接近壳层 {0}：航道记录无用（走廊已移动） - 捕获风险 {1}%",
+      "es": "envoltura de aproximación {0}: registro de ruta inútil (el corredor se ha desplazado) - riesgo de captura {1}%",
+      "ja": "接近殻 {0}：航路記録は無効（回廊が移動） - 捕捉リスク {1}%"
+    },
+    "cockpit.jump.shell_no_record": {
+      "en": "approach shell {0}: no lane record, capture risk {1}%",
+      "ru": "оболочка подступов {0}: без записи трассы риск захвата {1}%",
+      "zh-Hans": "接近壳层 {0}：无航道记录，捕获风险 {1}%",
+      "es": "envoltura de aproximación {0}: sin registro de ruta, riesgo de captura {1}%",
+      "ja": "接近殻 {0}：航路記録なし、捕捉リスク {1}%"
+    },
+    "cockpit.jump.sump_on_way": {
+      "en": "sump {0} on the way: capture risk {1}%",
+      "ru": "отстойник {0} на пути: риск захвата {1}%",
+      "zh-Hans": "途中有沉积区 {0}：捕获风险 {1}%",
+      "es": "sumidero {0} en el camino: riesgo de captura {1}%",
+      "ja": "経路上の溜まり {0}：捕捉リスク {1}%"
+    },
+    "cockpit.jump.swarm_lottery": {
+      "en": "path through swarm {0}: no beacons, risk unknown - a lottery",
+      "ru": "путь через рой {0}: без маяков риск неизвестен - лотерея",
+      "zh-Hans": "穿越群集 {0}：无信标，风险未知 - 碰运气",
+      "es": "ruta a través del enjambre {0}: sin balizas, riesgo desconocido - una lotería",
+      "ja": "群集 {0} を通過：ビーコンなしでリスク不明 - 運任せ"
+    },
+    "cockpit.jump.detours": {
+      "en": "{0} detour corrections:",
+      "ru": "{0} коррекц. в обход:",
+      "zh-Hans": "{0} 次绕行修正：",
+      "es": "{0} correcciones de rodeo:",
+      "ja": "迂回修正 {0} 回："
+    },
+    "cockpit.jump.calc_ok": {
+      "en": "JUMP {0}: {1}, charge {2} of {3} t, charge-up {4} - START available",
+      "ru": "ПРЫЖОК {0}: {1}, заряд {2} из {3} т, зарядка {4} - можно СТАРТ",
+      "zh-Hans": "跃迁 {0}：{1}，充能 {2} / {3} 吨，充能时间 {4} - 可以开始",
+      "es": "SALTO {0}: {1}, carga {2} de {3} t, tiempo de carga {4} - INICIO disponible",
+      "ja": "ジャンプ {0}：{1}、チャージ {2}/{3} t、充填 {4} - 開始可能"
+    },
+    "cockpit.jump.calc_refused": {
+      "en": "JUMP {0} ({1}): not possible - {2}",
+      "ru": "ПРЫЖОК {0} ({1}): нельзя - {2}",
+      "zh-Hans": "跃迁 {0}（{1}）：无法执行 - {2}",
+      "es": "SALTO {0} ({1}): imposible - {2}",
+      "ja": "ジャンプ {0}（{1}）：不可 - {2}"
+    },
+    "cockpit.jump.no_rescue_warning": {
+      "en": "WARNING: no rescue service in the system - SOS will be heard only by passing ships",
+      "ru": "ВНИМАНИЕ: в системе нет спасательной службы - SOS услышат только случайные корабли",
+      "zh-Hans": "警告：该星系没有救援服务 - SOS 只有路过的飞船能收到",
+      "es": "ATENCIÓN: no hay servicio de rescate en el sistema - solo las naves de paso oirán el SOS",
+      "ja": "警告：星系に救助サービスなし - SOSは偶然通る船にしか届かない"
+    },
+    "cockpit.jump.in_system_only_here": {
+      "en": "IN-SYSTEM JUMP: only within the ship's current system",
+      "ru": "ПРЫЖОК ВНУТРИ СИСТЕМЫ: только в системе, где корабль",
+      "zh-Hans": "星系内跃迁：仅限飞船所在星系",
+      "es": "SALTO DENTRO DEL SISTEMA: solo en el sistema donde está la nave",
+      "ja": "星系内ジャンプ：船がいる星系内のみ"
+    },
+    "cockpit.jump.refused": {
+      "en": "JUMP: not possible - {0}",
+      "ru": "ПРЫЖОК: нельзя - {0}",
+      "zh-Hans": "跃迁：无法执行 - {0}",
+      "es": "SALTO: imposible - {0}",
+      "ja": "ジャンプ：不可 - {0}"
+    },
+    "cockpit.jump.sump_named": {
+      "en": "sump {0}: capture risk {1}%",
+      "ru": "отстойник {0}: риск захвата {1}%",
+      "zh-Hans": "沉积区 {0}：捕获风险 {1}%",
+      "es": "sumidero {0}: riesgo de captura {1}%",
+      "ja": "溜まり {0}：捕捉リスク {1}%"
+    },
+    "cockpit.jump.path_lottery": {
+      "en": "path through {0}: no beacons, sump risk unknown - a lottery",
+      "ru": "путь через {0}: без маяков риск отстойника неизвестен - лотерея",
+      "zh-Hans": "穿越 {0}：无信标，沉积区风险未知 - 碰运气",
+      "es": "ruta a través de {0}: sin balizas, riesgo del sumidero desconocido - una lotería",
+      "ja": "{0} を通過：ビーコンなしで溜まりのリスク不明 - 運任せ"
+    },
+    "cockpit.jump.in_system_calc_ok": {
+      "en": "JUMP TO {0}: {1}, {2}, charge {3} of {4} t, charge-up {5} - START: start zone, aim, jump",
+      "ru": "ПРЫЖОК К {0}: {1}, {2}, заряд {3} из {4} т, зарядка {5} - СТАРТ: зона старта, наведение, прыжок",
+      "zh-Hans": "跃迁至 {0}：{1}，{2}，充能 {3} / {4} 吨，充能时间 {5} - 开始：起跳区、瞄准、跃迁",
+      "es": "SALTO A {0}: {1}, {2}, carga {3} de {4} t, tiempo de carga {5} - INICIO: zona de salida, orientación, salto",
+      "ja": "{0} へジャンプ：{1}、{2}、チャージ {3}/{4} t、充填 {5} - 開始：開始圏、照準、ジャンプ"
+    },
+    "cockpit.jump.steps_two": {
+      "en": "2 steps around the star",
+      "ru": "2 шага в обход звезды",
+      "zh-Hans": "绕过恒星分 2 步",
+      "es": "2 pasos rodeando la estrella",
+      "ja": "恒星を迂回して2ステップ"
+    },
+    "cockpit.jump.steps_one": {
+      "en": "1 step",
+      "ru": "1 шаг",
+      "zh-Hans": "1 步",
+      "es": "1 paso",
+      "ja": "1ステップ"
+    },
+    "cockpit.jump.in_system_calc_refused": {
+      "en": "JUMP TO {0} ({1}): not possible - {2}",
+      "ru": "ПРЫЖОК К {0} ({1}): нельзя - {2}",
+      "zh-Hans": "跃迁至 {0}（{1}）：无法执行 - {2}",
+      "es": "SALTO A {0} ({1}): imposible - {2}",
+      "ja": "{0} へジャンプ（{1}）：不可 - {2}"
+    },
+    "cockpit.jump.notice": {
+      "en": "JUMP: {0}",
+      "ru": "ПРЫЖОК: {0}",
+      "zh-Hans": "跃迁：{0}",
+      "es": "SALTO: {0}",
+      "ja": "ジャンプ：{0}"
+    },
+    "cockpit.jump.started_in_system": {
+      "en": "IN-SYSTEM JUMP: procedure started - target {0}, path {1}",
+      "ru": "ПРЫЖОК ВНУТРИ СИСТЕМЫ: начата процедура - цель {0}, путь {1}",
+      "zh-Hans": "星系内跃迁：程序已启动 - 目标 {0}，航程 {1}",
+      "es": "SALTO DENTRO DEL SISTEMA: procedimiento iniciado - destino {0}, trayecto {1}",
+      "ja": "星系内ジャンプ：手順開始 - 目標 {0}、経路 {1}"
+    },
+    "cockpit.jump.started": {
+      "en": "JUMP: procedure started - target {0}, {1}",
+      "ru": "ПРЫЖОК: начата процедура - цель {0}, {1}",
+      "zh-Hans": "跃迁：程序已启动 - 目标 {0}，{1}",
+      "es": "SALTO: procedimiento iniciado - destino {0}, {1}",
+      "ja": "ジャンプ：手順開始 - 目標 {0}、{1}"
+    },
+    "cockpit.jump.cancel_hint_system": {
+      "en": "cancel: system map -> target -> CANCEL JUMP",
+      "ru": "отмена: карта системы -> цель -> ОТМЕНИТЬ ПРЫЖОК",
+      "zh-Hans": "取消：星系地图 -> 目标 -> 取消跃迁",
+      "es": "cancelar: mapa del sistema -> destino -> CANCELAR SALTO",
+      "ja": "中止：星系マップ -> 目標 -> ジャンプ中止"
+    },
+    "cockpit.jump.cancel_hint_galaxy": {
+      "en": "cancel: galaxy map -> star -> CANCEL JUMP",
+      "ru": "отмена: карта галактики -> звезда -> ОТМЕНИТЬ ПРЫЖОК",
+      "zh-Hans": "取消：银河地图 -> 恒星 -> 取消跃迁",
+      "es": "cancelar: mapa galáctico -> estrella -> CANCELAR SALTO",
+      "ja": "中止：銀河マップ -> 恒星 -> ジャンプ中止"
+    },
+    "cockpit.jump.planner_zone": {
+      "en": "PLANNER: moving to a safe start zone (J)",
+      "ru": "ПЛАНИРОВЩИК: выход в безопасную зону старта (J)",
+      "zh-Hans": "规划器：前往安全起跳区（J）",
+      "es": "PLANIFICADOR: saliendo a una zona de salida segura (J)",
+      "ja": "プランナー：安全な開始圏へ移動（J）"
+    },
+    "cockpit.jump.planner_aim": {
+      "en": "PLANNER: start zone - aiming the nose at the target",
+      "ru": "ПЛАНИРОВЩИК: зона старта - наведение носа на цель",
+      "zh-Hans": "规划器：起跳区 - 船头对准目标",
+      "es": "PLANIFICADOR: zona de salida - apuntando el morro al destino",
+      "ja": "プランナー：開始圏 - 船首を目標へ向ける"
+    },
+    "cockpit.jump.core_charge": {
+      "en": "CORE: charge-up {0}, charge use {1} t - jump right after the charge-up",
+      "ru": "ЯДРО: зарядка {0}, расход заряда {1} т - прыжок сразу после зарядки",
+      "zh-Hans": "核心：充能 {0}，消耗充能 {1} 吨 - 充能完成后立即跃迁",
+      "es": "NÚCLEO: carga {0}, consumo de carga {1} t - salto justo después de la carga",
+      "ja": "コア：充填 {0}、消費チャージ {1} t - 充填完了直後にジャンプ"
+    },
+    "cockpit.jump.aborted": {
+      "en": "JUMP ABORTED: {0}",
+      "ru": "ПРЫЖОК ПРЕРВАН: {0}",
+      "zh-Hans": "跃迁中止：{0}",
+      "es": "SALTO ABORTADO: {0}",
+      "ja": "ジャンプ中断：{0}"
+    },
+    "cockpit.jump.sump_caught": {
+      "en": "JUMP: step caught by a sump - exit short of the target ({0} not reached), step charge spent. Look around and recalculate the jump",
+      "ru": "ПРЫЖОК: шаг захвачен отстойником - выход раньше цели ({0} не достигнут), заряд шага потрачен. Осмотритесь и рассчитайте прыжок заново",
+      "zh-Hans": "跃迁：该步被沉积区捕获 - 在到达目标前退出（未到达 {0}），该步充能已消耗。请观察周围并重新计算跃迁",
+      "es": "SALTO: el paso fue capturado por un sumidero - salida antes del destino ({0} no alcanzado), carga del paso gastada. Mira a tu alrededor y vuelve a calcular el salto",
+      "ja": "ジャンプ：ステップが溜まりに捕捉 - 目標手前で離脱（{0} 未到達）、ステップのチャージは消費済み。周囲を確認しジャンプを再計算せよ"
+    },
+    "cockpit.jump.transit_body": {
+      "en": "JUMP: transit to {0}",
+      "ru": "ПРЫЖОК: переход к {0}",
+      "zh-Hans": "跃迁：前往 {0}",
+      "es": "SALTO: tránsito a {0}",
+      "ja": "ジャンプ：{0} へ移動"
+    },
+    "cockpit.jump.transit_system": {
+      "en": "JUMP: transit to system {0}",
+      "ru": "ПРЫЖОК: переход в систему {0}",
+      "zh-Hans": "跃迁：前往星系 {0}",
+      "es": "SALTO: tránsito al sistema {0}",
+      "ja": "ジャンプ：星系 {0} へ移動"
+    },
+    "cockpit.jump.complete_body": {
+      "en": "JUMP COMPLETE: {0}",
+      "ru": "ПРЫЖОК ЗАВЕРШЁН: {0}",
+      "zh-Hans": "跃迁完成：{0}",
+      "es": "SALTO COMPLETADO: {0}",
+      "ja": "ジャンプ完了：{0}"
+    },
+    "cockpit.jump.complete_system": {
+      "en": "JUMP COMPLETE: system {0}",
+      "ru": "ПРЫЖОК ЗАВЕРШЁН: система {0}",
+      "zh-Hans": "跃迁完成：星系 {0}",
+      "es": "SALTO COMPLETADO: sistema {0}",
+      "ja": "ジャンプ完了：星系 {0}"
+    },
+    "cockpit.jump.exit_drifted": {
+      "en": "EXIT: open space, {0} from {1} - drifted by currents (cannot be accounted for without beacons), continue in J",
+      "ru": "ВЫХОД: открытый космос, {0} от {1} - снесло течениями (без маяков их не учесть), дальше в J",
+      "zh-Hans": "出口：开放空间，距 {1} {0} - 被洋流冲偏（无信标无法计算），请继续用 J 飞行",
+      "es": "SALIDA: espacio abierto, a {0} de {1} - arrastrada por corrientes (sin balizas no se pueden prever), continúa en J",
+      "ja": "離脱：宇宙空間、{1} から {0} - 流れに流された（ビーコンなしでは考慮不可）、以降はJで"
+    },
+    "cockpit.jump.exit_star": {
+      "en": "EXIT: open space, {0} from the star",
+      "ru": "ВЫХОД: открытый космос, {0} от звезды",
+      "zh-Hans": "出口：开放空间，距恒星 {0}",
+      "es": "SALIDA: espacio abierto, a {0} de la estrella",
+      "ja": "離脱：宇宙空間、恒星から {0}"
+    },
+    "cockpit.jump.exit_orbit": {
+      "en": "EXIT: orbit of {0}, altitude {1}",
+      "ru": "ВЫХОД: орбита {0}, высота {1}",
+      "zh-Hans": "出口：{0} 轨道，高度 {1}",
+      "es": "SALIDA: órbita de {0}, altitud {1}",
+      "ja": "離脱：{0} の軌道、高度 {1}"
+    },
+    "cockpit.jump.coordinates": {
+      "en": "COORDINATES: {0}  {1}  {2} AU from the star",
+      "ru": "КООРДИНАТЫ: {0}  {1}  {2} а.е. от звезды",
+      "zh-Hans": "坐标：{0}  {1}  {2} 天文单位（相对恒星）",
+      "es": "COORDENADAS: {0}  {1}  {2} UA desde la estrella",
+      "ja": "座標：{0}  {1}  {2} AU（恒星基準）"
+    },
+    "cockpit.jump.far_off": {
+      "en": "WARNING: the ship drifted - {0} from the calculated exit point (normal up to {1})",
+      "ru": "ВНИМАНИЕ: корабль снесло - {0} от расчётной точки выхода (норма до {1})",
+      "zh-Hans": "警告：飞船偏离 - 距计算出口点 {0}（正常范围 {1} 以内）",
+      "es": "ATENCIÓN: la nave se ha desviado - a {0} del punto de salida calculado (normal hasta {1})",
+      "ja": "警告：船が流された - 計算上の離脱点から {0}（正常範囲 {1} 以内）"
+    },
+    "cockpit.jump.deviation": {
+      "en": "DEVIATION: {0} from the calculated point (within the calculated {1})",
+      "ru": "ОТКЛОНЕНИЕ: {0} от расчётной точки (в пределах расчётных {1})",
+      "zh-Hans": "偏差：距计算点 {0}（在计算范围 {1} 以内）",
+      "es": "DESVIACIÓN: a {0} del punto calculado (dentro de los {1} calculados)",
+      "ja": "偏差：計算点から {0}（計算範囲 {1} 以内）"
+    },
+    "cockpit.jump.charge_bar": {
+      "en": "CORE CHARGE {0} {1}%  {2} / {3}",
+      "ru": "ЗАРЯД ЯДРА {0} {1}%  {2} / {3}",
+      "zh-Hans": "核心充能 {0} {1}%  {2} / {3}",
+      "es": "CARGA DEL NÚCLEO {0} {1}%  {2} / {3}",
+      "ja": "コアチャージ {0} {1}%  {2} / {3}"
+    },
+    "cockpit.jump.charge_ready": {
+      "en": "CORE CHARGE {0} 100%  READY - waiting for clear space",
+      "ru": "ЗАРЯД ЯДРА {0} 100%  ГОТОВ - ждём чистого пространства",
+      "zh-Hans": "核心充能 {0} 100%  就绪 - 等待空域清空",
+      "es": "CARGA DEL NÚCLEO {0} 100%  LISTO - esperando espacio despejado",
+      "ja": "コアチャージ {0} 100%  準備完了 - 空間が空くのを待機"
+    },
+    "cockpit.jump.exit_locating": {
+      "en": "EXIT: determining position...",
+      "ru": "ВЫХОД: определяем положение...",
+      "zh-Hans": "出口：正在确定位置...",
+      "es": "SALIDA: determinando la posición...",
+      "ja": "離脱：位置を特定中..."
+    },
+    "cockpit.jump.refusal.not_in_normal_flight": {
+      "en": "normal flight required (leave stabilization, Ctrl+K)",
+      "ru": "нужен нормальный полёт (выйдите из стабилизации, Ctrl+K)",
+      "zh-Hans": "需要常规飞行（退出稳定模式，Ctrl+K）",
+      "es": "se requiere vuelo normal (sal de la estabilización, Ctrl+K)",
+      "ja": "通常飛行が必要（安定化を解除、Ctrl+K）"
+    },
+    "cockpit.jump.refusal.too_far": {
+      "en": "beyond 32 ly - the jump limit",
+      "ru": "дальше 32 св. лет - предел прыжка",
+      "zh-Hans": "超过 32 光年 - 跃迁上限",
+      "es": "más de 32 a. l. - el límite del salto",
+      "ja": "32光年超 - ジャンプの限界"
+    },
+    "cockpit.jump.refusal.core_overloaded": {
+      "en": "the ship is heavier than the jump core's rating",
+      "ru": "корабль тяжелее номинала прыжкового ядра",
+      "zh-Hans": "飞船重量超过跃迁核心额定值",
+      "es": "la nave pesa más de lo que admite el núcleo de salto",
+      "ja": "船がジャンプコアの定格より重い"
+    },
+    "cockpit.jump.refusal.not_enough_charge": {
+      "en": "not enough jump drive charge",
+      "ru": "не хватает заряда прыжкового привода",
+      "zh-Hans": "跃迁驱动充能不足",
+      "es": "carga insuficiente del propulsor de salto",
+      "ja": "ジャンプドライブのチャージ不足"
+    },
+    "cockpit.jump.refusal.near_objects": {
+      "en": "charged: move away from objects and above the J threshold",
+      "ru": "заряжено: отойдите от объектов и выше J-порога",
+      "zh-Hans": "已充能：请远离物体并高于 J 阈值",
+      "es": "cargado: aléjate de los objetos y sube por encima del umbral J",
+      "ja": "チャージ完了：物体から離れ、J閾値より上へ"
+    },
+    "cockpit.jump.refusal.same_system": {
+      "en": "you are already in this system",
+      "ru": "вы уже в этой системе",
+      "zh-Hans": "你已在该星系中",
+      "es": "ya estás en este sistema",
+      "ja": "すでにこの星系にいる"
+    },
+    "cockpit.jump.refusal.unknown_system": {
+      "en": "system not found",
+      "ru": "система не найдена",
+      "zh-Hans": "未找到星系",
+      "es": "sistema no encontrado",
+      "ja": "星系が見つからない"
+    },
+    "cockpit.jump.refusal.cancelled": {
+      "en": "jump cancelled",
+      "ru": "прыжок отменён",
+      "zh-Hans": "跃迁已取消",
+      "es": "salto cancelado",
+      "ja": "ジャンプ中止"
+    },
+    "cockpit.jump.refusal.interrupted": {
+      "en": "charge-up broken: the ship left normal flight",
+      "ru": "зарядка сорвана: корабль вышел из нормального полёта",
+      "zh-Hans": "充能中断：飞船退出了常规飞行",
+      "es": "carga interrumpida: la nave salió del vuelo normal",
+      "ja": "充填失敗：船が通常飛行を外れた"
+    },
+    "cockpit.jump.refusal.field_incomplete": {
+      "en": "jump field incomplete: field emitter or core damaged - repair needed",
+      "ru": "поле прыжка неполное: повреждён излучатель поля или ядро - нужен ремонт",
+      "zh-Hans": "跃迁场不完整：场发射器或核心受损 - 需要维修",
+      "es": "campo de salto incompleto: emisor de campo o núcleo dañado - hace falta reparar",
+      "ja": "ジャンプ場が不完全：場発生器またはコアが損傷 - 修理が必要"
+    },
+    "cockpit.jump.refusal.ship_disabled": {
+      "en": "charge-up interrupted: the ship is disabled",
+      "ru": "зарядка прервана: корабль выведен из строя",
+      "zh-Hans": "充能中断：飞船失去战斗力",
+      "es": "carga interrumpida: la nave está inutilizada",
+      "ja": "充填中断：船が戦闘不能"
+    },
+    "cockpit.jump.refusal.ship_destroyed": {
+      "en": "charge-up interrupted: the ship is destroyed",
+      "ru": "зарядка прервана: корабль разрушен",
+      "zh-Hans": "充能中断：飞船已损毁",
+      "es": "carga interrumpida: la nave ha sido destruida",
+      "ja": "充填中断：船が破壊された"
+    },
+    "cockpit.jump.refusal.star_in_the_way": {
+      "en": "the straight step crosses the star's capture zone - jump via an intermediate point",
+      "ru": "прямой шаг проходит через зону захвата звезды - прыгайте через промежуточную точку",
+      "zh-Hans": "直线步骤穿过恒星捕获区 - 请经由中间点跃迁",
+      "es": "el paso directo cruza la zona de captura de la estrella - salta por un punto intermedio",
+      "ja": "直線ステップが恒星の捕捉圏を通過 - 中間点を経由してジャンプせよ"
+    },
+    "cockpit.jump.refusal.too_close": {
+      "en": "target closer than 0.05 AU - fly there in J",
+      "ru": "цель ближе 0.05 а.е. - туда летят на J",
+      "zh-Hans": "目标近于 0.05 天文单位 - 请用 J 飞行前往",
+      "es": "destino a menos de 0.05 UA - allí se vuela en J",
+      "ja": "目標が0.05 AU未満 - Jで飛行せよ"
+    },
+    "cockpit.jump.refusal.unknown_body": {
+      "en": "body not found in the system",
+      "ru": "тело не найдено в системе",
+      "zh-Hans": "星系中未找到该天体",
+      "es": "cuerpo no encontrado en el sistema",
+      "ja": "星系内に天体が見つからない"
+    },
+    "cockpit.jump.refusal.zone_violated": {
+      "en": "failure: an obstacle entered the start zone or the nose left the line - core discharged, charge lost",
+      "ru": "срыв: в зону старта вошла помеха или нос ушёл с линии - ядро разряжено, заряд потерян",
+      "zh-Hans": "失败：有障碍物进入起跳区或船头偏离航线 - 核心已放电，充能丢失",
+      "es": "fallo: un obstáculo entró en la zona de salida o el morro se salió de la línea - núcleo descargado, carga perdida",
+      "ja": "失敗：開始圏に障害物が入ったか船首がラインを外れた - コア放電、チャージ喪失"
+    },
+    "cockpit.jump.refusal.line_blocked": {
+      "en": "the straight line to the target is blocked by a body - no way around found",
+      "ru": "прямая к цели перекрыта телом - обхода не найдено",
+      "zh-Hans": "通往目标的直线被天体阻挡 - 未找到绕行路线",
+      "es": "la línea recta al destino está bloqueada por un cuerpo - no se encontró rodeo",
+      "ja": "目標への直線が天体で遮られている - 迂回路が見つからない"
+    },
+    "cockpit.jump.refusal.sump_caught": {
+      "en": "jump caught by a sump - the ship exited short of the target, the step charge is spent",
+      "ru": "прыжок захвачен отстойником - корабль вышел раньше цели, заряд шага потрачен",
+      "zh-Hans": "跃迁被沉积区捕获 - 飞船在到达目标前退出，该步充能已消耗",
+      "es": "salto capturado por un sumidero - la nave salió antes del destino, carga del paso gastada",
+      "ja": "ジャンプが溜まりに捕捉 - 目標手前で離脱、ステップのチャージは消費済み"
+    },
+    "cockpit.route.no_jump_drive": {
+      "en": "no jump drive: a J route is impossible",
+      "ru": "нет прыжкового двигателя: маршрут на J невозможен",
+      "zh-Hans": "没有跃迁引擎：无法规划 J 航线",
+      "es": "sin motor de salto: imposible trazar una ruta en J",
+      "ja": "ジャンプドライブなし：Jルートは不可能"
+    },
+    "cockpit.route.no_finish": {
+      "en": "no finish",
+      "ru": "нет финиша",
+      "zh-Hans": "没有终点",
+      "es": "sin destino",
+      "ja": "終点なし"
+    },
+    "cockpit.route.star_heat": {
+      "en": "star {0} (heat)",
+      "ru": "звезда {0} (нагрев)",
+      "zh-Hans": "恒星 {0}（高温）",
+      "es": "estrella {0} (calor)",
+      "ja": "恒星 {0}（加熱）"
+    },
+    "cockpit.route.no_target_coords": {
+      "en": "no target coordinates: {0}",
+      "ru": "нет координат цели: {0}",
+      "zh-Hans": "没有目标坐标：{0}",
+      "es": "sin coordenadas del destino: {0}",
+      "ja": "目標の座標なし：{0}"
+    },
+    "cockpit.route.charge_short": {
+      "en": "the J charge will run out, no refuelling on the way",
+      "ru": "заряда J не хватит, заправки на пути нет",
+      "zh-Hans": "J 充能不足，途中无法补给",
+      "es": "la carga J no bastará y no hay repostaje en el camino",
+      "ja": "Jチャージが足りず、途中に補給地点なし"
+    },
+    "cockpit.route.refuel_reason": {
+      "en": "refuelling",
+      "ru": "заправка",
+      "zh-Hans": "补给",
+      "es": "repostaje",
+      "ja": "補給"
+    },
+    "cockpit.route.summary": {
+      "en": "{0} legs · {1}k km · J −{2} t · finish {3}/{4} t",
+      "ru": "{0} плеч · {1} тыс. км · J −{2} т · финиш {3}/{4} т",
+      "zh-Hans": "{0} 段 · {1} 千公里 · J −{2} 吨 · 终点 {3}/{4} 吨",
+      "es": "{0} tramos · {1} mil km · J −{2} t · destino {3}/{4} t",
+      "ja": "{0} 区間 · {1} 千km · J −{2} t · 終点 {3}/{4} t"
+    },
+    "cockpit.route.refuel_count": {
+      "en": "+{0} refuel",
+      "ru": "+{0} запр.",
+      "zh-Hans": "+{0} 次补给",
+      "es": "+{0} repost.",
+      "ja": "+{0} 補給"
+    },
+    "cockpit.route.outside_rescue": {
+      "en": "outside the rescue zone: {0} of {1} points",
+      "ru": "вне зоны спасения: {0} из {1} точек",
+      "zh-Hans": "救援区外：{1} 个点中有 {0} 个",
+      "es": "fuera de la zona de rescate: {0} de {1} puntos",
+      "ja": "救助圏外：{1} 地点中 {0}"
+    },
+    "cockpit.route.complete": {
+      "en": "ROUTE COMPLETE",
+      "ru": "МАРШРУТ ВЫПОЛНЕН",
+      "zh-Hans": "航线完成",
+      "es": "RUTA COMPLETADA",
+      "ja": "ルート完了"
+    },
+    "cockpit.route.violation": {
+      "en": "ADMINISTRATIVE VIOLATION: {0} '{1}'  ·  fine {2} cr  ·  {3}",
+      "ru": "АДМИНИСТРАТИВНОЕ НАРУШЕНИЕ: {0} «{1}»  ·  штраф {2} кр  ·  {3}",
+      "zh-Hans": "行政违规：{0}“{1}”  ·  罚款 {2} 信用点  ·  {3}",
+      "es": "INFRACCIÓN ADMINISTRATIVA: {0} «{1}»  ·  multa {2} cr  ·  {3}",
+      "ja": "行政違反：{0}「{1}」  ·  罰金 {2} cr  ·  {3}"
+    },
+    "cockpit.route.violation_red_zone": {
+      "en": "entering a red zone",
+      "ru": "вход в красную зону",
+      "zh-Hans": "进入红区",
+      "es": "entrada en una zona roja",
+      "ja": "レッドゾーン侵入"
+    },
+    "cockpit.route.violation_gate": {
+      "en": "mandatory gate missed",
+      "ru": "пропущен обязательный створ",
+      "zh-Hans": "错过必经航门",
+      "es": "se omitió un paso obligatorio",
+      "ja": "必須ゲートを通過せず"
+    },
+    "cockpit.terminal.recovered_prefix": {
+      "en": "RECOVERED: ",
+      "ru": "ВОССТАНОВЛЕНО: ",
+      "zh-Hans": "已恢复：",
+      "es": "RECUPERADO: ",
+      "ja": "復旧："
     }
   }
 }

@@ -22,10 +22,11 @@ bool SpaceState::systemHasRescueService(int systemId) const
     return false;
 }
 
-rescue::Estimate SpaceState::rescueAt(const glm::dvec3& worldM, int systemId, std::string* nearestHubName) const
+rescue::Estimate SpaceState::rescueAt(const glm::dvec3& worldM, int systemId, std::string* nearestHubName,
+                                      std::string* nearestHubId) const
 {
     double best = std::numeric_limits<double>::infinity();
-    std::string bestName;
+    std::string bestName, bestId;
     if (m_client)
         for (const auto& [id, hub] : m_client->world().hubs())
         {
@@ -36,10 +37,13 @@ rescue::Estimate SpaceState::rescueAt(const glm::dvec3& worldM, int systemId, st
             {
                 best = d;
                 bestName = hub.name.empty() ? id : hub.name;
+                bestId = id;
             }
         }
     if (nearestHubName)
         *nearestHubName = bestName;
+    if (nearestHubId)
+        *nearestHubId = bestId;
     return rescue::estimate(std::isfinite(best) ? best : -1.0, systemHasRescueService(systemId));
 }
 

@@ -36,6 +36,8 @@ struct DockingTerminalSnapshot
     std::string pilotNotice;
     std::string error;
     std::string biteNominalText;
+    // the prefix of a diagnostic that cleared (localized by the HUD: cockpit.terminal.recovered_prefix)
+    std::string recoveredPrefix = "RECOVERED: ";
     // Completed immutable planner measurements (separate from BITE faults).
     std::vector<std::string> plannerDetails;
 
@@ -162,7 +164,7 @@ public:
                     if (std::find(snapshot.diagnostics.begin(),
                                   snapshot.diagnostics.end(),
                                   previous) == snapshot.diagnostics.end())
-                        enqueuePriority("RECOVERED: " + previous.first,
+                        enqueuePriority(snapshot.recoveredPrefix + previous.first,
                                         DockingTerminalSeverity::Info);
                 }
                 m_lastReminderSeconds = nowSeconds;

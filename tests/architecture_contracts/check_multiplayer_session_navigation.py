@@ -35,7 +35,7 @@ server_cpp = require(
     "src/game/server/GameServer.cpp",
     "bool GameServer::navigationStateForSession(",
     "controlledEntityForSession(sessionId)",
-    "outNavigation = navigationStateForEntity(controlledEntityId);",
+    "outNavigation = navigationStateForEntity(controlledEntityId, published);",
     "snapshot.session.playerNavigation = {};",
     "navigationStateForSession(sessionId, sessionNavigation)",
     "outSnapshot.session.playerNavigation = sessionNavigation;",

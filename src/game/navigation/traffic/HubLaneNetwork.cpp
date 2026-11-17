@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
+#include <memory>
 #include <limits>
 #include <queue>
 #include <sstream>
@@ -59,6 +61,7 @@ bool HubLaneNetwork::load(const std::string& path)
             return false;
         }
         m_frameModuleId = doc.at("frame_module_id").get<std::string>();
+        m_hubId = doc.value("hub_id", std::string());
         m_speedLimitMps = doc.value("speed_limit_mps", 0.0);
         m_speedLimitZoneMeters = doc.value("speed_limit_zone_m", 0.0);
         std::unordered_map<std::string, std::size_t> index;
@@ -137,6 +140,7 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     const glm::dvec3& initialForward,
     double startLeadMeters,
     const glm::dvec3& goalArriveForward,
+    const FreeLegModel& freeLegs,
     std::string* summary
 ) const
 {
@@ -171,7 +175,7 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     }
     const auto joinStart = [&](std::size_t l) { return P[l][0] - F[l][0] * JoinStraightMeters; };
     // where a free leg into lane l really ends: the start of the planner's hard terminal approach before the join
-    const auto joinApproach = [&](std::size_t l) { return joinStart(l) - F[l][0] * JoinApproachMeters; };
+    const auto joinApproach = [&](std::size_t l) { return joinStart(l) - F[l][0] * freeLegs.joinApproachMeters; };
     const auto leaveEnd = [&](std::size_t l) { return P[l].back() + F[l].back() * LeaveStraightMeters; };
 
     // states: (global station, ridden) + the goal
@@ -214,15 +218,15 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         const double turn = (glm::length(fromForward) > 1.0e-9 ? angle(fromForward, d) : 0.0) +
                             (glm::length(arriveForward) > 1.0e-9 ? angle(d, arriveForward) : 0.0);
         // a leg that is (nearly) one straight - e.g. a blue approach's end on the dock axis -> the goal - needs no room
-        if (turn > glm::radians(5.0) && glm::length(d) < MinFreeLegMeters + FreeTurnRadiusMeters * turn)
+        if (turn > glm::radians(5.0) && glm::length(d) < MinFreeLegMeters + freeLegs.turnRadiusMeters * turn)
             return Inf;
         return glm::length(d) + TurnPenaltyMeters * turn;
     };
     // the goal is reached along goalArriveForward after a hard straight: a free leg into it ends that far out
     const bool goalHasDirection = glm::length(goalArriveForward) > 1.0e-9;
     const glm::dvec3 goalDirection = goalHasDirection ? glm::normalize(goalArriveForward) : glm::dvec3(0.0);
-    const glm::dvec3 goalApproach = goalWorld - goalDirection * (goalHasDirection ? JoinApproachMeters : 0.0);
-    const double goalApproachLength = goalHasDirection ? JoinApproachMeters : 0.0;
+    const glm::dvec3 goalApproach = goalWorld - goalDirection * (goalHasDirection ? freeLegs.joinApproachMeters : 0.0);
+    const double goalApproachLength = goalHasDirection ? freeLegs.joinApproachMeters : 0.0;
     const double direct = leadLength + freeLeg(leadEnd, heading, goalApproach, goalDirection) + goalApproachLength;
     relax(goal, std::isfinite(direct) ? direct : glm::length(goalWorld - shipWorld) + 1.0e6, count, EdgeFromShip);
     int entriesOk = 0, exitsTried = 0, exitsOk = 0;
@@ -232,7 +236,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             const double c = freeLeg(leadEnd, heading, joinApproach(l), F[l][0]);
             entriesOk += std::isfinite(c) ? 1 : 0;
             if (std::isfinite(c))
-                relax(state(l, 0, 0), leadLength + c + JoinApproachMeters + JoinStraightMeters, count, EdgeFromShip);
+                relax(state(l, 0, 0), leadLength + c + freeLegs.joinApproachMeters + JoinStraightMeters, count,
+                      EdgeFromShip);
         }
     while (!open.empty())
     {
@@ -258,7 +263,11 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             continue;
         // the lane's end beyond the rim: leave for the goal or transfer (open sky) to another lane's start
         const glm::dvec3 out0 = leaveEnd(l);
-        const double exitLeg = freeLeg(out0, F[l].back(), goalApproach, goalDirection);
+        // the final leg has its own fixed straights (start + turn budget + the goal's axis): shorter -> it loops back
+        // (live run 14: 1.1 km -> assisted reverse flight)
+        const double exitLeg = glm::length(goalWorld - out0) < freeLegs.exitMinimumMeters
+                                   ? Inf
+                                   : freeLeg(out0, F[l].back(), goalApproach, goalDirection);
         ++exitsTried;
         exitsOk += std::isfinite(exitLeg) ? 1 : 0;
         if (std::isfinite(exitLeg))
@@ -269,8 +278,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
                 continue;
             const double hop = freeLeg(out0, F[l].back(), joinApproach(m), F[m][0]);
             if (std::isfinite(hop))
-                relax(state(m, 0, 0), d + LeaveStraightMeters + hop + JoinApproachMeters + JoinStraightMeters, s,
-                      EdgeTransfer);
+                relax(state(m, 0, 0), d + LeaveStraightMeters + hop + freeLegs.joinApproachMeters + JoinStraightMeters,
+                      s, EdgeTransfer);
         }
     }
     std::ostringstream text;
@@ -420,6 +429,52 @@ std::vector<world::navigation::NavigationObstacle> HubLaneNetwork::redZoneObstac
         out.push_back(std::move(o));
     }
     return out;
+}
+
+namespace
+{
+
+struct CatalogData
+{
+    std::vector<std::unique_ptr<HubLaneNetwork>> networks;
+    bool scanned = false;
+};
+
+CatalogData& catalog()
+{
+    static CatalogData data;
+    if (!data.scanned)
+    {
+        data.scanned = true;
+        std::error_code ec;
+        for (const auto& entry : std::filesystem::directory_iterator("assets/data/navigation/hub_lanes", ec))
+        {
+            if (entry.path().extension() != ".json")
+                continue;
+            auto network = std::make_unique<HubLaneNetwork>();
+            if (network->load(entry.path().string()))
+                data.networks.push_back(std::move(network));
+        }
+    }
+    return data;
+}
+
+} // namespace
+
+const HubLaneNetwork* HubLaneCatalog::forHub(const std::string& hubId)
+{
+    for (const auto& network : catalog().networks)
+        if (network->hubId() == hubId)
+            return network.get();
+    return nullptr;
+}
+
+const HubLaneNetwork* HubLaneCatalog::forFrameModule(const std::string& moduleId)
+{
+    for (const auto& network : catalog().networks)
+        if (network->frameModuleId() == moduleId)
+            return network.get();
+    return nullptr;
 }
 
 } // namespace game::navigation::traffic

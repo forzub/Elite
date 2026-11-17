@@ -1,11 +1,13 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
-#include <cstdio>
+#include <initializer_list>
 #include <string>
 #include <vector>
 
 #include "src/game/docking/traffic/DockTrafficControllerApi.h"
+#include "src/game/presentation/DockPlannerTerminalTelemetry.h"
 
 // The player's small docking widget (author 2026-11-07: "небольшой виджет с основными
 // подсказками - идёт расчёт, движемся, расстояние, очередь в док - какой по очереди, время
@@ -69,29 +71,33 @@ struct DockingWidgetText
     std::vector<std::string> lines;   // = consoleLine (+ the details) for logs / tests
 };
 
-[[nodiscard]] inline std::string dockingWidgetDistance(double meters)
+// Every visible word comes from the localization catalog (cockpit.dock_widget.* / cockpit.unit.*
+// in src/assets/localization/ui/cockpit/flight.json) through `text`; numbers and pad / hold IDs are data.
+using DockingWidgetLookup = TerminalLocalizedText::Lookup;
+
+[[nodiscard]] inline std::string dockingWidgetDistance(const DockingWidgetLookup& text, double meters)
 {
-    char b[32];
     if (meters >= 1000.0)
-        std::snprintf(b, sizeof b, "%.1f км", meters / 1000.0);
-    else
-        std::snprintf(b, sizeof b, "%.0f м", meters);
-    return b;
+        return TerminalLocalizedText::render(text, "cockpit.unit.distance_km", {TerminalLocalizedText::number(meters / 1000.0, 1)});
+    return TerminalLocalizedText::render(text, "cockpit.unit.distance_m", {TerminalLocalizedText::number(meters, 0)});
 }
 
-[[nodiscard]] inline std::string dockingWidgetWait(double seconds)
+[[nodiscard]] inline std::string dockingWidgetWait(const DockingWidgetLookup& text, double seconds)
 {
-    char b[32];
     if (seconds < 60.0)
-        std::snprintf(b, sizeof b, "~%.0f с", std::max(0.0, seconds));
-    else
-        std::snprintf(b, sizeof b, "~%.0f мин", std::ceil(seconds / 60.0));
-    return b;
+        return "~" + TerminalLocalizedText::render(text, "cockpit.unit.time_s", {TerminalLocalizedText::number(std::max(0.0, seconds), 0)});
+    return "~" + TerminalLocalizedText::render(text, "cockpit.unit.time_min", {TerminalLocalizedText::number(std::ceil(seconds / 60.0), 0)});
 }
 
-[[nodiscard]] inline DockingWidgetText dockingWidgetText(const DockingWidgetInput& in)
+[[nodiscard]] inline DockingWidgetText dockingWidgetText(const DockingWidgetInput& in, const DockingWidgetLookup& text)
 {
     using game::docking::traffic::DockTrafficPhase;
+    const auto tr = [&text](const char* key, std::initializer_list<std::string> args = {}) {
+        return TerminalLocalizedText::render(text, key, args);
+    };
+    const auto speed = [&]() {
+        return tr("cockpit.unit.speed_mps", {TerminalLocalizedText::number(in.speedMps, 0)});
+    };
     DockingWidgetText out;
     // A departing ship stays on the panel until the station lets it go (its
     // dispatcher record is already "departed" at the lane clear point).
@@ -106,28 +112,26 @@ struct DockingWidgetText
     if (!in.requestPending && !dispatcher && !in.justReleased)
         return out;
     out.visible = true;
-    out.title = departing || (in.justReleased && !dispatcher) ? "ВЫЛЕТ" : "СТЫКОВКА";
+    out.title = tr(departing || (in.justReleased && !dispatcher) ? "cockpit.dock_widget.title_departure" : "cockpit.dock_widget.title_docking");
     if (in.justReleased && !dispatcher && !in.requestPending)
     {
-        out.chip = "УПРАВЛЕНИЕ ВАШЕ";
+        out.chip = tr("cockpit.dock_widget.chip_your_control");
         out.chipTone = 2;
-        out.consoleLine = "ВЫЛЕТ: управление у пилота";
+        out.consoleLine = tr("cockpit.dock_widget.console_released");
         out.lines.push_back(out.consoleLine);
-        char v[32];
-        std::snprintf(v, sizeof v, "%.0f м/с", in.speedMps);
-        out.fields.push_back({"СКОРОСТЬ", v});
+        out.fields.push_back({tr("cockpit.dock_widget.field_speed"), speed()});
         return out;
     }
 
     const auto clientStatus = [&]() -> std::string {
         switch (in.clientPhase)
         {
-            case DockingWidgetClientPhase::Stabilizing: return "подготовка: гасим скорость";
+            case DockingWidgetClientPhase::Stabilizing: return tr("cockpit.dock_widget.status_stabilizing");
             case DockingWidgetClientPhase::Planning:
-            case DockingWidgetClientPhase::RouteReady: return "идёт расчёт маршрута";
-            case DockingWidgetClientPhase::Executing: return "движемся к доку";
-            case DockingWidgetClientPhase::SecuringCourse: return "выравниваем курс";
-            default: return "запрос диспетчеру";
+            case DockingWidgetClientPhase::RouteReady: return tr("cockpit.dock_widget.status_planning");
+            case DockingWidgetClientPhase::Executing: return tr("cockpit.dock_widget.status_executing");
+            case DockingWidgetClientPhase::SecuringCourse: return tr("cockpit.dock_widget.status_securing");
+            default: return tr("cockpit.dock_widget.status_request");
         }
     };
     std::string status;
@@ -137,121 +141,113 @@ struct DockingWidgetText
     {
         case DockTrafficPhase::None: status = clientStatus(); break;
         case DockTrafficPhase::Queued:
-            status = "в очереди: ждём точку ожидания";
+            status = tr("cockpit.dock_widget.status_queued");
             waiting = true;
             break;
         case DockTrafficPhase::HoldAssigned:
-            status = "док занят - летим в точку ожидания " + in.holdPointId;
+            status = tr("cockpit.dock_widget.status_hold_assigned", {in.holdPointId});
             waiting = true;
             break;
         case DockTrafficPhase::AtHold:
-            status = "ожидание в точке " + in.holdPointId;
+            status = tr("cockpit.dock_widget.status_at_hold", {in.holdPointId});
             waiting = true;
             break;
         case DockTrafficPhase::EntryCleared:
-            status = "вход разрешён: " + clientStatus();
+            status = tr("cockpit.dock_widget.status_entry_cleared", {clientStatus()});
             break;
         case DockTrafficPhase::StationControl:
-            status = "станция ведёт на " + in.padId + ", руль у станции";
+            status = tr("cockpit.dock_widget.status_station_control", {in.padId});
             showDistance = false;
             break;
         case DockTrafficPhase::Docked:
-            status = "пристыкован, площадка " + in.padId + "  ·  Ctrl+L - вылет";
+            status = tr("cockpit.dock_widget.status_docked", {in.padId});
             showDistance = false;
             break;
         case DockTrafficPhase::DepartureQueued:
-            status = "вылет в очереди: " + std::to_string(in.departureQueuePosition) + "-й";
+            status = tr("cockpit.dock_widget.status_departure_queued", {std::to_string(in.departureQueuePosition)});
             waiting = true;
             showDistance = false;
             break;
         case DockTrafficPhase::DepartureCleared:
         case DockTrafficPhase::Departed:
             // no changing numbers here: the console prints every new phrase
-            status = in.beyondGate ? "за воротами; руль 3 с - взять управление" : "станция выводит корабль из дока";
+            status = tr(in.beyondGate ? "cockpit.dock_widget.status_beyond_gate" : "cockpit.dock_widget.status_station_departing");
             showDistance = false;
             break;
         default: break;
     }
     if (!in.failure.empty())
-        status = "ошибка: " + in.failure;
+        status = tr("cockpit.dock_widget.status_error", {in.failure});
     out.lines.push_back(status);
 
     if (showDistance && in.distanceKnown)
-    {
-        char b[96];
-        std::snprintf(b, sizeof b, "до входа %s  ·  скорость %.0f м/с", dockingWidgetDistance(in.distanceToEntryMeters).c_str(), in.speedMps);
-        out.lines.push_back(b);
-    }
+        out.lines.push_back(tr("cockpit.dock_widget.line_distance", {dockingWidgetDistance(text, in.distanceToEntryMeters), speed()}));
     if (waiting)
     {
         std::string q;
         if (in.phase == DockTrafficPhase::Queued && in.queuePosition > 0)
-            q = "очередь в док: " + std::to_string(in.queuePosition) + "-й из " + std::to_string(in.queueLength) + "  ·  ";
-        q += "впереди манёвров: " + std::to_string(in.movementsAhead) + "  ·  ожидание " + dockingWidgetWait(in.estimatedWaitSeconds);
+            q = tr("cockpit.dock_widget.line_queue", {std::to_string(in.queuePosition), std::to_string(in.queueLength)}) + "  ·  ";
+        q += tr("cockpit.dock_widget.line_ahead", {std::to_string(in.movementsAhead), dockingWidgetWait(text, in.estimatedWaitSeconds)});
         out.lines.push_back(q);
     }
     else if (dispatcher && !in.padId.empty() &&
              (in.phase == DockTrafficPhase::EntryCleared))
-        out.lines.push_back("площадка " + in.padId);
+        out.lines.push_back(tr("cockpit.dock_widget.line_pad", {in.padId}));
 
-    out.consoleLine = (departing ? "ВЫЛЕТ: " : "СТЫКОВКА: ") + status;
+    out.consoleLine = tr(departing ? "cockpit.dock_widget.console_departure" : "cockpit.dock_widget.console_docking", {status});
     // ---- the panel ----
     const DockTrafficPhase ph = dispatcher ? in.phase : DockTrafficPhase::None;
     switch (ph)
     {
         case DockTrafficPhase::None:
-            out.chip = in.clientPhase == DockingWidgetClientPhase::Planning || in.clientPhase == DockingWidgetClientPhase::RouteReady
-                ? "РАСЧЁТ" : in.clientPhase == DockingWidgetClientPhase::Executing ? "В ПУТИ" : "ЗАПРОС";
+            out.chip = tr(in.clientPhase == DockingWidgetClientPhase::Planning || in.clientPhase == DockingWidgetClientPhase::RouteReady
+                ? "cockpit.dock_widget.chip_calculating"
+                : in.clientPhase == DockingWidgetClientPhase::Executing ? "cockpit.dock_widget.chip_en_route" : "cockpit.dock_widget.chip_request");
             break;
-        case DockTrafficPhase::Queued: out.chip = "ОЧЕРЕДЬ"; out.chipTone = 1; break;
-        case DockTrafficPhase::HoldAssigned: out.chip = "К ТОЧКЕ " + in.holdPointId; out.chipTone = 1; break;
-        case DockTrafficPhase::AtHold: out.chip = "ОЖИДАНИЕ " + in.holdPointId; out.chipTone = 1; break;
-        case DockTrafficPhase::EntryCleared: out.chip = "ВХОД РАЗРЕШЁН"; out.chipTone = 2; break;
-        case DockTrafficPhase::StationControl: out.chip = "СТАНЦИЯ"; out.chipTone = 2; break;
-        case DockTrafficPhase::Docked: out.chip = "ДОК " + in.padId; out.chipTone = 2; break;
-        case DockTrafficPhase::DepartureQueued: out.chip = "ВЫЛЕТ: ОЧЕРЕДЬ"; out.chipTone = 1; break;
+        case DockTrafficPhase::Queued: out.chip = tr("cockpit.dock_widget.chip_queue"); out.chipTone = 1; break;
+        case DockTrafficPhase::HoldAssigned: out.chip = tr("cockpit.dock_widget.chip_to_point", {in.holdPointId}); out.chipTone = 1; break;
+        case DockTrafficPhase::AtHold: out.chip = tr("cockpit.dock_widget.chip_holding", {in.holdPointId}); out.chipTone = 1; break;
+        case DockTrafficPhase::EntryCleared: out.chip = tr("cockpit.dock_widget.chip_entry_cleared"); out.chipTone = 2; break;
+        case DockTrafficPhase::StationControl: out.chip = tr("cockpit.dock_widget.chip_station"); out.chipTone = 2; break;
+        case DockTrafficPhase::Docked: out.chip = tr("cockpit.dock_widget.chip_dock", {in.padId}); out.chipTone = 2; break;
+        case DockTrafficPhase::DepartureQueued: out.chip = tr("cockpit.dock_widget.chip_departure_queue"); out.chipTone = 1; break;
         case DockTrafficPhase::DepartureCleared:
-        case DockTrafficPhase::Departed: out.chip = "СТАНЦИЯ ВЕДЁТ"; out.chipTone = 2; break;
+        case DockTrafficPhase::Departed: out.chip = tr("cockpit.dock_widget.chip_station_guiding"); out.chipTone = 2; break;
         default: break;
     }
     if (departing)
     {
-        char v[32];
-        std::snprintf(v, sizeof v, "%.0f м/с", in.speedMps);
         if (in.releaseKnown)
-            out.fields.push_back({"ДО ВЫПУСКА", dockingWidgetDistance(in.releaseDistanceMeters)});
-        out.fields.push_back({"СКОРОСТЬ", v});
+            out.fields.push_back({tr("cockpit.dock_widget.field_to_release"), dockingWidgetDistance(text, in.releaseDistanceMeters)});
+        out.fields.push_back({tr("cockpit.dock_widget.field_speed"), speed()});
         if (in.beyondGate)
-            out.fields.push_back({"ПЕРЕХВАТ", "руль 3 с"});
+            out.fields.push_back({tr("cockpit.dock_widget.field_takeover"), tr("cockpit.dock_widget.value_takeover")});
     }
     if (!in.failure.empty())
     {
-        out.chip = "ОШИБКА";
+        out.chip = tr("cockpit.dock_widget.chip_error");
         out.chipTone = 3;
     }
     if (in.takeoverSecondsLeft >= 0.0)
     {
-        char c[48];
-        std::snprintf(c, sizeof c, "ПЕРЕХВАТ %.0f с", std::ceil(in.takeoverSecondsLeft));
-        out.chip = c;
+        out.chip = tr("cockpit.dock_widget.chip_takeover",
+                      {tr("cockpit.unit.time_s", {TerminalLocalizedText::number(std::ceil(in.takeoverSecondsLeft), 0)})});
         out.chipTone = 3;
     }
     if (showDistance && in.distanceKnown)
     {
-        char v[32];
-        std::snprintf(v, sizeof v, "%.0f м/с", in.speedMps);
-        out.fields.push_back({"ДО ВХОДА", dockingWidgetDistance(in.distanceToEntryMeters)});
-        out.fields.push_back({"СКОРОСТЬ", v});
+        out.fields.push_back({tr("cockpit.dock_widget.field_to_entry"), dockingWidgetDistance(text, in.distanceToEntryMeters)});
+        out.fields.push_back({tr("cockpit.dock_widget.field_speed"), speed()});
     }
     if (waiting)
     {
         if (ph == DockTrafficPhase::Queued && in.queuePosition > 0)
-            out.fields.push_back({"ОЧЕРЕДЬ", std::to_string(in.queuePosition) + " / " + std::to_string(in.queueLength)});
+            out.fields.push_back({tr("cockpit.dock_widget.field_queue"), std::to_string(in.queuePosition) + " / " + std::to_string(in.queueLength)});
         else if (ph == DockTrafficPhase::DepartureQueued)
-            out.fields.push_back({"ОЧЕРЕДЬ", std::to_string(in.departureQueuePosition)});
+            out.fields.push_back({tr("cockpit.dock_widget.field_queue"), std::to_string(in.departureQueuePosition)});
         else
-            out.fields.push_back({"ВПЕРЕДИ", std::to_string(in.movementsAhead)});
-        out.fields.push_back({"ЖДАТЬ", dockingWidgetWait(in.estimatedWaitSeconds)});
+            out.fields.push_back({tr("cockpit.dock_widget.field_ahead"), std::to_string(in.movementsAhead)});
+        out.fields.push_back({tr("cockpit.dock_widget.field_wait"), dockingWidgetWait(text, in.estimatedWaitSeconds)});
     }
     if (dispatcher && !departing && (!in.holdPointId.empty() || !in.padId.empty()) && ph != DockTrafficPhase::Docked)
     {
@@ -259,10 +255,10 @@ struct DockingWidgetText
         if (!in.padId.empty())
             place += (place.empty() ? "" : " > ") + in.padId;
         if (!place.empty())
-            out.fields.push_back({"МЕСТО", place});
+            out.fields.push_back({tr("cockpit.dock_widget.field_place"), place});
     }
     if (ph == DockTrafficPhase::Docked)
-        out.fields.push_back({"ВЫЛЕТ", "Ctrl+L"});
+        out.fields.push_back({tr("cockpit.dock_widget.field_departure"), "Ctrl+L"});
     return out;
 }
 

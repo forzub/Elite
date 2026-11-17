@@ -74,23 +74,25 @@ public:
     static constexpr double JoinStraightMeters = 300.0;     // mandatory straight before joining a lane
     static constexpr double LeaveStraightMeters = 200.0;    // ... and after leaving it
     static constexpr double MaxTransferMeters = 1600.0;     // lane end -> lane start free transfer limit (open sky)
-    // the free legs' geometry in the cost (live 2026-11-17: a lane start 1.2 km from a ship at rest, behind its 1 km
-    // start lead -> the inbound leg infeasible on every retry): every radian a free leg turns costs TurnPenaltyMeters,
-    // and a free leg shorter than MinFreeLegMeters (after the ship's start lead) is not offered
-    // A free leg must also have room for its turns: at least MinFreeLegMeters + FreeTurnRadiusMeters x its total turn
-    // (radians; ~100 m/s at the Assisted geometry lateral ~17 m/s^2 -> r ~600 m; live run 2: 940 m with a 70 deg turn
-    // at the join -> infeasible again).
-    // Run 6 (2026-11-17, the inbound leg's own numbers): before the join straight the composer also demands a hard
-    // terminal approach (700 m) - so the leg really ends JoinApproachMeters further out, and an S-curve of 27 + 32 deg
-    // with 0.8 km of side offset did not fit 1.66 km -> the radius taken is a conservative 1.5 km (1 km still passed it).
+    // the free legs' cost (live 2026-11-17: a lane start 1.2 km from a ship at rest, behind its 1 km start lead ->
+    // the inbound leg infeasible on every retry): every radian a free leg turns costs TurnPenaltyMeters, and a free leg
+    // shorter than MinFreeLegMeters + the turn radius x its total turn is not offered
     static constexpr double TurnPenaltyMeters = 400.0;
     static constexpr double MinFreeLegMeters = 600.0;
-    static constexpr double FreeTurnRadiusMeters = 1500.0;
-    static constexpr double JoinApproachMeters = 700.0;
+
+    // What the planner will demand of the free legs, taken from the SAME policy the composer applies
+    // (freeLegModelFor in HubLaneRouting <- OrdinaryRoutePolicy): live runs 6..14 failed whenever the search assumed less.
+    struct FreeLegModel
+    {
+        double joinApproachMeters = 700.0;     // the hard terminal approach before a lane's join straight
+        double turnRadiusMeters = 1500.0;      // the free legs' turn radius at the route speed
+        double exitMinimumMeters = 0.0;        // the shortest final leg (its start straight + turn budget + goal axis)
+    };
 
     bool load(const std::string& path);
     bool loaded() const noexcept { return !m_lanes.empty(); }
     const std::string& failure() const noexcept { return m_failure; }
+    const std::string& hubId() const noexcept { return m_hubId; }
     const std::string& frameModuleId() const noexcept { return m_frameModuleId; }
     const std::vector<Lane>& lanes() const noexcept { return m_lanes; }
     const std::vector<Connector>& connectors() const noexcept { return m_connectors; }
@@ -109,6 +111,7 @@ public:
         const glm::dvec3& initialForward,          // zero = no committed heading
         double startLeadMeters,                     // the straight the ship flies before it may turn
         const glm::dvec3& goalArriveForward,       // the direction the ship must reach the goal in (zero = free)
+        const FreeLegModel& freeLegs,
         std::string* summary = nullptr
     ) const;
 
@@ -119,12 +122,26 @@ public:
 
 private:
     std::string m_failure;
+    std::string m_hubId;
     std::string m_frameModuleId;
     std::vector<Lane> m_lanes;
     std::vector<Connector> m_connectors;
     std::vector<RedZone> m_redZones;
     double m_speedLimitMps = 0.0;
     double m_speedLimitZoneMeters = 0.0;
+};
+
+/*
+    The lane networks of all hubs: assets/data/navigation/hub_lanes/<hub>.json, loaded once on first use (the docking
+    planner, the flight HUD and the Hub map share them - audit 2026-11-18: each kept its own copy and resolved the city
+    frame its own way). Lookup by hub id or by the network's frame module id (the module whose pose is the lanes'
+    frame). The first call must not race another: the callers are the client main thread.
+*/
+class HubLaneCatalog final
+{
+public:
+    static const HubLaneNetwork* forHub(const std::string& hubId);
+    static const HubLaneNetwork* forFrameModule(const std::string& moduleId);
 };
 
 } // namespace game::navigation::traffic

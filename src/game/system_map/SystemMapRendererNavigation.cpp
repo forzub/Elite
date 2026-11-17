@@ -1738,25 +1738,17 @@ void SystemMapRenderer::decorateTrafficRoutes(
     }
 
     // The hub's corridors (GREEN lanes with their direction, BLUE passages, RED zones), always on the Hub map: the
-    // navigator's top view. Source: assets/data/navigation/hub_lanes/<hub>.json in the frame of the hub module
-    // <hub>.city (game::navigation::traffic::HubLaneNetwork - the same network the docking planner uses).
+    // navigator's top view. Source: game::navigation::traffic::HubLaneCatalog (the same networks the docking planner
+    // uses), in the frame of each network's frame module.
     if (hubMode)
     {
-        static std::unordered_map<std::string, std::unique_ptr<game::navigation::traffic::HubLaneNetwork>> networks;
         for (const auto& frameObject : scene->objects)
         {
-            const std::string& sid = frameObject.stableId;
-            if (sid.size() < 6 || sid.compare(sid.size() - 5, 5, ".city") != 0)
-                continue;
-            const std::string hubId = sid.substr(0, sid.size() - 5);
-            auto& network = networks[hubId];
+            // the module whose pose is a lane network's frame (HubLaneCatalog: frame_module_id of the lane file)
+            const auto* network = game::navigation::traffic::HubLaneCatalog::forFrameModule(frameObject.stableId);
             if (!network)
-            {
-                network = std::make_unique<game::navigation::traffic::HubLaneNetwork>();
-                network->load("assets/data/navigation/hub_lanes/" + hubId + ".json");
-            }
-            if (!network->loaded())
                 continue;
+            const std::string& hubId = network->hubId();
             const auto toScene = [&](const glm::dvec3& local)
             {
                 return frameObject.positionMeters + frameObject.axes.x * local.x + frameObject.axes.y * local.y +

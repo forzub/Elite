@@ -714,6 +714,8 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
             : "cockpit.terminal.system_title");
     terminal.biteNominalText =
         terminalText("cockpit.terminal.bite.nominal");
+    terminal.recoveredPrefix =
+        terminalText("cockpit.terminal.recovered_prefix");
 
     for (std::size_t i = 0; i < biteLines.size(); ++i)
     {
@@ -755,14 +757,13 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
             game::presentation::DockingTerminalSeverity::Info;
         if(!power.propulsionReactorsOn)
         {
-            message="REACTORS OFF / main and RCS thrust disabled";
+            message=terminalText("cockpit.terminal.reactor.off");
             severity=game::presentation::DockingTerminalSeverity::Warning;
         }
         else if(power.propulsionStartupSeconds>0.0)
         {
-            message="REACTORS STARTING / "+std::to_string(
-                static_cast<int>(std::ceil(power.propulsionStartupSeconds)))+
-                " s remaining";
+            message=lineText("cockpit.terminal.reactor.starting",{std::to_string(
+                static_cast<int>(std::ceil(power.propulsionStartupSeconds)))});
         }
         else
         {
@@ -774,14 +775,14 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
                 [](const auto& d){return d.installed && !d.failed &&
                     d.integrity01>0.0f;});
             if(synthetic)
-                message="REACTORS READY / diagnostic simulated 5 GW";
+                message=terminalText("cockpit.terminal.reactor.ready_simulated");
             else if(!live)
             {
-                message="REACTOR ERROR / no functional installed ER-5";
+                message=terminalText("cockpit.terminal.reactor.error");
                 severity=game::presentation::DockingTerminalSeverity::Error;
             }
             else
-                message="REACTORS READY / propulsion power enabled";
+                message=terminalText("cockpit.terminal.reactor.ready");
         }
         terminal.diagnostics.emplace_back(message,severity);
     }
@@ -820,16 +821,20 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
         // outside - as luck has it; the text changes only with the zone, so the history stays short
         namespace rz = game::navigation::rescue;
         const int systemId = playerShip.transform.motion.systemId;
-        std::string hub;
-        const auto e = rescueAt(world::coordinates::fullMeters(playerShip.transform.worldPosition), systemId, &hub);
+        std::string hub, hubId;
+        const auto e = rescueAt(world::coordinates::fullMeters(playerShip.transform.worldPosition), systemId, &hub,
+                                &hubId);
+        // the hub's display name in the UI language (localization world/star_systems "hubs")
+        if (context().app && !hubId.empty())
+            hub = context().app->localization().catalogName("hubs", hubId, hub);
         if (e.zone == rz::Zone::Inside)
-            terminal.diagnostics.emplace_back("SOS: зона спасения «" + hub + "» - подберут через 10-20 мин",
+            terminal.diagnostics.emplace_back(lineText("cockpit.terminal.sos.inside", {hub}),
                                               game::presentation::DockingTerminalSeverity::Info);
         else if (e.zone == rz::Zone::Outside)
-            terminal.diagnostics.emplace_back("SOS: вне зоны спасения - сигнал могут не услышать (ближайшая зона «" + hub + "»)",
+            terminal.diagnostics.emplace_back(lineText("cockpit.terminal.sos.outside", {hub}),
                                               game::presentation::DockingTerminalSeverity::Warning);
         else
-            terminal.diagnostics.emplace_back("SOS: в системе нет спасательной службы - услышат только случайные корабли",
+            terminal.diagnostics.emplace_back(terminalText("cockpit.terminal.sos.no_service"),
                                               game::presentation::DockingTerminalSeverity::Warning);
     }
     {
@@ -1145,12 +1150,13 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
     const float screenH =
         static_cast<float>(vp.height);
 
-    // larger, to be read (author 2026-11-09): ~21 px at 1080 lines (was ~15)
+    // author 2026-11-18: «текст терминала HUD процентов на 20 меньше, сделать его прозрачным,
+    // чтобы он не перетягивал на себя внимание» - ~17 px at 1080 lines (was ~21)
     const int fontPx =
         std::clamp(
-            static_cast<int>(screenH * 0.0195f),
-            14,
-            26
+            static_cast<int>(screenH * 0.0156f),
+            11,
+            21
         );
 
     const float terminalLeft =
@@ -1225,6 +1231,7 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
     {
         const std::string& visibleText = line.text;
 
+        // author 2026-11-18: «сделать его прозрачным, чтобы он не перетягивал на себя внимание» (alpha ~-40%)
         const glm::vec4 color =
             line.severity ==
                     game::presentation::
@@ -1233,7 +1240,7 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
                       0.80f,
                       0.50f,
                       0.55f,
-                      0.62f
+                      0.38f
                   )
                 : line.severity ==
                         game::presentation::
@@ -1242,13 +1249,13 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
                           0.80f,
                           0.66f,
                           0.50f,
-                          0.58f
+                          0.36f
                       )
                     : glm::vec4(
                           0.58f,
                           0.74f,
                           0.80f,
-                          0.55f
+                          0.32f
                       );
 
         text.textDrawPx(
@@ -1728,44 +1735,72 @@ void SpaceState::renderNavigationStressOverlay(
 
 namespace
 {
-// J HUD units by magnitude: m/s -> km/s; m -> km -> thousand / million km -> AU
-std::string jSpeed(double mps, bool signedValue = false)
+using HudLookup = game::presentation::TerminalLocalizedText::Lookup;
+
+// the active UI language's text for the flight HUD (src/assets/localization/ui/cockpit/flight.json)
+HudLookup hudLookup(const Application* app)
+{
+    return [app](const char* key) { return localizedUiText(app, key, key); };
+}
+
+std::string hudText(const HudLookup& text, const char* key, std::initializer_list<std::string> args = {})
+{
+    return game::presentation::TerminalLocalizedText::render(text, key, args);
+}
+
+// a number in printf form (signs, widths) for a localized template
+std::string hudNumber(const char* format, double value)
 {
     char t[48];
-    const double a = std::abs(mps);
-    const char* sign = signedValue ? (mps < 0.0 ? "-" : "+") : (mps < 0.0 ? "-" : "");
-    if (a < 1000.0)
-        std::snprintf(t, sizeof t, "%s%.0f м/с", sign, a);
-    else if (a < 100000.0)
-        std::snprintf(t, sizeof t, "%s%.2f км/с", sign, a / 1000.0);
-    else
-        std::snprintf(t, sizeof t, "%s%.0f км/с", sign, a / 1000.0);
+    std::snprintf(t, sizeof t, format, value);
     return t;
+}
+
+// J HUD units by magnitude: m/s -> km/s; m -> km -> thousand / million km -> AU
+std::string jSpeed(const HudLookup& text, double mps, bool signedValue = false)
+{
+    const double a = std::abs(mps);
+    const std::string sign = signedValue ? (mps < 0.0 ? "-" : "+") : (mps < 0.0 ? "-" : "");
+    if (a < 1000.0)
+        return hudText(text, "cockpit.unit.speed_mps", {sign + hudNumber("%.0f", a)});
+    if (a < 100000.0)
+        return hudText(text, "cockpit.unit.speed_kmps", {sign + hudNumber("%.2f", a / 1000.0)});
+    return hudText(text, "cockpit.unit.speed_kmps", {sign + hudNumber("%.0f", a / 1000.0)});
 }
 
 // a speed for a steady HUD line: hysteresis (0.05 %, 0.5 m/s) and 4 significant digits above 10 000 km/s
-std::string jSpeedSteady(const char* key, double mps)
+std::string jSpeedSteady(const HudLookup& text, const char* key, double mps)
 {
     using namespace game::presentation;
     const double v = hudSteady(key, mps, 0.0005, 0.5);
-    return jSpeed(std::abs(v) >= 1.0e7 ? hudSignificant(v / 1000.0, 4) * 1000.0 : v);
+    return jSpeed(text, std::abs(v) >= 1.0e7 ? hudSignificant(v / 1000.0, 4) * 1000.0 : v);
 }
 
-std::string jDistance(double m)
+std::string jDistance(const HudLookup& text, double m)
 {
-    char t[48];
     const double a = std::abs(m);
     if (a < 10000.0)
-        std::snprintf(t, sizeof t, "%.0f м", m);
-    else if (a < 1.0e7)
-        std::snprintf(t, sizeof t, "%.1f км", m / 1000.0);
-    else if (a < 1.0e9)
-        std::snprintf(t, sizeof t, "%.0f тыс. км", m / 1.0e6);
-    else if (a < 1.5e10)
-        std::snprintf(t, sizeof t, "%.2f млн км", m / 1.0e9);
-    else
-        std::snprintf(t, sizeof t, "%.3f а.е.", m / 1.495978707e11);
-    return t;
+        return hudText(text, "cockpit.unit.distance_m", {hudNumber("%.0f", m)});
+    if (a < 1.0e7)
+        return hudText(text, "cockpit.unit.distance_km", {hudNumber("%.1f", m / 1000.0)});
+    if (a < 1.0e9)
+        return hudText(text, "cockpit.unit.distance_thousand_km", {hudNumber("%.0f", m / 1.0e6)});
+    if (a < 1.5e10)
+        return hudText(text, "cockpit.unit.distance_million_km", {hudNumber("%.2f", m / 1.0e9)});
+    return hudText(text, "cockpit.unit.distance_au", {hudNumber("%.3f", m / 1.495978707e11)});
+}
+
+const char* capsuleStateKey(game::navigation::capsule::State s)
+{
+    using game::navigation::capsule::State;
+    switch (s)
+    {
+    case State::PilotAlive: return "cockpit.capsule.state.pilot_alive";
+    case State::PilotKilled: return "cockpit.capsule.state.pilot_killed";
+    case State::Destroyed: return "cockpit.capsule.state.destroyed";
+    case State::NoCapsule: return "cockpit.capsule.state.no_capsule";
+    default: return nullptr;
+    }
 }
 }
 
@@ -1812,12 +1847,12 @@ void SpaceState::renderDockingWidget(const Viewport& viewport)
         in.phase != game::docking::traffic::DockTrafficPhase::Docked)
     {
         m_stationReleasedAtSeconds = nowGlfw;
-        m_pilotNotice = "ВЫЛЕТ: станция отпустила корабль";
+        m_pilotNotice = localizedUiText(context().app, "cockpit.notice.station_released", "cockpit.notice.station_released");
     }
     m_lastStationControlled = in.stationControlled;
     in.justReleased = m_stationReleasedAtSeconds >= 0.0 && nowGlfw - m_stationReleasedAtSeconds < 8.0;
     in.takeoverSecondsLeft = m_takeoverSecondsLeft;
-    const auto widget = game::presentation::dockingWidgetText(in);
+    const auto widget = game::presentation::dockingWidgetText(in, hudLookup(context().app));
     m_dockingWidgetConsoleLine = widget.visible ? widget.consoleLine : std::string();
     if (!widget.visible)
         return;
@@ -1892,98 +1927,86 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     // the reference is the body whose sphere of influence holds the ship; beyond
     // every planet's sphere it is the star and the speed is the global one
     const bool global = motion.freeFlightReferenceIsRoot != 0;
-    const char* engine = motion.jEngine ? "двигатель J" : "маршевые двигатели";
+    const HudLookup lookup = hudLookup(context().app);
+    const auto tr = [&lookup](const char* key, std::initializer_list<std::string> args = {}) { return hudText(lookup, key, args); };
+    const std::string engine = tr(motion.jEngine ? "cockpit.flight.engine_j" : "cockpit.flight.engine_main");
     std::ostringstream line1;
     if (!motion.freeFlight)
     {
         const double local = glm::length(motion.localVelocityMps);
         if (kind == 3)
-            line1 << "СТАБИЛИЗАЦИЯ ОРБИТЫ " << shortBody(motion.freeFlightOrbitBodyId) << "  ·  манёвровая скорость "
-                  << jSpeed(local) << " (предел 500 м/с)  ·  нет хаба-ориентира: орбита может уйти";
+            line1 << tr("cockpit.flight.stab_orbit", {shortBody(motion.freeFlightOrbitBodyId), jSpeed(lookup, local)});
         else if (kind == 4)
-            line1 << "СТАБИЛИЗАЦИЯ НАД ГРУНТОМ " << shortBody(motion.freeFlightOrbitBodyId) << "  ·  скорость над грунтом "
-                  << jSpeed(local) << " (предел 500 м/с)";
+            line1 << tr("cockpit.flight.stab_ground", {shortBody(motion.freeFlightOrbitBodyId), jSpeed(lookup, local)});
         else
-            line1 << "СТАБИЛИЗАЦИЯ В ХАБЕ  ·  манёвровая скорость " << jSpeed(local) << " (предел 500 м/с)";
+            line1 << tr("cockpit.flight.stab_hub", {jSpeed(lookup, local)});
     }
     else if (kind == 0)
-        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeedSteady("hud.line1.speed", glm::length(relative)) << " отн. хаба " << reference;
+        line1 << tr("cockpit.flight.normal_hub", {engine, jSpeedSteady(lookup, "hud.line1.speed", glm::length(relative)), reference});
     else if (global)
-        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  глобальная скорость " << jSpeedSteady("hud.line1.speed", glm::length(relative))
-              << "  ·  гравитация планет пренебрежима";
+        line1 << tr("cockpit.flight.normal_global", {engine, jSpeedSteady(lookup, "hud.line1.speed", glm::length(relative))});
     else
-        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeedSteady("hud.line1.speed", glm::length(relative)) << " отн. " << reference
-              << " (в сфере её притяжения)";
-    std::string thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
+        line1 << tr("cockpit.flight.normal_body", {engine, jSpeedSteady(lookup, "hud.line1.speed", glm::length(relative)), reference});
+    std::string thrust = tr(motion.freeFlightThrust == 1 ? "cockpit.flight.thrust_full"
+                            : motion.freeFlightThrust == 2 ? "cockpit.flight.thrust_brake" : "cockpit.flight.thrust_off");
     // the autopilot flies on the J drive, not on the latched main-engine command
     if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5)
     {
-        char drive[96];
         // signed along the velocity: "-" is braking (the speed falls), "+" the speed grows
         // phase 11 (the de-orbit) flies on the main engines, the rest of the autopilot on its J drive
-        std::snprintf(drive, sizeof drive, "%s %+.1f g %s",
-                      motion.freeFlightAutopilotPhase == 11 ? "МАРШЕВЫЕ АВТОПИЛОТА" : "J-ПРИВОД АВТОПИЛОТА",
-                      motion.freeFlightAutopilotAccelMps2 / 9.81,
-                      motion.freeFlightAutopilotAccelMps2 < -0.05f ? "(торможение)" : "(разгон)");
-        thrust = drive;
+        thrust = tr(motion.freeFlightAutopilotPhase == 11 ? "cockpit.flight.autopilot_main_drive" : "cockpit.flight.autopilot_j_drive",
+                    {hudNumber("%+.1f", motion.freeFlightAutopilotAccelMps2 / 9.81)}) +
+                 " " + tr(motion.freeFlightAutopilotAccelMps2 < -0.05f ? "cockpit.flight.braking_paren" : "cockpit.flight.accelerating_paren");
     }
     if (motion.jEngine && !(motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5))
     {
-        char j[160];
         using game::presentation::hudSignificant;
         using game::presentation::hudSteady;
-        std::snprintf(j, sizeof j, "%s J %+.0f g (задано %+.0f g)", motion.jStopping ? "J ВЫКЛЮЧАЕТСЯ:" : "УСКОРЕНИЕ",
-                      hudSignificant(hudSteady("hud.j.accel", motion.jAccelMps2 / 9.81, 0.01, 5.0), 3),
-                      hudSignificant(hudSteady("hud.j.command", motion.jAccelCommandMps2 / 9.81, 0.01, 1.0), 3));
-        thrust = j;
+        thrust = tr(motion.jStopping ? "cockpit.flight.j_stopping" : "cockpit.flight.j_accel",
+                    {hudNumber("%+.0f", hudSignificant(hudSteady("hud.j.accel", motion.jAccelMps2 / 9.81, 0.01, 5.0), 3)),
+                     hudNumber("%+.0f", hudSignificant(hudSteady("hud.j.command", motion.jAccelCommandMps2 / 9.81, 0.01, 1.0), 3))});
         // the medium (author 2026-11-12): above ~0.1 c the swept-up particles resist - say how much of the thrust
         // goes into holding the speed
         if (const double medium = game::navigation::jdrive::mediumResistanceMps2(glm::length(relative)); medium >= 0.5 * 9.81)
-        {
-            std::snprintf(j, sizeof j, "  ·  сопротивление среды %.0f g",
-                          hudSignificant(hudSteady("hud.j.medium", medium / 9.81, 0.01, 5.0), 3));
-            thrust += j;
-        }
+            thrust += "  ·  " + tr("cockpit.flight.medium_drag",
+                                   {hudNumber("%.0f", hudSignificant(hudSteady("hud.j.medium", medium / 9.81, 0.01, 5.0), 3))});
     }
     std::string routeHint;
     if (motion.routeState == 2)
-    {
-        char r[160];
-        std::snprintf(r, sizeof r, "МАРШРУТ НА ПАУЗЕ (точка %d из %d): ручной режим  ·  продолжить: карта → финиш → ПРОДОЛЖИТЬ МАРШРУТ   ",
-                      static_cast<int>(motion.routeLegIndex), static_cast<int>(motion.routeLegCount));
-        routeHint = r;
-    }
+        routeHint = tr("cockpit.flight.route_paused", {std::to_string(static_cast<int>(motion.routeLegIndex)),
+                                                       std::to_string(static_cast<int>(motion.routeLegCount))}) + "   ";
     if (motion.freeFlight && motion.jChargeCapacityT > 0.0)
-    {
-        char c[64];
-        std::snprintf(c, sizeof c, "  ·  заряд J %.3f / %.0f т", motion.jChargeT, motion.jChargeCapacityT);
-        line1 << c;
-    }
-    const char* keys = motion.jEngine
-        ? "   HOME +макс · END -макс · INSERT 0 · +/- ускорение · Ctrl+J выкл J · Ctrl+K стабилизация"
-        : "   HOME тяга · END торм. · INSERT выкл · PgDn посадка · Ctrl+J двигатель J · Ctrl+K стабилизация";
+        line1 << "  ·  " << tr("cockpit.flight.j_charge", {hudNumber("%.3f", motion.jChargeT), hudNumber("%.0f", motion.jChargeCapacityT)});
+    const std::string keys = "   " + tr(motion.jEngine ? "cockpit.flight.keys_j" : "cockpit.flight.keys_main");
     std::string line2 = motion.freeFlight
         ? thrust + keys
-        : std::string("Ctrl+K нормальный полёт (без предела скорости)  ·  Ctrl+J двигатель J");
+        : tr("cockpit.flight.keys_stabilized");
     line2 = routeHint + line2;
-    if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::NoLocalFrame))
-        line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::CaptureTooFast))
-        line2 = "Захват невозможен: слишком высокая скорость относительно хаба   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JDroppedNearObject))
-        line2 = "J выключен: рядом объект   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::BelowJFloorMainEngines))
-        line2 = "Ниже пола J: маршевые двигатели   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JRefusedNearObject))
-        line2 = "J не включается: рядом объект (хаб / станция 20 км, корабль 5 км)   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JChargeEmpty))
-        line2 = "J: заряд прыжкового двигателя исчерпан   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JRefusedBelowFloor))
-        line2 = "J не включается: ниже пола J   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::LandingThrustTooLow))
-        line2 = "Посадка невозможна: тяги маршевых не хватит, чтобы сесть и взлететь   " + line2;
-    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::LandingAtmosphere))
-        line2 = "Посадка невозможна: атмосфера - садятся только челноки   " + line2;
+    {
+        using game::navigation::FlightRefusal;
+        const char* refusalKey = nullptr;
+        const auto refusal = motion.freeFlightCaptureRefusal;
+        if (refusal == game::navigation::code(FlightRefusal::NoLocalFrame))
+            refusalKey = "cockpit.flight.refusal.no_local_frame";
+        else if (refusal == game::navigation::code(FlightRefusal::CaptureTooFast))
+            refusalKey = "cockpit.flight.refusal.capture_too_fast";
+        else if (refusal == game::navigation::code(FlightRefusal::JDroppedNearObject))
+            refusalKey = "cockpit.flight.refusal.j_dropped_near_object";
+        else if (refusal == game::navigation::code(FlightRefusal::BelowJFloorMainEngines))
+            refusalKey = "cockpit.flight.refusal.below_j_floor_main";
+        else if (refusal == game::navigation::code(FlightRefusal::JRefusedNearObject))
+            refusalKey = "cockpit.flight.refusal.j_refused_near_object";
+        else if (refusal == game::navigation::code(FlightRefusal::JChargeEmpty))
+            refusalKey = "cockpit.flight.refusal.j_charge_empty";
+        else if (refusal == game::navigation::code(FlightRefusal::JRefusedBelowFloor))
+            refusalKey = "cockpit.flight.refusal.j_refused_below_floor";
+        else if (refusal == game::navigation::code(FlightRefusal::LandingThrustTooLow))
+            refusalKey = "cockpit.flight.refusal.landing_thrust_too_low";
+        else if (refusal == game::navigation::code(FlightRefusal::LandingAtmosphere))
+            refusalKey = "cockpit.flight.refusal.landing_atmosphere";
+        if (refusalKey)
+            line2 = tr(refusalKey) + "   " + line2;
+    }
 
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);
@@ -2006,19 +2029,22 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         std::string target = motion.freeFlightAutopilotTargetId;
         if (const auto dot = target.rfind('.'); dot != std::string::npos)
             target = target.substr(dot + 1);
-        static const char* phases[] = {"", "уход от тела", "перелёт", "подход", "снижение на площадку", "на поверхности",
-                                       "к площадке", "выбор площадки", "орбита: нет ровной площадки, поиск",
-                                       "выход из зоны хаба (J мягко)", "стабилизация над грунтом",
-                                       "сход с орбиты (нормальный полёт, маршевые)", "на орбите (стабилизация), ждём схода"};
+        static const char* phases[] = {nullptr, "cockpit.autopilot.phase.leave_body", "cockpit.autopilot.phase.transfer",
+                                       "cockpit.autopilot.phase.approach", "cockpit.autopilot.phase.descend_pad",
+                                       "cockpit.autopilot.phase.on_surface", "cockpit.autopilot.phase.to_pad",
+                                       "cockpit.autopilot.phase.choose_pad", "cockpit.autopilot.phase.orbit_search",
+                                       "cockpit.autopilot.phase.leave_hub", "cockpit.autopilot.phase.ground_stab",
+                                       "cockpit.autopilot.phase.deorbit", "cockpit.autopilot.phase.orbit_wait"};
         const int phase = std::min<int>(motion.freeFlightAutopilotPhase, 12);
-        char ap[256];
+        const std::string phaseText = phases[phase] ? tr(phases[phase]) : std::string();
+        std::string ap;
         if (phase == 5)
-            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s", target.c_str(), phases[phase]);
+            ap = tr("cockpit.autopilot.line_short", {target, phaseText});
         else
-            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   %s %s   ·   скорость %s   ·   ускорение %+.1f g",
-                          target.c_str(), phases[phase], phase == 6 || phase == 11 ? "до площадки" : "до поверхности",
-                          jDistance(motion.freeFlightAutopilotRangeM).c_str(),
-                          jSpeed(motion.freeFlightAutopilotRelSpeedMps).c_str(), motion.freeFlightAutopilotAccelMps2 / 9.81);
+            ap = tr("cockpit.autopilot.line",
+                    {target, phaseText, tr(phase == 6 || phase == 11 ? "cockpit.autopilot.to_pad" : "cockpit.autopilot.to_surface"),
+                     jDistance(lookup, motion.freeFlightAutopilotRangeM), jSpeed(lookup, motion.freeFlightAutopilotRelSpeedMps),
+                     hudNumber("%+.1f", motion.freeFlightAutopilotAccelMps2 / 9.81)});
         const float aw = text.measureTextPx(ap, 16) + 40.0f;
         const float ax = std::max(8.0f, (static_cast<float>(viewport.width) - aw) * 0.5f);
         const float ay = y + 104.0f;
@@ -2042,29 +2068,28 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         const double ratio = motion.freeFlightOrbitCircularMps > 0.0 ? motion.freeFlightOrbitSpeedMps / motion.freeFlightOrbitCircularMps : 1.0;
         const glm::vec4 speedColour = ratio < 0.80 ? crimson : ratio < 0.90 ? red : ratio < 0.97 ? yellow
                                     : ratio < 0.995 ? white : motion.freeFlightOrbitSpeedMps > motion.freeFlightOrbitEscapeMps ? yellow : grey;
-        char a[96], b[96], c[128];
+        std::string a, b, c;
         // units by magnitude (109309 m was read as "100 000 km"); the minimum is the
         // altitude where drag at orbital speed reaches 0.1 m/s2 (airless: a terrain
         // margin). Beyond every planet's sphere: altitude and 1st cosmic are dashes.
         if (global)
         {
-            std::snprintf(a, sizeof a, "1-я косм.  —");
-            std::snprintf(b, sizeof b, "V  %s  (глобальная)", jSpeedSteady("hud.v.speed", motion.freeFlightOrbitSpeedMps).c_str());
-            std::snprintf(c, sizeof c, "H  —");
+            a = tr("cockpit.orbit_panel.circular", {"—"});
+            b = tr("cockpit.orbit_panel.v_global", {jSpeedSteady(lookup, "hud.v.speed", motion.freeFlightOrbitSpeedMps)});
+            c = "H  —";
         }
         else
         {
-            std::snprintf(a, sizeof a, "1-я косм.  %s", jSpeed(motion.freeFlightOrbitCircularMps).c_str());
-            std::snprintf(b, sizeof b, "V  %s   (%s верт.)", jSpeedSteady("hud.v.speed", motion.freeFlightOrbitSpeedMps).c_str(),
-                          jSpeed(motion.freeFlightOrbitRadialMps, true).c_str());
+            a = tr("cockpit.orbit_panel.circular", {jSpeed(lookup, motion.freeFlightOrbitCircularMps)});
+            b = tr("cockpit.orbit_panel.v_radial", {jSpeedSteady(lookup, "hud.v.speed", motion.freeFlightOrbitSpeedMps),
+                                                    jSpeed(lookup, motion.freeFlightOrbitRadialMps, true)});
             // near the ground the height that matters is above the ground (under the
             // hull); H over the mean radius (the Moon's highlands are +5 km) misled
             if (motion.freeFlightGroundMaterial >= 0 && motion.freeFlightOrbitAltitudeM < 15000.0)
-                std::snprintf(c, sizeof c, "H  %s над грунтом   (%s над ср. радиусом)",
-                              jDistance(motion.freeFlightOrbitAltitudeM - motion.freeFlightGroundHeightM).c_str(),
-                              jDistance(motion.freeFlightOrbitAltitudeM).c_str());
+                c = tr("cockpit.orbit_panel.h_ground", {jDistance(lookup, motion.freeFlightOrbitAltitudeM - motion.freeFlightGroundHeightM),
+                                                        jDistance(lookup, motion.freeFlightOrbitAltitudeM)});
             else
-                std::snprintf(c, sizeof c, "H  %s   мин. %s", jDistance(motion.freeFlightOrbitAltitudeM).c_str(), jDistance(safe).c_str());
+                c = tr("cockpit.orbit_panel.h_min", {jDistance(lookup, motion.freeFlightOrbitAltitudeM), jDistance(lookup, safe)});
         }
         const float px = static_cast<float>(viewport.width) * 0.70f;
         const float py = static_cast<float>(viewport.height) * 0.64f;
@@ -2073,28 +2098,29 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         text.textDrawPx(c, px, py + 41.0f, 15, global ? grey : altColour);
         if (motion.freeFlightOrbitDenseAltM > 0.0)
         {
-            char d[128];
-            std::snprintf(d, sizeof d, "плотные слои %.1f км   сопр. %.2f м/с2",
-                          motion.freeFlightOrbitDenseAltM / 1000.0, motion.freeFlightDragMps2);
+            const std::string d = tr("cockpit.orbit_panel.dense", {hudNumber("%.1f", motion.freeFlightOrbitDenseAltM / 1000.0),
+                                                                   hudNumber("%.2f", motion.freeFlightDragMps2)});
             text.textDrawPx(d, px, py + 61.0f, 13, motion.freeFlightOrbitAltitudeM < motion.freeFlightOrbitDenseAltM ? crimson : grey);
-            text.textDrawPx("мин.: сопр. 0.1 м/с2 на орб. скорости · плотные: 1 g",
+            text.textDrawPx(tr("cockpit.orbit_panel.dense_hint"),
                             px, py + 79.0f, 11, grey);
         }
 
         // the ground under the ship (when low): material, slope, terrain feature
         if (motion.freeFlightGroundMaterial >= 0 && motion.freeFlightOrbitAltitudeM < 15000.0)
         {
-            static const char* materials[] = {"скала", "базальт", "реголит", "песок / барханы", "грунт", "растительность",
-                                              "лёд", "снег", "соль", "лава"};
-            const char* material = motion.freeFlightGroundMaterial == 100 ? "вода"
-                : motion.freeFlightGroundMaterial < 10 ? materials[motion.freeFlightGroundMaterial] : "?";
-            const char* feature = motion.freeFlightGroundFeature == 3 ? "  ·  кратер"
-                : motion.freeFlightGroundFeature == 2 ? "  ·  горы"
-                : motion.freeFlightGroundFeature == 4 ? "  ·  вулкан" : "";
-            char g[160];
-            std::snprintf(g, sizeof g, "под нами: %s, уклон %.0f°%s  ·  над рельефом %.0f м", material,
-                          motion.freeFlightGroundSlopeDeg, feature,
-                          motion.freeFlightOrbitAltitudeM - motion.freeFlightGroundHeightM);
+            static const char* materials[] = {"cockpit.ground.material.rock", "cockpit.ground.material.basalt",
+                                              "cockpit.ground.material.regolith", "cockpit.ground.material.sand",
+                                              "cockpit.ground.material.soil", "cockpit.ground.material.vegetation",
+                                              "cockpit.ground.material.ice", "cockpit.ground.material.snow",
+                                              "cockpit.ground.material.salt", "cockpit.ground.material.lava"};
+            const std::string material = motion.freeFlightGroundMaterial == 100 ? tr("cockpit.ground.material.water")
+                : motion.freeFlightGroundMaterial < 10 ? tr(materials[motion.freeFlightGroundMaterial]) : std::string("?");
+            const char* featureKey = motion.freeFlightGroundFeature == 3 ? "cockpit.ground.feature.crater"
+                : motion.freeFlightGroundFeature == 2 ? "cockpit.ground.feature.mountains"
+                : motion.freeFlightGroundFeature == 4 ? "cockpit.ground.feature.volcano" : nullptr;
+            const std::string feature = featureKey ? "  ·  " + tr(featureKey) : std::string();
+            const std::string g = tr("cockpit.ground.line", {material, hudNumber("%.0f", motion.freeFlightGroundSlopeDeg), feature,
+                                                            hudNumber("%.0f", motion.freeFlightOrbitAltitudeM - motion.freeFlightGroundHeightM)});
             text.textDrawPx(g, px, py + 97.0f, 13,
                             motion.freeFlightGroundSlopeDeg > 25.0f || motion.freeFlightGroundMaterial == 9 ? red : white);
         }
@@ -2104,47 +2130,41 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         if (motion.destroyedCause != 0)
         {
             namespace cap = game::navigation::capsule;
-            warning = motion.destroyedCause == 1 ? "КОРАБЛЬ РАЗРУШЕН: удар о поверхность"
-                    : motion.destroyedCause == 3 ? "КОРАБЛЬ ВЫВЕДЕН ИЗ СТРОЯ: кабина или реакторы потеряны в бою"
-                    : motion.destroyedCause == 4 ? "КОРАБЛЬ РАЗРУШЕН: столкновение"
-                    : "КОРАБЛЬ РАЗРУШЕН: перегрузка в плотных слоях атмосферы";
+            warning = tr(motion.destroyedCause == 1 ? "cockpit.warning.destroyed_impact"
+                    : motion.destroyedCause == 3 ? "cockpit.warning.disabled_combat"
+                    : motion.destroyedCause == 4 ? "cockpit.warning.destroyed_collision"
+                    : "cockpit.warning.destroyed_overload");
             const auto cs = static_cast<cap::State>(motion.capsuleState);
             if (cs != cap::State::None)
             {
-                char tail[160];
+                const char* stateKey = capsuleStateKey(cs);
+                const std::string state = stateKey ? tr(stateKey) : std::string();
+                std::string tail;
                 if (cs == cap::State::PilotAlive || cs == cap::State::PilotKilled)
-                    std::snprintf(tail, sizeof tail, " · %s (%.0f g, предел %.0f g)", cap::stateText(cs), motion.capsuleBodyG, cap::BodyLimitG);
+                    tail = " · " + tr("cockpit.capsule.g_tail", {state, hudNumber("%.0f", motion.capsuleBodyG), hudNumber("%.0f", cap::BodyLimitG)});
                 // difficulty layer "capsule survival" (settings): the waiting game is a later slice
                 if (cs == cap::State::PilotAlive && context().app && context().app->clientModeState().capsuleSurvivalEnabled)
-                    std::snprintf(tail + std::strlen(tail), sizeof tail - std::strlen(tail), " · режим выживания в капсуле");
+                    tail += " · " + tr("cockpit.capsule.survival_mode");
                 else
-                    std::snprintf(tail, sizeof tail, " · %s", cap::stateText(cs));
+                    tail = " · " + state;
                 warning += tail;
             }
         }
         else if (motion.freeFlightSurfaceState == 2)
-            warning = "КРУШЕНИЕ: удар о поверхность";
+            warning = tr("cockpit.warning.crash_impact");
         else if (motion.freeFlightSurfaceState == 1)
-            warning = "НА ПОВЕРХНОСТИ   HOME - взлёт";
+            warning = tr("cockpit.warning.on_surface");
         else if (motion.freeFlightDragMps2 > 9.81)
-            warning = "ПЛОТНЫЕ СЛОИ АТМОСФЕРЫ: нагрев и удар по корпусу";
+            warning = tr("cockpit.warning.dense_atmosphere");
         else if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5)
             ;   // the autopilot flies the descent: its own panel tells the state
         else if (motion.freeFlightOrbitAltitudeM < 20000.0 && motion.freeFlightOrbitRadialMps < -1.0 &&
                  motion.freeFlightOrbitSpeedMps < 1500.0)
-        {
-            char low[128];
-            std::snprintf(low, sizeof low, "СНИЖЕНИЕ: %.0f м/с вниз  (посадка < 8, выживание < 34 м/с)", -motion.freeFlightOrbitRadialMps);
-            warning = low;
-        }
+            warning = tr("cockpit.warning.descent", {hudNumber("%.0f", -motion.freeFlightOrbitRadialMps)});
         else if (motion.freeFlightDragMps2 > 0.1)
-        {
-            char atm[128];
-            std::snprintf(atm, sizeof atm, "ВХОД В АТМОСФЕРУ: сопротивление %.1f м/с2 - скорость падает", motion.freeFlightDragMps2);
-            warning = atm;
-        }
+            warning = tr("cockpit.warning.atmosphere_entry", {hudNumber("%.1f", motion.freeFlightDragMps2)});
         else if (!global && motion.freeFlightOrbitRadialMps < -1.0 && motion.freeFlightOrbitPeriapsisAltM < safe)
-            warning = "ОПАСНОСТЬ СВАЛИВАНИЯ: перицентр ниже безопасной высоты - поднимите скорость";
+            warning = tr("cockpit.warning.stall");
         if (!warning.empty())
         {
             const float ww = text.measureTextPx(warning, 18) + 40.0f;
@@ -2277,8 +2297,8 @@ void SpaceState::renderContainmentBeacon(const Viewport& viewport)
     const auto bar = alarm->message.find('|');
     const std::string head = alarm->message.substr(0, bar);
     const std::string advice = bar == std::string::npos ? std::string() : alarm->message.substr(bar + 1);
-    char line[200];
-    std::snprintf(line, sizeof line, "%s   ·   ядро %.0f K   ·   %.0f с", head.c_str(), alarm->value, alarm->threshold);
+    const std::string line = hudText(hudLookup(context().app), "cockpit.containment.line",
+                                     {head, hudNumber("%.0f", alarm->value), hudNumber("%.0f", alarm->threshold)});
     const float tw = std::max(text.measureTextPx(line, 18), text.measureTextPx(advice, 14));
     const float w = tw + 90.0f;
     const float x = std::max(8.0f, (static_cast<float>(viewport.width) - w) * 0.5f);

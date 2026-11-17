@@ -19,6 +19,10 @@ void setSegmentedRouteDiagnosticClock(SegmentedRouteDiagnosticClockMs clock);
 class SegmentedRouteComposer final
 {
 public:
+    // the hard straight a free leg keeps after a mandatory stage's release before it may turn (the rest of the
+    // dynamic start lead stays turn budget); HubLaneRouting sizes the lanes' exits with it
+    static constexpr double ReleaseProtectedStraightMeters = 150.0;
+
     [[nodiscard]] static planner::RoutePlan plan(
         const planner::RoutePlanRequest& terminalRequest,
         const CompiledTrafficRoute& trafficRoute

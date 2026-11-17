@@ -94,6 +94,17 @@ vec3 facadeWindows(vec3 nObj)
     return mix(nearGlow, farGlow, far);
 }
 
+// Elite Classic draws a structure as black fill + light edges, and the edges of a static megastructure fade out by
+// ~1.9 km (SceneRenderer: the instanced edge pass skips farther instances). Beyond that the city was black on black -
+// "the city disappeared" (author 2026-11-18). Where the edges are gone the fill turns into a dim monochrome grey with
+// a simple light, so the masses keep their silhouette in the vector look.
+vec3 eliteClassicHull(vec3 n, vec3 l)
+{
+    float far = smoothstep(900.0, 2200.0, distance(cameraPos, vWorldPos));
+    float wrap = clamp((dot(n, l) + 0.35) / 1.35, 0.0, 1.0);
+    return mix(vec3(0.012), vec3(0.045, 0.048, 0.052) + vec3(0.11) * wrap, far);
+}
+
 void main()
 {
     // Emissive faces (window lights, beacons, floodlights): ModelAssetGpuLibrary passes their glow colour + 2 as the
@@ -109,7 +120,7 @@ void main()
         float wrap2 = clamp((dot(nn, l2) + 0.42) / 1.42, 0.0, 1.0);
         vec3 hull = base * (ambientColor * 0.45 + lightColor * wrap2 * 0.6);
         if (uSceneStyle == 0)
-            hull = vec3(0.012);                                  // Classic: black structure, the lights only
+            hull = eliteClassicHull(nn, l2);                     // Classic: black near (edges draw it), grey far
         else if (uSceneStyle == 2)
             hull = base * mix(0.30, 0.75, step(0.0, dot(nn, l2)));   // Anime: two flat masses
         FragColor = vec4(pow(max(hull, vec3(0.0)), vec3(1.0 / 1.08)) + win * (uSceneStyle == 1 ? 1.5 : 1.1), 1.0);
@@ -167,8 +178,8 @@ void main()
 
     if (uSceneStyle == 0)
     {
-        // Elite Classic: opaque black structure; edges draw it.
-        FragColor = vec4(vec3(0.012), 1.0);
+        // Elite Classic: opaque black structure; edges draw it (grey far away, where the edges are gone).
+        FragColor = vec4(eliteClassicHull(n, l), 1.0);
         return;
     }
     if (uSceneStyle == 2)

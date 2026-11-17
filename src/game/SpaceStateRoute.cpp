@@ -43,6 +43,21 @@ const route::ZoneCatalog& zoneCatalog()
     static const route::ZoneCatalog catalog = route::loadZoneCatalog();
     return catalog;
 }
+
+// the route's player-visible text in the active UI language (cockpit.route.* in
+// src/assets/localization/ui/cockpit/flight.json)
+std::string routeText(const Application* app, const char* key, std::initializer_list<std::string> args = {})
+{
+    return game::presentation::TerminalLocalizedText::render(
+        [app](const char* k) { return localizedUiText(app, k, k); }, key, args);
+}
+
+std::string routeNumber(const char* format, double value)
+{
+    char b[48];
+    std::snprintf(b, sizeof b, format, value);
+    return b;
+}
 } // namespace
 
 route::AnchorResolver SpaceState::routeAnchorResolver() const
@@ -108,7 +123,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
     const double capacity = motion.jChargeCapacityT;   // the ship's own (0: no jump drive)
     if (capacity <= 0.0 || motion.jumpCoreRatingT <= 0.0)
     {
-        plan.summary = "нет прыжкового двигателя: маршрут на J невозможен";
+        plan.summary = routeText(context().app, "cockpit.route.no_jump_drive");
         std::cerr << "[RoutePlan] the ship has no jump drive - no J route" << std::endl;
         return;
     }
@@ -141,7 +156,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         if (order.empty() || order.back()->role != game::navigation::NavigationWaypointRole::Finish)
         {
             std::cerr << "[RoutePlan] no finish on the map" << std::endl;
-            plan.summary = "нет финиша";
+            plan.summary = routeText(context().app, "cockpit.route.no_finish");
             return;
         }
 
@@ -180,7 +195,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
                     continue;
                 const bool star = starMu > 0.0 && mu(b.id) >= starMu;
                 std::string name = b.id.substr(b.id.rfind('.') + 1);
-                req.bodies.push_back({star ? "звезда " + name + " (нагрев)" : name, b.worldMeters,
+                req.bodies.push_back({star ? routeText(context().app, "cockpit.route.star_heat", {name}) : name, b.worldMeters,
                                       game::navigation::rules::clearanceM(r, atmosphere(b.id, r), star)});
             }
         }
@@ -254,7 +269,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
                 if (glm::length(p.worldM) < 1.0)
                 {
                     std::cerr << "[RoutePlan] no position for the hub " << w->target.stableObjectId << std::endl;
-                    plan.summary = "нет координат цели: " + w->displayName;
+                    plan.summary = routeText(context().app, "cockpit.route.no_target_coords", {w->displayName});
                     return;
                 }
             }
@@ -336,7 +351,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         }
         if (bestHub.empty())
         {
-            shortage = "заряда J не хватит, заправки на пути нет";
+            shortage = routeText(context().app, "cockpit.route.charge_short");
             break;
         }
         game::navigation::RouteTargetRef target;
@@ -351,7 +366,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         w.actions.refuel = true;
         w.stopAction = "refuel";
         w.insertedByPlanner = true;
-        w.insertedReason = "заправка";
+        w.insertedReason = routeText(context().app, "cockpit.route.refuel_reason");
         plan.moveIntermediateWaypoint(w.id, failAt + 1);
         inserted.push_back(hub.name);
         std::cerr << "[RoutePlan] J charge short before point " << failAt + 1 << ": planner inserted a refuel stop at " << bestHub
@@ -367,12 +382,11 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         std::cerr << " | " << n;
     std::cerr << std::endl;
     {
-        char text[256];
-        std::snprintf(text, sizeof text, "%zu плеч · %.0f тыс. км · J −%.3f т · финиш %.2f/%.0f т", planned.legs.size(),
-                      planned.lengthM / 1.0e6, chargeUsed, std::max(0.0, chargeAtFinish), capacity);
-        plan.summary = text;
+        plan.summary = routeText(context().app, "cockpit.route.summary",
+                                 {std::to_string(planned.legs.size()), routeNumber("%.0f", planned.lengthM / 1.0e6), routeNumber("%.3f", chargeUsed),
+                                  routeNumber("%.2f", std::max(0.0, chargeAtFinish)), routeNumber("%.0f", capacity)});
         if (!inserted.empty())
-            plan.summary += " · +" + std::to_string(inserted.size()) + " запр.";
+            plan.summary += " · " + routeText(context().app, "cockpit.route.refuel_count", {std::to_string(inserted.size())});
         if (!shortage.empty())
             plan.summary += " · " + shortage;
         int outside = 0;
@@ -381,7 +395,8 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
                 ++outside;
         if (outside > 0)
         {
-            plan.summary += " · вне зоны спасения: " + std::to_string(outside) + " из " + std::to_string(planned.legs.size()) + " точек";
+            plan.summary += " · " + routeText(context().app, "cockpit.route.outside_rescue",
+                                              {std::to_string(outside), std::to_string(planned.legs.size())});
             std::cerr << "[RoutePlan] " << outside << " of " << planned.legs.size() << " points outside the rescue zones" << std::endl;
         }
     }
@@ -425,7 +440,7 @@ void SpaceState::updateZoneViolations(double dt)
         const int now = clientRouteState();
         if (plan.serverRouteState != 0 && now == 0 && m_routeLaunched)
         {
-            plan.summary = "МАРШРУТ ВЫПОЛНЕН";
+            plan.summary = routeText(context().app, "cockpit.route.complete");
             m_routeLaunched = false;
             std::cerr << "[RoutePlan] ROUTE COMPLETE" << std::endl;
         }
@@ -443,10 +458,10 @@ void SpaceState::updateZoneViolations(double dt)
             for (const auto& z : zoneCatalog().zones)
                 if (z.id == motion.zoneViolationZoneId)
                 {
-                    m_violationText = std::string("АДМИНИСТРАТИВНОЕ НАРУШЕНИЕ: ") +
-                                      (motion.zoneViolationKind == 1 ? "вход в красную зону" : "пропущен обязательный створ") + " «" +
-                                      z.name + "»  ·  штраф " + std::to_string(static_cast<long long>(z.fineCr)) + " кр  ·  " +
-                                      z.authority;
+                    m_violationText = routeText(
+                        context().app, "cockpit.route.violation",
+                        {routeText(context().app, motion.zoneViolationKind == 1 ? "cockpit.route.violation_red_zone" : "cockpit.route.violation_gate"),
+                         z.name, std::to_string(static_cast<long long>(z.fineCr)), z.authority});
                     m_violationShowSeconds = 8.0;
                 }
     }

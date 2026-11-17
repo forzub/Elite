@@ -3,6 +3,7 @@
 #include "src/core/ThreadPriority.h"
 #include "src/game/SpaceStateInternal.h"
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
+#include "src/game/navigation/traffic/HubLaneRouting.h"
 #include <memory>
 
 
@@ -2737,11 +2738,9 @@ void SpaceState::updateDockingStabilizing(Frame& f)
             return;
     }
 
-    // A generated settlement's own lane network (assets/data/navigation/hub_lanes/<hub>.json): the cheapest chain of
-    // GREEN lane spans to the dock becomes the compiled traffic route (lane interiors pre-written, only the free legs
-    // planned); its RED zones (cargo berths) join the obstacles of every free leg.
-    // ON by default since the network carries its own pre-written turns / plaza connectors and the ship joins and
-    // leaves it only beyond the rim (2026-11-17); ELITE_HUB_LANES=0 switches it off (A/B diagnostics).
+    // A generated settlement's own lane network (HubLaneCatalog; game::navigation::traffic::applyHubLanes): RED zones
+    // join the obstacles, the hub speed limit applies, the cheapest pre-written lane chain becomes the compiled
+    // traffic route. ON by default; ELITE_HUB_LANES=0 switches it off (A/B diagnostics).
     static const bool hubLanesEnabled = [] { const char* v = std::getenv("ELITE_HUB_LANES"); return !(v && *v == '0'); }();
     if (hubLanesEnabled && !lateEntryRebind && !compiledTrafficRoute.valid)
     {
@@ -2749,66 +2748,23 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         for (const auto& object : snapshot.objects)
             if (object.hubAttachment.valid && object.hubAttachment.moduleId == pending.target.stableObjectId)
                 hubId = object.hubAttachment.hubId;
-        static std::unordered_map<std::string, std::shared_ptr<game::navigation::traffic::HubLaneNetwork>> networks;
-        auto& network = networks[hubId];
-        if (!hubId.empty() && !network)
-        {
-            network = std::make_shared<game::navigation::traffic::HubLaneNetwork>();
-            if (!network->load("assets/data/navigation/hub_lanes/" + hubId + ".json"))
-                std::cerr << "[HubLanes] " << hubId << ": " << network->failure() << std::endl;
-            else
-                std::cerr << "[HubLanes] " << hubId << ": " << network->lanes().size() << " lanes, "
-                          << network->redZones().size() << " red zones" << std::endl;
-        }
+        const auto* network = game::navigation::traffic::HubLaneCatalog::forHub(hubId);
         const auto frameObject = std::find_if(
             snapshot.objects.begin(), snapshot.objects.end(), [&](const auto& object) {
-                return network && network->loaded() && object.hubAttachment.valid &&
+                return network && object.hubAttachment.valid &&
                        object.hubAttachment.moduleId == network->frameModuleId();
             });
         if (frameObject != snapshot.objects.end())
         {
             const auto& attachment = frameObject->hubAttachment;
-            const glm::dvec3 angles = attachment.localRotationDeg +
-                                      attachment.localAngularVelocityDegPerSecond * snapshot.epoch.universeTimeSeconds;
-            const glm::dmat3 visualRotation(glm::mat3(game::navigation::hubLocalEulerDegToMatrix(angles)));
-            game::navigation::traffic::NavigationReferenceFramePose framePose;
-            framePose.originWorldMeters = game::navigation::hubVisualToTacticalVector(attachment.localOffsetMeters);
-            framePose.localToWorldBasis = glm::dmat3(
-                game::navigation::hubVisualToTacticalVector(visualRotation * glm::dvec3(1.0, 0.0, 0.0)),
-                game::navigation::hubVisualToTacticalVector(visualRotation * glm::dvec3(0.0, 1.0, 0.0)),
-                game::navigation::hubVisualToTacticalVector(visualRotation * glm::dvec3(0.0, 0.0, 1.0)));
-            for (auto& red : network->redZoneObstacles(framePose))
-                request.obstacles.push_back(std::move(red));
-            // the hub speed limit for a route INTO the hub (its goal within the zone; the lanes carry their own limits)
-            if (network->speedLimitMps() > 0.0 &&
-                glm::length(request.goalMeters - framePose.originWorldMeters) <= network->speedLimitZoneMeters() &&
-                request.maxSpeedMps > network->speedLimitMps())
-            {
-                std::cerr << "[HubLanes] hub speed limit " << network->speedLimitMps() << " m/s (route max was "
-                          << request.maxSpeedMps << ")" << std::endl;
-                request.maxSpeedMps = network->speedLimitMps();
-            }
-            std::string summary;
-            auto laneRoute = network->chooseRoute(
-                framePose, request.startMeters, request.goalMeters, request.vehicleLengthMeters,
-                request.hasInitialForward ? request.initialForward : glm::dvec3(0.0), request.initialForwardLeadMeters,
-                -request.terminalOutward, &summary);
-            std::cerr << "[HubLanes] request=" << pending.serial << " " << summary << std::endl;
+            const auto framePose = game::navigation::traffic::hubModulePlanningFrame(
+                {attachment.localOffsetMeters, attachment.localRotationDeg, attachment.localAngularVelocityDegPerSecond},
+                snapshot.epoch.universeTimeSeconds);
+            std::string log;
+            auto laneRoute = game::navigation::traffic::applyHubLanes(*network, framePose, request, &log);
+            std::cerr << "[HubLanes] request=" << pending.serial << " " << log << std::endl;
             if (laneRoute.valid)
-            {
                 compiledTrafficRoute = std::move(laneRoute);
-                request.requiredViaPointsMeters = compiledTrafficRoute.requiredViaPointsMeters;
-                request.mandatoryTangentStraights.clear();
-                for (const auto& straight : compiledTrafficRoute.mandatoryTangentStraights)
-                {
-                    game::navigation::planner::MandatoryTangentStraightConstraint constraint;
-                    constraint.startMeters = straight.startWorldMeters;
-                    constraint.endMeters = straight.endWorldMeters;
-                    constraint.minimumStraightMeters = straight.lengthMeters;
-                    constraint.inbound = straight.inbound;
-                    request.mandatoryTangentStraights.push_back(constraint);
-                }
-            }
         }
     }
 

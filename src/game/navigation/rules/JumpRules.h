@@ -170,6 +170,34 @@ inline double exitSigmaM(double distanceLy, double lockFactor)
 // the exit is "far off" when it lies outside the 3 sigma planning box (a sump later)
 constexpr double ExitFarOffSigmas = 3.0;
 
+// The player-facing refusal text: a localization key (src/assets/localization/ui/cockpit/flight.json);
+// the client resolves it in the active UI language. refusalText below stays for the server's logs.
+inline const char* refusalKey(Refusal r)
+{
+    switch (r)
+    {
+    case Refusal::NotInNormalFlight: return "cockpit.jump.refusal.not_in_normal_flight";
+    case Refusal::TooFar: return "cockpit.jump.refusal.too_far";
+    case Refusal::CoreOverloaded: return "cockpit.jump.refusal.core_overloaded";
+    case Refusal::NotEnoughCharge: return "cockpit.jump.refusal.not_enough_charge";
+    case Refusal::NearObjects: return "cockpit.jump.refusal.near_objects";
+    case Refusal::SameSystem: return "cockpit.jump.refusal.same_system";
+    case Refusal::UnknownSystem: return "cockpit.jump.refusal.unknown_system";
+    case Refusal::Cancelled: return "cockpit.jump.refusal.cancelled";
+    case Refusal::Interrupted: return "cockpit.jump.refusal.interrupted";
+    case Refusal::FieldIncomplete: return "cockpit.jump.refusal.field_incomplete";
+    case Refusal::ShipDisabled: return "cockpit.jump.refusal.ship_disabled";
+    case Refusal::ShipDestroyed: return "cockpit.jump.refusal.ship_destroyed";
+    case Refusal::StarInTheWay: return "cockpit.jump.refusal.star_in_the_way";
+    case Refusal::TooClose: return "cockpit.jump.refusal.too_close";
+    case Refusal::UnknownBody: return "cockpit.jump.refusal.unknown_body";
+    case Refusal::ZoneViolated: return "cockpit.jump.refusal.zone_violated";
+    case Refusal::LineBlocked: return "cockpit.jump.refusal.line_blocked";
+    case Refusal::SumpCaught: return "cockpit.jump.refusal.sump_caught";
+    default: return nullptr;
+    }
+}
+
 inline const char* refusalText(Refusal r)
 {
     switch (r)

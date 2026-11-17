@@ -52,21 +52,14 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
     };
     for (const auto& [oid, object] : world.objects())
     {
-        const std::string& module = object.hubAttachment.moduleId;
-        if (!object.hubAttachment.valid || module.size() < 6 || module.compare(module.size() - 5, 5, ".city") != 0 ||
-            object.systemId != player.transform.motion.systemId)
+        // the module whose pose is a lane network's frame (HubLaneCatalog: frame_module_id of the hub's lane file)
+        if (!object.hubAttachment.valid || object.systemId != player.transform.motion.systemId)
+            continue;
+        const auto* network = game::navigation::traffic::HubLaneCatalog::forFrameModule(object.hubAttachment.moduleId);
+        if (!network)
             continue;
         const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
         if (glm::length(origin - playerMeters) > 60000.0)
-            continue;
-        const std::string hubId = module.substr(0, module.size() - 5);
-        auto& network = m_networks[hubId];
-        if (!network)
-        {
-            network = std::make_unique<game::navigation::traffic::HubLaneNetwork>();
-            network->load("assets/data/navigation/hub_lanes/" + hubId + ".json");
-        }
-        if (!network->loaded())
             continue;
         const glm::dmat3 R(glm::mat3(object.renderOrientation));
         const auto toWorld = [&](const glm::dvec3& local) { return origin + R * local; };

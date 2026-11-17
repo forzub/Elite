@@ -19,10 +19,9 @@ namespace render::cockpit
 /*
     The hub's corridors in the flight view (author 2026-11-17: «надо на худ отображать зеленые, синие и красные
     корридоры. таким - еле заметным оттенком»; «я имел в виду видимость корридоров в самой игре на HUD»): the GREEN
-    lanes as faint rings round the lane every ~200 m joined by four thin lines, the RED zones as faint box edges -
+    lanes as faint rings round the lane every ~250 m joined by four thin lines, the RED zones as faint box edges -
     only near the ship (fading out to FadeMeters), drawn on the glass like the guidance corridor. Source: the same
-    HubLaneNetwork the docking planner uses (assets/data/navigation/hub_lanes/<hub>.json, frame = the hub's <hub>.city
-    module, its render pose).
+    HubLaneNetwork the docking planner uses (HubLaneCatalog; frame = the network's frame module, its render pose).
 */
 class HubCorridorHudRenderer
 {
@@ -44,7 +43,6 @@ private:
                  glm::vec2& outPx) const;
 
     render::hud::HudPrimitiveBatch m_batch;
-    std::unordered_map<std::string, std::unique_ptr<game::navigation::traffic::HubLaneNetwork>> m_networks;
 };
 
 } // namespace render::cockpit

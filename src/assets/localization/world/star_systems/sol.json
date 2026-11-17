@@ -172,11 +172,11 @@
   },
   "hubs": {
     "earth_orbital_hub": {
-      "en": "Earth Orbital Hub",
-      "ru": "Орбитальный хаб Земли",
-      "zh-Hans": "地球轨道枢纽",
-      "es": "Nodo orbital terrestre",
-      "ja": "地球軌道ハブ"
+      "en": "Vysokiy",
+      "ru": "Высокий",
+      "zh-Hans": "维索基",
+      "es": "Vysoki",
+      "ja": "ヴィソーキー"
     },
     "earth_high_orbital": {
       "en": "Earth High Orbital",
@@ -184,6 +184,83 @@
       "zh-Hans": "地球高轨站",
       "es": "Estación orbital alta terrestre",
       "ja": "地球高軌道ステーション"
+    },
+    "earth_hub.tikhiy": {
+      "en": "Tikhiy",
+      "ru": "Тихий",
+      "zh-Hans": "季希",
+      "es": "Tiji",
+      "ja": "チーヒー"
+    },
+    "earth_hub.canaveral": {
+      "en": "Canaveral",
+      "ru": "Канаверал",
+      "zh-Hans": "卡纳维拉尔",
+      "es": "Cañaveral",
+      "ja": "カナベラル"
+    },
+    "earth_hub.wenchang": {
+      "en": "Wenchang",
+      "ru": "Вэньчан",
+      "zh-Hans": "文昌",
+      "es": "Wenchang",
+      "ja": "文昌"
+    },
+    "earth_hub.kourou": {
+      "en": "Kourou",
+      "ru": "Куру",
+      "zh-Hans": "库鲁",
+      "es": "Kourou",
+      "ja": "クールー"
+    },
+    "earth_hub.ekvator": {
+      "en": "Equator",
+      "ru": "Экватор",
+      "zh-Hans": "赤道",
+      "es": "Ecuador",
+      "ja": "赤道"
+    },
+    "earth_hub.aurora": {
+      "en": "Aurora",
+      "ru": "Аврора",
+      "zh-Hans": "极光",
+      "es": "Aurora",
+      "ja": "オーロラ"
+    },
+    "site.000.sol.ceres": {
+      "en": "Ceres Pass",
+      "ru": "Перевал Цереры",
+      "zh-Hans": "谷神星山口",
+      "es": "Paso de Ceres",
+      "ja": "ケレス峠"
+    },
+    "proto_district": {
+      "en": "Prototype District (belt)",
+      "ru": "Район-прототип (пояс)",
+      "zh-Hans": "原型街区（小行星带）",
+      "es": "Distrito prototipo (cinturón)",
+      "ja": "プロトタイプ地区（小惑星帯）"
+    },
+    "proto_mega": {
+      "en": "Prototype Megastructure (belt)",
+      "ru": "Мегаструктура-прототип (пояс)",
+      "zh-Hans": "原型巨构（小行星带）",
+      "es": "Megaestructura prototipo (cinturón)",
+      "ja": "プロトタイプ巨大構造物（小惑星帯）"
+    },
+    "belt_demo": {
+      "en": "Belt Settlement (generator)",
+      "ru": "Поселение «Пояс» (генератор)",
+      "zh-Hans": "“带”定居点（生成器）",
+      "es": "Asentamiento «Cinturón» (generador)",
+      "ja": "「ベルト」居住地（ジェネレーター）"
+    },
+    "plane_demo": {
+      "en": "Floating City \"Plane\" (generator)",
+      "ru": "Парящий город «Плоскость» (генератор)",
+      "zh-Hans": "悬浮城市“平面”（生成器）",
+      "es": "Ciudad flotante «Plano» (generador)",
+      "ja": "浮遊都市「プレーン」（ジェネレーター）"
     }
   }
 }

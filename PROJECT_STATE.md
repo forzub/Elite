@@ -6056,3 +6056,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   of 10 meridians + 11 parallels + straight poles, sphere r 132 filling a portal of lattice legs and a 580 m box-truss
   beam running past one leg as a crane jib with a king post, ties and a trolley. LIVE (release, Modern, dev start
   at the districts): D:/tmp/ts.png, frame p50 4.4 / 5.1 ms; previews vs video D:/tmp/tower_sphere.png.
+
+- 2026-11-17 SPIRE CROWN = ANTENNAS (author on 3:38:02: «на самом деле это что-то вроде антенн, там нет шара
+  внутри»). My crown (a cage of 8 arcs round a core) read as a ball - wrong. Reworked from zoomed frames
+  (D:/tmp/yt/crowns.png): a cluttered core stack with thin masts, a horizontal lattice halo (two rings + bars + lights),
+  4 flat vertical ladder antennas of different heights standing tangentially on the halo, one open hook-arc of two
+  rails with rungs (~250 deg) with a short ladder hanging off its open end; asymmetric, each variant turned its own way.
+  The sphere in the portal (0:34) is a different structure (it does have a ball). LIVE (release, Modern + Classic):
+  close and district views D:/tmp/sp.png.

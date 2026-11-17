@@ -127,32 +127,82 @@ def crown_spire_builder(name, H, seed):
                 box(s, rng.choice((HULL, LIGHT)), ((rr - 2) * math.cos(a), yc, (rr - 2) * math.sin(a)), (w, rng.uniform(14, 22), 9.0), rot_y(-a))
                 if hi:
                     box(s, WARM if k % 3 else COOL, ((rr + 2.6) * math.cos(a), yc + 2.0, (rr + 2.6) * math.sin(a)), (1.6, 1.6, 1.6))
-        # the crown: a core, stacked rings, a cage of arcs, a vertical wheel on top, needles
+        # the crown (author 2026-11-17 on 3:38:02: «на самом деле это что-то вроде антенн, там нет шара внутри»): an OPEN
+        # antenna structure - a cluttered core stack with thin masts, a horizontal lattice halo round it, flat vertical
+        # ladder-like antenna panels standing on the halo, and one big open hook-arc of two rails with rungs over it all;
+        # asymmetric (each variant turns it its own way).
         C = H + 34.0
-        cyl(s, HULL, (0, H - 6.0, 0), (0, C + 26.0, 0), 9.0, max(8, seg // 2))
-        for dy, rr in ((-30.0, 26.0), (-14.0, 32.0), (2.0, 34.0), (18.0, 30.0), (32.0, 22.0)):
-            ring_y(s, STEEL, (0, C + dy, 0), rr - 2.0, 3.0, 2.4, seg)
+        yaw = rng.uniform(0, 2 * math.pi)
+        lattice_column(s, STEEL, H - 4.0, C + 70.0, 10.0, 6.0, 6 if hi else 3, 1.2, 0.6)     # the core stack's frame
+        for k in range(7 if hi else 3):                                                   # clutter in the core stack
+            box(s, rng.choice((HULL, LIGHT, STEEL)), (rng.uniform(-6, 6), C - 20.0 + k * 13.0, rng.uniform(-6, 6)),
+                (rng.uniform(8, 16), rng.uniform(6, 11), rng.uniform(8, 16)), rot_y(rng.uniform(0, 3)))
+            if hi and k % 2 == 0:
+                box(s, WARM, (rng.uniform(-8, 8), C - 18.0 + k * 13.0, 8.5), (1.4, 1.4, 0.3))
+        for k in range(5 if hi else 3):                                                   # thin masts out of the core
+            a0 = yaw + 2 * math.pi * k / 5
+            x, z = 4.0 * math.cos(a0), 4.0 * math.sin(a0)
+            cyl(s, STEEL, (x, C + 60.0, z), (x * 1.3, C + 95.0 + 25.0 * rng.random(), z * 1.3), 0.6, 4)
+        # the halo: two rings with cross bars + spokes to the core
+        HR = 34.0
+        ring_y(s, STEEL, (0, C, 0), HR - 1.0, 2.0, 1.6, seg)
+        ring_y(s, STEEL, (0, C + 6.0, 0), HR - 1.0, 2.0, 1.6, seg)
         if lod < 3:
-            narc = 8 if hi else 4
-            for k in range(narc):
-                arc_tube(s, STEEL, (0, C + 10.0, 0), 34.0, -1.1, math.pi + 1.1, math.pi * k / narc, 1.4, 18 if hi else 8, sy=1.7)
-            for k in range(6):                                                       # boxes inside the cage
-                a = 2 * math.pi * k / 6 + 0.3
-                box(s, LIGHT, (16.0 * math.cos(a), C + rng.uniform(-18, 14), 16.0 * math.sin(a)), (8.0, 10.0, 6.0), rot_y(-a))
-            # the vertical wheel on top, facing out (+Z)
-            lathe(s, STEEL, [(20.0, -1.0), (23.0, -1.0), (23.0, 1.0), (20.0, 1.0), (20.0, -1.0)], seg, t=(0.0, C + 64.0, 0.0))
-            for k in range(8):
-                a = 2 * math.pi * k / 8
-                cyl(s, STEEL, (0, C + 64.0, 0), (21.0 * math.cos(a), C + 64.0 + 21.0 * math.sin(a), 0), 0.6, 4)
-            cyl(s, STEEL, (0, C + 26.0, 0), (0, C + 43.0, 0), 2.0, 6)
-            for k in range(8):                                                       # needles
-                a = 2 * math.pi * k / 8
-                r0 = 30.0
-                cyl(s, STEEL, (r0 * math.cos(a), C + 30.0, r0 * math.sin(a)),
-                    (r0 * 0.6 * math.cos(a), C + 60.0 + 18.0 * (k % 3), r0 * 0.6 * math.sin(a)), 0.6, 4)
+            nb = 24 if hi else 8
+            for k in range(nb):
+                a0 = 2 * math.pi * k / nb
+                q = (HR * math.cos(a0), HR * math.sin(a0))
+                cyl(s, STEEL, (q[0], C, q[1]), (q[0], C + 6.0, q[1]), 0.5, 4)
+                if k % 4 == 0:
+                    cyl(s, STEEL, (q[0] * 0.3, C + 3.0, q[1] * 0.3), (q[0], C + 3.0, q[1]), 0.6, 4)
+                if hi and k % 3 == 0:
+                    box(s, WARM, (q[0] * 1.03, C + 3.0, q[1] * 1.03), (1.4, 1.4, 1.4))
+
+        def ladder(p0, p1, half_w, width_dir, rungs, rail=0.8):
+            """a flat lattice strip from p0 to p1: two rails half_w either side along width_dir, rungs between"""
+            for sg in (-1, 1):
+                o = tuple(c * sg * half_w for c in width_dir)
+                cyl(s, STEEL, tuple(p0[i] + o[i] for i in range(3)), tuple(p1[i] + o[i] for i in range(3)), rail, 4)
+            for j in range(rungs + 1):
+                t = j / rungs
+                m = tuple(p0[i] + (p1[i] - p0[i]) * t for i in range(3))
+                cyl(s, STEEL, tuple(m[i] - width_dir[i] * half_w for i in range(3)), tuple(m[i] + width_dir[i] * half_w for i in range(3)),
+                    rail * 0.6, 4)
+
+        if lod < 3:
+            # flat antenna panels standing on the halo, tangential, of different heights
+            for k, (da, hgt) in enumerate(((0.0, 70.0), (1.9, 52.0), (3.6, 80.0), (4.9, 44.0))):
+                if not hi and k % 2:
+                    continue
+                a0 = yaw + da
+                c0 = (HR * math.cos(a0), C + 6.0, HR * math.sin(a0))
+                tang = (-math.sin(a0), 0.0, math.cos(a0))
+                ladder(c0, (c0[0], C + 6.0 + hgt, c0[2]), 9.0, tang, 12 if hi else 5)
                 if hi:
-                    box(s, WARM, (34.5 * math.cos(a), C + 2.0, 34.5 * math.sin(a)), (1.8, 1.8, 1.8))
-        cyl(s, STEEL, (0, C + 86.0, 0), (0, C + 140.0, 0), 1.0, 6)                       # the central needle
+                    beacon(s, (c0[0], C + 7.0 + hgt, c0[2]), 1.0)
+            # the open hook-arc: two rails with rungs in one vertical plane, ~250 degrees, open on one side
+            pa = yaw + 0.6
+            ca, sa = math.cos(pa), math.sin(pa)
+            Rh, cy = 46.0, C + 48.0
+            n = 22 if hi else 10
+            a_start, a_end = math.radians(-60.0), math.radians(190.0)
+            prev = None
+            for j in range(n + 1):
+                t = a_start + (a_end - a_start) * j / n
+                pts = []
+                for off in (-2.5, 2.5):
+                    u, v = (Rh + off) * math.cos(t), (Rh + off) * math.sin(t) * 1.1
+                    pts.append((u * ca, cy + v, u * sa))
+                if prev:
+                    for q0, q1 in zip(prev, pts):
+                        cyl(s, STEEL, q0, q1, 1.0, 4)
+                cyl(s, STEEL, pts[0], pts[1], 0.5, 4)
+                prev = pts
+            # a short ladder antenna hanging off the arc's open end
+            u, v = Rh * math.cos(a_end), Rh * math.sin(a_end) * 1.1
+            e = (u * ca, cy + v, u * sa)
+            ladder(e, (e[0], e[1] - 30.0, e[2]), 4.0, (-sa, 0.0, ca), 6 if hi else 3)
+        cyl(s, STEEL, (0, C + 70.0, 0), (0, C + 140.0, 0), 1.0, 6)                       # the central needle
         beacon(s, (0, C + 141.0, 0), 2.2)
         return P
     return build
@@ -161,7 +211,7 @@ def crown_spire_builder(name, H, seed):
 def crown_spire_hits_for(name, H):
     C = H + 34.0
     return lambda: [hcyl(name, (0, 34.0, 0), (0, 87.0, 0), 76.0), hbox(name, (0, (87.0 + H) / 2, 0), (40.0, H - 87.0, 40.0)),
-                    hcyl(name, (0, C - 34.0, 0), (0, C + 88.0, 0), 36.0)]
+                    hcyl(name, (0, C - 20.0, 0), (0, C + 110.0, 0), 44.0)]
 
 
 crown_spire_parts = crown_spire_builder("hubv_crown_spire", 250.0, 31)

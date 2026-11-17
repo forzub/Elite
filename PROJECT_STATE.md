@@ -6075,3 +6075,37 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   (39 blocks, 7.4 x 5.0 km, 3714 nodes, 5 spinning): set hub_plane_demo, hub_belt_world.py now uses
   hub_plane.hub_layout (phase +0.0012 in initial_world_state). Top-down plan D:/tmp/plane_plan.png (scratch
   plane_plan.py). Launcher build/run_plane.bat. Packaged (mesh editor serve hung once on hubp_truck_station - restarted, then OK). LIVE (release, Modern, offscreen): loads, 6.0-6.4 ms p50 at 2.8 km and 5 km; D:/tmp/plane1.png, plane3.png.
+- 2026-11-17 PLANAR CITY: UNDERSIDE + DOCK + HIT VOLUMES (author: «надо сделать продолжение города - с другой стороны
+  от уровня "земли". надо еще добавить где-нибудь док и попробовать как автопилот будет строить маршрут через это все.
+  там же хит-валумы - учтены?»).
+  * Underside (hub_plane.py UNDER_MODULES / UNDER_OF, own rng so the top side is unchanged): every block hangs modules
+    upside down below its girders (towers under the centre, works / gas / fuel under industry, stores under the port,
+    a mirrored canopy disc), an underside road under every street girder, underside access bridges and crossings;
+    junction balls at crossings removed (collars poked through the plates). plane_demo 4693 nodes, 5322 hit volumes.
+    LIVE (release, Modern): D:/tmp/plane_under.png.
+  * Dock: the residential block nearest the centre at Chebyshev distance 2 holds an upright hex dock (plane_demo.dock,
+    slot facing +Y, back face on the street plane) + its service block under the plane (plane_demo.dock_base);
+    hub_belt_world.py writes the dock modules and copies the hub_hex_dock_a anchors / port state under the new ids into
+    navigation/hub_semantic_anchors.json + hub_docking_runtime_test.json.
+  * ROOT CAUSE (hit volumes): hub kit / settlement objects (HubKitModuleDescriptor: no module descriptors) had NO hit
+    volumes in the simulation - only the renderer read the package. Ships flew through them; the docking snapshot
+    would fail (ObstacleGeometryUnavailable). FIX: GameSceneSetup spawnHubDockModules loads the package's collision
+    volumes (asset space, cylinders/capsules -> bounding boxes) into hitComponent (GameSimulation::
+    setStaticObjectPackageHitVolumes, StaticObject::packageHitVolumes guards both descriptor rebuild sites). LIVE:
+    proto_district 844, proto_mega 17226, belt_demo 9568, plane_demo 5322 volumes loaded.
+  * Ship-vs-static collision: static bounding radius cached per object, narrow phase keeps only boxes that can reach
+    the other body's sphere (was: every settlement box per tick).
+  * ROOT CAUSE (route never finished): the docking planning snapshot took every object of the system - 33035 obstacles
+    in Sol. FIX: ClientNavigationPlanningSnapshotFactory keeps objects within ship-target distance + 50 km of the ship
+    or the target -> 5271 obstacles; the worker then FINISHES in 89-99 s (still far too slow).
+  * OPEN (not solved): after the plan is ready the automatic docking stays in planning+securing-course at 0 m/s
+    ("ЗАПРОС"), no DockPlanner report written (the result is adopted only after the motion settles). Not known
+    whether this is the city or general: NO reference dock exists - Vysokiy's dock_modules (hub_hex_dock_a,
+    hub_hex_dock_base, guidance_dock_cylinder_b) were dropped from initial_world_state.json by commit 429488bf2
+    (2026-11-08, the 614-hub regeneration); docking anywhere has been impossible since then.
+  * DEV: ELITE_DEV_START_MATCHED=1 (+ ELITE_DEV_START_AT) places the ship matched to the hub frame at a city point;
+    ELITE_DEV_DOCK_TARGET="module:anchor" for ELITE_DEV_DOCK_REQUEST_AT; ELITE_DEV_STDOUT=1 keeps stdout (route
+    diagnostics); [DockWorker] launched/finished lines with obstacle count and time.
+  * Perf not re-measured: the GPU was 100 % busy with an external process (ai-studio python) during these runs.
+  Next: planner acceleration (coarse obstacles: per-block group boxes far from the route, exact volumes near it /
+  spatial index), the stuck securing-course hand-off, restoring Vysokiy's dock as the reference.

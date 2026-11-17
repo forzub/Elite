@@ -428,6 +428,9 @@ public:
         const world::hubs::OrbitalHubRuntime& hub
     );
 
+    // hit volumes from the object's production package (hub kit / settlement modules: no module descriptors)
+    bool setStaticObjectPackageHitVolumes(EntityId objectId, std::vector<game::damage::HitVolume> volumes);
+
     bool attachStaticObjectToHub(
         EntityId objectId,
         const std::string& hubId,

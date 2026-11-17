@@ -1701,6 +1701,11 @@ m_hubVelocityMetersPerSecond[hubId] =
             obj.assemblyRuntime.update(dt);
             obj.detachedFragmentRuntime.update(fdt);
 
+            if (obj.hitVolumesDirty && obj.packageHitVolumes)
+            {
+                obj.hitVolumesDirty = false;
+                obj.staticSnapshotPayloadDirty = true;
+            }
             if (obj.hitVolumesDirty)
             {
                 const auto& desc = ObjectDescriptorRegistry::get(obj.type);
@@ -3461,6 +3466,18 @@ bool GameSimulation::registerOrbitalHub(
     }
 
     m_orbitalHubs[hub.id] = hub;
+    return true;
+}
+
+bool GameSimulation::setStaticObjectPackageHitVolumes(EntityId objectId, std::vector<game::damage::HitVolume> volumes)
+{
+    auto it = m_staticObjects.find(objectId);
+    if (it == m_staticObjects.end() || volumes.empty())
+        return false;
+    it->second.hitComponent.volumes = std::move(volumes);
+    it->second.packageHitVolumes = true;
+    it->second.hitVolumesDirty = false;
+    it->second.staticSnapshotPayloadDirty = true;
     return true;
 }
 

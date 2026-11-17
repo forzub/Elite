@@ -1516,10 +1516,17 @@ void GameSimulation::collideShips(double dt)
         b.w = b.R * glm::dvec3(o.angularVelocity);
         b.m = 1.0e15;
         b.I = 1.0e20;
-        b.r = 1.0;
-        for (const auto& v : o.hitComponent.volumes)
-            if (!v.destroyed)
-                b.r = std::max(b.r, static_cast<double>(glm::length(v.center) + glm::length(v.halfSize)));
+        // the bounding radius, cached per object (a generated settlement has thousands of volumes; destroyed ones only
+        // make the cached radius conservative)
+        static std::unordered_map<std::uint64_t, std::pair<std::size_t, double>> radiusCache;
+        auto& rc = radiusCache[oid.value];
+        if (rc.first != o.hitComponent.volumes.size())
+        {
+            rc = {o.hitComponent.volumes.size(), 1.0};
+            for (const auto& v : o.hitComponent.volumes)
+                rc.second = std::max(rc.second, static_cast<double>(glm::length(v.center) + glm::length(v.halfSize)));
+        }
+        b.r = rc.second;
         bodies.push_back(b);
         statics.push_back(&o);
     }
@@ -1535,7 +1542,9 @@ void GameSimulation::collideShips(double dt)
             if (glm::length(B.p - A.p) >= A.r + B.r)
                 continue;
             // narrow phase: every pair of placed, intact hit boxes
-            auto boxes = [&](const Body& X) {
+            // near: only the boxes that can reach the other body's sphere (a settlement: thousands of boxes, a ship
+            // inside its bounding sphere touches a handful)
+            auto boxes = [&](const Body& X, const Body& near) {
                 std::vector<WorldBox> out;
                 const auto& vols = X.ship ? X.ship->core().hitComponent().volumes
                                           : statics[static_cast<std::size_t>(&X - &bodies[shipCount])]->hitComponent.volumes;
@@ -1546,6 +1555,8 @@ void GameSimulation::collideShips(double dt)
                         continue;
                     WorldBox wb;
                     wb.c = X.p + X.R * glm::dvec3(v.center);
+                    if (glm::length(wb.c - near.p) > near.r + glm::length(glm::dvec3(v.halfSize)))
+                        continue;
                     wb.R = X.R * glm::dmat3(v.orientation);
                     wb.h = glm::dvec3(v.halfSize);
                     wb.index = n;
@@ -1553,7 +1564,7 @@ void GameSimulation::collideShips(double dt)
                 }
                 return out;
             };
-            const auto ba = boxes(A), bb = boxes(B);
+            const auto ba = boxes(A, B), bb = boxes(B, A);
             std::vector<std::pair<std::size_t, std::size_t>> touching;
             glm::dvec3 contact(0.0), dirSum(0.0);
             double maxPen = 0.0;

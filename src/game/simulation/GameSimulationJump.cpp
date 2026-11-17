@@ -917,6 +917,41 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
     }
     auto& tr = ship->core().transform();
     auto& motion = tr.motion;
+    // DEV: ELITE_DEV_START_MATCHED=1 with ELITE_DEV_START_AT - the ship at that city point MATCHED to the hub's frame
+    // (HubTactical, at rest in it), as a docking request needs (a docking test inside a generated settlement)
+    if (const char* matched = std::getenv("ELITE_DEV_START_MATCHED"); matched && *matched == '1' && !motion.freeFlight)
+    {
+        const char* at = std::getenv("ELITE_DEV_START_AT");
+        glm::dvec3 p(0.0), t(0.0);
+        const int n = at ? std::sscanf(at, "%lf,%lf,%lf;%lf,%lf,%lf", &p.x, &p.y, &p.z, &t.x, &t.y, &t.z) : 0;
+        for (const auto& [oid, obj] : m_staticObjects)
+        {
+            if (n < 3 || obj.hubId != hubId || obj.hubModuleId.size() < 5 ||
+                obj.hubModuleId.compare(obj.hubModuleId.size() - 5, 5, ".city") != 0)
+                continue;
+            const glm::dmat3 R(glm::mat3(obj.orientation));
+            const glm::dvec3 o = world::coordinates::fullMeters(obj.worldPosition);
+            const glm::dvec3 pos = o + R * p;
+            game::navigation::ReferenceFrame frame;
+            frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
+            frame.systemId = hub->systemId;
+            frame.hubId = hubId;
+            frame.localOffsetMeters = hub->worldToLocalPosition(pos);
+            if (!placeShipInReferenceFrame(id, frame))
+                break;
+            const glm::dvec3 fwd = glm::normalize((o + R * (n >= 6 ? t : glm::dvec3(0.0))) - pos);
+            glm::dvec3 side = glm::cross(fwd, R * glm::dvec3(0.0, 1.0, 0.0));
+            if (glm::length(side) < 1e-6)
+                side = glm::cross(fwd, glm::dvec3(1.0, 0.0, 0.0));
+            const glm::dvec3 right = glm::normalize(side);
+            tr.orientation = glm::mat4(glm::mat3(glm::dmat3(right, glm::cross(right, fwd), -fwd)));
+            tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
+            std::cerr << "[DevStart] ship " << id.value << ": matched to hub " << hubId << " at city point " << p.x << ","
+                      << p.y << "," << p.z << std::endl;
+            return true;
+        }
+        std::cerr << "[DevStart] ELITE_DEV_START_MATCHED: no city point - normal flight placement\n";
+    }
     if (!motion.freeFlight || m_freeFlights.count(id) == 0)
         (void)toggleFreeFlight(id);   // out of the start hub's frame into normal flight
     if (!motion.freeFlight || m_freeFlights.count(id) == 0)

@@ -88,6 +88,9 @@ struct StaticObject
     world::modules::ObjectDetachedFragmentRuntime detachedFragmentRuntime;
     game::damage::HitComponent hitComponent;
     bool hitVolumesDirty = true;
+    // The hit volumes were taken from the object's production package (hub kit / generated settlement modules have
+    // no module descriptors): the descriptor-driven ObjectRuntimeHitBuilder::rebuild must not replace them.
+    bool packageHitVolumes = false;
 
     // Static snapshot payload cache.
     // Rotation changes every tick, but modules / structural links / debug hit volumes

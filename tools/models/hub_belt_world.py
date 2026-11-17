@@ -56,6 +56,34 @@ def main():
                                     "offset_m": {"x": round(p[0], 3), "y": round(p[1], 3), "z": round(p[2], 3)},
                                     "rotation_deg": {"x": r[0], "y": r[1], "z": r[2]},
                                     "angular_velocity_deg_s": {"x": 0.0, "y": 0.0, "z": sp["rate_deg_s"]}})
+    # docks (the planar city has one): the hub's own module ids, the navigation anchors and the port state copied from
+    # the reference hex dock entry (hub_hex_dock_a) - the docking target is (module id, anchor id)
+    nav = os.path.join(ROOT, "src", "assets", "data", "navigation")
+    anchors = json.loads(open(os.path.join(nav, "hub_semantic_anchors.json"), encoding="utf-8").read())
+    ports = json.loads(open(os.path.join(nav, "hub_docking_runtime_test.json"), encoding="utf-8").read())
+    mine = lambda mid: mid.startswith(a.hub + ".")
+    anchors["modules"] = [m for m in anchors["modules"] if not mine(m["module_id"])]
+    ports["ports"] = [p for p in ports["ports"] if not mine(p["module_id"])]
+    ref = {"hub_hex_dock": next(m for m in anchors["modules"] if m["module_id"] == "hub_hex_dock_a")}
+    for dk in L.get("docks", []):
+        p, r = dk["position"], dk["rotation_deg"]
+        mid = f"{a.hub}.{dk['id']}"
+        hub["dock_modules"].append({"id": mid, "type": dk["type"], "name": dk["name"],
+                                    "offset_m": {"x": round(p[0], 3), "y": round(p[1], 3), "z": round(p[2], 3)},
+                                    "rotation_deg": {"x": r[0], "y": r[1], "z": r[2]},
+                                    "angular_velocity_deg_s": {"x": 0.0, "y": 0.0, "z": dk["spin_deg_s"]}})
+        if dk["type"] in ref:
+            m = copy.deepcopy(ref[dk["type"]])
+            m["module_id"] = mid
+            anchors["modules"].append(m)
+            for an in m["anchors"]:
+                if an["kind"] == "docking_port":
+                    ports["ports"].append({"module_id": mid, "anchor_id": an["id"], "operational": "online",
+                                           "occupancy": "free", "access": "allowed"})
+    open(os.path.join(nav, "hub_semantic_anchors.json"), "w", encoding="utf-8", newline="\n").write(
+        json.dumps(anchors, ensure_ascii=False, indent=2) + "\n")
+    open(os.path.join(nav, "hub_docking_runtime_test.json"), "w", encoding="utf-8", newline="\n").write(
+        json.dumps(ports, ensure_ascii=False, indent=2) + "\n")
     world["orbital_hubs"] = [h for h in hubs if h["id"] != a.hub] + [hub]
     open(WORLD, "w", encoding="utf-8", newline="\n").write(json.dumps(world, ensure_ascii=False, indent=2) + "\n")
     open(os.path.join(ROOT, "src", "assets", "data", f"{a.hub}_haze.json"), "w", encoding="utf-8", newline="\n").write(

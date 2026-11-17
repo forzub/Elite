@@ -1216,6 +1216,46 @@
             "y": 0.0,
             "z": -4.0
           }
+        },
+        {
+          "id": "plane_demo.dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "offset_m": {
+            "x": 1652.0,
+            "y": 200.0,
+            "z": -413.0
+          },
+          "rotation_deg": {
+            "x": 90.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "plane_demo.dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "offset_m": {
+            "x": 1652.0,
+            "y": -310.0,
+            "z": -413.0
+          },
+          "rotation_deg": {
+            "x": 90.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     }

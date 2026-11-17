@@ -44,6 +44,8 @@ void runDockAdviceWorker(
                 workerStarted
             ).count();
 
+        std::cerr << "[DockWorker] request=" << compileRequestSerial << " finished ms=" << job->workerDurationMs
+                  << std::endl;
         job->ready.store(
             true,
             std::memory_order_release
@@ -2923,6 +2925,8 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         request.startMeters;
     const double planningInitialSpeedMps =
         request.initialSpeedMps;
+    std::cerr << "[DockWorker] request=" << pending.serial << " launched obstacles=" << request.obstacles.size()
+              << std::endl;
 
     std::thread(
         [job,

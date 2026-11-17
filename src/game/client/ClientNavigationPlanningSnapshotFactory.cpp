@@ -333,9 +333,19 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
     // makes docking to external modules impossible, so docking/navigation must
     // never reconstruct that coarse fallback here.
     out.navigationObstacles.clear();
+    // Only objects near the route are obstacles: the whole system's set (other hubs thousands of km away, generated
+    // settlements with thousands of hit volumes each - 33k volumes in Sol on 2026-11-17) left the route planner
+    // unable to finish. Keep every object whose origin is within the ship-target distance + a margin (the largest
+    // hub structure extends < 20 km from its origin) of the ship or of the target.
+    const glm::dvec3 planShipMeters = world::coordinates::fullMeters(shipIt->worldPosition);
+    const glm::dvec3 planTargetMeters = world::coordinates::fullMeters(out.targetObject.worldPosition);
+    const double planReachMeters = glm::length(planTargetMeters - planShipMeters) + 50000.0;
     for (const auto& object : out.objects)
     {
         if (object.systemId != requestedSystemId)
+            continue;
+        if (const glm::dvec3 op = world::coordinates::fullMeters(object.worldPosition);
+            glm::length(op - planShipMeters) > planReachMeters && glm::length(op - planTargetMeters) > planReachMeters)
             continue;
 
         const auto cachedIt =

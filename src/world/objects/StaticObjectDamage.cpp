@@ -53,14 +53,15 @@ void applyDamage(StaticObject& obj, const game::damage::DamageEvent& event)
 
     const auto& desc = ObjectDescriptorRegistry::get(obj.type);
 
-    world::modules::ObjectRuntimeHitBuilder::rebuild(
-        obj.hitComponent,
-        obj.type,
-        desc,
-        obj.moduleRuntime,
-        obj.structuralLinkRuntime,
-        obj.assemblyRuntime
-    );
+    if (!obj.packageHitVolumes)
+        world::modules::ObjectRuntimeHitBuilder::rebuild(
+            obj.hitComponent,
+            obj.type,
+            desc,
+            obj.moduleRuntime,
+            obj.structuralLinkRuntime,
+            obj.assemblyRuntime
+        );
 
     obj.hitVolumesDirty = false;
     if (game::ship::geometry::AssemblyMeshLibrary::has(obj.type))

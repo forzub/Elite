@@ -28,12 +28,91 @@
 #include "src/world/orbits/OrbitalMotion.h"
 #include "src/world/hubs/OrbitalHubRuntime.h"
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/world/descriptors/ObjectDescriptorRegistry.h"
+#include "src/game/damage/HitVolume.h"
+#include "src/model_asset/ModelAssetBinary.h"
+
+#include <algorithm>
+#include <filesystem>
+#include <iostream>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace game::scene
 {
 
 namespace
 {
+
+// The hub kit and generated settlement modules (hubk_*, hubb_*, hub_<id> settlements) have no module descriptors
+// (HubKitModuleDescriptor), so ObjectRuntimeHitBuilder makes no hit volumes for them: ships flew through them and the
+// navigation planner had no geometry for them (author 2026-11-17: «там же хит-валумы - учтены?»). Their production
+// package carries the editor's collision volumes in asset space: those become the object's hit volumes (the same
+// asset -> logical basis as the renderer; these packages have no object_frame socket and no logical scaling).
+// A cylinder / capsule / sphere becomes its bounding box. Cached per package (a settlement: thousands of volumes).
+bool packageHitVolumes(ObjectType type, const std::string& path, std::vector<game::damage::HitVolume>& out)
+{
+    namespace ma = elite::model_asset;
+    static std::unordered_map<std::string, std::vector<game::damage::HitVolume>> cache;
+    const auto [it, inserted] = cache.try_emplace(path);
+    if (inserted)
+    {
+        ma::ModelAsset asset;
+        std::string error;
+        if (!std::filesystem::exists(path))
+            std::cerr << "[HubDocks] no package " << path << " - no hit volumes\n";
+        else if (!ma::ModelAssetBinary::load(path, asset, &error))
+            std::cerr << "[HubDocks] package " << path << " failed to load (" << error << ") - no hit volumes\n";
+        else
+        {
+            const glm::mat4 basis = ObjectDescriptorRegistry::get(type).meshToLogicalBasis4();
+            for (const auto& c : asset.collisionVolumes)
+            {
+                if (!c.enabled ||
+                    (!c.activeStates.empty() &&
+                     std::find(c.activeStates.begin(), c.activeStates.end(), "intact") == c.activeStates.end()))
+                    continue;
+                glm::vec3 half;
+                switch (c.shape)
+                {
+                    case ma::CollisionShape::Box: half = c.halfSize; break;
+                    case ma::CollisionShape::Sphere: half = glm::vec3(c.radius); break;
+                    case ma::CollisionShape::Capsule: half = glm::vec3(c.radius, c.halfHeight + c.radius, c.radius); break;
+                    case ma::CollisionShape::Cylinder:
+                    {
+                        const float r = std::max(c.radius, c.radiusTop);
+                        half = glm::vec3(r, c.halfHeight, r);
+                        break;
+                    }
+                    default: continue;
+                }
+                glm::mat4 m = glm::translate(glm::mat4(1.0f), c.localPosition);
+                m = glm::rotate(m, glm::radians(c.localRotationDeg.x), glm::vec3(1, 0, 0));
+                m = glm::rotate(m, glm::radians(c.localRotationDeg.y), glm::vec3(0, 1, 0));
+                m = glm::rotate(m, glm::radians(c.localRotationDeg.z), glm::vec3(0, 0, 1));
+                m = basis * m;
+                game::damage::HitVolume v;
+                v.zone = game::damage::HitZoneType::Hull;
+                v.center = glm::vec3(m[3]);
+                glm::mat3 r(m);
+                for (int k = 0; k < 3; ++k)
+                {
+                    const float len = glm::length(r[k]);
+                    half[k] *= len;
+                    if (len > 1.0e-6f)
+                        r[k] /= len;
+                }
+                v.orientation = r;
+                v.halfSize = half;
+                v.m_label = c.id;
+                v.moduleId = c.moduleId;
+                it->second.push_back(std::move(v));
+            }
+            std::cerr << "[HubDocks] " << path << ": " << it->second.size() << " hit volumes\n";
+        }
+    }
+    out = it->second;
+    return !out.empty();
+}
 
 glm::vec3 safeNormalize(
     const glm::vec3& v,
@@ -207,6 +286,13 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
             std::cerr << "[HubDocks] failed to attach " << dock.id << " to " << hub.id << "\n";
         else
             std::cerr << "[HubDocks] " << hub.id << ": " << dock.type << " " << dock.id << "\n";
+        if (kit != kHubKit.end() || type == ObjectType::HubBeltCity)
+        {
+            const std::string folder = type == ObjectType::HubBeltCity ? "hub_" + hub.id : dock.type;
+            std::vector<game::damage::HitVolume> volumes;
+            if (packageHitVolumes(type, "assets/compiled/hub_modules/" + folder + "/" + folder + ".elmodel", volumes))
+                sim.setStaticObjectPackageHitVolumes(id, std::move(volumes));
+        }
     }
 }
 

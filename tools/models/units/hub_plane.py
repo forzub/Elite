@@ -220,18 +220,31 @@ ZONE_MODULES = {
     "repair": [("hubb_repair_dock", 2), ("hubb_parking", 2), ("hubb_warehouse", 1)],
     "rig": [("hubv_rig", 1), ("hubv_pad_star", 2), ("hubv_cage_gantry", 1), ("hubv_mast", 1)],
 }
+# the city continues UNDER the plane (author 2026-11-17: «надо сделать продолжение города - с другой стороны от
+# уровня "земли"»): every block also hangs modules upside down below its girder lattice - towers hanging into the dark
+# under the centre, tanks and works under the industry, stores under the port; a mirrored disc under the canopy
+UNDER_Y = FRAME_Y - GIRDER_H - 2.0     # the underside "ground": just below the girder bottoms
+UNDER_MODULES = {
+    "towers": [("hubb_hab_tower", 3), ("hubk_hab_b", 3), ("hubv_saucer_tower", 1), ("hubv_gallery_tower", 1), ("hubv_crown_spire_c", 1),
+               ("hubb_hab_slab", 1)],
+    "res": [("hubb_hab_slab", 3), ("hubk_hab_a", 3), ("hubk_hab_c", 3), ("hubb_hab_tower", 1), ("hubv_ring_wheel", 1)],
+    "ind": [("hubb_works", 2), ("hubb_gas_battery", 3), ("hubb_fuel_spheres", 2), ("hubv_refinery", 1)],
+    "store": [("hubb_warehouse", 3), ("hubp_container_yard", 3), ("hubp_truck_station", 1), ("hubb_fuel_spheres", 1)],
+}
+UNDER_OF = {"downtown": "towers", "residential": "res", "industry": "ind", "refuel": "ind", "rig": "ind", "storage": "store",
+            "port": "store", "logistics": "store", "repair": "store"}
 # the piers a rim block of the zone puts out of its open sides: (module, its width across, its length)
 ZONE_PIERS = {"port": [("hubb_pier_l", 200.0), ("hubb_pier_m", 150.0)], "refuel": [("hubb_fuel_dock", 150.0)],
               "logistics": [("hubb_pier_m", 150.0)]}
 ZONE_TITLE = {"downtown": "Центр", "residential": "Жилой район", "hotel": "Гостиничные доки", "hab_rot": "Жилые барабаны",
               "storage": "Склады", "industry": "Промзона", "port": "Порт", "logistics": "Логистика", "refuel": "Заправка",
-              "repair": "Ремонтные доки", "rig": "Платформы", "canopy": "Диск"}
+              "repair": "Ремонтные доки", "rig": "Платформы", "canopy": "Диск", "dock": "Док"}
 WHEELED = {"storage", "industry", "port", "logistics", "refuel", "repair", "rig"}
 PASSENGER = {"downtown", "residential", "hotel", "hab_rot", "canopy"}
 
 
-def _yaw(d):
-    return tuple(_frame(d, (0.0, 1.0, 0.0)))
+def _yaw(d, down=False):
+    return tuple(_frame(d, (0.0, -1.0 if down else 1.0, 0.0)))
 
 
 _OBB = {}
@@ -249,14 +262,15 @@ def _footprint(folder, rot):
     lo, hi, _ = _obb()[folder]
     R = pads.euler(rot)
     cs = [apply(R, (x, y, z)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]
-    return (min(c[0] for c in cs), max(c[0] for c in cs), min(c[2] for c in cs), max(c[2] for c in cs), max(c[1] for c in cs))
+    return (min(c[0] for c in cs), max(c[0] for c in cs), min(c[2] for c in cs), max(c[2] for c in cs), max(abs(c[1]) for c in cs))
 
 
-def _pack(rng, region, choices, max_top=None, gap=26.0):
-    """shelf-pack modules into region (x0, z0, x1, z1): -> [(folder, rot, pos)]; shelves spread evenly"""
+def _pack(rng, region, choices, max_top=None, gap=26.0, down=False):
+    """shelf-pack modules into region (x0, z0, x1, z1): -> [(folder, rot, pos)]; shelves spread evenly; down: the
+    modules hang upside down (their +Y to world -Y)"""
     x0, z0, x1, z1 = region
     pool = [f for f, w in choices for _ in range(w)]
-    yaws = [_yaw(d) for d in ((0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 0.0, -1.0), (-1.0, 0.0, 0.0))]
+    yaws = [_yaw(d, down) for d in ((0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 0.0, -1.0), (-1.0, 0.0, 0.0))]
     shelves, cur, cx, cz, sh, fails = [], [], x0, z0, 0.0, 0
     while fails < 14:
         folder = rng.choice(pool)
@@ -307,7 +321,8 @@ def plane_layout(hub_id):
     seed = int(hashlib.sha1(hub_id.encode("utf-8")).hexdigest()[:12], 16)
     rng = random.Random(seed)
     rot_x = _yaw((1.0, 0.0, 0.0))
-    nodes, spinning, haze, module_of, districts = [], [], [], {}, []
+    nodes, spinning, haze, module_of, districts, docks = [], [], [], {}, [], []
+    rng_u = random.Random(seed ^ 0x5A5A5A)                 # the underside (keeps the top side as it was)
 
     def add(nid, folder, pos, rot, role, group):
         nodes.append((nid, folder, tuple(round(c, 3) + 0.0 for c in pos), tuple(round(c, 4) + 0.0 for c in rot), role,
@@ -351,9 +366,16 @@ def plane_layout(hub_id):
             kind[k] = rng.choice(["residential"] * 6 + ["hotel", "hab_rot"])
         else:
             kind[k] = rng.choice(["industry", "industry", "storage", "storage", "storage", "logistics"])
+    # the dock (author 2026-11-17: «надо еще добавить где-нибудь док и попробовать как автопилот будет строить маршрут
+    # через это все»): the residential block nearest the centre but two blocks away from it (clear of the canopy disc) -
+    # a ship docking there comes down over the towers
+    cheb = lambda k: max(abs(k[0] - centre[0]), abs(k[1] - centre[1]))
+    dock_pool = sorted((k for k in kind if kind[k] in ("residential", "downtown") and cheb(k) >= 2), key=lambda k: (rr[k], k))
+    dock_cell = dock_pool[0] if dock_pool else None
     for need in ("hotel", "hab_rot"):
         if need not in kind.values():
             res = sorted(k for k in kind if kind[k] in ("residential", "downtown") and abs(k[0] - centre[0]) + abs(k[1] - centre[1]) > 1)
+            res = [k for k in res if k != dock_cell]
             if res:
                 kind[rng.choice(res)] = need
 
@@ -364,8 +386,9 @@ def plane_layout(hub_id):
         g = f"c{k[0]}_{k[1]}_{kd}"
         h = CELL / 2
         # the girder lattice under the block (in the drum / hotel blocks only the rim lines along X - the bodies hang there)
-        lines_z = [] if kd in ("hab_rot", "hotel") else [-h, 0.0, h]
-        lines_x = [-h, h] if kd in ("hab_rot", "hotel") else [-h, 0.0, h]
+        rim_only = kd in ("hab_rot", "hotel") or k == dock_cell
+        lines_z = [] if rim_only else [-h, 0.0, h]
+        lines_x = [-h, h] if rim_only else [-h, 0.0, h]
         for li, x in enumerate(lines_z):
             for s in range(int(CELL // SEG_L)):
                 add(f"{g}_fz{li}_{s}", "hubb_girder", (c[0] + x, FRAME_Y, c[2] - h + s * SEG_L), ROT_Z, "frame", g)
@@ -396,6 +419,26 @@ def plane_layout(hub_id):
         else:
             near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
             placed = _pack(rng, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), ZONE_MODULES[kd], max_top=400.0 if near else None)
+        # the underside
+        if kd == "canopy":
+            placed = placed + [("hubv_canopy", _yaw((0.0, 0.0, 1.0), True), (0.0, UNDER_Y, 0.0))]
+        elif kd in UNDER_OF:
+            near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
+            placed = placed + [(f, r, (q[0], UNDER_Y, q[2])) for f, r, q in
+                               _pack(rng_u, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), UNDER_MODULES[UNDER_OF[kd]],
+                                     max_top=400.0 if near else None, down=True)]
+        if k == dock_cell:
+            # the hex dock (src/game/docking/model/HexDockFacility.h: a hexagonal body 400 m along its Z, apothem 150, the
+            # entry slot on its -Z face, a fixed service block 600 m behind it): upright, the slot facing +Y, its back
+            # face on the street plane, the service block hanging under the plane. The block's own modules are drawn
+            # (the rng stays in step) but not placed.
+            placed = []
+            docks.append({"id": "dock", "type": "hub_hex_dock", "position": (c[0], 200.0, c[2]), "rotation_deg": (90.0, 0.0, 0.0),
+                          "spin_deg_s": 2.0, "name": "Док"})
+            docks.append({"id": "dock_base", "type": "dock_service_block", "position": (c[0], 200.0 - 510.0, c[2]),
+                          "rotation_deg": (90.0, 0.0, 0.0), "spin_deg_s": 0.0, "name": "Док: сервисный блок"})
+            kd = "dock"
+            g = f"c{k[0]}_{k[1]}_{kd}"
         for mi, (folder, rot, p) in enumerate(placed):
             wp = _add(c, p)
             add(f"{g}_m{mi}", folder, wp, rot, "module", g)
@@ -438,12 +481,14 @@ def plane_layout(hub_id):
             x = (line - ci) * PITCH
             z0 = (at - cj) * PITCH - PITCH / 2
             d, rot, side = (0.0, 0.0, 1.0), ROT_Z, (1.0, 0.0, 0.0)
+            rot_d = _yaw(d, True)
             start = (x, 0.0, z0 + 20.0)
             node_pts |= {(round(x, 1), round(z0, 1)), (round(x, 1), round(z0 + PITCH, 1))}
         else:
             z = (line - cj) * PITCH
             x0 = (at - ci) * PITCH - PITCH / 2
             d, rot, side = (1.0, 0.0, 0.0), rot_x, (0.0, 0.0, -1.0)
+            rot_d = _yaw(d, True)
             start = (x0 + 20.0, 0.0, z)
             node_pts |= {(round(x0, 1), round(z, 1)), (round(x0 + PITCH, 1), round(z, 1))}
         nseg = int(round((PITCH - 40.0) / SEG_L))
@@ -451,6 +496,7 @@ def plane_layout(hub_id):
             p = _add(start, _mul(d, s * SEG_L))
             add(f"{g}_r{s}", "hubb_road", p, rot, "road", g)
             add(f"{g}_g{s}", "hubb_girder", (p[0], FRAME_Y, p[2]), rot, "girder", g)
+            add(f"{g}_u{s}", "hubb_road", (p[0], UNDER_Y, p[2]), rot_d, "road", g)
             if av:
                 for sg in (-1, 1):
                     add(f"{g}_t{sg}_{s}", "hubb_tube", _add((p[0], FRAME_Y + 4.0, p[2]), _mul(side, sg * 40.0)), rot, "tube", g)
@@ -465,11 +511,15 @@ def plane_layout(hub_id):
                 ad = _mul(side, float(sg))
                 add(f"{g}_a{sg}_{ai}", "hubb_road", a, _yaw(ad), "access", g)
                 add(f"{g}_ag{sg}_{ai}", "hubb_girder", (a[0], FRAME_Y, a[2]), _yaw(ad), "girder", g)
+                b = _add(_add(mid, _mul(d, -t)), _mul(side, sg * 13.0))
+                add(f"{g}_ua{sg}_{ai}", "hubb_road", (b[0], UNDER_Y, b[2]), _yaw(ad, True), "access", g)
+                add(f"{g}_uag{sg}_{ai}", "hubb_girder", (b[0], FRAME_Y, b[2]), _yaw(ad), "girder", g)
     for ni, (x, z) in enumerate(sorted(node_pts)):
         add(f"x{ni}", "hubp_crossing", (x, 0.0, z), ROT_Z, "crossing", f"xs{ni // 16}")
-        add(f"x{ni}_j", "hubb_junction", (x, FRAME_Y, z), ROT_Z, "junction", f"xs{ni // 16}")
+        add(f"x{ni}_u", "hubp_crossing", (x, UNDER_Y, z), _yaw((0.0, 0.0, 1.0), True), "crossing", f"xs{ni // 16}")
     return {"nodes": nodes, "spinning": spinning, "haze": haze, "module_of": module_of, "districts": districts,
-            "links": len(runs), "cells": {k: kind[k] for k in cells}, "grid": (N, M, ci, cj)}
+            "links": len(runs), "cells": {k: ("dock" if k == dock_cell else kind[k]) for k in cells}, "grid": (N, M, ci, cj),
+            "docks": docks}
 
 
 def hub_layout(hub_id):

@@ -724,15 +724,25 @@ void DevScriptRunner::requestDockingWhenDue(SpaceState& s)
         target.kind = game::navigation::NavigationRouteAnchorKind::SemanticAnchor;
         if (const auto it = s.m_client->world().ships().find(s.m_playerId.value); it != s.m_client->world().ships().end())
             target.systemId = it->second.transform.motion.systemId;
-        target.stableObjectId = DevDockModuleId;
-        target.semanticAnchorId = DevDockAnchorId;
+        // ELITE_DEV_DOCK_TARGET="<module id>:<anchor id>" (e.g. plane_demo.dock:dock_gate_front) overrides the gate
+        std::string module = DevDockModuleId, anchor = DevDockAnchorId;
+        if (const char* v = std::getenv("ELITE_DEV_DOCK_TARGET"); v && *v)
+        {
+            const std::string t(v);
+            const auto colon = t.rfind(':');
+            module = colon == std::string::npos ? t : t.substr(0, colon);
+            if (colon != std::string::npos)
+                anchor = t.substr(colon + 1);
+        }
+        target.stableObjectId = module;
+        target.semanticAnchorId = anchor;
         const auto serial = s.m_navigationWorkspace.dockingRouteRequests().request(
             target, game::navigation::DockingRouteRequest::Mode::Automatic);
         // the same modules a request from the dock card enables (route + corridor shown)
         s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::RoutePlanning, true);
         s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::LocalGuidance, true);
         s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::HudGuidanceCorridor, true);
-        std::cerr << "[DevDockRequest] request=" << serial << " target=" << DevDockModuleId << ':' << DevDockAnchorId << '\n';
+        std::cerr << "[DevDockRequest] request=" << serial << " target=" << module << ':' << anchor << '\n';
     }
 }
 

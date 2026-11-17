@@ -514,12 +514,72 @@ def plane_layout(hub_id):
                 b = _add(_add(mid, _mul(d, -t)), _mul(side, sg * 13.0))
                 add(f"{g}_ua{sg}_{ai}", "hubb_road", (b[0], UNDER_Y, b[2]), _yaw(ad, True), "access", g)
                 add(f"{g}_uag{sg}_{ai}", "hubb_girder", (b[0], FRAME_Y, b[2]), _yaw(ad), "girder", g)
+    lanes, red_zones = _plane_lanes(runs, ci, cj), []
+    for nid, folder, pos, rot, role, parent in nodes:
+        if role == "dock":                                      # the berths of a pier: a red zone (no through traffic)
+            import pads
+            L, bw = {"hubb_pier_l": (300.0, 64.0), "hubb_pier_m": (160.0, 44.0), "hubb_fuel_dock": (160.0, 44.0)}[folder]
+            R = pads.euler(rot)
+            red_zones.append({"id": f"red.{nid}", "center": tuple(round(v, 1) for v in _add(pos, apply(R, (0.0, 0.0, L / 2)))),
+                              "half_extents": (20.0 + bw + 10.0, 70.0, L / 2 + 20.0), "rotation_deg": rot})
     for ni, (x, z) in enumerate(sorted(node_pts)):
         add(f"x{ni}", "hubp_crossing", (x, 0.0, z), ROT_Z, "crossing", f"xs{ni // 16}")
         add(f"x{ni}_u", "hubp_crossing", (x, UNDER_Y, z), _yaw((0.0, 0.0, 1.0), True), "crossing", f"xs{ni // 16}")
     return {"nodes": nodes, "spinning": spinning, "haze": haze, "module_of": module_of, "districts": districts,
             "links": len(runs), "cells": {k: ("dock" if k == dock_cell else kind[k]) for k in cells}, "grid": (N, M, ci, cj),
-            "docks": docks}
+            "docks": docks, "lanes": lanes, "red_zones": red_zones}
+
+
+# ---------------------------------------------------------------- green traffic lanes (author 2026-11-17: «предлагаю
+# использовать таки зеленые, синие и красные зоны в пределах хаба ... зеленые тунели - зоны через весь город - карта
+# быстрых маршрутов сформированная заранее ... участки для докинга грузовиков - делаем красной зоной ... можно какую-то
+# часть вести в центр - там сделать типа площади и из центра уже разлетаться»): every straight street line of 3+
+# blocks carries air lanes down the middle of its gap - two one-way lanes side by side (right-hand traffic, 50 m off
+# the gap centre, radius 45 m: a T-5000 is 50 x 40), the lanes along Z at 150 m above the street plane, those along X
+# at 290 m (no lane crosses another at its level); the same set mirrored under the plane. The four lines round the
+# central block make the square round the canopy - the "plaza" every crossing lane passes.
+LANE_R, LANE_OFF, LANE_SPEED = 45.0, 50.0, 150.0
+LANE_Y = {"z": 150.0, "x": 290.0}
+LANE_MIN_BLOCKS = 3
+LANE_OVERRUN = 120.0           # past the end crossings
+
+
+def _plane_lanes(runs, ci, cj):
+    """-> [{id, a, b (city frame, the lane axis from entry to exit), radius, speed, level}]"""
+    by_line = {}
+    for ax, line, at in runs:
+        by_line.setdefault((ax, line), []).append(at)
+    lanes = []
+    for (ax, line), ats in sorted(by_line.items()):
+        ats = sorted(ats)
+        seg = [ats[0]]
+        groups = []
+        for v in ats[1:]:
+            if v == seg[-1] + 1:
+                seg.append(v)
+            else:
+                groups.append(seg)
+                seg = [v]
+        groups.append(seg)
+        for gi, gr in enumerate(groups):
+            if len(gr) < LANE_MIN_BLOCKS:
+                continue
+            c_line = (line - (ci if ax == "z" else cj)) * PITCH
+            c0 = (gr[0] - (cj if ax == "z" else ci)) * PITCH - PITCH / 2 - LANE_OVERRUN
+            c1 = (gr[-1] - (cj if ax == "z" else ci)) * PITCH + PITCH / 2 + LANE_OVERRUN
+            for level, ys in (("top", 1.0), ("under", -1.0)):
+                y = ys * LANE_Y[ax]
+                for sgn in (1, -1):                              # +1: travels towards +axis on the +side (right-hand)
+                    off = sgn * LANE_OFF
+                    if ax == "z":
+                        a, b = (c_line - off, y, c0), (c_line - off, y, c1)
+                    else:
+                        a, b = (c0, y, c_line + off), (c1, y, c_line + off)
+                    if sgn < 0:
+                        a, b = b, a
+                    lanes.append({"id": f"green.{ax}{line:g}.{gi}.{level}.{'p' if sgn > 0 else 'n'}", "a": a, "b": b,
+                                  "radius": LANE_R, "speed": LANE_SPEED, "level": level})
+    return lanes
 
 
 def hub_layout(hub_id):

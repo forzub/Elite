@@ -6123,3 +6123,15 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   (2 s), [DockClient] plan-ready / adopting lines. Launcher build/run_plane_dock.bat (console stays open).
   Open: planner speed (100 s for 5271 obstacles - needs coarse far obstacles / a spatial index), docking end-to-end
   (capture by a dock without the dispatcher: only hub_hex_dock_a has dispatcher / capture / pads).
+- 2026-11-17 DOCKING ROUTE FLOWN (free GPU, dock_run12, release, 16.6 ms frames): route 95.7 s to compute (5271
+  obstacles), adopted, flown the whole 25 km over the city, cross-track mostly < 25 m, no collision; the ship stopped
+  1.2 m before the route end (target 3.25 m/s, actual 0 - the follower does not finish the last metres) at city
+  (1652.8, 701, -772): 300 m above the dock top but 359 m off the dock axis in z per the city-frame track - to verify.
+  No capture: dispatcher / capture / pads exist only for hub_hex_dock_a.
+  Author's direction (same day): hub-scale GREEN lanes through the city (pre-written routes, planner plans only the
+  legs to / between / from lanes), BLUE mandatory, RED = cargo berths and the oncoming direction of one-way lanes;
+  a hub map / editor (layers = floors, SimCity-like module cards on grid cells, any 2D outline); later the same for
+  ground settlements. Generator step done: hub_plane._plane_lanes -> 44 lanes (one-way pairs, Z lanes at +-150 m, X
+  lanes at +-290 m, r 45 m, 150 m/s) + 34 pier red zones (layout "lanes" / "red_zones"); plan D:/tmp/plane_lanes.png.
+  Engine side (per-hub graph, lane choice by cost search from the ship, red OBB obstacles, connector obstacle
+  subsets, id hard-codes removed) not started.

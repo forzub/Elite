@@ -105,9 +105,18 @@ bool packageHitVolumes(ObjectType type, const std::string& path, std::vector<gam
                 v.halfSize = half;
                 v.m_label = c.id;
                 v.moduleId = c.moduleId;
+                // the node's module group (a block, a street run: the assembly's "modules" map) - the route planner merges
+                // a group far from the route into one box
+                if (c.parentNodeIndex >= 0 && static_cast<std::size_t>(c.parentNodeIndex) < asset.nodes.size())
+                    v.subsystemId = asset.nodes[static_cast<std::size_t>(c.parentNodeIndex)].moduleId;
                 it->second.push_back(std::move(v));
             }
-            std::cerr << "[HubDocks] " << path << ": " << it->second.size() << " hit volumes\n";
+            std::unordered_map<std::string, int> groupsSeen;
+            for (const auto& v : it->second)
+                ++groupsSeen[v.subsystemId];
+            std::cerr << "[HubDocks] " << path << ": " << it->second.size() << " hit volumes, " << groupsSeen.size()
+                      << " module groups (e.g. \"" << (it->second.empty() ? std::string() : it->second.front().subsystemId)
+                      << "\")" << std::endl;
         }
     }
     out = it->second;

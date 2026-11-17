@@ -358,8 +358,59 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
             return out;
         }
 
-        const auto& volumes =
+        const auto& exactVolumes =
             cachedIt->second.debugHitVolumes;
+        // A generated settlement (thousands of volumes): far from the ship-target segment each module group (a
+        // block, a street run) becomes ONE box - its bounds in the object frame - and only the volumes near the route
+        // stay exact. The planner searched ~6800 exact boxes for ~2 min (2026-11-17).
+        std::vector<game::simulation::DebugHitVolumeSnapshot> coarseVolumes;
+        if (exactVolumes.size() > 500)
+        {
+            constexpr double NearRouteMeters = 2000.0;
+            constexpr double MaxGroupDiagonalMeters = 1500.0;
+            const glm::dvec3 objectOrigin = world::coordinates::fullMeters(object.worldPosition);
+            const glm::dmat3 objectBasis(glm::mat3(object.orientation));
+            const glm::dvec3 seg = planTargetMeters - planShipMeters;
+            const double seg2 = std::max(glm::dot(seg, seg), 1.0e-9);
+            struct Group
+            {
+                glm::vec3 lo {1.0e30f}, hi {-1.0e30f};
+                std::vector<std::size_t> members;
+            };
+            std::unordered_map<std::string, Group> groups;
+            for (std::size_t i = 0; i < exactVolumes.size(); ++i)
+            {
+                const auto& v = exactVolumes[i];
+                const glm::dvec3 w = objectOrigin + objectBasis * glm::dvec3(v.center);
+                const double t = std::clamp(glm::dot(w - planShipMeters, seg) / seg2, 0.0, 1.0);
+                if (v.subsystemId.empty() || glm::length(w - (planShipMeters + seg * t)) < NearRouteMeters)
+                {
+                    coarseVolumes.push_back(v);
+                    continue;
+                }
+                auto& g = groups[v.subsystemId];
+                const glm::vec3 r = glm::abs(v.orientation[0]) * v.halfSize.x + glm::abs(v.orientation[1]) * v.halfSize.y +
+                                    glm::abs(v.orientation[2]) * v.halfSize.z;
+                g.lo = glm::min(g.lo, v.center - r);
+                g.hi = glm::max(g.hi, v.center + r);
+                g.members.push_back(i);
+            }
+            for (auto& [moduleId, g] : groups)
+            {
+                if (glm::length(g.hi - g.lo) > MaxGroupDiagonalMeters || g.members.size() < 2)
+                {
+                    for (const auto i : g.members)
+                        coarseVolumes.push_back(exactVolumes[i]);
+                    continue;
+                }
+                game::simulation::DebugHitVolumeSnapshot box = exactVolumes[g.members.front()];
+                box.center = 0.5f * (g.lo + g.hi);
+                box.halfSize = 0.5f * (g.hi - g.lo);
+                box.orientation = glm::mat3(1.0f);
+                coarseVolumes.push_back(box);
+            }
+        }
+        const auto& volumes = coarseVolumes.empty() ? exactVolumes : coarseVolumes;
         if (volumes.empty())
         {
             // Static graph payload is sparse on the wire, but ClientWorldState

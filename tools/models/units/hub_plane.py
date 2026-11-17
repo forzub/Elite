@@ -198,8 +198,8 @@ PASSPORTS = {k: (v[2], "hub_module", "Модуль плоского города
 
 
 # ================================================================ the planar city generator
-CELL, STREET = 600.0, 226.0            # a block; the gap between blocks (road edge to block edge = one 100 m bridge)
-PITCH = CELL + STREET
+CELL = 600.0                           # a block
+STREET_LOCAL, STREET_AVENUE = 300.0, 500.0   # the gaps between blocks by traffic class (see plane_layout)
 FRAME_Y = -GIRDER_H - 12.0             # the girder axes under the blocks and streets: the girder tops at y -12
 ROT_Z = (0.0, 0.0, 0.0)                # along +Z
 ROT_X = None                           # along +X (set below: _frame needs pads)
@@ -344,7 +344,33 @@ def plane_layout(hub_id):
                 seen.add(n)
                 todo.append(n)
     cells = seen
-    pos_of = lambda k: ((k[0] - ci) * PITCH, 0.0, (k[1] - cj) * PITCH)
+    # street gaps by traffic class (author 2026-11-17: «надо исходить из того, какие корабли будут двигаться по "городу"»
+    # -> 3 classes; «ньютоновскому кораблю в таком месте делать особо и нечего. поэтому все доки должны быть на
+    # окраинах»): local streets carry Assisted ships up to ~50 m (gap 300 m), avenues (every third line + the lines
+    # round the centre) Assisted up to ~100 m (gap 500 m); Newtonian / larger ships only dock on the rim.
+    av_x = lambda i: i % 3 == 0 or abs(i + 0.5 - ci) < 1.0
+    av_z = lambda j: j % 3 == 0 or abs(j + 0.5 - cj) < 1.0
+    gw_x = [STREET_AVENUE if av_x(i) else STREET_LOCAL for i in range(N - 1)]
+    gw_z = [STREET_AVENUE if av_z(j) else STREET_LOCAL for j in range(M - 1)]
+
+    def axis_centres(n, gw):
+        out = [0.0]
+        for i in range(1, n):
+            out.append(out[-1] + CELL + gw[i - 1])
+        sh = (out[0] + out[-1]) / 2
+        return [v - sh for v in out]
+    X, Z = axis_centres(N, gw_x), axis_centres(M, gw_z)
+
+    def line_at(cs, gw, i):
+        """the centre of the street line i + 0.5 (between cells i and i + 1); -1 / n-1: just outside the grid"""
+        if i < 0:
+            return cs[0] - CELL / 2 - STREET_LOCAL / 2
+        if i >= len(cs) - 1:
+            return cs[-1] + CELL / 2 + STREET_LOCAL / 2
+        return cs[i] + CELL / 2 + gw[i] / 2
+    line_x = lambda i: line_at(X, gw_x, i)
+    line_z = lambda j: line_at(Z, gw_z, j)
+    pos_of = lambda k: (X[k[0]], 0.0, Z[k[1]])
     nbr4 = lambda k: [(k[0] + 1, k[1]), (k[0] - 1, k[1]), (k[0], k[1] + 1), (k[0], k[1] - 1)]
     rim = {k for k in cells if any(n not in cells for n in nbr4(k))}
 
@@ -369,8 +395,13 @@ def plane_layout(hub_id):
     # the dock (author 2026-11-17: «надо еще добавить где-нибудь док и попробовать как автопилот будет строить маршрут
     # через это все»): the residential block nearest the centre but two blocks away from it (clear of the canopy disc) -
     # a ship docking there comes down over the towers
-    cheb = lambda k: max(abs(k[0] - centre[0]), abs(k[1] - centre[1]))
-    dock_pool = sorted((k for k in kind if kind[k] in ("residential", "downtown") and cheb(k) >= 2), key=lambda k: (rr[k], k))
+    # MOVED to the outskirts (author: «все доки должны быть на окраинах»): a rim block with an open side away from the
+    # port front; the hex dock's body sticks out of that side, its slot facing out (approach from open space), the
+    # service block lying along the axis inside the block
+    open_sides = lambda k: [o for o in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (k[0] + o[0], k[1] + o[1]) not in cells and
+                            not any(n in cells and n != k for n in nbr4((k[0] + o[0], k[1] + o[1])))]
+    dock_pool = sorted((k for k in kind if k in rim and kind[k] not in ("port", "logistics") and open_sides(k)),
+                       key=lambda k: (rr[k], k))
     dock_cell = dock_pool[0] if dock_pool else None
     for need in ("hotel", "hab_rot"):
         if need not in kind.values():
@@ -433,10 +464,13 @@ def plane_layout(hub_id):
             # face on the street plane, the service block hanging under the plane. The block's own modules are drawn
             # (the rng stays in step) but not placed.
             placed = []
-            docks.append({"id": "dock", "type": "hub_hex_dock", "position": (c[0], 200.0, c[2]), "rotation_deg": (90.0, 0.0, 0.0),
+            o2 = open_sides(k)[0]
+            o = (float(o2[0]), 0.0, float(o2[1]))
+            rot_dock = _yaw(_mul(o, -1.0))                       # local -Z (the slot) = out
+            docks.append({"id": "dock", "type": "hub_hex_dock", "position": _add(c, _mul(o, h + 210.0)), "rotation_deg": rot_dock,
                           "spin_deg_s": 2.0, "name": "Док"})
-            docks.append({"id": "dock_base", "type": "dock_service_block", "position": (c[0], 200.0 - 510.0, c[2]),
-                          "rotation_deg": (90.0, 0.0, 0.0), "spin_deg_s": 0.0, "name": "Док: сервисный блок"})
+            docks.append({"id": "dock_base", "type": "dock_service_block", "position": _add(c, _mul(o, h + 210.0 - 510.0)),
+                          "rotation_deg": rot_dock, "spin_deg_s": 0.0, "name": "Док: сервисный блок"})
             kd = "dock"
             g = f"c{k[0]}_{k[1]}_{kd}"
         for mi, (folder, rot, p) in enumerate(placed):
@@ -470,51 +504,61 @@ def plane_layout(hub_id):
             runs.append(("z", i + 0.5, j))           # a street along Z at column line i+0.5, beside row j
         if (i, j + 1) in cells:
             runs.append(("x", j + 0.5, i))
-    avenue = lambda ax, line: (line - 0.5) % 3 == 0 or abs(line - (ci if ax == "z" else cj)) < 1.0
     node_pts = set()
+
+    def pieces(a0, a1):
+        """100 m pieces covering [a0, a1]: offsets from a0; the last one ends at a1 (overlapping, lifted 4 cm)"""
+        n = max(1, int(math.ceil((a1 - a0) / SEG_L - 1.0e-6)))
+        return [(min(k * SEG_L, a1 - a0 - SEG_L), k == n - 1 and k * SEG_L > a1 - a0 - SEG_L) for k in range(n)]
+
     for ri, (ax, line, at) in enumerate(runs):
         g = f"s{ri}"
-        kinds = {kind[(int(line - 0.5), at)], kind[(int(line + 0.5), at)]} if ax == "z" else \
-            {kind[(at, int(line - 0.5))], kind[(at, int(line + 0.5))]}
-        av = avenue(ax, line)
+        li = int(line - 0.5)
+        kinds = {kind[(li, at)], kind[(li + 1, at)]} if ax == "z" else {kind[(at, li)], kind[(at, li + 1)]}
+        av = av_x(li) if ax == "z" else av_z(li)
+        gw = gw_x[li] if ax == "z" else gw_z[li]
         if ax == "z":
-            x = (line - ci) * PITCH
-            z0 = (at - cj) * PITCH - PITCH / 2
+            x = line_x(li)
+            a0, a1 = line_z(at - 1), line_z(at)
             d, rot, side = (0.0, 0.0, 1.0), ROT_Z, (1.0, 0.0, 0.0)
-            rot_d = _yaw(d, True)
-            start = (x, 0.0, z0 + 20.0)
-            node_pts |= {(round(x, 1), round(z0, 1)), (round(x, 1), round(z0 + PITCH, 1))}
+            start = (x, 0.0, a0 + 20.0)
+            node_pts |= {(round(x, 1), round(a0, 1)), (round(x, 1), round(a1, 1))}
         else:
-            z = (line - cj) * PITCH
-            x0 = (at - ci) * PITCH - PITCH / 2
+            z = line_z(li)
+            a0, a1 = line_x(at - 1), line_x(at)
             d, rot, side = (1.0, 0.0, 0.0), rot_x, (0.0, 0.0, -1.0)
-            rot_d = _yaw(d, True)
-            start = (x0 + 20.0, 0.0, z)
-            node_pts |= {(round(x0, 1), round(z, 1)), (round(x0 + PITCH, 1), round(z, 1))}
-        nseg = int(round((PITCH - 40.0) / SEG_L))
-        for s in range(nseg):
-            p = _add(start, _mul(d, s * SEG_L))
-            add(f"{g}_r{s}", "hubb_road", p, rot, "road", g)
-            add(f"{g}_g{s}", "hubb_girder", (p[0], FRAME_Y, p[2]), rot, "girder", g)
-            add(f"{g}_u{s}", "hubb_road", (p[0], UNDER_Y, p[2]), rot_d, "road", g)
+            start = (a0 + 20.0, 0.0, z)
+            node_pts |= {(round(a0, 1), round(z, 1)), (round(a1, 1), round(z, 1))}
+        rot_d = _yaw(d, True)
+        run_len = (a1 - a0) - 40.0
+        for s_i, (off, lift) in enumerate(pieces(0.0, run_len)):
+            p = _add(start, _mul(d, off))
+            dy = 0.04 if lift else 0.0
+            add(f"{g}_r{s_i}", "hubb_road", (p[0], dy, p[2]), rot, "road", g)
+            add(f"{g}_g{s_i}", "hubb_girder", (p[0], FRAME_Y, p[2]), rot, "girder", g)
+            add(f"{g}_u{s_i}", "hubb_road", (p[0], UNDER_Y - dy, p[2]), rot_d, "road", g)
             if av:
                 for sg in (-1, 1):
-                    add(f"{g}_t{sg}_{s}", "hubb_tube", _add((p[0], FRAME_Y + 4.0, p[2]), _mul(side, sg * 40.0)), rot, "tube", g)
+                    add(f"{g}_t{sg}_{s_i}", "hubb_tube", _add((p[0], FRAME_Y + 4.0, p[2]), _mul(side, sg * 40.0)), rot, "tube", g)
             if av and kinds & PASSENGER:
-                add(f"{g}_mr{s}", "hubb_monorail", _add((p[0], 14.0, p[2]), _mul(side, 18.0)), rot, "monorail", g)
-        # access bridges from the road edge into the two blocks beside it (1..2 per block side), girders under them
-        mid = _add(start, _mul(d, (PITCH - 40.0) / 2))
+                add(f"{g}_mr{s_i}", "hubb_monorail", _add((p[0], 14.0, p[2]), _mul(side, 18.0)), rot, "monorail", g)
+        # access bridges from the road edge to the block edges beside it (1..2 per side), girders under them
+        mid = _add(start, _mul(d, run_len / 2))
+        reach = gw / 2 - 13.0
         for sg in (-1, 1):
+            ad = _mul(side, float(sg))
             for ai in range(rng.choice((1, 1, 2))):
-                t = (rng.uniform(-200.0, 200.0) if ai == 0 else rng.uniform(-200.0, 200.0))
-                a = _add(_add(mid, _mul(d, t)), _mul(side, sg * 13.0))
-                ad = _mul(side, float(sg))
-                add(f"{g}_a{sg}_{ai}", "hubb_road", a, _yaw(ad), "access", g)
-                add(f"{g}_ag{sg}_{ai}", "hubb_girder", (a[0], FRAME_Y, a[2]), _yaw(ad), "girder", g)
-                b = _add(_add(mid, _mul(d, -t)), _mul(side, sg * 13.0))
-                add(f"{g}_ua{sg}_{ai}", "hubb_road", (b[0], UNDER_Y, b[2]), _yaw(ad, True), "access", g)
-                add(f"{g}_uag{sg}_{ai}", "hubb_girder", (b[0], FRAME_Y, b[2]), _yaw(ad), "girder", g)
-    lanes, red_zones = _plane_lanes(runs, ci, cj), []
+                t = rng.uniform(-200.0, 200.0)
+                for top in (True, False):
+                    base = _add(_add(mid, _mul(d, t if top else -t)), _mul(side, sg * 13.0))
+                    for pi_, (off, lift) in enumerate(pieces(0.0, reach)):
+                        q = _add(base, _mul(ad, off))
+                        dy = 0.04 if lift else 0.0
+                        tag = "" if top else "u"
+                        add(f"{g}_{tag}a{sg}_{ai}_{pi_}", "hubb_road", (q[0], dy if top else UNDER_Y - dy, q[2]),
+                            _yaw(ad, not top), "access", g)
+                        add(f"{g}_{tag}ag{sg}_{ai}_{pi_}", "hubb_girder", (q[0], FRAME_Y, q[2]), _yaw(ad), "girder", g)
+    lanes, red_zones = _plane_lanes(runs, line_x, line_z, av_x, av_z), []
     for nid, folder, pos, rot, role, parent in nodes:
         if role == "dock":                                      # the berths of a pier: a red zone (no through traffic)
             import pads
@@ -538,19 +582,24 @@ def plane_layout(hub_id):
 # the gap centre, radius 45 m: a T-5000 is 50 x 40), the lanes along Z at 150 m above the street plane, those along X
 # at 290 m (no lane crosses another at its level); the same set mirrored under the plane. The four lines round the
 # central block make the square round the canopy - the "plaza" every crossing lane passes.
-LANE_R, LANE_OFF, LANE_SPEED = 45.0, 50.0, 150.0
-LANE_Y = {"z": 150.0, "x": 290.0}
+# REVISED the same day (3 traffic classes, free legs only in open sky): the two directions of a street are stacked in
+# its centre (Z streets: +Z at 100 m, -Z at 210 m; X streets: +X at 320 m, -X at 430 m above the plane, mirrored
+# under it) - no lane crosses another at its level, and the clearance to the blocks is the whole half-gap.
+# Local streets: Assisted <= 55 m, r 35 m, 100 m/s; avenues: Assisted <= 100 m, r 55 m, 150 m/s.
+LANE_LEVELS = {("z", 1): 100.0, ("z", -1): 210.0, ("x", 1): 320.0, ("x", -1): 430.0}
+LANE_CLASS = {False: {"radius": 35.0, "speed": 100.0, "max_ship_m": 55.0},
+              True: {"radius": 55.0, "speed": 150.0, "max_ship_m": 100.0}}
 LANE_MIN_BLOCKS = 3
 LANE_OVERRUN = 120.0           # past the end crossings
 
 
-def _plane_lanes(runs, ci, cj):
-    """-> [{id, a, b (city frame, the lane axis from entry to exit), radius, speed, level}]"""
+def _plane_lanes(runs, line_x, line_z, av_x, av_z):
+    """-> [{id, a, b, stations (city frame, in travel order), radius, speed, max_ship_m, level}]"""
     by_line = {}
     for ax, line, at in runs:
-        by_line.setdefault((ax, line), []).append(at)
+        by_line.setdefault((ax, int(line - 0.5)), []).append(at)
     lanes = []
-    for (ax, line), ats in sorted(by_line.items()):
+    for (ax, li), ats in sorted(by_line.items()):
         ats = sorted(ats)
         seg = [ats[0]]
         groups = []
@@ -561,30 +610,23 @@ def _plane_lanes(runs, ci, cj):
                 groups.append(seg)
                 seg = [v]
         groups.append(seg)
+        avenue = av_x(li) if ax == "z" else av_z(li)
+        cls = LANE_CLASS[avenue]
+        c_line = line_x(li) if ax == "z" else line_z(li)
+        node_at = line_z if ax == "z" else line_x
         for gi, gr in enumerate(groups):
             if len(gr) < LANE_MIN_BLOCKS:
                 continue
-            c_line = (line - (ci if ax == "z" else cj)) * PITCH
-            c0 = (gr[0] - (cj if ax == "z" else ci)) * PITCH - PITCH / 2 - LANE_OVERRUN
-            c1 = (gr[-1] - (cj if ax == "z" else ci)) * PITCH + PITCH / 2 + LANE_OVERRUN
+            along = [node_at(gr[0] - 1) - LANE_OVERRUN] + [node_at(j - 1) for j in gr] + [node_at(gr[-1]), node_at(gr[-1]) + LANE_OVERRUN]
             for level, ys in (("top", 1.0), ("under", -1.0)):
-                y = ys * LANE_Y[ax]
-                for sgn in (1, -1):                              # +1: travels towards +axis on the +side (right-hand)
-                    off = sgn * LANE_OFF
-                    if ax == "z":
-                        a, b = (c_line - off, y, c0), (c_line - off, y, c1)
-                    else:
-                        a, b = (c0, y, c_line + off), (c1, y, c_line + off)
-                    # stations: the lane ends + every street crossing on the way (a ship may join / leave there)
-                    nodes_c = [(gr[0] - (cj if ax == "z" else ci)) * PITCH - PITCH / 2 + k * PITCH for k in range(len(gr) + 1)]
-                    along = [c0] + nodes_c + [c1]
-                    st = [(c_line - off, y, v) if ax == "z" else (v, y, c_line + off) for v in along]
+                for sgn in (1, -1):
+                    y = ys * LANE_LEVELS[(ax, sgn)]
+                    st = [(c_line, y, v) if ax == "z" else (v, y, c_line) for v in along]
                     if sgn < 0:
-                        a, b = b, a
                         st = st[::-1]
-                    lanes.append({"id": f"green.{ax}{line:g}.{gi}.{level}.{'p' if sgn > 0 else 'n'}", "a": a, "b": b,
-                                  "stations": [tuple(round(c, 2) for c in q) for q in st],
-                                  "radius": LANE_R, "speed": LANE_SPEED, "level": level})
+                    lanes.append({"id": f"green.{ax}{li + 0.5:g}.{gi}.{level}.{'p' if sgn > 0 else 'n'}", "a": st[0], "b": st[-1],
+                                  "stations": [tuple(round(c, 2) for c in q) for q in st], "radius": cls["radius"],
+                                  "speed": cls["speed"], "max_ship_m": cls["max_ship_m"], "level": level, "avenue": avenue})
     return lanes
 
 

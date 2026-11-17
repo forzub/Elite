@@ -6170,3 +6170,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   from the canyons up to open sky / the plaza, and the dock approach (a BLUE pre-written descent onto the dock); a
   hub speed limit (lanes 150 m/s, dock approach ~30 m/s) so the terminal straight is hundreds of metres, not 9 km;
   lanes centred in the gap, the two directions stacked in height.
+- 2026-11-17 ROADMAP ADDITIONS (author): «надо на худ отображать зеленые, синие и красные корридоры. таким - еле
+  заметным оттенком. надо придумать что-то вроде окна навигатора, что бы отображалась карта вид сверху и указаны все
+  зеленые, синие и красные корридоры». -> (a) in-flight HUD: hub lanes / blue passages / red zones as faint tinted
+  volumes in the world view; (b) a navigator window: top-down hub map with all green / blue / red corridors (base:
+  the existing Hub map F12 and its traffic lanes overlay, system_map/SystemMapRendererNavigation.cpp). Traffic classes
+  decided (author picked the 3-class option): local streets Assisted <= ~50 m (gap 300 m), avenues Assisted <= ~100 m
+  (gap 500 m), Newtonian / larger ships never enter - «все доки должны быть на окраинах»; the plane_demo hex dock
+  moved to a rim block, its slot facing out into open space.
+- 2026-11-17 PLANAR CITY REGRID + RIM DOCK + COARSE OBSTACLES. Generator: street gaps by traffic class (local 300 m,
+  avenues 500 m: every third line + the lines round the centre), 100 m road / access pieces cover any gap (the last
+  piece overlaps, lifted 4 cm), lanes centred in the gap with both directions stacked (Z: +100 / +210 m, X: +320 /
+  +430 m, mirrored under; local r 35 m 100 m/s <= 55 m ships, avenue r 55 m 150 m/s <= 100 m ships, law assisted),
+  canopy hanging towers shortened (bottoms >= 505 m, clear of the lanes); the hex dock moved to a rim block, slot
+  facing out (plane_demo.dock at city (-2000, 0, -1960), service block inside the block). City 8.9 x 6.0 km,
+  6222 nodes, 6791 hit volumes in 102 module groups (HitVolume.subsystemId = the node's assembly module group).
+  ClientNavigationPlanningSnapshotFactory: an object with > 500 volumes keeps exact volumes within 2 km of the
+  ship-target segment, every other module group (diagonal <= 1.5 km) becomes one box. LIVE rim docking (rim_run3,
+  release): 1100 obstacles (was 6800), route 18.7 s (was 104-114 s), flown to the end (remaining 0 m) on the dock
+  axis. No capture yet: dispatcher / capture / pads are keyed to hub_hex_dock_a.

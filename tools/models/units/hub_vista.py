@@ -698,7 +698,7 @@ def canopy_parts(lod):
     for k in range(nt):                                                         # towers hanging under the disc
         a = rng.uniform(0, 2 * math.pi)
         rr = rng.uniform(330.0, 640.0)
-        h = rng.uniform(50.0, 170.0)
+        h = rng.uniform(40.0, 85.0)            # bottoms >= 505 m: clear of the X-street lanes (up to 485 m)
         w = rng.uniform(26.0, 44.0)
         box(c, FACADE, (rr * math.cos(a), Y - 10.0 - h / 2, rr * math.sin(a)), (w, h, w * rng.uniform(0.7, 1.2)), rot_y(-a))
         if lod < 3:

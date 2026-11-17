@@ -6189,3 +6189,25 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   ship-target segment, every other module group (diagonal <= 1.5 km) becomes one box. LIVE rim docking (rim_run3,
   release): 1100 obstacles (was 6800), route 18.7 s (was 104-114 s), flown to the end (remaining 0 m) on the dock
   axis. No capture yet: dispatcher / capture / pads are keyed to hub_hex_dock_a.
+- 2026-11-17 DOCK CAPTURE GENERAL FOR EVERY HEX DOCK (author: «давай переделаем механизм захвата дока - сделаем его
+  общим для всех доков»). GameSimulation: m_dockServiceTraffic (one dock, keyed to hub_hex_dock_a) -> m_dockSites
+  (one DockSite per HubHexDock static object of the active system, keyed by its hub module id; fixed frame = the
+  nearest HubDockServiceBlock of the same hub; own DockServiceTraffic - dispatcher, pads, capture, NPC traffic, its
+  own traffic ship id range 9000001 + index * 1e6); m_pilotDockSite (pilot ship -> site). requestDockArrival(ship,
+  engage, dockModuleId) - ClientShipCommand::RequestDockArrival now carries the dock module id in `target` (client
+  sendDockArrivalRequest(engage, module)); the client dispatcher gate runs for any HubHexDock target (was:
+  hub_hex_dock_a only). Hub map dock overlay generalized to every hex dock. LIVE (release, cap_run1/cap_run2):
+  plane_demo.dock started its own traffic (PLA namespace, 4 Cobretts + shuttles), the pilot's request accepted at
+  plane_demo.dock, route 22 s, flown, "captured by station control at plane_demo.dock -> P4", docked on P4; with
+  ELITE_DEV_DOCK_AUTO_DEPART=20: departure accepted, cleared from P4, chamber / outer lanes released, departed.
+  Vysokiy's BLUE-transit route stays keyed to hub_hex_dock_a (its own traffic graph).
+  BASELINE RED (pre-existing, not from this work): EliteServer does not link - its source list lacks
+  src/game/navigation/rules/JumpSumps.cpp and the jump lane-record sources (systemHasBeacons, sumpCatch,
+  parseLaneRecords; since c0fc51f7f); EliteGame builds.
+- 2026-11-17 CORRIDORS SHOWN. (a) Hub map (F12): the hub's GREEN lanes (centre line + direction chevrons) and RED
+  zones (outlines) always on (MapTrajectoryKind::CorridorGreen / CorridorBlue / CorridorRed, MapObjectOverlayRenderer;
+  data = HubLaneNetwork in the frame of <hub>.city). (b) Flight HUD (author: «я имел в виду видимость корридоров в
+  самой игре на HUD»): render/cockpit/HubCorridorHudRenderer - faint rings round every green lane each 250 m, four
+  rails, floor chevrons, red zone box edges; only within 4.5 km, fading with distance (peak alpha ~0.1). LIVE:
+  D:/tmp/hudlane2.png (inside a Z lane), D:/tmp/hubmap1.png (Hub map). Blue passages: drawn when a hub has them
+  (none in plane_demo yet).

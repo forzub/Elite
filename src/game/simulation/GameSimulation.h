@@ -10,6 +10,7 @@
 #include <cstdint>
 
 #include <vector>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -405,7 +406,8 @@ public:
     // This ship's dispatcher status (phase None when unknown to the dock).
     game::docking::traffic::DockTrafficShipStatus dockDispatcherStatus(EntityId shipId) const;
     // The pilot's automatic docking engaged / dropped (ClientShipCommand::RequestDockArrival).
-    bool requestDockArrival(EntityId shipId, bool engage);
+    // dockModuleId: the dock asked for (empty: the nearest hex dock of the ship's system)
+    bool requestDockArrival(EntityId shipId, bool engage, const std::string& dockModuleId = {});
     // Hub-local geometry of the dispatcher's assignment for the ship's snapshot.
     void fillDockDispatcherGeometry(EntityId shipId, game::simulation::ShipDockDispatcherSnapshot& out) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
@@ -745,13 +747,27 @@ private:
 
     // Dock service traffic: dispatcher + shuttles + busy traffic, realised as
     // TrafficShell ships whose pose the traffic model owns.
-    std::unique_ptr<game::traffic::dock::DockServiceTraffic> m_dockServiceTraffic;
-    std::unordered_map<std::uint64_t, EntityId> m_dockTrafficShellByActor;
+    // One site per hex dock (keyed by its hub module id): its own dispatcher / pads / capture / NPC traffic.
+    struct DockSite
+    {
+        std::string dockModuleId;
+        std::string hubId;
+        std::unique_ptr<game::traffic::dock::DockServiceTraffic> traffic;
+        std::unordered_map<std::uint64_t, EntityId> shellByActor;
+        double phaseOffsetRad = 0.0;
+        double statusSeconds = -1.0e30;
+        double routeSeconds = -1.0e30;
+        double zoneRadiusMeters = 0.0;
+    };
+    std::map<std::string, DockSite> m_dockSites;
+    std::unordered_map<EntityId, std::string> m_pilotDockSite;   // pilot ship -> the dock site handling it
+    std::vector<std::pair<const StaticObject*, const StaticObject*>> hexDockPairs() const;
+    bool hexDockPair(const std::string& dockModuleId, const StaticObject*& dock, const StaticObject*& base) const;
+    DockSite* pilotDockSite(EntityId shipId);
+    const DockSite* pilotDockSite(EntityId shipId) const;
+    void updateDockSiteTraffic(DockSite& site, const StaticObject* dock, const StaticObject* base, int siteIndex);
+    void updateDockSitePilots(DockSite& site, const StaticObject* dock, const StaticObject* base);
     std::unordered_set<EntityId> m_dockTrafficShells;
-    double m_dockTrafficPhaseOffsetRad = 0.0;
-    double m_dockTrafficStatusSeconds = -1.0e30;
-    double m_dockTrafficRouteSeconds = -1.0e30;
-    double m_dockTrafficZoneRadiusMeters = 0.0;
     bool m_dockObserverPlaced = false;
     // Replicated traffic identity + remaining route per traffic ship.
     std::unordered_map<EntityId, game::simulation::ShipTrafficSnapshot> m_dockTrafficInfo;

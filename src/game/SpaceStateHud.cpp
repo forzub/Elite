@@ -341,6 +341,15 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
         vp.width,
         vp.height
     );
+    // the hub's corridors (green lanes / red zones), faint, under the guidance corridor
+    if (m_client)
+        m_hubCorridorHudRenderer.render(
+            m_client->world(),
+            playerShip,
+            m_activeMainCamera->viewMatrix(),
+            m_activeMainCamera->projectionMatrix(),
+            vp
+        );
     m_guidanceCorridorRenderer.render(
         guidance,
         m_activeMainCamera->viewMatrix(),

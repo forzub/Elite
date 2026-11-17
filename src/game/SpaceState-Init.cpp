@@ -211,6 +211,7 @@ void SpaceState::initHUD()
 
     m_flightVectorIndicatorRenderer.init();
     m_guidanceCorridorRenderer.init();
+    m_hubCorridorHudRenderer.init();
     m_galacticCompassRenderer.init();
 
     if (!m_hubSemanticAnchorCatalog.load())

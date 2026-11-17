@@ -37,6 +37,7 @@
 #include "src/render/cockpit/FlightVectorIndicatorRenderer.h"
 #include "src/render/cockpit/EngineThrustIndicatorRenderer.h"
 #include "src/render/cockpit/GuidanceCorridorRenderer.h"
+#include "src/render/cockpit/HubCorridorHudRenderer.h"
 #include "src/render/cockpit/GalacticCompassRenderer.h"
 #include "src/render/JumpScreenEffect.h"
 #include "src/render/HUD/HudPrimitiveBatch.h"
@@ -420,7 +421,7 @@ private:
     // The dock dispatcher gate of a docking request: tells the dispatcher once,
     // ends the request when docked; the planner / autopilot fly as before.
     template <class Frame> bool updateDockingDispatcherGate(Frame& f);
-    void sendDockArrivalRequest(bool engage);
+    void sendDockArrivalRequest(bool engage, const std::string& dockModuleId = {});
     template <class Frame> void publishDockingAdvisoryPresentation(Frame& f);
     void updateShipObservationInterest(float dt);
     game::presentation::SystemMapPanelPresentation
@@ -452,6 +453,7 @@ private:
     render::cockpit::FlightVectorIndicatorRenderer m_flightVectorIndicatorRenderer;
     render::cockpit::EngineThrustIndicatorRenderer m_engineThrustIndicatorRenderer;
     render::cockpit::GuidanceCorridorRenderer m_guidanceCorridorRenderer;
+    render::cockpit::HubCorridorHudRenderer m_hubCorridorHudRenderer;   // the hub's green / red corridors, faint
     render::cockpit::GalacticCompassRenderer m_galacticCompassRenderer;
     // Presentation-only terminal. It consumes a DTO snapshot and has no
     // navigation/control access; deleting this member cannot alter flight.

@@ -1138,7 +1138,7 @@ void GameServer::update(double dt)
                     break;
 
                 case ClientShipCommand::RequestDockArrival:
-                    m_simulation.requestDockArrival(id, shipCmd.index != 0);
+                    m_simulation.requestDockArrival(id, shipCmd.index != 0, shipCmd.target);
                     break;
 
                 case ClientShipCommand::ToggleStabilization:

@@ -54,7 +54,10 @@ enum class MapTrajectoryKind
     NetworkRoute,   // aggregate scheduled route of the world model: dashed, width by traffic
     TransferTunnel, // the player's Orbital Transfer plan: solid, high emphasis
     BeaconLink,     // beacon / relay network link: fine dotted (filter N)
-    HeightStem      // plan view: height of an object above its reference plane
+    HeightStem,     // plan view: height of an object above its reference plane
+    CorridorGreen,  // hub traffic lane (GREEN, pre-written route): centre line + direction chevrons
+    CorridorBlue,   // hub mandatory passage (BLUE)
+    CorridorRed     // hub forbidden zone (RED, e.g. cargo berths): closed outline
 };
 
 struct MapTrajectoryPoint

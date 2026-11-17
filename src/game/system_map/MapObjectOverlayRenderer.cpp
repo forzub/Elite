@@ -199,6 +199,51 @@ void drawProjectedTrajectory(const MapObjectTrajectory& trajectory)
             color = glm::vec4(0.30f, 0.95f, 1.00f, 0.98f);
             width = 2.6f;
             break;
+        case MapTrajectoryKind::CorridorGreen:
+        case MapTrajectoryKind::CorridorBlue:
+        {
+            // the hub's lanes (author 2026-11-17: «окно навигатора ... карта вид сверху и указаны все зеленые, синие и
+            // красные корридоры»): a quiet centre line with direction chevrons every ~110 px
+            const bool green = trajectory.kind == MapTrajectoryKind::CorridorGreen;
+            const glm::vec4 c = green ? glm::vec4(0.40f, 0.95f, 0.45f, 0.55f) : glm::vec4(0.35f, 0.62f, 1.00f, 0.70f);
+            elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
+            glLineWidth(1.4f);
+            elite::render::core_legacy::begin(GL_LINE_STRIP);
+            for (const auto& point : points)
+                elite::render::core_legacy::vertex2d(point.x, point.y);
+            elite::render::core_legacy::end();
+            elite::render::core_legacy::begin(GL_LINES);
+            double carry = 55.0;
+            for (std::size_t i = 0; i + 1 < points.size(); ++i)
+            {
+                const glm::dvec2 a = points[i];
+                const glm::dvec2 d = points[i + 1] - a;
+                const double len = glm::length(d);
+                if (len < 1.0e-6)
+                    continue;
+                const glm::dvec2 u = d / len;
+                const glm::dvec2 n(-u.y, u.x);
+                double s0 = carry;
+                for (; s0 < len; s0 += 110.0)
+                {
+                    const glm::dvec2 tip = a + u * s0;
+                    for (const double side : {1.0, -1.0})
+                    {
+                        const glm::dvec2 q = tip - u * 7.0 + n * (5.0 * side);
+                        elite::render::core_legacy::vertex2d(tip.x, tip.y);
+                        elite::render::core_legacy::vertex2d(q.x, q.y);
+                    }
+                }
+                carry = s0 - len;
+            }
+            elite::render::core_legacy::end();
+            glLineWidth(1.0f);
+            return;
+        }
+        case MapTrajectoryKind::CorridorRed:
+            color = glm::vec4(1.00f, 0.32f, 0.28f, 0.55f);
+            width = 1.2f;
+            break;
         case MapTrajectoryKind::Planned:
         default:
             // Solver-validation rendering is intentionally plain.  The line

@@ -420,7 +420,7 @@ void runDockAdviceWorker(
 }
 } // namespace
 
-void SpaceState::sendDockArrivalRequest(bool engage)
+void SpaceState::sendDockArrivalRequest(bool engage, const std::string& dockModuleId)
 {
     if (!m_client)
         return;
@@ -428,6 +428,7 @@ void SpaceState::sendDockArrivalRequest(bool engage)
     ClientShipCommand command;
     command.type = ClientShipCommand::RequestDockArrival;
     command.index = engage ? 1 : 0;
+    command.target = dockModuleId;   // the dock (module id) whose dispatcher handles it; empty = the nearest
     msg.payload = command;
     m_client->sendMessage(msg);
     std::cerr << "[DockDispatcher] " << (engage ? "docking request sent to the dock dispatcher" : "docking dropped: request cancelled")
@@ -444,14 +445,19 @@ bool SpaceState::updateDockingDispatcherGate(Frame& f)
     // then it waits at the end of its route. Never takes the control stream.
     using game::docking::traffic::DockTrafficPhase;
     auto& pending = f.pending;
-    if (pending.target.stableObjectId != "hub_hex_dock_a")
+    // every hex dock has a dispatcher (GameSimulation dock sites): the gate runs for any HubHexDock target
+    bool hexDockTarget = false;
+    for (const auto& [oid, object] : m_client->world().objects())
+        if (object.type == ObjectType::HubHexDock && object.hubAttachment.moduleId == pending.target.stableObjectId)
+            hexDockTarget = true;
+    if (!hexDockTarget)
         return true;
     if (m_dockArrivalSentSerial != pending.serial)
     {
         m_dockArrivalSentSerial = pending.serial;
         m_dockArrivalSentServerSeconds = f.authoritativeServerSeconds;
         m_dockGateLastPhase = 0xff;
-        sendDockArrivalRequest(true);
+        sendDockArrivalRequest(true, pending.target.stableObjectId);
     }
     const auto& dock = f.player.dockDispatcher;
     const auto phase = static_cast<DockTrafficPhase>(dock.phase);

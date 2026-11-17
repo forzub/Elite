@@ -2,6 +2,9 @@
 
 #include "src/game/system_map/SystemMapRendererInternal.h"
 #include "src/game/docking/model/HexDockFacility.h"
+#include "src/game/navigation/traffic/HubLaneNetwork.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <memory>
 
 
 void SystemMapRenderer::decorateHubDockingOverlay(
@@ -1734,46 +1737,101 @@ void SystemMapRenderer::decorateTrafficRoutes(
                     game::system_map::MapTrajectoryKind::TrafficRoute, points);
     }
 
+    // The hub's corridors (GREEN lanes with their direction, BLUE passages, RED zones), always on the Hub map: the
+    // navigator's top view. Source: assets/data/navigation/hub_lanes/<hub>.json in the frame of the hub module
+    // <hub>.city (game::navigation::traffic::HubLaneNetwork - the same network the docking planner uses).
+    if (hubMode)
+    {
+        static std::unordered_map<std::string, std::unique_ptr<game::navigation::traffic::HubLaneNetwork>> networks;
+        for (const auto& frameObject : scene->objects)
+        {
+            const std::string& sid = frameObject.stableId;
+            if (sid.size() < 6 || sid.compare(sid.size() - 5, 5, ".city") != 0)
+                continue;
+            const std::string hubId = sid.substr(0, sid.size() - 5);
+            auto& network = networks[hubId];
+            if (!network)
+            {
+                network = std::make_unique<game::navigation::traffic::HubLaneNetwork>();
+                network->load("assets/data/navigation/hub_lanes/" + hubId + ".json");
+            }
+            if (!network->loaded())
+                continue;
+            const auto toScene = [&](const glm::dvec3& local)
+            {
+                return frameObject.positionMeters + frameObject.axes.x * local.x + frameObject.axes.y * local.y +
+                       frameObject.axes.z * local.z;
+            };
+            for (const auto& lane : network->lanes())
+            {
+                std::vector<glm::dvec3> points;
+                for (const auto& p : lane.stationsLocal)
+                    points.push_back(toScene(p));
+                addPolyline("corridor:" + hubId + ":" + lane.id, game::system_map::MapTrajectoryKind::CorridorGreen, points);
+            }
+            for (const auto& zone : network->redZones())
+            {
+                glm::dmat4 r(1.0);
+                r = glm::rotate(r, glm::radians(zone.rotationDeg.x), glm::dvec3(1, 0, 0));
+                r = glm::rotate(r, glm::radians(zone.rotationDeg.y), glm::dvec3(0, 1, 0));
+                r = glm::rotate(r, glm::radians(zone.rotationDeg.z), glm::dvec3(0, 0, 1));
+                const glm::dmat3 rot(r);
+                const glm::dvec3 h = zone.halfExtentsMeters;
+                std::vector<glm::dvec3> ring;
+                for (const auto& c : {glm::dvec2(-1, -1), glm::dvec2(1, -1), glm::dvec2(1, 1), glm::dvec2(-1, 1), glm::dvec2(-1, -1)})
+                    ring.push_back(toScene(zone.centerLocal + rot * glm::dvec3(c.x * h.x, 0.0, c.y * h.z)));
+                addPolyline("corridor:" + hubId + ":" + zone.id, game::system_map::MapTrajectoryKind::CorridorRed, ring);
+            }
+        }
+    }
+
     if (!hubMode || !m_showTrafficLanes)
         return;
 
-    // Authored dock geometry (HexDockFacility): the same holds, axis join,
-    // entry face, departure clear/turn points and queue gates the dispatcher
-    // and the traffic model use, placed by the replicated dock modules.
-    const world::celestial::LocalSceneObject* dock = nullptr;
-    const world::celestial::LocalSceneObject* base = nullptr;
-    for (const auto& object : scene->objects)
+    // Authored dock geometry (HexDockFacility) of EVERY hex dock on the map (one dispatcher per dock, 2026-11-17): the
+    // same holds, axis join, entry face, departure clear/turn points and queue gates the dispatcher and the traffic
+    // model use, placed by the replicated dock modules; the fixed frame is the nearest dock service block.
+    for (const auto& dockObject : scene->objects)
     {
-        if (object.stableId == "hub_hex_dock_a")
-            dock = &object;
-        else if (object.stableId == "hub_hex_dock_base")
-            base = &object;
-    }
-    if (!dock || !base)
-        return;
-    const auto toScene = [&](const glm::dvec3& fixed)
-    {
-        return dock->positionMeters + base->axes.x * fixed.x + base->axes.y * fixed.y + base->axes.z * fixed.z;
-    };
-    namespace hex = game::docking::hex;
-    const auto& g = hex::hexDockGeometry();
-    const glm::dvec3 join {0.0, 0.0, g.axisJoinZ};
-    const glm::dvec3 entry {0.0, 0.0, g.entryFaceZ};
-    addPolyline("traffic:lane:arrival-axis", game::system_map::MapTrajectoryKind::AuthoredLane,
-                {toScene(join), toScene(entry), toScene({0.0, 0.0, g.chamberFrontZ})});
-    addPolyline("traffic:lane:departure-axis", game::system_map::MapTrajectoryKind::AuthoredLane,
-                {toScene(entry), toScene({0.0, 0.0, g.departureClearZ}), toScene({0.0, 0.0, g.departureTurnZ})});
-    for (int k = 0; k < hex::HoldCount; ++k)
-    {
-        const glm::dvec3 hold = hex::holdPosition(g, k);
-        // hold -> axis join (the arrival Bezier's chord) and a hold marker.
-        addPolyline("traffic:lane:hold-" + std::to_string(k), game::system_map::MapTrajectoryKind::AuthoredLane,
-                    {toScene(hold), toScene({0.0, 0.0, g.axisJoinZ - 300.0}), toScene(join)});
-        const double r = 60.0;
-        addPolyline("traffic:lane:hold-mark-" + std::to_string(k), game::system_map::MapTrajectoryKind::AuthoredLane,
-                    {toScene(hold + glm::dvec3(r, 0.0, 0.0)), toScene(hold + glm::dvec3(0.0, r, 0.0)),
-                     toScene(hold - glm::dvec3(r, 0.0, 0.0)), toScene(hold - glm::dvec3(0.0, r, 0.0)),
-                     toScene(hold + glm::dvec3(r, 0.0, 0.0))});
+        if (dockObject.typeId != ObjectType::HubHexDock)
+            continue;
+        const world::celestial::LocalSceneObject* dock = &dockObject;
+        const world::celestial::LocalSceneObject* base = nullptr;
+        double best = 1.0e30;
+        for (const auto& object : scene->objects)
+            if (object.typeId == ObjectType::HubDockServiceBlock &&
+                glm::length(object.positionMeters - dock->positionMeters) < best)
+            {
+                best = glm::length(object.positionMeters - dock->positionMeters);
+                base = &object;
+            }
+        if (!base)
+            continue;
+        const std::string tag = dock->stableId + ":";
+        const auto toScene = [&](const glm::dvec3& fixed)
+        {
+            return dock->positionMeters + base->axes.x * fixed.x + base->axes.y * fixed.y + base->axes.z * fixed.z;
+        };
+        namespace hex = game::docking::hex;
+        const auto& g = hex::hexDockGeometry();
+        const glm::dvec3 join {0.0, 0.0, g.axisJoinZ};
+        const glm::dvec3 entry {0.0, 0.0, g.entryFaceZ};
+        addPolyline("traffic:lane:" + tag + "arrival-axis", game::system_map::MapTrajectoryKind::AuthoredLane,
+                    {toScene(join), toScene(entry), toScene({0.0, 0.0, g.chamberFrontZ})});
+        addPolyline("traffic:lane:" + tag + "departure-axis", game::system_map::MapTrajectoryKind::AuthoredLane,
+                    {toScene(entry), toScene({0.0, 0.0, g.departureClearZ}), toScene({0.0, 0.0, g.departureTurnZ})});
+        for (int k = 0; k < hex::HoldCount; ++k)
+        {
+            const glm::dvec3 hold = hex::holdPosition(g, k);
+            // hold -> axis join (the arrival Bezier's chord) and a hold marker.
+            addPolyline("traffic:lane:" + tag + "hold-" + std::to_string(k), game::system_map::MapTrajectoryKind::AuthoredLane,
+                        {toScene(hold), toScene({0.0, 0.0, g.axisJoinZ - 300.0}), toScene(join)});
+            const double r = 60.0;
+            addPolyline("traffic:lane:" + tag + "hold-mark-" + std::to_string(k), game::system_map::MapTrajectoryKind::AuthoredLane,
+                        {toScene(hold + glm::dvec3(r, 0.0, 0.0)), toScene(hold + glm::dvec3(0.0, r, 0.0)),
+                         toScene(hold - glm::dvec3(r, 0.0, 0.0)), toScene(hold - glm::dvec3(0.0, r, 0.0)),
+                         toScene(hold + glm::dvec3(r, 0.0, 0.0))});
+        }
     }
 }
 

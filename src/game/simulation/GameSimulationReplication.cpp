@@ -193,7 +193,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             ship.core().controlAuthorityTelemetry();
         if (const auto info = m_dockTrafficInfo.find(id); info != m_dockTrafficInfo.end())
             s.traffic = info->second;
-        if (m_dockServiceTraffic && isPlayerControlled(id))
+        if (!m_dockSites.empty() && isPlayerControlled(id))
         {
             const auto dock = dockDispatcherStatus(id);
             if (dock.phase != game::docking::traffic::DockTrafficPhase::None)

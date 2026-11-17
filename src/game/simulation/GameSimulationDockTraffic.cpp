@@ -22,10 +22,14 @@
 // ELITE_DOCK_TRAFFIC_INTERVAL=<s> tune it, ELITE_DOCK_TRAFFIC_LOG=<path>
 // writes the traffic / dispatcher log.
 
+// GENERAL FOR EVERY HEX DOCK (author 2026-11-17: «давай переделаем механизм захвата дока - сделаем его общим для всех
+// доков»): every HubHexDock static object of the active system is a dock SITE (m_dockSites, keyed by its hub module
+// id) with its own DockServiceTraffic (dispatcher, pads, capture, NPC traffic); its fixed frame is the nearest
+// HubDockServiceBlock of the same hub. A pilot ship belongs to one site at a time (m_pilotDockSite): the dock it asked
+// (ClientShipCommand::RequestDockArrival target = the dock module id) or whose approach zone it entered.
+
 namespace
 {
-constexpr const char* DockModuleId = "hub_hex_dock_a";
-constexpr const char* DockBaseModuleId = "hub_hex_dock_base";
 
 int envInt(const char* name, int fallback)
 {
@@ -48,7 +52,11 @@ constexpr double RequestDropMeters = 20000.0;
 
 game::traffic::dock::DockServiceTraffic* GameSimulation::dockServiceTraffic() noexcept
 {
-    return m_dockServiceTraffic.get();
+    // the first dock site (diagnostics / the stress harness)
+    for (auto& [id, site] : m_dockSites)
+        if (site.traffic)
+            return site.traffic.get();
+    return nullptr;
 }
 
 bool GameSimulation::removeTrafficShell(EntityId id)
@@ -62,45 +70,101 @@ bool GameSimulation::removeTrafficShell(EntityId id)
     return true;
 }
 
+std::vector<std::pair<const StaticObject*, const StaticObject*>> GameSimulation::hexDockPairs() const
+{
+    std::vector<std::pair<const StaticObject*, const StaticObject*>> out;
+    for (const auto& [id, obj] : m_staticObjects)
+    {
+        if (!obj.attachedToHub || obj.type != ObjectType::HubHexDock)
+            continue;
+        const StaticObject* base = nullptr;
+        double best = 1.0e30;
+        for (const auto& [bid, b] : m_staticObjects)
+        {
+            if (!b.attachedToHub || b.type != ObjectType::HubDockServiceBlock || b.hubId != obj.hubId)
+                continue;
+            const double d = glm::length(b.hubLocalOffsetMeters - obj.hubLocalOffsetMeters);
+            if (d < best)
+            {
+                best = d;
+                base = &b;
+            }
+        }
+        if (base)
+            out.emplace_back(&obj, base);
+    }
+    std::sort(out.begin(), out.end(), [](const auto& x, const auto& y) { return x.first->hubModuleId < y.first->hubModuleId; });
+    return out;
+}
+
+bool GameSimulation::hexDockPair(const std::string& dockModuleId, const StaticObject*& dock, const StaticObject*& base) const
+{
+    dock = nullptr;
+    base = nullptr;
+    for (const auto& [d, b] : hexDockPairs())
+        if (d->hubModuleId == dockModuleId)
+        {
+            dock = d;
+            base = b;
+            return true;
+        }
+    return false;
+}
+
+GameSimulation::DockSite* GameSimulation::pilotDockSite(EntityId shipId)
+{
+    const auto it = m_pilotDockSite.find(shipId);
+    if (it == m_pilotDockSite.end())
+        return nullptr;
+    const auto site = m_dockSites.find(it->second);
+    return site != m_dockSites.end() && site->second.traffic ? &site->second : nullptr;
+}
+
+const GameSimulation::DockSite* GameSimulation::pilotDockSite(EntityId shipId) const
+{
+    return const_cast<GameSimulation*>(this)->pilotDockSite(shipId);
+}
+
 void GameSimulation::updateDockServiceTraffic(double /*dt*/)
 {
     if (m_dockTrafficDisabled)
         return;
-    if (!m_dockServiceTraffic && std::getenv("ELITE_DOCK_TRAFFIC") && std::getenv("ELITE_DOCK_TRAFFIC")[0] == '0')
+    if (m_dockSites.empty() && std::getenv("ELITE_DOCK_TRAFFIC") && std::getenv("ELITE_DOCK_TRAFFIC")[0] == '0')
     {
         m_dockTrafficDisabled = true;
         return;
     }
-
-    const StaticObject* dock = nullptr;
-    const StaticObject* base = nullptr;
-    for (const auto& [id, obj] : m_staticObjects)
+    int index = 0;
+    for (const auto& [dock, base] : hexDockPairs())
     {
-        if (!obj.attachedToHub)
-            continue;
-        if (obj.hubModuleId == DockModuleId)
-            dock = &obj;
-        else if (obj.hubModuleId == DockBaseModuleId)
-            base = &obj;
+        if (dock->systemId == m_activeCelestialSystemId)
+            updateDockSiteTraffic(m_dockSites[dock->hubModuleId], dock, base, index);
+        ++index;
     }
-    if (!dock || !base || dock->systemId != m_activeCelestialSystemId)
-        return;
+}
+
+void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* dock, const StaticObject* base, int siteIndex)
+{
 
     const double now = m_serverTimelineClock.timeSeconds();
     const double omega = glm::radians(dock->hubLocalAngularVelocityDegPerSecond.z);
     const double phaseNow = glm::radians(game::navigation::wrapHubLocalDegrees(
         dock->hubLocalRotationDeg.z + dock->hubLocalAngularVelocityDegPerSecond.z * m_orbitalUniverseTimeSeconds));
-    m_dockTrafficPhaseOffsetRad = phaseNow - omega * now;
+    site.phaseOffsetRad = phaseNow - omega * now;
 
-    if (!m_dockServiceTraffic)
+    if (!site.traffic)
     {
+        site.dockModuleId = dock->hubModuleId;
+        site.hubId = dock->hubId;
         game::traffic::dock::TrafficConfig config;
         // Generic traffic: identity of THIS hub's dock sector, its namespaces and the network it is
         // connected to come from the hub record and the world-model routes (GENERATED world sites copy).
         config.hubId = dock->hubId;
         config.systemId = dock->systemId;
-        config.dockFacilityId = dock->hubId + "." + std::string(DockModuleId).substr(4);   // e.g. earth_orbital_hub.hex_dock_a
-        config.dockFrameId = DockModuleId;
+        // e.g. earth_orbital_hub.hex_dock_a (Vysokiy keeps its ids), plane_demo.dock
+        config.dockFacilityId = dock->hubModuleId.rfind("hub_", 0) == 0 ? dock->hubId + "." + dock->hubModuleId.substr(4)
+                                                                         : dock->hubModuleId;
+        config.dockFrameId = dock->hubModuleId;
         if (const auto hubIt = m_orbitalHubs.find(dock->hubId); hubIt != m_orbitalHubs.end())
         {
             config.hubDisplayName = hubIt->second.name;
@@ -144,19 +208,21 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
         // Earth = hub radial down. The FIXED frame is hub visual basis x
         // Rx Ry (yaw 27 deg about the hub radial Y), so Earth is exactly -Y.
         config.earthDirectionFixed = glm::dvec3(0.0, -1.0, 0.0);
-        m_dockServiceTraffic = std::make_unique<game::traffic::dock::DockServiceTraffic>(
-            config, [this, omega](double t) { return m_dockTrafficPhaseOffsetRad + omega * t; });
-        if (const char* path = std::getenv("ELITE_DOCK_TRAFFIC_LOG"))
+        // every site its own range of traffic ship ids (instance ids stay unique across docks)
+        site.traffic = std::make_unique<game::traffic::dock::DockServiceTraffic>(
+            config, [s = &site, omega](double t) { return s->phaseOffsetRad + omega * t; },
+            9000001ull + static_cast<std::uint64_t>(siteIndex) * 1000000ull);
+        if (const char* path = std::getenv("ELITE_DOCK_TRAFFIC_LOG"); path && !m_dockTrafficLog)
             m_dockTrafficLog = std::fopen(path, "w");
-        m_dockTrafficZoneRadiusMeters = m_dockServiceTraffic->controlledZoneRadius();
+        site.zoneRadiusMeters = site.traffic->controlledZoneRadius();
         std::cerr << "[DockTraffic] started at " << config.hubDisplayName << " (" << config.dockFacilityId << ", namespace "
                   << config.flightPrefix << ", " << config.connectedDestinations.size() << " connected destinations): cobretts=" << config.cobrettCount
                   << " shuttle_interval_s=" << config.shuttleIntervalSeconds
-                  << " hub_zone_m=" << m_dockTrafficZoneRadiusMeters << "\n";
+                  << " hub_zone_m=" << site.zoneRadiusMeters << "\n";
     }
 
-    m_dockServiceTraffic->advance(now);
-    for (const auto& line : m_dockServiceTraffic->drainLog())
+    site.traffic->advance(now);
+    for (const auto& line : site.traffic->drainLog())
     {
         if (m_dockTrafficLog)
         {
@@ -228,14 +294,14 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
         }
     }
 
-    const bool refreshRoutes = now - m_dockTrafficRouteSeconds >= 1.0;
+    const bool refreshRoutes = now - site.routeSeconds >= 1.0;
     if (refreshRoutes)
-        m_dockTrafficRouteSeconds = now;
+        site.routeSeconds = now;
 
     std::unordered_set<std::uint64_t> alive;
-    for (const auto& actor : m_dockServiceTraffic->actors())
+    for (const auto& actor : site.traffic->actors())
     {
-        const auto pose = m_dockServiceTraffic->pose(actor.id, now);
+        const auto pose = site.traffic->pose(actor.id, now);
         if (!pose.present)
             continue;
         alive.insert(actor.id);
@@ -247,8 +313,8 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
         orientation[1] = glm::vec4(glm::vec3(basis[1]), 0.0f);
         orientation[2] = glm::vec4(glm::vec3(basis[2]), 0.0f);
 
-        auto shellIt = m_dockTrafficShellByActor.find(actor.id);
-        if (shellIt == m_dockTrafficShellByActor.end())
+        auto shellIt = site.shellByActor.find(actor.id);
+        if (shellIt == site.shellByActor.end())
         {
             const bool shuttle = actor.kind == game::traffic::dock::TrafficShipKind::CargoShuttle;
             const ShipDescriptor& descriptor = shuttle
@@ -264,7 +330,7 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
             const EntityId id = spawnTrafficShell(dock->systemId, descriptor, position, velocity, init, orientation, 0, 0);
             if (id.value == 0)
                 continue;
-            shellIt = m_dockTrafficShellByActor.emplace(actor.id, id).first;
+            shellIt = site.shellByActor.emplace(actor.id, id).first;
             m_dockTrafficShells.insert(id);
         }
         // The motion-fidelity LOD materializes a shell near a player (same
@@ -286,7 +352,7 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
         // Map ownership: inside the dock's controlled zone the ship belongs to
         // this hub (Hub Map); outside it, to the wider maps.
         tr.motion.hubId =
-            glm::length(pose.position) <= m_dockTrafficZoneRadiusMeters ? dock->hubId : std::string {};
+            glm::length(pose.position) <= site.zoneRadiusMeters ? dock->hubId : std::string {};
 
         if (refreshRoutes)
         {
@@ -294,30 +360,30 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
             info.active = true;
             info.callsign = actor.callsign;
             info.phase = game::traffic::dock::actorPhaseName(actor.phase);
-            info.destination = m_dockServiceTraffic->destination(actor.id);
+            info.destination = site.traffic->destination(actor.id);
             info.routeOffsetsMeters.clear();
-            for (const auto& p : m_dockServiceTraffic->plannedPath(actor.id, now))
+            for (const auto& p : site.traffic->plannedPath(actor.id, now))
                 info.routeOffsetsMeters.push_back(fixedBasis * (p - pose.position));
         }
     }
     // Live status every 10 s of server time: where each traffic ship is, how
     // the server simulates it and how far the nearest player is.
-    if (m_dockTrafficLog && now - m_dockTrafficStatusSeconds >= 10.0)
+    if (m_dockTrafficLog && now - site.statusSeconds >= 10.0)
     {
-        m_dockTrafficStatusSeconds = now;
+        site.statusSeconds = now;
         const glm::dmat3 toFixed = glm::transpose(fixedBasis);
         std::vector<glm::dvec3> players;
         for (const auto& [id, shipPtr] : m_ships)
             if (shipPtr && isPlayerControlled(id))
                 players.push_back(shipPtr->core().transform().fullWorldMeters());
-        for (const auto& actor : m_dockServiceTraffic->actors())
+        for (const auto& actor : site.traffic->actors())
         {
-            const auto pose = m_dockServiceTraffic->pose(actor.id, now);
-            const auto shellIt = m_dockTrafficShellByActor.find(actor.id);
+            const auto pose = site.traffic->pose(actor.id, now);
+            const auto shellIt = site.shellByActor.find(actor.id);
             const char* tier = "none";
             int fidelity = -1;
             glm::dvec3 world = origin + fixedBasis * pose.position;
-            if (shellIt != m_dockTrafficShellByActor.end())
+            if (shellIt != site.shellByActor.end())
             {
                 if (const auto it = m_shipShells.find(shellIt->second); it != m_shipShells.end())
                 {
@@ -341,7 +407,7 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
                          now, actor.callsign.c_str(), game::traffic::dock::actorPhaseName(actor.phase),
                          pose.present ? 1 : 0, tier, fidelity,
                          static_cast<unsigned long long>(
-                             shellIt != m_dockTrafficShellByActor.end() ? shellIt->second.value : 0),
+                             shellIt != site.shellByActor.end() ? shellIt->second.value : 0),
                          f.x, f.y, f.z, glm::length(world - origin), nearest);
         }
         for (const auto& p : players)
@@ -353,7 +419,7 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
         std::fflush(m_dockTrafficLog);
     }
 
-    for (auto it = m_dockTrafficShellByActor.begin(); it != m_dockTrafficShellByActor.end();)
+    for (auto it = site.shellByActor.begin(); it != site.shellByActor.end();)
     {
         if (alive.count(it->first) == 0)
         {
@@ -362,7 +428,7 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
             if (getShip(it->second))
                 dematerializeShip(it->second, game::simulation::ShipSimulationTier::TrafficShell);
             removeTrafficShell(it->second);
-            it = m_dockTrafficShellByActor.erase(it);
+            it = site.shellByActor.erase(it);
         }
         else
             ++it;
@@ -376,56 +442,80 @@ bool GameSimulation::isDockStationControlledShip(EntityId id) const noexcept
 
 game::docking::traffic::DockTrafficShipStatus GameSimulation::dockDispatcherStatus(EntityId shipId) const
 {
-    if (!m_dockServiceTraffic)
+    const DockSite* site = pilotDockSite(shipId);
+    if (!site)
         return {};
-    return m_dockServiceTraffic->dispatcher().status(shipId.value);
+    return site->traffic->dispatcher().status(shipId.value);
 }
 
-namespace
-{
-template <class Objects, class StaticObjectT>
-void findHexDock(const Objects& objects, const StaticObjectT*& dock, const StaticObjectT*& base)
-{
-    dock = nullptr;
-    base = nullptr;
-    for (const auto& [id, obj] : objects)
-    {
-        if (!obj.attachedToHub)
-            continue;
-        if (obj.hubModuleId == DockModuleId)
-            dock = &obj;
-        else if (obj.hubModuleId == DockBaseModuleId)
-            base = &obj;
-    }
-}
-} // namespace
-
-bool GameSimulation::requestDockArrival(EntityId shipId, bool engage)
+bool GameSimulation::requestDockArrival(EntityId shipId, bool engage, const std::string& dockModuleId)
 {
     using game::docking::traffic::DockTrafficPhase;
-    if (!m_dockServiceTraffic)
+    Ship* ship = getShip(shipId);
+    if (!ship)
         return false;
-    auto& dispatcher = m_dockServiceTraffic->dispatcher();
     const double now = m_serverTimelineClock.timeSeconds();
-    const auto status = dispatcher.status(shipId.value);
     if (!engage)
     {
+        DockSite* site = pilotDockSite(shipId);
+        if (!site)
+            return true;
+        auto& dispatcher = site->traffic->dispatcher();
+        const auto status = dispatcher.status(shipId.value);
         if (status.phase == DockTrafficPhase::Queued || status.phase == DockTrafficPhase::HoldAssigned ||
             status.phase == DockTrafficPhase::AtHold || status.phase == DockTrafficPhase::EntryCleared)
         {
             dispatcher.cancel(shipId.value, now);
-            std::cerr << "[DockTraffic] pilot " << shipId.value << " docking dropped by the pilot, request cancelled\n";
+            m_pilotDockSite.erase(shipId);
+            std::cerr << "[DockTraffic] pilot " << shipId.value << " docking at " << site->dockModuleId
+                      << " dropped by the pilot, request cancelled\n";
         }
         return true;
     }
-    if (status.phase != DockTrafficPhase::None && status.phase != DockTrafficPhase::Departed)
-        return true;   // already known (queued / holding / cleared / docked)
+    // the dock asked for; without one, the nearest dock site of the ship's system
     const StaticObject* dock = nullptr;
     const StaticObject* base = nullptr;
-    findHexDock(m_staticObjects, dock, base);
-    Ship* ship = getShip(shipId);
-    if (!dock || !base || !ship)
+    if (!dockModuleId.empty())
+        hexDockPair(dockModuleId, dock, base);
+    else
+    {
+        double best = 1.0e30;
+        for (const auto& [d, b] : hexDockPairs())
+        {
+            const double dist = glm::length(world::coordinates::fullMeters(d->worldPosition) -
+                                            ship->core().transform().fullWorldMeters());
+            if (d->systemId == ship->core().transform().motion.systemId && dist < best)
+            {
+                best = dist;
+                dock = d;
+                base = b;
+            }
+        }
+    }
+    if (!dock || !base)
+    {
+        std::cerr << "[DockTraffic] pilot " << shipId.value << " docking request: " << dockModuleId
+                  << " is not a hex dock - no dispatcher\n";
         return false;
+    }
+    auto siteIt = m_dockSites.find(dock->hubModuleId);
+    if (siteIt == m_dockSites.end() || !siteIt->second.traffic)
+    {
+        std::cerr << "[DockTraffic] pilot " << shipId.value << " docking request: the dispatcher of " << dock->hubModuleId
+                  << " is not running (another system?)\n";
+        return false;
+    }
+    DockSite& site = siteIt->second;
+    // asked another dock while assigned somewhere: leave that queue first
+    if (DockSite* previous = pilotDockSite(shipId); previous && previous != &site)
+    {
+        previous->traffic->dispatcher().cancel(shipId.value, now);
+        m_pilotDockSite.erase(shipId);
+    }
+    auto& dispatcher = site.traffic->dispatcher();
+    const auto status = dispatcher.status(shipId.value);
+    if (status.phase != DockTrafficPhase::None && status.phase != DockTrafficPhase::Departed)
+        return true;   // already known (queued / holding / cleared / docked)
     if (status.phase == DockTrafficPhase::Departed)
         dispatcher.cancel(shipId.value, now);
     const glm::dvec3 origin = world::coordinates::fullMeters(dock->worldPosition);
@@ -437,27 +527,29 @@ bool GameSimulation::requestDockArrival(EntityId shipId, bool engage)
     r.envelope = game::traffic::dock::dockingEnvelope(
         game::traffic::dock::trafficShipClass(game::traffic::dock::TrafficShipKind::Cobrett));
     r.insideControlledApproachHorizon = true;
-    // The pilot's planner / autopilot fly their own route to the dock (through
-    // the blue lane): a direct-entry request - first in the queue; the station
-    // captures it on the approach axis once its entry is cleared.
-    // (A hold point for the pilot needs the planner to stop there: not yet.)
+    // The pilot's planner / autopilot fly their own route to the dock: a direct-entry request - first in the queue;
+    // the station captures it on the approach axis once its entry is cleared.
     const bool direct = true;
     const bool freeNow = dispatcher.entryFreeNow(r);
     constexpr double TwoPi = 2.0 * 3.14159265358979323846;
     const double azimuth = std::fmod(std::atan2(p.y, p.x) + TwoPi, TwoPi);
     const bool ok = dispatcher.requestDocking(r, now, azimuth, direct).committed;
-    std::cerr << "[DockTraffic] pilot " << shipId.value << " automatic docking request " << (ok ? "accepted" : "rejected")
-              << (freeNow ? " - the entrance is free" : " - the entrance is busy, queued first") << " (fixed z="
-              << p.z << ", " << glm::length(p) << " m from the dock)\n";
+    if (ok)
+        m_pilotDockSite[shipId] = site.dockModuleId;
+    std::cerr << "[DockTraffic] pilot " << shipId.value << " automatic docking request at " << site.dockModuleId << " "
+              << (ok ? "accepted" : "rejected") << (freeNow ? " - the entrance is free" : " - the entrance is busy, queued first")
+              << " (fixed z=" << p.z << ", " << glm::length(p) << " m from the dock)\n";
     return ok;
 }
 
 void GameSimulation::fillDockDispatcherGeometry(EntityId shipId, game::simulation::ShipDockDispatcherSnapshot& out) const
 {
     namespace hex = game::docking::hex;
+    const DockSite* site = pilotDockSite(shipId);
     const StaticObject* dock = nullptr;
     const StaticObject* base = nullptr;
-    findHexDock(m_staticObjects, dock, base);
+    if (site)
+        hexDockPair(site->dockModuleId, dock, base);
     const Ship* ship = nullptr;
     if (const auto it = m_ships.find(shipId); it != m_ships.end())
         ship = it->second.get();
@@ -484,53 +576,46 @@ void GameSimulation::fillDockDispatcherGeometry(EntityId shipId, game::simulatio
 
 bool GameSimulation::requestDockDeparture(EntityId shipId)
 {
-    if (!m_dockServiceTraffic)
+    DockSite* site = pilotDockSite(shipId);
+    if (!site)
         return false;
-    const bool ok = m_dockServiceTraffic->requestExternalDeparture(shipId.value, m_serverTimelineClock.timeSeconds());
-    std::cerr << "[DockTraffic] pilot " << shipId.value << " departure request " << (ok ? "accepted" : "rejected") << "\n";
+    const bool ok = site->traffic->requestExternalDeparture(shipId.value, m_serverTimelineClock.timeSeconds());
+    std::cerr << "[DockTraffic] pilot " << shipId.value << " departure request at " << site->dockModuleId << " "
+              << (ok ? "accepted" : "rejected") << "\n";
     return ok;
 }
 
 bool GameSimulation::releaseDockDepartureToPilot(EntityId shipId)
 {
-    if (!m_dockServiceTraffic)
+    DockSite* site = pilotDockSite(shipId);
+    if (!site)
         return false;
-    const bool ok = m_dockServiceTraffic->releaseExternalToPilot(shipId.value, m_serverTimelineClock.timeSeconds());
+    const bool ok = site->traffic->releaseExternalToPilot(shipId.value, m_serverTimelineClock.timeSeconds());
     std::cerr << "[DockTraffic] pilot " << shipId.value << " takes the controls during the departure: "
               << (ok ? "released early" : "refused (still inside the dock)") << "\n";
     return ok;
 }
 
-// Pilot ships (player-controlled) and the dock dispatcher. Docking is
-// requested when the ship enters the approach zone on the dock axis; the
-// station captures it at the portal once entry is cleared and owns its pose
-// (kinematic, excluded from the physics loops) until it is released at the
-// portal on departure. The departure lane is held until the clear point.
 void GameSimulation::updateDockPilotShips()
 {
-    using game::docking::traffic::DockTrafficPhase;
-    if (!m_dockServiceTraffic)
-        return;
-    const StaticObject* dock = nullptr;
-    const StaticObject* base = nullptr;
-    for (const auto& [id, obj] : m_staticObjects)
+    for (const auto& [dock, base] : hexDockPairs())
     {
-        if (!obj.attachedToHub)
-            continue;
-        if (obj.hubModuleId == DockModuleId)
-            dock = &obj;
-        else if (obj.hubModuleId == DockBaseModuleId)
-            base = &obj;
+        const auto it = m_dockSites.find(dock->hubModuleId);
+        if (it != m_dockSites.end() && it->second.traffic && dock->systemId == m_activeCelestialSystemId)
+            updateDockSitePilots(it->second, dock, base);
     }
-    if (!dock || !base || dock->systemId != m_activeCelestialSystemId)
-        return;
+}
+
+void GameSimulation::updateDockSitePilots(DockSite& site, const StaticObject* dock, const StaticObject* base)
+{
+    using game::docking::traffic::DockTrafficPhase;
 
     const double now = m_serverTimelineClock.timeSeconds();
     const glm::dvec3 origin = world::coordinates::fullMeters(dock->worldPosition);
     const glm::dmat3 fixedBasis(base->orientation);
     const glm::dmat3 toFixed = glm::transpose(fixedBasis);
     const glm::dvec3 dockVelocity(dock->linearVelocity);
-    auto& traffic = *m_dockServiceTraffic;
+    auto& traffic = *site.traffic;
     auto& dispatcher = traffic.dispatcher();
     const auto envelope = game::traffic::dock::dockingEnvelope(
         game::traffic::dock::trafficShipClass(game::traffic::dock::TrafficShipKind::Cobrett));
@@ -539,6 +624,9 @@ void GameSimulation::updateDockPilotShips()
     {
         if (!shipPtr || !isPlayerControlled(id) ||
             !game::simulation::sameRuntimeSystem(shipPtr->core().transform().motion.systemId, dock->systemId))
+            continue;
+        // a pilot belongs to one site: skip the ships another dock is handling
+        if (const auto own = m_pilotDockSite.find(id); own != m_pilotDockSite.end() && own->second != site.dockModuleId)
             continue;
         auto& tr = shipPtr->core().transform();
         const glm::dvec3 p = toFixed * (tr.fullWorldMeters() - origin);
@@ -572,7 +660,9 @@ void GameSimulation::updateDockPilotShips()
                         r.envelope = envelope;
                         r.insideControlledApproachHorizon = true;
                         const bool ok = dispatcher.requestDocking(r, now, -1.0, true).committed;
-                        std::cerr << "[DockTraffic] pilot " << id.value << " docking request "
+                        if (ok)
+                            m_pilotDockSite[id] = site.dockModuleId;
+                        std::cerr << "[DockTraffic] pilot " << id.value << " docking request at " << site.dockModuleId << " "
                                   << (ok ? "accepted" : "rejected") << " at z=" << p.z << "\n";
                     }
                     break;
@@ -582,6 +672,7 @@ void GameSimulation::updateDockPilotShips()
                     if (glm::length(p) > RequestDropMeters)
                     {
                         dispatcher.cancel(id.value, now);
+                        m_pilotDockSite.erase(id);
                         std::cerr << "[DockTraffic] pilot " << id.value << " left the zone, request cancelled\n";
                     }
                     else if (k >= 0 &&
@@ -597,6 +688,7 @@ void GameSimulation::updateDockPilotShips()
                     if (glm::length(p) > RequestDropMeters)
                     {
                         dispatcher.cancel(id.value, now);
+                        m_pilotDockSite.erase(id);
                         std::cerr << "[DockTraffic] pilot " << id.value << " left the zone, request cancelled\n";
                     }
                     break;
@@ -605,6 +697,7 @@ void GameSimulation::updateDockPilotShips()
                     if (glm::length(p) > RequestDropMeters)
                     {
                         dispatcher.cancel(id.value, now);
+                        m_pilotDockSite.erase(id);
                         std::cerr << "[DockTraffic] pilot " << id.value << " left the zone, request cancelled\n";
                     }
                     else if (status.phase == DockTrafficPhase::EntryCleared &&
@@ -618,8 +711,8 @@ void GameSimulation::updateDockPilotShips()
                         if (traffic.beginStationCapture(id.value, game::traffic::dock::TrafficShipKind::Cobrett, pose, now))
                         {
                             m_dockStationControlledShips.insert(id);
-                            std::cerr << "[DockTraffic] pilot " << id.value << " captured by station control -> "
-                                      << status.padId << "\n";
+                            std::cerr << "[DockTraffic] pilot " << id.value << " captured by station control at "
+                                      << site.dockModuleId << " -> " << status.padId << "\n";
                         }
                     }
                     break;
@@ -627,6 +720,7 @@ void GameSimulation::updateDockPilotShips()
                     if (p.z <= -2400.0 || glm::length(p) > 3000.0 || radial > 300.0)
                     {
                         dispatcher.reportClear(id.value, now);
+                        m_pilotDockSite.erase(id);
                         std::cerr << "[DockTraffic] pilot " << id.value << " clear of the dock lane\n";
                     }
                     break;

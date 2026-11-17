@@ -6211,3 +6211,15 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   rails, floor chevrons, red zone box edges; only within 4.5 km, fading with distance (peak alpha ~0.1). LIVE:
   D:/tmp/hudlane2.png (inside a Z lane), D:/tmp/hubmap1.png (Hub map). Blue passages: drawn when a hub has them
   (none in plane_demo yet).
+- 2026-11-17 ELITESERVER BASELINE RED FIXED. (1) Link: ELITE_SERVER_SIMULATION_SOURCES now lists
+  src/game/navigation/rules/InterstellarJumpRoute.cpp, NavDataBanks.cpp, JumpSumps.cpp (the game target had them;
+  the server list did not since c0fc51f7f) -> EliteServer links. (2) `EliteServer --self-test` then failed (exit 14,
+  "per-session snapshot navigation failed"): ROOT CAUSE - GameServer::navigationStateForSession computed the session
+  navigation from the LIVE ship pose while the ships it travels with come from m_lastSnapshot (the publication
+  tick); session B's ship rides a planet orbit at ~25.9 km/s, so the two disagreed by ~519 m (A matched only because
+  its copy happened on the publication tick). FIX: navigationStateForEntity(id, publishedTransform) - the session
+  navigation is derived from the controlled ship's pose in m_lastSnapshot (falls back to the live pose when the ship
+  is not in it). The self-test failure now prints per-session nav/ship system, error and velocities.
+  GATE: EliteServer --self-test PASS ("boot + two-session authoritative routing smoke final_tick=12", exit 0).
+  Running EliteServer with no arguments terminates by design ("local server runtime started without client identity
+  hello"; use --listen / --self-test).

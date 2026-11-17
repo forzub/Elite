@@ -512,7 +512,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
 world::celestial::PlayerNavigationState
-GameServer::navigationStateForEntity(EntityId entityId) const
+GameServer::navigationStateForEntity(EntityId entityId, const ShipTransform* publishedTransform) const
 {
     world::celestial::PlayerNavigationState navigation;
 
@@ -520,8 +520,9 @@ GameServer::navigationStateForEntity(EntityId entityId) const
     if (!ship)
         return navigation;
 
-    const ShipTransform tr =
-        m_simulation.presentationShipTransform(entityId);
+    const ShipTransform tr = publishedTransform
+        ? *publishedTransform
+        : m_simulation.presentationShipTransform(entityId);
 
     const auto spatialDomain =
         game::navigation::resolvePlayerSpatialDomain(
@@ -2276,7 +2277,18 @@ bool GameServer::navigationStateForSession(
     if (controlledEntityId.value == 0)
         return false;
 
-    outNavigation = navigationStateForEntity(controlledEntityId);
+    // The navigation travels inside a copy of m_lastSnapshot: derive it from the ship pose of that
+    // publication tick, not the live one. Between publications the ship keeps moving (on a planet's
+    // orbit ~26 km/s, i.e. ~500 m a tick) and the session's navigation would disagree with its own
+    // replicated ship (EliteServer --self-test, 2026-11-17: 519 m).
+    const ShipTransform* published = nullptr;
+    for (const auto& ship : m_lastSnapshot.ships)
+        if (ship.id == controlledEntityId)
+        {
+            published = &ship.transform;
+            break;
+        }
+    outNavigation = navigationStateForEntity(controlledEntityId, published);
     return true;
 }
 

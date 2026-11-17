@@ -966,6 +966,9 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationFreeFlight.cpp
         src/game/simulation/GameSimulationRoute.cpp
         src/game/simulation/GameSimulationJump.cpp
+        src/game/navigation/rules/InterstellarJumpRoute.cpp
+        src/game/navigation/rules/NavDataBanks.cpp
+        src/game/navigation/rules/JumpSumps.cpp
         src/game/economy/EconomyModel.cpp
         src/game/simulation/GameSimulationZones.cpp
         src/game/simulation/GameSimulationCombat.cpp

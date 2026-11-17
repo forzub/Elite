@@ -278,8 +278,11 @@ private:
         SimulationSnapshot& snapshot
     ) const;
 
+    // `publishedTransform`: the entity's pose in the snapshot the navigation goes out with (the
+    // publication tick), so the session view matches the replicated ship; null = the live pose.
     world::celestial::PlayerNavigationState navigationStateForEntity(
-        EntityId entityId
+        EntityId entityId,
+        const ShipTransform* publishedTransform = nullptr
     ) const;
 
     mutable game::diagnostics::ServerDiagnostics m_diagnostics;

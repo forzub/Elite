@@ -377,6 +377,22 @@ int runHeadlessSelfTest()
     if (!checkSessionNavigation(snapshotA, welcomeA.controlledEntityId) ||
         !checkSessionNavigation(snapshotB, shipBId))
     {
+        const auto report = [](const char* label, const SimulationSnapshot& snapshot, EntityId id)
+        {
+            const auto* ship = findShipSnapshot(snapshot, id);
+            std::cerr << "[FAIL] session " << label << ": navSystem=" << snapshot.session.playerNavigation.currentSystemId
+                      << " shipSystem=" << (ship ? ship->transform.motion.systemId : -999);
+            if (ship)
+                std::cerr << " navLocalErr_m="
+                          << glm::length(snapshot.session.playerNavigation.systemLocalMeters -
+                                         world::coordinates::fullMeters(ship->transform.worldPosition))
+                          << " refVel_mps=" << glm::length(ship->transform.referenceVelocityMetersPerSecond)
+                          << " relVel_mps=" << glm::length(ship->transform.relativeVelocityMetersPerSecond)
+                          << " mode=" << static_cast<int>(ship->transform.motion.mode);
+            std::cerr << "\n";
+        };
+        report("A", snapshotA, welcomeA.controlledEntityId);
+        report("B", snapshotB, shipBId);
         std::cerr
             << "[FAIL] headless-server per-session snapshot navigation failed\n";
         return 14;

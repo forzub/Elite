@@ -6022,3 +6022,16 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   LIVE: belt_demo 15 districts, 2121 city nodes + 28 spinning bodies, captures D:/tmp/belt2_*.png. Verdict (mine): from
   8-14 km the settlement reads as sparse clusters on thin threads - it needs density (closer, bigger districts, braided
   link bundles). Next: densify the layout, then show the author.
+
+- 2026-11-17 DENSE SETTLEMENT + EDGE DISTANCE CULL. Layout: 26..34 districts, each a main spine (4..8 slots) + 1..3
+  branch spines (2..4 slots), placed by bounding sphere (no overlaps), 2..6 km out (ship districts 5..8 km); MST + up
+  to 2 short cross links per district; trunks (core links / > 2.5 km) are braided bundles of 3 tubes + 2 girders;
+  spinning bodies capped at 36 per hub (SPIN_CAP - each is a world object). belt_demo: 29 districts, 8852 city nodes,
+  36 spinning bodies, 117 haze sources. HLOD proxy error 12 m (OBB proxies are close).
+  ROOT CAUSE of a 173 ms GPU frame at 9 km: the instanced edge pass drew every edge of all ~7600 lattice instances
+  (girders / tubes: thousands of edges each) although station edges fade out by edgeFadeEnd (1600 m). FIX
+  (SceneRenderer drawQueuedMeshPassesInstanced): only instances whose nearest possible edge is within edgeFadeEnd
+  (MeshGPU::getEdgeRadius) get the edge pass - 84 of ~8000 kept at 9 km. LIVE (release, Quadro, no vsync, Modern):
+  frame p50 16 km 7.3 ms / 9 km 7.4 ms / 3 km 10.0 ms (city GPU 1.9 / 3.2 / 5.0 ms; 155 of 300+ groups collapsed).
+  Known: Elite Classic draws stations by edges only, so beyond 1.6 km the city is invisible there (pre-existing
+  station edge fade) - Classic needs a far presentation for hub cities. build/run_belt.bat added.

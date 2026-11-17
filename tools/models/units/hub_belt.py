@@ -704,7 +704,8 @@ EXTRA_KINDS = ["storage", "industry", "hab_static", "hab_rot", "docks_m", "fuel"
                "refinery", "rig", "landmark", "refinery", "rig"]
 WHEELED = {"docks_l", "docks_m", "refuel", "repair", "parking", "storage", "fuel", "industry", "refinery", "rig"}
 PASSENGER = {"hotel", "hab_static", "hab_rot", "core", "landmark"}
-RING_AXLE = 420.0          # the fixed axle junctions in front of / behind the ring hub
+RING_AXLE = 420.0
+SPIN_CAP = 36              # spinning bodies per hub (each one a separate world object)          # the fixed axle junctions in front of / behind the ring hub
 
 
 def _sub(a, b): return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
@@ -785,20 +786,71 @@ def belt_layout(hub_id):
     spinning.append({"id": "ring", "module": "hubb_ring_core", "position": (0.0, 0.0, 0.0), "rotation_deg": (0.0, 0.0, 0.0),
                      "spin_axis_local": (0.0, 0.0, 1.0), "rate_deg_s": 6.0, "title": "Центральное кольцо"})
 
-    # districts in a shell around the ring; docks further out (approach from outside)
-    n = rng.randint(14, 19)
+    # districts in a shell around the ring (dense: 26..34 districts 1.1 km apart at least, 1.6..5 km out; docks and the
+    # ship-handling districts outside, 4.5..6.5 km - the approach is from outside). Author after the first look:
+    # it must read as a city many kilometres across, not clusters on threads.
+    n = rng.randint(26, 34)
     kinds = DISTRICT_KINDS + [rng.choice(EXTRA_KINDS) for _ in range(n - len(DISTRICT_KINDS))]
     rng.shuffle(kinds)
     centres = []
+
+    def hang(dname, kind, a, spine, up, L, plan, tag):
+        """one spine of a district: girders from a along spine (length L), the plan's modules hung on its faces"""
+        side = _unit(_cross(up, spine))
+        segs = int(math.ceil(L / SEG_L))
+        rot_spine = _frame(spine, up)
+        for k in range(segs):
+            add(f"{dname}_{tag}sp{k}", "hubb_girder", _add(a, _mul(spine, k * SEG_L)), rot_spine, "spine", dname)
+        t = 40.0
+        faces = [up, _mul(up, -1.0), side, _mul(side, -1.0)]
+        for si, (folder, pitch, mount, rate) in enumerate(plan):
+            mid = _add(a, _mul(spine, t + pitch / 2))
+            t += pitch
+            # a spinning body is a whole object in the game (~0.03 ms of CPU each): one per slot, at most SPIN_CAP per hub
+            use = faces if mount == "face" else [side, _mul(side, -1.0)] if mount == "comb" else [up]
+            if mount == "axial" and len(spinning) >= SPIN_CAP:
+                use = []
+            for fi, f in enumerate(use):
+                if mount == "face" and fi > 1 and rng.random() < 0.25:
+                    continue                                                    # some side faces stay bare
+                nid = f"{dname}_{tag}m{si}_{fi}"
+                base = _add(mid, _mul(f, GIRDER_H + 2.0))
+                if mount == "face":
+                    add(nid, folder, base, _frame(spine, f), "module", dname)
+                    if folder in ("hubb_works", "hubv_refinery"):
+                        import pads
+                        from units.hub_vista import REFINERY_FLARE
+                        R = pads.euler(_frame(spine, f))
+                        haze.extend({"position": [round(x, 1) for x in _add(apply(R, v), base)], "radius_m": 300.0, "density": 1.0}
+                                    for v in (WORKS_VENTS if folder == "hubb_works" else [REFINERY_FLARE]))
+                elif mount == "comb":
+                    add(nid, folder, base, _frame(f, _cross(f, spine)), "dock", dname)
+                else:
+                    centre = _add(mid, _mul(f, AXIAL_OFFSET[folder]))
+                    spinning.append({"id": nid, "module": folder, "position": centre, "rotation_deg": _frame(f, spine),
+                                     "spin_axis_local": (0.0, 0.0, 1.0), "rate_deg_s": rate * (1 if rng.random() < 0.5 else -1),
+                                     "title": DISTRICT_TITLE[kind]})
+                    add(nid + "_mount", "hubb_girder", _add(mid, _mul(f, GIRDER_H)), _frame(f, spine), "mount", dname)
+        return segs
+
     for kind in kinds:
-        lo, hi = (5200.0, 8200.0) if kind.startswith("docks") or kind in ("refuel", "repair", "parking") else (2600.0, 6800.0)
-        for _ in range(400):
-            c = _mul(_rand_dir(rng), rng.uniform(lo, hi))
-            if abs(c[2]) < 900.0 and _len((c[0], c[1], 0.0)) < RING_R + 600.0:
-                continue                                                        # not through the ring
-            if all(_len(_sub(c, o)) > 2100.0 for o in centres):
+        mods = DISTRICT_MODULES[kind]
+        pick = lambda k: [mods[rng.randrange(len(mods))] for _ in range(k)]
+        plan = pick(rng.randint(4, 8))
+        L = sum(m[1] for m in plan) + 80.0
+        branches = [pick(rng.randint(2, 4)) for _ in range(rng.randint(1, 3))]
+        BL = max(sum(m[1] for m in bp) + 80.0 for bp in branches)
+        rad = max(L / 2, BL + 40.0) + 450.0                                      # the district's sphere (modules stick out)
+        outer = kind.startswith("docks") or kind in ("refuel", "repair", "parking")
+        lo, hi = (5000.0, 8000.0) if outer else (2000.0, 6000.0)
+        for attempt in range(800):
+            grow = 1.0 + attempt / 400.0                                        # widen the shell if it is full
+            c = _mul(_rand_dir(rng), rng.uniform(lo, hi * grow))
+            if _len(c) < RING_R + rad + 200.0:
+                continue                                                        # clear of the ring
+            if all(_len(_sub(c, o)) > rad + orad + 150.0 for o, orad in centres):
                 break
-        centres.append(c)
+        centres.append((c, rad))
         spine = _rand_dir(rng)
         radial = _unit(c)
         up = _sub(radial, _mul(spine, _dot(radial, spine)))                     # out of the settlement, square to the spine
@@ -808,49 +860,23 @@ def belt_layout(hub_id):
         side = _unit(_cross(up, spine))
         di = len(districts)
         dname = f"d{di}_{kind}"
-        mods = DISTRICT_MODULES[kind]
-        slots = rng.randint(3, 6)
-        plan = [mods[rng.randrange(len(mods))] if len(mods) > 1 else mods[0] for _ in range(slots)]
-        L = sum(m[1] for m in plan) + 80.0
         a = _sub(c, _mul(spine, L / 2))
-        segs = int(math.ceil(L / SEG_L))
-        rot_spine = _frame(spine, up)
-        for k in range(segs):
-            add(f"{dname}_sp{k}", "hubb_girder", _add(a, _mul(spine, k * SEG_L)), rot_spine, "spine", dname)
+        segs = hang(dname, kind, a, spine, up, L, plan, "")
         ends = [_sub(a, _mul(spine, 30.0)), _add(a, _mul(spine, segs * SEG_L + 30.0))]
+        rot_spine = _frame(spine, up)
         for e, pe in enumerate(ends):
             add(f"{dname}_j{e}", "hubb_junction", pe, rot_spine, "junction", dname)
-        t = 40.0
-        faces = [up, _mul(up, -1.0), side, _mul(side, -1.0)]
-        for si, (folder, pitch, mount, rate) in enumerate(plan):
-            mid = _add(a, _mul(spine, t + pitch / 2))
-            t += pitch
-            use = faces if mount == "face" else [side, _mul(side, -1.0)] if mount == "comb" else [up, side, _mul(side, -1.0)]
-            for fi, f in enumerate(use):
-                if mount == "face" and fi > 1 and rng.random() < 0.35:
-                    continue                                                    # some side faces stay bare
-                nid = f"{dname}_m{si}_{fi}"
-                base = _add(mid, _mul(f, GIRDER_H + 2.0))
-                if mount == "face":
-                    add(nid, folder, base, _frame(spine, f), "module", dname)
-                    if folder in ("hubb_works", "hubv_refinery"):
-                        import pads
-                        from units.hub_vista import REFINERY_FLARE
-                        R = pads.euler(_frame(spine, f))
-                        haze += [{"position": [round(x, 1) for x in _add(apply(R, v), base)], "radius_m": 300.0, "density": 1.0}
-                                 for v in (WORKS_VENTS if folder == "hubb_works" else [REFINERY_FLARE])]
-                elif mount == "comb":
-                    add(nid, folder, base, _frame(f, _cross(f, spine)), "dock", dname)
-                else:
-                    centre = _add(mid, _mul(f, AXIAL_OFFSET[folder]))
-                    spinning.append({"id": nid, "module": folder, "position": centre, "rotation_deg": _frame(f, spine),
-                                     "spin_axis_local": (0.0, 0.0, 1.0), "rate_deg_s": rate * (1 if rng.random() < 0.5 else -1),
-                                     "title": DISTRICT_TITLE[kind]})
-                    # its fixed mount: a short girder stub out of the spine to the axle
-                    add(nid + "_mount", "hubb_girder", _add(mid, _mul(f, GIRDER_H)), _frame(f, spine), "mount", dname)
+        # branch spines off the main one (square to it, along +-side or +-up), a junction where they meet
+        for bi, bplan in enumerate(branches):
+            at = _add(a, _mul(spine, rng.uniform(0.2, 0.8) * L))
+            bdir = rng.choice([side, _mul(side, -1.0), up, _mul(up, -1.0)])
+            bup = spine if abs(_dot(bdir, up)) > 0.5 else up
+            BL = sum(m[1] for m in bplan) + 80.0
+            add(f"{dname}_bj{bi}", "hubb_junction", at, rot_spine, "junction", dname)
+            hang(dname, kind, _add(at, _mul(bdir, 40.0)), bdir, bup, BL, bplan, f"b{bi}")
         districts.append({"id": dname, "kind": kind, "centre": c, "ends": ends, "spine": spine})
 
-    # links: a minimum spanning tree over the district ends + the ring axle junctions, plus some short cross links
+    # links: a minimum spanning tree over the district ends + the ring axle junctions, plus many short cross links
     pts = [("core", (0.0, 0.0, RING_AXLE)), ("core", (0.0, 0.0, -RING_AXLE))]
     for d in districts:
         pts += [(d["id"], d["ends"][0]), (d["id"], d["ends"][1])]
@@ -867,9 +893,10 @@ def belt_layout(hub_id):
     have = {(l[3], l[4]) for l in links} | {(l[4], l[3]) for l in links}
     for ga in groups:
         others = sorted((best(ga, gb) + (ga, gb) for gb in groups if gb != ga and (ga, gb) not in have), key=lambda x: x[0])
-        if others and rng.random() < 0.4 and others[0][0] < 5000.0:
-            links.append(others[0])
-            have |= {(others[0][3], others[0][4]), (others[0][4], others[0][3])}
+        for o in others[:2]:
+            if rng.random() < 0.6 and o[0] < 3500.0:
+                links.append(o)
+                have |= {(o[3], o[4]), (o[4], o[3])}
     for li, (dist, pa, pb, ga, gb) in enumerate(links):
         d = _unit(_sub(pb, pa))
         up = _cross(d, _cross((0.0, 1.0, 0.0), d))
@@ -878,18 +905,22 @@ def belt_layout(hub_id):
         rot = _frame(d, up)
         wheeled = kind_of[ga] in WHEELED or kind_of[gb] in WHEELED
         passenger = kind_of[ga] in PASSENGER or kind_of[gb] in PASSENGER
+        trunk = ga == "core" or gb == "core" or dist > 2500.0                   # the big trunks: a braided bundle
         L = dist - 60.0
         s0 = _add(pa, _mul(d, 30.0))
+        tubes = [(0.0, 0.0), (-26.0, 18.0), (26.0, 18.0)] if trunk else [(0.0, 0.0)]
         for k in range(int(math.ceil(L / SEG_L))):
             g = f"l{li}_{k // 12}"
             at = _add(s0, _mul(d, k * SEG_L))
-            add(f"l{li}_t{k}", "hubb_tube", at, rot, "tube", g)
-            if k % 3 != 1:
-                add(f"l{li}_g{k}", "hubb_girder", _add(at, _mul(side, -46.0)), rot, "girder", g)
+            for ti, (ox, oy) in enumerate(tubes):
+                add(f"l{li}_t{ti}_{k}", "hubb_tube", _add(at, _add(_mul(side, ox), _mul(up, oy))), rot, "tube", g)
+            add(f"l{li}_g{k}", "hubb_girder", _add(at, _mul(side, -60.0)), rot, "girder", g)
+            if trunk:
+                add(f"l{li}_h{k}", "hubb_girder", _add(at, _mul(side, 60.0)), rot, "girder", g)
             if wheeled:
-                add(f"l{li}_r{k}", "hubb_road", _add(at, _mul(side, 30.0)), rot, "road", g)
+                add(f"l{li}_r{k}", "hubb_road", _add(at, _mul(up, -30.0)), rot, "road", g)
             if passenger:
-                add(f"l{li}_m{k}", "hubb_monorail", _add(at, _mul(up, 20.0)), rot, "monorail", g)
+                add(f"l{li}_m{k}", "hubb_monorail", _add(at, _mul(up, 44.0 if trunk else 22.0)), rot, "monorail", g)
     return {"nodes": nodes, "spinning": spinning, "haze": haze, "module_of": module_of, "districts": districts,
             "links": len(links)}
 
@@ -947,5 +978,5 @@ for _hid in BELT_HUBS:
         "view_mode": "boxes",
         "modules": _L["module_of"],
         "proxies": belt_proxies(_L),
-        "proxy_error_m": 40.0,
+        "proxy_error_m": 12.0,     # the OBB proxies are close (a girder -> a bar): collapse early
         "view_lods": {0: 1, 1: 2, 2: 2}}

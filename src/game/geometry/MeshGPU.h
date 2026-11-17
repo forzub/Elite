@@ -77,6 +77,9 @@ public:
     {
         vertexCount = p.verts.size();
         edgeVertexCount = p.edgeVerts.size();
+        edgeRadius = 0.0f;
+        for (const glm::vec3& v : p.edgeVerts)
+            edgeRadius = std::max(edgeRadius, glm::length(v));
 
         glGenVertexArrays(1, &vaoEdges);
         glBindVertexArray(vaoEdges);
@@ -343,6 +346,9 @@ void drawEdgesInstanced(const std::vector<glm::mat4>& models) const
 
 
     size_t getEdgeVertexCount() const { return edgeVertexCount; }
+    // the farthest edge vertex from the mesh origin (metres, model space): instanced edge passes skip instances whose
+    // nearest possible edge is beyond the edge fade-out distance
+    float getEdgeRadius() const { return edgeRadius; }
 
 private:
 
@@ -355,6 +361,7 @@ private:
 
     size_t vertexCount = 0;
     size_t edgeVertexCount = 0;
+    float edgeRadius = 0.0f;
 
 
     mutable GLuint instanceVBO = 0;

@@ -509,7 +509,21 @@ namespace
             static const bool devNoEdges = std::getenv("ELITE_DEV_NO_EDGES") != nullptr;
             for (const render::MeshGPU* gpu : devNoEdges ? std::vector<const render::MeshGPU*>() : order)
             {
-                const auto& group = groups[gpu];
+                // Only the instances that can show an edge: the edges fade out by params.edgeFadeEnd, and lattice
+                // modules (girders, tubes of the belt settlement) are thousands of edges each - drawing all 7600
+                // instances of a settlement cost 169 ms of GPU at 9 km, all of it invisible (2026-11-17).
+                std::vector<const QueuedMeshDraw*> near;
+                near.reserve(groups[gpu].size());
+                const float reach = params.edgeFadeEnd + gpu->getEdgeRadius();
+                for (const QueuedMeshDraw* draw : groups[gpu])
+                {
+                    const float scale = glm::length(glm::vec3(draw->model[0]));
+                    if (glm::length(glm::vec3(draw->model[3]) - cameraLocalPosition) - (scale - 1.0f) * gpu->getEdgeRadius() <= reach)
+                        near.push_back(draw);
+                }
+                if (near.empty())
+                    continue;
+                const auto& group = near;
                 if (group.size() > 1 && edgeInstancedShader != 0)
                 {
                     collectModels(group);

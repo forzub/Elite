@@ -5,6 +5,10 @@
 
 Kits: units.hub_style_east (ultramodern, ancient, indian), units.hub_style_west (practical, belt_clans, american); each
 exports STYLE_ZONE_MODULES and STYLE_POLITIES. Sol keeps the default elegant kit (style "").
+
+Landmarks (every hub recognizable by its own one-offs, any style): units.hub_landmarks - the hubl_* modules, their
+placement table LANDMARKS and the picker landmarks_for(hub_id, style) (re-exported here; how hub_plane should apply
+it: that module's docstring).
 """
 import importlib
 
@@ -36,3 +40,15 @@ def styles():
 def polity_style(polity):
     """the style of a polity (its founding culture); "" = the default kit"""
     return _tables()[1].get(polity, "")
+
+
+def landmarks_for(hub_id, style=None):
+    """the hub's 2-4 landmarks + its block-layout signature (units.hub_landmarks.landmarks_for)"""
+    from units.hub_landmarks import landmarks_for as pick
+    return pick(hub_id, style)
+
+
+def landmark_info(module):
+    """kind / place / span / title of a landmark module (None: not a landmark)"""
+    from units.hub_landmarks import LANDMARKS
+    return LANDMARKS.get(module)

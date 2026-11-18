@@ -712,6 +712,7 @@ add_executable(EliteGame
     src/game/equipment/signalNode/SignalTransmitterModule.cpp
 
     src/scene/SceneRenderer.cpp
+    src/scene/HubCityTraffic.cpp
     
     src/ui/components/radar/RadarWidgetBase.cpp
     src/ui/components/radar/RadarWidgetFactory.cpp

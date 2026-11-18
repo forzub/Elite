@@ -109,6 +109,7 @@ struct PreparedScene
         std::vector<std::string> nodeState;             // per semantic node state id ("" = default)
         // a hub city: its damaged / destroyed buildings (hidden here, the variant packages drawn in their place)
         std::vector<game::simulation::CityBuildingState> buildingStates;
+        std::string hubModuleId;                        // the hub module this object is ("<hub>.city": its plan, traffic)
     };
     std::vector<ModelAssetObjectItem> modelAssetObjects;
 

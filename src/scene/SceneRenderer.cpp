@@ -52,6 +52,8 @@
 #include <fstream>
 #include <iomanip>
 #include "src/game/client/HubFramePresentation.h"
+#include "src/game/navigation/HubPlanCatalog.h"
+#include "src/scene/HubCityTraffic.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 
 namespace
@@ -1575,6 +1577,7 @@ void SceneRenderer::prepareScene(
                 item.gpu = modelAsset;
                 item.model = objectBaseModel;
                 item.buildingStates = obj.buildingStates;
+                item.hubModuleId = obj.hubAttachment.moduleId;
                 item.nodeModel.resize(modelAsset->nodeModule.size(), objectBaseModel);
                 for (std::size_t n = 0; n < modelAsset->nodeModule.size(); ++n)
                     for (const auto& module : obj.assembly->modules)
@@ -3779,6 +3782,49 @@ if (policy.drawObjects)
                         }
                     }
                 }
+                // a planar city's traffic (src/scene/HubCityTraffic.h): cars, trucks, monorail trains - a function of the
+                // universe time and the hub plan, drawn as the city's own instances (the station batches instance
+                // equal meshes); only near the camera
+                if (object.type == ObjectType::HubBeltCity && !object.hubModuleId.empty() && cameraName == "mainCam")
+                    if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubModuleId))
+                    {
+                        static std::vector<scene::HubTrafficInstance> traffic;
+                        const glm::mat4 cityModel = devPlacement * object.model;
+                        const glm::vec3 cameraCity = glm::vec3(glm::inverse(cityModel) * glm::vec4(cameraLocalPosition, 1.0f));
+                        const double trafficTime = prepared.celestialSnapshot ? prepared.celestialSnapshot->simTimeSeconds
+                                                                              : renderProfileNowMs() * 0.001;
+                        scene::hubCityTraffic(*plan, trafficTime, cameraCity, 3500.0f, traffic);
+                        const render::geometry::ModelAssetGpu* packages[static_cast<int>(scene::HubTrafficModel::Count)] = {};
+                        for (int k = 0; k < static_cast<int>(scene::HubTrafficModel::Count); ++k)
+                        {
+                            const std::string id = scene::hubTrafficModelId(static_cast<scene::HubTrafficModel>(k));
+                            packages[k] = render::geometry::ModelAssetGpuLibrary::getPackage(
+                                object.type, "assets/compiled/hub_modules/" + id + "/" + id + ".elmodel");
+                            if (packages[k])
+                                packages[k]->pumpPrewarm(1.0);
+                        }
+                        for (const auto& v : traffic)
+                        {
+                            const auto* pkg = packages[static_cast<int>(v.model)];
+                            if (!pkg || pkg->asset.renderLods.empty())
+                                continue;
+                            const int lods = static_cast<int>(pkg->asset.renderLods.size());
+                            const int lod = std::min(lods - 1, v.distance < 250.0f ? 0 : v.distance < 800.0f ? 1 : v.distance < 2000.0f ? 2 : 3);
+                            const auto& rl = pkg->asset.renderLods[static_cast<std::size_t>(lod)];
+                            const glm::mat4 base = cityModel * v.local * pkg->assetToLogical;
+                            for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
+                            {
+                                const render::MeshGPU* g = pkg->gpuFor(lod, rl.nodes[rn].geometryIndex);
+                                if (!g || rn >= pkg->index.renderNodes[static_cast<std::size_t>(lod)].size())
+                                    continue;
+                                const glm::mat4 model = base * pkg->index.renderNodes[static_cast<std::size_t>(lod)][rn].assetTransform;
+                                QueuedMeshDraw qd {g, proj * renderView * model, model};
+                                qd.seed = 0.5f;
+                                queuedModelAssetStationDraws.push_back(qd);
+                                m_lastStats.partsDrawn++;
+                            }
+                        }
+                    }
                 if (logNow)
                 {
                     std::fprintf(lodLog, "t=%.1f camera=%s select_ms=%.3f uploaded_meshes=%zu uploaded_tris=%zu vram_est_mb=%.1f\n",

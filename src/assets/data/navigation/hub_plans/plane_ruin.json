@@ -9737,5 +9737,15 @@
 "r": 95.0
 }
 ],
+"roads": {
+"top_y": 0.0,
+"under_y": -44.0,
+"lanes_m": [
+3.0,
+9.0
+],
+"monorail_y": 16.8,
+"monorail_side_m": 18.0
+},
 "population_estimate": 1649906
 }

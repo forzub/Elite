@@ -61,6 +61,16 @@ struct HubPlanSpinning
     double radius = 100.0;
 };
 
+// the roads / monorail as built (tools/models/hub_plan.py "roads"): what the city's traffic drives on
+struct HubPlanRoads
+{
+    double topY = 0.0;                 // the deck top over the plane
+    double underY = -44.0;             // the deck surface under the plane (facing down)
+    std::vector<double> lanesMeters {3.0, 9.0};   // lane centres off the street's centre line (each way)
+    double monorailY = 16.8;           // the rail top
+    double monorailSideMeters = 18.0;  // to the street's +X (Z streets) / -Z (X streets)
+};
+
 class HubPlan
 {
 public:
@@ -76,6 +86,7 @@ public:
     const std::vector<HubPlanStreet>& streets() const { return m_streets; }
     const std::vector<HubPlanDock>& docks() const { return m_docks; }
     const std::vector<HubPlanSpinning>& spinning() const { return m_spinning; }
+    const HubPlanRoads& roads() const { return m_roads; }
     const HubPlanBlock* block(const std::string& id) const;
     // the block under a point of the plane (city frame x, z), or nullptr
     const HubPlanBlock* blockAt(double x, double z) const;
@@ -92,6 +103,7 @@ private:
     std::vector<HubPlanStreet> m_streets;
     std::vector<HubPlanDock> m_docks;
     std::vector<HubPlanSpinning> m_spinning;
+    HubPlanRoads m_roads;
     std::string m_failure;
 };
 

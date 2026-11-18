@@ -91,6 +91,16 @@ bool HubPlan::load(const std::string& path)
     for (const auto& s : j.value("spinning", nlohmann::json::array()))
         m_spinning.push_back({s.value("id", std::string()), s.value("module", std::string()),
                               glm::dvec2(s.value("x", 0.0), s.value("z", 0.0)), s.value("r", 100.0)});
+    if (j.contains("roads") && j["roads"].is_object())
+    {
+        const auto& r = j["roads"];
+        m_roads.topY = r.value("top_y", m_roads.topY);
+        m_roads.underY = r.value("under_y", m_roads.underY);
+        m_roads.monorailY = r.value("monorail_y", m_roads.monorailY);
+        m_roads.monorailSideMeters = r.value("monorail_side_m", m_roads.monorailSideMeters);
+        if (r.contains("lanes_m") && r["lanes_m"].is_array() && !r["lanes_m"].empty())
+            m_roads.lanesMeters = r["lanes_m"].get<std::vector<double>>();
+    }
     if (m_frameModuleId.empty() || m_blocks.empty())
     {
         m_failure = "empty plan " + path;

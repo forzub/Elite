@@ -6423,3 +6423,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - Gates: check_navigation_context PASS; reds = the pre-existing 3 (galaxy map catalog, ui fonts, system_map
     architecture "System CPU frame must be built before input/picking").
   - Process: two more stray `python -` runs this session (stopped with TaskStop) - 4 in total today.
+- 2026-11-18 HUB CITY TRAFFIC (author: «давай трафик»): a presentation only, no server state - every vehicle a pure
+  function of the universe time (celestial snapshot simTimeSeconds) and the hub plan, so all clients see the same:
+  src/scene/HubCityTraffic.{h,cpp} (cars on 2 lanes each way of every street over the plane and upside down under it,
+  trucks on the outer lane beside wheeled zones, a vehicle leaving at the far crossing re-enters at the near one; one
+  3-car monorail train per monorail beam shuttling with a 25 s dwell at the ends); drawn by SceneRenderer next to the
+  HubBeltCity object within 3.5 km of the camera, LOD by distance, into the station instance batches.
+  Models tools/models/units/hub_traffic.py (hubt_car_a/b/c, hubt_truck, hubt_train; packaged by the mesh editor,
+  hub_modules). The hub plan got "roads" (deck heights over / under the plane, lanes 3 / 9 m, monorail rail top
+  16.8 m and side 18 m). Evidence: D:/tmp/traffic_za.png / traffic_zb.png (3 s apart: cars moved along the lanes,
+  the train came along the beam). Not checked: the under-plane traffic in a frame, frame-time cost. NOT accepted.

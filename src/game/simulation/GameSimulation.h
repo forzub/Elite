@@ -850,6 +850,21 @@ private:
     glm::dvec3 jumpLegEnd(const ActiveJump& j, const glm::dvec3& shipM) const;
     double jumpLegCostT(const ActiveJump& j, const glm::dvec3& fromM, double massT) const;
     std::unordered_map<EntityId, ActiveJump> m_jumps;
+    // a jump asked while the station holds the ship (docked / departing): the procedure asks for the departure and
+    // starts itself when the station releases the ship (author 2026-11-18: the computer runs the modes it needs)
+    struct PendingJumpRequest
+    {
+        int targetSystemId = -1;
+        std::string targetName;
+        double distanceLy = 0.0;
+        std::string exitBodyId;
+        glm::dvec3 interstellarDirWorld {0.0};
+        bool hasDeepCatch = false;
+        JumpDeepCatch deepCatch;
+        double ageS = 0.0;             // how long the procedure has been waiting
+        std::string waitingFor;        // what for (the log)
+    };
+    std::unordered_map<EntityId, PendingJumpRequest> m_pendingJumpRequests;
     std::unordered_map<int, std::vector<game::navigation::jump::JumpSump>> m_jumpSumps;
     // the step from -> to may fall into a sump: true = caught, the ship is out at the catch point and the jump is over
     bool jumpSumpCatch(EntityId shipId, ActiveJump& j, const glm::dvec3& from, const glm::dvec3& to);

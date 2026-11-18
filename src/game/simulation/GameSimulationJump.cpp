@@ -16,6 +16,7 @@
 #include <random>
 
 #include "src/game/navigation/FreeFlightCodes.h"
+#include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/navigation/rules/JumpRules.h"
 #include "src/game/navigation/rules/JumpCurrents.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
@@ -42,6 +43,7 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
     auto& motion = ship->core().transform().motion;
     const auto refuse = [&](jr::Refusal r) {
         motion.jumpRefusal = static_cast<std::uint8_t>(r);
+        motion.jumpState = 0;   // a waiting procedure (state 4) ends with the refusal
         ++motion.jumpRefusalSerial;
         std::cerr << "[Jump] ship " << shipId.value << ": jump to " << targetName << " (" << targetSystemId << ", " << distanceLy
                   << " ly) REFUSED: " << jr::refusalText(r) << std::endl;
@@ -52,8 +54,60 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
     const bool inSystem = targetSystemId == motion.systemId;
     if (inSystem && exitBodyId.empty())
         return refuse(jr::Refusal::SameSystem);
-    if (!motion.freeFlight || m_freeFlights.count(shipId) == 0 || m_freeFlights.at(shipId).localFrame)
-        return refuse(jr::Refusal::NotInNormalFlight);
+    // Held by the station (docked / departing): ask for the departure when docked and wait for the release; the
+    // procedure goes on by itself from updateJumps.
+    // the procedure waits (updateJumps asks again every step until the condition is gone)
+    const auto defer = [&](const char* what) {
+        PendingJumpRequest p;
+        p.targetSystemId = targetSystemId;
+        p.targetName = targetName;
+        p.distanceLy = distanceLy;
+        p.exitBodyId = exitBodyId;
+        p.interstellarDirWorld = interstellarDirWorld;
+        p.hasDeepCatch = deepCatch != nullptr;
+        if (deepCatch)
+            p.deepCatch = *deepCatch;
+        const auto old = m_pendingJumpRequests.find(shipId);
+        const bool fresh = old == m_pendingJumpRequests.end() || old->second.waitingFor != what;
+        if (!fresh)
+            p.ageS = old->second.ageS;   // the age of THIS wait (a new reason starts from zero)
+        p.waitingFor = what;
+        m_pendingJumpRequests[shipId] = p;
+        motion.jumpState = 4;
+        motion.jumpTargetSystemId = targetSystemId;
+        motion.jumpTargetName = targetName;
+        motion.jumpDistanceLy = distanceLy;
+        motion.jumpRefusal = 0;
+        if (fresh)
+            std::cerr << "[Jump] ship " << shipId.value << ": procedure for " << targetName << " waits: " << what << std::endl;
+        return true;
+    };
+    // Everything below (the stabilization exit, the zone over the dominant body) reads the ACTIVE system's context
+    // (gravity bodies, hub frames): a request from outside the ship's own system pass (the server's message handling,
+    // another system's pass) waits for that pass (live 2026-11-19: planned in Sol's context, the zone was put at the
+    // Sun while the ship was in Wolf 359 - holding it braked the planet's orbital speed and the ship was destroyed).
+    if (!passOwns(ship))
+        return defer("the ship's system pass");
+    if (isDockStationControlledShip(shipId))
+    {
+        if (dockDispatcherStatus(shipId).phase == game::docking::traffic::DockTrafficPhase::Docked &&
+            m_pendingJumpRequests.count(shipId) == 0)
+            (void)requestDockDeparture(shipId);
+        return defer("the station to release the ship");
+    }
+    // The jump procedure owns the flight mode it needs (author 2026-11-18: the computer switches the mode,
+    // not the drive telling the pilot what to press): out of a hub / ground / orbit stabilization into
+    // normal flight first; a refusal only when the ship cannot leave it.
+    const auto inNormalFlight = [&] {
+        return motion.freeFlight && m_freeFlights.count(shipId) != 0 && !m_freeFlights.at(shipId).localFrame;
+    };
+    if (!inNormalFlight())
+    {
+        std::cerr << "[Jump] ship " << shipId.value << ": procedure leaves stabilization for normal flight" << std::endl;
+        if (!toggleStabilization(shipId) || !inNormalFlight())
+            return refuse(jr::Refusal::NotInNormalFlight);
+    }
+    m_pendingJumpRequests.erase(shipId);
     if (!game::navigation::jdrive::jumpFieldComplete(game::simulation::jFieldIntegrity(
             static_cast<const world::modules::ObjectModuleRuntime&>(ship->core().moduleRuntime()))))
         return refuse(jr::Refusal::FieldIncomplete);
@@ -185,6 +239,12 @@ bool GameSimulation::requestJump(EntityId shipId, int targetSystemId, const std:
 
 void GameSimulation::cancelJump(EntityId shipId, std::uint8_t why)
 {
+    if (m_pendingJumpRequests.erase(shipId) != 0)
+        if (Ship* ship = getShip(shipId))
+        {
+            ship->core().transform().motion.jumpState = 0;
+            std::cerr << "[Jump] ship " << shipId.value << ": waiting procedure cancelled" << std::endl;
+        }
     const auto it = m_jumps.find(shipId);
     if (it == m_jumps.end() || it->second.jumped)
         return;
@@ -238,6 +298,31 @@ bool GameSimulation::shipAwaitingJumpExit(EntityId shipId) const
 
 void GameSimulation::updateJumps(double dt)
 {
+    // jumps asked while the station held the ship: start once it is released
+    std::vector<EntityId> waiting;
+    for (auto& [id, r] : m_pendingJumpRequests)
+    {
+        r.ageS += dt;
+        waiting.push_back(id);
+    }
+    for (const EntityId id : waiting)
+    {
+        const auto p = m_pendingJumpRequests.find(id);
+        if (p == m_pendingJumpRequests.end())
+            continue;
+        if (!getShip(id))
+        {
+            m_pendingJumpRequests.erase(p);
+            continue;
+        }
+        if (!passOwns(id) || isDockStationControlledShip(id))
+            continue;
+        // ask again: it goes on, waits on (kept, its age with it) or is refused (dropped)
+        const PendingJumpRequest r = p->second;
+        if (!requestJump(id, r.targetSystemId, r.targetName, r.distanceLy, r.exitBodyId, r.interstellarDirWorld,
+                         r.hasDeepCatch ? &r.deepCatch : nullptr))
+            m_pendingJumpRequests.erase(id);
+    }
     for (auto it = m_jumps.begin(); it != m_jumps.end();)
     {
         const EntityId id = it->first;
@@ -288,7 +373,7 @@ void GameSimulation::updateJumps(double dt)
                 if (b.id == j.zoneBodyId)
                 {
                     zoneBase = b.centerMeters;
-                    zoneVel = j.velocities.count(b.id) ? j.velocities[b.id] : glm::dvec3(0.0);
+                    zoneVel = j.velocities.count(b.id) ? j.velocities[b.id] : shipV;   // unknown in the first step: hold the ship's own
                 }
             const glm::dvec3 zoneM = zoneBase + j.zoneOffsetM;
             const glm::dvec3 legEnd = jumpLegEnd(j, shipM);
@@ -800,12 +885,20 @@ bool GameSimulation::planJumpZone(EntityId shipId, ActiveJump& j, const glm::dve
     double starMu = 0.0;
     for (const auto& b : m_gravityBodies)
         starMu = std::max(starMu, b.gravitationalParameterM3s2);
-    // the dominant body: the primary of the free flight (the star in open space)
+    // the dominant body at the ship (the star in open space), decided here by the one rule (BodyFlightRules.h) - not
+    // read from the free flight's state, which is empty in the step the procedure itself left a stabilization (live
+    // 2026-11-18: an empty primary planned the zone as a point at rest against the star; holding it next to a hub
+    // on its planet's orbit braked away 24 km/s and the planet ran the ship down - destroyed)
     const game::navigation::GravityBody* body = nullptr;
-    if (const auto f = m_freeFlights.find(shipId); f != m_freeFlights.end())
-        for (const auto& b : m_gravityBodies)
-            if (b.id == f->second.primaryBodyId)
-                body = &b;
+    {
+        using B = game::navigation::GravityBody;
+        bool isRoot = false;
+        const std::size_t k = game::navigation::rules::dominantBody(
+            m_gravityBodies, shipM, [](const B& b) -> const std::string& { return b.id; }, [](const B&) { return std::string(); },
+            [](const B& b) { return b.gravitationalParameterM3s2; }, [](const B& b) { return b.centerMeters; }, &isRoot);
+        if (k < m_gravityBodies.size())
+            body = &m_gravityBodies[k];
+    }
     if (safeHere && blocked.empty())
     {
         j.zoneBodyId = body ? body->id : std::string();

@@ -1,3 +1,4 @@
+#include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/simulation/GameSimulationInternal.h"
 
 #include <cstdio>
@@ -755,6 +756,10 @@ void GameSimulation::updateDockSitePilots(DockSite& site, const StaticObject* do
             ? hubNavigationFrame(tr.motion.hubId) : nullptr;
         if (frame && frame->valid)
         {
+            // The per-tick matched-frame refresh skips station-held ships: keep the ship's travel frame on the moving
+            // hub here, or its local offset (written against the live hub) lands on a stale origin at the release
+            // (live 2026-11-18: normal flight right after the release put the ship 96 km under Wolf 359 e - crash).
+            game::navigation::TravelFrameSystem::refreshMatchedReference(tr.motion, frame->kinematicFrame(), frame->hubId);
             const glm::dvec3 local = frame->worldToLocalPosition(position);
             tr.motion.localPositionMeters = local;
             tr.motion.localVelocityMps = frame->worldToLocalVelocity(position, velocity);

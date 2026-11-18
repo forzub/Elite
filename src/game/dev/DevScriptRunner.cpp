@@ -194,6 +194,16 @@ void DevScriptRunner::runSolMapScript(SpaceState& s)
         }
         const std::string cmd = steps[m_nextSolMapStep++].second;
         std::cerr << "[SolMapScript] " << cmd << " (t=" << glfwGetTime() << ")\n";
+        if (cmd == "undock")
+        {
+            // Ctrl+L: the dock dispatcher flies the ship out (a tour: leave for the next jump)
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::RequestDockDeparture;
+            msg.payload = command;
+            s.m_client->sendMessage(msg);
+            continue;
+        }
         if (cmd.rfind("dock:", 0) == 0)
         {
             // dock:<module id>:<anchor id> - automatic docking as from the dock card (a tour: the flight through the
@@ -242,6 +252,18 @@ bool DevScriptRunner::waitSatisfied(SpaceState& s, const std::string& condition)
         if (state != 0)
             m_waitRouteSeen = true;
         return m_waitRouteSeen && state == 0;
+    }
+    if (condition == "free")
+    {
+        // released by the dock dispatcher (or never docked)
+        const auto it = s.m_client->world().ships().find(s.m_playerId.value);
+        return it != s.m_client->world().ships().end() && !it->second.dockDispatcher.active;
+    }
+    if (condition == "docked")
+    {
+        const auto it = s.m_client->world().ships().find(s.m_playerId.value);
+        return it != s.m_client->world().ships().end() && it->second.dockDispatcher.active &&
+               it->second.dockDispatcher.phase == static_cast<std::uint8_t>(game::docking::traffic::DockTrafficPhase::Docked);
     }
     if (condition == "dockdone")
     {

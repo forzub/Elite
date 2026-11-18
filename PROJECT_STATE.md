@@ -6649,3 +6649,27 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   dockdone [@max s], capture:<png>, dock:<module>:<anchor>; ELITE_DEV_HUB_VEL_LOG=<hub>.
   OPEN: the jump exit warning «норма до 1106 км» ignores the currents' residual (52 000 km at Wolf 359, lock 200) - it
   fires on every jump into a system with currents (a design question for the author). Gates: 203 pass, the 3 old reds.
+- 2026-11-19 DOCKING START + JUMP PROCEDURE (author 2026-11-18: «не игра должна говорить, что ей нужно, а автопилот
+  включать нужный ему режим»; the computer owns the modes and its own boundary conditions). Root causes (live, Wolf 359
+  Citadel, D:/tmp/dockrepro3..14):
+  (1) docking held 0 m/s for 20 min: the start sample of the accepted program carries the ship's residual drift
+  (0.03 mm/s, any direction) as its velocity; applyRuntimeProfile steers the whole profile along that direction -> the
+  +45 m/s2 ramp projected onto the path became -28 m/s2. RouteExecutionCore::buildContinuousReference: a sample below
+  0.05 m/s takes the path's own direction (to the next sample). (2) Same drift read as a course-envelope breach in
+  ManeuverTrackingController (Assisted spatial) -> feed-forward dropped, no launch: course loss measured only above
+  0.05 m/s. (3) Station-held ships skip the matched-frame refresh: travelFrame stale while the station wrote the local
+  offset against the live hub -> at the release normal flight put the ship 96 km under Wolf 359 e (crash); the station
+  pose step now refreshes the travel frame (GameSimulationDockTraffic). (4) requestJump ran outside the ship's system
+  pass (server messages / pending loop) and planned the start zone in ANOTHER system's gravity context (zone at the Sun
+  while in Wolf 359) -> the zone hold braked the planet's orbital speed, the ship was run down: requestJump defers to
+  the ship's own pass (passOwns). (5) The procedure refused «нужен нормальный полёт» / failed during a station
+  departure: now it asks the departure when docked, waits for the release (PendingJumpRequest, logged reasons),
+  leaves stabilization itself; the zone's dominant body is decided by BodyFlightRules::dominantBody at the ship (not
+  read from the free flight's not-yet-filled primary); an unknown zone-body velocity holds the ship's own (not 0).
+  EVIDENCE: D:/tmp/dockrepro14 - route 1209 s, docking 197 s (also 170-241 s in 5 earlier runs, no stall), jump from the
+  pad: departure -> release -> normal flight -> zone at Wolf 359 e -> aim -> charge -> JUMP 3->4 in 470 s; exit at
+  Lalande. Unit: maneuver_tracking_controller / in_corridor_centering / tunnel_proving_ground / assisted_layout_matrix /
+  autopilot_law_api PASS (standalone build D:/tmp/navtests); client_route_autopilot_tests FAILS «runtime speed profile
+  erased Newtonian centripetal feed-forward» ALSO on the baseline (pre-existing; it stops at the first failure).
+  DEV: ELITE_DEV_ROUTE_START_DUMP=1 ([RouteStart] accepted profile + geometry); runs go under the scratchpad
+  watchdog.sh (docking stall / silent log / player destroyed -> kill). NEXT: the colony tour again under the watchdog.

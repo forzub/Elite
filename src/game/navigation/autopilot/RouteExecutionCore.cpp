@@ -44,6 +44,28 @@ bool RouteExecutionCore::buildContinuousReference(
             return false;
         progress[i] = progress[i - 1] + ds;
     }
+
+    // Boundary condition owned by the autopilot (author 2026-11-18): a sample
+    // at (near) rest has no meaningful velocity direction - the start sample
+    // carries the ship's residual drift (live: 0.03 mm/s pointing 128 deg
+    // backwards), and applyRuntimeProfile steers the whole profile along that
+    // direction, so the ramp projected onto the path became a brake and the
+    // ship held zero forever. At rest the motion direction is the path's own
+    // direction (towards the next sample; the last one from the previous).
+    constexpr double RestSpeedMps = 0.05;
+    for (std::size_t i = 0; i < samples.size(); ++i)
+    {
+        auto& v = samples[i].velocityMapMetersPerSecond;
+        const double speed = glm::length(v);
+        if (!(speed < RestSpeedMps))
+            continue;
+        const glm::dvec3 along = i + 1 < samples.size()
+            ? samples[i + 1].positionMapMeters - samples[i].positionMapMeters
+            : samples[i].positionMapMeters - samples[i - 1].positionMapMeters;
+        const double length = glm::length(along);
+        if (length > 1.0e-12)
+            v = along / length * speed;
+    }
     return true;
 }
 

@@ -337,10 +337,17 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
                 agent.velocityMapMetersPerSecond
             );
 
+        // At (near) rest the velocity has no meaningful course: a residual
+        // drift (live 2026-11-18: 0.02 mm/s pointing off the path at a docking
+        // start) read as a course-envelope breach, the feed-forward was
+        // dropped and the launch ramp never began - the ship held zero for
+        // 20 min. Course loss is measured only while the craft really moves.
+        constexpr double CourseObservableSpeedMps = 0.05;
         envelopeForwardAngleErrorRad =
             assistedSpatial &&
             referenceSpeedSquared > kEpsilon &&
-            actualSpeedSquared > kEpsilon
+            actualSpeedSquared >
+                CourseObservableSpeedMps * CourseObservableSpeedMps
                 ? angleBetween(
                       agent.velocityMapMetersPerSecond,
                       tangent

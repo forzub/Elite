@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdlib>
+#include <iostream>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -246,6 +248,50 @@ public:
                 *failureReason = "runtime-speed-profile-init-failed";
             state = {};
             return false;
+        }
+        // DEV (ELITE_DEV_ROUTE_START_DUMP=1): the start of the accepted profile
+        if (const char* d = std::getenv("ELITE_DEV_ROUTE_START_DUMP"); d && *d == '1')
+        {
+            std::cerr << "[RouteStart] law=" << static_cast<int>(law) << " samples="
+                      << state.continuousSamples.size() << " agent_v="
+                      << glm::length(initialAgent.velocityMapMetersPerSecond)
+                      << " curves=" << state.routeCurves.size() << '\n';
+            for (std::size_t i = 0; i < std::min<std::size_t>(10, state.continuousSamples.size()); ++i)
+            {
+                const auto& sm = state.continuousSamples[i];
+                std::cerr << "[RouteStart] " << i << " s=" << state.continuousProgressMeters[i]
+                          << " t=" << sm.timeOffsetSeconds
+                          << " v=" << glm::length(sm.velocityMapMetersPerSecond)
+                          << " nominal=" << state.nominalSpeedProfileMps[i]
+                          << " runtime=" << state.runtimeSpeedProfileMps[i]
+                          << " a=" << state.runtimeLongitudinalAccelerationMps2[i]
+                          << " ff=" << glm::length(sm.linearAccelerationFeedForwardMapMps2) << '\n';
+            }
+            for (std::size_t c = 0; c < std::min<std::size_t>(4, state.routeCurves.size()); ++c)
+                std::cerr << "[RouteStart] curve " << c << " kind=" << static_cast<int>(state.routeCurves[c].kind)
+                          << " s0=" << state.routeCurves[c].startProgressMeters
+                          << " s1=" << state.routeCurves[c].endProgressMeters
+                          << " vmax=" << state.routeCurves[c].maxSpeedMps << '\n';
+            const auto v3 = [](const glm::dvec3& v) {
+                return std::to_string(v.x) + "," + std::to_string(v.y) + "," + std::to_string(v.z);
+            };
+            const auto dir = [](const glm::dvec3& v) {
+                const double l = glm::length(v);
+                return l > 1e-12 ? v / l : glm::dvec3(0.0);
+            };
+            std::cerr << "[RouteStart] agent pos=" << v3(initialAgent.positionMapMeters)
+                      << " fwd=" << v3(initialAgent.forwardMap) << '\n';
+            if (!state.routeCurves.empty())
+                std::cerr << "[RouteStart] curve0 start=" << v3(state.routeCurves[0].startMeters)
+                          << " end=" << v3(state.routeCurves[0].endMeters)
+                          << " startFwd=" << v3(state.routeCurves[0].startForward) << '\n';
+            for (std::size_t i : {std::size_t(0), std::size_t(5), std::size_t(50)})
+                if (i < state.continuousSamples.size())
+                    std::cerr << "[RouteStart] sample " << i
+                              << " pos=" << v3(state.continuousSamples[i].positionMapMeters)
+                              << " vdir=" << v3(dir(state.continuousSamples[i].velocityMapMetersPerSecond))
+                              << " ffdir=" << v3(dir(state.continuousSamples[i].linearAccelerationFeedForwardMapMps2))
+                              << " fwd=" << v3(state.continuousSamples[i].forwardMap) << '\n';
         }
         // A pilot that must turn its thrust axis before braking gets its
         // coast interval from the very first sample, not only after the
@@ -1004,6 +1050,25 @@ public:
                 : continuous.reference.positionMapMeters;
         const glm::dvec3 referenceTangent =
             nominalForward;
+        if (const char* d = std::getenv("ELITE_DEV_ROUTE_START_DUMP"); d && *d == '1')
+        {
+            static int printed = 0;
+            if (printed < 3)
+            {
+                ++printed;
+                const glm::dvec3 sv = continuous.reference.velocityMapMetersPerSecond;
+                const glm::dvec3 sff = continuous.reference.linearAccelerationFeedForwardMapMps2;
+                std::cerr << "[RouteStartTrack] s=" << continuous.spatialProgressMeters
+                          << " route_s=" << routeProgressMeters
+                          << " curve_valid=" << curveNow.valid << " curve=" << curveNow.curveIndex
+                          << " tangent=" << nominalForward.x << "," << nominalForward.y << "," << nominalForward.z
+                          << " cos(tangent,v)=" << (glm::length(sv) > 1e-12 ? glm::dot(nominalForward, sv) / glm::length(sv) : 0.0)
+                          << " cos(tangent,ff)=" << (glm::length(sff) > 1e-12 ? glm::dot(nominalForward, sff) / glm::length(sff) : 0.0)
+                          << " curvePos=" << curveNow.positionMapMeters.x << "," << curveNow.positionMapMeters.y << "," << curveNow.positionMapMeters.z
+                          << " refPos=" << continuous.reference.positionMapMeters.x << "," << continuous.reference.positionMapMeters.y << "," << continuous.reference.positionMapMeters.z
+                          << '\n';
+            }
+        }
         const glm::dvec3 positionError =
             agent.positionMapMeters - referencePosition;
         const glm::dvec3 crossPositionError =

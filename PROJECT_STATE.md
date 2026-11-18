@@ -6370,3 +6370,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - NOT author-accepted. Not yet: 2nd/3rd tier, non-grid outlines (disc / free), hand-drawn corridors (only switching
     generated ones off), moving a whole block, multiple docks live in game.
   - Process: a stray `python -` was run once more this session (stopped at once with TaskStop).
+- 2026-11-18 HUB TRAFFIC DESIGN DISCUSSION (author, not implemented, not all decided):
+  - Author: a Newtonian ship arriving is «довольно тяжёлый баллистический заряд» - on a braking failure it must not cut
+    through the hub; terminals should be turned so that a ship in trouble flies past. Found: today the rim piers
+    (ship alongside, perpendicular to the rim) and the hex dock (slot facing out) are all approached nose-to-city.
+    Proposed (pending the author's go): tangential approach along the rim from outside + an overrun corridor (red,
+    no-build, no traffic) in line beyond the berth, a decision point with go-around, flow-through berths (in along the
+    berth, out forward, rail balloon-loop style), holding areas outside the hub + slot queue (DockTrafficController
+    Queued/holds, EntryHoldPoint not executed yet), leave the berth right after unloading (wait for cargo at a holding
+    area), industrial docks built into the industry modules (refinery / works / fuel - captive jetties).
+  - Author: «доки для фронтиров надо тоже делать где-то возле складов»; «фронтир - это кобра и ему подобные» = the
+    Newtonian-law ships (Cobrett-I N1 class, NewtonianI/Y/X) -> their docks in storage / logistics blocks on the rim.
+  - Population estimate of plane_demo (from the map's habitable modules): ~1.2 M (0.8-1.5 M) residents, ~20k/km2.
+  - Monorail only along avenues in passenger zones, no stations; pressurised tubes under avenues; no pedestrian
+    network inside blocks. Open question to the author: stations / port links.

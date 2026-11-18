@@ -241,9 +241,9 @@ ZONE_PIERS = {"port": [("hubb_pier_l", 200.0), ("hubb_pier_m", 150.0)], "refuel"
 ZONE_TITLE = {"downtown": "Центр", "residential": "Жилой район", "hotel": "Гостиничные доки", "hab_rot": "Жилые барабаны",
               "storage": "Склады", "industry": "Промзона", "port": "Порт", "logistics": "Логистика", "refuel": "Заправка",
               "repair": "Ремонтные доки", "rig": "Платформы", "canopy": "Диск", "dock": "Док",
-              "power": "Энергоблок", "services": "Службы: полиция и МЧС"}
+              "power": "Энергоблок", "services": "Службы: полиция и МЧС", "square": "Площадь", "void": "Просвет"}
 WHEELED = {"storage", "industry", "port", "logistics", "refuel", "repair", "rig", "power"}
-PASSENGER = {"downtown", "residential", "hotel", "hab_rot", "canopy"}
+PASSENGER = {"downtown", "residential", "hotel", "hab_rot", "canopy", "square"}
 
 
 def _yaw(d, down=False):
@@ -539,11 +539,17 @@ def _generate_map(hub_id):
                 if o in _open_sides(k, cells):
                     cell["piers"][f"{o[0]},{o[1]}"] = rng.choice(ZONE_PIERS[kd])[0]
         out_cells.append(cell)
-    return add_services({"schema": MAP_SCHEMA, "hub_id": hub_id, "title": hub_id, "generated_from": hub_id,
+    mp = add_services({"schema": MAP_SCHEMA, "hub_id": hub_id, "title": hub_id, "generated_from": hub_id,
             "style": prof.get("style", ""),
             "grid": {"cell_m": CELL, "street_local_m": STREET_LOCAL, "street_avenue_m": STREET_AVENUE,
                      "anchor": {"i": 0, "j": 0, "x": None, "z": None}, "extent": [0, 0, N - 1, M - 1]},
             "avenues": {"x": av_x, "z": av_z}, "cells": out_cells, "lanes_off": [], "red_zones": []})
+    # the hub's landmarks + its block-layout signature (author 2026-11-18: «каждый хаб узнаваем по индивидуальным
+    # чертам»): only where the profile asks for it - the cities frozen before keep their maps
+    if prof.get("landmarks"):
+        from units.hub_landmark_place import add_landmarks
+        mp = add_landmarks(mp, hub_id, prof.get("style", ""))
+    return mp
 
 
 SERVICE_CARDS = {

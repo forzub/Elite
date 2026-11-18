@@ -754,6 +754,447 @@
           "display_name": "CORE REFERENCE"
         }
       ]
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.port01.cty_dock",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [
+            0,
+            0,
+            -200
+          ],
+          "local_forward": [
+            0,
+            0,
+            -1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            160,
+            60,
+            400
+          ],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 12,
+          "enabled": true,
+          "display_name": "HEX DOCK ENTRY",
+          "orientation_policy": "upright",
+          "capture_depth_m": 160
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [
+            0,
+            0,
+            60
+          ],
+          "local_forward": [
+            0,
+            1,
+            0
+          ],
+          "local_up": [
+            0,
+            0,
+            -1
+          ],
+          "extent_m": [
+            60,
+            60,
+            60
+          ],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true,
+          "display_name": "CORE REFERENCE"
+        }
+      ]
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.city04.cty_dock",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [
+            0,
+            0,
+            -200
+          ],
+          "local_forward": [
+            0,
+            0,
+            -1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            160,
+            60,
+            400
+          ],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 12,
+          "enabled": true,
+          "display_name": "HEX DOCK ENTRY",
+          "orientation_policy": "upright",
+          "capture_depth_m": 160
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [
+            0,
+            0,
+            60
+          ],
+          "local_forward": [
+            0,
+            1,
+            0
+          ],
+          "local_up": [
+            0,
+            0,
+            -1
+          ],
+          "extent_m": [
+            60,
+            60,
+            60
+          ],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true,
+          "display_name": "CORE REFERENCE"
+        }
+      ]
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.port01.cty_dock",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [
+            0,
+            0,
+            -200
+          ],
+          "local_forward": [
+            0,
+            0,
+            -1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            160,
+            60,
+            400
+          ],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 12,
+          "enabled": true,
+          "display_name": "HEX DOCK ENTRY",
+          "orientation_policy": "upright",
+          "capture_depth_m": 160
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [
+            0,
+            0,
+            60
+          ],
+          "local_forward": [
+            0,
+            1,
+            0
+          ],
+          "local_up": [
+            0,
+            0,
+            -1
+          ],
+          "extent_m": [
+            60,
+            60,
+            60
+          ],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true,
+          "display_name": "CORE REFERENCE"
+        }
+      ]
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.port01.cty_dock",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [
+            0,
+            0,
+            -200
+          ],
+          "local_forward": [
+            0,
+            0,
+            -1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            160,
+            60,
+            400
+          ],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 12,
+          "enabled": true,
+          "display_name": "HEX DOCK ENTRY",
+          "orientation_policy": "upright",
+          "capture_depth_m": 160
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [
+            0,
+            0,
+            60
+          ],
+          "local_forward": [
+            0,
+            1,
+            0
+          ],
+          "local_up": [
+            0,
+            0,
+            -1
+          ],
+          "extent_m": [
+            60,
+            60,
+            60
+          ],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true,
+          "display_name": "CORE REFERENCE"
+        }
+      ]
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.port01.cty_dock",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [
+            0,
+            0,
+            -200
+          ],
+          "local_forward": [
+            0,
+            0,
+            -1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            160,
+            60,
+            400
+          ],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 12,
+          "enabled": true,
+          "display_name": "HEX DOCK ENTRY",
+          "orientation_policy": "upright",
+          "capture_depth_m": 160
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [
+            0,
+            0,
+            60
+          ],
+          "local_forward": [
+            0,
+            1,
+            0
+          ],
+          "local_up": [
+            0,
+            0,
+            -1
+          ],
+          "extent_m": [
+            60,
+            60,
+            60
+          ],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true,
+          "display_name": "CORE REFERENCE"
+        }
+      ]
+    },
+    {
+      "module_id": "site.004.lalande_hellas.port01.cty_dock",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [
+            0,
+            0,
+            -200
+          ],
+          "local_forward": [
+            0,
+            0,
+            -1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            160,
+            60,
+            400
+          ],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 12,
+          "enabled": true,
+          "display_name": "HEX DOCK ENTRY",
+          "orientation_policy": "upright",
+          "capture_depth_m": 160
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [
+            0,
+            0,
+            60
+          ],
+          "local_forward": [
+            0,
+            1,
+            0
+          ],
+          "local_up": [
+            0,
+            0,
+            -1
+          ],
+          "extent_m": [
+            60,
+            60,
+            60
+          ],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true,
+          "display_name": "CORE REFERENCE"
+        }
+      ]
+    },
+    {
+      "module_id": "site.041.vorota.cty_dock",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [
+            0,
+            0,
+            -200
+          ],
+          "local_forward": [
+            0,
+            0,
+            -1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            160,
+            60,
+            400
+          ],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 12,
+          "enabled": true,
+          "display_name": "HEX DOCK ENTRY",
+          "orientation_policy": "upright",
+          "capture_depth_m": 160
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [
+            0,
+            0,
+            60
+          ],
+          "local_forward": [
+            0,
+            1,
+            0
+          ],
+          "local_up": [
+            0,
+            0,
+            -1
+          ],
+          "extent_m": [
+            60,
+            60,
+            60
+          ],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true,
+          "display_name": "CORE REFERENCE"
+        }
+      ]
     }
   ]
 }

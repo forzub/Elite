@@ -1,0 +1,6 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.022.delta_pav_karma.port01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": []
+}

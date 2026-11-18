@@ -1,0 +1,6 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.041.vorota",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": []
+}

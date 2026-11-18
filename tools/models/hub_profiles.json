@@ -8,6 +8,13 @@
   "earth_hub.wenchang": {"size": [11, 6], "shape": "long", "under": true, "port": 0.9, "style": "", "attach_offset_m": [0, -6000, 0]},
   "earth_hub.kourou": {"size": [7, 7], "shape": "disc", "under": false, "port": 0.6, "style": "", "attach_offset_m": [0, -6000, 0]},
   "earth_hub.ekvator": {"size": [8, 7], "shape": "blob", "under": true, "port": 0.5, "style": "", "attach_offset_m": [0, -6000, 0]},
-  "earth_hub.aurora": {"size": [6, 5], "shape": "disc", "under": false, "port": 0.3, "style": "", "attach_offset_m": [0, -6000, 0]}
+  "earth_hub.aurora": {"size": [6, 5], "shape": "disc", "under": false, "port": 0.3, "style": "", "attach_offset_m": [0, -6000, 0]},
+  "site.003.wolf359_citadel.port01": {"size": [4, 3], "shape": "blob", "under": true, "port": 0.69, "style": "practical", "landmarks": true, "attach_offset_m": [0, -6000, 0], "site": "site.003.wolf359_citadel.port01"},
+  "site.012.gj832_tianhe.city04": {"size": [12, 5], "shape": "long", "under": false, "port": 0.67, "style": "ultramodern", "landmarks": true, "attach_offset_m": [0, -6000, 0], "site": "site.012.gj832_tianhe.city04"},
+  "site.014.hd20794_hellas2.port01": {"size": [4, 3], "shape": "blob", "under": false, "port": 0.31, "style": "american", "landmarks": true, "attach_offset_m": [0, -6000, 0], "site": "site.014.hd20794_hellas2.port01"},
+  "site.022.delta_pav_karma.port01": {"size": [4, 3], "shape": "disc", "under": false, "port": 0.55, "style": "indian", "landmarks": true, "attach_offset_m": [0, -6000, 0], "site": "site.022.delta_pav_karma.port01"},
+  "site.009.eps_eri_strife.port01": {"size": [5, 3], "shape": "long", "under": false, "port": 0.52, "style": "belt_clans", "landmarks": true, "attach_offset_m": [0, -6000, 0], "site": "site.009.eps_eri_strife.port01"},
+  "site.004.lalande_hellas.port01": {"size": [4, 3], "shape": "blob", "under": true, "port": 0.74, "style": "ancient", "landmarks": true, "attach_offset_m": [0, -6000, 0], "site": "site.004.lalande_hellas.port01"},
+  "site.041.vorota": {"size": [4, 3], "shape": "disc", "under": false, "port": 0.34, "style": "ultramodern", "landmarks": true, "attach_offset_m": [0, -6000, 0], "site": "site.041.vorota"}
  }
 }

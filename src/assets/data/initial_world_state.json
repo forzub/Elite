@@ -2771,6 +2771,1007 @@
           }
         }
       ]
+    },
+    {
+      "id": "site.003.wolf359_citadel.port01",
+      "name": "Цитадель: орбитальный порт",
+      "owner": "Цитадель",
+      "operator": "Цитадель",
+      "role": "порт над поселением: челноки поверхность ↔ орбита, таможня",
+      "system_id": 3,
+      "parent_body_id": "system_3.Wolf_359.Wolf_359_e",
+      "map_object_module_id": "site.003.wolf359_citadel.port01.station",
+      "model_family": "command_station",
+      "traffic_profile": {
+        "profile": "colony",
+        "arrivals_day": 0,
+        "dock_sectors": 0
+      },
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 820,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 0.0,
+        "longitude_of_ascending_node_deg": 170,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 125,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "site.003.wolf359_citadel.port01.station",
+          "type": "command_station",
+          "name": "Цитадель: орбитальный порт",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true
+          },
+          "local_rotation_deg": {
+            "pitch": 45,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "site.003.wolf359_citadel.port01.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "site.003.wolf359_citadel.port01.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": -1610.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "site.003.wolf359_citadel.port01.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.003.wolf359_citadel.port01)"
+    },
+    {
+      "id": "site.012.gj832_tianhe.city04",
+      "name": "Платформы GJ 832 b",
+      "owner": "Тяньхэ",
+      "operator": "Тяньхэ",
+      "role": "газовые платформы",
+      "system_id": 12,
+      "parent_body_id": "system_12.Gliese_832.GJ_832_b",
+      "map_object_module_id": "site.012.gj832_tianhe.city04.station",
+      "model_family": "command_station",
+      "traffic_profile": {
+        "profile": "colony",
+        "arrivals_day": 0,
+        "dock_sectors": 0
+      },
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 84859,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 0.0,
+        "longitude_of_ascending_node_deg": 68,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 271,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "site.012.gj832_tianhe.city04.station",
+          "type": "command_station",
+          "name": "Платформы GJ 832 b",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true
+          },
+          "local_rotation_deg": {
+            "pitch": 45,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "site.012.gj832_tianhe.city04.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c3_1_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2550.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c3_3_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2390.0,
+            "y": -6000.0,
+            "z": 920.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c3_3_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2390.0,
+            "y": -6000.0,
+            "z": 1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c3_3_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2390.0,
+            "y": -6000.0,
+            "z": 1280.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c4_3_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1290.0,
+            "y": -6000.0,
+            "z": 920.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c4_3_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1290.0,
+            "y": -6000.0,
+            "z": 1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c4_3_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1290.0,
+            "y": -6000.0,
+            "z": 1280.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c6_1_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": -1280.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c6_1_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_c6_1_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": -920.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 550.0,
+            "y": -6000.0,
+            "z": 2710.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "site.012.gj832_tianhe.city04.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 550.0,
+            "y": -6000.0,
+            "z": 2200.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.012.gj832_tianhe.city04)"
+    },
+    {
+      "id": "site.014.hd20794_hellas2.port01",
+      "name": "Хомстед: орбитальный порт",
+      "owner": "Хомстед",
+      "operator": "Хомстед",
+      "role": "порт над поселением: челноки поверхность ↔ орбита, таможня",
+      "system_id": 14,
+      "parent_body_id": "system_14.HD_20794.HD_20794_K3",
+      "map_object_module_id": "site.014.hd20794_hellas2.port01.station",
+      "model_family": "command_station",
+      "traffic_profile": {
+        "profile": "colony",
+        "arrivals_day": 0,
+        "dock_sectors": 0
+      },
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 392,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 0.0,
+        "longitude_of_ascending_node_deg": 184,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 359,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "site.014.hd20794_hellas2.port01.station",
+          "type": "command_station",
+          "name": "Хомстед: орбитальный порт",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true
+          },
+          "local_rotation_deg": {
+            "pitch": 45,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "site.014.hd20794_hellas2.port01.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "site.014.hd20794_hellas2.port01.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": -1610.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "site.014.hd20794_hellas2.port01.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.014.hd20794_hellas2.port01)"
+    },
+    {
+      "id": "site.022.delta_pav_karma.port01",
+      "name": "Новая Карма: орбитальный порт",
+      "owner": "Новая Карма",
+      "operator": "Новая Карма",
+      "role": "порт над поселением: челноки поверхность ↔ орбита, таможня",
+      "system_id": 22,
+      "parent_body_id": "system_22.Delta_Pavonis.Delta_Pavonis_k",
+      "map_object_module_id": "site.022.delta_pav_karma.port01.station",
+      "model_family": "command_station",
+      "traffic_profile": {
+        "profile": "colony",
+        "arrivals_day": 0,
+        "dock_sectors": 0
+      },
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 602,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 0.0,
+        "longitude_of_ascending_node_deg": 113,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 136,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "site.022.delta_pav_karma.port01.station",
+          "type": "command_station",
+          "name": "Новая Карма: орбитальный порт",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true
+          },
+          "local_rotation_deg": {
+            "pitch": 45,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "site.022.delta_pav_karma.port01.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "site.022.delta_pav_karma.port01.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -960.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "site.022.delta_pav_karma.port01.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.022.delta_pav_karma.port01)"
+    },
+    {
+      "id": "site.009.eps_eri_strife.port01",
+      "name": "Пояс Раздора: орбитальный порт",
+      "owner": "Пояс Раздора",
+      "operator": "Пояс Раздора",
+      "role": "порт над поселением: челноки поверхность ↔ орбита, таможня",
+      "system_id": 9,
+      "parent_body_id": "system_9.Epsilon_Eridani.Epsilon_Eridani_K4",
+      "map_object_module_id": "site.009.eps_eri_strife.port01.station",
+      "model_family": "command_station",
+      "traffic_profile": {
+        "profile": "colony",
+        "arrivals_day": 0,
+        "dock_sectors": 0
+      },
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 384,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 0.0,
+        "longitude_of_ascending_node_deg": 182,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 73,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "site.009.eps_eri_strife.port01.station",
+          "type": "command_station",
+          "name": "Пояс Раздора: орбитальный порт",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true
+          },
+          "local_rotation_deg": {
+            "pitch": 45,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "site.009.eps_eri_strife.port01.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "site.009.eps_eri_strife.port01.cty_c1_1_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1100.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "site.009.eps_eri_strife.port01.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": -1610.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "site.009.eps_eri_strife.port01.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.009.eps_eri_strife.port01)"
+    },
+    {
+      "id": "site.004.lalande_hellas.port01",
+      "name": "Агора: орбитальный порт",
+      "owner": "Агора",
+      "operator": "Агора",
+      "role": "порт над поселением: челноки поверхность ↔ орбита, таможня",
+      "system_id": 4,
+      "parent_body_id": "system_4.Lalande_21185.Lalande_21185_m",
+      "map_object_module_id": "site.004.lalande_hellas.port01.station",
+      "model_family": "command_station",
+      "traffic_profile": {
+        "profile": "colony",
+        "arrivals_day": 0,
+        "dock_sectors": 0
+      },
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 958,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 0.0,
+        "longitude_of_ascending_node_deg": 270,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 164,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "site.004.lalande_hellas.port01.station",
+          "type": "command_station",
+          "name": "Агора: орбитальный порт",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true
+          },
+          "local_rotation_deg": {
+            "pitch": 45,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "site.004.lalande_hellas.port01.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "site.004.lalande_hellas.port01.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": 1610.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "site.004.lalande_hellas.port01.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": 1100.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.004.lalande_hellas.port01)"
+    },
+    {
+      "id": "site.041.vorota",
+      "name": "Станция «Ворота» (внешний периметр)",
+      "owner": "Синь-Шанхай",
+      "operator": "Управление Маяков + Kern Logistics (кордон)",
+      "role": "внешний периметр: КПП кордона, таможня, лицензионные экспедиционные компании, страховщики, танкеры, ремонт, легальные брокеры, научная станция",
+      "system_id": 41,
+      "parent_body_id": "system_41.HD_104067.HD_104067_b",
+      "map_object_module_id": "site.041.vorota.station",
+      "model_family": "command_station",
+      "traffic_profile": {
+        "profile": "colony",
+        "arrivals_day": 0,
+        "dock_sectors": 0
+      },
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 160000,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 3.0,
+        "longitude_of_ascending_node_deg": 316,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 216,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "site.041.vorota.station",
+          "type": "command_station",
+          "name": "Станция «Ворота» (внешний периметр)",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true
+          },
+          "local_rotation_deg": {
+            "pitch": 45,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "site.041.vorota.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "site.041.vorota.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": -1610.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "site.041.vorota.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.041.vorota)"
     }
   ],
   "orbital_hubs_generated_by": "tools/colonization_lab/world_sites.py (sol_network.py); edit canon/sol_network.json, not this list"

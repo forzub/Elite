@@ -85,6 +85,55 @@
       "operational": "online",
       "occupancy": "free",
       "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.city04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.041.vorota.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
     }
   ]
 }

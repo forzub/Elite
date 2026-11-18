@@ -9,6 +9,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "src/model_asset/HubCityAssembly.h"
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 
@@ -143,11 +144,13 @@ std::string legacyModuleFor(ObjectType type, const std::string& nodeId)
     return "station_solar_panels";
 }
 
-std::unique_ptr<ModelAssetGpu> load(ObjectType type, const char* path)
+// `prebuilt`: an asset assembled in memory (a hub city from its layout, src/model_asset/HubCityAssembly.h) - `path`
+// is then only its label
+std::unique_ptr<ModelAssetGpu> load(ObjectType type, const char* path, const ma::ModelAsset* prebuilt = nullptr)
 {
     if (const char* legacy = std::getenv("ELITE_LEGACY_MODEL_ASSETS"); legacy && *legacy && *legacy != '0')
         return nullptr;
-    if (!path || !std::filesystem::exists(path))
+    if (!prebuilt && (!path || !std::filesystem::exists(path)))
     {
         if (path)
             std::cerr << "[ModelAssetGpu] no production package " << path << " - legacy assembly path\n";
@@ -155,7 +158,9 @@ std::unique_ptr<ModelAssetGpu> load(ObjectType type, const char* path)
     }
     auto gpu = std::make_unique<ModelAssetGpu>();
     std::string error;
-    if (!ma::ModelAssetBinary::load(path, gpu->asset, &error))
+    if (prebuilt)
+        gpu->asset = *prebuilt;
+    else if (!ma::ModelAssetBinary::load(path, gpu->asset, &error))
     {
         std::cerr << "[ModelAssetGpu] load failed " << path << ": " << error << " - legacy assembly path\n";
         return nullptr;
@@ -422,8 +427,22 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
     const auto [it, inserted] = cache.try_emplace(hubId);
     if (inserted)
     {
+        // a frozen city layout (assets/data/navigation/hub_cities/<hub>.json) is assembled in memory from the shared
+        // module packages; a hub without one keeps its per-hub package. DEV A/B: ELITE_DEV_CITY_PACKAGE=1 prefers
+        // the per-hub package
+        static const bool preferPackage = [] {
+            const char* v = std::getenv("ELITE_DEV_CITY_PACKAGE");
+            return v && *v && *v != '0';
+        }();
         const std::string path = "assets/compiled/hub_modules/hub_" + hubId + "/hub_" + hubId + ".elmodel";
-        it->second = load(type, path.c_str());
+        const bool layout = std::filesystem::exists(ma::hubCityLayoutPath(hubId));
+        if (layout && !(preferPackage && std::filesystem::exists(path)))
+        {
+            if (const ma::ModelAsset* city = ma::hubCityAsset(hubId))
+                it->second = load(type, ("layout:" + hubId).c_str(), city);
+        }
+        if (!it->second)
+            it->second = load(type, path.c_str());
     }
     return it->second.get();
 }

@@ -30,6 +30,7 @@
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/damage/HitVolume.h"
+#include "src/model_asset/HubCityAssembly.h"
 #include "src/model_asset/ModelAssetBinary.h"
 
 #include <algorithm>
@@ -49,21 +50,30 @@ namespace
 // package carries the editor's collision volumes in asset space: those become the object's hit volumes (the same
 // asset -> logical basis as the renderer; these packages have no object_frame socket and no logical scaling).
 // A cylinder / capsule / sphere becomes its bounding box. Cached per package (a settlement: thousands of volumes).
-bool packageHitVolumes(ObjectType type, const std::string& path, std::vector<game::damage::HitVolume>& out)
+// `prebuilt`: a city assembled in memory from its frozen layout (src/model_asset/HubCityAssembly.h); `path` is then
+// only the cache key
+bool packageHitVolumes(ObjectType type, const std::string& path, std::vector<game::damage::HitVolume>& out,
+                       const elite::model_asset::ModelAsset* prebuilt = nullptr)
 {
     namespace ma = elite::model_asset;
     static std::unordered_map<std::string, std::vector<game::damage::HitVolume>> cache;
     const auto [it, inserted] = cache.try_emplace(path);
     if (inserted)
     {
-        ma::ModelAsset asset;
+        ma::ModelAsset loaded;
         std::string error;
-        if (!std::filesystem::exists(path))
+        bool ok = prebuilt != nullptr;
+        if (ok)
+            ;
+        else if (!std::filesystem::exists(path))
             std::cerr << "[HubDocks] no package " << path << " - no hit volumes\n";
-        else if (!ma::ModelAssetBinary::load(path, asset, &error))
+        else if (!ma::ModelAssetBinary::load(path, loaded, &error))
             std::cerr << "[HubDocks] package " << path << " failed to load (" << error << ") - no hit volumes\n";
         else
+            ok = true;
+        if (ok)
         {
+            const ma::ModelAsset& asset = prebuilt ? *prebuilt : loaded;
             const glm::mat4 basis = ObjectDescriptorRegistry::get(type).meshToLogicalBasis4();
             for (const auto& c : asset.collisionVolumes)
             {
@@ -300,7 +310,13 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
         {
             const std::string folder = type == ObjectType::HubBeltCity ? "hub_" + hub.id : dock.type;
             std::vector<game::damage::HitVolume> volumes;
-            if (packageHitVolumes(type, "assets/compiled/hub_modules/" + folder + "/" + folder + ".elmodel", volumes))
+            // a city with a frozen layout: the same in-memory assembly the client renders (HubCityAssembly.h)
+            const elite::model_asset::ModelAsset* city =
+                type == ObjectType::HubBeltCity && std::filesystem::exists(elite::model_asset::hubCityLayoutPath(hub.id))
+                    ? elite::model_asset::hubCityAsset(hub.id)
+                    : nullptr;
+            if (packageHitVolumes(type, city ? "layout:" + hub.id : "assets/compiled/hub_modules/" + folder + "/" + folder + ".elmodel",
+                                  volumes, city))
                 sim.setStaticObjectPackageHitVolumes(id, std::move(volumes));
         }
     }

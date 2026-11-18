@@ -109,6 +109,7 @@ add_library(EliteModelAsset STATIC
     src/model_asset/ModelAssetLodError.cpp
     src/model_asset/ModelAssetPresentation.cpp
     src/model_asset/RuntimeMeshNormalizer.cpp
+    src/model_asset/HubCityAssembly.cpp
 )
 target_include_directories(EliteModelAsset PUBLIC
     "${CMAKE_SOURCE_DIR}"
@@ -121,6 +122,9 @@ add_executable(EliteModelAssetBuild tools/model_asset_build/main.cpp)
 add_executable(EliteModelAssetInfo tools/model_asset_build/ModelAssetInfo.cpp)
 target_link_libraries(EliteModelAssetInfo PRIVATE EliteModelAsset)
 target_link_libraries(EliteModelAsset PUBLIC Threads::Threads) # parallel LOD error measurement
+target_link_libraries(EliteModelAsset PUBLIC nlohmann_json::nlohmann_json) # the hub city layouts (HubCityAssembly)
+add_executable(EliteHubCityAssemblyCheck tests/model_asset_presentation/HubCityAssemblyCheck.cpp)
+target_link_libraries(EliteHubCityAssemblyCheck PRIVATE EliteModelAsset)
 # Offline geometry kernels stay optimized in Debug trees (same precedent as
 # EliteCelestialSurface): LOD error measurement and the libigl decimation.
 set_source_files_properties(

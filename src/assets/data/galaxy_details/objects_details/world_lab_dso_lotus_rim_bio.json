@@ -1,0 +1,67 @@
+{
+  "description": "Материал «Жопы мира»: синдром «Лотоса» и лотосит изучают снаружи поля (поле — 1 а.е.). Стоит в 1.28 а.е. от корпуса, рядом с карантинным пикетом; образцы и тела забирают у кордона (официальный «научный вывоз»).",
+  "id": "lab.dso.lotus_rim_bio",
+  "kind": "galaxy_object",
+  "name": "Лаборатория кромки «Лотоса»",
+  "object_type": "deep_space_station",
+  "position_ly": {
+    "x": -79.731,
+    "y": 4.023,
+    "z": -10.001
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "form": "свободно плавающая",
+    "frame": "ICRS_heliocentric",
+    "legal": "lawful",
+    "operator": "санитарная служба кордона + Научная служба Когниума",
+    "polity": "tau_ceti_cognium",
+    "population": 40,
+    "provenance": {
+      "generator": "tools/colonization_lab/outposts.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": "science_hub",
+    "supply": {
+      "delivery": "cobrett_i_n1: рейс раз в 90 сут (30.8 т)",
+      "goods": {
+        "consumer": 0.024,
+        "electronics": 0.012,
+        "food": 0.072,
+        "machinery": 0.06,
+        "medical": 0.004,
+        "science_kit": 0.05,
+        "water_volatiles": 0.12
+      },
+      "goods_ru": [
+        "вода и газы",
+        "продовольствие",
+        "запчасти и механика",
+        "научные расходники",
+        "бытовые расходники",
+        "электроника",
+        "медицина"
+      ],
+      "reactor_fuel_kg_y": 0.14,
+      "source": {
+        "id": "dso.quarantine_picket",
+        "name": "Карантинный пикет «Лотос» (Когниум)",
+        "system": null
+      },
+      "source_ly": 0.0,
+      "t_day": 0.342,
+      "water_local": false
+    },
+    "velocity_km_s": [
+      -24.745,
+      4.48,
+      -28.489
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "deep_space_station",
+    "lab"
+  ]
+}

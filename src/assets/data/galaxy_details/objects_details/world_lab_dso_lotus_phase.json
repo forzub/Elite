@@ -1,0 +1,67 @@
+{
+  "description": "Поле той же природы, что поле ядра прыжка: здесь меряют дрейф коридора (0.04 а.е./год) и испытывают фазовые стабилизаторы. Стоит по другую сторону поля от пикета — Керну нужен свой ряд измерений.",
+  "id": "lab.dso.lotus_phase",
+  "kind": "galaxy_object",
+  "name": "Фазовая лаборатория «Причал-2»",
+  "object_type": "deep_space_station",
+  "position_ly": {
+    "x": -79.731,
+    "y": 4.023,
+    "z": -10.001
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "form": "свободно плавающая",
+    "frame": "ICRS_heliocentric",
+    "legal": "licensed",
+    "operator": "Kern Logistics (лицензия) + держатели «Дальнего Причала»",
+    "polity": "cyg61_kern",
+    "population": 18,
+    "provenance": {
+      "generator": "tools/colonization_lab/outposts.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": "science_hub",
+    "supply": {
+      "delivery": "cobrett_i_n1: рейс раз в 90 сут (16.3 т)",
+      "goods": {
+        "consumer": 0.011,
+        "electronics": 0.005,
+        "food": 0.032,
+        "machinery": 0.027,
+        "medical": 0.002,
+        "science_kit": 0.05,
+        "water_volatiles": 0.054
+      },
+      "goods_ru": [
+        "вода и газы",
+        "научные расходники",
+        "продовольствие",
+        "запчасти и механика",
+        "бытовые расходники",
+        "электроника",
+        "медицина"
+      ],
+      "reactor_fuel_kg_y": 0.06,
+      "source": {
+        "id": "dso.far_berth",
+        "name": "Станция «Дальний Причал»",
+        "system": null
+      },
+      "source_ly": 0.0,
+      "t_day": 0.181,
+      "water_local": false
+    },
+    "velocity_km_s": [
+      -24.745,
+      4.48,
+      -28.489
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "deep_space_station",
+    "lab"
+  ]
+}

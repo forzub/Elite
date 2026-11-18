@@ -1,0 +1,67 @@
+{
+  "description": "Ледяной поток I-ZWLH8 — ободранное облако Оорта чужой звезды: межзвёздные кометы нетронутого состава. Станция у края эллипсоида (вне ядра, где ловит шаг), 2.4 св. лет от TRAPPIST-1 — по дороге к «Сундуку».",
+  "id": "lab.ism.frost_stream",
+  "kind": "galaxy_object",
+  "name": "Станция «Ледяной поток»",
+  "object_type": "deep_space_station",
+  "position_ly": {
+    "x": 39.369,
+    "y": -8.851,
+    "z": -1.372
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "form": "свободно плавающая",
+    "frame": "ICRS_heliocentric",
+    "legal": "lawful",
+    "operator": "консорциум «Сундук» (Когниум + Новая Индия), научный отдел",
+    "polity": "tau_ceti_cognium",
+    "population": 14,
+    "provenance": {
+      "generator": "tools/colonization_lab/outposts.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": "science_hub",
+    "supply": {
+      "delivery": "cobrett_i_n1: рейс раз в 90 сут (13.7 т)",
+      "goods": {
+        "consumer": 0.008,
+        "electronics": 0.004,
+        "food": 0.025,
+        "machinery": 0.021,
+        "medical": 0.001,
+        "science_kit": 0.05,
+        "water_volatiles": 0.042
+      },
+      "goods_ru": [
+        "научные расходники",
+        "вода и газы",
+        "продовольствие",
+        "запчасти и механика",
+        "бытовые расходники",
+        "электроника",
+        "медицина"
+      ],
+      "reactor_fuel_kg_y": 0.05,
+      "source": {
+        "id": "site.013.gj876_next.trade_hub01",
+        "name": "Провидение: торговый хаб 1",
+        "system": 13
+      },
+      "source_ly": 0.0,
+      "t_day": 0.152,
+      "water_local": false
+    },
+    "velocity_km_s": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "deep_space_station",
+    "lab"
+  ]
+}

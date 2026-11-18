@@ -171,9 +171,15 @@ def hub_records(I):
                          known_to_player="public", coverage_ls=b["coverage_ls"]))
     br = I.HM["beacons"]["relay"]
     for r in I.sites_doc["relays"]:
+        if r.get("kind") == "bridge":      # bridge beacons are hubs above (beacons_3126.bridge); the relay row is only their map marker
+            continue
+        sol = "kind" not in r               # Sol network relays (sol_network.py) carry no kind; outposts.py rows do
+        pol = "sol_authority" if sol else r.get("polity")
         hubs.append(dict(id=r["id"], name=r["name"], source="sites_3126.relays", type="beacon_relay", type_ru=br["type_ru"],
-                         system_id=r["system_id"], polity="sol_authority", owner="sol_authority", operator="Управление маяков Сола",
-                         level="C", map_level="system", purpose=f"навигационный ретранслятор Сола ({r['reason']})", functions=["маяк"],
+                         system_id=r.get("system_id"), polity=pol, owner=pol,
+                         operator="Управление маяков Сола" if sol else (I.polity_name.get(r.get("operator"), r.get("operator")) or "Управление Маяков"),
+                         level="C", map_level="system" if r.get("system_id") is not None else "galaxy",
+                         purpose=f"навигационный ретранслятор Сола ({r['reason']})" if sol else f"{br['type_ru']}: {r['reason']}", functions=["маяк"],
                          roles=[], docks=br["docks"], storage_t=br["storage_t"], population=br["staff"], repair=br["repair"],
                          security=br["security"], medical_beds=0, quarantine_beds=0, arrivals_day=None, dock_sectors=None,
                          dock_modules=None, passenger_terminals=None, cargo_terminals=None, service_berths=None, legal=None,

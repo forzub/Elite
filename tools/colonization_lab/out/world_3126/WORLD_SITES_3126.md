@@ -114,3 +114,9 @@
 - OK knowledge_never_before_truth: 5 records
 - OK every_site_has_jurisdiction: 555 sites
 - OK status_present: ok
+- OK outposts.beacons_match_model: bridge 25/25, relay 78/78, military 65/65
+- OK outposts.outpost_bodies_exist: 54 объектов
+- OK outposts.every_outpost_has_reason: ok
+- OK outposts.every_manned_outpost_has_supply_source: ok
+- OK outposts.outpost_ids_unique: 228 ids
+- OK outposts.labs_selective_and_dense_at_worlds_ass: всего 14, у «Жопы мира» 6, отвергнуто 19

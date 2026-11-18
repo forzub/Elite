@@ -214,6 +214,36 @@
    "check": "status_present",
    "detail": "ok",
    "ok": true
+  },
+  {
+   "check": "outposts.beacons_match_model",
+   "detail": "bridge 25/25, relay 78/78, military 65/65",
+   "ok": true
+  },
+  {
+   "check": "outposts.outpost_bodies_exist",
+   "detail": "54 объектов",
+   "ok": true
+  },
+  {
+   "check": "outposts.every_outpost_has_reason",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "outposts.every_manned_outpost_has_supply_source",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "outposts.outpost_ids_unique",
+   "detail": "228 ids",
+   "ok": true
+  },
+  {
+   "check": "outposts.labs_selective_and_dense_at_worlds_ass",
+   "detail": "всего 14, у «Жопы мира» 6, отвергнуто 19",
+   "ok": true
   }
  ],
  "status": "PROPOSAL"

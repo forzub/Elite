@@ -39,6 +39,7 @@ import naming
 NAMER = naming.Names()
 import logistics as lg
 import lotus_model
+import outposts
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out", "world_3126")
@@ -1485,6 +1486,8 @@ def checks(I, out):
     add("every_site_has_jurisdiction", all(s["id"] in juris for s in S), f"{len(juris)} sites")
     nolbl = [s["id"] for s in S if s["status"] not in ("PROPOSAL", "CANON", "GENERATED")]
     add("status_present", not nolbl, ",".join(nolbl[:5]) or "ok")
+    if "outposts" in out:
+        res += outposts.checks(I, out["outposts"])
     return res
 
 
@@ -1496,16 +1499,13 @@ def runtime_export(I, out):
     for s in S:
         if s["system"] is None or s.get("hidden") or s["type"] == "pirate_enclave":     # enclaves: only when the player knows (runtime knowledge)
             continue
-        j = jur.get(s["id"], {})
-        rows.append(dict(id=s["id"], name=s["name"], type=s["type"], type_ru=s.get("type_ru"), system_id=s["system"], parent_body_id=s.get("body"),
-                         placement=s["placement"], map_level=s["map_level"], polity=s["polity"], polity_name=I.pol[s["polity"]]["name"] if s["polity"] in I.pol else None,
-                         population=s["population"], runtime_binding=s.get("runtime_binding"), operator=s.get("operator"), owner=s.get("owner"),
-                         founded=s.get("founded"), founder=s.get("founder"), purpose=s.get("role") or s.get("purpose"), character=s.get("character"),
-                         function=[sol_network.FUNC_RU.get(f, f) for f in (s.get("function") or [])] or None, docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), dock_modules=s.get("dock_modules"), level=s.get("level", "A"), complex=s.get("complex"), terminals=s.get("terminals"), roles=s.get("roles"), passenger_terminals=s.get("passenger_terminals"), cargo_terminals=s.get("cargo_terminals"), service_berths=s.get("service_berths"), arrivals_day=s.get("arrivals_day"),
-                         utilisation=s.get("utilisation"), repair=s.get("repair"), storage_t=s.get("storage_t"), security=s.get("security_base"),
-                         medical_beds=s.get("medical_beds"), quarantine_beds=s.get("quarantine_beds"), legal=s.get("legal"),
-                         jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public"),
-                         manufacturer=s.get("manufacturer"), placement_reason=s.get("placement_reason"), graveyard_kind=s.get("graveyard_kind")))
+        rows.append(site_row(I, s, jur.get(s["id"], {})))
+    # outposts 3126 (outposts.py): visible ones join the sites; illegal ones go to hidden_sites (runtime knowledge decides)
+    O = out.get("outposts")
+    ojur = {r["site"]: r for r in (O or {}).get("law", [])}
+    for s in (O or {}).get("visible_sites", []):
+        rows.append(outpost_row(I, s, ojur.get(s["id"], {})))
+    hidden_rows = [outpost_row(I, s, ojur.get(s["id"], {})) for s in (O or {}).get("hidden_sites", [])]
     sp = I.WS["site_types"]["planetary_surface_port"]
     for c in out["sites"]["earth"]:
         if c.get("spaceport"):
@@ -1535,9 +1535,13 @@ def runtime_export(I, out):
                             cargo_t_y=r.get("cargo_t_y", 0), flights_day=r["flights_day"], ship_class=r["ship_class"], travel_days=r["travel_days"],
                             disruption=r["disruption"], hazard=r["hazard"]) for r in net["routes"]],
                relays=[dict(id=r["id"], name=r["name"], system_id=0, region=r["region"], anchor=r["anchor"], reason=r["reason"],
-                            placement=relay_placement(r, net)) for r in net["relays"]],
+                            placement=relay_placement(r, net)) for r in net["relays"]] + outpost_relays(O),
                belt_anchors=[dict(a, system_id=0) for a in net["belt_anchors"]],
                systems=system_summaries(I, out))
+    if O:
+        doc["hidden_sites"] = hidden_rows
+        doc["beacon_counts"] = dict(placed=O["beacons"]["counts"], in_hubs_only=O["beacons"]["count_only"],
+                                    note="маяки станций, торговых хабов и удалённых научных станций — модули своих хабов, отдельных объектов нет")
     objs = []
     for d in out["frontier"]["deep_space_objects"]:
         if d["hidden"]:
@@ -1549,7 +1553,52 @@ def runtime_export(I, out):
                          properties=dict(site_type=d["site_type"], epoch_year=d["epoch_year"], velocity_km_s=d["velocity_km_s"], frame=d["frame"],
                                          population=(ss or {}).get("population"), polity=(ss or {}).get("polity"),
                                          provenance=dict(generator="tools/colonization_lab/world_sites.py", status=TAG))))
+    for d in (O or {}).get("deep_labs", []):
+        objs.append(dict(schema_version=1, kind="galaxy_object", id=d["id"], name=d["name"], object_type="deep_space_station",
+                         position_ly=dict(x=d["position_ly"][0], y=d["position_ly"][1], z=d["position_ly"][2]), description=d["reason"],
+                         tags=["world_site", "deep_space_station", "lab"],
+                         properties=dict(site_type="science_hub", epoch_year=I.WS["epoch_year"], velocity_km_s=d["velocity_km_s"], frame="ICRS_heliocentric",
+                                         population=d["staff"], polity=d["polity"], operator=d["operator"], form=d["form_ru"], legal=d["legal"],
+                                         supply=d["supply"], provenance=dict(generator="tools/colonization_lab/outposts.py", status=TAG))))
     return doc, objs
+
+
+def site_row(I, s, j):
+    """One runtime site row (System / Detail map marker) - the shape WorldSitesCatalog.h and economy_live.py read."""
+    return dict(id=s["id"], name=s["name"], type=s["type"], type_ru=s.get("type_ru"), system_id=s["system"], parent_body_id=s.get("body"),
+                placement=s["placement"], map_level=s["map_level"], polity=s["polity"], polity_name=I.pol[s["polity"]]["name"] if s["polity"] in I.pol else None,
+                population=s["population"], runtime_binding=s.get("runtime_binding"), operator=s.get("operator"), owner=s.get("owner"),
+                founded=s.get("founded"), founder=s.get("founder"), purpose=s.get("role") or s.get("purpose"), character=s.get("character"),
+                function=[sol_network.FUNC_RU.get(f, f) for f in (s.get("function") or [])] or None, docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), dock_modules=s.get("dock_modules"), level=s.get("level", "A"), complex=s.get("complex"), terminals=s.get("terminals"), roles=s.get("roles"), passenger_terminals=s.get("passenger_terminals"), cargo_terminals=s.get("cargo_terminals"), service_berths=s.get("service_berths"), arrivals_day=s.get("arrivals_day"),
+                utilisation=s.get("utilisation"), repair=s.get("repair"), storage_t=s.get("storage_t"), security=s.get("security_base"),
+                medical_beds=s.get("medical_beds"), quarantine_beds=s.get("quarantine_beds"), legal=s.get("legal"),
+                jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public"),
+                manufacturer=s.get("manufacturer"), placement_reason=s.get("placement_reason"), graveyard_kind=s.get("graveyard_kind"))
+
+
+def outpost_row(I, s, j):
+    """A site row plus the outpost fields (kind, form, staff forces, supply, assembly kit) - extra keys the C++ loader ignores."""
+    row = site_row(I, s, j)
+    row.update({k: s[k] for k in ("outpost_kind", "form", "form_ru", "forces", "role", "supply", "interest", "zone", "artifact", "size", "ships", "assembly")
+                if s.get(k) is not None})
+    return row
+
+
+def outpost_relays(O):
+    """Beacons placed by outposts.py in the shape of the Sol relays (id, name, system_id, region, anchor, reason, placement) + kind /
+    operator / polity / staff. Interstellar route relays have no system_id: their placement is deep_space (position_ly)."""
+    if not O:
+        return []
+    rows = []
+    for r in O["beacons"]["in_system"] + O["beacons"]["route"]:
+        row = dict(id=r["id"], name=r["name"], region=r["region"], anchor=r["anchor"], reason=r["reason"], placement=r["placement"],
+                   kind=r["kind"], operator=r["operator"], polity=r["polity"], staff=r["staff"])
+        if r.get("system_id") is not None:
+            row["system_id"] = r["system_id"]
+        if r.get("uptime") is not None:
+            row["uptime"] = r["uptime"]
+        rows.append(row)
+    return rows
 
 
 RELAY_BODY = {"earth_cislunar": ("system_0.Sol.Земля", 6371.0), "mars": ("system_0.Sol.Марс", 3389.0), "mercury": ("system_0.Sol.Меркурий", 2440.0),
@@ -1710,10 +1759,16 @@ def compute():
         society=dict(sites=social, administrators=admins, archetypes=I.WS["social"]["archetypes"], status=TAG),
         law=law, comms=comms, passengers=pax, fleet_age=age, frontier=front, sol_network=sol)
     out["events"] = world_events(I, comms)
+    # outposts 3126 (outposts.py): beacons on the map, labs, military posts, refuelling, pirate settlements, smugglers.
+    # A separate layer: it reads the sites / comms / piracy above and never changes them.
+    O = outposts.compute(I, out, g, base_site, surface_latlon, ACCESS, FRONTIER_CHAINS)
+    O["law"] = law_model(I, O["visible_sites"] + O["hidden_sites"], comms)["sites"]
+    O.pop("rules", None)
+    out["outposts"] = O
     return I, out
 
 
-NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "events", "sol_network")
+NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "events", "sol_network", "outposts")
 
 
 def serialise(I, out, chk):

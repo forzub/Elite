@@ -75,6 +75,7 @@ bool HubTrafficSchedule::load(const std::string& path)
         visit.kind = v.value("kind", std::string());
         visit.model = v.value("model", std::string());
         visit.name = v.value("name", std::string());
+        visit.passport = v.value("passport", std::string());
         visit.lengthMeters = v.value("length_m", 30.0);
         visit.cargoTonnes = v.value("cargo_t", 0.0);
         const std::string dockId = v.value("dock", std::string());

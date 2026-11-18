@@ -900,7 +900,8 @@ ELITE_WIRE_SCHEMA(
     v.navigationParentBodyId,
     v.orbitalMotion,
     v.graph,
-    v.buildingStates
+    v.buildingStates,
+    v.materializedVisits
 );
 
 ELITE_WIRE_SCHEMA(

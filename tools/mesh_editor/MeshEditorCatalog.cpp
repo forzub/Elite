@@ -117,6 +117,7 @@ Settings loadSettings(const fs::path& file, const fs::path& sourceTree)
         {"equipment_hub_module", "Оборудование модулей хабов", {"equipment_hub_module"}},
         {"hub_modules", "Модули хабов", {"hub", "hub_modules"}},
         {"other", "Прочие объекты", {"objects", "drones"}},
+        {"people", "Люди", {"people"}},
     };
     const nlohmann::json j = readJson(file);
     if (j.is_object())

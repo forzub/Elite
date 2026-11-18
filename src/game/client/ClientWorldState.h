@@ -138,6 +138,8 @@ struct ClientObjectState
     world::orbits::OrbitalMotion orbitalMotion;
     // a hub city's damaged / destroyed buildings (ObjectSnapshot::buildingStates)
     std::vector<game::simulation::CityBuildingState> buildingStates;
+    // its scheduled visits that are real ships now (the renderer stops drawing them)
+    std::vector<std::uint32_t> materializedVisits;
 
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;

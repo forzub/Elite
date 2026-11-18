@@ -32,6 +32,7 @@ struct HubScheduleVisit
     std::string kind;            // bulk | fuel | frontier
     std::string model;           // "ships/ocs-4-lastochka" (under assets/compiled)
     std::string name;
+    std::string passport;        // the catalog ship (ship_catalog_3126 id): what the server spawns when it is attacked
     double lengthMeters = 30.0;
     double cargoTonnes = 0.0;
     int dock = -1;

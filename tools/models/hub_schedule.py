@@ -203,5 +203,6 @@ def schedule_document(hub_id, L, plan):
             "docks": [{"id": d["id"], "kind": d["kind"], "pos": r(d["pos"]), "axis": r(d["axis"]), "up": r(d["up"]),
                        "heading": r(d.get("heading", d["axis"])), "max_len": d["max_len"], "vertical": d["vertical"]} for d in docks],
             "visits": [{"id": v["id"], "kind": v["kind"], "model": v["model"], "name": v["name"], "length_m": v["length"],
+                        "passport": fleet[v["fleet"]].get("passport", ""),
                         "cargo_t": v["cargo_t"], "dock": v["dock"], "arrive_s": v["arrive_s"], "dwell_s": v["dwell_s"],
                         "wait_s": v.get("wait_s", 0)} for v in visits if v.get("dock")]}

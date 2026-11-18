@@ -6539,3 +6539,26 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     4 h. plane_demo map upgraded: 4 power + 2 services blocks; rebuilt + packaged (6230 nodes); schedule 210
     visits/day; cargo berths 52 / 11 needed, pads 29 / 8, police 2 / 2, rescue 2 / 1. Evidence: D:/tmp/svc_game.png,
     power_game.png (in game).
+- 2026-11-18 SCHEDULED VISIT -> REAL SHIP ON ATTACK (server): GameSimulationScheduledTraffic.cpp - castScheduledVisits
+  (the laser beam / the missile step segment in the city frame vs every active visit as a sphere of half its length,
+  the pose by m_orbitalUniverseTimeSeconds from the shared HubTrafficSchedule) -> materializeScheduledVisit: spawns the
+  visit's catalog ship (ShipDescriptorRegistry::resolve by the visit's passport, now in the schedule) at the world point
+  through the hub navigation frame, with its schedule velocity; the city's materialized visit indices replicate
+  (ObjectSnapshot::materializedVisits) and the clients stop drawing that visit. Evidence (offscreen, ELITE_DEV_CITY_FIRE
+  laser at a docked OCS-4): «visit plane_demo.v0062 (OCS-4, bulk) attacked -> real ship 176 in hub plane_demo», then the
+  laser «target 176 at 311 m, 1.1 deg off the boresight» and the new NPC fires back / moves (simulated). First try
+  placed it via the city axes -> 6.7 km off; fixed through the hub frame's worldToLocalPosition.
+- 2026-11-18 PEOPLE (agent): tools/people/make_people.py (Blender, ~50 s) -> 13 characters from the milo_002 astronaut
+  (person_m_normal / tall / thin / athletic / muscular / fat / obese, person_f_normal / thin / athletic / fat,
+  person_child_teen 1.45 m, person_child_small 1.10 m): 22-bone skeleton + prop.L / prop.R sockets (weights computed on a
+  sealed voxel copy, transferred), 7 clips (idle, walk, run, wave, carry_idle, carry_walk, tool_use); props prop_box,
+  prop_tool. glTF + model.json (kind person) in assets_source/models/people; mesh editor section «Люди»
+  (MeshEditorCatalog.cpp + settings). Contact sheet D:/tmp/people_lineup.png. MISSING for animation: the editor imports
+  glTF meshes as static OBJ (no skin / clips; GLTFLoader not vendored); the game has no skinning at all (asset skin
+  section, bone palette shader, clip player, prop attachment) - plan recorded in the agent report.
+- 2026-11-18 NATIONAL STYLE KIT EAST (agent): tools/models/units/hub_style_east.py - 15 modules hubx_{ultramodern,
+  ancient,indian}_{tower,slab,office,downtown,landmark} (twisted glass tower, pearl TV tower; Pharos tower, stoa, agora,
+  acropolis temple; shikhara tower, haveli block, jali office, gopuram, Taj-like landmark), tinted lit facades
+  eq_hub_facade_*, trusses on all; STYLE_ZONE_MODULES (downtown / residential / hotel) and STYLE_POLITIES (ultramodern:
+  gj832_tianhe, eps_eri_harmony, hd40307_firmament, tau_ceti_cognium (debatable); ancient: lalande_hellas,
+  hd114783_hellas3; indian: delta_pav_karma, delta_pav_freekarma, hd20794_newindia). Previews D:/tmp/east_prev/.

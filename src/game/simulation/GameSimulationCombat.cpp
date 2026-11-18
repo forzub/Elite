@@ -628,6 +628,11 @@ void GameSimulation::updateCombat(double dt)
             beam.to = world::coordinates::makeWorldPositionFromMeters(from + dir * laser->rangeM);
             beam.powerMW = static_cast<float>(powerMW);
             beam.colour = laser->colour;
+            // a scheduled visit of a hub city in the beam (nearer than the target ship): it becomes a real ship - the
+            // beam meets its hull from the next tick on
+            if (ScheduledVisitHit visitHit;
+                on && castScheduledVisits(from, from + dir * laser->rangeM, 0.0, visitHit) && (!targetShip || visitHit.t < targetT))
+                (void)materializeScheduledVisit(visitHit);
             // a hub city in the way (nearer than the target ship): the beam burns into its building
             CityRayHit cityHit;
             if (on && castCitySegment(from, from + dir * laser->rangeM, 0.0, cityHit) && (!targetShip || cityHit.t < targetT))
@@ -871,6 +876,9 @@ void GameSimulation::updateCombat(double dt)
             it = m_combatMissiles.erase(it);
             continue;
         }
+        // a scheduled visit on the missile's path this step: a real ship from now on (the missile meets its hull next step)
+        if (ScheduledVisitHit visitHit; m.ageS >= 1.0 && castScheduledVisits(prev, m.positionW, dt, visitHit))
+            (void)materializeScheduledVisit(visitHit);
         // a hub city on the missile's path this step: the warhead goes off in the building it hits
         if (CityRayHit cityHit; m.ageS >= 1.0 && castCitySegment(prev, m.positionW, dt, cityHit))
         {

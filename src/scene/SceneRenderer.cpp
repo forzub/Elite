@@ -1580,6 +1580,7 @@ void SceneRenderer::prepareScene(
                 item.model = objectBaseModel;
                 item.buildingStates = obj.buildingStates;
                 item.hubModuleId = obj.hubAttachment.moduleId;
+                item.materializedVisits = obj.materializedVisits;
                 item.nodeModel.resize(modelAsset->nodeModule.size(), objectBaseModel);
                 for (std::size_t n = 0; n < modelAsset->nodeModule.size(); ++n)
                     for (const auto& module : obj.assembly->modules)
@@ -3921,8 +3922,14 @@ if (policy.drawObjects)
                                 int shown = 0, draws = 0, active = 0;
                                 float nearestVisit = 1.0e9f;
                                 std::unordered_map<const render::geometry::ModelAssetGpu*, bool> warmed;
-                                for (const auto& visit : schedule->visits())
+                                for (std::size_t vi = 0; vi < schedule->visits().size(); ++vi)
                                 {
+                                    const auto& visit = schedule->visits()[vi];
+                                    // a visit the server made a real ship (it was attacked): drawn as that ship
+                                    if (!object.materializedVisits.empty() &&
+                                        std::find(object.materializedVisits.begin(), object.materializedVisits.end(),
+                                                  static_cast<std::uint32_t>(vi)) != object.materializedVisits.end())
+                                        continue;
                                     game::navigation::traffic::HubVisitPose pose;
                                     if (!schedule->pose(visit, trafficTime, pose))
                                         continue;

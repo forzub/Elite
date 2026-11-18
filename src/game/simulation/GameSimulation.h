@@ -932,6 +932,21 @@ private:
     std::vector<game::simulation::CityBuildingState> cityBuildingStates(EntityId objectId) const;
     void devCityFireStep();          // DEV: ELITE_DEV_CITY_FIRE (the player's weapons fired on a schedule)
     std::unordered_map<std::uint64_t, CityDamageState> m_cityDamage;
+    // The scheduled traffic of a hub city (game::navigation::traffic::HubTrafficSchedule, shared with the clients that
+    // draw it): a visit the player's weapon meets becomes a real ship the server simulates from then on (author
+    // 2026-11-18: «игрок нападает на корабль. тот становится настоящим и сервер начинает его симуляцию»).
+    struct ScheduledVisitHit
+    {
+        EntityId city {};
+        int visit = -1;                  // index into the city's schedule visits
+        double t = 0.0;                  // along the segment, metres
+        glm::dvec3 pointW {0.0};
+    };
+    bool castScheduledVisits(const glm::dvec3& startW, const glm::dvec3& endW, double dt, ScheduledVisitHit& out) const;
+    EntityId materializeScheduledVisit(const ScheduledVisitHit& hit);
+    // the visits of a city now real ships (replicated: the clients stop drawing them)
+    std::vector<std::uint32_t> cityMaterializedVisits(EntityId objectId) const;
+    std::unordered_map<std::uint64_t, std::vector<std::uint32_t>> m_materializedVisits;
     double m_combatClockS = 0.0;
     std::unordered_map<EntityId, double> m_devTargetMissileClockS;   // DEV duel: last missile launch
     std::unordered_set<EntityId> m_devTargetLaserOn;

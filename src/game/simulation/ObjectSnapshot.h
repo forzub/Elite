@@ -39,6 +39,8 @@ struct ObjectSnapshot
 
     // a hub city: its damaged / destroyed buildings (only the changed nodes; empty = intact)
     std::vector<game::simulation::CityBuildingState> buildingStates;
+    // a hub city's scheduled visits that are real ships now (indices into its HubTrafficSchedule visits)
+    std::vector<std::uint32_t> materializedVisits;
 
 
     void setWorldPosition(

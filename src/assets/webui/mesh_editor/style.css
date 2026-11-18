@@ -52,6 +52,11 @@ button.ghost { background: transparent; border-color: transparent; }
 .overlay.right { top: 10px; right: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 12px; color: var(--muted); }
 .overlay.anim { bottom: 56px; left: 10px; right: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 10px; }
 .overlay.anim #animTime { flex: 1; min-width: 80px; }
+.overlay.skin { bottom: 10px; left: 10px; right: 10px; background: rgba(13, 16, 20, 0.8); padding: 6px 10px; border-radius: 6px; gap: 10px; flex-wrap: wrap; }
+.overlay.skin #skinTime { flex: 1; min-width: 80px; }
+.overlay.skin #skinClip { max-width: 340px; }
+.overlay.skin #skinLabel { min-width: 104px; text-align: right; font-variant-numeric: tabular-nums; }
+
 .overlay.anim #animLabel { min-width: 92px; text-align: right; font-variant-numeric: tabular-nums; }
 .overlay label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
 #lodBar { right: 440px; }   /* LODs + shells wrap before the legend on the right */

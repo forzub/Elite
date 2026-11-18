@@ -6556,6 +6556,19 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   (MeshEditorCatalog.cpp + settings). Contact sheet D:/tmp/people_lineup.png. MISSING for animation: the editor imports
   glTF meshes as static OBJ (no skin / clips; GLTFLoader not vendored); the game has no skinning at all (asset skin
   section, bone palette shader, clip player, prop attachment) - plan recorded in the agent report.
+- 2026-11-18 PEOPLE ANIMATION PREVIEW + NEW CLIPS + ARM CLEARANCE AUDIT (agent, not committed): mesh editor opens a
+  skinned glTF with clips in a new step «Анимация» (MeshEditorSession::animPreview copies the glTF + bin + textures and
+  the passport's props into <web>/cache/<cat>/<id>/anim/, url + clips in the 'opened' message; command animCrowd for
+  «все люди»; viewer.js GLTFLoader r128 + AnimationMixer + SkeletonHelper, props on node prop.R; clip list, play /
+  pause, slider, speed, loop, skeleton, all people in a row). make_people.py: new clips dance (4 s), jumping_jacks
+  (1 s), jump (1.6 s, ballistic flight g = 9.81), bow (2.6 s), leg IK for planted feet; per-frame clearance audit
+  (arms vs the person's own torso slices / helmet ellipsoid / thigh capsules, rest-pose relative) with automatic
+  remedies (arm spread, elbow swivel IK, per-clip alternative); table in D:/tmp/people/work/people_clearance.json and
+  the passports (animations[].clearance_cm / spread / alt / loop / prop). Finding: nothing limited the arms before -
+  almost every clip put the arms 3-20 cm into the bulky suit. After: 139 of 143 clips clear; still inside:
+  person_m_muscular carry_idle / carry_walk (-3.7 cm), tool_use (-5.7), person_m_obese tool_use (-1.6) - author's
+  call (bigger box / thinner arms / other pose). Evidence: headless Edge CDP test (scratchpad people_anim_test.mjs)
+  all PASS, shots D:/tmp/people_shots/people_anim_*.png. Game side still has no skinning.
 - 2026-11-18 NATIONAL STYLE KIT EAST (agent): tools/models/units/hub_style_east.py - 15 modules hubx_{ultramodern,
   ancient,indian}_{tower,slab,office,downtown,landmark} (twisted glass tower, pearl TV tower; Pharos tower, stoa, agora,
   acropolis temple; shikhara tower, haveli block, jali office, gopuram, Taj-like landmark), tinted lit facades

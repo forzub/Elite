@@ -459,6 +459,89 @@ void Session::savePassport(const ModelCard& c, const nlohmann::json& p)
     m_catalog.rescan();
 }
 
+// the animation preview (people): a skinned glTF with animations is copied with its buffers and textures into
+// <web>/cache/<category>/<id>/anim/ (the page's GLTFLoader reads it there); its props (the passport's "props": prop_box,
+// prop_tool - models of "Прочие объекты") likewise into anim/props/<prop>/. Answer: {url, clips: [{id, title, loop,
+// prop}], props: [{id, url}]} or null when the model has no skinned animation.
+namespace
+{
+// a glTF and the files it names (buffers, images) into dir; the glTF's file name, or "" when it is not there
+std::string copyGltf(const fs::path& src, const fs::path& dir, nlohmann::json* doc)
+{
+    std::error_code ec;
+    std::ifstream in(src, std::ios::binary);
+    if (!in)
+        return std::string();
+    nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+    if (j.is_discarded())
+        return std::string();
+    fs::create_directories(dir, ec);
+    fs::copy_file(src, dir / src.filename(), fs::copy_options::overwrite_existing, ec);
+    for (const char* list : {"buffers", "images"})
+        for (const auto& b : j.value(list, nlohmann::json::array()))
+        {
+            const std::string uri = b.value("uri", std::string());
+            if (uri.empty() || uri.rfind("data:", 0) == 0 || uri.find("..") != std::string::npos)
+                continue;
+            const fs::path to = dir / fs::u8path(uri);
+            fs::create_directories(to.parent_path(), ec);
+            fs::copy_file(src.parent_path() / fs::u8path(uri), to, fs::copy_options::overwrite_existing, ec);
+        }
+    if (doc)
+        *doc = std::move(j);
+    return src.filename().u8string();
+}
+} // namespace
+
+nlohmann::json Session::animPreview(const ModelCard& c) const
+{
+    const fs::path src = GltfSource::find(c.folder);
+    if (src.empty())
+        return nullptr;
+    const fs::path rel = fs::path("cache") / c.category / c.id / "anim";
+    const fs::path dir = m_webRoot / rel;
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+    nlohmann::json doc;
+    const std::string name = copyGltf(src, dir, &doc);
+    if (name.empty() || doc.value("animations", nlohmann::json::array()).empty() || doc.value("skins", nlohmann::json::array()).empty())
+    {
+        fs::remove_all(dir, ec);
+        return nullptr;
+    }
+    const std::string stamp = std::to_string(
+        std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    nlohmann::json out = {{"url", (rel / name).generic_u8string() + "?v=" + stamp}, {"clips", nlohmann::json::array()},
+                          {"props", nlohmann::json::array()}};
+    // the clip titles from the passport (make_people.py ACTIONS); a clip only in the glTF keeps its name
+    const nlohmann::json pass = passport(c);
+    std::set<std::string> listed;
+    for (const auto& a : pass.value("animations", nlohmann::json::array()))
+        if (a.is_object())
+        {
+            out["clips"].push_back(a);
+            listed.insert(a.value("id", std::string()));
+        }
+    for (const auto& a : doc["animations"])
+        if (!listed.count(a.value("name", std::string())))
+            out["clips"].push_back({{"id", a.value("name", std::string())}, {"title", a.value("name", std::string())}});
+    for (const auto& p : pass.value("props", nlohmann::json::array()))
+    {
+        const std::string pid = p.is_string() ? p.get<std::string>() : std::string();
+        const ModelCard* pc = nullptr;
+        for (const auto& cat : m_catalog.settings().categories)
+            if ((pc = m_catalog.find(cat.id, pid)))
+                break;
+        const fs::path psrc = pc ? GltfSource::find(pc->folder) : fs::path();
+        if (psrc.empty())
+            continue;
+        const std::string pname = copyGltf(psrc, dir / "props" / pid, nullptr);
+        if (!pname.empty())
+            out["props"].push_back({{"id", pid}, {"url", (rel / "props" / pid / pname).generic_u8string() + "?v=" + stamp}});
+    }
+    return out;
+}
+
 nlohmann::json Session::variantsJson(const ModelCard& c, const std::string& select) const
 {
     nlohmann::json out = {{"type", "variants"}, {"category", c.category}, {"id", c.id}, {"variants", nlohmann::json::array()}};
@@ -1069,6 +1152,19 @@ void Session::handleCommand(const std::string& text)
             openInBlender(*c, m.value("group", std::string()), m.value("part", std::string()));
         return;
     }
+    // "все люди": every model of the category with a skinned animation, for the crowd preview
+    if (cmd == "animCrowd")
+    {
+        nlohmann::json items = nlohmann::json::array();
+        for (const auto& c : m_catalog.list(category))
+        {
+            nlohmann::json a = animPreview(c);
+            if (!a.is_null())
+                items.push_back({{"id", c.id}, {"title", c.title}, {"anim", a}});
+        }
+        send({{"type", "animCrowd"}, {"category", category}, {"items", items}});
+        return;
+    }
     if (cmd == "open")
     {
         if (const ModelCard* c = m_catalog.find(category, m.value("id", std::string())))
@@ -1076,6 +1172,7 @@ void Session::handleCommand(const std::string& text)
             std::cerr << "[MeshEditor] open " << category << "/" << c->id << std::endl;
             nlohmann::json j = openModel(effective(*c));
             j["folder"] = c->folder.generic_u8string();
+            j["anim"] = animPreview(*c);
             send(j);
         }
         return;

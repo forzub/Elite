@@ -6,6 +6,7 @@
 //           inspect {category, id, commit} | setKind {category, id, part, kind: volume|sheet|""} |
 //           setCaps {category, id, parts[], on} | blender {category, id, group, part} |
 //           assembly {category, id} | saveAssembly {category, id, doc} | build {category, id} | library | saveLibrary {lib} |
+//           animCrowd {category} (every skinned model of the category, for the crowd preview) |
 //           hubTool (the hub mode: starts tools/models/hub_map_tool.py, answers {type: hubTool, port, error}).
 #include <atomic>
 #include <condition_variable>
@@ -60,6 +61,8 @@ private:
     // the model's passport (model.json): read / write; the catalog is rescanned after a write
     nlohmann::json passport(const ModelCard& c) const;
     void savePassport(const ModelCard& c, const nlohmann::json& p);
+    // the skinned animation preview of a model (people): its glTF copied into the web cache, the clips, the props
+    nlohmann::json animPreview(const ModelCard& c) const;
     nlohmann::json variantsJson(const ModelCard& c, const std::string& select = std::string()) const;
     // Blender, headless: tools/blender/make_module_blend.py over the jobs; true when it ran
     bool runBlendJobs(const nlohmann::json& jobs, const std::string& name);

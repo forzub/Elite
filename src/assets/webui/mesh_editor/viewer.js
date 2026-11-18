@@ -2,6 +2,7 @@
 // Talks to app.js through window.MeshViewer (app.js is a classic script; this is a module).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const COLORS = { link: 0x8f7cf0, base: 0x9aa6b4, hover: 0xd8dee6, selected: 0xe8a33d, error: 0xc0584a, back: 0xd13fd1, open: 0xff4a3a, bad: 0xff3fd8 };
 
@@ -322,7 +323,7 @@ async function showGroup(gi, refit) {
   }
   for (const other of state.groups) if (other.root) other.root.visible = false;
   if (!g.root.parent) scene.add(g.root);
-  g.root.visible = true;
+  g.root.visible = !skin.root;   // the animation window keeps the inspection meshes hidden
   const first = state.current < 0;
   state.current = gi;
   restyle();
@@ -345,6 +346,7 @@ const ray = new THREE.Raycaster();
 let downAt = null;
 renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
 renderer.domElement.addEventListener('pointerup', (e) => {
+  if (skin.root) return;
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
   if (asm.root) { if (asm.onPick) asm.onPick(pickNode(e)); return; }
   const key = pickAt(e);
@@ -366,8 +368,125 @@ function pickAt(e) {
   return hit ? hit.object.userData.key : null;
 }
 
+// ---- the skinned animation window (people): the model's own glTF (served from the web cache) with its skeleton and
+// clips, played by THREE.AnimationMixer; a prop (box, tablet - its own glTF) hangs on the bone "prop.R" and is shown in
+// the clips the passport names it for (animations[].prop). The crowd: several people in a row play the same clip.
+const skin = { root: null, helpers: [], people: [], clip: null, speed: 1, loop: true, paused: false, bones: false, token: 0,
+  loading: false, clock: new THREE.Clock() };
+const gltfLoader = new GLTFLoader();
+function loadGltf(url) {
+  return new Promise((res, rej) => gltfLoader.load(url, res, undefined, rej));
+}
+function clearSkinned() {
+  if (skin.root) {
+    scene.remove(skin.root);
+    skin.root.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      for (const m of [].concat(o.material || [])) { for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) if (m[k]) m[k].dispose(); m.dispose(); }
+    });
+  }
+  for (const h of skin.helpers) { scene.remove(h); h.geometry.dispose(); h.material.dispose(); }
+  for (const p of skin.people) p.mixer.stopAllAction();
+  skin.root = null;
+  skin.helpers = [];
+  skin.people = [];
+}
+async function showSkinned(items, opts) {
+  const token = ++skin.token;
+  Object.assign(skin, { clip: opts.clip, speed: opts.speed || 1, loop: opts.loop !== false, bones: !!opts.bones, paused: false });
+  skin.loading = true;
+  let loaded;
+  try {
+    loaded = await Promise.all(items.map(async (it) => {
+      const g = await loadGltf(it.anim.url);
+      const props = new Map();
+      for (const p of it.anim.props || []) {
+        try { props.set(p.id, (await loadGltf(p.url)).scene); } catch (e) { console.warn('prop', p.id, e); }
+      }
+      return { it, g, props };
+    }));
+  } catch (e) {
+    console.error('skinned glTF', e);
+    loaded = null;
+  } finally {
+    if (token === skin.token) skin.loading = false;
+  }
+  if (token !== skin.token || !loaded) return;
+  clearSkinned();
+  for (const g of state.groups) if (g.root) g.root.visible = false;
+  if (propsState.root) propsState.root.visible = false;
+  renderer.outputEncoding = THREE.sRGBEncoding;   // the glTF textures are sRGB
+  const row = new THREE.Group();
+  let x = 0;
+  for (const { it, g, props } of loaded) {
+    const obj = g.scene;
+    obj.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(obj);
+    const w = Math.max(0.5, box.max.x - box.min.x);
+    obj.position.x = x + w / 2 - (box.min.x + box.max.x) / 2;
+    x += w + 0.3;
+    row.add(obj);
+    obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // the skinned bounds are the bind pose's
+    const socket = obj.getObjectByName('prop.R') || obj.getObjectByName('propR');
+    const shown = new Map();
+    for (const [pid, ps] of props) {
+      ps.visible = false;
+      if (socket) socket.add(ps);
+      shown.set(pid, ps);
+    }
+    const mixer = new THREE.AnimationMixer(obj);
+    const helper = new THREE.SkeletonHelper(obj);
+    helper.visible = skin.bones;
+    skin.helpers.push(helper);
+    scene.add(helper);
+    skin.people.push({ it, obj, clips: g.animations, mixer, action: null, props: shown, info: it.anim.clips || [] });
+  }
+  row.position.x = -(x - 0.3) / 2;
+  const n = Math.max(4, Math.ceil(x + 2));
+  const grid = new THREE.GridHelper(n, n * 2, 0x3a4450, 0x232a32);
+  const holder = new THREE.Group();
+  holder.add(row, grid);
+  scene.add(holder);
+  skin.root = holder;
+  holder.updateMatrixWorld(true);
+  const fb = new THREE.Box3().setFromObject(row);
+  fb.max.y += 0.3;   // room for the jump
+  frame(fb);
+  skinPlay(skin.clip);
+}
+function skinPlay(id) {
+  skin.clip = id;
+  for (const p of skin.people) {
+    p.mixer.stopAllAction();
+    const clip = THREE.AnimationClip.findByName(p.clips, id);
+    p.action = null;
+    if (clip) {
+      const a = p.mixer.clipAction(clip);
+      a.setLoop(skin.loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+      a.clampWhenFinished = true;
+      a.reset().play();
+      a.paused = skin.paused;
+      p.action = a;
+    }
+    const info = p.info.find((c) => c.id === id);
+    for (const [pid, inst] of p.props) inst.visible = !!(info && info.prop === pid);
+    p.mixer.update(0);
+  }
+}
+function skinStatus() {
+  if (!skin.root && !skin.loading) return null;
+  const p = skin.people.find((q) => q.action) || null;
+  const a = p && p.action;
+  const d = a ? a.getClip().duration : 0;
+  const ended = !!(a && !skin.loop && a.time >= d - 1e-3);
+  return { time: a ? Math.min(a.time, d) : 0, duration: d, paused: skin.paused || ended, people: skin.people.length,
+    loading: skin.loading, clip: skin.clip };
+}
+
 function loop() {
   requestAnimationFrame(loop);
+  const dt = skin.clock.getDelta();
+  if (skin.root && !skin.paused) for (const p of skin.people) p.mixer.update(dt * skin.speed);
   controls.update();
   renderer.render(scene, camera);
 }
@@ -672,6 +791,52 @@ window.MeshViewer = {
   // the player (app.js Anim): angles in degrees per part; null = the modelled pose
   setPose(rig, angles, extra) { state.pose = rig && angles ? { rig, angles, extra } : null; if (!state.pose) applyProps(() => new THREE.Matrix4()); applyPose(); },
   // check: the model roots in the scene (a stale load used to leave the previous model there)
+  // the skinned animation window (app.js Skin): items [{id, title, anim: {url, clips, props}}], opts {clip, speed, loop, bones}
+  showSkinned: (items, opts) => showSkinned(items, opts || {}),
+  hideSkinned() {
+    skin.token++;
+    skin.loading = false;
+    if (!skin.root) return;
+    clearSkinned();
+    renderer.outputEncoding = THREE.LinearEncoding;
+    const g = state.groups[state.current];
+    if (g && g.root) g.root.visible = true;
+    applyPose();
+  },
+  skinPlay,
+  skinSet(o) {
+    if (o.toggle) {
+      const s = skinStatus();
+      if (s && !skin.loop && s.duration && s.time >= s.duration - 1e-3) { skin.paused = false; skinPlay(skin.clip); }
+      else skin.paused = !skin.paused;
+    }
+    if ('speed' in o) skin.speed = o.speed;
+    if ('loop' in o) { skin.loop = o.loop; skinPlay(skin.clip); }
+    if ('bones' in o) { skin.bones = o.bones; for (const h of skin.helpers) h.visible = o.bones; }
+    for (const p of skin.people) if (p.action) p.action.paused = skin.paused;
+  },
+  skinSeek(frac) {
+    skin.paused = true;
+    for (const p of skin.people) {
+      if (!p.action) continue;
+      p.action.paused = false;
+      p.action.time = frac * p.action.getClip().duration;
+      p.mixer.update(0);
+      p.action.paused = true;
+    }
+  },
+  skinStatus,
+  // scripted shots: the clip at time t (seconds), paused; the camera from direction (x, y, z) onto the row
+  skinAt(t) { this.skinSeek(0); for (const p of skin.people) if (p.action) { p.action.paused = false; p.action.time = t; p.mixer.update(0); p.action.paused = true; } },
+  skinView(x, y, z) {
+    if (!skin.root) return;
+    const b = new THREE.Box3().setFromObject(skin.root.children[0]);
+    b.max.y += 0.3;
+    controls.target.copy(b.getCenter(new THREE.Vector3()));
+    camera.position.copy(controls.target.clone().add(new THREE.Vector3(x, y, z)));
+    frame(b);
+    controls.update();
+  },
   stats() { return { inScene: scene.children.filter((o) => o.isGroup).length, groups: state.groups.length }; },
 };
 window.dispatchEvent(new Event('viewer-ready'));

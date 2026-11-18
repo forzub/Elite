@@ -58,6 +58,7 @@ function connect() {
       Asm.onBuilt(m); notice(m.ok ? 'Собрано: ' + m.output : 'Сборка не удалась');
     }
     else if (m.type === 'hubTool') Hub.onTool(m);
+    else if (m.type === 'animCrowd') Skin.onCrowd(m);
   };
 }
 
@@ -216,10 +217,22 @@ function onOpened(m) {
     if (i === 0) b.classList.add('active');
     b.onclick = () => {
       for (const x of nav.children) x.classList.toggle('active', x === b);
+      Skin.leave();
       if (i === 0) { Asm.close(); whenViewer((v) => v.showGroup(insp.group)); } else Asm.open(i);
     };
     nav.appendChild(b);
   });
+  // a skinned model with clips (people): the animation window
+  Skin.setup(m.anim || null);
+  if (m.anim) {
+    const b = document.createElement('button');
+    b.textContent = 'Анимация';
+    b.title = 'клипы скелета из glTF: играть, пауза, скорость, повтор, кости, все люди';
+    b.onclick = () => { for (const x of nav.children) x.classList.toggle('active', x === b); Skin.enter(); };
+    nav.appendChild(b);
+    if (params.get('anim')) setTimeout(() => b.click(), 50);   // headless: &anim=<clip>[&crowd=1]
+  }
+
   loadVariant();
   if (state.pendingBack) {   // back from a link: the assembly comes back where it was left
     insp.selected = state.pendingBack.selected;
@@ -587,6 +600,89 @@ document.addEventListener('keydown', (e) => {
   if (e.code !== 'Space' || $('animBar').hidden || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
   e.preventDefault();
   $('animPlay').click();
+});
+
+// ---- the skinned animation window (people, tools/people/make_people.py): GLTFLoader + AnimationMixer in viewer.js
+const Skin = {
+  anim: null, on: false, clip: null, crowd: null, timer: null,
+  setup(anim) { this.leave(); this.anim = anim; this.crowd = null; $('skinCrowd').checked = false; },
+  clips() { return (this.anim && this.anim.clips) || []; },
+  enter() {
+    if (!this.anim) return;
+    Asm.close();
+    this.on = true;
+    for (const id of ['viewTools', 'lodBar', 'animBar', 'legend']) $(id).hidden = true;
+    $('skinBar').hidden = false;
+    $('stepSide').hidden = true;
+    $('asmSide').hidden = false;
+    $('asmSide').innerHTML = this.sideHtml();
+    const clips = this.clips();
+    $('skinClip').innerHTML = clips.map((c) => `<option value="${esc(c.id)}">${esc(c.title || c.id)}</option>`).join('');
+    const want = params.get('anim') && clips.some((c) => c.id === params.get('anim')) ? params.get('anim')
+      : clips.some((c) => c.id === 'dance') ? 'dance' : clips.length ? clips[0].id : null;
+    this.clip = this.clip && clips.some((c) => c.id === this.clip) ? this.clip : want;
+    $('skinClip').value = this.clip || '';
+    if (params.get('crowd') && !this.crowd) { $('skinCrowd').checked = true; this.askCrowd(); }
+    this.show();
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.status(), 100);
+  },
+  leave() {
+    if (!this.on) return;
+    this.on = false;
+    clearInterval(this.timer);
+    $('skinBar').hidden = true;
+    $('legend').hidden = false;
+    $('stepSide').hidden = false;
+    $('asmSide').hidden = true;
+    whenViewer((v) => v.hideSkinned());
+  },
+  items() {
+    if ($('skinCrowd').checked && this.crowd) return this.crowd;
+    return [{ id: state.model.id, title: state.model.title, anim: this.anim }];
+  },
+  show() { whenViewer((v) => v.showSkinned(this.items(), this.options())); },
+  options() {
+    return { clip: this.clip, speed: Number($('skinSpeed').value), loop: $('skinLoop').checked, bones: $('skinBones').checked };
+  },
+  askCrowd() { send({ cmd: 'animCrowd', category: state.model.category }); $('skinInfo').textContent = 'загрузка всех людей…'; },
+  onCrowd(m) {
+    if (!state.model || m.category !== state.model.category) return;
+    this.crowd = m.items;
+    if (this.on && $('skinCrowd').checked) this.show();
+  },
+  status() {
+    if (!window.MeshViewer || !window.MeshViewer.skinStatus) return;
+    const s = window.MeshViewer.skinStatus();
+    if (!s) return;
+    if (document.activeElement !== $('skinTime')) $('skinTime').value = String(Math.round((s.duration ? s.time / s.duration : 0) * 1000));
+    $('skinLabel').textContent = `${s.time.toFixed(2)} / ${s.duration.toFixed(2)} с`;
+    $('skinPlay').textContent = s.paused ? '▶' : '⏸';
+    const waiting = s.loading || ($('skinCrowd').checked && !this.crowd);
+    $('skinInfo').textContent = waiting ? 'загрузка…' : s.people > 1 ? `${s.people} чел.` : '';
+  },
+  // the clips and the generator's clearance audit (the passport: clearance_cm, spread)
+  sideHtml() {
+    const rows = this.clips().map((c) => `<tr><td>${esc(c.id)}</td><td>${esc(c.title || '')}</td>` +
+      `<td class="num">${c.clearance_cm != null ? Number(c.clearance_cm).toFixed(1) : '—'}</td><td class="num">${c.spread || 0}</td></tr>`).join('');
+    return `<h3>Анимация</h3><div class="muted small">Клипы скелета из glTF модели (tools/people/make_people.py). Реквизит
+      (ящик, планшет) висит на кости prop.R. «Зазор» — наименьшее расстояние руки до тела за клип по проверке генератора
+      (тело — срезы и капсулы по костям, размеры — по сетке этого человека); «разв.» — на сколько шагов генератор отвёл руки
+      от тела, чтобы они не проходили сквозь корпус.</div><div class="table-wrap"><table><tr><th>клип</th><th>что</th>
+      <th class="num">зазор, см</th><th class="num">разв.</th></tr>${rows}</table></div>`;
+  },
+};
+$('skinClip').onchange = () => { Skin.clip = $('skinClip').value; whenViewer((v) => v.skinPlay(Skin.clip)); };
+$('skinPlay').onclick = () => whenViewer((v) => v.skinSet({ toggle: true }));
+$('skinSpeed').onchange = () => whenViewer((v) => v.skinSet({ speed: Number($('skinSpeed').value) }));
+$('skinLoop').onchange = () => whenViewer((v) => v.skinSet({ loop: $('skinLoop').checked }));
+$('skinBones').onchange = () => whenViewer((v) => v.skinSet({ bones: $('skinBones').checked }));
+$('skinTime').oninput = () => whenViewer((v) => v.skinSeek(Number($('skinTime').value) / 1000));
+$('skinCrowd').onchange = () => { if ($('skinCrowd').checked && !Skin.crowd) Skin.askCrowd(); else Skin.show(); };
+document.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space' || $('skinBar').hidden || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  e.preventDefault();
+  $('skinPlay').click();
 });
 
 let noticeTimer = null;

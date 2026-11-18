@@ -51,6 +51,18 @@
           <label id="animPropsLabel" hidden title="показать навесной объект (ящик с инструментами на седле); клип с инструментами показывает его сам"><input type="checkbox" id="animProps"> <span id="animPropsName">ящик</span></label>
           <button id="animRest" class="small" title="вернуть исходную позу (как смоделировано)">исходная поза</button>
         </div>
+        <div id="skinBar" class="overlay skin" hidden title="анимация скелета из glTF модели (люди): клипы tools/people/make_people.py">
+          <select id="skinClip" title="клип"></select>
+          <button id="skinPlay" class="small" title="играть / пауза (пробел)">⏸</button>
+          <input type="range" id="skinTime" min="0" max="1000" step="1" value="0" title="время клипа">
+          <span id="skinLabel" class="muted">0.00 / 0.00 с</span>
+          <label title="скорость воспроизведения">скорость <select id="skinSpeed"><option value="0.1">×0.1</option><option value="0.25">×0.25</option>
+            <option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option></select></label>
+          <label title="повторять клип"><input type="checkbox" id="skinLoop" checked> повтор</label>
+          <label title="кости скелета поверх модели"><input type="checkbox" id="skinBones"> скелет</label>
+          <label title="все люди раздела в ряд, играют один и тот же клип"><input type="checkbox" id="skinCrowd"> все люди</label>
+          <span id="skinInfo" class="muted"></span>
+        </div>
         <div id="asmTools" class="overlay bottom" hidden>
           <label class="explode">разнос <input type="range" id="explode" min="0" max="1" step="0.01" value="0"></label>
           <label><input type="checkbox" data-ov="tree" checked> иерархия</label>

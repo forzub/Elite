@@ -1,6 +1,8 @@
 """People: body variants of the milo_002 astronaut with one shared humanoid skeleton, skin weights and baked actions.
 
 blender -b --factory-startup -P tools/people/make_people.py -- [--only id,id] [--out <models root>] [--work <tmp dir>]
+    [--reuse 1]   (reuse <work>/people_base.blend of an earlier run: the weights step takes a while)
+    PEOPLE_SHAPE_DEBUG=1 in the environment prints the body model and every spread step of the audit
 
 The source (D:/__elite/_data/objects/spacemans/milo_002/astronaut.glb, ASSET_LICENSES/models/astronauts/milo_002) is read
 only. Steps:
@@ -10,9 +12,13 @@ only. Steps:
   2. per person (PEOPLE): re-proportion by pose-bone scaling (inherit scale off, so a bone's scale moves its children
      but does not scale them), bake it into the mesh and the rest pose, add the belly / bust, scale to the height, put
      the soles on the floor;
-  3. actions (ACTIONS): idle, walk, run, wave, carry_idle, carry_walk, tool_use - FK for legs and torso, two-bone IK
-     for the arms; the socket bone prop.R (right palm) is animated too: in carry_* it sits in the middle of the box
-     held in both hands (axes = the chest's), in tool_use it holds the tablet facing the eyes;
+  3. actions (ACTIONS): idle, walk, run, wave, carry_idle, carry_walk, tool_use, dance, jumping_jacks, jump, bow - FK
+     for the torso, FK or leg IK (planted feet) for the legs, FK or two-bone IK for the arms; the socket bone prop.R
+     (right palm) is animated too: in carry_* it sits in the middle of the box held in both hands (axes = the chest's),
+     in tool_use it holds the tablet facing the eyes. Every baked frame goes through the clearance audit (the arms
+     against the person's own torso, helmet and thighs; see "clearance audit"): a clip that brings an arm into the
+     body is baked again with the arms spread a step wider / the elbows swung off the body; the table is printed and
+     written to <work>/people_clearance.json, the per-clip result into the passport (animations[].clearance_cm);
   4. export <out>/<id>/intact/assembly/<id>.gltf (+ .bin, textures/) and <out>/<id>/model.json;
   5. props: prop_box, prop_tool -> <out>/../objects/<id>/ (origin = the socket point, glTF Y up).
 
@@ -435,24 +441,257 @@ def aim(arm, name, direction, up_hint=None):
     update()
 
 
-def ik_arm(arm, s, wrist, pole, hand_dir=None, hand_up=None):
+def ik_chain(arm, upper, lower, target, pole):
+    """two-bone IK: the end of `lower` to target (armature space), the middle joint bent toward pole"""
     update()
     pb = arm.pose.bones
-    S = pb["upper_arm" + s].head.copy()
-    a = pb["upper_arm" + s].length
-    b = pb["forearm" + s].length
-    d = max(1e-4, min((wrist - S).length, (a + b) * 0.999))
-    dirv = (wrist - S).normalized()
+    S = pb[upper].head.copy()
+    a = pb[upper].length
+    b = pb[lower].length
+    d = max(1e-4, min((target - S).length, (a + b) * 0.999))
+    dirv = (target - S).normalized()
     along = (a * a - b * b + d * d) / (2 * d)
     h = math.sqrt(max(0.0, a * a - along * along))
     perp = pole - dirv * pole.dot(dirv)
     perp = perp.normalized() if perp.length > 1e-6 else Vector((0, 0, -1))
     E = S + dirv * along + perp * h
     W = S + dirv * d
-    aim(arm, "upper_arm" + s, E - S)
-    aim(arm, "forearm" + s, W - E)
+    aim(arm, upper, E - S)
+    aim(arm, lower, W - E)
+
+
+def ik_arm(arm, s, wrist, pole, hand_dir=None, hand_up=None):
+    ik_chain(arm, "upper_arm" + s, "forearm" + s, wrist, pole)
     if hand_dir is not None:
         aim(arm, "hand" + s, hand_dir, hand_up)
+
+
+def ik_leg(arm, s, ankle, toe_deg=0.0):
+    """the ankle (foot head) to `ankle`, the knee forward (a little outward); the foot keeps its rest orientation
+    (flat on the floor) turned by toe_deg about the armature X (+ = toes down)"""
+    sx = 1.0 if s == ".L" else -1.0
+    ik_chain(arm, "thigh" + s, "shin" + s, ankle, Vector((0.12 * sx, -1.0, 0.0)))
+    pb = arm.pose.bones["foot" + s]
+    rest = pb.bone.matrix_local.to_3x3()
+    m = (Matrix.Rotation(math.radians(-toe_deg), 3, "X") @ rest).to_4x4()
+    m.translation = pb.matrix.translation
+    pb.matrix = m
+    update()
+
+
+# ----------------------------------------------------------------------------------------------- clearance audit
+# Nothing in the rig itself keeps an arm out of the body (keyframed FK / IK poses only), so the generator checks every
+# frame: the body is modelled from the person's own mesh - the torso (hips, spine, chest, neck, head) as stacked
+# rounded slices (a superellipse cross-section per slice, the back capped so the backpack does not count), the limbs
+# as capsules - and an arm segment (upper arm beyond the shoulder, forearm, hand) is tested against the torso slices,
+# the head and both thighs. A clip that comes closer than CLEAR_MARGIN gets its arms spread a step wider and is baked
+# again (pose functions read SPREAD), up to SPREAD_MAX steps.
+TORSO = ("hips", "spine", "chest", "neck", "head")
+ARM_SEGS = ("upper_arm", "forearm", "hand")
+CLEAR_MARGIN = 0.005   # metres
+SPREAD_MAX = 16
+SLICES = 12            # torso slices from the crotch to the top of the neck
+SUPER_N = 2.0          # the slice cross-section: |x/rx|^n + |z/rz|^n = 1 (2 = ellipse, higher = boxier)
+
+
+def pct(xs, q):
+    xs = sorted(xs)
+    return xs[min(len(xs) - 1, max(0, int(round(q / 100.0 * (len(xs) - 1)))))]
+
+
+def side_frame(bone):
+    """a frame for a torso bone: y along the bone, x toward the armature +X (the person's left), z = x cross y (the
+    front, -Y); returned as the 3x3 that turns the bone's rest-local coordinates into it"""
+    y = (bone.tail_local - bone.head_local).normalized()
+    x = Vector((1, 0, 0))
+    x = (x - y * x.dot(y)).normalized()
+    z = x.cross(y)
+    F = Matrix((x, y, z))   # rows: armature -> this frame
+    return F @ bone.matrix_local.to_3x3()
+
+
+def body_shape(arm, body):
+    """the person's body for the audit, from its rest mesh:
+    torso -> {"slices": {bone: [(y0, y1, cx, rx, cz, rz)]}, "frames": {bone: 3x3}} in side_frame coordinates (from the
+    bone head): every vertex of the trunk (no arm weight; the legs only above the hip joints - the hand passes the
+    pelvis there) cut into SLICES horizontal slices, each with its width, front and back (the back capped: the
+    backpack); the head (helmet) one slice; limbs -> (cx, cz, r, y0, y1) capsules in the bone's rest frame"""
+    w = weights_of(body)
+    B = arm.data.bones
+    arm_names = {n + s for n in ("shoulder",) + ARM_SEGS for s in (".L", ".R")}
+    leg_names = {n + s for n in ("thigh", "shin", "foot") for s in (".L", ".R")}
+    hip_z = B["thigh.L"].head_local.z
+    trunk, head, limbs = [], [], {}
+    for v in body.data.vertices:
+        d = w[v.index]
+        if not d:
+            continue
+        armw = sum(x for k, x in d.items() if k in arm_names)
+        legw = sum(x for k, x in d.items() if k in leg_names)
+        n, x = max(d.items(), key=lambda kv: kv[1])
+        if x >= 0.5 and n not in TORSO and (n in arm_names or n in leg_names):
+            limbs.setdefault(n, []).append(v.co.copy())
+        if armw >= 0.5:
+            continue
+        if d.get("head", 0) >= 0.5:
+            head.append(v.co.copy())
+        elif legw < 0.5 or v.co.z >= hip_z:
+            trunk.append(v.co.copy())
+    chain = ("hips", "spine", "chest", "neck")
+    frames = {n: side_frame(B[n]) for n in chain + ("head",)}
+    slices = {n: [] for n in chain}
+    shape_head = []
+
+    def cut(n, pts, a, b):
+        bone = B[n]
+        F = frames[n] @ bone.matrix_local.to_3x3().transposed()   # armature -> side frame
+        loc = [F @ (p - bone.head_local) for p in pts]
+        # extremes, not the bulk: the backpack has far more vertices than the front of the suit
+        x_lo, x_hi = pct([p.x for p in loc], 0.5), pct([p.x for p in loc], 99.5)
+        z_lo, z_hi = pct([p.z for p in loc], 0.5), pct([p.z for p in loc], 99.5)
+        z_lo = min(max(z_lo, -0.7 * (x_hi - x_lo) / 2), z_hi - 0.02)   # the back without the backpack
+        ya, yb = (F @ (Vector((0, 0, a)) - bone.head_local)).y, (F @ (Vector((0, 0, b)) - bone.head_local)).y
+        if n == "head":   # the helmet: an ellipsoid (a, b = its bottom and top along the bone)
+            ylo, yhi = min(ya, yb), max(ya, yb)
+            shape_head[:] = [((x_lo + x_hi) / 2, (ylo + yhi) / 2, (z_lo + z_hi) / 2, (x_hi - x_lo) / 2, (yhi - ylo) / 2,
+                              (z_hi - z_lo) / 2)]
+            return
+        slices[n].append((min(ya, yb), max(ya, yb), (x_lo + x_hi) / 2, max(0.01, (x_hi - x_lo) / 2),
+                          (z_lo + z_hi) / 2, max(0.01, (z_hi - z_lo) / 2)))
+
+    zs = [p.z for p in trunk]
+    # up to the armpits: above them are the collar and the shoulder pads, which the shoulder joint deforms (the helmet
+    # is its own ellipsoid)
+    z0, z1 = pct(zs, 1), min(pct(zs, 99), B["upper_arm.L"].head_local.z - 0.04)
+    for i in range(SLICES):
+        a, b = z0 + (z1 - z0) * i / SLICES, z0 + (z1 - z0) * (i + 1) / SLICES
+        ps = [p for p in trunk if a <= p.z <= b]
+        if len(ps) < 12:
+            continue
+        zm = (a + b) / 2
+        n = next((c for c in chain if zm < B[c].tail_local.z), "neck")
+        cut(n, ps, a, b)
+    if len(head) >= 12:
+        hz = [p.z for p in head]
+        cut("head", head, pct(hz, 1), pct(hz, 99))
+    shape = {"slices": {n: v for n, v in slices.items() if v}, "frames": frames}
+    if shape_head:
+        shape["helmet"] = shape_head[0]
+    for n, pts in limbs.items():
+        if len(pts) < 20:
+            continue
+        inv = B[n].matrix_local.inverted()
+        loc = [inv @ p for p in pts]
+        ys = [p.y for p in loc]
+        x_lo, x_hi = pct([p.x for p in loc], 12), pct([p.x for p in loc], 88)   # the sleeve, not the cuffs / pads
+        z_lo, z_hi = pct([p.z for p in loc], 12), pct([p.z for p in loc], 88)
+        shape[n] = ((x_lo + x_hi) / 2, (z_lo + z_hi) / 2, ((x_hi - x_lo) + (z_hi - z_lo)) / 4, pct(ys, 2), pct(ys, 98))
+    if os.environ.get("PEOPLE_SHAPE_DEBUG"):
+        for n, v in shape["slices"].items():
+            print("[shape]", n, [tuple(round(x, 3) for x in t) for t in v])
+        for n, v in shape.items():
+            if n not in ("slices", "frames", "helmet", "rest"):
+                print("[shape]", n, tuple(round(x, 3) for x in v))
+    return shape
+
+
+def torso_sdf(slices, q):
+    """signed distance (approx.) of a side-frame point q to the stacked rounded slices"""
+    best = 1e9
+    for (a, b, cx, rx, cz, rz) in slices:
+        ox, oz = q.x - cx, q.z - cz
+        r = math.hypot(ox, oz)
+        rho = ((abs(ox) / rx) ** SUPER_N + (abs(oz) / rz) ** SUPER_N) ** (1.0 / SUPER_N)
+        radial = r * (1.0 - 1.0 / rho) if rho > 1e-6 else -min(rx, rz)
+        axial = max(a - q.y, q.y - b)
+        d = math.hypot(radial, axial) if radial > 0 and axial > 0 else max(radial, axial)
+        best = min(best, d)
+    return best
+
+
+def ellipsoid_sdf(e, q):
+    cx, cy, cz, rx, ry, rz = e
+    p = Vector((q.x - cx, q.y - cy, q.z - cz))
+    k0 = Vector((p.x / rx, p.y / ry, p.z / rz)).length
+    k1 = Vector((p.x / rx ** 2, p.y / ry ** 2, p.z / rz ** 2)).length
+    return k0 * (k0 - 1.0) / k1 if k1 > 1e-9 else -min(rx, ry, rz)
+
+
+def limb_sdf(cap, q):
+    cx, cz, r, y0, y1 = cap
+    t = max(y0, min(y1, q.y))
+    return math.sqrt((q.x - cx) ** 2 + (q.y - t) ** 2 + (q.z - cz) ** 2) - r
+
+
+def clearance(arm, shape, raw=False, side=None):
+    """the smallest gap (metres, < 0 = inside) between the arms and the body at the current pose, and what it is.
+    A sample already inside in the rest pose (the armpit of a thick arm on a wide chest) counts only for what it sinks
+    deeper than there (shape["rest"], the raw gaps of the rest pose: raw=True returns them)"""
+    update()
+    pb = arm.pose.bones
+    bodies = []
+    for n, sl in shape["slices"].items():
+        if n == "neck":   # the collar / shoulder pads round the joint: the shoulder deforms there, not a collision
+            continue
+        bodies.append((n, shape["frames"][n] @ pb[n].matrix.inverted().to_3x3(), pb[n].matrix.translation, sl, torso_sdf))
+    if "helmet" in shape:
+        bodies.append(("head", shape["frames"]["head"] @ pb["head"].matrix.inverted().to_3x3(), pb["head"].matrix.translation,
+                       shape["helmet"], ellipsoid_sdf))
+    for n in ("thigh.L", "thigh.R"):
+        if n in shape:
+            bodies.append((n, pb[n].matrix.inverted(), None, shape[n], limb_sdf))
+    rest = shape.get("rest")
+    out = []
+    worst = (1e9, "")
+    for s in (".L", ".R"):
+        for seg in ARM_SEGS:
+            n = seg + s
+            if n not in shape:
+                continue
+            cx, cz, r, y0, y1 = shape[n]
+            m = pb[n].matrix
+            start = y0 + (y1 - y0) * (0.4 if seg == "upper_arm" else 0.0)
+            for i in range(7):
+                q = m @ Vector((cx, start + (y1 - start) * i / 6, cz))
+                for t, M, origin, data, fn in bodies:
+                    if seg == "upper_arm" and i < 3 and t in ("hips", "spine", "chest"):   # the shoulder region
+                        continue
+                    d = fn(data, M @ (q - origin) if origin is not None else M @ q) - r
+                    if rest is not None:
+                        d -= min(0.0, rest[len(out)])
+                    out.append(d)
+                    if d < worst[0] and (side is None or s == side):
+                        worst = (d, f"{n}/{t}")
+    return out if raw else worst
+
+
+CUR_SHAPE = {}   # the person's body while its clips are baked (ik_arm_safe)
+
+
+def ik_arm_safe(arm, s, wrist, pole, hand_dir=None, hand_up=None):
+    """ik_arm, and when the arm then comes closer to the body than CLEAR_MARGIN, the elbow is swung about the
+    shoulder-wrist line (the same wrist, another pole: up to +-120 deg in 15 deg steps) to the swing that keeps the arm
+    farthest from the body - how a person lifts the elbow off the belly"""
+    ik_arm(arm, s, wrist, pole, hand_dir, hand_up)
+    shape = CUR_SHAPE.get("shape") if SPREAD["k"] else None   # spread 0 = the clip as designed (the "before")
+    if not shape:
+        return
+    c0 = clearance(arm, shape, side=s)[0]
+    if c0 >= CLEAR_MARGIN:
+        return
+    S = arm.pose.bones["upper_arm" + s].head.copy()
+    axis = (wrist - S).normalized()
+    best = (c0, 0)
+    for deg in [x for k in range(1, 9) for x in (15 * k, -15 * k)]:
+        q = Quaternion(axis, math.radians(deg))
+        ik_arm(arm, s, wrist, q @ pole, hand_dir, hand_up)
+        c = clearance(arm, shape, side=s)[0]
+        if c > best[0] + 1e-4:
+            best = (c, deg)
+        if c >= CLEAR_MARGIN and abs(deg) <= abs(best[1]):
+            best = (c, deg)
+            break
+    ik_arm(arm, s, wrist, Quaternion(axis, math.radians(best[1])) @ pole, hand_dir, hand_up)
 
 
 class Keyer:
@@ -525,14 +764,70 @@ def legs(pb, p, amp_t, knee_stance, knee_swing, lean=0.0):
         set_rot(pb["foot" + s], q(f))
 
 
-def cycle(arm, name, seconds, pose_fn, step=2):
+SPREAD = {"k": 0, "alt": 0}   # the clip's spread step while it is baked (see the clearance audit)
+AUDIT = {}          # clip -> {"before": (gap, pair), "after": (gap, pair), "spread": k}
+
+
+def cycle(arm, name, seconds, pose_fn, step=2, shape=None, alts=1):
+    """bake the clip; with a shape, every keyed frame is audited and the clip is baked again with SPREAD k = 1, 2, ..
+    (and, for a clip with alts > 1, with its alternative remedy SPREAD alt = 1, ..) until the arms keep CLEAR_MARGIN;
+    when nothing gets there, the best variant is kept"""
     n = max(2, round(seconds * FPS))
-    k = Keyer(arm, name)
-    for fr in list(range(0, n, step)) + [n]:
-        rest_pose(arm)
-        pose_fn(fr / n, arm.pose.bones)
-        k.key(fr + 1)
-    k.done()
+
+    def bake(k, alt):
+        SPREAD["k"], SPREAD["alt"] = k, alt
+        kr = Keyer(arm, name)
+        worst = (1e9, "")
+        for fr in list(range(0, n, step)) + [n]:
+            rest_pose(arm)
+            pose_fn(fr / n, arm.pose.bones)
+            if shape:
+                c = clearance(arm, shape)
+                if c[0] < worst[0]:
+                    worst = (c[0], c[1] + f"@{fr / FPS:.2f}s")
+            kr.key(fr + 1)
+        if os.environ.get("PEOPLE_SHAPE_DEBUG"):
+            print("[spread]", name, alt, k, round(worst[0] * 100, 1), worst[1])
+        return kr, worst
+
+    def drop(kr):
+        arm.animation_data.action = None
+        bpy.data.actions.remove(kr.act)
+
+    kr, before = bake(0, 0)
+    best = (before[0], 0, 0)
+    if shape and before[0] < CLEAR_MARGIN:
+        drop(kr)
+        kr = None
+        for alt in range(alts):
+            for k in range(1, SPREAD_MAX + 1):
+                kr, worst = bake(k, alt)
+                if worst[0] > best[0]:
+                    best = (worst[0], k, alt)
+                if worst[0] >= CLEAR_MARGIN:
+                    break
+                drop(kr)
+                kr = None
+            if kr:
+                break
+        if not kr:
+            kr, worst = bake(best[1], best[2])
+    kr.done()
+    after = before if best[1] == 0 and best[2] == 0 else worst
+    AUDIT[name] = {"before": before, "after": after, "spread": best[1], "alt": best[2]}
+    SPREAD["k"], SPREAD["alt"] = 0, 0
+
+
+def keyed(p, ks):
+    """value at p of smoothstep-eased keys [(p, value), ...]"""
+    if p <= ks[0][0]:
+        return ks[0][1]
+    for (t0, a0), (t1, a1) in zip(ks, ks[1:]):
+        if p <= t1:
+            u = (p - t0) / (t1 - t0) if t1 > t0 else 1.0
+            u = u * u * (3 - 2 * u)
+            return a0 + (a1 - a0) * u
+    return ks[-1][1]
 
 
 def make_actions(arm, body, P):
@@ -541,12 +836,48 @@ def make_actions(arm, body, P):
     down = max(18.0, min(48.0, 46.0 - 34.0 * (max(P["waist_w"], P["chest_w"], P["arm_t"], P["hip_w"] * 0.9) - 1.0)))
     leg = D["leg"]
     sc = leg / 0.66   # the source's leg is ~0.66 m
+    shape = body_shape(arm, body)
+    AUDIT.clear()
+    rest_pose(arm)
+    shape["rest"] = clearance(arm, shape, raw=True)
+    CUR_SHAPE["shape"] = shape
+    c = clearance(arm, shape)
+    AUDIT["(rest)"] = {"before": c, "after": c, "spread": 0}
+    B = arm.data.bones
+    ankle = {s: B["foot" + s].head_local.copy() for s in (".L", ".R")}
+
+    def sp():
+        return 4.0 * SPREAD["k"]
+
+    def abd(deg):
+        """arm abduction (degrees below the rest line, ~33 deg under the horizontal; -33 = horizontal, -123 = straight
+        up) moved away from the body by the audit's spread: a hanging arm goes out, a raised one comes down from the
+        head - never past the horizontal"""
+        return deg - sp() if deg > -33.0 else min(-33.0, deg + sp())
+
+    def arm_fk(pb, s, a, flex, elbow):
+        """a: abduction (see abd, already spread), flex: + = back / - = forward, elbow: - = bent"""
+        q = qa((1, 0, 0), flex) @ qa((0, 1, 0), a)
+        f = qa((1, 0, 0), elbow)
+        set_rot(pb["upper_arm" + s], q if s == ".L" else mir(q))
+        set_rot(pb["forearm" + s], f if s == ".L" else mir(f))
+
+    def hips_move(pb, off, rot=None):
+        """the pelvis (and all above it) moved by off (armature space, metres), turned by rot (armature space)"""
+        pb["hips"].location = pb["hips"].bone.matrix_local.to_3x3().transposed() @ off
+        if rot is not None:
+            set_rot(pb["hips"], rot)
+
+    def plant(dl=Vector(), dr=Vector(), toe_l=0.0, toe_r=0.0):
+        """the feet by IK at their rest place + offsets (a planted foot stays where it stands whatever the pelvis does)"""
+        ik_leg(arm, ".L", ankle[".L"] + dl, toe_l)
+        ik_leg(arm, ".R", ankle[".R"] + dr, toe_r)
 
     def idle(p, pb):
         br = math.sin(2 * math.pi * p)
         set_rot(pb["chest"], qa((1, 0, 0), -1.2 * br))
         set_rot(pb["head"], qa((0, 0, 1), 6 * math.sin(2 * math.pi * p + 0.6)) @ qa((1, 0, 0), 1.5 * br))
-        arms_down(pb, down + 1.5 * br)
+        arms_down(pb, abd(down) + 1.5 * br)
         pb["hips"].location = (0, 0.004 * sc * br, 0)
 
     def walk(p, pb):
@@ -555,8 +886,8 @@ def make_actions(arm, body, P):
         pb["hips"].location = (0, -0.02 * sc * (0.5 + 0.5 * math.cos(4 * math.pi * p)), 0)
         set_rot(pb["hips"], qa((0, 0, 1), -5 * c))
         set_rot(pb["chest"], qa((0, 0, 1), 7 * c) @ qa((1, 0, 0), 2))
-        set_rot(pb["upper_arm.L"], qa((1, 0, 0), 16 * c) @ qa((0, 1, 0), down))
-        set_rot(pb["upper_arm.R"], mir(qa((1, 0, 0), -16 * c) @ qa((0, 1, 0), down)))
+        set_rot(pb["upper_arm.L"], qa((1, 0, 0), 16 * c) @ qa((0, 1, 0), abd(down)))
+        set_rot(pb["upper_arm.R"], mir(qa((1, 0, 0), -16 * c) @ qa((0, 1, 0), abd(down))))
         set_rot(pb["forearm.L"], qa((1, 0, 0), -18 - 8 * max(0, -c)))
         set_rot(pb["forearm.R"], mir(qa((1, 0, 0), -18 - 8 * max(0, c))))
 
@@ -568,13 +899,13 @@ def make_actions(arm, body, P):
         set_rot(pb["spine"], qa((1, 0, 0), 10))
         set_rot(pb["chest"], qa((0, 0, 1), 12 * c))
         set_rot(pb["head"], qa((1, 0, 0), -8))
-        set_rot(pb["upper_arm.L"], qa((1, 0, 0), 40 * c) @ qa((0, 1, 0), down))
-        set_rot(pb["upper_arm.R"], mir(qa((1, 0, 0), -40 * c) @ qa((0, 1, 0), down)))
+        set_rot(pb["upper_arm.L"], qa((1, 0, 0), 40 * c) @ qa((0, 1, 0), abd(down)))
+        set_rot(pb["upper_arm.R"], mir(qa((1, 0, 0), -40 * c) @ qa((0, 1, 0), abd(down))))
         set_rot(pb["forearm.L"], qa((1, 0, 0), -70 - 15 * c))
         set_rot(pb["forearm.R"], mir(qa((1, 0, 0), -70 + 15 * c)))
 
     def wave(p, pb):
-        set_rot(pb["upper_arm.L"], qa((1, 0, 0), -6) @ qa((0, 1, 0), down))
+        set_rot(pb["upper_arm.L"], qa((1, 0, 0), -6) @ qa((0, 1, 0), abd(down)))
         set_rot(pb["forearm.L"], qa((1, 0, 0), -14))
         set_rot(pb["head"], qa((0, 0, 1), -8) @ qa((0, 1, 0), 4))
         set_rot(pb["chest"], qa((0, 1, 0), -3))
@@ -583,22 +914,26 @@ def make_actions(arm, body, P):
         sw = math.sin(2 * math.pi * 4 * p) * rise
         S = D["sh_R"]
         L = D["armlen"]
-        lo = S + Vector((-0.12, -0.08, -0.85)).normalized() * L * 0.95
-        up = S + Vector((-0.45, -0.25, 0.75)).normalized() * L * 0.93 + Vector((-0.05 * sw * L, 0, 0))
+        out = 0.07 * SPREAD["k"]
+        lo = S + Vector((-0.12 - out, -0.08, -0.85)).normalized() * L * 0.95
+        up = S + Vector((-0.45 - 0.08 * SPREAD["k"], -0.25, 0.75 - 0.03 * SPREAD["k"])).normalized() * L * 0.93 + Vector((-0.05 * sw * L, 0, 0))
         W = lo.lerp(up, rise)
         hand_dir = Vector((0, -0.25, -1)).lerp(Vector((-0.35 * sw, -0.1, 1)), rise)
         update()
-        ik_arm(arm, ".R", W, Vector((-1, 0.3, -0.6)), hand_dir, Vector((0, -1, 0)))
+        ik_arm_safe(arm, ".R", W, Vector((-1 - 0.3 * SPREAD["k"], 0.3, -0.6)), hand_dir, Vector((0, -1, 0)))
 
     torso_front = front_y(body, D["hips"].z, D["chest"].z + 0.1 * sc, 0.25 * sc)
     box = Vector((0.40, 0.30, 0.30))   # prop_box: width (x), depth (y), height (z), metres
 
     def carry_pose(pb):
+        """both hands on the box's sides; the audit's spread moves the box forward and the elbows out"""
+        k = SPREAD["k"]
         update()
-        C = Vector((0.0, torso_front - box.y / 2 - 0.03, (D["spine"].z + D["chest"].z) / 2 + 0.02 * sc))
+        C = Vector((0.0, torso_front - box.y / 2 - 0.03 - (0.01 if not SPREAD["alt"] else 0.03) * k,
+                   (D["spine"].z + D["chest"].z) / 2 + 0.02 * sc + (0.025 if not SPREAD["alt"] else 0.005) * k))
         for s, sx in ((".L", 1), (".R", -1)):
-            W = C + Vector((sx * (box.x / 2 + 0.02), 0.02, -0.02))
-            ik_arm(arm, s, W, Vector((sx * 1.0, 0.6, -0.8)), Vector((0.0, -1, -0.15)), Vector((-sx * 1.0, 0, 0)))
+            W = C + Vector((sx * (box.x / 2 + 0.02), 0.02 + 0.01 * k, -0.02))
+            ik_arm_safe(arm, s, W, Vector((sx * (1.0 + 0.6 * k), 0.6 / (1 + k), -0.8 / (1 + 0.2 * k))), Vector((0.0, -1, -0.15)), Vector((-sx * 1.0, 0, 0)))
         update()
         m = Matrix.Translation(C)
         pb["prop.R"].matrix = m   # the box's centre, its axes = the armature's (upright, facing the front)
@@ -606,8 +941,15 @@ def make_actions(arm, body, P):
         return {n: (pb[n].rotation_quaternion.copy(), pb[n].location.copy()) for n in
                 ("upper_arm.L", "forearm.L", "hand.L", "upper_arm.R", "forearm.R", "hand.R", "prop.R")}
 
-    rest_pose(arm)
-    carry = carry_pose(arm.pose.bones)
+    carry_cache = {}
+
+    def carry(pb):
+        key = (SPREAD["k"], SPREAD["alt"])
+        if key not in carry_cache:
+            rest_pose(arm)
+            carry_cache[key] = carry_pose(pb)
+            rest_pose(arm)
+        return carry_cache[key]
 
     def put(pb, saved):
         for n, (q, l) in saved.items():
@@ -615,27 +957,41 @@ def make_actions(arm, body, P):
             pb[n].location = l
 
     def carry_idle(p, pb):
+        saved = carry(pb)
         br = math.sin(2 * math.pi * p)
         set_rot(pb["spine"], qa((1, 0, 0), -3 - 0.8 * br))
         pb["hips"].location = (0, 0.004 * sc * br, 0)
-        put(pb, carry)
+        put(pb, saved)
 
     def carry_walk(p, pb):
+        saved = carry(pb)
         legs(pb, p, 16, 8, 42)
         c = math.cos(2 * math.pi * p)
         pb["hips"].location = (0, -0.018 * sc * (0.5 + 0.5 * math.cos(4 * math.pi * p)), 0)
         set_rot(pb["hips"], qa((0, 0, 1), -4 * c))
         set_rot(pb["spine"], qa((1, 0, 0), -3) @ qa((0, 0, 1), 3 * c))
-        put(pb, carry)
+        put(pb, saved)
 
     def tool_use(p, pb):
+        k = SPREAD["k"]
         set_rot(pb["head"], qa((1, 0, 0), 14 + 2 * math.sin(2 * math.pi * p)))
         set_rot(pb["neck"], qa((1, 0, 0), 6))
         update()
         C = D["chest"].lerp(D["chest_top"], 0.25)
-        T = Vector((-0.05 * sc, torso_front - 0.26 * sc, C.z))   # tablet centre
-        Wr = T + Vector((-0.11, 0.03, -0.03))
-        ik_arm(arm, ".R", Wr, Vector((-1, 0.5, -0.8)), Vector((0.25, -1, 0.1)), Vector((0, 0, 1)))
+        # with the spread the tablet comes to the middle and both hands hold it by its sides (g: 0 -> 1 over 4 steps)
+        g = min(1.0, k / 4.0)
+        T = Vector((-0.05 * sc * (1.0 - g), torso_front - 0.26 * sc - (0.01 if not SPREAD["alt"] else 0.02) * k,
+                    C.z + 0.01 * k))   # tablet centre
+        Wr = T + Vector((-0.11 - 0.02 * g, 0.03, -0.03))
+        # within 85 % of the reach: a straight arm cannot take its elbow off the flank (the tablet comes nearer)
+        S = D["sh_R"]
+        lat = (Wr.x - S.x) ** 2 + (Wr.z - S.z) ** 2
+        reach = 0.85 * D["armlen"]
+        if not SPREAD["alt"] and (Wr - S).length > reach and reach * reach > lat:
+            dy = S.y - math.sqrt(reach * reach - lat) - Wr.y
+            T.y += dy
+            Wr.y += dy
+        ik_arm_safe(arm, ".R", Wr, Vector((-1 - 0.6 * k, 0.5 / (1 + k), -0.8 / (1 + 0.2 * k))), Vector((0.25, -1, 0.1)), Vector((0, 0, 1)))
         update()
         pal = pb["prop.R"]
         rot = Matrix.Rotation(math.radians(-40), 4, "X")   # screen (+Z of the tablet) toward the eyes
@@ -644,27 +1000,154 @@ def make_actions(arm, body, P):
         n = (rot.to_3x3() @ Vector((0, 0, 1)))
         tap = 0.5 + 0.5 * math.cos(2 * math.pi * 3 * p)
         Wl = T + Vector((0.06 + 0.03 * math.sin(2 * math.pi * 2 * p), 0.0, 0.0)) + n * (0.10 + 0.04 * tap) + Vector((0.04, 0.02, -0.03))
-        ik_arm(arm, ".L", Wl, Vector((1, 0.5, -0.8)), Vector((-0.6, -0.8, -0.3)), Vector((0, 0, 1)))
+        # a wide body: the left hand cannot reach across it to tap - with the spread it takes the tablet's left edge
+        # instead (both hands on the tablet, the left thumb taps: a small twitch over the screen)
+        if g > 0:
+            grip = T + Vector((0.13, 0.03, -0.03)) + n * (0.015 * tap)
+            Wl = Wl.lerp(grip, g)
+        ik_arm_safe(arm, ".L", Wl, Vector((1 + 0.6 * k, 0.5 / (1 + k), -0.8)), Vector((-0.6, -0.8, -0.3)), Vector((0, 0, 1)))
 
-    cycle(arm, "idle", 3.0, idle, step=3)
-    cycle(arm, "walk", 1.1, walk)
-    cycle(arm, "run", 0.7, run, step=1)
-    cycle(arm, "wave", 2.4, wave, step=1)
-    cycle(arm, "carry_idle", 3.0, carry_idle, step=3)
-    cycle(arm, "carry_walk", 1.2, carry_walk)
-    cycle(arm, "tool_use", 3.0, tool_use, step=2)
+    # ---- the new clips (2026-11-18): whole-body moves with the feet planted by IK (or in the air with the pelvis)
+    def dance(p, pb):
+        """4 s, 8 beats (120 bpm): step-touch to the left and to the right, a bounce on every beat, the pelvis and the
+        chest twisting against each other; beats 1-4 the bent arms pump in turn, beats 5-8 both arms up, swaying"""
+        half = int(4 * p) % 2                 # 0: the left foot steps out, 1: the right one
+        ph = (4 * p) % 1.0
+        side = 1.0 if half == 0 else -1.0
+        out = math.sin(math.pi * ph) ** 2    # 0 home .. 1 out .. 0 home
+        lift = 0.035 * sc * abs(math.sin(2 * math.pi * ph))
+        bounce = -0.012 * sc - 0.03 * sc * (0.5 + 0.5 * math.cos(2 * math.pi * 8 * p))
+        twist = math.sin(2 * math.pi * 2 * p)
+        hips_move(pb, Vector((side * 0.06 * sc * out, 0.0, bounce)),
+                  qa((0, 0, 1), 9 * twist) @ qa((0, 1, 0), side * 4 * out))
+        set_rot(pb["spine"], qa((0, 0, 1), -5 * twist) @ qa((0, 1, 0), -side * 3 * out))
+        set_rot(pb["chest"], qa((0, 0, 1), -9 * twist) @ qa((1, 0, 0), 3))
+        set_rot(pb["head"], qa((1, 0, 0), 5 * math.cos(2 * math.pi * 8 * p)) @ qa((0, 0, 1), 8 * twist))
+        # arms: the up-section weight (beats 5..8), eased over half a beat at both ends
+        if p < 0.0625:
+            wu = 0.5 - 0.5 * keyed(p / 0.0625, [(0, 0), (1, 1)])
+        elif p < 0.4375:
+            wu = 0.0
+        elif p < 0.5625:
+            wu = keyed((p - 0.4375) / 0.125, [(0, 0), (1, 1)])
+        elif p < 0.9375:
+            wu = 1.0
+        else:
+            wu = 1.0 - 0.5 * keyed((p - 0.9375) / 0.0625, [(0, 0), (1, 1)])
+        sway = math.sin(2 * math.pi * 4 * p)
+        for s, sg in ((".L", 1.0), (".R", -1.0)):
+            a = math.sin(2 * math.pi * 4 * p + (0.0 if s == ".L" else math.pi))   # pump: one arm up per beat
+            # the spread also opens the elbows: a bent forearm swings the hand up to the (big) helmet
+            ease = max(0.2, 1.0 - 0.05 * SPREAD["k"])
+            pump = (down - 30.0, (-35.0 - 30.0 * a) * ease, (-95.0 + 15.0 * a) * ease)
+            up = (-100.0 - sg * 14.0 * sway, -10.0, -25.0 * ease)
+            if SPREAD["alt"]:   # low arms: swinging at the sides, the "up" half only out to the sides
+                pump = (down - 15.0, -20.0 - 25.0 * a, -35.0 + 10.0 * a)
+                up = (-50.0 - sg * 10.0 * sway, -5.0, -10.0)
+            arm_fk(pb, s, abd(pump[0] + (up[0] - pump[0]) * wu), pump[1] + (up[1] - pump[1]) * wu,
+                   pump[2] + (up[2] - pump[2]) * wu)
+            set_rot(pb["hand" + s], qa((1, 0, 0), 20 * wu * math.sin(2 * math.pi * 8 * p)) if s == ".L"
+                    else mir(qa((1, 0, 0), 20 * wu * math.sin(2 * math.pi * 8 * p))))
+        step = Vector((side * 0.16 * sc * out, 0.0, lift))
+        plant(step if half == 0 else Vector(), step if half == 1 else Vector(),
+              toe_l=12 * lift / (0.035 * sc) if half == 0 else 0.0, toe_r=12 * lift / (0.035 * sc) if half == 1 else 0.0)
+
+    def jumping_jacks(p, pb):
+        """1 s: hop out (feet apart, arms up over the head), hop in (feet together, arms down); two short flights"""
+        o = 0.5 - 0.5 * math.cos(2 * math.pi * p)
+        s2 = abs(math.sin(2 * math.pi * p))
+        hop = 0.07 * sc * max(0.0, (s2 - 0.35) / 0.65) ** 1.5
+        absorb = 0.045 * sc * (1.0 - s2) ** 2
+        wide = 0.20 * sc * o
+        sag = leg - math.sqrt(max(0.0, leg * leg - wide * wide))
+        hips_move(pb, Vector((0, 0, hop - absorb - sag)))
+        set_rot(pb["head"], qa((1, 0, 0), -3 * o))
+        for s, sg in ((".L", 1.0), (".R", -1.0)):
+            arm_fk(pb, s, abd(down + ((-112.0 if not SPREAD["alt"] else -78.0) - down) * o), -6.0, (-12.0 - 10.0 * o) * max(0.1, 1.0 - 0.08 * SPREAD["k"]))
+            f = qa((1, 0, 0), (0 if SPREAD["alt"] else 25) * math.sin(2 * math.pi * 2 * p) * o)   # the hands flap at the top
+            set_rot(pb["hand" + s], f if s == ".L" else mir(f))
+        toe = 25 * hop / (0.07 * sc)
+        plant(Vector((wide, 0, hop)), Vector((-wide, 0, hop)), toe, toe)
+
+    T_JUMP = 1.6
+    t_take, t_land = 0.46, 0.80
+    flight = (t_land - t_take) * T_JUMP
+    H_JUMP = 9.81 * flight * flight / 8.0   # the peak of a ballistic flight of that time (g = 9.81)
+
+    def jump(p, pb):
+        """1.6 s: stand, counter-movement squat with the arms swung back, push-off onto the toes swinging the arms up,
+        a ballistic flight (knees tucked a little), landing with a squat, standing up"""
+        crouch = 0.30 * leg
+        toes = 0.05 * sc
+        if p < t_take:
+            hip = keyed(p, [(0.0, 0.0), (0.08, 0.0), (0.36, -crouch), (t_take, toes)])
+            feet = keyed(p, [(0.0, 0.0), (0.40, 0.0), (t_take, toes)])
+            toe = keyed(p, [(0.0, 0.0), (0.40, 0.0), (t_take, 35.0)])
+        elif p < t_land:
+            u = (p - t_take) / (t_land - t_take)
+            h = 4.0 * H_JUMP * u * (1.0 - u)
+            base = toes * (1.0 - u)
+            hip = base + h
+            tuck = 0.0 if SPREAD["alt"] else 0.12 * leg / (1.0 + 0.15 * SPREAD["k"])
+            feet = max(0.0, base + h - tuck * math.sin(math.pi * u))   # the knee tuck
+            toe = 35.0 * (1.0 - u) + 10.0 * math.sin(math.pi * u)
+        else:
+            hip = keyed(p, [(t_land, 0.0), (0.88, -0.5 * crouch), (1.0, 0.0)])
+            feet, toe = 0.0, 0.0
+        cr = max(0.0, -hip / crouch)
+        hips_move(pb, Vector((0, 0.30 * cr * crouch, hip)), qa((1, 0, 0), 12 * cr))
+        set_rot(pb["spine"], qa((1, 0, 0), 14 * cr))
+        set_rot(pb["chest"], qa((1, 0, 0), 8 * cr))
+        set_rot(pb["head"], qa((1, 0, 0), -18 * cr))
+        flex = keyed(p, [(0.0, -8.0), (0.08, -8.0), (0.34, 50.0), (t_take, -95.0), (0.62, -105.0), (t_land, -70.0), (0.9, -40.0), (1.0, -8.0)])
+        out = keyed(p, [(0.0, down), (0.34, down), (0.5, down - 25.0), (t_land, down - 20.0), (1.0, down)])
+        elbow = keyed(p, [(0.0, -14.0), (0.34, -8.0), (0.5, -30.0), (t_land, -35.0), (1.0, -14.0)])
+        if SPREAD["alt"]:
+            flex = max(flex, -90.0)
+        for s in (".L", ".R"):   # the spread moves out the arms hanging by the body, not the ones swung up
+            arm_fk(pb, s, out - sp() * (1.0 if flex >= 0 else max(0.4, 1.0 + flex / 100.0)), flex, elbow)
+        plant(Vector((0, 0, feet)), Vector((0, 0, feet)), toe, toe)
+
+    def bow(p, pb):
+        """2.6 s: a bow from the hips (about 40 deg in all), the arms along the body, held, straightened up"""
+        w = keyed(p, [(0.0, 0.0), (0.15, 0.0), (0.40, 1.0), (0.62, 1.0), (0.88, 0.0), (1.0, 0.0)])
+        hips_move(pb, Vector((0, 0.07 * sc * w, -0.01 * sc * w)), qa((1, 0, 0), 16 * w))
+        set_rot(pb["spine"], qa((1, 0, 0), 12 * w))
+        set_rot(pb["chest"], qa((1, 0, 0), 10 * w))
+        set_rot(pb["neck"], qa((1, 0, 0), 5 * w))
+        set_rot(pb["head"], qa((1, 0, 0), 10 * w))
+        for s in (".L", ".R"):
+            arm_fk(pb, s, abd(down), 26 * w - 4, -10 - 6 * w)
+        plant()
+
+    cycle(arm, "idle", 3.0, idle, step=3, shape=shape)
+    cycle(arm, "walk", 1.1, walk, shape=shape)
+    cycle(arm, "run", 0.7, run, step=1, shape=shape)
+    cycle(arm, "wave", 2.4, wave, step=1, shape=shape)
+    cycle(arm, "carry_idle", 3.0, carry_idle, step=3, shape=shape, alts=2)
+    cycle(arm, "carry_walk", 1.2, carry_walk, shape=shape, alts=2)
+    cycle(arm, "tool_use", 3.0, tool_use, step=2, shape=shape, alts=2)
+    cycle(arm, "dance", 4.0, dance, step=2, shape=shape, alts=2)
+    cycle(arm, "jumping_jacks", 1.0, jumping_jacks, step=1, shape=shape, alts=2)
+    cycle(arm, "jump", T_JUMP, jump, step=1, shape=shape, alts=2)
+    cycle(arm, "bow", 2.6, bow, step=2, shape=shape)
     rest_pose(arm)
     return box
 
 
+# id: (title for the editor and the passport, loops, the prop on prop.R)
 ACTIONS = {
-    "idle": "стоит, дышит (3 с, петля)",
-    "walk": "шаг на месте (1,1 с, петля)",
-    "run": "бег на месте (0,7 с, петля)",
-    "wave": "машет правой рукой (2,4 с)",
-    "carry_idle": "держит ящик двумя руками (prop.R = центр ящика), стоит (3 с, петля)",
-    "carry_walk": "несёт ящик, шаг на месте (1,2 с, петля)",
-    "tool_use": "планшет в правой руке (prop.R), левая тычет в экран (3 с, петля)",
+    "idle": ("стоит, дышит (3 с, петля)", True, None),
+    "walk": ("шаг на месте (1,1 с, петля)", True, None),
+    "run": ("бег на месте (0,7 с, петля)", True, None),
+    "wave": ("машет правой рукой (2,4 с)", False, None),
+    "carry_idle": ("держит ящик двумя руками (prop.R = центр ящика), стоит (3 с, петля)", True, "prop_box"),
+    "carry_walk": ("несёт ящик, шаг на месте (1,2 с, петля)", True, "prop_box"),
+    "tool_use": ("планшет в правой руке (prop.R), левая тычет в экран (3 с, петля)", True, "prop_tool"),
+    "dance": ("танцует: шаг в сторону с пружинкой, руки качают, потом руки вверх (4 с, петля)", True, None),
+    "jumping_jacks": ("машет руками и ногами: прыжки «ноги врозь — руки вверх» (1 с, петля)", True, None),
+    "jump": ("прыжок на месте: присед, толчок, полёт, приземление (1,6 с)", False, None),
+    "bow": ("поклон (2,6 с)", False, None),
 }
 
 
@@ -698,7 +1181,12 @@ def export_person(arm, body, P, out_root, s):
                         "prop.L": "левая ладонь"},
             "frame": "glTF: +Y вверх, лицо смотрит в +Z, левая рука (.L) в +X; корень (root) на полу",
         },
-        "animations": [{"id": k, "title": v} for k, v in ACTIONS.items()],
+        # per clip: loops or plays once, the prop shown on prop.R, the clearance audit (the smallest gap between the
+        # arms and the body over the clip, cm; spread = how many steps the arms were moved out to get it)
+        "animations": [dict({"id": k, "title": t, "loop": loop}, **({"prop": prop} if prop else {}),
+                            **({"clearance_cm": round(AUDIT[k]["after"][0] * 100, 1), "spread": AUDIT[k]["spread"], "alt": AUDIT[k].get("alt", 0)}
+                               if k in AUDIT else {}))
+                       for k, (t, loop, prop) in ACTIONS.items()],
         "props": ["prop_box", "prop_tool"],
         "variants": [{"id": "intact", "title": "Целый", "inGame": "shell"}],
     }
@@ -763,6 +1251,30 @@ def make_props(objects_root):
         print(f"[people] prop {pid} -> {dst}")
 
 
+def print_audit(audit, path):
+    """the clearance table: per clip and person the smallest gap before the fix -> after it (cm, < 0 = an arm inside
+    the body), the spread steps used; the worst pair and time are in the JSON"""
+    if not audit:
+        return
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(audit, f, ensure_ascii=False, indent=1)
+    people = list(audit)
+    clips = list(next(iter(audit.values())))
+    short = {pid: pid.replace("person_", "") for pid in people}
+    print("[people] clearance audit, cm: before -> after (spread steps; a = the alternative remedy)")
+    print("clip".ljust(14) + "".join(short[p][:12].rjust(16) for p in people))
+    for c in clips:
+        row = c.ljust(14)
+        for pid in people:
+            a = audit[pid].get(c)
+            row += (f"{a['before_cm']:.1f}>{a['after_cm']:.1f}" + (f"({a['spread']}{'a' if a.get('alt') else ''})" if a["spread"] else "")).rjust(16) if a else " " * 16
+        print(row)
+    bad = [(pid, c, a) for pid in people for c, a in audit[pid].items() if a["after_cm"] < 0 and c != "(rest)"]
+    print(f"[people] clips with an arm inside the body after the fix: {len(bad)}" +
+          "".join(f"\n  {pid} {c}: {a['after_cm']} cm at {a['after_at']}" for pid, c, a in bad))
+    print(f"[people] audit -> {path}")
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     opt = {}
@@ -775,9 +1287,11 @@ def main():
     only = set(opt["only"].split(",")) if opt.get("only") else None
     os.makedirs(work, exist_ok=True)
     base = os.path.join(work, "people_base.blend")
-    build_base()
-    bpy.context.scene.render.fps = FPS
-    bpy.ops.wm.save_as_mainfile(filepath=base)
+    if not (opt.get("reuse") and os.path.isfile(base)):   # --reuse 1: the base of an earlier run (weights take a while)
+        build_base()
+        bpy.context.scene.render.fps = FPS
+        bpy.ops.wm.save_as_mainfile(filepath=base)
+    audit = {}
     for P in PEOPLE:
         if only and P["id"] not in only:
             continue
@@ -785,10 +1299,15 @@ def main():
         arm, body = bpy.data.objects["skeleton"], bpy.data.objects["body"]
         s = reshape(arm, body, P)
         make_actions(arm, body, P)
+        audit[P["id"]] = {k: {"before_cm": round(v["before"][0] * 100, 1), "before_at": v["before"][1],
+                              "after_cm": round(v["after"][0] * 100, 1), "after_at": v["after"][1], "spread": v["spread"], "alt": v.get("alt", 0)}
+                          for k, v in AUDIT.items()}
         export_person(arm, body, P, out, s)
         bpy.ops.wm.save_as_mainfile(filepath=os.path.join(work, P["id"] + ".blend"))
+    print_audit(audit, os.path.join(work, "people_clearance.json"))
     if not only or "props" in only:
         make_props(os.path.join(os.path.dirname(out.rstrip("/\\")), "objects"))
 
 
-main()
+if __name__ == "__main__":
+    main()

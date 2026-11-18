@@ -126,9 +126,10 @@ def main():
     plan_dir = os.path.join(nav, "hub_plans")
     plan_path = os.path.join(plan_dir, f"{a.hub}.json")
     if L.get("districts"):
-        from hub_plan import plan_document, population_estimate
+        from hub_plan import air_fleet, plan_document, population_estimate
         plan = plan_document(a.hub, L)
         plan["population_estimate"] = population_estimate(plan)
+        plan["air_fleet"] = air_fleet(a.hub, world)
         os.makedirs(plan_dir, exist_ok=True)
         open(plan_path, "w", encoding="utf-8", newline="\n").write(json.dumps(plan, ensure_ascii=False, indent=0) + "\n")
     elif os.path.exists(plan_path):

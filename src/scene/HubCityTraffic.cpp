@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <string>
 
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/traffic/HubLaneNetwork.h"
 
 namespace scene
 {
@@ -139,7 +141,7 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
                 }
             }
         }
-        // the monorail: one train shuttling along the beam (a dwell at each end, its stations)
+        // the monorail: one train shuttling along the beam (a dwell at each end, its stations) [air traffic below]
         if (st.monorail)
         {
             const bool alongZ = std::abs(d.z) > std::abs(d.x);
@@ -175,6 +177,78 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
                 v.distance = static_cast<float>(dist);
                 out.push_back(v);
             }
+        }
+    }
+}
+
+void hubCityAirTraffic(const game::navigation::HubPlan& plan, const game::navigation::traffic::HubLaneNetwork& lanes,
+                       double timeSeconds, const glm::vec3& cameraLocal, float radius, std::vector<HubAirTrafficInstance>& out)
+{
+    out.clear();
+    const auto& fleet = plan.airFleet();
+    if (fleet.empty())
+        return;
+    const glm::dvec3 camera(cameraLocal);
+    const double t = std::fmod(timeSeconds, 86400.0);
+    constexpr double ShipsPerMeter = 1.0 / 3500.0;   // «не обязательно слишком много»: one per 3.5 km of lane
+    std::vector<double> cum;
+    for (std::size_t li = 0; li < lanes.lanes().size(); ++li)
+    {
+        const auto& lane = lanes.lanes()[li];
+        std::size_t n = lane.stationsLocal.size();
+        if (n < 2)
+            continue;
+        // the plaza ring runs 1.75 laps (merges / diverges): one lap is the loop a ship keeps flying
+        if (lane.id.find(".plaza.") != std::string::npos)
+            n = std::min<std::size_t>(n, 37);
+        cum.assign(n, 0.0);
+        for (std::size_t k = 1; k < n; ++k)
+            cum[k] = cum[k - 1] + glm::length(lane.stationsLocal[k] - lane.stationsLocal[k - 1]);
+        const double length = cum[n - 1];
+        if (length < 200.0)
+            continue;
+        // the ships this lane carries: the fleet's hulls short enough for it, by weight
+        double total = 0.0;
+        for (const auto& s : fleet)
+            if (s.lengthMeters <= lane.maxShipLengthMeters)
+                total += s.weight;
+        if (total <= 0.0)
+            continue;
+        const std::uint32_t seed = static_cast<std::uint32_t>(std::hash<std::string>{}(lane.id));
+        const int count = std::max(1, static_cast<int>(std::lround(length * ShipsPerMeter * (lane.blue ? 0.5 : 1.0))));
+        const double speed = 0.7 * lane.maxSpeedMps;
+        const glm::dvec3 up(0.0, lane.stationsLocal[0].y < 0.0 ? -1.0 : 1.0, 0.0);
+        for (int i = 0; i < count; ++i)
+        {
+            const double s = std::fmod((i + 0.7 * hash01(seed, static_cast<std::uint32_t>(i))) * length / count + speed * t, length);
+            std::size_t k = 1;
+            while (k < n - 1 && cum[k] < s)
+                ++k;
+            const glm::dvec3 a = lane.stationsLocal[k - 1], b = lane.stationsLocal[k];
+            const double segment = std::max(1.0e-6, cum[k] - cum[k - 1]);
+            const glm::dvec3 p = a + (b - a) * ((s - cum[k - 1]) / segment);
+            const double dist = glm::length(p - camera);
+            if (dist > radius)
+                continue;
+            glm::dvec3 forward = b - a;
+            forward = glm::length(forward) > 1.0e-6 ? glm::normalize(forward) : glm::dvec3(0.0, 0.0, 1.0);
+            // the hull: a weighted pick, stable for this ship of this lane
+            double pick = hash01(seed + 77u, static_cast<std::uint32_t>(i)) * total;
+            int index = 0;
+            for (std::size_t f = 0; f < fleet.size(); ++f)
+            {
+                if (fleet[f].lengthMeters > lane.maxShipLengthMeters)
+                    continue;
+                index = static_cast<int>(f);
+                pick -= fleet[f].weight;
+                if (pick <= 0.0)
+                    break;
+            }
+            HubAirTrafficInstance v;
+            v.fleetIndex = index;
+            v.local = frame(p, -forward, glm::abs(forward.y) > 0.95 ? glm::dvec3(1.0, 0.0, 0.0) : up);   // nose -Z
+            v.distance = static_cast<float>(dist);
+            out.push_back(v);
         }
     }
 }

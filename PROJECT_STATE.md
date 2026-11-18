@@ -6458,3 +6458,17 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   Evidence: a 2 m/s touch-down on hubv_pad_star -> «closing 1.99997 m/s, 0.23 MJ» (no damage), a 0.3 m/s rebound
   (no gravity in the hub, no landing clamps yet - the ship floats off slowly); the full-thrust dive still 125 m/s,
   1.94 GJ; a ship sunk into the pad: pushed out, no impulse.
+- 2026-11-18 HUB AIR TRAFFIC BY THE HUB'S BLOC (author: «воздушный трафик из фронтиров и др. их там не обязательно
+  делать слишком много, но они должны быть» + «можешь использовать разные корабли в рамках политического блока к
+  которому принадлежит хаб»): tools/models/hub_plan.py air_fleet -> the hub plan's "air_fleet": the hub's polity (its
+  owner; a prototype hub: its system's hub owner) -> bloc (economy_rules blocs_members); catalog ships whose
+  manufacturer's polity (colonization canon industry.json) is in the bloc (weight 1), the blocs it trades with
+  open / licensed (0.35 / 0.15); hulls <= 100 m, no war / jump-train / liner classes; <= 60 m twice as often; + the
+  city shuttle hubt_shuttle. plane_demo (Sol Authority -> sol): OCS-4, SL-12, ST-6, PC-30, PDT-7 (+ C-120 licensed, +
+  shuttle). All 19 catalog ship models packaged by the mesh editor (assets/compiled/ships). Client:
+  scene::hubCityAirTraffic - ships on the green lanes / blue approaches (HubLaneCatalog), 1 per 3.5 km of lane (half
+  on blue), 70 % of the lane speed, hull fits the lane's max length, nose -Z; drawn within 9 km. Evidence:
+  ELITE_DEV_TRAFFIC_LOG: «air 74 (nearest 171 m), fleet 7, lanes 58»; D:/tmp/air_ship.png (a hull inside a green lane
+  tube), air_z3b.png. Not measured: frame cost (ground traffic is ~1750 vehicles in 3.5 km). NOT accepted.
+  Correction: «фронтир - это небольшой грузовик для локальной доставки»; the Sol bloc's local carriers here are OCS-4 /
+  SL-12 / ST-6 (the Cobretts belong to cognium_pool - not in Sol's open / licensed trade).

@@ -67,12 +67,35 @@ def train_parts(lod):
     return P
 
 
+def shuttle_parts(lod):
+    """a passenger shuttle of the city's air traffic (author 2026-11-18: «воздушный трафик из фронтиров и др.»): a
+    windowed fuselage 30 m, stub wings, two engines glowing aft; NOSE TO -Z like the ship packages (the client flies
+    every air vehicle nose-first along -Z)"""
+    name = "hubt_shuttle"
+    P = {name: Part(name)}
+    s = P[name]
+    box(s, LIGHT, (0, 0, 0), (6.0, 5.0, 26.0))                         # fuselage
+    box(s, HULL, (0, -0.4, -14.5), (5.0, 3.6, 3.0))                    # the nose
+    box(s, HULL, (0, -0.5, 3.0), (20.0, 0.8, 7.0))                     # the wing
+    box(s, HULL, (0, 3.2, 11.0), (0.8, 3.0, 4.0))                      # the fin
+    for sx in (-4.0, 4.0):
+        box(s, STEEL, (sx, -0.5, 10.5), (2.2, 2.2, 5.0))               # the engines
+        if lod < 2:
+            box(s, FLOOD, (sx, -0.5, 13.02), (1.6, 1.6, 0.04))         # their glow
+    if lod < 2:
+        for sx in (-3.01, 3.01):
+            box(s, WARM, (sx, 1.0, -2.0), (0.04, 1.0, 18.0))           # the cabin window band
+        box(s, COOL, (0, 0.6, -15.99), (3.2, 1.2, 0.04))               # the cockpit
+    return P
+
+
 ASSETS = {
     "hubt_car_a": lambda lod: car_parts(lod, "hubt_car_a", "eq_car_red"),
     "hubt_car_b": lambda lod: car_parts(lod, "hubt_car_b", "eq_car_blue"),
     "hubt_car_c": lambda lod: car_parts(lod, "hubt_car_c", "eq_car_white"),
     "hubt_truck": truck_parts,
     "hubt_train": train_parts,
+    "hubt_shuttle": shuttle_parts,
 }
 HITS = {k: (lambda k=k: []) for k in ASSETS}
 ROOTS = {k: "hub" for k in ASSETS}
@@ -82,4 +105,5 @@ PASSPORTS = {
     "hubt_car_c": ("Легковой автомобиль (белый)", "hub_module", "Городской трафик (tools/models/units/hub_traffic.py)."),
     "hubt_truck": ("Грузовик с 40-футовым кузовом", "hub_module", "Городской трафик (tools/models/units/hub_traffic.py)."),
     "hubt_train": ("Поезд монорельса, 3 вагона", "hub_module", "Городской трафик (tools/models/units/hub_traffic.py)."),
+    "hubt_shuttle": ("Пассажирский челнок 30 м", "hub_module", "Воздушный трафик города (tools/models/units/hub_traffic.py)."),
 }

@@ -101,6 +101,73 @@ def plan_document(hub_id, L):
             "docks": docks, "spinning": spinning, "roads": roads}
 
 
+def air_fleet(hub_id, world):
+    """the ships of the city's air traffic (author 2026-11-18: «воздушный трафик из фронтиров и др.» + «можешь использовать
+    разные корабли в рамках политического блока к которому принадлежит хаб»): the hub's polity (its owner; a prototype
+    hub: the owner of its system's other hubs) -> its bloc (economy_rules blocs_members); every catalog ship whose
+    manufacturer (colonization canon industry.json) belongs to that bloc, the ships of the blocs it trades with openly /
+    under licence at a lower weight (blocs.matrix); only hulls the city's lanes take (<= 100 m), no war / jump-train
+    hulls; the small local carriers (the frontiers, <= 60 m) twice as often; plus the city's own shuttle"""
+    import collections
+    import json
+    import os
+    root = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+    econ = json.load(open(os.path.join(root, "src", "assets", "data", "economy", "economy_rules.json"), encoding="utf-8"))
+    industry = json.load(open(os.path.join(root, "tools", "colonization_lab", "canon", "industry.json"), encoding="utf-8"))
+    catalog = json.load(open(os.path.join(root, "src", "assets", "data", "ships", "ship_catalog_3126.json"), encoding="utf-8"))
+    import eqlib
+    models = json.load(open(os.path.join(eqlib.SOURCE_MODELS, "ships", "ship_models.json"), encoding="utf-8"))
+    folder_of = {m["passportId"]: m["folder"] for m in models["ships"]}
+    mfr_polity = {}
+
+    def walk(x):
+        if isinstance(x, dict):
+            if str(x.get("id", "")).startswith("mfr.") and "polity" in x:
+                mfr_polity[x["id"]] = x["polity"]
+            for v in x.values():
+                walk(v)
+        elif isinstance(x, list):
+            for v in x:
+                walk(v)
+    walk(industry)
+    polity_bloc = {p: b for b, ps in econ["blocs_members"].items() for p in ps}
+    norm = lambda s: str(s or "").strip().lower().replace(" ", "_")
+    hubs = world["orbital_hubs"]
+    hub = next((h for h in hubs if h["id"] == hub_id), None)
+    owner = norm(hub.get("owner")) if hub else ""
+    if owner not in polity_bloc and hub:
+        owners = collections.Counter(norm(h.get("owner")) for h in hubs if h["system_id"] == hub["system_id"] and norm(h.get("owner")) in polity_bloc)
+        owner = owners.most_common(1)[0][0] if owners else owner
+    bloc = polity_bloc.get(owner, "sol")
+    relation = econ["blocs"]["matrix"].get(bloc, {})
+    no_city = {"jump_train", "jump_tanker", "escort_frigate", "fleet_tender", "colonist_transport", "line_combatant", "liner"}
+    ships = []
+    items = catalog.get("ships") if isinstance(catalog, dict) and "ships" in catalog else list(catalog.values())[0]
+    for s in items:
+        folder = folder_of.get(s["id"])
+        if not folder or not os.path.exists(os.path.join(root, "assets", "compiled", "ships", folder, folder + ".elmodel")):
+            continue
+        length = float((s.get("envelope_m") or [999.0])[0])
+        if length > 100.0 or s.get("cls") in no_city:
+            continue
+        ship_bloc = polity_bloc.get(mfr_polity.get(s.get("manufacturer_id"), ""), "")
+        w = 1.0 if ship_bloc == bloc else {"open": 0.35, "licensed": 0.15}.get(relation.get(ship_bloc, ""), 0.0)
+        if w <= 0.0:
+            continue
+        if length <= 60.0:
+            w *= 2.0
+        # one model per folder (the N1 / A3 variants share a hull)
+        prev = next((x for x in ships if x["model"] == "ships/" + folder), None)
+        if prev:
+            prev["weight"] = round(prev["weight"] + w * 0.5, 3)
+            continue
+        ships.append({"model": "ships/" + folder, "passport": s["id"], "name": s["name"], "length_m": length,
+                      "bloc": ship_bloc, "weight": round(w, 3)})
+    ships.append({"model": "hub_modules/hubt_shuttle", "passport": "", "name": "city shuttle", "length_m": 34.0, "bloc": bloc,
+                  "weight": 1.0})
+    return {"bloc": bloc, "polity": owner, "ships": ships}
+
+
 def population_estimate(plan):
     """a rough count of the residents from the habitable footprints (see the 2026-11-18 estimate: ~40 m2 per person)"""
     flats = {"hubb_hab_tower", "hubb_hab_slab", "hubk_hab_b"}

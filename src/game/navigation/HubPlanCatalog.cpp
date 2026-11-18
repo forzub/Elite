@@ -101,6 +101,14 @@ bool HubPlan::load(const std::string& path)
         if (r.contains("lanes_m") && r["lanes_m"].is_array() && !r["lanes_m"].empty())
             m_roads.lanesMeters = r["lanes_m"].get<std::vector<double>>();
     }
+    if (j.contains("air_fleet") && j["air_fleet"].is_object())
+    {
+        const auto& f = j["air_fleet"];
+        m_bloc = f.value("bloc", std::string());
+        for (const auto& s : f.value("ships", nlohmann::json::array()))
+            m_airFleet.push_back({s.value("model", std::string()), s.value("name", std::string()), s.value("length_m", 30.0),
+                                  s.value("weight", 1.0)});
+    }
     if (m_frameModuleId.empty() || m_blocks.empty())
     {
         m_failure = "empty plan " + path;

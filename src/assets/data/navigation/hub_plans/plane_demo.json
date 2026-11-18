@@ -9875,5 +9875,67 @@
 "monorail_y": 16.8,
 "monorail_side_m": 18.0
 },
-"population_estimate": 1649906
+"population_estimate": 1649906,
+"air_fleet": {
+"bloc": "sol",
+"polity": "sol_authority",
+"ships": [
+{
+"model": "ships/ocs-4-lastochka",
+"passport": "ofu.ship.ocs-4.lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"bloc": "sol",
+"weight": 2.0
+},
+{
+"model": "ships/sl-12-podyomnik",
+"passport": "ofu.ship.sl-12.podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"bloc": "sol",
+"weight": 2.0
+},
+{
+"model": "ships/c-120-konveyer",
+"passport": "bharat.ship.c-120.konveyer",
+"name": "C-120 «Вахак»",
+"length_m": 95.0,
+"bloc": "southern_circle",
+"weight": 0.15
+},
+{
+"model": "ships/st-6-masterovoy",
+"passport": "sol.ship.st-6.masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"bloc": "sol",
+"weight": 2.0
+},
+{
+"model": "ships/pk-30-strazh",
+"passport": "sol.ship.pk-30.strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"bloc": "sol",
+"weight": 2.0
+},
+{
+"model": "ships/pao-7-shchit",
+"passport": "sol.ship.pao-7.shchit",
+"name": "PDT-7 «Тунгуска»",
+"length_m": 70.0,
+"bloc": "sol",
+"weight": 1.0
+},
+{
+"model": "hub_modules/hubt_shuttle",
+"passport": "",
+"name": "city shuttle",
+"length_m": 34.0,
+"bloc": "sol",
+"weight": 1.0
+}
+]
+}
 }

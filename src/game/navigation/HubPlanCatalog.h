@@ -71,6 +71,15 @@ struct HubPlanRoads
     double monorailSideMeters = 18.0;  // to the street's +X (Z streets) / -Z (X streets)
 };
 
+// a ship of the city's air traffic (tools/models/hub_plan.py air_fleet: the hub's political bloc)
+struct HubPlanAirShip
+{
+    std::string model;          // "ships/ocs-4-lastochka" | "hub_modules/hubt_shuttle" (under assets/compiled)
+    std::string name;
+    double lengthMeters = 30.0;
+    double weight = 1.0;
+};
+
 class HubPlan
 {
 public:
@@ -87,6 +96,8 @@ public:
     const std::vector<HubPlanDock>& docks() const { return m_docks; }
     const std::vector<HubPlanSpinning>& spinning() const { return m_spinning; }
     const HubPlanRoads& roads() const { return m_roads; }
+    const std::vector<HubPlanAirShip>& airFleet() const { return m_airFleet; }
+    const std::string& bloc() const { return m_bloc; }
     const HubPlanBlock* block(const std::string& id) const;
     // the block under a point of the plane (city frame x, z), or nullptr
     const HubPlanBlock* blockAt(double x, double z) const;
@@ -104,6 +115,8 @@ private:
     std::vector<HubPlanDock> m_docks;
     std::vector<HubPlanSpinning> m_spinning;
     HubPlanRoads m_roads;
+    std::vector<HubPlanAirShip> m_airFleet;
+    std::string m_bloc;
     std::string m_failure;
 };
 

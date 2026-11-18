@@ -53,6 +53,7 @@
 #include <iomanip>
 #include "src/game/client/HubFramePresentation.h"
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/scene/HubCityTraffic.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 
@@ -3822,6 +3823,53 @@ if (policy.drawObjects)
                                 qd.seed = 0.5f;
                                 queuedModelAssetStationDraws.push_back(qd);
                                 m_lastStats.partsDrawn++;
+                            }
+                        }
+                        // the air traffic: the hub's bloc's ships flying its lanes (scene::hubCityAirTraffic)
+                        if (const auto* laneNet = game::navigation::traffic::HubLaneCatalog::forFrameModule(object.hubModuleId))
+                        {
+                            static std::vector<scene::HubAirTrafficInstance> air;
+                            scene::hubCityAirTraffic(*plan, *laneNet, trafficTime, cameraCity, 9000.0f, air);
+                            const auto& fleet = plan->airFleet();
+                            static const bool trafficLog = std::getenv("ELITE_DEV_TRAFFIC_LOG") != nullptr;
+                            if (trafficLog)
+                            {
+                                static double lastLog = -10.0;
+                                const double nowS = renderProfileNowMs() * 0.001;
+                                if (nowS - lastLog > 2.0)
+                                {
+                                    lastLog = nowS;
+                                    float nearest = 1.0e9f;
+                                    for (const auto& v : air)
+                                        nearest = std::min(nearest, v.distance);
+                                    std::fprintf(stderr, "[HubTraffic] ground %zu, air %zu (nearest %.0f m), fleet %zu, lanes %zu\n",
+                                                 traffic.size(), air.size(), nearest, fleet.size(), laneNet->lanes().size());
+                                }
+                            }
+                            for (const auto& v : air)
+                            {
+                                const std::string& model = fleet[static_cast<std::size_t>(v.fleetIndex)].model;
+                                const std::string base = model.substr(model.find_last_of('/') + 1);
+                                const auto* pkg = render::geometry::ModelAssetGpuLibrary::getPackage(
+                                    object.type, "assets/compiled/" + model + "/" + base + ".elmodel");
+                                if (!pkg || pkg->asset.renderLods.empty())
+                                    continue;
+                                pkg->pumpPrewarm(1.0);
+                                const int lods = static_cast<int>(pkg->asset.renderLods.size());
+                                const int lod = std::min(lods - 1, v.distance < 500.0f ? 0 : v.distance < 1500.0f ? 1 : v.distance < 4000.0f ? 2 : 3);
+                                const auto& rl = pkg->asset.renderLods[static_cast<std::size_t>(lod)];
+                                const glm::mat4 base4 = cityModel * v.local * pkg->assetToLogical;
+                                for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
+                                {
+                                    const render::MeshGPU* g = pkg->gpuFor(lod, rl.nodes[rn].geometryIndex);
+                                    if (!g || rn >= pkg->index.renderNodes[static_cast<std::size_t>(lod)].size())
+                                        continue;
+                                    const glm::mat4 model4 = base4 * pkg->index.renderNodes[static_cast<std::size_t>(lod)][rn].assetTransform;
+                                    QueuedMeshDraw qd {g, proj * renderView * model4, model4};
+                                    qd.seed = 0.5f;
+                                    queuedModelAssetStationDraws.push_back(qd);
+                                    m_lastStats.partsDrawn++;
+                                }
                             }
                         }
                     }

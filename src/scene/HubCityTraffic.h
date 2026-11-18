@@ -42,4 +42,27 @@ struct HubTrafficInstance
 // the vehicles of the city at timeSeconds within radius of the camera (city frame) -> out (cleared first)
 void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, const glm::vec3& cameraLocal, float radius,
                     std::vector<HubTrafficInstance>& out);
+
+// The city's AIR traffic (author 2026-11-18: «воздушный трафик из фронтиров и др. их там не обязательно делать слишком
+// много, но они должны быть» + «разные корабли в рамках политического блока к которому принадлежит хаб»): the ships
+// of the hub plan's air fleet (its bloc's hulls) flying the green lanes and the blue dock approaches of the hub's lane
+// network (assets/data/navigation/hub_lanes), one to three per lane, at 70 % of the lane's speed; a ship appears at
+// the lane's open-sky portal and leaves at its end. Each ship is a fleet index (the plan's air_fleet), nose -Z.
+struct HubAirTrafficInstance
+{
+    int fleetIndex = 0;
+    glm::mat4 local {1.0f};
+    float distance = 0.0f;
+};
+}
+
+namespace game::navigation::traffic
+{
+class HubLaneNetwork;
+}
+
+namespace scene
+{
+void hubCityAirTraffic(const game::navigation::HubPlan& plan, const game::navigation::traffic::HubLaneNetwork& lanes,
+                       double timeSeconds, const glm::vec3& cameraLocal, float radius, std::vector<HubAirTrafficInstance>& out);
 } // namespace scene

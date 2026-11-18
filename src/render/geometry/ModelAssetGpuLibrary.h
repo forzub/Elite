@@ -80,6 +80,9 @@ public:
     static const ModelAssetGpu* get(ObjectType type);
     // the per-hub packages (ObjectType::HubBeltCity: hub_modules/hub_<hubId>); other types ignore hubId
     static const ModelAssetGpu* get(ObjectType type, const std::string& hubId);
+    // any package by path, loaded in the frame of `type` (a damaged variant module of a hub city: hub_modules/<id>);
+    // nullptr when it does not exist
+    static const ModelAssetGpu* getPackage(ObjectType type, const std::string& path);
 };
 
 } // namespace render::geometry

@@ -39,6 +39,8 @@ struct HitVolume
     std::string m_label;
     std::string moduleId;
     std::string subsystemId;
+    // the semantic node of the model package the volume belongs to (package hit volumes: a city's building), -1 = none
+    std::int32_t assemblyNode = -1;
 
     int panelIndex = -1;
     bool destructible = false;

@@ -29,6 +29,13 @@
       "operational": "online",
       "occupancy": "free",
       "access": "allowed"
+    },
+    {
+      "module_id": "plane_ruin.dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
     }
   ]
 }

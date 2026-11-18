@@ -261,6 +261,13 @@
       "zh-Hans": "悬浮城市“平面”（生成器）",
       "es": "Ciudad flotante «Plano» (generador)",
       "ja": "浮遊都市「プレーン」（ジェネレーター）"
+    },
+    "plane_ruin": {
+      "en": "Ruined City \"Plane\" (generator)",
+      "ru": "Разрушенный город «Плоскость» (генератор)",
+      "zh-Hans": "废墟城市“平面”（生成器）",
+      "es": "Ciudad en ruinas «Plano» (generador)",
+      "ja": "廃墟都市「プレーン」（ジェネレーター）"
     }
   }
 }

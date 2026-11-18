@@ -316,8 +316,46 @@ def _pack(rng, region, choices, max_top=None, gap=26.0, down=False):
     return out
 
 
+# ---------------------------------------------------------------- a city after an attack (author 2026-11-18: «можешь ли ты
+# собрать поврежденный город из поврежденных мешей?»): RUIN_OF hubs are the layout of another hub with the damage of a
+# strike applied - 3..5 epicentres (seeded by the ruin's own id); a residential / office building (hub_damage.BUILDINGS)
+# near one is swapped for a damaged variant (missile / laser + railgun / gutted facade) with a probability falling off
+# with the distance, and the other modules close to an epicentre are blown away (their girders stay).
+RUIN_OF = {"plane_ruin": "plane_demo"}
+RUIN_REACH = 1800.0           # an epicentre's reach (m): the damage probability falls to 0 there
+RUIN_BLOWN = 380.0            # within this of an epicentre a module that cannot be damaged is gone
+
+
+def _ruin(L, hub_id):
+    from units.hub_damage_names import DAMAGED_OF
+    rng = random.Random(int(hashlib.sha1(("ruin:" + hub_id).encode("utf-8")).hexdigest()[:12], 16))
+    centres = [d["centre"] for d in L["districts"]]
+    homes = [d["centre"] for d in L["districts"] if d["kind"] in ("downtown", "residential", "hotel", "hab_rot")] or centres
+    strikes = [rng.choice(homes if rng.random() < 0.75 else centres) for _ in range(rng.randint(3, 5))]
+    strikes = [(c[0] + rng.uniform(-250, 250), c[2] + rng.uniform(-250, 250)) for c in strikes]
+    nodes, damaged, blown = [], 0, 0
+    for node in L["nodes"]:
+        nid, folder, pos, rot, role, parent = node
+        d = min(math.hypot(pos[0] - x, pos[2] - z) for x, z in strikes)
+        p = max(0.0, 1.0 - d / RUIN_REACH)
+        if folder in DAMAGED_OF and rng.random() < 0.15 + 0.85 * p:
+            nodes.append((nid, rng.choice(DAMAGED_OF[folder]), pos, rot, role, parent))
+            damaged += 1
+            continue
+        if role == "module" and folder not in DAMAGED_OF and d < RUIN_BLOWN and rng.random() < 0.7:
+            blown += 1
+            L["module_of"].pop(nid, None)
+            continue
+        nodes.append(node)
+    L["nodes"] = nodes
+    L["ruin"] = {"strikes": strikes, "damaged": damaged, "blown": blown}
+    return L
+
+
 def plane_layout(hub_id):
     """-> dict(nodes, spinning, haze, module_of, districts, links, cells): the planar city of one hub (pure in hub_id)"""
+    if hub_id in RUIN_OF:
+        return _ruin(plane_layout(RUIN_OF[hub_id]), hub_id)
     import pads
     seed = int(hashlib.sha1(hub_id.encode("utf-8")).hexdigest()[:12], 16)
     rng = random.Random(seed)
@@ -593,7 +631,7 @@ def hub_layout(hub_id):
     return belt_layout(hub_id)
 
 
-PLANE_HUBS = ["plane_demo"]
+PLANE_HUBS = ["plane_demo", "plane_ruin"]
 SETS = {}
 for _hid in PLANE_HUBS:
     from units.hub_belt import belt_proxies as _bp

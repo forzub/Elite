@@ -107,6 +107,8 @@ struct PreparedScene
         bool isShip = false;                            // real ship (step 3 S3): drawn under the ship policy
         ShipRole shipRole = ShipRole::NPC;
         std::vector<std::string> nodeState;             // per semantic node state id ("" = default)
+        // a hub city: its damaged / destroyed buildings (hidden here, the variant packages drawn in their place)
+        std::vector<game::simulation::CityBuildingState> buildingStates;
     };
     std::vector<ModelAssetObjectItem> modelAssetObjects;
 

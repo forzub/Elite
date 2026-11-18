@@ -400,6 +400,19 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type)
     return it == cache.end() ? nullptr : it->second.get();
 }
 
+const ModelAssetGpu* ModelAssetGpuLibrary::getPackage(ObjectType type, const std::string& path)
+{
+    static std::unordered_map<std::string, std::unique_ptr<ModelAssetGpu>> cache;
+    const auto [it, inserted] = cache.try_emplace(path);
+    if (inserted)
+    {
+        it->second = load(type, path.c_str());
+        if (it->second)
+            it->second->startPrewarm();
+    }
+    return it->second.get();
+}
+
 const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::string& hubId)
 {
     if (type != ObjectType::HubBeltCity)

@@ -547,6 +547,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         o.navigationVisible = obj.systemMapVisible;
         o.navigationParentBodyId = obj.mapParentBodyId;
         o.orbitalMotion = obj.orbitalMotion;
+        if (obj.type == ObjectType::HubBeltCity)
+            o.buildingStates = cityBuildingStates(id);   // its damaged / destroyed buildings (GameSimulationCityDamage)
 
         if (obj.attachedToHub &&
             obj.systemId >= 0 &&

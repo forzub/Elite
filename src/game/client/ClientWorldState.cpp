@@ -764,6 +764,10 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.navigationVisible = o.navigationVisible;
             state.navigationParentBodyId = o.navigationParentBodyId;
             state.orbitalMotion = o.orbitalMotion;
+            if (state.buildingStates.size() != o.buildingStates.size())
+                std::cerr << "[CityDamage] client: object " << o.id.value << " " << o.buildingStates.size()
+                          << " damaged buildings" << std::endl;
+            state.buildingStates = o.buildingStates;
 
             {
                 const auto phaseBegin = HydrateClock::now();
@@ -829,6 +833,10 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.navigationVisible = o.navigationVisible;
             state.navigationParentBodyId = o.navigationParentBodyId;
             state.orbitalMotion = o.orbitalMotion;
+            if (state.buildingStates.size() != o.buildingStates.size())
+                std::cerr << "[CityDamage] client: object " << o.id.value << " " << o.buildingStates.size()
+                          << " damaged buildings" << std::endl;
+            state.buildingStates = o.buildingStates;
 
             // Static object payload is sparse: for a rotating station the server sends
             // only graph.assemblyModules every tick. Heavy module/debug payload arrives

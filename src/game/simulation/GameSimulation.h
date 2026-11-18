@@ -908,6 +908,30 @@ private:
     std::unordered_map<EntityId, CombatTrack> m_combatTracks;
     std::vector<CombatMissile> m_combatMissiles;
     std::uint32_t m_nextCombatSerial = 1;
+
+    // ---- hub city damage (GameSimulationCityDamage.cpp; game::simulation::CityDamage.h)
+    struct CityRayHit
+    {
+        EntityId object {};
+        int volume = -1;
+        double t = 0.0;                  // along the ray, metres
+        glm::dvec3 pointW {0.0};
+    };
+    struct CityDamageState
+    {
+        std::unordered_map<std::int32_t, double> energyMJ;          // per node: the energy taken
+        std::unordered_map<std::int32_t, std::uint8_t> variant;     // per node: CityBuildingVariant (absent = intact)
+        std::unordered_map<std::int32_t, double> thresholdMJ;       // per node: its first-stage threshold (cached)
+        std::unordered_map<std::int32_t, std::string> folder;       // per node: its module folder (cached)
+    };
+    // the first city volume the world segment startW -> endW meets; the city moves over the step: the start is tested
+    // against where it was dt seconds ago (a missile's step), dt = 0 for an instant ray (a laser)
+    bool castCitySegment(const glm::dvec3& startW, const glm::dvec3& endW, double dt, CityRayHit& out) const;
+    // energy into the building of a city volume; kind: 0 laser, 1 shaped warhead, 2 kinetic slug
+    void damageCity(const CityRayHit& hit, double energyMJ, int kind);
+    std::vector<game::simulation::CityBuildingState> cityBuildingStates(EntityId objectId) const;
+    void devCityFireStep();          // DEV: ELITE_DEV_CITY_FIRE (the player's weapons fired on a schedule)
+    std::unordered_map<std::uint64_t, CityDamageState> m_cityDamage;
     double m_combatClockS = 0.0;
     std::unordered_map<EntityId, double> m_devTargetMissileClockS;   // DEV duel: last missile launch
     std::unordered_set<EntityId> m_devTargetLaserOn;

@@ -878,6 +878,12 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::CityBuildingState,
+    v.node,
+    v.variant
+);
+
+ELITE_WIRE_SCHEMA(
     ObjectSnapshot,
     v.id,
     v.type,
@@ -893,7 +899,8 @@ ELITE_WIRE_SCHEMA(
     v.navigationVisible,
     v.navigationParentBodyId,
     v.orbitalMotion,
-    v.graph
+    v.graph,
+    v.buildingStates
 );
 
 ELITE_WIRE_SCHEMA(

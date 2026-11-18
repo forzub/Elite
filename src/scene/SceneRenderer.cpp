@@ -1574,6 +1574,7 @@ void SceneRenderer::prepareScene(
                 item.objectId = obj.id.value;
                 item.gpu = modelAsset;
                 item.model = objectBaseModel;
+                item.buildingStates = obj.buildingStates;
                 item.nodeModel.resize(modelAsset->nodeModule.size(), objectBaseModel);
                 for (std::size_t n = 0; n < modelAsset->nodeModule.size(); ++n)
                     for (const auto& module : obj.assembly->modules)
@@ -3663,6 +3664,13 @@ if (policy.drawObjects)
                 const glm::mat4 assetFromWorld = glm::inverse(assetModel);
                 mp::ObjectState state;
                 state.nodeState = object.nodeState;
+                if (!object.buildingStates.empty())
+                {
+                    state.nodeHidden.assign(ma.asset.nodes.size(), 0);
+                    for (const auto& b : object.buildingStates)
+                        if (b.node < state.nodeHidden.size())
+                            state.nodeHidden[b.node] = 1;
+                }
                 for (std::size_t n = 0; n < object.nodeModel.size(); ++n)
                 {
                     if (object.nodeModel[n] == object.model)
@@ -3688,6 +3696,88 @@ if (policy.drawObjects)
                     qd.seed = glm::fract(glm::dot(at, glm::vec3(0.0131f, 0.0173f, 0.0197f)) + 0.371f);
                     queuedModelAssetStationDraws.push_back(qd);
                     m_lastStats.partsDrawn++;
+                }
+                static const bool cityDamageLog = std::getenv("ELITE_DEV_CITY_DAMAGE_LOG") != nullptr;
+                if (cityDamageLog && !object.buildingStates.empty() && cameraName == "mainCam")
+                {
+                    // DEV diagnostics of the city damage presentation, once a second: hidden nodes still drawn
+                    static double lastDiag = -10.0;
+                    const double nowDiag = renderProfileNowMs() * 0.001;
+                    if (nowDiag - lastDiag >= 1.0)
+                    {
+                        lastDiag = nowDiag;
+                        std::size_t leaked = 0, unbound = 0;
+                        int perLod[8] = {};
+                        for (const auto& d : frame.draws)
+                        {
+                            const auto& rn = ma.asset.renderLods[static_cast<std::size_t>(d.lod)].nodes[static_cast<std::size_t>(d.renderNode)];
+                            if (d.lod >= 0 && d.lod < 8)
+                                ++perLod[d.lod];
+                            if (rn.semanticNodeIndex < 0)
+                                ++unbound;
+                            if (rn.semanticNodeIndex >= 0 && static_cast<std::size_t>(rn.semanticNodeIndex) < state.nodeHidden.size() &&
+                                state.nodeHidden[static_cast<std::size_t>(rn.semanticNodeIndex)])
+                                ++leaked;
+                        }
+                        std::fprintf(stderr, "[CityDamage] render: %zu buildings, %zu draws (%zu unbound), %zu of hidden nodes, rep %d, "
+                                             "%u collapsed groups, L0 %d L1 %d L2 %d L3 %d\n",
+                                     object.buildingStates.size(), frame.draws.size(), unbound, leaked,
+                                     static_cast<int>(frame.representation), static_cast<unsigned>(frame.collapsedGroups),
+                                     perLod[0], perLod[1], perLod[2], perLod[3]);
+                    }
+                }
+                if (!object.buildingStates.empty())
+                {
+                    // a hub city's damaged buildings (game::simulation::CityDamage.h): the node is hidden above, its
+                    // damaged variant module (assets/compiled/hub_modules/<folder>_dmg_<kind>) is drawn in its place -
+                    // the node's LOD0 render-node frame, a LOD by distance; a destroyed one draws nothing
+                    static std::unordered_map<const render::geometry::ModelAssetGpu*, std::vector<std::string>> folders;
+                    auto& nodeFolder = folders[&ma];
+                    if (nodeFolder.empty())
+                    {
+                        nodeFolder.assign(ma.asset.nodes.size(), std::string());
+                        for (const auto& c : ma.asset.collisionVolumes)
+                            if (c.parentNodeIndex >= 0 && static_cast<std::size_t>(c.parentNodeIndex) < nodeFolder.size() &&
+                                nodeFolder[static_cast<std::size_t>(c.parentNodeIndex)].empty())
+                                nodeFolder[static_cast<std::size_t>(c.parentNodeIndex)] =
+                                    game::simulation::cityModuleFolderOfCollision(c.id);
+                    }
+                    for (const auto& b : object.buildingStates)
+                    {
+                        const char* suffix = game::simulation::cityVariantSuffix(b.variant);
+                        if (!*suffix || b.node >= nodeFolder.size() || b.node >= ma.index.components.size() ||
+                            nodeFolder[b.node].empty())
+                            continue;
+                        const auto& comp = ma.index.components[b.node];
+                        if (comp.renderNodes.empty() || comp.renderNodes[0].empty())
+                            continue;
+                        const glm::mat4 nodeFrame =
+                            ma.index.renderNodes[0][static_cast<std::size_t>(comp.renderNodes[0].front())].assetTransform;
+                        const std::string id = nodeFolder[b.node] + suffix;
+                        const auto* variant = render::geometry::ModelAssetGpuLibrary::getPackage(
+                            object.type, "assets/compiled/hub_modules/" + id + "/" + id + ".elmodel");
+                        if (!variant || variant->asset.renderLods.empty())
+                            continue;
+                        if (cameraName == "mainCam")
+                            variant->pumpPrewarm(1.0);
+                        const glm::mat4 base = assetModel * nodeFrame;
+                        const float dist = glm::length(glm::vec3(base[3]) - cameraLocalPosition);
+                        const int lods = static_cast<int>(variant->asset.renderLods.size());
+                        const int lod = std::min(lods - 1, dist < 450.0f ? 0 : dist < 1400.0f ? 1 : dist < 4000.0f ? 2 : 3);
+                        const auto& rl = variant->asset.renderLods[static_cast<std::size_t>(lod)];
+                        for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
+                        {
+                            const render::MeshGPU* g = variant->gpuFor(lod, rl.nodes[rn].geometryIndex);
+                            if (!g || rn >= variant->index.renderNodes[static_cast<std::size_t>(lod)].size())
+                                continue;
+                            const glm::mat4 model =
+                                base * variant->index.renderNodes[static_cast<std::size_t>(lod)][rn].assetTransform;
+                            QueuedMeshDraw qd {g, proj * renderView * model, model};
+                            qd.seed = glm::fract(glm::dot(glm::vec3(nodeFrame[3]), glm::vec3(0.0131f, 0.0173f, 0.0197f)) + 0.371f);
+                            queuedModelAssetStationDraws.push_back(qd);
+                            m_lastStats.partsDrawn++;
+                        }
+                    }
                 }
                 if (logNow)
                 {

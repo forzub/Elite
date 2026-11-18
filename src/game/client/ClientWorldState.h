@@ -136,6 +136,8 @@ struct ClientObjectState
     bool navigationVisible = false;
     std::string navigationParentBodyId;
     world::orbits::OrbitalMotion orbitalMotion;
+    // a hub city's damaged / destroyed buildings (ObjectSnapshot::buildingStates)
+    std::vector<game::simulation::CityBuildingState> buildingStates;
 
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;

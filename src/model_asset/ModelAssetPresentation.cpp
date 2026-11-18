@@ -477,8 +477,18 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
                 expand(gMin, gMax, any, movedMin[static_cast<std::size_t>(c)], movedMax[static_cast<std::size_t>(c)]);
         }
         bool collapse = false;
+        // a group with a hidden node (a destroyed / damaged building of a hub city, drawn by its own variant) keeps
+        // its components: its proxy is the intact group
+        bool groupHasHidden = false;
+        for (const std::int32_t c : g.components)
+            if (nodeHidden(state, index.components[static_cast<std::size_t>(c)].node))
+            {
+                groupHasHidden = true;
+                break;
+            }
         // error-based groups (moduleProxyErrorM) also collapse in Full: a city you are inside of is always "full"
-        if ((rep == Representation::Component || (rep == Representation::Full && index.moduleProxyErrorM > 0.0f)) &&
+        if (!groupHasHidden &&
+            (rep == Representation::Component || (rep == Representation::Full && index.moduleProxyErrorM > 0.0f)) &&
             !g.proxyRenderNodes.empty())
         {
             const float px = projectedPx(view, gMin, gMax);

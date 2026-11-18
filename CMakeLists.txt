@@ -653,6 +653,7 @@ add_executable(EliteGame
     src/game/navigation/rules/JumpSumps.cpp
     src/game/simulation/GameSimulationZones.cpp
     src/game/simulation/GameSimulationCombat.cpp
+    src/game/simulation/GameSimulationCityDamage.cpp
     src/game/combat/WeaponCatalog.cpp
     src/game/combat/Penetration.cpp
     src/game/navigation/route/RoutePlanner.cpp
@@ -973,6 +974,7 @@ if(ELITE_BUILD_SERVER)
         src/game/economy/EconomyModel.cpp
         src/game/simulation/GameSimulationZones.cpp
         src/game/simulation/GameSimulationCombat.cpp
+        src/game/simulation/GameSimulationCityDamage.cpp
         src/game/combat/WeaponCatalog.cpp
         src/game/combat/Penetration.cpp
         src/game/navigation/route/RoutePlanner.cpp

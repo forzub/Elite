@@ -469,6 +469,7 @@ void GameSimulation::updateCombat(double dt)
     for (const auto& e : std::exchange(m_pendingExplosions, {}))
         explodeReactor(e);
     devCombatStep(dt);
+    devCityFireStep();
     const auto& cat = weaponCatalog();
     const auto& mat = cat.materials;
     m_combatBeams.clear();
@@ -627,7 +628,15 @@ void GameSimulation::updateCombat(double dt)
             beam.to = world::coordinates::makeWorldPositionFromMeters(from + dir * laser->rangeM);
             beam.powerMW = static_cast<float>(powerMW);
             beam.colour = laser->colour;
-            if (on && targetShip)
+            // a hub city in the way (nearer than the target ship): the beam burns into its building
+            CityRayHit cityHit;
+            if (on && castCitySegment(from, from + dir * laser->rangeM, 0.0, cityHit) && (!targetShip || cityHit.t < targetT))
+            {
+                beam.to = world::coordinates::makeWorldPositionFromMeters(cityHit.pointW);
+                beam.hit = 1;
+                damageCity(cityHit, powerMW * dt, 0);
+            }
+            else if (on && targetShip)
             {
                 const ShipTransform& ttr = targetShip->core().transform();
                 const glm::dmat3 TR = basisOf(ttr);
@@ -859,6 +868,21 @@ void GameSimulation::updateCombat(double dt)
         }
         if (done)
         {
+            it = m_combatMissiles.erase(it);
+            continue;
+        }
+        // a hub city on the missile's path this step: the warhead goes off in the building it hits
+        if (CityRayHit cityHit; m.ageS >= 1.0 && castCitySegment(prev, m.positionW, dt, cityHit))
+        {
+            glm::dvec3 cityVel(0.0);
+            if (const auto c = m_staticObjects.find(cityHit.object); c != m_staticObjects.end())
+                cityVel = glm::dvec3(c->second.linearVelocity);
+            const double relSpeed = glm::length(m.velocityW - cityVel);
+            const bool slug = spec->warhead == game::combat::WarheadKind::Slug;
+            const double energy = slug ? 0.5 * spec->slugKg * relSpeed * relSpeed / 1.0e6 : spec->jetMJ;
+            std::cerr << "[Combat] missile " << m.id << " HIT the city at " << relSpeed << " m/s, " << energy << " MJ"
+                      << std::endl;
+            damageCity(cityHit, energy, slug ? 2 : 1);
             it = m_combatMissiles.erase(it);
             continue;
         }

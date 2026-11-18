@@ -105,6 +105,7 @@ bool packageHitVolumes(ObjectType type, const std::string& path, std::vector<gam
                 v.halfSize = half;
                 v.m_label = c.id;
                 v.moduleId = c.moduleId;
+                v.assemblyNode = c.parentNodeIndex;   // the building (city damage: game::simulation::CityDamage.h)
                 // the node's module group (a block, a street run: the assembly's "modules" map) - the route planner merges
                 // a group far from the route into one box
                 if (c.parentNodeIndex >= 0 && static_cast<std::size_t>(c.parentNodeIndex) < asset.nodes.size())

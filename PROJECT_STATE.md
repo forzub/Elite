@@ -6301,3 +6301,48 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     25bb22b20: updated, pass), 3 PRE-EXISTING (fail at 8cd8521a2~1 too, not in the allow-list):
     check_client_galaxy_map_catalog (source.description), check_ui_platform_fonts (mesh_editor/index.html lacks the
     shared font layer), tests/system_map/check_architecture (System CPU frame before input/picking). Not fixed here.
+- 2026-11-18 DAMAGED HUB BUILDINGS + CITY DAMAGE ACCOUNTING (author: «давай сначала поврежденные модули, потом
+  редактор»; «можешь ли ты собрать поврежденный город из поврежденных мешей?»; «да, делай учёт повреждений, потом
+  редактор»).
+  - Modules: tools/models/units/hub_damage.py (+ hub_damage_names.py): the 5 residential / office buildings
+    (hubb_hab_tower, hubb_hab_slab, hubk_hab_a/b/c) x 3 variants <module>_dmg_missile / _dmg_laser (+ railgun holes and
+    exits) / _dmg_gutted: the facade boxes rebuilt as a 4 m x 6 m cell grid, wounds knock cells out (jagged), a burnt
+    ring without windows, behind every open cell floors / ceilings / back walls / partitions every 2 bays, broken
+    recessed slab edges, collapsed slabs lying tilted on the floor below, hanging slabs with rebar at a blast; LOD0
+    furniture in a separate part group <module>_furniture (flats: beds, wardrobes, tables, fridges, sofas, washers;
+    offices: desks with screens, chairs, cabinets; burnt / tipped near the blast). Facade pieces share their grid
+    vertices (fanned from the centre over the perimeter grid points): the edge pass drew every seam before (live).
+    15 packages built (mesh editor).
+  - Ruined city: hub plane_ruin = the plane_demo layout + a strike (hub_plane RUIN_OF / _ruin: 3..5 epicentres, 75 %
+    on residential / downtown; 124 buildings swapped for variants, 8 modules blown away), in the world at phase
+    0.0018 deg, lanes file plane_ruin.json, localized name; package hub_plane_ruin (6214 nodes). Launcher
+    build/run_ruin.bat. Note: the mesh editor reads its catalogue at start - a set created later is ignored silently
+    until restart (the first packaging "hung" for an hour).
+  - Accounting (server, GameSimulationCityDamage.cpp, CityDamage.h): per city object and assembly node the weapons'
+    energy; first stage 25 MJ x cbrt(volume / 1e5 m3) (a tower 63 MJ), x4 gutted, x12 destroyed (volumes switched
+    off); the first variant by the hit kind (shaped -> missile, laser / slug -> laser); infrastructure (girders, roads,
+    tubes, monorail, crossings, canopy) takes none; a module without variants goes intact -> destroyed. Weapons: the
+    laser beam stops at the nearer of city / target ship and burns the building (power x dt); a missile's step
+    segment is tested against the city in its moving frame (the city does ~1 km a tick in orbit). Volumes carry
+    assemblyNode (package collision parent). Replicated: ObjectSnapshot::buildingStates {node, variant} (wire schema),
+    ClientObjectState; render: the node hidden (ObjectState::nodeHidden; a module group with a hidden node does not
+    collapse to its proxy), the variant package (ModelAssetGpuLibrary::getPackage) drawn in the node's LOD0 frame, LOD
+    by distance. DEV: ELITE_DEV_CITY_STRIKE="<s>:x,y,z:<MJ>:<kind>;..." (energy into the building at a city point),
+    ELITE_DEV_CITY_FIRE="<s>:laser:<dur>;<s>:missile" (the player's weapons on a schedule), ELITE_DEV_CITY_DAMAGE_LOG.
+  - LIVE (release, plane_demo): the laser burned node 480 (hubb_hab_tower, ~5.5 MJ/s through the reactor
+    controller), missiles hit the city (a girder when the ship drifted - the matched start drifts ~20..120 m/s in
+    the rotating hub, so aimed-fire runs are unreliable); strikes: missile / laser / gutted / destroyed stages logged;
+    28 then 124 buildings destroyed -> gone on screen (D:/tmp/cs_pair.png, only the girders), variants drawn in place
+    (D:/tmp/cs_var2.png). NOT author-accepted; the ruined city shown to the author next.
+  - Not yet: persistence of the damage across server restarts; NPC / dock reactions (lost pads, power); the client's
+    planning obstacles still include destroyed buildings' volumes.
+  - Author review of the ruined city (2026-11-18): «а так - норм», with two fixes, both done: (1) damaged buildings
+    show no lit windows - their facade boxes use eq_hub_dead_facade* (no eq_hub_facade prefix, so the shader draws no
+    windows) and the office screens are dead (eq_hub_window_dark); (2) «стенки с нестабильным освещением» = z-fighting
+    of coplanar interior geometry: both rooms drew a shared partition, corner-square slabs/walls of two adjacent faces
+    overlapped, end walls lay in the neighbouring facade plane, fallen/hanging slab undersides were back-to-back.
+    Fixed in hub_damage.py: inner walls WALL_IN 0.15 m inside their room, the x faces' rooms stop CORNER_GAP short of
+    the corner squares the z faces own (_Face.span), undersides offset by SLAB_T, furniture never overlaps in a room.
+    Coplanar-overlap scan of the tower variant: all wall / slab overlaps gone (only hidden box caps / furniture
+    bottoms, as in the intact modules). Live offscreen frame D:/tmp/ruin_fix_b.png: dark facades, rooms in the holes.
+    Flicker-free not yet confirmed by the author.

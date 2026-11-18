@@ -9,6 +9,7 @@
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"
 #include "src/world/orbits/OrbitalMotion.h"
+#include "src/game/simulation/CityDamage.h"
 
 struct ObjectSnapshot
 {
@@ -35,6 +36,9 @@ struct ObjectSnapshot
     // glm::vec3 rotation;
 
     game::simulation::ObjectGraphSnapshot graph;
+
+    // a hub city: its damaged / destroyed buildings (only the changed nodes; empty = intact)
+    std::vector<game::simulation::CityBuildingState> buildingStates;
 
 
     void setWorldPosition(

@@ -54,6 +54,7 @@
 #include "src/game/client/HubFramePresentation.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
+#include "src/game/navigation/traffic/HubTrafficSchedule.h"
 #include "src/scene/HubCityTraffic.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 
@@ -3848,6 +3849,116 @@ if (policy.drawObjects)
                                 m_lastStats.partsDrawn++;
                             }
                         }
+                        // one ship package in the city frame: a LOD by distance; far away (the ship packages carry LOD0 only:
+                        // 24-68 parts each) only its 4 biggest parts (2026-11-18 A/B: 40 ships in view = 1100 mesh draws,
+                        // +2.9 ms p50) -> the mesh draws queued
+                        const auto drawShip = [&](const render::geometry::ModelAssetGpu* pkg, const glm::mat4& local, float distance) {
+                            int draws = 0;
+                            if (!pkg || pkg->asset.renderLods.empty())
+                                return draws;
+                            const int lods = static_cast<int>(pkg->asset.renderLods.size());
+                            const int lod = std::min(lods - 1, distance < 500.0f ? 0 : distance < 1500.0f ? 1 : distance < 4000.0f ? 2 : 3);
+                            const auto& rl = pkg->asset.renderLods[static_cast<std::size_t>(lod)];
+                            const glm::mat4 base4 = cityModel * local * pkg->assetToLogical;
+                            static std::unordered_map<const render::geometry::ModelAssetGpu*, std::vector<std::size_t>> bigParts;
+                            const std::vector<std::size_t>* only = nullptr;
+                            if (lod == 0 && distance > 800.0f && rl.nodes.size() > 6)
+                            {
+                                auto& big = bigParts[pkg];
+                                if (big.empty())
+                                {
+                                    std::vector<std::pair<std::size_t, std::size_t>> bySize;
+                                    bool ready = true;
+                                    for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
+                                    {
+                                        const render::MeshGPU* g = pkg->gpuFor(0, rl.nodes[rn].geometryIndex);
+                                        ready = ready && g;
+                                        bySize.emplace_back(g ? g->vertices() : 0u, rn);
+                                    }
+                                    if (ready)
+                                    {
+                                        std::sort(bySize.rbegin(), bySize.rend());
+                                        for (std::size_t q = 0; q < std::min<std::size_t>(4, bySize.size()); ++q)
+                                            big.push_back(bySize[q].second);
+                                    }
+                                }
+                                if (!big.empty())
+                                    only = &big;
+                            }
+                            const std::size_t partCount = only ? only->size() : rl.nodes.size();
+                            for (std::size_t q = 0; q < partCount; ++q)
+                            {
+                                const std::size_t rn = only ? (*only)[q] : q;
+                                const render::MeshGPU* g = pkg->gpuFor(lod, rl.nodes[rn].geometryIndex);
+                                if (!g || rn >= pkg->index.renderNodes[static_cast<std::size_t>(lod)].size())
+                                    continue;
+                                const glm::mat4 model4 = base4 * pkg->index.renderNodes[static_cast<std::size_t>(lod)][rn].assetTransform;
+                                QueuedMeshDraw qd {g, proj * renderView * model4, model4};
+                                qd.seed = 0.5f;
+                                queuedModelAssetStationDraws.push_back(qd);
+                                m_lastStats.partsDrawn++;
+                                ++draws;
+                            }
+                            return draws;
+                        };
+                        // ships by their package path (cached; prewarmed once per frame below)
+                        static std::unordered_map<std::string, const render::geometry::ModelAssetGpu*> shipPackages;
+                        const auto shipPackage = [&](const std::string& model) {
+                            auto it = shipPackages.find(model);
+                            if (it == shipPackages.end())
+                            {
+                                const std::string base = model.substr(model.find_last_of('/') + 1);
+                                it = shipPackages.emplace(model, render::geometry::ModelAssetGpuLibrary::getPackage(
+                                                                     object.type, "assets/compiled/" + model + "/" + base + ".elmodel")).first;
+                            }
+                            return it->second;
+                        };
+                        // the scheduled visits (game::navigation::traffic::HubTrafficSchedule): the cargo ships at the rim
+                        // berths, the frontiers on the pads - arriving, docked, leaving, a function of the universe time
+                        if (trafficMode & 2)
+                            if (const auto* schedule = game::navigation::traffic::HubTrafficScheduleCatalog::forFrameModule(object.hubModuleId))
+                            {
+                                int shown = 0, draws = 0, active = 0;
+                                float nearestVisit = 1.0e9f;
+                                std::unordered_map<const render::geometry::ModelAssetGpu*, bool> warmed;
+                                for (const auto& visit : schedule->visits())
+                                {
+                                    game::navigation::traffic::HubVisitPose pose;
+                                    if (!schedule->pose(visit, trafficTime, pose))
+                                        continue;
+                                    const float dist = static_cast<float>(glm::length(pose.position - glm::dvec3(cameraCity)));
+                                    ++active;
+                                    nearestVisit = std::min(nearestVisit, dist);
+                                    if (dist > 5000.0f)
+                                        continue;
+                                    glm::mat4 local(glm::mat3(pose.basis));
+                                    local[3] = glm::vec4(glm::vec3(pose.position), 1.0f);
+                                    if (!inView(local, static_cast<float>(visit.lengthMeters)))
+                                        continue;
+                                    const auto* pkg = shipPackage(visit.model);
+                                    if (pkg && !warmed[pkg])
+                                    {
+                                        pkg->pumpPrewarm(1.0);
+                                        warmed[pkg] = true;
+                                    }
+                                    draws += drawShip(pkg, local, dist);
+                                    ++shown;
+                                }
+                                static const bool visitLog = std::getenv("ELITE_DEV_TRAFFIC_LOG") != nullptr;
+                                if (visitLog)
+                                {
+                                    static double lastVisitLog = -10.0;
+                                    const double nowS = renderProfileNowMs() * 0.001;
+                                    if (nowS - lastVisitLog > 2.0)
+                                    {
+                                        lastVisitLog = nowS;
+                                        std::fprintf(stderr, "[HubTraffic] schedule: %d visits active (nearest %.0f m), %d in view, %d mesh "
+                                                             "draws, cycle second %.0f\n",
+                                                     active, nearestVisit, shown, draws,
+                                                     std::fmod(trafficTime, schedule->cycleSeconds()));
+                                    }
+                                }
+                            }
                         // the air traffic: the hub's bloc's ships flying its lanes (scene::hubCityAirTraffic)
                         if (const auto* laneNet = game::navigation::traffic::HubLaneCatalog::forFrameModule(object.hubModuleId))
                         {
@@ -3896,54 +4007,7 @@ if (policy.drawObjects)
                             {
                                 if (!inView(v.local, static_cast<float>(fleet[static_cast<std::size_t>(v.fleetIndex)].lengthMeters)))
                                     continue;
-                                const auto* pkg = fleetPackages[static_cast<std::size_t>(v.fleetIndex)];
-                                if (!pkg || pkg->asset.renderLods.empty())
-                                    continue;
-                                const int lods = static_cast<int>(pkg->asset.renderLods.size());
-                                const int lod = std::min(lods - 1, v.distance < 500.0f ? 0 : v.distance < 1500.0f ? 1 : v.distance < 4000.0f ? 2 : 3);
-                                const auto& rl = pkg->asset.renderLods[static_cast<std::size_t>(lod)];
-                                const glm::mat4 base4 = cityModel * v.local * pkg->assetToLogical;
-                                // far away (the ship packages carry LOD0 only: 24-68 parts each): only its 4 biggest
-                                // parts (2026-11-18 A/B: 40 ships in view = 1100 mesh draws, +2.9 ms p50)
-                                static std::unordered_map<const render::geometry::ModelAssetGpu*, std::vector<std::size_t>> bigParts;
-                                const std::vector<std::size_t>* only = nullptr;
-                                if (lod == 0 && v.distance > 800.0f && rl.nodes.size() > 6)
-                                {
-                                    auto& big = bigParts[pkg];
-                                    if (big.empty())
-                                    {
-                                        std::vector<std::pair<std::size_t, std::size_t>> bySize;
-                                        bool ready = true;
-                                        for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
-                                        {
-                                            const render::MeshGPU* g = pkg->gpuFor(0, rl.nodes[rn].geometryIndex);
-                                            ready = ready && g;
-                                            bySize.emplace_back(g ? g->vertices() : 0u, rn);
-                                        }
-                                        if (ready)
-                                        {
-                                            std::sort(bySize.rbegin(), bySize.rend());
-                                            for (std::size_t q = 0; q < std::min<std::size_t>(4, bySize.size()); ++q)
-                                                big.push_back(bySize[q].second);
-                                        }
-                                    }
-                                    if (!big.empty())
-                                        only = &big;
-                                }
-                                const std::size_t partCount = only ? only->size() : rl.nodes.size();
-                                for (std::size_t q = 0; q < partCount; ++q)
-                                {
-                                    const std::size_t rn = only ? (*only)[q] : q;
-                                    const render::MeshGPU* g = pkg->gpuFor(lod, rl.nodes[rn].geometryIndex);
-                                    if (!g || rn >= pkg->index.renderNodes[static_cast<std::size_t>(lod)].size())
-                                        continue;
-                                    const glm::mat4 model4 = base4 * pkg->index.renderNodes[static_cast<std::size_t>(lod)][rn].assetTransform;
-                                    QueuedMeshDraw qd {g, proj * renderView * model4, model4};
-                                    qd.seed = 0.5f;
-                                    queuedModelAssetStationDraws.push_back(qd);
-                                    m_lastStats.partsDrawn++;
-                                    ++airDraws;
-                                }
+                                airDraws += drawShip(fleetPackages[static_cast<std::size_t>(v.fleetIndex)], v.local, v.distance);
                                 ++airShown;
                             }
                             if (trafficLog)

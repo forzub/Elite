@@ -857,6 +857,7 @@ add_executable(EliteGame
     src/game/navigation/traffic/TrafficRouteGraph.cpp
     src/game/navigation/traffic/TrafficRouteGraphCatalog.cpp
     src/game/navigation/traffic/HubLaneNetwork.cpp
+    src/game/navigation/traffic/HubTrafficSchedule.cpp
     src/game/navigation/traffic/HubLaneRouting.cpp
     src/game/navigation/DockingPortRuntimeStateCatalog.cpp
     src/game/navigation/GalacticReferenceFrame.cpp

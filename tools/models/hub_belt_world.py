@@ -130,6 +130,14 @@ def main():
         plan = plan_document(a.hub, L)
         plan["population_estimate"] = population_estimate(plan)
         plan["air_fleet"] = air_fleet(a.hub, world)
+        # the daily ship schedule (turnover -> visits -> docks): assets/data/navigation/hub_schedules/<hub>.json
+        from hub_schedule import schedule_document
+        sched = schedule_document(a.hub, L, plan)
+        sched_dir = os.path.join(nav, "hub_schedules")
+        os.makedirs(sched_dir, exist_ok=True)
+        open(os.path.join(sched_dir, f"{a.hub}.json"), "w", encoding="utf-8", newline="\n").write(
+            json.dumps(sched, ensure_ascii=False, indent=0) + "\n")
+        print(f"{a.hub}: schedule {len(sched['visits'])} visits/day, docks {len(sched['docks'])}, demand {sched['demand']}")
         os.makedirs(plan_dir, exist_ok=True)
         open(plan_path, "w", encoding="utf-8", newline="\n").write(json.dumps(plan, ensure_ascii=False, indent=0) + "\n")
     elif os.path.exists(plan_path):

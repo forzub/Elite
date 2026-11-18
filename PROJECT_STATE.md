@@ -6482,3 +6482,19 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   separate ground / air runs of the last pass were disturbed (CapCut, Telegram, a python ai-studio process on the GPU:
   100-1400 ms frames) - to re-measure on a quiet machine. Next if needed: real coarse LODs for the ship packages,
   thinner distant road traffic. ELITE_DEV_TRAFFIC_LOG prints the counts (air in view / mesh draws).
+- 2026-11-18 HUB TURNOVER + DAILY SHIP SCHEDULE (author: «прописать товарооборот и сделать тупо расписание, которое
+  будет лежать и на сервере и на клиенте ... сколько реально нужно доков ... все доки сделать доками - но на клиенте ...
+  игрок нападает на корабль. тот становится настоящим»): tools/models/hub_schedule.py (called by hub_belt_world.py) ->
+  assets/data/navigation/hub_schedules/<hub>.json (elite.hub_schedule.v1): client-side docks (2 berths per rim pier,
+  fuel berths, 8 frontier pads per parking deck, star pads), turnover t/day (consumer ~8 kg/resident/day, industry 1500
+  / block, stores-logistics-port 2500 / block transshipment, refuel 2000 / block), visits of a 24 h cycle (the bloc
+  fleet's cargo hulls; service hulls excluded), dwell by cargo, dock assignment with waiting, demand per dock kind.
+  plane_demo: 215 visits/day (120 bulk, 88 frontier, 7 fuel; OCS-4 115, SL-12 45, ST-6 43, C-120 12); cargo berths 68
+  available / 12 needed at peak, pads 45 / 9 (the city has ~5x the berths its turnover needs); fuel berths 0 (the
+  refuel block's fuel piers are not on an open side - fuel goes over cargo berths).
+  Shared code game::navigation::traffic::HubTrafficSchedule (+Catalog): the visit pose as a function of the universe
+  time (berth: in along the pier axis from 3 km out, decelerating; docked; lift 80 m, turn, out; pad: down from 900 m,
+  up and away from the centre). Client: SceneRenderer draws the visits within 5 km, frustum-culled, far ships as their
+  4 biggest parts (drawShip shared with the air traffic). Evidence: «7 visits active (nearest 267 m)»; D:/tmp/
+  visit_pad_z.png - an ST-6 parked on a parking pad. NOT yet: the server materializing an attacked visit (next), the
+  approach paths vs the overrun / tangential design, frame cost of the visits (to measure).

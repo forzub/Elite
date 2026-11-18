@@ -1450,13 +1450,19 @@ struct WorldBox
 };
 
 // separating-axis test of two oriented boxes; returns the penetration depth (<= 0: apart)
-double obbOverlap(const WorldBox& a, const WorldBox& b)
+// axisOut (optional): the axis of the least penetration, pointing from a to b - the contact normal. A face axis is
+// preferred over an edge (cross) axis unless the edge one is clearly shallower (the usual SAT bias). Before
+// 2026-11-18 the contact normal was the sum of the box centre offsets: against a wide thin slab (a landing pad, 160 x 6 m)
+// it pointed sideways to the slab's centre, the ship was pushed along the pad and sank through it, then jittered inside
+// (author: «пробил ее насквозь ... корабль перестал отвечать на управление, а вид из кабины - очень трясет»).
+double obbOverlap(const WorldBox& a, const WorldBox& b, glm::dvec3* axisOut = nullptr)
 {
     const glm::dvec3 t = b.c - a.c;
-    double minPen = 1.0e30;
-    auto test = [&](const glm::dvec3& axisIn) {
+    double minPen = 1.0e30, faceMinPen = 1.0e30;
+    glm::dvec3 bestAxis(0.0, 1.0, 0.0), faceAxis(0.0, 1.0, 0.0);
+    auto test = [&](const glm::dvec3& axisIn, bool face) {
         const double L = glm::length(axisIn);
-        if (L < 1.0e-9)
+        if (L < 1.0e-6)
             return true;
         const glm::dvec3 ax = axisIn / L;
         double ra = 0.0, rb = 0.0;
@@ -1465,20 +1471,33 @@ double obbOverlap(const WorldBox& a, const WorldBox& b)
             ra += a.h[i] * std::abs(glm::dot(a.R[i], ax));
             rb += b.h[i] * std::abs(glm::dot(b.R[i], ax));
         }
-        const double pen = ra + rb - std::abs(glm::dot(t, ax));
+        const double d = glm::dot(t, ax);
+        const double pen = ra + rb - std::abs(d);
         if (pen <= 0.0)
             return false;
-        minPen = std::min(minPen, pen);
+        const glm::dvec3 oriented = d >= 0.0 ? ax : -ax;
+        if (pen < minPen)
+        {
+            minPen = pen;
+            bestAxis = oriented;
+        }
+        if (face && pen < faceMinPen)
+        {
+            faceMinPen = pen;
+            faceAxis = oriented;
+        }
         return true;
     };
     for (int i = 0; i < 3; ++i)
-        if (!test(a.R[i]) || !test(b.R[i]))
+        if (!test(a.R[i], true) || !test(b.R[i], true))
             return 0.0;
     for (int i = 0; i < 3; ++i)
         for (int k = 0; k < 3; ++k)
-            if (!test(glm::cross(a.R[i], b.R[k])))
+            if (!test(glm::cross(a.R[i], b.R[k]), false))
                 return 0.0;
-    return minPen;
+    if (axisOut)
+        *axisOut = minPen < 0.9 * faceMinPen ? bestAxis : faceAxis;
+    return minPen < 0.9 * faceMinPen ? minPen : faceMinPen;
 }
 } // namespace
 
@@ -1501,17 +1520,31 @@ void GameSimulation::collideShips(double dt)
                 if (ps->core().role() != ShipRole::Player)
                     continue;
                 const auto& tr = ps->core().transform();
+                // the nearest city (a ship in free flight is matched to no hub)
+                const StaticObject* city = nullptr;
+                double best = 1.0e30;
                 for (const auto& [oid, obj] : m_staticObjects)
                 {
-                    if (obj.hubId.empty() || obj.hubId != tr.motion.hubId || obj.hubModuleId.size() < 5 ||
-                        obj.hubModuleId.compare(obj.hubModuleId.size() - 5, 5, ".city") != 0)
+                    if (obj.hubModuleId.size() < 5 || obj.hubModuleId.compare(obj.hubModuleId.size() - 5, 5, ".city") != 0)
                         continue;
-                    const glm::dmat3 R(glm::mat3(obj.orientation));
+                    const double d = glm::length(world::coordinates::fullMeters(tr.worldPosition) -
+                                                 world::coordinates::fullMeters(obj.worldPosition));
+                    if (d < best)
+                    {
+                        best = d;
+                        city = &obj;
+                    }
+                }
+                if (city)
+                {
+                    const glm::dmat3 R(glm::mat3(city->orientation));
                     const glm::dvec3 p = glm::transpose(R) * (world::coordinates::fullMeters(tr.worldPosition) -
-                                                              world::coordinates::fullMeters(obj.worldPosition));
-                    track << t << ' ' << p.x << ' ' << p.y << ' ' << p.z << '\n';
+                                                              world::coordinates::fullMeters(city->worldPosition));
+                    const glm::dvec3 lp = tr.motion.localPositionMeters;
+                    track << t << ' ' << p.x << ' ' << p.y << ' ' << p.z << " mode " << static_cast<int>(tr.motion.mode) << " ff "
+                          << tr.motion.freeFlight << " frame " << tr.motion.travelFrame.frameId << " local " << lp.x << ',' << lp.y
+                          << ',' << lp.z << '\n';
                     track.flush();
-                    break;
                 }
             }
         }
@@ -1524,6 +1557,7 @@ void GameSimulation::collideShips(double dt)
         glm::dvec3 p, v, w;   // position, velocity, angular velocity (world)
         glm::dmat3 R;
         double m, I, r;
+        bool velocityKnown = true;   // a static object's first tick: no velocity yet - push apart, no impulse
     };
     std::vector<Body> bodies;
     for (auto& [id, sp] : m_ships)
@@ -1536,8 +1570,17 @@ void GameSimulation::collideShips(double dt)
         b.id = id;
         b.ship = sp.get();
         b.p = world::coordinates::fullMeters(tr.worldPosition);
-        const auto t = m_combatTracks.find(id);
-        b.v = t != m_combatTracks.end() && t->second.valid ? t->second.velocityW : glm::dvec3(0.0);
+        // the ship's own world velocity (its travel frame + its local velocity). NOT the finite-difference combat
+        // track: one tick after a position jump (a dev start, a frame hand-over) that is km/s off, and a contact in that
+        // tick read 19 km/s "closing" against a city - CRUSHED and spun at 200 rad/s (2026-11-18, author: «пробил ее
+        // насквозь ... корабль перестал отвечать на управление, а вид из кабины - очень трясет»)
+        if (tr.motion.travelFrame.valid)
+            b.v = tr.motion.travelFrame.localToWorldVelocity(tr.motion.localPositionMeters, tr.motion.localVelocityMps);
+        else
+        {
+            const auto t = m_combatTracks.find(id);
+            b.v = t != m_combatTracks.end() && t->second.valid ? t->second.velocityW : glm::dvec3(0.0);
+        }
         b.R = basisOf(tr);
         b.w = b.R * glm::dvec3(tr.pitchRate, tr.yawRate, tr.rollRate);
         b.m = std::max(1.0e3, static_cast<double>(sp->core().effectivePhysics().massKg));
@@ -1564,6 +1607,7 @@ void GameSimulation::collideShips(double dt)
         b.p = world::coordinates::fullMeters(o.worldPosition);
         auto& track = m_staticTracks[oid];
         b.v = track.valid && m_combatClockS > track.t ? (b.p - track.p) / (m_combatClockS - track.t) : glm::dvec3(0.0);
+        b.velocityKnown = track.valid && m_combatClockS > track.t;
         track.p = b.p;
         track.t = m_combatClockS;
         track.valid = true;
@@ -1629,12 +1673,18 @@ void GameSimulation::collideShips(double dt)
                     continue;
                 for (const auto& y : bb)
                 {
-                    const double pen = obbOverlap(x, y);
+                    glm::dvec3 axis(0.0);
+                    const double pen = obbOverlap(x, y, &axis);
                     if (pen <= 0.0)
                         continue;
                     touching.emplace_back(x.index, y.index);
-                    contact += 0.5 * (x.c + y.c);
-                    dirSum += y.c - x.c;
+                    // the contact on the ship box's face along the normal (not halfway to the other box's centre:
+                    // a slab's centre is far to the side - a false lever arm, a false spin)
+                    double reach = 0.0;
+                    for (int c = 0; c < 3; ++c)
+                        reach += x.h[c] * std::abs(glm::dot(x.R[c], axis));
+                    contact += x.c + axis * (reach - 0.5 * pen);
+                    dirSum += axis * pen;   // the least-penetration axes (A -> B), weighted by depth
                     maxPen = std::max(maxPen, pen);
                 }
             }
@@ -1654,7 +1704,7 @@ void GameSimulation::collideShips(double dt)
             ta.motion.localPositionMeters += ta.motion.travelFrame.worldToLocalVector(-n * push * B.m / (A.m + B.m));
             if (tbp)
                 tbp->motion.localPositionMeters += tbp->motion.travelFrame.worldToLocalVector(n * push * A.m / (A.m + B.m));
-            if (vn >= -0.05 || m_combatClockS - m_devContactClockS[pair] < 0.25)
+            if (vn >= -0.05 || !B.velocityKnown || m_combatClockS - m_devContactClockS[pair] < 0.25)
                 continue;
             m_devContactClockS[pair] = m_combatClockS;
             const double e = 0.2;

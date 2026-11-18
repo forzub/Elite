@@ -6433,3 +6433,19 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   hub_modules). The hub plan got "roads" (deck heights over / under the plane, lanes 3 / 9 m, monorail rail top
   16.8 m and side 18 m). Evidence: D:/tmp/traffic_za.png / traffic_zb.png (3 s apart: cars moved along the lanes,
   the train came along the beam). Not checked: the under-plane traffic in a frame, frame-time cost. NOT accepted.
+- 2026-11-18 SHIP vs CITY CONTACT BUG (author: landed on a landing platform, «пробил ее насквозь. визуально если
+  смотреть из камеры дрона - все целое, но корабль перестал отвечать на управление, а вид из кабины - очень трясет»;
+  then «по-идее корабль должен был просто рассыпаться на части»). Root causes in GameSimulation::collideShips:
+  (1) the contact normal was the sum of the box-centre offsets: against a wide thin slab (hubv_pad_star 160 x 6 m,
+  hubb_parking 10 m thick) it pointed sideways to the slab's centre - the ship was pushed along the pad and sank
+  through; the contact point halfway to the slab centre gave a false lever arm / spin; (2) the ship velocity was the
+  finite-difference combat track: one tick after a position jump it is km/s off - reproduced: a ship touching a pad
+  after the dev start read «closing 19022 m/s», 4.5e7 MJ, CRUSHED (control state cleared = no response) and spun
+  at 214 rad/s (the cockpit shaking); the crushed hull has no break-up visual (the drone saw it whole).
+  Fix: obbOverlap returns the least-penetration axis (face axes preferred) -> the normal = depth-weighted axes; the
+  contact on the ship box face; the ship velocity from its travel frame (localToWorldVelocity); a static object's
+  first tick (no velocity yet) pushes apart without an impulse. Evidence (offscreen, ELITE_DEV_CITY_TRACK now finds
+  the nearest .city and logs mode / frame): sunk 1 m into a pad 40 m off its centre -> pushed straight up to rest at
+  y 0.71, no contacts logged (before: the 19 km/s crush); a full-thrust dive at 125 m/s -> 1.94 GJ, 3 links torn,
+  bounce up. Not yet: a break-up visual for a crushed hull; swept contacts (km/s J-speeds can tunnel a 6 m slab).
+  Self-test PASS; gates: the 3 pre-existing reds only.

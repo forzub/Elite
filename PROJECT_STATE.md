@@ -6591,3 +6591,48 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   generator to C++ + instanced module rendering) and simulate other systems' hubs; (b) surface settlements on airless
   bodies; (c) skinned animation (editor GLTFLoader + game skinning) for the people; (d) the beacon / labs not placed in
   the world yet; (e) a frame-cost A/B of the scheduled visits.
+- 2026-11-18 AUTHOR'S DECISIONS (after the Sol batch): (1) ALL hubs are built «by id» (generation), on the condition
+  that every hub is repeatable and recognizable: unique landmarks (statues, arch / plain bridges, a skirt around a
+  building, a very wide square with a monument in a corner, the block layout itself). Plan: the generator writes a
+  small frozen map per hub (repeatable even if the generator changes later), the game draws the city from the map with
+  shared instanced module models - no per-hub packaging. (2) Surface settlements = the same hubs on a planet; terrain
+  must give recognizable canyons / ridges / plains in the same places - the surface field is already deterministic
+  from the seed (FeatureClass: MountainRange, ImpactCrater, Volcano, Lake, IceCap); canyon / rift and plain classes are
+  missing. (3) Beacons in every inhabited system and along interstellar routes (the model has 1855 beacon nodes in 28
+  systems, the runtime only Sol's 19 relays); labs where something is interesting (around «Жопа мира», unmined belts,
+  some anomalies), not everywhere; missing kinds to place next: military outposts, route refuelling stations, pirate
+  settlements, smuggler hubs. In work: placement pass in tools/colonization_lab (agent), landmark kit
+  tools/models/units/hub_landmarks.py (agent).
+- 2026-11-18 HUB CITIES ASSEMBLED IN MEMORY (commit 5bfdc8062): tools/models/hub_city_layout.py writes the frozen
+  layout src/assets/data/navigation/hub_cities/<hub>.json (module palette, node groups, nodes [id, module, group,
+  pos, rot] in the packaged assembly's order; 0.1-0.9 MB vs 50-150 MB per-hub package); src/model_asset/HubCityAssembly
+  builds the metric production asset from it + the shared module packages (module LOD {0,2,3} -> city LOD 0..2,
+  OBB-box group proxies = LOD3 module_proxy, "hlod" 12 m, collision "<node>.<part>.<k>"). ModelAssetGpuLibrary and the
+  server's hit volumes (GameSceneSetup packageHitVolumes) use it when a layout exists (DEV A/B: ELITE_DEV_CITY_PACKAGE=1
+  = the old package). Evidence: EliteHubCityAssemblyCheck - 9 cities (7 Sol + plane_demo / plane_ruin) SAME as their
+  packages (nodes, collision ids / placement, placed triangles per LOD, proxies, groups, bounds); assembly 50-190 ms per
+  city (1.3 s cold); in game D:/tmp/tikhiy_layout.png = the same city; frame A/B Tikhiy 2 x 70 s no vsync: layout p50
+  15.7 / 16.4 ms p95 37.0 / 36.6 vs package p50 16.1 / 17.1 p95 37.2 / 37.5 (noise). Fixed on the way: stale module
+  packages hubk_hab_a/b/c (2244 tris vs the 128-tri source) repackaged; hubm_* and the 19 hubl_* landmarks packaged.
+- 2026-11-18 PLACEMENT PASS (agent, commit 27f79ba8c): tools/colonization_lab/outposts.py - 171 beacons into the runtime
+  (25 bridge, 60 relay, 65 military, 21 interstellar route relays), 14 labs, 21 military outposts, 5 refuelling
+  stations, 10 pirate settlements + 7 smuggler hubs (hidden_sites); docs/WORLD_OUTPOSTS_PLACEMENT.md (rules, per-system
+  table, assembly proposals, 9 open questions). Not yet: economy_live.py rerun (+183 hubs in the economy files), the
+  beacons / labs as world objects.
+- 2026-11-18 COLONY HUBS + TOUR FIXES (commits b072615f2, aa515ca90): tools/models/hub_colonies.py <site id> - profile
+  (size from population 22k / block, shape / under / port from the id, style = the polity's, landmarks on), world entry
+  (an orbital hub of its system), city attach, frozen layout. Built: Citadel (Wolf 359, practical), Agora (Lalande,
+  ancient), Strife belt (eps Eri, belt_clans), Homestead (HD 20794, american), New Karma (Delta Pav, indian), GJ 832 b
+  platforms (ultramodern, 7182 nodes), Vorota (HD 104067, far). units/hub_landmark_place.add_landmarks (signature +
+  landmarks; only with "landmarks": true - the Sol cities keep their frozen maps). GameServer::materializeWorldSiteHubs
+  spawns the authored hubs of other systems (their body gets no generated station).
+  FIXED (tour 2026-11-18): (1) hubs of other systems had a 0 s Kepler period (gravity parameters applied by
+  switchSimulationContext BEFORE they spawned) -> hub velocity 29 000 km/s, a route to them never ended; applied
+  after spawning (Citadel: orbit 5.5 km/s, period 8305 s). (2) A hidden window with vsync ran at 4 FPS (the GPU wait
+  ~190-250 ms a frame) - the client autopilots stepped at 4 Hz and rocked the ship (the author saw it on the preview;
+  most likely also this afternoon's "docking regressions"): Window::swapBuffers, unfocused + 3 frames >= 150 ms -> vsync
+  off, frames paced to 60 Hz; vsync back on focus. Evidence: D:/tmp/tour4 (Sol -> Wolf 359 jump + 36 M km route to the
+  Citadel: ROUTE COMPLETE in 620 s, frames 01..06). DEV script verbs: waitfor:system:<id> | route | hubnear:<hub>:<km> |
+  dockdone [@max s], capture:<png>, dock:<module>:<anchor>; ELITE_DEV_HUB_VEL_LOG=<hub>.
+  OPEN: the jump exit warning «норма до 1106 км» ignores the currents' residual (52 000 km at Wolf 359, lock 200) - it
+  fires on every jump into a system with currents (a design question for the author). Gates: 203 pass, the 3 old reds.

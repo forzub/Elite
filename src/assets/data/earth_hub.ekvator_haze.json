@@ -1,0 +1,259 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "earth_hub.ekvator",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -508.2,
+    -5870.0,
+    2980.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -508.2,
+    -5870.0,
+    2880.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -508.2,
+    -5870.0,
+    2780.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -539.0,
+    -6174.0,
+    3143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -639.0,
+    -6174.0,
+    3143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -739.0,
+    -6174.0,
+    3143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    739.0,
+    -6174.0,
+    -2857.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    639.0,
+    -6174.0,
+    -2857.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    539.0,
+    -6174.0,
+    -2857.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    653.5,
+    -6226.0,
+    2787.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    561.0,
+    -6174.0,
+    3133.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    461.0,
+    -6174.0,
+    3133.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    361.0,
+    -6174.0,
+    3133.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1230.0,
+    -6226.0,
+    2153.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1530.0,
+    -6174.0,
+    2303.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1530.0,
+    -6174.0,
+    2203.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1530.0,
+    -6174.0,
+    2103.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1350.0,
+    -5818.0,
+    2888.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1530.0,
+    -5870.0,
+    2838.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1530.0,
+    -5870.0,
+    2938.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1530.0,
+    -5870.0,
+    3038.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1350.0,
+    -6174.0,
+    2837.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1450.0,
+    -6174.0,
+    2837.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1550.0,
+    -6174.0,
+    2837.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2126.5,
+    -6226.0,
+    2764.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2126.5,
+    -6226.0,
+    2950.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2156.7,
+    -6226.0,
+    3136.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2423.3,
+    -6226.0,
+    3136.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

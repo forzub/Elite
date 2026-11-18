@@ -36,6 +36,55 @@
       "operational": "online",
       "occupancy": "free",
       "access": "allowed"
+    },
+    {
+      "module_id": "earth_orbital_hub.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "earth_hub.aurora.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "earth_hub.canaveral.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "earth_hub.ekvator.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "earth_hub.kourou.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "earth_hub.tikhiy.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "earth_hub.wenchang.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
     }
   ]
 }

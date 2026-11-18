@@ -1,0 +1,6 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "earth_hub.canaveral",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": []
+}

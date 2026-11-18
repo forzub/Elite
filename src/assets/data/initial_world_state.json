@@ -113,6 +113,148 @@
             "y": -250.0,
             "z": 0.0
           }
+        },
+        {
+          "id": "earth_orbital_hub.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_orbital_hub.cty_c4_5_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 550.0,
+            "y": -6000.0,
+            "z": 2100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "earth_orbital_hub.cty_c5_4_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1610.0,
+            "y": -6000.0,
+            "z": 1020.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_orbital_hub.cty_c5_4_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1610.0,
+            "y": -6000.0,
+            "z": 1200.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_orbital_hub.cty_c5_4_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1610.0,
+            "y": -6000.0,
+            "z": 1380.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_orbital_hub.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 550.0,
+            "y": -6000.0,
+            "z": -3510.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "earth_orbital_hub.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 550.0,
+            "y": -6000.0,
+            "z": -3000.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },
@@ -166,6 +308,171 @@
           },
           "map_visible": true
         }
+      ],
+      "dock_modules": [
+        {
+          "id": "earth_hub.tikhiy.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_hub.tikhiy.cty_c2_5_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -3100.0,
+            "y": -6000.0,
+            "z": 1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "earth_hub.tikhiy.cty_c3_3_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2200.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "earth_hub.tikhiy.cty_c4_2_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -940.0,
+            "y": -6000.0,
+            "z": -2180.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.tikhiy.cty_c4_2_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -940.0,
+            "y": -6000.0,
+            "z": -2000.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.tikhiy.cty_c4_2_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -940.0,
+            "y": -6000.0,
+            "z": -1820.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.tikhiy.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -3100.0,
+            "y": -6000.0,
+            "z": 3610.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "earth_hub.tikhiy.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -3100.0,
+            "y": -6000.0,
+            "z": 3100.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
       ]
     },
     {
@@ -217,6 +524,213 @@
             "roll": 0
           },
           "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "earth_hub.canaveral.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_c5_3_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 810.0,
+            "y": -6000.0,
+            "z": 920.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_c5_3_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 810.0,
+            "y": -6000.0,
+            "z": 1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_c5_3_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 810.0,
+            "y": -6000.0,
+            "z": 1280.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_c6_1_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1710.0,
+            "y": -6000.0,
+            "z": -1280.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_c6_1_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1710.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_c6_1_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1710.0,
+            "y": -6000.0,
+            "z": -920.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_c6_2_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1550.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": 2710.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "earth_hub.canaveral.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -450.0,
+            "y": -6000.0,
+            "z": 2200.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },
@@ -270,6 +784,234 @@
           },
           "map_visible": true
         }
+      ],
+      "dock_modules": [
+        {
+          "id": "earth_hub.wenchang.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c2_2_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2940.0,
+            "y": -6000.0,
+            "z": -730.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c2_2_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2940.0,
+            "y": -6000.0,
+            "z": -550.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c2_2_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2940.0,
+            "y": -6000.0,
+            "z": -370.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c3_2_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2040.0,
+            "y": -6000.0,
+            "z": -730.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c3_2_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2040.0,
+            "y": -6000.0,
+            "z": -550.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c3_2_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2040.0,
+            "y": -6000.0,
+            "z": -370.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c3_4_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -2200.0,
+            "y": -6000.0,
+            "z": 1650.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_c6_4_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 1100.0,
+            "y": -6000.0,
+            "z": 1650.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 4510.0,
+            "y": -6000.0,
+            "z": -550.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": -90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "earth_hub.wenchang.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 4000.0,
+            "y": -6000.0,
+            "z": -550.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": -90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
       ]
     },
     {
@@ -321,6 +1063,234 @@
             "roll": 0
           },
           "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "earth_hub.kourou.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c1_2_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1900.0,
+            "y": -6000.0,
+            "z": -1000.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c1_4_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1740.0,
+            "y": -6000.0,
+            "z": 1020.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c1_4_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1740.0,
+            "y": -6000.0,
+            "z": 1200.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c1_4_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1740.0,
+            "y": -6000.0,
+            "z": 1380.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c2_1_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1000.0,
+            "y": -6000.0,
+            "z": -1900.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c2_4_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -840.0,
+            "y": -6000.0,
+            "z": 1020.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c2_4_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -840.0,
+            "y": -6000.0,
+            "z": 1200.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_c2_4_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -840.0,
+            "y": -6000.0,
+            "z": 1380.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 100.0,
+            "y": -6000.0,
+            "z": 3510.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "earth_hub.kourou.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 100.0,
+            "y": -6000.0,
+            "z": 3000.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },
@@ -374,6 +1344,150 @@
           },
           "map_visible": true
         }
+      ],
+      "dock_modules": [
+        {
+          "id": "earth_hub.ekvator.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_hub.ekvator.cty_c2_4_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1450.0,
+            "y": -6000.0,
+            "z": 1200.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 9.0
+          }
+        },
+        {
+          "id": "earth_hub.ekvator.cty_c4_1_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": -2080.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.ekvator.cty_c4_1_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": -1900.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.ekvator.cty_c4_1_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": -1720.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.ekvator.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -550.0,
+            "y": -6000.0,
+            "z": -3510.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "earth_hub.ekvator.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -550.0,
+            "y": -6000.0,
+            "z": -3000.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
       ]
     },
     {
@@ -425,6 +1539,171 @@
             "roll": 0
           },
           "map_visible": true
+        }
+      ],
+      "dock_modules": [
+        {
+          "id": "earth_hub.aurora.city",
+          "type": "hub_belt_city",
+          "name": "city",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 0.0,
+            "y": -6000.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_hub.aurora.cty_c1_1_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -1450.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "earth_hub.aurora.cty_c3_1_hab_rot_drum",
+          "type": "hubb_hab_drum",
+          "name": "Жилые барабаны",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 550.0,
+            "y": -6000.0,
+            "z": -1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -9.0
+          }
+        },
+        {
+          "id": "earth_hub.aurora.cty_c3_3_hotel_hex0",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": 920.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -4.0
+          }
+        },
+        {
+          "id": "earth_hub.aurora.cty_c3_3_hotel_hex1",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": 1100.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.aurora.cty_c3_3_hotel_hex2",
+          "type": "hubb_hotel_hex",
+          "name": "Гостиничные доки",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": 710.0,
+            "y": -6000.0,
+            "z": 1280.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 4.0
+          }
+        },
+        {
+          "id": "earth_hub.aurora.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -550.0,
+            "y": -6000.0,
+            "z": 2710.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "earth_hub.aurora.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: сервисный блок",
+          "generated": "hub_city",
+          "offset_m": {
+            "x": -550.0,
+            "y": -6000.0,
+            "z": 2200.0
+          },
+          "rotation_deg": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": -180.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },

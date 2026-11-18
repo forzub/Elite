@@ -6562,3 +6562,32 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   eq_hub_facade_*, trusses on all; STYLE_ZONE_MODULES (downtown / residential / hotel) and STYLE_POLITIES (ultramodern:
   gj832_tianhe, eps_eri_harmony, hd40307_firmament, tau_ceti_cognium (debatable); ancient: lalande_hellas,
   hd114783_hellas3; indian: delta_pav_karma, delta_pav_freekarma, hd20794_newindia). Previews D:/tmp/east_prev/.
+- 2026-11-18 NATIONAL STYLE KIT WEST (agent): tools/models/units/hub_style_west.py - 16 modules hubx_{practical,
+  belt_clans,american}_*: concrete armour towers / bunker slabs / brutalist HQ / exoskeleton shaft / bastion with radar;
+  welded tank towers / stacked habs / rock-dome market / hull tower / clan rock; 57-house American suburb block, brick
+  walk-up, strip mall, art-deco tower, glass condos, capitol + mall. STYLE_POLITIES: practical (wolf359_citadel,
+  proxima_outpost, cyg61_kern), belt_clans (eps_eri_strife, gj581_freeclans), american (hd20794_hellas2). Previews
+  D:/tmp/west_*.png. Integration: tools/models/units/hub_styles.py (style tables, polity_style), hub_belt._module_obb
+  knows hub_services / hub_style_* (the generator's footprints), hub_plane._zone_modules(style).
+- 2026-11-18 HUB GENERATION PROFILES + THE SOL JURISDICTION'S HUBS AS CITIES: tools/models/hub_profiles.json (size,
+  shape blob / disc / long, under on / off, port share, style, attach offset); hub_plane.hub_profile + generator
+  (disc: quiet rim, long: half noise; under off; port front threshold); hub_belt_world.py --attach --city-offset:
+  the city + its spinning bodies / dock join an EXISTING hub as modules "<hub>.city" / "<hub>.cty_*" (marked
+  "generated": "hub_city"; only these are replaced; the hub's canon station and docks stay - checked: Vysokiy keeps
+  hub_hex_dock_a / hub_hex_dock_base / guidance_dock_cylinder_b); tools/models/hub_attach_profiles.py runs it for every
+  profile. Built, attached, packaged: earth_orbital_hub (Высокий, 6349 nodes), earth_hub.tikhiy (disc 11x9, 13359),
+  canaveral (long 10x5, no under level, 5305), wenchang (long 11x6, port 0.9, 8356), kourou (disc 7x7, 6127), ekvator
+  (6331), aurora (disc 6x5, 4389); the cities lie 6 km below each hub's station. Each has its plan / lanes / schedule
+  (e.g. Tikhiy 426 visits/day, cargo 44 / 17 needed, pads 97). Ceres (mining) untouched («шахты - надо будет подумать»).
+  Evidence: D:/tmp/tikhiy.png, vysokiy_city.png (in game over the Earth). Gates: 203 pass, the 3 pre-existing reds only.
+  NOT verified: docking regressions - this afternoon's offscreen runs ran at exactly 4 fps (frame-gap 250 ms x 716,
+  own frame 3.5 ms: the display / session throttled while the author is away), the assisted pre-turn limit-cycles at
+  4 Hz in BOTH the Vysokiy run and the reference plane_demo dock run that docked before -> re-run when the machine is
+  attended. A Vysokiy run without START_AT failed «ship is not matched to target Hub frame» with the OLD world too (the
+  matched dev start needs a city point) - not a regression.
+- Open after this batch: (a) the planned hubs of the OTHER colonies (sites_3126: 581 sites; minus 115 mines ~460) are
+  map catalog entries only, not world objects; a city assembly per site (2-5 min packaging each, 100+ KB of plan /
+  lanes / schedule data) does not scale -> proposal: generate the planar city at runtime from the hub id (port the
+  generator to C++ + instanced module rendering) and simulate other systems' hubs; (b) surface settlements on airless
+  bodies; (c) skinned animation (editor GLTFLoader + game skinning) for the people; (d) the beacon / labs not placed in
+  the world yet; (e) a frame-cost A/B of the scheduled visits.

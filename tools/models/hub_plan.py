@@ -20,9 +20,19 @@ def plan_document(hub_id, L):
     from units.hub_plane import CELL, ZONE_TITLE
     obb = _module_obb()
     blocks = {}
+    # the service / power blocks are named by where they stand in the city («названия согласно своей локации»):
+    # «Службы: полиция и МЧС · Восток» (+X east, -Z north)
+    def side_of(x, z):
+        if abs(x) < 400.0 and abs(z) < 400.0:
+            return "Центр"
+        a = math.degrees(math.atan2(-z, x)) % 360.0
+        return ["Восток", "Северо-восток", "Север", "Северо-запад", "Запад", "Юго-запад", "Юг", "Юго-восток"][int((a + 22.5) // 45) % 8]
     for d in L.get("districts", []):
         i, j = d["cell"]
-        blocks[d["id"]] = {"id": f"b{i}_{j}", "i": i, "j": j, "zone": d["kind"], "title": ZONE_TITLE.get(d["kind"], d["kind"]),
+        title = ZONE_TITLE.get(d["kind"], d["kind"])
+        if d["kind"] in ("services", "power"):
+            title = f"{title} · {side_of(d['centre'][0], d['centre'][2])}"
+        blocks[d["id"]] = {"id": f"b{i}_{j}", "i": i, "j": j, "zone": d["kind"], "title": title,
                            "centre": [round(d["centre"][0], 1), round(d["centre"][2], 1)], "half_m": CELL / 2,
                            "top_h": 0.0, "under_h": 0.0, "modules": 0}
     modules = []

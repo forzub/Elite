@@ -9,13 +9,13 @@
 "population": 1649906,
 "turnover_t_per_day": {
 "consumer_goods_t": 13199,
-"industry_t": 10500,
-"transshipment_t": 37500,
+"industry_t": 7500,
+"transshipment_t": 27500,
 "fuel_t": 2000
 },
 "demand": {
 "cargo": {
-"available": 68,
+"available": 52,
 "peak_needed": 14,
 "ships_waited": 0
 },
@@ -25,12 +25,74 @@
 "ships_waited": 0
 },
 "pad": {
-"available": 45,
-"peak_needed": 10,
+"available": 29,
+"peak_needed": 8,
+"ships_waited": 0
+},
+"police": {
+"available": 2,
+"peak_needed": 2,
+"ships_waited": 0
+},
+"rescue": {
+"available": 2,
+"peak_needed": 1,
 "ships_waited": 0
 }
 },
 "docks": [
+{
+"id": "c0_1_services_m0.police",
+"kind": "police",
+"pos": [
+-4066.0,
+21.0,
+-1600.0
+],
+"axis": [
+0.0,
+1.0,
+0.0
+],
+"up": [
+0.0,
+1.0,
+0.0
+],
+"heading": [
+0.0,
+0.0,
+1.0
+],
+"max_len": 50.0,
+"vertical": true
+},
+{
+"id": "c0_1_services_m1.rescue",
+"kind": "rescue",
+"pos": [
+-4078.0,
+5.0,
+-1254.0
+],
+"axis": [
+0.0,
+1.0,
+0.0
+],
+"up": [
+0.0,
+1.0,
+0.0
+],
+"heading": [
+0.0,
+0.0,
+1.0
+],
+"max_len": 50.0,
+"vertical": true
+},
 {
 "id": "c2_4_logistics_p01_0.l",
 "kind": "cargo",
@@ -1774,12 +1836,12 @@
 "vertical": false
 },
 {
-"id": "c8_1_logistics_m2.p00",
-"kind": "pad",
+"id": "c8_1_services_m0.police",
+"kind": "police",
 "pos": [
-3768.33,
-6.0,
--1242.0
+3934.0,
+21.0,
+-1600.0
 ],
 "axis": [
 0.0,
@@ -1792,20 +1854,20 @@
 0.0
 ],
 "heading": [
-1.0,
 0.0,
-0.0
+0.0,
+1.0
 ],
-"max_len": 60.0,
+"max_len": 50.0,
 "vertical": true
 },
 {
-"id": "c8_1_logistics_m2.p01",
-"kind": "pad",
+"id": "c8_1_services_m1.rescue",
+"kind": "rescue",
 "pos": [
-3838.33,
-6.0,
--1242.0
+3922.0,
+5.0,
+-1254.0
 ],
 "axis": [
 0.0,
@@ -1818,792 +1880,12 @@
 0.0
 ],
 "heading": [
-1.0,
 0.0,
-0.0
+0.0,
+1.0
 ],
-"max_len": 60.0,
+"max_len": 50.0,
 "vertical": true
-},
-{
-"id": "c8_1_logistics_m2.p02",
-"kind": "pad",
-"pos": [
-3908.33,
-6.0,
--1242.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m2.p03",
-"kind": "pad",
-"pos": [
-3978.33,
-6.0,
--1242.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m2.p10",
-"kind": "pad",
-"pos": [
-3768.33,
-6.0,
--1382.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m2.p11",
-"kind": "pad",
-"pos": [
-3838.33,
-6.0,
--1382.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m2.p12",
-"kind": "pad",
-"pos": [
-3908.33,
-6.0,
--1382.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m2.p13",
-"kind": "pad",
-"pos": [
-3978.33,
-6.0,
--1382.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p00",
-"kind": "pad",
-"pos": [
-4226.67,
-6.0,
--1207.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p01",
-"kind": "pad",
-"pos": [
-4226.67,
-6.0,
--1277.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p02",
-"kind": "pad",
-"pos": [
-4226.67,
-6.0,
--1347.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p03",
-"kind": "pad",
-"pos": [
-4226.67,
-6.0,
--1417.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p10",
-"kind": "pad",
-"pos": [
-4086.67,
-6.0,
--1207.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p11",
-"kind": "pad",
-"pos": [
-4086.67,
-6.0,
--1277.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p12",
-"kind": "pad",
-"pos": [
-4086.67,
-6.0,
--1347.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_m3.p13",
-"kind": "pad",
-"pos": [
-4086.67,
-6.0,
--1417.0
-],
-"axis": [
-0.0,
-1.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 60.0,
-"vertical": true
-},
-{
-"id": "c8_1_logistics_p10_0.l",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1183.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p10_0.r",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1267.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p10_1.l",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1333.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p10_1.r",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1417.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p10_2.l",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1483.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p10_2.r",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1567.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p10_3.l",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1633.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p10_3.r",
-"kind": "cargo",
-"pos": [
-4380.0,
-8.0,
--1717.0
-],
-"axis": [
-1.0,
-0.0,
-0.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-1.0,
-0.0,
-0.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_0.l",
-"kind": "cargo",
-"pos": [
-4267.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_0.r",
-"kind": "cargo",
-"pos": [
-4183.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_1.l",
-"kind": "cargo",
-"pos": [
-4117.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_1.r",
-"kind": "cargo",
-"pos": [
-4033.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_2.l",
-"kind": "cargo",
-"pos": [
-3967.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_2.r",
-"kind": "cargo",
-"pos": [
-3883.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_3.l",
-"kind": "cargo",
-"pos": [
-3817.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
-},
-{
-"id": "c8_1_logistics_p0-1_3.r",
-"kind": "cargo",
-"pos": [
-3733.0,
-8.0,
--1830.0
-],
-"axis": [
-0.0,
-0.0,
--1.0
-],
-"up": [
-0.0,
-1.0,
-0.0
-],
-"heading": [
-0.0,
-0.0,
--1.0
-],
-"max_len": 140.0,
-"vertical": false
 },
 {
 "id": "c8_2_port_p10_0.l",
@@ -2973,38 +2255,38 @@
 "visits": [
 {
 "id": "plane_ruin.v0000",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 294,
-"dock": "c6_0_port_p0-1_0.r",
-"arrive_s": 1490,
-"dwell_s": 3564,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 1309,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0001",
 "kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 198,
-"dock": "c7_3_logistics_m0.p13",
-"arrive_s": 1890,
-"dwell_s": 4464,
+"cargo_t": 108,
+"dock": "c3_4_logistics_m2.p10",
+"arrive_s": 1490,
+"dwell_s": 2841,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0002",
 "kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
 "length_m": 48.0,
-"cargo_t": 103,
-"dock": "c7_3_logistics_m0.p00",
+"cargo_t": 198,
+"dock": "c5_5_rig_m2.star",
 "arrive_s": 1890,
-"dwell_s": 2746,
+"dwell_s": 4464,
 "wait_s": 0
 },
 {
@@ -3014,7 +2296,7 @@
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 97,
-"dock": "c6_1_logistics_m2.p00",
+"dock": "c3_4_logistics_m2.p00",
 "arrive_s": 1973,
 "dwell_s": 2646,
 "wait_s": 0
@@ -3026,21 +2308,21 @@
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 198,
-"dock": "c3_4_logistics_m2.p01",
+"dock": "c7_3_logistics_m0.p02",
 "arrive_s": 2255,
 "dwell_s": 4466,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0005",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 132,
-"dock": "c3_4_logistics_m2.p00",
-"arrive_s": 2477,
-"dwell_s": 3274,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 268,
+"dock": "c8_3_port_p10_0.l",
+"arrive_s": 3551,
+"dwell_s": 3405,
 "wait_s": 0
 },
 {
@@ -3049,70 +2331,70 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 268,
-"dock": "c8_1_logistics_p10_2.r",
-"arrive_s": 3551,
-"dwell_s": 3405,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0007",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 119,
-"dock": "c8_1_logistics_m3.p02",
-"arrive_s": 3969,
-"dwell_s": 3039,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0008",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 332,
-"dock": "c8_1_logistics_p0-1_2.r",
+"dock": "c7_5_port_p10_2.l",
 "arrive_s": 4136,
 "dwell_s": 3789,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0009",
+"id": "plane_ruin.v0007",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 343,
-"dock": "c6_5_logistics_p01_1.l",
+"dock": "c2_4_logistics_p01_3.r",
 "arrive_s": 4162,
 "dwell_s": 3861,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0010",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 168,
-"dock": "c3_4_logistics_m2.p10",
-"arrive_s": 4762,
-"dwell_s": 3931,
+"id": "plane_ruin.v0008",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 5175,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0011",
+"id": "plane_ruin.v0009",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 213,
-"dock": "c8_1_logistics_m3.p01",
+"dock": "c7_3_logistics_m0.p00",
 "arrive_s": 5583,
 "dwell_s": 4730,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0010",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 6709,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0011",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 288,
+"dock": "c6_0_port_p0-1_1.l",
+"arrive_s": 6783,
+"dwell_s": 3527,
 "wait_s": 0
 },
 {
@@ -3121,22 +2403,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 288,
-"dock": "c7_5_port_p01_1.r",
-"arrive_s": 6783,
-"dwell_s": 3527,
+"cargo_t": 313,
+"dock": "c8_3_port_p10_2.l",
+"arrive_s": 7304,
+"dwell_s": 3679,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0013",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 313,
-"dock": "c8_2_port_p10_0.l",
-"arrive_s": 7304,
-"dwell_s": 3679,
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 103,
+"dock": "c3_4_logistics_m2.p11",
+"arrive_s": 7659,
+"dwell_s": 2757,
 "wait_s": 0
 },
 {
@@ -3145,34 +2427,34 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 281,
-"dock": "c8_1_logistics_p0-1_1.r",
-"arrive_s": 7659,
-"dwell_s": 3487,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0015",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 376,
-"dock": "c7_5_port_p10_0.r",
+"dock": "c7_5_port_p01_0.r",
 "arrive_s": 7715,
 "dwell_s": 4054,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0016",
+"id": "plane_ruin.v0015",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 102,
-"dock": "c7_3_logistics_m0.p12",
+"dock": "c7_3_logistics_m0.p11",
 "arrive_s": 8999,
 "dwell_s": 2732,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0016",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 319,
+"dock": "c7_5_port_p01_2.l",
+"arrive_s": 9009,
+"dwell_s": 3712,
 "wait_s": 0
 },
 {
@@ -3181,10 +2463,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 319,
-"dock": "c7_5_port_p01_1.l",
-"arrive_s": 9009,
-"dwell_s": 3712,
+"cargo_t": 289,
+"dock": "c6_5_logistics_p01_0.l",
+"arrive_s": 9306,
+"dwell_s": 3535,
 "wait_s": 0
 },
 {
@@ -3193,34 +2475,34 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 289,
-"dock": "c6_5_logistics_p01_3.l",
-"arrive_s": 9306,
-"dwell_s": 3535,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0019",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 360,
-"dock": "c6_0_port_p0-1_3.l",
+"dock": "c2_4_logistics_p01_0.r",
 "arrive_s": 9563,
 "dwell_s": 3959,
 "wait_s": 0
 },
 {
+"id": "plane_ruin.v0019",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 10575,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
 "id": "plane_ruin.v0020",
-"kind": "frontier",
+"kind": "rescue",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 124,
-"dock": "c6_1_logistics_m2.p10",
-"arrive_s": 11866,
-"dwell_s": 3127,
+"cargo_t": 0,
+"dock": "c8_1_services_m1.rescue",
+"arrive_s": 11110,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
@@ -3230,45 +2512,45 @@
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 161,
-"dock": "c7_3_logistics_m0.p13",
+"dock": "c7_3_logistics_m0.p02",
 "arrive_s": 12029,
 "dwell_s": 3804,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0022",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 12109,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0023",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 292,
-"dock": "c6_0_port_p0-1_0.l",
+"dock": "c2_4_logistics_p01_3.r",
 "arrive_s": 13243,
 "dwell_s": 3551,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0023",
-"kind": "fuel",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 383,
-"dock": "c8_2_port_p10_1.r",
-"arrive_s": 13863,
-"dwell_s": 3525,
-"wait_s": 0
-},
-{
 "id": "plane_ruin.v0024",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 320,
-"dock": "c6_5_logistics_p01_2.l",
-"arrive_s": 14352,
-"dwell_s": 3722,
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m1.rescue",
+"arrive_s": 13829,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
@@ -3277,46 +2559,46 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
+"cargo_t": 320,
+"dock": "c6_0_port_p0-1_3.l",
+"arrive_s": 14352,
+"dwell_s": 3722,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0026",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
 "cargo_t": 280,
-"dock": "c6_0_port_p0-1_0.r",
+"dock": "c6_5_logistics_p01_3.l",
 "arrive_s": 14614,
 "dwell_s": 3481,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0026",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 186,
-"dock": "c8_1_logistics_m3.p12",
-"arrive_s": 14727,
-"dwell_s": 4246,
-"wait_s": 0
-},
-{
 "id": "plane_ruin.v0027",
 "kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 189,
-"dock": "c3_4_logistics_m2.p03",
-"arrive_s": 14763,
-"dwell_s": 4298,
+"cargo_t": 106,
+"dock": "c6_1_logistics_m2.p02",
+"arrive_s": 15200,
+"dwell_s": 2813,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0028",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 153,
-"dock": "c8_1_logistics_m3.p11",
-"arrive_s": 14835,
-"dwell_s": 3661,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 383,
+"dock": "c8_3_port_p10_2.r",
+"arrive_s": 15412,
+"dwell_s": 4101,
 "wait_s": 0
 },
 {
@@ -3325,130 +2607,130 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 106,
-"dock": "c5_5_rig_m2.star",
-"arrive_s": 15200,
-"dwell_s": 2813,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0030",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 209,
-"dock": "c3_4_logistics_m2.p02",
-"arrive_s": 15315,
-"dwell_s": 4658,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0031",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 383,
-"dock": "c7_5_port_p01_2.l",
-"arrive_s": 15412,
-"dwell_s": 4101,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0032",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
 "cargo_t": 116,
-"dock": "c8_1_logistics_m3.p01",
+"dock": "c3_4_logistics_m2.p03",
 "arrive_s": 15615,
 "dwell_s": 2995,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0033",
+"id": "plane_ruin.v0030",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 385,
-"dock": "c8_1_logistics_p0-1_0.l",
+"dock": "c7_5_port_p01_2.l",
 "arrive_s": 15723,
 "dwell_s": 4109,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0034",
+"id": "plane_ruin.v0031",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 15975,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0032",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 315,
-"dock": "c7_5_port_p01_2.r",
+"dock": "c6_5_logistics_p01_1.l",
 "arrive_s": 15995,
 "dwell_s": 3690,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0035",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 130,
-"dock": "c6_1_logistics_m2.p12",
+"id": "plane_ruin.v0033",
+"kind": "fuel",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 354,
+"dock": "c6_5_logistics_p01_2.l",
 "arrive_s": 16516,
-"dwell_s": 3236,
+"dwell_s": 3393,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0036",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 90,
-"dock": "c7_3_logistics_m0.p10",
-"arrive_s": 16950,
-"dwell_s": 2523,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0037",
+"id": "plane_ruin.v0034",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 149,
-"dock": "c8_1_logistics_m2.p12",
+"dock": "c5_5_rig_m1.star",
 "arrive_s": 17068,
 "dwell_s": 3575,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0038",
+"id": "plane_ruin.v0035",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 17509,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0036",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 333,
-"dock": "c8_3_port_p10_2.r",
+"dock": "c8_3_port_p10_1.r",
 "arrive_s": 17543,
 "dwell_s": 3797,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0039",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 345,
-"dock": "c8_1_logistics_p10_0.l",
+"id": "plane_ruin.v0037",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 126,
+"dock": "c5_5_rig_m2.star",
 "arrive_s": 17586,
-"dwell_s": 3868,
+"dwell_s": 3175,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0038",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 132,
+"dock": "c6_1_logistics_m2.p12",
+"arrive_s": 18237,
+"dwell_s": 3284,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0039",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 94,
+"dock": "c3_4_logistics_m2.p10",
+"arrive_s": 18413,
+"dwell_s": 2591,
 "wait_s": 0
 },
 {
@@ -3457,46 +2739,46 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 361,
-"dock": "c8_1_logistics_p10_2.r",
-"arrive_s": 18237,
-"dwell_s": 3967,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0041",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 94,
-"dock": "c8_1_logistics_m3.p13",
-"arrive_s": 18413,
-"dwell_s": 2591,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0042",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 263,
-"dock": "c6_0_port_p0-1_0.r",
+"dock": "c6_0_port_p0-1_1.l",
 "arrive_s": 18699,
 "dwell_s": 3376,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0043",
+"id": "plane_ruin.v0041",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 206,
-"dock": "c8_1_logistics_m2.p00",
+"dock": "c5_5_rig_m3.star",
 "arrive_s": 18901,
 "dwell_s": 4611,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0042",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 159,
+"dock": "c7_3_logistics_m0.p03",
+"arrive_s": 18920,
+"dwell_s": 3761,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0043",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 253,
+"dock": "c8_2_port_p10_0.r",
+"arrive_s": 18992,
+"dwell_s": 3317,
 "wait_s": 0
 },
 {
@@ -3505,10 +2787,10 @@
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
-"cargo_t": 159,
-"dock": "c7_3_logistics_m0.p00",
-"arrive_s": 18920,
-"dwell_s": 3761,
+"cargo_t": 207,
+"dock": "c7_3_logistics_m0.p01",
+"arrive_s": 19234,
+"dwell_s": 4619,
 "wait_s": 0
 },
 {
@@ -3517,110 +2799,38 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 253,
-"dock": "c2_4_logistics_p01_0.r",
-"arrive_s": 18992,
-"dwell_s": 3317,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0046",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 207,
-"dock": "c8_1_logistics_m3.p10",
-"arrive_s": 19234,
-"dwell_s": 4619,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0047",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 222,
-"dock": "c5_5_rig_m0.star",
-"arrive_s": 19499,
-"dwell_s": 4901,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0048",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 339,
-"dock": "c2_4_logistics_p01_1.l",
+"dock": "c7_5_port_p10_1.r",
 "arrive_s": 20130,
 "dwell_s": 3832,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0049",
+"id": "plane_ruin.v0046",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 108,
-"dock": "c3_4_logistics_m2.p03",
+"dock": "c3_4_logistics_m2.p01",
 "arrive_s": 20169,
 "dwell_s": 2836,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0050",
-"kind": "fuel",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 282,
-"dock": "c8_3_port_p10_0.r",
-"arrive_s": 20938,
-"dwell_s": 3069,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0051",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 107,
-"dock": "c8_1_logistics_m2.p01",
-"arrive_s": 20996,
-"dwell_s": 2824,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0052",
+"id": "plane_ruin.v0047",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 293,
-"dock": "c6_0_port_p0-1_1.r",
+"dock": "c7_5_port_p10_2.r",
 "arrive_s": 21078,
 "dwell_s": 3555,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0053",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 193,
-"dock": "c3_4_logistics_m2.p02",
-"arrive_s": 21080,
-"dwell_s": 4380,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0054",
+"id": "plane_ruin.v0048",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
@@ -3632,75 +2842,147 @@
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0055",
+"id": "plane_ruin.v0049",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 21375,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0050",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 247,
-"dock": "c7_5_port_p01_1.r",
+"dock": "c7_5_port_p01_2.l",
 "arrive_s": 21739,
 "dwell_s": 3284,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0056",
+"id": "plane_ruin.v0051",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 297,
-"dock": "c6_5_logistics_p01_1.r",
+"dock": "c8_3_port_p10_1.r",
 "arrive_s": 22586,
 "dwell_s": 3579,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0057",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 130,
-"dock": "c8_1_logistics_m2.p02",
-"arrive_s": 23038,
-"dwell_s": 3240,
+"id": "plane_ruin.v0052",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 22909,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0058",
+"id": "plane_ruin.v0053",
 "kind": "bulk",
 "model": "ships/c-120-konveyer",
 "name": "C-120 «Вахак»",
 "length_m": 95.0,
 "cargo_t": 1899,
-"dock": "c8_2_port_p10_1.l",
+"dock": "c6_0_port_p0-1_1.l",
 "arrive_s": 23512,
 "dwell_s": 13196,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0059",
+"id": "plane_ruin.v0054",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 197,
-"dock": "c8_1_logistics_m2.p13",
+"dock": "c7_3_logistics_m0.p02",
 "arrive_s": 25264,
 "dwell_s": 4442,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0060",
+"id": "plane_ruin.v0055",
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m1.rescue",
+"arrive_s": 25510,
+"dwell_s": 2400,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0056",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 134,
+"dock": "c5_5_rig_m0.star",
+"arrive_s": 25850,
+"dwell_s": 3312,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0057",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 365,
-"dock": "c8_2_port_p10_0.l",
-"arrive_s": 25850,
-"dwell_s": 3992,
+"cargo_t": 249,
+"dock": "c7_5_port_p10_2.l",
+"arrive_s": 26526,
+"dwell_s": 3296,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0058",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 163,
+"dock": "c5_5_rig_m2.star",
+"arrive_s": 26694,
+"dwell_s": 3830,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0059",
+"kind": "bulk",
+"model": "ships/c-120-konveyer",
+"name": "C-120 «Вахак»",
+"length_m": 95.0,
+"cargo_t": 1790,
+"dock": "c6_0_port_p0-1_0.r",
+"arrive_s": 26712,
+"dwell_s": 12538,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0060",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 26775,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -3709,46 +2991,46 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 249,
-"dock": "c8_1_logistics_p10_1.l",
-"arrive_s": 26526,
-"dwell_s": 3296,
+"cargo_t": 316,
+"dock": "c6_5_logistics_p01_0.r",
+"arrive_s": 27061,
+"dwell_s": 3694,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0062",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 277,
-"dock": "c8_1_logistics_p0-1_1.r",
-"arrive_s": 26694,
-"dwell_s": 3465,
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 144,
+"dock": "c3_4_logistics_m2.p13",
+"arrive_s": 27127,
+"dwell_s": 3499,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0063",
-"kind": "bulk",
-"model": "ships/c-120-konveyer",
-"name": "C-120 «Вахак»",
-"length_m": 95.0,
-"cargo_t": 1790,
-"dock": "c6_5_logistics_p01_0.r",
-"arrive_s": 26712,
-"dwell_s": 12538,
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m1.rescue",
+"arrive_s": 28229,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0064",
-"kind": "fuel",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 384,
-"dock": "c8_2_port_p10_1.r",
-"arrive_s": 26928,
-"dwell_s": 3528,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 28309,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -3757,10 +3039,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 316,
-"dock": "c8_1_logistics_p0-1_1.l",
-"arrive_s": 27061,
-"dwell_s": 3694,
+"cargo_t": 357,
+"dock": "c6_0_port_p0-1_2.l",
+"arrive_s": 29256,
+"dwell_s": 3941,
 "wait_s": 0
 },
 {
@@ -3769,22 +3051,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 246,
-"dock": "c7_5_port_p01_0.r",
-"arrive_s": 27127,
-"dwell_s": 3276,
+"cargo_t": 271,
+"dock": "c6_5_logistics_p01_3.l",
+"arrive_s": 29425,
+"dwell_s": 3424,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0067",
 "kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 357,
-"dock": "c6_0_port_p0-1_3.l",
-"arrive_s": 29256,
-"dwell_s": 3941,
+"model": "ships/c-120-konveyer",
+"name": "C-120 «Вахак»",
+"length_m": 95.0,
+"cargo_t": 1649,
+"dock": "c7_5_port_p10_0.r",
+"arrive_s": 30047,
+"dwell_s": 11691,
 "wait_s": 0
 },
 {
@@ -3793,46 +3075,46 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 271,
-"dock": "c8_1_logistics_p0-1_3.r",
-"arrive_s": 29425,
-"dwell_s": 3424,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0069",
-"kind": "bulk",
-"model": "ships/c-120-konveyer",
-"name": "C-120 «Вахак»",
-"length_m": 95.0,
-"cargo_t": 1649,
-"dock": "c7_5_port_p01_3.l",
-"arrive_s": 30047,
-"dwell_s": 11691,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0070",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 358,
-"dock": "c2_4_logistics_p01_2.l",
+"dock": "c6_5_logistics_p01_2.r",
 "arrive_s": 30123,
 "dwell_s": 3945,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0071",
+"id": "plane_ruin.v0069",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 383,
-"dock": "c8_1_logistics_p10_1.l",
+"dock": "c6_5_logistics_p01_1.l",
 "arrive_s": 30517,
 "dwell_s": 4099,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0070",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 96,
+"dock": "c7_3_logistics_m0.p01",
+"arrive_s": 30548,
+"dwell_s": 2625,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0071",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 144,
+"dock": "c6_1_logistics_m2.p13",
+"arrive_s": 30557,
+"dwell_s": 3496,
 "wait_s": 0
 },
 {
@@ -3841,94 +3123,94 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 261,
-"dock": "c6_0_port_p0-1_0.l",
-"arrive_s": 30548,
-"dwell_s": 3368,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0073",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 144,
-"dock": "c5_5_rig_m5.star",
-"arrive_s": 30557,
-"dwell_s": 3496,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0074",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 131,
-"dock": "c8_1_logistics_m2.p10",
-"arrive_s": 30586,
-"dwell_s": 3266,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0075",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 299,
-"dock": "c7_5_port_p10_2.r",
+"dock": "c7_5_port_p01_0.l",
 "arrive_s": 31666,
 "dwell_s": 3593,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0076",
+"id": "plane_ruin.v0073",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 296,
-"dock": "c8_1_logistics_p0-1_1.l",
+"dock": "c6_5_logistics_p01_0.l",
 "arrive_s": 31990,
 "dwell_s": 3578,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0077",
+"id": "plane_ruin.v0074",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 32175,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0075",
 "kind": "bulk",
 "model": "ships/c-120-konveyer",
 "name": "C-120 «Вахак»",
 "length_m": 95.0,
 "cargo_t": 2231,
-"dock": "c6_0_port_p0-1_0.r",
+"dock": "c2_4_logistics_p01_2.l",
 "arrive_s": 32183,
 "dwell_s": 15183,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0078",
+"id": "plane_ruin.v0076",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 127,
-"dock": "c5_5_rig_m0.star",
+"dock": "c6_1_logistics_m2.p00",
 "arrive_s": 32257,
 "dwell_s": 3193,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0079",
+"id": "plane_ruin.v0077",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 105,
-"dock": "c8_1_logistics_m2.p11",
+"dock": "c6_1_logistics_m2.p11",
 "arrive_s": 32745,
 "dwell_s": 2797,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0078",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 291,
+"dock": "c6_0_port_p0-1_3.l",
+"arrive_s": 32830,
+"dwell_s": 3549,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0079",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 379,
+"dock": "c7_5_port_p10_0.l",
+"arrive_s": 32904,
+"dwell_s": 4077,
 "wait_s": 0
 },
 {
@@ -3937,10 +3219,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 291,
-"dock": "c2_4_logistics_p01_1.r",
-"arrive_s": 32830,
-"dwell_s": 3549,
+"cargo_t": 350,
+"dock": "c2_4_logistics_p01_2.r",
+"arrive_s": 33000,
+"dwell_s": 3903,
 "wait_s": 0
 },
 {
@@ -3949,58 +3231,58 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 379,
-"dock": "c8_1_logistics_p10_3.r",
-"arrive_s": 32904,
-"dwell_s": 4077,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0082",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 350,
-"dock": "c8_3_port_p10_0.l",
-"arrive_s": 33000,
-"dwell_s": 3903,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0083",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 188,
-"dock": "c7_3_logistics_m0.p03",
-"arrive_s": 33102,
-"dwell_s": 4293,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0084",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 311,
-"dock": "c6_0_port_p0-1_1.l",
+"dock": "c8_2_port_p10_0.l",
 "arrive_s": 33588,
 "dwell_s": 3667,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0085",
+"id": "plane_ruin.v0082",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 33709,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0083",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 142,
-"dock": "c8_1_logistics_m3.p11",
+"dock": "c3_4_logistics_m2.p12",
 "arrive_s": 33898,
 "dwell_s": 3462,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0084",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 110,
+"dock": "c7_3_logistics_m0.p12",
+"arrive_s": 34276,
+"dwell_s": 2885,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0085",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 340,
+"dock": "c7_5_port_p01_1.r",
+"arrive_s": 34354,
+"dwell_s": 3841,
 "wait_s": 0
 },
 {
@@ -4009,10 +3291,10 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 110,
-"dock": "c8_1_logistics_m3.p13",
-"arrive_s": 34276,
-"dwell_s": 2885,
+"cargo_t": 107,
+"dock": "c3_4_logistics_m2.p13",
+"arrive_s": 34471,
+"dwell_s": 2822,
 "wait_s": 0
 },
 {
@@ -4021,22 +3303,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 340,
-"dock": "c7_5_port_p10_1.r",
-"arrive_s": 34354,
-"dwell_s": 3841,
+"cargo_t": 314,
+"dock": "c6_5_logistics_p01_0.r",
+"arrive_s": 35731,
+"dwell_s": 3684,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0088",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 107,
-"dock": "c7_3_logistics_m0.p02",
-"arrive_s": 34471,
-"dwell_s": 2822,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 376,
+"dock": "c8_2_port_p10_3.l",
+"arrive_s": 36216,
+"dwell_s": 4053,
 "wait_s": 0
 },
 {
@@ -4045,22 +3327,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 314,
-"dock": "c6_5_logistics_p01_1.r",
-"arrive_s": 35731,
-"dwell_s": 3684,
+"cargo_t": 282,
+"dock": "c6_0_port_p0-1_2.r",
+"arrive_s": 36249,
+"dwell_s": 3490,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0090",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 376,
-"dock": "c8_1_logistics_p10_2.l",
-"arrive_s": 36216,
-"dwell_s": 4053,
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 133,
+"dock": "c6_1_logistics_m2.p12",
+"arrive_s": 36349,
+"dwell_s": 3295,
 "wait_s": 0
 },
 {
@@ -4069,34 +3351,34 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 282,
-"dock": "c7_5_port_p01_2.r",
-"arrive_s": 36249,
-"dwell_s": 3490,
+"cargo_t": 309,
+"dock": "c8_3_port_p10_2.l",
+"arrive_s": 36539,
+"dwell_s": 3655,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0092",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 133,
-"dock": "c3_4_logistics_m2.p13",
-"arrive_s": 36349,
-"dwell_s": 3295,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 376,
+"dock": "c6_5_logistics_p01_3.l",
+"arrive_s": 36659,
+"dwell_s": 4054,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0093",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 132,
-"dock": "c3_4_logistics_m2.p00",
-"arrive_s": 36441,
-"dwell_s": 3281,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 300,
+"dock": "c8_2_port_p10_1.l",
+"arrive_s": 36728,
+"dwell_s": 3599,
 "wait_s": 0
 },
 {
@@ -4105,22 +3387,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 309,
-"dock": "c2_4_logistics_p01_3.r",
-"arrive_s": 36539,
-"dwell_s": 3655,
+"cargo_t": 362,
+"dock": "c8_3_port_p10_2.r",
+"arrive_s": 37094,
+"dwell_s": 3969,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0095",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 376,
-"dock": "c6_0_port_p0-1_3.r",
-"arrive_s": 36659,
-"dwell_s": 4054,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 37575,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -4129,10 +3411,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 300,
-"dock": "c2_4_logistics_p01_2.l",
-"arrive_s": 36728,
-"dwell_s": 3599,
+"cargo_t": 292,
+"dock": "c2_4_logistics_p01_0.l",
+"arrive_s": 37837,
+"dwell_s": 3550,
 "wait_s": 0
 },
 {
@@ -4141,70 +3423,70 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 362,
-"dock": "c6_5_logistics_p01_2.r",
-"arrive_s": 37094,
-"dwell_s": 3969,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0098",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 292,
-"dock": "c8_1_logistics_p0-1_2.r",
-"arrive_s": 37837,
-"dwell_s": 3550,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0099",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 305,
-"dock": "c6_0_port_p0-1_2.r",
+"dock": "c6_5_logistics_p01_0.l",
 "arrive_s": 38216,
 "dwell_s": 3629,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0100",
+"id": "plane_ruin.v0098",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 115,
-"dock": "c6_1_logistics_m2.p01",
+"dock": "c7_3_logistics_m0.p03",
 "arrive_s": 38509,
 "dwell_s": 2963,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0101",
+"id": "plane_ruin.v0099",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 152,
-"dock": "c5_5_rig_m0.star",
+"dock": "c7_3_logistics_m0.p11",
 "arrive_s": 38688,
 "dwell_s": 3645,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0102",
+"id": "plane_ruin.v0100",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 178,
-"dock": "c3_4_logistics_m2.p12",
+"dock": "c3_4_logistics_m2.p13",
 "arrive_s": 38700,
 "dwell_s": 4098,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0101",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 324,
+"dock": "c7_5_port_p01_1.r",
+"arrive_s": 39071,
+"dwell_s": 3744,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0102",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 39109,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -4213,58 +3495,58 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 324,
-"dock": "c8_3_port_p10_2.r",
-"arrive_s": 39071,
-"dwell_s": 3744,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0104",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 222,
-"dock": "c6_1_logistics_m2.p02",
-"arrive_s": 39213,
-"dwell_s": 4895,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0105",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 374,
-"dock": "c8_3_port_p10_2.l",
+"dock": "c7_5_port_p10_1.l",
 "arrive_s": 39857,
 "dwell_s": 4042,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0106",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 311,
-"dock": "c8_2_port_p10_0.l",
-"arrive_s": 40389,
-"dwell_s": 3664,
+"id": "plane_ruin.v0104",
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m1.rescue",
+"arrive_s": 39910,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0107",
+"id": "plane_ruin.v0105",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
-"cargo_t": 162,
-"dock": "c5_5_rig_m5.star",
-"arrive_s": 40559,
-"dwell_s": 3813,
+"cargo_t": 182,
+"dock": "c6_1_logistics_m2.p00",
+"arrive_s": 40389,
+"dwell_s": 4181,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0106",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 164,
+"dock": "c3_4_logistics_m2.p02",
+"arrive_s": 40802,
+"dwell_s": 3855,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0107",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 305,
+"dock": "c7_5_port_p01_3.l",
+"arrive_s": 42364,
+"dwell_s": 3628,
 "wait_s": 0
 },
 {
@@ -4273,10 +3555,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 280,
-"dock": "c8_2_port_p10_3.r",
-"arrive_s": 40802,
-"dwell_s": 3478,
+"cargo_t": 291,
+"dock": "c6_5_logistics_p01_2.r",
+"arrive_s": 42535,
+"dwell_s": 3544,
 "wait_s": 0
 },
 {
@@ -4285,10 +3567,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 305,
-"dock": "c7_5_port_p01_3.r",
-"arrive_s": 42364,
-"dwell_s": 3628,
+"cargo_t": 270,
+"dock": "c7_5_port_p10_1.r",
+"arrive_s": 42551,
+"dwell_s": 3421,
 "wait_s": 0
 },
 {
@@ -4297,22 +3579,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 291,
-"dock": "c8_3_port_p10_1.r",
-"arrive_s": 42535,
-"dwell_s": 3544,
+"cargo_t": 322,
+"dock": "c2_4_logistics_p01_2.r",
+"arrive_s": 42613,
+"dwell_s": 3735,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0111",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 270,
-"dock": "c7_5_port_p01_3.l",
-"arrive_s": 42551,
-"dwell_s": 3421,
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m1.rescue",
+"arrive_s": 42629,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
@@ -4321,46 +3603,46 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 322,
-"dock": "c6_0_port_p0-1_1.l",
-"arrive_s": 42613,
-"dwell_s": 3735,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0113",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 160,
-"dock": "c6_1_logistics_m2.p11",
-"arrive_s": 42714,
-"dwell_s": 3777,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0114",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 255,
-"dock": "c6_0_port_p0-1_2.l",
+"dock": "c6_5_logistics_p01_2.l",
 "arrive_s": 42740,
 "dwell_s": 3328,
 "wait_s": 0
 },
 {
+"id": "plane_ruin.v0113",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 326,
+"dock": "c8_2_port_p10_3.r",
+"arrive_s": 42955,
+"dwell_s": 3758,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0114",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 42975,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
 "id": "plane_ruin.v0115",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 133,
-"dock": "c8_1_logistics_m3.p03",
-"arrive_s": 42756,
-"dwell_s": 3290,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 277,
+"dock": "c6_5_logistics_p01_0.r",
+"arrive_s": 43044,
+"dwell_s": 3464,
 "wait_s": 0
 },
 {
@@ -4369,22 +3651,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 326,
-"dock": "c8_2_port_p10_1.l",
-"arrive_s": 42955,
-"dwell_s": 3758,
+"cargo_t": 373,
+"dock": "c2_4_logistics_p01_1.r",
+"arrive_s": 43230,
+"dwell_s": 4039,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0117",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 277,
-"dock": "c7_5_port_p01_0.l",
-"arrive_s": 43044,
-"dwell_s": 3464,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 44509,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -4393,22 +3675,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 373,
-"dock": "c7_5_port_p10_1.r",
-"arrive_s": 43230,
-"dwell_s": 4039,
+"cargo_t": 338,
+"dock": "c6_0_port_p0-1_3.r",
+"arrive_s": 44514,
+"dwell_s": 3828,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0119",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 338,
-"dock": "c6_5_logistics_p01_0.r",
-"arrive_s": 44514,
-"dwell_s": 3828,
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 185,
+"dock": "c3_4_logistics_m2.p00",
+"arrive_s": 45479,
+"dwell_s": 4229,
 "wait_s": 0
 },
 {
@@ -4417,10 +3699,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 315,
-"dock": "c2_4_logistics_p01_0.l",
-"arrive_s": 45479,
-"dwell_s": 3691,
+"cargo_t": 278,
+"dock": "c6_0_port_p0-1_0.l",
+"arrive_s": 45607,
+"dwell_s": 3468,
 "wait_s": 0
 },
 {
@@ -4429,10 +3711,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 278,
-"dock": "c7_5_port_p01_1.l",
-"arrive_s": 45607,
-"dwell_s": 3468,
+"cargo_t": 347,
+"dock": "c6_5_logistics_p01_1.l",
+"arrive_s": 46454,
+"dwell_s": 3882,
 "wait_s": 0
 },
 {
@@ -4441,22 +3723,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 347,
-"dock": "c8_3_port_p10_1.r",
-"arrive_s": 46454,
-"dwell_s": 3882,
+"cargo_t": 253,
+"dock": "c7_5_port_p01_2.l",
+"arrive_s": 46738,
+"dwell_s": 3317,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0123",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 253,
-"dock": "c6_5_logistics_p01_2.l",
-"arrive_s": 46738,
-"dwell_s": 3317,
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 94,
+"dock": "c6_1_logistics_m2.p03",
+"arrive_s": 47655,
+"dwell_s": 2594,
 "wait_s": 0
 },
 {
@@ -4465,34 +3747,34 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 257,
-"dock": "c8_1_logistics_p0-1_3.l",
-"arrive_s": 47655,
-"dwell_s": 3340,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0125",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 315,
-"dock": "c6_5_logistics_p01_2.r",
+"dock": "c6_0_port_p0-1_1.r",
 "arrive_s": 47704,
 "dwell_s": 3688,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0126",
-"kind": "bulk",
-"model": "ships/c-120-konveyer",
-"name": "C-120 «Вахак»",
-"length_m": 95.0,
-"cargo_t": 1445,
-"dock": "c8_2_port_p10_3.l",
+"id": "plane_ruin.v0125",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 90,
+"dock": "c6_1_logistics_m2.p11",
 "arrive_s": 48122,
-"dwell_s": 10468,
+"dwell_s": 2525,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0126",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 48375,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -4502,7 +3784,7 @@
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 277,
-"dock": "c8_3_port_p10_1.l",
+"dock": "c8_2_port_p10_2.r",
 "arrive_s": 48384,
 "dwell_s": 3461,
 "wait_s": 0
@@ -4514,81 +3796,81 @@
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 351,
-"dock": "c8_1_logistics_p0-1_2.l",
+"dock": "c7_5_port_p10_0.l",
 "arrive_s": 48478,
 "dwell_s": 3904,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0129",
-"kind": "fuel",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 287,
-"dock": "c7_5_port_p01_0.r",
-"arrive_s": 49000,
-"dwell_s": 3091,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0130",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 356,
-"dock": "c7_5_port_p10_0.r",
+"dock": "c6_5_logistics_p01_0.r",
 "arrive_s": 49292,
 "dwell_s": 3936,
 "wait_s": 0
 },
 {
+"id": "plane_ruin.v0130",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 49909,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
 "id": "plane_ruin.v0131",
 "kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
 "length_m": 48.0,
-"cargo_t": 111,
-"dock": "c3_4_logistics_m2.p03",
-"arrive_s": 50002,
-"dwell_s": 2906,
+"cargo_t": 204,
+"dock": "c5_5_rig_m2.star",
+"arrive_s": 50604,
+"dwell_s": 4579,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0132",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 348,
-"dock": "c8_2_port_p10_0.l",
-"arrive_s": 50604,
-"dwell_s": 3890,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0133",
 "kind": "frontier",
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
 "cargo_t": 199,
-"dock": "c6_1_logistics_m2.p01",
+"dock": "c7_3_logistics_m0.p11",
 "arrive_s": 50620,
 "dwell_s": 4474,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0134",
+"id": "plane_ruin.v0133",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 98,
-"dock": "c8_1_logistics_m3.p10",
-"arrive_s": 51375,
-"dwell_s": 2671,
+"cargo_t": 130,
+"dock": "c3_4_logistics_m2.p10",
+"arrive_s": 52357,
+"dwell_s": 3235,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0134",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 354,
+"dock": "c6_0_port_p0-1_1.r",
+"arrive_s": 52608,
+"dwell_s": 3926,
 "wait_s": 0
 },
 {
@@ -4597,34 +3879,34 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 103,
-"dock": "c8_1_logistics_m2.p11",
-"arrive_s": 52270,
-"dwell_s": 2747,
+"cargo_t": 92,
+"dock": "c6_1_logistics_m2.p00",
+"arrive_s": 52863,
+"dwell_s": 2551,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0136",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 354,
-"dock": "c6_5_logistics_p01_3.r",
-"arrive_s": 52357,
-"dwell_s": 3922,
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 170,
+"dock": "c6_1_logistics_m2.p02",
+"arrive_s": 53117,
+"dwell_s": 3951,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0137",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 354,
-"dock": "c8_3_port_p10_0.r",
-"arrive_s": 52608,
-"dwell_s": 3926,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 53775,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -4633,22 +3915,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 250,
-"dock": "c8_3_port_p10_1.l",
-"arrive_s": 52863,
-"dwell_s": 3301,
+"cargo_t": 249,
+"dock": "c7_5_port_p01_0.r",
+"arrive_s": 54082,
+"dwell_s": 3293,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0139",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 289,
-"dock": "c8_1_logistics_p10_1.r",
-"arrive_s": 53117,
-"dwell_s": 3533,
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m1.rescue",
+"arrive_s": 54310,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
@@ -4657,70 +3939,70 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 262,
-"dock": "c6_5_logistics_p01_1.l",
-"arrive_s": 54055,
-"dwell_s": 2979,
+"cargo_t": 246,
+"dock": "c8_3_port_p10_2.r",
+"arrive_s": 54365,
+"dwell_s": 2905,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0141",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 249,
-"dock": "c7_5_port_p01_0.l",
-"arrive_s": 54082,
-"dwell_s": 3293,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0142",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 90,
-"dock": "c8_1_logistics_m3.p13",
-"arrive_s": 54365,
-"dwell_s": 2521,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0143",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 216,
-"dock": "c7_3_logistics_m0.p10",
-"arrive_s": 54614,
-"dwell_s": 4794,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0144",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 141,
-"dock": "c6_1_logistics_m2.p00",
+"dock": "c7_3_logistics_m0.p13",
 "arrive_s": 54749,
 "dwell_s": 3439,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0145",
+"id": "plane_ruin.v0142",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 55309,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0143",
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m1.rescue",
+"arrive_s": 57029,
+"dwell_s": 2400,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0144",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 334,
-"dock": "c7_5_port_p10_0.r",
+"dock": "c7_5_port_p10_1.l",
 "arrive_s": 57220,
 "dwell_s": 3804,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0145",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 200,
+"dock": "c6_1_logistics_m2.p13",
+"arrive_s": 57668,
+"dwell_s": 4507,
 "wait_s": 0
 },
 {
@@ -4729,58 +4011,58 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 341,
-"dock": "c8_1_logistics_p10_1.r",
-"arrive_s": 57668,
-"dwell_s": 3849,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0147",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 312,
-"dock": "c6_0_port_p0-1_2.l",
+"dock": "c8_2_port_p10_0.l",
 "arrive_s": 58880,
 "dwell_s": 3670,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0148",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 221,
-"dock": "c8_1_logistics_m2.p00",
-"arrive_s": 59102,
-"dwell_s": 4884,
+"id": "plane_ruin.v0147",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 59175,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0149",
+"id": "plane_ruin.v0148",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 348,
-"dock": "c2_4_logistics_p01_1.r",
+"dock": "c7_5_port_p01_1.l",
 "arrive_s": 59524,
 "dwell_s": 3886,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0150",
+"id": "plane_ruin.v0149",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 103,
-"dock": "c8_1_logistics_m3.p02",
+"dock": "c7_3_logistics_m0.p02",
 "arrive_s": 59623,
 "dwell_s": 2746,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0150",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 277,
+"dock": "c6_5_logistics_p01_1.l",
+"arrive_s": 59701,
+"dwell_s": 3464,
 "wait_s": 0
 },
 {
@@ -4789,22 +4071,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 277,
-"dock": "c8_1_logistics_p0-1_1.l",
-"arrive_s": 59701,
-"dwell_s": 3464,
+"cargo_t": 331,
+"dock": "c8_2_port_p10_1.l",
+"arrive_s": 59824,
+"dwell_s": 3787,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0152",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 331,
-"dock": "c7_5_port_p01_2.r",
-"arrive_s": 59824,
-"dwell_s": 3787,
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 141,
+"dock": "c6_1_logistics_m2.p02",
+"arrive_s": 60482,
+"dwell_s": 3444,
 "wait_s": 0
 },
 {
@@ -4813,70 +4095,70 @@
 "model": "ships/sl-12-podyomnik",
 "name": "SL-12",
 "length_m": 48.0,
-"cargo_t": 210,
-"dock": "c5_5_rig_m0.star",
-"arrive_s": 59891,
-"dwell_s": 4682,
+"cargo_t": 215,
+"dock": "c7_3_logistics_m0.p12",
+"arrive_s": 60513,
+"dwell_s": 4763,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0154",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 141,
-"dock": "c6_1_logistics_m2.p12",
-"arrive_s": 60482,
-"dwell_s": 3444,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0155",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 366,
-"dock": "c6_5_logistics_p01_1.l",
-"arrive_s": 60513,
-"dwell_s": 3994,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0156",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 291,
-"dock": "c8_1_logistics_p0-1_1.r",
+"dock": "c8_3_port_p10_2.r",
 "arrive_s": 60559,
 "dwell_s": 3546,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0157",
+"id": "plane_ruin.v0155",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 100,
-"dock": "c6_1_logistics_m2.p01",
+"dock": "c3_4_logistics_m2.p00",
 "arrive_s": 60567,
 "dwell_s": 2696,
 "wait_s": 0
 },
 {
+"id": "plane_ruin.v0156",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 60709,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0157",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 325,
+"dock": "c8_3_port_p10_0.r",
+"arrive_s": 61092,
+"dwell_s": 3749,
+"wait_s": 0
+},
+{
 "id": "plane_ruin.v0158",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 128,
-"dock": "c8_1_logistics_m2.p02",
-"arrive_s": 60930,
-"dwell_s": 3198,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 268,
+"dock": "c2_4_logistics_p01_3.r",
+"arrive_s": 61515,
+"dwell_s": 3407,
 "wait_s": 0
 },
 {
@@ -4885,106 +4167,106 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 325,
-"dock": "c6_0_port_p0-1_1.r",
-"arrive_s": 61092,
-"dwell_s": 3749,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0160",
-"kind": "fuel",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 249,
-"dock": "c8_1_logistics_p0-1_2.l",
-"arrive_s": 61330,
-"dwell_s": 2923,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0161",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 268,
-"dock": "c6_5_logistics_p01_3.r",
-"arrive_s": 61515,
-"dwell_s": 3407,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0162",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 271,
-"dock": "c7_5_port_p01_0.r",
+"dock": "c6_0_port_p0-1_1.r",
 "arrive_s": 61783,
 "dwell_s": 3428,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0163",
+"id": "plane_ruin.v0160",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 101,
-"dock": "c6_1_logistics_m2.p10",
+"dock": "c3_4_logistics_m2.p10",
 "arrive_s": 62146,
 "dwell_s": 2720,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0164",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 186,
-"dock": "c3_4_logistics_m2.p00",
-"arrive_s": 63177,
-"dwell_s": 4251,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0165",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 217,
-"dock": "c8_1_logistics_m3.p11",
-"arrive_s": 63315,
-"dwell_s": 4814,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0166",
-"kind": "fuel",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 318,
-"dock": "c8_2_port_p10_2.l",
-"arrive_s": 64036,
-"dwell_s": 3231,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0167",
+"id": "plane_ruin.v0161",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
 "cargo_t": 138,
-"dock": "c7_3_logistics_m0.p01",
+"dock": "c6_1_logistics_m2.p10",
 "arrive_s": 64118,
 "dwell_s": 3387,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0162",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 64575,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0163",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 313,
+"dock": "c6_5_logistics_p01_1.r",
+"arrive_s": 65726,
+"dwell_s": 3677,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0164",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 66109,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0165",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 95,
+"dock": "c5_5_rig_m3.star",
+"arrive_s": 66479,
+"dwell_s": 2612,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0166",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 223,
+"dock": "c3_4_logistics_m2.p03",
+"arrive_s": 66810,
+"dwell_s": 4913,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0167",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 313,
+"dock": "c2_4_logistics_p01_3.l",
+"arrive_s": 67444,
+"dwell_s": 3681,
 "wait_s": 0
 },
 {
@@ -4993,10 +4275,10 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 129,
-"dock": "c6_1_logistics_m2.p11",
-"arrive_s": 64385,
-"dwell_s": 3218,
+"cargo_t": 107,
+"dock": "c7_3_logistics_m0.p02",
+"arrive_s": 67667,
+"dwell_s": 2832,
 "wait_s": 0
 },
 {
@@ -5005,22 +4287,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 313,
-"dock": "c2_4_logistics_p01_2.r",
-"arrive_s": 65726,
-"dwell_s": 3677,
+"cargo_t": 368,
+"dock": "c6_5_logistics_p01_2.r",
+"arrive_s": 68023,
+"dwell_s": 4007,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0170",
 "kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 207,
-"dock": "c3_4_logistics_m2.p01",
-"arrive_s": 66059,
-"dwell_s": 4621,
+"cargo_t": 126,
+"dock": "c5_5_rig_m0.star",
+"arrive_s": 68127,
+"dwell_s": 3169,
 "wait_s": 0
 },
 {
@@ -5029,34 +4311,34 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 259,
-"dock": "c8_1_logistics_p10_2.r",
-"arrive_s": 66479,
-"dwell_s": 3356,
+"cargo_t": 340,
+"dock": "c6_5_logistics_p01_3.r",
+"arrive_s": 68237,
+"dwell_s": 3839,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0172",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 380,
-"dock": "c7_5_port_p10_0.l",
-"arrive_s": 66810,
-"dwell_s": 4079,
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m1.rescue",
+"arrive_s": 68710,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0173",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 116,
-"dock": "c8_1_logistics_m2.p13",
-"arrive_s": 67159,
-"dwell_s": 2992,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 253,
+"dock": "c8_2_port_p10_0.l",
+"arrive_s": 68815,
+"dwell_s": 3317,
 "wait_s": 0
 },
 {
@@ -5065,10 +4347,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 313,
-"dock": "c7_5_port_p01_0.l",
-"arrive_s": 67444,
-"dwell_s": 3681,
+"cargo_t": 255,
+"dock": "c6_5_logistics_p01_0.l",
+"arrive_s": 69476,
+"dwell_s": 3331,
 "wait_s": 0
 },
 {
@@ -5078,45 +4360,45 @@
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 293,
-"dock": "c6_0_port_p0-1_3.l",
-"arrive_s": 67667,
-"dwell_s": 3556,
+"dock": "c8_2_port_p10_1.l",
+"arrive_s": 69486,
+"dwell_s": 3558,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0176",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 368,
-"dock": "c7_5_port_p10_0.r",
-"arrive_s": 68023,
-"dwell_s": 4007,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 69975,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0177",
 "kind": "bulk",
-"model": "ships/c-120-konveyer",
-"name": "C-120 «Вахак»",
-"length_m": 95.0,
-"cargo_t": 2017,
-"dock": "c8_1_logistics_p10_2.l",
-"arrive_s": 68127,
-"dwell_s": 13903,
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 374,
+"dock": "c6_5_logistics_p01_0.r",
+"arrive_s": 70359,
+"dwell_s": 4045,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0178",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 340,
-"dock": "c7_5_port_p01_0.r",
-"arrive_s": 68237,
-"dwell_s": 3839,
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 111,
+"dock": "c5_5_rig_m3.star",
+"arrive_s": 70565,
+"dwell_s": 2898,
 "wait_s": 0
 },
 {
@@ -5125,22 +4407,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 253,
-"dock": "c8_2_port_p10_2.l",
-"arrive_s": 68815,
-"dwell_s": 3317,
+"cargo_t": 314,
+"dock": "c7_5_port_p10_1.r",
+"arrive_s": 70963,
+"dwell_s": 3684,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0180",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 158,
-"dock": "c7_3_logistics_m0.p11",
-"arrive_s": 69269,
-"dwell_s": 3738,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 352,
+"dock": "c8_2_port_p10_3.l",
+"arrive_s": 71363,
+"dwell_s": 3913,
 "wait_s": 0
 },
 {
@@ -5149,34 +4431,34 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 255,
-"dock": "c8_1_logistics_p10_0.l",
-"arrive_s": 69476,
-"dwell_s": 3331,
+"cargo_t": 297,
+"dock": "c8_2_port_p10_1.r",
+"arrive_s": 71412,
+"dwell_s": 3581,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0182",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 293,
-"dock": "c6_5_logistics_p01_2.l",
-"arrive_s": 69486,
-"dwell_s": 3558,
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m1.rescue",
+"arrive_s": 71429,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0183",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 374,
-"dock": "c8_1_logistics_p0-1_1.r",
-"arrive_s": 70359,
-"dwell_s": 4045,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 71509,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -5185,62 +4467,14 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 111,
-"dock": "c5_5_rig_m2.star",
-"arrive_s": 70565,
-"dwell_s": 2898,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0185",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 314,
-"dock": "c7_5_port_p01_3.l",
-"arrive_s": 70963,
-"dwell_s": 3684,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0186",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 352,
-"dock": "c8_3_port_p10_1.l",
-"arrive_s": 71363,
-"dwell_s": 3913,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0187",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 297,
-"dock": "c7_5_port_p01_1.l",
-"arrive_s": 71412,
-"dwell_s": 3581,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0188",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
 "cargo_t": 115,
-"dock": "c7_3_logistics_m0.p02",
+"dock": "c6_1_logistics_m2.p00",
 "arrive_s": 71554,
 "dwell_s": 2972,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0189",
+"id": "plane_ruin.v0185",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
@@ -5252,27 +4486,75 @@
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0190",
+"id": "plane_ruin.v0186",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 309,
-"dock": "c8_3_port_p10_0.r",
+"dock": "c2_4_logistics_p01_0.r",
 "arrive_s": 72264,
 "dwell_s": 3654,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0191",
+"id": "plane_ruin.v0187",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 335,
-"dock": "c8_2_port_p10_2.r",
+"dock": "c2_4_logistics_p01_0.l",
 "arrive_s": 72415,
 "dwell_s": 3812,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0188",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 114,
+"dock": "c5_5_rig_m5.star",
+"arrive_s": 72534,
+"dwell_s": 2959,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0189",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 134,
+"dock": "c7_3_logistics_m0.p10",
+"arrive_s": 72613,
+"dwell_s": 3318,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0190",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 217,
+"dock": "c7_3_logistics_m0.p12",
+"arrive_s": 73677,
+"dwell_s": 4803,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0191",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 75375,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -5281,94 +4563,94 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 114,
-"dock": "c7_3_logistics_m0.p00",
-"arrive_s": 72534,
-"dwell_s": 2959,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0193",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 134,
-"dock": "c8_1_logistics_m2.p10",
-"arrive_s": 72613,
-"dwell_s": 3318,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0194",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 217,
-"dock": "c5_5_rig_m0.star",
-"arrive_s": 73677,
-"dwell_s": 4803,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0195",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 227,
-"dock": "c8_1_logistics_m3.p00",
-"arrive_s": 73757,
-"dwell_s": 4985,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0196",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 221,
-"dock": "c8_1_logistics_m3.p02",
-"arrive_s": 74956,
-"dwell_s": 4883,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0197",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
 "cargo_t": 113,
-"dock": "c8_1_logistics_m3.p03",
+"dock": "c3_4_logistics_m2.p10",
 "arrive_s": 75397,
 "dwell_s": 2934,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0198",
+"id": "plane_ruin.v0193",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
 "cargo_t": 320,
-"dock": "c8_2_port_p10_3.l",
+"dock": "c8_2_port_p10_1.r",
 "arrive_s": 76273,
 "dwell_s": 3722,
 "wait_s": 0
 },
 {
-"id": "plane_ruin.v0199",
+"id": "plane_ruin.v0194",
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 76909,
+"dwell_s": 1500,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0195",
 "kind": "frontier",
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 109,
-"dock": "c7_3_logistics_m0.p13",
-"arrive_s": 76787,
-"dwell_s": 2866,
+"cargo_t": 118,
+"dock": "c6_1_logistics_m2.p11",
+"arrive_s": 76910,
+"dwell_s": 3028,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0196",
+"kind": "frontier",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 130,
+"dock": "c5_5_rig_m1.star",
+"arrive_s": 77424,
+"dwell_s": 3244,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0197",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 219,
+"dock": "c6_1_logistics_m2.p01",
+"arrive_s": 78101,
+"dwell_s": 4846,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0198",
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 146,
+"dock": "c7_3_logistics_m0.p11",
+"arrive_s": 78583,
+"dwell_s": 3521,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0199",
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 326,
+"dock": "c6_5_logistics_p01_3.r",
+"arrive_s": 78702,
+"dwell_s": 3759,
 "wait_s": 0
 },
 {
@@ -5377,58 +4659,58 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 118,
-"dock": "c8_1_logistics_m2.p03",
-"arrive_s": 76910,
-"dwell_s": 3028,
+"cargo_t": 135,
+"dock": "c6_1_logistics_m2.p00",
+"arrive_s": 78974,
+"dwell_s": 3323,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0201",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 159,
-"dock": "c6_1_logistics_m2.p00",
-"arrive_s": 77092,
-"dwell_s": 3756,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 377,
+"dock": "c7_5_port_p10_1.r",
+"arrive_s": 79035,
+"dwell_s": 4063,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0202",
-"kind": "bulk",
+"kind": "fuel",
 "model": "ships/c-120-konveyer",
 "name": "C-120 «Вахак»",
 "length_m": 95.0,
-"cargo_t": 2083,
-"dock": "c7_5_port_p01_2.r",
-"arrive_s": 77424,
-"dwell_s": 14301,
+"cargo_t": 1672,
+"dock": "c6_0_port_p0-1_3.r",
+"arrive_s": 79939,
+"dwell_s": 9323,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0203",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 219,
-"dock": "c3_4_logistics_m2.p01",
-"arrive_s": 78101,
-"dwell_s": 4846,
+"kind": "bulk",
+"model": "ships/c-120-konveyer",
+"name": "C-120 «Вахак»",
+"length_m": 95.0,
+"cargo_t": 2163,
+"dock": "c7_5_port_p10_0.l",
+"arrive_s": 79947,
+"dwell_s": 14778,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0204",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 146,
-"dock": "c7_3_logistics_m0.p00",
-"arrive_s": 78583,
-"dwell_s": 3521,
+"kind": "bulk",
+"model": "ships/ocs-4-lastochka",
+"name": "OCS-4",
+"length_m": 56.0,
+"cargo_t": 289,
+"dock": "c6_0_port_p0-1_3.l",
+"arrive_s": 79982,
+"dwell_s": 3533,
 "wait_s": 0
 },
 {
@@ -5437,46 +4719,46 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 326,
-"dock": "c8_1_logistics_p10_3.l",
-"arrive_s": 78702,
-"dwell_s": 3759,
+"cargo_t": 299,
+"dock": "c6_5_logistics_p01_1.r",
+"arrive_s": 80301,
+"dwell_s": 3595,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0206",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 367,
-"dock": "c6_5_logistics_p01_0.r",
-"arrive_s": 78974,
-"dwell_s": 4002,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 80775,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0207",
 "kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 377,
-"dock": "c8_1_logistics_p10_2.r",
-"arrive_s": 79035,
-"dwell_s": 4063,
+"model": "ships/c-120-konveyer",
+"name": "C-120 «Вахак»",
+"length_m": 95.0,
+"cargo_t": 2099,
+"dock": "c8_2_port_p10_3.r",
+"arrive_s": 82117,
+"dwell_s": 14396,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0208",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 203,
-"dock": "c8_1_logistics_m3.p03",
-"arrive_s": 79421,
-"dwell_s": 4547,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m0.police",
+"arrive_s": 82309,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -5485,22 +4767,22 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 104,
-"dock": "c3_4_logistics_m2.p13",
-"arrive_s": 79939,
-"dwell_s": 2781,
+"cargo_t": 107,
+"dock": "c6_1_logistics_m2.p02",
+"arrive_s": 82452,
+"dwell_s": 2823,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0210",
-"kind": "bulk",
-"model": "ships/c-120-konveyer",
-"name": "C-120 «Вахак»",
-"length_m": 95.0,
-"cargo_t": 2163,
-"dock": "c8_1_logistics_p10_0.r",
-"arrive_s": 79947,
-"dwell_s": 14778,
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m1.rescue",
+"arrive_s": 83110,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
@@ -5509,10 +4791,10 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 289,
-"dock": "c6_0_port_p0-1_3.r",
-"arrive_s": 79982,
-"dwell_s": 3533,
+"cargo_t": 300,
+"dock": "c2_4_logistics_p01_2.l",
+"arrive_s": 83694,
+"dwell_s": 3598,
 "wait_s": 0
 },
 {
@@ -5521,22 +4803,22 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 299,
-"dock": "c8_1_logistics_p0-1_3.l",
-"arrive_s": 80301,
-"dwell_s": 3595,
+"cargo_t": 302,
+"dock": "c8_3_port_p10_0.r",
+"arrive_s": 83864,
+"dwell_s": 3609,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0213",
-"kind": "bulk",
-"model": "ships/c-120-konveyer",
-"name": "C-120 «Вахак»",
-"length_m": 95.0,
-"cargo_t": 2099,
-"dock": "c8_2_port_p10_2.r",
-"arrive_s": 82117,
-"dwell_s": 14396,
+"kind": "frontier",
+"model": "ships/sl-12-podyomnik",
+"name": "SL-12",
+"length_m": 48.0,
+"cargo_t": 220,
+"dock": "c3_4_logistics_m2.p01",
+"arrive_s": 84985,
+"dwell_s": 4854,
 "wait_s": 0
 },
 {
@@ -5545,58 +4827,58 @@
 "model": "ships/st-6-masterovoy",
 "name": "ST-6",
 "length_m": 48.0,
-"cargo_t": 107,
-"dock": "c3_4_logistics_m2.p10",
-"arrive_s": 82452,
-"dwell_s": 2823,
+"cargo_t": 110,
+"dock": "c7_3_logistics_m0.p00",
+"arrive_s": 85334,
+"dwell_s": 2875,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0215",
-"kind": "frontier",
-"model": "ships/sl-12-podyomnik",
-"name": "SL-12",
-"length_m": 48.0,
-"cargo_t": 225,
-"dock": "c8_1_logistics_m3.p10",
-"arrive_s": 82795,
-"dwell_s": 4944,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0216",
 "kind": "bulk",
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 300,
-"dock": "c7_5_port_p01_3.l",
-"arrive_s": 83694,
-"dwell_s": 3598,
+"cargo_t": 386,
+"dock": "c8_3_port_p10_1.l",
+"arrive_s": 85775,
+"dwell_s": 4114,
+"wait_s": 0
+},
+{
+"id": "plane_ruin.v0216",
+"kind": "rescue",
+"model": "ships/st-6-masterovoy",
+"name": "ST-6",
+"length_m": 48.0,
+"cargo_t": 0,
+"dock": "c0_1_services_m1.rescue",
+"arrive_s": 85829,
+"dwell_s": 2400,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0217",
 "kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 302,
-"dock": "c7_5_port_p10_1.r",
-"arrive_s": 83864,
-"dwell_s": 3609,
+"model": "ships/c-120-konveyer",
+"name": "C-120 «Вахак»",
+"length_m": 95.0,
+"cargo_t": 1922,
+"dock": "c2_4_logistics_p01_1.l",
+"arrive_s": 85929,
+"dwell_s": 13329,
 "wait_s": 0
 },
 {
 "id": "plane_ruin.v0218",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 111,
-"dock": "c6_1_logistics_m2.p13",
-"arrive_s": 84335,
-"dwell_s": 2892,
+"kind": "patrol",
+"model": "ships/pk-30-strazh",
+"name": "PC-30 «Фарос»",
+"length_m": 34.0,
+"cargo_t": 0,
+"dock": "c8_1_services_m0.police",
+"arrive_s": 86175,
+"dwell_s": 1500,
 "wait_s": 0
 },
 {
@@ -5605,56 +4887,8 @@
 "model": "ships/ocs-4-lastochka",
 "name": "OCS-4",
 "length_m": 56.0,
-"cargo_t": 374,
-"dock": "c8_1_logistics_p10_1.r",
-"arrive_s": 84985,
-"dwell_s": 4046,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0220",
-"kind": "frontier",
-"model": "ships/st-6-masterovoy",
-"name": "ST-6",
-"length_m": 48.0,
-"cargo_t": 110,
-"dock": "c8_1_logistics_m3.p02",
-"arrive_s": 85334,
-"dwell_s": 2875,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0221",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
-"cargo_t": 386,
-"dock": "c6_0_port_p0-1_1.l",
-"arrive_s": 85775,
-"dwell_s": 4114,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0222",
-"kind": "bulk",
-"model": "ships/c-120-konveyer",
-"name": "C-120 «Вахак»",
-"length_m": 95.0,
-"cargo_t": 1922,
-"dock": "c8_1_logistics_p0-1_0.l",
-"arrive_s": 85929,
-"dwell_s": 13329,
-"wait_s": 0
-},
-{
-"id": "plane_ruin.v0223",
-"kind": "bulk",
-"model": "ships/ocs-4-lastochka",
-"name": "OCS-4",
-"length_m": 56.0,
 "cargo_t": 383,
-"dock": "c2_4_logistics_p01_0.l",
+"dock": "c8_2_port_p10_0.l",
 "arrive_s": 86176,
 "dwell_s": 4096,
 "wait_s": 0

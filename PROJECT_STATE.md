@@ -6498,3 +6498,44 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   4 biggest parts (drawShip shared with the air traffic). Evidence: «7 visits active (nearest 267 m)»; D:/tmp/
   visit_pad_z.png - an ST-6 parked on a parking pad. NOT yet: the server materializing an attacked visit (next), the
   approach paths vs the overrun / tangential design, frame cost of the visits (to measure).
+- 2026-11-18 AUTHOR'S NEW BATCH (author away for a while; work autonomously):
+  1. Turnover + schedule shared by server and client (DONE first slice above); docks client-side only; the server only
+     needs: a player attacks a scheduled ship -> it becomes real and the server simulates it (NEXT).
+  2. All hubs of the jurisdiction built on the planar template, varied (bigger / smaller, elongated, disc-like, a pair
+     of layers); then «создай эти хабы везде где они уже распланированы» - every planned hub except the MINES («шахты -
+     надо будет подумать»). Hub fixes: power GENERATORS per block / several blocks, security services - POLICE docks and
+     RESCUE (МЧС) docks, named by their location. TRUSSES everywhere («хотя бы в качестве мачт или опорных столбов»).
+  3. Models: a BEACON (large, antennas, rotating habitat, dock, two guard fighters, staff, own generator, needs crew
+     rotations and supplies); RESEARCH LABS (large, torus modules, generator, dock; several distinct models; on moons,
+     small asteroids or free in space; need supplies) - agents running (tools/models/units/space_stations.py,
+     hub_services.py).
+  4. PEOPLE: from the astronaut model several characters - heights, builds (thin, fat, very fat, muscular, athletic,
+     obese, normal), female / male / children - by re-proportioning; all with skeletons and animation incl. with
+     props; a separate mesh editor section «Люди»; people are the same in every colony.
+  5. NATIONAL STYLES (now requested, superseding «national styles only later»): hub modules per political system in its
+     spirit - plainly practical somewhere, hints of ancient architecture elsewhere, Chinese descendants in ultramodern
+     buildings, Americans in compact houses (much territory), some national-style buildings; on arrival hubs must look
+     different but share one mechanics layer (no binding to a specific place).
+  6. SURFACE SETTLEMENTS on airless bodies (like the Moon) from the hub elements; size plausible for the population;
+     the same logistics, transport, pedestrians.
+  Order taken: finish 1 (server materialization), integrate 3's service modules into the generator (2), people (4,
+  agent), style kits (5, agents), then 2 (all planned hubs), then 6.
+- 2026-11-18 SERVICES, POWER, BEACON, LABS (agents + integration):
+  - tools/models/units/hub_services.py (agent): hubs_power_plant (520 x 520 m: 2 fusion domes, 3 rows of 180 m
+    radiators on lattice masts, transformer yards), hubs_power_unit (160 x 120), hubs_police_dock (station, hangar,
+    deck at 16 m with 3 pads, 2 PC-30 parked), hubs_rescue_dock (hangar with open bay, 2 pads, tug, jib crane, tanks);
+    lattice trusses on all (author: «фермы везде обязательно»). Previews D:/tmp/svc_*.png.
+  - tools/models/units/space_stations.py (agent, editor «Станции»): stn_beacon_core (~0.5 x 0.4 x 1 km: antennas, 62 m
+    dish, reactor on a truss boom, hex dock z -400, apron with 2 fighters, supply apron) + stn_beacon_hab_ring (spinning
+    habitat, r 150 m, origin = spin centre at the core's origin about +Z); labs stn_lab_torus_a (+ _ring, r 300 m,
+    spinning), stn_lab_torus_b (twin static tori, experiment boom), stn_lab_torus_c (flat torus, 8 pods, telescope),
+    stn_lab_surface (on 12 truss columns, ground y 0 - for moons / asteroids, landing pad at (-300, 14, 0)).
+    Previews D:/tmp/stn_r1.png, stn_r2.png. Not yet placed in the world.
+  - Generator: hub_plane.add_services(map) (also applied to saved maps by tools/models/hub_map_add_services.py): one
+    power block (hubs_power_plant) per ~10 blocks from inner industry / storage blocks, one services block (police +
+    rescue + power unit) per ~16 blocks on rim blocks with an open side; zones "power" / "services" (editor colours,
+    the F12 plan colours); their plan block titles carry the side of the city («Службы: полиция и МЧС · Восток»).
+    Schedule: the police deck's free pad gets a PC-30 patrol every 90 min (25 min down), the rescue pad an ST-6 every
+    4 h. plane_demo map upgraded: 4 power + 2 services blocks; rebuilt + packaged (6230 nodes); schedule 210
+    visits/day; cargo berths 52 / 11 needed, pads 29 / 8, police 2 / 2, rescue 2 / 1. Evidence: D:/tmp/svc_game.png,
+    power_game.png (in game).

@@ -764,6 +764,8 @@ void HubMapBackend::renderHubMapPasses(
             if (zone == "refuel") return glm::vec4(0.75f, 0.60f, 0.19f, 0.20f);
             if (zone == "canopy") return glm::vec4(0.82f, 0.82f, 0.63f, 0.20f);
             if (zone == "dock") return glm::vec4(0.91f, 0.64f, 0.24f, 0.24f);
+            if (zone == "power") return glm::vec4(0.82f, 0.82f, 0.25f, 0.22f);
+            if (zone == "services") return glm::vec4(0.25f, 0.44f, 0.88f, 0.24f);
             return glm::vec4(0.50f, 0.55f, 0.60f, 0.18f);
         };
         for (const auto& city : planCities)

@@ -15,7 +15,7 @@ const Hub = {
   ov: { lanes: true, conns: false, red: true, other: true },
   ZONE_COLOR: { downtown: '#5b6fd6', residential: '#4f9e6a', hotel: '#9a6fd0', hab_rot: '#40a0b0', storage: '#a08350',
     industry: '#b06048', port: '#3f86c0', logistics: '#7c8a3c', refuel: '#c09a30', repair: '#8a6a8a', rig: '#607080',
-    canopy: '#d0d0a0', dock: '#e8a33d' },
+    canopy: '#d0d0a0', dock: '#e8a33d', power: '#d0d040', services: '#4070e0' },
   TOOLS: [['select', 'Выбор', 'V', 'выбрать / двигать карточку (R — повернуть, Del — убрать)'],
     ['blocks', 'Кварталы', 'B', 'клик по пустому месту — новый квартал (зона — из списка), по кварталу — убрать'],
     ['zones', 'Зоны', 'Z', 'клик по кварталу — назначить зону из списка'],

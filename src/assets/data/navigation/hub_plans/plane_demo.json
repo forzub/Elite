@@ -15,16 +15,16 @@
 "id": "b0_1",
 "i": 0,
 "j": 1,
-"zone": "storage",
-"title": "Склады",
+"zone": "services",
+"title": "Службы: полиция и МЧС · Запад",
 "centre": [
 -4000,
 -1450.0
 ],
 "half_m": 300.0,
-"top_h": 96.8,
+"top_h": 0.0,
 "under_h": 126.8,
-"modules": 8
+"modules": 4
 },
 {
 "id": "b0_2",
@@ -165,16 +165,16 @@
 "id": "b3_1",
 "i": 3,
 "j": 1,
-"zone": "industry",
-"title": "Промзона",
+"zone": "power",
+"title": "Энергоблок · Северо-запад",
 "centre": [
 -1100.0,
 -1450.0
 ],
 "half_m": 300.0,
-"top_h": 449.0,
+"top_h": 0.0,
 "under_h": 235.5,
-"modules": 10
+"modules": 4
 },
 {
 "id": "b3_2",
@@ -225,16 +225,16 @@
 "id": "b4_0",
 "i": 4,
 "j": 0,
-"zone": "storage",
-"title": "Склады",
+"zone": "power",
+"title": "Энергоблок · Север",
 "centre": [
 0.0,
 -2550
 ],
 "half_m": 300.0,
-"top_h": 96.8,
+"top_h": 0.0,
 "under_h": 96.6,
-"modules": 8
+"modules": 4
 },
 {
 "id": "b4_1",
@@ -300,16 +300,16 @@
 "id": "b4_5",
 "i": 4,
 "j": 5,
-"zone": "storage",
-"title": "Склады",
+"zone": "power",
+"title": "Энергоблок · Юг",
 "centre": [
 0.0,
 2550.0
 ],
 "half_m": 300.0,
-"top_h": 167.8,
+"top_h": 0.0,
 "under_h": 140.8,
-"modules": 9
+"modules": 4
 },
 {
 "id": "b5_0",
@@ -465,16 +465,16 @@
 "id": "b6_4",
 "i": 6,
 "j": 4,
-"zone": "industry",
-"title": "Промзона",
+"zone": "power",
+"title": "Энергоблок · Юго-восток",
 "centre": [
 2000.0,
 1650.0
 ],
 "half_m": 300.0,
-"top_h": 449.0,
+"top_h": 0.0,
 "under_h": 211.8,
-"modules": 7
+"modules": 4
 },
 {
 "id": "b6_5",
@@ -555,16 +555,16 @@
 "id": "b8_1",
 "i": 8,
 "j": 1,
-"zone": "logistics",
-"title": "Логистика",
+"zone": "services",
+"title": "Службы: полиция и МЧС · Восток",
 "centre": [
 4000.0,
 -1450.0
 ],
 "half_m": 300.0,
-"top_h": 52.6,
+"top_h": 0.0,
 "under_h": 96.6,
-"modules": 8
+"modules": 4
 },
 {
 "id": "b8_2",
@@ -598,70 +598,6 @@
 }
 ],
 "modules": [
-{
-"block": "b0_1",
-"layer": "top",
-"module": "hubp_container_yard",
-"role": "module",
-"rect": [
--4263.3,
--1668.0,
--4013.3,
--1478.0
-],
-"y": [
--6.0,
-23.5
-]
-},
-{
-"block": "b0_1",
-"layer": "top",
-"module": "hubp_container_yard",
-"role": "module",
-"rect": [
--3986.7,
--1668.0,
--3736.7,
--1478.0
-],
-"y": [
--6.0,
-23.5
-]
-},
-{
-"block": "b0_1",
-"layer": "top",
-"module": "hubp_container_yard",
-"role": "module",
-"rect": [
--4268.3,
--1437.0,
--4018.3,
--1247.0
-],
-"y": [
--6.0,
-23.5
-]
-},
-{
-"block": "b0_1",
-"layer": "top",
-"module": "hubp_truck_station",
-"role": "module",
-"rect": [
--3996.7,
--1452.0,
--3731.7,
--1232.0
-],
-"y": [
--6.0,
-96.8
-]
-},
 {
 "block": "b0_1",
 "layer": "under",
@@ -1780,102 +1716,6 @@
 "y": [
 -16.0,
 46.0
-]
-},
-{
-"block": "b3_1",
-"layer": "top",
-"module": "hubb_works",
-"role": "module",
-"rect": [
--1323.3,
--1703.0,
--983.3,
--1403.0
-],
-"y": [
--8.0,
-131.8
-]
-},
-{
-"block": "b3_1",
-"layer": "top",
-"module": "hubv_mast",
-"role": "module",
-"rect": [
--916.7,
--1573.0,
--876.7,
--1533.0
-],
-"y": [
-0.0,
-449.0
-]
-},
-{
-"block": "b3_1",
-"layer": "top",
-"module": "hubv_mast",
-"role": "module",
-"rect": [
--1371.4,
--1307.0,
--1331.4,
--1267.0
-],
-"y": [
-0.0,
-449.0
-]
-},
-{
-"block": "b3_1",
-"layer": "top",
-"module": "hubb_warehouse",
-"role": "module",
-"rect": [
--1312.8,
--1377.0,
--1052.8,
--1197.0
-],
-"y": [
--6.0,
-52.6
-]
-},
-{
-"block": "b3_1",
-"layer": "top",
-"module": "hubv_mast",
-"role": "module",
-"rect": [
--1034.2,
--1307.0,
--994.2,
--1267.0
-],
-"y": [
-0.0,
-449.0
-]
-},
-{
-"block": "b3_1",
-"layer": "top",
-"module": "hubb_gas_battery",
-"role": "module",
-"rect": [
--975.6,
--1335.5,
--828.6,
--1238.5
-],
-"y": [
-0.0,
-167.8
 ]
 },
 {
@@ -3032,70 +2872,6 @@
 },
 {
 "block": "b4_0",
-"layer": "top",
-"module": "hubp_truck_station",
-"role": "module",
-"rect": [
--268.3,
--2803.0,
--3.3,
--2583.0
-],
-"y": [
--6.0,
-96.8
-]
-},
-{
-"block": "b4_0",
-"layer": "top",
-"module": "hubp_container_yard",
-"role": "module",
-"rect": [
-18.3,
--2788.0,
-268.3,
--2598.0
-],
-"y": [
--6.0,
-23.5
-]
-},
-{
-"block": "b4_0",
-"layer": "top",
-"module": "hubb_warehouse",
-"role": "module",
-"rect": [
--240.0,
--2557.0,
--60.0,
--2297.0
-],
-"y": [
--6.0,
-52.6
-]
-},
-{
-"block": "b4_0",
-"layer": "top",
-"module": "hubp_container_yard",
-"role": "module",
-"rect": [
--10.0,
--2522.0,
-240.0,
--2332.0
-],
-"y": [
--6.0,
-23.5
-]
-},
-{
-"block": "b4_0",
 "layer": "under",
 "module": "hubp_container_yard",
 "role": "module",
@@ -4164,86 +3940,6 @@
 "y": [
 -6.0,
 97.8
-]
-},
-{
-"block": "b4_5",
-"layer": "top",
-"module": "hubb_warehouse",
-"role": "module",
-"rect": [
--232.3,
-2290.5,
-27.7,
-2470.5
-],
-"y": [
--6.0,
-52.6
-]
-},
-{
-"block": "b4_5",
-"layer": "top",
-"module": "hubb_gas_battery",
-"role": "module",
-"rect": [
-85.3,
-2332.0,
-232.3,
-2429.0
-],
-"y": [
-0.0,
-167.8
-]
-},
-{
-"block": "b4_5",
-"layer": "top",
-"module": "hubp_container_yard",
-"role": "module",
-"rect": [
--229.0,
-2496.5,
-21.0,
-2686.5
-],
-"y": [
--6.0,
-23.5
-]
-},
-{
-"block": "b4_5",
-"layer": "top",
-"module": "hubb_gas_battery",
-"role": "module",
-"rect": [
-82.0,
-2543.0,
-229.0,
-2640.0
-],
-"y": [
-0.0,
-167.8
-]
-},
-{
-"block": "b4_5",
-"layer": "top",
-"module": "hubb_gas_battery",
-"role": "module",
-"rect": [
--73.5,
-2712.5,
-73.5,
-2809.5
-],
-"y": [
-0.0,
-167.8
 ]
 },
 {
@@ -7480,54 +7176,6 @@
 },
 {
 "block": "b6_4",
-"layer": "top",
-"module": "hubb_works",
-"role": "module",
-"rect": [
-1850.0,
-1377.0,
-2150.0,
-1717.0
-],
-"y": [
--8.0,
-131.8
-]
-},
-{
-"block": "b6_4",
-"layer": "top",
-"module": "hubv_mast",
-"role": "module",
-"rect": [
-1803.3,
-1813.0,
-1843.3,
-1853.0
-],
-"y": [
-0.0,
-449.0
-]
-},
-{
-"block": "b6_4",
-"layer": "top",
-"module": "hubb_warehouse",
-"role": "module",
-"rect": [
-1936.7,
-1743.0,
-2196.7,
-1923.0
-],
-"y": [
--6.0,
-52.6
-]
-},
-{
-"block": "b6_4",
 "layer": "under",
 "module": "hubb_works",
 "role": "module",
@@ -8408,70 +8056,6 @@
 },
 {
 "block": "b8_1",
-"layer": "top",
-"module": "hubp_container_yard",
-"role": "module",
-"rect": [
-3753.3,
--1738.0,
-3943.3,
--1488.0
-],
-"y": [
--6.0,
-23.5
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_warehouse",
-"role": "module",
-"rect": [
-3986.7,
--1703.0,
-4246.7,
--1523.0
-],
-"y": [
--6.0,
-52.6
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_parking",
-"role": "module",
-"rect": [
-3723.3,
--1432.0,
-4023.3,
--1192.0
-],
-"y": [
--10.0,
-1.1
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_parking",
-"role": "module",
-"rect": [
-4036.7,
--1462.0,
-4276.7,
--1162.0
-],
-"y": [
--10.0,
-1.1
-]
-},
-{
-"block": "b8_1",
 "layer": "under",
 "module": "hubp_container_yard",
 "role": "module",
@@ -8532,134 +8116,6 @@
 "y": [
 -67.5,
 -38.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-4300.0,
--1290.5,
-4461.6,
--1159.5
-],
-"y": [
--16.0,
-46.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-4300.0,
--1440.5,
-4461.6,
--1309.5
-],
-"y": [
--16.0,
-46.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-4300.0,
--1590.5,
-4461.6,
--1459.5
-],
-"y": [
--16.0,
-46.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-4300.0,
--1740.5,
-4461.6,
--1609.5
-],
-"y": [
--16.0,
-46.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-4159.5,
--1911.6,
-4290.5,
--1750.0
-],
-"y": [
--16.0,
-46.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-4009.5,
--1911.6,
-4140.5,
--1750.0
-],
-"y": [
--16.0,
-46.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-3859.5,
--1911.6,
-3990.5,
--1750.0
-],
-"y": [
--16.0,
-46.0
-]
-},
-{
-"block": "b8_1",
-"layer": "top",
-"module": "hubb_pier_m",
-"role": "dock",
-"rect": [
-3709.5,
--1911.6,
-3840.5,
--1750.0
-],
-"y": [
--16.0,
-46.0
 ]
 },
 {

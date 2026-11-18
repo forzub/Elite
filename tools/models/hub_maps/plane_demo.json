@@ -37,31 +37,25 @@
   {
    "i": 0,
    "j": 1,
-   "zone": "storage",
+   "zone": "services",
    "top": [
     {
-     "module": "hubp_container_yard",
-     "x": -138.333,
-     "z": -123,
-     "yaw": 180
+     "module": "hubs_police_dock",
+     "x": -140.0,
+     "z": -150.0,
+     "yaw": 0
     },
     {
-     "module": "hubp_container_yard",
-     "x": 138.333,
-     "z": -123,
-     "yaw": 180
+     "module": "hubs_rescue_dock",
+     "x": -140.0,
+     "z": 150.0,
+     "yaw": 0
     },
     {
-     "module": "hubp_container_yard",
-     "x": -143.333,
-     "z": 108,
-     "yaw": 180
-    },
-    {
-     "module": "hubp_truck_station",
-     "x": 133.333,
-     "z": 108,
-     "yaw": 180
+     "module": "hubs_power_unit",
+     "x": 170.0,
+     "z": 0.0,
+     "yaw": 90
     }
    ],
    "under": [
@@ -555,43 +549,13 @@
   {
    "i": 3,
    "j": 1,
-   "zone": "industry",
+   "zone": "power",
    "top": [
     {
-     "module": "hubb_works",
-     "x": -53.333,
-     "z": -103,
-     "yaw": 270
-    },
-    {
-     "module": "hubv_mast",
-     "x": 203.333,
-     "z": -103,
+     "module": "hubs_power_plant",
+     "x": 0.0,
+     "z": 0.0,
      "yaw": 0
-    },
-    {
-     "module": "hubv_mast",
-     "x": -251.4,
-     "z": 163,
-     "yaw": 90
-    },
-    {
-     "module": "hubb_warehouse",
-     "x": -82.8,
-     "z": 163,
-     "yaw": 90
-    },
-    {
-     "module": "hubv_mast",
-     "x": 85.8,
-     "z": 163,
-     "yaw": 270
-    },
-    {
-     "module": "hubb_gas_battery",
-     "x": 200.4,
-     "z": 163,
-     "yaw": 270
     }
    ],
    "under": [
@@ -1060,30 +1024,12 @@
   {
    "i": 4,
    "j": 0,
-   "zone": "storage",
+   "zone": "power",
    "top": [
     {
-     "module": "hubp_truck_station",
-     "x": -133.333,
-     "z": -143,
-     "yaw": 0
-    },
-    {
-     "module": "hubp_container_yard",
-     "x": 143.333,
-     "z": -143,
-     "yaw": 180
-    },
-    {
-     "module": "hubb_warehouse",
-     "x": -150,
-     "z": 123,
-     "yaw": 180
-    },
-    {
-     "module": "hubp_container_yard",
-     "x": 115,
-     "z": 123,
+     "module": "hubs_power_plant",
+     "x": 0.0,
+     "z": 0.0,
      "yaw": 0
     }
    ],
@@ -1535,37 +1481,13 @@
   {
    "i": 4,
    "j": 5,
-   "zone": "storage",
+   "zone": "power",
    "top": [
     {
-     "module": "hubb_warehouse",
-     "x": -102.333,
-     "z": -169.5,
-     "yaw": 90
-    },
-    {
-     "module": "hubb_gas_battery",
-     "x": 161.333,
-     "z": -169.5,
-     "yaw": 270
-    },
-    {
-     "module": "hubp_container_yard",
-     "x": -104,
-     "z": 41.5,
-     "yaw": 180
-    },
-    {
-     "module": "hubb_gas_battery",
-     "x": 158,
-     "z": 41.5,
-     "yaw": 270
-    },
-    {
-     "module": "hubb_gas_battery",
-     "x": -2.5,
-     "z": 211,
-     "yaw": 90
+     "module": "hubs_power_plant",
+     "x": 0.0,
+     "z": 0.0,
+     "yaw": 0
     }
    ],
    "under": [
@@ -2856,25 +2778,13 @@
   {
    "i": 6,
    "j": 4,
-   "zone": "industry",
+   "zone": "power",
    "top": [
     {
-     "module": "hubb_works",
-     "x": 0,
-     "z": -103,
-     "yaw": 180
-    },
-    {
-     "module": "hubv_mast",
-     "x": -176.667,
-     "z": 183,
-     "yaw": 90
-    },
-    {
-     "module": "hubb_warehouse",
-     "x": 66.667,
-     "z": 183,
-     "yaw": 270
+     "module": "hubs_power_plant",
+     "x": 0.0,
+     "z": 0.0,
+     "yaw": 0
     }
    ],
    "under": [
@@ -3202,31 +3112,25 @@
   {
    "i": 8,
    "j": 1,
-   "zone": "logistics",
+   "zone": "services",
    "top": [
     {
-     "module": "hubp_container_yard",
-     "x": -151.667,
-     "z": -163,
-     "yaw": 270
+     "module": "hubs_police_dock",
+     "x": -140.0,
+     "z": -150.0,
+     "yaw": 0
     },
     {
-     "module": "hubb_warehouse",
-     "x": 116.667,
-     "z": -163,
-     "yaw": 270
+     "module": "hubs_rescue_dock",
+     "x": -140.0,
+     "z": 150.0,
+     "yaw": 0
     },
     {
-     "module": "hubb_parking",
-     "x": -126.667,
-     "z": 138,
+     "module": "hubs_power_unit",
+     "x": 170.0,
+     "z": 0.0,
      "yaw": 90
-    },
-    {
-     "module": "hubb_parking",
-     "x": 156.667,
-     "z": 138,
-     "yaw": 180
     }
    ],
    "under": [
@@ -3254,11 +3158,7 @@
      "z": 138,
      "yaw": 0
     }
-   ],
-   "piers": {
-    "1,0": "hubb_pier_m",
-    "0,-1": "hubb_pier_m"
-   }
+   ]
   },
   {
    "i": 8,

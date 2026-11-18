@@ -240,8 +240,9 @@ ZONE_PIERS = {"port": [("hubb_pier_l", 200.0), ("hubb_pier_m", 150.0)], "refuel"
               "logistics": [("hubb_pier_m", 150.0)]}
 ZONE_TITLE = {"downtown": "Центр", "residential": "Жилой район", "hotel": "Гостиничные доки", "hab_rot": "Жилые барабаны",
               "storage": "Склады", "industry": "Промзона", "port": "Порт", "logistics": "Логистика", "refuel": "Заправка",
-              "repair": "Ремонтные доки", "rig": "Платформы", "canopy": "Диск", "dock": "Док"}
-WHEELED = {"storage", "industry", "port", "logistics", "refuel", "repair", "rig"}
+              "repair": "Ремонтные доки", "rig": "Платформы", "canopy": "Диск", "dock": "Док",
+              "power": "Энергоблок", "services": "Службы: полиция и МЧС"}
+WHEELED = {"storage", "industry", "port", "logistics", "refuel", "repair", "rig", "power"}
 PASSENGER = {"downtown", "residential", "hotel", "hab_rot", "canopy"}
 
 
@@ -500,10 +501,54 @@ def _generate_map(hub_id):
                 if o in _open_sides(k, cells):
                     cell["piers"][f"{o[0]},{o[1]}"] = rng.choice(ZONE_PIERS[kd])[0]
         out_cells.append(cell)
-    return {"schema": MAP_SCHEMA, "hub_id": hub_id, "title": hub_id, "generated_from": hub_id,
+    return add_services({"schema": MAP_SCHEMA, "hub_id": hub_id, "title": hub_id, "generated_from": hub_id,
             "grid": {"cell_m": CELL, "street_local_m": STREET_LOCAL, "street_avenue_m": STREET_AVENUE,
                      "anchor": {"i": 0, "j": 0, "x": None, "z": None}, "extent": [0, 0, N - 1, M - 1]},
-            "avenues": {"x": av_x, "z": av_z}, "cells": out_cells, "lanes_off": [], "red_zones": []}
+            "avenues": {"x": av_x, "z": av_z}, "cells": out_cells, "lanes_off": [], "red_zones": []})
+
+
+SERVICE_CARDS = {
+    # a services block (author 2026-11-18: «службы охраны - доки с полицаями и доки с мчс-никами»): the police station
+    # with its deck of 3 pads, the rescue station with 2 pads and its hangar, a power unit (tools/models/units/hub_services.py)
+    "services": [{"module": "hubs_police_dock", "x": -140.0, "z": -150.0, "yaw": 0},
+                 {"module": "hubs_rescue_dock", "x": -140.0, "z": 150.0, "yaw": 0},
+                 {"module": "hubs_power_unit", "x": 170.0, "z": 0.0, "yaw": 90}],
+    # a power block («добавить генераторы - на квартал или несколько кварталов»): the district power station
+    "power": [{"module": "hubs_power_plant", "x": 0.0, "z": 0.0, "yaw": 0}],
+}
+POWER_BLOCKS_PER = 10          # one power station block per this many blocks (at least one)
+SERVICE_BLOCKS_PER = 16        # one police + rescue block per this many blocks (at least one)
+
+
+def add_services(mp):
+    """turn some blocks of a map into power stations and police / rescue service blocks (idempotent: a map that has
+    them keeps them): power from industry / storage blocks (inner ones first: the plants stay off the waterfront),
+    services on rim blocks with an open side (their decks reachable from open space), away from the port and the dock"""
+    cells = mp["cells"]
+    keys = {(c["i"], c["j"]) for c in cells}
+    n = len(cells)
+    have = lambda z: sum(1 for c in cells if c["zone"] == z)
+    centre = (sum(c["i"] for c in cells) / n, sum(c["j"] for c in cells) / n)
+    dist = lambda c: math.hypot(c["i"] - centre[0], c["j"] - centre[1])
+    need_power = max(1, round(n / POWER_BLOCKS_PER)) - have("power")
+    pool = sorted((c for c in cells if c["zone"] in ("industry", "storage")), key=lambda c: (dist(c), c["i"], c["j"]))
+    for c in pool[:max(0, need_power)]:
+        c["zone"], c["top"] = "power", [dict(x) for x in SERVICE_CARDS["power"]]
+        c.pop("piers", None)
+    need_services = max(1, round(n / SERVICE_BLOCKS_PER)) - have("services")
+    pool = sorted((c for c in cells if c["zone"] in ("industry", "storage", "logistics", "residential", "repair", "rig")
+                   and _open_sides((c["i"], c["j"]), keys)), key=lambda c: (-dist(c), c["i"], c["j"]))
+    chosen = []
+    for c in pool:
+        if len(chosen) >= max(0, need_services):
+            break
+        if any(abs(c["i"] - o["i"]) + abs(c["j"] - o["j"]) < 3 for o in chosen):
+            continue                                    # spread over the rim
+        chosen.append(c)
+    for c in chosen:
+        c["zone"], c["top"] = "services", [dict(x) for x in SERVICE_CARDS["services"]]
+        c.pop("piers", None)
+    return mp
 
 
 def _open_sides(k, cells):

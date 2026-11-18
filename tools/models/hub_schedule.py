@@ -60,6 +60,14 @@ def _docks(L):
                     c = _add(_add(pos, _rot(R, (x, 0.0, z))), up, 6.0)
                     docks.append({"id": f"{nid}.p{ix}{iz}", "kind": "pad", "pos": c, "axis": up, "up": up, "max_len": 60.0,
                                   "vertical": True, "heading": _rot(R, (0.0, 0.0, 1.0))})
+        elif role == "module" and folder in ("hubs_police_dock", "hubs_rescue_dock"):
+            # the services' free pads (tools/models/units/hub_services.py: the police deck's middle pad at 16 m, the rescue
+            # station's second pad; the others hold parked craft)
+            local = (74.0, 16.0, 0.0) if folder == "hubs_police_dock" else (62.0, 0.0, 46.0)
+            c = _add(_add(pos, _rot(R, local)), up, 5.0)
+            docks.append({"id": f"{nid}.{'police' if folder == 'hubs_police_dock' else 'rescue'}",
+                          "kind": "police" if folder == "hubs_police_dock" else "rescue", "pos": c, "axis": up, "up": up,
+                          "max_len": 50.0, "vertical": True, "heading": _rot(R, (0.0, 0.0, 1.0))})
         elif role == "module" and folder == "hubv_pad_star":
             c = _add(pos, up, 6.0)
             docks.append({"id": f"{nid}.star", "kind": "pad", "pos": c, "axis": up, "up": up, "max_len": 70.0, "vertical": True,
@@ -124,9 +132,28 @@ def schedule_document(hub_id, L, plan):
             visits.append({"kind": flow, "fleet": h["fleet"], "model": h["model"], "name": h["name"], "length": h["length"],
                            "cargo_t": round(load), "dwell_s": round(fixed + load / rate * 3600.0),
                            "arrive_s": round(rng.uniform(0.0, DAY))})
+    # the services: a patrol cutter on every police pad each 90 min (25 min down), a rescue tender on every rescue pad
+    # each 4 h (40 min) - the hulls of the bloc's fleet by class (any small hull when the bloc has none)
+    service_hull = {}
+    for i, s in enumerate(fleet):
+        cls = cat.get(s.get("passport", ""), {}).get("cls")
+        if cls in ("patrol_cutter", "service_tender") and cls not in service_hull:
+            service_hull[cls] = {"fleet": i, "model": s["model"], "name": s["name"], "length": s["length_m"]}
+    small = min(hulls, key=lambda h: h["length"]) if hulls else None
+    for d in [d for d in docks if d["kind"] in ("police", "rescue")]:
+        h = service_hull.get("patrol_cutter" if d["kind"] == "police" else "service_tender") or small
+        if not h or h["length"] > d["max_len"]:
+            continue
+        period, dwell = (5400.0, 1500.0) if d["kind"] == "police" else (14400.0, 2400.0)
+        t0 = rng.uniform(0.0, period)
+        while t0 < DAY:
+            visits.append({"kind": "patrol" if d["kind"] == "police" else "rescue", "fleet": h["fleet"], "model": h["model"],
+                           "name": h["name"], "length": h["length"], "cargo_t": 0, "dwell_s": round(dwell),
+                           "arrive_s": round(t0), "dock_fixed": d["id"]})
+            t0 += period
     # the docks: each visit takes a free dock of its kind (fuel falls back on a cargo berth); none free - it waits at the
     # holding area for the first one
-    want = {"bulk": ("cargo",), "fuel": ("fuel", "cargo"), "frontier": ("pad",)}
+    want = {"bulk": ("cargo",), "fuel": ("fuel", "cargo"), "frontier": ("pad",), "patrol": ("police",), "rescue": ("rescue",)}
     free_at = {d["id"]: 0.0 for d in docks}
     by_id = {d["id"]: d for d in docks}
     visits.sort(key=lambda v: v["arrive_s"])
@@ -134,6 +161,8 @@ def schedule_document(hub_id, L, plan):
     for n, v in enumerate(visits):
         kinds = want[v["kind"]]
         cands = [d for d in docks if d["kind"] in kinds and d["max_len"] >= v["length"]]
+        if v.get("dock_fixed"):
+            cands = [by_id[v["dock_fixed"]]]
         if not cands:
             v["dock"] = None
             continue
@@ -153,7 +182,7 @@ def schedule_document(hub_id, L, plan):
         v["id"] = f"{hub_id}.v{n:04d}"
     # the demand: the peak concurrency if every ship got a dock at once (no waiting)
     demand = {}
-    for kind in ("cargo", "fuel", "pad"):
+    for kind in ("cargo", "fuel", "pad", "police", "rescue"):
         events = []
         for v in visits:
             if v.get("dock") and by_id[v["dock"]]["kind"] == kind:
@@ -164,7 +193,8 @@ def schedule_document(hub_id, L, plan):
             cur += e
             peak = max(peak, cur)
         demand[kind] = {"available": sum(1 for d in docks if d["kind"] == kind), "peak_needed": peak,
-                        "ships_waited": waited.get({"cargo": "bulk", "fuel": "fuel", "pad": "frontier"}[kind], 0)}
+                        "ships_waited": waited.get({"cargo": "bulk", "fuel": "fuel", "pad": "frontier", "police": "patrol",
+                                                    "rescue": "rescue"}[kind], 0)}
     r = lambda p: [round(x, 2) for x in p]
     return {"schema": "elite.hub_schedule.v1", "hub_id": hub_id, "frame_module_id": f"{hub_id}.city",
             "description": "generated by tools/models/hub_schedule.py (hub_belt_world.py): a 24 h cycle, every day the same",

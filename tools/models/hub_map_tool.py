@@ -63,7 +63,7 @@ def cmd_catalog(a):
     zones = [{"id": z, "title": hp.ZONE_TITLE.get(z, z), "special": z in hp.SPECIAL_ZONES,
               "modules": [f for f, _ in hp.ZONE_MODULES.get(z, [])], "under": hp.UNDER_OF.get(z)}
              for z in ["downtown", "residential", "hotel", "hab_rot", "storage", "industry", "port", "logistics", "refuel",
-                       "repair", "rig", "canopy", "dock"]]
+                       "repair", "rig", "canopy", "dock", "power", "services"]]
     piers = sorted({f for lst in hp.ZONE_PIERS.values() for f, _ in lst})
     return ({"type": "hubCatalog", "modules": mods, "zones": zones, "piers": piers,
                    "cell_m": hp.CELL, "street_local_m": hp.STREET_LOCAL, "street_avenue_m": hp.STREET_AVENUE,

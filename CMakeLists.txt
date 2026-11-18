@@ -810,6 +810,7 @@ add_executable(EliteGame
     src/game/system_map/SystemMapRenderer.cpp
     src/game/system_map/SystemMapRendererPrimitives.cpp
     src/game/system_map/SystemMapRendererNavigation.cpp
+    src/game/navigation/HubPlanCatalog.cpp
     src/game/system_map/SystemMapRendererInput.cpp
     src/game/system_map/SystemMapRendererContextMenu.cpp
     src/game/system_map/SystemMapPlanetCarousel.cpp

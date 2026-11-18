@@ -392,6 +392,10 @@ private:
     void decorateHubDockingOverlay(
         const world::celestial::HubMapSnapshot& hub
     );
+    // the hub's 2D plan (V): every block of a planar city a clickable card; an open block card is a HUD marker
+    void decorateHubPlanBlocks(
+        const world::celestial::HubMapSnapshot& hub
+    );
 
     void applyDockingAction(
         const std::string& objectId,
@@ -515,6 +519,13 @@ public:
         m_systemSceneFrameDirty = true;
     }
     bool systemPlanView() const noexcept { return m_systemView.state().planView; }
+    // V in the Hub map: the hub's 2D plan (blocks, buildings, streets, docks; a block click -> a HUD marker) <-> 3D
+    void toggleHubPlanView() noexcept
+    {
+        m_hubView.setPlanView(!m_hubView.planView());
+        m_hubFrameDirty = true;
+    }
+    bool hubPlanView() const noexcept { return m_hubView.planView(); }
     void toggleSystemBeacons() noexcept
     {
         m_systemView.state().showBeacons = !m_systemView.state().showBeacons;
@@ -533,6 +544,18 @@ public:
     }
     // DEV map script: select an object as if clicked.
     void devActivateObject(const std::string& objectId) { m_objectOverlayState.activate(objectId); }
+    // DEV: a click on a Hub map object (its card opens, as handlePointer does): the hub plan's blocks
+    bool devOpenHubObject(const std::string& objectId)
+    {
+        for (const auto& item : m_hubPresentation.frame.objectOverlay.items)
+            if (item.objectId == objectId)
+            {
+                m_objectOverlayState.activate(objectId);
+                m_objectOverlayState.ensureOpen(item, m_hubPresentation.centerPx * 2.0);
+                return true;
+            }
+        return false;
+    }
     // DEV acceptance script: focus a body / hub through the ordinary selection path; hover an object.
     void devFocusBody(const std::string& bodyId) { m_devFocusBodyId = bodyId; }
     void devFocusHub(const std::string& hubId) { m_devFocusHubId = hubId; }

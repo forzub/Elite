@@ -548,6 +548,13 @@
       "es": "Punto de navegación",
       "ja": "航法ポイント"
     },
+    "map.object_info.hub_block_buildings": {
+      "en": "Buildings",
+      "ru": "Зданий",
+      "zh-Hans": "建筑",
+      "es": "Edificios",
+      "ja": "建物"
+    },
     "map.object_info.docking_ports": {
       "en": "Docking ports",
       "ru": "Доки",

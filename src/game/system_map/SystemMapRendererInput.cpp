@@ -823,6 +823,7 @@ SystemMapRenderer::handleInput(
                     hub
                 );
             decorateHubDockingOverlay(hub);
+            decorateHubPlanBlocks(hub);
             m_hubFramePrepared = true;
             m_hubFrameDirty = false;
         }

@@ -1395,6 +1395,10 @@ if ((systemMapMode || serviceMode))
                     space->devToggleTrafficLanes();
                 else if (space && step.action.rfind("select:", 0) == 0)
                     space->devSelectTrafficShip(step.action.substr(7));
+                else if (space && step.action == "plan")
+                    space->devToggleHubPlan();
+                else if (space && step.action.rfind("activate:", 0) == 0)
+                    space->devActivateMapObject(step.action.substr(9));
                 break;
             }
         for (auto& capture : core::dev::frameCaptureRequests())

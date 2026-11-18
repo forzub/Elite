@@ -130,6 +130,8 @@ struct MapObjectOverlayItem
     // id represented by a client-only celestial information panel.
     std::string semanticTargetId;
     std::string semanticAnchorId;
+    // Infrastructure: a point inside the semantic target module (its local metres) - a hub plan block
+    glm::dvec3 semanticLocalOffsetMeters {0.0};
     int trackingSystemId = -1;
     // Local-neighborhood semantic binding for tactical targets.  A ship or
     // infrastructure object may live inside a Hub even though the clicked

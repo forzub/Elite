@@ -121,8 +121,10 @@ player's current navigation state rather than from an arbitrary map selection:
 - **F12** — the local map (2026-11-06): with an object selected on the OPEN
   System / Details map, that object's Hub (a hub, or a ship / module attached
   to one) or else the terminal System cube containing it; otherwise (and
-  always from flight) the player's matched Hub, else the player's terminal
-  cube. Such a cube is the object's local space (`DetailTarget` SpatialVolume
+  always from flight) the player's matched Hub, else the nearest hub of the
+  system within 30 km of the ship (2026-11-18: after J / free flight the ship
+  is not matched, yet the pilot near a hub wants its map), else the player's
+  terminal cube. Such a cube is the object's local space (`DetailTarget` SpatialVolume
   with focusClass Ship / Hub and the object id): it is never promoted to a
   body scene, and while it is shown it FOLLOWS its object ("player",
   "entity:N") into the neighbour cube when the object leaves it.

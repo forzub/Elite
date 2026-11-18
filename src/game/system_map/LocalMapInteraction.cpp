@@ -190,7 +190,13 @@ LocalMapInteractionResult LocalMapInteraction::handle(
     const double dx = mouseX - camera.lastMouseX;
     const double dy = mouseY - camera.lastMouseY;
 
-    if (camera.rotating && leftDown && !leftStartedThisFrame)
+    // the hub's 2D plan (V): a left drag pans, nothing orbits
+    if (hubMode && hubView.planView() && camera.rotating && leftDown && !leftStartedThisFrame)
+    {
+        camera.pan.x += dx;
+        camera.pan.y += dy;
+    }
+    else if (camera.rotating && leftDown && !leftStartedThisFrame)
     {
         const double sensitivity =
             controls.rotateSensitivity *
@@ -283,6 +289,10 @@ LocalMapInteractionResult LocalMapInteraction::handle(
 
     if (hubMode)
     {
+        // the hub's 2D plan looks straight down (HubMapView::setPlanView); the 3D view keeps its pitch range
+        if (hubView.planView())
+            hubView.applyPlanCamera();
+        else
         camera.pitch =
             std::clamp(
                 camera.pitch,

@@ -6,6 +6,40 @@
 #include "src/game/presentation/SystemMapInfoBuilder.h"
 #include "src/game/SpaceStateInternal.h"
 
+namespace
+{
+// F12 from flight: a hub this close opens its Hub map even when the ship is not matched to it (author 2026-11-18:
+// the 3D Hub map orients the pilot «что происходит вокруг хаба»; from 6 km of a planar city F12 showed the player's
+// 2500 km cube - after J / free flight the ship is not matched to the hub)
+constexpr double PlayerHubMapProximityMeters = 30000.0;
+
+// the hub of the player's local map: the matched hub, else the nearest hub of the system within the proximity
+template <class World, class Ship>
+std::string playerLocalHubId(const World& world, const Ship& ship, int systemId, double* distanceMeters = nullptr)
+{
+    const auto& motion = ship.transform.motion;
+    if (motion.matchedToReferenceFrame && !motion.hubId.empty())
+        return motion.hubId;
+    const glm::dvec3 shipW = world::coordinates::fullMeters(ship.transform.worldPosition);
+    std::string nearest;
+    double best = PlayerHubMapProximityMeters;
+    for (const auto& [hubId, hub] : world.hubs())
+    {
+        if (hub.systemId != systemId)
+            continue;
+        const double d = glm::length(world::coordinates::fullMeters(hub.worldPosition) - shipW);
+        if (d < best)
+        {
+            best = d;
+            nearest = hubId;
+        }
+    }
+    if (distanceMeters)
+        *distanceMeters = best;
+    return nearest;
+}
+} // namespace
+
 
 
 bool SpaceState::buildPlayerDetailTarget(
@@ -875,12 +909,19 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                 (void)id;
                 if (!object.hubAttachment.valid || object.hubAttachment.hubId != hubId)
                     continue;
+                // the planar city's own pieces (author 2026-11-18: «city ×6» - the drums and hotel barrels were
+                // counted as the city): the city, its habitat drums, its hotel barrels each a row of their own
                 const char* type = object.type == ObjectType::Station              ? "admin_station"
                                    : object.type == ObjectType::HubHexDock          ? "shuttle_dock"
                                    : object.type == ObjectType::HubDockServiceBlock ? "service_dock"
+                                   : object.type == ObjectType::HubBeltDrum         ? "habitat"
+                                   : object.type == ObjectType::HubBeltHotel        ? "hotel"
                                                                                     : "module";
+                std::string rowName = object.displayName.empty() ? std::string("модуль") : object.displayName;
+                if (object.type == ObjectType::HubBeltCity)
+                    rowName = "Город";
                 if (present[type]++ == 0)
-                    runtimeRows.push_back({"", "", type, object.displayName.empty() ? std::string("модуль") : object.displayName, 1, 0});
+                    runtimeRows.push_back({"", "", type, rowName, 1, 0});
                 else
                     for (auto& row : runtimeRows)
                         if (row.type == type)
@@ -1568,7 +1609,9 @@ bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
             if (playerIt != ships.end())
             {
                 const auto& motion = playerIt->second.transform.motion;
-                if (motion.matchedToReferenceFrame && !motion.hubId.empty())
+                double nearestM = 0.0;
+                const std::string localHub = playerLocalHubId(m_client->world(), playerIt->second, nav.currentSystemId, &nearestM);
+                if (motion.matchedToReferenceFrame && !motion.hubId.empty() || !localHub.empty())
                 {
                     if (!composeSystemMapSnapshot(nav.currentSystemId))
                         return false;
@@ -1576,10 +1619,13 @@ bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
                     world::celestial::DetailTarget parentTarget;
                     if (!buildPlayerDetailTarget(parentTarget, true) ||
                         !composeDetailMapSnapshot(parentTarget) ||
-                        !composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
+                        !composeHubMapSnapshot(nav.currentSystemId, localHub))
                     {
                         return false;
                     }
+                    if (!motion.matchedToReferenceFrame)
+                        std::cerr << "[LocalMap] F12: the nearest hub " << localHub << " at " << static_cast<long long>(nearestM)
+                                  << " m (not matched)" << std::endl;
                     m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Hub);
                     return true;
                 }
@@ -1668,7 +1714,8 @@ void SpaceState::setSystemMapPlayerLocalMode()
     if (playerIt != ships.end())
     {
         const auto& motion = playerIt->second.transform.motion;
-        if (motion.matchedToReferenceFrame && !motion.hubId.empty())
+        const std::string localHub = playerLocalHubId(m_client->world(), playerIt->second, nav.currentSystemId);
+        if (motion.matchedToReferenceFrame && !motion.hubId.empty() || !localHub.empty())
         {
             if (!composeSystemMapSnapshot(nav.currentSystemId))
                 return;
@@ -1676,11 +1723,11 @@ void SpaceState::setSystemMapPlayerLocalMode()
             world::celestial::DetailTarget parentTarget;
             if (!buildPlayerDetailTarget(parentTarget, true) ||
                 !composeDetailMapSnapshot(parentTarget) ||
-                !composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
+                !composeHubMapSnapshot(nav.currentSystemId, localHub))
             {
                 return;
             }
-            beginSystemMapHubTransition(nav.currentSystemId, motion.hubId);
+            beginSystemMapHubTransition(nav.currentSystemId, localHub);
             return;
         }
     }
@@ -2054,6 +2101,7 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.intermediateTarget = loc.text("map.object_info.intermediate_target");
     mapText.navigationPoint = loc.text("map.object_info.navigation_point");
     mapText.dockingPorts = loc.text("map.object_info.docking_ports");
+    mapText.hubBlockBuildings = loc.text("map.object_info.hub_block_buildings");
     mapText.dockOpening = loc.text("map.object_info.dock_opening");
     mapText.shipEnvelope = loc.text("map.object_info.ship_envelope");
     mapText.dockFit = loc.text("map.object_info.dock_fit");
@@ -2099,6 +2147,19 @@ void SpaceState::applyClientCatalogLocalization()
 void SpaceState::devToggleTrafficLanes()
 {
     m_systemMapRenderer.toggleTrafficLanes();
+}
+
+void SpaceState::devToggleHubPlan()
+{
+    m_systemMapRenderer.toggleHubPlanView();
+}
+
+void SpaceState::devActivateMapObject(const std::string& objectId)
+{
+    const bool opened = m_systemMapRenderer.devOpenHubObject(objectId);
+    if (!opened)
+        m_systemMapRenderer.devActivateObject(objectId);
+    std::cerr << "[MapScript] activated " << objectId << (opened ? " (card open)" : " (not on the Hub map)") << std::endl;
 }
 
 void SpaceState::devSelectTrafficShip(const std::string& callsign)

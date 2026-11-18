@@ -112,6 +112,8 @@ public:
     // DEV map script hooks (ELITE_DEV_MAP_SCRIPT).
     void devToggleTrafficLanes();
     void devSelectTrafficShip(const std::string& callsign);
+    void devToggleHubPlan();                                   // V in the Hub map
+    void devActivateMapObject(const std::string& objectId);    // a click on that map object (its card opens)
     enum class StartupMode
     {
         Immediate,

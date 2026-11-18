@@ -204,7 +204,8 @@ inline ResolvedTacticalKinematics resolveTacticalKinematics(
 inline ResolvedTacticalKinematics resolveInfrastructureKinematics(
     const ClientWorldState& world,
     int systemId,
-    const std::string& stableObjectId
+    const std::string& stableObjectId,
+    const glm::dvec3& localOffsetMeters = glm::dvec3(0.0)
 )
 {
     ResolvedTacticalKinematics out;
@@ -222,6 +223,10 @@ inline ResolvedTacticalKinematics resolveInfrastructureKinematics(
         }
 
         out.worldPosition = object.renderWorldPosition;
+        if (localOffsetMeters != glm::dvec3(0.0))
+            out.worldPosition = world::coordinates::makeWorldPositionFromMeters(
+                world::coordinates::fullMeters(object.renderWorldPosition) +
+                glm::dmat3(glm::mat3(object.renderOrientation)) * localOffsetMeters);
         out.worldVelocityMps = object.linearVelocityMps;
         out.valid = true;
         return out;
@@ -422,7 +427,8 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
         const auto resolved = detail::resolveInfrastructureKinematics(
             world,
             tracked.systemId,
-            tracked.stableObjectId
+            tracked.stableObjectId,
+            tracked.localOffsetMeters
         );
         if (!resolved.valid)
             continue;

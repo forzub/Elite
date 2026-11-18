@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -11,6 +12,7 @@
 #include <GLFW/glfw3.h>
 
 #include "render/HUD/TextRenderer.h"
+#include "src/game/navigation/HubPlanCatalog.h"
 
 namespace
 {
@@ -591,6 +593,16 @@ void HubMapBackend::renderHubMapPasses(
         );
     }
 
+    // the planar cities of this frame, for the 2D plan's fills and labels (the label stage below)
+    struct PlanCity
+    {
+        const game::navigation::HubPlan* plan = nullptr;
+        glm::dvec3 position {0.0};
+        world::celestial::LocalSceneAxes axes;
+    };
+    std::vector<PlanCity> planCities;
+    const bool planView = activeCamera().state.pitch > 1.5;   // HubMapView::setPlanView (V)
+
     // Модули станции.
     for (const auto& mod : hub.scene.objects)
     {
@@ -619,7 +631,51 @@ void HubMapBackend::renderHubMapPasses(
                 ? m_resources.hubVisuals().primeModuleWireColor
                 : m_resources.hubVisuals().regularModuleWireColor;
 
-        const bool modelDrawn =
+        // a planar city (author 2026-11-18: «в 3Д нам достаточно будет просто коробок и отметок для дока»): one box
+        // per block over the plane (to its tallest building) and one under it; the plan of the city is the 2D map
+        const auto* cityPlan = game::navigation::HubPlanCatalog::forFrameModule(mod.stableId);
+        if (cityPlan)
+        {
+            planCities.push_back({cityPlan, mod.positionMeters, mod.axes});
+            const auto local = [&](double x, double y, double z) {
+                return mod.positionMeters + mod.axes.x * x + mod.axes.y * y + mod.axes.z * z;
+            };
+            // the 2D plan: the blocks' outlines and the streets flat in the plane (the fills, buildings and names
+            // follow in the label stage)
+            if (planView)
+            {
+                for (const auto& b : cityPlan->blocks())
+                    m_geometryPass.drawHubMapBox(local(b.centre.x, 0.0, b.centre.y), mod.axes,
+                                                 glm::dvec3(2.0 * b.halfMeters, 0.0, 2.0 * b.halfMeters), moduleWireColor, scale,
+                                                 centerPx);
+                glm::vec4 roadColor(0.55f, 0.60f, 0.66f, 0.55f);
+                for (const auto& st : cityPlan->streets())
+                {
+                    const glm::dvec2 c = (st.a + st.b) * 0.5;
+                    const glm::dvec2 d = st.b - st.a;
+                    const double w = st.avenue ? 40.0 : 26.0;
+                    m_geometryPass.drawHubMapBox(local(c.x, 0.0, c.y), mod.axes,
+                                                 glm::dvec3(std::max(std::abs(d.x), w), 0.0, std::max(std::abs(d.y), w)), roadColor,
+                                                 scale, centerPx);
+                }
+            }
+            else
+            for (const auto& b : cityPlan->blocks())
+            {
+                const double side = 2.0 * b.halfMeters;
+                const double top = std::max(15.0, b.topHeightMeters);
+                m_geometryPass.drawHubMapBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes, glm::dvec3(side, top, side),
+                                             moduleWireColor, scale, centerPx);
+                if (b.underDepthMeters > 1.0)
+                {
+                    glm::vec4 underColor = moduleWireColor;
+                    underColor.a *= 0.45f;
+                    m_geometryPass.drawHubMapBox(local(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y), mod.axes,
+                                                 glm::dvec3(side, b.underDepthMeters, side), underColor, scale, centerPx);
+                }
+            }
+        }
+        const bool modelDrawn = cityPlan ||
             m_geometryPass.drawHubMapAssemblyWire(
                 mod.typeId,
                 mod.positionMeters,
@@ -690,6 +746,74 @@ void HubMapBackend::renderHubMapPasses(
     beginGpuStage(
         GpuStage::Labels
     );
+
+    // the hub's 2D plan (V; author 2026-11-18: «2Д как сейчас в мешэдиторе ... непосредственно для указания дока»):
+    // the blocks filled by zone, the buildings over the plane, the block names when there is room, the docks
+    if (planView && !planCities.empty())
+    {
+        auto& text = TextRenderer::instance();
+        text.beginFrameForViewport(viewport.width, viewport.height);
+        const auto zoneColor = [](const std::string& zone) {
+            if (zone == "downtown") return glm::vec4(0.36f, 0.44f, 0.84f, 0.20f);
+            if (zone == "residential") return glm::vec4(0.31f, 0.62f, 0.42f, 0.20f);
+            if (zone == "hotel") return glm::vec4(0.60f, 0.44f, 0.82f, 0.20f);
+            if (zone == "hab_rot") return glm::vec4(0.25f, 0.63f, 0.69f, 0.20f);
+            if (zone == "port") return glm::vec4(0.25f, 0.53f, 0.75f, 0.20f);
+            if (zone == "industry") return glm::vec4(0.69f, 0.38f, 0.28f, 0.20f);
+            if (zone == "storage" || zone == "logistics") return glm::vec4(0.63f, 0.51f, 0.31f, 0.20f);
+            if (zone == "refuel") return glm::vec4(0.75f, 0.60f, 0.19f, 0.20f);
+            if (zone == "canopy") return glm::vec4(0.82f, 0.82f, 0.63f, 0.20f);
+            if (zone == "dock") return glm::vec4(0.91f, 0.64f, 0.24f, 0.24f);
+            return glm::vec4(0.50f, 0.55f, 0.60f, 0.18f);
+        };
+        for (const auto& city : planCities)
+        {
+            const auto screen = [&](double x, double z) {
+                return activeCamera().project(city.position + city.axes.x * x + city.axes.z * z);
+            };
+            const auto rectPx = [&](double x0, double z0, double x1, double z1) {
+                const glm::dvec2 a = screen(x0, z0), b = screen(x1, z1);
+                return glm::dvec4(std::min(a.x, b.x), std::min(a.y, b.y), std::abs(b.x - a.x), std::abs(b.y - a.y));
+            };
+            for (const auto& b : city.plan->blocks())
+            {
+                const glm::dvec4 r = rectPx(b.centre.x - b.halfMeters, b.centre.y - b.halfMeters, b.centre.x + b.halfMeters,
+                                            b.centre.y + b.halfMeters);
+                text.solidRectPx(static_cast<float>(r.x), static_cast<float>(r.y), static_cast<float>(r.z),
+                                 static_cast<float>(r.w), zoneColor(b.zone));
+            }
+            for (const auto& m : city.plan->modules())
+            {
+                if (m.under)
+                    continue;
+                const glm::dvec4 r = rectPx(m.rect.x, m.rect.y, m.rect.z, m.rect.w);
+                if (r.z < 1.0 || r.w < 1.0)
+                    continue;
+                text.solidRectPx(static_cast<float>(r.x), static_cast<float>(r.y), static_cast<float>(r.z),
+                                 static_cast<float>(r.w),
+                                 m.pier ? glm::vec4(0.45f, 0.52f, 0.60f, 0.55f) : glm::vec4(0.66f, 0.72f, 0.80f, 0.42f));
+            }
+            for (const auto& b : city.plan->blocks())
+            {
+                const glm::dvec4 r = rectPx(b.centre.x - b.halfMeters, b.centre.y - b.halfMeters, b.centre.x + b.halfMeters,
+                                            b.centre.y + b.halfMeters);
+                if (r.z < 70.0)
+                    continue;
+                const int px = r.z > 140.0 ? 13 : 11;
+                text.textDrawPx(b.title, static_cast<float>(r.x + 4.0), static_cast<float>(r.y + 3.0), px,
+                                glm::vec4(0.86f, 0.91f, 0.96f, 0.80f));
+            }
+            for (const auto& d : city.plan->docks())
+            {
+                const glm::dvec2 p = screen(d.position.x, d.position.z);
+                text.solidRectPx(static_cast<float>(p.x - 7.0), static_cast<float>(p.y - 7.0), 14.0f, 14.0f,
+                                 glm::vec4(0.91f, 0.64f, 0.24f, 0.95f));
+                text.textDrawPx(d.title, static_cast<float>(p.x + 10.0), static_cast<float>(p.y - 8.0), 13,
+                                glm::vec4(0.98f, 0.80f, 0.50f, 0.95f));
+            }
+        }
+        text.endFrame();
+    }
 
     /*
         Hub Map label policy: no persistent names. Every visible object uses

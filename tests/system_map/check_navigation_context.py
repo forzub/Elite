@@ -156,7 +156,9 @@ for token in (
     "composeSystemMapSnapshot(nav.currentSystemId)",
     "buildPlayerDetailTarget(parentTarget, true)",
     "composeDetailMapSnapshot(parentTarget)",
-    "composeHubMapSnapshot(nav.currentSystemId, motion.hubId)",
+    # the matched hub, else the nearest hub within PlayerHubMapProximityMeters (author 2026-11-18)
+    "playerLocalHubId(m_client->world(), playerIt->second, nav.currentSystemId",
+    "composeHubMapSnapshot(nav.currentSystemId, localHub)",
 ):
     require(prepare_level, token, "preparePlayerNavigationMapLevel")
 
@@ -168,7 +170,9 @@ for token in (
     "composeSystemMapSnapshot(nav.currentSystemId)",
     "buildPlayerDetailTarget(parentTarget, true)",
     "composeDetailMapSnapshot(parentTarget)",
-    "composeHubMapSnapshot(nav.currentSystemId, motion.hubId)",
+    # the matched hub, else the nearest hub within PlayerHubMapProximityMeters (author 2026-11-18)
+    "playerLocalHubId(m_client->world(), playerIt->second, nav.currentSystemId)",
+    "composeHubMapSnapshot(nav.currentSystemId, localHub)",
 ):
     require(player_local, token, "setSystemMapPlayerLocalMode")
 

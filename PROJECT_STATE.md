@@ -6399,3 +6399,27 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     the mesh editor «Прочие объекты» as objects/astronaut_milo (GLB -> glTF unchanged by tools/mesh_editor/glb_to_gltf.py;
     1 mesh, 35 312 tris, NO rig / animation in this GLB). Verified: listed and opened by the editor, 0 errors.
     lumi_001 not added (no license record).
+- 2026-11-18 HUB MAP: 3D BOXES + 2D PLAN + BLOCK HUD MARKER + F12 NEAR A HUB (author: «в 3Д нам достаточно будет
+  просто коробок и отметок для дока ... что касается самого хаба - это будет в 2Д карте. там можно выбирать кварталы -
+  в игре появляется метка на HUD»):
+  - Hub PLAN document assets/data/navigation/hub_plans/<hub>.json (elite.hub_plan.v1; tools/models/hub_plan.py, written
+    by hub_belt_world.py = by «Собрать в игру»): blocks (zone, centre, top / under heights), module footprints per
+    layer, streets, docks (module + anchor), spinning bodies, population estimate. C++ game::navigation::HubPlanCatalog.
+  - 3D Hub map: a planar city = one wire box per block over the plane (+ a dim one under it) instead of the
+    placeholder rock; its map size from the plan (auto-fit). Docks: the existing dock port cards.
+  - 2D plan: V in the Hub map (HubMapView::setPlanView: yaw 0, pitch 90 deg, a left drag pans, no orbit; the hub pitch
+    clamp skipped): zone-filled blocks, building footprints (top layer), streets, lanes, «Док» labels, block names
+    when there is room; fit to the city. Every block is a card (decorateHubPlanBlocks: "hub-block:<module>/b<i>_<j>",
+    Infrastructure with semanticLocalOffsetMeters); an open block card is tracked (TargetTrackingState infrastructure
+    + localOffsetMeters) -> a HUD diamond at the block centre following the city (resolveInfrastructureKinematics).
+  - F12 from flight: the matched hub, else the nearest hub of the system within 30 km (playerLocalHubId), else the
+    cube (MAP_NAVIGATION_CONTRACT.md + check_navigation_context.py updated). Composition: «Город», «Жилые барабаны
+    ×2», «Гостиничные доки ×3» instead of «city ×6».
+  - Evidence (offscreen, D:/tmp): f12_city.png (F12 at 2.8 km of plane_demo, not matched -> its Hub map, boxes, fixed
+    composition), plan_b.png (2D plan + block card «Центр 5,3 · Зданий 24»), plan_hud.png (HUD diamond «Центр» over
+    the block in flight). DEV map script actions added: plan, activate:<objectId> (opens a Hub map card).
+  - Not verified: a real mouse click on a block (the card was opened by the DEV action through the same overlay
+    state); block names localized only as the generator's Russian zone titles. NOT author-accepted.
+  - Gates: check_navigation_context PASS; reds = the pre-existing 3 (galaxy map catalog, ui fonts, system_map
+    architecture "System CPU frame must be built before input/picking").
+  - Process: two more stray `python -` runs this session (stopped with TaskStop) - 4 in total today.

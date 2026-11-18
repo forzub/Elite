@@ -904,7 +904,12 @@ void SpaceState::handleInput()
             m_systemMapRenderer.toggleSystemGridOverlay();
         // V: plan (2.5D) <-> free 3D view; N: beacon network filter
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_V))
-            m_systemMapRenderer.toggleSystemPlanView();
+        {
+            if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
+                m_systemMapRenderer.toggleHubPlanView();   // the hub's 2D plan <-> 3D (author 2026-11-18)
+            else
+                m_systemMapRenderer.toggleSystemPlanView();
+        }
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_N))
             m_systemMapRenderer.toggleSystemBeacons();
         {

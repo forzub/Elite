@@ -541,6 +541,7 @@ void SystemMapRenderer::render(
                     hub
                 );
             decorateHubDockingOverlay(hub);
+            decorateHubPlanBlocks(hub);
 
             m_hubFrameDirty = false;
         }

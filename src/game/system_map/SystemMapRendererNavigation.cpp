@@ -3,9 +3,68 @@
 #include "src/game/system_map/SystemMapRendererInternal.h"
 #include "src/game/docking/model/HexDockFacility.h"
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
+#include "src/game/navigation/HubPlanCatalog.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
+
+void SystemMapRenderer::decorateHubPlanBlocks(
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+    // author 2026-11-18: «что касается самого хаба - это будет в 2Д карте. там можно выбирать кварталы - в игре
+    // появляется метка на HUD». Only in the plan view: the 3D view keeps its few module cards.
+    if (!hub.valid || !m_hubView.planView())
+        return;
+    auto& frame = m_hubPresentation.frame.objectOverlay;
+    const glm::dvec2 viewportSize = m_hubPresentation.centerPx * 2.0;
+    for (const auto& module : hub.scene.objects)
+    {
+        if (!module.valid || module.objectClass != world::celestial::DetailObjectClass::Hub || module.stableId.empty())
+            continue;
+        const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(module.stableId);
+        if (!plan)
+            continue;
+        const auto local = [&](double x, double z) {
+            return module.positionMeters + module.axes.x * x + module.axes.z * z;
+        };
+        for (const auto& b : plan->blocks())
+        {
+            game::system_map::MapObjectOverlayItem item;
+            item.objectId = "hub-block:" + module.stableId + "/" + b.id;
+            item.semanticTargetId = module.stableId;
+            item.semanticLocalOffsetMeters = glm::dvec3(b.centre.x, 0.0, b.centre.y);
+            item.trackingSystemId = hub.systemId;
+            item.name = b.title + " " + std::to_string(b.i) + "," + std::to_string(b.j);
+            item.typeName = b.title;
+            item.kind = game::system_map::MapObjectGlyphKind::Infrastructure;
+            item.infoKind = game::system_map::MapObjectInfoKind::Infrastructure;
+            item.navigationHubId = hub.hubId;
+            item.navigationHubParentBodyId = hub.parentBodyId;
+            const glm::dvec3 centre = local(b.centre.x, b.centre.y);
+            item.trackingWorldPosition =
+                world::coordinates::makeWorldPositionFromMeters(hubLocalToWorldMetersForOverlay(hub, centre));
+            item.hasTrackingWorldPosition = true;
+            item.factionColor = glm::vec4(0.74f, 0.90f, 1.00f, 0.90f);
+            item.screenPx = m_hubPresentation.camera.project(centre);
+            const double h = b.halfMeters;
+            for (const auto& c : {glm::dvec2(-h, -h), glm::dvec2(h, -h), glm::dvec2(h, h), glm::dvec2(-h, h)})
+                item.hitPolygonPx.push_back(m_hubPresentation.camera.project(local(b.centre.x + c.x, b.centre.y + c.y)));
+            item.visible = item.screenPx.x >= -200.0 && item.screenPx.y >= -200.0 && item.screenPx.x <= viewportSize.x + 200.0 &&
+                           item.screenPx.y <= viewportSize.y + 200.0;
+            item.physicalSizeMeters = 2.0 * h;
+            item.hitRadiusPx = 1.0;          // the block's own outline is the hit area (hitPolygonPx)
+            item.pickPriority = -10;         // the docks, ships, hub modules on top of a block win
+            item.pointerInteractive = true;
+            item.drawGlyph = false;          // the plan itself draws the block
+            game::system_map::MapObjectInfoField buildings;
+            buildings.labelKey = "hub_block_buildings";
+            buildings.value = std::to_string(b.modules);
+            item.extraFields.push_back(std::move(buildings));
+            frame.items.push_back(std::move(item));
+        }
+    }
+}
 
 void SystemMapRenderer::decorateHubDockingOverlay(
     const world::celestial::HubMapSnapshot& hub
@@ -827,7 +886,8 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                 item.semanticTargetId,
                 item.typeName,
                 item.name,
-                item.factionColor
+                item.factionColor,
+                item.semanticLocalOffsetMeters
             );
         }
         else if (

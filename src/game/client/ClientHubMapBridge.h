@@ -12,6 +12,7 @@
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/navigation/HubFrameBasis.h"
+#include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/ReplicatedHubFrame.h"
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/world/celestial/CelestialTypes.h"
@@ -333,6 +334,19 @@ inline bool rebuildHubMapFromClientState(
             module.axes = hubMapAxesToLocal(source.orientation, frame);
         }
         module.sizeMeters = hubMapAssemblySizeMeters(source.type);
+        // a planar city: its size from its plan (the registry's placeholder assembly is a rock), so the Hub map's
+        // auto-fit and picking see the whole city (author 2026-11-18: the 3D Hub map - boxes of the blocks)
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(source.hubAttachment.moduleId))
+        {
+            double top = 0.0, under = 0.0;
+            for (const auto& b : plan->blocks())
+            {
+                top = std::max(top, b.topHeightMeters);
+                under = std::max(under, b.underDepthMeters);
+            }
+            const glm::dvec4 r = plan->bounds();
+            module.sizeMeters = glm::dvec3(r.z - r.x, top + under, r.w - r.y);
+        }
         module.prime =
             !hub.primeModuleId.empty() &&
             source.hubAttachment.moduleId == hub.primeModuleId;

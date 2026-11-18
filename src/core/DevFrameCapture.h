@@ -140,7 +140,8 @@ inline std::vector<FrameCaptureRequest>& frameCaptureRequests()
 // DEV map/view script: ELITE_DEV_MAP_SCRIPT="SECONDS:ACTION[;SECONDS:ACTION...]"
 // (seconds since startup). Actions: f1 / f3 (flight views), f10 / f11 / f12
 // (System / Detail / Hub map), lanes (toggle the traffic lanes overlay),
-// select:CALLSIGN (select that traffic ship on the open map).
+// select:CALLSIGN (select that traffic ship on the open map), plan (V: the hub's 2D plan), activate:OBJECT_ID (a click on
+// that map object, e.g. activate:hub-block:plane_demo.city/b3_2 - its card opens: a HUD marker).
 struct DevMapScriptStep
 {
     double atSeconds = 0.0;

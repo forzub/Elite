@@ -722,11 +722,12 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             continue;
         }
 
+        // the hub's 2D plan (V) fits the modules' half sizes: the city fills the view
         maxDistance =
             std::max(
                 maxDistance,
                 glm::length(object.positionMeters) +
-                glm::length(object.sizeMeters)
+                glm::length(object.sizeMeters) * (view.planView() ? 0.5 : 1.0)
             );
     }
 

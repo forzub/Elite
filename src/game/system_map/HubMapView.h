@@ -34,6 +34,11 @@ public:
     }
 
     HubMapViewState& state() noexcept { return m_state; }
+    void applyPlanCamera() noexcept
+    {
+        m_state.camera.yaw = 0.0;
+        m_state.camera.pitch = PlanPitchRad;
+    }
     const HubMapViewState& state() const noexcept { return m_state; }
 
     DetailCameraState& camera() noexcept { return m_state.camera; }
@@ -61,7 +66,34 @@ public:
         m_state.camera.yaw = 0.60;
         m_state.camera.pitch = 0.18;
         m_state.camera.zoom = 1.0;
+        if (m_planView)
+            applyPlanCamera();
     }
+
+    // The 2D plan of the hub (author 2026-11-18: «2Д как сейчас в мешэдиторе ... для указания дока»; V in the Hub
+    // map): the camera looks straight down the hub's +Y (yaw 0, pitch 90 deg: +X right, +Z down the screen, as in
+    // the mesh editor's hub mode); no orbiting - a left drag pans. Off: the 3D view comes back as it was.
+    bool planView() const noexcept { return m_planView; }
+    void setPlanView(bool on) noexcept
+    {
+        if (on == m_planView)
+            return;
+        m_planView = on;
+        if (on)
+        {
+            m_savedYaw = m_state.camera.yaw;
+            m_savedPitch = m_state.camera.pitch;
+            applyPlanCamera();
+        }
+        else
+        {
+            m_state.camera.yaw = m_savedYaw;
+            m_state.camera.pitch = m_savedPitch;
+        }
+        m_state.orbitPivotActive = false;
+    }
+    // the camera pitch the plan view uses (the Hub map backend draws the plan instead of the 3D boxes at it)
+    static constexpr double PlanPitchRad = 1.5707963267948966;
 
     HubMapCameraSnapshot cameraSnapshot(
         double scale,
@@ -218,6 +250,9 @@ public:
 private:
     HubMapViewState m_state;
     LocalMapControlSettings m_controls;
+    bool m_planView = false;
+    double m_savedYaw = 0.60;
+    double m_savedPitch = 0.18;
 };
 
 } // namespace game::system_map

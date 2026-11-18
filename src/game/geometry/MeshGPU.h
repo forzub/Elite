@@ -16,6 +16,8 @@ namespace render
 class MeshGPU
 {
 public:
+    // the uploaded vertex count (3 per triangle): how heavy the mesh is (the far-traffic part choice)
+    std::size_t vertices() const noexcept { return vertexCount; }
 
     // CPU side of an upload (no GL): the expanded triangle vertices (barycentrics, face colour,
     // normalised normals) and the edge lines. Thread-safe - a loader thread may build it.

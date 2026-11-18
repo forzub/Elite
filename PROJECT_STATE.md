@@ -6472,3 +6472,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   tube), air_z3b.png. Not measured: frame cost (ground traffic is ~1750 vehicles in 3.5 km). NOT accepted.
   Correction: «фронтир - это небольшой грузовик для локальной доставки»; the Sol bloc's local carriers here are OCS-4 /
   SL-12 / ST-6 (the Cobretts belong to cognium_pool - not in Sol's open / licensed trade).
+- 2026-11-18 HUB TRAFFIC FRAME COST (author: «надо после изменений в рендере проверять стоимость кадра»; rule saved).
+  A/B in build-relwithdebinfo, ELITE_DEV_NO_VSYNC=1, ELITE_DEV_FRAME_STATS=5, start 40 m over an avenue of plane_demo,
+  DEV switch ELITE_DEV_HUB_TRAFFIC=0|ground|air (default both). First version: none 13.9 / ground 14.6 / air 18.3 /
+  all 19.3 ms p50 (air +4.4: 40 ships in view = 1100 mesh draws - the ship packages are LOD0 only, 24-68 parts, and
+  nothing was frustum-culled). Fixes: frustum cull per vehicle / ship (city-frame planes), packages cached and
+  prewarmed once per frame, ships beyond 800 m draw only their 4 biggest parts (1100 -> ~245 draws), ground radius
+  2 km (a car ~2 px there), air 5 km. Result (clean runs): none 14.0 / all 16.6 ms p50 (+2.6), p95 22.9 / 27.1. The
+  separate ground / air runs of the last pass were disturbed (CapCut, Telegram, a python ai-studio process on the GPU:
+  100-1400 ms frames) - to re-measure on a quiet machine. Next if needed: real coarse LODs for the ship packages,
+  thinner distant road traffic. ELITE_DEV_TRAFFIC_LOG prints the counts (air in view / mesh draws).

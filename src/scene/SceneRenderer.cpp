@@ -3786,7 +3786,13 @@ if (policy.drawObjects)
                 // a planar city's traffic (src/scene/HubCityTraffic.h): cars, trucks, monorail trains - a function of the
                 // universe time and the hub plan, drawn as the city's own instances (the station batches instance
                 // equal meshes); only near the camera
-                if (object.type == ObjectType::HubBeltCity && !object.hubModuleId.empty() && cameraName == "mainCam")
+                // DEV A/B of the frame cost: ELITE_DEV_HUB_TRAFFIC=0 (none) | ground | air (default: both)
+                static const int trafficMode = [] {
+                    const char* v = std::getenv("ELITE_DEV_HUB_TRAFFIC");
+                    const std::string s = v ? v : "";
+                    return s == "0" ? 0 : s == "ground" ? 1 : s == "air" ? 2 : 3;
+                }();
+                if (trafficMode != 0 && object.type == ObjectType::HubBeltCity && !object.hubModuleId.empty() && cameraName == "mainCam")
                     if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubModuleId))
                     {
                         static std::vector<scene::HubTrafficInstance> traffic;
@@ -3794,18 +3800,35 @@ if (policy.drawObjects)
                         const glm::vec3 cameraCity = glm::vec3(glm::inverse(cityModel) * glm::vec4(cameraLocalPosition, 1.0f));
                         const double trafficTime = prepared.celestialSnapshot ? prepared.celestialSnapshot->simTimeSeconds
                                                                               : renderProfileNowMs() * 0.001;
-                        scene::hubCityTraffic(*plan, trafficTime, cameraCity, 3500.0f, traffic);
-                        const render::geometry::ModelAssetGpu* packages[static_cast<int>(scene::HubTrafficModel::Count)] = {};
+                        traffic.clear();
+                        if (trafficMode & 1)
+                            scene::hubCityTraffic(*plan, trafficTime, cameraCity, 2000.0f, traffic);   // a car ~2 px at 2 km
+                        static const render::geometry::ModelAssetGpu* packages[static_cast<int>(scene::HubTrafficModel::Count)] = {};
                         for (int k = 0; k < static_cast<int>(scene::HubTrafficModel::Count); ++k)
                         {
-                            const std::string id = scene::hubTrafficModelId(static_cast<scene::HubTrafficModel>(k));
-                            packages[k] = render::geometry::ModelAssetGpuLibrary::getPackage(
-                                object.type, "assets/compiled/hub_modules/" + id + "/" + id + ".elmodel");
+                            if (!packages[k])
+                            {
+                                const std::string id = scene::hubTrafficModelId(static_cast<scene::HubTrafficModel>(k));
+                                packages[k] = render::geometry::ModelAssetGpuLibrary::getPackage(
+                                    object.type, "assets/compiled/hub_modules/" + id + "/" + id + ".elmodel");
+                            }
                             if (packages[k])
                                 packages[k]->pumpPrewarm(1.0);
                         }
+                        // the view frustum in the city frame: a vehicle / ship out of view is not drawn (2026-11-18 A/B:
+                        // without it 74 air ships cost +4.4 ms p50, most of them behind the camera)
+                        const auto cityPlanes = mp::frustumPlanes(proj * renderView * cityModel);
+                        const auto inView = [&](const glm::mat4& local, float radiusM) {
+                            const glm::vec3 c(local[3]);
+                            for (const auto& pl : cityPlanes)
+                                if (glm::dot(glm::vec3(pl), c) + pl.w < -radiusM)
+                                    return false;
+                            return true;
+                        };
                         for (const auto& v : traffic)
                         {
+                            if (!inView(v.local, v.model == scene::HubTrafficModel::Train ? 32.0f : 10.0f))
+                                continue;
                             const auto* pkg = packages[static_cast<int>(v.model)];
                             if (!pkg || pkg->asset.renderLods.empty())
                                 continue;
@@ -3829,7 +3852,9 @@ if (policy.drawObjects)
                         if (const auto* laneNet = game::navigation::traffic::HubLaneCatalog::forFrameModule(object.hubModuleId))
                         {
                             static std::vector<scene::HubAirTrafficInstance> air;
-                            scene::hubCityAirTraffic(*plan, *laneNet, trafficTime, cameraCity, 9000.0f, air);
+                            air.clear();
+                            if (trafficMode & 2)
+                                scene::hubCityAirTraffic(*plan, *laneNet, trafficTime, cameraCity, 5000.0f, air);
                             const auto& fleet = plan->airFleet();
                             static const bool trafficLog = std::getenv("ELITE_DEV_TRAFFIC_LOG") != nullptr;
                             if (trafficLog)
@@ -3846,21 +3871,69 @@ if (policy.drawObjects)
                                                  traffic.size(), air.size(), nearest, fleet.size(), laneNet->lanes().size());
                                 }
                             }
+                            // the fleet's packages: looked up once per plan, prewarmed once per frame (not per ship)
+                            static const game::navigation::HubPlan* fleetPlan = nullptr;
+                            static std::vector<const render::geometry::ModelAssetGpu*> fleetPackages;
+                            if (fleetPlan != plan || fleetPackages.size() != fleet.size())
+                            {
+                                fleetPlan = plan;
+                                fleetPackages.assign(fleet.size(), nullptr);
+                            }
+                            for (std::size_t f = 0; f < fleet.size(); ++f)
+                            {
+                                if (!fleetPackages[f])
+                                {
+                                    const std::string& model = fleet[f].model;
+                                    const std::string base = model.substr(model.find_last_of('/') + 1);
+                                    fleetPackages[f] = render::geometry::ModelAssetGpuLibrary::getPackage(
+                                        object.type, "assets/compiled/" + model + "/" + base + ".elmodel");
+                                }
+                                if (fleetPackages[f])
+                                    fleetPackages[f]->pumpPrewarm(1.0);
+                            }
+                            int airShown = 0, airDraws = 0;
                             for (const auto& v : air)
                             {
-                                const std::string& model = fleet[static_cast<std::size_t>(v.fleetIndex)].model;
-                                const std::string base = model.substr(model.find_last_of('/') + 1);
-                                const auto* pkg = render::geometry::ModelAssetGpuLibrary::getPackage(
-                                    object.type, "assets/compiled/" + model + "/" + base + ".elmodel");
+                                if (!inView(v.local, static_cast<float>(fleet[static_cast<std::size_t>(v.fleetIndex)].lengthMeters)))
+                                    continue;
+                                const auto* pkg = fleetPackages[static_cast<std::size_t>(v.fleetIndex)];
                                 if (!pkg || pkg->asset.renderLods.empty())
                                     continue;
-                                pkg->pumpPrewarm(1.0);
                                 const int lods = static_cast<int>(pkg->asset.renderLods.size());
                                 const int lod = std::min(lods - 1, v.distance < 500.0f ? 0 : v.distance < 1500.0f ? 1 : v.distance < 4000.0f ? 2 : 3);
                                 const auto& rl = pkg->asset.renderLods[static_cast<std::size_t>(lod)];
                                 const glm::mat4 base4 = cityModel * v.local * pkg->assetToLogical;
-                                for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
+                                // far away (the ship packages carry LOD0 only: 24-68 parts each): only its 4 biggest
+                                // parts (2026-11-18 A/B: 40 ships in view = 1100 mesh draws, +2.9 ms p50)
+                                static std::unordered_map<const render::geometry::ModelAssetGpu*, std::vector<std::size_t>> bigParts;
+                                const std::vector<std::size_t>* only = nullptr;
+                                if (lod == 0 && v.distance > 800.0f && rl.nodes.size() > 6)
                                 {
+                                    auto& big = bigParts[pkg];
+                                    if (big.empty())
+                                    {
+                                        std::vector<std::pair<std::size_t, std::size_t>> bySize;
+                                        bool ready = true;
+                                        for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
+                                        {
+                                            const render::MeshGPU* g = pkg->gpuFor(0, rl.nodes[rn].geometryIndex);
+                                            ready = ready && g;
+                                            bySize.emplace_back(g ? g->vertices() : 0u, rn);
+                                        }
+                                        if (ready)
+                                        {
+                                            std::sort(bySize.rbegin(), bySize.rend());
+                                            for (std::size_t q = 0; q < std::min<std::size_t>(4, bySize.size()); ++q)
+                                                big.push_back(bySize[q].second);
+                                        }
+                                    }
+                                    if (!big.empty())
+                                        only = &big;
+                                }
+                                const std::size_t partCount = only ? only->size() : rl.nodes.size();
+                                for (std::size_t q = 0; q < partCount; ++q)
+                                {
+                                    const std::size_t rn = only ? (*only)[q] : q;
                                     const render::MeshGPU* g = pkg->gpuFor(lod, rl.nodes[rn].geometryIndex);
                                     if (!g || rn >= pkg->index.renderNodes[static_cast<std::size_t>(lod)].size())
                                         continue;
@@ -3869,6 +3942,18 @@ if (policy.drawObjects)
                                     qd.seed = 0.5f;
                                     queuedModelAssetStationDraws.push_back(qd);
                                     m_lastStats.partsDrawn++;
+                                    ++airDraws;
+                                }
+                                ++airShown;
+                            }
+                            if (trafficLog)
+                            {
+                                static double lastShown = -10.0;
+                                const double nowS = renderProfileNowMs() * 0.001;
+                                if (nowS - lastShown > 2.0)
+                                {
+                                    lastShown = nowS;
+                                    std::fprintf(stderr, "[HubTraffic] air in view %d ships, %d mesh draws\n", airShown, airDraws);
                                 }
                             }
                         }

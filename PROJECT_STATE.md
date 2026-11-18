@@ -6449,3 +6449,12 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   y 0.71, no contacts logged (before: the 19 km/s crush); a full-thrust dive at 125 m/s -> 1.94 GJ, 3 links torn,
   bounce up. Not yet: a break-up visual for a crushed hull; swept contacts (km/s J-speeds can tunnel a 6 m slab).
   Self-test PASS; gates: the 3 pre-existing reds only.
+- 2026-11-18 CONTACT VELOCITIES IN THE HUB FRAME (author: «ты считаешь абсолютные скорости или относительные? я
+  садился со скоростью что-то около 2 м/с ... относительно хаба - это 0»): a ship's contact with a hub's static object
+  now takes the closing velocity in that hub's frame (HubNavigationFrame::kinematicFrame: the object rests in it but
+  for its spin; the ship's velocity against the hub at its point) - not the difference of two ~18 km/s world
+  velocities. A contact > 300 m/s against a static logs "[Collision] HARD" with the frame, both speeds, the motion
+  mode. DEV: ELITE_DEV_START_VEL="vx,vy,vz" (with ELITE_DEV_START_AT: the velocity against the city).
+  Evidence: a 2 m/s touch-down on hubv_pad_star -> «closing 1.99997 m/s, 0.23 MJ» (no damage), a 0.3 m/s rebound
+  (no gravity in the hub, no landing clamps yet - the ship floats off slowly); the full-thrust dive still 125 m/s,
+  1.94 GJ; a ship sunk into the pad: pushed out, no impulse.

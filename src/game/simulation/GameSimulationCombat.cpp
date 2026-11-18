@@ -1693,8 +1693,37 @@ void GameSimulation::collideShips(double dt)
             contact /= static_cast<double>(touching.size());
             glm::dvec3 n = glm::length(dirSum) > 1.0e-6 ? glm::normalize(dirSum) : glm::normalize(B.p - A.p);
             const glm::dvec3 rA = contact - A.p, rB = contact - B.p;
-            const glm::dvec3 vRel = (B.v + glm::cross(B.w, rB)) - (A.v + glm::cross(A.w, rA));
+            // the closing velocity against a hub's static object is taken in THAT HUB's frame (author 2026-11-18: «ты
+            // считаешь абсолютные скорости или относительные? я садился со скоростью что-то около 2 м/с ... относительно
+            // хаба - это 0»): the object rests in it but for its own spin, the ship moves against the hub's frame at its
+            // point - no difference of two ~18 km/s orbital velocities, where any error in one leg became the "impact"
+            glm::dvec3 vA = A.v, vB = B.v;
+            bool velocitiesKnown = B.velocityKnown;
+            const char* velocityFrame = "world";
+            if (!B.ship)
+            {
+                const StaticObject& so = *statics[k - shipCount];
+                const auto* hubFrame = so.hubId.empty() ? nullptr : hubNavigationFrame(so.hubId);
+                if (hubFrame && hubFrame->valid)
+                {
+                    const game::navigation::KinematicFrame K = hubFrame->kinematicFrame();
+                    vA = A.v - K.localToWorldVelocity(K.worldToLocalPosition(A.p), glm::dvec3(0.0));
+                    vB = glm::dvec3(0.0);
+                    velocitiesKnown = true;
+                    velocityFrame = "hub";
+                }
+            }
+            const glm::dvec3 vRel = (vB + glm::cross(B.w, rB)) - (vA + glm::cross(A.w, rA));
             const double vn = glm::dot(vRel, n);
+            if (!B.ship && -vn > 300.0)
+            {
+                // a hard hit on a station / a city: what the contact read, to tell a real impact from a bad velocity
+                const auto& mo = A.ship->core().transform().motion;
+                std::cerr << "[Collision] HARD ship " << A.id.value << " x static " << B.id.value << ": closing " << -vn << " m/s ("
+                          << velocityFrame << " frame), ship |v| " << glm::length(A.v) << " m/s, against the object "
+                          << glm::length(vA) << " m/s, mode " << static_cast<int>(mo.mode) << " free " << mo.freeFlight << " frame '"
+                          << mo.travelFrame.frameId << "'" << std::endl;
+            }
             const std::uint64_t pair = (static_cast<std::uint64_t>(std::min(A.id.value, B.id.value)) << 32) |
                                        std::max(A.id.value, B.id.value);
             // separate the overlap in any case (no sinking into each other), impulse only while closing
@@ -1704,7 +1733,7 @@ void GameSimulation::collideShips(double dt)
             ta.motion.localPositionMeters += ta.motion.travelFrame.worldToLocalVector(-n * push * B.m / (A.m + B.m));
             if (tbp)
                 tbp->motion.localPositionMeters += tbp->motion.travelFrame.worldToLocalVector(n * push * A.m / (A.m + B.m));
-            if (vn >= -0.05 || !B.velocityKnown || m_combatClockS - m_devContactClockS[pair] < 0.25)
+            if (vn >= -0.05 || !velocitiesKnown || m_combatClockS - m_devContactClockS[pair] < 0.25)
                 continue;
             m_devContactClockS[pair] = m_combatClockS;
             const double e = 0.2;

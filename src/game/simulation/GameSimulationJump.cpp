@@ -1024,6 +1024,17 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
             tr.orientation = glm::mat4(glm::mat3(glm::dmat3(right, glm::cross(right, fwd), -fwd)));
             tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
             std::cerr << "[DevStart] at city point " << p.x << "," << p.y << "," << p.z << std::endl;
+            // DEV: ELITE_DEV_START_VEL="vx,vy,vz" - the ship's velocity against the city (its frame, m/s): a slow landing
+            // on a pad (2026-11-18: the author's ~2 m/s touch-down that read 19 km/s)
+            if (const char* sv = std::getenv("ELITE_DEV_START_VEL"); sv && *sv)
+            {
+                glm::dvec3 v(0.0);
+                if (std::sscanf(sv, "%lf,%lf,%lf", &v.x, &v.y, &v.z) == 3)
+                {
+                    frame.linearVelocityMps += R * v;
+                    std::cerr << "[DevStart] velocity against the city " << v.x << "," << v.y << "," << v.z << " m/s" << std::endl;
+                }
+            }
             break;
         }
     }

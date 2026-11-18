@@ -80,6 +80,12 @@ private:
     bool m_galaxyOpened = false;
     bool m_systemOpened = false;
     std::size_t m_nextSolMapStep = 0;
+    // "waitfor:<condition>[@<max s>]" holds the script until the condition (a tour: arrive in a system, finish a
+    // route); the later steps keep their offsets from the wait step's time (shifted by how long it waited)
+    double m_scriptShiftMs = 0.0;
+    double m_waitStartMs = -1.0;
+    bool m_waitRouteSeen = false;
+    bool waitSatisfied(SpaceState& s, const std::string& condition);
     int m_serviceStep = 0;
     bool m_dockRequestSent = false;
     bool m_freeFlightSent = false;

@@ -1444,6 +1444,21 @@ const glm::dvec3 hubVelocityMetersPerSecond =
 
 m_hubVelocityMetersPerSecond[hubId] =
     hubVelocityMetersPerSecond;
+{
+    // DEV: ELITE_DEV_HUB_VEL_LOG=<hub id> - the hub's velocity parts every 5 s (a route to a colony hub saw it move
+    // at 29 000 km/s, 2026-11-18)
+    static const char* watch = std::getenv("ELITE_DEV_HUB_VEL_LOG");
+    static double lastLog = -1.0e9;
+    if (watch && hub.id == watch && m_orbitalUniverseTimeSeconds - lastLog >= 5.0)
+    {
+        lastLog = m_orbitalUniverseTimeSeconds;
+        std::cerr << "[HubVel] sim " << hub.id << " system " << hub.systemId << " parent " << hub.parentBodyId
+                  << (parentVelocityIt != m_celestialBodyVelocitiesMetersPerSecond.end() ? "" : " (no parent velocity)")
+                  << ": parent " << glm::length(parentVelocityMetersPerSecond) << " m/s, orbit "
+                  << glm::length(localOrbitVelocityMetersPerSecond) << " m/s, alt " << hub.motion.altitudeMeters << " m, r_parent "
+                  << hub.motion.parentRadiusMeters << " m, period " << hub.motion.orbitalPeriodSeconds << " s" << std::endl;
+    }
+}
 
 
 

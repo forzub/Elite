@@ -2,6 +2,8 @@
 // Moved verbatim out of SpaceState::update (audit 2026-11-06 rec. 8 / 10):
 // the verbs, their order and every log line are unchanged.
 
+#include "src/core/DevFrameCapture.h"
+#include "src/world/coordinates/WorldPosition.h"
 #include "src/game/dev/DevScriptRunner.h"
 
 #include "src/game/SpaceStateInternal.h"
@@ -158,14 +160,115 @@ void DevScriptRunner::runSolMapScript(SpaceState& s)
 {
     const auto& steps = m_config.solMapScript;
     while (m_nextSolMapStep < steps.size() && s.context().app && s.m_client &&
-           startupElapsedMs(s.m_startupTotalBegin) >= steps[m_nextSolMapStep].first * 1000.0)
+           startupElapsedMs(s.m_startupTotalBegin) >= steps[m_nextSolMapStep].first * 1000.0 + m_scriptShiftMs)
     {
+        const std::string& step = steps[m_nextSolMapStep].second;
+        if (step.rfind("waitfor:", 0) == 0)
+        {
+            // waitfor:system:<id> | waitfor:route (a launched route ran and ended) | waitfor:hubnear:<hub id>:<km>
+            // optional "@<max seconds>": give up after that (logged) and go on
+            const double now = startupElapsedMs(s.m_startupTotalBegin);
+            std::string condition = step.substr(8);
+            double maxS = 1.0e9;
+            if (const auto at = condition.rfind('@'); at != std::string::npos)
+            {
+                maxS = std::atof(condition.c_str() + at + 1);
+                condition.resize(at);
+            }
+            if (m_waitStartMs < 0.0)
+            {
+                m_waitStartMs = now;
+                m_waitRouteSeen = false;
+                std::cerr << "[SolMapScript] waitfor " << condition << " (t=" << glfwGetTime() << ")\n";
+            }
+            const bool done = waitSatisfied(s, condition);
+            const bool timeout = now - m_waitStartMs > maxS * 1000.0;
+            if (!done && !timeout)
+                break;
+            std::cerr << "[SolMapScript] waitfor " << condition << (done ? " satisfied" : " TIMED OUT") << " after "
+                      << (now - m_waitStartMs) / 1000.0 << " s (t=" << glfwGetTime() << ")\n";
+            m_scriptShiftMs = now - steps[m_nextSolMapStep].first * 1000.0;
+            m_waitStartMs = -1.0;
+            ++m_nextSolMapStep;
+            continue;
+        }
         const std::string cmd = steps[m_nextSolMapStep++].second;
         std::cerr << "[SolMapScript] " << cmd << " (t=" << glfwGetTime() << ")\n";
+        if (cmd.rfind("dock:", 0) == 0)
+        {
+            // dock:<module id>:<anchor id> - automatic docking as from the dock card (a tour: the flight through the
+            // city's green lanes to its dock)
+            const std::string t = cmd.substr(5);
+            const auto colon = t.rfind(':');
+            game::navigation::RouteTargetRef target;
+            target.kind = game::navigation::NavigationRouteAnchorKind::SemanticAnchor;
+            if (const auto it = s.m_client->world().ships().find(s.m_playerId.value); it != s.m_client->world().ships().end())
+                target.systemId = it->second.transform.motion.systemId;
+            target.stableObjectId = colon == std::string::npos ? t : t.substr(0, colon);
+            target.semanticAnchorId = colon == std::string::npos ? std::string(DevDockAnchorId) : t.substr(colon + 1);
+            const auto serial = s.m_navigationWorkspace.dockingRouteRequests().request(
+                target, game::navigation::DockingRouteRequest::Mode::Automatic);
+            s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::RoutePlanning, true);
+            s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::LocalGuidance, true);
+            s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::HudGuidanceCorridor, true);
+            std::cerr << "[DevDockRequest] script request=" << serial << " target=" << target.stableObjectId << ':'
+                      << target.semanticAnchorId << '\n';
+            continue;
+        }
+        if (cmd.rfind("capture:", 0) == 0)
+        {
+            // capture:<png path> - this frame (the tour's evidence; ELITE_DEV_FRAME_CAPTURE takes fixed times only)
+            core::dev::frameCaptureRequests().push_back({glfwGetTime(), cmd.substr(8), false});
+            continue;
+        }
         if (!runMapVerb(s, cmd) && !runRouteVerb(s, cmd) && !runObjectListVerb(s, cmd) &&
             !runShipVerb(s, cmd))
             runReportVerb(s, cmd);
     }
+}
+
+// the conditions of "waitfor:" (a tour through jumps: author 2026-11-18 «экскурсию по нескольким хабам разных колоний
+// ... через прыжки, заодно проверим надежность механизма прыжков»)
+bool DevScriptRunner::waitSatisfied(SpaceState& s, const std::string& condition)
+{
+    if (!s.m_client)
+        return false;
+    if (condition.rfind("system:", 0) == 0)
+        return s.m_client->world().playerSystemId() == std::atoi(condition.c_str() + 7);
+    if (condition == "route")
+    {
+        // a launched route: seen running, then ended
+        const int state = s.clientRouteState();
+        if (state != 0)
+            m_waitRouteSeen = true;
+        return m_waitRouteSeen && state == 0;
+    }
+    if (condition == "dockdone")
+    {
+        // a docking request: seen running (any phase but Idle), then ended (docked or failed - the log tells which)
+        if (s.m_clientDockingPhase != SpaceState::ClientDockingPhase::Idle)
+            m_waitRouteSeen = true;
+        return m_waitRouteSeen && s.m_clientDockingPhase == SpaceState::ClientDockingPhase::Idle;
+    }
+    if (condition.rfind("hubnear:", 0) == 0)
+    {
+        // hubnear:<hub id>:<km> - the player within <km> of any object of that hub
+        const std::string rest = condition.substr(8);
+        const auto colon = rest.rfind(':');
+        const std::string hub = rest.substr(0, colon);
+        const double km = colon == std::string::npos ? 30.0 : std::atof(rest.c_str() + colon + 1);
+        const auto ship = s.m_client->world().ships().find(s.m_playerId.value);
+        if (ship == s.m_client->world().ships().end())
+            return false;
+        const glm::dvec3 at = ship->second.transform.fullWorldMeters();
+        for (const auto& [id, object] : s.m_client->world().objects())
+            if (object.hubAttachment.valid && object.hubAttachment.hubId == hub &&
+                glm::length(world::coordinates::fullMeters(object.worldPosition) - at) < km * 1000.0)
+                return true;
+        return false;
+    }
+    std::cerr << "[SolMapScript] waitfor: unknown condition '" << condition << "'\n";
+    return true;
 }
 
 // Map / panel verbs: system, grid, body:, enter:, tradetab:, tradehub:,

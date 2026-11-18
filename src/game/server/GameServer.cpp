@@ -34,6 +34,7 @@
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include <map>
+#include <set>
 #include <tuple>
 #include "src/game/world_state/InitialWorldState.h"
 #include "src/game/navigation/GalaxyNavigationConfig.h"
@@ -206,7 +207,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
         applyCelestialOrbitParentParameters(initialSystemId);
         m_gravityParametersAppliedSystems.insert(initialSystemId);
         m_initialSimulationSystemId = initialSystemId;
-        materializeWorldSiteHubs(initialSystemId);
+        materializeWorldSiteHubs(initialSystemId, initialWorldState.orbitalHubs);
 
         // Готовим хабы, станции и reference frames до размещения игрока.
         // Это не полный update и не создаёт грязный стартовый snapshot.
@@ -589,13 +590,15 @@ void GameServer::switchSimulationContext(int systemId)
     m_appliedSimulationContextSystemId = systemId;
 }
 
-void GameServer::materializeWorldSiteHubs(int startSystemId)
+void GameServer::materializeWorldSiteHubs(int startSystemId,
+                                          const std::vector<game::world_state::InitialWorldStateOrbitalHub>& authored)
 {
     world::celestial::WorldSitesCatalog sites;
     if (!sites.loadFromRuntimeOrSource())
         return;
     int made = 0;
     int systems = 0;
+    int authoredMade = 0;
     for (const auto& summary : m_starAtlas.systems())
     {
         const int systemId = summary.id;
@@ -604,6 +607,31 @@ void GameServer::materializeWorldSiteHubs(int startSystemId)
         const auto* system = m_starAtlas.findSystem(systemId);
         if (!system)
             continue;
+        // the authored hubs of this system first (a colony hub with its city); their bodies get no generated station
+        std::set<std::string> authoredBodies;
+        bool switched = false;
+        for (const auto& hub : authored)
+        {
+            if (hub.systemId != systemId)
+                continue;
+            if (!switched)
+            {
+                switchSimulationContext(systemId);
+                switched = true;
+            }
+            if (game::scene::spawnOrbitalHub(m_simulation, hub))
+            {
+                ++authoredMade;
+                authoredBodies.insert(hub.parentBodyId);
+            }
+            else
+                std::cerr << "[WorldSiteHubs] authored hub " << hub.id << " in system " << systemId << ": not created" << std::endl;
+        }
+        // the gravity parameters of the system (radius, Kepler period) reach only the hubs that exist when they are
+        // applied - switchSimulationContext applied them before these hubs: their period stayed 0 and a route to them
+        // saw the hub at 29 000 km/s (2026-11-18 tour)
+        if (switched)
+            applyCelestialOrbitParentParameters(systemId);
         // body -> its most populated site (an orbital one first: it is a station already)
         std::map<std::string, const world::celestial::WorldSite*> best;
         for (const auto& s : sites.sitesInSystem(systemId))
@@ -616,6 +644,8 @@ void GameServer::materializeWorldSiteHubs(int startSystemId)
             }();
             if (!b || b->radiusKm <= 0.0 || b->gravitationalParameterM3s2 <= 0.0)
                 continue;   // a belt / trojan reservoir, not a body a hub can orbit
+            if (authoredBodies.count(s.parentBodyId))
+                continue;   // the body's authored hub stands for it
             const bool orbit = s.placement == world::celestial::WorldSitePlacementKind::Orbit && s.altitudeKm > 0.0;
             auto& cur = best[s.parentBodyId];
             const bool curOrbit = cur && cur->placement == world::celestial::WorldSitePlacementKind::Orbit && cur->altitudeKm > 0.0;
@@ -663,9 +693,11 @@ void GameServer::materializeWorldSiteHubs(int startSystemId)
             else
                 std::cerr << "[WorldSiteHubs] " << s->id << " on " << bodyId << ": not created" << std::endl;
         }
+        applyCelestialOrbitParentParameters(systemId);   // the generated hubs too (see above)
     }
     switchSimulationContext(startSystemId);
-    std::cerr << "[WorldSiteHubs] " << made << " hubs in " << systems << " inhabited systems (one per body with world sites)" << std::endl;
+    std::cerr << "[WorldSiteHubs] " << made << " hubs in " << systems << " inhabited systems (one per body with world sites) + "
+              << authoredMade << " authored hubs (colony cities)" << std::endl;
 }
 
 /*

@@ -343,7 +343,55 @@ void Window::swapBuffers()
 #ifdef _WIN32
     const ULONGLONG xprocBeginMs = GetTickCount64();
 #endif
+    // A throttled presentation (2026-11-18: a hidden / off-screen / minimized window with vsync - Windows lets the
+    // swap through every ~250 ms, the game ran at 4 FPS and the client autopilots, stepping once a frame, rocked the
+    // ship side to side; the same for a player who minimizes the game on a long autopilot route): after a few swaps
+    // that block >= 150 ms the swap goes without vsync and the frame is paced to ~60 Hz here; vsync comes back when
+    // the window has the focus again (ELITE_DEV_NO_VSYNC runs never use vsync).
+    static const bool devNoVsync = [] {
+        const char* v = std::getenv("ELITE_DEV_NO_VSYNC");
+        return v && *v == '1';
+    }();
+    const double swapBegin = glfwGetTime();
+    if (m_presentThrottled)
+    {
+        constexpr double PacedFrameS = 1.0 / 60.0;
+        if (m_lastSwapEndSeconds > 0.0)
+            while (glfwGetTime() - m_lastSwapEndSeconds < PacedFrameS)
+            {
+#ifdef _WIN32
+                Sleep(1);
+#endif
+            }
+        if (glfwGetWindowAttrib(m_window, GLFW_FOCUSED) == GLFW_TRUE && !devNoVsync)
+        {
+            m_presentThrottled = false;
+            m_slowSwaps = 0;
+            glfwSwapInterval(1);
+            std::cerr << "[Window] presentation visible again - vsync back on" << std::endl;
+        }
+    }
     glfwSwapBuffers(m_window);
+    {
+        const double end = glfwGetTime();
+        if (!m_presentThrottled && !devNoVsync)
+        {
+            // the whole frame interval (the stall sits in the swap or in the next frame's GPU wait), only while the
+            // window is not focused (a slow frame of a played game is not a throttled presentation)
+            const double interval = m_lastSwapEndSeconds > 0.0 ? end - m_lastSwapEndSeconds : 0.0;
+            const bool unfocused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED) != GLFW_TRUE;
+            m_slowSwaps = unfocused && interval >= 0.15 ? m_slowSwaps + 1 : 0;
+            if (m_slowSwaps >= 3)
+            {
+                m_presentThrottled = true;
+                glfwSwapInterval(0);
+                std::cerr << "[Window] presentation throttled (frame " << static_cast<int>(interval * 1000.0)
+                          << " ms, swap " << static_cast<int>((end - swapBegin) * 1000.0)
+                          << " ms: a hidden / minimized window) - vsync off, frames paced to 60 Hz" << std::endl;
+            }
+        }
+        m_lastSwapEndSeconds = end;
+    }
 #ifdef _WIN32
     // WebView2 may keep keyboard focus on a child HWND whose key routing does
     // not update GLFW's key table. Poll the physical Escape key for this

@@ -12,6 +12,7 @@
 #include <string>
 
 
+#include "src/game/world_state/InitialWorldState.h"
 #include "src/game/simulation/GameSimulation.h"
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -377,7 +378,9 @@ private:
     // the hubs of the inhabited systems other than the start one (author 2026-11-08: "в населенных
     // системах есть хабы? если нет - сделай хотя бы по одному на жилую зону"): one hub per body
     // with world sites, from its most populated orbital site
-    void materializeWorldSiteHubs(int startSystemId);
+    // + the AUTHORED hubs of those systems (initial_world_state orbital_hubs with that system id: a colony hub with its
+    // generated city, tools/models/hub_colonies.py) - a body with an authored hub gets no generated station
+    void materializeWorldSiteHubs(int startSystemId, const std::vector<game::world_state::InitialWorldStateOrbitalHub>& authored);
 public:
     // DEV / load test: send a ship to systemId (ordinal picks the exit body: the hub bodies first,
     // else the planets by mass)

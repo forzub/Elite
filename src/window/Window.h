@@ -41,6 +41,11 @@ private:
     GLFWwindow* m_window;
     bool m_escapePressed = false;
     bool m_escapeDown = false;
+    // a throttled presentation (a hidden / occluded / minimized window: the vsync swap blocks ~250 ms) - the swap
+    // then runs without vsync and the frame is paced to ~60 Hz, so the client autopilots keep their rate
+    int m_slowSwaps = 0;
+    bool m_presentThrottled = false;
+    double m_lastSwapEndSeconds = -1.0;
     std::array<bool, 12> m_functionKeyDown{};
     std::deque<FunctionKeyPress> m_functionKeyPresses;
 };

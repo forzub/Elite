@@ -6346,3 +6346,27 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
     Coplanar-overlap scan of the tower variant: all wall / slab overlaps gone (only hidden box caps / furniture
     bottoms, as in the intact modules). Live offscreen frame D:/tmp/ruin_fix_b.png: dark facades, rooms in the holes.
     Flicker-free not yet confirmed by the author.
+- 2026-11-18 HUB EDITOR (roadmap step 2; author: «да, давай редактор»). Mesh editor mode «Хаб» (docs/MESH_EDITOR_SPEC.md 19):
+  - Hub MAP document tools/models/hub_maps/<hub>.json (elite.hub_map.v1): grid + frozen anchor, blocks with zone and
+    top / under module cards {module, x, z, yaw}, spin, piers, dock side, avenues per street line, lanes_off, drawn
+    red zones. hub_plane.py split: _generate_map(id) (the old random generator, same rng order) + layout_from_map(map)
+    (deterministic; access bridges seeded per street). plane_layout(id) = saved map or generated start map.
+    Evidence: generated map of plane_demo -> the same city as before the split (hub_map_compare.py: nodes, 5 spinning,
+    46 haze, 2 docks, 58 lanes, 370 connectors, 34 red zones identical; access bridges re-seeded 1548 -> 1580 nodes);
+    hub_map_check.py ALL PASS (frozen anchor; block added outside the extent moves nothing; lane off removes it and
+    its 9 connectors; drawn red zone; card move / turn; dock moved to another rim block -> 8 blue approaches).
+  - tools/models/hub_map_tool.py (catalog/list/generate/load/derive/save/build + `serve` HTTP for the page);
+    MeshEditorHub.cpp starts it once ({cmd: hubTool}); derive ~1 s after the ~6 s import.
+  - Page hub.js: top-down map, layers top/under, tools select/blocks/zones/avenues/lanes/red, palette of module cards
+    (previews), overlap/outside marks, lanes with arrows (two directions drawn apart), blue approaches, docks, undo.
+    Headless CDP run (Edge): place card, R turn, drag, undo x3, lane click off + rederive, red zone drag, new block,
+    layer 2 - all PASS, no JS errors (D:/tmp/ui3_edits.png, ui4_under.png).
+  - «Собрать в игру» pressed in the page on the saved plane_demo map: save -> sources -> world (in place: no diff of
+    initial_world_state / anchors / ports / hub_lanes) -> packaged hub_plane_demo in 85 s. Offscreen game at plane_demo
+    loads the rebuilt package (6254 components; D:/tmp/plane_map_a.png). plane_ruin rebuilt from the same map.
+  - Fixes on the way: hub_belt_world keeps a rebuilt hub's orbit phase / name / position in the files; _module_obb
+    knows the damaged variants (the ruined city's far proxies lacked them).
+  - Gates: 203 pass, 6 known red, 3 pre-existing new red (galaxy map catalog, ui fonts, system_map architecture).
+  - NOT author-accepted. Not yet: 2nd/3rd tier, non-grid outlines (disc / free), hand-drawn corridors (only switching
+    generated ones off), moving a whole block, multiple docks live in game.
+  - Process: a stray `python -` was run once more this session (stopped at once with TaskStop).

@@ -5,7 +5,8 @@
 //           settings | saveSettings {sourceRoot, outputRoot, blender} | pick {field, kind: folder|file, current} |
 //           inspect {category, id, commit} | setKind {category, id, part, kind: volume|sheet|""} |
 //           setCaps {category, id, parts[], on} | blender {category, id, group, part} |
-//           assembly {category, id} | saveAssembly {category, id, doc} | build {category, id} | library | saveLibrary {lib}.
+//           assembly {category, id} | saveAssembly {category, id, doc} | build {category, id} | library | saveLibrary {lib} |
+//           hubTool (the hub mode: starts tools/models/hub_map_tool.py, answers {type: hubTool, port, error}).
 #include <atomic>
 #include <condition_variable>
 #include <deque>
@@ -20,6 +21,7 @@
 #include <nlohmann/json.hpp>
 
 #include "tools/mesh_editor/MeshEditorCatalog.h"
+#include "tools/mesh_editor/MeshEditorHub.h"
 
 class HtmlUiServer;
 
@@ -85,5 +87,6 @@ private:
     std::atomic<bool> m_stop {false};
     std::atomic<bool> m_shellBusy {false};
     std::thread m_worker;
+    HubTool m_hub;
 };
 } // namespace elite::mesh_editor

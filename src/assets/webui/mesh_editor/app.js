@@ -26,6 +26,7 @@ function connect() {
     $('conn').textContent = 'связь есть';
     send({ cmd: 'categories' });
     if (params.get('settings')) send({ cmd: 'settings' });
+    if (params.get('hub') && !Hub.port) Hub.enter();   // headless check of the hub mode (?hub=<id>)
   };
   state.ws.onclose = () => {
     $('conn').textContent = 'нет связи';
@@ -52,7 +53,11 @@ function connect() {
     }
     else if (m.type === 'assembly') Asm.onAssembly(m);
     else if (m.type === 'library') { Asm.onLibrary(m); if (!$('library').hidden) renderLibrary(); }
-    else if (m.type === 'built') { Asm.onBuilt(m); notice(m.ok ? 'Собрано: ' + m.output : 'Сборка не удалась'); }
+    else if (m.type === 'built') {
+      if (window.Hub && Hub.onBuilt(m)) return;
+      Asm.onBuilt(m); notice(m.ok ? 'Собрано: ' + m.output : 'Сборка не удалась');
+    }
+    else if (m.type === 'hubTool') Hub.onTool(m);
   };
 }
 
@@ -195,6 +200,7 @@ function onOpened(m) {
   renderVariants();
   $('current').textContent = `${m.title}  ·  ${m.category}/${m.id}`;
   $('empty').hidden = true;
+  $('hub').hidden = true;
   $('model').hidden = false;
   $('modelTitle').textContent = m.title;
   $('modelMeta').textContent = `${m.id} · ${m.statusText}`;

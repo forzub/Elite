@@ -945,6 +945,11 @@ def _module_obb():
         lo = tuple(min(v[i] for v in vs) for i in range(3))
         hi = tuple(max(v[i] for v in vs) for i in range(3))
         out[k] = (lo, hi, FACADE if k.startswith(("hubb_hab", "hubk_hab")) or k in ("hubb_hotel_hex", "hubb_ring_core") else HULL)
+    # the damaged variants (hub_damage.py) keep their building's bounds: the ruined city's proxies and the editor's cards
+    from units.hub_damage_names import DAMAGED_OF
+    for k, variants in DAMAGED_OF.items():
+        if k in out:
+            out.update({v: out[k] for v in variants})
     return out
 
 

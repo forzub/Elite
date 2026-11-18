@@ -1,0 +1,3386 @@
+{
+ "schema": "elite.hub_map.v1",
+ "hub_id": "plane_demo",
+ "title": "plane_demo",
+ "generated_from": "plane_demo",
+ "grid": {
+  "cell_m": 600,
+  "street_local_m": 300,
+  "street_avenue_m": 500,
+  "anchor": {
+   "i": 0,
+   "j": 0,
+   "x": -4000,
+   "z": -2550
+  },
+  "extent": [
+   0,
+   0,
+   8,
+   5
+  ]
+ },
+ "avenues": {
+  "x": [
+   0,
+   3,
+   4,
+   6
+  ],
+  "z": [
+   0,
+   2,
+   3
+  ]
+ },
+ "cells": [
+  {
+   "i": 0,
+   "j": 1,
+   "zone": "storage",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -138.333,
+     "z": -123,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 138.333,
+     "z": -123,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -143.333,
+     "z": 108,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 133.333,
+     "z": 108,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_warehouse",
+     "x": -140,
+     "z": -108,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 140,
+     "z": -108,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -115,
+     "z": 103,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 150,
+     "z": 103,
+     "yaw": 270
+    }
+   ]
+  },
+  {
+   "i": 0,
+   "j": 2,
+   "zone": "industry",
+   "top": [
+    {
+     "module": "hubv_mast",
+     "x": -242,
+     "z": -176,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": -104,
+     "z": -176,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_mast",
+     "x": 34,
+     "z": -176,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 172,
+     "z": -176,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -113.333,
+     "z": 70,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 153.333,
+     "z": 70,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_mast",
+     "x": 0,
+     "z": 246,
+     "yaw": 90
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_gas_battery",
+     "x": -183,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_works",
+     "x": 89,
+     "z": -123,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -205.75,
+     "z": 165.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_refinery",
+     "x": -41.5,
+     "z": 163,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 164.25,
+     "z": 163,
+     "yaw": 270
+    }
+   ]
+  },
+  {
+   "i": 0,
+   "j": 3,
+   "zone": "industry",
+   "top": [
+    {
+     "module": "hubb_gas_battery",
+     "x": -123.667,
+     "z": -224.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 118.667,
+     "z": -224.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_works",
+     "x": -53.333,
+     "z": 0,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_mast",
+     "x": 203.333,
+     "z": 0,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -83,
+     "z": 224.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_mast",
+     "x": 139,
+     "z": 224.5,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubv_refinery",
+     "x": -133.333,
+     "z": -206,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_refinery",
+     "x": 133.333,
+     "z": -206,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_refinery",
+     "x": -120,
+     "z": -10,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 140,
+     "z": -10,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 0,
+     "z": 196,
+     "yaw": 270
+    }
+   ]
+  },
+  {
+   "i": 1,
+   "j": 2,
+   "zone": "refuel",
+   "top": [
+    {
+     "module": "hubb_fuel_spheres",
+     "x": -115.667,
+     "z": -184.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 129.667,
+     "z": -184.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": -115,
+     "z": 41.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 155,
+     "z": 41.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -2.5,
+     "z": 226,
+     "yaw": 90
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_works",
+     "x": 0,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 2.5,
+     "z": 101.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -2.5,
+     "z": 224.5,
+     "yaw": 90
+    }
+   ],
+   "piers": {}
+  },
+  {
+   "i": 1,
+   "j": 3,
+   "zone": "industry",
+   "top": [
+    {
+     "module": "hubv_mast",
+     "x": -203.333,
+     "z": -136,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_works",
+     "x": 53.333,
+     "z": -136,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": -175,
+     "z": 130,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_mast",
+     "x": -40,
+     "z": 130,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 135,
+     "z": 130,
+     "yaw": 90
+    },
+    {
+     "module": "hubv_mast",
+     "x": -103.333,
+     "z": 266,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_mast",
+     "x": 103.333,
+     "z": 266,
+     "yaw": 270
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_gas_battery",
+     "x": -225.7,
+     "z": -165.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_refinery",
+     "x": -81.4,
+     "z": -163,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 90.4,
+     "z": -163,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 225.7,
+     "z": -160.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -193.833,
+     "z": 120.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_works",
+     "x": 72.333,
+     "z": 123,
+     "yaw": 90
+    }
+   ]
+  },
+  {
+   "i": 1,
+   "j": 4,
+   "zone": "industry",
+   "top": [
+    {
+     "module": "hubb_warehouse",
+     "x": -135,
+     "z": -189.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_mast",
+     "x": 40,
+     "z": -189.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 175,
+     "z": -189.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -161.333,
+     "z": 16.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 102.333,
+     "z": 16.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -107,
+     "z": 206,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 129.5,
+     "z": 203.5,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_works",
+     "x": -72.333,
+     "z": -103,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 193.833,
+     "z": -105.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 0,
+     "z": 163,
+     "yaw": 270
+    }
+   ]
+  },
+  {
+   "i": 2,
+   "j": 1,
+   "zone": "dock",
+   "top": [],
+   "under": [],
+   "dock_side": [
+    0,
+    -1
+   ]
+  },
+  {
+   "i": 2,
+   "j": 2,
+   "zone": "hab_rot",
+   "top": [],
+   "under": [],
+   "spin": [
+    9
+   ]
+  },
+  {
+   "i": 2,
+   "j": 3,
+   "zone": "hab_rot",
+   "top": [],
+   "under": [],
+   "spin": [
+    9
+   ]
+  },
+  {
+   "i": 2,
+   "j": 4,
+   "zone": "logistics",
+   "top": [
+    {
+     "module": "hubp_truck_station",
+     "x": -133.333,
+     "z": -145.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 143.333,
+     "z": -145.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": -143.333,
+     "z": 120.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 128.333,
+     "z": 123,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_warehouse",
+     "x": -113.333,
+     "z": -108,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 153.333,
+     "z": -108,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -136.667,
+     "z": 103,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 141.667,
+     "z": 103,
+     "yaw": 0
+    }
+   ],
+   "piers": {
+    "0,1": "hubb_pier_m"
+   }
+  },
+  {
+   "i": 3,
+   "j": 1,
+   "zone": "industry",
+   "top": [
+    {
+     "module": "hubb_works",
+     "x": -53.333,
+     "z": -103,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_mast",
+     "x": 203.333,
+     "z": -103,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_mast",
+     "x": -251.4,
+     "z": 163,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -82.8,
+     "z": 163,
+     "yaw": 90
+    },
+    {
+     "module": "hubv_mast",
+     "x": 85.8,
+     "z": 163,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 200.4,
+     "z": 163,
+     "yaw": 270
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_gas_battery",
+     "x": -148,
+     "z": -163,
+     "yaw": 90
+    },
+    {
+     "module": "hubv_refinery",
+     "x": 109,
+     "z": -163,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_works",
+     "x": -89,
+     "z": 93,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 188,
+     "z": 93,
+     "yaw": 270
+    }
+   ]
+  },
+  {
+   "i": 3,
+   "j": 2,
+   "zone": "downtown",
+   "top": [
+    {
+     "module": "hubb_hab_slab",
+     "x": -147.5,
+     "z": -221.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 7.5,
+     "z": -221.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 102.5,
+     "z": -221.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 197.5,
+     "z": -221.28,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 250,
+     "z": -221.28,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -190,
+     "z": -85.28,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -77.5,
+     "z": -85.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 35,
+     "z": -85.28,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 190,
+     "z": -85.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": -172.5,
+     "z": 68,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 0,
+     "z": 68,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 172.5,
+     "z": 68,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -214,
+     "z": 221.28,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -125.5,
+     "z": 221.28,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -37,
+     "z": 221.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 154,
+     "z": 221.28,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_hab_slab",
+     "x": -142.5,
+     "z": -225.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 60,
+     "z": -225.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 202.5,
+     "z": -225.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": -170.64,
+     "z": -68.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 3.72,
+     "z": -68.28,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 174.36,
+     "z": -68.28,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -216,
+     "z": 106,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -129.5,
+     "z": 106,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -85.5,
+     "z": 106,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 22,
+     "z": 106,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 172,
+     "z": 106,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 258.5,
+     "z": 106,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 0,
+     "z": 216.78,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -100.833,
+     "z": 267.78,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 100.833,
+     "z": 267.78,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 3,
+   "j": 3,
+   "zone": "downtown",
+   "top": [
+    {
+     "module": "hubk_hab_b",
+     "x": -239.5,
+     "z": -221.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -74,
+     "z": -221.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 91.5,
+     "z": -221.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 197,
+     "z": -221.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -214,
+     "z": -85.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -23,
+     "z": -85.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 168,
+     "z": -85.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 256.5,
+     "z": -85.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -253.959,
+     "z": 110.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -205.419,
+     "z": 110.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": -69.27,
+     "z": 110.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 89.378,
+     "z": 110.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 182.919,
+     "z": 110.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 253.959,
+     "z": 110.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 0,
+     "z": 264,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubk_hab_b",
+     "x": -247.9,
+     "z": -202.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": -129.8,
+     "z": -202.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 90.8,
+     "z": -202.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 247.9,
+     "z": -202.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -213.912,
+     "z": -27.828,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -82.824,
+     "z": -27.828,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 65.544,
+     "z": -27.828,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 213.912,
+     "z": -27.828,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -210.771,
+     "z": 174.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -119.042,
+     "z": 174.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": 17.886,
+     "z": 174.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 154.813,
+     "z": 174.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 204.042,
+     "z": 174.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 253.271,
+     "z": 174.28,
+     "yaw": 270
+    }
+   ]
+  },
+  {
+   "i": 3,
+   "j": 4,
+   "zone": "logistics",
+   "top": [
+    {
+     "module": "hubp_truck_station",
+     "x": -143.333,
+     "z": -133,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 138.333,
+     "z": -133,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_parking",
+     "x": -130,
+     "z": 123,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 155,
+     "z": 123,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_warehouse",
+     "x": -140,
+     "z": -103,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 140,
+     "z": -103,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -113.333,
+     "z": 103,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 153.333,
+     "z": 103,
+     "yaw": 270
+    }
+   ],
+   "piers": {}
+  },
+  {
+   "i": 4,
+   "j": 0,
+   "zone": "storage",
+   "top": [
+    {
+     "module": "hubp_truck_station",
+     "x": -133.333,
+     "z": -143,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 143.333,
+     "z": -143,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -150,
+     "z": 123,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 115,
+     "z": 123,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -141.667,
+     "z": -108,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 136.667,
+     "z": -108,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -138.333,
+     "z": 108,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 138.333,
+     "z": 108,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 4,
+   "j": 1,
+   "zone": "residential",
+   "top": [
+    {
+     "module": "hubk_hab_c",
+     "x": -240.884,
+     "z": -234.651,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -76.767,
+     "z": -234.651,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 87.349,
+     "z": -234.651,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_water_tower",
+     "x": 182.116,
+     "z": -234.651,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 258.884,
+     "z": -234.651,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -250.9,
+     "z": -115,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -96.8,
+     "z": -115,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_water_tower",
+     "x": 92.8,
+     "z": -115,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_water_tower",
+     "x": 215.4,
+     "z": -115,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -250.82,
+     "z": -8.349,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": -137.34,
+     "z": -8.349,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -11.86,
+     "z": -8.349,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 154.32,
+     "z": -8.349,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -212.571,
+     "z": 167.651,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_water_tower",
+     "x": -87.143,
+     "z": 167.651,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -4.214,
+     "z": 167.651,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 61.214,
+     "z": 167.651,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 149.143,
+     "z": 167.651,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 237.071,
+     "z": 167.651,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_hab_slab",
+     "x": -227,
+     "z": -172.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -49,
+     "z": -172.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 129,
+     "z": -172.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 227,
+     "z": -172.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -155.25,
+     "z": 3.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 0,
+     "z": 3.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 155.25,
+     "z": 3.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -159.12,
+     "z": 99.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 2.26,
+     "z": 99.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": 122.94,
+     "z": 99.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 243.62,
+     "z": 99.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -135,
+     "z": 195.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 135,
+     "z": 195.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 0,
+     "z": 272,
+     "yaw": 180
+    }
+   ]
+  },
+  {
+   "i": 4,
+   "j": 2,
+   "zone": "downtown",
+   "top": [
+    {
+     "module": "hubb_hab_tower",
+     "x": -214,
+     "z": -225,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -83,
+     "z": -225,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 5.5,
+     "z": -225,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 154,
+     "z": -225,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -215.833,
+     "z": -89,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -86.667,
+     "z": -89,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 42.5,
+     "z": -89,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 171.667,
+     "z": -89,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 258.333,
+     "z": -89,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": -193.86,
+     "z": 68,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 17.28,
+     "z": 68,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 211.14,
+     "z": 68,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -129.167,
+     "z": 225,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 86.667,
+     "z": 225,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_hab_tower",
+     "x": -203.74,
+     "z": -181.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": -17.28,
+     "z": -181.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 186.459,
+     "z": -181.108,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -155,
+     "z": 0,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 95,
+     "z": 0,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": -99.934,
+     "z": 181.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 145.133,
+     "z": 181.108,
+     "yaw": 90
+    }
+   ]
+  },
+  {
+   "i": 4,
+   "j": 3,
+   "zone": "canopy",
+   "top": [
+    {
+     "module": "hubv_canopy",
+     "x": 0,
+     "z": 0,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubv_canopy",
+     "x": 0,
+     "z": 0,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 4,
+   "j": 4,
+   "zone": "hotel",
+   "top": [
+    {
+     "module": "hubk_hab_a",
+     "x": -250,
+     "z": -169,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -189.5,
+     "z": -169,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -114.5,
+     "z": -169,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -175,
+     "z": 7,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -175,
+     "z": 103,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": -175,
+     "z": 176,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -175,
+     "z": 249,
+     "yaw": 180
+    }
+   ],
+   "under": [],
+   "spin": [
+    4,
+    4,
+    -4
+   ]
+  },
+  {
+   "i": 4,
+   "j": 5,
+   "zone": "storage",
+   "top": [
+    {
+     "module": "hubb_warehouse",
+     "x": -102.333,
+     "z": -169.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 161.333,
+     "z": -169.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -104,
+     "z": 41.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 158,
+     "z": 41.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -2.5,
+     "z": 211,
+     "yaw": 90
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_warehouse",
+     "x": -155,
+     "z": -103,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 115,
+     "z": -103,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -140,
+     "z": 143,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 140,
+     "z": 143,
+     "yaw": 90
+    }
+   ]
+  },
+  {
+   "i": 5,
+   "j": 0,
+   "zone": "industry",
+   "top": [
+    {
+     "module": "hubb_works",
+     "x": 0,
+     "z": -93,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_refinery",
+     "x": 0,
+     "z": 183,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_works",
+     "x": -100,
+     "z": -86.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 180,
+     "z": -86.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 0,
+     "z": 165.5,
+     "yaw": 180
+    }
+   ]
+  },
+  {
+   "i": 5,
+   "j": 1,
+   "zone": "residential",
+   "top": [
+    {
+     "module": "hubb_hab_tower",
+     "x": -215,
+     "z": -159.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -25,
+     "z": -159.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 145,
+     "z": -159.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 235,
+     "z": -159.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -249.875,
+     "z": 96.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -189.25,
+     "z": 96.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_water_tower",
+     "x": -93.125,
+     "z": 96.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -5,
+     "z": 96.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 55.625,
+     "z": 96.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 134.25,
+     "z": 96.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 227.375,
+     "z": 96.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -100.167,
+     "z": 256,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 110.167,
+     "z": 256,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_hab_slab",
+     "x": -135,
+     "z": -249,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 135,
+     "z": -249,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -236.833,
+     "z": -73,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -148.667,
+     "z": -73,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 19.5,
+     "z": -73,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 187.667,
+     "z": -73,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 256.333,
+     "z": -73,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -118,
+     "z": 103,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 84.5,
+     "z": 103,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 202.5,
+     "z": 103,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -160.25,
+     "z": 199,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 84.5,
+     "z": 199,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 244.75,
+     "z": 199,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": 0,
+     "z": 272,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 5,
+   "j": 2,
+   "zone": "downtown",
+   "top": [
+    {
+     "module": "hubb_hab_slab",
+     "x": -143.849,
+     "z": -170.561,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 14.801,
+     "z": -170.561,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": 158.651,
+     "z": -170.561,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -153,
+     "z": 27.828,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 60,
+     "z": 27.828,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 213,
+     "z": 27.828,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": -79.667,
+     "z": 198.388,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 143.167,
+     "z": 198.388,
+     "yaw": 90
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_hab_slab",
+     "x": -153,
+     "z": -206.608,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 39,
+     "z": -206.608,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 192,
+     "z": -206.608,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -208.08,
+     "z": -8.22,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -71.159,
+     "z": -8.22,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 23.261,
+     "z": -8.22,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": 162.881,
+     "z": -8.22,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -115,
+     "z": 172.888,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 115,
+     "z": 172.888,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -100.833,
+     "z": 266.388,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 100.833,
+     "z": 266.388,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 5,
+   "j": 3,
+   "zone": "downtown",
+   "top": [
+    {
+     "module": "hubb_hab_tower",
+     "x": -210,
+     "z": -226.307,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -117.5,
+     "z": -226.307,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -67.5,
+     "z": -226.307,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 25,
+     "z": -226.307,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 160,
+     "z": -226.307,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 252.5,
+     "z": -226.307,
+     "yaw": 90
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": -128.651,
+     "z": -45.199,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 87.699,
+     "z": -45.199,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 216.349,
+     "z": -45.199,
+     "yaw": 90
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": -172.455,
+     "z": 181.108,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 0.091,
+     "z": 181.108,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": 172.545,
+     "z": 181.108,
+     "yaw": 90
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_hab_tower",
+     "x": -183,
+     "z": -213.28,
+     "yaw": 90
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": 0,
+     "z": -213.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 183,
+     "z": -213.28,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_crown_spire_c",
+     "x": -192,
+     "z": -42.72,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 21,
+     "z": -42.72,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 213,
+     "z": -42.72,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -246.786,
+     "z": 170.561,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -148.571,
+     "z": 170.561,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -27.857,
+     "z": 170.561,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 92.857,
+     "z": 170.561,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 191.071,
+     "z": 170.561,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 246.786,
+     "z": 170.561,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 5,
+   "j": 4,
+   "zone": "residential",
+   "top": [
+    {
+     "module": "hubk_hab_b",
+     "x": -211.675,
+     "z": -186.608,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": -33.151,
+     "z": -186.608,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_water_tower",
+     "x": 178.524,
+     "z": -186.608,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": -155.25,
+     "z": 39.608,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 0,
+     "z": 39.608,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_saucer_tower",
+     "x": 155.25,
+     "z": 39.608,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -135,
+     "z": 200.716,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 135,
+     "z": 200.716,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 0,
+     "z": 274.216,
+     "yaw": 270
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_hab_slab",
+     "x": -155.25,
+     "z": -244.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 94.5,
+     "z": -244.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 249.75,
+     "z": -244.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -250.82,
+     "z": -148.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -181.14,
+     "z": -148.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": -55.66,
+     "z": -148.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 154.32,
+     "z": -148.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": -188.4,
+     "z": -57,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -68.3,
+     "z": -57,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -2,
+     "z": -57,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 66.3,
+     "z": -57,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": 188.4,
+     "z": -57,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -228.167,
+     "z": 114.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -145.833,
+     "z": 114.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -39,
+     "z": 114.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 82.333,
+     "z": 114.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 203.667,
+     "z": 114.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": 0,
+     "z": 267.5,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 5,
+   "j": 5,
+   "zone": "rig",
+   "top": [
+    {
+     "module": "hubv_pad_star",
+     "x": -185,
+     "z": -199.599,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_pad_star",
+     "x": 0,
+     "z": -199.599,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_pad_star",
+     "x": 185,
+     "z": -199.599,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_pad_star",
+     "x": -195.748,
+     "z": 49.282,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_rig",
+     "x": 11.497,
+     "z": 45.842,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_pad_star",
+     "x": 195.748,
+     "z": 49.282,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_mast",
+     "x": 0,
+     "z": 248.881,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_gas_battery",
+     "x": -183,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_works",
+     "x": 89,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -179.25,
+     "z": 101.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 2.5,
+     "z": 101.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 179.25,
+     "z": 101.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -2.5,
+     "z": 224.5,
+     "yaw": 90
+    }
+   ]
+  },
+  {
+   "i": 6,
+   "j": 0,
+   "zone": "port",
+   "top": [
+    {
+     "module": "hubb_warehouse",
+     "x": -140,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 140,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -143.333,
+     "z": 103,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 133.333,
+     "z": 103,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_fuel_spheres",
+     "x": -130,
+     "z": -103,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 125,
+     "z": -103,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -140,
+     "z": 138,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 140,
+     "z": 138,
+     "yaw": 90
+    }
+   ],
+   "piers": {
+    "0,-1": "hubb_pier_m"
+   }
+  },
+  {
+   "i": 6,
+   "j": 1,
+   "zone": "logistics",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -115,
+     "z": -145.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 150,
+     "z": -145.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_parking",
+     "x": -120,
+     "z": 143,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 160,
+     "z": 140.5,
+     "yaw": 90
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -118.333,
+     "z": -145.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 148.333,
+     "z": -145.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -140,
+     "z": 138,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 120,
+     "z": 135.5,
+     "yaw": 270
+    }
+   ],
+   "piers": {}
+  },
+  {
+   "i": 6,
+   "j": 2,
+   "zone": "residential",
+   "top": [
+    {
+     "module": "hubb_hab_tower",
+     "x": -196.2,
+     "z": -161.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_water_tower",
+     "x": -54.4,
+     "z": -161.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 87.4,
+     "z": -161.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 216.2,
+     "z": -161.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -215,
+     "z": 94.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -25,
+     "z": 94.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 145,
+     "z": 94.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 235,
+     "z": 94.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 0,
+     "z": 256,
+     "yaw": 270
+    }
+   ],
+   "under": [
+    {
+     "module": "hubk_hab_c",
+     "x": -239.214,
+     "z": -207.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -167.929,
+     "z": -207.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -106.643,
+     "z": -207.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 49.143,
+     "z": -207.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 204.929,
+     "z": -207.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": 257.714,
+     "z": -207.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -231.929,
+     "z": 7.8,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -143.357,
+     "z": 7.8,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -54.786,
+     "z": 7.8,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 58.286,
+     "z": 7.8,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 175.857,
+     "z": 7.8,
+     "yaw": 270
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": 250.429,
+     "z": 7.8,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -152.75,
+     "z": 183.8,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 99.5,
+     "z": 183.8,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 252.25,
+     "z": 183.8,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -209.82,
+     "z": 263.3,
+     "yaw": 0
+    },
+    {
+     "module": "hubv_ring_wheel",
+     "x": -55.34,
+     "z": 263.3,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 99.14,
+     "z": 263.3,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 209.82,
+     "z": 263.3,
+     "yaw": 0
+    }
+   ]
+  },
+  {
+   "i": 6,
+   "j": 3,
+   "zone": "residential",
+   "top": [
+    {
+     "module": "hubv_water_tower",
+     "x": -215.833,
+     "z": -156.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -123.167,
+     "z": -156.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -23.5,
+     "z": -156.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 92.667,
+     "z": -156.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 208.833,
+     "z": -156.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -229.429,
+     "z": 99.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -113.857,
+     "z": 99.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": -20.786,
+     "z": 99.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": 72.286,
+     "z": 99.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 183.357,
+     "z": 99.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_b",
+     "x": 251.929,
+     "z": 99.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 0,
+     "z": 256,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubk_hab_c",
+     "x": -236,
+     "z": -149.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -163.5,
+     "z": -149.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -101,
+     "z": -149.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": -22,
+     "z": -149.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 151.5,
+     "z": -149.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -229.5,
+     "z": 26.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -148.5,
+     "z": 26.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -79.5,
+     "z": 26.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -15.5,
+     "z": 26.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 145,
+     "z": 26.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_tower",
+     "x": -217.5,
+     "z": 142.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -126.5,
+     "z": 142.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -60,
+     "z": 142.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_hab_slab",
+     "x": 103,
+     "z": 142.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 254,
+     "z": 142.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -249.278,
+     "z": 244,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": -188.056,
+     "z": 244,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -116.833,
+     "z": 244,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": -35.611,
+     "z": 244,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 45.611,
+     "z": 244,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_c",
+     "x": 126.833,
+     "z": 244,
+     "yaw": 180
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 198.056,
+     "z": 244,
+     "yaw": 0
+    },
+    {
+     "module": "hubk_hab_a",
+     "x": 254.278,
+     "z": 244,
+     "yaw": 90
+    }
+   ]
+  },
+  {
+   "i": 6,
+   "j": 4,
+   "zone": "industry",
+   "top": [
+    {
+     "module": "hubb_works",
+     "x": 0,
+     "z": -103,
+     "yaw": 180
+    },
+    {
+     "module": "hubv_mast",
+     "x": -176.667,
+     "z": 183,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 66.667,
+     "z": 183,
+     "yaw": 270
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_works",
+     "x": -100,
+     "z": -123,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 180,
+     "z": -123,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": 2.5,
+     "z": 101.5,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_gas_battery",
+     "x": -2.5,
+     "z": 224.5,
+     "yaw": 90
+    }
+   ]
+  },
+  {
+   "i": 6,
+   "j": 5,
+   "zone": "logistics",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -118.333,
+     "z": -138,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 148.333,
+     "z": -138,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -148.333,
+     "z": 138,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 118.333,
+     "z": 138,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_fuel_spheres",
+     "x": -150,
+     "z": -108,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 115,
+     "z": -108,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -138.333,
+     "z": 108,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 138.333,
+     "z": 108,
+     "yaw": 0
+    }
+   ],
+   "piers": {
+    "0,1": "hubb_pier_m"
+   }
+  },
+  {
+   "i": 7,
+   "j": 1,
+   "zone": "port",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -138.333,
+     "z": -123,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 123.333,
+     "z": -125.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -143.333,
+     "z": 145.5,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 138.333,
+     "z": 145.5,
+     "yaw": 0
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -141.667,
+     "z": -108,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 136.667,
+     "z": -108,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -136.667,
+     "z": 108,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 141.667,
+     "z": 108,
+     "yaw": 180
+    }
+   ],
+   "piers": {}
+  },
+  {
+   "i": 7,
+   "j": 3,
+   "zone": "logistics",
+   "top": [
+    {
+     "module": "hubb_parking",
+     "x": -145,
+     "z": -123,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 130,
+     "z": -123,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": -133.333,
+     "z": 163,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 143.333,
+     "z": 163,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -141.667,
+     "z": -138,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 136.667,
+     "z": -138,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -148.333,
+     "z": 108,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 118.333,
+     "z": 108,
+     "yaw": 180
+    }
+   ],
+   "piers": {}
+  },
+  {
+   "i": 7,
+   "j": 4,
+   "zone": "logistics",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -143.333,
+     "z": -123,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 138.333,
+     "z": -123,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": -133.333,
+     "z": 123,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 143.333,
+     "z": 123,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubb_fuel_spheres",
+     "x": -126.667,
+     "z": -123,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": 126.667,
+     "z": -123,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_fuel_spheres",
+     "x": -155,
+     "z": 103,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 110,
+     "z": 103,
+     "yaw": 0
+    }
+   ],
+   "piers": {}
+  },
+  {
+   "i": 7,
+   "j": 5,
+   "zone": "port",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -143.333,
+     "z": -138,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 133.333,
+     "z": -138,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": -113.333,
+     "z": 123,
+     "yaw": 0
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 153.333,
+     "z": 123,
+     "yaw": 90
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -138.333,
+     "z": -145.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 138.333,
+     "z": -145.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -126.667,
+     "z": 108,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 146.667,
+     "z": 105.5,
+     "yaw": 270
+    }
+   ],
+   "piers": {
+    "1,0": "hubb_pier_l",
+    "0,1": "hubb_pier_m"
+   }
+  },
+  {
+   "i": 8,
+   "j": 1,
+   "zone": "logistics",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -151.667,
+     "z": -163,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 116.667,
+     "z": -163,
+     "yaw": 270
+    },
+    {
+     "module": "hubb_parking",
+     "x": -126.667,
+     "z": 138,
+     "yaw": 90
+    },
+    {
+     "module": "hubb_parking",
+     "x": 156.667,
+     "z": 138,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -148.333,
+     "z": -108,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 118.333,
+     "z": -108,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -136.667,
+     "z": 138,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 141.667,
+     "z": 138,
+     "yaw": 0
+    }
+   ],
+   "piers": {
+    "1,0": "hubb_pier_m",
+    "0,-1": "hubb_pier_m"
+   }
+  },
+  {
+   "i": 8,
+   "j": 2,
+   "zone": "port",
+   "top": [
+    {
+     "module": "hubp_container_yard",
+     "x": -141.667,
+     "z": -123,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 136.667,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": -141.667,
+     "z": 108,
+     "yaw": 180
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 141.667,
+     "z": 108,
+     "yaw": 270
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -138.333,
+     "z": -108,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 138.333,
+     "z": -108,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": -136.667,
+     "z": 108,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 141.667,
+     "z": 108,
+     "yaw": 0
+    }
+   ],
+   "piers": {
+    "1,0": "hubb_pier_m"
+   }
+  },
+  {
+   "i": 8,
+   "j": 3,
+   "zone": "port",
+   "top": [
+    {
+     "module": "hubp_truck_station",
+     "x": -136.667,
+     "z": -123,
+     "yaw": 0
+    },
+    {
+     "module": "hubb_warehouse",
+     "x": 141.667,
+     "z": -123,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": -138.333,
+     "z": 123,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 143.333,
+     "z": 123,
+     "yaw": 180
+    }
+   ],
+   "under": [
+    {
+     "module": "hubp_container_yard",
+     "x": -148.333,
+     "z": -145.5,
+     "yaw": 90
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": 118.333,
+     "z": -145.5,
+     "yaw": 180
+    },
+    {
+     "module": "hubp_container_yard",
+     "x": -138.333,
+     "z": 138,
+     "yaw": 270
+    },
+    {
+     "module": "hubp_truck_station",
+     "x": 123.333,
+     "z": 140.5,
+     "yaw": 90
+    }
+   ],
+   "piers": {
+    "1,0": "hubb_pier_l"
+   }
+  }
+ ],
+ "lanes_off": [],
+ "red_zones": []
+}

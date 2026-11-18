@@ -89,7 +89,8 @@ std::string pickPath(bool folder, const std::string& currentUtf8)
 
 Session::Session(Catalog& catalog, HtmlUiServer& server, fs::path webRoot, fs::path sourceTree, fs::path settingsFile)
     : m_catalog(catalog), m_server(server), m_webRoot(std::move(webRoot)), m_sourceTree(std::move(sourceTree)),
-      m_settingsFile(std::move(settingsFile)), m_blender(catalog.settings().blender)
+      m_settingsFile(std::move(settingsFile)), m_blender(catalog.settings().blender),
+      m_hub(m_sourceTree, catalog.settings().workRoot / "hub")
 {
     m_worker = std::thread([this] { previewWorker(); });
 }
@@ -806,6 +807,18 @@ void Session::handleCommand(const std::string& text)
     if (cmd == "rescan")
     {
         m_catalog.rescan();
+        if (m.value("reply", false))
+            sendCategories();
+        return;
+    }
+    if (cmd == "hubTool")
+    {
+        // the first start imports the hub generator (~6 s): off the socket thread
+        std::thread([this] {
+            std::string error;
+            const int port = m_hub.port(error);
+            send({{"type", "hubTool"}, {"port", port}, {"error", error}});
+        }).detach();
         return;
     }
     if (cmd == "refresh")

@@ -16,6 +16,7 @@ drive-through bays under a roof, platforms, trucks), hubp_crossing (a street cro
 """
 import hashlib
 import math
+import os
 import random
 
 from eqlib import *  # noqa: F401,F403 - the unit kernel
@@ -352,22 +353,59 @@ def _ruin(L, hub_id):
     return L
 
 
-def plane_layout(hub_id):
-    """-> dict(nodes, spinning, haze, module_of, districts, links, cells): the planar city of one hub (pure in hub_id)"""
-    if hub_id in RUIN_OF:
-        return _ruin(plane_layout(RUIN_OF[hub_id]), hub_id)
-    import pads
+# ================================================================ the hub MAP (author 2026-11-17: hub editor - «слои / этажи,
+# карточки модулей на клетках как в SimCity, любой 2D контур; генератор строит хаб по карте; сгенерированную стартовую
+# раскладку можно править»). The planar city is built in two steps: hub id -> MAP (the random generator, _generate_map)
+# and MAP -> city (layout_from_map, no randomness except per-street seeds). A map saved by the mesh editor's hub mode
+# (tools/models/hub_maps/<hub>.json, schema elite.hub_map.v1) replaces the generated one.
+#   grid      cell / street sizes; anchor: the centre of one cell (positions stay put when the outline grows)
+#   avenues   {"x": [street line i, between columns i and i+1], "z": [...]}: avenue class (500 m gap, tunnels, monorail)
+#   cells     [{i, j, zone, top: [card], under: [card], spin: [deg/s], piers: {"ox,oz": module}, dock_side: [ox, oz]}]
+#             card = {module, x, z, yaw}: the module origin in block metres, yaw 0 / 90 / 180 / 270 (0: its +Z = +Z)
+#   lanes_off the ids of generated lanes switched off (one-way streets, closed corridors)
+#   red_zones extra red zones drawn on the map: {id, x, z, w, d, h}
+MAP_SCHEMA = "elite.hub_map.v1"
+MAP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "hub_maps")
+LAYERS = {"top": 0.0, "under": UNDER_Y}
+YAWS = {0: (0.0, 0.0, 1.0), 90: (1.0, 0.0, 0.0), 180: (0.0, 0.0, -1.0), 270: (-1.0, 0.0, 0.0)}
+SPECIAL_ZONES = ("canopy", "hab_rot", "hotel", "dock")
+
+
+def _card_rot(yaw, down):
+    return _yaw(YAWS[int(yaw) % 360], down)
+
+
+def _rot_yaw(rot, down):
+    for y in YAWS:
+        if all(abs(a - b) < 1.0e-6 for a, b in zip(_card_rot(y, down), rot)):
+            return y
+    raise ValueError(f"not a card yaw: {rot}")
+
+
+def map_path(hub_id):
+    return os.path.join(MAP_DIR, f"{hub_id}.json")
+
+
+def load_map(hub_id):
+    p = map_path(hub_id)
+    if not os.path.exists(p):
+        return None
+    import json
+    m = json.loads(open(p, encoding="utf-8").read())
+    assert m.get("schema") == MAP_SCHEMA, p
+    return m
+
+
+def hub_map(hub_id):
+    """the hub's map: the saved one (the editor's) or the generated start layout"""
+    return load_map(hub_id) or _generate_map(hub_id)
+
+
+def _generate_map(hub_id):
+    """the random generator: hub id -> map (pure in the id: the same id is always the same city)"""
     seed = int(hashlib.sha1(hub_id.encode("utf-8")).hexdigest()[:12], 16)
     rng = random.Random(seed)
-    rot_x = _yaw((1.0, 0.0, 0.0))
-    nodes, spinning, haze, module_of, districts, docks = [], [], [], {}, [], []
     rng_u = random.Random(seed ^ 0x5A5A5A)                 # the underside (keeps the top side as it was)
-
-    def add(nid, folder, pos, rot, role, group):
-        nodes.append((nid, folder, tuple(round(c, 3) + 0.0 for c in pos), tuple(round(c, 4) + 0.0 for c in rot), role,
-                      None if not nodes else nodes[0][0]))
-        module_of[nid] = group
-
     # the grid: an irregular blob of blocks (an ellipse with a noisy rim, a few holes), the largest connected piece
     N, M = rng.randint(7, 9), rng.randint(6, 8)
     ci, cj = (N - 1) / 2, (M - 1) / 2
@@ -387,32 +425,10 @@ def plane_layout(hub_id):
     # -> 3 classes; «ньютоновскому кораблю в таком месте делать особо и нечего. поэтому все доки должны быть на
     # окраинах»): local streets carry Assisted ships up to ~50 m (gap 300 m), avenues (every third line + the lines
     # round the centre) Assisted up to ~100 m (gap 500 m); Newtonian / larger ships only dock on the rim.
-    av_x = lambda i: i % 3 == 0 or abs(i + 0.5 - ci) < 1.0
-    av_z = lambda j: j % 3 == 0 or abs(j + 0.5 - cj) < 1.0
-    gw_x = [STREET_AVENUE if av_x(i) else STREET_LOCAL for i in range(N - 1)]
-    gw_z = [STREET_AVENUE if av_z(j) else STREET_LOCAL for j in range(M - 1)]
-
-    def axis_centres(n, gw):
-        out = [0.0]
-        for i in range(1, n):
-            out.append(out[-1] + CELL + gw[i - 1])
-        sh = (out[0] + out[-1]) / 2
-        return [v - sh for v in out]
-    X, Z = axis_centres(N, gw_x), axis_centres(M, gw_z)
-
-    def line_at(cs, gw, i):
-        """the centre of the street line i + 0.5 (between cells i and i + 1); -1 / n-1: just outside the grid"""
-        if i < 0:
-            return cs[0] - CELL / 2 - STREET_LOCAL / 2
-        if i >= len(cs) - 1:
-            return cs[-1] + CELL / 2 + STREET_LOCAL / 2
-        return cs[i] + CELL / 2 + gw[i] / 2
-    line_x = lambda i: line_at(X, gw_x, i)
-    line_z = lambda j: line_at(Z, gw_z, j)
-    pos_of = lambda k: (X[k[0]], 0.0, Z[k[1]])
+    av_x = [i for i in range(N - 1) if i % 3 == 0 or abs(i + 0.5 - ci) < 1.0]
+    av_z = [j for j in range(M - 1) if j % 3 == 0 or abs(j + 0.5 - cj) < 1.0]
     nbr4 = lambda k: [(k[0] + 1, k[1]), (k[0] - 1, k[1]), (k[0], k[1] + 1), (k[0], k[1] - 1)]
     rim = {k for k in cells if any(n not in cells for n in nbr4(k))}
-
     # zones: the canopy in the centre, downtown round it, residential (+ drums, hotels), industry / storage, the port rim
     # the port is ONE waterfront (the side the city faces its traffic): the rim there is port / logistics, the rest of
     # the rim is industry, storage, fuel, repair yards, rigs
@@ -431,15 +447,9 @@ def plane_layout(hub_id):
             kind[k] = rng.choice(["residential"] * 6 + ["hotel", "hab_rot"])
         else:
             kind[k] = rng.choice(["industry", "industry", "storage", "storage", "storage", "logistics"])
-    # the dock (author 2026-11-17: «надо еще добавить где-нибудь док и попробовать как автопилот будет строить маршрут
-    # через это все»): the residential block nearest the centre but two blocks away from it (clear of the canopy disc) -
-    # a ship docking there comes down over the towers
-    # MOVED to the outskirts (author: «все доки должны быть на окраинах»): a rim block with an open side away from the
-    # port front; the hex dock's body sticks out of that side, its slot facing out (approach from open space), the
-    # service block lying along the axis inside the block
-    open_sides = lambda k: [o for o in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (k[0] + o[0], k[1] + o[1]) not in cells and
-                            not any(n in cells and n != k for n in nbr4((k[0] + o[0], k[1] + o[1])))]
-    dock_pool = sorted((k for k in kind if k in rim and kind[k] not in ("port", "logistics") and open_sides(k)),
+    # the dock (author: «все доки должны быть на окраинах»): a rim block with an open side away from the port front;
+    # the hex dock's body sticks out of that side, its slot facing out (approach from open space)
+    dock_pool = sorted((k for k in kind if k in rim and kind[k] not in ("port", "logistics") and _open_sides(k, cells)),
                        key=lambda k: (rr[k], k))
     dock_cell = dock_pool[0] if dock_pool else None
     for need in ("hotel", "hab_rot"):
@@ -448,15 +458,120 @@ def plane_layout(hub_id):
             res = [k for k in res if k != dock_cell]
             if res:
                 kind[rng.choice(res)] = need
+    h = CELL / 2
+    out_cells = []
+    n_spin = 0                                             # the spinning bodies so far (SPIN_CAP: the rng draws stop)
+    for k in sorted(cells):
+        kd = kind[k]
+        cell = {"i": k[0], "j": k[1], "zone": kd, "top": [], "under": []}
+        placed, under = [], []
+        if kd == "canopy":
+            placed = [("hubv_canopy", ROT_Z, (0.0, 0.0, 0.0))]
+        elif kd == "hab_rot":
+            cell["spin"] = [9.0 * rng.choice((-1, 1))]
+            n_spin += 1
+        elif kd == "hotel":
+            cell["spin"] = []
+            for _ in range(3):
+                if n_spin < SPIN_CAP:
+                    cell["spin"].append(4.0 * rng.choice((-1, 1)))
+                    n_spin += 1
+            placed = _pack(rng, (-h + 10.0, -h + 10.0, -60.0, h - 10.0), ZONE_MODULES["hotel"])
+        else:
+            near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
+            placed = _pack(rng, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), ZONE_MODULES[kd], max_top=400.0 if near else None)
+        if kd == "canopy":
+            under = [("hubv_canopy", _yaw((0.0, 0.0, 1.0), True), (0.0, UNDER_Y, 0.0))]
+        elif kd in UNDER_OF:
+            near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
+            under = [(f, r, (q[0], UNDER_Y, q[2])) for f, r, q in
+                     _pack(rng_u, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), UNDER_MODULES[UNDER_OF[kd]],
+                           max_top=400.0 if near else None, down=True)]
+        if k == dock_cell:
+            # the block's own modules are drawn (the rng stays in step) but not placed
+            placed, under = [], []
+            cell["zone"] = "dock"
+            cell["dock_side"] = list(_open_sides(k, cells)[0])
+        cell["top"] = [{"module": f, "x": round(p[0], 3), "z": round(p[2], 3), "yaw": _rot_yaw(r, False)} for f, r, p in placed]
+        cell["under"] = [{"module": f, "x": round(p[0], 3), "z": round(p[2], 3), "yaw": _rot_yaw(r, True)} for f, r, p in under]
+        if cell["zone"] in ZONE_PIERS:
+            cell["piers"] = {}
+            for o in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                if o in _open_sides(k, cells):
+                    cell["piers"][f"{o[0]},{o[1]}"] = rng.choice(ZONE_PIERS[kd])[0]
+        out_cells.append(cell)
+    return {"schema": MAP_SCHEMA, "hub_id": hub_id, "title": hub_id, "generated_from": hub_id,
+            "grid": {"cell_m": CELL, "street_local_m": STREET_LOCAL, "street_avenue_m": STREET_AVENUE,
+                     "anchor": {"i": 0, "j": 0, "x": None, "z": None}, "extent": [0, 0, N - 1, M - 1]},
+            "avenues": {"x": av_x, "z": av_z}, "cells": out_cells, "lanes_off": [], "red_zones": []}
+
+
+def _open_sides(k, cells):
+    """the sides of block k that face open space: no block there and no other block next to that spot (a dock / pier
+    sticking out of that side meets nothing)"""
+    nbr4 = lambda c: [(c[0] + 1, c[1]), (c[0] - 1, c[1]), (c[0], c[1] + 1), (c[0], c[1] - 1)]
+    return [o for o in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (k[0] + o[0], k[1] + o[1]) not in cells and
+            not any(n in cells and n != k for n in nbr4((k[0] + o[0], k[1] + o[1])))]
+
+
+def _axis(cells_ix, avenues, anchor_i, anchor_c, extent):
+    """-> (centre(i), line(i)): the block centre of column i and the street line between i and i+1 (any i)"""
+    gw = lambda i: STREET_AVENUE if i in avenues else STREET_LOCAL
+    lo, hi = extent
+    cache = {anchor_i: anchor_c}
+
+    def centre(i):
+        if i not in cache:
+            if i > anchor_i:
+                cache[i] = centre(i - 1) + CELL + gw(i - 1)
+            else:
+                cache[i] = centre(i + 1) - CELL - gw(i)
+        return cache[i]
+    return centre, (lambda i: centre(i) + CELL / 2 + gw(i) / 2)
+
+
+def layout_from_map(mp):
+    """map -> dict(nodes, spinning, haze, module_of, districts, links, cells, docks, lanes, connectors, red_zones)"""
+    import pads
+    rot_x = _yaw((1.0, 0.0, 0.0))
+    nodes, spinning, haze, module_of, districts, docks = [], [], [], {}, [], []
+    hid = mp["hub_id"]
+
+    def add(nid, folder, pos, rot, role, group):
+        nodes.append((nid, folder, tuple(round(c, 3) + 0.0 for c in pos), tuple(round(c, 4) + 0.0 for c in rot), role,
+                      None if not nodes else nodes[0][0]))
+        module_of[nid] = group
+
+    cmap = {(c["i"], c["j"]): c for c in mp["cells"]}
+    cells = set(cmap)
+    g = mp["grid"]
+    i0, j0, i1, j1 = g["extent"]
+    av_x, av_z = set(mp["avenues"]["x"]), set(mp["avenues"]["z"])
+    # the generated anchor: the grid centred on the extent (as the generator always placed it)
+    anc = g["anchor"]
+    if anc["x"] is None:
+        def centred(n, avs, a0):
+            out = [0.0]
+            for i in range(1, n):
+                out.append(out[-1] + CELL + (STREET_AVENUE if (a0 + i - 1) in avs else STREET_LOCAL))
+            return -(out[0] + out[-1]) / 2
+        anc = {"i": i0, "j": j0, "x": centred(i1 - i0 + 1, av_x, i0), "z": centred(j1 - j0 + 1, av_z, j0)}
+    cx_of, line_x = _axis(None, av_x, anc["i"], anc["x"], (i0, i1))
+    cz_of, line_z = _axis(None, av_z, anc["j"], anc["z"], (j0, j1))
+    pos_of = lambda k: (cx_of(k[0]), 0.0, cz_of(k[1]))
+    zone = {k: cmap[k]["zone"] for k in cells}
+    canopy = [k for k in sorted(cells) if zone[k] == "canopy"]
+    centre = canopy[0] if canopy else min(cells, key=lambda k: math.hypot(*pos_of(k)[::2]))
 
     # the blocks
     for k in sorted(cells):
         c = pos_of(k)
-        kd = kind[k]
+        cell = cmap[k]
+        kd = zone[k]
         g = f"c{k[0]}_{k[1]}_{kd}"
         h = CELL / 2
-        # the girder lattice under the block (in the drum / hotel blocks only the rim lines along X - the bodies hang there)
-        rim_only = kd in ("hab_rot", "hotel") or k == dock_cell
+        # the girder lattice under the block (in the drum / hotel / dock blocks only the rim lines along X)
+        rim_only = kd in ("hab_rot", "hotel", "dock")
         lines_z = [] if rim_only else [-h, 0.0, h]
         lines_x = [-h, h] if rim_only else [-h, 0.0, h]
         for li, x in enumerate(lines_z):
@@ -465,13 +580,11 @@ def plane_layout(hub_id):
         for li, z in enumerate(lines_x):
             for s in range(int(CELL // SEG_L)):
                 add(f"{g}_fx{li}_{s}", "hubb_girder", (c[0] - h + s * SEG_L, FRAME_Y, c[2] + z), rot_x, "frame", g)
-        placed = []
-        if kd == "canopy":
-            placed = [("hubv_canopy", ROT_Z, (0.0, 0.0, 0.0))]
-        elif kd == "hab_rot":
+        spin = cell.get("spin") or []
+        if kd == "hab_rot":
             # a habitat drum lying in the plane, its axis along X, held at both axle ends by bearings on the rim girders
             spinning.append({"id": f"{g}_drum", "module": "hubb_hab_drum", "position": c, "rotation_deg": rot_x,
-                             "spin_axis_local": (0.0, 0.0, 1.0), "rate_deg_s": 9.0 * rng.choice((-1, 1)), "title": ZONE_TITLE[kd]})
+                             "spin_axis_local": (0.0, 0.0, 1.0), "rate_deg_s": float(spin[0]) if spin else 9.0, "title": ZONE_TITLE[kd]})
             for sx in (-1, 1):
                 add(f"{g}_brg{sx}", "hubb_junction", (c[0] + sx * (DRUM_L / 2 + 64.0), 0.0, c[2]), ROT_Z, "bearing", g)
                 for s in range(int(CELL // SEG_L)):
@@ -479,64 +592,55 @@ def plane_layout(hub_id):
         elif kd == "hotel":
             # three hotel barrels in a row, mouths out to +X, axles back to a spine girder; static hotel blocks on -X
             for zi, z in enumerate((-180.0, 0.0, 180.0)):
-                if len(spinning) < SPIN_CAP:
+                if zi < len(spin) and len(spinning) < SPIN_CAP:
                     spinning.append({"id": f"{g}_hex{zi}", "module": "hubb_hotel_hex", "position": (c[0] + 160.0, 0.0, c[2] + z),
                                      "rotation_deg": rot_x, "spin_axis_local": (0.0, 0.0, 1.0),
-                                     "rate_deg_s": 4.0 * rng.choice((-1, 1)), "title": ZONE_TITLE[kd]})
+                                     "rate_deg_s": float(spin[zi]), "title": ZONE_TITLE[kd]})
             for s in range(int(CELL // SEG_L)):
                 add(f"{g}_hs{s}", "hubb_girder", (c[0] - 25.0, 0.0, c[2] - h + s * SEG_L), ROT_Z, "frame", g)
-            placed = _pack(rng, (-h + 10.0, -h + 10.0, -60.0, h - 10.0), ZONE_MODULES["hotel"])
-        else:
-            near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
-            placed = _pack(rng, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), ZONE_MODULES[kd], max_top=400.0 if near else None)
-        # the underside
-        if kd == "canopy":
-            placed = placed + [("hubv_canopy", _yaw((0.0, 0.0, 1.0), True), (0.0, UNDER_Y, 0.0))]
-        elif kd in UNDER_OF:
-            near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
-            placed = placed + [(f, r, (q[0], UNDER_Y, q[2])) for f, r, q in
-                               _pack(rng_u, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), UNDER_MODULES[UNDER_OF[kd]],
-                                     max_top=400.0 if near else None, down=True)]
-        if k == dock_cell:
+        if kd == "dock" and cell.get("dock_side"):
             # the hex dock (src/game/docking/model/HexDockFacility.h: a hexagonal body 400 m along its Z, apothem 150, the
-            # entry slot on its -Z face, a fixed service block 600 m behind it): upright, the slot facing +Y, its back
-            # face on the street plane, the service block hanging under the plane. The block's own modules are drawn
-            # (the rng stays in step) but not placed.
-            placed = []
-            o2 = open_sides(k)[0]
-            o = (float(o2[0]), 0.0, float(o2[1]))
+            # entry slot on its -Z face, a fixed service block 600 m behind it): upright, the slot facing out of the open
+            # side, its back face on the street plane, the service block hanging under the plane
+            o = (float(cell["dock_side"][0]), 0.0, float(cell["dock_side"][1]))
             rot_dock = _yaw(_mul(o, -1.0))                       # local -Z (the slot) = out
-            docks.append({"id": "dock", "type": "hub_hex_dock", "position": _add(c, _mul(o, h + 210.0)), "rotation_deg": rot_dock,
-                          "spin_deg_s": 2.0, "name": "Док"})
-            docks.append({"id": "dock_base", "type": "dock_service_block", "position": _add(c, _mul(o, h + 210.0 - 510.0)),
+            n_dock = sum(1 for d in docks if d["type"] == "hub_hex_dock")
+            sfx = "" if n_dock == 0 else f"_{n_dock + 1}"
+            docks.append({"id": "dock" + sfx, "type": "hub_hex_dock", "position": _add(c, _mul(o, h + 210.0)), "rotation_deg": rot_dock,
+                          "spin_deg_s": 2.0, "name": "Док" + (f" {n_dock + 1}" if sfx else "")})
+            docks.append({"id": "dock_base" + sfx, "type": "dock_service_block", "position": _add(c, _mul(o, h + 210.0 - 510.0)),
                           "rotation_deg": rot_dock, "spin_deg_s": 0.0, "name": "Док: сервисный блок"})
-            kd = "dock"
-            g = f"c{k[0]}_{k[1]}_{kd}"
-        for mi, (folder, rot, p) in enumerate(placed):
-            wp = _add(c, p)
-            add(f"{g}_m{mi}", folder, wp, rot, "module", g)
-            if folder in ("hubb_works", "hubv_refinery"):
-                from units.hub_vista import REFINERY_FLARE
-                R = pads.euler(rot)
-                haze.extend({"position": [round(x, 1) for x in _add(apply(R, v), wp)], "radius_m": 300.0, "density": 1.0}
-                            for v in (WORKS_VENTS if folder == "hubb_works" else [REFINERY_FLARE]))
+        mi = 0
+        for layer, down in (("top", False), ("under", True)):
+            y = LAYERS[layer]
+            for card in cell.get(layer, []):
+                folder, rot = card["module"], _card_rot(card.get("yaw", 0), down)
+                wp = _add(c, (card["x"], y, card["z"]))
+                add(f"{g}_m{mi}", folder, wp, rot, "module", g)
+                mi += 1
+                if folder in ("hubb_works", "hubv_refinery"):
+                    from units.hub_vista import REFINERY_FLARE
+                    R = pads.euler(rot)
+                    haze.extend({"position": [round(x, 1) for x in _add(apply(R, v), wp)], "radius_m": 300.0, "density": 1.0}
+                                for v in (WORKS_VENTS if folder == "hubb_works" else [REFINERY_FLARE]))
         # piers out of the open sides of a rim block (in the plane: their berths lie along the rim)
-        if kd in ZONE_PIERS:
-            for o in ((1.0, 0.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 0.0, -1.0)):
-                out_c = (k[0] + int(o[0]), k[1] + int(o[2]))
-                if out_c in cells or any(n in cells and n != k for n in nbr4(out_c)):
-                    continue                                    # only into open space (no other block's piers there)
-                folder, pitch = rng.choice(ZONE_PIERS[kd])
-                along = (o[2], 0.0, -o[0])
-                n = int(CELL // pitch)
-                for pi in range(n):
-                    t = (pi - (n - 1) / 2) * pitch
-                    root = _add(c, _add(_mul(o, h), _mul(along, t)))
-                    add(f"{g}_p{int(o[0])}{int(o[2])}_{pi}", folder, root, _yaw(o), "dock", g)
+        piers = cell.get("piers") or {}
+        for o2 in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            folder = piers.get(f"{o2[0]},{o2[1]}")
+            if not folder or o2 not in _open_sides(k, cells):
+                continue                                    # only into open space (no other block's piers there)
+            o = (float(o2[0]), 0.0, float(o2[1]))
+            pitch = dict(sum(ZONE_PIERS.values(), []))[folder]
+            along = (o[2], 0.0, -o[0])
+            n = int(CELL // pitch)
+            for pi in range(n):
+                t = (pi - (n - 1) / 2) * pitch
+                root = _add(c, _add(_mul(o, h), _mul(along, t)))
+                add(f"{g}_p{o2[0]}{o2[1]}_{pi}", folder, root, _yaw(o), "dock", g)
         districts.append({"id": g, "kind": kd, "centre": c, "cell": k})
 
     # streets: a road bridge on a girder down the middle of every gap between two blocks, crossings at the nodes,
-    # avenues (every third line + the central ones) with two tunnels and a monorail
+    # avenues with two tunnels and a monorail. The access bridges are seeded per street (an edit elsewhere leaves them)
     runs = []
     for (i, j) in sorted(cells):
         if (i + 1, j) in cells:
@@ -552,10 +656,11 @@ def plane_layout(hub_id):
 
     for ri, (ax, line, at) in enumerate(runs):
         g = f"s{ri}"
-        li = int(line - 0.5)
-        kinds = {kind[(li, at)], kind[(li + 1, at)]} if ax == "z" else {kind[(at, li)], kind[(at, li + 1)]}
-        av = av_x(li) if ax == "z" else av_z(li)
-        gw = gw_x[li] if ax == "z" else gw_z[li]
+        li = int(math.floor(line))
+        srng = random.Random(zlib_crc(f"{hid}:{ax}:{li}:{at}"))
+        kinds = {zone[(li, at)], zone[(li + 1, at)]} if ax == "z" else {zone[(at, li)], zone[(at, li + 1)]}
+        av = (li in av_x) if ax == "z" else (li in av_z)
+        gw = STREET_AVENUE if av else STREET_LOCAL
         if ax == "z":
             x = line_x(li)
             a0, a1 = line_z(at - 1), line_z(at)
@@ -586,8 +691,8 @@ def plane_layout(hub_id):
         reach = gw / 2 - 13.0
         for sg in (-1, 1):
             ad = _mul(side, float(sg))
-            for ai in range(rng.choice((1, 1, 2))):
-                t = rng.uniform(-200.0, 200.0)
+            for ai in range(srng.choice((1, 1, 2))):
+                t = srng.uniform(-200.0, 200.0)
                 for top in (True, False):
                     base = _add(_add(mid, _mul(d, t if top else -t)), _mul(side, sg * 13.0))
                     for pi_, (off, lift) in enumerate(pieces(0.0, reach)):
@@ -597,11 +702,18 @@ def plane_layout(hub_id):
                         add(f"{g}_{tag}a{sg}_{ai}_{pi_}", "hubb_road", (q[0], dy if top else UNDER_Y - dy, q[2]),
                             _yaw(ad, not top), "access", g)
                         add(f"{g}_{tag}ag{sg}_{ai}_{pi_}", "hubb_girder", (q[0], FRAME_Y, q[2]), _yaw(ad), "girder", g)
-    lanes, red_zones = _plane_lanes(runs, line_x, line_z, av_x, av_z), []
-    plaza, connectors = _plane_connectors(lanes, (X[centre[0]], Z[centre[1]]), [line_x(centre[0] - 1), line_x(centre[0])],
-                                          [line_z(centre[1] - 1), line_z(centre[1])])
+    av_xf = lambda i: i in av_x
+    av_zf = lambda j: j in av_z
+    lanes, red_zones = _plane_lanes(runs, line_x, line_z, av_xf, av_zf), []
+    off = set(mp.get("lanes_off") or [])
+    lanes = [ln for ln in lanes if ln["id"] not in off]
+    plaza, connectors = _plane_connectors(lanes, (cx_of(centre[0]), cz_of(centre[1])), [line_x(centre[0] - 1), line_x(centre[0])],
+                                          [line_z(centre[1] - 1), line_z(centre[1])]) if canopy else ([], [])
+    plaza = [p for p in plaza if p["id"] not in off]
+    ids = {ln["id"] for ln in lanes + plaza}
+    connectors = [cn for cn in connectors if cn["from_lane"] in ids and cn["to_lane"] in ids]
     lanes = lanes + plaza
-    blue = _plane_dock_approaches(lanes, docks)
+    blue = [b for b in _plane_dock_approaches(lanes, docks) if b["id"] not in off]
     for b in blue:                                             # lane end -> its approach: a zero-length connector
         src = next(ln for ln in lanes if ln["id"] == b["from_lane"])
         connectors.append({"id": f"to.{b['id']}", "from_lane": src["id"], "from_station": len(src["stations"]) - 1,
@@ -610,17 +722,33 @@ def plane_layout(hub_id):
     lanes = lanes + blue
     for nid, folder, pos, rot, role, parent in nodes:
         if role == "dock":                                      # the berths of a pier: a red zone (no through traffic)
-            import pads
             L, bw = {"hubb_pier_l": (300.0, 64.0), "hubb_pier_m": (160.0, 44.0), "hubb_fuel_dock": (160.0, 44.0)}[folder]
             R = pads.euler(rot)
             red_zones.append({"id": f"red.{nid}", "center": tuple(round(v, 1) for v in _add(pos, apply(R, (0.0, 0.0, L / 2)))),
                               "half_extents": (20.0 + bw + 10.0, 70.0, L / 2 + 20.0), "rotation_deg": rot})
+    for rz in mp.get("red_zones") or []:                        # drawn on the map
+        red_zones.append({"id": f"red.map.{rz['id']}", "center": (rz["x"], 0.0, rz["z"]),
+                          "half_extents": (rz["w"] / 2, rz.get("h", 600.0) / 2, rz["d"] / 2), "rotation_deg": (0.0, 0.0, 0.0)})
     for ni, (x, z) in enumerate(sorted(node_pts)):
         add(f"x{ni}", "hubp_crossing", (x, 0.0, z), ROT_Z, "crossing", f"xs{ni // 16}")
         add(f"x{ni}_u", "hubp_crossing", (x, UNDER_Y, z), _yaw((0.0, 0.0, 1.0), True), "crossing", f"xs{ni // 16}")
     return {"nodes": nodes, "spinning": spinning, "haze": haze, "module_of": module_of, "districts": districts,
-            "links": len(runs), "cells": {k: ("dock" if k == dock_cell else kind[k]) for k in cells}, "grid": (N, M, ci, cj),
-            "docks": docks, "lanes": lanes, "connectors": connectors, "red_zones": red_zones}
+            "links": len(runs), "cells": {k: zone[k] for k in cells}, "grid": (i1 - i0 + 1, j1 - j0 + 1, None, None),
+            "docks": docks, "lanes": lanes, "connectors": connectors, "red_zones": red_zones,
+            "anchor": anc, "lines": {"x": {i: line_x(i) for i in range(i0 - 1, i1 + 1)}, "z": {j: line_z(j) for j in range(j0 - 1, j1 + 1)}},
+            "centres": {"x": {i: cx_of(i) for i in range(i0, i1 + 1)}, "z": {j: cz_of(j) for j in range(j0, j1 + 1)}}}
+
+
+def zlib_crc(s):
+    import zlib
+    return zlib.crc32(s.encode("utf-8"))
+
+
+def plane_layout(hub_id):
+    """-> dict(nodes, spinning, haze, module_of, districts, links, cells, ...): the planar city of one hub (its map)"""
+    if hub_id in RUIN_OF:
+        return _ruin(plane_layout(RUIN_OF[hub_id]), hub_id)
+    return layout_from_map(hub_map(hub_id))
 
 
 def hub_layout(hub_id):
@@ -631,7 +759,9 @@ def hub_layout(hub_id):
     return belt_layout(hub_id)
 
 
-PLANE_HUBS = ["plane_demo", "plane_ruin"]
+# the planar hubs: the generator's demos + every hub the editor saved a map of (tools/models/hub_maps/<hub>.json)
+PLANE_HUBS = ["plane_demo", "plane_ruin"] + sorted(f[:-5] for f in (os.listdir(MAP_DIR) if os.path.isdir(MAP_DIR) else [])
+                                                   if f.endswith(".json") and f[:-5] not in ("plane_demo", "plane_ruin"))
 SETS = {}
 for _hid in PLANE_HUBS:
     from units.hub_belt import belt_proxies as _bp

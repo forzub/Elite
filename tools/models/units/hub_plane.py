@@ -402,15 +402,53 @@ def hub_map(hub_id):
     return load_map(hub_id) or _generate_map(hub_id)
 
 
+PROFILES_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "hub_profiles.json")
+
+
+def hub_profile(hub_id):
+    """the hub's generation profile (tools/models/hub_profiles.json; author 2026-11-18: «какие-то более крупные - делаем
+    больше, какие-то меньше, какой-то вытянутый, какой-то имеет примерно форму диска, какие-то состоят из пары слоев»):
+    size [N, M] blocks, shape blob | disc | long, under (the city under the plane) true / false, style (a national
+    style kit, tools/models/units/hub_styles.py), port (0..1: how much of the rim is the port front)"""
+    import json
+    if not os.path.exists(PROFILES_PATH):
+        return None
+    return json.load(open(PROFILES_PATH, encoding="utf-8")).get("hubs", {}).get(hub_id)
+
+
+def _zone_modules(style):
+    """the zone -> modules table of a style (the default kit where the style has no entry)"""
+    if not style:
+        return ZONE_MODULES, UNDER_MODULES
+    from units.hub_styles import style_zone_modules
+    zm = dict(ZONE_MODULES)
+    zm.update(style_zone_modules(style))
+    um = dict(UNDER_MODULES)
+    if "downtown" in zm and style_zone_modules(style).get("downtown"):
+        um["towers"] = style_zone_modules(style)["downtown"]
+    if style_zone_modules(style).get("residential"):
+        um["res"] = style_zone_modules(style)["residential"]
+    return zm, um
+
+
 def _generate_map(hub_id):
     """the random generator: hub id -> map (pure in the id: the same id is always the same city)"""
     seed = int(hashlib.sha1(hub_id.encode("utf-8")).hexdigest()[:12], 16)
     rng = random.Random(seed)
     rng_u = random.Random(seed ^ 0x5A5A5A)                 # the underside (keeps the top side as it was)
+    prof = hub_profile(hub_id) or {}
+    zone_modules, under_modules = _zone_modules(prof.get("style"))
     # the grid: an irregular blob of blocks (an ellipse with a noisy rim, a few holes), the largest connected piece
     N, M = rng.randint(7, 9), rng.randint(6, 8)
+    if prof.get("size"):
+        N, M = int(prof["size"][0]), int(prof["size"][1])
+    shape = prof.get("shape", "blob")
     ci, cj = (N - 1) / 2, (M - 1) / 2
     noise = {(i, j): rng.uniform(-0.28, 0.22) for i in range(N) for j in range(M)}
+    if shape == "disc":                                    # a round outline: almost no noise on the rim
+        noise = {k: v * 0.2 for k, v in noise.items()}
+    elif shape == "long":                                  # a long city: the ends rounded, the sides straight
+        noise = {k: v * 0.5 for k, v in noise.items()}
     rr = {(i, j): math.hypot((i - ci) / (N / 2), (j - cj) / (M / 2)) for i in range(N) for j in range(M)}
     cells = {k for k in rr if rr[k] < 1.0 + noise[k] and (rr[k] < 0.3 or rng.random() > 0.06)}
     centre = min(cells, key=lambda k: rr[k])
@@ -437,7 +475,7 @@ def _generate_map(hub_id):
     kind = {centre: "canopy"}
     for k in sorted(cells - {centre}, key=lambda k: (rr[k], k)):
         r = rr[k]
-        front = ((k[0] - ci) / (N / 2)) * port_dir[0] + ((k[1] - cj) / (M / 2)) * port_dir[1] > 0.3
+        front = ((k[0] - ci) / (N / 2)) * port_dir[0] + ((k[1] - cj) / (M / 2)) * port_dir[1] > 0.3 - 0.8 * (prof.get("port", 0.5) - 0.5)
         if k in rim and r > 0.5 and front:
             kind[k] = rng.choice(["port"] * 3 + ["logistics"])
         elif k in rim and r > 0.5:
@@ -477,16 +515,16 @@ def _generate_map(hub_id):
                 if n_spin < SPIN_CAP:
                     cell["spin"].append(4.0 * rng.choice((-1, 1)))
                     n_spin += 1
-            placed = _pack(rng, (-h + 10.0, -h + 10.0, -60.0, h - 10.0), ZONE_MODULES["hotel"])
+            placed = _pack(rng, (-h + 10.0, -h + 10.0, -60.0, h - 10.0), zone_modules["hotel"])
         else:
             near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
-            placed = _pack(rng, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), ZONE_MODULES[kd], max_top=400.0 if near else None)
+            placed = _pack(rng, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), zone_modules[kd], max_top=400.0 if near else None)
         if kd == "canopy":
             under = [("hubv_canopy", _yaw((0.0, 0.0, 1.0), True), (0.0, UNDER_Y, 0.0))]
-        elif kd in UNDER_OF:
+        elif kd in UNDER_OF and prof.get("under", True):
             near = max(abs(k[0] - centre[0]), abs(k[1] - centre[1])) == 1
             under = [(f, r, (q[0], UNDER_Y, q[2])) for f, r, q in
-                     _pack(rng_u, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), UNDER_MODULES[UNDER_OF[kd]],
+                     _pack(rng_u, (-h + 10.0, -h + 10.0, h - 10.0, h - 10.0), under_modules[UNDER_OF[kd]],
                            max_top=400.0 if near else None, down=True)]
         if k == dock_cell:
             # the block's own modules are drawn (the rng stays in step) but not placed
@@ -502,6 +540,7 @@ def _generate_map(hub_id):
                     cell["piers"][f"{o[0]},{o[1]}"] = rng.choice(ZONE_PIERS[kd])[0]
         out_cells.append(cell)
     return add_services({"schema": MAP_SCHEMA, "hub_id": hub_id, "title": hub_id, "generated_from": hub_id,
+            "style": prof.get("style", ""),
             "grid": {"cell_m": CELL, "street_local_m": STREET_LOCAL, "street_avenue_m": STREET_AVENUE,
                      "anchor": {"i": 0, "j": 0, "x": None, "z": None}, "extent": [0, 0, N - 1, M - 1]},
             "avenues": {"x": av_x, "z": av_z}, "cells": out_cells, "lanes_off": [], "red_zones": []})
@@ -807,6 +846,10 @@ def hub_layout(hub_id):
 # the planar hubs: the generator's demos + every hub the editor saved a map of (tools/models/hub_maps/<hub>.json)
 PLANE_HUBS = ["plane_demo", "plane_ruin"] + sorted(f[:-5] for f in (os.listdir(MAP_DIR) if os.path.isdir(MAP_DIR) else [])
                                                    if f.endswith(".json") and f[:-5] not in ("plane_demo", "plane_ruin"))
+# + every hub with a generation profile (tools/models/hub_profiles.json: the jurisdiction's hubs built on this template)
+if os.path.exists(PROFILES_PATH):
+    import json as _json
+    PLANE_HUBS += sorted(h for h in _json.load(open(PROFILES_PATH, encoding="utf-8")).get("hubs", {}) if h not in PLANE_HUBS)
 SETS = {}
 for _hid in PLANE_HUBS:
     from units.hub_belt import belt_proxies as _bp

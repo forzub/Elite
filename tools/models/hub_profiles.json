@@ -1,0 +1,13 @@
+{
+ "schema": "elite.hub_profiles.v1",
+ "note": "Generation profiles of the hubs built on the planar city template (tools/models/units/hub_plane.py hub_profile). Author 2026-11-18: «сделай все хабы этой юрисдикции по этому образцу. какие-то более крупные - делаем больше, какие-то меньше, какой-то вытянутый, какой-то имеет примерно форму диска, какие-то состоят из пары слоев». size [N, M] = the block grid before the outline; shape blob | disc | long; under = the city also under the plane; port 0..1 = how much of the rim faces the port; style = a national style kit (units/hub_styles.py; '' = the default Sol kit); attach_offset_m = where the city lies from the hub's origin (its station stays at the origin). The mines (site.000.sol.ceres) are left out: «шахты - надо будет подумать».",
+ "hubs": {
+  "earth_orbital_hub": {"size": [8, 7], "shape": "blob", "under": true, "port": 0.6, "style": "", "attach_offset_m": [0, -6000, 0]},
+  "earth_hub.tikhiy": {"size": [11, 9], "shape": "disc", "under": true, "port": 0.3, "style": "", "attach_offset_m": [0, -6000, 0]},
+  "earth_hub.canaveral": {"size": [10, 5], "shape": "long", "under": false, "port": 0.4, "style": "", "attach_offset_m": [0, -6000, 0]},
+  "earth_hub.wenchang": {"size": [11, 6], "shape": "long", "under": true, "port": 0.9, "style": "", "attach_offset_m": [0, -6000, 0]},
+  "earth_hub.kourou": {"size": [7, 7], "shape": "disc", "under": false, "port": 0.6, "style": "", "attach_offset_m": [0, -6000, 0]},
+  "earth_hub.ekvator": {"size": [8, 7], "shape": "blob", "under": true, "port": 0.5, "style": "", "attach_offset_m": [0, -6000, 0]},
+  "earth_hub.aurora": {"size": [6, 5], "shape": "disc", "under": false, "port": 0.3, "style": "", "attach_offset_m": [0, -6000, 0]}
+ }
+}

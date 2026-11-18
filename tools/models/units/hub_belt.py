@@ -940,6 +940,13 @@ def _module_obb():
     import units.hub_plane as hp                     # the planar city kit + the small district blocks it uses
     builders.update(getattr(hp, "ASSETS", {}))      # (absent while hub_plane itself is importing hub_belt)
     builders.update({k: hd.ASSETS[k] for k in ("hubk_hab_a", "hubk_hab_b", "hubk_hab_c")})
+    # the service modules and the national style kits (cards of the hub maps too)
+    import importlib
+    for unit in ("hub_services", "hub_style_east", "hub_style_west"):
+        try:
+            builders.update(getattr(importlib.import_module(f"units.{unit}"), "ASSETS", {}))
+        except ImportError:
+            pass
     for k, fn in builders.items():
         vs = [v for part in fn(2).values() for v in part.v]
         lo = tuple(min(v[i] for v in vs) for i in range(3))

@@ -66,6 +66,9 @@ Required project-side rules:
 
 - **Downloaded:** 2026-09-14
 - **Chosen source format:** GLB (binary glTF)
-- **Original filename:** pending
-- **SHA-256:** pending
-- **Project modifications:** none yet
+- **Original filename:** `astronaut.glb` (kept at `D:\__elite\_data\objects\spacemans\milo_002\`, outside Git)
+- **SHA-256:** `0307f24b5a54de4e0b0b2f240b0679b7d34494e2551d372bcb19598836ecddeb`
+- **Project modifications:** none to the geometry. 2026-11-18: converted GLB -> glTF (separate .bin + textures, no
+  edits) by `tools/mesh_editor/glb_to_gltf.py` into the mesh editor source
+  `D:\__elite\assets_source\models\objects\astronaut_milo\intact\assembly\` ("Прочие объекты"). The file has
+  1 mesh, 35 312 faces, **no armature and no animation** (the CGTrader page's "Rigged" is not in this GLB).

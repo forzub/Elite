@@ -6384,3 +6384,18 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   - Population estimate of plane_demo (from the map's habitable modules): ~1.2 M (0.8-1.5 M) residents, ~20k/km2.
   - Monorail only along avenues in passenger zones, no stations; pressurised tubes under avenues; no pedestrian
     network inside blocks. Open question to the author: stations / port links.
+- 2026-11-18 CORRECTION + F12 FINDINGS + ASTRONAUT:
+  - Author: «фронтир - это небольшой грузовик для локальной доставки» (Cobra-like, Newtonian); one frontier dock is not
+    enough for the megacity -> many small frontier docks by the stores (rim storage / logistics blocks). Supersedes the
+    "frontier = Newtonian ships in general" note above.
+  - Author looked at the hub in game: «есть некоторые вопросы по отдельным моделям, но в целом - очень хорошо».
+  - F12 today (offscreen evidence D:/tmp/f12_a.png, f12_vys.png, f12_hub3.png): from flight F12 shows the player's
+    2500 km cube (icons only), also at Vysokiy - the Hub mode is reached only via System map -> hub -> «ХАБ». The Hub
+    mode of plane_demo draws lanes (green/blue), red zones, wire icons of the spinning bodies and the dock; the city
+    itself (the assembly) is NOT drawn; the composition panel says «city x6» (the spinning bodies counted as city).
+  - Author's request: the Hub map in two modes - 3D (as now, far view of the surroundings) and 2D (a plan like the
+    hub editor's, to pick the dock to land at); hub traffic: generated cars, trucks, passenger trains.
+  - Astronaut milo_002 (CGTrader, license record ASSET_LICENSES/models/astronauts/milo_002, SHA-256 recorded) put into
+    the mesh editor «Прочие объекты» as objects/astronaut_milo (GLB -> glTF unchanged by tools/mesh_editor/glb_to_gltf.py;
+    1 mesh, 35 312 tris, NO rig / animation in this GLB). Verified: listed and opened by the editor, 0 errors.
+    lumi_001 not added (no license record).

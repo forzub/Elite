@@ -1089,7 +1089,6 @@ private:
     int m_evasionThreatsSystem = -999;
     // in stage 3 (dock traffic, hub security) the hub objects are already at the next epoch while the free-flying
     // ships are not (a step behind: 35 km/s x 20 ms = 0.7 km at Earth): the ships are projected by velocity x this
-    double m_securityStepDt = 0.0;
     struct EvasionTrack
     {
         game::traffic::security::EvasionOffset offset;

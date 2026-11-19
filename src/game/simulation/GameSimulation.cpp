@@ -1756,8 +1756,6 @@ m_hubVelocityMetersPerSecond[hubId] =
             updateCatalogShipLineup();
             updateShipShells(dt);
         }
-        // m_securityStepDt (the free-flying ships vs the hub objects epoch projection) stays 0: the live check 2026-11-19
-        // did not confirm the one-step theory (docs/HUB_SECURITY.md §7)
         updateDockServiceTraffic(dt);
         updateHubSecurity(dt);   // traffic control, promoted air traffic, collision avoidance, defence (docs/HUB_SECURITY.md)
         if (firstPass)

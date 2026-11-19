@@ -6842,3 +6842,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   disabled); writeFileAtomically writes via CreateFileW/WriteFile/FlushFileBuffers before MoveFileExW.
 - Evidence: EliteEconomyCheck 86/86 (new: a state failing half-way is rejected and changes nothing; an unreadable state
   file is kept as .bad-<time>, not overwritten).
+### R1. The one-tick lag of free-flying ships (hub security 600-700 m) - DONE
+- Root cause (proved live, D:/tmp/hubsec_audit): updateFreeFlights moved the travel frame to epoch n in stage 1, but the
+  world position was rewritten only by the integration in stage 4 - stage 1-3 consumers (hub security, evasion,
+  traffic promotion, combat vs HubTactical ships) saw a free-flying ship v_world x dt behind the hub objects
+  (26-36 km/s x 0.02 s = 525-715 m). Not a frame / cache / float issue.
+- Fix: re-materialize the world position and velocity right after the frame step (as updateShipReferenceFrames does for
+  HubTactical); the double "m_securityStepDt" correction removed.
+- Evidence: D:/tmp/lagfix/lane.log - ELITE_DEV_LANE_START against the lane: in lane 0 at 4 m lateral, WRONG WAY ->
+  warning, fined 1500 cr through the bank after 5 s; the oncoming ship's CPA 0 m (was ~600 m), honest CANNOT CLEAR at
+  60 m/s head-on. Flight A/B D:/tmp/lagfix/ms: jump to HD 20794 (K3 reference), route 98 s, docking 230 s (was
+  242-258), prepaid refuel, undock, missile hit - unchanged behaviour.

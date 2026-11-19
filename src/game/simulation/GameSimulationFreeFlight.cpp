@@ -762,6 +762,12 @@ void GameSimulation::updateFreeFlights(double dt)
             frame.linearVelocityMps += 0.5 * (g0.accelerationMps2 + g1.accelerationMps2) * dt;
         frame.linearAccelerationMps2 = f.ground.active ? glm::dvec3(0.0) : g1.accelerationMps2;
         frame.valid = true;
+        // Re-materialize the world pose at the frame's NEW epoch (audit 2026-11-19): the frame moved to epoch n here,
+        // but the world position was rewritten only by the integration in stage 4 - stage 1-3 consumers (hub security
+        // corridors / fines / evasion, traffic promotion, combat vs HubTactical ships) saw the ship one tick behind the
+        // hub objects: v_world x dt = 525-715 m at 26-36 km/s. HubTactical ships get the same in updateShipReferenceFrames.
+        tr.setWorldPositionMeters(frame.localToWorldPosition(motion.localPositionMeters));
+        motion.worldVelocityMps = frame.localToWorldVelocity(motion.localPositionMeters, motion.localVelocityMps);
         if (f.localFrame && !f.ground.active)
         {
             // local flight inside the falling frame: nothing is folded, the frame

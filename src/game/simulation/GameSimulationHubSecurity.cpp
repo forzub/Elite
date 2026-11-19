@@ -80,7 +80,7 @@ void GameSimulation::refreshEvasionThreats()
         EvasionThreat th;
         th.id = id;
         // a free-flying ship is a step behind the hub objects in this stage: projected to their epoch
-        th.position = t.fullWorldMeters() + (t.motion.freeFlight ? t.motion.worldVelocityMps * m_securityStepDt : glm::dvec3(0.0));
+        th.position = t.fullWorldMeters();   // the free-flight step re-materializes it at the hub objects' epoch
         th.velocity = t.motion.worldVelocityMps;
         th.radius = 20.0;
         m_evasionThreats.push_back(th);
@@ -262,9 +262,7 @@ void GameSimulation::updateHubSecurity(double dt)
         if (shipPtr && isPlayerControlled(id) && passOwns(shipPtr.get()) &&
             shipPtr->core().transform().motion.systemId == m_activeCelestialSystemId)
             players.push_back({id, shipPtr.get(),
-                               shipPtr->core().transform().fullWorldMeters() +
-                                   (shipPtr->core().transform().motion.freeFlight ? shipPtr->core().transform().motion.worldVelocityMps * m_securityStepDt
-                                                                                  : glm::dvec3(0.0)),
+                               shipPtr->core().transform().fullWorldMeters(),
                                shipPtr->core().transform().motion.worldVelocityMps});
 
     // ---- the promoted air traffic: its pose every tick (the nominal lane track + its evasion layer)
@@ -386,8 +384,7 @@ void GameSimulation::updateHubSecurity(double dt)
                         const glm::dvec3 fwd = R * fwdLocal;
                         auto& tr = p.ship->core().transform();
                         auto& frame = motion.travelFrame;
-                        // a free-flying ship lives a step behind the hub objects here (see m_securityStepDt)
-                        const glm::dvec3 shipPos = pos - (cvel + fwd * speed) * m_securityStepDt;
+                        const glm::dvec3 shipPos = pos;   // same epoch as the hub objects (free-flight step)
                         frame.originMeters = shipPos;
                         frame.linearVelocityMps = cvel + fwd * speed;
                         motion.localPositionMeters = glm::dvec3(0.0);

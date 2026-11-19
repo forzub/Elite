@@ -309,6 +309,7 @@ private:
     GameSimulation m_simulation;
     game::server::PlayerRegistry m_players;
     game::server::ShipInstanceRegistry m_shipInstances;
+    std::unordered_set<std::uint32_t> m_reportedShipLosses;   // player ships whose loss went to the economy
     game::server::ControlRegistry m_controls;
     game::server::ShipOwnershipRegistry m_shipOwnership;
     game::server::ServerSessionRegistry m_sessions;

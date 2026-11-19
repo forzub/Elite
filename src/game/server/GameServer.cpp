@@ -1098,6 +1098,17 @@ void GameServer::update(double dt)
     m_universeClock.update(dt);
     m_serverTick++;
     applyDevStartPoint(dt);
+    // DEV: ELITE_DEV_DESTROY_PLAYER_AT=<server s> destroys the player's ship once (live checks of the loss path)
+    if (static const double destroyAt = [] {
+            const char* v = std::getenv("ELITE_DEV_DESTROY_PLAYER_AT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        destroyAt >= 0.0)
+        if (static bool destroyed = false; !destroyed && m_serverTick * std::max(dt, 1.0e-6) >= destroyAt)
+        {
+            destroyed = true;
+            std::cerr << "[Dev] destroying the player ship: " << m_simulation.devDestroyShip(m_simulation.playerId()) << std::endl;
+        }
     // the hubs' construction stages follow the server's universe time (docs/HUB_CONSTRUCTION.md)
     world::time::setConstructionUniverseTime(m_universeClock.timeSeconds());
     game::scene::refreshHubCityConstructionCollision(m_simulation);
@@ -1596,6 +1607,32 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     }
     m_simulation.setSystemPass(0);
     m_lastTickSystemPasses = passSystems.size();
+
+    // A player ship lost (destroyed / disabled in combat / crushed): its cargo leaves the manifest ONCE, into lost-cargo
+    // records (EconomyServer::recordShipLoss, idempotent by event id) - it must not come back with the ship after a
+    // restart, nor stay both aboard and lost (re-audit 2026-11-19; docs/CARGO_SALVAGE_DESIGN.md minimal part)
+    if (m_economy.loaded())
+        for (const EntityId id : m_simulation.playerControlledShipIds())
+        {
+            const Ship* lost = m_simulation.getShip(id);
+            if (!lost || lost->core().transform().motion.destroyedCause == 0 || !m_reportedShipLosses.insert(id.value).second)
+                continue;
+            const auto& tr = lost->core().transform();
+            game::economy::EconomyServer::ShipLoss loss;
+            loss.shipKey = lost->core().registry().instanceId;
+            loss.eventId = "loss:" + std::to_string(loss.shipKey) + ":" + std::to_string(m_serverTick);
+            loss.systemId = tr.motion.systemId;
+            const glm::dvec3 at = tr.fullWorldMeters();
+            loss.worldM[0] = at.x;
+            loss.worldM[1] = at.y;
+            loss.worldM[2] = at.z;
+            loss.universeS = m_universeClock.timeSeconds();
+            static const char* const causes[] = {"-", "surface impact", "atmosphere", "disabled in combat", "crushed"};
+            const int c = tr.motion.destroyedCause;
+            loss.cause = c >= 0 && c <= 4 ? causes[c] : "destroyed";
+            m_economy.recordShipLoss(loss);
+            applyCargoLoad(id);
+        }
     game::server::serverTickProfile().systemPasses += static_cast<long long>(passSystems.size());
     game::server::serverTickProfile().simulatedShips += static_cast<long long>(m_simulation.ships().size());
     m_lastTickSimulationSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - passStart).count();

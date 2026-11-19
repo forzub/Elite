@@ -156,9 +156,7 @@ nlohmann::json CargoRegistry::toJson() const
     {
         nlohmann::json lots = nlohmann::json::array();
         for (const auto& l : m.lots)
-            lots.push_back({{"id", l.lotId}, {"good", l.goodId}, {"t", l.tonnes}, {"c20", l.c20}, {"owner", l.owner},
-                            {"contract", l.contractId}, {"cost", l.costBasisCr}, {"origin", l.originHub}, {"day", l.loadedDay},
-                            {"declared", l.declared}, {"concealment", l.concealment}});
+            lots.push_back(lotToJson(l));
         out.push_back({{"ship", key}, {"player", m.playerId}, {"next", m.nextLot}, {"lots", lots}});
     }
     return out;
@@ -178,22 +176,49 @@ void CargoRegistry::fromJson(const nlohmann::json& j)
         const nlohmann::json lots = x.value("lots", nlohmann::json::array());
         for (const auto& l : lots)
         {
-            CargoLot c;
-            c.lotId = l.value("id", std::string());
-            c.goodId = l.value("good", std::string());
-            c.tonnes = l.value("t", 0.0);
-            c.c20 = l.value("c20", 0);
-            c.owner = l.value("owner", std::string());
-            c.contractId = l.value("contract", std::string());
-            c.costBasisCr = l.value("cost", 0.0);
-            c.originHub = l.value("origin", std::string());
-            c.loadedDay = l.value("day", 0);
-            c.declared = l.value("declared", true);
-            c.concealment = l.value("concealment", 0);
+            CargoLot c = lotFromJson(l);
             m.lots.push_back(std::move(c));
         }
         m_manifests[m.shipKey] = std::move(m);
     }
     ++m_serial;
 }
+nlohmann::json CargoRegistry::lotToJson(const CargoLot& l)
+{
+    return {{"id", l.lotId}, {"good", l.goodId}, {"t", l.tonnes}, {"c20", l.c20}, {"owner", l.owner}, {"contract", l.contractId},
+            {"cost", l.costBasisCr}, {"origin", l.originHub}, {"day", l.loadedDay}, {"declared", l.declared},
+            {"concealment", l.concealment}};
+}
+
+CargoLot CargoRegistry::lotFromJson(const nlohmann::json& l)
+{
+    CargoLot c;
+    c.lotId = l.value("id", std::string());
+    c.goodId = l.value("good", std::string());
+    c.tonnes = l.value("t", 0.0);
+    c.c20 = l.value("c20", 0);
+    c.owner = l.value("owner", std::string());
+    c.contractId = l.value("contract", std::string());
+    c.costBasisCr = l.value("cost", 0.0);
+    c.originHub = l.value("origin", std::string());
+    c.loadedDay = l.value("day", 0);
+    c.declared = l.value("declared", true);
+    c.concealment = l.value("concealment", 0);
+    return c;
+}
+
+std::vector<CargoLot> CargoRegistry::takeAll(std::uint64_t shipKey, std::uint64_t& playerIdOut)
+{
+    std::vector<CargoLot> out;
+    playerIdOut = 0;
+    if (const auto it = m_manifests.find(shipKey); it != m_manifests.end())
+    {
+        playerIdOut = it->second.playerId;
+        out = std::move(it->second.lots);
+        m_manifests.erase(it);
+        ++m_serial;
+    }
+    return out;
+}
+
 } // namespace game::economy

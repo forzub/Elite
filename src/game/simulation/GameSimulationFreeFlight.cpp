@@ -1433,6 +1433,15 @@ void GameSimulation::updateFreeFlights(double dt)
 }
 
 // re-base a ship into a hub's frame with its actual relative position / velocity (no snap)
+bool GameSimulation::devDestroyShip(EntityId shipId)
+{
+    Ship* ship = getShip(shipId);
+    if (!ship || ship->core().transform().motion.destroyedCause != 0)
+        return false;
+    destroyShipOnImpact(shipId, *ship, 1, 0.0, 0.0, game::navigation::capsule::Outcome {});
+    return true;
+}
+
 void GameSimulation::destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG,
                                          const game::navigation::capsule::Outcome& capsule)
 {

@@ -7,6 +7,7 @@
 
 #include "src/game/economy/BankingModel.h"
 #include "src/game/economy/PriceModel.h"
+#include <set>
 #include "src/game/economy/CargoRegistry.h"
 #include "src/game/economy/TradeQuoteModel.h"
 #include "src/game/simulation/ClientTradeSnapshot.h"
@@ -133,6 +134,39 @@ public:
                             const CargoCapacity& capacity, const std::string& hubId);
     void devClearCargo(std::uint64_t shipKey);
     [[nodiscard]] const CargoRegistry& cargo() const { return m_cargo; }
+
+    // A ship was lost (destroyed / disabled). IDEMPOTENT by eventId: the first call takes every lot off the ship's
+    // manifest into lost-cargo records (state aboard_wreck, legal known_owner, no claim) and saves at once; later calls
+    // with the same eventId do nothing (returns false). The cargo never "resurrects" with the ship after a restart and
+    // cannot be both in a manifest and lost (docs/CARGO_SALVAGE_DESIGN.md: the minimal pre-MVP part).
+    struct ShipLoss
+    {
+        std::string eventId;           // "loss:<shipKey>:<server tick>"
+        std::uint64_t shipKey = 0;
+        int systemId = -1;
+        double worldM[3] {0.0, 0.0, 0.0};
+        double universeS = 0.0;
+        std::string cause;
+    };
+    struct LostCargo
+    {
+        std::string recordId;          // "L<serial>"
+        std::string eventId;
+        std::uint64_t shipKey = 0, playerId = 0;
+        CargoLot lot;
+        std::string state = "aboard_wreck";   // CargoUnitState (design §2.2): aboard_wreck | adrift | held | recovered | destroyed | disposed
+        std::string legal = "known_owner";    // LegalStatus
+        std::string rightsHolder;             // who the goods are owed to now (the owner until a claim is paid)
+        std::string claim = "none";           // ClaimState
+        int systemId = -1;
+        double worldM[3] {0.0, 0.0, 0.0};
+        double universeS = 0.0;
+        int day = 0;
+        std::string cause;
+    };
+    bool recordShipLoss(const ShipLoss& loss);
+    [[nodiscard]] const std::vector<LostCargo>& lostCargo() const { return m_lostCargo; }
+    [[nodiscard]] bool lossRecorded(const std::string& eventId) const { return m_lossEvents.count(eventId) != 0; }
     [[nodiscard]] FiscalStyle fiscalStyleOf(const std::string& hubId, int systemId) const;
     [[nodiscard]] const TradeDealRules& dealRules() const { return m_dealRules; }
     // the hub's OWN market cell (no system fallback for trade); false = this hub does not trade that good
@@ -196,6 +230,9 @@ private:
     void pushResult(std::uint64_t playerId, game::simulation::ClientTradeResult r);
     void payDueVatRefunds(int day);
     CargoRegistry m_cargo;
+    std::set<std::string> m_lossEvents;
+    std::vector<LostCargo> m_lostCargo;
+    std::uint64_t m_nextLostCargo = 1;
     TradeDealRules m_dealRules;
     std::unordered_map<std::string, FiscalStyle> m_styles;
     std::unordered_map<std::string, std::string> m_regimeStyle;

@@ -6853,3 +6853,16 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   warning, fined 1500 cr through the bank after 5 s; the oncoming ship's CPA 0 m (was ~600 m), honest CANNOT CLEAR at
   60 m/s head-on. Flight A/B D:/tmp/lagfix/ms: jump to HD 20794 (K3 reference), route 98 s, docking 230 s (was
   242-258), prepaid refuel, undock, missile hit - unchanged behaviour.
+### R3. Cargo of a lost ship leaves the manifest once (minimal part of docs/CARGO_SALVAGE_DESIGN.md) - DONE
+- Defect (verified): a destroyed player ship kept its manifest; the world is not saved, so after a restart the ship
+  came back whole and applyCargoLoad put the cargo back - paid money, resurrected goods.
+- Fix (minimal, per lot - the design's per-container CargoUnit / holder binding / WreckField physics come later on the
+  same records): EconomyServer::recordShipLoss(ShipLoss), IDEMPOTENT by event id: every lot leaves the manifest
+  (CargoRegistry::takeAll) into LostCargo records (state aboard_wreck, legal known_owner, rights holder = owner, claim
+  none, system, world position, time, cause), saved at once (economy_state: loss_events, lost_cargo, next_lost_cargo).
+  GameServer detects a player ship's first destroyedCause (all three loss paths set it) once per entity. DEV
+  ELITE_DEV_DESTROY_PLAYER_AT=<s> (GameSimulation::devDestroyShip, the surface-impact path).
+- Evidence: EliteEconomyCheck 88/88 (loss moves the cargo once, a repeated event does nothing, after a restore the
+  cargo stays lost and the event resolved). Live D:/tmp/losscheck2: 40 t steel aboard -> destroyed -> "ship loss
+  loss:1:2250 ... 40 t -> lost-cargo records", mass 303.4 -> 260 t; state file: cargo [], lost_cargo L1, loss_events;
+  restart -> "manifest 0 t".

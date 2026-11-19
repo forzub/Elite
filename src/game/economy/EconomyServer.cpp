@@ -1303,10 +1303,62 @@ std::string EconomyServer::saveState() const
     for (const auto id : owners)
         j["ledgers"].push_back(ledgerToJson(m_ledgers.at(id)));
     j["cargo"] = m_cargo.toJson();
+    j["loss_events"] = json::array();
+    for (const auto& e : m_lossEvents)
+        j["loss_events"].push_back(e);
+    j["next_lost_cargo"] = m_nextLostCargo;
+    j["lost_cargo"] = json::array();
+    for (const auto& r : m_lostCargo)
+        j["lost_cargo"].push_back({{"id", r.recordId}, {"event", r.eventId}, {"ship", r.shipKey}, {"player", r.playerId},
+                                   {"lot", CargoRegistry::lotToJson(r.lot)}, {"state", r.state}, {"legal", r.legal},
+                                   {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
+                                   {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
+                                   {"cause", r.cause}});
     j["vat_refunds"] = json::array();
     for (const auto& v : m_vatRefunds)
         j["vat_refunds"].push_back({{"player", v.playerId}, {"bank", v.bankId}, {"cr", v.amountCr}, {"due", v.dueDay}});
     return j.dump();
+}
+
+bool EconomyServer::recordShipLoss(const ShipLoss& loss)
+{
+    if (!m_loaded || loss.eventId.empty() || m_lossEvents.count(loss.eventId))
+        return false;   // idempotent: this loss was resolved already
+    m_lossEvents.insert(loss.eventId);
+    std::uint64_t player = 0;
+    const std::vector<CargoLot> lots = m_cargo.takeAll(loss.shipKey, player);
+    double tonnes = 0.0;
+    for (const auto& lot : lots)
+    {
+        LostCargo r;
+        r.recordId = "L" + std::to_string(m_nextLostCargo++);
+        r.eventId = loss.eventId;
+        r.shipKey = loss.shipKey;
+        r.playerId = player;
+        r.lot = lot;
+        r.rightsHolder = lot.owner;
+        r.systemId = loss.systemId;
+        for (int k = 0; k < 3; ++k)
+            r.worldM[k] = loss.worldM[k];
+        r.universeS = loss.universeS;
+        r.day = m_day;
+        r.cause = loss.cause;
+        tonnes += lot.tonnes;
+        m_lostCargo.push_back(std::move(r));
+    }
+    if (ClientLedger* l = player ? ledger(player) : nullptr)
+        if (!lots.empty())
+        {
+            char memo[200];
+            std::snprintf(memo, sizeof memo, "корабль потерян (%s): груз %.1f т остался в обломках", loss.cause.c_str(), tonnes);
+            logEvent(*l, m_day, memo);
+        }
+    std::cerr << "[Economy] ship loss " << loss.eventId << " (" << loss.cause << "): " << lots.size() << " lot(s), " << tonnes
+              << " t -> lost-cargo records (aboard_wreck), system " << loss.systemId << '\n';
+    ++m_tradeSerial;
+    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
+        std::cerr << "[EconomyServer] state NOT saved to " << m_stateFile << " (the previous file is kept)" << '\n';
+    return true;
 }
 
 bool EconomyServer::restoreState(const std::string& text)
@@ -1365,6 +1417,32 @@ bool EconomyServer::restoreState(const std::string& text)
             ClientLedger x = ledgerFromJson(l);
             ledgers[x.ownerId] = std::move(x);
         }
+        std::set<std::string> lossEvents;
+        for (const auto& e : j.value("loss_events", json::array()))
+            lossEvents.insert(e.get<std::string>());
+        std::vector<LostCargo> lostCargo;
+        for (const auto& x : j.value("lost_cargo", json::array()))
+        {
+            LostCargo r;
+            r.recordId = x.value("id", std::string());
+            r.eventId = x.value("event", std::string());
+            r.shipKey = x.value("ship", std::uint64_t{0});
+            r.playerId = x.value("player", std::uint64_t{0});
+            r.lot = CargoRegistry::lotFromJson(x.value("lot", json::object()));
+            r.state = x.value("state", std::string("aboard_wreck"));
+            r.legal = x.value("legal", std::string("known_owner"));
+            r.rightsHolder = x.value("rights", std::string());
+            r.claim = x.value("claim", std::string("none"));
+            r.systemId = x.value("system", -1);
+            const json pos = x.value("pos", json::array());
+            for (std::size_t k = 0; k < 3 && k < pos.size(); ++k)
+                r.worldM[k] = pos[k].get<double>();
+            r.universeS = x.value("t", 0.0);
+            r.day = x.value("day", 0);
+            r.cause = x.value("cause", std::string());
+            lostCargo.push_back(std::move(r));
+        }
+        const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
         decltype(m_vatRefunds) vatRefunds;
@@ -1383,6 +1461,9 @@ bool EconomyServer::restoreState(const std::string& text)
         m_ledgers.swap(ledgers);
         m_cargo.fromJson(j.value("cargo", json::array()));   // already parsed once above (cannot throw now); keeps the registry serial
         m_vatRefunds.swap(vatRefunds);
+        m_lossEvents.swap(lossEvents);
+        m_lostCargo.swap(lostCargo);
+        m_nextLostCargo = nextLostCargo;
         ++m_tradeSerial;
     }
     catch (const std::exception& e)

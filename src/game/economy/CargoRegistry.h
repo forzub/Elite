@@ -80,6 +80,11 @@ public:
 
     [[nodiscard]] nlohmann::json toJson() const;
     void fromJson(const nlohmann::json& j);
+    [[nodiscard]] static nlohmann::json lotToJson(const CargoLot& l);
+    [[nodiscard]] static CargoLot lotFromJson(const nlohmann::json& l);
+    // the ship is lost: every lot leaves its manifest (returned) and the manifest is erased - the lots are no longer
+    // "aboard" anything that can come back (docs/CARGO_SALVAGE_DESIGN.md: the loss event decides their fate)
+    std::vector<CargoLot> takeAll(std::uint64_t shipKey, std::uint64_t& playerIdOut);
 
 private:
     std::map<std::uint64_t, CargoManifest> m_manifests;

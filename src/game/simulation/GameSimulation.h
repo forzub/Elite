@@ -593,6 +593,9 @@ public:
 
     void updateShipReferenceFrames(double dt);
     void updateFreeFlights(double dt);
+    // DEV (live checks of the loss path: cargo, salvage): the ship destroyed as on a surface impact; false = no ship /
+    // already destroyed
+    bool devDestroyShip(EntityId shipId);
     // an impact beyond survival: the whole ship destroyed (every module), a wreck under physics only
     void destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG,
                              const game::navigation::capsule::Outcome& capsule);

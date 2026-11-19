@@ -492,6 +492,34 @@ void testTradeServer()
     check(t.restoreState(saved) && t.saveState() == saved && t.cargo().find(501) && near(t.cargo().find(501)->grossT(), 43.4, 1e-9),
           "save / restore: the manifest and the VAT refunds round-trip exactly");
 
+    // a lost ship: its cargo leaves the manifest ONCE into lost-cargo records; no resurrection after a restore
+    {
+        const std::size_t lostBefore = t.lostCargo().size();
+        const double grossBefore = t.cargo().find(501)->grossT();
+        EconomyServer::ShipLoss loss;
+        loss.eventId = "loss:501:42";
+        loss.shipKey = 501;
+        loss.systemId = 0;
+        loss.cause = "crushed";
+        const bool first = t.recordShipLoss(loss);
+        const bool again = t.recordShipLoss(loss);
+        const std::size_t added = t.lostCargo().size() - lostBefore;
+        double lostT = 0.0;
+        for (const auto& r : t.lostCargo())
+            if (r.eventId == loss.eventId)
+                lostT += r.lot.tonnes;
+        check(first && !again && added >= 1 && !t.cargo().find(501) && near(lostT, 40.0, 1e-9) &&
+                  t.lostCargo().back().state == "aboard_wreck" && t.lossRecorded(loss.eventId),
+              "a ship loss moves the cargo off the manifest once (" + std::to_string(added) + " record(s), " +
+                  std::to_string(lostT) + " t; gross before " + std::to_string(grossBefore) + " t)");
+        const std::string lostSaved = t.saveState();
+        EconomyServer u;
+        u.load();
+        check(u.restoreState(lostSaved) && !u.cargo().find(501) && u.lostCargo().size() == t.lostCargo().size() &&
+                  u.lossRecorded(loss.eventId) && !u.recordShipLoss(loss) && u.saveState() == lostSaved,
+              "after a restore the lost cargo stays lost (no manifest), the event stays resolved");
+    }
+
     // the input VAT comes back after 30 days minus 1 %
     const double before = worth(1);
     for (int day = 1001; day <= 1031; ++day)

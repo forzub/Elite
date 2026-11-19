@@ -256,7 +256,8 @@
             "z": 0.0
           }
         }
-      ]
+      ],
+      "world_state_owner": "sol_network"
     },
     {
       "id": "earth_hub.tikhiy",
@@ -473,7 +474,8 @@
             "z": 0.0
           }
         }
-      ]
+      ],
+      "world_state_owner": "sol_network"
     },
     {
       "id": "earth_hub.canaveral",
@@ -732,7 +734,8 @@
             "z": 0.0
           }
         }
-      ]
+      ],
+      "world_state_owner": "sol_network"
     },
     {
       "id": "earth_hub.wenchang",
@@ -1012,7 +1015,8 @@
             "z": 0.0
           }
         }
-      ]
+      ],
+      "world_state_owner": "sol_network"
     },
     {
       "id": "earth_hub.kourou",
@@ -1292,7 +1296,8 @@
             "z": 0.0
           }
         }
-      ]
+      ],
+      "world_state_owner": "sol_network"
     },
     {
       "id": "earth_hub.ekvator",
@@ -1488,7 +1493,8 @@
             "z": 0.0
           }
         }
-      ]
+      ],
+      "world_state_owner": "sol_network"
     },
     {
       "id": "earth_hub.aurora",
@@ -1705,7 +1711,8 @@
             "z": 0.0
           }
         }
-      ]
+      ],
+      "world_state_owner": "sol_network"
     },
     {
       "id": "site.000.sol.ceres",
@@ -1755,7 +1762,8 @@
           "map_visible": true
         }
       ],
-      "note": "co-orbits the Ceres anchor on its circular approximation (e omitted); see canon/sol_network.json belt_anchor_note"
+      "note": "co-orbits the Ceres anchor on its circular approximation (e omitted); see canon/sol_network.json belt_anchor_note",
+      "world_state_owner": "sol_network"
     },
     {
       "id": "proto_district",
@@ -35987,5 +35995,5 @@
       "note": "a colony hub with a generated city: tools/models/hub_colonies.py (world site site.000.sol.triton)"
     }
   ],
-  "orbital_hubs_generated_by": "tools/colonization_lab/world_sites.py (sol_network.py); edit canon/sol_network.json, not this list"
+  "orbital_hubs_generated_by": "tools/world_state_io.py merges the writers by world_state_owner: sol_network = tools/colonization_lab/world_sites.py (edit canon/sol_network.json, not this list)"
 }

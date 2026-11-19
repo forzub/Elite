@@ -26,6 +26,8 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import eqlib  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # tools/: world_state_io
+import world_state_io  # noqa: E402 - the one writer of initial_world_state.json
 WORLD = os.path.join(ROOT, "src", "assets", "data", "initial_world_state.json")
 
 
@@ -167,12 +169,7 @@ def main():
         open(plan_path, "w", encoding="utf-8", newline="\n").write(json.dumps(plan, ensure_ascii=False, indent=0) + "\n")
     elif os.path.exists(plan_path):
         os.remove(plan_path)
-    at_h = next((k for k, h in enumerate(hubs) if h["id"] == a.hub), None)
-    if at_h is None:
-        world["orbital_hubs"] = hubs + [hub]
-    else:
-        world["orbital_hubs"] = hubs[:at_h] + [hub] + hubs[at_h + 1:]
-    open(WORLD, "w", encoding="utf-8", newline="\n").write(json.dumps(world, ensure_ascii=False, indent=2) + "\n")
+    world_state_io.update(lambda doc: world_state_io.upsert_hub(doc, hub, "hub_belt_world"), WORLD)
     open(os.path.join(ROOT, "src", "assets", "data", f"{a.hub}_haze.json"), "w", encoding="utf-8", newline="\n").write(
         json.dumps({"schema": "elite.hub_haze.v1", "hub": a.hub, "frame": "hub local metres (the dock modules' frame)",
                     "sources": [dict(h, position=[round(c, 1) for c in shift(h["position"])]) for h in L["haze"]]},

@@ -33,6 +33,8 @@ import sys
 
 import endowment as endow
 import sol_network
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # tools/: world_state_io
+import world_state_io  # noqa: E402 - the one writer of initial_world_state.json
 import lab
 import naming
 
@@ -1780,6 +1782,7 @@ def compute():
     return I, out
 
 
+SOL_HUBS = []   # this run's Sol hubs (written through world_state_io under its lock)
 NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "events", "sol_network", "outposts", "worlds_ass_region")
 
 
@@ -1789,13 +1792,15 @@ def serialise(I, out, chk):
     files["WORLD_SITES_3126.md"] = md_report(I, out, chk)
     doc, objs = runtime_export(I, out)
     runtime = {RUNTIME_SITES: json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True) + "\n"}
-    ws_doc = json.load(open(RUNTIME_WORLD_STATE, encoding="utf-8"))
+    ws_doc = world_state_io.load(RUNTIME_WORLD_STATE)
     template = next(h for h in ws_doc["orbital_hubs"] if h["id"] == "earth_orbital_hub")
-    # Sol's hubs are generated here; hubs of other systems (colony hubs of tools/models/hub_colonies.py) belong to
-    # their own tool and are kept in their order (before: the whole list was replaced and the colony hubs were lost)
-    ws_doc["orbital_hubs"] = sol_network.runtime_hubs(out["sol_network"], template) + [h for h in ws_doc["orbital_hubs"] if h.get("system_id", 0) != 0]
-    ws_doc["orbital_hubs_generated_by"] = "tools/colonization_lab/world_sites.py (sol_network.py); edit canon/sol_network.json, not this list"
-    runtime[RUNTIME_WORLD_STATE] = json.dumps(ws_doc, ensure_ascii=False, indent=2) + "\n"
+    # Sol's hubs are generated here and REPLACE ONLY THEIR OWN entries (world_state_owner "sol_network"; audit
+    # 2026-11-19: every system-0 hub was replaced, so Sol hubs of other tools - belt_demo, proto_district - were lost)
+    SOL_HUBS[:] = sol_network.runtime_hubs(out["sol_network"], template)
+    world_state_io.replace_owned(ws_doc, "sol_network", SOL_HUBS)
+    ws_doc["orbital_hubs_generated_by"] = ("tools/world_state_io.py merges the writers by world_state_owner: sol_network = "
+                                           "tools/colonization_lab/world_sites.py (edit canon/sol_network.json, not this list)")
+    runtime[RUNTIME_WORLD_STATE] = world_state_io.dumps(ws_doc)
     for o in objs:
         runtime[os.path.join(RUNTIME_OBJECTS, f"world_{o['id'].replace('.', '_')}.json")] = json.dumps(o, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     return files, runtime
@@ -1836,6 +1841,12 @@ def main():
     for f in glob.glob(os.path.join(RUNTIME_OBJECTS, "world_*.json")):
         os.remove(f)
     for p, text in runtime.items():
+        if os.path.normpath(p) == os.path.normpath(RUNTIME_WORLD_STATE):
+            def merge(doc):
+                world_state_io.replace_owned(doc, "sol_network", SOL_HUBS)
+                doc["orbital_hubs_generated_by"] = json.loads(text)["orbital_hubs_generated_by"]
+            world_state_io.update(merge, RUNTIME_WORLD_STATE)   # re-read under the lock: another tool may have written
+            continue
         with open(p, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
     for c in chk:

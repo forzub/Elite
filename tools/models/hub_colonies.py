@@ -25,6 +25,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, HERE)
 SITES = os.path.join(ROOT, "src", "assets", "data", "galaxy_details", "world_sites", "sites_3126.json")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # tools/: world_state_io
+import world_state_io  # noqa: E402 - the one writer of initial_world_state.json
 WORLD = os.path.join(ROOT, "src", "assets", "data", "initial_world_state.json")
 PROFILES = os.path.join(HERE, "hub_profiles.json")
 CITY_OFFSET = [0, -6000, 0]
@@ -109,10 +111,10 @@ def main():
                 f.write(",\n".join(f"  {json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}" for k, v in prof["hubs"].items()))
                 f.write("\n }\n}\n")
             os.replace(PROFILES + ".tmp", PROFILES)
-        world = json.load(open(WORLD, encoding="utf-8"))
-        if not any(h["id"] == sid for h in world["orbital_hubs"]):
-            world["orbital_hubs"].append(world_entry(site))
-            open(WORLD, "w", encoding="utf-8", newline="\n").write(json.dumps(world, ensure_ascii=False, indent=2) + "\n")
+        def add_if_missing(doc, sid=sid, site=site):
+            if not any(h["id"] == sid for h in doc["orbital_hubs"]):
+                world_state_io.upsert_hub(doc, world_entry(site), "hub_colonies")
+        world_state_io.update(add_if_missing, WORLD)
         out = run([os.path.join(HERE, "hub_belt_world.py"), "--hub", sid, "--attach", "--city-offset", ",".join(map(str, CITY_OFFSET))])
         print(out.strip().splitlines()[-1] if out.strip() else sid)
         if "--no-layout" not in args:                 # a batch (hub_colonies_batch.py) runs the layouts aside

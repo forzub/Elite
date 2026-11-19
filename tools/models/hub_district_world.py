@@ -21,6 +21,8 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import eqlib  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # tools/: world_state_io
+import world_state_io  # noqa: E402 - the one writer of initial_world_state.json
 WORLD = os.path.join(ROOT, "src", "assets", "data", "initial_world_state.json")
 HAZE = os.path.join(ROOT, "src", "assets", "data", "hub_district_haze.json")
 ASM = os.path.join(eqlib.SOURCE_MODELS, "hub", "hub_proto_district", "intact", "assembly", "assembly.json")
@@ -58,8 +60,7 @@ def main():
         hub["dock_modules"].append({"id": f"{a.hub}.{n['id']}", "type": n["part"], "name": n["id"],
                                     "offset_m": {"x": p[0], "y": p[1], "z": p[2]},
                                     "rotation_deg": {"x": r[0], "y": r[1], "z": r[2]}})
-    world["orbital_hubs"] = [h for h in hubs if h["id"] != a.hub] + [hub]
-    open(WORLD, "w", encoding="utf-8", newline="\n").write(json.dumps(world, ensure_ascii=False, indent=2) + "\n")
+    world_state_io.update(lambda doc: world_state_io.upsert_hub(doc, hub, "hub_district_world"), WORLD)
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "units"))
     from units.hub_district import DISTRICT_HAZE   # noqa: E402
     if a.asm == "hub_proto_mega":

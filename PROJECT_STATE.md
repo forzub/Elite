@@ -6803,3 +6803,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Evidence: live jump to Eps Eri without a named exit -> eps_Eri_b (= the tour's choice); load test 61 bots / 240 s
   with fast jumps: 19 / 26 jumps done, 0 context violations, server tick p50 31 / p95 59 / max 96 ms; the entry
   catch-up (~0.5 s of ticks after a jump) is the same before and after - another cause, open.
+### 6. One writer of initial_world_state.json - DONE
+- Defect (verified): 4 tools read-modify-wrote the file (world_sites.py, hub_colonies.py, hub_belt_world.py,
+  hub_district_world.py); world_sites.py replaced EVERY system-0 hub - its next run would have dropped 23 Sol hubs
+  (Luna, Mars, Jovian moons, Titan, Venus, belt_demo, plane_demo, plane_ruin, proto_district, ...) AND erased the city
+  modules hub_belt_world --attach had put on 7 Earth hubs (tikhiy's dock_modules -> null).
+- Fix: tools/world_state_io.py - update(fn) under a lock file, atomic write, one format; upsert_hub / replace_owned
+  with "world_state_owner" per hub; a generator replaces only its own hubs and keeps modules other tools attached
+  ("generated"); the 4 tools go through it.
+- Evidence: tests/architecture_contracts/check_world_state_writers.py PASS (merge keeps other writers' Sol hubs, a
+  dropped own hub goes, attached city modules survive, no lock / temp left, no direct writer left); world_sites.py
+  regenerated: 297 hubs before and after, no content change besides 8 owner tags; world_sites.py --check OK.

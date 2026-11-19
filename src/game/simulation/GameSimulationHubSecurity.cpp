@@ -199,25 +199,12 @@ std::vector<std::uint32_t> GameSimulation::cityPromotedAirSlots(EntityId objectI
     return out;
 }
 
-void GameSimulation::forgetShipState(EntityId id)
-{
-    // every EntityId-keyed side table a traffic ship may have entered (combat when it was shot at, zones, the
-    // traffic tables): a despawned ship must leave nothing behind
-    m_laserUnits.erase(id);
-    m_zoneWatch.erase(id);
-    m_combatLoadouts.erase(id);
-    m_burnStates.erase(id);
-    m_combatTracks.erase(id);
-    m_wrongWay.erase(id);
-    m_evasion.erase(id);
-    m_dockTrafficInfo.erase(id);
-}
 
 void GameSimulation::despawnPromotedAirShip(EntityId id)
 {
     m_promotedAir.erase(id);
     m_airTrafficShells.erase(id);
-    forgetShipState(id);
+    forgetShip(id);
     if (getShip(id))
         dematerializeShip(id, game::simulation::ShipSimulationTier::TrafficShell);
     removeTrafficShell(id);
@@ -231,9 +218,9 @@ void GameSimulation::updateHubSecurity(double dt)
 
     // ---- the cities of the active system (cached per system: static objects are only ever added)
     HubSecuritySystem& sys = m_securityBySystem[m_activeCelestialSystemId];
-    if (sys.staticCount != m_staticObjects.size())
+    if (sys.staticGeneration != m_staticObjectsGeneration)
     {
-        sys.staticCount = m_staticObjects.size();
+        sys.staticGeneration = m_staticObjectsGeneration;
         sys.cities.clear();
         for (const auto& [oid, obj] : m_staticObjects)
         {

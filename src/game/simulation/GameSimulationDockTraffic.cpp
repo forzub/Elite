@@ -66,8 +66,7 @@ bool GameSimulation::removeTrafficShell(EntityId id)
     if (it == m_shipShells.end())
         return false;
     m_shipShells.erase(it);
-    m_shipMotionFidelityStates.erase(id);
-    m_shipClientObservationInterests.erase(id);
+    forgetShip(id);   // the id leaves the simulation: every side table
     return true;
 }
 
@@ -77,7 +76,7 @@ const std::vector<std::pair<const StaticObject*, const StaticObject*>>& GameSimu
     // ~12 ms of a 20 ms tick - the game fell into catch-up batches at ~5 FPS and the docking autopilot lost its
     // corridor). Static objects are only ever added (spawnStation) and an unordered_map keeps its elements' addresses
     // on insertion, so the pairs stay valid until the count changes.
-    if (m_hexDockPairsCacheValid && m_hexDockPairsCacheSize == m_staticObjects.size())
+    if (m_hexDockPairsCacheValid && m_hexDockPairsCacheGeneration == m_staticObjectsGeneration)
         return m_hexDockPairsCache;
     auto& out = m_hexDockPairsCache;
     out.clear();
@@ -107,7 +106,7 @@ const std::vector<std::pair<const StaticObject*, const StaticObject*>>& GameSimu
             out.emplace_back(&obj, base);
     }
     std::sort(out.begin(), out.end(), [](const auto& x, const auto& y) { return x.first->hubModuleId < y.first->hubModuleId; });
-    m_hexDockPairsCacheSize = m_staticObjects.size();
+    m_hexDockPairsCacheGeneration = m_staticObjectsGeneration;
     m_hexDockPairsCacheValid = true;
     return out;
 }

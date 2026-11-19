@@ -6745,3 +6745,16 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   laser + missile hit at 2.9 km, 0 violations. check_active_system_context / check_server_runtime_ownership PASS.
 - Side finding: tour part 2 docking refusals were the DEV start not applied (non-Sol hub id) - with a valid start the
   same hub docks (D:/tmp/dockrepro).
+- Load test with ELITE_DEV_JUMP_CHARGE_S=1: 24 of 34 jumps done across 49 systems, 0 violations; without the fix 207.
+### 2. Lifetime - DONE
+- Defect (verified): ~25 EntityId-keyed tables had no common removal; m_burnStates / m_laserUnits / m_combatLoadouts /
+  m_zoneWatch / m_combatTracks were never erased; removeTrafficShell cleared 2 tables. hexDockPairs / hub security
+  caches validated by m_staticObjects.size() (an erase + insert keeps the size: dangling pointers).
+- Fix: GameSimulation::forgetShipDetail(id) (ship -> shell: the full ship's transient state) and forgetShip(id) (the id
+  leaves: everything; removeTrafficShell and the promoted-traffic despawn call it). m_staticObjectsGeneration bumped by
+  spawnStation / setStaticObjectIdentity / setStaticObjectMapInfo / setStaticObjectPackageHitVolumes /
+  attachStaticObjectToHub; hexDockPairs and the hub security city cache validate by it.
+- Contract: tests/architecture_contracts/check_entity_lifetime.py (54 EntityId tables; each erased by forgetShip* or
+  listed with a reason; no size-validated static caches; mutators bump the generation) - PASS, and FAILS when a table is
+  dropped from forgetShip (checked). Live two-system rerun D:/tmp/multisys2: jump, docking 258 s, refuel, combat, 216
+  promoted-traffic despawns, no crash. EliteHubSecurityCheck 29/29.

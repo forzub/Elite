@@ -3172,14 +3172,7 @@ bool GameSimulation::dematerializeShip(
             ? manoeuvre / static_cast<double>(manoeuvreCount)
             : 1.0;
 
-    m_npcNavigationControlBridges.erase(id);
-    m_npcNavigationExecutionSnapshots.erase(id);
-    m_npcNavigationLastExecutionTimeSeconds.erase(id);
-    m_npcAutopilotLawControllers.erase(id);
-    m_npcAiCadenceStates.erase(id);
-    m_shipMotionControlCadenceStates.erase(id);
-    m_shipSystemsCadenceStates.erase(id);
-    m_shipMaintenanceCadenceStates.erase(id);
+    forgetShipDetail(id);   // the full ship's transient state; the id lives on as a shell
 
     m_ships.erase(shipIt);
     m_shipSimulationLifecycle.erase(id);
@@ -3208,6 +3201,7 @@ EntityId GameSimulation::spawnStation(
 
     EntityId id = generateEntityId();
 
+    ++m_staticObjectsGeneration;
     auto& obj = m_staticObjects[id];
 
     obj.id = id;
@@ -3314,6 +3308,65 @@ bool GameSimulation::passOwns(EntityId id) const
     return it != m_ships.end() && passOwns(it->second.get());
 }
 
+void GameSimulation::forgetShipDetail(EntityId id)
+{
+    m_laserUnits.erase(id);
+    m_laserFiring.erase(id);
+    m_burnStates.erase(id);
+    m_burnFlushSeconds.erase(id);
+    m_combatBeams.erase(id);
+    m_combatImpacts.erase(id);
+    m_combatTracks.erase(id);
+    m_evasion.erase(id);
+    m_wrongWay.erase(id);
+    m_devTargetLaserOn.erase(id);
+    m_devTargetMissileClockS.erase(id);
+    m_devRamRetreatUntilS.erase(id);
+    m_npcNavigationControlBridges.erase(id);
+    m_npcNavigationExecutionSnapshots.erase(id);
+    m_npcNavigationLastExecutionTimeSeconds.erase(id);
+    m_npcAutopilotLawControllers.erase(id);
+    m_npcAiCadenceStates.erase(id);
+    m_shipMotionControlCadenceStates.erase(id);
+    m_shipSystemsCadenceStates.erase(id);
+    m_shipMaintenanceCadenceStates.erase(id);
+    m_shipMotionControlStepDecisions.erase(id);
+}
+
+void GameSimulation::forgetShip(EntityId id)
+{
+    forgetShipDetail(id);
+    m_combatHostility.erase(id);
+    m_pilotDockSite.erase(id);
+    m_dockTrafficShells.erase(id);
+    m_dockTrafficInfo.erase(id);
+    m_dockStationControlledShips.erase(id);
+    m_freeFlights.erase(id);
+    m_jumps.erase(id);
+    m_pendingJumpRequests.erase(id);
+    m_zoneWatch.erase(id);
+    m_hubServices.erase(id);
+    m_refuels.erase(id);
+    m_combatLoadouts.erase(id);
+    m_combatTargetDummies.erase(id);
+    m_promotedAir.erase(id);
+    m_airTrafficShells.erase(id);
+    m_initializedShipGraphIds.erase(id);
+    m_shipGraphPayloadPublicationsRemaining.erase(id);
+    m_shipsWithDetachedFragmentPayload.erase(id);
+    m_shipsWithRepairJobPayload.erase(id);
+    m_shipReferenceBindings.erase(id);
+    m_activationPlanStates.erase(id);
+    m_activationPlannerDecisions.erase(id);
+    m_shipMotionFidelityStates.erase(id);
+    m_shipSimulationLifecycle.erase(id);
+    m_shipClientObservationInterests.erase(id);
+    m_fiveHundredShipHerd.erase(id);
+    // an NPC fighting this id forgets it
+    for (auto it = m_combatHostility.begin(); it != m_combatHostility.end();)
+        it = it->second == id ? m_combatHostility.erase(it) : std::next(it);
+}
+
 bool GameSimulation::commandContextOk(EntityId id, const char* where) const
 {
     const Ship* ship = getShip(id);
@@ -3384,6 +3437,7 @@ bool GameSimulation::setStaticObjectIdentity(
     const std::string& owner
 )
 {
+    ++m_staticObjectsGeneration;   // identity / hub / hit volumes of a static object change
     auto it = m_staticObjects.find(id);
     if (it == m_staticObjects.end())
         return false;
@@ -3403,6 +3457,7 @@ bool GameSimulation::setStaticObjectMapInfo(
     const std::string& hubModuleId
 )
 {
+    ++m_staticObjectsGeneration;   // identity / hub / hit volumes of a static object change
     auto it = m_staticObjects.find(id);
 
     if (it == m_staticObjects.end())
@@ -3501,6 +3556,7 @@ bool GameSimulation::registerOrbitalHub(
 
 bool GameSimulation::setStaticObjectPackageHitVolumes(EntityId objectId, std::vector<game::damage::HitVolume> volumes)
 {
+    ++m_staticObjectsGeneration;   // identity / hub / hit volumes of a static object change
     auto it = m_staticObjects.find(objectId);
     if (it == m_staticObjects.end() || volumes.empty())
         return false;
@@ -3521,6 +3577,7 @@ bool GameSimulation::attachStaticObjectToHub(
     const glm::dvec3& localAngularVelocityDegPerSecond
 )
 {
+    ++m_staticObjectsGeneration;   // identity / hub / hit volumes of a static object change
     auto objIt =
         m_staticObjects.find(objectId);
 

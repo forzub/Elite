@@ -778,7 +778,10 @@ private:
     std::unordered_map<EntityId, std::string> m_pilotDockSite;   // pilot ship -> the dock site handling it
     const std::vector<std::pair<const StaticObject*, const StaticObject*>>& hexDockPairs() const;
     mutable std::vector<std::pair<const StaticObject*, const StaticObject*>> m_hexDockPairsCache;
-    mutable std::size_t m_hexDockPairsCacheSize = 0;
+    mutable std::uint64_t m_hexDockPairsCacheGeneration = 0;
+    // bumped by EVERY structural change of m_staticObjects (insert / erase / identity / hub attachment / hit volumes):
+    // caches of pointers or of derived lists validate by it, never by the container size (erase + insert keeps it)
+    std::uint64_t m_staticObjectsGeneration = 1;
     mutable bool m_hexDockPairsCacheValid = false;
     bool hexDockPair(const std::string& dockModuleId, const StaticObject*& dock, const StaticObject*& base) const;
     DockSite* pilotDockSite(EntityId shipId);
@@ -1023,11 +1026,17 @@ private:
     struct HubSecuritySystem
     {
         std::vector<HubSecurityCity> cities;
-        std::size_t staticCount = static_cast<std::size_t>(-1);
+        std::uint64_t staticGeneration = 0;
         double checkSeconds = 0.0;
     };
     std::unordered_map<int, HubSecuritySystem> m_securityBySystem;
-    void forgetShipState(EntityId id);   // erase an id from every EntityId-keyed side table (a despawned traffic ship)
+    // Lifetime (audit 2026-11-19): ONE place knows every EntityId-keyed table.
+    //  forgetShipDetail(id) - the full ship's transient state (combat units, burns, tracks, evasion, NPC control and
+    //                         cadence state); called when a ship becomes a shell (the id lives on);
+    //  forgetShip(id)       - everything the id owns, detail included; called when the id leaves the simulation.
+    // A new EntityId-keyed member MUST be added to one of them.
+    void forgetShipDetail(EntityId id);
+    void forgetShip(EntityId id);
     struct HubSecurityState
     {
         game::traffic::security::HubAlert alert = game::traffic::security::HubAlert::Calm;

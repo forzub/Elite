@@ -6,12 +6,14 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <cstdlib>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <string>
 #include <vector>
 
+#include <nlohmann/json.hpp>
 #include "src/game/economy/BankingModel.h"
 #include "src/game/economy/EconomyServer.h"
 #include "src/game/economy/PriceModel.h"
@@ -577,6 +579,15 @@ void testFuelPriceAndAtomicSave()
     check(bought.ok && bought.chargedCr > 0.0 && near(worth0 - worth1, bought.chargedCr * 0.3 / 0.5, 1.0) && near(stock0 - stock1, 0.3, 1e-6),
           "prepaid 0.5 t, 0.2 t refunded: paid for 0.3 t, the stock down 0.3 t");
 
+    // a file that fails half-way through the parse changes NOTHING (audit 2026-11-19: fx / markets were restored,
+    // the ledgers cleared, then "fresh state" overwrote the file)
+    {
+        const std::string before = s.saveState();
+        nlohmann::json bad = nlohmann::json::parse(before);
+        bad["day"] = 777;
+        bad["markets"] = {{"earth_orbital_hub", {{"price", nlohmann::json::array()}}}};   // "stock" missing: at() throws
+        check(!s.restoreState(bad.dump()) && s.saveState() == before, "a state that fails half-way is rejected and changes nothing");
+    }
     namespace fs = std::filesystem;
     const std::string path = "economy_check_state.json";
     fs::remove(path);
@@ -594,6 +605,45 @@ void testFuelPriceAndAtomicSave()
     check(failed && kept == "BB", "atomic write: a failed write keeps the previous file intact");
     fs::remove_all(path + ".tmp");
     fs::remove(path);
+
+    // an unreadable state file at start is set aside as <file>.bad-<time> and never written over
+    {
+        const std::string statePath = "economy_check_bad_state.json";
+        for (const auto& e : fs::directory_iterator("."))
+            if (e.path().filename().string().rfind(statePath + ".bad-", 0) == 0)
+                fs::remove(e.path());
+        {
+            std::ofstream f(statePath, std::ios::binary);
+            f << "{\"schema\":\"economy_state/2\",\"markets\":{\"earth_orbital_hub\":{}}}";
+        }
+#ifdef _WIN32
+        _putenv_s("ELITE_ECONOMY_STATE_FILE", statePath.c_str());
+#else
+        setenv("ELITE_ECONOMY_STATE_FILE", statePath.c_str(), 1);
+#endif
+        EconomyServer r;
+        r.load();
+        r.start(1000);
+        bool setAside = false;
+        std::string keptText;
+        for (const auto& e : fs::directory_iterator("."))
+            if (e.path().filename().string().rfind(statePath + ".bad-", 0) == 0)
+            {
+                setAside = true;
+                std::ifstream k(e.path(), std::ios::binary);
+                keptText.assign((std::istreambuf_iterator<char>(k)), std::istreambuf_iterator<char>());
+                k.close();
+                fs::remove(e.path());
+            }
+        check(setAside && keptText.find("economy_state/2") != std::string::npos && !fs::exists(statePath),
+              "an unreadable state file is kept as .bad-<time>, not overwritten");
+#ifdef _WIN32
+        _putenv_s("ELITE_ECONOMY_STATE_FILE", "");
+#else
+        unsetenv("ELITE_ECONOMY_STATE_FILE");
+#endif
+        fs::remove(statePath);
+    }
 }
 } // namespace
 

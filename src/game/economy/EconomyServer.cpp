@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <ctime>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -29,6 +31,23 @@ namespace game::economy
 bool writeFileAtomically(const std::string& path, const std::string& text)
 {
     const std::string tmp = path + ".tmp";
+#ifdef _WIN32
+    // the data reaches the disk (FlushFileBuffers) before the replace: a power loss cannot leave an empty file
+    const std::wstring from = std::filesystem::path(tmp).wstring(), to = std::filesystem::path(path).wstring();
+    HANDLE h = CreateFileW(from.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h == INVALID_HANDLE_VALUE)
+        return false;
+    DWORD written = 0;
+    const bool ok = WriteFile(h, text.data(), static_cast<DWORD>(text.size()), &written, nullptr) && written == text.size() &&
+                    FlushFileBuffers(h);
+    CloseHandle(h);
+    if (!ok)
+    {
+        DeleteFileW(from.c_str());
+        return false;
+    }
+    return MoveFileExW(from.c_str(), to.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
     {
         std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
         if (!f)
@@ -38,10 +57,6 @@ bool writeFileAtomically(const std::string& path, const std::string& text)
         if (!f)
             return false;
     }
-#ifdef _WIN32
-    const std::wstring from = std::filesystem::path(tmp).wstring(), to = std::filesystem::path(path).wstring();
-    return MoveFileExW(from.c_str(), to.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
-#else
     return std::rename(tmp.c_str(), path.c_str()) == 0;
 #endif
 }
@@ -409,10 +424,24 @@ void EconomyServer::start(int day)
         {
             std::stringstream ss;
             ss << f.rdbuf();
+            f.close();
             if (restoreState(ss.str()))
                 std::cerr << "[EconomyServer] state restored from " << m_stateFile << " (day " << m_day << ")" << '\n';
             else
-                std::cerr << "[EconomyServer] " << m_stateFile << ": unreadable, fresh state" << '\n';
+            {
+                // never write over a file we could not read: set it aside (it may be repairable by hand)
+                const std::string bad = m_stateFile + ".bad-" + std::to_string(static_cast<long long>(std::time(nullptr)));
+                std::error_code ec;
+                std::filesystem::rename(m_stateFile, bad, ec);
+                if (ec)
+                {
+                    std::cerr << "[EconomyServer] " << m_stateFile << ": UNREADABLE and could not be set aside (" << ec.message()
+                              << ") - saving DISABLED to protect it" << '\n';
+                    m_stateFile.clear();
+                }
+                else
+                    std::cerr << "[EconomyServer] " << m_stateFile << ": UNREADABLE - kept as " << bad << "; fresh state" << '\n';
+            }
         }
     }
 }
@@ -1294,12 +1323,22 @@ bool EconomyServer::restoreState(const std::string& text)
     const std::string schema = j.value("schema", std::string());
     if (schema != "economy_state/1" && schema != "economy_state/2")   // /1: no trade registries yet (empty)
         return false;
+    // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
+    // 2026-11-19: an exception half-way left fx / markets restored, the ledgers cleared, and the caller started a
+    // "fresh state" that the next save wrote over the original file - every account lost).
     try
     {
-        m_day = j.value("day", m_day);
-        const json fx = j.value("fx", json::object());
-        for (const auto& [bank, v] : fx.items())
-            m_banks.setFx(bank, v.get<double>());
+        const int day = j.value("day", m_day);
+        std::vector<std::pair<std::string, double>> fxs;
+        const json fxJson = j.value("fx", json::object());   // a named object: items() of a temporary would dangle
+        for (const auto& [bank, v] : fxJson.items())
+            fxs.emplace_back(bank, v.get<double>());
+        struct CellValue
+        {
+            std::size_t market = 0, good = 0;
+            double stockT = 0.0, priceCr = 0.0;
+        };
+        std::vector<CellValue> cellValues;
         std::vector<int> order;
         for (const auto& id : j.value("goods_order", json::array()))
             order.push_back(goodIndex(id.get<std::string>()));
@@ -1309,7 +1348,7 @@ bool EconomyServer::restoreState(const std::string& text)
             const auto it = m_marketIndex.find(hub);
             if (it == m_marketIndex.end())
                 continue;
-            auto& cells = m_markets[it->second].cells;
+            const auto& cells = m_markets[it->second].cells;
             const auto& stock = m.at("stock");
             const auto& price = m.at("price");
             for (std::size_t k = 0; k < order.size() && k < stock.size() && k < price.size(); ++k)
@@ -1317,20 +1356,33 @@ bool EconomyServer::restoreState(const std::string& text)
                 const int g = order[k];
                 if (g < 0 || !cells[static_cast<std::size_t>(g)].traded || !stock[k].is_number() || !price[k].is_number())
                     continue;
-                cells[static_cast<std::size_t>(g)].stockT = stock[k].get<double>();
-                cells[static_cast<std::size_t>(g)].priceCr = price[k].get<double>();
+                cellValues.push_back({it->second, static_cast<std::size_t>(g), stock[k].get<double>(), price[k].get<double>()});
             }
         }
-        m_ledgers.clear();
+        decltype(m_ledgers) ledgers;
         for (const auto& l : j.value("ledgers", json::array()))
         {
             ClientLedger x = ledgerFromJson(l);
-            m_ledgers[x.ownerId] = std::move(x);
+            ledgers[x.ownerId] = std::move(x);
         }
-        m_cargo.fromJson(j.value("cargo", json::array()));
-        m_vatRefunds.clear();
+        CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
+        cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_vatRefunds) vatRefunds;
         for (const auto& v : j.value("vat_refunds", json::array()))
-            m_vatRefunds.push_back({v.value("player", std::uint64_t{0}), v.value("bank", std::string()), v.value("cr", 0.0), v.value("due", 0)});
+            vatRefunds.push_back({v.value("player", std::uint64_t{0}), v.value("bank", std::string()), v.value("cr", 0.0), v.value("due", 0)});
+
+        // ---- commit (no parsing below this line)
+        m_day = day;
+        for (const auto& [bank, v] : fxs)
+            m_banks.setFx(bank, v);
+        for (const auto& c : cellValues)
+        {
+            m_markets[c.market].cells[c.good].stockT = c.stockT;
+            m_markets[c.market].cells[c.good].priceCr = c.priceCr;
+        }
+        m_ledgers.swap(ledgers);
+        m_cargo.fromJson(j.value("cargo", json::array()));   // already parsed once above (cannot throw now); keeps the registry serial
+        m_vatRefunds.swap(vatRefunds);
         ++m_tradeSerial;
     }
     catch (const std::exception& e)

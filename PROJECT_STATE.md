@@ -6832,3 +6832,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   shows 3/6 C20, 65.1 t gross, 75.1 vs 82.7 ly (-9.1 %).
 - LIVE step 2: NOT done (the run was stopped at docking by the pause). First attempt: dock from 40 km failed "ship is not
   matched to target Hub frame" - the script needs finish:hub + route:official before dock:.
+
+## FIXES BEFORE THE TRADE MVP (re-audit 2026-11-19)
+### R2. Atomic economy restore - DONE
+- Defect (verified): restoreState changed fx / markets, cleared the ledgers, then could throw - a mixed state; the
+  caller then started "fresh" and the next save wrote over the original file (every account lost).
+- Fix: parse everything into temporaries (fx, market cells, ledgers, a dry-run cargo parse, VAT refunds), commit only
+  after the whole file parsed; an unreadable file at start is renamed <file>.bad-<time> (if that fails, saving is
+  disabled); writeFileAtomically writes via CreateFileW/WriteFile/FlushFileBuffers before MoveFileExW.
+- Evidence: EliteEconomyCheck 86/86 (new: a state failing half-way is rejected and changes nothing; an unreadable state
+  file is kept as .bad-<time>, not overwritten).

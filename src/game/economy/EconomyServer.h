@@ -11,6 +11,7 @@
 #include <deque>
 #include <map>
 #include "src/game/economy/CargoRegistry.h"
+#include "src/game/economy/ContractBoard.h"
 #include "src/game/economy/TradeQuoteModel.h"
 #include "src/game/simulation/ClientTradeSnapshot.h"
 #include "src/game/simulation/ClientWalletSnapshot.h"
@@ -202,6 +203,35 @@ public:
     // the hull figures (capacity, mass, jump range)
     [[nodiscard]] game::simulation::ClientTradeSnapshot tradeSnapshot(std::uint64_t playerId, std::uint64_t shipKey,
                                                                       const std::string& hubId, int systemId, bool docked) const;
+    // ---- contracts (TRADE_DESIGN §3, §9 row 5 - trade step 5): the shared boards of every hub, the players' contracts.
+    // Take: docked at the posting's origin; the deposit is held on the account (BankingModel hold; no free money = no
+    // contract), the advance paid, the cargo loaded as a contract lot (owner = the issuer, never sellable). Hand-in is
+    // automatic when the ship docks at the destination with the lot aboard (on time: reward - advance, deposit released;
+    // late d <= late_max_days: the same minus a late penalty, never refused - a debt when unpaid). Past the deadline +
+    // late_max_days, or abandoned away from the origin: failure (advance back + penalty as ContractPenalty, never
+    // refused; the deposit forfeited; the cargo leaves the manifest). Abandoned at the origin before the deadline: a
+    // cancel fee, the deposit released, the posting back on the board.
+    struct ContractOrder
+    {
+        std::uint64_t playerId = 0;
+        std::uint64_t shipKey = 0;
+        std::string hubId;               // the hub the ship is docked at ("" = not docked)
+        int systemId = -1;
+        std::string contractId;
+        std::uint32_t requestId = 0;
+        CargoCapacity capacity;
+    };
+    game::simulation::ClientTradeResult takeContract(const ContractOrder& order);
+    game::simulation::ClientTradeResult abandonContract(const ContractOrder& order);
+    // the ship docked at `hubId` (the dispatcher's docked event): hands in every active contract of the player due there
+    // whose cargo is aboard this ship; returns how many were handed in
+    int deliverContracts(std::uint64_t playerId, std::uint64_t shipKey, const std::string& hubId, int systemId);
+    // a contract failure took cargo off this ship (outside its system pass): true once, the caller re-applies the mass
+    bool takeCargoChange(std::uint64_t shipKey);
+    [[nodiscard]] const ContractBoard& contracts() const { return m_board; }
+    // the economy day with its fraction (the board's timers); set by the server each tick
+    void setClockDays(double days) { m_clockDays = days; }
+
     // ---- replication
     [[nodiscard]] game::simulation::ClientWalletSnapshot walletSnapshot(std::uint64_t playerId, const std::string& hubId,
                                                                         int systemId) const;
@@ -256,6 +286,14 @@ private:
         int dueDay = 0;
     };
     void pushResult(std::uint64_t playerId, game::simulation::ClientTradeResult r);
+    void stepContracts(int day);
+    // failure (deadline passed / abandoned away from the origin): advance back + penalty (never refused), deposit forfeited
+    void failContract(Contract& c, const std::string& status, const std::string& why);
+    void saveNow(const char* what);
+    [[nodiscard]] game::simulation::ClientContractRow contractRow(const ContractPosting& p) const;
+    ContractBoard m_board;
+    std::set<std::uint64_t> m_cargoChanged;
+    double m_clockDays = 0.0;
     void payDueVatRefunds(int day);
     CargoRegistry m_cargo;
     std::set<std::string> m_lossEvents;

@@ -36,7 +36,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 32u;   // 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4)
+inline constexpr std::uint16_t WireProtocolVersion = 33u;   // 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4); 33: its contractId + TakeContract / AbandonContract / DevEconomyDays (trade step 5)
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -727,7 +727,7 @@ inline bool encodeClientEconomyCommand(
     writer.f64(value.quantity);
     writer.f64(value.limitUnitCr);
     writer.i32(value.quoteDay);
-    return writer.string(value.hubId) && writer.string(value.goodId);
+    return writer.string(value.hubId) && writer.string(value.goodId) && writer.string(value.contractId);
 }
 
 inline bool decodeClientEconomyCommand(
@@ -744,7 +744,8 @@ inline bool decodeClientEconomyCommand(
         !reader.f64(outValue.limitUnitCr) ||
         !reader.i32(quoteDay) ||
         !reader.string(outValue.hubId) ||
-        !reader.string(outValue.goodId))
+        !reader.string(outValue.goodId) ||
+        !reader.string(outValue.contractId))
     {
         return false;
     }

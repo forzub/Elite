@@ -1,0 +1,88 @@
+{
+  "schema": "contract_rules/1",
+  "note": "TRADE_DESIGN §3 / §9 row 5 (trade step 5): the server ContractBoard. Recurring series derive from hub_modules_3126.json supply (remote hubs: kit_30d_t, staff, rotation_days, shift_size, supply_parent) and from the construction projects of sites_3126.json (HUB_CONSTRUCTION.md: expansion / build while 'building'). Publication days d_k = phase + k*period - post_lead (strict); a posting lives board_life_days; NPC haulers take it by one daily hash roll. Hand-authored PROPOSAL values; reward formula from economy_rules.json board (c20 jump/leg rates).",
+  "construction_epoch_day": 9873,
+  "supply": {
+    "period_days": 14,
+    "period_days_small": 30,
+    "small_staff_below": 20,
+    "small_types": ["beacon_bridge", "beacon_relay", "deep_space_relay"],
+    "post_lead_days": 7,
+    "board_life_days": 3,
+    "deadline_slack": 2.0,
+    "max_posting_t": 40.0,
+    "min_posting_t": 0.5,
+    "max_postings": 3,
+    "deposit_share_of_goods": 0.25,
+    "kit_good": "supply_kit",
+    "kit_ru": "набор снабжения"
+  },
+  "crew_shift": {
+    "period_days": 14,
+    "post_lead_days": 7,
+    "board_life_days": 3,
+    "deadline_slack": 2.0,
+    "max_people_per_posting": 48,
+    "max_postings": 2,
+    "return_leg": true,
+    "deposit_cr_per_person": 0.0,
+    "p20_seats": 12,
+    "p20_loaded_t": 9.0,
+    "p20_good": "crew_p20",
+    "p20_ru": "вахта (модули P20)"
+  },
+  "construction": {
+    "period_days": 7,
+    "post_lead_days": 3,
+    "board_life_days": 3,
+    "deadline_slack": 3.0,
+    "posting_t": 40.0,
+    "max_posting_value_cr": 60000.0,
+    "max_postings": 1,
+    "origin_candidates": 4,
+    "origin_note": "a project buys at up to origin_candidates boarded exchanges trading its material: the same parent body first (an Earth-orbit yard buys at the Earth-orbit exchanges), ranked by arrivals a day, then the rest of the system; each supplier is its own weekly series",
+    "deposit_share_of_goods": 0.25,
+    "materials": {
+      "hab": ["steel", "construction_bulk"],
+      "slab": ["construction_bulk", "steel"],
+      "tower": ["steel", "construction_bulk"],
+      "dock": ["steel", "industrial_machinery"],
+      "yard": ["construction_bulk", "steel"],
+      "hall": ["steel", "industrial_machinery"],
+      "mast": ["steel"],
+      "build": ["construction_bulk", "steel"],
+      "default": ["steel"]
+    }
+  },
+  "travel": {
+    "same_system_days": 1.0,
+    "base_days": 2.0,
+    "per_jump_days": 3.0,
+    "legs": 2.0
+  },
+  "reward": {
+    "c20_jump_cr": 4700.0,
+    "c20_leg_cr": 1300.0,
+    "min_cr": 1500.0,
+    "pax_jump_cr": 600.0,
+    "pax_leg_cr": 150.0,
+    "crew_mult": 1.3,
+    "advance_share": 0.2,
+    "penalty_share": 0.5,
+    "abandon_fee_share": 0.1,
+    "late_per_day_cargo": 0.1,
+    "late_per_day_people": 0.2,
+    "late_max_days": 5,
+    "channel_mult": {"open": 1.0, "licensed": 1.15, "restricted": 1.5, "black": 2.5}
+  },
+  "npc": {
+    "note": "P(taken in a day) = 1 - exp(-lambda); lambda = base x traffic x attractiveness. traffic = clamp(arrivals_day / busy_arrivals_day, min, 1): a busy hub (>= 500 arrivals a day: the Earth orbital hubs, 2 000-9 500) = 1, so a fair posting there (attractiveness 1) has lambda 0.5 / day = a half-life ln2 / 0.5 = 1.39 days (§3.7); a frontier post (2 arrivals) 0.1 -> 13.9 days. attractiveness = clamp((reward / fair - a0) / (1 - a0), 0, 2). §3.7 wrote the same idea with arrivals / 50 clamped to 3 and a fair posting at 0.5 - rescaled here so the stated 1.4-day half-life holds.",
+    "base_rate_per_day": 0.5,
+    "busy_arrivals_day": 500.0,
+    "traffic_min": 0.1,
+    "attractiveness_a0": 0.7,
+    "channel_mult": {"open": 1.0, "licensed": 1.0, "restricted": 0.3, "black": 0.3},
+    "arrivals_fallback": {"per_cargo_dock": 3.0, "per_refuel_dock": 1.0, "per_service_dock": 0.5, "per_pad": 0.05, "min": 2.0},
+    "keep_closed_days": 1
+  }
+}

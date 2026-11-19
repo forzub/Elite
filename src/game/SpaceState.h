@@ -446,6 +446,10 @@ private:
     // F8 MARKET deal window (trade step 3): a click / DEV action, a key, Confirm (sends the quoted unit price)
     void applyTradeDealAction(const ui::presentation::ServicePanelAction& action);
     void tradeDealKey(int key, bool shift);
+    // F8 CONTRACTS (trade step 5): select / take / abandon with a confirm; the server answers in session.trade.results
+    void applyTradeContractAction(const ui::presentation::ServicePanelAction& action);
+    std::uint32_t sendContractCommand(int op, const std::string& contractId);
+    void logContracts(const char* why);
     void confirmTradeDeal();
     void logTradeDeal(const char* why);
     void applyNativeSystemMapPanelAction(
@@ -812,6 +816,10 @@ private:
     std::uint32_t m_jImpactSerialSeen = 0;
     float m_jShakePulse = 0.0f;
     std::string m_tradeHub;
+    std::string m_tradeContract;            // the selected posting / contract on the CONTRACTS tab
+    std::string m_tradeContractAsk;         // "" | "take" | "abandon": the question shown, waiting for the confirm
+    std::uint32_t m_tradeContractRequest = 0;
+    std::uint32_t m_tradeContractAnswerLogged = 0;
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;

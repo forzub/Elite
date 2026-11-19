@@ -168,6 +168,38 @@ void CargoRegistry::clear(std::uint64_t shipKey)
     }
 }
 
+std::vector<CargoLot> CargoRegistry::takeContract(std::uint64_t shipKey, const std::string& contractId)
+{
+    std::vector<CargoLot> out;
+    const auto it = m_manifests.find(shipKey);
+    if (it == m_manifests.end() || contractId.empty())
+        return out;
+    auto& lots = it->second.lots;
+    for (auto l = lots.begin(); l != lots.end();)
+    {
+        if (l->contractId == contractId)
+        {
+            out.push_back(std::move(*l));
+            l = lots.erase(l);
+        }
+        else
+            ++l;
+    }
+    if (!out.empty())
+        ++m_serial;
+    return out;
+}
+
+double CargoRegistry::contractTonnesOf(std::uint64_t shipKey, const std::string& contractId) const
+{
+    double t = 0.0;
+    if (const CargoManifest* m = find(shipKey))
+        for (const auto& l : m->lots)
+            if (l.contractId == contractId)
+                t += l.tonnes;
+    return t;
+}
+
 nlohmann::json CargoRegistry::toJson() const
 {
     nlohmann::json out = nlohmann::json::array();
@@ -206,7 +238,7 @@ nlohmann::json CargoRegistry::lotToJson(const CargoLot& l)
 {
     return {{"id", l.lotId}, {"good", l.goodId}, {"t", l.tonnes}, {"c20", l.c20}, {"owner", l.owner}, {"contract", l.contractId},
             {"cost", l.costBasisCr}, {"origin", l.originHub}, {"day", l.loadedDay}, {"declared", l.declared},
-            {"concealment", l.concealment}};
+            {"concealment", l.concealment}, {"people", l.people}};
 }
 
 CargoLot CargoRegistry::lotFromJson(const nlohmann::json& l)
@@ -223,6 +255,7 @@ CargoLot CargoRegistry::lotFromJson(const nlohmann::json& l)
     c.loadedDay = l.value("day", 0);
     c.declared = l.value("declared", true);
     c.concealment = l.value("concealment", 0);
+    c.people = l.value("people", 0);
     return c;
 }
 

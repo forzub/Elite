@@ -655,6 +655,8 @@ void GameSimulation::updatePortCall(EntityId id, const DockSite& site, bool dock
                   << ": docking fee " << fee.feeCr << " Cr (" << (fee.charged ? "booked" : fee.duplicate ? "duplicate" : "no economy / AI")
                   << ", paid " << fee.paidCr << ", debt " << fee.debtCr << ", dry " << dryT << " t)" << std::endl;
         m_portCalls.emplace(id, std::move(call));
+        // contracts due here whose cargo is aboard are handed in at the berth (TRADE_DESIGN §3.4, trade step 5)
+        game::economy::service::notifyShipDocked(static_cast<std::uint32_t>(id.value), site.hubId);
         return;
     }
     if (it == m_portCalls.end())

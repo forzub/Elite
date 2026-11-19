@@ -145,6 +145,21 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
         }
     if (page.card.valid && page.card.info.id == page.hubId)
         page.card.knownPrices = page.market;
+    // the CONTRACTS tab (trade step 5): the server's board of this hub and the player's contracts are in page.trade
+    page.selectedContract = m_tradeContract;
+    page.contractConfirm = !m_tradeContractAsk.empty();
+    page.contractRequest = m_tradeContractRequest;
+    {
+        static const char* const ContractKeys[] = {
+            "tab", "board", "mine", "empty_board", "empty_mine", "kind_supply", "kind_crew_shift", "kind_construction", "route",
+            "cargo", "people", "reward", "advance", "deposit", "penalty", "deadline", "on_board", "status_open", "status_taken",
+            "status_npc", "status_expired", "status_active", "status_delivered", "status_late", "status_failed", "status_abandoned",
+            "status_cancelled", "take", "confirm_take", "cancel", "abandon", "confirm_abandon", "issuer", "cause", "waiting",
+            "aboard", "not_aboard", "payout", "late", "keys", "take_hint", "days_hours", "hours", "overdue", "select_hint",
+            "penalty_paid", "late_rule", "no_deposit_hint", "day", "load", "deadline_label", "board_left", "refused"};
+        for (const char* key : ContractKeys)
+            page.contractText[key] = localizedUiText(context().app, std::string("service.trade.contracts.") + key, key);
+    }
     // the MARKET deal window (trade step 3): priced with the server's TradeQuoteModel on the replicated inputs
     if (page.tab == 1)
     {
@@ -308,7 +323,9 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
 
     if (service == ui::services::ServiceUiId::Trade)
     {
-        if (action->type >= ServicePanelActionType::TradeSelectGood)
+        if (action->type >= ServicePanelActionType::TradeContractSelect && action->type <= ServicePanelActionType::TradeContractCancel)
+            applyTradeContractAction(*action);
+        else if (action->type >= ServicePanelActionType::TradeSelectGood)
             applyTradeDealAction(*action);
         else if (action->type == ServicePanelActionType::TradeTab)
             m_tradeTab = std::atoi(action->text.c_str());
@@ -472,6 +489,39 @@ void SpaceState::tradeDealKey(int key, bool shift)
         m_tradeTab = key - GLFW_KEY_1;
         return;
     }
+    if (m_tradeTab == 0)
+    {
+        const auto& t = m_client->sessionSnapshot().trade;
+        std::vector<std::string> ids;
+        for (const auto& r : t.board)
+            ids.push_back(r.id);
+        for (const auto& r : t.contracts)
+            ids.push_back(r.id);
+        if ((key == GLFW_KEY_UP || key == GLFW_KEY_DOWN) && !ids.empty())
+        {
+            const auto it = std::find(ids.begin(), ids.end(), m_tradeContract);
+            const int n = static_cast<int>(ids.size());
+            int at = it == ids.end() ? -1 : static_cast<int>(it - ids.begin());
+            at = at < 0 ? (key == GLFW_KEY_DOWN ? 0 : n - 1) : (at + (key == GLFW_KEY_DOWN ? 1 : n - 1)) % n;
+            applyTradeContractAction({ServicePanelActionType::TradeContractSelect, ids[static_cast<std::size_t>(at)]});
+        }
+        else if ((key == GLFW_KEY_ENTER || key == GLFW_KEY_KP_ENTER) && !m_tradeContract.empty())
+        {
+            if (!m_tradeContractAsk.empty())
+                applyTradeContractAction({ServicePanelActionType::TradeContractConfirm, {}});
+            else
+            {
+                bool mine = false;
+                for (const auto& r : t.contracts)
+                    mine = mine || (r.id == m_tradeContract && r.status == "active");
+                applyTradeContractAction({mine ? ServicePanelActionType::TradeContractAbandon : ServicePanelActionType::TradeContractTake,
+                                          m_tradeContract});
+            }
+        }
+        else if (key == GLFW_KEY_BACKSPACE)
+            applyTradeContractAction({ServicePanelActionType::TradeContractCancel, {}});
+        return;
+    }
     if (m_tradeTab != 1)
         return;
     const auto& market = m_client->sessionSnapshot().trade.market;
@@ -512,6 +562,104 @@ void SpaceState::tradeDealKey(int key, bool shift)
         default:
             return;
     }
+}
+
+// ---------------------------------------------------------------- F8 CONTRACTS (TRADE_DESIGN §8.2, trade step 5)
+// The tab shows the server's board and contracts; a take / abandon is asked first, then sent - the server decides.
+void SpaceState::applyTradeContractAction(const ui::presentation::ServicePanelAction& action)
+{
+    using ui::presentation::ServicePanelActionType;
+    if (!m_client)
+        return;
+    switch (action.type)
+    {
+        case ServicePanelActionType::TradeContractSelect:
+            if (m_tradeContract != action.text)
+                m_tradeContractAsk.clear();
+            m_tradeContract = action.text;
+            m_tradeTab = 0;
+            for (const auto& r : m_client->sessionSnapshot().trade.board)
+                if (r.id == action.text)
+                    m_tradeHub = r.destinationHub;
+            for (const auto& r : m_client->sessionSnapshot().trade.contracts)
+                if (r.id == action.text)
+                    m_tradeHub = r.destinationHub;
+            break;
+        case ServicePanelActionType::TradeContractTake:
+            m_tradeContract = action.text;
+            m_tradeContractAsk = "take";
+            break;
+        case ServicePanelActionType::TradeContractAbandon:
+            m_tradeContract = action.text;
+            m_tradeContractAsk = "abandon";
+            break;
+        case ServicePanelActionType::TradeContractConfirm:
+            if (!m_tradeContract.empty() && !m_tradeContractAsk.empty())
+            {
+                m_tradeContractRequest = sendContractCommand(m_tradeContractAsk == "take" ? game::network::ClientEconomyCommand::TakeContract
+                                                                                          : game::network::ClientEconomyCommand::AbandonContract,
+                                                             m_tradeContract);
+                m_tradeContractAsk.clear();
+            }
+            break;
+        case ServicePanelActionType::TradeContractCancel:
+            m_tradeContractAsk.clear();
+            break;
+        default:
+            break;
+    }
+    logContracts("action");
+}
+
+std::uint32_t SpaceState::sendContractCommand(int op, const std::string& contractId)
+{
+    if (!m_client)
+        return 0;
+    game::network::ClientEconomyCommand command;
+    command.op = static_cast<game::network::ClientEconomyCommand::Op>(
+        std::clamp(op, 0, static_cast<int>(game::network::ClientEconomyCommand::Last)));
+    command.requestId = ++m_economyRequestId;
+    command.shipEntityId = m_client->localControlledEntityId().value;
+    command.contractId = contractId;
+    const auto& trade = m_client->sessionSnapshot().trade;
+    if (trade.valid && trade.docked)
+        command.hubId = trade.hubId;
+    command.quoteDay = trade.valid ? trade.day : -1;
+    game::network::ClientMessage msg;
+    msg.payload = command;
+    m_client->sendMessage(msg);
+    std::cerr << "[Contract] client: request " << command.requestId << " op " << op << " " << contractId << std::endl;
+    return command.requestId;
+}
+
+// DEV / evidence: the replicated board and contracts with their timers ("[ContractReport]")
+void SpaceState::logContracts(const char* why)
+{
+    if (!m_client)
+        return;
+    const auto& t = m_client->sessionSnapshot().trade;
+    const auto left = [&](double day) {
+        char b[48];
+        const double d = day - t.dayNow;
+        std::snprintf(b, sizeof b, "%+.2f d", d);
+        return std::string(b);
+    };
+    std::cerr << "[ContractReport] " << why << ": day " << t.day << " (" << t.dayNow << "), board of '" << t.boardHubId << "': "
+              << t.board.size() << " posting(s), my contracts " << t.contracts.size() << ", selected '" << m_tradeContract << "'"
+              << (m_tradeContractAsk.empty() ? std::string() : " ASK " + m_tradeContractAsk) << '\n';
+    for (const auto& r : t.board)
+        std::cerr << "[ContractReport]   board " << r.id << " [" << r.status << "] " << r.kind << " " << r.originHub << " -> " << r.destinationHub
+                  << " (" << r.destinationName << "): " << r.tonnes << " t " << r.goodId << (r.people ? " " + std::to_string(r.people) + " people" : "")
+                  << ", C20 " << r.c20 << ", reward " << r.rewardCr << ", advance " << r.advanceCr << ", deposit " << r.depositCr << ", penalty "
+                  << r.penaltyCr << ", off the board in " << left(r.expiresDay) << ", deadline day " << r.deadlineDay << " (" << left(r.deadlineDay + 1.0)
+                  << ")" << '\n';
+    for (const auto& r : t.contracts)
+        std::cerr << "[ContractReport]   mine " << r.id << " [" << r.status << "] " << r.originHub << " -> " << r.destinationHub << ": "
+                  << r.tonnes << " t " << r.goodId << ", aboard " << r.aboard << ", deadline day " << r.deadlineDay << " (" << left(r.deadlineDay + 1.0)
+                  << "), late " << r.lateDays << " d, paid " << r.paidCr << ", penalty " << r.penaltyPaidCr << '\n';
+    for (const auto& r : t.results)
+        if (r.requestId == m_tradeContractRequest)
+            std::cerr << "[ContractReport]   answer #" << r.requestId << " " << (r.ok ? "OK " : "REFUSED ") << r.code << ": " << r.message << '\n';
 }
 
 void SpaceState::confirmTradeDeal()

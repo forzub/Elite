@@ -6949,3 +6949,50 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   timeline clock, not universe time; the port-call state is not saved (a restart while docked: no berth fee for it);
   hangar / holding area / in-hub tow fees not done; only the dispatcher-docked berths (hex docks) charge - other dock kinds
   have no Docked event yet.
+
+## TRADE MVP step 5: the server ContractBoard (docs/TRADE_DESIGN.md §3, §9 row 5, §9d) - SOURCE + UNIT + LIVE PASS 2026-11-19
+- Built: src/game/economy/ContractBoard.{h,cpp} (state: series, shared per-hub postings, taken contracts; pure model:
+  isPublishDay / nextPublishDay, fair reward, trafficOf / attractivenessOf / npcTakeRatePerDay, npcTakes hash roll,
+  projectBuilding; buildContractSeries from hub_modules supply + sites_3126 construction projects), data
+  src/assets/data/economy/contract_rules.json (contract_rules/1). 238 supply, 413 crew-shift (out + back), 6 750
+  construction series (each project x up to 4 suppliers of the same body, weekly; lots <= 40 t / 60 000 Cr).
+  EconomyServer: takeContract (origin berth only; deposit placeHold; advance; contract lot owner issuer:<actor>),
+  deliverContracts (dispatcher Docked hook: updatePortCall -> service::notifyShipDocked -> GameServer binding ->
+  applyCargoLoad), abandonContract (origin = cancel 10 % + advance back, deposit released, posting reopened; elsewhere
+  = failure), daily failure past deadline + 5 d (penalty 50 % + advance back via payOrDebt Purpose::ContractPenalty,
+  deposit captureHold, lot seized); Sell refuses contract cargo ("contract_cargo"). Fresh boards on start (last
+  board-life days replayed). EconomyModel::board / BoardEntry removed (one source). BankingModel: Purpose::ContractPenalty
+  (9), captureHold, findHold, logEvent cuts a broken UTF-8 tail. CargoLot.people (P20 crew lots: ceil(n/12) x 9 t, one
+  C20 place each - no passenger hardware yet), CargoRegistry::takeContract / contractTonnesOf. Persistence
+  economy_state/3 (+contracts; /1 /2 read; temporaries then commit). Replication: ClientTradeSnapshot board / contracts /
+  dayNow / boardHubId (ClientContractRow), snapshot schema 53; ClientEconomyCommand TakeContract / AbandonContract /
+  DevEconomyDays + contractId, wire protocol 33. UI: F8 tab 0 "КОНТРАКТЫ" (board with timers, open first, my contracts,
+  card, take / abandon with confirm, keys), ФИНАНСЫ shows held deposits; service.trade.contracts.* in 5 languages.
+  DEV: contract:take:<id|pick:part>, contract:abandon:<id>, contract:report, contractclick:<...>, econ:days:<n>,
+  econ:await:<series part>.
+- Unit: EliteEconomyCheck 131/131 (testContracts: d_k strictly every 14 d; 40 000-seed NPC half-life 1.393 / 1.391 d at a
+  busy hub, frontier 13.9 d; 120 server days - every posting exactly on its series' d_k, Europa supply 14 d apart; the
+  real board's busy-hub first-day NPC take -> half-life 1.39 d; take -> deposit held + advance, only at the origin, gone
+  for player 2; contract cargo not sellable; on-time hand-in = reward - advance, deposit released; 2 d late = -20 %;
+  failed with no money -> penalty + advance back as debt, deposit forfeited, lot seized; abandon in flight / cancel at
+  origin; save/restore byte-exact; a broken contracts block rejected whole; fresh server starts with 442 open postings).
+  Contracts PASS: entity_lifetime, active_system_context, server_runtime_ownership, wire_protocol_boundary,
+  wire_data_schema, replication_snapshot_boundary, service_panel_shell, localization_boundary,
+  function_key_presentation_route; wire_data_plane / wire_protocol contract tests (g++ by hand) PASS.
+- LIVE (D:/tmp/trade5/b/run.log, DEV start hub:earth_orbital_hub@40, `econ:await:earth_hub.kourou.x06` = +6 economy
+  days): F8 КОНТРАКТЫ at Высокий (01_board.png, 02_confirm.png: "Стройка ... 40 т, 2 x C20 -> Куру, на доске ещё 2 сут 07 ч,
+  залог 2 760", card + "ПОДТВЕРДИТЬ: ВЗЯТЬ (залог блокируется)"); confirm ->
+  "[Contract] player 1 TAKE SER-earth_hub.kourou.x06-build@earth_orbital_hub/10201/0 (construction, 40 t construction_bulk)
+  ... reward 5200, advance 1040 paid, deposit 2760 held ... deadline day 10207"; undock, route + dock at
+  earth_hub.kourou.cty_dock -> "DOCKING at earth_hub.kourou ... 384.00 Cr" then "[Contract] player 1 HAND-IN ... at
+  earth_hub.kourou (Куру), day 10201 deadline 10207: delivered, payout +4160 Cr (reward 5200 - advance 1040) ... deposit
+  2760 released (hold 1); net worth 25440 Cr, held 0 Cr". 04_finance_taken.png (блокировка залога, аванс +1040),
+  06_contracts_delivered.png ("сдан вовремя +4 160 Cr"), 07_finance_delivered.png (+4160.00 CR сдан ... в срок, залог
+  разблокирован). Run a (D:/tmp/trade5/a/run.log, run_a_01_board_scrolled.png) found the selected posting off the visible
+  list (no click region) - fixed: open postings first, the list scrolls to the selection.
+- Deviations / not done: construction series from sites_3126 added (§3.1 table) and are the ones used live (Высокий is
+  no supply_parent); NPC rate rescaled (traffic = arrivals / 500 clamped 0.1..1, a = 1 for a fair posting) so the stated
+  1.4 d half-life holds; take = load (no taken-not-loaded state); failure removes the lot from the manifest; no
+  reputation, framework contract, x1.3 repost, operator's own ship, shortage on failure, NPC virtual delivery, event
+  postings (shortage / state order / passengers / relief / smuggling), insurance, licences; the F8 header day is the
+  client's (no DEV offset); server messages Russian; ФИНАНСЫ memo lines overflow into the right column (cosmetic).

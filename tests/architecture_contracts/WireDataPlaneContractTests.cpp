@@ -522,6 +522,22 @@ SimulationSnapshot makeSnapshot()
     snapshot.session.trade.market.push_back({0, true, 557.0, 540.3, 573.7, 48154.0, 39695.0, 11388.5, 46169.2, 0.02});
     snapshot.session.trade.cargo.push_back({"L1", 0, 15.15, 1, 699.9, "earth_orbital_hub", 1412, "player:1", "", 0.06});
     snapshot.session.trade.jumpRangeLy = 45.5;
+    snapshot.session.trade.dayNow = 10241.25;
+    {
+        game::simulation::ClientContractRow row;
+        row.id = "SER-site.000.sol.europa-supply/10241/0";
+        row.kind = "supply";
+        row.tonnes = 18.67;
+        row.people = 0;
+        row.rewardCr = 2600.0;
+        row.depositCr = 1450.0;
+        row.deadlineDay = 10246;
+        row.status = "open";
+        snapshot.session.trade.board.push_back(row);
+        row.status = "active";
+        row.aboard = true;
+        snapshot.session.trade.contracts.push_back(row);
+    }
     snapshot.session.trade.results.push_back({9u, true, "", "куплено", {"товар|-8 700"}, -10500.5, 1412});
 
     return snapshot;
@@ -731,6 +747,10 @@ void testSnapshotRoundTrip()
                 decoded.session.trade.market.size() == 1 && decoded.session.trade.market[0].askCr == 573.7 &&
                 decoded.session.trade.cargo.size() == 1 && decoded.session.trade.cargo[0].tonnes == 15.15 && decoded.session.trade.cargo[0].dutyShare == 0.06 &&
                 decoded.session.trade.jumpRangeLy == 45.5 && decoded.session.trade.results.size() == 1 &&
+                decoded.session.trade.dayNow == 10241.25 && decoded.session.trade.board.size() == 1 &&
+                decoded.session.trade.board[0].tonnes == 18.67 && decoded.session.trade.board[0].deadlineDay == 10246 &&
+                decoded.session.trade.contracts.size() == 1 && decoded.session.trade.contracts[0].aboard &&
+                decoded.session.trade.contracts[0].status == "active" &&
                 decoded.session.trade.results[0].requestId == 9u && decoded.session.trade.results[0].totalCr == -10500.5,
         "session trade snapshot did not round-trip");
 

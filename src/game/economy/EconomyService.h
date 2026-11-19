@@ -30,6 +30,9 @@ struct Bindings
     std::function<int(const std::string& hubId)> systemOfHub;
     // runtime ship entity -> (hub id it is at / in the frame of, physical system id): whose bank is paid
     std::function<std::pair<std::string, int>(std::uint32_t shipEntityId)> locationOfShip;
+    // the ship reached its berth at `hubId` (dispatcher Docked): the contract hand-in (trade step 5) - GameServer owns
+    // the ship -> manifest key mapping and the mass follow-up
+    std::function<void(std::uint32_t shipEntityId, const std::string& hubId)> shipDocked;
 };
 
 void install(Bindings bindings);
@@ -89,6 +92,9 @@ struct PortFeeResult
 };
 PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double dryMassT);
 PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double berthHours);
+// the dispatcher's docked event of a player ship (after the docking fee): contracts due at `hubId` are handed in
+// automatically when their cargo is aboard (TRADE_DESIGN §3.4). No economy / AI: nothing.
+void notifyShipDocked(std::uint32_t shipEntityId, const std::string& hubId);
 // optional: the fuel physically left station `stationId` (its stock and tomorrow's price feel it; the player's
 // "received free of charge" list value grows). Call once per finished delivery.
 void noteFuelDelivered(std::uint32_t shipEntityId, const std::string& stationId, const std::string& commodity, double tonnes);

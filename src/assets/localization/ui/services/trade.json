@@ -323,6 +323,377 @@
       "zh-Hans": "{n} × C20",
       "es": "{n} × C20",
       "ja": "{n} × C20"
+    },
+    "service.trade.contracts.tab": {
+      "en": "CONTRACTS",
+      "ru": "КОНТРАКТЫ",
+      "zh-Hans": "合同",
+      "es": "CONTRATOS",
+      "ja": "契約"
+    },
+    "service.trade.contracts.board": {
+      "en": "Contract board — {hub}",
+      "ru": "Доска заявок — {hub}",
+      "zh-Hans": "合同公告板 — {hub}",
+      "es": "Tablón de contratos — {hub}",
+      "ja": "契約掲示板 — {hub}"
+    },
+    "service.trade.contracts.mine": {
+      "en": "My contracts",
+      "ru": "Мои контракты",
+      "zh-Hans": "我的合同",
+      "es": "Mis contratos",
+      "ja": "自分の契約"
+    },
+    "service.trade.contracts.empty_board": {
+      "en": "No open postings. Series are published strictly on schedule",
+      "ru": "Открытых заявок нет. Серии публикуются строго по графику",
+      "zh-Hans": "暂无开放的委托。系列委托严格按计划发布",
+      "es": "No hay ofertas abiertas. Las series se publican estrictamente según calendario",
+      "ja": "公開中の依頼はありません。定期便は予定どおりにのみ掲載されます"
+    },
+    "service.trade.contracts.empty_mine": {
+      "en": "No contracts taken",
+      "ru": "Взятых контрактов нет",
+      "zh-Hans": "尚未接受合同",
+      "es": "Ningún contrato aceptado",
+      "ja": "受注した契約はありません"
+    },
+    "service.trade.contracts.kind_supply": {
+      "en": "Supply",
+      "ru": "Снабжение",
+      "zh-Hans": "补给",
+      "es": "Suministro",
+      "ja": "補給"
+    },
+    "service.trade.contracts.kind_crew_shift": {
+      "en": "Crew rotation",
+      "ru": "Вахта",
+      "zh-Hans": "轮班人员",
+      "es": "Relevo de turno",
+      "ja": "交代要員"
+    },
+    "service.trade.contracts.kind_construction": {
+      "en": "Construction",
+      "ru": "Стройка",
+      "zh-Hans": "建设",
+      "es": "Construcción",
+      "ja": "建設"
+    },
+    "service.trade.contracts.route": {
+      "en": "route",
+      "ru": "маршрут",
+      "zh-Hans": "航线",
+      "es": "ruta",
+      "ja": "航路"
+    },
+    "service.trade.contracts.load": {
+      "en": "load",
+      "ru": "груз",
+      "zh-Hans": "货物",
+      "es": "carga",
+      "ja": "積荷"
+    },
+    "service.trade.contracts.cargo": {
+      "en": "{t} t, {c20} × C20",
+      "ru": "{t} т, {c20} × C20",
+      "zh-Hans": "{t} 吨，{c20} × C20",
+      "es": "{t} t, {c20} × C20",
+      "ja": "{t} t、{c20} × C20"
+    },
+    "service.trade.contracts.people": {
+      "en": "{n} people, {m} × P20",
+      "ru": "{n} чел., {m} × P20",
+      "zh-Hans": "{n} 人，{m} × P20",
+      "es": "{n} personas, {m} × P20",
+      "ja": "{n} 名、{m} × P20"
+    },
+    "service.trade.contracts.reward": {
+      "en": "reward",
+      "ru": "награда",
+      "zh-Hans": "报酬",
+      "es": "recompensa",
+      "ja": "報酬"
+    },
+    "service.trade.contracts.advance": {
+      "en": "advance (paid on taking)",
+      "ru": "аванс (при взятии)",
+      "zh-Hans": "预付款（接受时支付）",
+      "es": "anticipo (al aceptar)",
+      "ja": "前払い（受注時）"
+    },
+    "service.trade.contracts.deposit": {
+      "en": "deposit",
+      "ru": "залог",
+      "zh-Hans": "押金",
+      "es": "fianza",
+      "ja": "保証金"
+    },
+    "service.trade.contracts.penalty": {
+      "en": "penalty for failure",
+      "ru": "неустойка за срыв",
+      "zh-Hans": "违约金",
+      "es": "penalización por incumplimiento",
+      "ja": "不履行の違約金"
+    },
+    "service.trade.contracts.late_rule": {
+      "en": "late: minus per day",
+      "ru": "опоздание: минус за сутки",
+      "zh-Hans": "延误：每天扣除",
+      "es": "retraso: menos por día",
+      "ja": "遅延：1日ごとの減額"
+    },
+    "service.trade.contracts.deadline": {
+      "en": "due day {d} ({left})",
+      "ru": "срок: день {d} ({left})",
+      "zh-Hans": "期限：第 {d} 天（{left}）",
+      "es": "plazo: día {d} ({left})",
+      "ja": "期限：{d} 日目（{left}）"
+    },
+    "service.trade.contracts.deadline_label": {
+      "en": "deadline",
+      "ru": "срок",
+      "zh-Hans": "期限",
+      "es": "plazo",
+      "ja": "期限"
+    },
+    "service.trade.contracts.day": {
+      "en": "day {d}",
+      "ru": "день {d}",
+      "zh-Hans": "第 {d} 天",
+      "es": "día {d}",
+      "ja": "{d} 日目"
+    },
+    "service.trade.contracts.on_board": {
+      "en": "on the board for {left}",
+      "ru": "на доске ещё {left}",
+      "zh-Hans": "公告剩余 {left}",
+      "es": "en el tablón {left} más",
+      "ja": "掲示残り {left}"
+    },
+    "service.trade.contracts.board_left": {
+      "en": "on the board for",
+      "ru": "на доске ещё",
+      "zh-Hans": "公告剩余",
+      "es": "en el tablón",
+      "ja": "掲示残り"
+    },
+    "service.trade.contracts.status_open": {
+      "en": "open",
+      "ru": "открыта",
+      "zh-Hans": "开放",
+      "es": "abierta",
+      "ja": "受付中"
+    },
+    "service.trade.contracts.status_taken": {
+      "en": "taken by a pilot",
+      "ru": "взята пилотом",
+      "zh-Hans": "已被飞行员接受",
+      "es": "aceptada por un piloto",
+      "ja": "パイロットが受注"
+    },
+    "service.trade.contracts.status_npc": {
+      "en": "taken by another hauler",
+      "ru": "забрал другой перевозчик",
+      "zh-Hans": "已被其他承运人接走",
+      "es": "la tomó otro transportista",
+      "ja": "他の運送業者が受注"
+    },
+    "service.trade.contracts.status_expired": {
+      "en": "withdrawn",
+      "ru": "снята с доски",
+      "zh-Hans": "已撤下",
+      "es": "retirada",
+      "ja": "掲示終了"
+    },
+    "service.trade.contracts.status_active": {
+      "en": "in progress",
+      "ru": "выполняется",
+      "zh-Hans": "进行中",
+      "es": "en curso",
+      "ja": "遂行中"
+    },
+    "service.trade.contracts.status_delivered": {
+      "en": "delivered on time",
+      "ru": "сдан вовремя",
+      "zh-Hans": "按时交付",
+      "es": "entregado a tiempo",
+      "ja": "期限内に納品"
+    },
+    "service.trade.contracts.status_late": {
+      "en": "delivered late",
+      "ru": "сдан с опозданием",
+      "zh-Hans": "延误交付",
+      "es": "entregado con retraso",
+      "ja": "遅延納品"
+    },
+    "service.trade.contracts.status_failed": {
+      "en": "failed",
+      "ru": "сорван",
+      "zh-Hans": "失败",
+      "es": "fallido",
+      "ja": "不履行"
+    },
+    "service.trade.contracts.status_abandoned": {
+      "en": "abandoned",
+      "ru": "брошен",
+      "zh-Hans": "已放弃",
+      "es": "abandonado",
+      "ja": "放棄"
+    },
+    "service.trade.contracts.status_cancelled": {
+      "en": "cancelled at the origin",
+      "ru": "отказ на хабе отправления",
+      "zh-Hans": "在出发枢纽取消",
+      "es": "cancelado en origen",
+      "ja": "出発地で取消"
+    },
+    "service.trade.contracts.take": {
+      "en": "TAKE",
+      "ru": "ВЗЯТЬ",
+      "zh-Hans": "接受",
+      "es": "ACEPTAR",
+      "ja": "受注"
+    },
+    "service.trade.contracts.confirm_take": {
+      "en": "CONFIRM: TAKE (deposit is blocked)",
+      "ru": "ПОДТВЕРДИТЬ: ВЗЯТЬ (залог блокируется)",
+      "zh-Hans": "确认：接受（押金将被冻结）",
+      "es": "CONFIRMAR: ACEPTAR (se bloquea la fianza)",
+      "ja": "確認：受注（保証金を拘束）"
+    },
+    "service.trade.contracts.cancel": {
+      "en": "CANCEL",
+      "ru": "ОТМЕНА",
+      "zh-Hans": "取消",
+      "es": "CANCELAR",
+      "ja": "キャンセル"
+    },
+    "service.trade.contracts.abandon": {
+      "en": "ABANDON",
+      "ru": "ОТКАЗАТЬСЯ",
+      "zh-Hans": "放弃",
+      "es": "ABANDONAR",
+      "ja": "放棄"
+    },
+    "service.trade.contracts.confirm_abandon": {
+      "en": "CONFIRM: ABANDON (penalty)",
+      "ru": "ПОДТВЕРДИТЬ: ОТКАЗ (неустойка)",
+      "zh-Hans": "确认：放弃（违约金）",
+      "es": "CONFIRMAR: ABANDONAR (penalización)",
+      "ja": "確認：放棄（違約金）"
+    },
+    "service.trade.contracts.issuer": {
+      "en": "issuer",
+      "ru": "заказчик",
+      "zh-Hans": "委托方",
+      "es": "cliente",
+      "ja": "発注者"
+    },
+    "service.trade.contracts.cause": {
+      "en": "why",
+      "ru": "основание",
+      "zh-Hans": "原因",
+      "es": "motivo",
+      "ja": "理由"
+    },
+    "service.trade.contracts.waiting": {
+      "en": "waiting for the server...",
+      "ru": "ждём ответ сервера...",
+      "zh-Hans": "等待服务器回应……",
+      "es": "esperando al servidor...",
+      "ja": "サーバーの応答待ち…"
+    },
+    "service.trade.contracts.aboard": {
+      "en": "cargo aboard",
+      "ru": "груз на борту",
+      "zh-Hans": "货物在船上",
+      "es": "carga a bordo",
+      "ja": "積載済み"
+    },
+    "service.trade.contracts.not_aboard": {
+      "en": "cargo not aboard this ship",
+      "ru": "груза нет на этом корабле",
+      "zh-Hans": "本船上没有该货物",
+      "es": "la carga no está en esta nave",
+      "ja": "この船に積荷なし"
+    },
+    "service.trade.contracts.payout": {
+      "en": "paid at hand-in",
+      "ru": "выплачено при сдаче",
+      "zh-Hans": "交付时支付",
+      "es": "pagado a la entrega",
+      "ja": "納品時の支払い"
+    },
+    "service.trade.contracts.penalty_paid": {
+      "en": "charged (penalty / fee / advance back)",
+      "ru": "списано (неустойка / сбор / возврат аванса)",
+      "zh-Hans": "已扣除（违约金/手续费/退还预付款）",
+      "es": "cargado (penalización / tasa / devolución del anticipo)",
+      "ja": "請求済み（違約金・手数料・前払い返還）"
+    },
+    "service.trade.contracts.late": {
+      "en": "late by {d} days",
+      "ru": "опоздание {d} сут",
+      "zh-Hans": "延误 {d} 天",
+      "es": "retraso de {d} días",
+      "ja": "{d} 日遅延"
+    },
+    "service.trade.contracts.keys": {
+      "en": "↑/↓ select · Enter take (twice = confirm) · Backspace cancel · delivery is automatic when you dock at the destination",
+      "ru": "↑/↓ выбор · Enter взять (дважды = подтвердить) · Backspace отмена · сдача автоматически при стыковке у хаба назначения",
+      "zh-Hans": "↑/↓ 选择 · Enter 接受（再按一次确认）· Backspace 取消 · 在目的地对接时自动交付",
+      "es": "↑/↓ elegir · Enter aceptar (dos veces = confirmar) · Retroceso cancelar · la entrega es automática al atracar en destino",
+      "ja": "↑/↓ 選択 · Enter 受注（2回で確定）· Backspace 取消 · 目的地にドッキングすると自動で納品"
+    },
+    "service.trade.contracts.take_hint": {
+      "en": "A posting can be taken at the berth of its origin hub",
+      "ru": "Взять заявку можно у причала хаба отправления",
+      "zh-Hans": "只能在出发枢纽的泊位接受委托",
+      "es": "Una oferta se acepta en el atraque de su hub de origen",
+      "ja": "依頼は出発ハブの係留所でのみ受注できます"
+    },
+    "service.trade.contracts.select_hint": {
+      "en": "Select a posting or a contract in the list",
+      "ru": "Выберите заявку или контракт в списке",
+      "zh-Hans": "在列表中选择委托或合同",
+      "es": "Elija una oferta o un contrato en la lista",
+      "ja": "リストで依頼または契約を選択してください"
+    },
+    "service.trade.contracts.no_deposit_hint": {
+      "en": "The deposit needs free money on an account (not the overdraft)",
+      "ru": "Для залога нужны свободные деньги на счёте (не овердрафт)",
+      "zh-Hans": "押金需要账户中的可用资金（不能用透支）",
+      "es": "La fianza requiere dinero libre en una cuenta (no el descubierto)",
+      "ja": "保証金には口座の自由資金が必要です（当座貸越は不可）"
+    },
+    "service.trade.contracts.days_hours": {
+      "en": "{d} d {h} h",
+      "ru": "{d} сут {h} ч",
+      "zh-Hans": "{d} 天 {h} 小时",
+      "es": "{d} d {h} h",
+      "ja": "{d}日 {h}時間"
+    },
+    "service.trade.contracts.hours": {
+      "en": "{h} h",
+      "ru": "{h} ч",
+      "zh-Hans": "{h} 小时",
+      "es": "{h} h",
+      "ja": "{h}時間"
+    },
+    "service.trade.contracts.overdue": {
+      "en": "overdue",
+      "ru": "просрочен",
+      "zh-Hans": "已逾期",
+      "es": "vencido",
+      "ja": "期限切れ"
+    },
+    "service.trade.contracts.refused": {
+      "en": "REFUSED:",
+      "ru": "ОТКАЗ:",
+      "zh-Hans": "拒绝：",
+      "es": "RECHAZADO:",
+      "ja": "拒否："
     }
   }
 }

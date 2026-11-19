@@ -183,8 +183,29 @@ void EconomyModel::load()
         i.systemId = static_cast<int>(num(h, "system_id", -1.0));
         i.hostsBoard = flag(h, "hosts_board");
         i.hidden = flag(h, "hidden");
+        i.typeId = str(h, "type");
         if (h.contains("supply") && h["supply"].is_object())
-            i.remote = flag(h["supply"], "remote");
+        {
+            const json& sup = h["supply"];
+            i.remote = flag(sup, "remote");
+            i.supply.mode = str(sup, "supply_mode");
+            i.supply.parent = str(sup, "supply_parent");
+            i.supply.staff = static_cast<int>(num(sup, "staff", 0.0));
+            i.supply.rotationDays = static_cast<int>(num(sup, "rotation_days", 0.0));
+            i.supply.shiftSize = static_cast<int>(num(sup, "shift_size", 0.0));
+            if (sup.contains("kit_30d_t") && sup["kit_30d_t"].is_object())
+                for (const auto& [good, t] : sup["kit_30d_t"].items())
+                    if (t.is_number())
+                        i.supply.kit30dT.emplace_back(good, t.get<double>());
+        }
+        if (h.contains("totals") && h["totals"].is_object())
+        {
+            const json& t = h["totals"];
+            i.totals.cargoDocks = static_cast<int>(num(t, "cargo_docks", 0.0));
+            i.totals.refuelDocks = static_cast<int>(num(t, "refuel_docks", 0.0));
+            i.totals.serviceDocks = static_cast<int>(num(t, "service_docks", 0.0));
+            i.totals.pads = static_cast<int>(num(t, "pads", 0.0));
+        }
         m_hubIndex[i.id] = m_hubs.size();
         m_hubs.push_back(std::move(i));
     }
@@ -241,8 +262,6 @@ void EconomyModel::load()
                     m_blocMatrix[from][to] = channel.get<std::string>();
     if (rules.contains("board") && rules["board"].contains("reward"))
     {
-        m_c20JumpCr = num(rules["board"]["reward"], "c20_jump_cr", m_c20JumpCr);
-        m_c20LegCr = num(rules["board"]["reward"], "c20_leg_cr", m_c20LegCr);
     }
 
     // bound to a local: `delay.value(...)` is a temporary and `.items()` only refers to it - in a
@@ -368,97 +387,4 @@ std::string EconomyModel::channel(const std::string& fromHub, const std::string&
     return "licensed";
 }
 
-std::vector<BoardEntry> EconomyModel::board(const std::string& hubId, int day) const
-{
-    std::vector<BoardEntry> out;
-    const auto* origin = hub(hubId);
-    if (!origin || !origin->hostsBoard)
-        return out;
-
-    // destinations: boarded hubs of the same system first, then the network
-    std::vector<const HubEconomyInfo*> local, remote;
-    for (const auto& h : m_hubs)
-    {
-        if (h.id == hubId || h.hidden)
-            continue;
-        if (h.systemId == origin->systemId)
-            local.push_back(&h);
-        else if (h.hostsBoard && infoDelayHours(h.id, hubId) >= 0.0)
-            remote.push_back(&h);
-    }
-    if (local.empty() && remote.empty())
-        return out;
-
-    const auto here = market(hubId, day);
-    const int count = 4 + static_cast<int>(hashOf(hubId, static_cast<std::uint64_t>(day)) % 9);   // 4..12
-    for (int k = 0; k < count; ++k)
-    {
-        const std::uint64_t key = hashOf(hubId, (static_cast<std::uint64_t>(day) << 8) ^ static_cast<std::uint64_t>(k));
-        BoardEntry e;
-        e.id = "BRD-" + hubId + "-" + std::to_string(day) + "-" + std::to_string(k);
-        e.originHub = hubId;
-        e.postedDay = day;
-        const double r = unit(key);
-        const bool farAway = !remote.empty() && (local.empty() || unit(key ^ 0x11ull) < 0.35);
-        const auto& pool = farAway ? remote : local;
-        const auto* dest = pool[static_cast<std::size_t>(mix(key ^ 0x22ull) % pool.size())];
-        e.destinationHub = dest->id;
-        e.channel = channel(hubId, dest->id);
-        if (e.channel == "closed")
-            continue;
-        const double jumps = farAway ? std::max(1.0, std::round(infoDelayHours(dest->id, hubId) / 24.0)) : 0.0;
-        const double legs = 2.0;
-        const double blocMult = e.channel == "black" ? 2.5 : e.channel == "restricted" ? 1.5 : e.channel == "licensed" ? 1.15 : 1.0;
-        const double travelDays = farAway ? 2.0 + 3.0 * jumps : 1.0;
-        e.deadlineDay = day + static_cast<int>(std::ceil(travelDays * (1.5 + 1.5 * unit(key ^ 0x33ull))));
-
-        if (dest->remote && unit(key ^ 0x44ull) < 0.5)
-        {
-            e.kind = "crew_shift";
-            e.kindRu = "вахта";
-            e.people = 6 + static_cast<int>(unit(key ^ 0x55ull) * 30.0);
-            e.rewardCr = (900.0 * (jumps + 1.0) + 300.0 * legs) * e.people * 1.3 * blocMult;
-        }
-        else if (r < 0.58)
-        {
-            // cargo: the good with the best price gap destination / origin
-            const auto there = market(dest->id, day);
-            double best = 0.0;
-            for (std::size_t g = 0; g < here.size(); ++g)
-                if (here[g].traded && there[g].traded && here[g].buyCr > 0.0)
-                {
-                    const double gain = there[g].sellCr / here[g].buyCr * (0.85 + 0.3 * unit(key ^ g));
-                    if (gain > best)
-                    {
-                        best = gain;
-                        e.good = static_cast<int>(g);
-                    }
-                }
-            if (e.good < 0)
-                e.good = static_cast<int>(mix(key ^ 0x66ull) % m_goods.size());
-            e.kind = "cargo";
-            e.kindRu = "груз";
-            e.containersC20 = 1 + static_cast<int>(unit(key ^ 0x77ull) * 11.0);
-            e.rewardCr = std::max(2500.0, (m_c20JumpCr * jumps + m_c20LegCr * legs) * e.containersC20) * blocMult;
-        }
-        else if (r < 0.82)
-        {
-            e.kind = "passengers";
-            e.kindRu = "пассажиры";
-            e.people = 2 + static_cast<int>(unit(key ^ 0x88ull) * 40.0);
-            e.rewardCr = (600.0 * std::max(1.0, jumps) + 150.0 * legs) * e.people * blocMult;
-        }
-        else
-        {
-            e.kind = "courier_package";
-            e.kindRu = "курьерская посылка";
-            e.rewardCr = (3000.0 + 6000.0 * jumps + 800.0 * legs) * (1.0 + unit(key ^ 0x99ull)) * blocMult;
-        }
-        e.advanceCr = std::round(e.rewardCr * 0.2);
-        e.rewardCr = std::round(e.rewardCr / 10.0) * 10.0;
-        e.issuer = origin->operatorName.empty() ? origin->name : origin->operatorName;
-        out.push_back(std::move(e));
-    }
-    return out;
-}
 } // namespace game::economy

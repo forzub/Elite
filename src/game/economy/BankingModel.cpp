@@ -182,6 +182,18 @@ Account& ensureAccount(ClientLedger& ledger, const std::string& bankId)
 
 void logEvent(ClientLedger& ledger, int day, std::string text)
 {
+    // a memo cut by a fixed buffer may end inside a UTF-8 letter: drop the broken tail (the state file's JSON writer
+    // throws on invalid UTF-8 - live 2026-11-19, a long contract id in a 260-byte memo)
+    std::size_t lead = text.size();
+    while (lead > 0 && (static_cast<unsigned char>(text[lead - 1]) & 0xC0) == 0x80)
+        --lead;
+    if (lead > 0)
+    {
+        const unsigned char c = static_cast<unsigned char>(text[lead - 1]);
+        const std::size_t need = c >= 0xF0 ? 4 : c >= 0xE0 ? 3 : c >= 0xC0 ? 2 : 1;
+        if (c >= 0x80 && text.size() - (lead - 1) < need)
+            text.resize(lead - 1);
+    }
     ledger.events.push_back({day, std::move(text)});
     if (ledger.events.size() > 24)
         ledger.events.erase(ledger.events.begin(), ledger.events.begin() + static_cast<long>(ledger.events.size() - 24));
@@ -588,6 +600,28 @@ bool releaseHold(ClientLedger& ledger, int holdId)
             return true;
         }
     return false;
+}
+
+const Hold* findHold(const ClientLedger& ledger, int holdId)
+{
+    for (const auto& h : ledger.holds)
+        if (h.id == holdId)
+            return &h;
+    return nullptr;
+}
+
+bool captureHold(ClientLedger& ledger, const BankDirectory& dir, int holdId, int day, const std::string& memo)
+{
+    const Hold* h = findHold(ledger, holdId);
+    if (!h)
+        return false;
+    const std::string bank = h->bankId;
+    const Minor amount = h->amount;
+    releaseHold(ledger, holdId);
+    if (Account* a = findAccount(ledger, bank))
+        a->balance -= amount;
+    logEvent(ledger, day, "залог удержан " + money(toUnits(amount), codeOf(dir, bank)) + " " + memo);
+    return true;
 }
 
 double heldCr(const ClientLedger& ledger, const BankDirectory& dir)

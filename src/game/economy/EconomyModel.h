@@ -44,6 +44,21 @@ struct HubEconomyInfo
     bool hostsBoard = false;
     bool remote = false;
     bool hidden = false;
+    std::string typeId;        // hub_modules "type" (mining_hub, science_hub, beacon_relay, ...)
+    // the standing need of a remote hub (hub_modules supply; TRADE_DESIGN §3.1 - the contract series of step 5)
+    struct Supply
+    {
+        std::string mode;      // "board" (published on the parent's board) | "own_ship" | "" (none)
+        std::string parent;    // the hub that supplies it
+        int staff = 0;
+        int rotationDays = 0;
+        int shiftSize = 0;
+        std::vector<std::pair<std::string, double>> kit30dT;   // good id -> tonnes per 30 days
+    } supply;
+    struct Totals
+    {
+        int cargoDocks = 0, refuelDocks = 0, serviceDocks = 0, pads = 0;
+    } totals;
     // Composition (hub_modules blocks): one line per block, e.g.
     // "Пассажирский блок: челночный док x141, отель x21".
     std::vector<std::string> composition;
@@ -79,23 +94,6 @@ struct ActiveEvent
     int endDay = 0;            // exclusive
 };
 
-struct BoardEntry
-{
-    std::string id;
-    std::string kind;          // cargo / passengers / courier_package / crew_shift
-    std::string kindRu;
-    std::string originHub;
-    std::string destinationHub;
-    int good = -1;             // cargo
-    int containersC20 = 0;
-    int people = 0;
-    double rewardCr = 0.0;
-    double advanceCr = 0.0;
-    int postedDay = 0;
-    int deadlineDay = 0;
-    std::string issuer;
-    std::string channel;       // bloc channel origin -> destination (open / licensed / restricted / black / closed)
-};
 
 class EconomyModel
 {
@@ -110,7 +108,6 @@ public:
 
     [[nodiscard]] std::vector<MarketQuote> market(const std::string& hubId, int day) const;
     [[nodiscard]] std::vector<ActiveEvent> events(const std::string& hubId, int day) const;
-    [[nodiscard]] std::vector<BoardEntry> board(const std::string& hubId, int day) const;
 
     // Hours a price bulletin of `hubId` needs to reach `observerHubId` over the
     // beacon network (bulk queue); < 0 = no connection.
@@ -154,7 +151,5 @@ private:
     std::unordered_map<std::string, DelayNode> m_delayNodes;
     std::vector<std::vector<double>> m_bulkH;   // node x node, < 0 = none
     std::unordered_map<std::string, std::unordered_map<std::string, std::string>> m_blocMatrix;
-    double m_c20JumpCr = 4700.0;
-    double m_c20LegCr = 1300.0;
 };
 } // namespace game::economy

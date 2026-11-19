@@ -509,6 +509,23 @@ m_simulation.setCelestialBodyKinematicStateAu(
                 const auto& motion = ship->core().transform().motion;
                 return {motion.hubId, motion.systemId};
             };
+            // the ship reached its berth (GameSimulation::updatePortCall, the ship's system pass): hand in the contracts due
+            // here whose cargo is aboard (TRADE_DESIGN §3.4) - the mass follows at once
+            bindings.shipDocked = [this](std::uint32_t shipEntityId, const std::string& hubId) {
+                const EntityId id{shipEntityId};
+                const Ship* ship = m_simulation.getShip(id);
+                if (!ship)
+                    return;
+                const std::uint64_t shipKey = ship->core().registry().instanceId;
+                const std::uint64_t player = m_players.playerForShip(shipKey).value;
+                if (player == 0)
+                    return;
+                if (m_economy.deliverContracts(player, shipKey, hubId, ship->core().transform().motion.systemId) > 0)
+                {
+                    (void)m_economy.takeCargoChange(shipKey);
+                    applyCargoLoad(id);
+                }
+            };
             game::economy::service::install(std::move(bindings));
             // a restored manifest (economy_state/2): the player ships carry its mass from the first tick
             for (const auto& [shipId, shipPtr] : m_simulation.ships())
@@ -1180,6 +1197,14 @@ void GameServer::update(double dt)
             observational; leaving it resumes from the same gameplay state
             that existed before the diagnostic session.
         */
+        // a contract failure (the economy's daily step) took cargo off this ship: the mass follows here, in its system pass
+        if (m_economy.loaded() && m_economy.takeCargoChange(ship.core().registry().instanceId) && !time.universeTimeSimulation)
+        {
+            const int cargoSystemId = ship.core().transform().motion.systemId;
+            if (cargoSystemId >= 0 && cargoSystemId != m_appliedSimulationContextSystemId)
+                switchSimulationContext(cargoSystemId);
+            applyCargoLoad(id);
+        }
         // Trade requests (TRADE_DESIGN §7.4) run like the ship commands: in the context of THEIR ship's system, never
         // in accelerated diagnostics or for a destroyed ship
         if (auto ecoIt = m_pendingEconomyCommands.find(id.value); ecoIt != m_pendingEconomyCommands.end() && !ecoIt->second.empty())
@@ -1675,8 +1700,7 @@ m_simulation.setOrbitalUniverseTimeSeconds(
             const auto& hub = hubs[economyNext];
             const auto quotes = economy.market(hub.id, day);
             const auto events = economy.events(hub.id, day);
-            const auto board = economy.board(hub.id, day);
-            profile.economyQuotes += static_cast<long long>(quotes.size() + events.size() + board.size());
+            profile.economyQuotes += static_cast<long long>(quotes.size() + events.size());
         }
         if (economyNext >= hubs.size())
         {
@@ -1690,7 +1714,8 @@ m_simulation.setOrbitalUniverseTimeSeconds(
 // market's stock / price take one daily step per world day passed (<= 3 per tick when the clock races).
 {
     game::server::ScopedTickTimer timer(game::server::serverTickProfile().economy);
-    m_economy.advanceTo(game::economy::EconomyModel::dayOf(universeTime));
+    m_economy.advanceTo(game::economy::EconomyModel::dayOf(universeTime) + m_devEconomyDayOffset);
+    m_economy.setClockDays(universeTime / 86400.0 + m_devEconomyDayOffset);
 }
 
 
@@ -2406,9 +2431,60 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
         applyCargoLoad(id);
         return;
     }
+    if (command.op == Op::DevEconomyDays)
+    {
+        // DEV: the board's days without waiting them out (the economy steps <= 3 days a tick toward the new day)
+        if (!devCommandAccepted("economy days", id))
+            return;
+        int days = std::clamp(static_cast<int>(std::lround(command.quantity)), 0, 60);
+        if (!command.goodId.empty())
+        {
+            // "await <series part>": to the next publication of the first matching series at this ship's hub (0 = one is
+            // open on the board now)
+            const auto& board = m_economy.contracts();
+            const int today = m_economy.day();
+            int best = -1;
+            for (const auto& p : board.postings())
+                if (p.status == "open" && p.originHub == motion.hubId && p.id.find(command.goodId) != std::string::npos)
+                    best = 0;
+            for (const auto& s : board.series())
+                if (best != 0 && s.originHub == motion.hubId && s.id.find(command.goodId) != std::string::npos)
+                {
+                    int d = game::economy::nextPublishDay(s, today + 1);
+                    while (d < today + 400 && !game::economy::projectBuilding(s, d - board.rules().constructionEpochDay))
+                        d = game::economy::nextPublishDay(s, d + 1);
+                    if (d < today + 400 && (best < 0 || d - today < best))
+                        best = d - today;
+                }
+            days = std::max(0, best);
+            std::cerr << "[Contract] DEV await '" << command.goodId << "' at " << motion.hubId << ": " << (best < 0 ? "no such series" : best == 0 ? "open now" : "published in " + std::to_string(best) + " days") << std::endl;
+        }
+        m_devEconomyDayOffset += days;
+        std::cerr << "[Contract] DEV economy clock +" << days << " days (offset now " << m_devEconomyDayOffset << ")" << std::endl;
+        return;
+    }
     // a deal needs a berth at that hub (TRADE_DESIGN §7.4): docked, not a tender alongside, not in a jump
     bool tender = false;
     const std::string at = m_simulation.serviceStationOf(id, &tender);
+    if (command.op == Op::TakeContract || command.op == Op::AbandonContract)
+    {
+        // the contract board (trade step 5): taking loads the cargo, so it needs the berth of the posting's origin
+        game::economy::EconomyServer::ContractOrder order;
+        order.playerId = player;
+        order.shipKey = shipKey;
+        order.hubId = tender ? std::string() : at;
+        order.systemId = motion.systemId;
+        order.contractId = command.contractId;
+        order.requestId = command.requestId;
+        order.capacity = cargoCapacityOf(*ship);
+        if (command.op == Op::TakeContract)
+            (void)m_economy.takeContract(order);
+        else
+            (void)m_economy.abandonContract(order);
+        (void)m_economy.takeCargoChange(shipKey);
+        applyCargoLoad(id);
+        return;
+    }
     if (at.empty() || tender || (!command.hubId.empty() && command.hubId != at))
     {
         m_economy.recordTradeRefusal(player, command.requestId, "not_docked",

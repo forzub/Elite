@@ -415,6 +415,41 @@ bool EconomyServer::load()
     }
     if (!(m_customsFeeMult[static_cast<int>(Channel::Closed)] > 0.0))
         m_customsFeeMult[static_cast<int>(Channel::Closed)] = m_customsFeeMult[static_cast<int>(Channel::Black)];
+
+    // contracts (TRADE_DESIGN §3, step 5): the rules (contract_rules.json) and the series from hub_modules supply and the
+    // construction projects of the site catalog
+    {
+        json contractRules, sites;
+        ContractRules rules;
+        if (readJson("contract_rules.json", contractRules))
+            loadContractRules(contractRules, rules);
+        for (const std::string path : {"assets/data/galaxy_details/world_sites/sites_3126.json",
+                                       "src/assets/data/galaxy_details/world_sites/sites_3126.json"})
+        {
+            std::ifstream f(path, std::ios::binary);
+            if (!f)
+                continue;
+            try
+            {
+                sites = json::parse(f);
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "[ContractBoard] " << path << ": " << e.what() << '\n';
+            }
+            break;
+        }
+        m_board.setRules(rules);
+        m_board.setSeries(buildContractSeries(rules, model, sites, [this](const std::string& hub, const std::string& good) {
+            MarketSide side;
+            return marketSide(hub, good, side) ? side.priceCr : -1.0;
+        }));
+        std::size_t supply = 0, crew = 0, build = 0;
+        for (const auto& s : m_board.series())
+            (s.kind == "supply" ? supply : s.kind == "crew_shift" ? crew : build) += 1;
+        std::cerr << "[ContractBoard] " << m_board.series().size() << " series: " << supply << " supply, " << crew << " crew shift, " << build
+                  << " construction (sites " << (sites.is_object() ? "loaded" : "MISSING") << ")" << '\n';
+    }
     m_loaded = !m_banks.banks().empty() && !m_markets.empty();
     std::cerr << "[EconomyServer] " << m_banks.banks().size() << " national banks, " << m_markets.size() << " markets, fuel "
               << (m_fuelFree ? "FREE of charge (list prices computed)" : "charged") << '\n';
@@ -463,6 +498,19 @@ void EconomyServer::start(int day)
                     std::cerr << "[EconomyServer] " << m_stateFile << ": UNREADABLE - kept as " << bad << "; fresh state" << '\n';
             }
         }
+    }
+    // a fresh world (no saved boards): the boards as they stand today - the publications of the last board-life days
+    // with their NPC rolls, as if the server had been running (otherwise every board is empty until the next day)
+    if (m_board.postings().empty() && m_board.contracts().empty())
+    {
+        int life = 1;
+        for (const auto& s : m_board.series())
+            life = std::max(life, s.boardLifeDays);
+        ContractBoard::DayReport rep;
+        for (int d = m_day - life; d <= m_day; ++d)
+            rep = m_board.stepBoard(d);
+        std::cerr << "[ContractBoard] fresh boards for day " << m_day << " (the last " << life << " days replayed): " << rep.open
+                  << " open postings" << '\n';
     }
 }
 
@@ -554,6 +602,16 @@ void EconomyServer::stepDay(int day)
 
     // input VAT refunds that came due (trade, TRADE_DESIGN §5.2)
     payDueVatRefunds(day);
+
+    // the contract boards (§7.3 items 5-6): expiries, NPC haulers, today's publications; then the contracts' deadlines
+    const auto board = m_board.stepBoard(day);
+    stepContracts(day);
+    std::size_t activeContracts = 0;
+    for (const auto& c : m_board.contracts())
+        activeContracts += c.status == "active";
+    std::cerr << "[ContractBoard] day " << day << ": published " << board.published << ", taken by NPC " << board.npcTaken << ", expired "
+              << board.expired << ", open " << board.open << "; player contracts active " << activeContracts << '\n';
+    ++m_tradeSerial;
 
     // ledgers
     for (auto& [id, l] : m_ledgers)
@@ -1007,9 +1065,26 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
     if (!l)
         return refuse("no_account", "нет счёта");
     const int g = goodIndex(o.goodId);
+    if (g < 0 && !o.buy)
+        if (const CargoManifest* held = m_cargo.find(o.shipKey))
+            for (const auto& lot : held->lots)
+                if (lot.goodId == o.goodId && !lot.contractId.empty())
+                    return refuse("contract_cargo", "груз контракта " + lot.contractId + " принадлежит заказчику: продать его нельзя");
     if (g < 0)
         return refuse("no_good", "неизвестный товар " + o.goodId);
     const auto& good = EconomyModel::instance().goods()[static_cast<std::size_t>(g)];
+    // the issuer's goods are never the player's to sell (TRADE_DESIGN §3.4: that would be appropriation)
+    if (!o.buy)
+        if (const CargoManifest* held = m_cargo.find(o.shipKey))
+        {
+            double contractT = 0.0;
+            for (const auto& lot : held->lots)
+                if (lot.goodId == o.goodId && !lot.contractId.empty())
+                    contractT += lot.tonnes;
+            if (contractT > 0.0 && held->ownTonnesOf(o.goodId) + 1.0e-6 < o.tonnes)
+                return refuse("contract_cargo", "груз контракта (" + grouped(contractT, 2) + " т «" + good.ru +
+                                                    "») принадлежит заказчику: продать его нельзя");
+        }
     const auto mit = m_marketIndex.find(o.hubId);
     if (mit == m_marketIndex.end() || !m_markets[mit->second].cells[static_cast<std::size_t>(g)].traded)
         return refuse("no_market", "на этом хабе нет рынка товара «" + good.ru + "»");
@@ -1214,7 +1289,56 @@ game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t
             s.vatReclaimCr += v.amountCr;
     if (const auto it = m_results.find(playerId); it != m_results.end())
         s.results = it->second;
+    // the contract board of this hub (shared) and the player's contracts (trade step 5)
+    s.dayNow = std::clamp(m_clockDays, static_cast<double>(m_day), static_cast<double>(m_day) + 0.999);
+    s.boardHubId = hubId;
+    if (!hubId.empty())
+        for (const auto& p : m_board.postings())
+            if (p.originHub == hubId)
+                s.board.push_back(contractRow(p));
+    for (const auto& c : m_board.contracts())
+    {
+        if (c.playerId != playerId)
+            continue;
+        auto row = contractRow(c.p);
+        row.status = c.status;
+        row.closedDay = c.closedDay;
+        row.paidCr = c.paidCr;
+        row.penaltyPaidCr = c.penaltyCr;
+        row.lateDays = c.status == "active" ? std::max(0, m_day - c.p.deadlineDay) : c.lateDays;
+        row.aboard = m_cargo.contractTonnesOf(shipKey, c.p.id) > 0.0;
+        s.contracts.push_back(std::move(row));
+    }
     return s;
+}
+
+game::simulation::ClientContractRow EconomyServer::contractRow(const ContractPosting& p) const
+{
+    game::simulation::ClientContractRow r;
+    r.id = p.id;
+    r.kind = p.kind;
+    r.originHub = p.originHub;
+    r.originName = hubDisplayName(p.originHub);
+    r.destinationHub = p.destinationHub;
+    r.destinationName = hubDisplayName(p.destinationHub);
+    r.issuerName = p.issuerName;
+    r.goodId = p.goodId;
+    r.goodRu = p.goodRu;
+    r.cause = p.cause;
+    r.tonnes = p.tonnes;
+    r.people = p.people;
+    r.c20 = p.c20;
+    r.rewardCr = p.rewardCr;
+    r.advanceCr = p.advanceCr;
+    r.depositCr = p.depositCr;
+    r.penaltyCr = p.penaltyCr;
+    r.lateSharePerDay = p.lateSharePerDay;
+    r.postedDay = p.postedDay;
+    r.expiresDay = p.expiresDay;
+    r.deadlineDay = p.deadlineDay;
+    r.status = p.status;
+    r.closedDay = p.closedDay;
+    return r;
 }
 
 // ---------------------------------------------------------------- replication
@@ -1427,7 +1551,7 @@ ClientLedger ledgerFromJson(const json& j)
 std::string EconomyServer::saveState() const
 {
     json j;
-    j["schema"] = "economy_state/2";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6)
+    j["schema"] = "economy_state/3";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5)
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -1473,6 +1597,7 @@ std::string EconomyServer::saveState() const
     j["vat_refunds"] = json::array();
     for (const auto& v : m_vatRefunds)
         j["vat_refunds"].push_back({{"player", v.playerId}, {"bank", v.bankId}, {"cr", v.amountCr}, {"due", v.dueDay}});
+    j["contracts"] = m_board.toJson();   // the shared boards and the taken contracts (their holds live in the ledgers)
     return j.dump();
 }
 
@@ -1529,7 +1654,7 @@ bool EconomyServer::restoreState(const std::string& text)
         return false;
     }
     const std::string schema = j.value("schema", std::string());
-    if (schema != "economy_state/1" && schema != "economy_state/2")   // /1: no trade registries yet (empty)
+    if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3")   // /1: no trade registries; /2: no contracts
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
     // 2026-11-19: an exception half-way left fx / markets restored, the ledgers cleared, and the caller started a
@@ -1605,6 +1730,10 @@ bool EconomyServer::restoreState(const std::string& text)
         for (const auto& v : j.value("vat_refunds", json::array()))
             vatRefunds.push_back({v.value("player", std::uint64_t{0}), v.value("bank", std::string()), v.value("cr", 0.0), v.value("due", 0)});
 
+        std::vector<ContractPosting> postings;
+        std::vector<Contract> contracts;
+        ContractBoard::fromJson(j.value("contracts", json::object()), postings, contracts);
+
         // ---- commit (no parsing below this line)
         m_day = day;
         for (const auto& [bank, v] : fxs)
@@ -1620,6 +1749,7 @@ bool EconomyServer::restoreState(const std::string& text)
         m_lossEvents.swap(lossEvents);
         m_lostCargo.swap(lostCargo);
         m_nextLostCargo = nextLostCargo;
+        m_board.commit(std::move(postings), std::move(contracts));
         ++m_tradeSerial;
     }
     catch (const std::exception& e)
@@ -1628,5 +1758,258 @@ bool EconomyServer::restoreState(const std::string& text)
         return false;
     }
     return true;
+}
+
+// ---------------------------------------------------------------- contracts (TRADE_DESIGN §3, step 5)
+void EconomyServer::saveNow(const char* what)
+{
+    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
+        std::cerr << "[EconomyServer] state NOT saved after " << what << '\n';
+}
+
+bool EconomyServer::takeCargoChange(std::uint64_t shipKey)
+{
+    return m_cargoChanged.erase(shipKey) != 0;
+}
+
+game::simulation::ClientTradeResult EconomyServer::takeContract(const ContractOrder& o)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = o.requestId;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(o.playerId, o.requestId, code, message);
+        r.code = code;
+        r.message = message;
+        r.day = m_day;
+        return r;
+    };
+    if (!m_loaded)
+        return refuse("off", "экономика не загружена");
+    ClientLedger* l = ledger(o.playerId);
+    if (!l)
+        return refuse("no_account", "нет счёта");
+    ContractPosting* p = m_board.posting(o.contractId);
+    if (!p)
+        return refuse("no_contract", "заявки " + o.contractId + " нет на доске");
+    if (p->status != "open")
+        return refuse("taken", p->status == "npc" ? "заявку уже забрал другой перевозчик" : p->status == "expired" ? "заявка снята с доски"
+                                                                                                              : "заявка уже взята");
+    if (o.hubId.empty() || o.hubId != p->originHub)
+        return refuse("not_docked", "взять заявку можно только у причала хаба отправления " + hubDisplayName(p->originHub));
+    // the hold: the cargo (a P20 crew lot takes one C20 place per module)
+    CargoLot lot;
+    lot.goodId = p->goodId;
+    lot.tonnes = p->tonnes;
+    lot.people = p->people;
+    lot.owner = "issuer:" + p->issuer;
+    lot.contractId = p->id;
+    lot.originHub = p->originHub;
+    lot.loadedDay = m_day;
+    const CargoManifest& m = m_cargo.manifest(o.shipKey, o.playerId);
+    const std::string fit = CargoRegistry::fits(m, o.capacity, p->tonnes, c20For(p->tonnes, p->densityTM3));
+    if (!fit.empty())
+        return refuse("no_space", fit);
+    // the deposit: the client's own money blocked on an account (at the origin's bank if there is one, else home)
+    Contract c;
+    c.p = *p;
+    c.playerId = o.playerId;
+    c.shipKey = o.shipKey;
+    c.takenDay = m_day;
+    c.issuerBank = bankOf(p->destinationHub, -1);
+    if (c.issuerBank.empty())
+        c.issuerBank = bankOf(o.hubId, o.systemId);
+    if (p->depositCr > 0.0)
+    {
+        const std::string local = bankOf(o.hubId, o.systemId);
+        c.holdBank = findAccount(*l, local) ? local : l->homeBank;
+        // (std::string, not a fixed buffer: a cut in the middle of a UTF-8 letter made the state file unwritable)
+        const std::string memo = "залог по контракту " + p->id + " (" + hubDisplayName(p->originHub) + " -> " +
+                                 hubDisplayName(p->destinationHub) + ")";
+        c.holdId = placeHold(*l, m_banks, c.holdBank, p->depositCr, m_day, memo);
+        if (c.holdId == 0)
+            return refuse("no_deposit", "нечем обеспечить залог " + grouped(p->depositCr) + " Cr: нужны свободные деньги на счёте (не овердрафт)");
+    }
+    if (p->advanceCr > 0.0)
+        receive(*l, m_banks, c.issuerBank, p->advanceCr, m_day, "аванс по контракту " + p->id);
+    m_cargo.load(o.shipKey, o.playerId, lot, p->densityTM3);
+    p->status = "taken";
+    p->takenBy = o.playerId;
+    p->closedDay = m_day;
+    m_board.contracts().push_back(c);
+    m_board.touch();
+    logEvent(*l, m_day, "контракт " + p->id + " взят: " + hubDisplayName(p->originHub) + " -> " + hubDisplayName(p->destinationHub) +
+                            ", награда " + grouped(p->rewardCr) + " Cr, аванс " + grouped(p->advanceCr) + ", залог " + grouped(p->depositCr) +
+                            ", срок день " + std::to_string(p->deadlineDay));
+    std::cerr << "[Contract] player " << o.playerId << " TAKE " << p->id << " (" << p->kind << ", " << p->tonnes << " t " << p->goodId
+              << (p->people > 0 ? ", " + std::to_string(p->people) + " people" : std::string()) << ") " << p->originHub << " -> "
+              << p->destinationHub << ": reward " << p->rewardCr << ", advance " << p->advanceCr << " paid, deposit " << p->depositCr
+              << " held (hold " << c.holdId << " at " << c.holdBank << "), deadline day " << p->deadlineDay << " (now " << m_day
+              << "); net worth " << netWorthCr(*l, m_banks) << " Cr, held " << heldCr(*l, m_banks) << " Cr" << '\n';
+    r.ok = true;
+    r.code = "contract_taken";
+    r.totalCr = p->advanceCr;
+    r.message = "контракт взят: аванс +" + grouped(p->advanceCr) + " Cr, залог " + grouped(p->depositCr) + " Cr заблокирован, груз на борту";
+    pushResult(o.playerId, r);
+    saveNow("the contract was taken");
+    r.day = m_day;
+    return r;
+}
+
+int EconomyServer::deliverContracts(std::uint64_t playerId, std::uint64_t shipKey, const std::string& hubId, int systemId)
+{
+    (void)systemId;
+    if (!m_loaded || hubId.empty())
+        return 0;
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+        return 0;
+    const auto& rules = m_board.rules();
+    int handedIn = 0;
+    for (auto& c : m_board.contracts())
+    {
+        if (c.playerId != playerId || c.status != "active" || c.p.destinationHub != hubId)
+            continue;
+        if (!(m_cargo.contractTonnesOf(shipKey, c.p.id) > 0.0))
+            continue;   // its cargo is on another ship (or gone): nothing to hand in here
+        (void)m_cargo.takeContract(shipKey, c.p.id);
+        m_cargoChanged.insert(shipKey);
+        c.lateDays = std::max(0, m_day - c.p.deadlineDay);
+        c.closedDay = m_day;
+        c.paidCr = std::max(0.0, c.p.rewardCr - c.p.advanceCr);
+        if (c.paidCr > 0.0)
+            receive(*l, m_banks, c.issuerBank, c.paidCr, m_day,
+                    "контракт " + c.p.id + " сдан на " + hubDisplayName(hubId) + (c.lateDays > 0 ? " с опозданием" : " в срок"));
+        if (c.holdId != 0)
+            releaseHold(*l, c.holdId);
+        double debt = 0.0;
+        if (c.lateDays > 0)
+        {
+            // late: reward x (1 - share x d) - the cut is a penalty to the issuer, never refused (a debt when unpaid)
+            c.status = "late";
+            c.penaltyCr = std::round(c.p.rewardCr * std::min(1.0, c.p.lateSharePerDay * c.lateDays));
+            const std::string memo = "неустойка за опоздание " + std::to_string(c.lateDays) + " сут по контракту " + c.p.id;
+            const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, "неустойка в долг");
+            debt = p.ok ? p.lifelineCr : 0.0;
+        }
+        else
+            c.status = "delivered";
+        logEvent(*l, m_day, "контракт " + c.p.id + " сдан" + (c.lateDays > 0 ? " с опозданием" : " в срок") + ": +" + grouped(c.paidCr) +
+                                " Cr (награда " + grouped(c.p.rewardCr) + " - аванс " + grouped(c.p.advanceCr) + ")" +
+                                (c.lateDays > 0 ? ", неустойка -" + grouped(c.penaltyCr) + " Cr" : std::string()) + ", залог " +
+                                grouped(c.p.depositCr) + " Cr разблокирован");
+        std::cerr << "[Contract] player " << playerId << " HAND-IN " << c.p.id << " at " << hubId << " (" << hubDisplayName(hubId) << "), day "
+                  << m_day << " deadline " << c.p.deadlineDay << ": " << c.status << ", payout +" << c.paidCr << " Cr (reward " << c.p.rewardCr
+                  << " - advance " << c.p.advanceCr << "), late penalty " << c.penaltyCr << " (debt " << debt << "), deposit "
+                  << c.p.depositCr << " released (hold " << c.holdId << "); net worth " << netWorthCr(*l, m_banks) << " Cr, held "
+                  << heldCr(*l, m_banks) << " Cr" << '\n';
+        c.holdId = 0;
+        ++handedIn;
+    }
+    if (handedIn > 0)
+    {
+        (void)rules;
+        m_board.trimClosed(8);
+        m_board.touch();
+        ++m_tradeSerial;
+        saveNow("the contract hand-in");
+    }
+    return handedIn;
+}
+
+void EconomyServer::failContract(Contract& c, const std::string& status, const std::string& why)
+{
+    ClientLedger* l = ledger(c.playerId);
+    const auto lots = m_cargo.takeContract(c.shipKey, c.p.id);   // the issuer's goods are reclaimed / written off
+    if (!lots.empty())
+        m_cargoChanged.insert(c.shipKey);
+    c.status = status;
+    c.closedDay = m_day;
+    c.lateDays = std::max(0, m_day - c.p.deadlineDay);
+    c.penaltyCr = c.p.penaltyCr + c.p.advanceCr;   // the penalty + the advance back
+    double debt = 0.0;
+    if (l)
+    {
+        const std::string memo = "контракт " + c.p.id + " сорван (" + why + "): неустойка " + grouped(c.p.penaltyCr) + " + возврат аванса " +
+                                 grouped(c.p.advanceCr);
+        const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, "неустойка в долг");
+        debt = p.ok ? p.lifelineCr : 0.0;
+        if (c.holdId != 0)
+            captureHold(*l, m_banks, c.holdId, m_day, "по контракту " + c.p.id);
+    }
+    std::cerr << "[Contract] player " << c.playerId << " " << (status == "abandoned" ? "ABANDONED" : "FAILED") << " " << c.p.id << " ("
+              << why << "), day " << m_day << " deadline " << c.p.deadlineDay << ": penalty " << c.p.penaltyCr << " + advance back "
+              << c.p.advanceCr << " (debt " << debt << "), deposit " << c.p.depositCr << " forfeited (hold " << c.holdId << "), "
+              << lots.size() << " lot(s) off ship " << c.shipKey << (l ? "; net worth " + grouped(netWorthCr(*l, m_banks)) + " Cr" : std::string())
+              << '\n';
+    c.holdId = 0;
+    m_board.touch();
+    ++m_tradeSerial;
+}
+
+game::simulation::ClientTradeResult EconomyServer::abandonContract(const ContractOrder& o)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = o.requestId;
+    Contract* c = m_board.contract(o.contractId);
+    if (!c || c->playerId != o.playerId || c->status != "active")
+    {
+        recordTradeRefusal(o.playerId, o.requestId, "no_contract", "нет такого действующего контракта " + o.contractId);
+        r.code = "no_contract";
+        return r;
+    }
+    ClientLedger* l = ledger(o.playerId);
+    if (l && !o.hubId.empty() && o.hubId == c->p.originHub && m_day <= c->p.deadlineDay)
+    {
+        // a cancel at the origin (the cargo goes back to the issuer's warehouse): a fee + the advance back, deposit released
+        (void)m_cargo.takeContract(o.shipKey, c->p.id);
+        m_cargoChanged.insert(o.shipKey);
+        c->status = "cancelled";
+        c->closedDay = m_day;
+        c->penaltyCr = std::round(c->p.rewardCr * m_board.rules().abandonFeeShare) + c->p.advanceCr;
+        const PaymentResult p = payOrDebt(*l, m_banks, c->issuerBank, c->penaltyCr, Purpose::ContractPenalty, m_day,
+                                          "отказ от контракта " + c->p.id + " (сбор + возврат аванса)", "неустойка в долг");
+        if (c->holdId != 0)
+            releaseHold(*l, c->holdId);
+        c->holdId = 0;
+        if (ContractPosting* posting = m_board.posting(c->p.id); posting && m_day < posting->expiresDay)
+        {
+            posting->status = "open";   // back on the board for the others
+            posting->takenBy = 0;
+            posting->closedDay = -1;
+        }
+        std::cerr << "[Contract] player " << o.playerId << " CANCELLED " << c->p.id << " at the origin: fee + advance back " << c->penaltyCr
+                  << " (debt " << (p.ok ? p.lifelineCr : 0.0) << "), deposit released" << '\n';
+        r.ok = true;
+        r.code = "contract_cancelled";
+        r.totalCr = -c->penaltyCr;
+        r.message = "отказ от контракта: -" + grouped(c->penaltyCr) + " Cr (сбор и возврат аванса), залог разблокирован";
+    }
+    else
+    {
+        failContract(*c, "abandoned", "отказ в пути");
+        r.ok = true;
+        r.code = "contract_abandoned";
+        r.totalCr = -c->penaltyCr;
+        r.message = "контракт брошен: неустойка и возврат аванса -" + grouped(c->penaltyCr) + " Cr, залог " + grouped(c->p.depositCr) + " Cr удержан";
+    }
+    m_board.touch();
+    pushResult(o.playerId, r);
+    saveNow("the contract was abandoned");
+    r.day = m_day;
+    return r;
+}
+
+void EconomyServer::stepContracts(int day)
+{
+    const int lateMax = m_board.rules().lateMaxDays;
+    bool changed = false;
+    for (auto& c : m_board.contracts())
+        if (c.status == "active" && day > c.p.deadlineDay + lateMax)
+        {
+            failContract(c, "failed", "срок + " + std::to_string(lateMax) + " сут истёк");
+            changed = true;
+        }
+    if (changed)
+        m_board.trimClosed(8);
 }
 } // namespace game::economy

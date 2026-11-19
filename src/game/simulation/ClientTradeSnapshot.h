@@ -49,6 +49,37 @@ struct ClientTradeResult
     int day = 0;
 };
 
+// A contract posting of the hub's board or one of the player's contracts (TRADE_DESIGN §3, §8.2 - trade step 5): the
+// server's ContractBoard as replicated; times in economy days (the client shows dayNow - x as days / hours)
+struct ClientContractRow
+{
+    std::string id;
+    std::string kind;                 // supply | crew_shift | construction
+    std::string originHub, originName;
+    std::string destinationHub, destinationName;
+    std::string issuerName;
+    std::string goodId;               // a trade good, "supply_kit" or "crew_p20"
+    std::string goodRu;
+    std::string cause;
+    double tonnes = 0.0;
+    int people = 0;
+    int c20 = 0;
+    double rewardCr = 0.0;
+    double advanceCr = 0.0;
+    double depositCr = 0.0;
+    double penaltyCr = 0.0;
+    double lateSharePerDay = 0.0;
+    int postedDay = 0;
+    int expiresDay = 0;               // off the board at the start of this day
+    int deadlineDay = 0;              // delivered by the end of this day = on time
+    std::string status;               // board: open | taken | npc | expired; mine: active | delivered | late | failed | abandoned | cancelled
+    int closedDay = -1;
+    double paidCr = 0.0;              // mine: the payout at hand-in
+    double penaltyPaidCr = 0.0;       // mine: the penalty / fee / advance back charged
+    int lateDays = 0;
+    bool aboard = false;              // mine: its cargo is in this ship's manifest
+};
+
 struct ClientTradeSnapshot
 {
     bool valid = false;
@@ -89,5 +120,11 @@ struct ClientTradeSnapshot
     double vatReclaimCr = 0.0;        // input VAT waiting for its refund
 
     std::vector<ClientTradeResult> results;   // newest last, at most 4
+
+    // the contract board of the hub the ship is at (shared by every player) and this player's contracts (trade step 5)
+    double dayNow = 0.0;              // the economy day with its fraction (timers)
+    std::string boardHubId;
+    std::vector<ClientContractRow> board;
+    std::vector<ClientContractRow> contracts;
 };
 } // namespace game::simulation

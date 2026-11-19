@@ -30,25 +30,8 @@ TradePresentation buildTradePresentation(
     page.events = model.events(hubId, page.day);
     page.hubs = model.hubsOfSystem(here->systemId);
 
-    for (auto& entry : model.board(hubId, page.day))
-    {
-        TradeBoardRow row;
-        if (const auto* dest = model.hub(entry.destinationHub))
-        {
-            row.destinationName = dest->name;
-            row.destinationSystem = dest->systemName;
-        }
-        if (entry.good >= 0 && entry.good < static_cast<int>(model.goods().size()))
-            row.goodRu = model.goods()[static_cast<std::size_t>(entry.good)].ru;
-        row.daysLeft = entry.deadlineDay - page.day;
-        row.entry = std::move(entry);
-        page.board.push_back(std::move(row));
-    }
-
-    // the card: the selected hub, else the first board destination
+    // the card: the selected hub (the caller may put the selected contract's destination here)
     page.selectedHub = selectedHub;
-    if (page.selectedHub.empty() && !page.board.empty())
-        page.selectedHub = page.board.front().entry.destinationHub;
     if (const auto* dest = model.hub(page.selectedHub))
     {
         auto& card = page.card;

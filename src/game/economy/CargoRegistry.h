@@ -32,6 +32,8 @@ struct CargoLot
     std::string goodId;
     double tonnes = 0.0;
     int c20 = 0;
+    int people = 0;             // a P20 passenger module lot (crew shift, TRADE_DESIGN §3.3): seats taken; tonnes = the
+                                // loaded modules (9 t each), c20 = the modules - no separate passenger hardware yet
     std::string owner;          // "player:<id>" | "issuer:<actor>" (contract cargo, step 5)
     std::string contractId;     // "" = own goods
     double costBasisCr = 0.0;   // what the lot cost in total (goods + handling + VAT not reclaimable)
@@ -80,6 +82,10 @@ public:
     // takes `tonnes` of own goods FIFO; returns the cost basis taken out (Cr); false = not that much aboard
     bool unload(std::uint64_t shipKey, const std::string& goodId, double tonnes, double densityTM3, double& costBasisOutCr);
     void clear(std::uint64_t shipKey);
+    // contract cargo (TRADE_DESIGN §3.4, step 5): every lot of `contractId` leaves the manifest (delivered / seized /
+    // returned to the issuer); returns them
+    std::vector<CargoLot> takeContract(std::uint64_t shipKey, const std::string& contractId);
+    [[nodiscard]] double contractTonnesOf(std::uint64_t shipKey, const std::string& contractId) const;
 
     [[nodiscard]] std::uint64_t serial() const { return m_serial; }
     [[nodiscard]] const std::map<std::uint64_t, CargoManifest>& all() const { return m_manifests; }

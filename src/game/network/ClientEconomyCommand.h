@@ -16,7 +16,10 @@ struct ClientEconomyCommand
         Sell = 1,        // limitUnitCr: not cheaper than
         DevCargoAdd = 2, // DEV: put `quantity` t of goodId aboard without paying (cost basis 0)
         DevCargoClear = 3,
-        Last = DevCargoClear
+        TakeContract = 4,    // contractId: a posting of the board of hubId (docked there); its cargo is loaded at once
+        AbandonContract = 5, // contractId: at its origin hub before the deadline = cancel (fee); elsewhere = failure
+        DevEconomyDays = 6,  // DEV: the economy clock runs `quantity` days ahead (the board's days without waiting)
+        Last = DevEconomyDays
     };
     Op op = Buy;
     std::uint32_t requestId = 0;
@@ -26,5 +29,6 @@ struct ClientEconomyCommand
     double quantity = 0.0;            // tonnes
     double limitUnitCr = 0.0;
     std::int32_t quoteDay = -1;       // the economy day the client priced it on (-1 = any)
+    std::string contractId;           // TakeContract / AbandonContract (trade step 5)
 };
 } // namespace game::network

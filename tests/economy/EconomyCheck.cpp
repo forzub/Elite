@@ -10,6 +10,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <climits>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -18,6 +20,7 @@
 #include "src/game/economy/EconomyServer.h"
 #include "src/game/economy/PriceModel.h"
 #include "src/game/economy/CargoRegistry.h"
+#include "src/game/economy/ContractBoard.h"
 #include "src/game/economy/TradeQuoteModel.h"
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/presentation/TradeDealPresentation.h"
@@ -675,6 +678,336 @@ void testFuelPriceAndAtomicSave()
         fs::remove(statePath);
     }
 }
+// ---------------------------------------------------------------- contracts (TRADE_DESIGN §3, step 5)
+void testContracts()
+{
+    // the pure model: strict publication days, the NPC half-life
+    {
+        ContractSeries ser;
+        ser.periodDays = 14;
+        ser.phaseDay = 5;
+        ser.postLeadDays = 7;
+        std::vector<int> days;
+        for (int d = 1000; d < 1200; ++d)
+            if (isPublishDay(ser, d))
+                days.push_back(d);
+        bool every14 = days.size() >= 14;
+        for (std::size_t k = 1; k < days.size(); ++k)
+            every14 = every14 && days[k] - days[k - 1] == 14;
+        check(every14 && (days[0] + 7 - 5) % 14 == 0 && nextPublishDay(ser, 1000) == days[0] && nextPublishDay(ser, days[0]) == days[0] &&
+                  nextPublishDay(ser, days[0] + 1) == days[1],
+              "a series publishes strictly on d_k = phase + k x 14 - lead (" + std::to_string(days.size()) + " days in 200, first " +
+                  std::to_string(days[0]) + ")");
+        const ContractRules r;
+        const double busy = npcTakeRatePerDay(r, trafficOf(r, 5515.0), attractivenessOf(r, 2600.0, 2600.0), "open");
+        const double frontier = npcTakeRatePerDay(r, trafficOf(r, 2.0), attractivenessOf(r, 2600.0, 2600.0), "open");
+        // many seeds: 40 000 postings rolled day after day at the busy rate
+        const int n = 40000;
+        std::vector<int> takenOn(n, 0);
+        for (int i = 0; i < n; ++i)
+            for (int d = 1; d <= 60 && takenOn[i] == 0; ++d)
+                if (npcTakes("seed-" + std::to_string(i), 5000 + d, busy))
+                    takenOn[i] = d;
+        int after1 = 0, after2 = 0;
+        for (const int t : takenOn)
+        {
+            after1 += t == 0 || t > 1;
+            after2 += t == 0 || t > 2;
+        }
+        const double s1 = static_cast<double>(after1) / n, s2 = static_cast<double>(after2) / n;
+        const double hl1 = std::log(2.0) / -std::log(s1), hl2 = 2.0 * std::log(2.0) / -std::log(s2);
+        check(near(busy, 0.5, 1e-9) && near(hl1, 1.386, 0.06) && near(hl2, 1.386, 0.06) && near(std::log(2.0) / frontier, 13.86, 0.05),
+              "NPC haulers: a fair posting at a busy hub (5 515 arrivals/day) lambda 0.5/day -> half-life " + std::to_string(hl1) + " d (1 day) / " +
+                  std::to_string(hl2) + " d (2 days) over 40 000 seeds (~1.39); a frontier post (2 arrivals) 13.9 d");
+        ContractSeries p;
+        p.project = true;
+        p.projectStart = 100;
+        p.projectWorkDays = 50;
+        p.halts = {{120, 130}, {200, INT_MIN}};
+        check(!projectBuilding(p, 99) && projectBuilding(p, 100) && !projectBuilding(p, 125) && projectBuilding(p, 130) &&
+                  projectBuilding(p, 159) && !projectBuilding(p, 160) && !projectBuilding(p, 205),
+              "a construction series runs only while its project is building (start, work days, a halt pauses it)");
+    }
+
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  contracts (economy data not found from this working directory)\n");
+        return;
+    }
+    const int day0 = s.contracts().rules().constructionEpochDay + 322;   // 3126-11-19
+    s.start(day0);
+    std::size_t openAtStart = 0;
+    for (const auto& p : s.contracts().postings())
+        openAtStart += p.status == "open" && p.postedDay <= day0 && p.expiresDay > day0;
+    check(openAtStart > 50, "a fresh server starts with today's boards (" + std::to_string(openAtStart) +
+                                " open postings: the last board-life days replayed), not empty until the next day");
+    const auto stepTo = [&](int d) {
+        while (s.day() < d)
+            s.advanceTo(d);
+    };
+    std::size_t supply = 0, crew = 0, build = 0;
+    const ContractSeries* europa = nullptr;
+    for (const auto& ser : s.contracts().series())
+    {
+        (ser.kind == "supply" ? supply : ser.kind == "crew_shift" ? crew : build) += 1;
+        if (ser.id == "SER-site.000.sol.europa-supply")
+            europa = &ser;
+    }
+    check(supply > 100 && crew > 100 && build > 100 && europa && europa->originHub == "earth_hub.tikhiy" && europa->periodDays == 14 &&
+              near(europa->tonnesPerPosting, 40.006 * 14.0 / 30.0, 0.01),
+          "series from the data: " + std::to_string(supply) + " supply, " + std::to_string(crew) + " crew shift, " + std::to_string(build) +
+              " construction; Europa (Конамара): supply 18.67 t every 14 days from Тихий");
+
+    // every day: the postings of the day are exactly the series due that day (and nothing else)
+    std::map<std::string, const ContractSeries*> byId;
+    for (const auto& ser : s.contracts().series())
+        byId[ser.id] = &ser;
+    bool exact = true;
+    std::vector<int> europaDays;
+    int busyRolled = 0, busyTaken = 0;
+    std::string why;
+    for (int d = day0 + 1; d <= day0 + 120; ++d)
+    {
+        stepTo(d);
+        int expected = 0, got = 0;
+        for (const auto& ser : s.contracts().series())
+            if (isPublishDay(ser, d) && projectBuilding(ser, d - s.contracts().rules().constructionEpochDay))
+                expected += std::max(1, ser.postings);
+        for (const auto& p : s.contracts().postings())
+        {
+            if (p.postedDay == d)
+            {
+                ++got;
+                const auto it = byId.find(p.seriesId);
+                if (it == byId.end() || !isPublishDay(*it->second, d))
+                {
+                    exact = false;
+                    why = p.id;
+                }
+                if (p.seriesId == "SER-site.000.sol.europa-supply")
+                    europaDays.push_back(d);
+            }
+            // the busy-hub NPC roll as it happened on the real board: the postings rolled for the first time today
+            if (p.postedDay == d - 1 && near(p.npcRatePerDay, 0.5, 1e-9))
+            {
+                ++busyRolled;
+                busyTaken += p.status == "npc" && p.closedDay == d;
+            }
+        }
+        if (got != expected)
+        {
+            exact = false;
+            why = "day " + std::to_string(d) + ": " + std::to_string(got) + " vs " + std::to_string(expected);
+        }
+    }
+    bool europa14 = europaDays.size() >= 8;
+    for (std::size_t k = 1; k < europaDays.size(); ++k)
+        europa14 = europa14 && europaDays[k] - europaDays[k - 1] == 14;
+    check(exact && europa14, "120 days of the server board: every posting appears exactly on its series' d_k (" + why +
+                                 "); Europa supply on " + std::to_string(europaDays.size()) + " days, 14 apart");
+    const double pTaken = busyRolled ? static_cast<double>(busyTaken) / busyRolled : 0.0;
+    const double hlBoard = std::log(2.0) / -std::log(1.0 - pTaken);
+    check(busyRolled > 300 && near(hlBoard, 1.386, 0.25),
+          "the real board: " + std::to_string(busyTaken) + " of " + std::to_string(busyRolled) +
+              " fair postings at busy hubs taken by NPC on their first day -> half-life " + std::to_string(hlBoard) + " d (~1.4)");
+
+    // ---- take -> deposit held, advance paid, cargo aboard as the issuer's lot
+    const auto worth = [&](std::uint64_t p) { return netWorthCr(*s.ledger(p), s.banks()); };
+    const auto held = [&](std::uint64_t p) { return heldCr(*s.ledger(p), s.banks()); };
+    const auto debt = [&](std::uint64_t p) { return totalDebtCr(*s.ledger(p), s.banks()); };
+    const auto pick = [&](const std::string& kind, double minDeposit) -> const ContractPosting* {
+        for (const auto& p : s.contracts().postings())
+            if (p.status == "open" && p.kind == kind && p.depositCr >= minDeposit && p.postedDay == s.day() && p.depositCr < 12000.0 &&
+                p.originHub != p.destinationHub)
+                return &p;
+        return nullptr;
+    };
+    CargoCapacity cap;
+    cap.netT = 400.0;
+    cap.c20Slots = 20;
+    const auto order = [&](std::uint64_t player, std::uint64_t ship, const ContractPosting& p) {
+        EconomyServer::ContractOrder o;
+        o.playerId = player;
+        o.shipKey = ship;
+        o.hubId = p.originHub;
+        o.systemId = -1;
+        o.contractId = p.id;
+        o.requestId = 7;
+        o.capacity = cap;
+        return o;
+    };
+    // a day with a construction posting with a deposit
+    const ContractPosting* found = nullptr;
+    for (int k = 0; k < 14 && !(found = pick("construction", 1.0)); ++k)
+        stepTo(s.day() + 1);
+    if (!found)
+    {
+        check(false, "no construction posting with a deposit in 14 days");
+        return;
+    }
+    const ContractPosting posted = *found;
+    s.ensurePlayer(1, 0);
+    double w0 = worth(1);
+    EconomyServer::ContractOrder wrongHub = order(1, 501, posted);
+    wrongHub.hubId = posted.destinationHub;
+    const auto refusedAway = s.takeContract(wrongHub);
+    const auto taken = s.takeContract(order(1, 501, posted));
+    const CargoManifest* m = s.cargo().find(501);
+    bool lotOk = m && m->lots.size() == 1 && m->lots[0].contractId == posted.id && m->lots[0].owner.rfind("issuer:", 0) == 0 &&
+                 near(m->lots[0].tonnes, posted.tonnes, 1e-9);
+    check(!refusedAway.ok && refusedAway.code == "not_docked" && taken.ok && near(held(1), posted.depositCr, 0.02) &&
+              near(worth(1) - w0, posted.advanceCr, 0.02) && lotOk && s.contracts().posting(posted.id)->status == "taken",
+          "take " + posted.id + " (" + posted.goodId + " " + std::to_string(posted.tonnes) + " t " + posted.originHub + " -> " +
+              posted.destinationHub + "): only at the origin's berth; deposit " + std::to_string(posted.depositCr) + " held (" +
+              std::to_string(held(1)) + "), advance +" + std::to_string(posted.advanceCr) + ", the issuer's lot aboard");
+    s.ensurePlayer(2, 0);
+    const auto again = s.takeContract(order(2, 502, posted));
+    check(!again.ok && again.code == "taken", "a shared board: the posting is gone for everyone else (first come, first served)");
+
+    // ---- contract cargo cannot be sold
+    EconomyServer::TradeOrder sell;
+    sell.buy = false;
+    sell.playerId = 1;
+    sell.shipKey = 501;
+    sell.hubId = posted.destinationHub;
+    sell.goodId = posted.goodId;
+    sell.tonnes = 5.0;
+    sell.capacity = cap;
+    const auto sold = s.trade(sell);
+    check(!sold.ok && sold.code == "contract_cargo" && near(s.cargo().find(501)->netT(), posted.tonnes, 1e-9),
+          "selling the contract's " + posted.goodId + " is refused (\"" + sold.message + "\"), the lot stays aboard");
+
+    // ---- deliver on time: reward - advance, deposit released
+    w0 = worth(1);
+    const int handed = s.deliverContracts(1, 501, posted.destinationHub, -1);
+    const Contract* done = nullptr;
+    for (const auto& c : s.contracts().contracts())
+        if (c.p.id == posted.id)
+            done = &c;
+    check(handed == 1 && done && done->status == "delivered" && near(worth(1) - w0, posted.rewardCr - posted.advanceCr, 0.05) &&
+              near(held(1), 0.0, 1e-9) && s.cargo().find(501)->lots.empty() && s.takeCargoChange(501),
+          "hand-in on docking at the destination in time: +" + std::to_string(worth(1) - w0) + " Cr (reward " + std::to_string(posted.rewardCr) +
+              " - advance), deposit released, the lot left the manifest");
+
+    // ---- late: reward x (1 - 0.1 x d), the cut is a penalty (never refused)
+    const ContractPosting* late = nullptr;
+    for (int k = 0; k < 14 && !(late = pick("supply", 1.0)); ++k)
+        stepTo(s.day() + 1);
+    if (!late)
+    {
+        check(false, "no supply posting with a deposit in 14 days");
+        return;
+    }
+    const ContractPosting latePosted = *late;
+    s.ensurePlayer(3, 0);
+    check(s.takeContract(order(3, 503, latePosted)).ok, "take supply " + latePosted.id + " (" + std::to_string(latePosted.tonnes) + " t kit)");
+    stepTo(latePosted.deadlineDay + 2);
+    w0 = worth(3);
+    (void)s.deliverContracts(3, 503, latePosted.destinationHub, -1);
+    const Contract* lateC = nullptr;
+    for (const auto& c : s.contracts().contracts())
+        if (c.p.id == latePosted.id)
+            lateC = &c;
+    const double lateCut = std::round(latePosted.rewardCr * 0.1 * 2.0);
+    check(lateC && lateC->status == "late" && lateC->lateDays == 2 && near(lateC->penaltyCr, lateCut, 1e-9) &&
+              near(worth(3) - w0, latePosted.rewardCr - latePosted.advanceCr - lateCut, 0.05) && near(held(3), 0.0, 1e-9),
+          "2 days late: payout " + std::to_string(worth(3) - w0) + " = reward - advance - 20 % (" + std::to_string(lateCut) +
+              " Cr penalty), deposit released");
+
+    // ---- failure: deadline + 5 days -> advance back + penalty (a broke pilot: debt, never refused), deposit forfeited
+    const ContractPosting* failP = nullptr;
+    for (int k = 0; k < 14 && !(failP = pick("supply", 1.0)); ++k)
+        stepTo(s.day() + 1);
+    if (!failP)
+    {
+        check(false, "no supply posting to fail");
+        return;
+    }
+    const ContractPosting failPosted = *failP;
+    s.ensurePlayer(4, 0);
+    check(s.takeContract(order(4, 504, failPosted)).ok, "take " + failPosted.id + " to fail it");
+    // spend everything free (the deposit stays blocked): the penalty cannot be paid
+    (void)s.chargeService(4, failPosted.originHub, -1, Purpose::Other,
+                          s.tradeSnapshot(4, 504, failPosted.originHub, -1, true).spendableCr - 0.5, "test: broke");
+    const double balance0 = worth(4), debt0 = debt(4), held0 = held(4);
+    stepTo(failPosted.deadlineDay + 6);
+    const Contract* failC = nullptr;
+    for (const auto& c : s.contracts().contracts())
+        if (c.p.id == failPosted.id)
+            failC = &c;
+    const double owed = failPosted.penaltyCr + failPosted.advanceCr;
+    const bool lotGone = !s.cargo().find(504) || s.cargo().find(504)->lots.empty();
+    check(failC && failC->status == "failed" && near(held0, failPosted.depositCr, 0.02) && near(held(4), 0.0, 1e-9) &&
+              near(debt(4) - debt0, owed, 0.5) && lotGone && s.takeCargoChange(504) &&
+              near(balance0 - worth(4), failPosted.depositCr + owed, 1.0 + 0.002 * (failPosted.depositCr + owed)),
+          "failed (deadline + 5 days): deposit " + std::to_string(failPosted.depositCr) + " forfeited, penalty + advance back " +
+              std::to_string(owed) + " booked as debt (" + std::to_string(debt(4) - debt0) + ") - not refused; the lot seized");
+
+    // ---- abandon away from the origin = failure; at the origin = a cancel fee, the deposit back, the posting reopened
+    const ContractPosting* abP = nullptr;
+    for (int k = 0; k < 14 && !(abP = pick("construction", 1.0)); ++k)
+        stepTo(s.day() + 1);
+    if (!abP)
+    {
+        check(false, "no posting to abandon");
+        return;
+    }
+    const ContractPosting abPosted = *abP;
+    s.ensurePlayer(5, 0);
+    check(s.takeContract(order(5, 505, abPosted)).ok, "take " + abPosted.id + " to abandon it");
+    EconomyServer::ContractOrder away = order(5, 505, abPosted);
+    away.hubId.clear();   // in flight
+    w0 = worth(5);
+    const auto ab = s.abandonContract(away);
+    check(ab.ok && ab.code == "contract_abandoned" && near(held(5), 0.0, 1e-9) &&
+              near(w0 - worth(5), abPosted.depositCr + abPosted.penaltyCr + abPosted.advanceCr, 0.5),
+          "abandoned in flight: deposit " + std::to_string(abPosted.depositCr) + " forfeited + penalty " + std::to_string(abPosted.penaltyCr) +
+              " + advance back (" + std::to_string(w0 - worth(5)) + " Cr)");
+    const ContractPosting* cP = nullptr;
+    for (const auto& p : s.contracts().postings())
+        if (!cP && p.status == "open" && p.depositCr > 0.0 && p.postedDay == s.day() && p.depositCr < 12000.0)
+            cP = &p;
+    if (cP)
+    {
+        const ContractPosting cPosted = *cP;
+        s.ensurePlayer(6, 0);
+        const double w6 = worth(6);
+        (void)s.takeContract(order(6, 506, cPosted));
+        const auto cancel = s.abandonContract(order(6, 506, cPosted));
+        const double fee = std::round(cPosted.rewardCr * 0.1);
+        check(cancel.ok && cancel.code == "contract_cancelled" && near(held(6), 0.0, 1e-9) && near(w6 - worth(6), fee, 0.05) &&
+                  s.contracts().posting(cPosted.id)->status == "open",
+              "abandoned at the origin before loading out: a 10 % fee (" + std::to_string(w6 - worth(6)) + " Cr net), deposit released, back on the board");
+    }
+
+    // ---- save / restore: exact round trip (the boards, the contracts, the holds in the ledgers)
+    s.ensurePlayer(7, 0);
+    const ContractPosting* keepP = nullptr;
+    for (const auto& p : s.contracts().postings())
+        if (!keepP && p.status == "open" && p.depositCr > 0.0 && p.depositCr < 12000.0)
+            keepP = &p;
+    if (keepP)
+        (void)s.takeContract(order(7, 507, *keepP));
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    (void)t.load();
+    t.start(day0);
+    const bool restored = t.restoreState(saved);
+    std::size_t active = 0;
+    for (const auto& c : t.contracts().contracts())
+        active += c.status == "active";
+    check(restored && t.saveState() == saved && active >= 1 && t.contracts().postings().size() == s.contracts().postings().size() &&
+              near(heldCr(*t.ledger(7), t.banks()), heldCr(*s.ledger(7), s.banks()), 1e-9),
+          "save / restore round trip is exact (" + std::to_string(saved.size()) + " bytes, " + std::to_string(t.contracts().postings().size()) +
+              " postings, " + std::to_string(active) + " active contract(s), the deposit hold kept)");
+    // a malformed contracts block leaves the live state untouched (temporaries, then commit)
+    nlohmann::json bad = nlohmann::json::parse(saved);
+    bad["contracts"]["contracts"][0]["posting"] = 42;
+    const bool rejected = !t.restoreState(bad.dump());
+    check(rejected && t.saveState() == saved, "a broken contracts block is rejected whole: the live board / ledgers unchanged");
+}
+
 } // namespace
 
 // trade step 3: the F8 deal window prices a deal with the server's TradeQuoteModel on the replicated inputs - its
@@ -1007,6 +1340,7 @@ int main()
     testTradeServer();
     testTradeDealWindow();
     testPortFeesAndDuty();
+    testContracts();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

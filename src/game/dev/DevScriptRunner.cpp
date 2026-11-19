@@ -420,6 +420,79 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
     }
     else if (cmd == "tradedeal:report")
         s.logTradeDeal("report");
+    // the contract board (TRADE_DESIGN §3, trade step 5):
+    //   contract:take:<id> | contract:take:pick:<part of an id> - the request the CONTRACTS tab's confirm sends
+    //   contract:abandon:<id> | contract:report ("[ContractReport]": the replicated board / contracts with timers)
+    //   econ:days:<n> - DEV: the server's economy clock runs n days ahead (the board's days without waiting)
+    //   econ:await:<part of a series id> - DEV: ahead to that series' next publication at this hub (0 if open now)
+    //   contractclick:<select:<id|pick:<part>>|take|abandon|confirm|cancel> - a click on the region the last frame drew
+    else if (cmd.rfind("contract:take:", 0) == 0 || cmd.rfind("contract:abandon:", 0) == 0 || cmd.rfind("contractclick:", 0) == 0)
+    {
+        using ui::presentation::ServicePanelActionType;
+        const auto& t = s.m_client->sessionSnapshot().trade;
+        const auto resolve = [&](std::string id) {
+            if (id.rfind("pick:", 0) == 0)
+            {
+                const std::string part = id.substr(5);
+                id.clear();
+                for (const auto& r : t.board)
+                    if (id.empty() && r.status == "open" && r.id.find(part) != std::string::npos)
+                        id = r.id;
+                for (const auto& r : t.contracts)
+                    if (id.empty() && r.status == "active" && r.id.find(part) != std::string::npos)
+                        id = r.id;
+                if (id.empty())
+                    std::cerr << "[Contract] DEV pick '" << part << "': no open posting / active contract matches" << std::endl;
+            }
+            return id;
+        };
+        if (cmd.rfind("contract:take:", 0) == 0 || cmd.rfind("contract:abandon:", 0) == 0)
+        {
+            const bool take = cmd.rfind("contract:take:", 0) == 0;
+            const std::string id = resolve(cmd.substr(take ? 14 : 17));
+            if (!id.empty())
+            {
+                s.m_tradeContract = id;
+                s.m_tradeContractRequest = s.sendContractCommand(take ? game::network::ClientEconomyCommand::TakeContract
+                                                                      : game::network::ClientEconomyCommand::AbandonContract,
+                                                                 id);
+            }
+        }
+        else
+        {
+            std::string what = arg("contractclick:"), param;
+            if (const auto colon = what.find(':'); colon != std::string::npos)
+            {
+                param = what.substr(colon + 1);
+                what.resize(colon);
+            }
+            ServicePanelActionType type = ServicePanelActionType::TradeContractConfirm;
+            if (what == "select")
+            {
+                type = ServicePanelActionType::TradeContractSelect;
+                param = resolve(param);
+            }
+            else if (what == "take") type = ServicePanelActionType::TradeContractTake;
+            else if (what == "abandon") type = ServicePanelActionType::TradeContractAbandon;
+            else if (what == "cancel") type = ServicePanelActionType::TradeContractCancel;
+            if (const auto action = s.m_servicePanels.devClick(type, param))
+                s.applyTradeContractAction(*action);
+            else if (type == ServicePanelActionType::TradeContractSelect && !param.empty())
+            {
+                // a row below the visible part of the list: the key / wheel path selects it (the list scrolls to it)
+                std::cerr << "[Contract] DEV select " << param << ": off the visible list - selected as by the keys" << std::endl;
+                s.applyTradeContractAction({type, param});
+            }
+            else
+                std::cerr << "[Contract] DEV click " << what << ":" << param << ": the last frame has no such region" << std::endl;
+        }
+    }
+    else if (cmd == "contract:report")
+        s.logContracts("report");
+    else if (cmd.rfind("econ:days:", 0) == 0)
+        s.sendEconomyCommand(game::network::ClientEconomyCommand::DevEconomyDays, std::string(), std::atof(cmd.c_str() + 10));
+    else if (cmd.rfind("econ:await:", 0) == 0)   // DEV: the clock runs to the next publication of that series here
+        s.sendEconomyCommand(game::network::ClientEconomyCommand::DevEconomyDays, cmd.substr(11), 0.0);
     else if (cmd == "detail")
     {
         // the Details tab: the selected body's Detail map

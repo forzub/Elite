@@ -592,6 +592,8 @@ void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot
     const bool good = f.standing == "good";
     row("Статус клиента", f.standingRu, good ? Good : f.standing == "grace" ? Warn : Bad, px);
     row("Чистые активы", money2(f.netWorthCr) + " Cr", f.netWorthCr >= 0.0 ? Good : Bad, px);
+    if (f.heldCr > 0.005)   // contract deposits (trade step 5): the client's money, blocked until hand-in / failure
+        row("  из них заблокировано (залоги контрактов)", money2(f.heldCr) + " Cr", Warn, small);
     header("Наличные");
     for (const auto& c : f.cash)
         row(c.label, money2(c.amount) + " " + c.currency + (c.currency == "CR" ? "" : "  (" + grouped(c.amountCr) + " Cr)"), Text, small);
@@ -692,7 +694,7 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
     {
         if (y > listY + listH - 2.0f * static_cast<float>(px))
             break;
-        t.textDrawPx(goodRu(c.good), x, y, px, Text);
+        t.textDrawPx(c.good >= 0 ? goodRu(c.good) : (c.contractId.empty() ? std::string("?") : "груз контракта"), x, y, px, Text);
         const std::string mass = fmt("%.2f т", c.tonnes) + "  ·  C20 x " + std::to_string(c.c20);
         t.textDrawPx(mass, right - t.measureTextPx(mass, px), y, px, Text);
         y += static_cast<float>(px) + 4.0f;
@@ -783,7 +785,7 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     }
     t.textDrawPx("ТОРГОВЛЯ — " + page.hubName, 24, 18, big, Title);
     t.textDrawPx(std::string(page.atHub ? "F8  /  вы в хабе" : "F8  /  ближайший хаб") + "  ·  день " + std::to_string(page.day) +
-                     "  ·  доска объявлений, рынок, хабы системы", 24, 18 + big + 6, small, Muted);
+                     "  ·  контракты, рынок, хабы системы", 24, 18 + big + 6, small, Muted);
     if (!page.events.empty())
     {
         std::string ev = "События: ";
@@ -794,7 +796,9 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
 
     // ---- tabs
     const float tabY = 18.0f + big + 18.0f + 2.0f * small;
-    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ", "ФИНАНСЫ", "ГРУЗ"};
+    const auto tabIt = page.contractText.find("tab");
+    const std::string contractsTab = tabIt == page.contractText.end() ? std::string("КОНТРАКТЫ") : tabIt->second;
+    const char* tabs[] = {contractsTab.c_str(), "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ", "ФИНАНСЫ", "ГРУЗ"};
     float tx = 24.0f;
     for (int i = 0; i < 6; ++i)
     {
@@ -825,11 +829,17 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
         t.endFrame();
         return;
     }
+    if (page.tab == 0)
+    {
+        renderTradeContracts(page, listX, listY, listW, listH, w, h, px, small, big);
+        t.endFrame();
+        return;
+    }
     t.solidRectPx(listX, listY, listW, listH, Panel);
     m_zones.push_back({4, listX, listY, listX + listW, listY + listH});
     const float rowH = static_cast<float>(px) * 2.7f;
     const auto& goods = game::economy::EconomyModel::instance().goods();
-    std::size_t rows = page.tab == 0 ? page.board.size() : page.tab == 1 ? page.market.size() : page.hubs.size();
+    std::size_t rows = page.tab == 1 ? page.market.size() : page.hubs.size();
     const float maxScroll = std::max(0.0f, rowH * static_cast<float>(rows) - listH);
     m_tradeListScroll = std::clamp(m_tradeListScroll, 0.0f, maxScroll);
     std::size_t visibleRow = 0;
@@ -841,26 +851,7 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
         ++visibleRow;
         if (y < listY - 1.0f || y + rowH > listY + listH + 1.0f)
             continue;
-        if (page.tab == 0)
-        {
-            const auto& r = page.board[i];
-            const bool sel = r.entry.destinationHub == page.selectedHub;
-            if (sel)
-                t.solidRectPx(listX, y, listW, rowH, Selected);
-            std::string what = r.entry.kindRu;
-            if (r.entry.kind == "cargo")
-                what += ": " + r.goodRu + ", " + std::to_string(r.entry.containersC20) + " x C20";
-            else if (r.entry.people > 0)
-                what += ": " + std::to_string(r.entry.people) + " чел.";
-            t.textDrawPx(what, listX + 10, y + 4, px, sel ? Title : Text);
-            const std::string dest = "-> " + r.destinationName + (r.destinationSystem.empty() ? "" : "  (" + r.destinationSystem + ")") +
-                                     "  ·  срок " + std::to_string(r.daysLeft) + " сут  ·  канал " + channelRu(r.entry.channel);
-            t.textDrawPx(dest, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
-            const std::string reward = grouped(r.entry.rewardCr) + " Cr";
-            t.textDrawPx(reward, listX + listW - t.measureTextPx(reward, px) - 10, y + 4, px, Good);
-            m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::TradeSelectHub, r.entry.destinationHub}});
-        }
-        else if (page.tab == 1)
+        if (page.tab == 1)
         {
             const auto& q = page.market[i];
             const auto& g = goods[static_cast<std::size_t>(q.good)];
@@ -1369,4 +1360,270 @@ std::optional<ServicePanelAction> ServicePanelsRenderer::devClick(ServicePanelAc
         }
     return std::nullopt;
 }
+// F8 CONTRACTS (TRADE_DESIGN §8.2, trade step 5): the server's shared board of this hub and the player's contracts, with
+// their timers. Every number is the server's (session.trade board / contracts); the tab only lays them out and asks
+// "take?" / "abandon?" before the request goes.
+namespace
+{
+std::string ctext(const game::presentation::TradePresentation& page, const std::string& key)
+{
+    const auto it = page.contractText.find(key);
+    return it == page.contractText.end() ? key : it->second;
+}
+
+std::string cfill(std::string s, const std::vector<std::pair<std::string, std::string>>& args)
+{
+    for (const auto& [k, v] : args)
+        for (std::size_t p = s.find(k); p != std::string::npos; p = s.find(k, p + v.size()))
+            s.replace(p, k.size(), v);
+    return s;
+}
+
+// "2 сут 05 ч" / "17 ч" / "просрочен"
+std::string leftText(const game::presentation::TradePresentation& page, double days)
+{
+    if (days <= 0.0)
+        return ctext(page, "overdue");
+    const int d = static_cast<int>(std::floor(days));
+    const int h = static_cast<int>(std::floor((days - d) * 24.0));
+    char hh[8];
+    std::snprintf(hh, sizeof hh, "%02d", h);
+    return d > 0 ? cfill(ctext(page, "days_hours"), {{"{d}", std::to_string(d)}, {"{h}", hh}})
+                 : cfill(ctext(page, "hours"), {{"{h}", std::to_string(h)}});
+}
+
+std::string kindText(const game::presentation::TradePresentation& page, const std::string& kind)
+{
+    return ctext(page, "kind_" + kind);
+}
+
+std::string loadText(const game::presentation::TradePresentation& page, const game::simulation::ClientContractRow& r)
+{
+    if (r.people > 0)
+        return cfill(ctext(page, "people"), {{"{n}", std::to_string(r.people)}, {"{m}", std::to_string(r.c20)}});
+    return r.goodRu + ", " + cfill(ctext(page, "cargo"), {{"{t}", fmt("%.1f", r.tonnes)}, {"{c20}", std::to_string(r.c20)}});
+}
+
+glm::vec4 statusColour(const std::string& s)
+{
+    if (s == "open" || s == "active")
+        return Text;
+    if (s == "delivered")
+        return Good;
+    if (s == "late" || s == "cancelled")
+        return Warn;
+    if (s == "failed" || s == "abandoned")
+        return Bad;
+    return Muted;
+}
+} // namespace
+
+void ServicePanelsRenderer::renderTradeContracts(const game::presentation::TradePresentation& page, float listX, float listY, float listW,
+                                                 float listH, float w, float h, int px, int small, int big)
+{
+    auto& t = TextRenderer::instance();
+    const auto& s = page.trade;
+    t.solidRectPx(listX, listY, listW, listH, Panel);
+    m_zones.push_back({4, listX, listY, listX + listW, listY + listH});
+    if (!s.valid)
+    {
+        t.textDrawPx(ctext(page, "take_hint"), listX + 12, listY + 12, px, Muted);
+        return;
+    }
+    // ---- the list: the board of this hub, then my contracts
+    const float rowH = static_cast<float>(px) * 2.7f, headH = static_cast<float>(px) * 1.8f;
+    const float total = headH * 2.0f + rowH * static_cast<float>(std::max<std::size_t>(1, s.board.size()) + std::max<std::size_t>(1, s.contracts.size()));
+    std::vector<const game::simulation::ClientContractRow*> boardRows;
+    for (int pass = 0; pass < 2; ++pass)
+        for (const auto& r : s.board)
+            if ((r.status == "open") == (pass == 0))
+                boardRows.push_back(&r);
+    if (page.selectedContract != m_tradeContractShown)
+    {
+        // a new selection (click, keys, a DEV pick): scroll so that its row is in the list
+        m_tradeContractShown = page.selectedContract;
+        float at = -1.0f;
+        for (std::size_t i = 0; i < boardRows.size(); ++i)
+            if (boardRows[i]->id == page.selectedContract)
+                at = headH + rowH * static_cast<float>(i);
+        for (std::size_t i = 0; i < s.contracts.size() && at < 0.0f; ++i)
+            if (s.contracts[i].id == page.selectedContract)
+                at = headH * 2.0f + rowH * static_cast<float>(std::max<std::size_t>(1, s.board.size()) + i);
+        if (at >= 0.0f && (at < m_tradeListScroll || at + rowH > m_tradeListScroll + listH))
+            m_tradeListScroll = at - listH * 0.4f;
+    }
+    m_tradeListScroll = std::clamp(m_tradeListScroll, 0.0f, std::max(0.0f, total - listH));
+    float y = listY - m_tradeListScroll;
+    const auto visible = [&](float y0, float hh) { return y0 >= listY - 1.0f && y0 + hh <= listY + listH + 1.0f; };
+    const auto header = [&](const std::string& text) {
+        if (visible(y, headH))
+        {
+            t.textDrawPx(text, listX + 10, y + 4, px, Title);
+            t.solidRectPx(listX, y + headH - 2, listW, 1, Line);
+        }
+        y += headH;
+    };
+    const auto row = [&](const game::simulation::ClientContractRow& r, bool mine) {
+        if (visible(y, rowH))
+        {
+            const bool sel = r.id == page.selectedContract;
+            if (sel)
+                t.solidRectPx(listX, y, listW, rowH, Selected);
+            const bool closed = mine ? r.status != "active" : r.status != "open";
+            const std::string what = kindText(page, r.kind) + ": " + loadText(page, r);
+            t.textDrawPx(what, listX + 10, y + 4, px, closed ? Muted : sel ? Title : Text);
+            const std::string reward = grouped(r.rewardCr) + " Cr";
+            t.textDrawPx(reward, listX + listW - t.measureTextPx(reward, px) - 10, y + 4, px, closed ? Muted : Good);
+            std::string sub = "-> " + r.destinationName + "  ·  ";
+            if (mine)
+            {
+                sub += ctext(page, "status_" + r.status);
+                if (r.status == "active")
+                    sub += "  ·  " + cfill(ctext(page, "deadline"), {{"{d}", std::to_string(r.deadlineDay)},
+                                                                   {"{left}", leftText(page, r.deadlineDay + 1.0 - s.dayNow)}}) +
+                           "  ·  " + ctext(page, r.aboard ? "aboard" : "not_aboard");
+                else if (r.paidCr > 0.0)
+                    sub += "  ·  +" + grouped(r.paidCr) + " Cr";
+            }
+            else if (r.status == "open")
+                sub += cfill(ctext(page, "on_board"), {{"{left}", leftText(page, r.expiresDay - s.dayNow)}}) + "  ·  " +
+                       ctext(page, "deposit") + " " + grouped(r.depositCr) + " Cr";
+            else
+                sub += ctext(page, "status_" + r.status);
+            t.textDrawPx(sub, listX + 10, y + 6 + static_cast<float>(px), small, mine ? statusColour(r.status) : Muted);
+            m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::TradeContractSelect, r.id}});
+            t.solidRectPx(listX, y + rowH - 1, listW, 1, glm::vec4(0.2f, 0.3f, 0.4f, 0.5f));
+        }
+        y += rowH;
+    };
+    header(cfill(ctext(page, "board"), {{"{hub}", s.hubName.empty() ? s.boardHubId : s.hubName}}));
+    if (s.board.empty())
+    {
+        if (visible(y, rowH))
+            t.textDrawPx(s.boardHubId.empty() ? ctext(page, "take_hint") : ctext(page, "empty_board"), listX + 10, y + 6, small, Muted);
+        y += rowH;
+    }
+    for (const auto* r : boardRows)
+        row(*r, false);
+    header(ctext(page, "mine"));
+    if (s.contracts.empty())
+    {
+        if (visible(y, rowH))
+            t.textDrawPx(ctext(page, "empty_mine"), listX + 10, y + 6, small, Muted);
+        y += rowH;
+    }
+    for (const auto& r : s.contracts)
+        row(r, true);
+
+    // ---- the card of the selected posting / contract
+    const float cx = listX + listW + 24.0f, cw = w - cx - 24.0f;
+    float ry = listY;
+    const game::simulation::ClientContractRow* sel = nullptr;
+    bool mine = false;
+    for (const auto& r : s.board)
+        if (r.id == page.selectedContract)
+            sel = &r;
+    for (const auto& r : s.contracts)
+        if (r.id == page.selectedContract)
+        {
+            sel = &r;
+            mine = true;
+        }
+    const auto line = [&](const std::string& label, const std::string& value, const glm::vec4& col) {
+        if (ry > h - 60.0f - static_cast<float>(small))
+            return;
+        t.textDrawPx(label, cx, ry, small, Muted);
+        t.textDrawPx(value, cx + cw - t.measureTextPx(value, small), ry, small, col);
+        ry += static_cast<float>(small) + 6.0f;
+    };
+    if (!sel)
+        t.textDrawPx(ctext(page, "select_hint"), cx, ry, small, Muted);
+    else
+    {
+        t.textDrawPx(kindText(page, sel->kind), cx, ry, big, Text);
+        ry += static_cast<float>(big) + 6.0f;
+        t.textDrawPx(sel->id, cx, ry, small, Muted);
+        ry += static_cast<float>(small) + 10.0f;
+        line(ctext(page, "route"), sel->originName + " -> " + sel->destinationName, Text);
+        line(ctext(page, "load"), loadText(page, *sel), Text);
+        line(ctext(page, "issuer"), sel->issuerName, Text);
+        if (!sel->cause.empty())
+            line(ctext(page, "cause"), sel->cause, Muted);
+        ry += 6.0f;
+        line(ctext(page, "reward"), grouped(sel->rewardCr) + " Cr", Good);
+        line(ctext(page, "advance"), grouped(sel->advanceCr) + " Cr", Text);
+        line(ctext(page, "deposit"), grouped(sel->depositCr) + " Cr", sel->depositCr > 0.0 ? Warn : Text);
+        line(ctext(page, "penalty"), grouped(sel->penaltyCr) + " Cr", Warn);
+        line(ctext(page, "late_rule"), fmt("%.0f %%", sel->lateSharePerDay * 100.0), Muted);
+        line(ctext(page, "deadline_label"),
+             cfill(ctext(page, "day"), {{"{d}", std::to_string(sel->deadlineDay)}}) + "  (" + leftText(page, sel->deadlineDay + 1.0 - s.dayNow) + ")",
+             sel->deadlineDay + 1.0 - s.dayNow < 1.0 ? Warn : Text);
+        if (!mine && sel->status == "open")
+            line(ctext(page, "board_left"), leftText(page, sel->expiresDay - s.dayNow), Text);
+        if (mine)
+        {
+            line(ctext(page, "status_" + sel->status), sel->status == "active" ? ctext(page, sel->aboard ? "aboard" : "not_aboard") : "",
+                 statusColour(sel->status));
+            if (sel->paidCr > 0.0)
+                line(ctext(page, "payout"), "+" + grouped(sel->paidCr) + " Cr", Good);
+            if (sel->penaltyPaidCr > 0.0)
+                line(ctext(page, "penalty_paid"), "-" + grouped(sel->penaltyPaidCr) + " Cr", Bad);
+            if (sel->lateDays > 0)
+                line(cfill(ctext(page, "late"), {{"{d}", std::to_string(sel->lateDays)}}), "", Warn);
+        }
+        ry += 10.0f;
+        // the buttons: take (open posting, docked here) / abandon (my active contract), each asked first
+        const float bh = static_cast<float>(px) * 1.9f;
+        const auto button = [&](const std::string& label, ServicePanelActionType type, const std::string& text, const glm::vec4& fill,
+                                float x) {
+            const float bw = t.measureTextPx(label, px) + 28.0f;
+            t.solidRectPx(x, ry, bw, bh, fill);
+            t.textDrawPx(label, x + 14, ry + px * 0.4f, px, Title);
+            m_hits.push_back({x, ry, x + bw, ry + bh, 0, {type, text}});
+            return x + bw + 12.0f;
+        };
+        const bool canTake = !mine && sel->status == "open" && s.docked && s.hubId == sel->originHub;
+        const bool canAbandon = mine && sel->status == "active";
+        if (page.contractConfirm && (canTake || canAbandon))
+        {
+            float bx = button(ctext(page, canTake ? "confirm_take" : "confirm_abandon"), ServicePanelActionType::TradeContractConfirm, {},
+                              canTake ? glm::vec4(0.10f, 0.36f, 0.20f, 1.0f) : glm::vec4(0.40f, 0.12f, 0.10f, 1.0f), cx);
+            button(ctext(page, "cancel"), ServicePanelActionType::TradeContractCancel, {}, Selected, bx);
+            ry += bh + 8.0f;
+        }
+        else if (canTake)
+        {
+            button(ctext(page, "take"), ServicePanelActionType::TradeContractTake, sel->id, Selected, cx);
+            ry += bh + 8.0f;
+        }
+        else if (canAbandon)
+        {
+            button(ctext(page, "abandon"), ServicePanelActionType::TradeContractAbandon, sel->id, Selected, cx);
+            ry += bh + 8.0f;
+        }
+        else if (!mine && sel->status == "open")
+        {
+            t.textDrawPx(ctext(page, "take_hint"), cx, ry, small, Muted);
+            ry += static_cast<float>(small) + 6.0f;
+        }
+        if (canTake && sel->depositCr > 0.0)
+            t.textDrawPx(ctext(page, "no_deposit_hint"), cx, ry, small, Muted);
+    }
+    // ---- the server's answer to the last take / abandon
+    std::string status = ctext(page, "keys");
+    glm::vec4 col = Muted;
+    for (const auto& r : s.results)
+        if (page.contractRequest != 0 && r.requestId == page.contractRequest)
+        {
+            status = "#" + std::to_string(r.requestId) + "  " + (r.ok ? r.message : ctext(page, "refused") + " " + r.message);
+            col = r.ok ? Good : Bad;
+        }
+    if (page.contractRequest != 0 && status == ctext(page, "keys"))
+    {
+        status = ctext(page, "waiting");
+        col = Warn;
+    }
+    t.textDrawPx(status, 24, h - 26, small, col);
+}
+
 } // namespace ui::presentation

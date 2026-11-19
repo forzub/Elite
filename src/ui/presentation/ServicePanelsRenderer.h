@@ -26,13 +26,19 @@ enum class ServicePanelActionType
     RefitPreviewRepair,
     RefitPreviewReplace,     // text = product id ("" = same product)
     RefitApply,
-    TradeTab,                // text = "0" board / "1" market / "2" hubs / "3" nav data / "4" finance / "5" cargo
+    TradeTab,                // text = "0" contracts / "1" market / "2" hubs / "3" nav data / "4" finance / "5" cargo
     TradeSelectHub,          // text = hub id
     TradeShowOnMap,          // text = hub id
     NavDataSelect,           // text = bank record id
     NavDataLoad,             // text = bank record id -> the onboard computer
     NavDataCarrier,          // text = bank record id -> a new data carrier
     NavDataInsert,           // text = carrier number (1-based) -> the onboard computer
+    // F8 CONTRACTS (TRADE_DESIGN §8.2, trade step 5)
+    TradeContractSelect,     // text = posting / contract id
+    TradeContractTake,       // text = posting id: asks "take?" (the confirm state)
+    TradeContractAbandon,    // text = contract id: asks "abandon?"
+    TradeContractConfirm,    // sends the asked take / abandon
+    TradeContractCancel,     // drops the question
     // F8 MARKET deal window (TRADE_DESIGN §8.1, trade step 3)
     TradeSelectGood,         // text = EconomyModel::goods() index
     TradeDealSide,           // text = "buy" | "sell"
@@ -70,6 +76,8 @@ public:
 private:
     void renderTradeDeal(const game::presentation::TradePresentation& page, float cx, float y, float cw, float h, int px, int small,
                          int big);
+    void renderTradeContracts(const game::presentation::TradePresentation& page, float listX, float listY, float listW, float listH,
+                              float w, float h, int px, int small, int big);
     struct Hit
     {
         float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
@@ -88,5 +96,6 @@ private:
     float m_refitListScroll = 0.0f;
     float m_cardScroll = 0.0f;
     float m_tradeListScroll = 0.0f;
+    std::string m_tradeContractShown;    // the CONTRACTS selection the list was last scrolled to
 };
 } // namespace ui::presentation

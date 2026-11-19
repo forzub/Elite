@@ -216,6 +216,15 @@ PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hu
     });
 }
 
+void notifyShipDocked(std::uint32_t shipEntityId, const std::string& hubId)
+{
+    if (!installed())
+        return;
+    const auto& b = bindings();
+    if (b.shipDocked)
+        b.shipDocked(shipEntityId, hubId);
+}
+
 PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double berthHours)
 {
     return portFee(shipEntityId, hubId, [&](EconomyServer& e, std::uint64_t player, const std::string& hub, int sys) {

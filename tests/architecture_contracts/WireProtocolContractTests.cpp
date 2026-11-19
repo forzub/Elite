@@ -357,13 +357,15 @@ void testClientMessageRoundTrip()
     trade.quantity = 15.145;
     trade.limitUnitCr = 520.25;
     trade.quoteDay = 1412;
+    trade.contractId = "SER-site.000.sol.europa-supply/10241/0";
     commandMessage.payload = trade;
     require(encodeClientMessage(commandMessage, payload), "economy command encode failed");
     require(decodeClientMessage(payload, decoded), "economy command decode failed");
     require(std::holds_alternative<game::network::ClientEconomyCommand>(decoded.payload), "economy command variant changed");
     const auto& tradeBack = std::get<game::network::ClientEconomyCommand>(decoded.payload);
     require(tradeBack.op == trade.op && tradeBack.requestId == 41u && tradeBack.hubId == trade.hubId &&
-                tradeBack.goodId == trade.goodId && nearlyEqual(tradeBack.quantity, 15.145) && tradeBack.quoteDay == 1412,
+                tradeBack.goodId == trade.goodId && nearlyEqual(tradeBack.quantity, 15.145) && tradeBack.quoteDay == 1412 &&
+                tradeBack.contractId == trade.contractId,
         "economy command fields lost over the wire");
 
 

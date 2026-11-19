@@ -318,6 +318,7 @@ private:
     std::unordered_map<std::uint64_t, PlayerRadarRuntime> m_playerRadarRuntimes;
     // declared after the registries it reads through game::economy::service: destroyed (and uninstalled) first
     game::economy::EconomyServer m_economy;
+    int m_devEconomyDayOffset = 0;   // DEV (ClientEconomyCommand::DevEconomyDays): the economy clock runs ahead by whole days
 
 
     static constexpr std::size_t MaxShipCommandsPerShip = 32;

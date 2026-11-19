@@ -1081,6 +1081,37 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientContractRow,
+    v.id,
+    v.kind,
+    v.originHub,
+    v.originName,
+    v.destinationHub,
+    v.destinationName,
+    v.issuerName,
+    v.goodId,
+    v.goodRu,
+    v.cause,
+    v.tonnes,
+    v.people,
+    v.c20,
+    v.rewardCr,
+    v.advanceCr,
+    v.depositCr,
+    v.penaltyCr,
+    v.lateSharePerDay,
+    v.postedDay,
+    v.expiresDay,
+    v.deadlineDay,
+    v.status,
+    v.closedDay,
+    v.paidCr,
+    v.penaltyPaidCr,
+    v.lateDays,
+    v.aboard
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientTradeSnapshot,
     v.valid,
     v.day,
@@ -1112,7 +1143,11 @@ ELITE_WIRE_SCHEMA(
     v.jumpRangeLy,
     v.jumpRangeEmptyLy,
     v.vatReclaimCr,
-    v.results
+    v.results,
+    v.dayNow,
+    v.boardHubId,
+    v.board,
+    v.contracts
 );
 
 ELITE_WIRE_SCHEMA(

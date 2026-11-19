@@ -40,6 +40,7 @@ enum class Purpose : int
     Other = 6,
     Fine = 7,    // an administrative fine (traffic control, navigation zones): never refused - booked as debt
     Parking = 8, // the berth fee beyond the hours the docking fee covers (TRADE_DESIGN §5.2, step 4): never refused
+    ContractPenalty = 9, // a contract's late / failure penalty, the advance clawed back (TRADE_DESIGN §3.5, step 5): never refused
 };
 [[nodiscard]] inline bool isLifelinePurpose(Purpose p) { return p == Purpose::Fuel || p == Purpose::Tow || p == Purpose::Repair; }
 
@@ -273,6 +274,10 @@ Loan* takeLoan(ClientLedger& ledger, const BankDirectory& dir, const std::string
 // enough free money there. release returns the money to the free balance (step 5 adds capture to a payee).
 int placeHold(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int day, const std::string& memo);
 bool releaseHold(ClientLedger& ledger, int holdId);
+// the hold is forfeited (a failed contract's deposit, TRADE_DESIGN §3.6): released and the same amount leaves the account
+// (it was the client's own money, blocked); false = no such hold
+bool captureHold(ClientLedger& ledger, const BankDirectory& dir, int holdId, int day, const std::string& memo);
+[[nodiscard]] const Hold* findHold(const ClientLedger& ledger, int holdId);
 [[nodiscard]] double heldCr(const ClientLedger& ledger, const BankDirectory& dir);
 
 // ---- the daily step (interest, due dates, standing machine, restructuring)

@@ -19,6 +19,8 @@
 #include "src/game/economy/PriceModel.h"
 #include "src/game/economy/CargoRegistry.h"
 #include "src/game/economy/TradeQuoteModel.h"
+#include "src/game/economy/EconomyModel.h"
+#include "src/game/presentation/TradeDealPresentation.h"
 
 using namespace game::economy;
 
@@ -675,6 +677,149 @@ void testFuelPriceAndAtomicSave()
 }
 } // namespace
 
+// trade step 3: the F8 deal window prices a deal with the server's TradeQuoteModel on the replicated inputs - its
+// breakdown sums to its total, the total is what EconomyServer::trade charges, its limits are the server's refusals
+void testTradeDealWindow()
+{
+    using game::presentation::buildTradeDeal;
+    using game::presentation::TradeDealRequest;
+    {
+        long long total = 0;
+        const auto shown = game::presentation::roundLinesToTotal({-9049.62, -181.74, -1846.27}, total);
+        check(total == -11078 && shown[0] + shown[1] + shown[2] == total, "whole-Cr lines add up to the rounded total (largest remainder)");
+    }
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  deal window (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    s.ensurePlayer(2, 0);
+    s.credit(1, "earth_orbital_hub", 0, 200000.0, "test: a trader with money");
+    const CargoCapacity cobrett{120.0, 6};
+    const auto worth = [&](std::uint64_t p) { return netWorthCr(*s.ledger(p), s.banks()); };
+    const auto snapshot = [&](std::uint64_t player, std::uint64_t ship) {
+        auto snap = s.tradeSnapshot(player, ship, "earth_orbital_hub", 0, true);
+        snap.c20Slots = cobrett.c20Slots;   // the hull figures GameServer::tradeForSession adds
+        snap.netCapacityT = cobrett.netT;
+        return snap;
+    };
+    int grain = -1;
+    const auto& goods = EconomyModel::instance().goods();
+    for (std::size_t k = 0; k < goods.size(); ++k)
+        if (goods[k].id == "food_staples")
+            grain = static_cast<int>(k);
+    const auto order = [&](const game::presentation::TradeDealView& v, std::uint64_t player, std::uint64_t ship, int day) {
+        EconomyServer::TradeOrder o;
+        o.buy = v.buy;
+        o.playerId = player;
+        o.shipKey = ship;
+        o.hubId = "earth_orbital_hub";
+        o.systemId = 0;
+        o.goodId = v.goodId;
+        o.tonnes = v.tonnes;
+        o.limitUnitCr = v.quote.unitCr;   // what the window sends: the exact quoted unit price
+        o.quoteDay = day;
+        o.capacity = cobrett;
+        o.requestId = 100;
+        return o;
+    };
+    const auto sums = [](const game::presentation::TradeDealView& v) {
+        double sum = 0.0;
+        long long shown = 0;
+        for (const auto& l : v.lines)
+        {
+            sum += l.cr;
+            shown += l.shownCr;
+        }
+        return std::fabs(sum - v.quote.totalCr) < 1e-9 && shown == v.shownTotalCr && v.shownTotalCr == std::llround(v.quote.totalCr);
+    };
+
+    // buy 2 C20 of grain: the preview = the charge
+    TradeDealRequest req;
+    req.good = grain;
+    req.buy = true;
+    req.tonnes = 2.0 * c20NetTonnes(0.65);
+    auto snap = snapshot(1, 601);
+    auto v = buildTradeDeal(snap, req);
+    check(v.valid && v.canConfirm && v.lines.size() == 3 && sums(v),
+          "deal window (buy 2 C20 grain): goods + handling + VAT = total " + std::to_string(v.quote.totalCr) + " Cr, shown lines add up");
+    check(near(v.holdLimitT, 6.0 * c20NetTonnes(0.65), 1e-4) && v.limitKind == "hold_c20" && near(v.maxT, v.holdLimitT, 1e-9),
+          "empty Cobrett: the slider stops at 6 C20 of grain (" + std::to_string(v.maxT) + " t)");
+    double w0 = worth(1);
+    auto r = s.trade(order(v, 1, 601, snap.day));
+    check(r.ok && r.totalCr == v.quote.totalCr && near(worth(1) - w0, v.quote.totalCr, 0.02) && r.lines.size() == v.lines.size(),
+          "the server charged exactly the window's total (" + std::to_string(r.totalCr) + " vs " + std::to_string(v.quote.totalCr) + ")");
+
+    // after the deal: the limits follow the manifest (today's lot merges); the max fits, a hair more does not
+    snap = snapshot(1, 601);
+    req.tonnes = 1.0e9;
+    v = buildTradeDeal(snap, req);
+    check(near(v.holdLimitT, 4.0 * c20NetTonnes(0.65), 1e-4) && near(v.aboardT, 2.0 * c20NetTonnes(0.65), 1e-9),
+          "2 C20 aboard: 4 C20 left (" + std::to_string(v.holdLimitT) + " t)");
+    auto o = order(v, 1, 601, snap.day);
+    o.tonnes += 0.01;
+    o.limitUnitCr = 0.0;
+    const auto over = s.trade(o);
+    check(!over.ok && over.code == "no_space", "the server refuses the window's max + 0.01 t (" + over.code + ")");
+
+    // money: a nearly broke player - the window's money limit is what pay() covers (incl. overdraft, fees)
+    (void)s.chargeService(2, "earth_orbital_hub", 0, Purpose::Other, snapshot(2, 602).spendableCr - 3000.0, "test: spent down");
+    auto snap2 = snapshot(2, 602);
+    TradeDealRequest broke = req;
+    broke.tonnes = 1.0e9;
+    auto v2 = buildTradeDeal(snap2, broke);
+    check(near(snap2.spendableCr, 3000.0, 0.02) && v2.limitKind == "money" && v2.moneyLimitT > 0.5 && -v2.quote.totalCr <= snap2.spendableCr,
+          "3 000 Cr spendable: the slider stops at " + std::to_string(v2.maxT) + " t (" + std::to_string(-v2.quote.totalCr) + " Cr)");
+    o = order(v2, 2, 602, snap2.day);
+    o.tonnes += 0.5;
+    o.limitUnitCr = 0.0;
+    const auto tooMuch = s.trade(o);
+    w0 = worth(2);
+    r = s.trade(order(v2, 2, 602, snap2.day));
+    check(!tooMuch.ok && tooMuch.code == "no_money" && r.ok && r.totalCr == v2.quote.totalCr && near(worth(2) - w0, r.totalCr, 0.02),
+          "the server takes the window's money max and refuses 0.5 t more (" + tooMuch.code + ")");
+
+    // the market moved between the quote and Confirm: "price_moved", the re-quote then goes through at the new price
+    snap = snapshot(1, 601);
+    req.tonnes = c20NetTonnes(0.65);
+    v = buildTradeDeal(snap, req);
+    {
+        s.ensurePlayer(3, 0);
+        EconomyServer::TradeOrder other = order(v, 3, 603, snap.day);
+        other.tonnes = 3.0;
+        other.limitUnitCr = 0.0;
+        (void)s.trade(other);   // someone else buys first: less stock, dearer
+    }
+    const auto moved = s.trade(order(v, 1, 601, snap.day));
+    snap = snapshot(1, 601);
+    req.sentRequest = 100;
+    req.sentUnitCr = v.quote.unitCr;
+    const auto again = buildTradeDeal(snap, req);
+    check(!moved.ok && moved.code == "price_moved" && again.answer == game::presentation::TradeDealAnswer::PriceMoved &&
+              again.quote.unitCr > v.quote.unitCr,
+          "a moved market: price_moved, the window shows " + std::to_string(again.quote.unitCr) + " instead of " +
+              std::to_string(v.quote.unitCr));
+    r = s.trade(order(again, 1, 601, snap.day));
+    check(r.ok && r.totalCr == again.quote.totalCr, "the one-key re-quote is charged exactly its new total");
+
+    // sell everything aboard: the window's sell total = the server's credit
+    snap = snapshot(1, 601);
+    TradeDealRequest sell;
+    sell.good = grain;
+    sell.buy = false;
+    sell.tonnes = 1.0e9;
+    v = buildTradeDeal(snap, sell);
+    w0 = worth(1);
+    r = s.trade(order(v, 1, 601, snap.day));
+    check(v.limitKind == "aboard" && near(v.tonnes, 3.0 * c20NetTonnes(0.65), 1e-9) && sums(v) && r.ok && r.totalCr == v.quote.totalCr &&
+              near(worth(1) - w0, r.totalCr, 0.02) && s.cargo().find(601)->lots.empty(),
+          "sell all 3 C20 (" + v.limitKind + ", " + std::to_string(v.tonnes) + " t, " + (r.ok ? "ok" : r.code) + ", server " +
+              std::to_string(r.totalCr) + "): revenue - unloading - VAT (+ turnover) = " + std::to_string(v.quote.totalCr) + " Cr, credited exactly");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -688,6 +833,7 @@ int main()
     testServer();
     testTradeModel();
     testTradeServer();
+    testTradeDealWindow();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

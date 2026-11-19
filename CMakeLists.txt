@@ -719,6 +719,7 @@ add_executable(EliteGame
     src/ui/presentation/ServicePanelsRenderer.cpp
     src/game/presentation/ShipyardPresentation.cpp
     src/game/presentation/TradePresentation.cpp
+    src/game/presentation/TradeDealPresentation.cpp
     src/game/economy/EconomyModel.cpp
     src/game/economy/BankingModel.cpp
     src/game/economy/PriceModel.cpp
@@ -1317,6 +1318,7 @@ if(ELITE_BUILD_SERVER)
     # insolvency path, in duplum, the daily price step, FX, a 365-day server run. Run from the repository root.
     add_executable(EliteEconomyCheck
         tests/economy/EconomyCheck.cpp
+        src/game/presentation/TradeDealPresentation.cpp
         src/game/economy/BankingModel.cpp
         src/game/economy/PriceModel.cpp
         src/game/economy/EconomyServer.cpp

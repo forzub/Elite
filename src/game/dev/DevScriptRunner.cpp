@@ -360,6 +360,66 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.m_systemMapRenderer.devFocusHub(s.m_tradeHub);
         s.context().app->requestNavigationView(NavigationPresentationView::System);
     }
+    // F8 MARKET deal window (TRADE_DESIGN step 3), the same paths a player takes:
+    //   tradeclick:<what>[:<arg>] - a click on the region of the LAST RENDERED frame that carries that action (good:<good id>,
+    //     side:buy|sell, units:t|c20, step:+1|-10, slider:<fraction 0..1>, max, confirm, cancel, retry); a region the
+    //     frame did not draw is logged, not faked
+    //   tradekey:<up|down|left|right|tab|enter|backspace|r|u|1..6>[+shift] - the key handler
+    //   tradedeal:report - the window's preview / limits / answer to the log
+    else if (cmd.rfind("tradeclick:", 0) == 0)
+    {
+        using ui::presentation::ServicePanelActionType;
+        std::string what = arg("tradeclick:"), param;
+        if (const auto colon = what.find(':'); colon != std::string::npos)
+        {
+            param = what.substr(colon + 1);
+            what.resize(colon);
+        }
+        ServicePanelActionType type = ServicePanelActionType::TradeDealConfirm;
+        double fraction = 0.5;
+        if (what == "good")
+        {
+            type = ServicePanelActionType::TradeSelectGood;
+            const auto& goods = game::economy::EconomyModel::instance().goods();
+            for (std::size_t k = 0; k < goods.size(); ++k)
+                if (goods[k].id == param)
+                    param = std::to_string(k);
+        }
+        else if (what == "side") type = ServicePanelActionType::TradeDealSide;
+        else if (what == "units") type = ServicePanelActionType::TradeDealUnits;
+        else if (what == "step") type = ServicePanelActionType::TradeDealStep;
+        else if (what == "slider")
+        {
+            type = ServicePanelActionType::TradeDealSlider;
+            fraction = std::atof(param.c_str());
+        }
+        else if (what == "max") type = ServicePanelActionType::TradeDealMax;
+        else if (what == "cancel") type = ServicePanelActionType::TradeDealCancel;
+        else if (what == "retry") type = ServicePanelActionType::TradeDealRetry;
+        if (const auto action = s.m_servicePanels.devClick(type, param, fraction))
+            s.applyTradeDealAction(*action);
+        else
+            std::cerr << "[TradeDeal] DEV click " << what << ":" << param << ": the last frame has no such region" << std::endl;
+    }
+    else if (cmd.rfind("tradekey:", 0) == 0)
+    {
+        std::string name = arg("tradekey:");
+        bool shift = false;
+        if (const auto plus = name.find("+shift"); plus != std::string::npos)
+        {
+            shift = true;
+            name.resize(plus);
+        }
+        static const std::pair<const char*, int> Keys[] = {
+            {"up", GLFW_KEY_UP}, {"down", GLFW_KEY_DOWN}, {"left", GLFW_KEY_LEFT}, {"right", GLFW_KEY_RIGHT}, {"tab", GLFW_KEY_TAB},
+            {"enter", GLFW_KEY_ENTER}, {"backspace", GLFW_KEY_BACKSPACE}, {"r", GLFW_KEY_R}, {"u", GLFW_KEY_U}, {"1", GLFW_KEY_1},
+            {"2", GLFW_KEY_2}, {"3", GLFW_KEY_3}, {"4", GLFW_KEY_4}, {"5", GLFW_KEY_5}, {"6", GLFW_KEY_6}};
+        for (const auto& [k, code] : Keys)
+            if (name == k)
+                s.tradeDealKey(code, shift);
+    }
+    else if (cmd == "tradedeal:report")
+        s.logTradeDeal("report");
     else if (cmd == "detail")
     {
         // the Details tab: the selected body's Detail map

@@ -8,6 +8,314 @@
       "zh-Hans": "贸易",
       "es": "COMERCIO",
       "ja": "交易"
+    },
+    "service.trade.deal.hint": {
+      "en": "Select a good in the list: click or ↑/↓",
+      "ru": "Выберите товар в списке: клик или ↑/↓",
+      "zh-Hans": "在列表中选择商品：点击或 ↑/↓",
+      "es": "Elija un producto en la lista: clic o ↑/↓",
+      "ja": "リストで商品を選択：クリックまたは ↑/↓"
+    },
+    "service.trade.deal.buy": {
+      "en": "BUY",
+      "ru": "КУПИТЬ",
+      "zh-Hans": "买入",
+      "es": "COMPRAR",
+      "ja": "購入"
+    },
+    "service.trade.deal.sell": {
+      "en": "SELL",
+      "ru": "ПРОДАТЬ",
+      "zh-Hans": "卖出",
+      "es": "VENDER",
+      "ja": "売却"
+    },
+    "service.trade.deal.units_t": {
+      "en": "t",
+      "ru": "т",
+      "zh-Hans": "吨",
+      "es": "t",
+      "ja": "t"
+    },
+    "service.trade.deal.units_c20": {
+      "en": "C20",
+      "ru": "C20",
+      "zh-Hans": "C20",
+      "es": "C20",
+      "ja": "C20"
+    },
+    "service.trade.deal.aboard": {
+      "en": "aboard: {t} t",
+      "ru": "на борту: {t} т",
+      "zh-Hans": "船上：{t} 吨",
+      "es": "a bordo: {t} t",
+      "ja": "積載中：{t} t"
+    },
+    "service.trade.deal.quantity": {
+      "en": "quantity",
+      "ru": "количество",
+      "zh-Hans": "数量",
+      "es": "cantidad",
+      "ja": "数量"
+    },
+    "service.trade.deal.limit": {
+      "en": "limit {t} t: {why}",
+      "ru": "предел {t} т: {why}",
+      "zh-Hans": "上限 {t} 吨：{why}",
+      "es": "límite {t} t: {why}",
+      "ja": "上限 {t} t：{why}"
+    },
+    "service.trade.deal.why_hold_c20": {
+      "en": "C20 places ({n} free)",
+      "ru": "места C20 (свободно {n})",
+      "zh-Hans": "C20 舱位（空余 {n}）",
+      "es": "plazas C20 ({n} libres)",
+      "ja": "C20 区画（空き {n}）"
+    },
+    "service.trade.deal.why_payload": {
+      "en": "hold payload",
+      "ru": "грузоподъёмность",
+      "zh-Hans": "载重上限",
+      "es": "carga útil",
+      "ja": "積載重量"
+    },
+    "service.trade.deal.why_hub_buy": {
+      "en": "the hub's stock (irreducible remainder)",
+      "ru": "запас хаба (неснижаемый остаток)",
+      "zh-Hans": "枢纽库存（最低存量）",
+      "es": "existencias del hub (remanente mínimo)",
+      "ja": "ハブの在庫（最低残量）"
+    },
+    "service.trade.deal.why_hub_sell": {
+      "en": "the hub's warehouse is nearly full",
+      "ru": "склад хаба почти полон",
+      "zh-Hans": "枢纽仓库将满",
+      "es": "el almacén del hub está casi lleno",
+      "ja": "ハブの倉庫がほぼ満杯"
+    },
+    "service.trade.deal.why_money": {
+      "en": "money ({cr} Cr available)",
+      "ru": "деньги (доступно {cr} Cr)",
+      "zh-Hans": "资金（可用 {cr} Cr）",
+      "es": "dinero ({cr} Cr disponibles)",
+      "ja": "資金（利用可能 {cr} Cr）"
+    },
+    "service.trade.deal.why_aboard": {
+      "en": "that much aboard",
+      "ru": "столько на борту",
+      "zh-Hans": "船上仅有此数",
+      "es": "eso hay a bordo",
+      "ja": "積載量まで"
+    },
+    "service.trade.deal.list_ask": {
+      "en": "ask price",
+      "ru": "цена продавца (ask)",
+      "zh-Hans": "卖方报价（ask）",
+      "es": "precio de venta (ask)",
+      "ja": "売値（ask）"
+    },
+    "service.trade.deal.list_bid": {
+      "en": "bid price",
+      "ru": "цена покупателя (bid)",
+      "zh-Hans": "买方报价（bid）",
+      "es": "precio de compra (bid)",
+      "ja": "買値（bid）"
+    },
+    "service.trade.deal.impact": {
+      "en": "deal impact",
+      "ru": "влияние сделки",
+      "zh-Hans": "交易影响",
+      "es": "impacto del trato",
+      "ja": "取引の影響"
+    },
+    "service.trade.deal.goods_buy": {
+      "en": "goods {t} t × {unit}",
+      "ru": "товар {t} т × {unit}",
+      "zh-Hans": "商品 {t} 吨 × {unit}",
+      "es": "mercancía {t} t × {unit}",
+      "ja": "商品 {t} t × {unit}"
+    },
+    "service.trade.deal.goods_sell": {
+      "en": "revenue {t} t × {unit}",
+      "ru": "выручка {t} т × {unit}",
+      "zh-Hans": "收入 {t} 吨 × {unit}",
+      "es": "ingresos {t} t × {unit}",
+      "ja": "売上 {t} t × {unit}"
+    },
+    "service.trade.deal.handling_buy": {
+      "en": "loading {t} t × {rate}",
+      "ru": "погрузка {t} т × {rate}",
+      "zh-Hans": "装货 {t} 吨 × {rate}",
+      "es": "carga {t} t × {rate}",
+      "ja": "積込 {t} t × {rate}"
+    },
+    "service.trade.deal.handling_sell": {
+      "en": "unloading {t} t × {rate}",
+      "ru": "выгрузка {t} т × {rate}",
+      "zh-Hans": "卸货 {t} 吨 × {rate}",
+      "es": "descarga {t} t × {rate}",
+      "ja": "荷降ろし {t} t × {rate}"
+    },
+    "service.trade.deal.vat_buy": {
+      "en": "VAT {pct} (goods part refunded in {days} d)",
+      "ru": "НДС {pct} (с товара вернут через {days} сут)",
+      "zh-Hans": "增值税 {pct}（商品部分 {days} 天后退还）",
+      "es": "IVA {pct} (la parte de la mercancía se devuelve en {days} d)",
+      "ja": "付加価値税 {pct}（商品分は {days} 日後に還付）"
+    },
+    "service.trade.deal.vat_sell": {
+      "en": "VAT on the port service {pct}",
+      "ru": "НДС с портовой услуги {pct}",
+      "zh-Hans": "港口服务增值税 {pct}",
+      "es": "IVA del servicio portuario {pct}",
+      "ja": "港湾サービスの付加価値税 {pct}"
+    },
+    "service.trade.deal.turnover": {
+      "en": "turnover levy {pct}",
+      "ru": "налог с оборота {pct}",
+      "zh-Hans": "流转税 {pct}",
+      "es": "impuesto sobre el volumen {pct}",
+      "ja": "売上税 {pct}"
+    },
+    "service.trade.deal.total_buy": {
+      "en": "from the account now",
+      "ru": "со счёта сейчас",
+      "zh-Hans": "立即从账户扣除",
+      "es": "del saldo ahora",
+      "ja": "口座から即時"
+    },
+    "service.trade.deal.total_sell": {
+      "en": "to the account now",
+      "ru": "на счёт сейчас",
+      "zh-Hans": "立即存入账户",
+      "es": "al saldo ahora",
+      "ja": "口座へ即時"
+    },
+    "service.trade.deal.vat_refund": {
+      "en": "VAT back later: {cr} Cr in {days} d",
+      "ru": "вернётся НДС: {cr} Cr через {days} сут",
+      "zh-Hans": "稍后退还增值税：{cr} Cr，{days} 天后",
+      "es": "IVA a devolver: {cr} Cr en {days} d",
+      "ja": "後日還付の付加価値税：{cr} Cr（{days} 日後）"
+    },
+    "service.trade.deal.confirm_buy": {
+      "en": "BUY {t} t for {cr} Cr  (Enter)",
+      "ru": "КУПИТЬ {t} т за {cr} Cr  (Enter)",
+      "zh-Hans": "买入 {t} 吨，{cr} Cr（Enter）",
+      "es": "COMPRAR {t} t por {cr} Cr  (Enter)",
+      "ja": "{t} t を {cr} Cr で購入（Enter）"
+    },
+    "service.trade.deal.confirm_sell": {
+      "en": "SELL {t} t for {cr} Cr  (Enter)",
+      "ru": "ПРОДАТЬ {t} т за {cr} Cr  (Enter)",
+      "zh-Hans": "卖出 {t} 吨，{cr} Cr（Enter）",
+      "es": "VENDER {t} t por {cr} Cr  (Enter)",
+      "ja": "{t} t を {cr} Cr で売却（Enter）"
+    },
+    "service.trade.deal.cancel": {
+      "en": "CANCEL",
+      "ru": "ОТМЕНА",
+      "zh-Hans": "取消",
+      "es": "CANCELAR",
+      "ja": "キャンセル"
+    },
+    "service.trade.deal.max": {
+      "en": "MAX",
+      "ru": "МАКС",
+      "zh-Hans": "最大",
+      "es": "MÁX",
+      "ja": "最大"
+    },
+    "service.trade.deal.waiting": {
+      "en": "request #{id} sent - waiting for the server",
+      "ru": "запрос #{id} отправлен — ждём ответ сервера",
+      "zh-Hans": "请求 #{id} 已发送——等待服务器",
+      "es": "solicitud #{id} enviada: esperando al servidor",
+      "ja": "リクエスト #{id} 送信済み — サーバー応答待ち"
+    },
+    "service.trade.deal.ok_buy": {
+      "en": "server: bought, charged {cr} Cr",
+      "ru": "сервер: куплено, списано {cr} Cr",
+      "zh-Hans": "服务器：已买入，扣款 {cr} Cr",
+      "es": "servidor: comprado, cargado {cr} Cr",
+      "ja": "サーバー：購入完了、{cr} Cr 引き落とし"
+    },
+    "service.trade.deal.ok_sell": {
+      "en": "server: sold, credited {cr} Cr",
+      "ru": "сервер: продано, зачислено {cr} Cr",
+      "zh-Hans": "服务器：已卖出，入账 {cr} Cr",
+      "es": "servidor: vendido, abonado {cr} Cr",
+      "ja": "サーバー：売却完了、{cr} Cr 入金"
+    },
+    "service.trade.deal.refused": {
+      "en": "server refused: {reason}",
+      "ru": "сервер отказал: {reason}",
+      "zh-Hans": "服务器拒绝：{reason}",
+      "es": "el servidor rechazó: {reason}",
+      "ja": "サーバーが拒否：{reason}"
+    },
+    "service.trade.deal.price_moved": {
+      "en": "price changed: {new} instead of {old}, retry?",
+      "ru": "цена изменилась: {new} вместо {old}, повторить?",
+      "zh-Hans": "价格已变：{new}（原 {old}），重试？",
+      "es": "el precio cambió: {new} en lugar de {old}, ¿repetir?",
+      "ja": "価格が変わりました：{old} ではなく {new}、再試行？"
+    },
+    "service.trade.deal.retry": {
+      "en": "RETRY (R)",
+      "ru": "ПОВТОРИТЬ (R)",
+      "zh-Hans": "重试（R）",
+      "es": "REPETIR (R)",
+      "ja": "再試行（R）"
+    },
+    "service.trade.deal.not_docked": {
+      "en": "deals only at a berth",
+      "ru": "сделки только у причала",
+      "zh-Hans": "仅在泊位可交易",
+      "es": "tratos solo en un atraque",
+      "ja": "取引は係留中のみ"
+    },
+    "service.trade.deal.zero": {
+      "en": "quantity is zero",
+      "ru": "количество 0",
+      "zh-Hans": "数量为零",
+      "es": "cantidad cero",
+      "ja": "数量ゼロ"
+    },
+    "service.trade.deal.money": {
+      "en": "not enough money",
+      "ru": "не хватает денег",
+      "zh-Hans": "资金不足",
+      "es": "dinero insuficiente",
+      "ja": "資金不足"
+    },
+    "service.trade.deal.keys": {
+      "en": "↑/↓ good · Left/Right, wheel: quantity (Shift ×10) · Tab buy/sell · U t/C20 · Enter confirm · Backspace cancel",
+      "ru": "↑/↓ товар · влево/вправо, колесо: количество (Shift ×10) · Tab купить/продать · U т/C20 · Enter подтвердить · Backspace отмена",
+      "zh-Hans": "↑/↓ 商品 · 左/右、滚轮：数量（Shift ×10）· Tab 买/卖 · U 吨/C20 · Enter 确认 · Backspace 取消",
+      "es": "↑/↓ producto · izquierda/derecha, rueda: cantidad (Shift ×10) · Tab comprar/vender · U t/C20 · Enter confirmar · Backspace cancelar",
+      "ja": "↑/↓ 商品 · 左/右・ホイール：数量（Shift ×10）· Tab 購入/売却 · U t/C20 · Enter 確定 · Backspace 取消"
+    },
+    "service.trade.deal.account": {
+      "en": "available {cr} Cr · hold C20 {used}/{slots}, {net}/{cap} t",
+      "ru": "доступно {cr} Cr · трюм C20 {used}/{slots}, {net}/{cap} т",
+      "zh-Hans": "可用 {cr} Cr · 货舱 C20 {used}/{slots}，{net}/{cap} 吨",
+      "es": "disponible {cr} Cr · bodega C20 {used}/{slots}, {net}/{cap} t",
+      "ja": "利用可能 {cr} Cr · 貨物室 C20 {used}/{slots}、{net}/{cap} t"
+    },
+    "service.trade.deal.unit_price": {
+      "en": "deal price",
+      "ru": "цена сделки",
+      "zh-Hans": "成交价",
+      "es": "precio del trato",
+      "ja": "取引価格"
+    },
+    "service.trade.deal.boxes": {
+      "en": "{n} × C20",
+      "ru": "{n} × C20",
+      "zh-Hans": "{n} × C20",
+      "es": "{n} × C20",
+      "ja": "{n} × C20"
     }
   }
 }

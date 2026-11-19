@@ -67,6 +67,12 @@ struct ClientTradeSnapshot
     std::string turnoverRu;
     double handlingCrPerT = 0.0;      // incl. the port index
     double kappa = 0.5;
+    // the rest of the deal rules (TradeDealRules) and the money the server's pay() can cover here: the deal window
+    // (trade step 3) prices a deal with the SAME TradeQuoteModel::explainDeal the server charges with
+    double stockExponent = 0.6;
+    double minStockShare = 0.05;
+    double hubBuyCapShare = 1.5;
+    double spendableCr = 0.0;         // cash + accounts incl. overdraft, after FX / transfer fees, payable to this hub's bank
     std::vector<ClientMarketRow> market;
 
     // the manifest of the controlled ship

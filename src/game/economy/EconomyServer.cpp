@@ -1019,6 +1019,11 @@ game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t
     s.hubId = hubId;
     s.docked = docked;
     s.kappa = m_dealRules.kappa;
+    s.stockExponent = m_dealRules.stockExponent;
+    s.minStockShare = m_dealRules.minStockShare;
+    s.hubBuyCapShare = m_dealRules.hubBuyCapShare;
+    if (const ClientLedger* l = ledger(playerId))
+        s.spendableCr = spendableCr(*l, m_banks, bankOf(hubId, systemId));
     if (const auto it = m_marketIndex.find(hubId); it != m_marketIndex.end())
     {
         const auto& m = m_markets[it->second];

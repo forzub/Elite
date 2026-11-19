@@ -864,7 +864,11 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
         {
             const auto& q = page.market[i];
             const auto& g = goods[static_cast<std::size_t>(q.good)];
-            t.textDrawPx(g.ru, listX + 10, y + 4, px, Text);
+            const bool sel = page.deal.valid && page.deal.good == q.good;
+            if (sel)
+                t.solidRectPx(listX, y, listW, rowH, Selected);
+            t.textDrawPx(g.ru, listX + 10, y + 4, px, sel ? Title : Text);
+            m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::TradeSelectGood, std::to_string(q.good)}});
             std::string sub = g.groupRu + "  ·  запас " + grouped(q.stockT) + " т";
             if (i < page.marketLimits.size())
                 sub += "  ·  хаб берёт ≤ " + grouped(page.marketLimits[i].hubTakesUpToT) + " т, отпускает ≤ " +
@@ -893,7 +897,9 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     const float cx = listX + listW + 24.0f, cw = w - cx - 24.0f;
     float y = listY;
     const auto& c = page.card;
-    if (c.valid)
+    if (page.tab == 1)
+        renderTradeDeal(page, cx, y, cw, h, px, small, big);
+    else if (c.valid)
     {
         t.textDrawPx(c.info.name, cx, y, big, Text);
         y += static_cast<float>(big) + 6;
@@ -967,6 +973,240 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     if (page.tab != 1)
         t.textDrawPx("Клик по заявке или хабу — карточка; колесо — прокрутка списка", 24, h - 26, small, Muted);
     t.endFrame();
+}
+
+// F8 MARKET: the deal window of the selected row (TRADE_DESIGN §8.1, trade step 3). Every number comes from
+// TradeDealView - the server's TradeQuoteModel on the replicated inputs; the panel only lays it out.
+namespace
+{
+std::string signedCr(long long v)
+{
+    return (v > 0 ? "+" : v < 0 ? "-" : "") + grouped(static_cast<double>(v < 0 ? -v : v));
+}
+
+std::string tonnesText(double t)
+{
+    return fmt(t >= 100.0 ? "%.1f" : "%.2f", t);
+}
+
+std::string fill(std::string s, const std::vector<std::pair<std::string, std::string>>& args)
+{
+    for (const auto& [k, v] : args)
+        for (std::size_t p = s.find(k); p != std::string::npos; p = s.find(k, p + v.size()))
+            s.replace(p, k.size(), v);
+    return s;
+}
+} // namespace
+
+void ServicePanelsRenderer::renderTradeDeal(const game::presentation::TradePresentation& page, float cx, float y0, float cw, float h,
+                                            int px, int small, int big)
+{
+    auto& t = TextRenderer::instance();
+    const auto tx = [&](const std::string& key) -> std::string {
+        const auto it = page.dealText.find(key);
+        return it != page.dealText.end() ? it->second : key;
+    };
+    const auto& d = page.deal;
+    const auto& s = page.trade;
+    // textDrawPx takes the BASELINE: this panel lays out by the text's top (caps ~0.8 of the size above the baseline)
+    const auto text = [&](const std::string& str, float x, float top, int size, const glm::vec4& col) {
+        t.textDrawPx(str, x, top + static_cast<float>(size) * 0.8f, size, col);
+    };
+    // the key hint, wrapped at " · " to the panel width, bottom-aligned
+    const auto keysHint = [&](float bottomY) {
+        std::vector<std::string> lines(1);
+        const std::string all = tx("keys"), sep = " · ";
+        for (std::size_t p = 0; p <= all.size();)
+        {
+            const std::size_t e = std::min(all.find(sep, p), all.size());
+            const std::string part = all.substr(p, e - p);
+            if (!lines.back().empty() && t.measureTextPx(lines.back() + sep + part, small) > cw)
+                lines.emplace_back();
+            lines.back() += (lines.back().empty() ? "" : sep) + part;
+            p = e + sep.size();
+        }
+        float ly = bottomY - static_cast<float>(lines.size()) * (static_cast<float>(small) + 6.0f);
+        for (const auto& l : lines)
+        {
+            text(l, cx, ly, small, Muted);
+            ly += static_cast<float>(small) + 6.0f;
+        }
+    };
+    float y = y0;
+    const float bottom = h - 40.0f;
+    t.solidRectPx(cx - 10, y - 6, cw + 20, bottom - y + 6, Panel);
+    m_zones.push_back({5, cx - 10, y - 6, cx + cw + 10, bottom});
+    const std::string T = tx("units_t");
+    if (!d.valid)
+    {
+        text(tx("hint"), cx, y + 6, px, Muted);
+        keysHint(bottom - 8.0f);
+        return;
+    }
+    const auto& goods = game::economy::EconomyModel::instance().goods();
+    const auto& g = goods[static_cast<std::size_t>(d.good)];
+
+    // ---- the good, the side, the units
+    text(g.ru, cx, y, big, Title);
+    y += static_cast<float>(big) + 12;
+    const auto toggle = [&](const std::string& label, bool on, ServicePanelActionType type, const std::string& arg, float x) {
+        const float bw = t.measureTextPx(label, px) + 24.0f, bh = px * 1.8f;
+        t.solidRectPx(x, y, bw, bh, on ? Selected : Bg);
+        t.solidRectPx(x, y + bh - 2, bw, 2, on ? Title : Line);
+        text(label, x + 12, y + (bh - px) * 0.5f, px, on ? Title : Muted);
+        m_hits.push_back({x, y, x + bw, y + bh, 0, {type, arg}});
+        return x + bw + 6.0f;
+    };
+    float x = toggle(tx("buy"), d.buy, ServicePanelActionType::TradeDealSide, "buy", cx);
+    (void)toggle(tx("sell"), !d.buy, ServicePanelActionType::TradeDealSide, "sell", x);
+    {
+        const std::string ut = T, uc = tx("units_c20");
+        const float wc = t.measureTextPx(uc, px) + 24.0f, wt = t.measureTextPx(ut, px) + 24.0f;
+        float ux = cx + cw - wc - 6.0f - wt;
+        ux = toggle(ut, !d.unitsC20, ServicePanelActionType::TradeDealUnits, "t", ux);
+        (void)toggle(uc, d.unitsC20, ServicePanelActionType::TradeDealUnits, "c20", ux);
+    }
+    y += px * 1.8f + 10;
+    text(fill(tx("aboard"), {{"{t}", tonnesText(d.aboardT)}}) + "   ·   " +
+                     fill(tx("account"), {{"{cr}", grouped(s.spendableCr)}, {"{used}", std::to_string(s.c20Used)},
+                                          {"{slots}", std::to_string(s.c20Slots)}, {"{net}", tonnesText(s.cargoNetT)},
+                                          {"{cap}", grouped(s.netCapacityT)}}),
+                 cx, y, small, Muted);
+    y += static_cast<float>(small) + 12;
+
+    // ---- the quantity: [-] slider [+] [MAX]  value
+    text(tx("quantity"), cx, y + 2, small, Muted);
+    const std::string value = tonnesText(d.tonnes) + " " + T + "  (" + fill(tx("boxes"), {{"{n}", std::to_string(d.c20)}}) + ")";
+    text(value, cx + cw - t.measureTextPx(value, px), y, px, Text);
+    y += static_cast<float>(px) + 8;
+    {
+        const float bh = px * 1.8f, bw = bh * 1.2f;
+        const auto button = [&](const std::string& label, ServicePanelActionType type, const std::string& arg, float bx, float w) {
+            t.solidRectPx(bx, y, w, bh, Selected);
+            const int size = label.size() == 1 ? big : px;   // "-" / "+" large enough to read
+            text(label, bx + (w - t.measureTextPx(label, size)) * 0.5f, y + (bh - static_cast<float>(size)) * 0.5f, size, Title);
+            m_hits.push_back({bx, y, bx + w, y + bh, 0, {type, arg}});
+        };
+        const std::string maxLabel = tx("max");
+        const float mw = t.measureTextPx(maxLabel, px) + 20.0f;
+        button("-", ServicePanelActionType::TradeDealStep, "-1", cx, bw);
+        const float trackX = cx + bw + 10.0f, trackW = cw - 2.0f * bw - mw - 30.0f;
+        button("+", ServicePanelActionType::TradeDealStep, "+1", trackX + trackW + 10.0f, bw);
+        button(maxLabel, ServicePanelActionType::TradeDealMax, "", cx + cw - mw, mw);
+        // the track: filled to tonnes / max; box ticks in C20 units
+        const float ty = y + bh * 0.5f;
+        t.solidRectPx(trackX, ty - 3, trackW, 6, Bg);
+        const float f = d.maxT > 0.0 ? static_cast<float>(d.tonnes / d.maxT) : 0.0f;
+        t.solidRectPx(trackX, ty - 3, trackW * f, 6, d.buy ? Warn : Good);
+        if (d.unitsC20 && d.maxT > 0.0 && d.maxT / d.boxT <= 40.0)
+            for (double b = d.boxT; b < d.maxT; b += d.boxT)
+                t.solidRectPx(trackX + trackW * static_cast<float>(b / d.maxT), ty - 6, 1, 12, Line);
+        t.solidRectPx(trackX + trackW * f - 4, y + 2, 8, bh - 4, Title);
+        m_hits.push_back({trackX, y, trackX + trackW, y + bh, 0, {ServicePanelActionType::TradeDealSlider, {}}});
+        y += bh + 8;
+    }
+    // the limit that decides the maximum
+    {
+        std::string why;
+        if (d.limitKind == "hold_c20")
+            why = fill(tx("why_hold_c20"), {{"{n}", std::to_string(d.c20Free)}});
+        else if (d.limitKind == "payload")
+            why = tx("why_payload");
+        else if (d.limitKind == "hub")
+            why = tx(d.buy ? "why_hub_buy" : "why_hub_sell");
+        else if (d.limitKind == "money")
+            why = fill(tx("why_money"), {{"{cr}", grouped(d.spendableCr)}});
+        else
+            why = tx("why_aboard");
+        const bool atLimit = d.maxT <= 1.0e-6 || d.tonnes >= d.maxT - 1.0e-6;
+        text(fill(tx("limit"), {{"{t}", tonnesText(d.maxT)}, {"{why}", why}}), cx, y, small, atLimit ? Warn : Muted);
+        y += static_cast<float>(small) + 14;
+    }
+
+    // ---- the price and the breakdown (sums exactly to the total)
+    const auto& q = d.quote;
+    const auto row = [&](const std::string& label, const std::string& v, const glm::vec4& col, int size) {
+        text(label, cx, y, size, size == px ? Text : Muted);
+        text(v, cx + cw - t.measureTextPx(v, size), y, size, col);
+        y += static_cast<float>(size) + 8;
+    };
+    const std::string perT = " Cr/" + T;
+    row(tx(d.buy ? "list_ask" : "list_bid"), money2(q.listUnitCr) + perT, Text, small);
+    row(tx("impact"), fmt("%+.2f %%", q.impactShare * 100.0) + "  ->  " + money2(q.unitCr) + perT, q.impactShare != 0.0 ? Warn : Text, small);
+    t.solidRectPx(cx, y + 1, cw, 1, Line);
+    y += 8;
+    const std::string tt = tonnesText(d.tonnes);
+    for (const auto& l : d.lines)
+    {
+        std::string label;
+        if (l.kind == "goods")
+            label = fill(tx(d.buy ? "goods_buy" : "goods_sell"), {{"{t}", tt}, {"{unit}", money2(q.unitCr)}});
+        else if (l.kind == "handling")
+            label = fill(tx(d.buy ? "handling_buy" : "handling_sell"), {{"{t}", tt}, {"{rate}", money2(s.handlingCrPerT)}});
+        else if (l.kind == "vat")
+            label = fill(tx(d.buy ? "vat_buy" : "vat_sell"), {{"{pct}", fmt("%.0f %%", s.vatShare * 100.0)}, {"{days}", std::to_string(s.vatRefundDays)}});
+        else
+            label = fill(tx("turnover"), {{"{pct}", fmt("%.0f %%", s.turnoverShare * 100.0)}});
+        row(label, signedCr(l.shownCr), l.shownCr >= 0 ? Good : Text, small);
+    }
+    t.solidRectPx(cx, y + 1, cw, 1, Line);
+    y += 8;
+    row(tx(d.buy ? "total_buy" : "total_sell"), signedCr(d.shownTotalCr) + " Cr", d.shownTotalCr >= 0 ? Good : Warn, px);
+    if (d.buy && d.vatRefundCr > 0.0)
+        row(fill(tx("vat_refund"), {{"{cr}", grouped(d.vatRefundCr)}, {"{days}", std::to_string(d.vatRefundDays)}}), "", Muted, small);
+    y += 6;
+
+    // ---- Confirm / Cancel
+    {
+        const long long total = d.shownTotalCr < 0 ? -d.shownTotalCr : d.shownTotalCr;
+        const std::string label = fill(tx(d.buy ? "confirm_buy" : "confirm_sell"), {{"{t}", tt}, {"{cr}", grouped(static_cast<double>(total))}});
+        const float bh = px * 2.1f, bw = t.measureTextPx(label, px) + 32.0f;
+        t.solidRectPx(cx, y, bw, bh, d.canConfirm ? Selected : Bg);
+        t.solidRectPx(cx, y + bh - 2, bw, 2, d.canConfirm ? Title : Line);
+        text(label, cx + 16, y + (bh - px) * 0.5f, px, d.canConfirm ? Title : Muted);
+        m_hits.push_back({cx, y, cx + bw, y + bh, 0, {ServicePanelActionType::TradeDealConfirm, {}}});
+        const std::string cancel = tx("cancel");
+        const float cw2 = t.measureTextPx(cancel, px) + 28.0f;
+        t.solidRectPx(cx + bw + 10, y, cw2, bh, Bg);
+        text(cancel, cx + bw + 24, y + (bh - px) * 0.5f, px, Muted);
+        m_hits.push_back({cx + bw + 10, y, cx + bw + 10 + cw2, y + bh, 0, {ServicePanelActionType::TradeDealCancel, {}}});
+        y += bh + 10;
+    }
+    // why it cannot be confirmed / the server's answer
+    if (!d.canConfirm && d.blockKind != "waiting")
+    {
+        const std::string why = d.blockKind == "quote" ? q.reason : tx(d.blockKind);
+        text(why, cx, y, small, Bad);
+        y += static_cast<float>(small) + 8;
+    }
+    using game::presentation::TradeDealAnswer;
+    if (d.answer == TradeDealAnswer::Waiting)
+        text(fill(tx("waiting"), {{"{id}", std::to_string(d.sentRequest)}}), cx, y, small, Muted);
+    else if (d.answer == TradeDealAnswer::Ok)
+    {
+        const double v = d.result.totalCr < 0.0 ? -d.result.totalCr : d.result.totalCr;
+        text(fill(tx(d.result.totalCr < 0.0 ? "ok_buy" : "ok_sell"), {{"{cr}", money2(v)}}) + "  ·  #" +
+                         std::to_string(d.result.requestId),
+                     cx, y, small, Good);
+        y += static_cast<float>(small) + 6;
+        text(d.result.message, cx, y, small, Muted);
+    }
+    else if (d.answer == TradeDealAnswer::Refused)
+        text(fill(tx("refused"), {{"{reason}", d.result.message}}), cx, y, small, Bad);
+    else if (d.answer == TradeDealAnswer::PriceMoved)
+    {
+        // a tiny move (a big stock) looks equal at 2 decimals: then show enough digits to see it
+        const bool tiny = money2(q.unitCr) == money2(d.sentUnitCr);
+        const std::string fresh = tiny ? fmt("%.6f", q.unitCr) : money2(q.unitCr), old = tiny ? fmt("%.6f", d.sentUnitCr) : money2(d.sentUnitCr);
+        text(fill(tx("price_moved"), {{"{new}", fresh + perT}, {"{old}", old + perT}}), cx, y, px, Warn);
+        y += static_cast<float>(px) + 8;
+        const std::string retry = tx("retry");
+        const float bh = px * 1.9f, bw = t.measureTextPx(retry, px) + 28.0f;
+        t.solidRectPx(cx, y, bw, bh, Selected);
+        text(retry, cx + 14, y + (bh - px) * 0.5f, px, Title);
+        m_hits.push_back({cx, y, cx + bw, y + bh, 0, {ServicePanelActionType::TradeDealRetry, {}}});
+    }
+    keysHint(bottom - 8.0f);
 }
 
 // F8 tab 3: the colony's navigation data bank, the onboard computer's memory, the data carriers (JUMP_MECHANICS 10l)
@@ -1095,13 +1335,36 @@ std::optional<ServicePanelAction> ServicePanelsRenderer::handleInput(const Viewp
                 s -= static_cast<float>(scrollY) * 40.0f;
                 s = std::max(0.0f, s);
             }
+    // the wheel over the deal panel changes the quantity (TRADE_DESIGN §8: ←/→ or the wheel)
+    if (scrollY != 0.0)
+        for (const auto& z : m_zones)
+            if (z.id == 5 && x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1)
+                return ServicePanelAction {ServicePanelActionType::TradeDealStep, scrollY > 0.0 ? "+1" : "-1"};
     const bool pressed = leftDown && !m_leftWasDown;
     m_leftWasDown = leftDown;
     if (!pressed)
         return std::nullopt;
     for (auto it = m_hits.rbegin(); it != m_hits.rend(); ++it)
         if (x >= it->x0 && x <= it->x1 && y >= it->y0 && y <= it->y1)
-            return it->action;
+        {
+            ServicePanelAction a = it->action;
+            if (a.type == ServicePanelActionType::TradeDealSlider)
+                a.text = std::to_string(std::clamp((x - it->x0) / std::max(1.0f, it->x1 - it->x0), 0.0f, 1.0f));
+            return a;
+        }
+    return std::nullopt;
+}
+
+std::optional<ServicePanelAction> ServicePanelsRenderer::devClick(ServicePanelActionType type, const std::string& text, double fraction) const
+{
+    for (auto it = m_hits.rbegin(); it != m_hits.rend(); ++it)
+        if (it->action.type == type && (text.empty() || it->action.text == text || type == ServicePanelActionType::TradeDealSlider))
+        {
+            ServicePanelAction a = it->action;
+            if (type == ServicePanelActionType::TradeDealSlider)
+                a.text = std::to_string(std::clamp(fraction, 0.0, 1.0));
+            return a;
+        }
     return std::nullopt;
 }
 } // namespace ui::presentation

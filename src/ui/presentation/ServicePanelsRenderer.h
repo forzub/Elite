@@ -32,7 +32,17 @@ enum class ServicePanelActionType
     NavDataSelect,           // text = bank record id
     NavDataLoad,             // text = bank record id -> the onboard computer
     NavDataCarrier,          // text = bank record id -> a new data carrier
-    NavDataInsert            // text = carrier number (1-based) -> the onboard computer
+    NavDataInsert,           // text = carrier number (1-based) -> the onboard computer
+    // F8 MARKET deal window (TRADE_DESIGN §8.1, trade step 3)
+    TradeSelectGood,         // text = EconomyModel::goods() index
+    TradeDealSide,           // text = "buy" | "sell"
+    TradeDealUnits,          // text = "t" | "c20"
+    TradeDealStep,           // text = signed steps ("-1", "+10"; tonnes or boxes)
+    TradeDealSlider,         // text = the clicked fraction of the track 0..1 (filled by handleInput)
+    TradeDealMax,
+    TradeDealConfirm,
+    TradeDealCancel,
+    TradeDealRetry
 };
 
 struct ServicePanelAction
@@ -53,12 +63,17 @@ public:
                        float h, int px, int small, int big);
     std::optional<ServicePanelAction> handleInput(const Viewport& viewport, double mouseX, double mouseY, bool leftDown,
                                                   double scrollY);
+    // DEV: a click at the centre (slider: at `fraction` of the track) of the last frame's region with that action -
+    // the same action a real click there returns; nullopt = the frame had no such region
+    std::optional<ServicePanelAction> devClick(ServicePanelActionType type, const std::string& text, double fraction = 0.5) const;
 
 private:
+    void renderTradeDeal(const game::presentation::TradePresentation& page, float cx, float y, float cw, float h, int px, int small,
+                         int big);
     struct Hit
     {
         float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-        int scrollZone = 0;              // 1 = shipyard list, 2 = refit module list, 3 = right card, 4 = trade list
+        int scrollZone = 0;              // 1 = shipyard list, 2 = refit module list, 3 = right card, 4 = trade list, 5 = deal panel
         ServicePanelAction action;
     };
     std::vector<Hit> m_hits;             // regions of the last rendered frame

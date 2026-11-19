@@ -241,6 +241,9 @@ void logEvent(ClientLedger& ledger, int day, std::string text);
 // All or nothing: a failed payment changes nothing.
 PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::string& payeeBank, double amountCr, Purpose purpose,
                   int day, bool allowLifeline, const std::string& memo);
+// The most pay() (no lifeline) can cover to `payeeBank` right now, Cr: the same sources in the same order with their
+// FX / transfer / exchange fees taken off (TRADE_DESIGN step 3: the deal window's money limit = what the server allows).
+[[nodiscard]] double spendableCr(const ClientLedger& ledger, const BankDirectory& dir, const std::string& payeeBank);
 // An administrative fine payable to the authority banking with `authorityBank` (docs/HUB_SECURITY.md): paid like any
 // payment (cash, the account incl. its arranged overdraft, other accounts); what cannot be paid is NOT refused - it is
 // booked as a fine debt at that bank (a 0 % term loan over 360 days, PaymentResult::lifelineCr = the booked part), so a

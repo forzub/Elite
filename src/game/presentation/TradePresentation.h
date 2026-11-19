@@ -1,12 +1,14 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/simulation/ClientWalletSnapshot.h"
 #include "src/game/simulation/ClientTradeSnapshot.h"
+#include "src/game/presentation/TradeDealPresentation.h"
 
 // F8 Trade page model: the bulletin board of the hub the player is at, its
 // market, the hubs of the system, and the card of a selected destination
@@ -81,6 +83,10 @@ struct TradePresentation
     NavDataPage nav;
     game::simulation::ClientWalletSnapshot finance;   // the server ledger as replicated to this session
     game::simulation::ClientTradeSnapshot trade;      // the server market, the manifest, the latest results
+    // the MARKET tab's deal window (trade step 3): the selected row's deal priced like the server will charge it
+    TradeDealView deal;
+    // its strings in the UI language ("service.trade.deal.<key>" without the prefix; resolved by the caller)
+    std::map<std::string, std::string> dealText;
 };
 
 // distanceText(hubId) -> "12 400 km" / "4.3 ly" / "" (unknown)

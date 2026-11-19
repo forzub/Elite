@@ -6885,3 +6885,34 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - ShipCore::addCargo / removeCargo and Ship::addItem / removeItem removed (dead; a second writer of the cargo mass) - the
   cargo mass has ONE writer: the manifest via GameServer::applyCargoLoad -> ShipCore::setLoad.
 - Evidence: builds (Debug + RelWithDebInfo), contract checks PASS, the DEV start runs in every live check above.
+
+## TRADE MVP step 3: the F8 MARKET deal window (docs/TRADE_DESIGN.md §8.1, §9 row 3, §9b) - SOURCE + UNIT + LIVE PASS 2026-11-19
+- Built: src/game/presentation/TradeDealPresentation.* (pure): buildTradeDeal(session.trade, window state) prices the deal
+  with the SAME TradeQuoteModel::explainDeal the server charges with; the slider limits = min(C20 places + payload via
+  CargoRegistry::extraC20/fits on the replicated manifest, hubGivesUpToT / hubTakesUpToT, money = spendableCr, aboard);
+  whole-Cr lines by largest remainder (shown lines = shown total). BankingModel::spendableCr (what pay() covers without
+  lifeline: cash, accounts incl. overdraft, fees). ClientTradeSnapshot + stockExponent / minStockShare / hubBuyCapShare /
+  spendableCr -> snapshot schema 51 (wire protocol unchanged, 32). ServicePanelsRenderer::renderTradeDeal (right column of
+  РЫНОК), new actions TradeSelectGood / TradeDealSide / Units / Step / Slider / Max / Confirm / Cancel / Retry, wheel over the
+  panel = quantity, devClick. SpaceState: applyTradeDealAction / tradeDealKey (↑↓ row, ←→ qty, Shift x10, Tab side, U units,
+  Enter / R confirm, Backspace cancel, 1..6 tabs - read via glfwGetKey because Input is reset under a service page) /
+  confirmTradeDeal (Buy / Sell with limitUnitCr = the exact quoted unit price, quoteDay = the snapshot day). Strings:
+  service.trade.deal.* in ui/services/trade.json (en / ru / zh-Hans / es / ja). DEV: tradeclick:<what>[:arg] (a click on the
+  region the last frame drew), tradekey:<key>[+shift], tradedeal:report.
+- Unit: EliteEconomyCheck 99/99 (new testTradeDealWindow: lines sum to the total and shown lines to the shown total; the
+  server charged EXACTLY the window's total for buy 2 C20, money-limited buy, re-quote, sell all; the window's hold max
+  +0.01 t -> no_space; money max +0.5 t -> no_money; a moved market -> price_moved and the window shows the new price).
+- Contracts PASS: entity_lifetime, active_system_context, server_runtime_ownership, wire_protocol_boundary,
+  wire_data_schema, replication_snapshot_boundary, function_key_presentation_route, service_panel_shell,
+  localization_boundary.
+- LIVE (earth_orbital_hub, docked; D:/tmp/trade3/b.log, screenshots D:/tmp/trade3/01..08_*.png, layout fixed after run a):
+  window BUY 3 C20 grain clamped to the money limit 35.565 t, preview total -24 999.99 -> "[Trade] ... BUY 35.5655 t
+  food_staples ... account -25000 Cr; stock 48154 -> 48118.4" (answer total -24999.99); SELL max (aboard) preview
+  +18 701.41 -> server "+18701.4 Cr" (answer 18701.40633 = preview); DEV buy 3 t then Confirm in the same frame ->
+  "REFUSED (price_moved)", panel «цена изменилась ..., повторить?» + ПОВТОРИТЬ (R) -> R -> server total -10645.1855 =
+  re-quote. After each deal the panel shows the server's answer, the new available money, C20 used and the hub stock.
+- Not done / deviations: Esc is the global session menu - cancel is Backspace; the exact quoted price is sent as the limit
+  (design said preview -/+1 %); F8 tabs not reordered (НАВИГ. ДАННЫЕ stays in F8 until its move to F5, §11a); no trend /
+  lot cost-basis columns; the rest of F8 still hardcoded Russian; the server's refusal text is Russian; the price-moved
+  precision fix (6 decimals when equal at 2) and the Left/Right wording of the key hint were made after the last live run
+  (built, not re-captured).

@@ -390,6 +390,37 @@ PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::str
     return r;
 }
 
+double spendableCr(const ClientLedger& ledger, const BankDirectory& dir, const std::string& payeeBank)
+{
+    // pay()'s plan with an unbounded amount: what every source covers (the same order and fees)
+    const NationalBank* payee = dir.bank(payeeBank) ? dir.bank(payeeBank) : dir.reserve();
+    if (!payee)
+        return 0.0;
+    const std::string& pid = payee->id;
+    const double fxP = dir.fx(pid);
+    const auto available = [](const Account& a) { return (a.frozen ? std::max<Minor>(0, a.balance) : a.balance + a.overdraftLimit) - a.held; };
+    const double huge = 1.0e15;
+    double covered = 0.0;
+    if (const auto it = ledger.cash.find(pid); it != ledger.cash.end())
+        covered += takeFrom(huge, it->second, fxP, 0.0, 0.0).coveredCr;
+    if (const auto* a = findAccount(ledger, pid))
+        covered += takeFrom(huge, available(*a), fxP, 0.0, 0.0).coveredCr;
+    for (const auto& a : ledger.accounts)
+    {
+        if (a.bankId == pid)
+            continue;
+        const TransferFee& fee = dir.rules.transfer[static_cast<int>(dir.channel(a.bankId, pid))];
+        if (!fee.allowed)
+            continue;
+        const bool sameCurrency = codeOf(dir, a.bankId) == payee->code;
+        covered += takeFrom(huge, available(a), dir.fx(a.bankId), fee.share + (sameCurrency ? 0.0 : dir.rules.fxFeeShare), fee.minCr).coveredCr;
+    }
+    for (const auto& [bank, minor] : ledger.cash)
+        if (bank != pid)
+            covered += takeFrom(huge, minor, dir.fx(bank), dir.rules.cashExchangeShare, 0.0).coveredCr;
+    return covered;
+}
+
 void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& payerBank, double amountCr, int day,
              const std::string& memo)
 {

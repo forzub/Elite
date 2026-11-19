@@ -145,6 +145,26 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
         }
     if (page.card.valid && page.card.info.id == page.hubId)
         page.card.knownPrices = page.market;
+    // the MARKET deal window (trade step 3): priced with the server's TradeQuoteModel on the replicated inputs
+    if (page.tab == 1)
+    {
+        if (m_tradeDeal.good >= 0 && page.trade.hubId == page.hubId)
+            page.deal = game::presentation::buildTradeDeal(page.trade, m_tradeDeal);
+        if (page.deal.sentRequest != 0 && page.deal.answer != game::presentation::TradeDealAnswer::Waiting &&
+            m_tradeDealAnswerLogged != page.deal.sentRequest)
+        {
+            m_tradeDealAnswerLogged = page.deal.sentRequest;
+            logTradeDeal("answer");
+        }
+        static const char* const DealKeys[] = {
+            "hint", "buy", "sell", "units_t", "units_c20", "aboard", "quantity", "limit", "why_hold_c20", "why_payload",
+            "why_hub_buy", "why_hub_sell", "why_money", "why_aboard", "list_ask", "list_bid", "impact", "goods_buy", "goods_sell",
+            "handling_buy", "handling_sell", "vat_buy", "vat_sell", "turnover", "total_buy", "total_sell", "vat_refund",
+            "confirm_buy", "confirm_sell", "cancel", "max", "waiting", "ok_buy", "ok_sell", "refused", "price_moved", "retry",
+            "not_docked", "zero", "money", "keys", "account", "unit_price", "boxes"};
+        for (const char* key : DealKeys)
+            page.dealText[key] = localizedUiText(context().app, std::string("service.trade.deal.") + key, key);
+    }
     // the navigation data tab (JUMP_MECHANICS 10l)
     namespace jr = game::navigation::jump;
     auto& nav = page.nav;
@@ -266,13 +286,31 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
     glfwGetCursorPos(window, &mx, &my);
     const bool leftDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     const double scrollY = Input::instance().consumeScrollY();
+    // F8 keys (TRADE_DESIGN §8): Input is reset while a service page owns the screen - read the keys directly
+    if (service == ui::services::ServiceUiId::Trade)
+    {
+        const bool shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+        static const int Keys[] = {GLFW_KEY_UP, GLFW_KEY_DOWN, GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_TAB, GLFW_KEY_ENTER,
+                                   GLFW_KEY_KP_ENTER, GLFW_KEY_BACKSPACE, GLFW_KEY_R, GLFW_KEY_U, GLFW_KEY_1, GLFW_KEY_2,
+                                   GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6};
+        for (const int key : Keys)
+        {
+            const bool down = glfwGetKey(window, key) == GLFW_PRESS;
+            bool& was = m_tradeKeyWasDown[key];
+            if (down && !was)
+                tradeDealKey(key, shift);
+            was = down;
+        }
+    }
     const auto action = m_servicePanels.handleInput(viewport, mx, my, leftDown, scrollY);
     if (!action)
         return true;
 
     if (service == ui::services::ServiceUiId::Trade)
     {
-        if (action->type == ServicePanelActionType::TradeTab)
+        if (action->type >= ServicePanelActionType::TradeSelectGood)
+            applyTradeDealAction(*action);
+        else if (action->type == ServicePanelActionType::TradeTab)
             m_tradeTab = std::atoi(action->text.c_str());
         else if (action->type == ServicePanelActionType::TradeSelectHub)
             m_tradeHub = action->text;
@@ -361,4 +399,172 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             break;
     }
     return true;
+}
+
+// ---------------------------------------------------------------- F8 MARKET deal window (TRADE_DESIGN §8.1, step 3)
+// The window only shows and requests: the preview is TradeQuoteModel on the server's replicated inputs; Confirm sends
+// Buy / Sell with the EXACT quoted unit price as the limit and the snapshot day, the server re-prices and charges.
+void SpaceState::applyTradeDealAction(const ui::presentation::ServicePanelAction& action)
+{
+    using ui::presentation::ServicePanelActionType;
+    if (!m_client)
+        return;
+    const auto view = [&]() { return game::presentation::buildTradeDeal(m_client->sessionSnapshot().trade, m_tradeDeal); };
+    switch (action.type)
+    {
+        case ServicePanelActionType::TradeSelectGood:
+        {
+            const int good = std::atoi(action.text.c_str());
+            if (good != m_tradeDeal.good)
+            {
+                m_tradeDeal.good = good;
+                m_tradeDeal.tonnes = -1.0;
+                m_tradeDeal.sentRequest = 0;
+            }
+            m_tradeTab = 1;
+            break;
+        }
+        case ServicePanelActionType::TradeDealSide:
+            if (m_tradeDeal.buy != (action.text == "buy"))
+            {
+                m_tradeDeal.buy = action.text == "buy";
+                m_tradeDeal.tonnes = -1.0;
+                m_tradeDeal.sentRequest = 0;
+            }
+            break;
+        case ServicePanelActionType::TradeDealUnits:
+            m_tradeDeal.unitsC20 = action.text == "c20";
+            break;
+        case ServicePanelActionType::TradeDealStep:
+            m_tradeDeal.tonnes = game::presentation::tradeDealStep(view(), std::atoi(action.text.c_str()));
+            break;
+        case ServicePanelActionType::TradeDealSlider:
+            m_tradeDeal.tonnes = game::presentation::tradeDealAtFraction(view(), std::atof(action.text.c_str()));
+            break;
+        case ServicePanelActionType::TradeDealMax:
+            m_tradeDeal.tonnes = view().maxT;
+            break;
+        case ServicePanelActionType::TradeDealConfirm:
+        case ServicePanelActionType::TradeDealRetry:
+            confirmTradeDeal();
+            return;
+        case ServicePanelActionType::TradeDealCancel:
+            // waiting: forget the request (its result still lands in the list); else close the window
+            if (m_tradeDeal.sentRequest != 0)
+                m_tradeDeal.sentRequest = 0;
+            else
+                m_tradeDeal.good = -1;
+            break;
+        default:
+            return;
+    }
+    logTradeDeal("action");
+}
+
+void SpaceState::tradeDealKey(int key, bool shift)
+{
+    using ui::presentation::ServicePanelAction;
+    using ui::presentation::ServicePanelActionType;
+    if (!m_client)
+        return;
+    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_6)
+    {
+        m_tradeTab = key - GLFW_KEY_1;
+        return;
+    }
+    if (m_tradeTab != 1)
+        return;
+    const auto& market = m_client->sessionSnapshot().trade.market;
+    switch (key)
+    {
+        case GLFW_KEY_UP:
+        case GLFW_KEY_DOWN:
+        {
+            if (market.empty())
+                return;
+            int at = -1;
+            for (std::size_t i = 0; i < market.size(); ++i)
+                if (market[i].good == m_tradeDeal.good)
+                    at = static_cast<int>(i);
+            const int n = static_cast<int>(market.size());
+            at = at < 0 ? (key == GLFW_KEY_DOWN ? 0 : n - 1) : (at + (key == GLFW_KEY_DOWN ? 1 : n - 1)) % n;
+            applyTradeDealAction({ServicePanelActionType::TradeSelectGood, std::to_string(market[static_cast<std::size_t>(at)].good)});
+            return;
+        }
+        case GLFW_KEY_LEFT:
+        case GLFW_KEY_RIGHT:
+            applyTradeDealAction({ServicePanelActionType::TradeDealStep, std::to_string((key == GLFW_KEY_RIGHT ? 1 : -1) * (shift ? 10 : 1))});
+            return;
+        case GLFW_KEY_TAB:
+            applyTradeDealAction({ServicePanelActionType::TradeDealSide, m_tradeDeal.buy ? "sell" : "buy"});
+            return;
+        case GLFW_KEY_U:
+            applyTradeDealAction({ServicePanelActionType::TradeDealUnits, m_tradeDeal.unitsC20 ? "t" : "c20"});
+            return;
+        case GLFW_KEY_ENTER:
+        case GLFW_KEY_KP_ENTER:
+        case GLFW_KEY_R:
+            applyTradeDealAction({ServicePanelActionType::TradeDealConfirm, {}});
+            return;
+        case GLFW_KEY_BACKSPACE:
+            applyTradeDealAction({ServicePanelActionType::TradeDealCancel, {}});
+            return;
+        default:
+            return;
+    }
+}
+
+void SpaceState::confirmTradeDeal()
+{
+    if (!m_client)
+        return;
+    const auto v = game::presentation::buildTradeDeal(m_client->sessionSnapshot().trade, m_tradeDeal);
+    if (!v.valid || !v.canConfirm)
+    {
+        std::cerr << "[TradeDeal] confirm ignored: " << (v.valid ? v.blockKind : std::string("no row selected")) << std::endl;
+        return;
+    }
+    const std::uint32_t id = sendEconomyCommand(v.buy ? game::network::ClientEconomyCommand::Buy : game::network::ClientEconomyCommand::Sell,
+                                                v.goodId, v.tonnes, v.quote.unitCr);
+    m_tradeDeal.tonnes = v.tonnes;
+    m_tradeDeal.sentRequest = id;
+    m_tradeDeal.sentUnitCr = v.quote.unitCr;
+    m_tradeDeal.sentTonnes = v.tonnes;
+    m_tradeDeal.sentBuy = v.buy;
+    logTradeDeal("confirm");
+}
+
+void SpaceState::logTradeDeal(const char* why)
+{
+    if (!m_client)
+        return;
+    const auto& snap = m_client->sessionSnapshot().trade;
+    const auto v = game::presentation::buildTradeDeal(snap, m_tradeDeal);
+    if (!v.valid)
+    {
+        std::cerr << "[TradeDeal] " << why << ": no row selected (tab " << m_tradeTab << ")" << std::endl;
+        return;
+    }
+    std::ostringstream o;
+    o.precision(10);
+    o << "[TradeDeal] " << why << ": " << (v.buy ? "BUY " : "SELL ") << v.goodId << " " << v.tonnes << " t (" << v.c20 << " C20, "
+      << (v.unitsC20 ? "C20 units" : "t units") << "), max " << v.maxT << " t by " << v.limitKind << " [hold " << v.holdLimitT << ", hub "
+      << v.hubLimitT << ", money " << v.moneyLimitT << ", aboard " << v.aboardT << "], day " << snap.day << ", list " << v.quote.listUnitCr
+      << " -> deal " << v.quote.unitCr << " Cr/t; lines";
+    for (const auto& l : v.lines)
+        o << " " << l.kind << " " << l.cr << " (" << l.shownCr << ")";
+    o << "; total " << v.quote.totalCr << " (" << v.shownTotalCr << "); spendable " << snap.spendableCr << "; "
+      << (v.canConfirm ? "can confirm" : "blocked: " + v.blockKind);
+    if (v.sentRequest != 0)
+    {
+        o << "; request #" << v.sentRequest << " ";
+        using game::presentation::TradeDealAnswer;
+        o << (v.answer == TradeDealAnswer::Waiting ? "waiting"
+              : v.answer == TradeDealAnswer::Ok     ? "OK"
+              : v.answer == TradeDealAnswer::PriceMoved ? "PRICE MOVED"
+                                                        : "REFUSED");
+        if (v.answer != TradeDealAnswer::Waiting)
+            o << " (" << v.result.code << ") " << v.result.message << " total " << v.result.totalCr;
+    }
+    std::cerr << o.str() << std::endl;
 }

@@ -1,0 +1,46 @@
+{
+ "schema": "trade_fees/1",
+ "status": "PROPOSAL",
+ "note": "Hand-authored (docs/TRADE_DESIGN.md §2.3, §5.1, §5.2; step 2 of §9). The deal price (kappa, the hub limits) and the fiscal styles: the regime of a polity (national_banks.json banks[].regime) -> its style. A polity without a bank (a no-state zone) takes 'no_state'. Anchors: ship_economics.json fees (docking 150 + 0.9 Cr/t dry mass, cargo handling 12 Cr/t), EU VAT 17-27 %, Singapore GST 9 %, tithe 10 %.",
+ "deal": {
+  "kappa": 0.5,
+  "stock_exponent": 0.6,
+  "min_stock_share": 0.05,
+  "hub_buy_cap_share": 1.5,
+  "handling_cr_per_t": 12.0,
+  "docking_base_cr": 150.0,
+  "docking_cr_per_dry_t": 0.9,
+  "vat_refund_fee_share": 0.01
+ },
+ "styles": {
+  "bureaucratic": {"ru": "бюрократический", "vat": 0.20, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.0},
+  "corporate":    {"ru": "корпоративный",   "vat": 0.08, "vat_refund_days": 14, "turnover": 0.0, "turnover_ru": "", "port_index": 1.4},
+  "planned":      {"ru": "плановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "налог с оборота", "port_index": 0.7},
+  "theocratic":   {"ru": "теократический",  "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.10, "turnover_ru": "десятина", "port_index": 0.9},
+  "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2},
+  "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8}
+ },
+ "regime_style": {
+  "parliamentary_bureaucracy": "bureaucratic",
+  "sol_authority": "bureaucratic",
+  "litigating_city_states": "bureaucratic",
+  "merit_caste_republic": "bureaucratic",
+  "corporate_board": "corporate",
+  "corporate_democracy": "corporate",
+  "shareholder_agora": "corporate",
+  "technocratic_meritocracy": "corporate",
+  "navigator_council": "corporate",
+  "exile_republic": "corporate",
+  "party_technocracy": "planned",
+  "sage_council": "planned",
+  "machine_oracle": "planned",
+  "caste_theocracy": "theocratic",
+  "synod_theocracy": "theocratic",
+  "grandees_and_church": "theocratic",
+  "security_oligarchy": "security",
+  "clan_contracts": "clan",
+  "council_of_chiefs": "clan",
+  "none_quiet": "clan",
+  "no_state": "clan"
+ }
+}

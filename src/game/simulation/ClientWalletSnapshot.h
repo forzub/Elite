@@ -32,6 +32,7 @@ struct ClientWalletSnapshot
     double netWorthCr = 0.0;
     double lifelineLeftCr = 0.0;
     double freeFuelListCr = 0.0;   // list value of the fuel received free of charge so far
+    double heldCr = 0.0;           // blocked by holds (escrow): the client's money, not spendable
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

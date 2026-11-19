@@ -29,6 +29,7 @@
 #include "src/game/navigation/rules/JumpSumps.h"
 #include "src/game/navigation/rules/NavDataBanks.h"
 #include "src/game/navigation/rules/JumpRules.h"
+#include "src/game/navigation/rules/JDrive.h"
 #include <random>
 #include "src/game/scene/GameSceneSetup.h"
 #include "src/world/time/ConstructionClock.h"
@@ -509,6 +510,10 @@ m_simulation.setCelestialBodyKinematicStateAu(
                 return {motion.hubId, motion.systemId};
             };
             game::economy::service::install(std::move(bindings));
+            // a restored manifest (economy_state/2): the player ships carry its mass from the first tick
+            for (const auto& [shipId, shipPtr] : m_simulation.ships())
+                if (shipPtr && m_players.playerForShip(shipPtr->core().registry().instanceId))
+                    applyCargoLoad(shipId);
         }
 
         game::server::ServerTimeContext initialTime;
@@ -1161,6 +1166,21 @@ void GameServer::update(double dt)
             observational; leaving it resumes from the same gameplay state
             that existed before the diagnostic session.
         */
+        // Trade requests (TRADE_DESIGN §7.4) run like the ship commands: in the context of THEIR ship's system, never
+        // in accelerated diagnostics or for a destroyed ship
+        if (auto ecoIt = m_pendingEconomyCommands.find(id.value); ecoIt != m_pendingEconomyCommands.end() && !ecoIt->second.empty())
+        {
+            if (!time.universeTimeSimulation && ship.core().transform().motion.destroyedCause == 0)
+            {
+                const int commandSystemId = ship.core().transform().motion.systemId;
+                if (commandSystemId >= 0 && commandSystemId != m_appliedSimulationContextSystemId)
+                    switchSimulationContext(commandSystemId);
+                for (const auto& economyCommand : ecoIt->second)
+                    handleEconomyCommand(id, economyCommand);
+            }
+            ecoIt->second.clear();
+        }
+
         auto cmdIt = m_pendingClientShipCommands.find(id.value);
         if (cmdIt == m_pendingClientShipCommands.end())
             continue;
@@ -1794,6 +1814,7 @@ void GameServer::populateClientSessionSnapshot(
     snapshot.session.ownedNavigationAssets.clear();
     snapshot.session.navigationSensors = {};
     snapshot.session.wallet = {};
+    snapshot.session.trade = {};
     snapshot.session.predictionWorldParams = m_simulation.world();
     snapshot.session.universeTimeSeconds =
         m_universeClock.timeSeconds();
@@ -1857,6 +1878,7 @@ void GameServer::resetSessionControlState(
         previousPendingCommands = commandIt->second.size();
         m_pendingClientShipCommands.erase(commandIt);
     }
+    m_pendingEconomyCommands.erase(controlledEntityId.value);
 
     // Continuous control belongs to the live session too. Do not leave the
     // ship accelerating or rotating from the final sample of a disconnected
@@ -2092,6 +2114,17 @@ void GameServer::receiveClientMessage(
                 }
                 queue.push_back(payload);
             }
+            else if constexpr (std::is_same_v<PayloadT, game::network::ClientEconomyCommand>)
+            {
+                // trade requests (TRADE_DESIGN §7.4): queued per controlled ship, run in its system context
+                auto& queue = m_pendingEconomyCommands[controlledEntityId.value];
+                if (queue.size() >= MaxShipCommandsPerShip)
+                {
+                    ++m_queueDiagnostics.droppedShipCommands;
+                    return;
+                }
+                queue.push_back(payload);
+            }
         },
         msg.payload
     );
@@ -2263,6 +2296,121 @@ GameServer::walletForSession(
     return m_economy.walletSnapshot(player.value, hubId, systemId);
 }
 
+namespace
+{
+game::economy::CargoCapacity cargoCapacityOf(const Ship& ship)
+{
+    const auto& storage = ship.core().descriptor().storage;
+    return {static_cast<double>(std::max(0, storage.cargoMass)), std::max(0, storage.containerSlots)};
+}
+
+// one full J charge at `massT` (JDrive: charge = q x d x (alpha + M))
+double jumpRangeLy(double chargeT, double massT)
+{
+    namespace jd = game::navigation::jdrive;
+    return chargeT > 0.0 ? chargeT / (jd::JumpChargePerLyT * (jd::JumpEnvelopeT + std::max(0.0, massT))) : 0.0;
+}
+} // namespace
+
+void GameServer::applyCargoLoad(EntityId id)
+{
+    Ship* ship = m_simulation.getShip(id);
+    if (!ship)
+        return;
+    const auto* manifest = m_economy.cargo().find(ship->core().registry().instanceId);
+    auto load = ship->core().load();
+    const double net = manifest ? manifest->netT() : 0.0;
+    const int boxes = manifest ? manifest->c20() : 0;
+    if (std::fabs(load.cargoTonnes - net) < 1.0e-9 && load.containers == boxes)
+        return;
+    const double before = ship->core().currentMassKg() / 1000.0;
+    load.cargoTonnes = net;
+    load.containers = boxes;
+    ship->core().setLoad(load);
+    const double after = ship->core().currentMassKg() / 1000.0;
+    const double chargeT = ship->core().effectivePhysics().jumpChargeCapacityT;
+    std::cerr << "[Cargo] ship " << id.value << ": manifest " << net << " t net, " << boxes << " C20 (gross "
+              << (manifest ? manifest->grossT() : 0.0) << " t) -> mass " << before << " -> " << after << " t; full-charge jump range "
+              << jumpRangeLy(chargeT, before) << " -> " << jumpRangeLy(chargeT, after) << " ly" << std::endl;
+}
+
+void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEconomyCommand& command)
+{
+    using Op = game::network::ClientEconomyCommand::Op;
+    Ship* ship = m_simulation.getShip(id);
+    if (!ship || !m_economy.loaded())
+        return;
+    const std::uint64_t shipKey = ship->core().registry().instanceId;
+    const std::uint64_t player = m_players.playerForShip(shipKey).value;
+    if (player == 0)
+        return;
+    const auto& motion = ship->core().transform().motion;
+    std::cerr << "[Trade] command op " << static_cast<int>(command.op) << " request " << command.requestId << " ship " << id.value << " "
+              << command.goodId << " " << command.quantity << " t at '" << command.hubId << "'" << std::endl;
+    if (command.op == Op::DevCargoAdd || command.op == Op::DevCargoClear)
+    {
+        if (!devCommandAccepted("cargo", id))
+            return;
+        if (command.op == Op::DevCargoClear)
+            m_economy.devClearCargo(shipKey);
+        else if (const std::string why = m_economy.devAddCargo(player, shipKey, command.goodId, command.quantity, cargoCapacityOf(*ship),
+                                                               motion.hubId);
+                 !why.empty())
+            m_economy.recordTradeRefusal(player, command.requestId, "no_space", why);
+        applyCargoLoad(id);
+        return;
+    }
+    // a deal needs a berth at that hub (TRADE_DESIGN §7.4): docked, not a tender alongside, not in a jump
+    bool tender = false;
+    const std::string at = m_simulation.serviceStationOf(id, &tender);
+    if (at.empty() || tender || (!command.hubId.empty() && command.hubId != at))
+    {
+        m_economy.recordTradeRefusal(player, command.requestId, "not_docked",
+                                     "сделка только у причала хаба" + (command.hubId.empty() ? std::string() : " " + command.hubId));
+        return;
+    }
+    game::economy::EconomyServer::TradeOrder order;
+    order.buy = command.op == Op::Buy;
+    order.playerId = player;
+    order.shipKey = shipKey;
+    order.hubId = at;
+    order.systemId = motion.systemId;
+    order.goodId = command.goodId;
+    order.tonnes = command.quantity;
+    order.limitUnitCr = command.limitUnitCr;
+    order.quoteDay = command.quoteDay;
+    order.requestId = command.requestId;
+    order.capacity = cargoCapacityOf(*ship);
+    (void)m_economy.trade(order);
+    applyCargoLoad(id);
+}
+
+game::simulation::ClientTradeSnapshot
+GameServer::tradeForSession(
+    game::network::ServerSessionId sessionId
+) const
+{
+    const PlayerId player = m_sessions.player(sessionId);
+    if (!player || !m_economy.loaded())
+        return {};
+    const Ship* ship = m_simulation.getShip(controlledEntityForSession(sessionId));
+    if (!ship)
+        return {};
+    const auto& motion = ship->core().transform().motion;
+    const std::uint64_t shipKey = ship->core().registry().instanceId;
+    bool tender = false;
+    const std::string at = m_simulation.serviceStationOf(controlledEntityForSession(sessionId), &tender);
+    auto s = m_economy.tradeSnapshot(player.value, shipKey, motion.hubId, motion.systemId, !at.empty() && !tender);
+    const auto cap = cargoCapacityOf(*ship);
+    s.c20Slots = cap.c20Slots;
+    s.netCapacityT = cap.netT;
+    s.shipMassT = ship->core().currentMassKg() / 1000.0;
+    const double chargeT = ship->core().effectivePhysics().jumpChargeCapacityT;
+    s.jumpRangeLy = jumpRangeLy(chargeT, s.shipMassT);
+    s.jumpRangeEmptyLy = jumpRangeLy(chargeT, s.shipMassT - s.cargoGrossT);
+    return s;
+}
+
 game::simulation::ClientNavigationSensorSnapshot
 GameServer::navigationSensorsForSession(
     game::network::ServerSessionId sessionId
@@ -2418,6 +2566,7 @@ bool GameServer::copySnapshotForSession(
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
     outSnapshot.session.wallet = walletForSession(sessionId);
+    outSnapshot.session.trade = tradeForSession(sessionId);
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -2450,6 +2599,7 @@ bool GameServer::copyHydratedSnapshotForSession(
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
     outSnapshot.session.wallet = walletForSession(sessionId);
+    outSnapshot.session.trade = tradeForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -2510,6 +2660,7 @@ bool GameServer::copySparseSnapshotForSession(
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
     outSnapshot.session.wallet = walletForSession(sessionId);
+    outSnapshot.session.trade = tradeForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

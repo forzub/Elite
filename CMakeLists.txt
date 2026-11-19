@@ -723,6 +723,8 @@ add_executable(EliteGame
     src/game/economy/BankingModel.cpp
     src/game/economy/PriceModel.cpp
     src/game/economy/EconomyServer.cpp
+    src/game/economy/CargoRegistry.cpp
+    src/game/economy/TradeQuoteModel.cpp
     src/game/economy/EconomyService.cpp
     src/game/presentation/RepairRefitPresentation.cpp
 
@@ -1025,6 +1027,8 @@ if(ELITE_BUILD_SERVER)
         src/game/economy/BankingModel.cpp
         src/game/economy/PriceModel.cpp
         src/game/economy/EconomyServer.cpp
+        src/game/economy/CargoRegistry.cpp
+        src/game/economy/TradeQuoteModel.cpp
         src/game/economy/EconomyService.cpp
         src/game/simulation/GameSimulationZones.cpp
         src/game/simulation/GameSimulationHubSecurity.cpp
@@ -1316,6 +1320,8 @@ if(ELITE_BUILD_SERVER)
         src/game/economy/BankingModel.cpp
         src/game/economy/PriceModel.cpp
         src/game/economy/EconomyServer.cpp
+        src/game/economy/CargoRegistry.cpp
+        src/game/economy/TradeQuoteModel.cpp
         src/game/economy/EconomyService.cpp
         src/game/economy/EconomyModel.cpp
         src/game/fuel/FuelStationCatalog.cpp

@@ -6,6 +6,7 @@
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/network/ClientShipCommand.h"
 #include "src/game/network/ClientObservationInterest.h"
+#include "src/game/network/ClientEconomyCommand.h"
 
 namespace game::network
 {
@@ -16,7 +17,8 @@ struct ClientMessage
     std::variant<
         ShipControlState,
         ClientShipCommand,
-        ClientObservationInterest
+        ClientObservationInterest,
+        ClientEconomyCommand
     > payload;
 };
 

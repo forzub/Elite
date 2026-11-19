@@ -24,6 +24,7 @@ struct TradeGood
     std::string group;
     std::string groupRu;
     double baseCrPerTonne = 0.0;
+    double densityTM3 = 0.0;   // t / m3 (a C20 holds 23.3 m3: light goods fill it by volume)
 };
 
 struct HubEconomyInfo

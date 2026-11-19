@@ -205,6 +205,7 @@ bool EconomyServer::load()
         nb.fxSigmaDay = num(b, "fx_sigma_day", 0.0);
         nb.fxHalfLifeDays = num(b, "fx_half_life_days", 730.0);
         nb.fxBand = num(b, "fx_band", 0.0);
+        nb.regime = str(b, "regime");
         m_banks.add(std::move(nb));
     }
     const json noBank = doc.value("no_bank", json::object());
@@ -347,6 +348,38 @@ bool EconomyServer::load()
             if (m.cells[g].traded && !m.cells[g].producer)
                 m.transportCrT[g] = (systemProduces[m.systemId][g] ? 2.0 * c20Leg : c20Jump + 2.0 * c20Leg) / c20T;
 
+
+    // trade: the deal rules and the fiscal styles (trade_fees.json, hand-authored; defaults when missing)
+    json fees;
+    if (readJson("trade_fees.json", fees))
+    {
+        const json deal = fees.value("deal", json::object());
+        m_dealRules.kappa = num(deal, "kappa", m_dealRules.kappa);
+        m_dealRules.stockExponent = num(deal, "stock_exponent", m_dealRules.stockExponent);
+        m_dealRules.minStockShare = num(deal, "min_stock_share", m_dealRules.minStockShare);
+        m_dealRules.hubBuyCapShare = num(deal, "hub_buy_cap_share", m_dealRules.hubBuyCapShare);
+        m_dealRules.handlingCrPerT = num(deal, "handling_cr_per_t", m_dealRules.handlingCrPerT);
+        m_dealRules.dockingBaseCr = num(deal, "docking_base_cr", m_dealRules.dockingBaseCr);
+        m_dealRules.dockingCrPerDryT = num(deal, "docking_cr_per_dry_t", m_dealRules.dockingCrPerDryT);
+        m_dealRules.vatRefundFeeShare = num(deal, "vat_refund_fee_share", m_dealRules.vatRefundFeeShare);
+        const json styles = fees.value("styles", json::object());
+        for (const auto& [id, s] : styles.items())
+        {
+            FiscalStyle st;
+            st.id = id;
+            st.ru = str(s, "ru", id);
+            st.vatShare = num(s, "vat", 0.0);
+            st.vatRefundDays = static_cast<int>(num(s, "vat_refund_days", 0.0));
+            st.turnoverShare = num(s, "turnover", 0.0);
+            st.turnoverRu = str(s, "turnover_ru");
+            st.portIndex = num(s, "port_index", 1.0);
+            m_styles[id] = st;
+        }
+        const json regimes = fees.value("regime_style", json::object());
+        for (const auto& [regime, style] : regimes.items())
+            if (style.is_string())
+                m_regimeStyle[regime] = style.get<std::string>();
+    }
     m_loaded = !m_banks.banks().empty() && !m_markets.empty();
     std::cerr << "[EconomyServer] " << m_banks.banks().size() << " national banks, " << m_markets.size() << " markets, fuel "
               << (m_fuelFree ? "FREE of charge (list prices computed)" : "charged") << '\n';
@@ -469,6 +502,9 @@ void EconomyServer::stepDay(int day)
                 jumpPrices.push_back(c.priceCr * (1.0 + 0.5 * m.spread));
         }
     }
+
+    // input VAT refunds that came due (trade, TRADE_DESIGN §5.2)
+    payDueVatRefunds(day);
 
     // ledgers
     for (auto& [id, l] : m_ledgers)
@@ -741,6 +777,261 @@ void EconomyServer::credit(std::uint64_t playerId, const std::string& hubId, int
         receive(*l, m_banks, bankOf(hubId, systemId), amountCr, m_day, memo);
 }
 
+// ---------------------------------------------------------------- trade (TRADE_DESIGN steps 1-2)
+FiscalStyle EconomyServer::fiscalStyleOf(const std::string& hubId, int systemId) const
+{
+    const std::string polity = polityOf(hubId, systemId);
+    const auto* bank = m_banks.bank(polity);   // the polity's OWN bank carries its regime; a zone without one: no state
+    const std::string regime = bank && !bank->regime.empty() ? bank->regime : std::string("no_state");
+    if (const auto it = m_regimeStyle.find(regime); it != m_regimeStyle.end())
+        if (const auto st = m_styles.find(it->second); st != m_styles.end())
+            return st->second;
+    return FiscalStyle{};
+}
+
+bool EconomyServer::marketSide(const std::string& hubId, const std::string& goodId, MarketSide& out) const
+{
+    const int g = goodIndex(goodId);
+    const auto it = m_marketIndex.find(hubId);
+    if (g < 0 || it == m_marketIndex.end())
+        return false;
+    const auto& m = m_markets[it->second];
+    const auto& c = m.cells[static_cast<std::size_t>(g)];
+    if (!c.traded)
+        return false;
+    out = {c.priceCr, m.spread, c.stockT, c.targetT};
+    return true;
+}
+
+void EconomyServer::pushResult(std::uint64_t playerId, game::simulation::ClientTradeResult r)
+{
+    r.day = m_day;
+    auto& v = m_results[playerId];
+    v.push_back(std::move(r));
+    if (v.size() > 4)
+        v.erase(v.begin(), v.end() - 4);
+    ++m_tradeSerial;
+}
+
+void EconomyServer::recordTradeRefusal(std::uint64_t playerId, std::uint32_t requestId, const std::string& code, const std::string& message)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.code = code;
+    r.message = message;
+    std::cerr << "[Trade] player " << playerId << " request " << requestId << ": REFUSED (" << code << ") " << message << '\n';
+    pushResult(playerId, std::move(r));
+}
+
+game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = o.requestId;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(o.playerId, o.requestId, code, message);
+        r.code = code;
+        r.message = message;
+        r.day = m_day;
+        return r;
+    };
+    if (!m_loaded)
+        return refuse("off", "экономика не загружена");
+    ClientLedger* l = ledger(o.playerId);
+    if (!l)
+        return refuse("no_account", "нет счёта");
+    const int g = goodIndex(o.goodId);
+    if (g < 0)
+        return refuse("no_good", "неизвестный товар " + o.goodId);
+    const auto& good = EconomyModel::instance().goods()[static_cast<std::size_t>(g)];
+    const auto mit = m_marketIndex.find(o.hubId);
+    if (mit == m_marketIndex.end() || !m_markets[mit->second].cells[static_cast<std::size_t>(g)].traded)
+        return refuse("no_market", "на этом хабе нет рынка товара «" + good.ru + "»");
+    if (o.quoteDay >= 0 && o.quoteDay != m_day)
+        return refuse("requote", "сутки сменились (котировка дня " + std::to_string(o.quoteDay) + ", сейчас " + std::to_string(m_day) +
+                                     "): цена пересчитана, повторите");
+    auto& market = m_markets[mit->second];
+    auto& cell = market.cells[static_cast<std::size_t>(g)];
+    const MarketSide side{cell.priceCr, market.spread, cell.stockT, cell.targetT};
+    const FiscalStyle style = fiscalStyleOf(o.hubId, o.systemId);
+    const DealQuote q = explainDeal(o.buy, side, o.tonnes, style, m_dealRules);
+    if (!q.ok)
+        return refuse(q.code, q.reason);
+    if (o.limitUnitCr > 0.0 && (o.buy ? q.unitCr > o.limitUnitCr * (1.0 + 1.0e-9) : q.unitCr < o.limitUnitCr * (1.0 - 1.0e-9)))
+        return refuse("price_moved", "цена изменилась: " + grouped(q.unitCr) + " Cr/т вместо " + grouped(o.limitUnitCr) + ", повторить?");
+    const std::string bank = bankOf(o.hubId, o.systemId);
+    char memo[200];
+    double basisOut = 0.0;
+    if (o.buy)
+    {
+        CargoLot lot;
+        lot.goodId = o.goodId;
+        lot.tonnes = o.tonnes;
+        lot.owner = "player:" + std::to_string(o.playerId);
+        lot.originHub = o.hubId;
+        lot.loadedDay = m_day;
+        const CargoManifest& m = m_cargo.manifest(o.shipKey, o.playerId);
+        const std::string fit = CargoRegistry::fits(m, o.capacity, o.tonnes, CargoRegistry::extraC20(m, lot, good.densityTM3));
+        if (!fit.empty())
+            return refuse("no_space", fit);
+        std::snprintf(memo, sizeof memo, "покупка %.2f т «%s» на %s", o.tonnes, good.ru.c_str(), market.name.c_str());
+        const PaymentResult p = pay(*l, m_banks, bank, -q.totalCr, Purpose::Trade, m_day, false, memo);
+        if (!p.ok)
+            return refuse("no_money", "недостаточно средств: нужно " + grouped(-q.totalCr) + " Cr (" + p.reason + ")");
+        cell.stockT = std::max(0.0, cell.stockT - o.tonnes);
+        if (q.vatReclaimCr > 0.0 && style.vatRefundDays > 0)
+            m_vatRefunds.push_back({o.playerId, bank, q.vatReclaimCr, m_day + style.vatRefundDays});
+        lot.costBasisCr = -q.totalCr - (style.vatRefundDays > 0 ? q.vatReclaimCr * (1.0 - m_dealRules.vatRefundFeeShare) : 0.0);
+        m_cargo.load(o.shipKey, o.playerId, lot, good.densityTM3);
+        r.message = std::string("куплено ") + grouped(o.tonnes, 2) + " т по " + grouped(q.unitCr) + " Cr/т";
+    }
+    else
+    {
+        const CargoManifest* m = m_cargo.find(o.shipKey);
+        const double aboard = m ? m->ownTonnesOf(o.goodId) : 0.0;
+        if (aboard + 1.0e-6 < o.tonnes)
+            return refuse("not_aboard", "на борту только " + grouped(aboard, 2) + " т «" + good.ru + "»");
+        std::snprintf(memo, sizeof memo, "продажа %.2f т «%s» на %s", o.tonnes, good.ru.c_str(), market.name.c_str());
+        if (q.totalCr < 0.0)   // the fees exceed the revenue (cheap bulk): the difference is paid first, all or nothing
+        {
+            const PaymentResult p = pay(*l, m_banks, bank, -q.totalCr, Purpose::Trade, m_day, false, memo);
+            if (!p.ok)
+                return refuse("no_money", "сборы больше выручки, а денег нет: нужно " + grouped(-q.totalCr) + " Cr");
+        }
+        (void)m_cargo.unload(o.shipKey, o.goodId, o.tonnes, good.densityTM3, basisOut);
+        if (q.totalCr > 0.0)
+            receive(*l, m_banks, bank, q.totalCr, m_day, memo);
+        cell.stockT += o.tonnes;
+        r.message = std::string("продано ") + grouped(o.tonnes, 2) + " т по " + grouped(q.unitCr) + " Cr/т; к себестоимости " +
+                    (q.totalCr - basisOut >= 0.0 ? "+" : "") + grouped(q.totalCr - basisOut) + " Cr";
+    }
+    r.ok = true;
+    r.totalCr = q.totalCr;
+    for (const auto& line : q.lines)
+        r.lines.push_back(line.label + "|" + (line.cr >= 0.0 ? "+" : "") + grouped(line.cr));
+    std::snprintf(memo, sizeof memo, "%s %.2f т «%s» на %s: %s%s Cr", o.buy ? "покупка" : "продажа", o.tonnes, good.ru.c_str(),
+                  market.name.c_str(), q.totalCr >= 0.0 ? "+" : "", grouped(q.totalCr).c_str());
+    logEvent(*l, m_day, memo);
+    std::cerr << "[Trade] player " << o.playerId << " request " << o.requestId << ": " << (o.buy ? "BUY " : "SELL ") << o.tonnes << " t "
+              << o.goodId << " at " << o.hubId << " (" << style.id << "): list " << q.listUnitCr << " -> deal " << q.unitCr
+              << " Cr/t (impact " << 100.0 * q.impactShare << " %), goods " << q.goodsCr << ", handling " << q.handlingCr << ", VAT "
+              << q.vatCr << ", turnover " << q.turnoverCr << ", account " << (q.totalCr >= 0.0 ? "+" : "") << q.totalCr
+              << " Cr; stock " << (o.buy ? cell.stockT + o.tonnes : cell.stockT - o.tonnes) << " -> " << cell.stockT << " t; net worth "
+              << netWorthCr(*l, m_banks) << " Cr" << '\n';
+    pushResult(o.playerId, r);
+    // a deal moves money and goods: it must not wait for the daily save (a crash would lose it - TRADE_DESIGN §7.6; the
+    // JSONL money journal of step 17 replaces this full write)
+    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
+        std::cerr << "[EconomyServer] state NOT saved after the deal" << '\n';
+    r.day = m_day;
+    return r;
+}
+
+std::string EconomyServer::devAddCargo(std::uint64_t playerId, std::uint64_t shipKey, const std::string& goodId, double tonnes,
+                                       const CargoCapacity& capacity, const std::string& hubId)
+{
+    const int g = goodIndex(goodId);
+    if (g < 0 || !(tonnes > 0.0))
+        return "неизвестный товар или нулевая масса";
+    const auto& good = EconomyModel::instance().goods()[static_cast<std::size_t>(g)];
+    CargoLot lot;
+    lot.goodId = goodId;
+    lot.tonnes = tonnes;
+    lot.owner = "player:" + std::to_string(playerId);
+    lot.originHub = hubId.empty() ? std::string("dev") : hubId;
+    lot.loadedDay = m_day;
+    const CargoManifest& m = m_cargo.manifest(shipKey, playerId);
+    const std::string fit = CargoRegistry::fits(m, capacity, tonnes, CargoRegistry::extraC20(m, lot, good.densityTM3));
+    if (!fit.empty())
+        return fit;
+    m_cargo.load(shipKey, playerId, lot, good.densityTM3);
+    ++m_tradeSerial;
+    if (!m_stateFile.empty())
+        (void)writeFileAtomically(m_stateFile, saveState());
+    return {};
+}
+
+void EconomyServer::devClearCargo(std::uint64_t shipKey)
+{
+    m_cargo.clear(shipKey);
+    ++m_tradeSerial;
+    if (!m_stateFile.empty())
+        (void)writeFileAtomically(m_stateFile, saveState());
+}
+
+void EconomyServer::payDueVatRefunds(int day)
+{
+    for (auto it = m_vatRefunds.begin(); it != m_vatRefunds.end();)
+    {
+        if (it->dueDay > day)
+        {
+            ++it;
+            continue;
+        }
+        if (ClientLedger* l = ledger(it->playerId))
+        {
+            const double back = it->amountCr * (1.0 - m_dealRules.vatRefundFeeShare);
+            receive(*l, m_banks, it->bankId, back, day, "возврат входного НДС (минус 1 % сбор)");
+            std::cerr << "[Trade] player " << it->playerId << ": input VAT refund +" << grouped(back, 2) << " Cr" << '\n';
+        }
+        it = m_vatRefunds.erase(it);
+        ++m_tradeSerial;
+    }
+}
+
+game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t playerId, std::uint64_t shipKey, const std::string& hubId,
+                                                                   int systemId, bool docked) const
+{
+    game::simulation::ClientTradeSnapshot s;
+    if (!m_loaded)
+        return s;
+    s.valid = true;
+    s.day = m_day;
+    s.serial = m_cargo.serial() * 1000003ull + m_tradeSerial;
+    s.hubId = hubId;
+    s.docked = docked;
+    s.kappa = m_dealRules.kappa;
+    if (const auto it = m_marketIndex.find(hubId); it != m_marketIndex.end())
+    {
+        const auto& m = m_markets[it->second];
+        const FiscalStyle style = fiscalStyleOf(hubId, systemId);
+        s.hubName = m.name;
+        s.spread = m.spread;
+        s.fiscalStyleRu = style.ru;
+        s.vatShare = style.vatShare;
+        s.vatRefundDays = style.vatRefundDays;
+        s.turnoverShare = style.turnoverShare;
+        s.turnoverRu = style.turnoverRu;
+        s.handlingCrPerT = m_dealRules.handlingCrPerT * style.portIndex;
+        for (std::size_t g = 0; g < m.cells.size(); ++g)
+        {
+            const auto& c = m.cells[g];
+            if (!c.traded)
+                continue;
+            const MarketSide side{c.priceCr, m.spread, c.stockT, c.targetT};
+            s.market.push_back({static_cast<int>(g), true, c.priceCr, bidCr(side), askCr(side), c.stockT, c.targetT,
+                                hubTakesUpToT(side, m_dealRules), hubGivesUpToT(side, m_dealRules),
+                                c.anchorCr > 0.0 ? c.priceCr / c.anchorCr - 1.0 : 0.0});
+        }
+    }
+    else
+        s.marketNote = hubId.empty() ? "рынок виден у хаба (в его зоне)" : "у этого хаба нет своего рынка";
+    if (const CargoManifest* m = m_cargo.find(shipKey))
+    {
+        for (const auto& lot : m->lots)
+            s.cargo.push_back({lot.lotId, goodIndex(lot.goodId), lot.tonnes, lot.c20, lot.tonnes > 0.0 ? lot.costBasisCr / lot.tonnes : 0.0,
+                               lot.originHub, lot.loadedDay, lot.owner, lot.contractId});
+        s.cargoNetT = m->netT();
+        s.cargoGrossT = m->grossT();
+        s.c20Used = m->c20();
+    }
+    for (const auto& v : m_vatRefunds)
+        if (v.playerId == playerId)
+            s.vatReclaimCr += v.amountCr;
+    if (const auto it = m_results.find(playerId); it != m_results.end())
+        s.results = it->second;
+    return s;
+}
+
 // ---------------------------------------------------------------- replication
 game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64_t playerId, const std::string& hubId, int systemId) const
 {
@@ -803,6 +1094,7 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
     w.netWorthCr = netWorthCr(*l, m_banks);
     w.lifelineLeftCr = lifelineLeftCr(*l, m_banks, m_day);
     w.freeFuelListCr = l->freeFuelListCr;
+    w.heldCr = heldCr(*l, m_banks);
 
     w.localPolity = polityOf(hubId, systemId);
     if (const auto* b = m_banks.bankForPolity(w.localPolity))
@@ -864,7 +1156,10 @@ json ledgerToJson(const ClientLedger& l)
     j["cash"] = cash;
     for (const auto& a : l.accounts)
         j["accounts"].push_back({{"bank", a.bankId}, {"balance", a.balance}, {"overdraft", a.overdraftLimit}, {"frozen", a.frozen},
-                                 {"overdue", a.overdueDays}, {"carry", a.carry}});
+                                 {"overdue", a.overdueDays}, {"carry", a.carry}, {"held", a.held}});
+    j["next_hold"] = l.nextHoldId;
+    for (const auto& h : l.holds)
+        j["holds"].push_back({{"id", h.id}, {"bank", h.bankId}, {"amount", h.amount}, {"day", h.day}, {"memo", h.memo}});
     for (const auto& x : l.loans)
         j["loans"].push_back({{"id", x.id}, {"bank", x.bankId}, {"kind", static_cast<int>(x.kind)}, {"principal", x.principal},
                               {"outstanding", x.outstanding}, {"interest", x.interestCharged}, {"arrears", x.arrears},
@@ -902,6 +1197,7 @@ ClientLedger ledgerFromJson(const json& j)
         x.frozen = a.value("frozen", false);
         x.overdueDays = a.value("overdue", 0);
         x.carry = a.value("carry", 0.0);
+        x.held = a.value("held", Minor{0});
         l.accounts.push_back(x);
     }
     for (const auto& a : j.value("loans", json::array()))
@@ -935,6 +1231,10 @@ ClientLedger ledgerFromJson(const json& j)
         l.lifelineDraws.emplace_back(d[0].get<int>(), d[1].get<double>());
     for (const auto& e : j.value("events", json::array()))
         l.events.push_back({e[0].get<int>(), e[1].get<std::string>()});
+    l.nextHoldId = j.value("next_hold", 1);
+    for (const auto& h : j.value("holds", json::array()))
+        l.holds.push_back({h.value("id", 0), h.value("bank", std::string()), h.value("amount", Minor{0}), h.value("day", 0),
+                           h.value("memo", std::string())});
     return l;
 }
 } // namespace
@@ -942,7 +1242,7 @@ ClientLedger ledgerFromJson(const json& j)
 std::string EconomyServer::saveState() const
 {
     json j;
-    j["schema"] = "economy_state/1";
+    j["schema"] = "economy_state/2";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6)
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -966,8 +1266,17 @@ std::string EconomyServer::saveState() const
         goods.push_back(g.id);
     j["goods_order"] = goods;
     j["ledgers"] = json::array();
+    // by owner id: an unordered_map iterates differently after a restore, and the file must be deterministic
+    std::vector<std::uint64_t> owners;
     for (const auto& [id, l] : m_ledgers)
-        j["ledgers"].push_back(ledgerToJson(l));
+        owners.push_back(id);
+    std::sort(owners.begin(), owners.end());
+    for (const auto id : owners)
+        j["ledgers"].push_back(ledgerToJson(m_ledgers.at(id)));
+    j["cargo"] = m_cargo.toJson();
+    j["vat_refunds"] = json::array();
+    for (const auto& v : m_vatRefunds)
+        j["vat_refunds"].push_back({{"player", v.playerId}, {"bank", v.bankId}, {"cr", v.amountCr}, {"due", v.dueDay}});
     return j.dump();
 }
 
@@ -982,7 +1291,8 @@ bool EconomyServer::restoreState(const std::string& text)
     {
         return false;
     }
-    if (j.value("schema", std::string()) != "economy_state/1")
+    const std::string schema = j.value("schema", std::string());
+    if (schema != "economy_state/1" && schema != "economy_state/2")   // /1: no trade registries yet (empty)
         return false;
     try
     {
@@ -1017,6 +1327,11 @@ bool EconomyServer::restoreState(const std::string& text)
             ClientLedger x = ledgerFromJson(l);
             m_ledgers[x.ownerId] = std::move(x);
         }
+        m_cargo.fromJson(j.value("cargo", json::array()));
+        m_vatRefunds.clear();
+        for (const auto& v : j.value("vat_refunds", json::array()))
+            m_vatRefunds.push_back({v.value("player", std::uint64_t{0}), v.value("bank", std::string()), v.value("cr", 0.0), v.value("due", 0)});
+        ++m_tradeSerial;
     }
     catch (const std::exception& e)
     {

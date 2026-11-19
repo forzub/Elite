@@ -663,6 +663,98 @@ void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot
     if (f.freeFuelListCr > 0.0)
         line("Получено бесплатно по прейскуранту", grouped(f.freeFuelListCr) + " Cr", Muted);
 }
+
+// F8 -> ГРУЗ: the server's manifest of the ship (docs/TRADE_DESIGN.md §8.3, read-only in step 1), the hull figures and
+// the latest trade results
+void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s, const game::simulation::ClientWalletSnapshot& f,
+                 float listX, float listY, float listW, float listH, float w, float h, int px, int small, int big)
+{
+    t.solidRectPx(listX, listY, listW, listH, Panel);
+    if (!s.valid)
+    {
+        t.textDrawPx("нет данных груза (сервер без экономики)", listX + 12, listY + 12, px, Muted);
+        return;
+    }
+    const auto& goods = game::economy::EconomyModel::instance().goods();
+    const auto goodRu = [&](int g) {
+        return g >= 0 && g < static_cast<int>(goods.size()) ? goods[static_cast<std::size_t>(g)].ru : std::string("?");
+    };
+    float y = listY + 10.0f;
+    const float x = listX + 12.0f, right = listX + listW - 12.0f;
+    t.textDrawPx("Манифест", x, y, px, Title);
+    y += static_cast<float>(px) + 8.0f;
+    if (s.cargo.empty())
+    {
+        t.textDrawPx("трюм пуст", x, y, px, Muted);
+        y += static_cast<float>(px) + 6.0f;
+    }
+    for (const auto& c : s.cargo)
+    {
+        if (y > listY + listH - 2.0f * static_cast<float>(px))
+            break;
+        t.textDrawPx(goodRu(c.good), x, y, px, Text);
+        const std::string mass = fmt("%.2f т", c.tonnes) + "  ·  C20 x " + std::to_string(c.c20);
+        t.textDrawPx(mass, right - t.measureTextPx(mass, px), y, px, Text);
+        y += static_cast<float>(px) + 4.0f;
+        const std::string detail = "партия " + c.lotId + "  ·  " + (c.contractId.empty() ? std::string("свой товар") : "контракт " + c.contractId) +
+                                   "  ·  погружено день " + std::to_string(c.loadedDay) + " (" + c.originHub + ")  ·  себест. " +
+                                   grouped(c.costBasisCrPerT) + " Cr/т";
+        t.textDrawPx(detail, x + 10, y, small, Muted);
+        y += static_cast<float>(small) + 8.0f;
+    }
+    if (!s.results.empty())
+    {
+        y += 6.0f;
+        t.textDrawPx("Последние сделки", x, y, px, Title);
+        y += static_cast<float>(px) + 6.0f;
+        for (auto it = s.results.rbegin(); it != s.results.rend(); ++it)
+        {
+            if (y > listY + listH - static_cast<float>(small))
+                break;
+            const std::string line = "#" + std::to_string(it->requestId) + "  " + (it->ok ? it->message : "ОТКАЗ: " + it->message);
+            t.textDrawPx(line, x, y, small, it->ok ? Good : Bad);
+            if (it->ok)
+            {
+                const std::string total = (it->totalCr >= 0.0 ? "+" : "") + grouped(it->totalCr) + " Cr";
+                t.textDrawPx(total, right - t.measureTextPx(total, small), y, small, it->totalCr >= 0.0 ? Good : Warn);
+            }
+            y += static_cast<float>(small) + 6.0f;
+        }
+    }
+
+    // right column: the hold and what the cargo does to the ship
+    const float cx = listX + listW + 24.0f, cw = w - cx - 24.0f;
+    float ry = listY;
+    const auto line = [&](const std::string& label, const std::string& value, const glm::vec4& col) {
+        if (ry > h - 40.0f - static_cast<float>(small))
+            return;
+        t.textDrawPx(label, cx, ry, small, Muted);
+        t.textDrawPx(value, cx + cw - t.measureTextPx(value, small), ry, small, col);
+        ry += static_cast<float>(small) + 6.0f;
+    };
+    t.textDrawPx("Трюм", cx, ry, big, Text);
+    ry += static_cast<float>(big) + 6.0f;
+    line("Места C20", std::to_string(s.c20Used) + " занято / " + std::to_string(s.c20Slots), s.c20Used >= s.c20Slots ? Warn : Text);
+    line("Груз нетто", fmt("%.2f", s.cargoNetT) + " / " + fmt("%.0f т", s.netCapacityT), Text);
+    line("Тара C20 (1.7 т на контейнер)", fmt("%.1f т", s.cargoGrossT - s.cargoNetT), Text);
+    line("Груз брутто", fmt("%.2f т", s.cargoGrossT), Text);
+    ry += 10.0f;
+    t.textDrawPx("Корабль", cx, ry, big, Text);
+    ry += static_cast<float>(big) + 6.0f;
+    line("Масса сейчас", fmt("%.1f т", s.shipMassT), Text);
+    line("Дальность прыжка на полном заряде", fmt("%.1f св. лет", s.jumpRangeLy), s.jumpRangeLy < s.jumpRangeEmptyLy - 0.05 ? Warn : Text);
+    line("  с пустым трюмом", fmt("%.1f св. лет", s.jumpRangeEmptyLy), Muted);
+    if (s.jumpRangeEmptyLy > 0.0 && s.jumpRangeLy < s.jumpRangeEmptyLy - 0.05)
+        line("  груз сокращает прыжок на", fmt("%.1f %%", 100.0 * (1.0 - s.jumpRangeLy / s.jumpRangeEmptyLy)), Warn);
+    ry += 10.0f;
+    t.textDrawPx("Деньги", cx, ry, big, Text);
+    ry += static_cast<float>(big) + 6.0f;
+    if (f.valid)
+        for (const auto& a : f.accounts)
+            line(a.label, money2(a.amount) + " " + a.currency, a.amount >= 0.0 ? Text : Warn);
+    if (s.vatReclaimCr > 0.0)
+        line("Входной НДС к возврату", grouped(s.vatReclaimCr) + " Cr", Muted);
+}
 } // namespace
 
 void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page)
@@ -702,9 +794,9 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
 
     // ---- tabs
     const float tabY = 18.0f + big + 18.0f + 2.0f * small;
-    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ", "ФИНАНСЫ"};
+    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ", "ФИНАНСЫ", "ГРУЗ"};
     float tx = 24.0f;
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 6; ++i)
     {
         const float tw = t.measureTextPx(tabs[i], px) + 24.0f;
         t.solidRectPx(tx, tabY, tw, px * 1.8f, page.tab == i ? Selected : Panel);
@@ -724,6 +816,12 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     if (page.tab == 4)
     {
         renderFinance(t, page.finance, listX, listY, listW, listH, w, h, px, small, big);
+        t.endFrame();
+        return;
+    }
+    if (page.tab == 5)
+    {
+        renderCargo(t, page.trade, page.finance, listX, listY, listW, listH, w, h, px, small, big);
         t.endFrame();
         return;
     }
@@ -767,7 +865,11 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
             const auto& q = page.market[i];
             const auto& g = goods[static_cast<std::size_t>(q.good)];
             t.textDrawPx(g.ru, listX + 10, y + 4, px, Text);
-            t.textDrawPx(g.groupRu + "  ·  запас " + grouped(q.stockT) + " т", listX + 10, y + 6 + static_cast<float>(px), small, Muted);
+            std::string sub = g.groupRu + "  ·  запас " + grouped(q.stockT) + " т";
+            if (i < page.marketLimits.size())
+                sub += "  ·  хаб берёт ≤ " + grouped(page.marketLimits[i].hubTakesUpToT) + " т, отпускает ≤ " +
+                       grouped(page.marketLimits[i].hubGivesUpToT) + " т";
+            t.textDrawPx(sub, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
             const std::string prices = "купить " + priceText(q.buyCr) + "   продать " + priceText(q.sellCr);
             t.textDrawPx(prices, listX + listW - t.measureTextPx(prices, small) - 10, y + 4, small, Text);
             const std::string drift = fmt("%+.0f %%", q.drift * 100.0);
@@ -844,7 +946,26 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
             t.textDrawPx(c.info.purpose, cx, y, small, Muted);
         }
     }
-    t.textDrawPx("Клик по заявке или хабу — карточка; колесо — прокрутка списка", 24, h - 26, small, Muted);
+    if (page.tab == 1)
+    {
+        // the server's market: an empty list says why (not at a hub with a market); the newest trade result
+        if (page.market.empty())
+            t.textDrawPx(page.trade.marketNote.empty() ? std::string("рынок виден у хаба, где стоит корабль") : page.trade.marketNote,
+                         listX + 12, listY + 12, px, Muted);
+        std::string status = page.trade.valid ? "цены сервера, день " + std::to_string(page.trade.day) + "  ·  стиль " +
+                                                    page.trade.fiscalStyleRu + ", НДС " + fmt("%.0f %%", page.trade.vatShare * 100.0) +
+                                                    ", погрузка " + grouped(page.trade.handlingCrPerT) + " Cr/т" +
+                                                    (page.trade.docked ? "  ·  у причала: сделки разрешены" : "  ·  сделки только у причала")
+                                              : std::string();
+        if (!page.trade.results.empty())
+        {
+            const auto& r = page.trade.results.back();
+            status += "   |   #" + std::to_string(r.requestId) + " " + (r.ok ? r.message : "ОТКАЗ: " + r.message);
+        }
+        t.textDrawPx(status, 24, h - 26, small, Text);
+    }
+    if (page.tab != 1)
+        t.textDrawPx("Клик по заявке или хабу — карточка; колесо — прокрутка списка", 24, h - 26, small, Muted);
     t.endFrame();
 }
 

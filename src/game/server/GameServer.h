@@ -109,6 +109,13 @@ public:
         game::network::ServerSessionId sessionId
     ) const;
 
+    // the trade layer as the session sees it (docs/TRADE_DESIGN.md §7.5): the server market of the hub the ship is at,
+    // the manifest, the hull figures (capacity, live mass, jump range), the latest command results
+    game::simulation::ClientTradeSnapshot
+    tradeForSession(
+        game::network::ServerSessionId sessionId
+    ) const;
+
     // the server economy: national banks, ledgers, daily prices (the only writer of money)
     game::economy::EconomyServer& economy() noexcept { return m_economy; }
     const game::economy::EconomyServer& economy() const noexcept { return m_economy; }
@@ -321,6 +328,8 @@ private:
     std::unordered_map<uint32_t, game::server::FixedStepControlQueue>
         m_controlStreams;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
+    // trade-layer requests (ClientEconomyCommand), drained with the ship commands in the ship's system context
+    std::unordered_map<uint32_t, std::deque<game::network::ClientEconomyCommand>> m_pendingEconomyCommands;
 
     // Diagnostic F-key remembers which installed engine it temporarily
     // failed; the authoritative damage remains in ObjectModuleRuntime.
@@ -404,6 +413,10 @@ public:
     void applyDevStartPoint(double dt);
     // navigation data (JUMP_MECHANICS 10l): a bank record into the computer / onto a carrier, a carrier into the computer
     void handleNavDataCommand(EntityId id, int op, const std::string& recordId, int carrier);
+    // the trade layer (TRADE_DESIGN steps 1-2): a Buy / Sell / DEV cargo request of ship `id`
+    void handleEconomyCommand(EntityId id, const game::network::ClientEconomyCommand& command);
+    // the simulation's cargo mass follows the server manifest (net tonnes + the C20 boxes, tare in the mass model)
+    void applyCargoLoad(EntityId id);
     std::size_t orbitalHubCount() const { return m_simulation.orbitalHubs().size(); }
 private:
 };

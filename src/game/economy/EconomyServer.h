@@ -7,6 +7,9 @@
 
 #include "src/game/economy/BankingModel.h"
 #include "src/game/economy/PriceModel.h"
+#include "src/game/economy/CargoRegistry.h"
+#include "src/game/economy/TradeQuoteModel.h"
+#include "src/game/simulation/ClientTradeSnapshot.h"
 #include "src/game/simulation/ClientWalletSnapshot.h"
 
 // Server-held economy (docs/ECONOMY_BANKING.md, PROPOSAL 2026-11-19): national banks and exchange rates,
@@ -104,6 +107,40 @@ public:
     [[nodiscard]] bool fuelFreeOfCharge() const { return m_fuelFree; }
     void setFuelFreeOfCharge(bool free) { m_fuelFree = free; }
 
+
+    // ---- trade (docs/TRADE_DESIGN.md §2.3, §7.2, §7.4; steps 1-2)
+    struct TradeOrder
+    {
+        bool buy = true;
+        std::uint64_t playerId = 0;
+        std::uint64_t shipKey = 0;       // the ship's persistent instance id (the manifest key)
+        std::string hubId;               // the hub the ship is docked at (the caller checked the berth)
+        int systemId = -1;
+        std::string goodId;
+        double tonnes = 0.0;
+        double limitUnitCr = 0.0;        // buy: not dearer than; sell: not cheaper than (0 = none)
+        int quoteDay = -1;               // the day the client priced it (-1 = any)
+        std::uint32_t requestId = 0;
+        CargoCapacity capacity;
+    };
+    // all or nothing: the stock, the manifest and the money move together or nothing changes; the result is also kept
+    // for the session (tradeSnapshot().results)
+    game::simulation::ClientTradeResult trade(const TradeOrder& order);
+    // a refusal decided outside the economy (not docked, ...) recorded as the command's result
+    void recordTradeRefusal(std::uint64_t playerId, std::uint32_t requestId, const std::string& code, const std::string& message);
+    // DEV: put cargo aboard without paying (cost basis 0) / empty the hold; "" = done, else the reason
+    std::string devAddCargo(std::uint64_t playerId, std::uint64_t shipKey, const std::string& goodId, double tonnes,
+                            const CargoCapacity& capacity, const std::string& hubId);
+    void devClearCargo(std::uint64_t shipKey);
+    [[nodiscard]] const CargoRegistry& cargo() const { return m_cargo; }
+    [[nodiscard]] FiscalStyle fiscalStyleOf(const std::string& hubId, int systemId) const;
+    [[nodiscard]] const TradeDealRules& dealRules() const { return m_dealRules; }
+    // the hub's OWN market cell (no system fallback for trade); false = this hub does not trade that good
+    [[nodiscard]] bool marketSide(const std::string& hubId, const std::string& goodId, MarketSide& out) const;
+    // the session projection: the market of `hubId` (server prices), the manifest, the latest results; the caller adds
+    // the hull figures (capacity, mass, jump range)
+    [[nodiscard]] game::simulation::ClientTradeSnapshot tradeSnapshot(std::uint64_t playerId, std::uint64_t shipKey,
+                                                                      const std::string& hubId, int systemId, bool docked) const;
     // ---- replication
     [[nodiscard]] game::simulation::ClientWalletSnapshot walletSnapshot(std::uint64_t playerId, const std::string& hubId,
                                                                         int systemId) const;
@@ -148,5 +185,22 @@ private:
     std::unordered_map<std::uint64_t, ClientLedger> m_ledgers;
     std::string m_stateFile;
     double m_aiFreeFuelListCr = 0.0;
+    // trade
+    struct VatRefund
+    {
+        std::uint64_t playerId = 0;
+        std::string bankId;
+        double amountCr = 0.0;
+        int dueDay = 0;
+    };
+    void pushResult(std::uint64_t playerId, game::simulation::ClientTradeResult r);
+    void payDueVatRefunds(int day);
+    CargoRegistry m_cargo;
+    TradeDealRules m_dealRules;
+    std::unordered_map<std::string, FiscalStyle> m_styles;
+    std::unordered_map<std::string, std::string> m_regimeStyle;
+    std::vector<VatRefund> m_vatRefunds;
+    std::unordered_map<std::uint64_t, std::vector<game::simulation::ClientTradeResult>> m_results;
+    std::uint64_t m_tradeSerial = 0;
 };
 } // namespace game::economy

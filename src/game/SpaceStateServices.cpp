@@ -127,6 +127,24 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
                                                            distanceText);
     // the finance tab: the server's ledger for this session (docs/ECONOMY_BANKING.md)
     page.finance = m_client->sessionSnapshot().wallet;
+    // the market and the cargo: the server's (docs/TRADE_DESIGN.md §7.5) - one price of record, what is shown is what
+    // a Buy / Sell is charged at; the market of the hub the ship is at, none elsewhere
+    page.trade = m_client->sessionSnapshot().trade;
+    if (page.trade.valid && page.trade.hubId == page.hubId)
+        for (const auto& row : page.trade.market)
+        {
+            game::economy::MarketQuote q;
+            q.good = row.good;
+            q.traded = row.traded;
+            q.buyCr = row.askCr;
+            q.sellCr = row.bidCr;
+            q.stockT = row.stockT;
+            q.drift = row.drift;
+            page.market.push_back(q);
+            page.marketLimits.push_back(row);
+        }
+    if (page.card.valid && page.card.info.id == page.hubId)
+        page.card.knownPrices = page.market;
     // the navigation data tab (JUMP_MECHANICS 10l)
     namespace jr = game::navigation::jump;
     auto& nav = page.nav;
@@ -191,6 +209,28 @@ void SpaceState::sendRefitCommand(bool apply, const game::ship::refit::RefitOper
     msg.payload = command;
     m_client->sendMessage(msg);
     m_refitLastOperation = operation;
+}
+
+std::uint32_t SpaceState::sendEconomyCommand(int op, const std::string& goodId, double tonnes, double limitUnitCr)
+{
+    if (!m_client)
+        return 0;
+    game::network::ClientEconomyCommand command;
+    command.op = static_cast<game::network::ClientEconomyCommand::Op>(
+        std::clamp(op, 0, static_cast<int>(game::network::ClientEconomyCommand::Last)));
+    command.requestId = ++m_economyRequestId;
+    command.shipEntityId = m_client->localControlledEntityId().value;
+    command.goodId = goodId;
+    command.quantity = tonnes;
+    command.limitUnitCr = limitUnitCr;
+    const auto& trade = m_client->sessionSnapshot().trade;
+    if (trade.valid && trade.docked)
+        command.hubId = trade.hubId;
+    game::network::ClientMessage msg;
+    msg.payload = command;
+    m_client->sendMessage(msg);
+    std::cerr << "[Trade] client: request " << command.requestId << " op " << op << " " << goodId << " " << tonnes << " t" << std::endl;
+    return command.requestId;
 }
 
 bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::ServiceUiId service)

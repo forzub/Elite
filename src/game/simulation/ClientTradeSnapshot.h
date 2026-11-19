@@ -1,0 +1,86 @@
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+// Per-session projection of the trade layer (docs/TRADE_DESIGN.md §7.5): the market of the hub the ship is at as
+// the SERVER prices it (EconomyServer - one price of record: what the client shows is what is charged), the ship's
+// cargo manifest, the fiscal terms here and the latest command results. The client only shows it and sends requests
+// (ClientEconomyCommand); it never changes a stock, a price or a manifest itself.
+namespace game::simulation
+{
+struct ClientMarketRow
+{
+    int good = -1;               // EconomyModel::goods() index (the same data file on both sides)
+    bool traded = false;
+    double priceCr = 0.0;        // the day's mid price
+    double bidCr = 0.0;          // the player sells at (before the deal's own impact)
+    double askCr = 0.0;          // the player buys at
+    double stockT = 0.0;
+    double targetT = 0.0;
+    double hubTakesUpToT = 0.0;  // the most the hub buys now ("склад полон" beyond)
+    double hubGivesUpToT = 0.0;  // the most the hub sells now
+    double drift = 0.0;          // price vs the cell's structural anchor
+};
+
+struct ClientCargoLine
+{
+    std::string lotId;
+    int good = -1;
+    double tonnes = 0.0;
+    int c20 = 0;
+    double costBasisCrPerT = 0.0;
+    std::string originHub;
+    int loadedDay = 0;
+    std::string owner;
+    std::string contractId;
+};
+
+struct ClientTradeResult
+{
+    std::uint32_t requestId = 0;
+    bool ok = false;
+    std::string code;                 // "" ok | "not_docked" | "no_market" | "no_money" | "hub_full" | "hub_empty" | "no_space" | ...
+    std::string message;
+    std::vector<std::string> lines;   // the breakdown "label|+-Cr"
+    double totalCr = 0.0;             // signed: what the account changed by
+    int day = 0;
+};
+
+struct ClientTradeSnapshot
+{
+    bool valid = false;
+    int day = 0;
+    std::uint64_t serial = 0;         // changes with every trade / cargo change
+
+    // the market (the hub the ship is at; empty with marketNote outside a hub with a market)
+    std::string hubId;
+    std::string hubName;
+    bool docked = false;              // at a berth: deals allowed
+    std::string marketNote;
+    double spread = 0.0;
+    std::string fiscalStyleRu;
+    double vatShare = 0.0;
+    int vatRefundDays = 0;
+    double turnoverShare = 0.0;
+    std::string turnoverRu;
+    double handlingCrPerT = 0.0;      // incl. the port index
+    double kappa = 0.5;
+    std::vector<ClientMarketRow> market;
+
+    // the manifest of the controlled ship
+    std::vector<ClientCargoLine> cargo;
+    double cargoNetT = 0.0;
+    double cargoGrossT = 0.0;         // net + 1.7 t tare per C20
+    int c20Used = 0;
+    int c20Slots = 0;
+    double netCapacityT = 0.0;
+    double shipMassT = 0.0;           // the simulation's live mass (follows the manifest)
+    double jumpRangeLy = 0.0;         // one full J charge at this mass
+    double jumpRangeEmptyLy = 0.0;    // the same with an empty hold
+    double vatReclaimCr = 0.0;        // input VAT waiting for its refund
+
+    std::vector<ClientTradeResult> results;   // newest last, at most 4
+};
+} // namespace game::simulation

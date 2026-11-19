@@ -281,7 +281,8 @@ PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::str
     };
     std::vector<Debit> plan;
     double remaining = amountCr;
-    const auto available = [](const Account& a) { return a.frozen ? std::max<Minor>(0, a.balance) : a.balance + a.overdraftLimit; };
+    // held money (escrow) is the client's but not spendable
+    const auto available = [](const Account& a) { return (a.frozen ? std::max<Minor>(0, a.balance) : a.balance + a.overdraftLimit) - a.held; };
 
     // 1. notes of the payee's currency, 2. the account at the payee's bank
     if (const auto it = ledger.cash.find(pid); it != ledger.cash.end())
@@ -517,6 +518,47 @@ double lifelineLeftCr(const ClientLedger& ledger, const BankDirectory& dir, int 
         if (d > day - 90)
             used += cr;
     return std::max(0.0, dir.rules.lifelineLimitCr90d - used);
+}
+
+int placeHold(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int day, const std::string& memo)
+{
+    Account* a = findAccount(ledger, bankId);
+    if (!a || !(amountCr > 0.0))
+        return 0;
+    const Minor m = toMinor(amountCr * dir.fx(bankId));
+    if (a->balance - a->held < m)   // own money only: a hold never draws the overdraft
+        return 0;
+    a->held += m;
+    Hold h;
+    h.id = ledger.nextHoldId++;
+    h.bankId = bankId;
+    h.amount = m;
+    h.day = day;
+    h.memo = memo;
+    ledger.holds.push_back(h);
+    logEvent(ledger, day, "блокировка " + memo);
+    return h.id;
+}
+
+bool releaseHold(ClientLedger& ledger, int holdId)
+{
+    for (auto it = ledger.holds.begin(); it != ledger.holds.end(); ++it)
+        if (it->id == holdId)
+        {
+            if (Account* a = findAccount(ledger, it->bankId))
+                a->held = std::max<Minor>(0, a->held - it->amount);
+            ledger.holds.erase(it);
+            return true;
+        }
+    return false;
+}
+
+double heldCr(const ClientLedger& ledger, const BankDirectory& dir)
+{
+    double s = 0.0;
+    for (const auto& h : ledger.holds)
+        s += toUnits(h.amount) / dir.fx(h.bankId);
+    return s;
 }
 
 double trailingIncomeCr(const ClientLedger& ledger, int day)

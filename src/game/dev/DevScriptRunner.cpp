@@ -5,6 +5,9 @@
 #include "src/core/DevFrameCapture.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/dev/DevScriptRunner.h"
+#include "src/game/economy/CargoRegistry.h"
+#include "src/game/economy/EconomyModel.h"
+#include "src/game/network/ClientEconomyCommand.h"
 
 #include "src/game/SpaceStateInternal.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
@@ -667,6 +670,68 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
     }
     else if (cmd.rfind("navsel:", 0) == 0)
         s.m_navDataSelected = cmd.substr(7);
+    // the trade layer (docs/TRADE_DESIGN.md §9 steps 1-2): "cargo:add:<good>:<t>" (DEV: aboard without paying),
+    // "cargo:clear", "trade:buy|sell:<good>:<qty>" with qty = tonnes | "c20x<N>" (N containers of that good) | "all"
+    // (sell what is aboard), as the F8 deal button will send it; "trade:report" logs the replicated trade snapshot
+    else if (cmd.rfind("cargo:add:", 0) == 0 || cmd == "cargo:clear" || cmd.rfind("trade:buy:", 0) == 0 ||
+             cmd.rfind("trade:sell:", 0) == 0)
+    {
+        const bool add = cmd.rfind("cargo:add:", 0) == 0;
+        const bool buy = cmd.rfind("trade:buy:", 0) == 0;
+        if (cmd == "cargo:clear")
+            s.sendEconomyCommand(game::network::ClientEconomyCommand::DevCargoClear, std::string(), 0.0);
+        else
+        {
+            const std::string rest = cmd.substr(add ? 10 : buy ? 10 : 11);
+            const auto colon = rest.find(':');
+            const std::string good = rest.substr(0, colon);
+            const std::string qty = colon == std::string::npos ? std::string("1") : rest.substr(colon + 1);
+            double tonnes = std::atof(qty.c_str());
+            if (qty.rfind("c20x", 0) == 0)
+            {
+                double density = 0.0;
+                for (const auto& g : game::economy::EconomyModel::instance().goods())
+                    if (g.id == good)
+                        density = g.densityTM3;
+                tonnes = std::atof(qty.c_str() + 4) * game::economy::c20NetTonnes(density);
+            }
+            else if (qty == "all")
+            {
+                tonnes = 0.0;
+                const auto& trade = s.m_client->sessionSnapshot().trade;
+                for (const auto& c : trade.cargo)
+                    if (c.good >= 0 && game::economy::EconomyModel::instance().goods()[static_cast<std::size_t>(c.good)].id == good &&
+                        c.contractId.empty())
+                        tonnes += c.tonnes;
+            }
+            s.sendEconomyCommand(add ? game::network::ClientEconomyCommand::DevCargoAdd
+                                 : buy ? game::network::ClientEconomyCommand::Buy : game::network::ClientEconomyCommand::Sell,
+                                 good, tonnes);
+        }
+    }
+    else if (cmd == "trade:report")
+    {
+        const auto& t = s.m_client->sessionSnapshot().trade;
+        const auto& w = s.m_client->sessionSnapshot().wallet;
+        std::cerr << "[TradeReport] valid " << t.valid << " day " << t.day << " hub '" << t.hubId << "' docked " << t.docked << " market rows "
+                  << t.market.size() << " (" << t.fiscalStyleRu << ", VAT " << t.vatShare << ")" << '\n';
+        for (const auto& a : w.accounts)
+            std::cerr << "[TradeReport] account " << a.label << ": " << a.amount << " " << a.currency << '\n';
+        std::cerr << "[TradeReport] cargo net " << t.cargoNetT << " t, gross " << t.cargoGrossT << " t, C20 " << t.c20Used << "/" << t.c20Slots
+                  << ", ship mass " << t.shipMassT << " t, jump range " << t.jumpRangeLy << " ly (empty hold " << t.jumpRangeEmptyLy
+                  << " ly), VAT to reclaim " << t.vatReclaimCr << " Cr" << '\n';
+        const auto& goods = game::economy::EconomyModel::instance().goods();
+        for (const auto& c : t.cargo)
+            std::cerr << "[TradeReport]   lot " << c.lotId << " " << (c.good >= 0 ? goods[static_cast<std::size_t>(c.good)].id : "?") << " "
+                      << c.tonnes << " t, C20 " << c.c20 << ", basis " << c.costBasisCrPerT << " Cr/t, from " << c.originHub << '\n';
+        for (const auto& row : t.market)
+            if (row.good >= 0 && goods[static_cast<std::size_t>(row.good)].id == "food_staples")
+                std::cerr << "[TradeReport]   market food_staples: stock " << row.stockT << " t, bid " << row.bidCr << ", ask " << row.askCr
+                          << ", hub takes <= " << row.hubTakesUpToT << " t" << '\n';
+        for (const auto& r : t.results)
+            std::cerr << "[TradeReport]   result #" << r.requestId << " " << (r.ok ? "OK " : "REFUSED ") << r.code << " " << r.message
+                      << " total " << r.totalCr << '\n';
+    }
     else if (cmd == "service:trade")
         s.context().app->requestServicePanel(ui::services::ServiceUiId::Trade);
     // refuel at the station the ship stands at, as Ctrl+U (docs/FUEL_STATIONS.md): "refuel" | "refuel:cancel";

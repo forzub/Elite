@@ -15,6 +15,8 @@
 #include "src/game/economy/BankingModel.h"
 #include "src/game/economy/EconomyServer.h"
 #include "src/game/economy/PriceModel.h"
+#include "src/game/economy/CargoRegistry.h"
+#include "src/game/economy/TradeQuoteModel.h"
 
 using namespace game::economy;
 
@@ -313,6 +315,189 @@ void testFx()
     check(stepFx(*d.bank("sol"), 1.0, 3.0) == 1.0, "the Cr (reserve) never moves");
 }
 
+// ---- trade layer, steps 1-2 (docs/TRADE_DESIGN.md §2.3, §5, §7.2)
+void testTradeModel()
+{
+    check(near(c20NetTonnes(0.65), 15.145, 1e-9) && near(c20NetTonnes(7.8), 20.0, 1e-9),
+          "a C20 takes 23.3 m3 x density, at most 20 t (grain 15.1 t, steel 20 t)");
+    check(c20For(15.145, 0.65) == 1 && c20For(15.2, 0.65) == 2 && c20For(0.0, 0.65) == 0, "C20 boxes a lot needs");
+
+    CargoManifest m;
+    m.lots.push_back({"L1", "food_staples", 15.145, 1});
+    m.lots.push_back({"L2", "steel", 30.0, 2});
+    check(near(m.netT(), 45.145, 1e-9) && m.c20() == 3 && near(m.grossT(), 45.145 + 3 * 1.7, 1e-9),
+          "gross cargo mass = net + 1.7 t tare per C20");
+
+    TradeDealRules r;
+    FiscalStyle sol;   // bureaucratic: VAT 20 %, port index 1
+    const MarketSide small{1000.0, 0.10, 200.0, 200.0};
+    const double impact = sellUnitCr(small, 120.0, r) / bidCr(small) - 1.0;
+    check(near(impact, std::pow(200.0 / 230.0, 0.6) - 1.0, 1e-12) && impact < -0.075 && impact > -0.085,
+          "selling 120 t into a 200 t stock: the deal price -8 % (" + std::to_string(impact * 100.0) + " %)");
+    const MarketSide big{1000.0, 0.10, 2000.0, 2000.0};
+    const double impactBig = sellUnitCr(big, 120.0, r) / bidCr(big) - 1.0;
+    check(impactBig > -0.01 && impactBig < -0.008, "the same 120 t into 2 000 t: -0.9 % (" + std::to_string(impactBig * 100.0) + " %)");
+
+    // the hub limits: the warehouse is full above 1.5 T, the irreducible remainder 5 % T
+    const MarketSide m200{1000.0, 0.10, 200.0, 200.0};
+    const auto full = explainDeal(false, m200, 101.0, sol, r);
+    check(!full.ok && full.code == "hub_full" && explainDeal(false, m200, 100.0, sol, r).ok, "the hub takes at most 1.5 T - S (100 t here)");
+    const auto empty = explainDeal(true, m200, 191.0, sol, r);
+    check(!empty.ok && empty.code == "hub_empty" && explainDeal(true, m200, 190.0, sol, r).ok, "the hub gives at most S - 0.05 T (190 t)");
+
+    // the breakdown sums to the total; a buy, then a sell of the same goods the same day at the same hub always loses -
+    // even counting the input VAT that comes back later (minus the refund fee)
+    bool sums = true, alwaysLoses = true;
+    double worst = -1e18;
+    for (const double spread : {0.06, 0.10, 0.18, 0.25})
+        for (const double stock : {50.0, 200.0, 2000.0, 40000.0})
+            for (const double q : {1.0, 15.145, 60.0, 120.0})
+                for (const double vat : {0.0, 0.08, 0.20})
+                {
+                    FiscalStyle st;
+                    st.vatShare = vat;
+                    st.portIndex = vat > 0.1 ? 1.0 : 0.7;
+                    MarketSide side{900.0, spread, stock, stock};
+                    const auto b = explainDeal(true, side, std::min(q, hubGivesUpToT(side, r)), st, r);
+                    if (!b.ok)
+                        continue;
+                    side.stockT -= b.tonnes;
+                    const auto s = explainDeal(false, side, b.tonnes, st, r);
+                    double lineSum = 0.0;
+                    for (const auto& l : b.lines)
+                        lineSum += l.cr;
+                    sums = sums && near(lineSum, b.totalCr, 1e-6);
+                    const double roundTrip = b.totalCr + s.totalCr + b.vatReclaimCr * (1.0 - r.vatRefundFeeShare);
+                    alwaysLoses = alwaysLoses && s.ok && roundTrip < 0.0;
+                    worst = std::max(worst, roundTrip);
+                }
+    check(sums, "the deal breakdown sums to what the account changes by");
+    check(alwaysLoses, "buy -> sell the same day at the same hub always loses (best case " + std::to_string(worst) + " Cr)");
+
+    check(near(dockingFeeCr(260.0, sol, r), 384.0, 1e-9), "docking a Cobrett-I (260 t dry) at a bureaucratic port = 384 Cr");
+    const auto sell = explainDeal(false, MarketSide{1214.0 / 0.97, 0.06, 312.0, 312.0}, 10.5, sol, r);
+    check(near(sell.handlingCr, 126.0, 1e-9) && near(sell.vatCr, 25.2, 1e-9), "selling 10.5 t: handling 126 Cr, VAT on it 25 Cr (§8.1)");
+
+    // holds (escrow): blocked money is the client's but not spendable
+    BankDirectory d = testBanks();
+    ClientLedger l = openLedger(d, 1, "sol", 0);
+    l.cash.clear();
+    const int hold = placeHold(l, d, "sol", 15000.0, 0, "залог");
+    check(hold > 0 && near(heldCr(l, d), 15000.0, 0.01) && near(netWorthCr(l, d), 20000.0, 0.01), "a hold blocks 15 000 of 20 000 Cr");
+    check(!pay(l, d, "sol", 10000.0, Purpose::Trade, 0, false, "x").ok, "held money cannot be spent (5 000 free + 4 000 overdraft)");
+    check(placeHold(l, d, "sol", 6000.0, 0, "x") == 0, "a hold never draws the overdraft");
+    check(releaseHold(l, hold) && pay(l, d, "sol", 10000.0, Purpose::Trade, 0, false, "x").ok, "released: the money is spendable again");
+}
+
+void testTradeServer()
+{
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  trade server run (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    const CargoCapacity cobrett{120.0, 6};
+    const auto worth = [&](std::uint64_t p) { return netWorthCr(*s.ledger(p), s.banks()); };
+    const auto stockOf = [&](const char* hub, const char* good) {
+        MarketSide m;
+        return s.marketSide(hub, good, m) ? m.stockT : -1.0;
+    };
+    check(s.fiscalStyleOf("earth_orbital_hub", 0).id == "bureaucratic" && near(s.fiscalStyleOf("earth_orbital_hub", 0).vatShare, 0.20, 1e-9),
+          "Sol is bureaucratic: VAT 20 %");
+
+    EconomyServer::TradeOrder o;
+    o.playerId = 1;
+    o.shipKey = 501;
+    o.hubId = "earth_orbital_hub";
+    o.systemId = 0;
+    o.goodId = "food_staples";
+    o.tonnes = c20NetTonnes(0.65);   // 1 C20 of grain
+    o.capacity = cobrett;
+    o.requestId = 1;
+    const double w0 = worth(1), s0 = stockOf("earth_orbital_hub", "food_staples");
+    const auto bought = s.trade(o);
+    const auto* m = s.cargo().find(501);
+    check(bought.ok && bought.totalCr < -9000.0 && near(worth(1) - w0, bought.totalCr, 0.05) &&
+              near(s0 - stockOf("earth_orbital_hub", "food_staples"), o.tonnes, 1e-9),
+          "buy 1 C20 of grain: the account -" + std::to_string(-bought.totalCr) + " Cr, the hub stock -15.1 t at once");
+    check(m && m->lots.size() == 1 && m->c20() == 1 && near(m->netT(), 15.145, 1e-9) && near(m->grossT(), 16.845, 1e-9),
+          "the manifest: 15.1 t net, 1 C20, 16.8 t gross");
+
+    // the same day, the same hub: sold back at a loss even after the VAT refund
+    o.buy = false;
+    o.requestId = 2;
+    const auto sold = s.trade(o);
+    const double vatBack = 0.20 * 0.99 * (-bought.totalCr / 1.2 - o.tonnes * 12.0);
+    check(sold.ok && s.cargo().find(501)->lots.empty() && worth(1) + vatBack < w0,
+          "sold back the same day: " + std::to_string(worth(1) + vatBack - w0) + " Cr including the VAT refund to come");
+
+    // all or nothing: refusals change nothing
+    const auto unchanged = [&](const std::string& what, const game::simulation::ClientTradeResult& r, const std::string& code) {
+        check(!r.ok && r.code == code, what + " -> " + r.code + " (" + r.message + ")");
+    };
+    o.requestId = 3;
+    unchanged("selling grain that is not aboard", s.trade(o), "not_aboard");
+    o.buy = true;
+    o.tonnes = 7 * c20NetTonnes(0.65);
+    const double w1 = worth(1), s1 = stockOf("earth_orbital_hub", "food_staples");
+    unchanged("7 C20 into 6 places", s.trade(o), "no_space");
+    o.tonnes = 1.0;
+    o.quoteDay = 999;
+    unchanged("a quote of yesterday", s.trade(o), "requote");
+    o.quoteDay = -1;
+    o.limitUnitCr = 100.0;
+    unchanged("not dearer than 100 Cr/t", s.trade(o), "price_moved");
+    o.limitUnitCr = 0.0;
+    s.ensurePlayer(2, 0);
+    (void)s.chargeService(2, "earth_orbital_hub", 0, Purpose::Other, worth(2) + 3000.0, "test: spent down");
+    o.playerId = 2;
+    o.shipKey = 502;
+    o.goodId = "computing";
+    o.tonnes = 10.0;
+    const double w2 = worth(2);
+    unchanged("a broke player buying 10 t of computers", s.trade(o), "no_money");
+    check(near(worth(1), w1, 1e-9) && near(worth(2), w2, 1e-9) && near(stockOf("earth_orbital_hub", "food_staples"), s1, 1e-9) &&
+              s.cargo().find(502) && s.cargo().find(502)->lots.empty(),
+          "refused deals moved no money, no stock, no cargo");
+
+    // buy here, sell at another Sol hub
+    o.playerId = 1;
+    o.shipKey = 501;
+    o.goodId = "food_staples";
+    o.tonnes = c20NetTonnes(0.65);
+    o.requestId = 10;
+    check(s.trade(o).ok, "bought 1 C20 of grain again");
+    o.buy = false;
+    o.hubId = "earth_hub.tikhiy";
+    o.requestId = 11;
+    const double t0 = stockOf("earth_hub.tikhiy", "food_staples");
+    const auto there = s.trade(o);
+    check(there.ok && near(stockOf("earth_hub.tikhiy", "food_staples") - t0, o.tonnes, 1e-9), "sold at Тихий: its stock +15.1 t");
+    const auto snap = s.tradeSnapshot(1, 501, "earth_hub.tikhiy", 0, true);
+    check(snap.valid && !snap.market.empty() && snap.results.size() == 4 && snap.results.back().requestId == 11 && snap.vatReclaimCr > 0.0,
+          "the trade snapshot: the server market, the last 4 results, the VAT to come back");
+
+    // DEV cargo + save / restore round trip (economy_state/2)
+    check(s.devAddCargo(1, 501, "steel", 40.0, cobrett, "earth_orbital_hub").empty() && s.cargo().find(501)->c20() == 2,
+          "DEV cargo: 40 t of steel = 2 C20");
+    check(!s.devAddCargo(1, 501, "steel", 81.0, cobrett, "earth_orbital_hub").empty(), "DEV cargo still obeys the 120 t payload limit");
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    check(t.restoreState(saved) && t.saveState() == saved && t.cargo().find(501) && near(t.cargo().find(501)->grossT(), 43.4, 1e-9),
+          "save / restore: the manifest and the VAT refunds round-trip exactly");
+
+    // the input VAT comes back after 30 days minus 1 %
+    const double before = worth(1);
+    for (int day = 1001; day <= 1031; ++day)
+        s.advanceTo(day);
+    check(s.tradeSnapshot(1, 501, "", 0, false).vatReclaimCr == 0.0 && worth(1) > before + 0.5 * vatBack,
+          "the input VAT was refunded after 30 days (+" + std::to_string(worth(1) - before) + " Cr)");
+}
+
 void testServer()
 {
     EconomyServer s;
@@ -423,6 +608,8 @@ int main()
     testFx();
     testFuelPriceAndAtomicSave();
     testServer();
+    testTradeModel();
+    testTradeServer();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

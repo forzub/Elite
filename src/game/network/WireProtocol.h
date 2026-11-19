@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 31u;
+inline constexpr std::uint16_t WireProtocolVersion = 32u;   // 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4)
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -715,6 +715,45 @@ inline bool decodeClientShipCommand(
     return true;
 }
 
+inline bool encodeClientEconomyCommand(
+    WireWriter& writer,
+    const ClientEconomyCommand& value
+)
+{
+    writer.u8(static_cast<std::uint8_t>(value.op));
+    writer.u32(value.requestId);
+    writer.u64(value.shipEntityId);
+    writer.f64(value.quantity);
+    writer.f64(value.limitUnitCr);
+    writer.i32(value.quoteDay);
+    return writer.string(value.hubId) && writer.string(value.goodId);
+}
+
+inline bool decodeClientEconomyCommand(
+    WireReader& reader,
+    ClientEconomyCommand& outValue
+)
+{
+    std::uint8_t op = 0;
+    std::int32_t quoteDay = -1;
+    if (!reader.u8(op) ||
+        !reader.u32(outValue.requestId) ||
+        !reader.u64(outValue.shipEntityId) ||
+        !reader.f64(outValue.quantity) ||
+        !reader.f64(outValue.limitUnitCr) ||
+        !reader.i32(quoteDay) ||
+        !reader.string(outValue.hubId) ||
+        !reader.string(outValue.goodId))
+    {
+        return false;
+    }
+    if (op > static_cast<std::uint8_t>(ClientEconomyCommand::Last))
+        return false;
+    outValue.op = static_cast<ClientEconomyCommand::Op>(op);
+    outValue.quoteDay = quoteDay;
+    return true;
+}
+
 inline bool encodeClientObservationInterest(
     WireWriter& writer,
     const ClientObservationInterest& value
@@ -813,6 +852,16 @@ inline bool encodeClientMessage(
             return false;
         }
     }
+    else if (std::holds_alternative<ClientEconomyCommand>(value.payload))
+    {
+        writer.u8(3u);
+        if (!encodeClientEconomyCommand(
+                writer,
+                std::get<ClientEconomyCommand>(value.payload)))
+        {
+            return false;
+        }
+    }
     else
     {
         return false;
@@ -852,6 +901,13 @@ inline bool decodeClientMessage(
         if (!decodeClientObservationInterest(reader, interest))
             return false;
         outValue.payload = std::move(interest);
+    }
+    else if (variantTag == 3u)
+    {
+        ClientEconomyCommand command;
+        if (!decodeClientEconomyCommand(reader, command))
+            return false;
+        outValue.payload = std::move(command);
     }
     else
     {

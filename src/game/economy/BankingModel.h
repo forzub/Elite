@@ -75,6 +75,7 @@ struct NationalBank
     double fxSigmaDay = 0.0;       // daily volatility
     double fxHalfLifeDays = 730.0; // mean reversion towards the anchor
     double fxBand = 0.0;           // +- share around the anchor the bank defends
+    std::string regime;            // the polity's form of government (national_banks.json): its fiscal style (trade_fees.json)
 };
 
 struct TransferFee
@@ -139,6 +140,7 @@ struct Account
     Minor overdraftLimit = 0;   // arranged overdraft (>= 0)
     bool frozen = false;        // delinquent / restructured: no new overdraft draws
     int overdueDays = 0;        // days spent beyond the arranged limit
+    Minor held = 0;             // blocked by holds (escrow, docs/TRADE_DESIGN.md §7.1): not spendable
     double carry = 0.0;         // sub-minor interest remainder
 };
 
@@ -179,6 +181,16 @@ enum class Standing : int
 [[nodiscard]] const char* standingName(Standing s);
 [[nodiscard]] const char* standingRu(Standing s);
 
+// A hold (escrow, TRADE_DESIGN §7.1): money blocked on an account - still the client's, not spendable until released
+struct Hold
+{
+    int id = 0;
+    std::string bankId;
+    Minor amount = 0;   // bank currency
+    int day = 0;
+    std::string memo;
+};
+
 struct LedgerEvent
 {
     int day = 0;
@@ -201,6 +213,8 @@ struct ClientLedger
     std::vector<std::pair<int, double>> lifelineDraws;   // (day, Cr) - the 90-day limit window
     std::vector<LedgerEvent> events;                     // newest last, at most 24
     double freeFuelListCr = 0.0;                         // list value of fuel received free of charge
+    std::vector<Hold> holds;                             // blocked money (escrow): collateral, a deal in flight
+    int nextHoldId = 1;
 };
 
 struct PaymentResult
@@ -246,6 +260,12 @@ void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& 
 Loan* takeLoan(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int termDays,
                double extraRate, int day);
 [[nodiscard]] double lifelineLeftCr(const ClientLedger& ledger, const BankDirectory& dir, int day);
+
+// ---- holds (escrow): block `amountCr` on the account at `bankId` (its own money only - not the overdraft); 0 = not
+// enough free money there. release returns the money to the free balance (step 5 adds capture to a payee).
+int placeHold(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int day, const std::string& memo);
+bool releaseHold(ClientLedger& ledger, int holdId);
+[[nodiscard]] double heldCr(const ClientLedger& ledger, const BankDirectory& dir);
 
 // ---- the daily step (interest, due dates, standing machine, restructuring)
 struct LedgerDayReport

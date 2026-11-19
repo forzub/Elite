@@ -6814,3 +6814,21 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Evidence: tests/architecture_contracts/check_world_state_writers.py PASS (merge keeps other writers' Sol hubs, a
   dropped own hub goes, attached city modules survive, no lock / temp left, no direct writer left); world_sites.py
   regenerated: 297 hubs before and after, no content change besides 8 owner tags; world_sites.py --check OK.
+
+## TRADE MVP step 1 / step 2 (docs/TRADE_DESIGN.md §9, §9a) - SOURCE + UNIT PASS, LIVE PARTIAL, PAUSED 2026-11-19
+- Paused by the coordinator for an architecture re-audit of the authority boundaries (money / cargo / price /
+  transactions, CargoRegistry keying by ShipInstanceId). Not committed.
+- Built: CargoRegistry (EconomyServer member, keyed by ShipInstanceId), GameServer::applyCargoLoad (manifest -> ShipLoadState
+  cargoTonnes / containers), TradeQuoteModel (§2.3 kappa 0.5 + spread / handling / VAT / turnover; docking fee function),
+  trade_fees.json (fiscal styles), EconomyServer::trade (Buy / Sell, all or nothing), input VAT refunds, BankingModel holds,
+  ClientEconomyCommand (protocol 32, tag 3), ClientTradeSnapshot (snapshot schema 50), F8 РЫНОК from server quotes, F8 ГРУЗ
+  tab (tradetab:5), DEV verbs cargo:add / cargo:clear / trade:buy|sell / trade:report; economy_state/2.
+- Evidence: EliteEconomyCheck 84/84 (new: C20 15.1 t grain, gross = net + 1.7 x C20, 120 t into 200 t = -8.04 %,
+  buy->sell same day always loses, hub limits, all-or-nothing refusals, sell at Тихий, holds, save/restore exact, VAT
+  refund after 30 d); wire protocol / data-plane round trips PASS; contracts entity_lifetime, active_system_context,
+  server_runtime_ownership, world_state_writers, wire_* , replication_snapshot PASS.
+- LIVE step 1 (D:/tmp/trade1/game_step1.log, D:/tmp/trade1/step1_cargo_tab.png): cargo:add:steel:60 -> "[Cargo] ship 201:
+  manifest 60 t net, 3 C20 (gross 65.1 t) -> mass 260 -> 325.1 t; full-charge jump range 82.672 -> 75.1247 ly"; F8 ГРУЗ
+  shows 3/6 C20, 65.1 t gross, 75.1 vs 82.7 ly (-9.1 %).
+- LIVE step 2: NOT done (the run was stopped at docking by the pause). First attempt: dock from 40 km failed "ship is not
+  matched to target Hub frame" - the script needs finish:hub + route:official before dock:.

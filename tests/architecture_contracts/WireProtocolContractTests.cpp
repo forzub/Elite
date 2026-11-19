@@ -347,6 +347,25 @@ void testClientMessageRoundTrip()
             fault.index==-1 && nearlyEqual(fault.amount,1.0),
             "equipment failure slot/level lost over network");
 
+    // The trade layer's request (TRADE_DESIGN §7.4): its own message, not a ship control.
+    game::network::ClientEconomyCommand trade;
+    trade.op = game::network::ClientEconomyCommand::Sell;
+    trade.requestId = 41u;
+    trade.shipEntityId = 7u;
+    trade.hubId = "earth_hub.tikhiy";
+    trade.goodId = "food_staples";
+    trade.quantity = 15.145;
+    trade.limitUnitCr = 520.25;
+    trade.quoteDay = 1412;
+    commandMessage.payload = trade;
+    require(encodeClientMessage(commandMessage, payload), "economy command encode failed");
+    require(decodeClientMessage(payload, decoded), "economy command decode failed");
+    require(std::holds_alternative<game::network::ClientEconomyCommand>(decoded.payload), "economy command variant changed");
+    const auto& tradeBack = std::get<game::network::ClientEconomyCommand>(decoded.payload);
+    require(tradeBack.op == trade.op && tradeBack.requestId == 41u && tradeBack.hubId == trade.hubId &&
+                tradeBack.goodId == trade.goodId && nearlyEqual(tradeBack.quantity, 15.145) && tradeBack.quoteDay == 1412,
+        "economy command fields lost over the wire");
+
 
 }
 

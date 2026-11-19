@@ -1024,6 +1024,7 @@ ELITE_WIRE_SCHEMA(
     v.netWorthCr,
     v.lifelineLeftCr,
     v.freeFuelListCr,
+    v.heldCr,
     v.localPolity,
     v.localBank,
     v.localCurrency,
@@ -1041,11 +1042,81 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientMarketRow,
+    v.good,
+    v.traded,
+    v.priceCr,
+    v.bidCr,
+    v.askCr,
+    v.stockT,
+    v.targetT,
+    v.hubTakesUpToT,
+    v.hubGivesUpToT,
+    v.drift
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientCargoLine,
+    v.lotId,
+    v.good,
+    v.tonnes,
+    v.c20,
+    v.costBasisCrPerT,
+    v.originHub,
+    v.loadedDay,
+    v.owner,
+    v.contractId
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientTradeResult,
+    v.requestId,
+    v.ok,
+    v.code,
+    v.message,
+    v.lines,
+    v.totalCr,
+    v.day
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientTradeSnapshot,
+    v.valid,
+    v.day,
+    v.serial,
+    v.hubId,
+    v.hubName,
+    v.docked,
+    v.marketNote,
+    v.spread,
+    v.fiscalStyleRu,
+    v.vatShare,
+    v.vatRefundDays,
+    v.turnoverShare,
+    v.turnoverRu,
+    v.handlingCrPerT,
+    v.kappa,
+    v.market,
+    v.cargo,
+    v.cargoNetT,
+    v.cargoGrossT,
+    v.c20Used,
+    v.c20Slots,
+    v.netCapacityT,
+    v.shipMassT,
+    v.jumpRangeLy,
+    v.jumpRangeEmptyLy,
+    v.vatReclaimCr,
+    v.results
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientSessionSnapshot,
     v.playerNavigation,
     v.ownedNavigationAssets,
     v.navigationSensors,
     v.wallet,
+    v.trade,
     v.predictionWorldParams,
     v.universeTimeSeconds,
     v.universeTimeScale,

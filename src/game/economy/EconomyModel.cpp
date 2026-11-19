@@ -141,6 +141,7 @@ void EconomyModel::load()
         t.group = str(g, "group");
         t.groupRu = groupRu[t.group];
         t.baseCrPerTonne = num(g, "base_cr_t");
+        t.densityTM3 = num(g, "density_t_m3", 0.0);
         goodIndex[t.id] = m_goods.size();
         m_goods.push_back(std::move(t));
     }

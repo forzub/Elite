@@ -26,8 +26,7 @@ TradePresentation buildTradePresentation(
     page.hubName = here->name;
     page.atHub = atHub;
     page.day = EconomyModel::dayOf(universeSeconds);
-    page.tab = std::clamp(tab, 0, 4);   // 4 = finance (the session wallet, filled by the caller)
-    page.market = model.market(hubId, page.day);
+    page.tab = std::clamp(tab, 0, 5);   // 4 = finance (the session wallet), 5 = cargo (the server manifest) - filled by the caller
     page.events = model.events(hubId, page.day);
     page.hubs = model.hubsOfSystem(here->systemId);
 
@@ -66,9 +65,12 @@ TradePresentation buildTradePresentation(
             const double publishedH = std::floor((nowH - delayH) / 24.0) * 24.0;
             card.infoAgeHours = std::max(0.0, nowH - publishedH);
             const int knownDay = EconomyModel::dayOf(publishedH * 3600.0);
-            for (const auto& q : model.market(dest->id, knownDay))
-                if (q.traded)
-                    card.knownPrices.push_back(q);
+            // a remote hub: its aged bulletin (the deterministic baseline until the server bulletin ring, step 10); the
+            // hub we are at: the caller puts the server's live prices here
+            if (dest->id != hubId)
+                for (const auto& q : model.market(dest->id, knownDay))
+                    if (q.traded)
+                        card.knownPrices.push_back(q);
             card.knownEvents = model.events(dest->id, knownDay);
         }
     }

@@ -26,7 +26,7 @@ enum class ServicePanelActionType
     RefitPreviewRepair,
     RefitPreviewReplace,     // text = product id ("" = same product)
     RefitApply,
-    TradeTab,                // text = "0" board / "1" market / "2" hubs
+    TradeTab,                // text = "0" board / "1" market / "2" hubs / "3" nav data / "4" finance / "5" cargo
     TradeSelectHub,          // text = hub id
     TradeShowOnMap,          // text = hub id
     NavDataSelect,           // text = bank record id

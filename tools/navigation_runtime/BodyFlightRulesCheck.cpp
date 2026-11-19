@@ -138,7 +138,9 @@ int main()
         q.farthestBodyM = 30.0 * au;
         q.hubZoneM = 3.0e6;
         q.distanceFromStarM = 40.0 * au;
-        check(sn::chartedBy(q) == sn::ChartedBy::SurveyShell, "charted: 40 AU in a 30 AU system (1.5 x shell)");
+        check(sn::chartedBy(q) == sn::ChartedBy::None, "uncharted: an EMPTY catalogue system (no places / hubs) is known only in fragments");
+        q.inhabited = true;
+        check(sn::chartedBy(q) == sn::ChartedBy::SurveyShell, "charted: 40 AU in an inhabited 30 AU system (1.5 x shell)");
         q.distanceFromStarM = 60.0 * au;
         check(sn::chartedBy(q) == sn::ChartedBy::None, "uncharted: 60 AU, beyond the shell");
         q.nearestHubM = 2.0e6;

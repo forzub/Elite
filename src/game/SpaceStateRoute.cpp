@@ -15,6 +15,7 @@
 #include "src/game/navigation/rules/JDrive.h"
 #include "src/game/navigation/rules/InterstellarJumpRoute.h"
 #include "src/game/navigation/rules/SensorSpeedRules.h"
+#include "src/game/navigation/rules/JumpSumps.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 
 namespace
@@ -557,7 +558,11 @@ void SpaceState::applySensorSpeedInputs(game::navigation::globalflight::BodyAuto
     }
     for (const auto& [hubId, hub] : m_client->world().hubs())
         if (hub.systemId == systemId)
+        {
             q.nearestHubM = std::min(q.nearestHubM, glm::length(world::coordinates::fullMeters(hub.worldPosition) - p));
+            q.inhabited = true;
+        }
+    q.inhabited = q.inhabited || jr::systemHasBeacons(systemId);   // world places = beacons (JumpSumps.h)
     q.hubZoneM = zoneCatalog().hubRadarM;
     for (const auto& z : route::resolveZones(zoneCatalog(), systemId, routeAnchorResolver()))
         if (z.zone && z.zone->colour == route::ZoneColour::Green && z.contains(p))

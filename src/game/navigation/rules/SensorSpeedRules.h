@@ -51,13 +51,15 @@ enum class ChartedBy : int
     None = 0,
     Corridor = 1,      // inside a green corridor (route_zones.json)
     HubZone = 2,       // inside a hub's radar / beacon zone (route_zones.json watch.hub_radar_km)
-    SurveyShell = 3,   // inside a catalogue system's surveyed shell (SurveyShellFactor x its farthest body)
+    SurveyShell = 3,   // inside an INHABITED catalogue system's surveyed shell (SurveyShellFactor x its farthest body);
+                       // author 2026-11-20: only inhabited systems are well surveyed, the rest is known in fragments
     LaneRecord = 4     // a system's approaches with a usable lane record of its shell (readable: the nav computer works)
 };
 
 struct ChartedQuery
 {
     bool catalogueSystem = false;   // a local catalogue system (not a deep-space place, not approaches, not a distant one)
+    bool inhabited = false;         // it has world places / hubs (beacons): surveyed; an empty system is not
     double distanceFromStarM = 0.0;
     double farthestBodyM = 0.0;     // the farthest body's distance from the star now
     double nearestHubM = std::numeric_limits<double>::infinity();
@@ -72,7 +74,7 @@ inline ChartedBy chartedBy(const ChartedQuery& q)
         return ChartedBy::Corridor;
     if (q.nearestHubM <= q.hubZoneM)
         return ChartedBy::HubZone;
-    if (q.catalogueSystem && q.distanceFromStarM <= SurveyShellFactor * q.farthestBodyM)
+    if (q.catalogueSystem && q.inhabited && q.distanceFromStarM <= SurveyShellFactor * q.farthestBodyM)
         return ChartedBy::SurveyShell;
     if (q.approachLaneRecord)
         return ChartedBy::LaneRecord;

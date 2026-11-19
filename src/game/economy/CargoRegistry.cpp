@@ -113,6 +113,25 @@ std::string CargoRegistry::load(std::uint64_t shipKey, std::uint64_t playerId, C
     return m.lots.back().lotId;
 }
 
+double CargoRegistry::fifoDutyShare(const CargoManifest& m, const std::string& goodId, double tonnes,
+                                    const std::function<double(const CargoLot&)>& rateOfLot)
+{
+    if (!(tonnes > 0.0))
+        return 0.0;
+    double left = tonnes, weighted = 0.0;
+    for (const auto& l : m.lots)   // the same order as unload(): the oldest own lot first
+    {
+        if (left <= 1.0e-9)
+            break;
+        if (l.goodId != goodId || !l.contractId.empty())
+            continue;
+        const double take = std::min(left, l.tonnes);
+        weighted += take * std::max(0.0, rateOfLot(l));
+        left -= take;
+    }
+    return weighted / tonnes;
+}
+
 bool CargoRegistry::unload(std::uint64_t shipKey, const std::string& goodId, double tonnes, double densityTM3, double& costBasisOutCr)
 {
     costBasisOutCr = 0.0;

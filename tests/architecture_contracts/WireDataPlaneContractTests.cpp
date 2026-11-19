@@ -520,7 +520,7 @@ SimulationSnapshot makeSnapshot()
     snapshot.session.trade.serial = 77;
     snapshot.session.trade.hubId = "earth_orbital_hub";
     snapshot.session.trade.market.push_back({0, true, 557.0, 540.3, 573.7, 48154.0, 39695.0, 11388.5, 46169.2, 0.02});
-    snapshot.session.trade.cargo.push_back({"L1", 0, 15.15, 1, 699.9, "earth_orbital_hub", 1412, "player:1", ""});
+    snapshot.session.trade.cargo.push_back({"L1", 0, 15.15, 1, 699.9, "earth_orbital_hub", 1412, "player:1", "", 0.06});
     snapshot.session.trade.jumpRangeLy = 45.5;
     snapshot.session.trade.results.push_back({9u, true, "", "куплено", {"товар|-8 700"}, -10500.5, 1412});
 
@@ -729,7 +729,7 @@ void testSnapshotRoundTrip()
         "session wallet did not round-trip");
     require(decoded.session.trade.valid && decoded.session.trade.serial == 77u && decoded.session.trade.hubId == "earth_orbital_hub" &&
                 decoded.session.trade.market.size() == 1 && decoded.session.trade.market[0].askCr == 573.7 &&
-                decoded.session.trade.cargo.size() == 1 && decoded.session.trade.cargo[0].tonnes == 15.15 &&
+                decoded.session.trade.cargo.size() == 1 && decoded.session.trade.cargo[0].tonnes == 15.15 && decoded.session.trade.cargo[0].dutyShare == 0.06 &&
                 decoded.session.trade.jumpRangeLy == 45.5 && decoded.session.trade.results.size() == 1 &&
                 decoded.session.trade.results[0].requestId == 9u && decoded.session.trade.results[0].totalCr == -10500.5,
         "session trade snapshot did not round-trip");

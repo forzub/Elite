@@ -178,4 +178,48 @@ FineResult chargeFine(std::uint32_t shipEntityId, const std::string& hubId, doub
     out.paidCr = r.ok ? amountCr - out.debtCr : 0.0;
     return out;
 }
+
+namespace
+{
+template <class F> PortFeeResult portFee(std::uint32_t shipEntityId, const std::string& hubId, F charge)
+{
+    PortFeeResult out;
+    if (!installed())
+        return out;
+    const auto& b = bindings();
+    const std::uint64_t player = b.playerOfShip ? b.playerOfShip(shipEntityId) : 0;
+    if (player == 0)
+        return out;
+    auto where = b.locationOfShip ? b.locationOfShip(shipEntityId) : std::pair<std::string, int>{std::string(), -1};
+    if (!hubId.empty())
+    {
+        where.first = hubId;
+        const int sys = systemOf(hubId);
+        if (sys >= 0)
+            where.second = sys;
+    }
+    const EconomyServer::PortCharge c = charge(*b.economy, player, where.first, where.second);
+    out.charged = c.booked;
+    out.duplicate = c.duplicate;
+    out.feeCr = c.feeCr;
+    out.paidCr = c.paidCr;
+    out.debtCr = c.debtCr;
+    out.hours = c.hours;
+    return out;
+}
+} // namespace
+
+PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double dryMassT)
+{
+    return portFee(shipEntityId, hubId, [&](EconomyServer& e, std::uint64_t player, const std::string& hub, int sys) {
+        return e.chargeDocking(player, callId, hub, sys, dryMassT);
+    });
+}
+
+PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double berthHours)
+{
+    return portFee(shipEntityId, hubId, [&](EconomyServer& e, std::uint64_t player, const std::string& hub, int sys) {
+        return e.chargeBerth(player, callId, hub, sys, berthHours);
+    });
+}
 } // namespace game::economy::service

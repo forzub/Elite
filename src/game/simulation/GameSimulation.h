@@ -799,6 +799,18 @@ private:
     bool m_dockTrafficDisabled = false;
     std::unordered_set<EntityId> m_dockStationControlledShips;
     double m_dockPilotTraceSeconds = -1e9;
+    // Port fees (TRADE_DESIGN §5.2, step 4): one open call per pilot ship at a berth - the docking fee is booked when
+    // the dispatcher reports Docked, the berth fee when the ship leaves the berth (EconomyServer is idempotent per
+    // callId too). Runs in the ship's system pass (updateDockSitePilots).
+    struct PortCall
+    {
+        std::string callId;
+        std::string hubId;
+        std::string dockModuleId;
+        double dockedAtSeconds = 0.0;   // the server timeline clock
+    };
+    std::unordered_map<EntityId, PortCall> m_portCalls;
+    void updatePortCall(EntityId id, const DockSite& site, bool docked);
     std::unordered_map<
         EntityId,
         game::simulation::ShipSimulationLifecycleState

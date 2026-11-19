@@ -3336,6 +3336,7 @@ void GameSimulation::forgetShip(EntityId id)
     forgetShipDetail(id);
     m_combatHostility.erase(id);
     m_pilotDockSite.erase(id);
+    m_portCalls.erase(id);   // a ship gone at the berth: no berth fee (no release event)
     m_dockTrafficShells.erase(id);
     m_dockTrafficInfo.erase(id);
     m_dockStationControlledShips.erase(id);

@@ -377,6 +377,9 @@ bool EconomyServer::load()
         m_dealRules.dockingBaseCr = num(deal, "docking_base_cr", m_dealRules.dockingBaseCr);
         m_dealRules.dockingCrPerDryT = num(deal, "docking_cr_per_dry_t", m_dealRules.dockingCrPerDryT);
         m_dealRules.vatRefundFeeShare = num(deal, "vat_refund_fee_share", m_dealRules.vatRefundFeeShare);
+        m_dealRules.berthIncludedHours = num(deal, "berth_included_hours", m_dealRules.berthIncludedHours);
+        m_dealRules.berthCrPerHour = num(deal, "berth_cr_per_hour", m_dealRules.berthCrPerHour);
+        m_dealRules.berthCrPerDayCap = num(deal, "berth_cr_per_day_cap", m_dealRules.berthCrPerDayCap);
         const json styles = fees.value("styles", json::object());
         for (const auto& [id, s] : styles.items())
         {
@@ -388,6 +391,7 @@ bool EconomyServer::load()
             st.turnoverShare = num(s, "turnover", 0.0);
             st.turnoverRu = str(s, "turnover_ru");
             st.portIndex = num(s, "port_index", 1.0);
+            st.dutyShare = num(s, "duty", st.dutyShare);
             m_styles[id] = st;
         }
         const json regimes = fees.value("regime_style", json::object());
@@ -395,6 +399,22 @@ bool EconomyServer::load()
             if (style.is_string())
                 m_regimeStyle[regime] = style.get<std::string>();
     }
+    // the customs channel multipliers of the import duty (economy_rules.json customs.by_channel[].fee_mult - one source
+    // with the customs layer of step 9). "closed" carries 0 there (no admission at all); until step 9 refuses closed
+    // imports at the border, goods that got through anyway pay the black-channel rate, never less than an open border.
+    json econRules;
+    if (readJson("economy_rules.json", econRules))
+    {
+        const json byChannel = econRules.value("customs", json::object()).value("by_channel", json::object());
+        for (const auto& [name, c] : byChannel.items())
+        {
+            const int k = static_cast<int>(channelFromString(name));
+            if (k >= 0 && k < 5 && c.is_object())
+                m_customsFeeMult[k] = num(c, "fee_mult", m_customsFeeMult[k]);
+        }
+    }
+    if (!(m_customsFeeMult[static_cast<int>(Channel::Closed)] > 0.0))
+        m_customsFeeMult[static_cast<int>(Channel::Closed)] = m_customsFeeMult[static_cast<int>(Channel::Black)];
     m_loaded = !m_banks.banks().empty() && !m_markets.empty();
     std::cerr << "[EconomyServer] " << m_banks.banks().size() << " national banks, " << m_markets.size() << " markets, fuel "
               << (m_fuelFree ? "FREE of charge (list prices computed)" : "charged") << '\n';
@@ -806,6 +826,124 @@ void EconomyServer::credit(std::uint64_t playerId, const std::string& hubId, int
         receive(*l, m_banks, bankOf(hubId, systemId), amountCr, m_day, memo);
 }
 
+// ---------------------------------------------------------------- port fees (TRADE_DESIGN step 4)
+namespace
+{
+// marks the call's event booked; false = it already was (the idempotency of a repeated docked / released event)
+bool markPortCall(std::map<std::string, int>& calls, std::deque<std::string>& order, const std::string& callId, int bit)
+{
+    auto [it, fresh] = calls.try_emplace(callId, 0);
+    if (fresh)
+    {
+        order.push_back(callId);
+        while (order.size() > 512)
+        {
+            calls.erase(order.front());
+            order.pop_front();
+        }
+        it = calls.find(callId);
+    }
+    if (it == calls.end() || (it->second & bit))
+        return false;
+    it->second |= bit;
+    return true;
+}
+} // namespace
+
+std::string EconomyServer::hubDisplayName(const std::string& hubId) const
+{
+    if (const auto it = m_marketIndex.find(hubId); it != m_marketIndex.end() && !m_markets[it->second].name.empty())
+        return m_markets[it->second].name;
+    if (const auto* h = EconomyModel::instance().hub(hubId); h && !h->name.empty())
+        return h->name;
+    return hubId;
+}
+
+EconomyServer::PortCharge EconomyServer::chargeDocking(std::uint64_t playerId, const std::string& callId, const std::string& hubId,
+                                                       int systemId, double dryMassT, const std::string& hubName)
+{
+    PortCharge c;
+    const FiscalStyle style = fiscalStyleOf(hubId, systemId);
+    c.styleId = style.id;
+    c.portIndex = style.portIndex;
+    c.feeCr = dockingFeeCr(dryMassT, style, m_dealRules);
+    ClientLedger* l = ledger(playerId);
+    if (!m_loaded || !l || !(c.feeCr > 0.0))
+        return c;   // AI ships (no wallets yet) / no economy: nothing booked
+    if (!markPortCall(m_portCalls, m_portCallOrder, callId, 1))
+    {
+        c.duplicate = true;
+        return c;
+    }
+    char memo[200];
+    std::snprintf(memo, sizeof memo, "стыковка %s (%.0f т сухой массы, индекс порта %.1f)", (hubName.empty() ? hubDisplayName(hubId) : hubName).c_str(),
+                  dryMassT, style.portIndex);
+    const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Docking, m_day, memo, "сбор в долг");
+    c.booked = p.ok;
+    c.debtCr = p.ok ? p.lifelineCr : 0.0;
+    c.paidCr = p.ok ? c.feeCr - c.debtCr : 0.0;
+    std::cerr << "[PortFee] player " << playerId << " call " << callId << ": DOCKING at " << hubId << " (" << style.id << ", index "
+              << style.portIndex << ", dry " << dryMassT << " t) " << grouped(c.feeCr, 2) << " Cr: paid " << grouped(c.paidCr, 2) << ", debt "
+              << grouped(c.debtCr, 2) << "; net worth " << grouped(netWorthCr(*l, m_banks)) << " Cr" << '\n';
+    ++m_tradeSerial;
+    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
+        std::cerr << "[EconomyServer] state NOT saved after the docking fee" << '\n';
+    return c;
+}
+
+EconomyServer::PortCharge EconomyServer::chargeBerth(std::uint64_t playerId, const std::string& callId, const std::string& hubId,
+                                                     int systemId, double berthHours, const std::string& hubName)
+{
+    PortCharge c;
+    const FiscalStyle style = fiscalStyleOf(hubId, systemId);
+    c.styleId = style.id;
+    c.portIndex = style.portIndex;
+    c.hours = std::max(0.0, berthHours);
+    c.feeCr = berthFeeCr(c.hours, style, m_dealRules);
+    ClientLedger* l = ledger(playerId);
+    if (!m_loaded || !l)
+        return c;
+    if (!markPortCall(m_portCalls, m_portCallOrder, callId, 2))
+    {
+        c.duplicate = true;
+        return c;
+    }
+    if (!(c.feeCr > 0.005))
+    {
+        std::cerr << "[PortFee] player " << playerId << " call " << callId << ": BERTH at " << hubId << " " << grouped(c.hours, 2)
+                  << " h (within the " << m_dealRules.berthIncludedHours << " h the docking fee covers): 0 Cr" << '\n';
+        return c;
+    }
+    char memo[200];
+    std::snprintf(memo, sizeof memo, "стоянка %s: %.1f ч (сверх %.0f ч по %.0f Cr/ч)", (hubName.empty() ? hubDisplayName(hubId) : hubName).c_str(),
+                  c.hours, m_dealRules.berthIncludedHours, m_dealRules.berthCrPerHour * style.portIndex);
+    const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Parking, m_day, memo, "сбор в долг");
+    c.booked = p.ok;
+    c.debtCr = p.ok ? p.lifelineCr : 0.0;
+    c.paidCr = p.ok ? c.feeCr - c.debtCr : 0.0;
+    std::cerr << "[PortFee] player " << playerId << " call " << callId << ": BERTH at " << hubId << " " << grouped(c.hours, 2) << " h -> "
+              << grouped(c.feeCr, 2) << " Cr: paid " << grouped(c.paidCr, 2) << ", debt " << grouped(c.debtCr, 2) << "; net worth "
+              << grouped(netWorthCr(*l, m_banks)) << " Cr" << '\n';
+    ++m_tradeSerial;
+    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
+        std::cerr << "[EconomyServer] state NOT saved after the berth fee" << '\n';
+    return c;
+}
+
+double EconomyServer::importDutyRate(const std::string& originHub, const std::string& hubId, int systemId) const
+{
+    if (originHub.empty() || originHub == hubId)
+        return 0.0;
+    const std::string from = polityOf(originHub, -1);
+    const std::string to = polityOf(hubId, systemId);
+    if (from.empty() || to.empty() || from == to)
+        return 0.0;
+    const auto* a = m_banks.bankForPolity(from);
+    const auto* b = m_banks.bankForPolity(to);
+    const Channel ch = a && b ? m_banks.channel(a->id, b->id) : Channel::Licensed;
+    return fiscalStyleOf(hubId, systemId).dutyShare * customsFeeMult(ch);
+}
+
 // ---------------------------------------------------------------- trade (TRADE_DESIGN steps 1-2)
 FiscalStyle EconomyServer::fiscalStyleOf(const std::string& hubId, int systemId) const
 {
@@ -882,7 +1020,13 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
     auto& cell = market.cells[static_cast<std::size_t>(g)];
     const MarketSide side{cell.priceCr, market.spread, cell.stockT, cell.targetT};
     const FiscalStyle style = fiscalStyleOf(o.hubId, o.systemId);
-    const DealQuote q = explainDeal(o.buy, side, o.tonnes, style, m_dealRules);
+    // a sale pays the import duty on the tonnes bought in another polity (the lots unload() takes, oldest first)
+    double dutyShare = 0.0;
+    if (!o.buy)
+        if (const CargoManifest* held = m_cargo.find(o.shipKey))
+            dutyShare = CargoRegistry::fifoDutyShare(*held, o.goodId, o.tonnes,
+                                                     [&](const CargoLot& lot) { return importDutyRate(lot.originHub, o.hubId, o.systemId); });
+    const DealQuote q = explainDeal(o.buy, side, o.tonnes, style, m_dealRules, dutyShare);
     if (!q.ok)
         return refuse(q.code, q.reason);
     if (o.limitUnitCr > 0.0 && (o.buy ? q.unitCr > o.limitUnitCr * (1.0 + 1.0e-9) : q.unitCr < o.limitUnitCr * (1.0 - 1.0e-9)))
@@ -940,10 +1084,16 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
     std::snprintf(memo, sizeof memo, "%s %.2f т «%s» на %s: %s%s Cr", o.buy ? "покупка" : "продажа", o.tonnes, good.ru.c_str(),
                   market.name.c_str(), q.totalCr >= 0.0 ? "+" : "", grouped(q.totalCr).c_str());
     logEvent(*l, m_day, memo);
+    if (q.dutyCr > 0.0)   // the duty is inside the deal's total; its own ledger line names it (F8 ФИНАНСЫ)
+    {
+        std::snprintf(memo, sizeof memo, "пошлина -%s Cr (%.1f %% ввоз «%s» на %s)", grouped(q.dutyCr).c_str(), q.dutyShare * 100.0,
+                      good.ru.c_str(), market.name.c_str());
+        logEvent(*l, m_day, memo);
+    }
     std::cerr << "[Trade] player " << o.playerId << " request " << o.requestId << ": " << (o.buy ? "BUY " : "SELL ") << o.tonnes << " t "
               << o.goodId << " at " << o.hubId << " (" << style.id << "): list " << q.listUnitCr << " -> deal " << q.unitCr
               << " Cr/t (impact " << 100.0 * q.impactShare << " %), goods " << q.goodsCr << ", handling " << q.handlingCr << ", VAT "
-              << q.vatCr << ", turnover " << q.turnoverCr << ", account " << (q.totalCr >= 0.0 ? "+" : "") << q.totalCr
+              << q.vatCr << ", duty " << q.dutyCr << " (" << 100.0 * q.dutyShare << " %), turnover " << q.turnoverCr << ", account " << (q.totalCr >= 0.0 ? "+" : "") << q.totalCr
               << " Cr; stock " << (o.buy ? cell.stockT + o.tonnes : cell.stockT - o.tonnes) << " -> " << cell.stockT << " t; net worth "
               << netWorthCr(*l, m_banks) << " Cr" << '\n';
     pushResult(o.playerId, r);
@@ -1053,7 +1203,8 @@ game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t
     {
         for (const auto& lot : m->lots)
             s.cargo.push_back({lot.lotId, goodIndex(lot.goodId), lot.tonnes, lot.c20, lot.tonnes > 0.0 ? lot.costBasisCr / lot.tonnes : 0.0,
-                               lot.originHub, lot.loadedDay, lot.owner, lot.contractId});
+                               lot.originHub, lot.loadedDay, lot.owner, lot.contractId,
+                               hubId.empty() ? 0.0 : importDutyRate(lot.originHub, hubId, systemId)});
         s.cargoNetT = m->netT();
         s.cargoGrossT = m->grossT();
         s.c20Used = m->c20();

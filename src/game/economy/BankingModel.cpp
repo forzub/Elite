@@ -491,7 +491,13 @@ double riskPremium(double annualNetIncomeCr, double routeRisk, double legalRisk,
 PaymentResult payFine(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, int day,
                       const std::string& memo)
 {
-    PaymentResult r = pay(ledger, dir, authorityBank, amountCr, Purpose::Fine, day, false, memo);
+    return payOrDebt(ledger, dir, authorityBank, amountCr, Purpose::Fine, day, memo, "штраф в долг");
+}
+
+PaymentResult payOrDebt(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, Purpose purpose,
+                        int day, const std::string& memo, const std::string& debtLabel)
+{
+    PaymentResult r = pay(ledger, dir, authorityBank, amountCr, purpose, day, false, memo);
     if (r.ok || !(amountCr > 0.0))
         return r;
     const NationalBank* b = dir.bank(authorityBank) ? dir.bank(authorityBank) : dir.reserve();
@@ -511,7 +517,7 @@ PaymentResult payFine(ClientLedger& ledger, const BankDirectory& dir, const std:
     l.nextDueDay = day + 30;
     l.installment = annuityInstallment(l.principal, 0.0, 12);
     ledger.loans.push_back(l);
-    logEvent(ledger, day, "штраф в долг " + money(toUnits(l.principal), b->code) + " " + memo);
+    logEvent(ledger, day, debtLabel + " " + money(toUnits(l.principal), b->code) + " " + memo);
     r.ok = true;
     r.reason.clear();
     r.lifelineCr = amountCr;

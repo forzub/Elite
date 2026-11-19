@@ -19,6 +19,12 @@
 // handling; the goods part is reclaimable after the style's refund days minus 1 %) and on the handling of a sale, the
 // turnover tax / tithe / artel levy on a sale's gross revenue. Docking (150 + 0.9 Cr/t dry mass) x the port index is
 // computed here; charging it at docking is step 4.
+//
+// Step 4: the berth (parking) fee beyond the hours the docking fee includes (25 Cr/h, <= 400 Cr per day, x the port
+// index) and the import duty on a sale: goods value x the selling hub's style rate x the customs channel multiplier
+// (economy_rules customs.by_channel fee_mult: open 1 / licensed 1.5 / restricted 2.5 / black 4) for the part of the sold
+// tonnes that was bought in ANOTHER polity (CargoLot.originHub). The caller passes that as one effective share of the
+// goods value (dutyShare; CargoRegistry::fifoDutyShare weighs the lots the sale takes).
 namespace game::economy
 {
 struct FiscalStyle
@@ -29,7 +35,8 @@ struct FiscalStyle
     int vatRefundDays = 30;
     double turnoverShare = 0.0;   // planned 3 %, theocratic tithe 10 %, clan artel levy 3 % - of a sale's gross revenue
     std::string turnoverRu;
-    double portIndex = 1.0;       // multiplies docking and handling
+    double portIndex = 1.0;       // multiplies docking, berth and handling
+    double dutyShare = 0.04;      // import duty base (x the customs channel multiplier), §5.1
 };
 
 struct TradeDealRules
@@ -42,6 +49,9 @@ struct TradeDealRules
     double dockingBaseCr = 150.0;
     double dockingCrPerDryT = 0.9;
     double vatRefundFeeShare = 0.01;
+    double berthIncludedHours = 4.0;   // the docking fee covers this long at the berth
+    double berthCrPerHour = 25.0;      // beyond it (x the port index)
+    double berthCrPerDayCap = 400.0;   // at most per 24 h beyond the included hours (x the port index)
 };
 
 // one market cell as the deal sees it
@@ -61,6 +71,9 @@ struct MarketSide
 [[nodiscard]] double sellUnitCr(const MarketSide& m, double tonnes, const TradeDealRules& r);
 [[nodiscard]] double buyUnitCr(const MarketSide& m, double tonnes, const TradeDealRules& r);
 [[nodiscard]] double dockingFeeCr(double dryMassT, const FiscalStyle& s, const TradeDealRules& r);
+// the berth fee for `hours` at the berth (the docking fee already covers berthIncludedHours): per 24 h block beyond them
+// min(cap, rate x hours), x the port index
+[[nodiscard]] double berthFeeCr(double hours, const FiscalStyle& s, const TradeDealRules& r);
 
 struct DealLine
 {
@@ -83,10 +96,14 @@ struct DealQuote
     double vatCr = 0.0;        // all VAT paid now
     double vatReclaimCr = 0.0; // the part refunded after vatRefundDays (minus the refund fee)
     double turnoverCr = 0.0;
+    double dutyShare = 0.0;    // sell: the effective import duty share of the goods value
+    double dutyCr = 0.0;
     double totalCr = 0.0;      // signed: what the account changes by now (= the sum of lines)
     std::vector<DealLine> lines;
 };
 
-// the deal and its breakdown; the hub limits are checked (code / reason when not ok, the numbers still filled)
-[[nodiscard]] DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const FiscalStyle& style, const TradeDealRules& r);
+// the deal and its breakdown; the hub limits are checked (code / reason when not ok, the numbers still filled).
+// dutyShare (sell only): the import duty as a share of the goods value (0 = all of it bought in this polity)
+[[nodiscard]] DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const FiscalStyle& style, const TradeDealRules& r,
+                                    double dutyShare = 0.0);
 } // namespace game::economy

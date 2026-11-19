@@ -8,6 +8,8 @@
 #include "src/game/economy/BankingModel.h"
 #include "src/game/economy/PriceModel.h"
 #include <set>
+#include <deque>
+#include <map>
 #include "src/game/economy/CargoRegistry.h"
 #include "src/game/economy/TradeQuoteModel.h"
 #include "src/game/simulation/ClientTradeSnapshot.h"
@@ -168,6 +170,31 @@ public:
     [[nodiscard]] const std::vector<LostCargo>& lostCargo() const { return m_lostCargo; }
     [[nodiscard]] bool lossRecorded(const std::string& eventId) const { return m_lossEvents.count(eventId) != 0; }
     [[nodiscard]] FiscalStyle fiscalStyleOf(const std::string& hubId, int systemId) const;
+    // the import duty rate (share of the goods value) for goods bought at `originHub` and sold at `hubId` (TRADE_DESIGN
+    // §5.2, step 4): 0 inside one polity or for an unknown origin; else the selling hub's style rate x the customs
+    // channel multiplier between the two polities' banks
+    [[nodiscard]] double importDutyRate(const std::string& originHub, const std::string& hubId, int systemId) const;
+    [[nodiscard]] double customsFeeMult(Channel c) const { return m_customsFeeMult[static_cast<int>(c)]; }
+
+    // ---- port fees (TRADE_DESIGN §5.2, step 4): charged by the server at the dispatcher's docked / released events.
+    // IDEMPOTENT per call: `callId` names one docking ("call:<ship>:<dock>:<ms>"); the docking fee is booked once per
+    // callId, the berth fee once at its release - a repeated event is reported `duplicate` and changes nothing. Never
+    // refused: what cannot be paid becomes a 0 % debt at the port's bank (payOrDebt) - a fee never strands a ship.
+    struct PortCharge
+    {
+        bool booked = false;       // a ledger entry was made (paid or debt)
+        bool duplicate = false;    // this callId's event was already booked
+        double feeCr = 0.0;
+        double paidCr = 0.0;
+        double debtCr = 0.0;
+        double hours = 0.0;        // berth: the hours at the berth
+        std::string styleId;
+        double portIndex = 1.0;
+    };
+    PortCharge chargeDocking(std::uint64_t playerId, const std::string& callId, const std::string& hubId, int systemId, double dryMassT,
+                             const std::string& hubName = std::string());
+    PortCharge chargeBerth(std::uint64_t playerId, const std::string& callId, const std::string& hubId, int systemId, double berthHours,
+                           const std::string& hubName = std::string());
     [[nodiscard]] const TradeDealRules& dealRules() const { return m_dealRules; }
     // the hub's OWN market cell (no system fallback for trade); false = this hub does not trade that good
     [[nodiscard]] bool marketSide(const std::string& hubId, const std::string& goodId, MarketSide& out) const;
@@ -205,6 +232,7 @@ private:
     [[nodiscard]] int goodIndex(const std::string& id) const;
     [[nodiscard]] const HubMarket* marketFor(const std::string& hubId, int systemId, int good, bool& systemReference) const;
     [[nodiscard]] std::string bankOf(const std::string& hubId, int systemId) const;
+    [[nodiscard]] std::string hubDisplayName(const std::string& hubId) const;
 
     bool m_loaded = false;
     bool m_fuelFree = true;
@@ -237,6 +265,9 @@ private:
     std::unordered_map<std::string, FiscalStyle> m_styles;
     std::unordered_map<std::string, std::string> m_regimeStyle;
     std::vector<VatRefund> m_vatRefunds;
+    double m_customsFeeMult[5] = {1.0, 1.5, 2.5, 4.0, 4.0};   // by Channel
+    std::map<std::string, int> m_portCalls;                  // callId -> 1 docking booked | 2 berth booked
+    std::deque<std::string> m_portCallOrder;                 // the oldest calls are forgotten beyond 512
     std::unordered_map<std::uint64_t, std::vector<game::simulation::ClientTradeResult>> m_results;
     std::uint64_t m_tradeSerial = 0;
 };

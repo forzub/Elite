@@ -170,6 +170,13 @@
       "es": "IVA del servicio portuario {pct}",
       "ja": "港湾サービスの付加価値税 {pct}"
     },
+    "service.trade.deal.duty": {
+      "en": "import duty {pct} (goods from another polity)",
+      "ru": "пошлина {pct} (ввоз из другой политии)",
+      "zh-Hans": "进口关税 {pct}（来自其他政体的货物）",
+      "es": "arancel de importación {pct} (mercancía de otra entidad política)",
+      "ja": "輸入関税 {pct}（他の政体からの貨物）"
+    },
     "service.trade.deal.turnover": {
       "en": "turnover levy {pct}",
       "ru": "налог с оборота {pct}",

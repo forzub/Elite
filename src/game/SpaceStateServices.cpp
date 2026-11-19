@@ -159,7 +159,7 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
         static const char* const DealKeys[] = {
             "hint", "buy", "sell", "units_t", "units_c20", "aboard", "quantity", "limit", "why_hold_c20", "why_payload",
             "why_hub_buy", "why_hub_sell", "why_money", "why_aboard", "list_ask", "list_bid", "impact", "goods_buy", "goods_sell",
-            "handling_buy", "handling_sell", "vat_buy", "vat_sell", "turnover", "total_buy", "total_sell", "vat_refund",
+            "handling_buy", "handling_sell", "vat_buy", "vat_sell", "duty", "turnover", "total_buy", "total_sell", "vat_refund",
             "confirm_buy", "confirm_sell", "cancel", "max", "waiting", "ok_buy", "ok_sell", "refused", "price_moved", "retry",
             "not_docked", "zero", "money", "keys", "account", "unit_price", "boxes"};
         for (const char* key : DealKeys)

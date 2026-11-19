@@ -182,6 +182,7 @@ struct ShipCatalogRuntime
     int lifeSupportPersons = 0;
     int lifeSupportDays = 0;
     int crew = 0;
+    double dryMassTonnes = 0.0;               // the catalog hull's dry mass (port fees by hull size, TRADE step 4)
     int passengers = 0;
 
     // Load model: the ship's CURRENT mass is dry + these loads (ShipCore).

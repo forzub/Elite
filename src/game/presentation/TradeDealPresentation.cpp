@@ -170,15 +170,26 @@ TradeDealView buildTradeDeal(const game::simulation::ClientTradeSnapshot& snap, 
     v.tonnes = req.tonnes < 0.0 ? std::min(v.boxT, v.maxT) : std::clamp(req.tonnes, 0.0, v.maxT);
     v.c20 = game::economy::c20For(v.tonnes, good.densityTM3);
 
-    v.quote = game::economy::explainDeal(req.buy, side, v.tonnes, style, rules);
+    // a sale: the import duty of the lots the server's unload() takes (oldest first), each at the rate the server
+    // replicated for this hub (TRADE step 4) - the same CargoRegistry::fifoDutyShare the server charges with
+    if (!req.buy)
+        v.dutyShare = CargoRegistry::fifoDutyShare(m, good.id, v.tonnes, [&](const CargoLot& lot) {
+            for (const auto& c : snap.cargo)
+                if (c.lotId == lot.lotId)
+                    return c.dutyShare;
+            return 0.0;
+        });
+    v.quote = game::economy::explainDeal(req.buy, side, v.tonnes, style, rules, v.dutyShare);
     if (!(v.tonnes > 0.0))   // nothing to deal: still show the list price (explainDeal leaves it 0 for a zero quantity)
         v.quote.listUnitCr = v.quote.unitCr = req.buy ? game::economy::askCr(side) : game::economy::bidCr(side);
     std::vector<double> amounts;
-    const char* kinds[] = {"goods", "handling", "vat", "turnover"};
-    const double values[] = {req.buy ? -v.quote.goodsCr : v.quote.goodsCr, -v.quote.handlingCr, -v.quote.vatCr, -v.quote.turnoverCr};
-    // the same lines, in the same order, as explainDeal books (a zero VAT / turnover line is not booked)
-    for (int i = 0; i < 4; ++i)
-        if (i < 2 || (i == 2 && v.quote.vatCr > 0.0) || (i == 3 && !req.buy && v.quote.turnoverCr > 0.0))
+    const char* kinds[] = {"goods", "handling", "vat", "duty", "turnover"};
+    const double values[] = {req.buy ? -v.quote.goodsCr : v.quote.goodsCr, -v.quote.handlingCr, -v.quote.vatCr, -v.quote.dutyCr,
+                             -v.quote.turnoverCr};
+    // the same lines, in the same order, as explainDeal books (a zero VAT / duty / turnover line is not booked)
+    for (int i = 0; i < 5; ++i)
+        if (i < 2 || (i == 2 && v.quote.vatCr > 0.0) || (i == 3 && !req.buy && v.quote.dutyCr > 0.0) ||
+            (i == 4 && !req.buy && v.quote.turnoverCr > 0.0))
         {
             v.lines.push_back({kinds[i], values[i], 0});
             amounts.push_back(values[i]);

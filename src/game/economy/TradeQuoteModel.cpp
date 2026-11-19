@@ -46,6 +46,15 @@ double dockingFeeCr(double dryMassT, const FiscalStyle& s, const TradeDealRules&
     return (r.dockingBaseCr + r.dockingCrPerDryT * std::max(0.0, dryMassT)) * s.portIndex;
 }
 
+double berthFeeCr(double hours, const FiscalStyle& s, const TradeDealRules& r)
+{
+    const double beyond = std::max(0.0, hours - r.berthIncludedHours);
+    const double fullDays = std::floor(beyond / 24.0);
+    const double rest = beyond - 24.0 * fullDays;
+    const double perDay = std::min(r.berthCrPerDayCap, 24.0 * r.berthCrPerHour);
+    return (fullDays * perDay + std::min(r.berthCrPerDayCap, rest * r.berthCrPerHour)) * s.portIndex;
+}
+
 namespace
 {
 std::string pct(double share)
@@ -56,7 +65,8 @@ std::string pct(double share)
 }
 } // namespace
 
-DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const FiscalStyle& style, const TradeDealRules& r)
+DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const FiscalStyle& style, const TradeDealRules& r,
+                      double dutyShare)
 {
     DealQuote q;
     q.buy = buy;
@@ -91,11 +101,18 @@ DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const Fiscal
     {
         q.vatCr = style.vatShare * q.handlingCr;
         q.turnoverCr = style.turnoverShare * q.goodsCr;
+        q.dutyShare = std::max(0.0, dutyShare);
+        q.dutyCr = q.dutyShare * q.goodsCr;
         q.lines.push_back({"выручка", q.goodsCr});
         std::snprintf(label, sizeof label, "выгрузка %.1f т", tonnes);
         q.lines.push_back({label, -q.handlingCr});
         if (q.vatCr > 0.0)
             q.lines.push_back({"НДС с портовой услуги " + pct(style.vatShare), -q.vatCr});
+        if (q.dutyCr > 0.0)
+        {
+            std::snprintf(label, sizeof label, "пошлина %.1f %% (ввоз из другой политии)", q.dutyShare * 100.0);
+            q.lines.push_back({label, -q.dutyCr});
+        }
         if (q.turnoverCr > 0.0)
             q.lines.push_back({(style.turnoverRu.empty() ? std::string("налог с оборота") : style.turnoverRu) + " " +
                                    pct(style.turnoverShare),

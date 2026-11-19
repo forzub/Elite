@@ -15,7 +15,7 @@ namespace game::network::wire
     Compression, framing and TCP operate on that buffer later and do not know
     how many entities or fields it contains.
 */
-inline constexpr std::uint16_t SimulationSnapshotWireSchemaVersion = 51u;   // 48: motion.jFieldLevelMps2; 49: hub security (motion.security*, city promotedAirSlots); 50: session.trade (TRADE_DESIGN §7.5); 51: session.trade deal rules + spendableCr (trade step 3)
+inline constexpr std::uint16_t SimulationSnapshotWireSchemaVersion = 52u;   // 48: motion.jFieldLevelMps2; 49: hub security (motion.security*, city promotedAirSlots); 50: session.trade (TRADE_DESIGN §7.5); 51: session.trade deal rules + spendableCr (trade step 3); 52: session.trade cargo[].dutyShare (trade step 4)
 inline constexpr std::uint16_t MapResponseWireSchemaVersion = 2u;
 
 inline bool encodeSimulationSnapshot(

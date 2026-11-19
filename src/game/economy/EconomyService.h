@@ -74,6 +74,21 @@ struct FineResult
     std::string bankId;
 };
 FineResult chargeFine(std::uint32_t shipEntityId, const std::string& hubId, double amountCr, const std::string& reason);
+// Port fees (docs/TRADE_DESIGN.md §5.2, step 4), charged by the dock dispatcher hook in the ship's system pass:
+// the docking fee when the ship reaches its berth, the berth fee beyond the included hours when it leaves it. Both
+// idempotent per `callId` (one docking) and never refused (unpaid -> a 0 % debt at the port's bank). AI ships and no
+// economy: nothing booked.
+struct PortFeeResult
+{
+    bool charged = false;      // booked in the ledger now
+    bool duplicate = false;    // this call's event was already booked
+    double feeCr = 0.0;
+    double paidCr = 0.0;
+    double debtCr = 0.0;
+    double hours = 0.0;
+};
+PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double dryMassT);
+PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double berthHours);
 // optional: the fuel physically left station `stationId` (its stock and tomorrow's price feel it; the player's
 // "received free of charge" list value grows). Call once per finished delivery.
 void noteFuelDelivered(std::uint32_t shipEntityId, const std::string& stationId, const std::string& commodity, double tonnes);

@@ -296,6 +296,24 @@ auto r = game::economy::service::chargeFine(shipEntityId, hubId /* "" = где �
   paid P, debt D)`) и нарушения навигационных зон (`GameSimulationZones.cpp`, `[Zones] ... (banked: paid, debt)`;
   раньше эти штрафы только копились в `motion.zoneFinesTotalCr` и в банк не попадали).
 
+
+## 9b. Портовые сборы и пошлина (2026-11-19, docs/TRADE_DESIGN.md §9c, шаг 4)
+
+```cpp
+auto d = game::economy::service::chargeDockingFee(shipEntityId, hubId, callId, dryMassT);   // при Docked
+auto b = game::economy::service::chargeBerthFee(shipEntityId, hubId, callId, berthHours);   // при уходе с причала
+// d.charged / d.duplicate / d.paidCr / d.debtCr
+```
+
+- Получатель — банк политии хаба; назначения `Purpose::Docking` (3) и `Purpose::Parking` (8, новое).
+- `BankingModel::payOrDebt(ledger, dir, bank, amount, purpose, day, memo, debtLabel)` — общее правило «не отказываем»:
+  `payFine` теперь его частный случай («штраф в долг»), портовые сборы — «сбор в долг». Без спасательного кредита;
+  неоплаченное — займ `Term` 0 %, 360 сут, 12 платежей.
+- Идемпотентность по `callId` в `EconomyServer` (помнит 512 последних вызовов): стыковочный сбор — один раз на вызов,
+  стоянка — один раз при уходе.
+- Пошлина при продаже ввезённого из другой политии товара — внутри итога сделки (`explainDeal`, строка «пошлина»), в
+  журнале — отдельной строкой.
+
 ## 10. Не сделано / следующие шаги
 
 - Кошельки ИИ и организаций (сейчас ИИ ничего не платит, учитывается только прейскурантная стоимость).

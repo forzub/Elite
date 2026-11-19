@@ -650,6 +650,7 @@ struct MassSum
     // ---- ship devices bound to their modules
     auto& c = d.catalog;
     c.crew = s.crew;
+    c.dryMassTonnes = s.dryMassTonnes;
     c.passengers = s.passengers;
     c.fluidsCapacityTonnes = s.fluidsTonnes;
     c.consumablesCapacityTonnes = s.consumablesTonnes;

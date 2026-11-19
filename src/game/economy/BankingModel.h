@@ -39,7 +39,7 @@ enum class Purpose : int
     Fee = 5,
     Other = 6,
     Fine = 7,    // an administrative fine (traffic control, navigation zones): never refused - booked as debt
-
+    Parking = 8, // the berth fee beyond the hours the docking fee covers (TRADE_DESIGN §5.2, step 4): never refused
 };
 [[nodiscard]] inline bool isLifelinePurpose(Purpose p) { return p == Purpose::Fuel || p == Purpose::Tow || p == Purpose::Repair; }
 
@@ -250,6 +250,11 @@ PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::str
 // fine never empties the ship or blocks fuel (the no-death-spiral rules then cover the debt like any other).
 PaymentResult payFine(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, int day,
                       const std::string& memo);
+// The same never-refused rule for any obligation to an authority / a port (docking, berth fees - TRADE_DESIGN step 4:
+// a port fee must not strand the player): paid like any payment, else booked whole as a 0 % debt (12 x 30 days) with
+// `debtLabel` in the ledger ("сбор в долг", "штраф в долг").
+PaymentResult payOrDebt(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, Purpose purpose,
+                        int day, const std::string& memo, const std::string& debtLabel);
 // Income paid by someone banking with `payerBank`: garnish share to restructured debt first, the rest to
 // the account at that bank if the client has one, else home (converted, FX fee).
 void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& payerBank, double amountCr, int day,

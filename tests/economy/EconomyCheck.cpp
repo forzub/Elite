@@ -820,6 +820,178 @@ void testTradeDealWindow()
               std::to_string(r.totalCr) + "): revenue - unloading - VAT (+ turnover) = " + std::to_string(v.quote.totalCr) + " Cr, credited exactly");
 }
 
+// ---- trade step 4: port fees (docking + berth) and the import duty (docs/TRADE_DESIGN.md §5.2, §9 row 4)
+void testPortFeesAndDuty()
+{
+    using game::presentation::buildTradeDeal;
+    using game::presentation::TradeDealRequest;
+    // the pure formulas
+    {
+        FiscalStyle bureau;   // port index 1.0
+        FiscalStyle corp;
+        corp.portIndex = 1.4;
+        const TradeDealRules r;
+        check(near(dockingFeeCr(260.0, bureau, r), 384.0, 1e-9) && near(dockingFeeCr(260.0, corp, r), 384.0 * 1.4, 1e-9),
+              "docking fee of a Cobrett (260 t dry): 150 + 0.9 x 260 = 384 Cr x the port index (corporate 537.6)");
+        check(near(berthFeeCr(0.5, bureau, r), 0.0, 1e-12) && near(berthFeeCr(4.0, bureau, r), 0.0, 1e-12) &&
+                  near(berthFeeCr(10.0, bureau, r), 150.0, 1e-9) && near(berthFeeCr(28.0, bureau, r), 400.0, 1e-9) &&
+                  near(berthFeeCr(64.0, bureau, r), 400.0 * 2 + 300.0, 1e-9) && near(berthFeeCr(10.0, corp, r), 210.0, 1e-9),
+              "berth fee: 4 h included, then 25 Cr/h, <= 400 Cr per 24 h, x the port index");
+    }
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  port fees / duty (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    const auto worth = [&](std::uint64_t p) { return netWorthCr(*s.ledger(p), s.banks()); };
+    const auto debt = [&](std::uint64_t p) { return totalDebtCr(*s.ledger(p), s.banks()); };
+    const auto lastEvent = [&](std::uint64_t p) { return s.ledger(p)->events.empty() ? std::string() : s.ledger(p)->events.back().text; };
+
+    // one Cobrett call at Earth orbit (Sol: bureaucratic, index 1.0): 384 Cr, once
+    double w0 = worth(1);
+    const auto d1 = s.chargeDocking(1, "call:7:dock_a:1000", "earth_orbital_hub", 0, 260.0);
+    const auto d1again = s.chargeDocking(1, "call:7:dock_a:1000", "earth_orbital_hub", 0, 260.0);
+    check(d1.booked && near(d1.feeCr, 384.0, 1e-9) && near(d1.paidCr, 384.0, 1e-9) && d1again.duplicate && !d1again.booked &&
+              near(w0 - worth(1), 384.0, 0.011) && lastEvent(1).find("стыковка") != std::string::npos,
+          "docking at Earth orbit: -384 Cr once, the repeated event books nothing (ledger: \"" + lastEvent(1) + "\")");
+    const auto b1 = s.chargeBerth(1, "call:7:dock_a:1000", "earth_orbital_hub", 0, 3.5);
+    const auto b1again = s.chargeBerth(1, "call:7:dock_a:1000", "earth_orbital_hub", 0, 30.0);
+    check(near(b1.feeCr, 0.0, 1e-12) && !b1.booked && b1again.duplicate && near(w0 - worth(1), 384.0, 0.011),
+          "3.5 h at the berth: within the included 4 h, 0 Cr; a repeated release books nothing - the call cost 384 Cr in all");
+    w0 = worth(1);
+    const auto d2 = s.chargeDocking(1, "call:7:dock_a:9000", "earth_orbital_hub", 0, 260.0);
+    const auto b2 = s.chargeBerth(1, "call:7:dock_a:9000", "earth_orbital_hub", 0, 10.0);
+    check(d2.booked && b2.booked && near(b2.feeCr, 150.0, 1e-9) && near(w0 - worth(1), 534.0, 0.011) &&
+              lastEvent(1).find("стоянка") != std::string::npos,
+          "a 10 h call: docking 384 + berth 6 h x 25 = 150 -> 534 Cr (ledger: \"" + lastEvent(1) + "\")");
+
+    // unpaid -> debt, never a refusal (the fee must not strand the ship)
+    s.ensurePlayer(2, 0);
+    (void)s.chargeService(2, "earth_orbital_hub", 0, Purpose::Other, s.tradeSnapshot(2, 0, "earth_orbital_hub", 0, true).spendableCr - 0.5,
+                          "test: broke");
+    const double debt0 = debt(2);
+    const double spend0 = s.tradeSnapshot(2, 0, "earth_orbital_hub", 0, true).spendableCr;
+    const auto d3 = s.chargeDocking(2, "call:8:dock_a:1", "earth_orbital_hub", 0, 260.0);
+    const auto b3 = s.chargeBerth(2, "call:8:dock_a:1", "earth_orbital_hub", 0, 12.0);
+    check(spend0 < 1.0 && d3.booked && near(d3.debtCr, 384.0, 1e-9) && b3.booked && near(b3.debtCr, 200.0, 1e-9) &&
+              near(debt(2) - debt0, 584.0, 0.02) && lastEvent(2).find("сбор в долг") != std::string::npos,
+          "a broke pilot: docking 384 + berth 200 become a 0 % debt (" + std::to_string(debt(2) - debt0) + " Cr), not a refusal");
+
+    // the import duty x the customs channel
+    check(near(s.importDutyRate("earth_orbital_hub", "earth_hub.tikhiy", 0), 0.0, 1e-12) &&
+              near(s.importDutyRate("dev", "earth_orbital_hub", 0), 0.0, 1e-12),
+          "no duty inside one polity (Earth orbit -> Тихий) or for an unknown origin");
+    const auto& hubs = EconomyModel::instance().hubs();
+    const std::string sol = s.polityOf("earth_orbital_hub", 0);
+    const auto* solBank = s.banks().bankForPolity(sol);
+    std::string foreign;
+    int foreignSystem = -1;
+    Channel foreignChannel = Channel::Open;
+    int checkedRates = 0, wrongRates = 0;
+    bool channels[5] = {};
+    for (const auto& h : hubs)
+    {
+        MarketSide m;
+        if (!s.marketSide(h.id, "food_staples", m))
+            continue;
+        const std::string pol = s.polityOf(h.id, h.systemId);
+        if (pol.empty() || pol == sol)
+            continue;
+        const auto* bank = s.banks().bankForPolity(pol);
+        if (!bank || !solBank)
+            continue;
+        const Channel ch = s.banks().channel(solBank->id, bank->id);
+        const double expect = s.fiscalStyleOf(h.id, h.systemId).dutyShare * s.customsFeeMult(ch);
+        ++checkedRates;
+        wrongRates += near(s.importDutyRate("earth_orbital_hub", h.id, h.systemId), expect, 1e-12) ? 0 : 1;
+        channels[static_cast<int>(ch)] = true;
+        if ((foreign.empty() || (foreignChannel == Channel::Open && ch != Channel::Open)) && m.stockT < 1.2 * m.targetT)
+        {
+            foreign = h.id;
+            foreignSystem = h.systemId;
+            foreignChannel = ch;
+        }
+    }
+    check(checkedRates > 0 && wrongRates == 0 && near(s.customsFeeMult(Channel::Open), 1.0, 1e-12) &&
+              near(s.customsFeeMult(Channel::Licensed), 1.5, 1e-12) && near(s.customsFeeMult(Channel::Restricted), 2.5, 1e-12) &&
+              near(s.customsFeeMult(Channel::Black), 4.0, 1e-12),
+          "duty = the selling hub's style rate x the channel multiplier 1 / 1.5 / 2.5 / 4 (" + std::to_string(checkedRates) +
+              " foreign grain markets, channels open " + (channels[0] ? "y" : "n") + " licensed " + (channels[1] ? "y" : "n") +
+              " restricted " + (channels[2] ? "y" : "n") + ")");
+    if (foreign.empty())
+    {
+        check(false, "a foreign grain market to sell Sol grain at");
+        return;
+    }
+
+    // the window shows the duty line and the server charges exactly the window's total
+    s.credit(1, "earth_orbital_hub", 0, 200000.0, "test: a trader with money");
+    const CargoCapacity cobrett{120.0, 6};
+    EconomyServer::TradeOrder o;
+    o.playerId = 1;
+    o.shipKey = 701;
+    o.hubId = "earth_orbital_hub";
+    o.systemId = 0;
+    o.goodId = "food_staples";
+    o.tonnes = c20NetTonnes(0.65);
+    o.capacity = cobrett;
+    o.requestId = 200;
+    check(s.trade(o).ok, "bought 1 C20 of grain in Sol");
+    // an older lot from the same polity as the foreign hub (no duty there) + the Sol lot: the FIFO weighs both
+    check(s.devAddCargo(1, 701, "food_staples", 5.0, cobrett, foreign).empty(), "plus 5 t of grain loaded at " + foreign);
+    int grain = -1;
+    const auto& goods = EconomyModel::instance().goods();
+    for (std::size_t k = 0; k < goods.size(); ++k)
+        if (goods[k].id == "food_staples")
+            grain = static_cast<int>(k);
+    auto snap = s.tradeSnapshot(1, 701, foreign, foreignSystem, true);
+    snap.c20Slots = cobrett.c20Slots;
+    snap.netCapacityT = cobrett.netT;
+    TradeDealRequest sell;
+    sell.good = grain;
+    sell.buy = false;
+    sell.tonnes = 1.0e9;
+    const auto v = buildTradeDeal(snap, sell);
+    const double rate = s.importDutyRate("earth_orbital_hub", foreign, foreignSystem);
+    const double soldT = c20NetTonnes(0.65) + 5.0;
+    bool dutyLine = false;
+    double sum = 0.0;
+    long long shown = 0;
+    for (const auto& l : v.lines)
+    {
+        dutyLine = dutyLine || (l.kind == "duty" && l.cr < 0.0);
+        sum += l.cr;
+        shown += l.shownCr;
+    }
+    check(v.valid && dutyLine && near(v.tonnes, soldT, 1e-9) && near(v.dutyShare, rate * c20NetTonnes(0.65) / soldT, 1e-12) &&
+              near(v.quote.dutyCr, v.quote.goodsCr * v.dutyShare, 1e-6) && std::fabs(sum - v.quote.totalCr) < 1e-9 && shown == v.shownTotalCr,
+          "the deal window at " + foreign + " (" + channelName(foreignChannel) + "): a duty line " + std::to_string(v.quote.dutyCr) +
+              " Cr = goods x " + std::to_string(100.0 * v.dutyShare) + " % (only the Sol lot: " + std::to_string(100.0 * rate) +
+              " % on 15.1 of 20.1 t)");
+    o.buy = false;
+    o.hubId = foreign;
+    o.systemId = foreignSystem;
+    o.tonnes = v.tonnes;
+    o.limitUnitCr = v.quote.unitCr;
+    o.quoteDay = snap.day;
+    o.requestId = 201;
+    w0 = worth(1);
+    const auto r = s.trade(o);
+    bool serverDuty = false;
+    for (const auto& line : r.lines)
+        serverDuty = serverDuty || line.rfind("пошлина", 0) == 0;
+    bool ledgerDuty = false;
+    for (const auto& e : s.ledger(1)->events)
+        ledgerDuty = ledgerDuty || e.text.rfind("пошлина", 0) == 0;
+    check(r.ok && r.totalCr == v.quote.totalCr && worth(1) - w0 >= (1.0 - s.banks().rules.fxFeeShare) * r.totalCr - 0.05 && serverDuty && ledgerDuty &&
+              r.lines.size() == v.lines.size(),
+          "the server charged exactly the window's total with the duty (" + std::to_string(r.totalCr) + " vs " +
+              std::to_string(v.quote.totalCr) + "), the ledger has a \"пошлина\" line (the account got " + std::to_string(worth(1) - w0) + " Cr after the 1 % FX of a foreign payer)");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -834,6 +1006,7 @@ int main()
     testTradeModel();
     testTradeServer();
     testTradeDealWindow();
+    testPortFeesAndDuty();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

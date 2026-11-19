@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -71,6 +72,11 @@ public:
     [[nodiscard]] static int extraC20(const CargoManifest& m, const CargoLot& lot, double densityTM3);
     // loads a lot (merging into a same-good own lot of the same origin and day); returns the lot id
     std::string load(std::uint64_t shipKey, std::uint64_t playerId, CargoLot lot, double densityTM3);
+    // the import duty share of a sale of `tonnes` (TRADE_DESIGN §5.2, step 4): the lots unload() would take (own goods,
+    // oldest first), each weighted by the tonnes taken and its rate (rateOfLot: 0 for goods of this polity) / tonnes.
+    // The server (EconomyServer::trade) and the deal window (from the replicated per-lot rate) call the same function.
+    [[nodiscard]] static double fifoDutyShare(const CargoManifest& m, const std::string& goodId, double tonnes,
+                                              const std::function<double(const CargoLot&)>& rateOfLot);
     // takes `tonnes` of own goods FIFO; returns the cost basis taken out (Cr); false = not that much aboard
     bool unload(std::uint64_t shipKey, const std::string& goodId, double tonnes, double densityTM3, double& costBasisOutCr);
     void clear(std::uint64_t shipKey);

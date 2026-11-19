@@ -31,7 +31,7 @@ struct TradeDealRequest
 
 struct TradeDealLineView
 {
-    std::string kind;              // "goods" | "handling" | "vat" | "turnover"
+    std::string kind;              // "goods" | "handling" | "vat" | "duty" | "turnover"
     double cr = 0.0;               // signed (+ to the player), exactly explainDeal's line
     long long shownCr = 0;         // whole Cr shown; the shown lines add up to shownTotalCr exactly
 };
@@ -70,6 +70,7 @@ struct TradeDealView
     game::economy::DealQuote quote;   // explainDeal(buy, side, tonnes, style, rules) - what the server will charge
     std::vector<TradeDealLineView> lines;
     long long shownTotalCr = 0;
+    double dutyShare = 0.0;        // sell: the import duty share of the goods value (lots bought in another polity)
     double vatRefundCr = 0.0;      // buy: what comes back after the refund days (minus the refund fee)
     int vatRefundDays = 0;
 

@@ -745,7 +745,14 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
             const std::string rest = cmd.substr(add ? 10 : buy ? 10 : 11);
             const auto colon = rest.find(':');
             const std::string good = rest.substr(0, colon);
-            const std::string qty = colon == std::string::npos ? std::string("1") : rest.substr(colon + 1);
+            std::string qty = colon == std::string::npos ? std::string("1") : rest.substr(colon + 1);
+            // cargo:add:<good>:<t>:<origin hub> - DEV goods "bought" at another hub (the import duty of trade step 4)
+            std::string origin;
+            if (const auto o = qty.find(':'); add && o != std::string::npos)
+            {
+                origin = qty.substr(o + 1);
+                qty.resize(o);
+            }
             double tonnes = std::atof(qty.c_str());
             if (qty.rfind("c20x", 0) == 0)
             {
@@ -766,7 +773,7 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
             }
             s.sendEconomyCommand(add ? game::network::ClientEconomyCommand::DevCargoAdd
                                  : buy ? game::network::ClientEconomyCommand::Buy : game::network::ClientEconomyCommand::Sell,
-                                 good, tonnes);
+                                 origin.empty() ? good : good + "@" + origin, tonnes);
         }
     }
     else if (cmd == "trade:report")

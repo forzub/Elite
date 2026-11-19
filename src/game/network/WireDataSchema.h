@@ -1065,7 +1065,8 @@ ELITE_WIRE_SCHEMA(
     v.originHub,
     v.loadedDay,
     v.owner,
-    v.contractId
+    v.contractId,
+    v.dutyShare
 );
 
 ELITE_WIRE_SCHEMA(

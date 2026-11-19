@@ -2393,8 +2393,14 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
             return;
         if (command.op == Op::DevCargoClear)
             m_economy.devClearCargo(shipKey);
-        else if (const std::string why = m_economy.devAddCargo(player, shipKey, command.goodId, command.quantity, cargoCapacityOf(*ship),
-                                                               motion.hubId);
+        else if (const std::string why = [&] {
+                     // "<good>@<origin hub>": DEV goods loaded as if bought at another hub (trade step 4: the import duty)
+                     const auto at = command.goodId.find('@');
+                     return at == std::string::npos
+                         ? m_economy.devAddCargo(player, shipKey, command.goodId, command.quantity, cargoCapacityOf(*ship), motion.hubId)
+                         : m_economy.devAddCargo(player, shipKey, command.goodId.substr(0, at), command.quantity, cargoCapacityOf(*ship),
+                                                 command.goodId.substr(at + 1));
+                 }();
                  !why.empty())
             m_economy.recordTradeRefusal(player, command.requestId, "no_space", why);
         applyCargoLoad(id);

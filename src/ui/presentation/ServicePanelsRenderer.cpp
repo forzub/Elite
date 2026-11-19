@@ -1145,6 +1145,8 @@ void ServicePanelsRenderer::renderTradeDeal(const game::presentation::TradePrese
             label = fill(tx(d.buy ? "handling_buy" : "handling_sell"), {{"{t}", tt}, {"{rate}", money2(s.handlingCrPerT)}});
         else if (l.kind == "vat")
             label = fill(tx(d.buy ? "vat_buy" : "vat_sell"), {{"{pct}", fmt("%.0f %%", s.vatShare * 100.0)}, {"{days}", std::to_string(s.vatRefundDays)}});
+        else if (l.kind == "duty")
+            label = fill(tx("duty"), {{"{pct}", fmt("%.1f %%", d.dutyShare * 100.0)}});
         else
             label = fill(tx("turnover"), {{"{pct}", fmt("%.0f %%", s.turnoverShare * 100.0)}});
         row(label, signedCr(l.shownCr), l.shownCr >= 0 ? Good : Text, small);

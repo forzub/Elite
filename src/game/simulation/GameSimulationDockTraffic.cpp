@@ -1,3 +1,4 @@
+#include "src/game/economy/EconomyService.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/simulation/GameSimulationInternal.h"
 
@@ -622,6 +623,52 @@ bool GameSimulation::releaseDockDepartureToPilot(EntityId shipId)
     return ok;
 }
 
+// Port fees (docs/TRADE_DESIGN.md §5.2, step 4). Called for every pilot ship of a dock site in the ship's own system
+// pass. The dispatcher's Docked phase opens a call (the docking fee, once: 150 + 0.9 Cr/t dry mass x the port index,
+// 4 h at the berth included); leaving Docked closes it (the berth fee beyond the included hours). The time at the berth
+// is the server timeline clock; DEV: ELITE_DEV_BERTH_TIME_SCALE=<k> counts k berth seconds per server second (a live
+// check of the parking fee without hours of waiting). The economy books both idempotently per callId and never refuses.
+void GameSimulation::updatePortCall(EntityId id, const DockSite& site, bool docked)
+{
+    const double now = m_serverTimelineClock.timeSeconds();
+    const auto it = m_portCalls.find(id);
+    if (docked)
+    {
+        if (it != m_portCalls.end())
+            return;   // the same call: Docked repeats every tick
+        const Ship* ship = getShip(id);
+        if (!ship)
+            return;
+        PortCall call;
+        call.hubId = site.hubId;
+        call.dockModuleId = site.dockModuleId;
+        call.dockedAtSeconds = now;
+        call.callId = "call:" + std::to_string(id.value) + ":" + site.dockModuleId + ":" +
+                      std::to_string(static_cast<long long>(std::llround(now * 1000.0)));
+        // the hull's dry mass: the catalog passport; a legacy hull: its mass without the cargo and the C20 tare
+        const auto& core = ship->core();
+        double dryT = core.descriptor().catalog.dryMassTonnes;
+        if (!(dryT > 0.0))
+            dryT = std::max(0.0, core.currentMassKg() / 1000.0 - core.load().cargoTonnes - 1.7 * std::max(0, core.load().containers));
+        const auto fee = game::economy::service::chargeDockingFee(static_cast<std::uint32_t>(id.value), site.hubId, call.callId, dryT);
+        std::cerr << "[PortFee] ship " << id.value << " docked at " << site.hubId << " (" << site.dockModuleId << "), call " << call.callId
+                  << ": docking fee " << fee.feeCr << " Cr (" << (fee.charged ? "booked" : fee.duplicate ? "duplicate" : "no economy / AI")
+                  << ", paid " << fee.paidCr << ", debt " << fee.debtCr << ", dry " << dryT << " t)" << std::endl;
+        m_portCalls.emplace(id, std::move(call));
+        return;
+    }
+    if (it == m_portCalls.end())
+        return;
+    const double scale = std::max(0.0, envDouble("ELITE_DEV_BERTH_TIME_SCALE", 1.0));
+    const double hours = std::max(0.0, now - it->second.dockedAtSeconds) * scale / 3600.0;
+    const auto fee = game::economy::service::chargeBerthFee(static_cast<std::uint32_t>(id.value), it->second.hubId, it->second.callId, hours);
+    std::cerr << "[PortFee] ship " << id.value << " left the berth at " << it->second.hubId << ", call " << it->second.callId << ": "
+              << hours << " h at the berth" << (scale != 1.0 ? " (DEV berth time x" + std::to_string(scale) + ")" : std::string())
+              << " -> berth fee " << fee.feeCr << " Cr (" << (fee.charged ? "booked" : fee.duplicate ? "duplicate" : "nothing booked")
+              << ", paid " << fee.paidCr << ", debt " << fee.debtCr << ")" << std::endl;
+    m_portCalls.erase(it);
+}
+
 void GameSimulation::updateDockPilotShips()
 {
     for (const auto& [dock, base] : hexDockPairs())
@@ -658,6 +705,7 @@ void GameSimulation::updateDockSitePilots(DockSite& site, const StaticObject* do
         const glm::dvec3 p = toFixed * (tr.fullWorldMeters() - origin);
         const glm::dvec3 v = toFixed * (tr.motion.worldVelocityMps - dockVelocity);
         const auto status = dispatcher.status(id.value);
+        updatePortCall(id, site, status.phase == DockTrafficPhase::Docked);
         const double radial = std::hypot(p.x, p.y);
         if (status.phase != DockTrafficPhase::None && now - m_dockPilotTraceSeconds >= 5.0)
         {

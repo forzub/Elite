@@ -6916,3 +6916,36 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   lot cost-basis columns; the rest of F8 still hardcoded Russian; the server's refusal text is Russian; the price-moved
   precision fix (6 decimals when equal at 2) and the Left/Right wording of the key hint were made after the last live run
   (built, not re-captured).
+
+## TRADE MVP step 4: port fees (docking + berth) and the import duty (docs/TRADE_DESIGN.md §5.2, §9 row 4, §9c) - SOURCE + UNIT + LIVE PASS 2026-11-19
+- Built: TradeQuoteModel berthFeeCr (4 h included in the docking fee, then 25 Cr/h, <= 400 Cr / 24 h, x port index),
+  FiscalStyle.dutyShare, explainDeal(..., dutyShare) with a "пошлина" line; CargoRegistry::fifoDutyShare (the lots unload()
+  takes, FIFO); EconomyServer::chargeDocking / chargeBerth (idempotent per callId, 512 remembered), importDutyRate (style
+  duty x economy_rules customs.by_channel fee_mult; same polity / unknown origin = 0; closed counted as black until step 9),
+  a separate "пошлина" ledger line on a sale; BankingModel::payOrDebt (payFine is now its case; port fees: "сбор в долг",
+  never refused), Purpose::Parking (8); service::chargeDockingFee / chargeBerthFee; GameSimulation::updatePortCall from
+  updateDockSitePilots (the ship's system pass): dispatcher Docked -> docking fee once, leaving Docked -> berth fee;
+  m_portCalls erased in forgetShip; ShipCatalogRuntime::dryMassTonnes. Data: trade_fees.json deal.berth_* and
+  styles[].duty (4/3/6/5/8/2 %). Replication: ClientCargoLine::dutyShare -> snapshot schema 52 (round-trip contract extended).
+  Deal window: "duty" line (service.trade.deal.duty, 5 languages). DEV: ELITE_DEV_BERTH_TIME_SCALE=<k>,
+  cargo:add:<good>:<t>:<origin hub>.
+- Unit: EliteEconomyCheck 111/111 (new testPortFeesAndDuty: Cobrett call = 384 Cr, a repeated docked / released event books
+  nothing, 10 h call = 384 + 150, a broke pilot -> 584 Cr debt not a refusal, duty = style x channel 1/1.5/2.5/4 over 505
+  foreign grain markets, FIFO duty share of a mixed hold, the window's total with a duty line = the server's charge).
+  Contracts PASS: entity_lifetime, active_system_context, server_runtime_ownership, wire_protocol_boundary, wire_data_schema,
+  replication_snapshot_boundary, service_panel_shell, localization_boundary, function_key_presentation_route;
+  wire_data_plane_contract_tests (built by hand with g++) PASS.
+- LIVE (earth_orbital_hub, D:/tmp/trade4/a.log, ELITE_DEV_BERTH_TIME_SCALE=360):
+  "[PortFee] player 1 call call:201:hub_hex_dock_a:356080: DOCKING at earth_orbital_hub (bureaucratic, index 1, dry 260 t)
+  384.00 Cr: paid 384.00" - one line for the whole stay (Docked repeats every tick); DEV 10 t grain with origin
+  site.002.barnard_post sold via the window: "SELL 10 t ... duty 324.164 (6 %) ... account +4934.57" = the window's
+  4934.567804; after undock "BERTH at earth_orbital_hub 13.17 h -> 229.35 Cr: paid 229.35". F8 ФИНАНСЫ
+  (D:/tmp/trade4/04_finance_after_undock.png): "-384.00 CR стыковка Высокий (260 т сухой массы, индекс порта 1.0)",
+  "пошлина -324 Cr (6.0 % ввоз ...)", "-229.35 CR стоянка Высокий: 13.2 ч (сверх 4 ч по 25 Cr/ч)". Run a showed the raw
+  key "duty" in the window (the key was not in SpaceStateServices DealKeys) - fixed; run b (D:/tmp/trade4/b/b.log,
+  b/01_sell_duty_preview.png) shows «пошлина 6.0 % (ввоз из другой политии) -324».
+- Deviations / not done: no VAT on docking / berth (§5.2 "taxes on taxes" item 2 - with the taxes of step 7; the call stays
+  384); the duty is charged at the sale, not at entry (customs inspection at docking - step 9); berth time = the server
+  timeline clock, not universe time; the port-call state is not saved (a restart while docked: no berth fee for it);
+  hangar / holding area / in-hub tow fees not done; only the dispatcher-docked berths (hex docks) charge - other dock kinds
+  have no Docked event yet.

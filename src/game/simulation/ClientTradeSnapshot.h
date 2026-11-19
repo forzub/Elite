@@ -35,6 +35,7 @@ struct ClientCargoLine
     int loadedDay = 0;
     std::string owner;
     std::string contractId;
+    double dutyShare = 0.0;      // the import duty rate for selling this lot HERE (share of the goods value; 0 = this polity)
 };
 
 struct ClientTradeResult

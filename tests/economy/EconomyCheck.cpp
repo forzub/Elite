@@ -3,6 +3,9 @@
 // economy data is reachable from the working directory (run from the repository root).
 //
 //   EliteEconomyCheck            -> "ECONOMY CHECK: N passed, 0 failed", exit code = failures
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -320,6 +323,7 @@ void testServer()
     }
     s.start(1000);
     s.ensurePlayer(1, 0);
+    s.setFuelFreeOfCharge(true);   // the data now charges fuel (author 2026-11-19 later); this part tests the free switch
     const auto* l = s.ledger(1);
     check(l && l->homeBank == "sol_authority", "a player starting in Sol banks with the Sol Authority");
 
@@ -362,6 +366,50 @@ void testServer()
     t.load();
     check(t.restoreState(saved) && t.saveState() == saved, "state save / restore round trip is exact");
 }
+
+// audit 2026-11-19: ONE fuel price (the station's markup inside the economy's quote) and an atomic state file
+void testFuelPriceAndAtomicSave()
+{
+    EconomyServer s;
+    s.load();
+    const auto ill = s.quoteFuel("ill.004.sump", 4, FuelKind::JumpCharge);
+    check(ill.available && near(ill.stationFactor, 3.0, 1e-9) && near(ill.listCrPerT, 3.0 * ill.breakdown.listCr, 1e-6),
+          "an illegal pump's markup (x3) is inside the economy's quote (" + std::to_string(ill.listCrPerT) + " Cr/t)");
+    const auto legal = s.quoteFuel("earth_orbital_hub", 0, FuelKind::JumpCharge);
+    check(legal.available && near(legal.stationFactor, 1.0, 1e-9) && near(legal.listCrPerT, legal.breakdown.listCr, 1e-6),
+          "a legal hub's quote carries no markup");
+
+    // a prepaid refuel cut short: the unused tonnes come back - the money and the stock
+    s.setFuelFreeOfCharge(false);
+    s.start(1000);
+    s.ensurePlayer(7, 0);
+    const double worth0 = netWorthCr(*s.ledger(7), s.banks());
+    const double stock0 = s.quoteFuel("earth_orbital_hub", 0, FuelKind::JumpCharge).stockT;
+    const auto bought = s.chargeFuel(7, "earth_orbital_hub", 0, FuelKind::JumpCharge, 0.5);
+    s.refundFuel(7, "earth_orbital_hub", 0, FuelKind::JumpCharge, 0.2, bought.chargedCr / bought.tonnesGranted);
+    const double worth1 = netWorthCr(*s.ledger(7), s.banks());
+    const double stock1 = s.quoteFuel("earth_orbital_hub", 0, FuelKind::JumpCharge).stockT;
+    check(bought.ok && bought.chargedCr > 0.0 && near(worth0 - worth1, bought.chargedCr * 0.3 / 0.5, 1.0) && near(stock0 - stock1, 0.3, 1e-6),
+          "prepaid 0.5 t, 0.2 t refunded: paid for 0.3 t, the stock down 0.3 t");
+
+    namespace fs = std::filesystem;
+    const std::string path = "economy_check_state.json";
+    fs::remove(path);
+    fs::remove_all(path + ".tmp");
+    check(writeFileAtomically(path, "A") && writeFileAtomically(path, "BB"), "atomic write: create, then replace");
+    std::ifstream in(path, std::ios::binary);
+    std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    in.close();
+    check(text == "BB" && !fs::exists(path + ".tmp"), "atomic write: the new content, no temp file left");
+    fs::create_directory(path + ".tmp");   // the temp file cannot be created: the write must fail and keep the old file
+    const bool failed = !writeFileAtomically(path, "CCC");
+    std::ifstream in2(path, std::ios::binary);
+    std::string kept((std::istreambuf_iterator<char>(in2)), std::istreambuf_iterator<char>());
+    in2.close();
+    check(failed && kept == "BB", "atomic write: a failed write keeps the previous file intact");
+    fs::remove_all(path + ".tmp");
+    fs::remove(path);
+}
 } // namespace
 
 int main()
@@ -373,6 +421,7 @@ int main()
     testInDuplum();
     testPriceStep();
     testFx();
+    testFuelPriceAndAtomicSave();
     testServer();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;

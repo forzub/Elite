@@ -41,6 +41,25 @@ void uninstall(const EconomyServer* economy);
 [[nodiscard]] double fuelPriceCrPerTonne(const std::string& stationId, const std::string& commodity);
 // the list price the model computes even while fuel is free (for display / statistics)
 [[nodiscard]] double fuelListPriceCrPerTonne(const std::string& stationId, const std::string& commodity);
+// A refuel is PREPAID (audit 2026-11-19: it was charged after the pumping, and a refused payment left the fuel in the
+// tank): buyFuel pays what the account can (overdraft; else the lifeline minimum on credit) and takes it out of the
+// stock; the pump delivers at most grantedT; returnFuel gives back the unused part (money and stock).
+struct FuelPurchase
+{
+    bool ok = false;
+    bool economy = false;       // false: no economy running (tools / tests) - nothing charged, nothing reserved
+    double grantedT = 0.0;
+    double crPerT = 0.0;        // charged per tonne (0 while fuel is free of charge)
+    double chargedCr = 0.0;
+    double lifelineCr = 0.0;
+    std::string reason;
+};
+[[nodiscard]] FuelPurchase buyFuel(std::uint32_t shipEntityId, const std::string& stationId, const std::string& commodity,
+                                   double tonnes);
+void returnFuel(std::uint32_t shipEntityId, const std::string& stationId, const std::string& commodity, double tonnes,
+                double crPerT);
+// the station's fuel stock of record (t); < 0 when the economy is not running or does not sell it there
+[[nodiscard]] double fuelStockT(const std::string& stationId, const std::string& commodity);
 // charge the account of the player flying `shipEntityId`; fuel / tow / repair reasons may draw lifeline credit.
 // false = refused. AI ships (no player) and 0 Cr always succeed.
 bool chargeAccount(std::uint32_t shipEntityId, double amountCr, const std::string& reason);

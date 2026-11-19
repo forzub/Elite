@@ -39,6 +39,7 @@ struct FuelQuote
     std::string bankId;          // the bank that is paid
     std::string currency;
     double fxPerCr = 1.0;
+    double stationFactor = 1.0;  // the fuel station's markup (fuel_stations.json priceFactor), already in listCrPerT
     double listCrPerT = 0.0;     // what the station asks (buy side), Cr / t
     double listLocalPerT = 0.0;
     double chargedLocalPerT = 0.0;   // 0 while fuel is free of charge
@@ -46,6 +47,9 @@ struct FuelQuote
     double stockT = 0.0;
     CostBreakdown breakdown;     // Cr / t
 };
+
+// <path>.tmp + atomic replace; false (and the old file kept) on any failure
+bool writeFileAtomically(const std::string& path, const std::string& text);
 
 struct FuelCharge
 {
@@ -84,6 +88,8 @@ public:
     [[nodiscard]] FuelQuote quoteFuel(const std::string& hubId, int systemId, FuelKind kind) const;
     // playerId 0 = an AI ship: nothing is charged (no AI wallets yet), the depot stock still drops
     FuelCharge chargeFuel(std::uint64_t playerId, const std::string& hubId, int systemId, FuelKind kind, double tonnes);
+    // the unused part of a prepaid refuel (the job was cut short): the money back, the fuel back into the stock
+    void refundFuel(std::uint64_t playerId, const std::string& hubId, int systemId, FuelKind kind, double tonnes, double crPerT);
     // the fuel left the depot (stock drops; while free, the player's free list value grows) - no charge here
     void recordFuelDelivery(std::uint64_t playerId, const std::string& hubId, int systemId, FuelKind kind, double tonnes);
     PaymentResult chargeService(std::uint64_t playerId, const std::string& hubId, int systemId, Purpose purpose, double amountCr,

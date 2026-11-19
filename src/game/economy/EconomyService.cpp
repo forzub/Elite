@@ -83,6 +83,51 @@ double fuelListPriceCrPerTonne(const std::string& stationId, const std::string& 
     return q.available ? q.listCrPerT : 0.0;
 }
 
+FuelPurchase buyFuel(std::uint32_t shipEntityId, const std::string& stationId, const std::string& commodity, double tonnes)
+{
+    FuelPurchase out;
+    FuelKind k;
+    if (!installed() || !kindOf(commodity, k))
+    {
+        out.ok = true;
+        out.grantedT = tonnes;
+        return out;
+    }
+    out.economy = true;
+    const auto& b = bindings();
+    const std::uint64_t player = b.playerOfShip ? b.playerOfShip(shipEntityId) : 0;
+    const auto stock = b.economy->quoteFuel(stationId, systemOf(stationId), k);
+    const double t = stock.available ? std::min(tonnes, std::max(0.0, stock.stockT)) : tonnes;
+    const FuelCharge c = b.economy->chargeFuel(player, stationId, systemOf(stationId), k, t);
+    out.ok = c.ok && c.tonnesGranted > 0.0;
+    out.grantedT = c.tonnesGranted;
+    out.chargedCr = c.chargedCr;
+    out.lifelineCr = c.lifelineCr;
+    out.crPerT = c.tonnesGranted > 0.0 ? c.chargedCr / c.tonnesGranted : 0.0;
+    out.reason = c.reason;
+    return out;
+}
+
+void returnFuel(std::uint32_t shipEntityId, const std::string& stationId, const std::string& commodity, double tonnes,
+                double crPerT)
+{
+    FuelKind k;
+    if (!installed() || !kindOf(commodity, k) || !(tonnes > 0.0))
+        return;
+    const auto& b = bindings();
+    const std::uint64_t player = b.playerOfShip ? b.playerOfShip(shipEntityId) : 0;
+    b.economy->refundFuel(player, stationId, systemOf(stationId), k, tonnes, crPerT);
+}
+
+double fuelStockT(const std::string& stationId, const std::string& commodity)
+{
+    FuelKind k;
+    if (!installed() || !kindOf(commodity, k))
+        return -1.0;
+    const auto q = bindings().economy->quoteFuel(stationId, systemOf(stationId), k);
+    return q.available ? q.stockT : -1.0;
+}
+
 bool chargeAccount(std::uint32_t shipEntityId, double amountCr, const std::string& reason)
 {
     if (!(amountCr > 0.0))

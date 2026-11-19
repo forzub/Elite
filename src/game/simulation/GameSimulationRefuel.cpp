@@ -82,14 +82,18 @@ bool GameSimulation::requestRefuel(EntityId shipId, const std::string& hubId)
     if (m.jumpState != 0)
         return refuse(RefuelRefusal::Busy, at);
     const auto* station = game::fuel::FuelStationCatalog::instance().find(at);
-    if (!station || station->stockT <= 0.0)
+    if (!station)
         return refuse(RefuelRefusal::NoFuelHere, at);
     if (m.jChargeT < 0.0)
         m.jChargeT = m.jChargeCapacityT;   // never used yet: the tanks came full
     if (m.jChargeT >= m.jChargeCapacityT - game::fuel::FullEpsilonT)
         return refuse(RefuelRefusal::TankFull, at);
-    auto stock = m_fuelStockT.try_emplace(at, station->stockT).first;
-    if (stock->second <= game::fuel::FullEpsilonT)
+    // the stock is the economy's (fuel_stations.json describes the pump and the tank, not the stock of record); the
+    // economy not running (tools, tests): the station's tank capacity
+    double economyStockT = game::economy::service::fuelStockT(at, "jump_charge");
+    if (economyStockT < 0.0)
+        economyStockT = station->stockT;
+    if (economyStockT <= game::fuel::FullEpsilonT)
         return refuse(RefuelRefusal::StationDry, at);
 
     RefuelService service;
@@ -98,13 +102,25 @@ bool GameSimulation::requestRefuel(EntityId shipId, const std::string& hubId)
     service.tender = tender;
     if (tender)
         service.pump.hookupS *= game::fuel::TenderHookupFactor;
-    service.priceCrPerT = game::economy::service::fuelPriceCrPerTonne(at, "jump_charge") * station->priceFactor;
+    // prepaid: the economy charges what the account can pay (the station's markup is in its one price), takes the fuel
+    // out of its stock, and the pump delivers at most that; the unused part is refunded in endRefuel
     const double need = m.jChargeCapacityT - m.jChargeT;
+    const auto purchase = game::economy::service::buyFuel(shipId.value, at, "jump_charge", std::min(need, economyStockT));
+    if (!purchase.ok)
+    {
+        std::cerr << "[Refuel] ship " << shipId.value << ": payment refused (" << purchase.reason << ")" << std::endl;
+        return refuse(RefuelRefusal::PaymentRefused, at);
+    }
+    service.priceCrPerT = purchase.crPerT;
+    service.allocatedT = purchase.grantedT;
+    service.stockT = purchase.grantedT;
     std::cerr << "[Refuel] ship " << shipId.value << ": at " << station->name << " (" << at << ", " << station->kind
               << (station->illegal ? ", ILLEGAL" : "") << (tender ? ", tender alongside" : ", dock hose") << ") - "
               << need << " t to fill, pump " << service.pump.rateTPerMin << " t/min, ~"
               << game::fuel::refuelEtaSeconds(service.pump, need) << " s; price " << service.priceCrPerT
-              << " Cr/t (economy service), station stock " << stock->second << " t" << std::endl;
+              << " Cr/t paid in advance for " << purchase.grantedT << " t (" << purchase.chargedCr << " Cr"
+              << (purchase.lifelineCr > 0.0 ? ", lifeline credit" : "") << "), station stock was " << economyStockT << " t"
+              << std::endl;
     publish(m, RefuelPhase::Hookup, RefuelRefusal::None, 0.0, service.pump.rateTPerMin);
     m_refuels[shipId] = std::move(service);
     return true;
@@ -122,13 +138,12 @@ void GameSimulation::cancelRefuel(EntityId shipId, const char* why)
 void GameSimulation::endRefuel(EntityId shipId, RefuelService& service, RefuelPhase end, const char* why)
 {
     Ship* ship = getShip(shipId);
+    // prepaid at the request: the cost is what was delivered; the unused part goes back (money and stock)
     const double cost = service.job.deliveredT * service.priceCrPerT;
-    bool paid = true;
-    if (cost > 0.0)
-        paid = game::economy::service::chargeAccount(shipId.value, cost, "jump charge at " + service.hubId);
-    // the fuel left the station: the economy's stock / price and the "received free of charge" list value feel it
-    if (service.job.deliveredT > 0.0)
-        game::economy::service::noteFuelDelivered(shipId.value, service.hubId, "jump_charge", service.job.deliveredT);
+    const double unusedT = service.allocatedT - service.job.deliveredT;
+    if (unusedT > 1.0e-9)
+        game::economy::service::returnFuel(shipId.value, service.hubId, "jump_charge", unusedT, service.priceCrPerT);
+
     if (!ship)
         return;
     auto& m = ship->core().transform().motion;
@@ -136,8 +151,9 @@ void GameSimulation::endRefuel(EntityId shipId, RefuelService& service, RefuelPh
     ++m.refuelSerial;
     std::cerr << "[Refuel] ship " << shipId.value << ": " << game::fuel::refuelPhaseName(end) << " at " << service.hubId << " ("
               << why << "): delivered " << service.job.deliveredT << " t, J charge " << m.jChargeT << " / " << m.jChargeCapacityT
-              << " t, cost " << cost << " Cr" << (paid ? "" : " - PAYMENT REFUSED (PROPOSAL: a debt to the station)")
-              << "; station stock left " << m_fuelStockT[service.hubId] << " t" << std::endl;
+              << " t, cost " << cost << " Cr (prepaid)"
+              << "; station stock left " << game::economy::service::fuelStockT(service.hubId, "jump_charge") << " t"
+              << std::endl;
 }
 
 void GameSimulation::updateRefuels(double dt)
@@ -189,7 +205,7 @@ void GameSimulation::updateRefuels(double dt)
             continue;
         }
         const bool attached = !service.tender || at == service.hubId;
-        double& stock = m_fuelStockT[service.hubId];
+        double& stock = service.stockT;   // this job's reservation of the economy's stock
         if (m.jChargeT < 0.0)
             m.jChargeT = m.jChargeCapacityT;
         const auto before = service.job.phase;
@@ -200,7 +216,9 @@ void GameSimulation::updateRefuels(double dt)
                       << m.jChargeT << " t)" << std::endl;
         if (service.job.phase == RefuelPhase::Done)
         {
-            endRefuel(it->first, service, RefuelPhase::Done, stock <= game::fuel::FullEpsilonT ? "the station ran dry" : "full");
+            // full tank first: the prepaid reservation equals the need, so it also reaches 0 when the tank is full
+            const bool full = m.jChargeT >= m.jChargeCapacityT - game::fuel::FullEpsilonT;
+            endRefuel(it->first, service, RefuelPhase::Done, full ? "full" : stock <= game::fuel::FullEpsilonT ? "the prepaid amount (or the stock) ran out" : "full");
             it = m_refuels.erase(it);
             continue;
         }

@@ -685,8 +685,8 @@
   }
  },
  "prices": {
-  "fuel_free_of_charge": true,
-  "fuel_free_note": "Author 2026-11-19: fuel costs 0 for the player and the AI for now. The model still computes the list price; the switch only zeroes what is charged.",
+  "fuel_free_of_charge": false,
+  "fuel_free_note": "Author 2026-11-19 (later): fuel is PAID again - the player lives on the start money, the overdraft and the lifeline credit. ELITE_FUEL_FREE=1 zeroes what is charged (tests).",
   "stock_exponent": 0.6,
   "smoothing_per_day": 0.35,
   "max_daily_change": 0.08,

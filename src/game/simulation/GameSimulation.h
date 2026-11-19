@@ -922,11 +922,15 @@ private:
         game::fuel::PumpSpec pump;
         bool tender = false;
         double priceCrPerT = 0.0;
+        // the station's fuel this job reserved at its start (the economy's stock minus the other running jobs'
+        // reservations there); the pump draws it down; the delivery is written to the economy at the end
+        double allocatedT = 0.0;
+        double stockT = 0.0;
     };
     std::unordered_map<EntityId, RefuelService> m_refuels;
-    std::unordered_map<std::string, double> m_fuelStockT;
-    std::unordered_map<int, double> m_npcRefuelScanSecondsBySystem;
-    mutable long long m_contextViolations = 0;   // per system: updateRefuels runs in every system pass
+    // (no station stock here: EconomyServer owns the stock and the price - audit 2026-11-19)
+    std::unordered_map<int, double> m_npcRefuelScanSecondsBySystem;   // per system: updateRefuels runs in every system pass
+    mutable long long m_contextViolations = 0;
     void updateRefuels(double dt);
     void endRefuel(EntityId shipId, RefuelService& service, game::fuel::RefuelPhase end, const char* why);
 

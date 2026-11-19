@@ -6758,3 +6758,24 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   listed with a reason; no size-validated static caches; mutators bump the generation) - PASS, and FAILS when a table is
   dropped from forgetShip (checked). Live two-system rerun D:/tmp/multisys2: jump, docking 258 s, refuel, combat, 216
   promoted-traffic despawns, no crash. EliteHubSecurityCheck 29/29.
+### 4. Economy: atomic save, ONE fuel stock, ONE fuel price; fuel PAID again - DONE
+- Defects (verified): the state file was rewritten in place (a crash = "unreadable, fresh state", every account
+  zeroed); the simulation kept its own m_fuelStockT (from fuel_stations.json, only decreasing, never saved) next to the
+  economy's stock; the station markup (priceFactor) was applied only in the simulation, the wallet showed another
+  price; payment came AFTER pumping and a refused payment left the fuel in the tank; fuel_free saved, never read.
+- Fix: writeFileAtomically (<file>.tmp + MoveFileExW REPLACE_EXISTING|WRITE_THROUGH; failure keeps the old file);
+  quoteFuel carries the station markup (FuelQuote::stationFactor); m_fuelStockT removed - the refuel PREPAYS through
+  service::buyFuel (EconomyServer::chargeFuel: what the account can pay, else the lifeline minimum on credit; the
+  tonnes leave the stock at once), the pump delivers at most the prepaid amount, returnFuel/refundFuel gives back the
+  unused part (money + stock); fuel_free is a rule, not saved. fuel_stations.json = pump / tank infrastructure (its
+  stock_t only as the tank capacity when no economy runs).
+- Author 2026-11-19: "уберем нулевую заправку для игрока ... пусть берет кредиты": national_banks.json
+  fuel_free_of_charge = false (ELITE_FUEL_FREE=1 for tests); start money unchanged (20 000 + 1 000 cash, overdraft
+  4 000, lifeline 25 000 / 90 d).
+- Evidence: EliteEconomyCheck 52/52 (new: markup x3 in the quote, no markup at a legal hub, atomic create/replace/no
+  temp left/failed write keeps the file, prepaid 0.5 t - 0.2 t refunded = paid 0.3 t and stock -0.3 t). Live
+  D:/tmp/econlive: refuel at Homestead prepaid 0.715 t x 5 781.39 Cr/t = 4 136 Cr; F8 FINANCE before 21 000.00 Cr,
+  after 16 802.10 Cr, "-5 611.62 HMD заправка 0.72 т (комиссии 62.04 Cr)", the shown price 7 844 HMD/t = 5 781 Cr/t =
+  the charged price; station stock 1 911.0 -> 1 910.3 t.
+- Open (trade MVP): the F8 MARKET tab still shows the stateless EconomyModel::market(day) for goods - to be replaced by
+  replicated server quotes in trade step 2 (docs/TRADE_DESIGN.md).

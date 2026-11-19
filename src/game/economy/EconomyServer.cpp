@@ -1,3 +1,11 @@
+#include "src/game/fuel/FuelStationCatalog.h"
+#include <filesystem>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 #include "src/game/economy/EconomyServer.h"
 
 #include <algorithm>
@@ -15,6 +23,29 @@
 
 namespace game::economy
 {
+
+// Atomic replace (audit 2026-11-19): the accounts were rewritten in place (trunc) - a crash mid-write left a file the
+// next start read as "unreadable, fresh state", silently zeroing every account. Write <file>.tmp, flush, then replace.
+bool writeFileAtomically(const std::string& path, const std::string& text)
+{
+    const std::string tmp = path + ".tmp";
+    {
+        std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
+        if (!f)
+            return false;
+        f << text;
+        f.flush();
+        if (!f)
+            return false;
+    }
+#ifdef _WIN32
+    const std::wstring from = std::filesystem::path(tmp).wstring(), to = std::filesystem::path(path).wstring();
+    return MoveFileExW(from.c_str(), to.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+    return std::rename(tmp.c_str(), path.c_str()) == 0;
+#endif
+}
+
 namespace
 {
 using nlohmann::json;
@@ -462,12 +493,8 @@ void EconomyServer::stepDay(int day)
                   m_fuelFree ? " (charged 0: fuel free)" : "", 100.0 * fxMax, fxMaxCode.c_str(), m_ledgers.size());
     std::cerr << line << '\n';
 
-    if (!m_stateFile.empty())
-    {
-        std::ofstream f(m_stateFile, std::ios::binary | std::ios::trunc);
-        if (f)
-            f << saveState();
-    }
+    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
+        std::cerr << "[EconomyServer] state NOT saved to " << m_stateFile << " (the previous file is kept)" << '\n';
 }
 
 // ---------------------------------------------------------------- players
@@ -563,7 +590,11 @@ FuelQuote EconomyServer::quoteFuel(const std::string& hubId, int systemId, FuelK
     const auto split = m_splits.count(good.id) ? m_splits.at(good.id) : m_splits.count("default") ? m_splits.at("default") : ProductionSplit{};
     q.breakdown = explainPrice(good.baseCrPerTonne, c.producer, m->transportCrT[static_cast<std::size_t>(g)], c.anchorCr, c.priceCr,
                                m->spread, split);
-    q.listCrPerT = q.breakdown.listCr;
+    // the station's own markup (an illegal pump, a remote tender) is part of THE price - the refuel service, the
+    // wallet and the finance tab all read this one number (audit 2026-11-19: it was applied only in the simulation)
+    if (const auto* station = game::fuel::FuelStationCatalog::instance().find(hubId))
+        q.stationFactor = station->priceFactor > 0.0 ? station->priceFactor : 1.0;
+    q.listCrPerT = q.breakdown.listCr * q.stationFactor;
     q.listLocalPerT = q.listCrPerT * q.fxPerCr;
     q.chargedLocalPerT = m_fuelFree ? 0.0 : q.listLocalPerT;
     q.stockT = c.stockT;
@@ -656,6 +687,23 @@ void EconomyServer::recordFuelDelivery(std::uint64_t playerId, const std::string
     {
         auto& c = m_markets[it->second].cells[static_cast<std::size_t>(goodIndex(fuelGoodId(kind)))];
         c.stockT = std::max(0.0, c.stockT - tonnes);
+    }
+}
+
+void EconomyServer::refundFuel(std::uint64_t playerId, const std::string& hubId, int systemId, FuelKind kind, double tonnes,
+                               double crPerT)
+{
+    if (!m_loaded || !(tonnes > 0.0))
+        return;
+    const FuelQuote q = quoteFuel(hubId, systemId, kind);
+    if (q.available)
+        if (const auto it = m_marketIndex.find(q.hubId); it != m_marketIndex.end())
+            m_markets[it->second].cells[static_cast<std::size_t>(goodIndex(fuelGoodId(kind)))].stockT += tonnes;
+    if (crPerT > 0.0 && playerId != 0)
+    {
+        char memo[160];
+        std::snprintf(memo, sizeof memo, "возврат за незалитое топливо: %.2f т", tonnes);
+        credit(playerId, hubId, systemId, tonnes * crPerT, memo);
     }
 }
 
@@ -896,7 +944,7 @@ std::string EconomyServer::saveState() const
     json j;
     j["schema"] = "economy_state/1";
     j["day"] = m_day;
-    j["fuel_free"] = m_fuelFree;
+    // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
     for (const auto& b : m_banks.banks())
         fx[b.id] = m_banks.fx(b.id);

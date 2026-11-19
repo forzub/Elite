@@ -1318,6 +1318,7 @@ if(ELITE_BUILD_SERVER)
         src/game/economy/EconomyServer.cpp
         src/game/economy/EconomyService.cpp
         src/game/economy/EconomyModel.cpp
+        src/game/fuel/FuelStationCatalog.cpp
     )
     target_include_directories(EliteEconomyCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
     target_compile_features(EliteEconomyCheck PRIVATE cxx_std_17)

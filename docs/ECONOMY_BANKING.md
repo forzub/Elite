@@ -298,3 +298,13 @@ auto r = game::economy::service::chargeFine(shipEntityId, hubId /* "" = где �
   `EconomyModel` становится стартовой точкой, как и задумано в его заголовке).
 - Залог второго корабля / базы, арест и аукцион (BANKING.md) — только для имущества сверх единственного корабля.
 - Налоги и акцизы политий на топливо — в разборе цены места нет (сейчас 0).
+
+## Fuel: one stock, one price, prepaid (2026-11-19)
+- The stock of record and the price are EconomyServer's. `quoteFuel` includes the fuel station's markup
+  (`fuel_stations.json` price_factor -> `FuelQuote::stationFactor`). `fuel_stations.json` describes the pump and the
+  tank (its stock_t is only the tank capacity used when no economy runs).
+- A refuel is prepaid: `service::buyFuel` -> `EconomyServer::chargeFuel` (what the account can pay incl. overdraft,
+  else the lifeline minimum on credit; the tonnes leave the stock at once); the pump delivers at most that;
+  `service::returnFuel` -> `EconomyServer::refundFuel` returns the unused part (money and stock).
+- Fuel is PAID (`prices.fuel_free_of_charge = false`, author 2026-11-19); `ELITE_FUEL_FREE=1` zeroes the charge.
+- The state file is written atomically (`writeFileAtomically`); `fuel_free` is a rule and is not saved.

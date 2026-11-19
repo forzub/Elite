@@ -156,6 +156,24 @@ body.elite-ui-body--service {
   line-height: 1;
 }
 
+/* HUNTED: DEFAULT (author 2026-11-19): a longer name than ELITE - tighter tracking so it fits the shell panel */
+.elite-title--long {
+  font-size: clamp(22px, 4.8vh, 40px);
+  letter-spacing: 0.14em;
+}
+
+/* the small remark under the name */
+.elite-remark {
+  margin: 0 auto clamp(6px, 1.4vh, 12px);
+  max-width: 48em;
+  color: var(--elite-text-muted);
+  font-size: clamp(9px, 1.4vh, 12px);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  opacity: 0.85;
+}
+
 .elite-subtitle {
   margin-bottom: clamp(10px, 2.7vh, 28px);
   color: var(--elite-text-muted);

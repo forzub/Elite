@@ -611,7 +611,7 @@ void Application::init()
     m_context.app           = this;
 
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
-    m_window = new Window(1280, 720, "EliteGame");
+    m_window = new Window(1280, 720, "HUNTED: DEFAULT");   // the game's name (author 2026-11-19); the binaries keep Elite*
 #ifdef _WIN32
     if (core::runtimeTraceEnabled())
         std::cerr

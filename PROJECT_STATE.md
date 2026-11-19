@@ -7159,7 +7159,7 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   docking with no money "paid 0.00, debt 384.00" (01_finance_docked_broke.png); econ:days 60+60 -> grace -> delinquent ->
   restructured 4 467.65 (02_finance_restructured.png: row "долг 4 468 · удержано 0 · защищено 6 100 Cr"); sale 14 t grain
   +7 317.54 -> withheld 1 217.54 (25 % would be 1 829), account exactly 6 100.00, debt 3 250.11
-  (03_finance_sale1_protected.png); sale 10 t +5 226.88 -> the full share (25 % in testBanks; 10 % in national_banks.json) 1 306.72, account 10 020.16, debt 1 943.39
+  (03_finance_sale1_protected.png); sale 10 t +5 226.88 -> the full 25 % (the rate then) 1 306.72, account 10 020.16, debt 1 943.39
   (04_finance_sale2_full_share.png). State file economy_state/5, "last_withheld":[10315,1306.72]. An earlier run with
   a 30 t second sale paid the debt off (withheld = the debt left) and showed the floor note wrongly - fixed.
 - Not done (deviations from §1.3): the base is the gross receipt (not revenue - lot cost / reward - trip costs); the

@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 
 #include <algorithm>
 #include <cstddef>
@@ -748,6 +749,10 @@ inline bool decodeClientEconomyCommand(
         return false;
     }
     if (op > static_cast<std::uint8_t>(ClientEconomyCommand::Last))
+        return false;
+    // numbers that cannot be a deal (re-audit 2026-11-19: +Inf passed the first check)
+    if (!std::isfinite(outValue.quantity) || !std::isfinite(outValue.limitUnitCr) || outValue.quantity < 0.0 ||
+        outValue.limitUnitCr < 0.0)
         return false;
     outValue.op = static_cast<ClientEconomyCommand::Op>(op);
     outValue.quoteDay = quoteDay;

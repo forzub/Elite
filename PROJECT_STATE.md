@@ -6866,3 +6866,11 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   cargo stays lost and the event resolved). Live D:/tmp/losscheck2: 40 t steel aboard -> destroyed -> "ship loss
   loss:1:2250 ... 40 t -> lost-cargo records", mass 303.4 -> 260 t; state file: cargo [], lost_cargo L1, loss_events;
   restart -> "manifest 0 t".
+### R4. The price and the day the player saw are sent - DONE
+- Defect (verified): the client never sent quoteDay (-1 = any) nor a price limit; the server's "price moved" / "the day
+  changed" guards never fired; the decoder accepted +Inf / NaN quantities and limits.
+- Fix: SpaceState::sendEconomyCommand sends the snapshot's day and, without an explicit limit, the shown ask x 1.02
+  (buy) / bid x 0.98 (sell) - the deal window (trade step 3) will send its exact quoted unit price; decodeClient-
+  EconomyCommand rejects non-finite or negative quantity / limit.
+- Evidence: live D:/tmp/losscheck/a.log - "BUY 15.145 t food_staples ... list 573.71 -> deal 573.737 Cr/t" accepted with
+  the client-sent day and limit. Wire contract scripts PASS.

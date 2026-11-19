@@ -222,10 +222,30 @@ std::uint32_t SpaceState::sendEconomyCommand(int op, const std::string& goodId, 
     command.shipEntityId = m_client->localControlledEntityId().value;
     command.goodId = goodId;
     command.quantity = tonnes;
-    command.limitUnitCr = limitUnitCr;
     const auto& trade = m_client->sessionSnapshot().trade;
     if (trade.valid && trade.docked)
         command.hubId = trade.hubId;
+    // the price and the day the player SAW (re-audit 2026-11-19: neither was sent, the server's "price moved" / "the
+    // day changed" guards never fired). No explicit limit: the shown ask (buy) / bid (sell) with a 2 % tolerance for
+    // the deal's own impact; the deal window (trade step 3) sends its exact quoted unit price instead.
+    command.quoteDay = trade.valid ? trade.day : -1;
+    command.limitUnitCr = limitUnitCr;
+    if (!(limitUnitCr > 0.0) && trade.valid)
+    {
+        int good = -1;
+        const auto& goods = game::economy::EconomyModel::instance().goods();
+        for (std::size_t k = 0; k < goods.size(); ++k)
+            if (goods[k].id == goodId)
+                good = static_cast<int>(k);
+        for (const auto& row : trade.market)
+            if (row.good == good && row.traded)
+            {
+                if (command.op == game::network::ClientEconomyCommand::Buy && row.askCr > 0.0)
+                    command.limitUnitCr = row.askCr * 1.02;
+                else if (command.op == game::network::ClientEconomyCommand::Sell && row.bidCr > 0.0)
+                    command.limitUnitCr = row.bidCr * 0.98;
+            }
+    }
     game::network::ClientMessage msg;
     msg.payload = command;
     m_client->sendMessage(msg);

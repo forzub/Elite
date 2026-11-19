@@ -6779,3 +6779,16 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   the charged price; station stock 1 911.0 -> 1 910.3 t.
 - Open (trade MVP): the F8 MARKET tab still shows the stateless EconomyModel::market(day) for goods - to be replaced by
   replicated server quotes in trade step 2 (docs/TRADE_DESIGN.md).
+### 3. Hub / city runtime - DONE
+- HubPlanCatalog / HubLaneCatalog / HubTrafficScheduleCatalog: already thread-safe in HEAD (function-local static
+  initializers, read-only after; committed with the hub security batch) - verified.
+- New race found: EliteCobraMk1::EliteCobraMk1Descriptor() set `static bool initialized = true` BEFORE filling the
+  descriptor (server thread + client registries) -> a function-local static initializer.
+- Defect (verified): the FIRST assembly of a city ran synchronously in the render frame (hubCityAsset), no
+  one-city-per-frame limit (only the construction-stage rebuild was off-thread). Fix (ModelAssetGpuLibrary::get): a
+  layout city is assembled off-thread (assembleHubCity in std::async, one job at a time), uploaded at most once per
+  50 ms (one a frame), not drawn until then; the job's CPU asset is dropped after the upload (the cached second CPU copy
+  in hubCityAsset is no longer made). Per-hub legacy packages (no layout, 9 hubs) still load synchronously.
+- Evidence: live D:/tmp/citycheck - Homestead city assembled off-thread (31.5 ms), docking 253 s, the city drawn at the
+  pad (3_docked.png); Earth hub D:/tmp/cityasync (assembled 79-97 ms, drawn after; the start frame 454 ms vs 1056-1467
+  ms in the previous build - that frame also holds other first-use work, so not a clean measure).

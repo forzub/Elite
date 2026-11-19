@@ -34,12 +34,11 @@
 
 const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
 {
-    static ShipDescriptor desc;
-    static bool initialized = false;
-
-    if (!initialized)
+    // thread-safe first use (audit 2026-11-19): the server thread and the client's registries may both ask first; the
+    // old `static bool initialized` was set BEFORE the descriptor was filled - a second thread got a half-built one
+    static const ShipDescriptor built = [] {
+    ShipDescriptor desc;
     {
-        initialized = true;
 
         desc.typeId = ObjectType::CobraMk1;
 
@@ -1659,6 +1658,8 @@ ShipAttachmentPoint{
     }
 
     return desc;
+    }();
+    return built;
 }
 
 

@@ -451,6 +451,56 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
     while (!retired.empty() && now - retired.front().first > std::chrono::seconds(10))
         retired.erase(retired.begin());
     const std::uint64_t stageKey = ma::hubExpansionStageKey(hubId);
+    // The FIRST assembly of a city is off-thread too (audit 2026-11-19: several cities inside the load radius were
+    // assembled synchronously in ONE render frame, 0.1-1.3 s each): one assembly job at a time, the finished city
+    // uploaded at most once per 50 ms (one a frame); until then the city is not drawn (it is a dot at the load radius).
+    // The job's CPU asset is dropped after the upload (the GPU package keeps its own copy; no second cached copy).
+    static const bool preferPackage = [] {
+        const char* v = std::getenv("ELITE_DEV_CITY_PACKAGE");
+        return v && *v && *v != '0';
+    }();
+    const std::string packagePath = "assets/compiled/hub_modules/hub_" + hubId + "/hub_" + hubId + ".elmodel";
+    if (cache.find(hubId) == cache.end() && std::filesystem::exists(ma::hubCityLayoutPath(hubId)) &&
+        !(preferPackage && std::filesystem::exists(packagePath)))
+    {
+        static std::unordered_map<std::string, Rebuild> firstLoads;
+        auto job = firstLoads.find(hubId);
+        if (job == firstLoads.end())
+        {
+            const bool running = std::any_of(firstLoads.begin(), firstLoads.end(), [](const auto& r) {
+                return r.second.job.wait_for(std::chrono::seconds(0)) != std::future_status::ready;
+            });
+            if (!running)
+            {
+                Rebuild r;
+                r.key = stageKey;
+                r.job = std::async(std::launch::async, [hubId] {
+                    auto asset = std::make_unique<ma::ModelAsset>();
+                    std::string error;
+                    if (ma::assembleHubCity(hubId, "assets/compiled/hub_modules", *asset, &error))
+                        return asset;
+                    std::cerr << "[HubCityAssembly] " << hubId << ": " << error << "\n";
+                    return std::unique_ptr<ma::ModelAsset>();
+                });
+                firstLoads.emplace(hubId, std::move(r));
+            }
+            return nullptr;
+        }
+        if (job->second.job.wait_for(std::chrono::seconds(0)) != std::future_status::ready ||
+            now - lastSwap <= std::chrono::milliseconds(50))
+            return nullptr;
+        lastSwap = now;
+        std::unique_ptr<ma::ModelAsset> asset = job->second.job.get();
+        const std::uint64_t key = job->second.key;
+        firstLoads.erase(job);
+        auto& slot = cache[hubId];
+        stageKeys[hubId] = key;
+        if (asset)
+            slot = load(type, ("layout:" + hubId).c_str(), asset.get());
+        if (!slot)
+            slot = load(type, packagePath.c_str());   // the layout failed: the per-hub package, if any
+        return slot.get();
+    }
     const auto [it, inserted] = cache.try_emplace(hubId);
     const bool reload = inserted;
     if (inserted)
@@ -493,22 +543,9 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
     }
     if (reload)
     {
-        // a frozen city layout (assets/data/navigation/hub_cities/<hub>.json) is assembled in memory from the shared
-        // module packages; a hub without one keeps its per-hub package. DEV A/B: ELITE_DEV_CITY_PACKAGE=1 prefers
-        // the per-hub package
-        static const bool preferPackage = [] {
-            const char* v = std::getenv("ELITE_DEV_CITY_PACKAGE");
-            return v && *v && *v != '0';
-        }();
-        const std::string path = "assets/compiled/hub_modules/hub_" + hubId + "/hub_" + hubId + ".elmodel";
-        const bool layout = std::filesystem::exists(ma::hubCityLayoutPath(hubId));
-        if (layout && !(preferPackage && std::filesystem::exists(path)))
-        {
-            if (const ma::ModelAsset* city = ma::hubCityAsset(hubId))
-                it->second = load(type, ("layout:" + hubId).c_str(), city);
-        }
-        if (!it->second)
-            it->second = load(type, path.c_str());
+        // a hub without a frozen city layout keeps its per-hub package (a layout city is assembled off-thread above;
+        // DEV A/B: ELITE_DEV_CITY_PACKAGE=1 prefers the per-hub package)
+        it->second = load(type, packagePath.c_str());
     }
     return it->second.get();
 }

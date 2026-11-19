@@ -297,6 +297,7 @@ ELITE_WIRE_SCHEMA(
     v.velocityReferenceKind,
     v.jAccelCommandMps2,
     v.jAccelMps2,
+    v.jFieldLevelMps2,
     v.mainEngineMaxMps2,
     v.jStopping,
     v.jChargeT,
@@ -321,6 +322,11 @@ ELITE_WIRE_SCHEMA(
     v.laneRecords,
     v.navComputerState,
     v.dataCarriers,
+    v.refuelState,
+    v.refuelRefusal,
+    v.refuelSerial,
+    v.refuelDeliveredT,
+    v.refuelRateTpm,
     v.zoneFinesTotalCr,
     v.zoneViolationSerial,
     v.zoneViolationKind,
@@ -985,10 +991,52 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientMoneyLine,
+    v.bankId,
+    v.label,
+    v.currency,
+    v.amount,
+    v.amountCr,
+    v.limit,
+    v.annualRate,
+    v.state
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientWalletSnapshot,
+    v.valid,
+    v.day,
+    v.homeBank,
+    v.standing,
+    v.standingRu,
+    v.cash,
+    v.accounts,
+    v.loans,
+    v.netWorthCr,
+    v.lifelineLeftCr,
+    v.freeFuelListCr,
+    v.localPolity,
+    v.localBank,
+    v.localCurrency,
+    v.localFxPerCr,
+    v.fuelQuoteValid,
+    v.fuelHubName,
+    v.fuelFree,
+    v.jumpChargeListPerT,
+    v.jumpChargeChargedPerT,
+    v.jumpChargeListCrPerT,
+    v.jumpChargeStockT,
+    v.reactorFuelListPerKg,
+    v.fuelBreakdown,
+    v.notices
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientSessionSnapshot,
     v.playerNavigation,
     v.ownedNavigationAssets,
     v.navigationSensors,
+    v.wallet,
     v.predictionWorldParams,
     v.universeTimeSeconds,
     v.universeTimeScale,

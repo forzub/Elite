@@ -264,12 +264,14 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     // level (live 2026-11-08: the client braked on 1e5 g while the plant had 2e2 g - 8000 km overshoot)
     // (held 0.5 s: the replicated level lags a jump of the wanted velocity by a tick or two)
     const bool plantBehind = !nearDeparture && ship.jAccelKnown && driveSeconds > 1.0 && glm::length(m_lastWantedDv) > 2.0 * limit * dt &&
-                             ship.jAccelMps2 < 0.25 * limit;
+                             ship.jFieldLevelMps2 < 0.25 * limit;
     m_plantBehindSeconds = plantBehind ? m_plantBehindSeconds + dt : 0.0;
     if (m_plantBehindSeconds > 0.5)
     {
         m_plantBehindSeconds = 0.0;
-        const double level = std::max(9.81, ship.jAccelMps2);
+        // the field's own level, never the net of the medium (2026-11-19: at 0.87 c the net went negative and the
+        // pilot restarted its ramp at 1 g again and again - no braking, the hub overshot)
+        const double level = std::max(9.81, ship.jFieldLevelMps2);
         m_driveStartSeconds = m_seconds - jd::DriveRampDoublingS * std::log2(level / 9.81);
         driveSeconds = m_seconds - m_driveStartSeconds;
         limit = std::min(jd::MaxAccelMps2, level);

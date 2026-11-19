@@ -38,6 +38,8 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/equipment/radar/TestIdealRadarUnit.h"
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
+#include "src/game/simulation/ClientWalletSnapshot.h"
+#include "src/game/economy/EconomyServer.h"
 
 struct ServerQueueDiagnostics
 {
@@ -100,6 +102,16 @@ public:
     navigationSensorsForSession(
         game::network::ServerSessionId sessionId
     ) const;
+
+    // the player's money as the session sees it (docs/ECONOMY_BANKING.md)
+    game::simulation::ClientWalletSnapshot
+    walletForSession(
+        game::network::ServerSessionId sessionId
+    ) const;
+
+    // the server economy: national banks, ledgers, daily prices (the only writer of money)
+    game::economy::EconomyServer& economy() noexcept { return m_economy; }
+    const game::economy::EconomyServer& economy() const noexcept { return m_economy; }
 
     game::server::ShipReplicationInterestPlan
     shipReplicationInterestPlanForSession(
@@ -296,6 +308,8 @@ private:
     PlayerId m_primaryPlayerId {};
     game::server::ReplicationInterestPolicy m_replicationInterestPolicy;
     std::unordered_map<std::uint64_t, PlayerRadarRuntime> m_playerRadarRuntimes;
+    // declared after the registries it reads through game::economy::service: destroyed (and uninstalled) first
+    game::economy::EconomyServer m_economy;
 
 
     static constexpr std::size_t MaxShipCommandsPerShip = 32;

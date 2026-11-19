@@ -32,6 +32,7 @@
 #include "src/world/celestial/surface/BodySurfaceDescriptor.h"
 #include "src/world/celestial/surface/CloudWeatherField.h"
 #include "src/world/celestial/surface/GlobeBake.h"
+#include "src/world/celestial/surface/AppearancePassport.h"
 #include "src/world/celestial/surface/ImportedSurfaceField.h"
 #include "src/world/celestial/surface/LocalTerrain.h"
 #include "src/world/celestial/surface/PlanetSurfaceField.h"
@@ -556,6 +557,8 @@ namespace
         std::shared_ptr<surface::CloudWeatherField> clouds;
         surface::SurfaceDetailPolicy policy;
         AtmosphereParams atmosphere;
+        bool hasLook = false;          // the passport's Modern look (AppearancePassport.h BodyLook)
+        surface::BodyLook look;
         double contourKm = 1.0;
         bool cratered = false; // airless / icy: Elite lines only on crater walls
         GlobeTier globe;
@@ -887,6 +890,17 @@ struct CelestialFlightRenderer::Impl
         rt.clouds = r.clouds;
         rt.policy = surface::surfaceDetailPolicy(rt.descriptor);
         rt.atmosphere = atmosphereFor(rt.descriptor, src.kind, src.radiusM, rt.clouds != nullptr, rt.clouds.get());
+        if (const surface::AppearancePassport* p = surface::findAppearancePassport(rt.id); p && p->hasLook)
+        {
+            rt.hasLook = true;
+            rt.look = p->look;
+            if (rt.look.hasScatter && rt.atmosphere.present)
+            {
+                rt.atmosphere.scatter = rt.look.scatter;
+                const glm::vec3 n = rt.look.scatter / std::max(rt.look.scatter.r, std::max(rt.look.scatter.g, rt.look.scatter.b));
+                rt.atmosphere.haze = glm::mix(n, glm::vec3(1.0f), 0.35f) * 0.9f;
+            }
+        }
         rt.contourKm = std::clamp(rt.descriptor.reliefAmplitudeKm / 6.0, 0.2, 3.0);
         {
             const surface::SurfaceArchetype a = surface::surfaceArchetype(rt.descriptor);
@@ -1309,6 +1323,7 @@ struct CelestialFlightRenderer::Impl
         }
         terrain.use();
         setCommon(terrain, sunDir, sunColour);
+        setLook(terrain, rt, toWorld, 0.0);
         terrain.set("uViewProj", viewProj);
         terrain.set("uBodyToWorld", toWorld);
         terrain.set("uBodyCentre", glm::vec3(centreRel));
@@ -1374,6 +1389,34 @@ struct CelestialFlightRenderer::Impl
         p.set("uLineColour", lineColour());
         p.set("uSunDir", sunDir);
         p.set("uSunColour", sunColour);
+    }
+
+    // The body's Modern look (AppearancePassport.h BodyLook) - set for EVERY body (the programs are shared:
+    // a body without a look must reset what the previous one left).
+    void setLook(const Program& p, const BodyRuntime& rt, const glm::mat3& toWorld, double worldTimeSeconds)
+    {
+        const bool on = rt.hasLook && style == CelestialRenderStyle::Modern;
+        const surface::BodyLook look = on ? rt.look : surface::BodyLook {};
+        p.set("uLookOn", on ? 1.0f : 0.0f);
+        p.set("uLookSeaShallow", look.seaShallow);
+        p.set("uLookSeaDeep", look.seaDeep);
+        p.set("uLookShelfKm", look.shelfDepthKm);
+        p.set("uLookGlint", look.glint);
+        p.set("uLookGlintPower", look.glintPower);
+        p.set("uLookForest", look.forest);
+        p.set("uLookPlains", look.plains);
+        p.set("uLookDry", look.dry);
+        p.set("uLookNightSea", look.nightSeaGlow);
+        p.set("uLookNightSeaCover", look.nightSeaCover);
+        p.set("uLookAirglow", look.airglow);
+        p.set("uLookAurora", look.aurora);
+        p.set("uLookAuroraTop", look.auroraTop);
+        p.set("uLookAuroraColat", glm::radians(look.auroraColatDeg));
+        p.set("uLookAuroraWidth", glm::radians(std::max(0.5f, look.auroraWidthDeg)));
+        // the magnetic pole: the spin axis (+Y body) tilted about the body's +X
+        const float tilt = glm::radians(look.magneticTiltDeg);
+        p.set("uLookMagPole", glm::normalize(toWorld * glm::vec3(0.0f, std::cos(tilt), std::sin(tilt))));
+        p.set("uLookTime", static_cast<float>(std::fmod(worldTimeSeconds, 86400.0)));
     }
 
     // ---- rings ----------------------------------------------------------------
@@ -2202,6 +2245,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             ScopedTimer timer(timers, TGlobes);
             globe.use();
             setCommon(globe, sunDir, sunColour);
+            setLook(globe, *rt, toWorld, frame.worldTimeSeconds);
             globe.set("uViewProj", viewProj);
             globe.set("uBodyToWorld", toWorld);
             globe.set("uCentre", glm::vec3(it.rel));
@@ -2312,6 +2356,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             ScopedTimer timer(timers, TAtmosphere);
             atmosphere.use();
             setCommon(atmosphere, sunDir, sunColour);
+            setLook(atmosphere, *rt, toWorld, frame.worldTimeSeconds);
             atmosphere.set("uViewProj", viewProj);
             atmosphere.set("uBodyToWorld", toWorld);
             atmosphere.set("uCentre", glm::vec3(it.rel));

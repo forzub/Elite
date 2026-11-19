@@ -57,6 +57,14 @@ CloudWeatherField::CloudWeatherField(const BodySurfaceDescriptor& body) : m_body
     }
     // Zonal wind speed ~ 20 m/s at the surface scale.
     m_windRadPerSecond = 20.0 / std::max(1.0e5, body.radiusM);
+    // circulation vs spin (Held-Hou: the Hadley edge widens as the rotation slows; the Rossby deformation radius
+    // NH / f grows with the period): Earth 24 h = the calibration; Lexie 31 h: belts ~14 % poleward, lows ~30 %
+    // larger. Bounded - a very slow / fast spinner keeps a recognisable three-cell picture.
+    {
+        const double period = body.rotationPeriodHours > 0.0 ? body.rotationPeriodHours : 24.0;
+        m_beltScale = std::clamp(std::sqrt(period / 24.0), 0.8, 1.35);
+        m_lowScale = std::clamp(period / 24.0, 0.8, 1.6);
+    }
     // weather systems ~ a fifth of the radius (Earth: fronts / lows ~1000-2000 km)
     m_pattern = OctaveSpec {body.radiusM * 0.30, 1.92, 0.50, 6, 1.5};
 }
@@ -66,8 +74,8 @@ float CloudWeatherField::tendency(const glm::dvec3& dir) const
     // The climate's cloudiness by latitude - a tendency the weather rides on, not the picture itself
     // (2026-11-11: narrow strong belts drew three cloud rings with clear subtropics and poles).
     const double latDeg = std::abs(std::asin(std::clamp(dir.y, -1.0, 1.0))) * 180.0 / Pi;
-    const double t = 0.50 + 0.16 * gauss(latDeg, 0.0, 10.0) - 0.20 * gauss(latDeg, 24.0, 9.0) +
-                     0.14 * gauss(latDeg, 55.0, 14.0) + 0.04 * gauss(latDeg, 90.0, 20.0);
+    const double t = 0.50 + 0.16 * gauss(latDeg, 0.0, 10.0 * m_beltScale) - 0.20 * gauss(latDeg, 24.0 * m_beltScale, 9.0) +
+                     0.14 * gauss(latDeg, std::min(75.0, 55.0 * m_beltScale), 14.0) + 0.04 * gauss(latDeg, 90.0, 20.0);
     return static_cast<float>(std::clamp(t * (0.55 + 0.75 * m_body.cloudPotential), 0.0, 1.0));
 }
 
@@ -101,12 +109,12 @@ float CloudWeatherField::cyclones(const glm::dvec3& dir, std::int64_t epoch) con
                 const double latDeg = std::abs(std::asin(centre.y)) * 180.0 / Pi;
                 // Storm tracks: tropical cyclones 8-25 deg (small, tight), mid-latitude lows 40-65 (large,
                 // loosely wound: the comma of a front)
-                const double tropical = 0.6 * gauss(latDeg, 16.0, 7.0);
-                const double midLatitude = 0.8 * gauss(latDeg, 52.0, 10.0);
+                const double tropical = 0.6 * gauss(latDeg, 16.0 * m_beltScale, 7.0);
+                const double midLatitude = 0.8 * gauss(latDeg, std::min(72.0, 52.0 * m_beltScale), 10.0);
                 if (unitFromHash(h, 0) > (tropical + midLatitude) * 0.55)
                     continue;
                 const bool low = midLatitude > tropical;
-                const double radius = low ? 0.10 + 0.12 * unitFromHash(h, 4) : 0.04 + 0.05 * unitFromHash(h, 4);
+                const double radius = low ? (0.10 + 0.12 * unitFromHash(h, 4)) * m_lowScale : 0.04 + 0.05 * unitFromHash(h, 4);
                 const glm::dvec3 rel = dir - centre * glm::dot(dir, centre);
                 const double d = glm::length(rel) / radius;
                 if (d > 1.4)

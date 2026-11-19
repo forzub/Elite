@@ -125,6 +125,8 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
     };
     auto page = game::presentation::buildTradePresentation(hubId, atHub, m_client->universeTimeSeconds(), m_tradeTab, m_tradeHub,
                                                            distanceText);
+    // the finance tab: the server's ledger for this session (docs/ECONOMY_BANKING.md)
+    page.finance = m_client->sessionSnapshot().wallet;
     // the navigation data tab (JUMP_MECHANICS 10l)
     namespace jr = game::navigation::jump;
     auto& nav = page.nav;

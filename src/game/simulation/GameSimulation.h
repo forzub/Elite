@@ -2,6 +2,7 @@
 
 #include "src/game/navigation/rules/CapsuleRules.h"
 #include "src/game/navigation/rules/JumpSumps.h"
+#include "src/game/fuel/RefuelRules.h"
 
 #include "src/game/navigation/landing/LandingAutopilot.h"
 #include <algorithm>
@@ -298,6 +299,8 @@ public:
     {
         int placeId = -1;
         glm::dvec3 positionM {0.0};
+        // the approach shells' currents on the way (InterstellarJumpRoute.h interstellarShellDriftM; raw, before the lock)
+        glm::dvec3 shellDriftM {0.0};
         std::string name;
     };
     bool requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy, const std::string& exitBodyId,
@@ -330,6 +333,13 @@ public:
     void setFreeFlightThrust(EntityId shipId, int command);
     // a route stop's service stay at a hub (the client flies the route, NAVIGATION_V2 §1)
     void startHubService(EntityId shipId, const std::string& hubId, const std::string& action);
+    // ---- refuelling at a station (GameSimulationRefuel.cpp, docs/FUEL_STATIONS.md): any ship (pilot, route stop,
+    // NPC). `hubId` empty = the station the ship stands at; false = refused (the reason is in motion.refuelRefusal)
+    bool requestRefuel(EntityId shipId, const std::string& hubId = std::string());
+    void cancelRefuel(EntityId shipId, const char* why);
+    // the station a ship stands at for a service: docked on a pad of a hub's dock, or held nearly still in a hub's
+    // frame (a tender comes alongside, like bunkering at anchor); empty = none. `tender` tells which.
+    std::string serviceStationOf(EntityId shipId, bool* tender = nullptr) const;
 
     // ---- combat (GameSimulationCombat.cpp): lasers, missiles, hits on hit volumes
     struct CombatLoadout
@@ -887,9 +897,26 @@ private:
         std::string hubId;
         std::string action;
         double seconds = 0.0;
+        bool refuelAsked = false;     // the refuel service was asked (GameSimulationRefuel.cpp)
+        double refuelRetryS = 0.0;
     };
     std::unordered_map<EntityId, HubService> m_hubServices;
     void updateHubServices(double dt);
+    // refuelling jobs (GameSimulationRefuel.cpp): one per ship; the stations' stock left (t) - starts from the data
+    // file, drained by the jobs, not restocked yet (tankers later)
+    struct RefuelService
+    {
+        std::string hubId;
+        game::fuel::RefuelJob job;
+        game::fuel::PumpSpec pump;
+        bool tender = false;
+        double priceCrPerT = 0.0;
+    };
+    std::unordered_map<EntityId, RefuelService> m_refuels;
+    std::unordered_map<std::string, double> m_fuelStockT;
+    double m_npcRefuelScanSeconds = 0.0;
+    void updateRefuels(double dt);
+    void endRefuel(EntityId shipId, RefuelService& service, game::fuel::RefuelPhase end, const char* why);
 
     // combat state
     struct CombatMissile

@@ -263,6 +263,7 @@ public:
         bool resumeCurrent = false;
         bool landingSeen = false;
         double serviceStart = -1.0;
+        int serviceRefuelSerial = -1;   // the ship's refuelSerial when the service stay began (its refuel job ended = moved on)
         std::string departureHubId;
         double lastDriveSeconds = 0.0;   // the leg pilot's drive ramp (handed to a landing leg)
         game::navigation::globalflight::RouteLegPilot pilot;
@@ -356,6 +357,8 @@ private:
     // the cockpit's shake and fish-eye swell while charging, the fling forward at the jump, the
     // star rays from the old sky to the new one, the report of the exit
     void handleJumpRequest(int kind, int systemId, const std::string& bodyId = {});
+    // refuel at the station the ship stands at (Ctrl+U, the DEV verb "refuel"): mode 1 start, 0 stop, -1 toggle
+    void requestClientRefuel(int mode);
     // the in-system jump (author 2026-11-12): calculate / START to a body of the player's system
     void handleInSystemJumpRequest(int kind, int systemId, const std::string& bodyId);
     void updateJumpPresentation();                       // renderUI, before the scene: events, the effect's frame

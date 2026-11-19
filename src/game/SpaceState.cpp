@@ -1038,6 +1038,11 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         }
     }
 
+    // Ctrl+U: refuel - docked at a station (or held still in a hub's frame: a tender comes alongside) fill the jump
+    // charge; pressed again while it runs - stop. The server decides (GameSimulationRefuel.cpp, docs/FUEL_STATIONS.md).
+    if(ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_U) && m_client)
+        requestClientRefuel(-1);
+
     // Ctrl+J: the J engine on / off (the server refuses it near objects / below the J floor).
     // Ctrl+K: stabilization on / off (off = normal flight, no speed envelope; on = the hub /
     // own orbit / ground frame with the 500 m/s manoeuvre envelope; the server picks it).
@@ -3142,4 +3147,25 @@ void SpaceState::handleResize(int width, int height)
 
 
     }
+}
+// Refuel at the station the ship stands at (docs/FUEL_STATIONS.md): the server decides and runs the job
+// (GameSimulationRefuel.cpp); mode 1 start, 0 stop, -1 toggle by the replicated job phase.
+void SpaceState::requestClientRefuel(int mode)
+{
+    if (!m_client)
+        return;
+    if (mode < 0)
+    {
+        const auto it = m_client->world().ships().find(m_playerId.value);
+        const std::uint8_t phase = it != m_client->world().ships().end() ? it->second.transform.motion.refuelState : 0;
+        mode = phase >= 1 && phase <= 3 ? 0 : 1;   // hookup / pumping / disconnect: running -> stop
+    }
+    game::network::ClientMessage msg;
+    ClientShipCommand command;
+    command.type = ClientShipCommand::RequestRefuel;
+    command.index = mode;
+    msg.payload = command;
+    m_client->sendMessage(msg);
+    m_pilotNotice = mode ? "ЗАПРАВКА: запрос станции" : "ЗАПРАВКА: остановлена";
+    std::cerr << "[Refuel] client: " << (mode ? "refuel requested" : "refuel stop requested") << std::endl;
 }

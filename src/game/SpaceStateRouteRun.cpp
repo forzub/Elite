@@ -171,6 +171,7 @@ void SpaceState::updateClientRoute()
             r.serviceStart < 0.0)
         {
             r.serviceStart = meta.serverTimeSeconds;
+            r.serviceRefuelSerial = -1;
             r.state = S::Service;
             game::network::ClientMessage msg;
             ClientShipCommand command;
@@ -304,7 +305,15 @@ void SpaceState::updateClientRoute()
         const bool refuel = done.action.find("refuel") != std::string::npos;
         const double stay = meta.serverTimeSeconds - r.serviceStart;
         const bool full = motion.jChargeCapacityT > 0.0 && motion.jChargeT >= motion.jChargeCapacityT - 1.0e-9;
-        if ((refuel && full && stay > 20.0) || stay > 25.0)
+        // the refuel is the station's job now (GameSimulationRefuel.cpp: coupling + the pump's rate, minutes): stay
+        // while it runs; the server asks it only once the ship holds still at the station (<= 60 s), so a refuel
+        // stop that is not full waits up to 90 s for the job to appear; 20 min is the hard cap
+        const bool refuelRunning = motion.refuelState >= 1 && motion.refuelState <= 3;
+        const bool refuelEnded = r.serviceRefuelSerial >= 0 && motion.refuelSerial != static_cast<std::uint16_t>(r.serviceRefuelSerial);
+        if (r.serviceRefuelSerial < 0)
+            r.serviceRefuelSerial = motion.refuelSerial;
+        const bool waitRefuel = refuel && !full && !refuelEnded && (refuelRunning || stay < 90.0);
+        if ((stay > 20.0 && !refuelRunning && !waitRefuel) || stay > 1200.0)
         {
             std::cerr << "[Route] service at " << done.hubId << " done (J charge " << motion.jChargeT << " t)" << std::endl;
             r.serviceStart = 1.0e300;   // done: finishPoint goes on

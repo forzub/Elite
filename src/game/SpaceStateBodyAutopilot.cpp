@@ -176,6 +176,7 @@ bool SpaceState::clientBodyAutopilotWorld(gf::BodyAutopilotEnvironment& env, gf:
     sample.refusal = motion.freeFlightCaptureRefusal;
     sample.jAccelKnown = true;
     sample.jAccelMps2 = std::abs(motion.jAccelMps2);
+    sample.jFieldLevelMps2 = motion.jFieldLevelMps2;
     return true;
 }
 

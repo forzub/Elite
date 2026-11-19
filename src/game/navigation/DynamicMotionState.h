@@ -163,6 +163,9 @@ struct DynamicMotionState
     // +/- exponentially), the field follows it exponentially; main = the main engines' maximum
     double jAccelCommandMps2 = 0.0;
     double jAccelMps2 = 0.0;
+    // the J field's own level now (what it can give: its ramp / the client limit / damage), NOT net of the
+    // medium's resistance - the route pilot follows the field's ramp with it (2026-11-19)
+    double jFieldLevelMps2 = 0.0;
     double mainEngineMaxMps2 = 0.0;
     bool jStopping = false;   // J switched off: the field winds down to the main engines' level first
     double jChargeT = -1.0;          // jump-drive charge left (t); < 0 = not yet filled (first J use)
@@ -196,6 +199,15 @@ struct DynamicMotionState
     std::uint8_t navComputerState = 0;
     // the data carriers aboard (NavDataBanks.h parseDataCarriers)
     std::string dataCarriers;
+    // refuelling at a station (GameSimulationRefuel.cpp, src/game/fuel/RefuelRules.h): the job's phase
+    // (game::fuel::RefuelPhase: 0 none, 1 hookup, 2 pumping, 3 disconnect, 4 done, 5 refused, 6 cancelled), the
+    // refusal (game::fuel::RefuelRefusal), the tonnes delivered by the job, the station's pump rate (t/min);
+    // refuelSerial counts the ended jobs (done / refused / cancelled: the client's "refuelled" event)
+    std::uint8_t refuelState = 0;
+    std::uint8_t refuelRefusal = 0;
+    std::uint16_t refuelSerial = 0;
+    double refuelDeliveredT = 0.0;
+    double refuelRateTpm = 0.0;
     // the client's route (display only, not on the wire): 0 none, 1 flying, 2 paused (manual flight
     // until RESUME), 3 a service stay, 4 landing (the landing autopilot); legIndex / legCount of it
     std::uint8_t routeState = 0;

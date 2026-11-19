@@ -547,6 +547,122 @@ const char* channelRu(const std::string& c)
     if (c == "closed") return "закрыт";
     return c.c_str();
 }
+
+std::string money2(double v)
+{
+    char b[48];
+    std::snprintf(b, sizeof b, "%.2f", v);
+    std::string s = b;
+    const auto dot = s.find('.');
+    const bool neg = !s.empty() && s[0] == '-';
+    std::string head = s.substr(neg ? 1 : 0, dot - (neg ? 1 : 0)), out;
+    for (std::size_t i = 0; i < head.size(); ++i)
+    {
+        if (i > 0 && (head.size() - i) % 3 == 0)
+            out += ' ';
+        out += head[i];
+    }
+    return (neg ? "-" : "") + out + s.substr(dot);
+}
+
+// F8 -> ФИНАНСЫ: the server's ledger as replicated to this session (docs/ECONOMY_BANKING.md)
+void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, float listX, float listY, float listW, float listH,
+                   float w, float h, int px, int small, int big)
+{
+    t.solidRectPx(listX, listY, listW, listH, Panel);
+    if (!f.valid)
+    {
+        t.textDrawPx("нет данных банка (сервер без экономики)", listX + 12, listY + 12, px, Muted);
+        return;
+    }
+    float y = listY + 10.0f;
+    const float x = listX + 12.0f, right = listX + listW - 12.0f;
+    const auto row = [&](const std::string& label, const std::string& value, const glm::vec4& col, int size) {
+        if (y > listY + listH - static_cast<float>(size))
+            return;
+        t.textDrawPx(label, x, y, size, size == px ? Text : Muted);
+        t.textDrawPx(value, right - t.measureTextPx(value, size), y, size, col);
+        y += static_cast<float>(size) + 6.0f;
+    };
+    const auto header = [&](const std::string& s) {
+        y += 4.0f;
+        t.textDrawPx(s, x, y, px, Title);
+        y += static_cast<float>(px) + 6.0f;
+    };
+    const bool good = f.standing == "good";
+    row("Статус клиента", f.standingRu, good ? Good : f.standing == "grace" ? Warn : Bad, px);
+    row("Чистые активы", money2(f.netWorthCr) + " Cr", f.netWorthCr >= 0.0 ? Good : Bad, px);
+    header("Наличные");
+    for (const auto& c : f.cash)
+        row(c.label, money2(c.amount) + " " + c.currency + (c.currency == "CR" ? "" : "  (" + grouped(c.amountCr) + " Cr)"), Text, small);
+    header("Счета");
+    for (const auto& a : f.accounts)
+    {
+        row(a.label, money2(a.amount) + " " + a.currency + (a.currency == "CR" ? "" : "  (" + grouped(a.amountCr) + " Cr)"),
+            a.amount >= 0.0 ? Text : Warn, px);
+        row("  овердрафт " + grouped(a.limit) + " " + a.currency + ", ставка " + fmt("%.2f %%", a.annualRate * 100.0) +
+                (a.state.empty() ? "" : "  ·  " + a.state),
+            "", Muted, small);
+    }
+    if (!f.loans.empty())
+    {
+        header("Долги");
+        for (const auto& l : f.loans)
+        {
+            row(l.label, money2(l.amount) + " " + l.currency, Warn, px);
+            row("  ставка " + fmt("%.2f %%", l.annualRate * 100.0) + ", платёж " + grouped(l.limit) + " / 30 сут" +
+                    (l.state.empty() ? "" : "  ·  " + l.state),
+                "", Muted, small);
+        }
+    }
+    header("Спасательный кредит");
+    row("Остаток лимита (топливо, ремонт до лётного состояния; буксир — всегда)", grouped(f.lifelineLeftCr) + " Cr / 90 сут", Good, small);
+    if (!f.notices.empty())
+    {
+        header("Последние операции");
+        for (const auto& n : f.notices)
+            row(n, "", Muted, small);
+    }
+
+    // right column: where the ship is, the fuel price here
+    const float cx = listX + listW + 24.0f, cw = w - cx - 24.0f;
+    float ry = listY;
+    const auto line = [&](const std::string& label, const std::string& value, const glm::vec4& col) {
+        if (ry > h - 40.0f - static_cast<float>(small))
+            return;
+        t.textDrawPx(label, cx, ry, small, Muted);
+        t.textDrawPx(value, cx + cw - t.measureTextPx(value, small), ry, small, col);
+        ry += static_cast<float>(small) + 6.0f;
+    };
+    t.textDrawPx("Здесь платят", cx, ry, big, Text);
+    ry += static_cast<float>(big) + 6.0f;
+    line("Полития", f.localPolity.empty() ? "нет государства" : f.localPolity, Text);
+    line("Банк", f.localBank, Text);
+    line("Курс", "1 Cr = " + fmt("%.4f", f.localFxPerCr) + " " + f.localCurrency, Text);
+    ry += 10.0f;
+    t.textDrawPx("Топливо", cx, ry, big, Text);
+    ry += static_cast<float>(big) + 6.0f;
+    if (!f.fuelQuoteValid)
+        line("Заряд прыжка", "здесь не продаётся", Bad);
+    else
+    {
+        line("Где", f.fuelHubName, Text);
+        line("Заряд прыжка, прейскурант", grouped(f.jumpChargeListPerT) + " " + f.localCurrency + "/т  (" + grouped(f.jumpChargeListCrPerT) +
+                                              " Cr/т)", Text);
+        line("К оплате", f.fuelFree ? "0 — топливо пока бесплатно" : grouped(f.jumpChargeChargedPerT) + " " + f.localCurrency + "/т",
+             f.fuelFree ? Good : Text);
+        line("Запас станции", fmt("%.1f т", f.jumpChargeStockT), Text);
+        if (f.reactorFuelListPerKg > 0.0)
+            line("Реакторное топливо (D/He-3)", grouped(f.reactorFuelListPerKg) + " " + f.localCurrency + "/кг", Text);
+        ry += 6.0f;
+        t.textDrawPx("Из чего цена заряда", cx, ry, px, Title);
+        ry += static_cast<float>(px) + 6.0f;
+        for (const auto& b : f.fuelBreakdown)
+            line(b, "", Muted);
+    }
+    if (f.freeFuelListCr > 0.0)
+        line("Получено бесплатно по прейскуранту", grouped(f.freeFuelListCr) + " Cr", Muted);
+}
 } // namespace
 
 void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page)
@@ -586,9 +702,9 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
 
     // ---- tabs
     const float tabY = 18.0f + big + 18.0f + 2.0f * small;
-    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ"};
+    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ", "ФИНАНСЫ"};
     float tx = 24.0f;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 5; ++i)
     {
         const float tw = t.measureTextPx(tabs[i], px) + 24.0f;
         t.solidRectPx(tx, tabY, tw, px * 1.8f, page.tab == i ? Selected : Panel);
@@ -602,6 +718,12 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     if (page.tab == 3)
     {
         renderNavData(page.nav, listX, listY, listW, listH, w, h, px, small, big);
+        t.endFrame();
+        return;
+    }
+    if (page.tab == 4)
+    {
+        renderFinance(t, page.finance, listX, listY, listW, listH, w, h, px, small, big);
         t.endFrame();
         return;
     }

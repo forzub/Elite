@@ -33,9 +33,11 @@
                                     //     dispatcher clears a direct entry or assigns a hold point
             RequestJump,            // the interstellar jump: index = the target system id (START: the
                                     //     charge-up), index -1 = cancel; detail = the exit body id (optional)
-            NavData                 // navigation data (JUMP_MECHANICS 10l), docked at a hub: index 0 = the bank's
+            NavData,                // navigation data (JUMP_MECHANICS 10l), docked at a hub: index 0 = the bank's
                                     //     record `detail` into the onboard computer, 1 = onto a new data carrier,
                                     //     2 = carrier number `amount` into the computer
+            RequestRefuel           // docked at a station (or held in a hub's frame): index 1 = fill the jump charge,
+                                    //     index 0 = stop (docs/FUEL_STATIONS.md); the server decides
         };
         Type type;
 

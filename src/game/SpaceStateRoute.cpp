@@ -3,6 +3,7 @@
 // assets/data/navigation/route_zones.json); the server's route autopilot flies
 // the legs (GameSimulationRoute.cpp).
 #include "src/game/navigation/rules/BodyFlightRules.h"
+#include "src/game/fuel/FuelStationCatalog.h"
 #include "src/game/SpaceStateInternal.h"
 
 #include <algorithm>
@@ -342,6 +343,8 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         {
             if (hubId == req.points[static_cast<std::size_t>(failAt)].hubId)
                 continue;   // the point itself: it is a stop already (a refuel there needs its own action)
+            if (!game::fuel::FuelStationCatalog::instance().sellsFuel(hubId))
+                continue;   // only a station that sells jump charge (docs/FUEL_STATIONS.md)
             const double extra = glm::length(p - a) + glm::length(b - p) - glm::length(b - a);
             if (extra < best)
             {

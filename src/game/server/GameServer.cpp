@@ -32,6 +32,7 @@
 #include "src/game/scene/GameSceneSetup.h"
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/economy/EconomyModel.h"
+#include "src/game/economy/EconomyService.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include <map>
 #include <set>
@@ -477,6 +478,35 @@ m_simulation.setCelestialBodyKinematicStateAu(
             throw std::runtime_error(
                 "primary bootstrap player identity was not registered"
             );
+        }
+
+        // The economy (docs/ECONOMY_BANKING.md): national banks, one ledger per player (home bank = the polity
+        // of the start system), the market state; installed for the server systems that charge (refuel service).
+        if (m_economy.load())
+        {
+            m_economy.start(game::economy::EconomyModel::dayOf(universeTime));
+            for (const auto& [playerValue, player] : m_players.all())
+                m_economy.ensurePlayer(playerValue, m_initialSimulationSystemId);
+            game::economy::service::Bindings bindings;
+            bindings.economy = &m_economy;
+            bindings.playerOfShip = [this](std::uint32_t shipEntityId) -> std::uint64_t {
+                const Ship* ship = m_simulation.getShip(EntityId{shipEntityId});
+                return ship ? m_players.playerForShip(ship->core().registry().instanceId).value : 0;
+            };
+            bindings.systemOfHub = [this](const std::string& hubId) -> int {
+                for (const auto& hub : m_lastSnapshot.hubs)
+                    if (hub.id == hubId)
+                        return hub.systemId;
+                return -1;
+            };
+            bindings.locationOfShip = [this](std::uint32_t shipEntityId) -> std::pair<std::string, int> {
+                const Ship* ship = m_simulation.getShip(EntityId{shipEntityId});
+                if (!ship)
+                    return {std::string(), -1};
+                const auto& motion = ship->core().transform().motion;
+                return {motion.hubId, motion.systemId};
+            };
+            game::economy::service::install(std::move(bindings));
         }
 
         game::server::ServerTimeContext initialTime;
@@ -1291,14 +1321,27 @@ void GameServer::update(double dt)
                             deepCatch.positionM = (c.pointLy - c.centreLy) * jj::MetersPerLy;
                             deepCatch.name = c.name;
                         }
+                        // the approach shells' own currents on the way (Fortuna, docs/FORTUNA_LEXIE.md)
+                        deepCatch.shellDriftM = jj::interstellarShellDriftM(m_starAtlas, route, universeS);
+                        if (glm::length(deepCatch.shellDriftM) > 0.0)
+                            std::cerr << "[Jump] the way to " << to->name << ": approach-shell currents "
+                                      << glm::length(deepCatch.shellDriftM) / 1000.0 << " km (before the lock " << lock << ")" << std::endl;
                     }
                     m_simulation.requestJump(id, to ? to->id : -1, targetName, pathLy, exitBody, dir,
-                                             deepCatch.placeId >= 0 ? &deepCatch : nullptr);
+                                             deepCatch.placeId >= 0 || glm::length(deepCatch.shellDriftM) > 0.0 ? &deepCatch : nullptr);
                     break;
                 }
 
                 case ClientShipCommand::NavData:
                     handleNavDataCommand(id, shipCmd.index, shipCmd.detail, static_cast<int>(shipCmd.amount));
+                    break;
+
+                case ClientShipCommand::RequestRefuel:
+                    // docked at a station (or held in a hub's frame): fill the jump charge / stop (docs/FUEL_STATIONS.md)
+                    if (shipCmd.index == 0)
+                        m_simulation.cancelRefuel(id, "the pilot stopped it");
+                    else
+                        (void)m_simulation.requestRefuel(id, shipCmd.target);
                     break;
 
                 case ClientShipCommand::SetFreeFlightThrust:
@@ -1573,6 +1616,12 @@ m_simulation.setOrbitalUniverseTimeSeconds(
         }
     }
 }
+// The world changes once a day (author 2026-11-19): banks (FX, interest, due dates, standing) and every
+// market's stock / price take one daily step per world day passed (<= 3 per tick when the clock races).
+{
+    game::server::ScopedTickTimer timer(game::server::serverTickProfile().economy);
+    m_economy.advanceTo(game::economy::EconomyModel::dayOf(universeTime));
+}
 
 
 
@@ -1734,6 +1783,7 @@ void GameServer::populateClientSessionSnapshot(
     snapshot.session.playerNavigation = {};
     snapshot.session.ownedNavigationAssets.clear();
     snapshot.session.navigationSensors = {};
+    snapshot.session.wallet = {};
     snapshot.session.predictionWorldParams = m_simulation.world();
     snapshot.session.universeTimeSeconds =
         m_universeClock.timeSeconds();
@@ -2185,6 +2235,24 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
 }
 
 
+game::simulation::ClientWalletSnapshot
+GameServer::walletForSession(
+    game::network::ServerSessionId sessionId
+) const
+{
+    const PlayerId player = m_sessions.player(sessionId);
+    if (!player || !m_economy.loaded())
+        return {};
+    std::string hubId;
+    int systemId = -1;
+    if (const Ship* ship = m_simulation.getShip(controlledEntityForSession(sessionId)))
+    {
+        hubId = ship->core().transform().motion.hubId;
+        systemId = ship->core().transform().motion.systemId;
+    }
+    return m_economy.walletSnapshot(player.value, hubId, systemId);
+}
+
 game::simulation::ClientNavigationSensorSnapshot
 GameServer::navigationSensorsForSession(
     game::network::ServerSessionId sessionId
@@ -2339,6 +2407,7 @@ bool GameServer::copySnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
+    outSnapshot.session.wallet = walletForSession(sessionId);
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -2370,6 +2439,7 @@ bool GameServer::copyHydratedSnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
+    outSnapshot.session.wallet = walletForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -2429,6 +2499,7 @@ bool GameServer::copySparseSnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
+    outSnapshot.session.wallet = walletForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

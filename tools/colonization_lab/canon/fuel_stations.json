@@ -1,0 +1,80 @@
+{
+  "status": "PROPOSAL (2026-11-19, fuel stations slice): every number here is a proposal anchored on the real data named in each note",
+  "what_fuel_is": "The ship's only runtime consumable is the JUMP CHARGE (commodity jump_charge: the drive's consumable isotope charge, 1.9 t/m3, hazard D, 'restricted' in every goods regime - a licensed sale). It sits in std.tank.jumpcharge tanks (1 t each; the Cobrett carries 3) and is spent by jumps and by J flight (src/game/navigation/rules/JDrive.h). Reactor fuel (D / He-3 pellets) is listed with the stations' stock but is not consumed by the runtime yet (a Cobrett burns grams a year).",
+  "pumps": {
+    "note": "Transfer rates. Anchor: a narrow-body airliner's single-point refuelling takes ~1000-1500 L/min at 50 psi. 1 t of jump charge = 0.53 m3 (530 L); the charge is hazard class D, so a hub refuel dock pumps about half the airliner rate. A full Cobrett (3 t) takes 2.5 min of pumping at a hub plus the coupling.",
+    "hub": {
+      "rate_t_per_min": 1.2,
+      "hookup_s": 30,
+      "disconnect_s": 15,
+      "why": "заправочный док хаба (hub_modules.refuel_dock): ~630 л/мин, муфта класса D с проверкой утечки и продувкой"
+    },
+    "refuel_point": {
+      "rate_t_per_min": 1.8,
+      "hookup_s": 30,
+      "disconnect_s": 15,
+      "why": "отдельное транзитное депо (deep_space_refuel_point): строится под поток, насосы крупнее"
+    },
+    "small": {
+      "rate_t_per_min": 0.6,
+      "hookup_s": 30,
+      "disconnect_s": 15,
+      "why": "маяк-мост / склад снабжения: один малый заправочный док или только танкерный причал"
+    },
+    "illegal": {
+      "rate_t_per_min": 0.4,
+      "hookup_s": 60,
+      "disconnect_s": 20,
+      "why": "шланг из трюма танкера (~210 л/мин) без штатной муфты: медленно и осторожно"
+    }
+  },
+  "stock": {
+    "note": "Stock of jump charge at the station (t). Hubs: their market stock (market_state_3126). Jump-point depots: stock_days of their transit demand (outposts.json refuel.jump_point.stock_days). Shell staging posts: bulk tanker deliveries. Illegal: what a crew can skim or divert.",
+    "shell_staging_t": 2000,
+    "pirate_t_per_ship": 3.0,
+    "smuggler_t_per_person": 0.25,
+    "proposed_tanker_t": 40
+  },
+  "price": {
+    "note": "The price itself comes from the ECONOMY agent's interface (fuel price at a station); author 2026-11-19: 0 for now. price_hint_cr_per_t is the market's jump_charge price (market_state_3126) for that agent; price_factor is the markup a station applies over it.",
+    "remote_markup": 1.15,
+    "grey_factor": 1.3,
+    "smuggler_factor": 1.6,
+    "pirate_factor": 2.0,
+    "vulture_factor": 3.0
+  },
+  "illegal_rules": {
+    "sump_vulture": {
+      "min_piracy_index": 0.45,
+      "min_weak_enforcement": 0.5,
+      "min_traffic": 0.5,
+      "reservoir_kinds": [
+        "asteroid_belt",
+        "kuiper_belt",
+        "debris_disk",
+        "outer_belt",
+        "trojans"
+      ],
+      "why": "Пояс — отстойник прыжков (JumpSumps.h): шаг, пересекающий его, может быть пойман, и корабль выходит в точке захвата с потраченным зарядом шага. Застрявший в поясе платит любую цену — чёрный танкер прячется среди камней и ждёт. Только где патрули слабые, а трафик кормит; систему, где уже есть тайный объект, закрывает он."
+    },
+    "sargasso_edge": {
+      "zone_kinds": [
+        "sargasso"
+      ],
+      "why": "Саргассы — место, где копятся застрявшие корабли и обломки; чёрный танкер на краю продаёт заряд застрявшим и мусорщикам."
+    },
+    "shell_mouth": {
+      "why": "Корабль, пойманный оболочкой, теряет заряд шага (JUMP_MECHANICS 10h). Устье коридора без законного поста — узкое место без патрулей: чёрный танкер продаёт заряд там, а рядом с лицензионным кордоном — тем, кто его обходит."
+    },
+    "covert_moon": {
+      "why": "Система контрабанды, отсеянная проходом placement только лимитом 6 хабов (outposts smugglers_rejected «лимит»): строгий / военный режим товаров всё равно делает «restricted» заряд товаром чёрного рынка. Тайный танкер стоит на орбите дальнего малого тела, куда не ходят патрули и плановые рейсы."
+    }
+  },
+  "runtime_demo_hubs": {
+    "note": "Runtime-only authored hubs of Sol (initial_world_state) that have no world site: the generator cities used by the docking runs. They sell fuel like an orbital hub so the service can be checked live at their dock (DEV); the ruin and the prototypes do not.",
+    "hubs": {
+      "plane_demo": 1318,
+      "belt_demo": 363
+    }
+  }
+}

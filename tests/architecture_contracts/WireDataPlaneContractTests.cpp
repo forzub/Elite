@@ -510,6 +510,12 @@ SimulationSnapshot makeSnapshot()
     snapshot.session.configuredUniverseTimeScale = 10000.0;
     snapshot.session.universeTimeSimulation = true;
     snapshot.session.universeDate = "3026-08-14";
+    snapshot.session.wallet.valid = true;
+    snapshot.session.wallet.day = 1141234;
+    snapshot.session.wallet.localCurrency = "HRL";
+    snapshot.session.wallet.jumpChargeListPerT = 31244.5;
+    snapshot.session.wallet.accounts.push_back({"sol_authority", "Sol Treasury", "CR", 20000.25, 20000.25, 4000.0, 0.0245, ""});
+    snapshot.session.wallet.fuelBreakdown.push_back("feedstock 2 083 Cr/t");
 
     return snapshot;
 }
@@ -709,6 +715,11 @@ void testSnapshotRoundTrip()
         "navigation uncertainty did not round-trip");
     require(decoded.session.universeDate == "3026-08-14",
         "session universe date mismatch");
+    require(decoded.session.wallet.valid && decoded.session.wallet.day == 1141234 &&
+                decoded.session.wallet.localCurrency == "HRL" && decoded.session.wallet.jumpChargeListPerT == 31244.5 &&
+                decoded.session.wallet.accounts.size() == 1 && decoded.session.wallet.accounts[0].amount == 20000.25 &&
+                decoded.session.wallet.accounts[0].annualRate == 0.0245 && decoded.session.wallet.fuelBreakdown.size() == 1,
+        "session wallet did not round-trip");
 
     auto withTrailingGarbage = payload;
     withTrailingGarbage.push_back(0xAAu);

@@ -259,6 +259,10 @@ void GameSimulation::applyGlobalFlightCommand(EntityId shipId, Ship& ship, Activ
         frame.linearVelocityMps += dv;
         f.jChargeAccelMps2 = glm::length(dv) / dt;
         motion.jAccelMps2 = f.jChargeAccelMps2 - f.jMediumMps2;   // net of the medium (shown)
+        // the field's own level (what it can give now) for the client's ramp: never the net of the medium (live
+        // 2026-11-19: at 0.87 c the medium's ~6e4 m/s2 made the net negative, the route pilot took it for a field
+        // still ramping, dropped its limit to 1 g again and again and could not brake - it overshot the hub)
+        motion.jFieldLevelMps2 = cap;
         jField = true;
         f.globalLogSeconds += dt;
         if (f.globalLogSeconds >= 2.0)
@@ -692,6 +696,7 @@ void GameSimulation::updateFreeFlights(double dt)
     for (const EntityId id : otherPasses)
         m_pendingStabilize.push_back(id);
     updateHubServices(dt);
+    updateRefuels(dt);
     for (auto it = m_freeFlights.begin(); it != m_freeFlights.end();)
     {
         Ship* ship = getShip(it->first);
@@ -876,6 +881,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 // shown: the net acceleration - the field minus the medium's resistance (holding the top speed the
                 // field works at full thrust and the ship does not accelerate; the charge pays for the field)
                 motion.jAccelMps2 = a - f.jMediumMps2;
+                motion.jFieldLevelMps2 = std::abs(a);
                 if (a != 0.0 && std::fmod(f.elapsedSeconds, 2.0) < dt)
                     std::cerr << "[Flight] ship " << it->first.value << ": J engine " << a / g << " g field, " << motion.jAccelMps2 / g << " g effective (command " << motion.jAccelCommandMps2 / g
                               << " g), speed vs reference " << glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps) / 1000.0

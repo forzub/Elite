@@ -6673,3 +6673,33 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   erased Newtonian centripetal feed-forward» ALSO on the baseline (pre-existing; it stops at the first failure).
   DEV: ELITE_DEV_ROUTE_START_DUMP=1 ([RouteStart] accepted profile + geometry); runs go under the scratchpad
   watchdog.sh (docking stall / silent log / player destroyed -> kill). NEXT: the colony tour again under the watchdog.
+- 2026-11-19 NIGHT BATCH (author away; agents + lead; built together, gates 204 pass / 6 known / the 3 old new-reds:
+  check_client_galaxy_map_catalog, check_ui_platform_fonts, system_map/check_architecture - pre-existing):
+  HUBS: docs/HUB_COVERAGE.md (tools/models/hub_coverage.py): 637 inhabited sites; 277 new orbital colony cities
+  (hub_colonies_batch.py), all 293 cities assemble (EliteHubCityAssemblyCheck). New shape «spire cluster»
+  (units/hub_spire.py, author reference D:/tmp/refs/yt_lqpHpz6Tv2s: towers with cantilevered pads, lit causeways at
+  560/720/880 m, capital-ship berth), sha1 pick for 50 hubs. Server: assembleHubCityCollision (collision only) - start
+  14.4 GB -> 1.77 GB. Client: cities beyond 400 km not assembled until near (SceneRenderer, ModelAssetGpuLibrary::get
+  loadIfMissing) - Sol entry frame 10 s -> 2.4 s. OPEN: minimum city 12 blocks oversized for small sites; 146 surface,
+  39 outpost, 20 hidden, 12 graveyard, 12 belt/Lagrange sites without a hub (see the doc); the near-load is synchronous
+  (~0.1-1.3 s per city on approach).
+  FUEL: refuel service (GameSimulationRefuel, docs/FUEL_STATIONS.md, 647 places, 32 illegal; Ctrl+U, verbs refuel /
+  waitfor:refueled); fuel = J charge (jump_charge good). ECONOMY: docs/ECONOMY_BANKING.md - 22 national banks /
+  currencies, wallet + accounts + overdraft, no-death-spiral rules (emergency credit 25k Cr / 90 d, tow never refused,
+  restructuring), daily price step with damping; fuel free (prices.fuel_free_of_charge / ELITE_FUEL_FREE) with the list
+  price computed; F8 ФИНАНСЫ tab (live: D:/tmp/tour/00_finance.png - 21 000 Cr, Казначейство СА, fuel list 7 790 Cr/t,
+  to pay 0). EliteEconomyCheck 46/46. Wire schema 48.
+  FORTUNA (Fomalhaut 61): closed by data (collision cascade 3121: tau 16, corridors 2/3 collapsed, Fortuna-1 a 0.25 deg
+  thread) + a narrow rule: approach-shell drift (driftAuPerTau). EliteJumpAccessCheck: blind 99 % caught; fresh lane
+  record 2.9 %. Lexie: AUTHOR 2026-11-19 CANON - habitable paradise; look block (sapphire/turquoise sea, glint, night
+  sea glow, airglow, aurora) - NOT yet the "most beautiful": renders flat, night side shows blocky patches - next pass.
+  Day-length cloud belts now apply to all planets. WORLD'S ASS: docs/WORLDS_ASS_REGION.md + canon/worlds_ass_region.json
+  (3 pirate groups, rogue Cognium «Нить» + Tianhe «Хоу И», 4 labs, 8 wrecks + field «Тихая заводь», PROPOSAL lost
+  generation ship «Парамита» - author to confirm). MINES: 24 hubq_* modules + hubq_mine_site (docs/MINE_MODELS.md;
+  bucket wheel, rails/wagons/loco, pipe conveyor, pit kit, canyon, portal, headframe, settlement, bulk terminal, pier,
+  drilling rig) - site reads flat; next: sculpted asteroid terrain, more canyons.
+  ROUTE FIX: J-field level replicated (motion.jFieldLevelMps2): the route pilot took the net-of-medium accel (negative
+  at 0.87 c) for a ramping field and dropped to 1 g - overshot Agora (Lalande, 417 M km). Tour restarted with it.
+  OPEN for the author: questions in each doc (banks/currency names, start money, fuel tax; Fortuna risk display and the
+  trapped-inside rule; HD 102195 only via the ice shoal; «Парамита»; mine placement; who owns Sol hubs in
+  initial_world_state.json - world_sites.py overwrites them).

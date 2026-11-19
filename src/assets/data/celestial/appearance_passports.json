@@ -316,6 +316,30 @@
         0.64
       ],
       "reference": "deeper blue than Uranus (Voyager 2 true colour); the curated albedo_source is a synthetic placeholder (ring \"craters\" / lines / waves)"
+    },
+    {
+      "id": "system_61.Fomalhaut.Lexie",
+      "procedural": true,
+      "reference": "Lexie (Fomalhaut), docs/FORTUNA_LEXIE.md 2026-11-19: the 'most beautiful planet' look (Modern style). Physically motivated, exaggerated where noted: turquoise carbonate banks (karst 1.0, carbonate 15 %: Bahamas-like white sand under clear water) kept turquoise down to ~1 km depth (exaggerated); deep oligotrophic sapphire sea; sharper, brighter glint (1.4 bar calm swell, a hot white star); vegetation under an A3 star (more blue/UV: pigments plausibly absorb blue -> teal-emerald forests, golden meadows, Kiang 2007 speculation); pink coralline sands (Bermuda-like) on dry coasts; night: bioluminescent 'milky sea' patches (real, satellite-observed) and blue surf rims; airglow green O 557.7 nm + gold Na 589 nm (strong day-side UV of an A star, sodium from the heavy dust infall of the young system) as a band on the night limb; aurorae green with crimson tops round a pole 9 deg off the spin axis (field 1.28 Earth); violet-leaning Rayleigh sky under an 8600 K star.",
+      "look": {
+        "sea_shallow_linear": [0.012, 0.130, 0.150],
+        "sea_deep_linear": [0.002, 0.014, 0.070],
+        "shelf_depth_km": 1.0,
+        "glint": 1.6,
+        "glint_power": 90,
+        "forest_linear": [0.012, 0.055, 0.035],
+        "plains_linear": [0.140, 0.150, 0.035],
+        "dry_linear": [0.500, 0.300, 0.250],
+        "night_sea_glow_linear": [0.015, 0.075, 0.090],
+        "night_sea_cover": 0.18,
+        "airglow_linear": [0.100, 0.200, 0.060],
+        "aurora_linear": [0.045, 0.240, 0.085],
+        "aurora_top_linear": [0.140, 0.020, 0.050],
+        "aurora_colatitude_deg": 19,
+        "aurora_width_deg": 3.5,
+        "magnetic_tilt_deg": 9,
+        "sky_scatter": [0.20, 0.38, 1.0]
+      }
     }
   ]
 }

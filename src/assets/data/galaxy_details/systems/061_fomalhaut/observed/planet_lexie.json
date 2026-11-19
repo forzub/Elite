@@ -32,18 +32,21 @@
     "surface_pressure_pa": 141855,
     "mean_surface_temperature_k": 283,
     "water_mass_fraction": 0.0006,
-    "biosphere": "none"
+    "biosphere": "complex"
   },
   "atmosphere_composition": {
-    "N2": 0.968,
-    "CO2": 0.02,
-    "Ar": 0.009,
-    "H2O": 0.003
+    "N2": 0.77,
+    "O2": 0.21,
+    "CO2": 0.0007,
+    "Ar": 0.0093,
+    "H2O": 0.01
   },
   "extra": {
     "environment_preset_id": "terrestrial_temperate",
     "naming": "tools/colonization_lab/canon/naming.json body:system_61.Fomalhaut.Lexie; name history AUTHOR_UNSPECIFIED",
-    "hydrosphere": "океаны, около 65 % поверхности",
-    "breathable": false
+    "hydrosphere": "океаны, около 80 % поверхности; архипелаги и широкие мелководные карбонатные банки",
+    "visual_tuning_note": "2026-11-19 (FORTUNA_LEXIE.md, author: make Lexie visually the most beautiful): generated ocean_coverage 0.92 -> 0.80, relief_amplitude_km 13.97 -> 3.5, glaciation_potential 0.5 -> 0.3 (two continents + island chains instead of one snow-capped island in an empty sea); colours in appearance_passports.json look",
+    "breathable": true,
+    "habitability_note": "author 2026-11-19: Lexie is habitable - a paradise world (CANON); details (biosphere origin, climate) deferred by the author; composition set N2/O2 for consistency with breathable. docs/FORTUNA_LEXIE.md"
   }
 }

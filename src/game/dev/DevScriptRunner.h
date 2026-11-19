@@ -85,6 +85,7 @@ private:
     double m_scriptShiftMs = 0.0;
     double m_waitStartMs = -1.0;
     bool m_waitRouteSeen = false;
+    int m_refuelSerialAtRequest = -1;   // "refuel": the ship's refuelSerial when it was asked ("waitfor:refueled")
     bool waitSatisfied(SpaceState& s, const std::string& condition);
     int m_serviceStep = 0;
     bool m_dockRequestSent = false;

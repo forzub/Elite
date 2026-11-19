@@ -8,8 +8,11 @@
       "innerAu": 1500.0,
       "peakAu": 4000.0,
       "outerAu": 12000.0,
-      "tau": 3.0,
-      "cause": "Фомальгаут - молодая (440 млн лет) тройная система A: спутники TW PsA (B, ~0.9 св. года) и LP 876-10 (C, ~2.5 св. года) взбалтывают её кометное облако; основное кольцо ALMA (136-150 а.е.) - свидетельство бурных столкновений. Здесь облако Хиллса сжато и плотнее солнечного в сотни раз (преувеличение). Коридоры - щели резонансов со спутниками (как люки Кирквуда в поясе астероидов); спутники движутся - щели прецессируют.",
+      "tau": 16.0,
+      "tauBefore3121": 3.0,
+      "driftAuPerTau": 0.05,
+      "closure": "CLOSED since 3121 (docs/FORTUNA_LEXIE.md, 2026-11-19): a dumb jump is caught ~99 % (lock 12); a survivor is carried off Lexie's reach by the shell's currents. Only Фортуна-1 survives as a thin precessing thread (0.25 deg, 0.6 deg/yr): it needs a fresh survey better than ~0.03 deg (records die in weeks); Фортуна-2 and -3 collapsed (0.01 deg - no record can find them). The old bank records (0.1-0.3 deg) are useless now.",
+      "cause": "Фомальгаут - молодая (440 млн лет) тройная система A: спутники TW PsA (B, ~0.9 св. года) и LP 876-10 (C, ~2.5 св. года) взбалтывают её кометное облако; основное кольцо ALMA (136-150 а.е.) - свидетельство бурных столкновений. Облако Хиллса сжато и плотнее солнечного в сотни раз (преувеличение). Коридоры - щели резонансов со спутниками (как люки Кирквуда); спутники движутся - щели прецессируют. ЗАКРЫТИЕ (3121): каскад столкновений в облаке - то, что реально видно у Фомальгаута: «планета» Fomalhaut b оказалась расширяющимся облаком пыли от столкновения двух тел ~200 км (Gáspár, Rieke 2020), JWST (2023) нашёл ещё одно такое облако («Great Dust Cloud»). Здесь такой каскад прошёл по облаку Хиллса во время периастра TW PsA: миллиарды осколков заполнили щели резонансов (коридоры 2 и 3 схлопнулись, 1 сузился до нити и прецессирует быстрее), отстойник стал в пять раз глубже, а шероховатый потенциал свежего роя сносит шаг поперёк линии (течения оболочки) - даже прошедший наобум выходит вдали от Лекси, в открытом космосе (преувеличение).",
       "corridors": [
         {
           "name": "Фортуна-1",
@@ -23,8 +26,10 @@
             0.841094,
             -0.437554
           ],
-          "halfWidthDeg": 1.2,
-          "driftDegPerYear": 0.1083
+          "halfWidthDeg": 0.25,
+          "halfWidthDegBefore3121": 1.2,
+          "state": "thread (survived the 3121 cascade, narrowed, precesses faster)",
+          "driftDegPerYear": 0.6
         },
         {
           "name": "Фортуна-2",
@@ -38,7 +43,9 @@
             -0.952107,
             -0.253209
           ],
-          "halfWidthDeg": 1.2,
+          "halfWidthDeg": 0.01,
+          "halfWidthDegBefore3121": 1.2,
+          "state": "collapsed in 3121 (filled by the cascade debris)",
           "driftDegPerYear": 0.1471
         },
         {
@@ -53,7 +60,9 @@
             -0.037399,
             0.949672
           ],
-          "halfWidthDeg": 1.2,
+          "halfWidthDeg": 0.01,
+          "halfWidthDegBefore3121": 1.2,
+          "state": "collapsed in 3121 (filled by the cascade debris)",
           "driftDegPerYear": 0.1503
         }
       ]

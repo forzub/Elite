@@ -222,7 +222,7 @@
   },
   {
    "check": "outposts.outpost_bodies_exist",
-   "detail": "54 объектов",
+   "detail": "61 объектов",
    "ok": true
   },
   {
@@ -237,12 +237,57 @@
   },
   {
    "check": "outposts.outpost_ids_unique",
-   "detail": "228 ids",
+   "detail": "235 ids",
    "ok": true
   },
   {
    "check": "outposts.labs_selective_and_dense_at_worlds_ass",
-   "detail": "всего 14, у «Жопы мира» 6, отвергнуто 19",
+   "detail": "всего 17, у «Жопы мира» 7, отвергнуто 19",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.ids_unique",
+   "detail": "19 ids",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.bodies_exist",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.wrecks_have_year_cause_remains",
+   "detail": "9 обломков",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.lost_ship_outside_field_and_in_region",
+   "detail": "0.5285 св. лет от «Лотоса» (33420 а.е.); до HD 102195 22.18, до HD 104067 21.15 св. лет",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.braking_physics_consistent",
+   "detail": "торможение 0.1357 м/с², при отделении 299.8 км/с, v_rel 360.0 км/с",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.lost_ship_has_public_search_hints",
+   "detail": "9 подсказок",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.hot_region_mix",
+   "detail": "{\"generation_ship\": 1, \"lab\": 4, \"military_outpost\": 1, \"pirate\": 3, \"rogue_military\": 1, \"wreck\": 8, \"wreck_field\": 1} {\"civil\": 4, \"military\": 10, \"science\": 8}",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.every_manned_place_has_supply_source",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass.factions_known",
+   "detail": "12 фракций",
    "ok": true
   }
  ],

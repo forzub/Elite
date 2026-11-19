@@ -1571,6 +1571,21 @@ void SceneRenderer::prepareScene(
             // Production ModelAsset v4 package (all components, all LODs):
             // per-component screen-space LOD at draw time. Rotating modules
             // keep the legacy replicated module angles.
+            // A hub city is assembled (~0.1-1.3 s, up to ~0.5 M triangles) only when the ship is near it: entering a
+            // system used to assemble every city in it at once (live 2026-11-19, Sol: one 10 s frame after the
+            // 277-hub batch). Beyond CityLoadRadiusM a city not yet loaded is not drawn (an 8 km city is < 1.2 deg
+            // there); once loaded it stays drawn from the cache.
+            bool farUnloadedCity = false;
+            if (obj.type == ObjectType::HubBeltCity)
+            {
+                constexpr double CityLoadRadiusM = 400000.0;
+                const double distanceM = glm::length(world::coordinates::fullMeters(objectRenderWorldPosition) -
+                                                     world::coordinates::fullMeters(itPlayer->second.renderTransform.worldPosition));
+                farUnloadedCity = distanceM > CityLoadRadiusM &&
+                                  !render::geometry::ModelAssetGpuLibrary::get(obj.type, obj.hubAttachment.hubId, false);
+            }
+            if (farUnloadedCity)
+                continue;
             if (const auto* modelAsset = render::geometry::ModelAssetGpuLibrary::get(obj.type, obj.hubAttachment.hubId))
             {
                 PreparedScene::ModelAssetObjectItem item;

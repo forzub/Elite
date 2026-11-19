@@ -4,6 +4,8 @@
 #include "src/game/navigation/rules/JDrive.h"
 #include <cstring>
 #include "src/game/navigation/rules/CapsuleRules.h"
+#include "src/game/fuel/FuelStationCatalog.h"
+#include <cstdio>
 #include "src/game/presentation/DockingWidgetText.h"
 #include "src/game/docking/model/HexDockFacility.h"
 #include "src/game/navigation/FreeFlightCodes.h"
@@ -815,6 +817,65 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
                 text += (text.empty() ? "" : " / ") + line;
         terminal.dispatcher = text;
         terminal.visible = true;
+    }
+    {
+        // fuel (docs/FUEL_STATIONS.md): docked at a station - what it sells and Ctrl+U; a running job (a dock hose
+        // or a tender alongside) - its progress; an ended job - its result for 10 s
+        namespace gf = game::fuel;
+        const auto& m = playerShip.transform.motion;
+        const auto num = [](const char* format, double value) {
+            char buffer[32];
+            std::snprintf(buffer, sizeof(buffer), format, value);
+            return std::string(buffer);
+        };
+        static std::uint16_t seenSerial = 0;
+        static double endedAt = -1.0e30;
+        if (m.refuelSerial != seenSerial)
+        {
+            seenSerial = m.refuelSerial;
+            endedAt = glfwGetTime();
+        }
+        const auto phase = static_cast<gf::RefuelPhase>(m.refuelState);
+        const double capacity = m.jChargeCapacityT;
+        const double charge = m.jChargeT < 0.0 ? capacity : m.jChargeT;
+        const bool docked = playerShip.dockDispatcher.active &&
+                            playerShip.dockDispatcher.phase == static_cast<std::uint8_t>(game::docking::traffic::DockTrafficPhase::Docked);
+        const auto stationName = [&](const std::string& hubId) {
+            const auto* s = gf::FuelStationCatalog::instance().find(hubId);
+            const std::string fallback = s ? s->name : hubId;
+            return context().app ? context().app->localization().catalogName("hubs", hubId, fallback) : fallback;
+        };
+        using Sev = game::presentation::DockingTerminalSeverity;
+        if (phase == gf::RefuelPhase::Hookup)
+            terminal.diagnostics.emplace_back(lineText("cockpit.terminal.fuel.hookup", {stationName(m.hubId)}), Sev::Info);
+        else if (phase == gf::RefuelPhase::Pumping)
+            terminal.diagnostics.emplace_back(
+                lineText("cockpit.terminal.fuel.pumping", {num("%.2f", charge), num("%.0f", capacity), num("%.1f", m.refuelRateTpm)}), Sev::Info);
+        else if (phase == gf::RefuelPhase::Disconnect)
+            terminal.diagnostics.emplace_back(lineText("cockpit.terminal.fuel.disconnect", {num("%.2f", m.refuelDeliveredT)}), Sev::Info);
+        else if (glfwGetTime() - endedAt < 10.0 && phase == gf::RefuelPhase::Done)
+            terminal.diagnostics.emplace_back(
+                lineText("cockpit.terminal.fuel.done", {num("%.2f", m.refuelDeliveredT), num("%.2f", charge), num("%.0f", capacity)}), Sev::Info);
+        else if (glfwGetTime() - endedAt < 10.0 && phase == gf::RefuelPhase::Cancelled)
+            terminal.diagnostics.emplace_back(lineText("cockpit.terminal.fuel.cancelled", {num("%.2f", m.refuelDeliveredT)}), Sev::Warning);
+        else if (glfwGetTime() - endedAt < 10.0 && phase == gf::RefuelPhase::Refused)
+        {
+            const std::string why = "cockpit.terminal.fuel.why." + std::to_string(m.refuelRefusal);
+            terminal.diagnostics.emplace_back(lineText("cockpit.terminal.fuel.refused", {terminalText(why.c_str())}), Sev::Warning);
+        }
+        else if (docked && capacity > 0.0)
+        {
+            const auto* s = gf::FuelStationCatalog::instance().find(m.hubId);
+            if (!s || s->stockT <= 0.0)
+                terminal.diagnostics.emplace_back(lineText("cockpit.terminal.fuel.none", {stationName(m.hubId)}), Sev::Info);
+            else if (charge >= capacity - gf::FullEpsilonT)
+                terminal.diagnostics.emplace_back(lineText("cockpit.terminal.fuel.full", {num("%.0f", capacity)}), Sev::Info);
+            else
+                terminal.diagnostics.emplace_back(
+                    lineText("cockpit.terminal.fuel.offer", {stationName(m.hubId), num("%.2f", capacity - charge),
+                                                             num("%.1f", gf::refuelEtaSeconds(s->pump, capacity - charge) / 60.0)}),
+                    Sev::Info);
+        }
     }
     {
         // rescue zone (author 2026-11-08): in an inhabited zone the capsule is picked up in 10-20 min,

@@ -4104,6 +4104,1773 @@
    "twoSided": false,
    "physical": null,
    "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_car_blue",
+   "name": "car blue",
+   "baseColor": [
+    0.12,
+    0.22,
+    0.48
+   ],
+   "metallic": 0.7,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_car_glass",
+   "name": "car glass",
+   "baseColor": [
+    0.06,
+    0.08,
+    0.1
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_car_red",
+   "name": "car red",
+   "baseColor": [
+    0.55,
+    0.1,
+    0.08
+   ],
+   "metallic": 0.7,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_car_tail",
+   "name": "car tail",
+   "baseColor": [
+    0.9,
+    0.1,
+    0.06
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_car_white",
+   "name": "car white",
+   "baseColor": [
+    0.8,
+    0.81,
+    0.82
+   ],
+   "metallic": 0.7,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_furn_burnt",
+   "name": "furn burnt",
+   "baseColor": [
+    0.06,
+    0.05,
+    0.05
+   ],
+   "metallic": 0.0,
+   "roughness": 0.976,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_furn_fabric",
+   "name": "furn fabric",
+   "baseColor": [
+    0.3,
+    0.33,
+    0.4
+   ],
+   "metallic": 0.0,
+   "roughness": 0.976,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_furn_metal",
+   "name": "furn metal",
+   "baseColor": [
+    0.32,
+    0.33,
+    0.35
+   ],
+   "metallic": 0.7,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_furn_white",
+   "name": "furn white",
+   "baseColor": [
+    0.78,
+    0.79,
+    0.8
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_furn_wood",
+   "name": "furn wood",
+   "baseColor": [
+    0.36,
+    0.24,
+    0.15
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_burnt",
+   "name": "hub burnt",
+   "baseColor": [
+    0.045,
+    0.04,
+    0.036
+   ],
+   "metallic": 0.0,
+   "roughness": 0.968,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_dead_facade",
+   "name": "hub dead facade",
+   "baseColor": [
+    0.22,
+    0.23,
+    0.25
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_dead_facade_light",
+   "name": "hub dead facade light",
+   "baseColor": [
+    0.4,
+    0.41,
+    0.42
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_an_marble",
+   "name": "hub facade an marble",
+   "baseColor": [
+    0.8,
+    0.77,
+    0.7
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_an_stone",
+   "name": "hub facade an stone",
+   "baseColor": [
+    0.64,
+    0.53,
+    0.4
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_in_ivory",
+   "name": "hub facade in ivory",
+   "baseColor": [
+    0.82,
+    0.75,
+    0.62
+   ],
+   "metallic": 0.0,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_in_sandstone",
+   "name": "hub facade in sandstone",
+   "baseColor": [
+    0.6,
+    0.33,
+    0.23
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_lm_copper",
+   "name": "hub facade lm copper",
+   "baseColor": [
+    0.52,
+    0.33,
+    0.22
+   ],
+   "metallic": 0.15,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_lm_glass",
+   "name": "hub facade lm glass",
+   "baseColor": [
+    0.13,
+    0.22,
+    0.3
+   ],
+   "metallic": 0.7,
+   "roughness": 0.48,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_lm_stone",
+   "name": "hub facade lm stone",
+   "baseColor": [
+    0.62,
+    0.56,
+    0.47
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_lm_white",
+   "name": "hub facade lm white",
+   "baseColor": [
+    0.82,
+    0.81,
+    0.78
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_sp_dark",
+   "name": "hub facade sp dark",
+   "baseColor": [
+    0.075,
+    0.085,
+    0.1
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_sp_slate",
+   "name": "hub facade sp slate",
+   "baseColor": [
+    0.13,
+    0.15,
+    0.18
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_um_glass",
+   "name": "hub facade um glass",
+   "baseColor": [
+    0.12,
+    0.18,
+    0.24
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_um_rose",
+   "name": "hub facade um rose",
+   "baseColor": [
+    0.52,
+    0.24,
+    0.34
+   ],
+   "metallic": 0.7,
+   "roughness": 0.56,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_um_silver",
+   "name": "hub facade um silver",
+   "baseColor": [
+    0.44,
+    0.48,
+    0.52
+   ],
+   "metallic": 0.7,
+   "roughness": 0.6,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wbrick",
+   "name": "hub facade wbrick",
+   "baseColor": [
+    0.47,
+    0.22,
+    0.16
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wconcrete",
+   "name": "hub facade wconcrete",
+   "baseColor": [
+    0.38,
+    0.38,
+    0.36
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wglass",
+   "name": "hub facade wglass",
+   "baseColor": [
+    0.14,
+    0.24,
+    0.31
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wlimestone",
+   "name": "hub facade wlimestone",
+   "baseColor": [
+    0.72,
+    0.68,
+    0.6
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wpatch",
+   "name": "hub facade wpatch",
+   "baseColor": [
+    0.26,
+    0.29,
+    0.23
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wrust",
+   "name": "hub facade wrust",
+   "baseColor": [
+    0.34,
+    0.21,
+    0.14
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wsiding",
+   "name": "hub facade wsiding",
+   "baseColor": [
+    0.8,
+    0.78,
+    0.72
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wsiding_b",
+   "name": "hub facade wsiding b",
+   "baseColor": [
+    0.56,
+    0.66,
+    0.74
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_facade_wsiding_c",
+   "name": "hub facade wsiding c",
+   "baseColor": [
+    0.8,
+    0.71,
+    0.5
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_insulator",
+   "name": "hub insulator",
+   "baseColor": [
+    0.48,
+    0.3,
+    0.2
+   ],
+   "metallic": 0.7,
+   "roughness": 0.68,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_police_blue",
+   "name": "hub police blue",
+   "baseColor": [
+    0.08,
+    0.18,
+    0.48
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_police_white",
+   "name": "hub police white",
+   "baseColor": [
+    0.82,
+    0.84,
+    0.86
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_rad_panel",
+   "name": "hub rad panel",
+   "baseColor": [
+    0.74,
+    0.76,
+    0.76
+   ],
+   "metallic": 0.7,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_reactor",
+   "name": "hub reactor",
+   "baseColor": [
+    0.58,
+    0.6,
+    0.62
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_rebar",
+   "name": "hub rebar",
+   "baseColor": [
+    0.2,
+    0.17,
+    0.15
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_rescue_orange",
+   "name": "hub rescue orange",
+   "baseColor": [
+    0.85,
+    0.36,
+    0.06
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_rescue_white",
+   "name": "hub rescue white",
+   "baseColor": [
+    0.86,
+    0.85,
+    0.82
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_slab",
+   "name": "hub slab",
+   "baseColor": [
+    0.36,
+    0.35,
+    0.33
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_slab_under",
+   "name": "hub slab under",
+   "baseColor": [
+    0.26,
+    0.26,
+    0.25
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_wall_flat",
+   "name": "hub wall flat",
+   "baseColor": [
+    0.46,
+    0.42,
+    0.36
+   ],
+   "metallic": 0.0,
+   "roughness": 0.952,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hub_wall_office",
+   "name": "hub wall office",
+   "baseColor": [
+    0.38,
+    0.41,
+    0.44
+   ],
+   "metallic": 0.0,
+   "roughness": 0.944,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_bridge_red",
+   "name": "hubl bridge red",
+   "baseColor": [
+    0.62,
+    0.2,
+    0.12
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_bronze",
+   "name": "hubl bronze",
+   "baseColor": [
+    0.46,
+    0.31,
+    0.17
+   ],
+   "metallic": 0.7,
+   "roughness": 0.72,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_chrome",
+   "name": "hubl chrome",
+   "baseColor": [
+    0.62,
+    0.65,
+    0.7
+   ],
+   "metallic": 0.7,
+   "roughness": 0.36,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_clockface",
+   "name": "hubl clockface",
+   "baseColor": [
+    0.92,
+    0.89,
+    0.76
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_gilt",
+   "name": "hubl gilt",
+   "baseColor": [
+    0.8,
+    0.62,
+    0.24
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_granite",
+   "name": "hubl granite",
+   "baseColor": [
+    0.27,
+    0.26,
+    0.27
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_iron",
+   "name": "hubl iron",
+   "baseColor": [
+    0.2,
+    0.21,
+    0.23
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_lawn",
+   "name": "hubl lawn",
+   "baseColor": [
+    0.21,
+    0.36,
+    0.15
+   ],
+   "metallic": 0.0,
+   "roughness": 0.98,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_marble",
+   "name": "hubl marble",
+   "baseColor": [
+    0.85,
+    0.83,
+    0.78
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_patina",
+   "name": "hubl patina",
+   "baseColor": [
+    0.29,
+    0.5,
+    0.42
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_paving",
+   "name": "hubl paving",
+   "baseColor": [
+    0.5,
+    0.49,
+    0.46
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_paving_b",
+   "name": "hubl paving b",
+   "baseColor": [
+    0.36,
+    0.35,
+    0.33
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_tree",
+   "name": "hubl tree",
+   "baseColor": [
+    0.12,
+    0.27,
+    0.11
+   ],
+   "metallic": 0.0,
+   "roughness": 0.98,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubl_water",
+   "name": "hubl water",
+   "baseColor": [
+    0.1,
+    0.2,
+    0.28
+   ],
+   "metallic": 0.7,
+   "roughness": 0.4,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubq_concrete",
+   "name": "hubq concrete",
+   "baseColor": [
+    0.46,
+    0.45,
+    0.42
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubq_net",
+   "name": "hubq net",
+   "baseColor": [
+    0.85,
+    0.42,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubq_ore_grey",
+   "name": "hubq ore grey",
+   "baseColor": [
+    0.3,
+    0.31,
+    0.3
+   ],
+   "metallic": 0.0,
+   "roughness": 0.92,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubq_ore_iron",
+   "name": "hubq ore iron",
+   "baseColor": [
+    0.4,
+    0.19,
+    0.11
+   ],
+   "metallic": 0.0,
+   "roughness": 0.968,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubq_regolith",
+   "name": "hubq regolith",
+   "baseColor": [
+    0.2,
+    0.19,
+    0.18
+   ],
+   "metallic": 0.0,
+   "roughness": 0.976,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubq_rock_cut",
+   "name": "hubq rock cut",
+   "baseColor": [
+    0.38,
+    0.35,
+    0.31
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubsp_deck",
+   "name": "hubsp deck",
+   "baseColor": [
+    0.16,
+    0.17,
+    0.19
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubsp_ship",
+   "name": "hubsp ship",
+   "baseColor": [
+    0.12,
+    0.13,
+    0.15
+   ],
+   "metallic": 0.7,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_an_bronze",
+   "name": "hubx an bronze",
+   "baseColor": [
+    0.3,
+    0.46,
+    0.4
+   ],
+   "metallic": 0.15,
+   "roughness": 0.76,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_an_marble",
+   "name": "hubx an marble",
+   "baseColor": [
+    0.88,
+    0.86,
+    0.8
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_an_terracotta",
+   "name": "hubx an terracotta",
+   "baseColor": [
+    0.58,
+    0.29,
+    0.17
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_in_gold",
+   "name": "hubx in gold",
+   "baseColor": [
+    0.8,
+    0.62,
+    0.22
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_in_marble",
+   "name": "hubx in marble",
+   "baseColor": [
+    0.91,
+    0.9,
+    0.87
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_in_sandstone",
+   "name": "hubx in sandstone",
+   "baseColor": [
+    0.66,
+    0.38,
+    0.26
+   ],
+   "metallic": 0.0,
+   "roughness": 0.94,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_in_shadow",
+   "name": "hubx in shadow",
+   "baseColor": [
+    0.2,
+    0.13,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_um_chrome",
+   "name": "hubx um chrome",
+   "baseColor": [
+    0.58,
+    0.61,
+    0.65
+   ],
+   "metallic": 0.7,
+   "roughness": 0.44,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_armor",
+   "name": "hubx w armor",
+   "baseColor": [
+    0.21,
+    0.23,
+    0.21
+   ],
+   "metallic": 0.15,
+   "roughness": 0.8,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_concrete",
+   "name": "hubx w concrete",
+   "baseColor": [
+    0.52,
+    0.52,
+    0.5
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_gold",
+   "name": "hubx w gold",
+   "baseColor": [
+    0.72,
+    0.56,
+    0.22
+   ],
+   "metallic": 0.7,
+   "roughness": 0.52,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_lawn",
+   "name": "hubx w lawn",
+   "baseColor": [
+    0.2,
+    0.35,
+    0.14
+   ],
+   "metallic": 0.0,
+   "roughness": 0.98,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_roof_brown",
+   "name": "hubx w roof brown",
+   "baseColor": [
+    0.35,
+    0.26,
+    0.19
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_roof_red",
+   "name": "hubx w roof red",
+   "baseColor": [
+    0.43,
+    0.17,
+    0.13
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_roof_slate",
+   "name": "hubx w roof slate",
+   "baseColor": [
+    0.2,
+    0.21,
+    0.24
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_scrap",
+   "name": "hubx w scrap",
+   "baseColor": [
+    0.4,
+    0.3,
+    0.22
+   ],
+   "metallic": 0.15,
+   "roughness": 0.88,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_tree",
+   "name": "hubx w tree",
+   "baseColor": [
+    0.11,
+    0.25,
+    0.1
+   ],
+   "metallic": 0.0,
+   "roughness": 0.98,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_white",
+   "name": "hubx w white",
+   "baseColor": [
+    0.86,
+    0.86,
+    0.84
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_hubx_w_wood",
+   "name": "hubx w wood",
+   "baseColor": [
+    0.42,
+    0.29,
+    0.18
+   ],
+   "metallic": 0.0,
+   "roughness": 0.96,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_stn_array",
+   "name": "stn array",
+   "baseColor": [
+    0.1,
+    0.14,
+    0.26
+   ],
+   "metallic": 0.7,
+   "roughness": 0.56,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_stn_dish",
+   "name": "stn dish",
+   "baseColor": [
+    0.86,
+    0.86,
+    0.84
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_stn_fighter",
+   "name": "stn fighter",
+   "baseColor": [
+    0.36,
+    0.4,
+    0.46
+   ],
+   "metallic": 0.7,
+   "roughness": 0.64,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_stn_mirror",
+   "name": "stn mirror",
+   "baseColor": [
+    0.72,
+    0.74,
+    0.78
+   ],
+   "metallic": 0.7,
+   "roughness": 0.2,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
+  },
+  {
+   "id": "eq_stn_radiator",
+   "name": "stn radiator",
+   "baseColor": [
+    0.8,
+    0.8,
+    0.82
+   ],
+   "metallic": 0.15,
+   "roughness": 0.84,
+   "emissive": [
+    0,
+    0,
+    0
+   ],
+   "twoSided": false,
+   "physical": null,
+   "source": "tools/models/eqlib.py"
   }
  ]
 }

@@ -93,6 +93,7 @@ struct BodyAutopilotShip
     std::uint8_t refusal = 0;          // the plant's last FlightRefusal code
     bool jAccelKnown = false;          // the plant's J field acceleration now (replicated)
     double jAccelMps2 = 0.0;
+    double jFieldLevelMps2 = 0.0;      // the field's own level (its ramp), not net of the medium (replicated)
 };
 
 struct BodyAutopilotOutput

@@ -8,6 +8,7 @@
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/game/navigation/OwnedNavigationAsset.h"
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
+#include "src/game/simulation/ClientWalletSnapshot.h"
 #include "src/world/WorldParams.h"
 
 namespace game::simulation
@@ -18,6 +19,7 @@ struct ClientSessionSnapshot
     world::celestial::PlayerNavigationState playerNavigation;
     std::vector<game::navigation::OwnedNavigationAsset> ownedNavigationAssets;
     game::simulation::ClientNavigationSensorSnapshot navigationSensors;
+    game::simulation::ClientWalletSnapshot wallet;   // per session (GameServer::walletForSession)
     WorldParams predictionWorldParams {0.0f, 50.0f};
     double universeTimeSeconds = 0.0;
     double universeTimeScale = 1.0;

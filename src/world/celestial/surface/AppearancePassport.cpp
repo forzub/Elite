@@ -56,6 +56,37 @@ std::unordered_map<std::string, AppearancePassport> loadPassports()
                 p.hasMeanAlbedo = true;
             }
             p.reference = b.value("reference", std::string());
+            if (b.contains("look") && b.at("look").is_object())
+            {
+                const auto& l = b.at("look");
+                const auto vec = [&](const char* key, glm::vec3& v) {
+                    if (l.contains(key) && l.at(key).is_array() && l.at(key).size() == 3)
+                    {
+                        v = glm::vec3(l.at(key).at(0).get<float>(), l.at(key).at(1).get<float>(), l.at(key).at(2).get<float>());
+                        return true;
+                    }
+                    return false;
+                };
+                BodyLook& k = p.look;
+                vec("sea_shallow_linear", k.seaShallow);
+                vec("sea_deep_linear", k.seaDeep);
+                k.shelfDepthKm = l.value("shelf_depth_km", k.shelfDepthKm);
+                k.glint = l.value("glint", k.glint);
+                k.glintPower = l.value("glint_power", k.glintPower);
+                vec("forest_linear", k.forest);
+                vec("plains_linear", k.plains);
+                vec("dry_linear", k.dry);
+                vec("night_sea_glow_linear", k.nightSeaGlow);
+                k.nightSeaCover = l.value("night_sea_cover", k.nightSeaCover);
+                vec("airglow_linear", k.airglow);
+                vec("aurora_linear", k.aurora);
+                vec("aurora_top_linear", k.auroraTop);
+                k.auroraColatDeg = l.value("aurora_colatitude_deg", k.auroraColatDeg);
+                k.auroraWidthDeg = l.value("aurora_width_deg", k.auroraWidthDeg);
+                k.magneticTiltDeg = l.value("magnetic_tilt_deg", k.magneticTiltDeg);
+                k.hasScatter = vec("sky_scatter", k.scatter);
+                p.hasLook = true;
+            }
             out[p.bodyId] = p;
         }
     }

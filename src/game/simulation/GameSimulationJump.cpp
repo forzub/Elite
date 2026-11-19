@@ -599,7 +599,8 @@ void GameSimulation::updateJumps(double dt)
             }
             const int from = motion.systemId;
             // the currents of the departure system along the way out (the next 1000 AU of the line)
-            j.currentDriftM = jumpCurrentDriftHere(from, shipM, shipM + j.interstellarDir * (1000.0 * jr::AuM));
+            // + the approach shells' own currents on the interstellar way (zero without them)
+            j.currentDriftM = jumpCurrentDriftHere(from, shipM, shipM + j.interstellarDir * (1000.0 * jr::AuM)) + j.deepCatch.shellDriftM;
             j.fromSystemId = from;
             motion.systemId = j.targetSystemId;
             frame.systemId = j.targetSystemId;   // the replicated frame identity carries the system (the client's)

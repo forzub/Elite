@@ -814,6 +814,118 @@
       "es": "SOS: fuera de la zona de rescate - puede que nadie oiga la señal (zona más cercana: «{0}»)",
       "ja": "SOS：救助圏外 - 信号が届かない可能性あり（最寄りの救助圏「{0}」）"
     },
+    "cockpit.terminal.fuel.offer": {
+      "en": "FUEL: '{0}' sells jump charge - Ctrl+U to refuel ({1} t to fill, ~{2} min)",
+      "ru": "ТОПЛИВО: «{0}» продаёт заряд прыжка - Ctrl+U заправиться (до полного {1} т, ~{2} мин)",
+      "zh-Hans": "燃料：“{0}”出售跃迁充能 - Ctrl+U 加注（加满需 {1} 吨，约 {2} 分钟）",
+      "es": "COMBUSTIBLE: «{0}» vende carga de salto - Ctrl+U para repostar ({1} t hasta lleno, ~{2} min)",
+      "ja": "燃料：「{0}」でジャンプチャージ販売中 - Ctrl+Uで補給（満タンまで{1} t、約{2}分）"
+    },
+    "cockpit.terminal.fuel.full": {
+      "en": "FUEL: jump charge full ({0} t)",
+      "ru": "ТОПЛИВО: заряд прыжка полный ({0} т)",
+      "zh-Hans": "燃料：跃迁充能已满（{0} 吨）",
+      "es": "COMBUSTIBLE: carga de salto llena ({0} t)",
+      "ja": "燃料：ジャンプチャージ満タン（{0} t）"
+    },
+    "cockpit.terminal.fuel.none": {
+      "en": "FUEL: no jump charge sold at '{0}'",
+      "ru": "ТОПЛИВО: в «{0}» заряд прыжка не продают",
+      "zh-Hans": "燃料：“{0}”不出售跃迁充能",
+      "es": "COMBUSTIBLE: en «{0}» no se vende carga de salto",
+      "ja": "燃料：「{0}」ではジャンプチャージを販売していない"
+    },
+    "cockpit.terminal.fuel.hookup": {
+      "en": "REFUELLING: coupling the hose ({0})",
+      "ru": "ЗАПРАВКА: стыковка шланга ({0})",
+      "zh-Hans": "加注：正在连接软管（{0}）",
+      "es": "REPOSTAJE: acoplando la manguera ({0})",
+      "ja": "補給：ホース接続中（{0}）"
+    },
+    "cockpit.terminal.fuel.pumping": {
+      "en": "REFUELLING: {0} / {1} t, {2} t/min - Ctrl+U to stop",
+      "ru": "ЗАПРАВКА: {0} / {1} т, {2} т/мин - Ctrl+U остановить",
+      "zh-Hans": "加注：{0} / {1} 吨，{2} 吨/分 - Ctrl+U 停止",
+      "es": "REPOSTAJE: {0} / {1} t, {2} t/min - Ctrl+U para parar",
+      "ja": "補給中：{0} / {1} t、{2} t/分 - Ctrl+Uで停止"
+    },
+    "cockpit.terminal.fuel.disconnect": {
+      "en": "REFUELLING: disconnecting the hose (+{0} t)",
+      "ru": "ЗАПРАВКА: отстыковка шланга (+{0} т)",
+      "zh-Hans": "加注：正在断开软管（+{0} 吨）",
+      "es": "REPOSTAJE: desacoplando la manguera (+{0} t)",
+      "ja": "補給：ホース切り離し中（+{0} t）"
+    },
+    "cockpit.terminal.fuel.done": {
+      "en": "REFUELLED: +{0} t, jump charge {1} / {2} t",
+      "ru": "ЗАПРАВЛЕНО: +{0} т, заряд прыжка {1} / {2} т",
+      "zh-Hans": "加注完成：+{0} 吨，跃迁充能 {1} / {2} 吨",
+      "es": "REPOSTADO: +{0} t, carga de salto {1} / {2} t",
+      "ja": "補給完了：+{0} t、ジャンプチャージ {1} / {2} t"
+    },
+    "cockpit.terminal.fuel.cancelled": {
+      "en": "REFUELLING STOPPED: +{0} t taken",
+      "ru": "ЗАПРАВКА ПРЕРВАНА: залито +{0} т",
+      "zh-Hans": "加注中止：已加 +{0} 吨",
+      "es": "REPOSTAJE INTERRUMPIDO: cargadas +{0} t",
+      "ja": "補給中断：+{0} t 補給済み"
+    },
+    "cockpit.terminal.fuel.refused": {
+      "en": "REFUEL REFUSED: {0}",
+      "ru": "ЗАПРАВКА ОТКАЗАНА: {0}",
+      "zh-Hans": "拒绝加注：{0}",
+      "es": "REPOSTAJE DENEGADO: {0}",
+      "ja": "補給拒否：{0}"
+    },
+    "cockpit.terminal.fuel.why.1": {
+      "en": "not docked at a station",
+      "ru": "корабль не у причала станции",
+      "zh-Hans": "未停靠在站点",
+      "es": "no estás atracado en una estación",
+      "ja": "ステーションに停泊していない"
+    },
+    "cockpit.terminal.fuel.why.2": {
+      "en": "no jump charge sold here",
+      "ru": "здесь заряд прыжка не продают",
+      "zh-Hans": "此处不出售跃迁充能",
+      "es": "aquí no se vende carga de salto",
+      "ja": "ここではジャンプチャージを販売していない"
+    },
+    "cockpit.terminal.fuel.why.3": {
+      "en": "the tank is full",
+      "ru": "бак полон",
+      "zh-Hans": "储罐已满",
+      "es": "el tanque está lleno",
+      "ja": "タンクは満タン"
+    },
+    "cockpit.terminal.fuel.why.4": {
+      "en": "the ship has no jump-charge tanks",
+      "ru": "у корабля нет баков заряда прыжка",
+      "zh-Hans": "飞船没有跃迁充能储罐",
+      "es": "la nave no tiene tanques de carga de salto",
+      "ja": "船にジャンプチャージタンクがない"
+    },
+    "cockpit.terminal.fuel.why.5": {
+      "en": "the station is out of jump charge",
+      "ru": "у станции кончился заряд прыжка",
+      "zh-Hans": "站点的跃迁充能已售罄",
+      "es": "la estación se quedó sin carga de salto",
+      "ja": "ステーションのジャンプチャージが尽きた"
+    },
+    "cockpit.terminal.fuel.why.6": {
+      "en": "payment refused",
+      "ru": "оплата отклонена",
+      "zh-Hans": "付款被拒",
+      "es": "pago rechazado",
+      "ja": "支払い拒否"
+    },
+    "cockpit.terminal.fuel.why.7": {
+      "en": "a jump is under way",
+      "ru": "идёт прыжок",
+      "zh-Hans": "正在跃迁",
+      "es": "hay un salto en curso",
+      "ja": "ジャンプ中"
+    },
     "cockpit.terminal.sos.no_service": {
       "en": "SOS: no rescue service in this system - only passing ships will hear it",
       "ru": "SOS: в системе нет спасательной службы - услышат только случайные корабли",

@@ -11,7 +11,81 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WE_DIR = os.path.join(HERE, "out", "world_3126")
-NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "world_events", "industry", "rescue", "sol_network")
+NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "world_events", "industry", "rescue", "sol_network", "worlds_ass_region")
+FKIND_RU = {"pirate_clan": "пиратский клан", "rogue_military": "военные-пираты", "order": "орден", "lab_operator": "оператор лабораторий"}
+RKIND_RU = {"pirate": "пиратское логово", "rogue_military": "стоянка непризнанного отряда", "military_outpost": "военный пост", "lab": "лаборатория"}
+WKNOW_RU = {"public": "известен", "partial": "частично", "rumour": "слухи", "hidden": "скрыт", "classified": "засекречен", "unknown_position": "место неизвестно"}
+ZKIND_RU = {"ambush": "засада", "raid": "рейды", "patrol": "патруль", "search": "поиск"}
+
+
+def pub(text):
+    """Public layer: drop the clauses that carry AUTHOR_TRUTH."""
+    if not text:
+        return "—"
+    parts = [p for p in text.replace(" (AUTHOR_TRUTH)", "").split("; ") if "AUTHOR_TRUTH" not in p]
+    return "; ".join(parts) or "—"
+
+
+def region_docs(D, lm, R):
+    fac = {f["id"]: f for f in R["factions"]}
+    public = lambda x: x.get("known_to_player") in ("public", "partial", "rumour")
+    # ---- public
+    d = lm.new_doc(D, "FRONTIER/WORLDS_ASS_REGION.md", "«Жопа мира»: пираты, мундиры, лаборатории, мёртвые корабли", "frontier")
+    st = R["region"]["stars"]
+    g = ["Источник: `tools/colonization_lab/worlds_ass_region.py` + `canon/worlds_ass_region.json` → `out/world_3126/worlds_ass_region_3126.json`. "
+         "Публичный слой (что можно узнать в мире); правда разработчика — `AUTHOR/WORLDS_ASS_LOST_SHIP.md`. Дизайн — `docs/WORLDS_ASS_REGION.md`.", "",
+         "### Звёзды (реальные данные)", "",
+         lm.table(["Система", "Класс", "Масса, M☉", "Teff, K", "Расстояние, св. лет", "Планеты", "Роль"],
+                  [(v["name"], v["spectral"], v["mass_solar"], v["teff_k"], v["distance_ly"], v["planets_real"], v["role"]) for v in st.values()]), "",
+         "### Кто здесь с оружием", "",
+         lm.table(["Кто", "Тип", "Откуда", "Чем живут", "Снабжение", "Кораблей"],
+                  [(f["name"], FKIND_RU[f["kind"]], pub(f.get("origin") or f.get("why_rogue")), pub(f.get("business") or f.get("why_rogue")), pub(f.get("supply")), f.get("ships", "—"))
+                   for f in R["factions"] if f["kind"] in ("pirate_clan", "rogue_military") and f["id"] not in ("fac.houyi",)]), "",
+         "Отряда «Хоу И» официально нет: в портах говорят о «кораблях без знаков» у горячего железа.", "",
+         "### Места (без скрытых)", "",
+         lm.table(["Место", "Что", "Где", "Людей", "Кто держит", "Знание", "Почему здесь"],
+                  [(r["name"], RKIND_RU[r["region_kind"]], r.get("body") or "глубокий космос", n0(r["staff"]), (fac.get(r.get("faction")) or {}).get("name") or r.get("operator") or "—",
+                    WKNOW_RU[r["known_to_player"]], r["reason"]) for r in R["manned_in_system"] + R["deep_space"] if public(r)]), "",
+         "### Мёртвые корабли", "",
+         lm.table(["Корабль", "Тип", "Чей", "Год", "Где", "Как погиб", "Что осталось", "Знание"],
+                  [(w["name"], w["wreck_class_ru"], D.pname(w["owner"]) if w.get("owner") in D.X["economy"]["polities"] else (w.get("owner") or "—"),
+                    w.get("died_year") or "–".join(str(x) for x in w.get("died_years", [])), w.get("body") or "глубокий космос", pub(w["cause"]), pub(w["left"]), WKNOW_RU[w["known_to_player"]])
+                   for w in R["wrecks"] if public(w)]), "",
+         "### Засады и патрули", "",
+         lm.table(["Зона", "Тип", "Где", "Кто", "Почему именно здесь"],
+                  [(z["name"], ZKIND_RU[z["kind"]], z["anchor"], ", ".join((fac.get(x) or {}).get("name", x) for x in z["who"] if x != "fac.houyi"), z["cause"]) for z in R["zones"]]), "",
+         "### «Второй корпус» (что знает мир)", "",
+         "Слух старше кордона: «Корпусов два. Второй никто не может найти дважды». Подсказки, которые можно добыть в мире:", ""] + \
+        [f"- **{WKNOW_RU.get(h['known'], h['known'])}** ({h['where']}): {pub(h['text'])}" for h in R["generation_ship"]["search_hints"] if h["known"] in ("public", "partial", "rumour")] + \
+        ["", "Во что верит мир: " + R["generation_ship"]["value"]["world_believes"] + ".", "", "### Почему здесь жарко", ""] + [f"- {pub(x)}" for x in R["heat"]]
+    d.gen("worlds_ass_region", "\n".join(g))
+    d.narr("worlds_ass_region_story", "Как это рассказывать", "бар «Троянского рынка», голос маяка, объявления о розыске, «справки», обрывки координат.")
+    docs = [d]
+    # ---- author truth
+    G = R["generation_ship"]
+    T = G["truth"]
+    a = lm.new_doc(D, "AUTHOR/WORLDS_ASS_LOST_SHIP.md", "Правда разработчика: «Парамита» — потерянный корабль поколений «Жопы мира»", "author")
+    g = ["`AUTHOR_TRUTH` (PROPOSAL). Публичный слой — `FRONTIER/WORLDS_ASS_REGION.md`. Источник: `canon/worlds_ass_region.json → generation_ship`.", "",
+         f"**{G['name']}** — {G['what']}", "", f"Основание: {G['knowledge']['basis']}.", "",
+         "### История", "", lm.table(["Год", "Что"], [(h["year"], h["what"]) for h in G["history"]]), "",
+         "### Физика и положение (эпоха " + str(T["epoch_year"]) + ")", "",
+         f"- Правило: {G['physics']['rule']}.",
+         f"- Торможение «Лотоса» {T['braking_decel_m_s2']} м/с²; при отделении {T['v_at_separation_check_km_s']} км/с + собственный разгон {G['physics']['own_burn_km_s']} км/с = {G['physics']['v_rel_km_s']} км/с относительно поля.",
+         f"- Сейчас: {T['distance_from_lotus_ly']} св. года ({n0(T['distance_from_lotus_au'])} а.е.) от «Лотоса» по оси на Kepler-62; уходит на {T['drift_au_per_year']} а.е. в год. "
+         f"До HD 102195 — {T['distance_to_19_ly']} св. лет, до HD 104067 — {T['distance_to_41_ly']} св. лет.",
+         f"- Положение ICRS, св. лет: {', '.join(str(x) for x in T['position_ly'])}; скорость, км/с: {', '.join(str(x) for x in T['velocity_km_s'])}.",
+         f"- Конус поиска для мира: ±{T['cone_half_angle_deg']}° вокруг оси, {T['search_range_ly'][0]}–{T['search_range_ly'][1]} св. года. {G['physics']['note']}.", "",
+         "### Подсказки поиска (все)", "", lm.table(["Id", "Где", "Знание", "Что"], [(h["id"], h["where"], WKNOW_RU.get(h["known"], h["known"]), h["text"]) for h in G["search_hints"]]), "",
+         "### Ценность", "", f"- Мир верит: {G['value']['world_believes']}.", f"- На деле: {G['value']['truth']}.", "", G["crew_note"] + ".", "",
+         "### Скрытые места и обломки", "",
+         lm.table(["Id", "Что", "Знание", "Правда"], [(r["id"], r["name"], WKNOW_RU[r["known_to_player"]], r.get("lore") or r["reason"]) for r in R["manned_in_system"] + R["deep_space"] if not public(r)]
+                  + [(w["id"], w["name"], WKNOW_RU[w["known_to_player"]], w["cause"] + " Осталось: " + w["left"]) for w in R["wrecks"] if not public(w) or "AUTHOR_TRUTH" in w["cause"] + w["left"]]), "",
+         "### Фракции: что на самом деле", "",
+         lm.table(["Кто", "Тип", "Позиция по «второму корпусу»"], [(f["name"], FKIND_RU[f["kind"]], f.get("stance_lost_ship", "—")) for f in R["factions"]]), "",
+         "### Что меняет в существующей правде", ""] + [f"- `{x['what']}`: сейчас «{x['now']}» → предложение: {x['proposed']} ({x['status']})." for x in R["supersedes_proposal"]]
+    a.gen("worlds_ass_lost_ship", "\n".join(g))
+    docs.append(a)
+    return docs
 TAG = "`PROPOSAL` (модель)"
 
 
@@ -207,6 +281,10 @@ def docs(D, lm):
                                                             for z in F["hazard_zones"] if z not in [y for y in F["hazard_zones"] if y.get("anchor", "").startswith("system_19.") or y.get("anchor") == "dso.lotus"]])]
     d.gen("frontiers", "\n".join(g))
     out.append(d)
+
+    # ---------------- the World's Ass region (worlds_ass_region.py): public layer + author truth
+    if S.get("worlds_ass_region"):
+        out += region_docs(D, lm, S["worlds_ass_region"])
 
     # ---------------- hubs, society, administrators
     path = "ECONOMY/HUBS_AND_SOCIETY.md"

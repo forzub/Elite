@@ -236,6 +236,7 @@ const std::vector<ApproachShell>& approachShells(const world::celestial::StarAtl
             s.peakLy = e.value("peakAu", 0.0) * auLy;
             s.outerLy = e.value("outerAu", 0.0) * auLy;
             s.tau = e.value("tau", 0.0);
+            s.driftAuPerTau = e.value("driftAuPerTau", 0.0);
             s.epochUniverseS = epoch;
             if (s.outerLy <= s.innerLy || s.tau <= 0.0)
                 continue;
@@ -345,6 +346,58 @@ std::vector<InterstellarSumpCrossing> interstellarSumpCrossings(const world::cel
     }
     return out;
 }
+
+glm::dvec3 interstellarShellDriftM(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
+                                   double universeTimeS)
+{
+    glm::dvec3 drift(0.0);
+    for (const auto& s : approachShells(atlas))
+    {
+        if (s.driftAuPerTau <= 0.0)
+            continue;
+        const double half = 0.5 * (s.outerLy - s.innerLy);
+        for (std::size_t i = 1; i < route.pointsLy.size(); ++i)
+        {
+            const glm::dvec3 a = route.pointsLy[i - 1], b = route.pointsLy[i];
+            double lo = 0.0, hi = 0.0;
+            if (!shellSpan(s, a, b, lo, hi))
+                continue;
+            const glm::dvec3 u = glm::normalize(b - a);
+            const double dl = glm::length(b - a) * (hi - lo) / ShellSamples;
+            for (int k = 0; k < ShellSamples; ++k)
+            {
+                const glm::dvec3 p = a + (b - a) * (lo + (hi - lo) * (k + 0.5) / ShellSamples);
+                const double dTau = s.tau * approachShellFactor(s, p, universeTimeS) * dl / std::max(1e-12, half);
+                if (dTau <= 0.0)
+                    continue;
+                // away from the nearest corridor (into the stirred cloud), across the line
+                const glm::dvec3 radial = glm::normalize(p - s.centreLy);
+                glm::dvec3 nearest = radial;
+                double best = -2.0;
+                for (const auto& c : s.corridors)
+                {
+                    const glm::dvec3 d = corridorDirAt(s, c, universeTimeS);
+                    if (glm::dot(d, radial) > best)
+                    {
+                        best = glm::dot(d, radial);
+                        nearest = d;
+                    }
+                }
+                glm::dvec3 away = radial - nearest;
+                away -= u * glm::dot(away, u);
+                if (glm::length(away) < 1.0e-9)
+                {
+                    away = glm::cross(u, glm::dvec3(0.0, 1.0, 0.0));
+                    if (glm::length(away) < 1.0e-9)
+                        away = glm::cross(u, glm::dvec3(1.0, 0.0, 0.0));
+                }
+                drift += glm::normalize(away) * (s.driftAuPerTau * AuM * dTau);
+            }
+        }
+    }
+    return drift;
+}
+
 
 InterstellarSumpCatch interstellarSumpCatch(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
                                             double lockFactor, double e, double universeTimeS)

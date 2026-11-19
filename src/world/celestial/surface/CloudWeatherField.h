@@ -75,6 +75,10 @@ private:
     double deckClosure(std::size_t layer) const;
 
     BodySurfaceDescriptor m_body;
+    // the rotation's reach on the circulation (1 at a 24 h day): the Hadley cell edge and the storm tracks move
+    // poleward on a slower spin (~ sqrt of the period), the lows grow with the deformation radius (~ the period)
+    double m_beltScale = 1.0;
+    double m_lowScale = 1.0;
     std::uint64_t m_seed = 0;
     std::vector<CloudLayer> m_layers;
     double m_windRadPerSecond = 0.0;

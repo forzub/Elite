@@ -418,12 +418,17 @@ const ModelAssetGpu* ModelAssetGpuLibrary::getPackage(ObjectType type, const std
     return it->second.get();
 }
 
-const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::string& hubId)
+const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::string& hubId, bool loadIfMissing)
 {
     if (type != ObjectType::HubBeltCity)
         return get(type);
     // a belt settlement: one package per hub, generated from its id (tools/models/units/hub_belt.py belt_layout)
     static std::unordered_map<std::string, std::unique_ptr<ModelAssetGpu>> cache;
+    if (!loadIfMissing)
+    {
+        const auto found = cache.find(hubId);
+        return found == cache.end() ? nullptr : found->second.get();
+    }
     const auto [it, inserted] = cache.try_emplace(hubId);
     if (inserted)
     {

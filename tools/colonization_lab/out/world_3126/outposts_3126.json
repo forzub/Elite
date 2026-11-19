@@ -5252,6 +5252,239 @@
    "system_name": "HD 102195",
    "type": "free_port",
    "type_ru": "вольный порт"
+  },
+  {
+   "assembly": "pirate_settlement",
+   "body": "system_19.HD_102195",
+   "docks": 4,
+   "faction": "fac.lanterns",
+   "id": "pir.019.lanterns",
+   "known_to_player": "rumour",
+   "language": "en",
+   "legal": "illegal",
+   "level": "C",
+   "map_level": "none",
+   "medical_beds": 0.1,
+   "name": "Логово «Фонарщиков»",
+   "operator": "«Фонарщики» (ложные маяки)",
+   "outpost_kind": "pirate_settlement",
+   "placement": {
+    "corridor": {
+     "dir": [
+      0.220302,
+      0.975259,
+      -0.01835
+     ],
+     "drift_deg_per_year": 0.1895,
+     "name": "Жопа мира-3",
+     "note": "направление на эпоху; стоянка смещается вслед за дрейфом коридора",
+     "shell_outer_au": 10000.0
+    },
+    "heliocentric": {
+     "a_au": 15000.0,
+     "anchor": "shell.19.Жопа мира-3",
+     "anchor_name": "устье коридора «Жопа мира-3»",
+     "e": 0.0,
+     "i_deg": 90.0,
+     "mean_anomaly_epoch_deg": -1.051,
+     "node_deg": 77.271,
+     "peri_deg": 0.0
+    },
+    "parent_body_id": "system_19.HD_102195"
+   },
+   "placement_reason": "Устье коридора «Жопа мира-3» в оболочке HD 102195 (10 000 а.е.): корабль, прошедший коридор, сразу берёт захват на ближайший маяк. Подложный маяк у устья с кодом, смещённым на тысячи км, — дешёвая и физически честная засада: ошибка выхода растёт с ошибкой захвата.",
+   "polity": null,
+   "population": 70,
+   "purpose": "Устье коридора «Жопа мира-3» в оболочке HD 102195 (10 000 а.е.): корабль, прошедший коридор, сразу берёт захват на ближайший маяк. Подложный маяк у устья с кодом, смещённым на тысячи км, — дешёвая и физически честная засада: ошибка выхода растёт с ошибкой захвата.",
+   "quarantine_beds": 0.0,
+   "region": "frontier.worlds_ass",
+   "repair": "basic",
+   "security_base": 0.5,
+   "ships": 6,
+   "size": "малое",
+   "source": "outposts.py",
+   "status": "PROPOSAL",
+   "storage_t": 30000,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (46.0 т)",
+    "goods": {
+     "consumer": 0.042,
+     "electronics": 0.021,
+     "food": 0.126,
+     "machinery": 0.105,
+     "medical": 0.007,
+     "water_volatiles": 0.21
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "note": "покупают через скупщиков и подставные компании; часть — краденое",
+    "reactor_fuel_kg_y": 0.24,
+    "source": {
+     "id": "site.019.troyan_market",
+     "name": "«Троянский рынок» (Кабак)",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 0.511,
+    "water_local": false
+   },
+   "system": 19,
+   "system_name": "HD 102195",
+   "type": "pirate_enclave",
+   "type_ru": "пиратский анклав"
+  },
+  {
+   "assembly": "pirate_settlement",
+   "body": "system_41.HD_104067.HD_104067_K3",
+   "docks": 4,
+   "faction": "fac.chechetka",
+   "id": "pir.041.chechetka",
+   "known_to_player": "rumour",
+   "language": "en",
+   "legal": "illegal",
+   "level": "C",
+   "map_level": "none",
+   "medical_beds": 0.1,
+   "name": "Артель «Чечётка»",
+   "operator": "Артель «Чечётка»",
+   "outpost_kind": "pirate_settlement",
+   "placement": {
+    "surface": {
+     "elevation_ref": "terrain_surface",
+     "generator_version": 1,
+     "lat_deg": -17.312,
+     "lon_deg": 11.474,
+     "placement_status": "climate_only_terrain_not_sampled",
+     "seed": "751d6f96d230d451"
+    }
+   },
+   "placement_reason": "Карликовая планета Чечётка (13 а.е.) — самое тёмное и далёкое малое тело периметра, вне орбит патрулей «Ворот». Отсюда до изолированной якорной стоянки «Ворота-К» (400 тыс. км от b) — сутки на тяге; там корабли ждут досмотра до 21 сут.",
+   "polity": null,
+   "population": 90,
+   "purpose": "Карликовая планета Чечётка (13 а.е.) — самое тёмное и далёкое малое тело периметра, вне орбит патрулей «Ворот». Отсюда до изолированной якорной стоянки «Ворота-К» (400 тыс. км от b) — сутки на тяге; там корабли ждут досмотра до 21 сут.",
+   "quarantine_beds": 0.0,
+   "region": "frontier.worlds_ass",
+   "repair": "basic",
+   "security_base": 0.5,
+   "ships": 7,
+   "size": "малое",
+   "source": "outposts.py",
+   "status": "PROPOSAL",
+   "storage_t": 30000,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (34.8 т)",
+    "goods": {
+     "consumer": 0.054,
+     "electronics": 0.027,
+     "food": 0.162,
+     "machinery": 0.135,
+     "medical": 0.009
+    },
+    "goods_ru": [
+     "продовольствие",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "note": "покупают через скупщиков и подставные компании; часть — краденое",
+    "reactor_fuel_kg_y": 0.3,
+    "source": {
+     "id": "site.041.vorota",
+     "name": "Станция «Ворота» (внешний периметр)",
+     "system": 41
+    },
+    "source_ly": 0.0,
+    "t_day": 0.387,
+    "water_local": true
+   },
+   "system": 41,
+   "system_name": "HD 104067",
+   "type": "pirate_enclave",
+   "type_ru": "пиратский анклав"
+  },
+  {
+   "assembly": "pirate_settlement",
+   "body": "system_19.HD_102195.HD_102195_i",
+   "docks": 4,
+   "faction": "fac.houyi",
+   "forces": {
+    "escort_frigate": 1,
+    "interceptor": 4
+   },
+   "id": "pir.019.houyi",
+   "known_to_player": "hidden",
+   "language": "en",
+   "legal": "illegal",
+   "level": "C",
+   "map_level": "none",
+   "medical_beds": 0.1,
+   "name": "Стоянка отряда «Хоу И»",
+   "operator": "Отряд «Хоу И» (флот Тяньхэ, непризнанный)",
+   "outpost_kind": "pirate_settlement",
+   "placement": {
+    "orbit": {
+     "altitude_km": 1800000,
+     "inclination_deg": 71.0
+    }
+   },
+   "placement_reason": "Холодная Юйту (5 а.е., 88 К), высокая наклонная орбита: далеко от «Порога» (0.74 а.е.) и от плоскости патрулей; на фоне холодной планеты и в её тени тепловую подпись корабля почти не видно. Отсюда до лицензий Керна у c — 5 а.е., несколько суток на тяге.",
+   "polity": null,
+   "population": 88,
+   "purpose": "Холодная Юйту (5 а.е., 88 К), высокая наклонная орбита: далеко от «Порога» (0.74 а.е.) и от плоскости патрулей; на фоне холодной планеты и в её тени тепловую подпись корабля почти не видно. Отсюда до лицензий Керна у c — 5 а.е., несколько суток на тяге.",
+   "quarantine_beds": 0.0,
+   "region": "frontier.worlds_ass",
+   "repair": "basic",
+   "role": "непризнанный отряд флота (каперы)",
+   "security_base": 0.5,
+   "ships": 5,
+   "size": "малое",
+   "source": "outposts.py",
+   "status": "PROPOSAL",
+   "storage_t": 30000,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (89.3 т)",
+    "goods": {
+     "consumer": 0.053,
+     "electronics": 0.026,
+     "food": 0.158,
+     "jump_charge": 0.25,
+     "machinery": 0.132,
+     "medical": 0.009,
+     "water_volatiles": 0.264,
+     "weapons": 0.1
+    },
+    "goods_ru": [
+     "вода и газы",
+     "заряд прыжка",
+     "продовольствие",
+     "запчасти и механика",
+     "боеприпасы",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "note": "покупают через скупщиков и подставные компании; часть — краденое",
+    "reactor_fuel_kg_y": 0.3,
+    "source": {
+     "id": "site.019.troyan_market",
+     "name": "«Троянский рынок» (Кабак)",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 0.992,
+    "water_local": false
+   },
+   "system": 19,
+   "system_name": "HD 102195",
+   "type": "pirate_enclave",
+   "type_ru": "пиратский анклав"
   }
  ],
  "interstellar_refuel": {
@@ -6071,6 +6304,179 @@
     0.0,
     0.0
    ]
+  },
+  {
+   "assembly": "lab_orbital",
+   "body": "system_41.HD_104067.HD_104067_h",
+   "faction": "fac.order",
+   "form": "orbital",
+   "form_ru": "орбитальная станция",
+   "id": "lab.041.crossing",
+   "interest": "generation_ship",
+   "kind": "lab",
+   "known_to_player": "public",
+   "legal": "licensed",
+   "lore": "Монахи и два инженера связи. Публично — молитвы о погибших; непублично — сличение ритма мантр: у маяка «Лотоса» и у слабого второго источника разный такт (второй источник — «Парамита», AUTHOR_TRUTH).",
+   "name": "Обитель «Переправа»",
+   "on_ice": false,
+   "operator": "Путь Бесконечного Света (лицензия Когниума)",
+   "placement": {
+    "orbit": {
+     "altitude_km": 30000,
+     "inclination_deg": 12.0
+    }
+   },
+   "polity": null,
+   "reason": "Ближе к «Лотосу» ордену не дают (кордон): обитель на периметре, у Дрозда (1.1 а.е.), в стороне от станции «Ворота». Слушают мантры маяка «Лотоса» через ретранслятор и сличают их с архивом ордена XXIII века; архив — единственный источник чертежей NIRVANA-1.",
+   "region_kind": "lab",
+   "staff": 35,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (27.5 т)",
+    "goods": {
+     "consumer": 0.021,
+     "electronics": 0.011,
+     "food": 0.063,
+     "machinery": 0.052,
+     "medical": 0.004,
+     "science_kit": 0.05,
+     "water_volatiles": 0.105
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "запчасти и механика",
+     "научные расходники",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.12,
+    "source": {
+     "id": "site.041.vorota",
+     "name": "Станция «Ворота» (внешний периметр)",
+     "system": 41
+    },
+    "source_ly": 0.0,
+    "t_day": 0.305,
+    "water_local": false
+   },
+   "system": 41
+  },
+  {
+   "assembly": "lab_moon_surface",
+   "body": "system_41.HD_104067.HD_104067_K2",
+   "faction": "fac.kern_survey",
+   "form": "moon_surface",
+   "form_ru": "на поверхности луны",
+   "id": "lab.041.okoye",
+   "interest": "anomaly",
+   "kind": "lab",
+   "known_to_player": "public",
+   "legal": "licensed",
+   "lore": "Решётка из 40 тарелок во льду. Официально — служба навигационных поправок Керна; три года пишет «второй тон» в эхе маяка и не публикует его.",
+   "name": "Антенное поле «Окойе-Линд»",
+   "on_ice": true,
+   "operator": "Kern Survey (навигационный отдел)",
+   "placement": {
+    "surface": {
+     "elevation_ref": "terrain_surface",
+     "generator_version": 1,
+     "lat_deg": -24.459,
+     "lon_deg": 117.831,
+     "placement_status": "climate_only_terrain_not_sampled",
+     "seed": "f0e33b5db2396508"
+    }
+   },
+   "polity": "cyg61_kern",
+   "reason": "Доплеровский сдвиг маяка «Лотоса» нашли в 3087 по записям ретранслятора у 83 Leonis. Для триангуляции эха нужна вторая точка с длинной базой: тёмная, холодная Свиристель (13.9 а.е.) — тихая площадка для решётки антенн вдали от шума звезды и станции.",
+   "region_kind": "lab",
+   "staff": 22,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (13.0 т)",
+    "goods": {
+     "consumer": 0.013,
+     "electronics": 0.007,
+     "food": 0.04,
+     "machinery": 0.033,
+     "medical": 0.002,
+     "science_kit": 0.05
+    },
+    "goods_ru": [
+     "научные расходники",
+     "продовольствие",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.07,
+    "source": {
+     "id": "site.041.vorota",
+     "name": "Станция «Ворота» (внешний периметр)",
+     "system": 41
+    },
+    "source_ly": 0.0,
+    "t_day": 0.145,
+    "water_local": true
+   },
+   "system": 41
+  },
+  {
+   "assembly": "lab_orbital",
+   "body": "system_19.HD_102195.HD_102195_e",
+   "faction": "fac.asclepius",
+   "form": "orbital",
+   "form_ru": "орбитальная станция",
+   "id": "lab.019.asclepius",
+   "interest": "worlds_ass_material",
+   "kind": "lab",
+   "known_to_player": "public",
+   "legal": "contested",
+   "lore": "Клинические серии на добровольцах-должниках; «Порог» закрывает глаза. Ищут медицинский архив NIRVANA-1: журналы «Лотоса» повреждены, ряда наблюдений 2450-2685 нет ни у кого.",
+   "name": "Клиника-лаборатория «Асклепий-9»",
+   "on_ice": false,
+   "operator": "фармацевтический пул Агоры «Асклепий» (лицензия «Порога»)",
+   "placement": {
+    "orbit": {
+     "altitude_km": 9000,
+     "inclination_deg": 2.0
+    }
+   },
+   "polity": "lalande_hellas",
+   "reason": "Регенеративный эффект лотосита изучают у источника: материал не везут через кордон (протокол L, вспышка «Перевала»). Юэгуй (0.15 а.е.) — внутри системы, но вне тора радиации b и вне зоны искажения c; до «Порога» — сутки.",
+   "region_kind": "lab",
+   "staff": 30,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (24.2 т)",
+    "goods": {
+     "consumer": 0.018,
+     "electronics": 0.009,
+     "food": 0.054,
+     "machinery": 0.045,
+     "medical": 0.003,
+     "science_kit": 0.05,
+     "water_volatiles": 0.09
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "научные расходники",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.1,
+    "source": {
+     "id": "site.019.porog",
+     "name": "Станция «Порог»",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 0.269,
+    "water_local": false
+   },
+   "system": 19
   }
  ],
  "labs_rejected": [
@@ -6997,6 +7403,98 @@
    "weapons": "licensed"
   },
   {
+   "applicable_law": "technocratic_civil",
+   "applicable_law_ru": "технократическое гражданское право",
+   "competing_claims": [],
+   "controlled_goods": "strict",
+   "court": "государственные суды + арбитраж лицензий",
+   "customs": "strict",
+   "docking": "разрешение диспетчера",
+   "enforcement": "государственная полиция",
+   "extradition": "treaty",
+   "immigration": "визы",
+   "local_jurisdiction": "государственная",
+   "private_security": "licensed",
+   "quarantine_authority": "государственная полиция",
+   "registration": "strict",
+   "salvage_finder_share": 0.25,
+   "search_seizure": "warrant",
+   "site": "mil.019.nit",
+   "sovereign_polity": "tau_ceti_cognium",
+   "status": "PROPOSAL",
+   "weapons": "licensed"
+  },
+  {
+   "applicable_law": "none",
+   "applicable_law_ru": "фактически нет работающего закона",
+   "competing_claims": [],
+   "controlled_goods": "free",
+   "court": "нет (сила, репутация, долги)",
+   "customs": "free",
+   "docking": "договор с причалом",
+   "enforcement": "нет",
+   "extradition": "none",
+   "immigration": "нет контроля",
+   "local_jurisdiction": "государственная",
+   "private_security": "allowed",
+   "quarantine_authority": "никто",
+   "registration": "none",
+   "salvage_finder_share": 1.0,
+   "search_seizure": "force",
+   "site": "lab.041.crossing",
+   "sovereign_polity": null,
+   "status": "PROPOSAL",
+   "weapons": "allowed"
+  },
+  {
+   "applicable_law": "corporate",
+   "applicable_law_ru": "корпоративная юрисдикция",
+   "competing_claims": [],
+   "controlled_goods": "taxed",
+   "court": "корпоративный арбитраж",
+   "customs": "taxed",
+   "docking": "разрешение диспетчера",
+   "enforcement": "служба безопасности компании",
+   "extradition": "contractual",
+   "immigration": "визы",
+   "local_jurisdiction": "государственная",
+   "private_security": "allowed",
+   "quarantine_authority": "служба безопасности компании",
+   "registration": "contractual",
+   "salvage_finder_share": 0.4,
+   "search_seizure": "contractual",
+   "site": "lab.041.okoye",
+   "sovereign_polity": "cyg61_kern",
+   "status": "PROPOSAL",
+   "weapons": "licensed"
+  },
+  {
+   "applicable_law": "city_state_arbitration",
+   "applicable_law_ru": "городские суды и частный арбитраж",
+   "competing_claims": [
+    "cyg61_kern",
+    "tau_ceti_cognium",
+    "gj832_tianhe"
+   ],
+   "controlled_goods": "taxed",
+   "court": "городские суды + частный арбитраж",
+   "customs": "taxed",
+   "docking": "разрешение диспетчера",
+   "enforcement": "городская стража",
+   "extradition": "treaty",
+   "immigration": "визы",
+   "local_jurisdiction": "оспаривается",
+   "private_security": "allowed",
+   "quarantine_authority": "городская стража",
+   "registration": "liberal",
+   "salvage_finder_share": 0.5,
+   "search_seizure": "warrant",
+   "site": "lab.019.asclepius",
+   "sovereign_polity": "lalande_hellas",
+   "status": "PROPOSAL",
+   "weapons": "licensed"
+  },
+  {
    "applicable_law": "none",
    "applicable_law_ru": "фактически нет работающего закона",
    "competing_claims": [],
@@ -7366,6 +7864,72 @@
    "salvage_finder_share": 1.0,
    "search_seizure": "force",
    "site": "smug.019.ass_mouth",
+   "sovereign_polity": null,
+   "status": "PROPOSAL",
+   "weapons": "allowed"
+  },
+  {
+   "applicable_law": "none",
+   "applicable_law_ru": "фактически нет работающего закона",
+   "competing_claims": [],
+   "controlled_goods": "free",
+   "court": "нет (сила, репутация, долги)",
+   "customs": "free",
+   "docking": "договор с причалом",
+   "enforcement": "нет",
+   "extradition": "none",
+   "immigration": "нет контроля",
+   "local_jurisdiction": "вне закона (де-факто сила)",
+   "private_security": "allowed",
+   "quarantine_authority": "никто",
+   "registration": "none",
+   "salvage_finder_share": 1.0,
+   "search_seizure": "force",
+   "site": "pir.019.lanterns",
+   "sovereign_polity": null,
+   "status": "PROPOSAL",
+   "weapons": "allowed"
+  },
+  {
+   "applicable_law": "none",
+   "applicable_law_ru": "фактически нет работающего закона",
+   "competing_claims": [],
+   "controlled_goods": "free",
+   "court": "нет (сила, репутация, долги)",
+   "customs": "free",
+   "docking": "договор с причалом",
+   "enforcement": "нет",
+   "extradition": "none",
+   "immigration": "нет контроля",
+   "local_jurisdiction": "вне закона (де-факто сила)",
+   "private_security": "allowed",
+   "quarantine_authority": "никто",
+   "registration": "none",
+   "salvage_finder_share": 1.0,
+   "search_seizure": "force",
+   "site": "pir.041.chechetka",
+   "sovereign_polity": null,
+   "status": "PROPOSAL",
+   "weapons": "allowed"
+  },
+  {
+   "applicable_law": "none",
+   "applicable_law_ru": "фактически нет работающего закона",
+   "competing_claims": [],
+   "controlled_goods": "free",
+   "court": "нет (сила, репутация, долги)",
+   "customs": "free",
+   "docking": "договор с причалом",
+   "enforcement": "нет",
+   "extradition": "none",
+   "immigration": "нет контроля",
+   "local_jurisdiction": "вне закона (де-факто сила)",
+   "private_security": "allowed",
+   "quarantine_authority": "никто",
+   "registration": "none",
+   "salvage_finder_share": 1.0,
+   "search_seizure": "force",
+   "site": "pir.019.houyi",
    "sovereign_polity": null,
    "status": "PROPOSAL",
    "weapons": "allowed"
@@ -8580,6 +9144,68 @@
     "water_local": false
    },
    "system": 12
+  },
+  {
+   "assembly": "military_outpost",
+   "body": "system_19.HD_102195.HD_102195_h",
+   "faction": "fac.nit",
+   "forces": {
+    "escort_frigate": 2,
+    "patrol_cutter": 2,
+    "recon_picket": 3
+   },
+   "id": "mil.019.nit",
+   "kind": "military_outpost",
+   "known_to_player": "public",
+   "legal": "lawful",
+   "lore": "Пост виден на карте и честно продаёт поправки коридоров. Рядом с ним досматривают «по навигационной безопасности» и изымают записи эха.",
+   "name": "Гидрографический пост «Нить»",
+   "on_ice": false,
+   "operator": "флот Управления Маяков, гидрографическая партия «Нить» (научная служба)",
+   "placement": {
+    "orbit": {
+     "altitude_km": 60000,
+     "inclination_deg": 8.0
+    }
+   },
+   "polity": "tau_ceti_cognium",
+   "reason": "Официально — промер дрейфа коридоров оболочки и поля; Гуанхань (1.9 а.е., нептун 15 M⊕) — вне радиационных поясов b и вдали от трафика «Порога», с обзором на обе стороны неба. На деле — база поиска «второго корпуса»: отсюда пикеты уходят на «Линию».",
+   "region_kind": "military_outpost",
+   "role": "гидрографическая партия (поиск «второго корпуса»)",
+   "staff": 200,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 62 сут (120.0 т)",
+    "goods": {
+     "consumer": 0.12,
+     "electronics": 0.06,
+     "food": 0.36,
+     "jump_charge": 0.35,
+     "machinery": 0.3,
+     "medical": 0.02,
+     "water_volatiles": 0.6,
+     "weapons": 0.14
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "заряд прыжка",
+     "запчасти и механика",
+     "боеприпасы",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.68,
+    "source": {
+     "id": "site.019.porog",
+     "name": "Станция «Порог»",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 1.95,
+    "water_local": false
+   },
+   "system": 19
   }
  ],
  "pirates": [
@@ -9130,6 +9756,202 @@
    },
    "supply_via": "site.054.pirate_enclave",
    "system": 54
+  },
+  {
+   "assembly": "pirate_settlement",
+   "body": "system_19.HD_102195",
+   "faction": "fac.lanterns",
+   "id": "pir.019.lanterns",
+   "kind": "pirate_settlement",
+   "known_to_player": "rumour",
+   "legal": "illegal",
+   "lore": "Три цистерны на остове рудовоза за ледяной глыбой облака Хиллса; передатчик-подделка на отдельном буе в 40 тыс. км. Ловят тех, кто купил запись коридора у «Жопа мира-1» и пошёл в обход.",
+   "name": "Логово «Фонарщиков»",
+   "on_ice": false,
+   "operator": "«Фонарщики» (ложные маяки)",
+   "placement": {
+    "corridor": {
+     "dir": [
+      0.220302,
+      0.975259,
+      -0.01835
+     ],
+     "drift_deg_per_year": 0.1895,
+     "name": "Жопа мира-3",
+     "note": "направление на эпоху; стоянка смещается вслед за дрейфом коридора",
+     "shell_outer_au": 10000.0
+    },
+    "heliocentric": {
+     "a_au": 15000.0,
+     "anchor": "shell.19.Жопа мира-3",
+     "anchor_name": "устье коридора «Жопа мира-3»",
+     "e": 0.0,
+     "i_deg": 90.0,
+     "mean_anomaly_epoch_deg": -1.051,
+     "node_deg": 77.271,
+     "peri_deg": 0.0
+    },
+    "parent_body_id": "system_19.HD_102195"
+   },
+   "polity": null,
+   "reason": "Устье коридора «Жопа мира-3» в оболочке HD 102195 (10 000 а.е.): корабль, прошедший коридор, сразу берёт захват на ближайший маяк. Подложный маяк у устья с кодом, смещённым на тысячи км, — дешёвая и физически честная засада: ошибка выхода растёт с ошибкой захвата.",
+   "region_kind": "pirate",
+   "role": null,
+   "ships": 6,
+   "size": "малое",
+   "staff": 70,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (46.0 т)",
+    "goods": {
+     "consumer": 0.042,
+     "electronics": 0.021,
+     "food": 0.126,
+     "machinery": 0.105,
+     "medical": 0.007,
+     "water_volatiles": 0.21
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "note": "покупают через скупщиков и подставные компании; часть — краденое",
+    "reactor_fuel_kg_y": 0.24,
+    "source": {
+     "id": "site.019.troyan_market",
+     "name": "«Троянский рынок» (Кабак)",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 0.511,
+    "water_local": false
+   },
+   "system": 19
+  },
+  {
+   "assembly": "pirate_settlement",
+   "body": "system_41.HD_104067.HD_104067_K3",
+   "faction": "fac.chechetka",
+   "id": "pir.041.chechetka",
+   "kind": "pirate_settlement",
+   "known_to_player": "rumour",
+   "legal": "illegal",
+   "lore": "Ангары во льду; живут семьями. Своих людей держат в санитарной службе: знают, кто ждёт выдержки и с каким грузом.",
+   "name": "Артель «Чечётка»",
+   "on_ice": true,
+   "operator": "Артель «Чечётка»",
+   "placement": {
+    "surface": {
+     "elevation_ref": "terrain_surface",
+     "generator_version": 1,
+     "lat_deg": -17.312,
+     "lon_deg": 11.474,
+     "placement_status": "climate_only_terrain_not_sampled",
+     "seed": "751d6f96d230d451"
+    }
+   },
+   "polity": null,
+   "reason": "Карликовая планета Чечётка (13 а.е.) — самое тёмное и далёкое малое тело периметра, вне орбит патрулей «Ворот». Отсюда до изолированной якорной стоянки «Ворота-К» (400 тыс. км от b) — сутки на тяге; там корабли ждут досмотра до 21 сут.",
+   "region_kind": "pirate",
+   "role": null,
+   "ships": 7,
+   "size": "малое",
+   "staff": 90,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (34.8 т)",
+    "goods": {
+     "consumer": 0.054,
+     "electronics": 0.027,
+     "food": 0.162,
+     "machinery": 0.135,
+     "medical": 0.009
+    },
+    "goods_ru": [
+     "продовольствие",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "note": "покупают через скупщиков и подставные компании; часть — краденое",
+    "reactor_fuel_kg_y": 0.3,
+    "source": {
+     "id": "site.041.vorota",
+     "name": "Станция «Ворота» (внешний периметр)",
+     "system": 41
+    },
+    "source_ly": 0.0,
+    "t_day": 0.387,
+    "water_local": true
+   },
+   "system": 41
+  },
+  {
+   "assembly": "pirate_settlement",
+   "body": "system_19.HD_102195.HD_102195_i",
+   "faction": "fac.houyi",
+   "forces": {
+    "escort_frigate": 1,
+    "interceptor": 4
+   },
+   "id": "pir.019.houyi",
+   "kind": "pirate_settlement",
+   "known_to_player": "hidden",
+   "legal": "illegal",
+   "lore": "Официально отряда нет. Корабли без опознавательных знаков, экипажи на призовой доле; командир — капитан 2 ранга Цао Минлу (в отставке «по болезни» с 3118).",
+   "name": "Стоянка отряда «Хоу И»",
+   "on_ice": false,
+   "operator": "Отряд «Хоу И» (флот Тяньхэ, непризнанный)",
+   "placement": {
+    "orbit": {
+     "altitude_km": 1800000,
+     "inclination_deg": 71.0
+    }
+   },
+   "polity": null,
+   "reason": "Холодная Юйту (5 а.е., 88 К), высокая наклонная орбита: далеко от «Порога» (0.74 а.е.) и от плоскости патрулей; на фоне холодной планеты и в её тени тепловую подпись корабля почти не видно. Отсюда до лицензий Керна у c — 5 а.е., несколько суток на тяге.",
+   "region_kind": "rogue_military",
+   "role": "непризнанный отряд флота (каперы)",
+   "ships": 5,
+   "size": "малое",
+   "staff": 88,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (89.3 т)",
+    "goods": {
+     "consumer": 0.053,
+     "electronics": 0.026,
+     "food": 0.158,
+     "jump_charge": 0.25,
+     "machinery": 0.132,
+     "medical": 0.009,
+     "water_volatiles": 0.264,
+     "weapons": 0.1
+    },
+    "goods_ru": [
+     "вода и газы",
+     "заряд прыжка",
+     "продовольствие",
+     "запчасти и механика",
+     "боеприпасы",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "note": "покупают через скупщиков и подставные компании; часть — краденое",
+    "reactor_fuel_kg_y": 0.3,
+    "source": {
+     "id": "site.019.troyan_market",
+     "name": "«Троянский рынок» (Кабак)",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 0.992,
+    "water_local": false
+   },
+   "system": 19
   }
  ],
  "refuel": [
@@ -12698,6 +13520,293 @@
    "system_name": "HD 114783",
    "type": "deep_space_refuel_point",
    "type_ru": "межзвёздная заправка"
+  },
+  {
+   "assembly": "military_outpost",
+   "body": "system_19.HD_102195.HD_102195_h",
+   "docks": 4,
+   "faction": "fac.nit",
+   "forces": {
+    "escort_frigate": 2,
+    "patrol_cutter": 2,
+    "recon_picket": 3
+   },
+   "id": "mil.019.nit",
+   "known_to_player": "public",
+   "language": "en",
+   "legal": "lawful",
+   "level": "C",
+   "map_level": "detail",
+   "medical_beds": 1.2,
+   "name": "Гидрографический пост «Нить»",
+   "operator": "флот Управления Маяков, гидрографическая партия «Нить» (научная служба)",
+   "outpost_kind": "military_outpost",
+   "placement": {
+    "orbit": {
+     "altitude_km": 60000,
+     "inclination_deg": 8.0
+    }
+   },
+   "placement_reason": "Официально — промер дрейфа коридоров оболочки и поля; Гуанхань (1.9 а.е., нептун 15 M⊕) — вне радиационных поясов b и вдали от трафика «Порога», с обзором на обе стороны неба. На деле — база поиска «второго корпуса»: отсюда пикеты уходят на «Линию».",
+   "polity": "tau_ceti_cognium",
+   "population": 200,
+   "purpose": "Официально — промер дрейфа коридоров оболочки и поля; Гуанхань (1.9 а.е., нептун 15 M⊕) — вне радиационных поясов b и вдали от трафика «Порога», с обзором на обе стороны неба. На деле — база поиска «второго корпуса»: отсюда пикеты уходят на «Линию».",
+   "quarantine_beds": 0.2,
+   "region": "frontier.worlds_ass",
+   "repair": "basic",
+   "role": "гидрографическая партия (поиск «второго корпуса»)",
+   "security_base": 0.95,
+   "source": "outposts.py",
+   "status": "PROPOSAL",
+   "storage_t": 20000,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 62 сут (120.0 т)",
+    "goods": {
+     "consumer": 0.12,
+     "electronics": 0.06,
+     "food": 0.36,
+     "jump_charge": 0.35,
+     "machinery": 0.3,
+     "medical": 0.02,
+     "water_volatiles": 0.6,
+     "weapons": 0.14
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "заряд прыжка",
+     "запчасти и механика",
+     "боеприпасы",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.68,
+    "source": {
+     "id": "site.019.porog",
+     "name": "Станция «Порог»",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 1.95,
+    "water_local": false
+   },
+   "system": 19,
+   "system_name": "HD 102195",
+   "type": "military_hub",
+   "type_ru": "военный хаб"
+  },
+  {
+   "assembly": "lab_orbital",
+   "body": "system_41.HD_104067.HD_104067_h",
+   "docks": 2,
+   "faction": "fac.order",
+   "form": "orbital",
+   "form_ru": "орбитальная станция",
+   "id": "lab.041.crossing",
+   "interest": "generation_ship",
+   "known_to_player": "public",
+   "language": "en",
+   "legal": "licensed",
+   "level": "C",
+   "map_level": "detail",
+   "medical_beds": 0.1,
+   "name": "Обитель «Переправа»",
+   "operator": "Путь Бесконечного Света (лицензия Когниума)",
+   "outpost_kind": "lab",
+   "placement": {
+    "orbit": {
+     "altitude_km": 30000,
+     "inclination_deg": 12.0
+    }
+   },
+   "placement_reason": "Ближе к «Лотосу» ордену не дают (кордон): обитель на периметре, у Дрозда (1.1 а.е.), в стороне от станции «Ворота». Слушают мантры маяка «Лотоса» через ретранслятор и сличают их с архивом ордена XXIII века; архив — единственный источник чертежей NIRVANA-1.",
+   "polity": null,
+   "population": 35,
+   "purpose": "Ближе к «Лотосу» ордену не дают (кордон): обитель на периметре, у Дрозда (1.1 а.е.), в стороне от станции «Ворота». Слушают мантры маяка «Лотоса» через ретранслятор и сличают их с архивом ордена XXIII века; архив — единственный источник чертежей NIRVANA-1.",
+   "quarantine_beds": 0.1,
+   "region": "frontier.worlds_ass",
+   "repair": "basic",
+   "security_base": 0.4,
+   "source": "outposts.py",
+   "status": "PROPOSAL",
+   "storage_t": 3000,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (27.5 т)",
+    "goods": {
+     "consumer": 0.021,
+     "electronics": 0.011,
+     "food": 0.063,
+     "machinery": 0.052,
+     "medical": 0.004,
+     "science_kit": 0.05,
+     "water_volatiles": 0.105
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "запчасти и механика",
+     "научные расходники",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.12,
+    "source": {
+     "id": "site.041.vorota",
+     "name": "Станция «Ворота» (внешний периметр)",
+     "system": 41
+    },
+    "source_ly": 0.0,
+    "t_day": 0.305,
+    "water_local": false
+   },
+   "system": 41,
+   "system_name": "HD 104067",
+   "type": "science_hub",
+   "type_ru": "научный хаб"
+  },
+  {
+   "assembly": "lab_moon_surface",
+   "body": "system_41.HD_104067.HD_104067_K2",
+   "docks": 2,
+   "faction": "fac.kern_survey",
+   "form": "moon_surface",
+   "form_ru": "на поверхности луны",
+   "id": "lab.041.okoye",
+   "interest": "anomaly",
+   "known_to_player": "public",
+   "language": "en",
+   "legal": "licensed",
+   "level": "C",
+   "map_level": "detail",
+   "medical_beds": 0.1,
+   "name": "Антенное поле «Окойе-Линд»",
+   "operator": "Kern Survey (навигационный отдел)",
+   "outpost_kind": "lab",
+   "placement": {
+    "surface": {
+     "elevation_ref": "terrain_surface",
+     "generator_version": 1,
+     "lat_deg": -24.459,
+     "lon_deg": 117.831,
+     "placement_status": "climate_only_terrain_not_sampled",
+     "seed": "f0e33b5db2396508"
+    }
+   },
+   "placement_reason": "Доплеровский сдвиг маяка «Лотоса» нашли в 3087 по записям ретранслятора у 83 Leonis. Для триангуляции эха нужна вторая точка с длинной базой: тёмная, холодная Свиристель (13.9 а.е.) — тихая площадка для решётки антенн вдали от шума звезды и станции.",
+   "polity": "cyg61_kern",
+   "population": 22,
+   "purpose": "Доплеровский сдвиг маяка «Лотоса» нашли в 3087 по записям ретранслятора у 83 Leonis. Для триангуляции эха нужна вторая точка с длинной базой: тёмная, холодная Свиристель (13.9 а.е.) — тихая площадка для решётки антенн вдали от шума звезды и станции.",
+   "quarantine_beds": 0.0,
+   "region": "frontier.worlds_ass",
+   "repair": "basic",
+   "security_base": 0.4,
+   "source": "outposts.py",
+   "status": "PROPOSAL",
+   "storage_t": 3000,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (13.0 т)",
+    "goods": {
+     "consumer": 0.013,
+     "electronics": 0.007,
+     "food": 0.04,
+     "machinery": 0.033,
+     "medical": 0.002,
+     "science_kit": 0.05
+    },
+    "goods_ru": [
+     "научные расходники",
+     "продовольствие",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.07,
+    "source": {
+     "id": "site.041.vorota",
+     "name": "Станция «Ворота» (внешний периметр)",
+     "system": 41
+    },
+    "source_ly": 0.0,
+    "t_day": 0.145,
+    "water_local": true
+   },
+   "system": 41,
+   "system_name": "HD 104067",
+   "type": "science_hub",
+   "type_ru": "научный хаб"
+  },
+  {
+   "assembly": "lab_orbital",
+   "body": "system_19.HD_102195.HD_102195_e",
+   "docks": 2,
+   "faction": "fac.asclepius",
+   "form": "orbital",
+   "form_ru": "орбитальная станция",
+   "id": "lab.019.asclepius",
+   "interest": "worlds_ass_material",
+   "known_to_player": "public",
+   "language": "el",
+   "legal": "contested",
+   "level": "C",
+   "map_level": "detail",
+   "medical_beds": 0.1,
+   "name": "Клиника-лаборатория «Асклепий-9»",
+   "operator": "фармацевтический пул Агоры «Асклепий» (лицензия «Порога»)",
+   "outpost_kind": "lab",
+   "placement": {
+    "orbit": {
+     "altitude_km": 9000,
+     "inclination_deg": 2.0
+    }
+   },
+   "placement_reason": "Регенеративный эффект лотосита изучают у источника: материал не везут через кордон (протокол L, вспышка «Перевала»). Юэгуй (0.15 а.е.) — внутри системы, но вне тора радиации b и вне зоны искажения c; до «Порога» — сутки.",
+   "polity": "lalande_hellas",
+   "population": 30,
+   "purpose": "Регенеративный эффект лотосита изучают у источника: материал не везут через кордон (протокол L, вспышка «Перевала»). Юэгуй (0.15 а.е.) — внутри системы, но вне тора радиации b и вне зоны искажения c; до «Порога» — сутки.",
+   "quarantine_beds": 0.1,
+   "region": "frontier.worlds_ass",
+   "repair": "basic",
+   "security_base": 0.4,
+   "source": "outposts.py",
+   "status": "PROPOSAL",
+   "storage_t": 3000,
+   "supply": {
+    "delivery": "cobrett_i_n1: рейс раз в 90 сут (24.2 т)",
+    "goods": {
+     "consumer": 0.018,
+     "electronics": 0.009,
+     "food": 0.054,
+     "machinery": 0.045,
+     "medical": 0.003,
+     "science_kit": 0.05,
+     "water_volatiles": 0.09
+    },
+    "goods_ru": [
+     "вода и газы",
+     "продовольствие",
+     "научные расходники",
+     "запчасти и механика",
+     "бытовые расходники",
+     "электроника",
+     "медицина"
+    ],
+    "reactor_fuel_kg_y": 0.1,
+    "source": {
+     "id": "site.019.porog",
+     "name": "Станция «Порог»",
+     "system": 19
+    },
+    "source_ly": 0.0,
+    "t_day": 0.269,
+    "water_local": false
+   },
+   "system": 19,
+   "system_name": "HD 102195",
+   "type": "science_hub",
+   "type_ru": "научный хаб"
   }
  ]
 }

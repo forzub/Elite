@@ -9,6 +9,7 @@
 #include "src/game/SpaceStateInternal.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <string>
 
@@ -166,6 +167,7 @@ void DevScriptRunner::runSolMapScript(SpaceState& s)
         if (step.rfind("waitfor:", 0) == 0)
         {
             // waitfor:system:<id> | waitfor:route (a launched route ran and ended) | waitfor:hubnear:<hub id>:<km>
+            // | waitfor:refueled (the job asked by "refuel" ended)
             // optional "@<max seconds>": give up after that (logged) and go on
             const double now = startupElapsedMs(s.m_startupTotalBegin);
             std::string condition = step.substr(8);
@@ -271,6 +273,21 @@ bool DevScriptRunner::waitSatisfied(SpaceState& s, const std::string& condition)
         if (s.m_clientDockingPhase != SpaceState::ClientDockingPhase::Idle)
             m_waitRouteSeen = true;
         return m_waitRouteSeen && s.m_clientDockingPhase == SpaceState::ClientDockingPhase::Idle;
+    }
+    if (condition == "refueled")
+    {
+        // the refuel job asked by "refuel" ended (its serial moved on): done / refused / cancelled
+        const auto it = s.m_client->world().ships().find(s.m_playerId.value);
+        if (it == s.m_client->world().ships().end())
+            return false;
+        const auto& m = it->second.transform.motion;
+        if (m_refuelSerialAtRequest < 0 || m.refuelSerial == static_cast<std::uint16_t>(m_refuelSerialAtRequest))
+            return false;
+        static const char* const phases[] = {"none", "hookup", "pumping", "disconnect", "done", "refused", "cancelled"};
+        std::cerr << "[SolMapScript] refueled: " << phases[std::min<int>(m.refuelState, 6)] << " (refusal " << int(m.refuelRefusal)
+                  << "), delivered " << m.refuelDeliveredT << " t, J charge " << m.jChargeT << " / " << m.jChargeCapacityT << " t\n";
+        m_refuelSerialAtRequest = -1;
+        return true;
     }
     if (condition.rfind("hubnear:", 0) == 0)
     {
@@ -652,6 +669,17 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         s.m_navDataSelected = cmd.substr(7);
     else if (cmd == "service:trade")
         s.context().app->requestServicePanel(ui::services::ServiceUiId::Trade);
+    // refuel at the station the ship stands at, as Ctrl+U (docs/FUEL_STATIONS.md): "refuel" | "refuel:cancel";
+    // "waitfor:refueled" waits for the job to end (done / refused / cancelled - the log says which)
+    else if (cmd == "refuel" || cmd == "refuel:cancel")
+    {
+        if (cmd == "refuel")
+        {
+            const auto it = s.m_client->world().ships().find(s.m_playerId.value);
+            instance().m_refuelSerialAtRequest = it != s.m_client->world().ships().end() ? it->second.transform.motion.refuelSerial : -1;
+        }
+        s.requestClientRefuel(cmd == "refuel" ? 1 : 0);
+    }
     // the map menu's jump rows through the client's own handler: "jumpui:calc|start|cancel:<system id>"
     else if (cmd.rfind("jumpui:", 0) == 0)
     {

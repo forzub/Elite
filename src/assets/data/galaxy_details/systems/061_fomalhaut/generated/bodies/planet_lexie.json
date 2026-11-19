@@ -68,25 +68,26 @@
   "atmosphere": {
     "surface_pressure_pa": 141855.0,
     "composition": {
-      "N2": 0.968,
-      "CO2": 0.02,
-      "Ar": 0.009,
-      "H2O": 0.003
+      "N2": 0.77,
+      "O2": 0.21,
+      "CO2": 0.0007,
+      "Ar": 0.0093,
+      "H2O": 0.01
     },
-    "mean_molecular_weight": 28.411346999999996,
-    "scale_height_km": 7.528818886947639,
+    "mean_molecular_weight": 28.8925,
+    "scale_height_km": 7.4031,
     "greenhouse_warming_k": 37.61993644461887,
     "cloud_potential": 0.6,
     "origin": "outgassed",
     "retention_index": 13.115725027543407,
-    "outer_radius_km": 6978.693826643372
+    "outer_radius_km": 6977.185
   },
   "geophysics": {
     "tectonic_regime": "mobile_lid",
     "volcanism": "high",
     "magnetic_field_earth": 1.2821362066921909,
     "hydrosphere": "surface_ocean",
-    "biosphere": "none"
+    "biosphere": "complex"
   },
   "spin": {
     "rotation_period_hours": 31.0,
@@ -97,17 +98,17 @@
   },
   "surface_generation": {
     "terrain_profile": "plate_tectonic_continents",
-    "relief_amplitude_km": 13.971909338354559,
+    "relief_amplitude_km": 3.5,
     "roughness": 0.24821956104242948,
     "crater_density": 0.009096359388890037,
     "resurfacing_rate": 0.8,
     "erosion_potential": 0.854428728840052,
-    "glaciation_potential": 0.5,
+    "glaciation_potential": 0.3,
     "cave_tectonic_propensity": 0.601819271877778,
     "lava_tube_propensity": 0.17965766178515194,
     "karst_propensity": 1.0,
     "weather_potential": 0.7125716384534029,
-    "ocean_coverage": 0.9236264336051687,
+    "ocean_coverage": 0.8,
     "ice_coverage": 0.05,
     "surface_materials": {
       "basalt": 0.35,
@@ -393,9 +394,11 @@
     "semi_major_axis_au": "observed"
   },
   "extra": {
-    "breathable": false,
+    "breathable": true,
+    "habitability_note": "author 2026-11-19: Lexie is habitable - a paradise world (CANON); details (biosphere origin, climate) deferred by the author; composition set N2/O2 for consistency with breathable. docs/FORTUNA_LEXIE.md",
     "environment_preset_id": "terrestrial_temperate",
-    "hydrosphere": "океаны, около 65 % поверхности",
+    "hydrosphere": "океаны, около 80 % поверхности; архипелаги и широкие мелководные карбонатные банки",
+    "visual_tuning_note": "2026-11-19 (FORTUNA_LEXIE.md, author: make Lexie visually the most beautiful): generated ocean_coverage 0.92 -> 0.80, relief_amplitude_km 13.97 -> 3.5, glaciation_potential 0.5 -> 0.3 (two continents + island chains instead of one snow-capped island in an empty sea); colours in appearance_passports.json look",
     "naming": "tools/colonization_lab/canon/naming.json body:system_61.Fomalhaut.Lexie; name history AUTHOR_UNSPECIFIED"
   }
 }

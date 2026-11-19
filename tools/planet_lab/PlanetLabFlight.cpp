@@ -71,6 +71,8 @@ namespace
             {41, "planet_hd_104067_e", "proc_icy"}, {41, "planet_hd_104067_b", "proc_gas_giant"},
             // a saturated, airless procedural moon (crater classes + the small-crater tail)
             {47, "moon_hd_154345_b_ii", "proc_moon"},
+            // Fortuna: Lexie, the look of docs/FORTUNA_LEXIE.md (appearance passport look)
+            {61, "planet_lexie", "lexie"},
         };
         return t;
     }
@@ -274,7 +276,7 @@ namespace
         const glm::dvec3 sunWorld = lab.sunDirection(b);
         const glm::dvec3 sunBody = glm::transpose(ax) * sunWorld;
         if (glm::length(siteBodyOut) < 0.5)
-            siteBodyOut = chooseSite(field, sunBody);
+            siteBodyOut = chooseSite(field, std::getenv("PLANET_LAB_NIGHT") ? -sunBody : sunBody);   // DEV: night side
         const glm::dvec3 n = ax * siteBodyOut;
         const glm::dvec3 side = glm::normalize(glm::cross(n, sunWorld));
         Camera c;

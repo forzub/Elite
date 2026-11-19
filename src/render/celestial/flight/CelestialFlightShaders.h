@@ -45,6 +45,18 @@ uniform float uNaturalZones; // 1: the body states life or open water (zone pale
 uniform float uRimScale;     // Elite globe outline strength (the backdrop globe low over the ground: faint)
 uniform float uDetailStrength; // procedural micro relief (normal tilt)
 uniform float uFarFade;        // 0 near .. 1 small disc: less contrast far away
+// the body's Modern look (AppearancePassport.h BodyLook; uLookOn 0 = the generic palette)
+uniform float uLookOn;
+uniform vec3 uLookSeaShallow;
+uniform vec3 uLookSeaDeep;
+uniform float uLookShelfKm;      // sea depth (km) of the shallow -> deep change
+uniform float uLookGlint;
+uniform float uLookGlintPower;
+uniform vec3 uLookForest;
+uniform vec3 uLookPlains;
+uniform vec3 uLookDry;
+uniform vec3 uLookNightSea;      // night glowing sea patches (colour x strength, linear)
+uniform float uLookNightSeaCover;
 
 float hash13(vec3 p)
 {
@@ -74,6 +86,25 @@ vec4 noised(vec3 x)
     vec3 g3 = du * vec3(k1 + k4 * u.y + k6 * u.z + k7 * u.y * u.z, k2 + k5 * u.z + k4 * u.x + k7 * u.z * u.x,
                         k3 + k6 * u.x + k5 * u.y + k7 * u.x * u.y);
     return vec4(v, g3);
+}
+
+// The look's night sea (docs/FORTUNA_LEXIE.md): bioluminescence seen from orbit - open-ocean "milky sea"
+// patches (bacterial, steady, hundreds of km: real, satellite-observed) and a blue surf rim along the coasts
+// (dinoflagellate "sea sparkle"). bodyDir: the unit direction in the body frame (glow fixed to the sea).
+// Returns a display-space addition (0 on the day side, on land, without a look).
+vec3 lookNightSea(vec3 bodyDir, vec3 nSphere, float coastKm)
+{
+    if (uLookOn < 0.5 || coastKm >= 0.0 || dot(uLookNightSea, vec3(1.0)) <= 0.0)
+        return vec3(0.0);
+    float night = 1.0 - smoothstep(-0.16, 0.02, dot(nSphere, normalize(uSunDir)));
+    if (night <= 0.0)
+        return vec3(0.0);
+    vec3 q = bodyDir * 9.0 + vec3(17.0, 31.0, 7.0);
+    float n = 0.55 * noised(q).x + 0.30 * noised(q * 2.6 + 5.0).x + 0.15 * noised(q * 6.9 + 11.0).x;
+    float t = 0.5 + (0.5 - clamp(uLookNightSeaCover, 0.0, 1.0)) * 0.55;
+    float patches = smoothstep(t, t + 0.10, n) * smoothstep(0.4, 1.2, -coastKm);   // open, deep water
+    float surf = exp(coastKm / 0.04);  // coastKm < 0 is the depth (km): the breaking shallows
+    return uLookNightSea * night * (patches + vec3(0.25, 0.6, 1.4) * surf * 0.9);
 }
 
 // Band-limited micro normal perturbation: octaves finer than a pixel fade.
@@ -324,14 +355,19 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     // zone palette blended with the real albedo (variation without noise),
     // deep blue ocean with a soft broad glint, smooth light with a soft
     // terminator, cloud shadows, blue aerial haze toward the limb.
+    bool look = uLookOn > 0.5;
     vec3 landZone = zoneColour(zones,
         vec3(0.80, 0.82, 0.86),   // snow / ice
-        vec3(0.028, 0.065, 0.016),// forest (linear)
-        vec3(0.12, 0.17, 0.045),  // plains
-        vec3(0.42, 0.29, 0.13),   // dry
+        look ? uLookForest : vec3(0.028, 0.065, 0.016),// forest (linear)
+        look ? uLookPlains : vec3(0.12, 0.17, 0.045),  // plains
+        look ? uLookDry : vec3(0.42, 0.29, 0.13),      // dry
         vec3(0.17, 0.12, 0.075)); // mountains
-    vec3 landCol = uNaturalZones > 0.5 ? mix(landZone, albedo, 0.35) : albedo;
-    vec3 seaCol = mix(vec3(0.010, 0.055, 0.15), vec3(0.003, 0.018, 0.075), deepSea);
+    vec3 landCol = uNaturalZones > 0.5 ? mix(landZone, albedo, look ? 0.2 : 0.35) : albedo;
+    // the body's own sea by depth (coastKm < 0 = km below the sea level): banks and lagoons read from orbit
+    if (look)
+        deepSea = smoothstep(0.0, uLookShelfKm, -coastKm);
+    vec3 seaCol = look ? mix(uLookSeaShallow, uLookSeaDeep, deepSea)
+                       : mix(vec3(0.010, 0.055, 0.15), vec3(0.003, 0.018, 0.075), deepSea);
     vec3 base = isGas > 0.5 ? albedo : mix(landCol, seaCol, isWater);
     float wrap = clamp((dot(normalize(mix(nSphere, nRelief, 0.6)), L) + 0.08) / 1.08, 0.0, 1.0);
     float terminator = smoothstep(-0.10, 0.18, ns);
@@ -340,9 +376,9 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     if (isWater > 0.5)
     {
         // A broad, calm glint (not plastic): fresnel-weighted, sun-lit only.
-        float spec = pow(max(dot(nRelief, H), 0.0), 60.0);
+        float spec = pow(max(dot(nRelief, H), 0.0), look ? uLookGlintPower : 60.0);
         float fresnel = 0.02 + 0.98 * pow(1.0 - max(nv, 0.0), 5.0);
-        col += uSunColour * spec * (0.25 + fresnel) * 0.35 * terminator * (1.0 - cloudShadow);
+        col += uSunColour * spec * (0.25 + fresnel) * 0.35 * (look ? uLookGlint : 1.0) * terminator * (1.0 - cloudShadow);
     }
     // Night: subtle city light.
     col += vec3(1.0, 0.72, 0.38) * emission * 0.020 * (1.0 - day);
@@ -407,6 +443,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
                   vec3 nRelief, vec3 nSphere, vec3 viewDir, float dist, float lattice, float isGas,
                   float cloudShadow, out float alpha);
 vec3 microNormal(vec3 n, vec3 p, float footprint);
+vec3 lookNightSea(vec3 bodyDir, vec3 nSphere, float coastKm);
 uniform float uMicroWavelength;
 void main()
 {
@@ -463,6 +500,8 @@ void main()
     float alpha;
     vec3 col = shadeSurface(land, water, coastKm, heightKm, emission, 0.0, nr, ns, v, dist, -1.0, gasLines,
                             shadow, alpha);
+    if (uDeckLines < 0.5)
+        col += lookNightSea(d, ns, coastKm);
     if (uSkyDisc > 0.0)
     {
         // A body in the night sky reads as the dark-adapted eye sees it: Elite
@@ -544,6 +583,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
                   vec3 nRelief, vec3 nSphere, vec3 viewDir, float dist, float lattice, float isGas,
                   float cloudShadow, out float alpha);
 vec3 microNormal(vec3 n, vec3 p, float footprint);
+vec3 lookNightSea(vec3 bodyDir, vec3 nSphere, float coastKm);
 void main()
 {
     float dist = length(vWorld);
@@ -570,6 +610,7 @@ void main()
     float lat = 1.0 - clamp(min(g.x, g.y) / 0.8, 0.0, 1.0);
     vec3 col = shadeSurface(land, water, vCoast / 1000.0, vHeight / 1000.0, vWater.a, vLand.a, nr, ns, v, dist,
                             lat, 0.0, 0.0, alpha);
+    col += lookNightSea(normalize(transpose(uBodyToWorld) * ns), ns, vCoast / 1000.0);
     fragColour = vec4(col, 1.0);
     writeLogDepth();
 }
@@ -715,6 +756,14 @@ uniform int uStyle;
 uniform vec3 uLineColour;
 uniform int uSteps;
 uniform int uGlowOnly; // Anime: 1 = the cheap limb-glow pass (no ray march)
+uniform float uLookOn;        // the body's look (AppearancePassport.h BodyLook): night air light
+uniform vec3 uLookAirglow;
+uniform vec3 uLookAurora;
+uniform vec3 uLookAuroraTop;
+uniform float uLookAuroraColat;
+uniform float uLookAuroraWidth;
+uniform vec3 uLookMagPole;
+uniform float uLookTime;
 out vec4 fragColour;
 void writeLogDepth();
 
@@ -727,6 +776,79 @@ vec2 raySphere(vec3 o, vec3 d, float r)
         return vec2(-1.0, -2.0);
     h = sqrt(h);
     return vec2(-b - h, -b + h);
+}
+
+// The look's night-side air light (docs/FORTUNA_LEXIE.md; Modern only): the path through a thin emitting
+// layer is computed exactly (a thin layer is undersampled by the march), so the limb brightens as it does
+// from orbit (airglow band) and a layer seen from above stays faint. Layers inside the drawn shell
+// (exaggerated low: the shell is 8 scale heights).
+float layerPath(vec3 o, vec3 dir, float rIn, float rOut, float tEnd, out vec3 pMid)
+{
+    vec2 a = raySphere(o, dir, rOut);
+    float a0 = max(a.x, 0.0), a1 = min(a.y, tEnd);
+    pMid = o + dir * 0.5 * (a0 + a1);
+    if (a1 <= a0)
+        return 0.0;
+    float len = a1 - a0;
+    vec2 b = raySphere(o, dir, rIn);
+    float b0 = max(b.x, 0.0), b1 = min(b.y, tEnd);
+    if (b1 > b0)
+    {
+        len -= b1 - b0;
+        if (b.x > a0)
+            pMid = o + dir * 0.5 * (a0 + b.x);   // the first piece, before the inner sphere
+    }
+    return max(len, 0.0);
+}
+
+vec3 lookAirEmission(vec3 o, vec3 dir, float top, float tEnd, vec3 L)
+{
+    float hs = top - 1.0;
+    vec3 sum = vec3(0.0);
+    vec3 p;
+    // airglow: recombination light of the day's UV photochemistry (O 557.7 nm green, Na 589 nm from
+    // ablated dust), a band along the night limb; colour = the limb's brightness
+    if (dot(uLookAirglow, vec3(1.0)) > 0.0)
+    {
+        float th = 0.16 * hs;
+        float path = layerPath(o, dir, 1.0 + 0.70 * hs, 1.0 + 0.86 * hs, tEnd, p);
+        float night = 1.0 - smoothstep(-0.12, 0.10, dot(normalize(p), L));
+        sum += uLookAirglow * night * min(path, 40.0 * th) / (40.0 * th);
+    }
+    // the auroral ovals round the magnetic poles: closer to the pole on the day side, brightest at
+    // midnight, rayed curtains drifting in the sun-fixed frame; green core, red tops; colour = seen from above
+    if (dot(uLookAurora + uLookAuroraTop, vec3(1.0)) > 0.0)
+    {
+        vec3 pole = normalize(uLookMagPole);
+        vec3 e1 = L - pole * dot(L, pole);
+        e1 = length(e1) > 1e-4 ? normalize(e1) : normalize(cross(pole, vec3(0.31, 0.77, 0.56)));
+        vec3 e2 = cross(pole, e1);
+        for (int k = 0; k < 2; ++k)
+        {
+            float rIn = 1.0 + (k == 0 ? 0.50 : 0.80) * hs;
+            float rOut = 1.0 + (k == 0 ? 0.80 : 0.98) * hs;
+            float th = rOut - rIn;
+            float path = layerPath(o, dir, rIn, rOut, tEnd, p);
+            if (path <= 0.0)
+                continue;
+            vec3 n = normalize(p);
+            float c = acos(clamp(dot(n, pole), -1.0, 1.0));
+            c = min(c, 3.14159265 - c);                            // both hemispheres
+            float sunward = dot(n, L);
+            float target = uLookAuroraColat * (1.0 - 0.25 * sunward);
+            float oval = exp(-pow((c - target) / uLookAuroraWidth, 2.0));
+            float lon = atan(dot(n, e2), dot(n, e1));
+            // irregular folded curtains: rays bunched by two slow folds, brightness surging along the oval
+            float phase = lon * 36.0 + 4.0 * sin(lon * 5.0 + uLookTime * 0.004) + 2.5 * sin(lon * 13.0 - uLookTime * 0.003);
+            float rays = (0.5 + 0.5 * sin(phase)) * (0.45 + 0.55 * smoothstep(-0.3, 0.8, sin(lon * 3.0 + 1.7 * sin(lon * 2.0) + uLookTime * 0.001)));
+            float curtains = 0.35 + 0.65 * rays * rays * rays;
+            float midnight = 0.55 + 0.45 * clamp(-sunward, 0.0, 1.0);
+            float night = 1.0 - 0.85 * smoothstep(-0.05, 0.25, sunward);
+            vec3 colour = k == 0 ? uLookAurora : uLookAuroraTop;
+            sum += colour * oval * curtains * midnight * night * min(path, 3.0 * th) / th;
+        }
+    }
+    return sum;
 }
 
 void main()
@@ -849,6 +971,8 @@ void main()
         exposure = 1.0;
     }
     vec3 mapped = 1.0 - exp(-colour * exposure);
+    if (uStyle == 1 && uLookOn > 0.5)
+        mapped += lookAirEmission(o, dir, top, t1, L);
     // Sky: the scattered light also hides what is behind it (stars).
     // Over the ground: additive haze only - the surface stays readable.
     float cover = hitsGround ? alpha * 0.25 : max(alpha * 0.25, max(max(mapped.r, mapped.g), mapped.b));

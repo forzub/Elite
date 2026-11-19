@@ -40,6 +40,7 @@ NAMER = naming.Names()
 import logistics as lg
 import lotus_model
 import outposts
+import worlds_ass_region
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out", "world_3126")
@@ -1488,6 +1489,8 @@ def checks(I, out):
     add("status_present", not nolbl, ",".join(nolbl[:5]) or "ok")
     if "outposts" in out:
         res += outposts.checks(I, out["outposts"])
+    if "worlds_ass_region" in out:
+        res += worlds_ass_region.checks(I, out["worlds_ass_region"], out["outposts"])
     return res
 
 
@@ -1542,6 +1545,9 @@ def runtime_export(I, out):
         doc["hidden_sites"] = hidden_rows
         doc["beacon_counts"] = dict(placed=O["beacons"]["counts"], in_hubs_only=O["beacons"]["count_only"],
                                     note="маяки станций, торговых хабов и удалённых научных станций — модули своих хабов, отдельных объектов нет")
+    if out.get("worlds_ass_region"):
+        # known wrecks of the World's Ass as future derelict objects (no runtime spawner yet; the C++ loader ignores the key)
+        doc["derelicts"] = worlds_ass_region.runtime_rows(out["worlds_ass_region"])
     objs = []
     for d in out["frontier"]["deep_space_objects"]:
         if d["hidden"]:
@@ -1762,13 +1768,16 @@ def compute():
     # outposts 3126 (outposts.py): beacons on the map, labs, military posts, refuelling, pirate settlements, smugglers.
     # A separate layer: it reads the sites / comms / piracy above and never changes them.
     O = outposts.compute(I, out, g, base_site, surface_latlon, ACCESS, FRONTIER_CHAINS)
+    # the World's Ass region (worlds_ass_region.py + canon/worlds_ass_region.json): its in-system manned places join
+    # the outposts layer before the law model; wrecks, deep-space places and the lost generation ship are its own file
+    out["worlds_ass_region"] = worlds_ass_region.compute(I, out, g, base_site, surface_latlon, O)
     O["law"] = law_model(I, O["visible_sites"] + O["hidden_sites"], comms)["sites"]
     O.pop("rules", None)
     out["outposts"] = O
     return I, out
 
 
-NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "events", "sol_network", "outposts")
+NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "events", "sol_network", "outposts", "worlds_ass_region")
 
 
 def serialise(I, out, chk):
@@ -1779,7 +1788,9 @@ def serialise(I, out, chk):
     runtime = {RUNTIME_SITES: json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True) + "\n"}
     ws_doc = json.load(open(RUNTIME_WORLD_STATE, encoding="utf-8"))
     template = next(h for h in ws_doc["orbital_hubs"] if h["id"] == "earth_orbital_hub")
-    ws_doc["orbital_hubs"] = sol_network.runtime_hubs(out["sol_network"], template)
+    # Sol's hubs are generated here; hubs of other systems (colony hubs of tools/models/hub_colonies.py) belong to
+    # their own tool and are kept in their order (before: the whole list was replaced and the colony hubs were lost)
+    ws_doc["orbital_hubs"] = sol_network.runtime_hubs(out["sol_network"], template) + [h for h in ws_doc["orbital_hubs"] if h.get("system_id", 0) != 0]
     ws_doc["orbital_hubs_generated_by"] = "tools/colonization_lab/world_sites.py (sol_network.py); edit canon/sol_network.json, not this list"
     runtime[RUNTIME_WORLD_STATE] = json.dumps(ws_doc, ensure_ascii=False, indent=2) + "\n"
     for o in objs:

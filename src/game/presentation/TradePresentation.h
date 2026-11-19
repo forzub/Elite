@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "src/game/economy/EconomyModel.h"
+#include "src/game/simulation/ClientWalletSnapshot.h"
 
 // F8 Trade page model: the bulletin board of the hub the player is at, its
 // market, the hubs of the system, and the card of a selected destination
@@ -65,7 +66,7 @@ struct TradePresentation
     std::string hubName;
     bool atHub = false;
     int day = 0;
-    int tab = 0;                        // 0 board, 1 market, 2 hubs, 3 navigation data
+    int tab = 0;                        // 0 board, 1 market, 2 hubs, 3 navigation data, 4 finance
     std::vector<TradeBoardRow> board;
     std::vector<game::economy::MarketQuote> market;
     std::vector<game::economy::ActiveEvent> events;
@@ -73,6 +74,7 @@ struct TradePresentation
     std::string selectedHub;
     TradeHubCard card;
     NavDataPage nav;
+    game::simulation::ClientWalletSnapshot finance;   // the server ledger as replicated to this session
 };
 
 // distanceText(hubId) -> "12 400 km" / "4.3 ly" / "" (unknown)

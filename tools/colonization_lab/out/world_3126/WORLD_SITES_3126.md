@@ -115,8 +115,17 @@
 - OK every_site_has_jurisdiction: 555 sites
 - OK status_present: ok
 - OK outposts.beacons_match_model: bridge 25/25, relay 78/78, military 65/65
-- OK outposts.outpost_bodies_exist: 54 объектов
+- OK outposts.outpost_bodies_exist: 61 объектов
 - OK outposts.every_outpost_has_reason: ok
 - OK outposts.every_manned_outpost_has_supply_source: ok
-- OK outposts.outpost_ids_unique: 228 ids
-- OK outposts.labs_selective_and_dense_at_worlds_ass: всего 14, у «Жопы мира» 6, отвергнуто 19
+- OK outposts.outpost_ids_unique: 235 ids
+- OK outposts.labs_selective_and_dense_at_worlds_ass: всего 17, у «Жопы мира» 7, отвергнуто 19
+- OK worlds_ass.ids_unique: 19 ids
+- OK worlds_ass.bodies_exist: ok
+- OK worlds_ass.wrecks_have_year_cause_remains: 9 обломков
+- OK worlds_ass.lost_ship_outside_field_and_in_region: 0.5285 св. лет от «Лотоса» (33420 а.е.); до HD 102195 22.18, до HD 104067 21.15 св. лет
+- OK worlds_ass.braking_physics_consistent: торможение 0.1357 м/с², при отделении 299.8 км/с, v_rel 360.0 км/с
+- OK worlds_ass.lost_ship_has_public_search_hints: 9 подсказок
+- OK worlds_ass.hot_region_mix: {"generation_ship": 1, "lab": 4, "military_outpost": 1, "pirate": 3, "rogue_military": 1, "wreck": 8, "wreck_field": 1} {"civil": 4, "military": 10, "science": 8}
+- OK worlds_ass.every_manned_place_has_supply_source: ok
+- OK worlds_ass.factions_known: 12 фракций

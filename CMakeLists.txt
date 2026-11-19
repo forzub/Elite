@@ -229,6 +229,19 @@ target_include_directories(EliteSystemMapInfoCheck PRIVATE "${CMAKE_SOURCE_DIR}"
 target_compile_features(EliteSystemMapInfoCheck PRIVATE cxx_std_17)
 target_link_libraries(EliteSystemMapInfoCheck PRIVATE nlohmann_json::nlohmann_json)
 
+# DEV check: how hard a jump from -> to is by the game's own jump rules (route, charge, sumps, shells, lanes, currents);
+# docs/FORTUNA_LEXIE.md. Run from the repository root: EliteJumpAccessCheck.exe 0:61 --near 61 --chain 0:19
+add_executable(EliteJumpAccessCheck
+    tools/navigation_runtime/JumpAccessCheck.cpp
+    src/game/navigation/rules/InterstellarJumpRoute.cpp
+    src/game/navigation/rules/JumpSumps.cpp
+    src/world/celestial/StarAtlasDatabase.cpp
+    src/world/celestial/CelestialEphemerisService.cpp
+)
+target_include_directories(EliteJumpAccessCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+target_compile_features(EliteJumpAccessCheck PRIVATE cxx_std_17)
+target_link_libraries(EliteJumpAccessCheck PRIVATE nlohmann_json::nlohmann_json)
+
 
 # shared body flight rules + the route codec / charge estimate (architecture audit 2026-11-06)
 add_executable(EliteBodyFlightRulesCheck tools/navigation_runtime/BodyFlightRulesCheck.cpp src/game/navigation/route/RoutePlanner.cpp src/game/navigation/route/RouteWire.cpp src/game/navigation/route/RouteZones.cpp)
@@ -652,6 +665,8 @@ add_executable(EliteGame
     src/game/simulation/GameSimulationDockTraffic.cpp
     src/game/simulation/GameSimulationFreeFlight.cpp
     src/game/simulation/GameSimulationRoute.cpp
+    src/game/simulation/GameSimulationRefuel.cpp
+    src/game/fuel/FuelStationCatalog.cpp
     src/game/simulation/GameSimulationJump.cpp
     src/game/navigation/rules/InterstellarJumpRoute.cpp
     src/game/navigation/rules/NavDataBanks.cpp
@@ -687,6 +702,10 @@ add_executable(EliteGame
     src/game/presentation/ShipyardPresentation.cpp
     src/game/presentation/TradePresentation.cpp
     src/game/economy/EconomyModel.cpp
+    src/game/economy/BankingModel.cpp
+    src/game/economy/PriceModel.cpp
+    src/game/economy/EconomyServer.cpp
+    src/game/economy/EconomyService.cpp
     src/game/presentation/RepairRefitPresentation.cpp
 
     src/game/client/ClientWorldState.cpp
@@ -976,11 +995,17 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationDockTraffic.cpp
         src/game/simulation/GameSimulationFreeFlight.cpp
         src/game/simulation/GameSimulationRoute.cpp
+        src/game/simulation/GameSimulationRefuel.cpp
+        src/game/fuel/FuelStationCatalog.cpp
         src/game/simulation/GameSimulationJump.cpp
         src/game/navigation/rules/InterstellarJumpRoute.cpp
         src/game/navigation/rules/NavDataBanks.cpp
         src/game/navigation/rules/JumpSumps.cpp
         src/game/economy/EconomyModel.cpp
+        src/game/economy/BankingModel.cpp
+        src/game/economy/PriceModel.cpp
+        src/game/economy/EconomyServer.cpp
+        src/game/economy/EconomyService.cpp
         src/game/simulation/GameSimulationZones.cpp
         src/game/simulation/GameSimulationCombat.cpp
         src/game/simulation/GameSimulationCityDamage.cpp
@@ -1258,6 +1283,20 @@ if(ELITE_BUILD_SERVER)
     if(WIN32)
         target_link_libraries(EliteDamageCheck PRIVATE ws2_32 mswsock)
     endif()
+
+    # Unit checks of the economy (docs/ECONOMY_BANKING.md): interest, payments, lifeline, the no-death-spiral
+    # insolvency path, in duplum, the daily price step, FX, a 365-day server run. Run from the repository root.
+    add_executable(EliteEconomyCheck
+        tests/economy/EconomyCheck.cpp
+        src/game/economy/BankingModel.cpp
+        src/game/economy/PriceModel.cpp
+        src/game/economy/EconomyServer.cpp
+        src/game/economy/EconomyService.cpp
+        src/game/economy/EconomyModel.cpp
+    )
+    target_include_directories(EliteEconomyCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_compile_features(EliteEconomyCheck PRIVATE cxx_std_17)
+    target_link_libraries(EliteEconomyCheck PRIVATE nlohmann_json::nlohmann_json)
 
     # DEV check: F6 Shipyard / F7 Repair & Refit page models from one source.
     add_executable(EliteServicePagesCheck

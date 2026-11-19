@@ -71,6 +71,11 @@ struct ApproachShell
     glm::dvec3 centreLy {0.0};
     double innerLy = 0.0, peakLy = 0.0, outerLy = 0.0;
     double tau = 0.0;
+    // the shell's own currents (docs/FORTUNA_LEXIE.md, 2026-11-19): AU of exit drift per unit of tau crossed (0 = none).
+    // The same law as a swarm's drift toward its ridge (JumpCurrents.h SumpDriftPerDepthM): the stirred cloud's rough
+    // potential bends the step, across the line, away from the nearest corridor; a corridor crossing has ~no depth and
+    // so ~no drift. Added to the departure currents; the beacons compensate all but drift / lock like the rest.
+    double driftAuPerTau = 0.0;
     double epochUniverseS = 0.0;
     std::vector<ApproachCorridor> corridors;
 };
@@ -103,6 +108,10 @@ struct InterstellarSumpCatch
 std::vector<InterstellarSumpCrossing> interstellarSumpCrossings(const world::celestial::StarAtlasDatabase& atlas,
                                                                 const InterstellarRoute& route, double lockFactor,
                                                                 double universeTimeS = 0.0);
+// the exit drift (metres, galactic axes = the system frame's) the approach shells with currents (driftAuPerTau > 0) put
+// on the way; zero for shells without them
+glm::dvec3 interstellarShellDriftM(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
+                                   double universeTimeS);
 // the catch along the way for an exponential draw `e` (= -ln U)
 InterstellarSumpCatch interstellarSumpCatch(const world::celestial::StarAtlasDatabase& atlas, const InterstellarRoute& route,
                                             double lockFactor, double e, double universeTimeS = 0.0);

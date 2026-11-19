@@ -425,6 +425,7 @@ void GameSimulation::enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFligh
 
 bool GameSimulation::toggleFreeFlight(EntityId shipId)
 {
+    (void)commandContextOk(shipId, "toggleFreeFlight");
     Ship* ship = getShip(shipId);
     if (!ship)
         return false;
@@ -585,6 +586,7 @@ int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dve
 
 bool GameSimulation::toggleStabilization(EntityId shipId)
 {
+    (void)commandContextOk(shipId, "toggleStabilization");
     Ship* ship = getShip(shipId);
     if (!ship)
         return false;
@@ -613,6 +615,7 @@ bool GameSimulation::toggleStabilization(EntityId shipId)
 
 bool GameSimulation::toggleJEngine(EntityId shipId)
 {
+    (void)commandContextOk(shipId, "toggleJEngine");
     Ship* ship = getShip(shipId);
     if (!ship)
         return false;

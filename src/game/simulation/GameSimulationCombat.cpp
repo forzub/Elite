@@ -13,6 +13,7 @@
 // a burn-through. Missiles: guided at launch by the seeker cone, gravity of
 // the system, burning-through warheads on contact (shaped jet / slug).
 #include "src/game/simulation/GameSimulationInternal.h"
+#include "src/game/simulation/RuntimeSystemPolicy.h"
 
 #include "src/game/combat/Penetration.h"
 #include "src/game/combat/WeaponCatalog.h"
@@ -147,10 +148,14 @@ bool GameSimulation::launchMissile(EntityId shipId)
             target = id;
         }
     };
+    // the seeker sees its own system only (multi-system tick: another system's coordinates overlap this one's)
+    const int shooterSystemId = tr.motion.systemId;
     for (const auto& [id, s] : m_ships)
-        consider(id, world::coordinates::fullMeters(s->core().transform().worldPosition));
+        if (game::simulation::sameRuntimeSystem(s->core().transform().motion.systemId, shooterSystemId))
+            consider(id, world::coordinates::fullMeters(s->core().transform().worldPosition));
     for (const auto& [id, s] : m_shipShells)
-        consider(id, world::coordinates::fullMeters(s.transform.worldPosition));
+        if (game::simulation::sameRuntimeSystem(s.transform.motion.systemId, shooterSystemId))
+            consider(id, world::coordinates::fullMeters(s.transform.worldPosition));
 
     // from the missile rack (or under the hull), pushed clear of it
     glm::dvec3 rackLocal(0.0, -2.0, -2.0);
@@ -174,6 +179,7 @@ bool GameSimulation::launchMissile(EntityId shipId)
     m.shooter = shipId;
     m.target = target;
     m.specId = spec->id;
+    m.systemId = shooterSystemId;
     m.positionW = pos + R * rackLocal;
     const auto track = m_combatTracks.find(shipId);
     const glm::dvec3 shooterVel = track != m_combatTracks.end() && track->second.valid ? track->second.velocityW : glm::dvec3(0.0);
@@ -416,10 +422,18 @@ void GameSimulation::disableShipIfCombatLost(EntityId shipId, Ship& ship)
         (void)markShipDerelict(shipId);
 }
 
-void GameSimulation::updateCombat(double dt)
+void GameSimulation::updateCombat(double dt, bool tickStart)
 {
     if (dt <= 0.0)
         return;
+    const auto& cat = weaponCatalog();
+    const auto& mat = cat.materials;
+    // Multi-system tick (audit 2026-11-19): the once-per-tick bookkeeping (the combat clock, reactor emergencies and
+    // explosions, the velocity tracks, cooling, ship collisions) runs in the first system pass; the lasers and the
+    // missiles run in EVERY pass, each for the shooters / missiles of the pass's system against that system's ships,
+    // in that system's gravity context.
+    if (tickStart)
+    {
     m_combatClockS += dt;
     for (auto& [id, sp] : m_ships)
         for (const auto& mod : sp->core().takeReactorCatastrophes())
@@ -470,8 +484,6 @@ void GameSimulation::updateCombat(double dt)
         explodeReactor(e);
     devCombatStep(dt);
     devCityFireStep();
-    const auto& cat = weaponCatalog();
-    const auto& mat = cat.materials;
     m_combatBeams.clear();
 
     // world velocity of every ship (finite differences; the frame-independent
@@ -498,6 +510,7 @@ void GameSimulation::updateCombat(double dt)
             if (Ship* idle = getShip(uid))
                 if (const auto* l = cat.laser(combatLoadout(uid).laserId))
                     (void)laserControllerStep(uid, *idle, *l, dt, false);
+    }
     for (const EntityId shooterId : std::vector<EntityId>(m_laserFiring.begin(), m_laserFiring.end()))
     {
         const Ship* shooter = getShip(shooterId);
@@ -506,6 +519,8 @@ void GameSimulation::updateCombat(double dt)
             m_laserFiring.erase(shooterId);
             continue;
         }
+        if (!passOwns(shooter))
+            continue;   // fired in its own system's pass
         const auto* laser = cat.laser(combatLoadout(shooterId).laserId);
         if (!laser)
             continue;
@@ -520,7 +535,7 @@ void GameSimulation::updateCombat(double dt)
         bool targetIsShell = false;
         for (const auto& [id, s] : m_ships)
         {
-            if (id == shooterId)
+            if (id == shooterId || !passOwns(s.get()))
                 continue;
             double t = 0.0;
             if (raySphere(pos, fwd, world::coordinates::fullMeters(s->core().transform().worldPosition), shipRadiusM(s->core().desc()), t) &&
@@ -533,6 +548,8 @@ void GameSimulation::updateCombat(double dt)
         }
         for (const auto& [id, s] : m_shipShells)
         {
+            if (!game::simulation::sameRuntimeSystem(s.transform.motion.systemId, m_activeCelestialSystemId))
+                continue;
             double t = 0.0;
             if (s.definition && raySphere(pos, fwd, world::coordinates::fullMeters(s.transform.worldPosition), shipRadiusM(*s.definition), t) &&
                 t < targetT)
@@ -601,7 +618,7 @@ void GameSimulation::updateCombat(double dt)
                 double nearestAngle = 0.0;
                 std::string nearestInfo;
                 for (const auto& [id, s] : m_ships)
-                    if (id != shooterId)
+                    if (id != shooterId && passOwns(s.get()))
                     {
                         const glm::dvec3 d = world::coordinates::fullMeters(s->core().transform().worldPosition) - pos;
                         if (glm::length(d) < nearest)
@@ -698,6 +715,11 @@ void GameSimulation::updateCombat(double dt)
     for (auto it = m_combatMissiles.begin(); it != m_combatMissiles.end();)
     {
         CombatMissile& m = *it;
+        if (!game::simulation::sameRuntimeSystem(m.systemId, m_activeCelestialSystemId))
+        {
+            ++it;   // flown in its own system's pass (its gravity, its ships)
+            continue;
+        }
         const auto* spec = cat.missile(m.specId);
         m.ageS += dt;
         if (!spec || m.ageS > spec->fuelS + 20.0)
@@ -763,7 +785,7 @@ void GameSimulation::updateCombat(double dt)
         bool done = false;
         for (auto& [id, s] : m_ships)
         {
-            if (id == m.shooter && m.ageS < 1.0)
+            if ((id == m.shooter && m.ageS < 1.0) || !passOwns(s.get()))
                 continue;
             const ShipTransform& ttr = s->core().transform();
             const glm::dvec3 tpos = world::coordinates::fullMeters(ttr.worldPosition);
@@ -1268,9 +1290,11 @@ void GameSimulation::explodeReactor(const PendingExplosion& e)
 
     // 3) other ships: fragments that left the hull reach a ship at distance d with probability (its cross-section /
     //    the sphere) - a random number of hits, each on a random module (no rays: cheap)
+    const Ship* exploded = getShip(e.shipId);
+    const int explodedSystemId = exploded ? exploded->core().transform().motion.systemId : -1;
     for (auto& [id, other] : m_ships)
     {
-        if (id == e.shipId)
+        if (id == e.shipId || !game::simulation::sameRuntimeSystem(other->core().transform().motion.systemId, explodedSystemId))
             continue;
         const glm::dvec3 p = world::coordinates::fullMeters(other->core().transform().worldPosition);
         const double d = glm::length(p - centreW);
@@ -1646,6 +1670,9 @@ void GameSimulation::collideShips(double dt)
             Body& B = bodies[k];
             if (B.ship && A.ship->core().transform().motion.systemId != B.ship->core().transform().motion.systemId)
                 continue;
+            if (!B.ship &&
+                !game::simulation::sameRuntimeSystem(statics[k - shipCount]->systemId, A.ship->core().transform().motion.systemId))
+                continue;   // another system's station / city (the coordinates of the systems overlap)
             if (glm::length(B.p - A.p) >= A.r + B.r)
                 continue;
             // narrow phase: every pair of placed, intact hit boxes

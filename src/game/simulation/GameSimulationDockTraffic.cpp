@@ -476,6 +476,7 @@ game::docking::traffic::DockTrafficShipStatus GameSimulation::dockDispatcherStat
 
 bool GameSimulation::requestDockArrival(EntityId shipId, bool engage, const std::string& dockModuleId)
 {
+    (void)commandContextOk(shipId, "requestDockArrival");
     using game::docking::traffic::DockTrafficPhase;
     Ship* ship = getShip(shipId);
     if (!ship)
@@ -602,6 +603,7 @@ void GameSimulation::fillDockDispatcherGeometry(EntityId shipId, game::simulatio
 
 bool GameSimulation::requestDockDeparture(EntityId shipId)
 {
+    (void)commandContextOk(shipId, "requestDockDeparture");
     DockSite* site = pilotDockSite(shipId);
     if (!site)
         return false;

@@ -1172,6 +1172,22 @@ void GameServer::update(double dt)
             continue;
         }
 
+        // A command runs in the context of ITS ship's system (audit 2026-11-19): the queue is drained before the
+        // system passes, when the simulation still holds the last pass's system (gravity bodies, hubs, corridors).
+        // toggleStabilization / toggleFreeFlight / jEngineBlocked / the jump procedure read that context - a ship
+        // outside the last pass's system got a foreign primary body (live: a jump at HD 20794 zoned on the Sun).
+        // DEV A/B: ELITE_DEV_NO_COMMAND_CONTEXT=1 restores the old behaviour (the violation counter must then fire)
+        static const bool noCommandContext = [] {
+            const char* v = std::getenv("ELITE_DEV_NO_COMMAND_CONTEXT");
+            return v && *v == '1';
+        }();
+        if (!cmdQueue.empty() && !noCommandContext)
+        {
+            const int commandSystemId = ship.core().transform().motion.systemId;
+            if (commandSystemId >= 0 && commandSystemId != m_appliedSimulationContextSystemId)
+                switchSimulationContext(commandSystemId);
+        }
+
         while (!cmdQueue.empty())
         {
             const auto& shipCmd = cmdQueue.front();

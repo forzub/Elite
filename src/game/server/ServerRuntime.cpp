@@ -85,6 +85,11 @@ std::size_t ServerRuntime::lastTickSystemPasses() const noexcept
     return m_server->lastTickSystemPasses();
 }
 
+long long ServerRuntime::contextViolations() const
+{
+    return m_server->contextViolations();
+}
+
 double ServerRuntime::lastTickSimulationSeconds() const noexcept
 {
     return m_server->lastTickSimulationSeconds();

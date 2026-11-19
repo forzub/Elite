@@ -1503,8 +1503,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         updateFreeFlights(dt);
         updateZoneViolations(dt);
         updateShipReferenceFrames(dt);
-        if (firstPass)
-            updateCombat(dt);
+        updateCombat(dt, firstPass);   // bookkeeping once per tick, lasers / missiles per system pass
     }
 
     if (!trajectoryDebugMode)
@@ -2227,11 +2226,13 @@ m_hubVelocityMetersPerSecond[hubId] =
         // control, internal systems and structural/repair maintenance consume
         // the stabilized mode as work cadences. Cheap kinematic propagation,
         // signals and entity presence in snapshots remain full-rate for now.
-        m_activationShadowEvaluationAccumulatorSeconds += dt;
-        if (!m_activationShadowEvaluated ||
-            m_activationShadowEvaluationAccumulatorSeconds >= 0.20)
+        // per system: this runs in every system pass and evaluates the pass's system only (a shared accumulator
+        // fired in whichever pass crossed 0.20 s - one system could be starved)
+        auto [shadowAcc, shadowFresh] = m_activationShadowEvaluationSecondsBySystem.try_emplace(m_activeCelestialSystemId, 0.0);
+        shadowAcc->second += dt;
+        if (shadowFresh || shadowAcc->second >= 0.20)
         {
-            m_activationShadowEvaluationAccumulatorSeconds = 0.0;
+            shadowAcc->second = 0.0;
             updateActivationShadow();
             m_activationShadowEvaluated = true;
         }
@@ -3311,6 +3312,17 @@ bool GameSimulation::passOwns(EntityId id) const
 {
     const auto it = m_ships.find(id);
     return it != m_ships.end() && passOwns(it->second.get());
+}
+
+bool GameSimulation::commandContextOk(EntityId id, const char* where) const
+{
+    const Ship* ship = getShip(id);
+    if (!ship || passOwns(ship))
+        return true;
+    ++m_contextViolations;
+    std::cerr << "[SystemContext] VIOLATION " << where << ": ship " << id.value << " in system "
+              << ship->core().transform().motion.systemId << ", active context " << m_activeCelestialSystemId << std::endl;
+    return false;
 }
 
 void GameSimulation::setCelestialBodyGravityParameters(

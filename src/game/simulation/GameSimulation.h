@@ -535,6 +535,10 @@ public:
     bool firstSystemPass() const noexcept { return m_systemPassIndex == 0; }
     bool passOwns(const Ship* ship) const;
     bool passOwns(EntityId id) const;
+    // A command that reads the system context (gravity bodies, hubs, corridors) must run with its ship's system
+    // active (audit 2026-11-19). Logs and counts a violation; cheap. contextViolations(): the total (tests).
+    bool commandContextOk(EntityId id, const char* where) const;
+    long long contextViolations() const { return m_contextViolations; }
     // DEV / load test: the ship leaves for systemId at once (the jump's instant part, no charge,
     // no checks); its system's pass puts it on the exit body's orbit like a jump exit.
     bool devPlaceShipInSystem(EntityId shipId, int systemId, const std::string& systemName, const std::string& exitBodyId);
@@ -918,7 +922,8 @@ private:
     };
     std::unordered_map<EntityId, RefuelService> m_refuels;
     std::unordered_map<std::string, double> m_fuelStockT;
-    double m_npcRefuelScanSeconds = 0.0;
+    std::unordered_map<int, double> m_npcRefuelScanSecondsBySystem;
+    mutable long long m_contextViolations = 0;   // per system: updateRefuels runs in every system pass
     void updateRefuels(double dt);
     void endRefuel(EntityId shipId, RefuelService& service, game::fuel::RefuelPhase end, const char* why);
 
@@ -933,13 +938,14 @@ private:
         double ageS = 0.0;
         double closestM = 1.0e18;   // closest approach to the target so far
         bool passReported = false;
+        int systemId = -1;          // flown in this system's pass only (multi-system tick)
     };
     struct CombatTrack
     {
         glm::dvec3 positionW {0.0}, velocityW {0.0};
         bool valid = false;
     };
-    void updateCombat(double dt);
+    void updateCombat(double dt, bool tickStart);
     void flushCombatDamage(EntityId targetId, game::damage::DamageType type, const world::coordinates::WorldPosition& where);
     void recordCombatImpact(EntityId targetId, const world::coordinates::WorldPosition& where, double energyMJ,
                             std::uint8_t kind, const std::string& moduleId);
@@ -1280,7 +1286,7 @@ private:
         game::simulation::activation::ActivationCadenceState
     > m_shipMaintenanceCadenceStates;
 
-    double m_activationShadowEvaluationAccumulatorSeconds = 0.0;
+    std::unordered_map<int, double> m_activationShadowEvaluationSecondsBySystem;   // per system pass
     bool m_activationShadowEvaluated = false;
     double m_activationShadowCsvAccumulatorSeconds = 0.0;
     bool m_activationShadowCsvInitialized = false;

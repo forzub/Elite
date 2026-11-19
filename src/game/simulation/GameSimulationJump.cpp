@@ -302,7 +302,8 @@ void GameSimulation::updateJumps(double dt)
     std::vector<EntityId> waiting;
     for (auto& [id, r] : m_pendingJumpRequests)
     {
-        r.ageS += dt;
+        if (passOwns(id))
+            r.ageS += dt;   // its own system's pass only (this runs once per system pass)
         waiting.push_back(id);
     }
     for (const EntityId id : waiting)

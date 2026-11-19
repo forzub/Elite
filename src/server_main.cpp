@@ -2158,6 +2158,8 @@ int runLoadTest(int perSystem, double measureSeconds, bool move)
     }
     std::cerr << "[LoadTest] RESULT bots " << bots.size() << ", systems simulated " << runtime.lastTickSystemPasses() << ", ticks " << ticks
               << " (" << measureSeconds << " s of game time at " << 1.0 / step << " Hz) in " << wall << " s wall\n";
+    std::cerr << "[LoadTest] RESULT system-context violations (commands run outside their ship's system): "
+              << runtime.contextViolations() << "\n";
     std::cerr << "[LoadTest] RESULT server tick (whole: sessions, simulation, replication, wire encoding): " << stats(tickMs) << "\n";
     std::cerr << "[LoadTest] RESULT simulation part (all system passes): " << stats(simMs) << "\n";
     {

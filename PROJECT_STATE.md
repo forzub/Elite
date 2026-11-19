@@ -6726,3 +6726,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Pirate hubs built from the hulls of old ships, once full ship hull models exist (welded / docked derelicts as modules).
 - Fortuna approaches through low-visibility clouds with glitches (dolphins alongside), another wrecked lost ship there,
   flocks of thousands of birds = souls (Windaria image).
+
+## ARCHITECTURE FIXES AFTER THE AUDIT 2026-11-19 (author: "берись за найденные проблемы, без большого рефакторинга")
+### 1. Multi-system correctness - DONE (live + load-test evidence)
+- Defect (verified in HEAD, seen live): client commands were drained in GameServer::update BEFORE the system passes, in
+  the last pass's context -> toggleStabilization / toggleFreeFlight / jEngineBlocked used another system's bodies (live:
+  a jump at HD 20794 zoned on the Sun). Fix: a non-empty command queue switches the context to its ship's system.
+- Combat ran only in pass 0 over all systems' ships (lasers / missiles / fragments / ship-static collisions crossed
+  systems, missiles took pass 0's gravity). Fix: updateCombat(dt, tickStart) - bookkeeping once per tick, lasers and
+  missiles per pass for that system only (CombatMissile::systemId), fragment and static-collision filters by system.
+- Per-pass timers made per system: NPC refuel scan, activation shadow (its decisions erased per system, not cleared
+  globally); pending jump age only in its own pass.
+- Guard: GameSimulation::commandContextOk (flight, J engine, refuel, dock arrival / departure) logs
+  `[SystemContext] VIOLATION` and counts; EliteServer --load-test prints the count.
+- Evidence: load test 61 bots / 61 systems / 300 s: 0 violations; same with ELITE_DEV_NO_COMMAND_CONTEXT=1 (old path):
+  129+ violations (toggleStabilization 47, toggleFreeFlight 47, toggleJEngine 35). Live two-system run (Sol NPCs + the
+  player in HD 20794, 2.0 passes/tick, D:/tmp/multisys): jump (reference K3), docking 242 s, refuel 0.72 t, flight modes,
+  laser + missile hit at 2.9 km, 0 violations. check_active_system_context / check_server_runtime_ownership PASS.
+- Side finding: tour part 2 docking refusals were the DEV start not applied (non-Sol hub id) - with a valid start the
+  same hub docks (D:/tmp/dockrepro).

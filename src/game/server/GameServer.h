@@ -345,6 +345,7 @@ private:
     std::unordered_set<int> m_gravityParametersAppliedSystems;
 public:
     std::size_t lastTickSystemPasses() const noexcept { return m_lastTickSystemPasses; }
+    long long contextViolations() const { return m_simulation.contextViolations(); }
     double lastTickSimulationSeconds() const noexcept { return m_lastTickSimulationSeconds; }
 private:
     std::size_t m_lastTickSystemPasses = 0;

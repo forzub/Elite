@@ -89,6 +89,7 @@ public:
     );
     bool devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal);
     std::size_t lastTickSystemPasses() const noexcept;
+    long long contextViolations() const;
     double lastTickSimulationSeconds() const noexcept;
     std::size_t orbitalHubCount() const;
 

@@ -280,7 +280,15 @@ void GameSimulation::updateActivationShadow()
 {
     using namespace game::simulation::activation;
 
-    m_activationPlannerDecisions.clear();
+    // evaluated per system pass: drop this system's decisions (and those of ships gone), keep the other systems'
+    for (auto it = m_activationPlannerDecisions.begin(); it != m_activationPlannerDecisions.end();)
+    {
+        const Ship* decided = getShip(it->first);
+        if (!decided || game::simulation::sameRuntimeSystem(decided->core().transform().motion.systemId, m_activeCelestialSystemId))
+            it = m_activationPlannerDecisions.erase(it);
+        else
+            ++it;
+    }
 
     const double serverTimeSeconds =
         m_serverTimelineClock.timeSeconds();

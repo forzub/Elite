@@ -54,6 +54,7 @@ std::string GameSimulation::serviceStationOf(EntityId shipId, bool* tender) cons
 
 bool GameSimulation::requestRefuel(EntityId shipId, const std::string& hubId)
 {
+    (void)commandContextOk(shipId, "requestRefuel");
     Ship* ship = getShip(shipId);
     if (!ship)
         return false;
@@ -142,10 +143,12 @@ void GameSimulation::endRefuel(EntityId shipId, RefuelService& service, RefuelPh
 void GameSimulation::updateRefuels(double dt)
 {
     // NPC ships use the same service: one held at a station with less than half a tank asks for it (a scan every 5 s)
-    m_npcRefuelScanSeconds += dt;
-    if (m_npcRefuelScanSeconds >= 5.0)
+    // per system: updateRefuels runs in every system pass and scans the pass's ships only
+    double& scanS = m_npcRefuelScanSecondsBySystem[m_activeCelestialSystemId];
+    scanS += dt;
+    if (scanS >= 5.0)
     {
-        m_npcRefuelScanSeconds = 0.0;
+        scanS = 0.0;
         for (const auto& [id, shipPtr] : m_ships)
         {
             if (!shipPtr || isPlayerControlled(id) || m_refuels.count(id) || !passOwns(shipPtr.get()))

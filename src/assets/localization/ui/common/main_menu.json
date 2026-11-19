@@ -2,6 +2,13 @@
   "schema_version": 1,
   "kind": "ui_strings",
   "strings": {
+    "main.tagline": {
+      "en": "Inspired by classic Elite — but taken somewhere considerably less civilized.",
+      "ru": "По умолчанию ты — добыча.",
+      "zh-Hans": "灵感源自经典《Elite》——却被带到了一个远没那么文明的地方。",
+      "es": "Inspirado en el clásico Elite, pero llevado a un lugar bastante menos civilizado.",
+      "ja": "名作『Elite』に着想を得て、はるかに無法な世界へ。"
+    },
     "main.subtitle": {
       "en": "HTML GAME UI PROTOTYPE",
       "ru": "ПРОТОТИП ИГРОВОГО ИНТЕРФЕЙСА",

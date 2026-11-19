@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -73,8 +74,8 @@ struct FuelCharge
 class EconomyServer
 {
 public:
-    EconomyServer() = default;
-    ~EconomyServer();   // uninstalls itself from game::economy::service
+    EconomyServer();
+    ~EconomyServer();   // uninstalls itself from game::economy::service; writes a dirty state and joins the writer
     EconomyServer(const EconomyServer&) = delete;
     EconomyServer& operator=(const EconomyServer&) = delete;
 
@@ -139,7 +140,7 @@ public:
     [[nodiscard]] const CargoRegistry& cargo() const { return m_cargo; }
 
     // A ship was lost (destroyed / disabled). IDEMPOTENT by eventId: the first call takes every lot off the ship's
-    // manifest into lost-cargo records (state aboard_wreck, legal known_owner, no claim) and saves at once; later calls
+    // manifest into lost-cargo records (state aboard_wreck, legal known_owner, no claim) and saves (within ~2 s); later calls
     // with the same eventId do nothing (returns false). The cargo never "resurrects" with the ship after a restart and
     // cannot be both in a manifest and lost (docs/CARGO_SALVAGE_DESIGN.md: the minimal pre-MVP part).
     struct ShipLoss
@@ -196,6 +197,25 @@ public:
                              const std::string& hubName = std::string());
     PortCharge chargeBerth(std::uint64_t playerId, const std::string& callId, const std::string& hubId, int systemId, double berthHours,
                            const std::string& hubName = std::string());
+    // The open port call of a player ship (persisted, economy_state/4): opened at the docking fee, closed at the berth
+    // fee. Its start is the UNIVERSE clock (anchored to real time, so it runs on across a server restart - the server
+    // timeline clock restarts at 0): after a restart the call is resumed at the same berth (no second docking fee) or
+    // closed when the ship is seen away from it (the berth fee up to then).
+    struct OpenPortCall
+    {
+        std::string callId;
+        std::string hubId;
+        std::string dockModuleId;
+        std::uint64_t playerId = 0;
+        double sinceUniverseS = 0.0;
+    };
+    void openPortCall(std::uint64_t shipKey, const std::string& callId, const std::string& hubId, const std::string& dockModuleId,
+                      std::uint64_t playerId);
+    [[nodiscard]] const OpenPortCall* openPortCall(std::uint64_t shipKey) const;
+    // forgets the ship's open call; the hours at the berth by the universe clock x `timeScale` (< 0: no open call)
+    double closePortCall(std::uint64_t shipKey, double timeScale);
+    // the universe clock (s); set by the server each tick and before start()
+    void setUniverseTime(double seconds) { m_universeS = seconds; }
     [[nodiscard]] const TradeDealRules& dealRules() const { return m_dealRules; }
     // the hub's OWN market cell (no system fallback for trade); false = this hub does not trade that good
     [[nodiscard]] bool marketSide(const std::string& hubId, const std::string& goodId, MarketSide& out) const;
@@ -289,7 +309,22 @@ private:
     void stepContracts(int day);
     // failure (deadline passed / abandoned away from the origin): advance back + penalty (never refused), deposit forfeited
     void failContract(Contract& c, const std::string& status, const std::string& why);
+    // State saves (perf 2026-11-19: ~1.3 MB since the contract board): saveNow only marks the state dirty;
+    // flushStateIfDue (each advanceTo = each server tick) serializes it on the server thread at most once per
+    // kSaveIntervalS and hands the text to ONE background writer (latest wins, atomic .tmp + replace); the destructor
+    // writes the last dirty state and joins the writer. A crash loses at most ~2 s, never leaves a torn file.
     void saveNow(const char* what);
+    void flushStateIfDue(bool force = false);
+    // saveState = finishState(saveStateParts()): the server thread builds the small JSON tree (ledgers, cargo, ...) and
+    // copies the market cells and the board's postings / contracts; the markets / board JSON + dump run in the writer
+    struct StateParts;   // EconomyServer.cpp
+    [[nodiscard]] StateParts saveStateParts() const;
+    [[nodiscard]] static std::string finishState(StateParts parts);
+    struct StateWriter;
+    std::unique_ptr<StateWriter> m_writer;
+    bool m_stateDirty = false;
+    const char* m_dirtyWhat = "";
+    double m_lastSaveS = -1e9;   // steady clock, s
     [[nodiscard]] game::simulation::ClientContractRow contractRow(const ContractPosting& p) const;
     ContractBoard m_board;
     std::set<std::uint64_t> m_cargoChanged;
@@ -306,6 +341,8 @@ private:
     double m_customsFeeMult[5] = {1.0, 1.5, 2.5, 4.0, 4.0};   // by Channel
     std::map<std::string, int> m_portCalls;                  // callId -> 1 docking booked | 2 berth booked
     std::deque<std::string> m_portCallOrder;                 // the oldest calls are forgotten beyond 512
+    std::map<std::uint64_t, OpenPortCall> m_openPortCalls;   // shipKey -> the call at the berth now
+    double m_universeS = 0.0;
     std::unordered_map<std::uint64_t, std::vector<game::simulation::ClientTradeResult>> m_results;
     std::uint64_t m_tradeSerial = 0;
 };

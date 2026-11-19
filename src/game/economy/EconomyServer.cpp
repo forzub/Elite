@@ -9,6 +9,10 @@
 #include "src/game/economy/EconomyServer.h"
 
 #include <algorithm>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include <cmath>
 #include <map>
 #include <ctime>
@@ -185,9 +189,111 @@ const char* fuelGoodId(FuelKind kind)
     return "jump_charge";
 }
 
+namespace
+{
+double steadyS()
+{
+    return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+bool saveTiming()
+{
+    // DEV: ELITE_DEV_ECONOMY_SAVE_TIMING=1 logs the cost of every state save (server thread + writer thread)
+    static const bool on = [] {
+        const char* v = std::getenv("ELITE_DEV_ECONOMY_SAVE_TIMING");
+        return v && *v == '1';
+    }();
+    return on;
+}
+constexpr double kSaveIntervalS = 2.0;   // a crash loses at most this (+ one tick + one write)
+} // namespace
+
+// ONE background writer: the newest state replaces a pending one (latest wins); it finishes the serialization (the
+// board JSON from the copied postings / contracts, dump) and replaces the file atomically by writeFileAtomically (a crash
+// mid-write leaves the previous complete file). The destructor drains the pending state.
+struct EconomyServer::StateParts
+{
+    struct Cell
+    {
+        bool traded = false;
+        double stockT = 0.0, priceCr = 0.0;
+    };
+    struct Market
+    {
+        std::string hubId;
+        std::vector<Cell> cells;
+    };
+    nlohmann::json head;
+    std::vector<Market> markets;
+    std::vector<ContractPosting> postings;
+    std::vector<Contract> contracts;
+};
+
+struct EconomyServer::StateWriter
+{
+    std::string path;
+    std::mutex mutex;
+    std::condition_variable wake;
+    StateParts pending;
+    bool hasPending = false;
+    bool stop = false;
+    std::thread thread;
+
+    explicit StateWriter(std::string p) : path(std::move(p)), thread([this] { run(); }) {}
+    ~StateWriter()
+    {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            stop = true;
+        }
+        wake.notify_one();
+        thread.join();
+    }
+    void submit(StateParts parts)
+    {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            pending = std::move(parts);
+            hasPending = true;
+        }
+        wake.notify_one();
+    }
+    void run()
+    {
+        for (;;)
+        {
+            StateParts parts;
+            {
+                std::unique_lock<std::mutex> lock(mutex);
+                wake.wait(lock, [this] { return hasPending || stop; });
+                if (!hasPending)
+                    return;   // stop with nothing left to write
+                parts = std::move(pending);
+                pending = StateParts{};
+                hasPending = false;
+            }
+            const double t0 = steadyS();
+            const std::string text = finishState(std::move(parts));
+            const double t1 = steadyS();
+            const bool ok = writeFileAtomically(path, text);
+            if (!ok)
+                std::cerr << "[EconomyServer] state NOT saved to " << path << " (the previous file is kept)" << '\n';
+            if (saveTiming())
+                std::cerr << "[EconomySave] writer: " << text.size() << " B, markets + board + dump " << 1000.0 * (t1 - t0) << " ms, write "
+                          << 1000.0 * (steadyS() - t1) << " ms (background)" << '\n';
+        }
+    }
+};
+
+EconomyServer::EconomyServer() = default;
+
 EconomyServer::~EconomyServer()
 {
     service::uninstall(this);
+    const bool dirty = m_stateDirty;
+    flushStateIfDue(true);   // the last dirty state reaches the disk on a clean exit
+    m_writer.reset();        // joins the writer after its pending write
+    if (dirty)
+        std::cerr << "[EconomyServer] the last state written on shutdown: " << m_stateFile << '\n';
 }
 
 // ---------------------------------------------------------------- load
@@ -518,6 +624,7 @@ void EconomyServer::advanceTo(int day)
 {
     if (!m_loaded)
         return;
+    flushStateIfDue();   // each server tick: the throttled state save
     if (m_day < 0)
     {
         m_day = day;
@@ -636,8 +743,7 @@ void EconomyServer::stepDay(int day)
                   m_fuelFree ? " (charged 0: fuel free)" : "", 100.0 * fxMax, fxMaxCode.c_str(), m_ledgers.size());
     std::cerr << line << '\n';
 
-    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
-        std::cerr << "[EconomyServer] state NOT saved to " << m_stateFile << " (the previous file is kept)" << '\n';
+    saveNow("the daily step");
 }
 
 // ---------------------------------------------------------------- players
@@ -944,8 +1050,7 @@ EconomyServer::PortCharge EconomyServer::chargeDocking(std::uint64_t playerId, c
               << style.portIndex << ", dry " << dryMassT << " t) " << grouped(c.feeCr, 2) << " Cr: paid " << grouped(c.paidCr, 2) << ", debt "
               << grouped(c.debtCr, 2) << "; net worth " << grouped(netWorthCr(*l, m_banks)) << " Cr" << '\n';
     ++m_tradeSerial;
-    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
-        std::cerr << "[EconomyServer] state NOT saved after the docking fee" << '\n';
+    saveNow("the docking fee");
     return c;
 }
 
@@ -983,9 +1088,37 @@ EconomyServer::PortCharge EconomyServer::chargeBerth(std::uint64_t playerId, con
               << grouped(c.feeCr, 2) << " Cr: paid " << grouped(c.paidCr, 2) << ", debt " << grouped(c.debtCr, 2) << "; net worth "
               << grouped(netWorthCr(*l, m_banks)) << " Cr" << '\n';
     ++m_tradeSerial;
-    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
-        std::cerr << "[EconomyServer] state NOT saved after the berth fee" << '\n';
+    saveNow("the berth fee");
     return c;
+}
+
+void EconomyServer::openPortCall(std::uint64_t shipKey, const std::string& callId, const std::string& hubId,
+                                 const std::string& dockModuleId, std::uint64_t playerId)
+{
+    if (!m_loaded || shipKey == 0 || playerId == 0)
+        return;
+    const auto it = m_openPortCalls.find(shipKey);
+    if (it != m_openPortCalls.end() && it->second.callId == callId)
+        return;   // the same call (a repeated docked event)
+    m_openPortCalls[shipKey] = {callId, hubId, dockModuleId, playerId, m_universeS};
+    saveNow("the port call opened");
+}
+
+const EconomyServer::OpenPortCall* EconomyServer::openPortCall(std::uint64_t shipKey) const
+{
+    const auto it = m_openPortCalls.find(shipKey);
+    return it == m_openPortCalls.end() ? nullptr : &it->second;
+}
+
+double EconomyServer::closePortCall(std::uint64_t shipKey, double timeScale)
+{
+    const auto it = m_openPortCalls.find(shipKey);
+    if (it == m_openPortCalls.end())
+        return -1.0;
+    const double hours = std::max(0.0, m_universeS - it->second.sinceUniverseS) * std::max(0.0, timeScale) / 3600.0;
+    m_openPortCalls.erase(it);
+    saveNow("the port call closed");
+    return hours;
 }
 
 double EconomyServer::importDutyRate(const std::string& originHub, const std::string& hubId, int systemId) const
@@ -1174,8 +1307,7 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
     pushResult(o.playerId, r);
     // a deal moves money and goods: it must not wait for the daily save (a crash would lose it - TRADE_DESIGN §7.6; the
     // JSONL money journal of step 17 replaces this full write)
-    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
-        std::cerr << "[EconomyServer] state NOT saved after the deal" << '\n';
+    saveNow("the deal");
     r.day = m_day;
     return r;
 }
@@ -1199,8 +1331,7 @@ std::string EconomyServer::devAddCargo(std::uint64_t playerId, std::uint64_t shi
         return fit;
     m_cargo.load(shipKey, playerId, lot, good.densityTM3);
     ++m_tradeSerial;
-    if (!m_stateFile.empty())
-        (void)writeFileAtomically(m_stateFile, saveState());
+    saveNow("DEV cargo add");
     return {};
 }
 
@@ -1208,8 +1339,7 @@ void EconomyServer::devClearCargo(std::uint64_t shipKey)
 {
     m_cargo.clear(shipKey);
     ++m_tradeSerial;
-    if (!m_stateFile.empty())
-        (void)writeFileAtomically(m_stateFile, saveState());
+    saveNow("DEV cargo clear");
 }
 
 void EconomyServer::payDueVatRefunds(int day)
@@ -1550,16 +1680,13 @@ ClientLedger ledgerFromJson(const json& j)
 
 std::string EconomyServer::saveState() const
 {
-    json j;
-    j["schema"] = "economy_state/3";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5)
-    j["day"] = m_day;
-    // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
-    json fx = json::object();
-    for (const auto& b : m_banks.banks())
-        fx[b.id] = m_banks.fx(b.id);
-    j["fx"] = fx;
+    return finishState(saveStateParts());
+}
+
+std::string EconomyServer::finishState(StateParts parts)
+{
     json markets = json::object();
-    for (const auto& m : m_markets)
+    for (const auto& m : parts.markets)
     {
         json stock = json::array(), price = json::array();
         for (const auto& c : m.cells)
@@ -1569,7 +1696,34 @@ std::string EconomyServer::saveState() const
         }
         markets[m.hubId] = {{"stock", stock}, {"price", price}};
     }
-    j["markets"] = markets;
+    parts.head["markets"] = std::move(markets);
+    parts.head["contracts"] = ContractBoard::toJson(parts.postings, parts.contracts);
+    return parts.head.dump();
+}
+
+// the server-thread part: everything but the board as a JSON tree, the board's postings / contracts copied
+EconomyServer::StateParts EconomyServer::saveStateParts() const
+{
+    StateParts parts;
+    json& j = parts.head;
+    j["schema"] = "economy_state/4";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+                                       // 4: port calls (open + booked)
+    j["day"] = m_day;
+    // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
+    json fx = json::object();
+    for (const auto& b : m_banks.banks())
+        fx[b.id] = m_banks.fx(b.id);
+    j["fx"] = fx;
+    // "markets" (finishState): a flat copy of the stock / price of every cell
+    parts.markets.reserve(m_markets.size());
+    for (const auto& m : m_markets)
+    {
+        auto& out = parts.markets.emplace_back();
+        out.hubId = m.hubId;
+        out.cells.reserve(m.cells.size());
+        for (const auto& c : m.cells)
+            out.cells.push_back({c.traded, c.stockT, c.priceCr});
+    }
     json goods = json::array();
     for (const auto& g : EconomyModel::instance().goods())
         goods.push_back(g.id);
@@ -1597,8 +1751,20 @@ std::string EconomyServer::saveState() const
     j["vat_refunds"] = json::array();
     for (const auto& v : m_vatRefunds)
         j["vat_refunds"].push_back({{"player", v.playerId}, {"bank", v.bankId}, {"cr", v.amountCr}, {"due", v.dueDay}});
-    j["contracts"] = m_board.toJson();   // the shared boards and the taken contracts (their holds live in the ledgers)
-    return j.dump();
+    // "contracts" (finishState): the shared boards and the taken contracts (their holds live in the ledgers)
+    parts.postings = m_board.postings();
+    parts.contracts = m_board.contracts();
+    // 4: the open port calls (shipKey order) and the booked call events (idempotency across a restart)
+    json open = json::array();
+    for (const auto& [ship, c] : m_openPortCalls)
+        open.push_back({{"ship", ship}, {"call", c.callId}, {"hub", c.hubId}, {"dock", c.dockModuleId}, {"player", c.playerId},
+                        {"since", c.sinceUniverseS}});
+    json booked = json::array();
+    for (const auto& id : m_portCallOrder)
+        if (const auto it = m_portCalls.find(id); it != m_portCalls.end())
+            booked.push_back({id, it->second});
+    j["port_calls"] = {{"open", open}, {"booked", booked}};
+    return parts;
 }
 
 bool EconomyServer::recordShipLoss(const ShipLoss& loss)
@@ -1606,6 +1772,7 @@ bool EconomyServer::recordShipLoss(const ShipLoss& loss)
     if (!m_loaded || loss.eventId.empty() || m_lossEvents.count(loss.eventId))
         return false;   // idempotent: this loss was resolved already
     m_lossEvents.insert(loss.eventId);
+    m_openPortCalls.erase(loss.shipKey);   // a ship lost at the berth: no berth fee (as before: no release event)
     std::uint64_t player = 0;
     const std::vector<CargoLot> lots = m_cargo.takeAll(loss.shipKey, player);
     double tonnes = 0.0;
@@ -1637,8 +1804,7 @@ bool EconomyServer::recordShipLoss(const ShipLoss& loss)
     std::cerr << "[Economy] ship loss " << loss.eventId << " (" << loss.cause << "): " << lots.size() << " lot(s), " << tonnes
               << " t -> lost-cargo records (aboard_wreck), system " << loss.systemId << '\n';
     ++m_tradeSerial;
-    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
-        std::cerr << "[EconomyServer] state NOT saved to " << m_stateFile << " (the previous file is kept)" << '\n';
+    saveNow("the ship loss");
     return true;
 }
 
@@ -1654,7 +1820,8 @@ bool EconomyServer::restoreState(const std::string& text)
         return false;
     }
     const std::string schema = j.value("schema", std::string());
-    if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3")   // /1: no trade registries; /2: no contracts
+    if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3" &&
+        schema != "economy_state/4")   // /1: no trade registries; /2: no contracts; /3: no port calls
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
     // 2026-11-19: an exception half-way left fx / markets restored, the ledgers cleared, and the caller started a
@@ -1734,6 +1901,18 @@ bool EconomyServer::restoreState(const std::string& text)
         std::vector<Contract> contracts;
         ContractBoard::fromJson(j.value("contracts", json::object()), postings, contracts);
 
+        decltype(m_openPortCalls) openCalls;
+        decltype(m_portCalls) bookedCalls;
+        decltype(m_portCallOrder) bookedOrder;
+        const json portCalls = j.value("port_calls", json::object());
+        for (const auto& c : portCalls.value("open", json::array()))
+            openCalls[c.at("ship").get<std::uint64_t>()] = {c.value("call", std::string()), c.value("hub", std::string()),
+                                                            c.value("dock", std::string()), c.value("player", std::uint64_t{0}),
+                                                            c.value("since", 0.0)};
+        for (const auto& b : portCalls.value("booked", json::array()))
+            if (bookedCalls.emplace(b.at(0).get<std::string>(), b.at(1).get<int>()).second)
+                bookedOrder.push_back(b.at(0).get<std::string>());
+
         // ---- commit (no parsing below this line)
         m_day = day;
         for (const auto& [bank, v] : fxs)
@@ -1750,6 +1929,9 @@ bool EconomyServer::restoreState(const std::string& text)
         m_lostCargo.swap(lostCargo);
         m_nextLostCargo = nextLostCargo;
         m_board.commit(std::move(postings), std::move(contracts));
+        m_openPortCalls.swap(openCalls);
+        m_portCalls.swap(bookedCalls);
+        m_portCallOrder.swap(bookedOrder);
         ++m_tradeSerial;
     }
     catch (const std::exception& e)
@@ -1763,8 +1945,30 @@ bool EconomyServer::restoreState(const std::string& text)
 // ---------------------------------------------------------------- contracts (TRADE_DESIGN §3, step 5)
 void EconomyServer::saveNow(const char* what)
 {
-    if (!m_stateFile.empty() && !writeFileAtomically(m_stateFile, saveState()))
-        std::cerr << "[EconomyServer] state NOT saved after " << what << '\n';
+    if (m_stateFile.empty())
+        return;
+    m_stateDirty = true;
+    m_dirtyWhat = what;
+}
+
+void EconomyServer::flushStateIfDue(bool force)
+{
+    if (!m_stateDirty || m_stateFile.empty())
+        return;
+    const double now = steadyS();
+    if (!force && now - m_lastSaveS < kSaveIntervalS)
+        return;
+    m_stateDirty = false;
+    m_lastSaveS = now;
+    StateParts parts = saveStateParts();
+    const double serialized = steadyS();
+    if (!m_writer)
+        m_writer = std::make_unique<StateWriter>(m_stateFile);
+    m_writer->submit(std::move(parts));
+    if (saveTiming())
+        std::cerr << "[EconomySave] " << m_dirtyWhat << (force ? " (final)" : "") << ": state tree + board / market copy "
+                  << 1000.0 * (serialized - now) << " ms, hand-off " << 1000.0 * (steadyS() - serialized)
+                  << " ms on the server thread" << '\n';
 }
 
 bool EconomyServer::takeCargoChange(std::uint64_t shipKey)

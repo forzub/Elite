@@ -14,6 +14,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 #include <nlohmann/json.hpp>
 #include "src/game/economy/BankingModel.h"
@@ -678,6 +680,101 @@ void testFuelPriceAndAtomicSave()
         fs::remove(statePath);
     }
 }
+// ---------------------------------------------------------------- the open port call survives a restart (economy_state/4)
+void testPortCallPersistence()
+{
+    using nlohmann::json;
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  port call persistence (economy data not found from this working directory)\n");
+        return;
+    }
+    const double t0 = 3.2e10;   // the universe clock (s): anchored to real time, it runs on while the server is down
+    s.setUniverseTime(t0);
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    const std::uint64_t ship = 777;
+    const std::string call = "call:118:hub_hex_dock_a:52000";
+    s.openPortCall(ship, call, "earth_orbital_hub", "hub_hex_dock_a", 1);
+    const auto d = s.chargeDocking(1, call, "earth_orbital_hub", 0, 260.0);
+    const std::string saved = s.saveState();
+
+    // a restart 10 h later (universe clock): the call is restored with its start, the docking event is a duplicate
+    EconomyServer t;
+    t.load();
+    t.setUniverseTime(t0 + 10.0 * 3600.0);
+    t.start(1000);
+    const bool restored = t.restoreState(saved);
+    const auto* c = t.openPortCall(ship);
+    check(d.booked && restored && t.saveState() == saved && c && c->callId == call && c->hubId == "earth_orbital_hub" &&
+              c->dockModuleId == "hub_hex_dock_a" && c->playerId == 1 && near(c->sinceUniverseS, t0, 1e-6),
+          "economy_state/4: the open port call (call id, berth, player, universe-clock start) survives save / restore byte-exact");
+    const double w0 = netWorthCr(*t.ledger(1), t.banks());
+    const auto again = t.chargeDocking(1, call, "earth_orbital_hub", 0, 260.0);
+    const double hours = t.closePortCall(ship, 1.0);
+    const auto b = t.chargeBerth(1, call, "earth_orbital_hub", 0, hours);
+    check(again.duplicate && !again.booked && near(hours, 10.0, 1e-9) && b.booked && near(b.feeCr, 150.0, 1e-9) &&
+              near(w0 - netWorthCr(*t.ledger(1), t.banks()), 150.0, 0.011) && !t.openPortCall(ship) && t.closePortCall(ship, 1.0) < 0.0,
+          "after a restart: no second docking fee; leaving the berth books 10 h (universe clock) -> 150 Cr once, the call closed");
+
+    // an economy_state/3 file (no port calls) still loads; a broken port_calls block is rejected whole
+    json old = json::parse(saved);
+    old["schema"] = "economy_state/3";
+    old.erase("port_calls");
+    EconomyServer u;
+    u.load();
+    u.start(1000);
+    const bool oldOk = u.restoreState(old.dump());
+    const std::string before = u.saveState();
+    json bad = json::parse(saved);
+    bad["port_calls"]["open"][0].erase("ship");
+    check(oldOk && !u.openPortCall(ship) && !u.restoreState(bad.dump()) && u.saveState() == before,
+          "an economy_state/3 file loads (no open calls); a broken port_calls block is rejected and changes nothing");
+
+    // the throttled background save: a second change within 2 s waits, the destructor writes it and joins the writer
+    {
+        const std::string path = "economy_check_writer_state.json";
+        std::filesystem::remove(path);
+#ifdef _WIN32
+        _putenv_s("ELITE_ECONOMY_STATE_FILE", path.c_str());
+#else
+        setenv("ELITE_ECONOMY_STATE_FILE", path.c_str(), 1);
+#endif
+        std::string expect;
+        bool firstWritten = false;
+        {
+            EconomyServer w;
+            w.load();
+            w.setUniverseTime(t0);
+            w.start(1000);
+            w.ensurePlayer(1, 0);
+            w.openPortCall(ship, call, "earth_orbital_hub", "hub_hex_dock_a", 1);
+            w.advanceTo(1000);   // the first save is due at once (handed to the writer)
+            w.openPortCall(ship + 1, call + "b", "earth_orbital_hub", "hub_hex_dock_b", 1);
+            w.advanceTo(1000);   // within 2 s: only marked dirty
+            expect = w.saveState();
+            for (int k = 0; k < 200 && !firstWritten; ++k)
+            {
+                firstWritten = std::filesystem::exists(path);
+                if (!firstWritten)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+        }
+        std::ifstream f(path, std::ios::binary);
+        const std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        f.close();
+#ifdef _WIN32
+        _putenv_s("ELITE_ECONOMY_STATE_FILE", "");
+#else
+        unsetenv("ELITE_ECONOMY_STATE_FILE");
+#endif
+        check(firstWritten && text == expect && !std::filesystem::exists(path + ".tmp"),
+              "state save: the writer thread wrote the first change; the throttled second one was written on shutdown (" +
+                  std::to_string(text.size()) + " B, == saveState(), no .tmp left)");
+        std::filesystem::remove(path);
+    }
+}
 // ---------------------------------------------------------------- contracts (TRADE_DESIGN §3, step 5)
 void testContracts()
 {
@@ -1340,6 +1437,7 @@ int main()
     testTradeServer();
     testTradeDealWindow();
     testPortFeesAndDuty();
+    testPortCallPersistence();
     testContracts();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;

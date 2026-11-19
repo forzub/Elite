@@ -810,6 +810,7 @@ private:
         double dockedAtSeconds = 0.0;   // the server timeline clock
     };
     std::unordered_map<EntityId, PortCall> m_portCalls;
+    std::unordered_set<EntityId> m_portCallsChecked;   // pilot ships whose saved economy call was looked at (restart)
     void updatePortCall(EntityId id, const DockSite& site, bool docked);
     std::unordered_map<
         EntityId,

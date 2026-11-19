@@ -7020,3 +7020,43 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Finding: the player hull is a legacy descriptor (no passport, catalog radar 0, installed PPI LCD radar 1000 m) - hence
   the 150 km optics floor (otherwise v_max 533 m/s). Not done: route-map time estimate, radar damage, server-side
   bound / NPC, live check of approaches + lane record / deep space / failed nav computer.
+
+## ECONOMY: state save off the action path + the open port call persisted (economy_state/4) - SOURCE + UNIT + LIVE PASS 2026-11-19
+
+- Measured first (DEV `ELITE_DEV_ECONOMY_SAVE_TIMING=1`, `[EconomySave]` lines; relwithdebinfo, D:/tmp/econsave): the old
+  path (`writeFileAtomically(m_stateFile, saveState())` after every trade / fee / contract / cargo action, on the server
+  thread) cost serialize 19-37 ms + write 2-12 ms = 21-48 ms PER ACTION for an 842 KB state (before.log, 11 actions).
+  Section probe: rest of the tree ~4 ms, board JSON 6-17 ms, dump 5-13 ms.
+- Fix (EconomyServer): `saveNow` only marks the state dirty; `flushStateIfDue` (called from `advanceTo` = every server tick)
+  saves at most once per 2 s: the server thread builds only the small JSON tree (ledgers, cargo, fx, losses, port calls)
+  and copies the market cells + the board's postings / contracts (`StateParts`); ONE background `StateWriter` thread
+  builds the markets / board JSON, dumps and writes with the unchanged `writeFileAtomically` (.tmp + FlushFileBuffers +
+  MoveFileExW): latest wins, one write in flight. The destructor writes a dirty state and joins the writer (clean exit).
+  A crash loses at most ~2 s + one write, never leaves a torn file (the `.bad-<time>` restore path is untouched).
+  `ContractBoard::toJson(postings, contracts)` static overload. Old per-site writes all go through saveNow.
+- After (same script, after2.log / econportcall a+b.log): server thread 0.8-1.2 ms per flush (tree + copies), 0.01-0.1 ms
+  hand-off, 0 per action between flushes; writer 15-30 ms board+dump + 2-13 ms write in the background. Intermediate
+  version (board only off-thread): 4-7.5 ms.
+- Port call persisted: EconomyServer keeps `OpenPortCall` per shipKey (callId, hub, dock module, player, sinceUniverseS)
+  plus the booked-event map (idempotency) in `port_calls` of economy_state/4 (/1-/3 still load: no calls; a broken block
+  is rejected whole). service::chargeDockingFee opens it (new binding `shipKeyOf` = registry instanceId),
+  chargeBerthFee closes it and takes the hours from it; `resumePortCall` / `closeStalePortCall`. GameSimulation::updatePortCall:
+  on the first sight of a pilot ship in this process (`m_portCallsChecked`, erased in forgetShip) a saved call is resumed
+  when Docked at that same berth (no second docking fee) or else closed with the berth fee up to now. A ship loss drops
+  its open call (no berth fee, as before).
+- Clock choice: berth time = the UNIVERSE clock (`m_universeClock`, anchored to real time by reset(), so it continues
+  across a restart; also the clock of economy days / contract deadlines); the server timeline clock restarts at 0 and is
+  now only the fallback when no saved call exists. Server downtime counts as berth time (the ship sat at the berth).
+  The DEV economy day offset is not used (it does not survive a restart). ELITE_DEV_BERTH_TIME_SCALE still multiplies.
+- Unit: EliteEconomyCheck 135/135 (+4: open call save/restore byte-exact; after a restart 10 h later docking = duplicate,
+  berth 10 h -> 150 Cr once; /3 file loads, broken port_calls rejected; throttled writer: first change written by the
+  thread, the second (within 2 s) on shutdown, == saveState(), no .tmp). check_architecture, check_entity_lifetime,
+  check_active_system_context PASS.
+- LIVE (D:/tmp/econportcall): run A docked at earth_orbital_hub ("DOCKING ... 384.00 Cr"), state saved 0.8 ms server
+  thread, process KILLED 10 s later (crash) -> file valid, economy_state/4 with the open call. Run B (same file, start
+  40 km out): "state restored", "saved call call:201:hub_hex_dock_a:362320 ... closed (the ship is away from that berth
+  after a restart): 7.6 h -> berth fee 89.99 Cr (booked)" (DEV berth x360), file: open [] , booked bits 3, ledger line
+  "стоянка ... 7.6 ч".
+- Not done / limits: the resume branch (Docked at the same berth after a restart) is unit-tested only - without a world
+  save the ship never starts docked; a burst of actions still costs one ~1 ms flush per 2 s; all save sites now
+  lag up to 2 s (incl. the ship-loss record, documented in the header).

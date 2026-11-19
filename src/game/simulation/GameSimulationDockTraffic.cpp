@@ -631,7 +631,12 @@ bool GameSimulation::releaseDockDepartureToPilot(EntityId shipId)
 void GameSimulation::updatePortCall(EntityId id, const DockSite& site, bool docked)
 {
     const double now = m_serverTimelineClock.timeSeconds();
+    const auto berthScale = [] { return std::max(0.0, envDouble("ELITE_DEV_BERTH_TIME_SCALE", 1.0)); };
     const auto it = m_portCalls.find(id);
+    // the economy saves the open call (economy_state/4): the first time this process sees a pilot ship, a call saved
+    // before a restart is either resumed (Docked at that same berth: no second docking fee, the berth time runs on by
+    // the universe clock) or closed (the ship is elsewhere: the berth fee up to now)
+    const bool firstSight = it == m_portCalls.end() && m_portCallsChecked.insert(id).second;
     if (docked)
     {
         if (it != m_portCalls.end())
@@ -643,6 +648,21 @@ void GameSimulation::updatePortCall(EntityId id, const DockSite& site, bool dock
         call.hubId = site.hubId;
         call.dockModuleId = site.dockModuleId;
         call.dockedAtSeconds = now;
+        if (firstSight)
+        {
+            call.callId = game::economy::service::resumePortCall(static_cast<std::uint32_t>(id.value), site.hubId, site.dockModuleId);
+            if (!call.callId.empty())
+            {
+                std::cerr << "[PortFee] ship " << id.value << " at " << site.hubId << " (" << site.dockModuleId << "): call "
+                          << call.callId << " resumed (saved before a restart) - no second docking fee" << std::endl;
+                m_portCalls.emplace(id, std::move(call));
+                return;
+            }
+            const auto stale = game::economy::service::closeStalePortCall(static_cast<std::uint32_t>(id.value), berthScale());
+            if (!stale.callId.empty())
+                std::cerr << "[PortFee] ship " << id.value << ": saved call " << stale.callId << " at " << stale.hubId << " closed (the ship is "
+                          << "at another berth now): " << stale.hours << " h -> berth fee " << stale.feeCr << " Cr" << std::endl;
+        }
         call.callId = "call:" + std::to_string(id.value) + ":" + site.dockModuleId + ":" +
                       std::to_string(static_cast<long long>(std::llround(now * 1000.0)));
         // the hull's dry mass: the catalog passport; a legacy hull: its mass without the cargo and the C20 tare
@@ -650,7 +670,8 @@ void GameSimulation::updatePortCall(EntityId id, const DockSite& site, bool dock
         double dryT = core.descriptor().catalog.dryMassTonnes;
         if (!(dryT > 0.0))
             dryT = std::max(0.0, core.currentMassKg() / 1000.0 - core.load().cargoTonnes - 1.7 * std::max(0, core.load().containers));
-        const auto fee = game::economy::service::chargeDockingFee(static_cast<std::uint32_t>(id.value), site.hubId, call.callId, dryT);
+        const auto fee = game::economy::service::chargeDockingFee(static_cast<std::uint32_t>(id.value), site.hubId, call.callId, dryT,
+                                                                  site.dockModuleId);
         std::cerr << "[PortFee] ship " << id.value << " docked at " << site.hubId << " (" << site.dockModuleId << "), call " << call.callId
                   << ": docking fee " << fee.feeCr << " Cr (" << (fee.charged ? "booked" : fee.duplicate ? "duplicate" : "no economy / AI")
                   << ", paid " << fee.paidCr << ", debt " << fee.debtCr << ", dry " << dryT << " t)" << std::endl;
@@ -660,12 +681,25 @@ void GameSimulation::updatePortCall(EntityId id, const DockSite& site, bool dock
         return;
     }
     if (it == m_portCalls.end())
+    {
+        if (firstSight)
+        {
+            const auto stale = game::economy::service::closeStalePortCall(static_cast<std::uint32_t>(id.value), berthScale());
+            if (!stale.callId.empty())
+                std::cerr << "[PortFee] ship " << id.value << ": saved call " << stale.callId << " at " << stale.hubId
+                          << " closed (the ship is away from that berth after a restart): " << stale.hours << " h -> berth fee "
+                          << stale.feeCr << " Cr (" << (stale.charged ? "booked" : stale.duplicate ? "duplicate" : "nothing booked")
+                          << ", paid " << stale.paidCr << ", debt " << stale.debtCr << ")" << std::endl;
+        }
         return;
-    const double scale = std::max(0.0, envDouble("ELITE_DEV_BERTH_TIME_SCALE", 1.0));
+    }
+    // the hours by the economy's saved call (universe clock); this process's server timeline as the fallback
+    const double scale = berthScale();
     const double hours = std::max(0.0, now - it->second.dockedAtSeconds) * scale / 3600.0;
-    const auto fee = game::economy::service::chargeBerthFee(static_cast<std::uint32_t>(id.value), it->second.hubId, it->second.callId, hours);
+    const auto fee = game::economy::service::chargeBerthFee(static_cast<std::uint32_t>(id.value), it->second.hubId, it->second.callId, hours,
+                                                            scale);
     std::cerr << "[PortFee] ship " << id.value << " left the berth at " << it->second.hubId << ", call " << it->second.callId << ": "
-              << hours << " h at the berth" << (scale != 1.0 ? " (DEV berth time x" + std::to_string(scale) + ")" : std::string())
+              << fee.hours << " h at the berth" << (scale != 1.0 ? " (DEV berth time x" + std::to_string(scale) + ")" : std::string())
               << " -> berth fee " << fee.feeCr << " Cr (" << (fee.charged ? "booked" : fee.duplicate ? "duplicate" : "nothing booked")
               << ", paid " << fee.paidCr << ", debt " << fee.debtCr << ")" << std::endl;
     m_portCalls.erase(it);

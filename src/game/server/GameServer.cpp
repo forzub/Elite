@@ -487,6 +487,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
         // of the start system), the market state; installed for the server systems that charge (refuel service).
         if (m_economy.load())
         {
+            m_economy.setUniverseTime(universeTime);   // a restored port call's berth time runs on this clock
             m_economy.start(game::economy::EconomyModel::dayOf(universeTime));
             for (const auto& [playerValue, player] : m_players.all())
                 m_economy.ensurePlayer(playerValue, m_initialSimulationSystemId);
@@ -525,6 +526,10 @@ m_simulation.setCelestialBodyKinematicStateAu(
                     (void)m_economy.takeCargoChange(shipKey);
                     applyCargoLoad(id);
                 }
+            };
+            bindings.shipKeyOf = [this](std::uint32_t shipEntityId) -> std::uint64_t {
+                const Ship* ship = m_simulation.getShip(EntityId{shipEntityId});
+                return ship ? ship->core().registry().instanceId : 0;
             };
             game::economy::service::install(std::move(bindings));
             // a restored manifest (economy_state/2): the player ships carry its mass from the first tick
@@ -1716,6 +1721,7 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     game::server::ScopedTickTimer timer(game::server::serverTickProfile().economy);
     m_economy.advanceTo(game::economy::EconomyModel::dayOf(universeTime) + m_devEconomyDayOffset);
     m_economy.setClockDays(universeTime / 86400.0 + m_devEconomyDayOffset);
+    m_economy.setUniverseTime(universeTime);
 }
 
 

@@ -401,12 +401,17 @@ ContractPosting postingFromJson(const json& j)
 
 json ContractBoard::toJson() const
 {
+    return toJson(m_postings, m_contracts);
+}
+
+json ContractBoard::toJson(const std::vector<ContractPosting>& postings, const std::vector<Contract>& contracts)
+{
     json out;
     out["postings"] = json::array();
-    for (const auto& p : m_postings)
+    for (const auto& p : postings)
         out["postings"].push_back(postingToJson(p));
     out["contracts"] = json::array();
-    for (const auto& c : m_contracts)
+    for (const auto& c : contracts)
         out["contracts"].push_back({{"posting", postingToJson(c.p)}, {"player", c.playerId}, {"ship", c.shipKey}, {"taken", c.takenDay},
                                     {"hold", c.holdId}, {"hold_bank", c.holdBank}, {"issuer_bank", c.issuerBank},
                                     {"status", c.status}, {"closed", c.closedDay}, {"late", c.lateDays}, {"paid_cr", c.paidCr},

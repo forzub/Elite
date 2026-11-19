@@ -209,11 +209,41 @@ template <class F> PortFeeResult portFee(std::uint32_t shipEntityId, const std::
 }
 } // namespace
 
-PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double dryMassT)
+std::uint64_t shipKeyOf(std::uint32_t shipEntityId)
+{
+    const auto& b = bindings();
+    return b.shipKeyOf ? b.shipKeyOf(shipEntityId) : 0;
+}
+
+PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double dryMassT,
+                               const std::string& dockModuleId)
 {
     return portFee(shipEntityId, hubId, [&](EconomyServer& e, std::uint64_t player, const std::string& hub, int sys) {
+        e.openPortCall(shipKeyOf(shipEntityId), callId, hub, dockModuleId, player);   // saved: survives a restart
         return e.chargeDocking(player, callId, hub, sys, dryMassT);
     });
+}
+
+std::string resumePortCall(std::uint32_t shipEntityId, const std::string& hubId, const std::string& dockModuleId)
+{
+    if (!installed())
+        return {};
+    const auto* c = bindings().economy->openPortCall(shipKeyOf(shipEntityId));
+    return c && c->hubId == hubId && c->dockModuleId == dockModuleId ? c->callId : std::string();
+}
+
+PortFeeResult closeStalePortCall(std::uint32_t shipEntityId, double berthTimeScale)
+{
+    if (!installed())
+        return {};
+    const auto* c = bindings().economy->openPortCall(shipKeyOf(shipEntityId));
+    if (!c)
+        return {};
+    const std::string callId = c->callId, hubId = c->hubId;
+    PortFeeResult out = chargeBerthFee(shipEntityId, hubId, callId, 0.0, berthTimeScale);
+    out.callId = callId;
+    out.hubId = hubId;
+    return out;
 }
 
 void notifyShipDocked(std::uint32_t shipEntityId, const std::string& hubId)
@@ -225,10 +255,13 @@ void notifyShipDocked(std::uint32_t shipEntityId, const std::string& hubId)
         b.shipDocked(shipEntityId, hubId);
 }
 
-PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double berthHours)
+PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double fallbackHours,
+                             double berthTimeScale)
 {
     return portFee(shipEntityId, hubId, [&](EconomyServer& e, std::uint64_t player, const std::string& hub, int sys) {
-        return e.chargeBerth(player, callId, hub, sys, berthHours);
+        // the saved call's universe-clock hours (they run on across a restart); the caller's own count when none
+        const double saved = e.closePortCall(shipKeyOf(shipEntityId), berthTimeScale);
+        return e.chargeBerth(player, callId, hub, sys, saved >= 0.0 ? saved : fallbackHours);
     });
 }
 } // namespace game::economy::service

@@ -178,6 +178,8 @@ public:
     void trimClosed(std::size_t keep);
 
     [[nodiscard]] nlohmann::json toJson() const;
+    // the same from copies (the economy state writer serializes them off the server thread)
+    [[nodiscard]] static nlohmann::json toJson(const std::vector<ContractPosting>& postings, const std::vector<Contract>& contracts);
     // parses into `out` (postings + contracts; the series and rules stay those of `out`); throws on malformed input
     static void fromJson(const nlohmann::json& j, std::vector<ContractPosting>& postings, std::vector<Contract>& contracts);
     void commit(std::vector<ContractPosting> postings, std::vector<Contract> contracts);

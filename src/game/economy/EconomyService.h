@@ -33,6 +33,8 @@ struct Bindings
     // the ship reached its berth at `hubId` (dispatcher Docked): the contract hand-in (trade step 5) - GameServer owns
     // the ship -> manifest key mapping and the mass follow-up
     std::function<void(std::uint32_t shipEntityId, const std::string& hubId)> shipDocked;
+    // runtime ship entity -> the ship's persistent instance id (0 = unknown): the key of its saved port call
+    std::function<std::uint64_t(std::uint32_t shipEntityId)> shipKeyOf;
 };
 
 void install(Bindings bindings);
@@ -89,9 +91,19 @@ struct PortFeeResult
     double paidCr = 0.0;
     double debtCr = 0.0;
     double hours = 0.0;
+    std::string callId;        // closeStalePortCall: the call it closed ("" = none)
+    std::string hubId;
 };
-PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double dryMassT);
-PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double berthHours);
+// the docking fee also opens the ship's saved port call (EconomyServer::openPortCall) at `dockModuleId`
+PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double dryMassT,
+                               const std::string& dockModuleId = std::string());
+// the berth hours come from the saved call (the universe clock x `berthTimeScale`); `fallbackHours` when there is none
+PortFeeResult chargeBerthFee(std::uint32_t shipEntityId, const std::string& hubId, const std::string& callId, double fallbackHours,
+                             double berthTimeScale = 1.0);
+// a call saved before a server restart: its callId when it is at this berth ("" = none / another berth)
+[[nodiscard]] std::string resumePortCall(std::uint32_t shipEntityId, const std::string& hubId, const std::string& dockModuleId);
+// a saved call the ship is no longer at (seen away from that berth after a restart): closed now, the berth fee booked
+PortFeeResult closeStalePortCall(std::uint32_t shipEntityId, double berthTimeScale = 1.0);
 // the dispatcher's docked event of a player ship (after the docking fee): contracts due at `hubId` are handed in
 // automatically when their cargo is aboard (TRADE_DESIGN §3.4). No economy / AI: nothing.
 void notifyShipDocked(std::uint32_t shipEntityId, const std::string& hubId);

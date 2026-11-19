@@ -3344,6 +3344,8 @@ void GameSimulation::forgetShip(EntityId id)
     m_pendingJumpRequests.erase(id);
     m_zoneWatch.erase(id);
     m_hubServices.erase(id);
+    if (const auto refuel = m_refuels.find(id); refuel != m_refuels.end())
+        endRefuel(id, refuel->second, game::fuel::RefuelPhase::Cancelled, "the ship left the simulation");   // the prepaid rest back
     m_refuels.erase(id);
     m_combatLoadouts.erase(id);
     m_combatTargetDummies.erase(id);

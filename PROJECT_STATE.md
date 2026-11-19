@@ -6874,3 +6874,8 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   EconomyCommand rejects non-finite or negative quantity / limit.
 - Evidence: live D:/tmp/losscheck/a.log - "BUY 15.145 t food_staples ... list 573.71 -> deal 573.737 Cr/t" accepted with
   the client-sent day and limit. Wire contract scripts PASS.
+### R5. A prepaid refuel is refunded when the ship leaves the simulation - DONE (code path, not live-triggered)
+- Defect (verified): updateRefuels erased a refuel whose ship was gone, and forgetShip erased m_refuels, both without
+  endRefuel - the prepaid, undelivered tonnes went back neither to the station's stock nor as money.
+- Fix: both call endRefuel(Cancelled) first (with no ship it only refunds through returnFuel).
+- Evidence: build + contract checks; the path needs a ship despawned mid-refuel (NPC traffic) - not reproduced live.

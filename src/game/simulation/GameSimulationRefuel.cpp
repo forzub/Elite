@@ -183,6 +183,8 @@ void GameSimulation::updateRefuels(double dt)
         Ship* ship = getShip(it->first);
         if (!ship)
         {
+            // the ship is gone (a shell / despawned): the prepaid, undelivered fuel goes back (re-audit 2026-11-19)
+            endRefuel(it->first, it->second, RefuelPhase::Cancelled, "the ship left the simulation");
             it = m_refuels.erase(it);
             continue;
         }

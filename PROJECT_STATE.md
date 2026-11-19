@@ -7092,3 +7092,32 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   (EliteServer --load-test) has no ClientWorldState, so its catch-up after jumps is not this cause; its jump-entry
   server ticks were not re-measured here.
 - Checks: EliteEconomyCheck 135/135; check_architecture, check_entity_lifetime, check_active_system_context PASS.
+
+## CLIENT SNAPSHOT HISTORY = POSE SAMPLES (open item (a) of "JUMP ENTRY CATCH-UP") - SOURCE + LIVE PASS 2026-11-19, not committed
+- Cause (measured): in Sol the server publishes sparse snapshots (~200 of ~1400 objects); materializeCanonicalReplicationSnapshot
+  starts each history sample as a copy of the previous one, so every apply deep-copied ~1400 ObjectSnapshots with
+  their module graphs / structural links / hit volumes / city building states (canonical_ms 49-51 p50, 64-68 p95).
+- Readers of ClientWorldState::m_snapshotBuffer (audited): update() interpolation (ships: transform, referenceFrame,
+  systemId; objects: worldPosition, orientation, systemId, graph.assemblyModules), the System / Detail / Hub map
+  samplers (ids, poses, velocities, names, hubAttachment, orbitalMotion, traffic, hubs), the fence/trim, and
+  previousCanonical for the next merge. Prediction reconciliation does not read it. Nobody reads the module graphs,
+  structural links, fragments, repair jobs, hit volumes, buildingStates / materializedVisits / promotedAirSlots or the
+  ships' receptions / radarContacts / damageEvents from history - the live m_ships / m_objects own them.
+- Fix (src/game/client/ClientWorldState.cpp only): stripToHistorySample() right after the materialization moves those
+  fields out of the new history sample (has* flags false, assemblyModules kept) and hands them to the existing
+  SnapshotHistoryReleaser. The merge function, the wire format and the server are unchanged. DEV A/B:
+  ELITE_DEV_FULL_SNAPSHOT_HISTORY=1 keeps full samples; ELITE_DEV_HYDRATE_LOG_ALL=1 logs [M8E-HYDRATE] for every apply.
+- Evidence (D:/tmp/histstrip, relwithdebinfo, offscreen, NO_VSYNC, Quadro; same build A = full history, B = stripped):
+  idle at hub:earth_orbital_hub@8 150 s: canonical p50/p95/max 51.1/67.7/171 -> 1.9/3.1/40 ms (max = the bootstrap
+  full set); catch-up limited frames 296 -> 4; frames after load p50 62.5 -> 8.7 ms, p95 205 -> 13.0 ms, >33 ms 790 -> 4.
+  Flight (@50, route to the hub + automatic docking at hub_hex_dock_a, 200 s): canonical 49.1/64.0/113 -> 2.1/3.0/53;
+  catch-up limited 342 -> 4; frame p50 62.0 -> 9.1 ms, p95 208 -> 12.9 ms. Long run BK: docking completed
+  ("пристыкован, площадка P1", waitfor dockdone 67 s), approach captures BK_1..3 / docked look consistent (dock frame
+  centred on the corridor). Jump Sol -> Eps Eri (BJ2, CHARGE_S=3): jumped, fence apply 5.5 ms, no catch-up after entry.
+- Side note: with the faster frames the jump procedure at script t=15 reported "zone to reach" (flies into the zone
+  first) where the slow run had "zone here"; the jump then completed normally.
+- Checks: EliteEconomyCheck 135/135; check_replication_snapshot_boundary, check_prediction_reconciliation,
+  check_local_predicted_presentation, check_replication_interest_retention, check_architecture, check_entity_lifetime,
+  check_active_system_context PASS; architecture_contracts (D:/tmp/elite_contracts) replication_interest,
+  detail/hub map runtime sampling, system map ship / infrastructure sampling, remote_ship_presentation,
+  client_observation_interest PASS (they do not compile ClientWorldState.cpp). Not accepted by the author.

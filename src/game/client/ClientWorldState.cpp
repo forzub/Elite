@@ -115,6 +115,87 @@ namespace
         SnapshotHistoryReleaser::instance().release(std::move(snapshot));
     }
 
+    // The history (m_snapshotBuffer) is read only for poses: update()'s interpolation (ship transform /
+    // referenceFrame, object worldPosition / orientation / systemId + graph.assemblyModules) and the map samplers
+    // (ids, poses, names, hubAttachment, orbitalMotion, traffic, hubs). Nobody reads the module graphs, structural
+    // links, fragments, repair jobs, hit volumes, city building states or the ships' sensor / damage event lists
+    // from it - the live state (m_ships / m_objects) owns those. Keeping them in every one of the 20 samples made
+    // each sparse apply deep-copy the whole retained set (Sol: ~1400 objects with their graphs, 52-105 ms canonical
+    // per snapshot, measured 2026-11-19). The stripped payload goes to the releaser (no free on this thread).
+    // DEV A/B: ELITE_DEV_FULL_SNAPSHOT_HISTORY=1 keeps the full samples as before.
+    bool keepFullSnapshotHistory()
+    {
+        static const bool full = [] {
+            const char* v = std::getenv("ELITE_DEV_FULL_SNAPSHOT_HISTORY");
+            return v && *v == '1';
+        }();
+        return full;
+    }
+
+    void stripHistoryOnlyGraph(game::simulation::ObjectGraphSnapshot& graph, game::simulation::ObjectGraphSnapshot& garbage)
+    {
+        // assemblyModules stay: update() interpolates the station / city assembly rotation from the history
+        graph.hasModules = false;
+        graph.hasStructuralLinks = false;
+        graph.hasDetachedFragments = false;
+        graph.hasRepairJobs = false;
+        graph.hasDebugHitVolumes = false;
+        garbage.modules = std::move(graph.modules);
+        garbage.structuralLinks = std::move(graph.structuralLinks);
+        garbage.detachedFragments = std::move(graph.detachedFragments);
+        garbage.repairJobs = std::move(graph.repairJobs);
+        garbage.debugHitVolumes = std::move(graph.debugHitVolumes);
+        graph.modules.clear();
+        graph.structuralLinks.clear();
+        graph.detachedFragments.clear();
+        graph.repairJobs.clear();
+        graph.debugHitVolumes.clear();
+    }
+
+    template <typename T>
+    bool hasHeavyGraph(const T& value)
+    {
+        const auto& g = value.graph;
+        return !g.modules.empty() || !g.structuralLinks.empty() || !g.detachedFragments.empty() ||
+               !g.repairJobs.empty() || !g.debugHitVolumes.empty();
+    }
+
+    void stripToHistorySample(SimulationSnapshot& sample)
+    {
+        if (keepFullSnapshotHistory())
+            return;
+        SimulationSnapshot garbage;
+        for (auto& ship : sample.ships)
+        {
+            if (!hasHeavyGraph(ship) && ship.receptions.empty() && ship.radarContacts.empty() && ship.damageEvents.empty())
+                continue;
+            ShipSnapshot& g = garbage.ships.emplace_back();
+            stripHistoryOnlyGraph(ship.graph, g.graph);
+            g.receptions = std::move(ship.receptions);
+            g.radarContacts = std::move(ship.radarContacts);
+            g.damageEvents = std::move(ship.damageEvents);
+            ship.receptions.clear();
+            ship.radarContacts.clear();
+            ship.damageEvents.clear();
+        }
+        for (auto& object : sample.objects)
+        {
+            if (!hasHeavyGraph(object) && object.buildingStates.empty() && object.materializedVisits.empty() &&
+                object.promotedAirSlots.empty())
+                continue;
+            ObjectSnapshot& g = garbage.objects.emplace_back();
+            stripHistoryOnlyGraph(object.graph, g.graph);
+            g.buildingStates = std::move(object.buildingStates);
+            g.materializedVisits = std::move(object.materializedVisits);
+            g.promotedAirSlots = std::move(object.promotedAirSlots);
+            object.buildingStates.clear();
+            object.materializedVisits.clear();
+            object.promotedAirSlots.clear();
+        }
+        if (!garbage.ships.empty() || !garbage.objects.empty())
+            releaseSnapshot(garbage);
+    }
+
     void appendHubMotionLabPresentationCsv(
         const game::diagnostics::HubMotionLabPresentationSample& sample
     )
@@ -1119,6 +1200,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 snapshot
             )
         );
+        // a pose-only history sample (see stripToHistorySample): the next sparse apply copies only that
+        stripToHistorySample(m_snapshotBuffer.back());
         canonicalMs += elapsedMs(phaseBegin);
     }
 
@@ -1141,7 +1224,12 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         entryTiming && (timelineRevisionChanged || activeSystemChanged))
         std::cerr << "[JumpEntryTiming] client fence (history dropped): apply-snapshot " << totalMs << " ms, of it the history release "
                   << fenceClearMs << " ms" << (SnapshotHistoryReleaser::inline_() ? " (inline, DEV A/B)" : " (off-thread)") << std::endl;
-    if (totalMs >= 100.0)
+    // DEV: ELITE_DEV_HYDRATE_LOG_ALL=1 - the line below for every apply (the canonical_ms distribution), not only >= 100 ms
+    static const bool hydrateLogAll = [] {
+        const char* v = std::getenv("ELITE_DEV_HYDRATE_LOG_ALL");
+        return v && *v == '1';
+    }();
+    if (totalMs >= 100.0 || hydrateLogAll)
     {
         std::cerr
             << "[M8E-HYDRATE] apply-snapshot total_ms=" << totalMs

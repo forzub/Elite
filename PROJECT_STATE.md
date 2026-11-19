@@ -7149,7 +7149,7 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   DEV: econ:spendall (ClientEconomyCommand::DevSpendAll = 7, WireProtocolVersion 34; EconomyServer::devSpendAll pays all
   spendable money incl. the overdraft to its limit).
 - Unit: EliteEconomyCheck 142/142 (+7: below the floor nothing withheld; across it only 900 of 1 000 withheld, 6 100
-  stays; above it the full 25 %; 400 random receipts CR+HRL payers / debts with spending - the floor holds, free money
+  stays; above it the full share (25 % in testBanks; 10 % in national_banks.json); 400 random receipts CR+HRL payers / debts with spending - the floor holds, free money
   never drops, the debt falls by exactly the withheld amount; economy_state/5 round trip byte-exact + wallet fields;
   /4 file loads). Contracts PASS: check_architecture, check_entity_lifetime, check_active_system_context,
   check_wire_data_schema, check_wire_protocol_boundary, check_localization_boundary, check_replication_snapshot_boundary,
@@ -7159,10 +7159,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   docking with no money "paid 0.00, debt 384.00" (01_finance_docked_broke.png); econ:days 60+60 -> grace -> delinquent ->
   restructured 4 467.65 (02_finance_restructured.png: row "долг 4 468 · удержано 0 · защищено 6 100 Cr"); sale 14 t grain
   +7 317.54 -> withheld 1 217.54 (25 % would be 1 829), account exactly 6 100.00, debt 3 250.11
-  (03_finance_sale1_protected.png); sale 10 t +5 226.88 -> the full 25 % 1 306.72, account 10 020.16, debt 1 943.39
+  (03_finance_sale1_protected.png); sale 10 t +5 226.88 -> the full share (25 % in testBanks; 10 % in national_banks.json) 1 306.72, account 10 020.16, debt 1 943.39
   (04_finance_sale2_full_share.png). State file economy_state/5, "last_withheld":[10315,1306.72]. An earlier run with
   a 30 t second sale paid the debt off (withheld = the debt left) and showed the floor note wrongly - fixed.
 - Not done (deviations from §1.3): the base is the gross receipt (not revenue - lot cost / reward - trip costs); the
   floor is on the balance, not "per 30 days" nor "fixed monthly costs + 4 000 Cr" (no crew / ship loan / insurance
   costs in the model yet); the 0 % debts' auto-debit is not floored (it would push small debts of a pilot with < 6 100
   into arrears). The F8 page header day ("день 10195") does not follow the DEV economy clock - pre-existing.
+- 2026-11-20 author: "25 % may be too much - milk the cow, don't milk it dry": garnish_share 0.25 -> 0.10 in
+  national_banks.json (+ canon); the standing / restructuring texts no longer hard-code 25 %. Unit tests keep their
+  own 25 % (testBanks). Not re-run live.

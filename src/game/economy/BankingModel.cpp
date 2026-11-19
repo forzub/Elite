@@ -54,7 +54,7 @@ const char* standingRu(Standing s)
     case Standing::Good: return "в порядке";
     case Standing::Grace: return "льготный период";
     case Standing::Delinquent: return "просрочка: кредит заморожен";
-    case Standing::Restructured: return "реструктуризация: 25 % дохода сверх защищённого минимума";
+    case Standing::Restructured: return "реструктуризация: доля дохода сверх защищённого минимума";
     }
     return "";
 }
@@ -840,7 +840,7 @@ LedgerDayReport stepLedgerDay(ClientLedger& ledger, const BankDirectory& dir, in
             r->hardship = income30 <= 0.0;
             rep.restructured = true;
             logEvent(ledger, day, "реструктуризация в банке " + b->name + ": " + money(toUnits(sum), b->code) + " под " +
-                                      money(b->policyRate * 100.0, "%") + ", погашение 25 % дохода");
+                                      money(b->policyRate * 100.0, "%") + ", погашение " + std::to_string(static_cast<int>(std::lround(rules.garnishShare * 100.0))) + " % дохода");
         }
         maxOverdue = 0;
         for (const auto& l : ledger.loans)

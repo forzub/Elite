@@ -5,6 +5,7 @@
 // client its sky / bodies / maps on the next tick), and once the new system's bodies are in the
 // gravity context the ship is put on a circular orbit of the exit planet (version 1: no hubs in
 // other systems yet - the orbit of the planet with the most world sites, else the heaviest).
+#include "src/game/navigation/rules/JumpExit.h"
 #include "src/game/simulation/JFieldIntegrity.h"
 #include "src/game/simulation/GameSimulation.h"
 
@@ -654,26 +655,22 @@ void GameSimulation::updateJumps(double dt)
                     exit = &b;
         if (!exit)
         {
-            // the planet with the most world sites (where people are), else the heaviest planet
-            std::map<std::string, int> sitesOnBody;
-            world::celestial::WorldSitesCatalog sites;
-            if (sites.loadFromRuntimeOrSource())
-                for (const auto& s : sites.sitesInSystem(j.targetSystemId))
-                    ++sitesOnBody[s.parentBodyId];
-            int bestSites = -1;
-            double bestMu = -1.0;
+            // the body the server chose is not among the gravity bodies (or none was named): the same rule
+            // (rules/JumpExit.h) over the bodies at hand - canon status unknown here (the server's candidates carry it)
+            constexpr double G = 6.674e-11;
+            // a planet: lighter than the main star AND than a brown dwarf (13 Jupiter masses, mu ~1.65e18) - a companion
+            // star (17 Cygni B, load test 2026-11-19) passed the old "lighter than the main star" test
+            constexpr double MaxPlanetMu = 13.0 * 1.26687e17;
+            std::vector<game::navigation::rules::JumpExitCandidate> candidates;
             for (const auto& b : m_gravityBodies)
-            {
-                if (b.gravitationalParameterM3s2 >= starMu || b.id.rfind(prefix, 0) != 0 || b.radiusMeters < 1.0e6)
-                    continue;
-                const int n = sitesOnBody.count(b.id) ? sitesOnBody[b.id] : 0;
-                if (n > bestSites || (n == bestSites && b.gravitationalParameterM3s2 > bestMu))
-                {
-                    bestSites = n;
-                    bestMu = b.gravitationalParameterM3s2;
+                candidates.push_back({b.id, b.gravitationalParameterM3s2 < std::min(starMu, MaxPlanetMu) && b.id.rfind(prefix, 0) == 0, b.radiusMeters,
+                                      b.gravitationalParameterM3s2 / G, false});
+            const std::string picked = game::navigation::rules::pickJumpExitBody(j.targetSystemId, candidates);
+            for (const auto& b : m_gravityBodies)
+                if (b.id == picked)
                     exit = &b;
-                }
-            }
+            std::cerr << "[Jump] ship " << id.value << ": exit body '" << j.exitBodyId << "' not among the gravity bodies -> "
+                      << (picked.empty() ? std::string("none") : picked) << std::endl;
         }
         if (!exit)
         {

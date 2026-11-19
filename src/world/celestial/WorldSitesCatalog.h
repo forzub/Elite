@@ -169,6 +169,18 @@ struct WorldSystemSummary
 class WorldSitesCatalog
 {
 public:
+    // The process-wide catalog, loaded once on first use (thread-safe: a function-local static's initializer). The
+    // server read the 1.7 MB file per jump command, per jump exit and per dock site (audit 2026-11-19).
+    static const WorldSitesCatalog& shared()
+    {
+        static const WorldSitesCatalog catalog = [] {
+            WorldSitesCatalog c;
+            c.loadFromRuntimeOrSource();
+            return c;
+        }();
+        return catalog;
+    }
+
     bool loadFromRuntimeOrSource()
     {
         for (const char* root : {

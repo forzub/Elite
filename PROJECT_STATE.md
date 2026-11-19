@@ -6792,3 +6792,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Evidence: live D:/tmp/citycheck - Homestead city assembled off-thread (31.5 ms), docking 253 s, the city drawn at the
   pad (3_docked.png); Earth hub D:/tmp/cityasync (assembled 79-97 ms, drawn after; the start frame 454 ms vs 1056-1467
   ms in the previous build - that frame also holds other first-use work, so not a clean measure).
+### 5. sites_3126 cached per process; ONE jump exit rule - DONE
+- Defect (verified): the 1.7 MB sites_3126.json was parsed per RequestJump command (GameServer), per jump-exit
+  fallback (GameSimulationJump) and per dock site at a system's first pass (GameSimulationDockTraffic); two exit
+  pickers with different tie-breaks.
+- Fix: WorldSitesCatalog::shared() (loaded once, thread-safe static) used by GameServer (jump + startup), the dock
+  sites, JumpSumps; src/game/navigation/rules/JumpExit.h pickJumpExitBody - ONE rule (most world sites, then canon,
+  then heaviest; planets >= 1000 km) fed by the atlas (server) or the gravity bodies (fallback, logged); the fallback
+  no longer takes a companion star for a planet (mu < 13 Jupiter masses; load test: 17 Cygni B).
+- Evidence: live jump to Eps Eri without a named exit -> eps_Eri_b (= the tour's choice); load test 61 bots / 240 s
+  with fast jumps: 19 / 26 jumps done, 0 context violations, server tick p50 31 / p95 59 / max 96 ms; the entry
+  catch-up (~0.5 s of ticks after a jump) is the same before and after - another cause, open.

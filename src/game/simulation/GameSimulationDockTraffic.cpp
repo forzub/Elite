@@ -196,8 +196,7 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
             config.flightPrefix = prefix;
             config.cobrettCallsignPrefix = prefix + "C";
         }
-        world::celestial::WorldSitesCatalog sites;
-        if (sites.loadFromRuntimeOrSource())
+        const auto& sites = world::celestial::WorldSitesCatalog::shared();   // loaded once per process
         {
             for (const auto& r : sites.routesInSystem(dock->systemId))
             {

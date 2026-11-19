@@ -126,9 +126,7 @@ bool systemHasBeacons(int systemId)
     static const bool devNone = std::getenv("ELITE_DEV_NO_BEACONS") != nullptr;   // DEV: every system without beacons
     if (devNone)
         return false;
-    static world::celestial::WorldSitesCatalog sites;
-    static const bool loaded = sites.loadFromRuntimeOrSource();
-    return loaded && systemId >= 0 && !sites.sitesInSystem(systemId).empty();
+    return systemId >= 0 && !world::celestial::WorldSitesCatalog::shared().sitesInSystem(systemId).empty();
 }
 
 double sumpDensityKgM3(const JumpSump& s, const glm::dvec3& p, const std::unordered_map<std::string, glm::dvec3>& centres)

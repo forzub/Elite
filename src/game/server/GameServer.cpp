@@ -2,6 +2,7 @@
 #include <chrono>
 #include <thread>
 
+#include "src/game/navigation/rules/JumpExit.h"
 #include "src/game/system_map/PlanetBodyOrientation.h"
 #include "src/game/navigation/globalflight/BodyTerrainProbe.h"
 #include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
@@ -624,8 +625,8 @@ void GameServer::switchSimulationContext(int systemId)
 void GameServer::materializeWorldSiteHubs(int startSystemId,
                                           const std::vector<game::world_state::InitialWorldStateOrbitalHub>& authored)
 {
-    world::celestial::WorldSitesCatalog sites;
-    if (!sites.loadFromRuntimeOrSource())
+    const auto& sites = world::celestial::WorldSitesCatalog::shared();   // loaded once per process
+    if (!sites.loaded())
         return;
     int made = 0;
     int systems = 0;
@@ -1250,24 +1251,11 @@ void GameServer::update(double dt)
                     if (exitBody.empty() && to && from != to)
                         if (const auto* system = m_starAtlas.findSystem(to->id))
                         {
-                            std::map<std::string, int> sitesOnBody;
-                            world::celestial::WorldSitesCatalog sites;
-                            if (sites.loadFromRuntimeOrSource())
-                                for (const auto& s : sites.sitesInSystem(to->id))
-                                    ++sitesOnBody[s.parentBodyId];
-                            std::tuple<int, int, double> best {-1, -1, -1.0};
+                            std::vector<game::navigation::rules::JumpExitCandidate> candidates;
                             for (const auto& b : system->bodies)
-                            {
-                                if (b.type != world::celestial::BodyType::Planet || b.radiusKm < 1000.0)
-                                    continue;
-                                const auto n = sitesOnBody.find(b.id);
-                                const std::tuple<int, int, double> key {n == sitesOnBody.end() ? 0 : n->second, b.observed ? 1 : 0, b.massKg};
-                                if (key > best)
-                                {
-                                    best = key;
-                                    exitBody = b.id;
-                                }
-                            }
+                                candidates.push_back({b.id, b.type == world::celestial::BodyType::Planet, b.radiusKm * 1000.0,
+                                                      b.massKg, b.observed});
+                            exitBody = game::navigation::rules::pickJumpExitBody(to->id, candidates);
                         }
                     // an in-system jump is named after its body (the terminal shows "переход к <тело>")
                     std::string targetName = to ? to->name : std::string();

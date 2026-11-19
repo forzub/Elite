@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
 namespace
 {
@@ -1333,6 +1334,34 @@ void ClientWorldState::update(
             newer->metadata.serverTick;
     }
 
+    // id -> sample of the interpolation bracket, built once a frame (a linear find_if per ship / object made the
+    // presentation O(N^2): ~1400 objects in Sol)
+    std::unordered_map<std::uint32_t, const ShipSnapshot*> olderShipById;
+    std::unordered_map<std::uint32_t, const ShipSnapshot*> newerShipById;
+    std::unordered_map<std::uint32_t, const ObjectSnapshot*> olderObjectById;
+    std::unordered_map<std::uint32_t, const ObjectSnapshot*> newerObjectById;
+    if (older && newer)
+    {
+        const auto indexShips = [](const SimulationSnapshot& sample, auto& out) {
+            out.reserve(sample.ships.size());
+            for (const ShipSnapshot& s : sample.ships)
+                out.emplace(static_cast<std::uint32_t>(s.id.value), &s);   // first wins, as find_if did
+        };
+        const auto indexObjects = [](const SimulationSnapshot& sample, auto& out) {
+            out.reserve(sample.objects.size());
+            for (const ObjectSnapshot& o : sample.objects)
+                out.emplace(static_cast<std::uint32_t>(o.id.value), &o);
+        };
+        indexShips(*older, olderShipById);
+        indexShips(*newer, newerShipById);
+        indexObjects(*older, olderObjectById);
+        indexObjects(*newer, newerObjectById);
+    }
+    const auto lookup = [](const auto& index, std::uint32_t id) {
+        const auto it = index.find(id);
+        return it == index.end() ? nullptr : it->second;
+    };
+
     auto sampleRenderReferenceFrame =
         [&](std::uint32_t shipId)
             -> game::simulation::ShipReferenceFrameSnapshot
@@ -1353,26 +1382,10 @@ void ClientWorldState::update(
             if (span <= 0.0)
                 return fallback;
 
-            const auto oldIt = std::find_if(
-                older->ships.begin(),
-                older->ships.end(),
-                [&](const ShipSnapshot& snapshot)
-                {
-                    return snapshot.id.value == shipId;
-                }
-            );
+            const ShipSnapshot* oldIt = lookup(olderShipById, static_cast<std::uint32_t>(shipId));
+            const ShipSnapshot* newIt = lookup(newerShipById, static_cast<std::uint32_t>(shipId));
 
-            const auto newIt = std::find_if(
-                newer->ships.begin(),
-                newer->ships.end(),
-                [&](const ShipSnapshot& snapshot)
-                {
-                    return snapshot.id.value == shipId;
-                }
-            );
-
-            if (oldIt == older->ships.end() ||
-                newIt == newer->ships.end())
+            if (!oldIt || !newIt)
             {
                 return fallback;
             }
@@ -1512,18 +1525,10 @@ void ClientWorldState::update(
                             presentationWindow.interpolationAlpha
                         );
 
-                    auto itOld = std::find_if(
-                        older->ships.begin(),
-                        older->ships.end(),
-                        [&](const ShipSnapshot& s){ return s.id.value == id; });
+                    const ShipSnapshot* itOld = lookup(olderShipById, static_cast<std::uint32_t>(id));
+                    const ShipSnapshot* itNew = lookup(newerShipById, static_cast<std::uint32_t>(id));
 
-                    auto itNew = std::find_if(
-                        newer->ships.begin(),
-                        newer->ships.end(),
-                        [&](const ShipSnapshot& s){ return s.id.value == id; });
-
-                    if (itOld != older->ships.end() &&
-                        itNew != newer->ships.end())
+                    if (itOld && itNew)
                     {
                         if (!game::client::canInterpolateSystemLocalState(
                                 itOld->transform.motion.systemId,
@@ -1869,26 +1874,10 @@ void ClientWorldState::update(
 
                 debugT = t;
 
-                auto itOld = std::find_if(
-                    older->objects.begin(),
-                    older->objects.end(),
-                    [&](const ObjectSnapshot& s)
-                    {
-                        return s.id.value == id;
-                    }
-                );
+                const ObjectSnapshot* itOld = lookup(olderObjectById, static_cast<std::uint32_t>(id));
+                const ObjectSnapshot* itNew = lookup(newerObjectById, static_cast<std::uint32_t>(id));
 
-                auto itNew = std::find_if(
-                    newer->objects.begin(),
-                    newer->objects.end(),
-                    [&](const ObjectSnapshot& s)
-                    {
-                        return s.id.value == id;
-                    }
-                );
-
-                if (itOld != older->objects.end() &&
-                    itNew != newer->objects.end())
+                if (itOld && itNew)
                 {
                     if (!game::client::canInterpolateSystemLocalState(
                             itOld->systemId,

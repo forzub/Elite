@@ -7121,3 +7121,13 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   check_active_system_context PASS; architecture_contracts (D:/tmp/elite_contracts) replication_interest,
   detail/hub map runtime sampling, system map ship / infrastructure sampling, remote_ship_presentation,
   client_observation_interest PASS (they do not compile ClientWorldState.cpp). Not accepted by the author.
+
+## CLIENT INTERPOLATION BRACKET INDEX (2026-11-19) - DONE
+- Defect (verified in code): ClientWorldState::update() found each ship / object of the older and newer bracket
+  samples with a linear find_if per entity (reference frame sampler, NPC ships, objects): O(N^2) a frame, ~1400
+  objects in Sol.
+- Fix: id -> sample maps of both bracket samples built once a frame (first wins, as find_if); the three lookup sites
+  use them. EntityId is uint32, no truncation.
+- Evidence (same scenario as CLIENT SNAPSHOT HISTORY, D:/tmp/histstrip, Sol idle @8 km, no vsync, relwithdebinfo):
+  B_strip -> C_index frame median-of-p50 8.7 -> 7.5 ms, median-of-p95 13.0 -> 11.4 ms, over33 4 -> 2;
+  C_index_b.png: HUD and radar contacts as before.

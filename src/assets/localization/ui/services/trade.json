@@ -324,6 +324,20 @@
       "es": "{n} × C20",
       "ja": "{n} × C20"
     },
+    "service.trade.finance.garnish": {
+      "en": "Debt withholding from income",
+      "ru": "Удержание долга из дохода",
+      "zh-Hans": "从收入中扣还债务",
+      "es": "Retención de deuda sobre ingresos",
+      "ja": "収入からの債務天引き"
+    },
+    "service.trade.finance.garnish_value": {
+      "en": "debt {debt} · withheld {withheld} · protected {protected} Cr",
+      "ru": "долг {debt} · удержано {withheld} · защищено {protected} Cr",
+      "zh-Hans": "债务 {debt} · 已扣 {withheld} · 保留 {protected} Cr",
+      "es": "deuda {debt} · retenido {withheld} · protegido {protected} Cr",
+      "ja": "債務 {debt} · 天引き {withheld} · 保護 {protected} Cr"
+    },
     "service.trade.contracts.tab": {
       "en": "CONTRACTS",
       "ru": "КОНТРАКТЫ",

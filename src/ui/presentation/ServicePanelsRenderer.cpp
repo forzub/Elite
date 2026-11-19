@@ -565,10 +565,17 @@ std::string money2(double v)
     return (neg ? "-" : "") + out + s.substr(dot);
 }
 
-// F8 -> ФИНАНСЫ: the server's ledger as replicated to this session (docs/ECONOMY_BANKING.md)
-void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, float listX, float listY, float listW, float listH,
-                   float w, float h, int px, int small, int big)
+std::string fill(std::string s, const std::vector<std::pair<std::string, std::string>>& args);
+
+// F8 -> ФИНАНСЫ: the server's ledger as replicated to this session (docs/ECONOMY_BANKING.md); `text` = the
+// "service.trade.finance.<key>" strings in the UI language
+void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, const std::map<std::string, std::string>& text,
+                   float listX, float listY, float listW, float listH, float w, float h, int px, int small, int big)
 {
+    const auto tx = [&](const std::string& key) -> std::string {
+        const auto it = text.find(key);
+        return it != text.end() ? it->second : key;
+    };
     t.solidRectPx(listX, listY, listW, listH, Panel);
     if (!f.valid)
     {
@@ -594,6 +601,11 @@ void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot
     row("Чистые активы", money2(f.netWorthCr) + " Cr", f.netWorthCr >= 0.0 ? Good : Bad, px);
     if (f.heldCr > 0.005)   // contract deposits (trade step 5): the client's money, blocked until hand-in / failure
         row("  из них заблокировано (залоги контрактов)", money2(f.heldCr) + " Cr", Warn, small);
+    if (f.garnishDebtCr > 0.005 || f.lastWithheldDay >= 0)   // income garnish over the protected minimum (TRADE_DESIGN §1.3)
+        row(tx("garnish"),
+            fill(tx("garnish_value"), {{"{debt}", grouped(f.garnishDebtCr)}, {"{withheld}", grouped(f.lastWithheldCr)},
+                                       {"{protected}", grouped(f.protectedCr)}}),
+            f.garnishDebtCr > 0.005 ? Warn : Good, small);
     header("Наличные");
     for (const auto& c : f.cash)
         row(c.label, money2(c.amount) + " " + c.currency + (c.currency == "CR" ? "" : "  (" + grouped(c.amountCr) + " Cr)"), Text, small);
@@ -819,7 +831,7 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     }
     if (page.tab == 4)
     {
-        renderFinance(t, page.finance, listX, listY, listW, listH, w, h, px, small, big);
+        renderFinance(t, page.finance, page.financeText, listX, listY, listW, listH, w, h, px, small, big);
         t.endFrame();
         return;
     }

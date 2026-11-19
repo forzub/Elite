@@ -93,6 +93,9 @@ struct BankRules
     double lateFeeShare = 0.02;
     int restructureTermDays = 720;
     double garnishShare = 0.25;
+    // the protected minimum (TRADE_DESIGN §1.3, author 2026-11-19 §11 item 6): a garnish never takes the client's free
+    // money below this, Cr - a round trip's fuel and docking, so a pilot in debt can always fly and earn
+    double garnishProtectedCr = 6100.0;
     double inDuplumCap = 1.0;
     double lifelineLimitCr90d = 25000.0;
     int lifelineFreeDays = 90;
@@ -216,6 +219,8 @@ struct ClientLedger
     double freeFuelListCr = 0.0;                         // list value of fuel received free of charge
     std::vector<Hold> holds;                             // blocked money (escrow): collateral, a deal in flight
     int nextHoldId = 1;
+    double lastWithheldCr = 0.0;                         // the latest garnish of income (receive), Cr
+    int lastWithheldDay = -1;                            // its day (-1: never)
 };
 
 struct PaymentResult
@@ -257,7 +262,8 @@ PaymentResult payFine(ClientLedger& ledger, const BankDirectory& dir, const std:
 PaymentResult payOrDebt(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, Purpose purpose,
                         int day, const std::string& memo, const std::string& debtLabel);
 // Income paid by someone banking with `payerBank`: garnish share to restructured debt first, the rest to
-// the account at that bank if the client has one, else home (converted, FX fee).
+// the account at that bank if the client has one, else home (converted, FX fee). The garnish never takes the
+// client's free money (freeMoneyCr) below rules.garnishProtectedCr - the protected minimum (TRADE_DESIGN §1.3).
 void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& payerBank, double amountCr, int day,
              const std::string& memo);
 
@@ -291,6 +297,8 @@ struct LedgerDayReport
 };
 LedgerDayReport stepLedgerDay(ClientLedger& ledger, const BankDirectory& dir, int day);
 
+// the client's own spendable money, Cr: cash + the accounts' credit balances above their holds (no overdraft)
+[[nodiscard]] double freeMoneyCr(const ClientLedger& ledger, const BankDirectory& dir);
 [[nodiscard]] double trailingIncomeCr(const ClientLedger& ledger, int day);
 [[nodiscard]] double netWorthCr(const ClientLedger& ledger, const BankDirectory& dir);
 [[nodiscard]] double totalDebtCr(const ClientLedger& ledger, const BankDirectory& dir);

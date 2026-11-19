@@ -54,7 +54,7 @@ const char* standingRu(Standing s)
     case Standing::Good: return "в порядке";
     case Standing::Grace: return "льготный период";
     case Standing::Delinquent: return "просрочка: кредит заморожен";
-    case Standing::Restructured: return "реструктуризация: 25 % дохода в погашение";
+    case Standing::Restructured: return "реструктуризация: 25 % дохода сверх защищённого минимума";
     }
     return "";
 }
@@ -448,32 +448,48 @@ void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& 
     }
     ledger.incomeCr[idx] += amountCr;
 
-    double rest = amountCr;
-    double garnish = amountCr * dir.rules.garnishShare;
+    Account* target = findAccount(ledger, pid);
+    double feeShare = 0.0;
+    if (!target)
+    {
+        target = &ensureAccount(ledger, ledger.homeBank);
+        if (codeOf(dir, ledger.homeBank) != codeOf(dir, pid))
+            feeShare = dir.rules.fxFeeShare;
+    }
+    const double tfx = dir.fx(target->bankId);
+    // the whole income lands first; the garnish is then taken back from it, but only above the protected minimum:
+    // taking g Cr lowers the free money by at most g, so free money after >= protected (TRADE_DESIGN §1.3)
+    target->balance += toMinor(amountCr * (1.0 - feeShare) * tfx);
+    bool restructured = false;
+    for (const auto& l : ledger.loans)
+        restructured = restructured || (l.kind == LoanKind::Restructured && l.outstanding > 0);
+    if (!restructured)
+    {
+        logEvent(ledger, day, "+" + money(amountCr * dir.fx(pid), codeOf(dir, pid)) + " " + memo);
+        return;
+    }
+    const double share = amountCr * dir.rules.garnishShare;
+    const double above = std::max(0.0, freeMoneyCr(ledger, dir) - dir.rules.garnishProtectedCr);
+    double garnish = std::min(share, above);
+    double withheld = 0.0;
     for (auto& l : ledger.loans)
     {
         if (l.kind != LoanKind::Restructured || garnish <= 0.0 || l.outstanding <= 0)
             continue;
         const double fx = dir.fx(l.bankId);
-        const double payCr = std::min(garnish, toUnits(l.outstanding) / fx);
-        const Minor m = std::min(l.outstanding, toMinor(payCr * fx));
+        const Minor m = std::min(l.outstanding, toMinor(garnish * fx));
         l.outstanding -= m;
         l.hardship = false;
-        garnish -= payCr;
-        rest -= payCr;
+        garnish -= toUnits(m) / fx;
+        withheld += toUnits(m) / fx;
     }
-    rest = std::max(0.0, rest);
-    Account* target = findAccount(ledger, pid);
-    double fee = 0.0;
-    if (!target)
-    {
-        target = &ensureAccount(ledger, ledger.homeBank);
-        if (codeOf(dir, ledger.homeBank) != codeOf(dir, pid))
-            fee = rest * dir.rules.fxFeeShare;
-    }
-    target->balance += toMinor((rest - fee) * dir.fx(target->bankId));
-    logEvent(ledger, day, "+" + money(amountCr * dir.fx(pid), codeOf(dir, pid)) + " " + memo +
-                              (rest < amountCr - 0.005 ? " (в погашение долга " + money(amountCr - rest, "Cr") + ")" : std::string()));
+    target->balance -= toMinor(withheld * (1.0 - feeShare) * tfx);
+    ledger.lastWithheldCr = withheld;
+    ledger.lastWithheldDay = day;
+    std::string note = withheld > 0.005 ? " (в погашение долга " + money(withheld, "Cr") : std::string(" (удержания нет");
+    if (above < share - 0.005)   // the protected minimum set the limit (not the debt left)
+        note += ", защищено " + money(dir.rules.garnishProtectedCr, "Cr");
+    logEvent(ledger, day, "+" + money(amountCr * dir.fx(pid), codeOf(dir, pid)) + " " + memo + note + ")");
 }
 
 // ---------------------------------------------------------------- credit
@@ -629,6 +645,16 @@ double heldCr(const ClientLedger& ledger, const BankDirectory& dir)
     double s = 0.0;
     for (const auto& h : ledger.holds)
         s += toUnits(h.amount) / dir.fx(h.bankId);
+    return s;
+}
+
+double freeMoneyCr(const ClientLedger& ledger, const BankDirectory& dir)
+{
+    double s = 0.0;
+    for (const auto& [bank, minor] : ledger.cash)
+        s += toUnits(std::max<Minor>(0, minor)) / dir.fx(bank);
+    for (const auto& a : ledger.accounts)
+        s += toUnits(std::max<Minor>(0, a.balance - a.held)) / dir.fx(a.bankId);
     return s;
 }
 

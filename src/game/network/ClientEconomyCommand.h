@@ -19,7 +19,8 @@ struct ClientEconomyCommand
         TakeContract = 4,    // contractId: a posting of the board of hubId (docked there); its cargo is loaded at once
         AbandonContract = 5, // contractId: at its origin hub before the deadline = cancel (fee); elsewhere = failure
         DevEconomyDays = 6,  // DEV: the economy clock runs `quantity` days ahead (the board's days without waiting)
-        Last = DevEconomyDays
+        DevSpendAll = 7,     // DEV: the player spends all spendable money here (cash + the overdraft to its limit)
+        Last = DevSpendAll
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

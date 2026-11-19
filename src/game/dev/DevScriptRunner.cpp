@@ -425,6 +425,7 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
     //   contract:abandon:<id> | contract:report ("[ContractReport]": the replicated board / contracts with timers)
     //   econ:days:<n> - DEV: the server's economy clock runs n days ahead (the board's days without waiting)
     //   econ:await:<part of a series id> - DEV: ahead to that series' next publication at this hub (0 if open now)
+    //   econ:spendall - DEV: the player spends all spendable money (cash + the overdraft to its limit)
     //   contractclick:<select:<id|pick:<part>>|take|abandon|confirm|cancel> - a click on the region the last frame drew
     else if (cmd.rfind("contract:take:", 0) == 0 || cmd.rfind("contract:abandon:", 0) == 0 || cmd.rfind("contractclick:", 0) == 0)
     {
@@ -491,6 +492,8 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.logContracts("report");
     else if (cmd.rfind("econ:days:", 0) == 0)
         s.sendEconomyCommand(game::network::ClientEconomyCommand::DevEconomyDays, std::string(), std::atof(cmd.c_str() + 10));
+    else if (cmd == "econ:spendall")   // DEV: a broke pilot - all spendable money spent (cash, account, overdraft)
+        s.sendEconomyCommand(game::network::ClientEconomyCommand::DevSpendAll, std::string(), 0.0);
     else if (cmd.rfind("econ:await:", 0) == 0)   // DEV: the clock runs to the next publication of that series here
         s.sendEconomyCommand(game::network::ClientEconomyCommand::DevEconomyDays, cmd.substr(11), 0.0);
     else if (cmd == "detail")

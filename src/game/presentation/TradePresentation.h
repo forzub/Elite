@@ -86,6 +86,8 @@ struct TradePresentation
     std::map<std::string, std::string> dealText;
     // the CONTRACTS tab's strings ("service.trade.contracts.<key>" without the prefix)
     std::map<std::string, std::string> contractText;
+    // the FINANCE tab's strings ("service.trade.finance.<key>" without the prefix)
+    std::map<std::string, std::string> financeText;
 };
 
 // distanceText(hubId) -> "12 400 km" / "4.3 ly" / "" (unknown)

@@ -1422,6 +1422,106 @@ void testPortFeesAndDuty()
               std::to_string(v.quote.totalCr) + "), the ledger has a \"пошлина\" line (the account got " + std::to_string(worth(1) - w0) + " Cr after the 1 % FX of a foreign payer)");
 }
 
+// the protected minimum (TRADE_DESIGN §1.3, §11 item 6): a garnish of income by a restructured debt never takes the
+// client's free money below rules.garnishProtectedCr; the debt falls by exactly what was withheld
+void testProtectedMinimum()
+{
+    BankDirectory d = testBanks();
+    d.rules.startAccountCr = 0.0;
+    d.rules.startCashCr = 0.0;
+    const double M = d.rules.garnishProtectedCr;
+    const auto restructured = [&](ClientLedger& l, const std::string& bank, double cr) {
+        Loan x;
+        x.id = l.nextLoanId++;
+        x.bankId = bank;
+        x.kind = LoanKind::Restructured;
+        x.principal = x.outstanding = toMinor(cr * d.fx(bank));
+        x.annualRate = 0.032;
+        x.termDays = 720;
+        l.loans.push_back(x);
+        l.standing = Standing::Restructured;
+    };
+    const auto debt = [&](const ClientLedger& l) { return totalDebtCr(l, d); };
+
+    ClientLedger l = openLedger(d, 1, "sol", 0);
+    restructured(l, "sol", 50000.0);
+    receive(l, d, "sol", 3000.0, 1, "sale");
+    check(near(freeMoneyCr(l, d), 3000.0, 0.005) && near(debt(l), 50000.0, 0.005) && l.lastWithheldCr == 0.0 && l.lastWithheldDay == 1,
+          "below the protected minimum (" + std::to_string(M) + " Cr) nothing is withheld: all 3 000 Cr stay, the debt is unchanged");
+    double d0 = debt(l);
+    receive(l, d, "sol", 4000.0, 2, "sale");
+    check(near(l.lastWithheldCr, 7000.0 - M, 0.005) && near(freeMoneyCr(l, d), M, 0.005) && near(d0 - debt(l), l.lastWithheldCr, 0.005),
+          "income across the minimum: only " + std::to_string(l.lastWithheldCr) + " Cr withheld (not 25 % = 1 000), " +
+              std::to_string(freeMoneyCr(l, d)) + " Cr stay = the minimum");
+    d0 = debt(l);
+    receive(l, d, "sol", 20000.0, 3, "sale");
+    check(near(l.lastWithheldCr, 5000.0, 0.005) && near(d0 - debt(l), 5000.0, 0.005) && near(freeMoneyCr(l, d), M + 15000.0, 0.005),
+          "above the minimum the full 25 % share is withheld (5 000 of 20 000 Cr), the debt falls by exactly that");
+
+    // a random walk: income from the home bank and from a foreign payer (lands home minus 1 % FX), spending, a debt
+    // in a foreign currency - after every receipt with a withholding the free money is >= the minimum, and the debt
+    // fell by exactly the withheld amount
+    ClientLedger r = openLedger(d, 2, "sol", 0);
+    restructured(r, "harmony", 80000.0);
+    restructured(r, "sol", 30000.0);
+    bool floorHolds = true, exact = true, someWithheld = false, someProtected = false;
+    for (int day = 1; day <= 400; ++day)
+    {
+        const double amount = 200.0 + 15000.0 * uniform();
+        const double before = debt(r);
+        const double freeBefore = freeMoneyCr(r, d);
+        receive(r, d, uniform() < 0.5 ? "sol" : "harmony", amount, day, "x");
+        const double w = r.lastWithheldDay == day ? r.lastWithheldCr : 0.0;   // no restructured debt left: no garnish today
+        floorHolds = floorHolds && (w <= 0.0 || freeMoneyCr(r, d) >= M - 0.02) && freeMoneyCr(r, d) >= freeBefore - 0.02;
+        exact = exact && near(before - debt(r), w, 0.01) && w <= 0.25 * amount + 0.005;
+        someWithheld = someWithheld || w > 0.0;
+        someProtected = someProtected || (w < 0.25 * amount - 0.01 && debt(r) > 0.0);
+        if (uniform() < 0.7)   // spend down (fuel, fees) - not below zero
+            (void)pay(r, d, "sol", std::min(freeMoneyCr(r, d), 12000.0 * uniform()), Purpose::Trade, day, false, "spend");
+    }
+    check(floorHolds && someWithheld && someProtected,
+          "400 random receipts (CR + HRL payers, CR + HRL debt, spending between): a withholding never leaves less than the minimum "
+          "and never lowers the free money");
+    check(exact, "every receipt: the debt fell by exactly the withheld amount, never more than 25 % of the income");
+
+    // persistence: economy_state/5 carries the latest withholding; an economy_state/4 file (without it) still loads
+    using nlohmann::json;
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  protected minimum persistence (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    ClientLedger* sl = s.ledger(1);
+    restructured(*sl, sl->homeBank, 40000.0);
+    const double before = debt(*sl);
+    receive(*sl, s.banks(), sl->homeBank, 30000.0, 1000, "sale");
+    const double withheld = sl->lastWithheldCr;
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(1000);
+    const bool restored = t.restoreState(saved);
+    const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/5" &&
+              t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
+              near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
+          "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
+              std::to_string(w.garnishDebtCr) + ", withheld, protected " + std::to_string(w.protectedCr) + " (national_banks.json)");
+    json old = json::parse(saved);
+    old["schema"] = "economy_state/4";
+    for (auto& lj : old["ledgers"])
+        lj.erase("last_withheld");
+    EconomyServer u;
+    u.load();
+    u.start(1000);
+    check(u.restoreState(old.dump()) && u.ledger(1) && u.ledger(1)->lastWithheldDay == -1 && u.ledger(1)->lastWithheldCr == 0.0 &&
+              near(totalDebtCr(*u.ledger(1), u.banks()), before - withheld, 0.005),
+          "an economy_state/4 file (no last_withheld) loads: the debt as saved, no withholding recorded");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -1439,6 +1539,7 @@ int main()
     testPortFeesAndDuty();
     testPortCallPersistence();
     testContracts();
+    testProtectedMinimum();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

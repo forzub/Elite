@@ -33,6 +33,11 @@ struct ClientWalletSnapshot
     double lifelineLeftCr = 0.0;
     double freeFuelListCr = 0.0;   // list value of the fuel received free of charge so far
     double heldCr = 0.0;           // blocked by holds (escrow): the client's money, not spendable
+    // income garnish (TRADE_DESIGN §1.3): the restructured debt, the latest withholding, the protected minimum (Cr)
+    double garnishDebtCr = 0.0;
+    double lastWithheldCr = 0.0;
+    int lastWithheldDay = -1;
+    double protectedCr = 0.0;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

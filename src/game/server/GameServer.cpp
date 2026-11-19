@@ -2540,6 +2540,14 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
         applyCargoLoad(id);
         return;
     }
+    if (command.op == Op::DevSpendAll)
+    {
+        if (!devCommandAccepted("spend all", id))
+            return;
+        std::cerr << "[Trade] DEV spend all: player " << player << " paid " << m_economy.devSpendAll(player, motion.hubId, motion.systemId)
+                  << " Cr" << std::endl;
+        return;
+    }
     if (command.op == Op::DevEconomyDays)
     {
         // DEV: the board's days without waiting them out (the economy steps <= 3 days a tick toward the new day)

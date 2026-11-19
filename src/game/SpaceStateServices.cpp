@@ -127,6 +127,8 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
                                                            distanceText);
     // the finance tab: the server's ledger for this session (docs/ECONOMY_BANKING.md)
     page.finance = m_client->sessionSnapshot().wallet;
+    for (const char* key : {"garnish", "garnish_value"})
+        page.financeText[key] = localizedUiText(context().app, std::string("service.trade.finance.") + key, key);
     // the market and the cargo: the server's (docs/TRADE_DESIGN.md §7.5) - one price of record, what is shown is what
     // a Buy / Sell is charged at; the market of the hub the ship is at, none elsewhere
     page.trade = m_client->sessionSnapshot().trade;

@@ -137,6 +137,9 @@ public:
     std::string devAddCargo(std::uint64_t playerId, std::uint64_t shipKey, const std::string& goodId, double tonnes,
                             const CargoCapacity& capacity, const std::string& hubId);
     void devClearCargo(std::uint64_t shipKey);
+    // DEV: the player pays all spendable money (cash + accounts + the arranged overdraft to its limit) to the bank of
+    // hubId - a broke pilot for the debt / protected-minimum checks; returns the Cr paid
+    double devSpendAll(std::uint64_t playerId, const std::string& hubId, int systemId);
     [[nodiscard]] const CargoRegistry& cargo() const { return m_cargo; }
 
     // A ship was lost (destroyed / disabled). IDEMPOTENT by eventId: the first call takes every lot off the ship's

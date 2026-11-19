@@ -345,6 +345,7 @@ bool EconomyServer::load()
     rules.lateFeeShare = num(r, "late_fee_share", rules.lateFeeShare);
     rules.restructureTermDays = static_cast<int>(num(r, "restructure_term_days", rules.restructureTermDays));
     rules.garnishShare = num(r, "garnish_share", rules.garnishShare);
+    rules.garnishProtectedCr = num(r, "garnish_protected_cr", rules.garnishProtectedCr);
     rules.inDuplumCap = num(r, "in_duplum_cap", rules.inDuplumCap);
     rules.lifelineLimitCr90d = num(r, "lifeline_limit_cr_90d", rules.lifelineLimitCr90d);
     rules.lifelineFreeDays = static_cast<int>(num(r, "lifeline_free_days", rules.lifelineFreeDays));
@@ -1335,6 +1336,18 @@ std::string EconomyServer::devAddCargo(std::uint64_t playerId, std::uint64_t shi
     return {};
 }
 
+double EconomyServer::devSpendAll(std::uint64_t playerId, const std::string& hubId, int systemId)
+{
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+        return 0.0;
+    const std::string bank = bankOf(hubId, systemId);
+    const double all = spendableCr(*l, m_banks, bank);
+    const PaymentResult r = pay(*l, m_banks, bank, all, Purpose::Trade, m_day, false, "DEV: всё потрачено");
+    saveNow("DEV spend all");
+    return r.ok ? all : 0.0;
+}
+
 void EconomyServer::devClearCargo(std::uint64_t shipKey)
 {
     m_cargo.clear(shipKey);
@@ -1534,6 +1547,13 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
     w.lifelineLeftCr = lifelineLeftCr(*l, m_banks, m_day);
     w.freeFuelListCr = l->freeFuelListCr;
     w.heldCr = heldCr(*l, m_banks);
+    // the garnish of income by a restructured debt and the protected minimum (TRADE_DESIGN §1.3)
+    for (const auto& loan : l->loans)
+        if (loan.kind == LoanKind::Restructured)
+            w.garnishDebtCr += toUnits(loan.outstanding) / m_banks.fx(loan.bankId);
+    w.lastWithheldCr = l->lastWithheldCr;
+    w.lastWithheldDay = l->lastWithheldDay;
+    w.protectedCr = m_banks.rules.garnishProtectedCr;
 
     w.localPolity = polityOf(hubId, systemId);
     if (const auto* b = m_banks.bankForPolity(w.localPolity))
@@ -1589,6 +1609,7 @@ json ledgerToJson(const ClientLedger& l)
     j["next_loan"] = l.nextLoanId;
     j["last_day"] = l.lastDay;
     j["free_fuel_list_cr"] = l.freeFuelListCr;
+    j["last_withheld"] = {l.lastWithheldDay, l.lastWithheldCr};   // economy_state/5
     json cash = json::object();
     for (const auto& [b, m] : l.cash)
         cash[b] = m;
@@ -1623,6 +1644,11 @@ ClientLedger ledgerFromJson(const json& j)
     l.nextLoanId = j.value("next_loan", 1);
     l.lastDay = j.value("last_day", -1);
     l.freeFuelListCr = j.value("free_fuel_list_cr", 0.0);
+    if (const json w = j.value("last_withheld", json::array()); w.is_array() && w.size() == 2)
+    {
+        l.lastWithheldDay = w[0].get<int>();
+        l.lastWithheldCr = w[1].get<double>();
+    }
     // bound to locals: `.items()` of a temporary dies before the loop (the EconomyModel::load crash, 2026-11-11)
     const json cash = j.value("cash", json::object());
     for (const auto& [b, m] : cash.items())
@@ -1706,8 +1732,8 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/4";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
-                                       // 4: port calls (open + booked)
+    j["schema"] = "economy_state/5";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+                                       // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum)
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -1821,7 +1847,8 @@ bool EconomyServer::restoreState(const std::string& text)
     }
     const std::string schema = j.value("schema", std::string());
     if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3" &&
-        schema != "economy_state/4")   // /1: no trade registries; /2: no contracts; /3: no port calls
+        schema != "economy_state/4" && schema != "economy_state/5")   // /1: no trade registries; /2: no contracts;
+                                                                       // /3: no port calls; /4: no last_withheld
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
     // 2026-11-19: an exception half-way left fx / markets restored, the ledgers cleared, and the caller started a

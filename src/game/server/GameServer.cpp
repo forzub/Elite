@@ -762,6 +762,9 @@ void GameServer::applyDevStartPoint(double dt)
     if (waited < 3.0 || !m_simulation.getShip(ship))
         return;
     done = true;
+    // it runs before the command drain, in the last pass's system context: the placement reads the gravity bodies
+    // (the star, "up") - the player's own system first (re-audit 2026-11-19: false [SystemContext] violations)
+    switchSimulationContext(m_simulation.getShip(ship)->core().transform().motion.systemId);
     const auto colon = spec.find(':');
     const std::string kind = spec.substr(0, colon);
     std::string arg = colon == std::string::npos ? std::string() : spec.substr(colon + 1);

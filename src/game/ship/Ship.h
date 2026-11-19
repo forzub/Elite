@@ -43,8 +43,8 @@ public:
 
  
 
-    bool addItem(Item* item);
-    bool removeItem(Item* item);
+    // (addItem / removeItem removed 2026-11-19: the cargo mass has ONE writer - the economy manifest via
+    //  GameServer::applyCargoLoad -> ShipCore::setLoad)
 
     // === безопасный доступ ===
     const ShipCore& core() const { return m_core; }

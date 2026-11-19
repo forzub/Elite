@@ -6879,3 +6879,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   endRefuel - the prepaid, undelivered tonnes went back neither to the station's stock nor as money.
 - Fix: both call endRefuel(Cancelled) first (with no ship it only refunds through returnFuel).
 - Evidence: build + contract checks; the path needs a ship despawned mid-refuel (NPC traffic) - not reproduced live.
+### R6. Small ones - DONE
+- applyDevStartPoint (runs before the command drain, in the last pass's context) switches to the player's system first
+  (it read the star / "up" of another system; false [SystemContext] violations).
+- ShipCore::addCargo / removeCargo and Ship::addItem / removeItem removed (dead; a second writer of the cargo mass) - the
+  cargo mass has ONE writer: the manifest via GameServer::applyCargoLoad -> ShipCore::setLoad.
+- Evidence: builds (Debug + RelWithDebInfo), contract checks PASS, the DEV start runs in every live check above.

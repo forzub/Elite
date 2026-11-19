@@ -139,36 +139,6 @@ void Ship::updateControlIntent()
 //   #####    ######   ######            ####       ###    #####   ##   ##  ######
 
 
-bool Ship::addItem(Item* item)
-{
-    if (!item) return false;
-
-    if (item->usesCargoSpace())
-    {
-        if (!m_core.addCargo(item->cargoMass(), item->cargoVolume()))
-            return false;
-    }
-
-    m_core.inventory().add(item);
-    return true;
-}
-
-
-bool Ship::removeItem(Item* item)
-{
-    if (!item) return false;
-
-    if (!m_core.inventory().remove(item))
-        return false;
-
-    if (item->usesCargoSpace())
-    {
-        m_core.removeCargo(item->cargoMass(), item->cargoVolume());
-    }
-
-    return true;
-}
-
 void Ship::setControlState(const ShipControlState& newControl)
 {
     m_core.state().control = newControl;

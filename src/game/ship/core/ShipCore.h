@@ -140,8 +140,7 @@ public:
     // // ───────────────
     int  freeCargoMass() const;
     int  freeCargoVolume() const;
-    bool addCargo(int mass, int volume);
-    bool removeCargo(int mass, int volume);
+    // (addCargo / removeCargo removed 2026-11-19: the cargo mass has ONE writer - setLoad from the manifest)
 
     // // ───────────────
     // // Mass / load / devices (ShipCoreMass.cpp)

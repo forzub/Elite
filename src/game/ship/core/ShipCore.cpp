@@ -384,31 +384,6 @@ int ShipCore::freeCargoVolume() const
     return m_cargo.volume.free();
 }
 
-bool ShipCore::addCargo(int mass, int volume)
-{
-    if (!m_cargo.mass.canAdd(mass)) return false;
-    if (!m_cargo.volume.canAdd(volume)) return false;
-
-    m_cargo.mass.add(mass);
-    m_cargo.volume.add(volume);
-    // the hold IS mass: capability / acceleration follow the mass revision
-    m_load.cargoTonnes = m_cargo.mass.value;
-    recomputeMassProperties();
-    return true;
-}
-
-bool ShipCore::removeCargo(int mass, int volume)
-{
-    if (!m_cargo.mass.canRemove(mass)) return false;
-    if (!m_cargo.volume.canRemove(volume)) return false;
-
-    m_cargo.mass.remove(mass);
-    m_cargo.volume.remove(volume);
-    m_load.cargoTonnes = m_cargo.mass.value;
-    recomputeMassProperties();
-    return true;
-}
-
 // //            ###                ##                         ##                ##       ##
 // //             ##                ##                                                    ##
 // //   #####     ##      ####     #####    #####             ###     #####     ###      #####

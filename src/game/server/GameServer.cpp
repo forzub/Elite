@@ -1,4 +1,5 @@
 #include <atomic>
+#include <cstdio>
 #include <chrono>
 #include <thread>
 
@@ -1006,6 +1007,77 @@ void GameServer::applyCelestialOrbitParentParameters(int systemId)
 namespace
 {
 
+// DEV: ELITE_DEV_JUMP_ENTRY_TIMING=1 - where a server tick's wall time goes around a system entry (a jump
+// exit): every tick >= 25 ms, and every tick for 2 s after the set of simulated systems changed, as
+// "[JumpEntryTiming] tick N total X ms: <phase>=<ms> ..." (phases >= 0.3 ms only).
+struct JumpEntryTiming
+{
+    using Clock = std::chrono::steady_clock;
+    const bool on = [] {
+        const char* v = std::getenv("ELITE_DEV_JUMP_ENTRY_TIMING");
+        return v && *v == '1';
+    }();
+    Clock::time_point start;
+    Clock::time_point last;
+    std::string line;
+    int watchTicks = 0;
+    std::vector<int> lastSystems;
+
+    void begin()
+    {
+        if (!on)
+            return;
+        start = last = Clock::now();
+        line.clear();
+    }
+    void mark(const std::string& phase)
+    {
+        if (!on)
+            return;
+        const auto now = Clock::now();
+        const double ms = std::chrono::duration<double, std::milli>(now - last).count();
+        last = now;
+        if (ms >= 0.3)
+        {
+            char buf[32];
+            std::snprintf(buf, sizeof(buf), "=%.1f", ms);
+            line += " " + phase + buf;
+        }
+    }
+    void systems(const std::vector<int>& passSystems)
+    {
+        if (!on)
+            return;
+        std::vector<int> sorted = passSystems;
+        std::sort(sorted.begin(), sorted.end());
+        if (sorted != lastSystems)
+        {
+            std::string list;
+            for (const int s : sorted)
+                list += (list.empty() ? "" : ",") + std::to_string(s);
+            std::cerr << "[JumpEntryTiming] simulated systems now {" << list << "}" << std::endl;
+            lastSystems = std::move(sorted);
+            watchTicks = 100;
+        }
+    }
+    void end(unsigned long long tick)
+    {
+        if (!on)
+            return;
+        const double total = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+        if (total >= 25.0 || watchTicks > 0)
+            std::cerr << "[JumpEntryTiming] tick " << tick << " total " << total << " ms:" << line << std::endl;
+        if (watchTicks > 0)
+            --watchTicks;
+    }
+};
+
+JumpEntryTiming& jumpEntryTiming()
+{
+    static JumpEntryTiming timing;
+    return timing;
+}
+
 // EXPLICIT DIAGNOSTIC (damaged stage): ELITE_SHIP_DAMAGE_AT=
 // "T MODULE TARGET01[;T MODULE TARGET01...]" injects a real installed
 // equipment fault (the same injectEquipmentFailure path as the server DEV
@@ -1087,6 +1159,8 @@ void advanceTimedDamageDiagnostic(TimedDamageDiagnostic& d, Ship* ship, double d
 
 void GameServer::update(double dt)
 {
+    auto& entryTiming = jumpEntryTiming();
+    entryTiming.begin();
     static TimedDamageDiagnostic timedDamage;
     advanceTimedDamageDiagnostic(
         timedDamage, m_simulation.getShip(m_simulation.playerId()), dt);
@@ -1137,6 +1211,7 @@ void GameServer::update(double dt)
     // the hubs' construction stages follow the server's universe time (docs/HUB_CONSTRUCTION.md)
     world::time::setConstructionUniverseTime(m_universeClock.timeSeconds());
     game::scene::refreshHubCityConstructionCollision(m_simulation);
+    entryTiming.mark("pre");
 
     const double universeTime =
         m_universeClock.timeSeconds();
@@ -1608,6 +1683,7 @@ void GameServer::update(double dt)
     // ShipControlState stream. Navigation/autopilot lives on the client and
     // is indistinguishable here from human control input.
 
+entryTiming.mark("commands");
 m_simulation.setOrbitalUniverseTimeSeconds(
     universeTime
 );
@@ -1632,11 +1708,33 @@ m_simulation.setOrbitalUniverseTimeSeconds(
         if (systemId >= 0 && std::find(passSystems.begin(), passSystems.end(), systemId) == passSystems.end())
             passSystems.push_back(systemId);
     }
+    entryTiming.systems(passSystems);
     for (std::size_t pass = 0; pass < passSystems.size(); ++pass)
     {
+        const std::string sys = std::to_string(passSystems[pass]);
         switchSimulationContext(passSystems[pass]);
+        entryTiming.mark("ctx" + sys);
+        double stageBefore[7] = {};
+        if (entryTiming.on)
+            std::copy(std::begin(game::server::serverTickProfile().simStage), std::end(game::server::serverTickProfile().simStage), stageBefore);
         m_simulation.setSystemPass(static_cast<int>(pass));
         m_simulation.update(time);
+        if (entryTiming.on)
+        {
+            // the pass's GameSimulation::update stages (ServerTickProfile::simStage)
+            std::string stages;
+            for (int k = 0; k < 7; ++k)
+            {
+                const double ms = (game::server::serverTickProfile().simStage[k] - stageBefore[k]) * 1000.0;
+                if (ms >= 0.3)
+                {
+                    char buf[32];
+                    std::snprintf(buf, sizeof(buf), "%sst%d:%.1f", stages.empty() ? "" : ",", k, ms);
+                    stages += buf;
+                }
+            }
+            entryTiming.mark("sim" + sys + (stages.empty() ? "" : "[" + stages + "]"));
+        }
     }
     m_simulation.setSystemPass(0);
     m_lastTickSystemPasses = passSystems.size();
@@ -1670,6 +1768,7 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     game::server::serverTickProfile().simulatedShips += static_cast<long long>(m_simulation.ships().size());
     m_lastTickSimulationSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - passStart).count();
     game::server::serverTickProfile().simulation += m_lastTickSimulationSeconds;
+    entryTiming.mark("losses");
 }
 
 // Navigation sensors observe the completed authoritative epoch. Their cadence
@@ -1678,6 +1777,7 @@ m_simulation.setOrbitalUniverseTimeSeconds(
 {
     game::server::ScopedTickTimer timer(game::server::serverTickProfile().sensors);
     updateNavigationSensorDevices(universeTime);
+    entryTiming.mark("sensors");
 }
 // DEV / load test (author 2026-11-08: "погоняй эту симуляцию ... с тиками по экономике"): the
 // economy is a deterministic function of the day computed by the clients today; with
@@ -1722,6 +1822,7 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     m_economy.advanceTo(game::economy::EconomyModel::dayOf(universeTime) + m_devEconomyDayOffset);
     m_economy.setClockDays(universeTime / 86400.0 + m_devEconomyDayOffset);
     m_economy.setUniverseTime(universeTime);
+    entryTiming.mark("economy");
 }
 
 
@@ -1765,6 +1866,8 @@ m_simulation.setOrbitalUniverseTimeSeconds(
         game::server::ScopedTickTimer timer(game::server::serverTickProfile().mapRequests);
         processPendingMapRequests();
     }
+    entryTiming.mark("snapshot+maps");
+    entryTiming.end(m_serverTick);
 }
 
 bool GameServer::enqueueMapRequest(

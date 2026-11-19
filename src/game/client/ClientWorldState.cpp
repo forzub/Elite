@@ -26,9 +26,95 @@
 #include "src/world/coordinates/WorldPosition.h"
 #include <fstream>
 #include <iomanip>
+#include <condition_variable>
+#include <cstdlib>
+#include <mutex>
+#include <thread>
 
 namespace
 {
+    // The snapshot history holds canonical (full-set) snapshots: in Sol ~1400 objects with their module graphs
+    // each. Freeing one took ~25 ms, the whole 20-entry history ~0.5 s - on the jump into another system (the
+    // system fence drops the history) that was one 0.5 s frame, and the fixed-step server, advanced by the frame
+    // time, fell 0.5 s behind and caught up over the next frames (measured 2026-11-19, Sol -> Eps Eri). Dropped
+    // snapshots are plain data (vectors / strings, no GL, no registry back-references): one background thread
+    // frees them. DEV A/B: ELITE_DEV_SYNC_SNAPSHOT_RELEASE=1 frees them inline as before.
+    class SnapshotHistoryReleaser
+    {
+    public:
+        static SnapshotHistoryReleaser& instance()
+        {
+            static SnapshotHistoryReleaser releaser;
+            return releaser;
+        }
+
+        static bool inline_()
+        {
+            static const bool sync = [] {
+                const char* v = std::getenv("ELITE_DEV_SYNC_SNAPSHOT_RELEASE");
+                return v && *v == '1';
+            }();
+            return sync;
+        }
+
+        void release(SimulationSnapshot&& snapshot)
+        {
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_pending.push_back(std::move(snapshot));
+            }
+            m_wake.notify_one();
+        }
+
+        ~SnapshotHistoryReleaser()
+        {
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_stop = true;
+            }
+            m_wake.notify_one();
+            if (m_worker.joinable())
+                m_worker.join();
+        }
+
+    private:
+        SnapshotHistoryReleaser() : m_worker([this] { run(); }) {}
+
+        void run()
+        {
+            std::vector<SimulationSnapshot> batch;
+            for (;;)
+            {
+                {
+                    std::unique_lock<std::mutex> lock(m_mutex);
+                    m_wake.wait(lock, [this] { return m_stop || !m_pending.empty(); });
+                    if (m_pending.empty() && m_stop)
+                        return;
+                    batch.swap(m_pending);
+                }
+                batch.clear();   // the frees, off the main thread
+            }
+        }
+
+        std::mutex m_mutex;
+        std::condition_variable m_wake;
+        std::vector<SimulationSnapshot> m_pending;
+        bool m_stop = false;
+        std::thread m_worker;   // last: started after the members above exist
+    };
+
+    // moves a snapshot out of the history to the releaser (or frees it here with the DEV A/B switch)
+    void releaseSnapshot(SimulationSnapshot& snapshot)
+    {
+        if (SnapshotHistoryReleaser::inline_())
+        {
+            SimulationSnapshot dropped = std::move(snapshot);
+            (void)dropped;
+            return;
+        }
+        SnapshotHistoryReleaser::instance().release(std::move(snapshot));
+    }
+
     void appendHubMotionLabPresentationCsv(
         const game::diagnostics::HubMotionLabPresentationSample& sample
     )
@@ -486,6 +572,12 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     double hubMs = 0.0;
     double droneMs = 0.0;
     double canonicalMs = 0.0;
+    double shipLoopMs = 0.0;      // the whole ship loop (the parts above included)
+    double objectNewMs = 0.0;     // objects seen for the first time (whole body)
+    double objectUpdateMs = 0.0;  // objects already known (whole body)
+    int objectsNew = 0;
+    double fenceClearMs = 0.0;    // the snapshot history dropped on a timeline / system change
+    double objectRemoveMs = 0.0;  // objects no longer replicated, erased
 
     const auto elapsedMs = [](const auto& begin) {
         return std::chrono::duration<double, std::milli>(
@@ -512,7 +604,12 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         // Both events are hard presentation discontinuities. Server time stays
         // monotonic, so without this fence snapshots from different universe
         // branches or different system-local coordinate domains look adjacent.
+        // (the old history is freed off this thread: SnapshotHistoryReleaser)
+        const auto phaseBegin = HydrateClock::now();
+        for (auto& dropped : m_snapshotBuffer)
+            releaseSnapshot(dropped);
         m_snapshotBuffer.clear();
+        fenceClearMs = elapsedMs(phaseBegin);
     }
 
     m_snapshotTimelineRevision = incomingTimelineRevision;
@@ -525,6 +622,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     authoritativeObjectIds.reserve(snapshot.objects.size());
 
     // ------- передача ShipSnapshot ------
+    const auto shipLoopBegin = HydrateClock::now();
     for (const auto& s : snapshot.ships)
     {
         authoritativeShipIds.insert(s.id.value);
@@ -711,6 +809,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     }
 
 
+    shipLoopMs = elapsedMs(shipLoopBegin);
     const bool fullAuthoritativeEntitySet =
         snapshot.replication.entitySetMode ==
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
@@ -738,6 +837,15 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     {
         authoritativeObjectIds.insert(o.id.value);
         auto it = m_objects.find(o.id.value);
+        const auto objectBegin = HydrateClock::now();
+        const bool objectNew = it == m_objects.end();
+        struct ObjectTimer
+        {
+            double& sink;
+            std::chrono::steady_clock::time_point begin;
+            ~ObjectTimer() { sink += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - begin).count(); }
+        } objectTimer {objectNew ? objectNewMs : objectUpdateMs, objectBegin};
+        objectsNew += objectNew ? 1 : 0;
 
         if (it == m_objects.end())
         {
@@ -871,6 +979,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         }
     }
 
+    const auto objectRemoveBegin = HydrateClock::now();
     if (fullAuthoritativeEntitySet)
     {
         for (auto it = m_objects.begin(); it != m_objects.end();)
@@ -886,6 +995,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         for (const auto id : snapshot.replication.removedObjectIds)
             m_objects.erase(id.value);
     }
+    objectRemoveMs = elapsedMs(objectRemoveBegin);
 
     std::unordered_set<std::string> authoritativeHubIds;
     authoritativeHubIds.reserve(snapshot.hubs.size());
@@ -1012,10 +1122,25 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         canonicalMs += elapsedMs(phaseBegin);
     }
 
-    while (m_snapshotBuffer.size() > 20)
-        m_snapshotBuffer.pop_front();
+    double historyTrimMs = 0.0;
+    {
+        const auto phaseBegin = HydrateClock::now();
+        while (m_snapshotBuffer.size() > 20)
+        {
+            releaseSnapshot(m_snapshotBuffer.front());
+            m_snapshotBuffer.pop_front();
+        }
+        historyTrimMs = elapsedMs(phaseBegin);
+    }
 
     const double totalMs = elapsedMs(hydrateBegin);
+    if (static const bool entryTiming = [] {
+            const char* v = std::getenv("ELITE_DEV_JUMP_ENTRY_TIMING");
+            return v && *v == '1';
+        }();
+        entryTiming && (timelineRevisionChanged || activeSystemChanged))
+        std::cerr << "[JumpEntryTiming] client fence (history dropped): apply-snapshot " << totalMs << " ms, of it the history release "
+                  << fenceClearMs << " ms" << (SnapshotHistoryReleaser::inline_() ? " (inline, DEV A/B)" : " (off-thread)") << std::endl;
     if (totalMs >= 100.0)
     {
         std::cerr
@@ -1032,6 +1157,12 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             << " hub_ms=" << hubMs
             << " drone_ms=" << droneMs
             << " canonical_ms=" << canonicalMs
+            << " ship_loop_ms=" << shipLoopMs
+            << " object_new_ms=" << objectNewMs << " (" << objectsNew << " new)"
+            << " object_update_ms=" << objectUpdateMs
+            << " fence_clear_ms=" << fenceClearMs
+            << " object_remove_ms=" << objectRemoveMs
+            << " history_trim_ms=" << historyTrimMs
             << "\n";
     }
 }

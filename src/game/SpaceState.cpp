@@ -1533,6 +1533,15 @@ void SpaceState::update(float dt)
         serverAdvance.totalDiscardedSeconds * 1000.0;
     m_perfServerCatchUpLimited =
         serverAdvance.catchUpLimited;
+    // DEV (ELITE_DEV_JUMP_ENTRY_TIMING=1): the server's catch-up - a frame that ran > 2 fixed steps or left a debt
+    if (static const bool entryTiming = [] {
+            const char* v = std::getenv("ELITE_DEV_JUMP_ENTRY_TIMING");
+            return v && *v == '1';
+        }();
+        entryTiming && (serverAdvance.stepsExecuted > 2 || serverAdvance.remainingDebtSeconds > 0.04))
+        std::cerr << "[JumpEntryTiming] frame dt " << dt * 1000.0f << " ms: server steps " << serverAdvance.stepsExecuted
+                  << ", debt left " << serverAdvance.remainingDebtSeconds * 1000.0 << " ms"
+                  << (serverAdvance.catchUpLimited ? " (catch-up limited)" : "") << std::endl;
 
     // Debug/control commands are asynchronous requests to ServerRuntime. Flush
     // UI responses only after a newer copied diagnostic revision has crossed

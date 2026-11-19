@@ -7060,3 +7060,35 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Not done / limits: the resume branch (Docked at the same berth after a restart) is unit-tested only - without a world
   save the ship never starts docked; a burst of actions still costs one ~1 ms flush per 2 s; all save sites now
   lag up to 2 s (incl. the ship-loss record, documented in the header).
+
+## JUMP ENTRY CATCH-UP (the open item of §5 "sites_3126 cached") - SOURCE + LIVE PASS 2026-11-19, not committed
+- Instrumented (DEV, ELITE_DEV_JUMP_ENTRY_TIMING=1): GameServer::update per-phase times ([JumpEntryTiming] tick N: pre /
+  commands / ctx<sys> / sim<sys>[stages] / losses / sensors / economy / snapshot+maps; every tick >= 25 ms and every tick
+  for 2 s after the simulated-system set changes); SpaceState: frames that ran > 2 server steps or left a debt; the
+  client fence line. M8E-HYDRATE gained ship_loop / object_new / object_update / fence_clear / object_remove /
+  history_trim.
+- Live scenario (D:/tmp/jumpentry, offscreen): ELITE_DEV_START=hub:earth_orbital_hub@50, ELITE_DEV_JUMP_CHARGE_S=3,
+  script 15:jump:9 (Sol -> Eps Eri, exit eps_Eri_b).
+- Server side is NOT the cause: the entry tick (first pass of system 9: 13 dock sites started, hub security of 40
+  cities, the exit) 4.5-5 ms (sim9 3.5 ms); the next ticks 1.5-3 ms; ctx switch < 0.3 ms; one snapshot tick 37-56 ms
+  (the first build with system 9's 176 objects / 40 hubs); no file I/O / JSON on entry (WorldSitesCatalog cached).
+- Cause (verified): the CLIENT. ClientWorldState::applySnapshot drops the 20-entry snapshot history on the system /
+  timeline fence (m_snapshotBuffer.clear()); every entry is a canonical full-set snapshot (Sol: ~1400 objects with
+  module graphs) and freeing them took 507-610 ms on the main thread (fence_clear_ms 507.7 / 592 / 610). That frame
+  (gap 530-860 ms) is the frame time the fixed-step server is advanced by -> 8 steps / frame (catch-up limited) with
+  0.2-0.3 s debt for the next ~5 frames = the "entry catch-up". Same mechanism, smaller: the history trim (pop_front)
+  freed one snapshot per apply in Sol, 23.6-24.7 ms each.
+- Fix (src/game/client/ClientWorldState.cpp): SnapshotHistoryReleaser - dropped history snapshots (fence + trim) are
+  moved to one background thread that frees them (plain data: vectors / strings, no GL, no registry back-refs);
+  joined at exit. DEV A/B: ELITE_DEV_SYNC_SNAPSHOT_RELEASE=1 frees inline as before. check_architecture still sees
+  m_snapshotBuffer.clear() (the fence itself is unchanged).
+- Evidence, same build, same scenario: A (inline) fence 592 ms of a 609 ms apply-snapshot, frame gap 860 ms (A_sync:
+  610 / 659 ms); B (off-thread) fence 0.14 ms of a 19.4 ms apply-snapshot, no frame gap at the entry, largest frame
+  around it 190-227 ms (= this harness's normal Sol frames, 250-450 ms gaps before the jump). history_trim 24 ms -> 0.0001
+  ms; apply-snapshot >= 100 ms lines in Sol before the jump 19 -> 2. Both runs quit cleanly (DEV quit, no watchdog).
+- Still open (side findings, not fixed): (a) in Sol every apply-snapshot spends 52-105 ms in canonical_ms
+  (materializeCanonicalReplicationSnapshot copying the omitted ~1400 objects of the full set per snapshot) - the main
+  reason the offscreen game is chronically catch-up limited in Sol; Eps Eri 0.1-1 ms. (b) The headless load test
+  (EliteServer --load-test) has no ClientWorldState, so its catch-up after jumps is not this cause; its jump-entry
+  server ticks were not re-measured here.
+- Checks: EliteEconomyCheck 135/135; check_architecture, check_entity_lifetime, check_active_system_context PASS.

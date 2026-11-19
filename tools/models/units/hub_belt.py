@@ -947,6 +947,8 @@ def _module_obb():
             builders.update(getattr(importlib.import_module(f"units.{unit}"), "ASSETS", {}))
         except ImportError:
             pass
+    import units.hub_damage_heavy as hdh              # its intact modules (the ship salon); the variants: DAMAGED_OF below
+    builders.update({k: v for k, v in hdh.ASSETS.items() if "_dmg_" not in k})
     for k, fn in builders.items():
         vs = [v for part in fn(2).values() for v in part.v]
         lo = tuple(min(v[i] for v in vs) for i in range(3))

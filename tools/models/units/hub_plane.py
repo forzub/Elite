@@ -329,7 +329,7 @@ RUIN_BLOWN = 380.0            # within this of an epicentre a module that cannot
 
 
 def _ruin(L, hub_id):
-    from units.hub_damage_names import DAMAGED_OF
+    from units.hub_damage_names import DAMAGED_FRAME, DAMAGED_OF
     rng = random.Random(int(hashlib.sha1(("ruin:" + hub_id).encode("utf-8")).hexdigest()[:12], 16))
     centres = [d["centre"] for d in L["districts"]]
     homes = [d["centre"] for d in L["districts"] if d["kind"] in ("downtown", "residential", "hotel", "hab_rot")] or centres
@@ -340,6 +340,11 @@ def _ruin(L, hub_id):
         nid, folder, pos, rot, role, parent = node
         d = min(math.hypot(pos[0] - x, pos[2] - z) for x, z in strikes)
         p = max(0.0, 1.0 - d / RUIN_REACH)
+        if folder in DAMAGED_FRAME and d < RUIN_BLOWN:      # the frame under a blast: bent / snapped girders (own seed)
+            fr = random.Random(zlib_crc("ruin_frame:" + hub_id + ":" + nid))
+            if fr.random() < 0.6:
+                nodes.append((nid, fr.choice(DAMAGED_FRAME[folder]), pos, rot, role, parent))
+                continue
         if folder in DAMAGED_OF and rng.random() < 0.15 + 0.85 * p:
             nodes.append((nid, rng.choice(DAMAGED_OF[folder]), pos, rot, role, parent))
             damaged += 1

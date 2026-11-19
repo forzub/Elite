@@ -1,0 +1,16 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "plant.014.cobretty.k3_yard",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    1769.2,
+    -6226.0,
+    -1239.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

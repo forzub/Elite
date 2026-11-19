@@ -1,0 +1,25 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.019.troyan_market",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    710.0,
+    -6226.0,
+    -1191.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    710.0,
+    -6226.0,
+    -985.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

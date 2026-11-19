@@ -1,0 +1,52 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.022.delta_pav_karma.military_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1501.0,
+    -6226.0,
+    -256.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1610.0,
+    -6226.0,
+    246.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    461.0,
+    -6174.0,
+    973.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    561.0,
+    -6174.0,
+    973.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    661.0,
+    -6174.0,
+    973.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

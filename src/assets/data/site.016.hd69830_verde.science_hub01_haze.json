@@ -1,0 +1,16 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.016.hd69830_verde.science_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    1381.0,
+    -6226.0,
+    156.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

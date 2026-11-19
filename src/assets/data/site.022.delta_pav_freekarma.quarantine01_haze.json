@@ -1,0 +1,61 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.022.delta_pav_freekarma.quarantine01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1450.0,
+    -6174.0,
+    143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1550.0,
+    -6174.0,
+    143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1650.0,
+    -6174.0,
+    143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -490.0,
+    -6174.0,
+    1097.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -490.0,
+    -6174.0,
+    997.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -490.0,
+    -6174.0,
+    897.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.060.proxima_outpost.trade_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    1490.0,
+    -6226.0,
+    33.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1610.0,
+    -6226.0,
+    139.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1350.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1450.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1550.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

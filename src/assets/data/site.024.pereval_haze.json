@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.024.pereval",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    600.0,
+    -6226.0,
+    997.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    650.0,
+    -6174.0,
+    1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    750.0,
+    -6174.0,
+    1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    850.0,
+    -6174.0,
+    1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

@@ -1,0 +1,70 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "plant.004.agora.section_park",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -2027.7,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2127.7,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2227.7,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2096.5,
+    -6226.0,
+    156.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1089.0,
+    -6174.0,
+    -1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1189.0,
+    -6174.0,
+    -1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1289.0,
+    -6174.0,
+    -1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

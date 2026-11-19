@@ -1,0 +1,115 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.mars_deimos",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -100.0,
+    -5870.0,
+    -1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    0.0,
+    -5870.0,
+    -1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    100.0,
+    -5870.0,
+    -1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    100.0,
+    -6174.0,
+    -973.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    0.0,
+    -6174.0,
+    -973.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -100.0,
+    -6174.0,
+    -973.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1166.7,
+    -6174.0,
+    -938.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1166.7,
+    -6174.0,
+    -1038.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1166.7,
+    -6174.0,
+    -1138.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    911.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1011.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1111.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

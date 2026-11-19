@@ -1,0 +1,25 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.053.gj674_frontier",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    2133.5,
+    -6226.0,
+    -8.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2346.8,
+    -6226.0,
+    101.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

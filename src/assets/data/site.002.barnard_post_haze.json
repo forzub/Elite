@@ -1,0 +1,6 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.002.barnard_post",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": []
+}

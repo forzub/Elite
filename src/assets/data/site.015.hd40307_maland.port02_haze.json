@@ -1,0 +1,106 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.015.hd40307_maland.port02",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -410.0,
+    -5870.0,
+    1097.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -410.0,
+    -5870.0,
+    997.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -410.0,
+    -5870.0,
+    897.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -586.8,
+    -6226.0,
+    877.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -450.0,
+    -6174.0,
+    1263.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -550.0,
+    -6174.0,
+    1263.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -650.0,
+    -6174.0,
+    1263.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    839.0,
+    -6174.0,
+    -1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    739.0,
+    -6174.0,
+    -1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    639.0,
+    -6174.0,
+    -1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    430.8,
+    -6226.0,
+    -987.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.010.gj581_freeclans.industrial_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1501.0,
+    -6226.0,
+    -256.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    650.0,
+    -6174.0,
+    -1140.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    750.0,
+    -6174.0,
+    -1140.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    850.0,
+    -6174.0,
+    -1140.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    481.0,
+    -6226.0,
+    1050.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

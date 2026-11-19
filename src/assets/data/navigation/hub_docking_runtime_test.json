@@ -134,6 +134,1945 @@
       "operational": "online",
       "occupancy": "free",
       "access": "allowed"
+    },
+    {
+      "module_id": "site.024.pereval.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.000.ofu.ural_kourou_yard.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.000.terra_habitat.geo.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.008.hyperion.museum_yard.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.008.xinzhi.orbital_fab.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.014.cobretty.k3_yard.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.009.harmony.yard1.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.009.harmony.yard2.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.012.tianhe.mass_yard.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.004.agora.section_park.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.004.kapehu.core_fab.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.014.bharat.rings.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "plant.003.bastion.mjolner.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.019.porog.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.019.troyan_market.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.041.holding.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.031.cyg61_kern.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.031.cyg61_kern.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.031.cyg61_kern.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.031.cyg61_kern.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.031.cyg61_kern.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.031.cyg61_kern.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.031.cyg61_kern.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_freekarma.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.port03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.022.delta_pav_karma.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.port03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.city04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.trade_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.trade_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.trade_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.trade_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.military_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.military_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.military_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.science_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.science_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_harmony.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.trade_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.military_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.009.eps_eri_strife.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_europa.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.010.gj581_freeclans.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_gaia_zone.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_gaia_zone.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_gaia_zone.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.port03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.science_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.012.gj832_tianhe.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.013.gj876_next.city04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.013.gj876_next.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.013.gj876_next.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.013.gj876_next.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.037.hd114783_hellas3.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.037.hd114783_hellas3.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.037.hd114783_hellas3.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_hellas2.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.port03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.science_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.014.hd20794_newindia.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_firmament.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.015.hd40307_maland.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.016.hd69830_verde.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_hellas.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.port03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.port05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.trade_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.004.lalande_mecca.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.045.leo83_zion.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.045.leo83_zion.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.045.leo83_zion.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.port01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.port03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.port04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.060.proxima_outpost.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.trade_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.trade_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.trade_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.trade_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.trade_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.science_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.science_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.008.tau_ceti_cognium.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.port02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.port03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.trade_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.trade_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.industrial_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.industrial_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.industrial_hub03.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.industrial_hub04.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.industrial_hub05.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.industrial_hub06.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.military_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.science_hub01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.science_hub02.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.003.wolf359_citadel.quarantine01.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.011.gj667_ubuntu_node.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.023.gj892_kern.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.057.hd10360_relay.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.002.barnard_post.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.053.gj674_frontier.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.025.gj357_frontier.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.041.hd104067_frontier.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.luna_orbit.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.mars_phobos.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.mars_ares.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.mars_deimos.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.mercury_orbit.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.venus.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.callisto.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.ganymede.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.jupiter_gas.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.europa.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.jupiter_fleet.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.titan.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.saturn_gas.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.enceladus.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.titania.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
+    },
+    {
+      "module_id": "site.000.sol.triton.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
     }
   ]
 }

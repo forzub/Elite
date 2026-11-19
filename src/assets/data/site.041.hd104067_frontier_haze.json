@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.041.hd104067_frontier",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1743.3,
+    -6174.0,
+    46.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1643.3,
+    -6174.0,
+    46.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1543.3,
+    -6174.0,
+    46.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1316.7,
+    -6226.0,
+    26.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

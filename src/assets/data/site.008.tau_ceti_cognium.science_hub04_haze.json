@@ -1,0 +1,6 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.008.tau_ceti_cognium.science_hub04",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": []
+}

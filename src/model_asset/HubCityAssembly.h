@@ -23,6 +23,12 @@ std::string hubCityLayoutPath(const std::string& hubId);
 // process (thread-safe); one city of ~13 000 nodes assembles in well under a second.
 bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, ModelAsset& out, std::string* error = nullptr);
 
+// the city's nodes and collision volumes only (no render geometry, no proxies, not validated as a render asset): what
+// the server's hit volumes need - a few MB instead of the ~50 MB render asset (2026-11-19: ~290 colony cities spawned
+// at the server start held 14 GB with the full asset cached per city)
+bool assembleHubCityCollision(const std::string& hubId, const std::string& moduleRoot, ModelAsset& out,
+                              std::string* error = nullptr);
+
 // the process-wide city asset of `hubId` (assembled once, shared by the server's hit volumes and the client's
 // renderer); nullptr when it cannot be assembled
 const ModelAsset* hubCityAsset(const std::string& hubId);

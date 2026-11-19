@@ -1,0 +1,133 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.003.wolf359_citadel.industrial_hub04",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1320.0,
+    -6226.0,
+    -1063.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -940.0,
+    -6174.0,
+    -1113.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -940.0,
+    -6174.0,
+    -1013.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -940.0,
+    -6174.0,
+    -913.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1040.0,
+    -6226.0,
+    987.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1300.0,
+    -6174.0,
+    1153.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1200.0,
+    -6174.0,
+    1153.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1100.0,
+    -6174.0,
+    1153.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    0.0,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -100.0,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -200.0,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -100.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    0.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    100.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.004.lalande_mecca.port01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1319.2,
+    -5818.0,
+    987.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1000.0,
+    -5870.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1100.0,
+    -5870.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1200.0,
+    -5870.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

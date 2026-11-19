@@ -1,0 +1,6 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.004.lalande_hellas.industrial_hub05",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": []
+}

@@ -1,0 +1,79 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.callisto",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1696.7,
+    -6174.0,
+    -3.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1696.7,
+    -6174.0,
+    -103.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1696.7,
+    -6174.0,
+    -203.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1610.0,
+    -6226.0,
+    233.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -390.0,
+    -6226.0,
+    860.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    639.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    739.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    839.0,
+    -6174.0,
+    957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

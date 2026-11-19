@@ -1,0 +1,106 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.060.proxima_outpost.port01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -303.3,
+    -6174.0,
+    1103.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -303.3,
+    -6174.0,
+    1203.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -303.3,
+    -6174.0,
+    1303.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1381.0,
+    -6226.0,
+    -1313.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1361.0,
+    -6174.0,
+    -1047.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1461.0,
+    -6174.0,
+    -1047.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1561.0,
+    -6174.0,
+    -1047.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1750.0,
+    -6174.0,
+    -53.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1650.0,
+    -6174.0,
+    -53.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1550.0,
+    -6174.0,
+    -53.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1653.5,
+    -6226.0,
+    113.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

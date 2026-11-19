@@ -1,0 +1,52 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.saturn_gas",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1543.3,
+    -6174.0,
+    143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1643.3,
+    -6174.0,
+    143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1743.3,
+    -6174.0,
+    143.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1416.7,
+    -6226.0,
+    163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1448.5,
+    -6226.0,
+    885.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

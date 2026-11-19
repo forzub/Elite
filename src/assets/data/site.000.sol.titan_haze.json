@@ -1,0 +1,61 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.titan",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1350.0,
+    -6174.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1450.0,
+    -6174.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1550.0,
+    -6174.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -550.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -450.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -350.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

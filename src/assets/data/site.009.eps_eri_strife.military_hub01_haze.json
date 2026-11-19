@@ -1,0 +1,6 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.009.eps_eri_strife.military_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": []
+}

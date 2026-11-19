@@ -12,7 +12,8 @@ For each site of the world catalog (src/assets/data/galaxy_details/world_sites/s
   3. the city attached 6 km under the station (tools/models/hub_belt_world.py --attach): spinning bodies, docks, lanes,
      the Hub-map plan, the daily schedule, the haze;
   4. its frozen city layout (tools/models/hub_city_layout.py) - the game assembles the city in memory from it.
-Re-running keeps an existing profile and world entry (a hub stays what it was); --refresh rebuilds the profile.
+Re-running keeps an existing profile and world entry (a hub stays what it was); --refresh rebuilds the profile;
+--no-layout skips step 4 (tools/models/hub_colonies_batch.py runs the layouts in parallel).
 """
 import hashlib
 import json
@@ -27,6 +28,7 @@ SITES = os.path.join(ROOT, "src", "assets", "data", "galaxy_details", "world_sit
 WORLD = os.path.join(ROOT, "src", "assets", "data", "initial_world_state.json")
 PROFILES = os.path.join(HERE, "hub_profiles.json")
 CITY_OFFSET = [0, -6000, 0]
+SPIRE_ONE_IN = 5                # one hub in five (by its id) is a spire cluster
 PEOPLE_PER_BLOCK = 22000.0      # the Sol cities: ~1.2-1.6 M people on ~56-99 blocks (hub_plan.population_estimate)
 
 
@@ -39,6 +41,8 @@ def profile_of(site):
     sid = site["id"]
     blocks = max(12, min(110, round((site.get("population") or 0) / PEOPLE_PER_BLOCK)))
     shape = ("blob", "disc", "long")[_h(sid, "shape") % 3]
+    if _h(sid, "spire") % SPIRE_ONE_IN == 0:
+        shape = "spire"          # a spire cluster (units/hub_spire.py): its own draw - the hubs before it keep theirs
     if shape == "long":
         m = max(3, round((blocks / 2.0) ** 0.5))
         n = max(m + 2, round(blocks / m))
@@ -94,23 +98,25 @@ def main():
             raise SystemExit(f"{sid}: no such world site")
         if "orbit" not in (site.get("placement") or {}):
             raise SystemExit(f"{sid}: not an orbital site (surface settlements are a later stage)")
-        if site.get("system_id") in (None, 0):
-            raise SystemExit(f"{sid}: Sol's hubs have their own profiles")
+        if site.get("system_id") is None or site.get("runtime_binding"):
+            raise SystemExit(f"{sid}: bound to an authored hub already (the Sol cities have their own profiles)")
         prof = json.load(open(PROFILES, encoding="utf-8"))
         if refresh or sid not in prof["hubs"]:
             prof["hubs"][sid] = profile_of(site)
-            with open(PROFILES, "w", encoding="utf-8", newline="\n") as f:
+            with open(PROFILES + ".tmp", "w", encoding="utf-8", newline="\n") as f:   # atomic: parallel layouts read it
                 f.write("{\n")
                 f.write(f' "schema": {json.dumps(prof["schema"])},\n "note": {json.dumps(prof["note"], ensure_ascii=False)},\n "hubs": {{\n')
                 f.write(",\n".join(f"  {json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}" for k, v in prof["hubs"].items()))
                 f.write("\n }\n}\n")
+            os.replace(PROFILES + ".tmp", PROFILES)
         world = json.load(open(WORLD, encoding="utf-8"))
         if not any(h["id"] == sid for h in world["orbital_hubs"]):
             world["orbital_hubs"].append(world_entry(site))
             open(WORLD, "w", encoding="utf-8", newline="\n").write(json.dumps(world, ensure_ascii=False, indent=2) + "\n")
         out = run([os.path.join(HERE, "hub_belt_world.py"), "--hub", sid, "--attach", "--city-offset", ",".join(map(str, CITY_OFFSET))])
         print(out.strip().splitlines()[-1] if out.strip() else sid)
-        print(run([os.path.join(HERE, "hub_city_layout.py"), sid]).strip())
+        if "--no-layout" not in args:                 # a batch (hub_colonies_batch.py) runs the layouts aside
+            print(run([os.path.join(HERE, "hub_city_layout.py"), sid]).strip())
         p = prof["hubs"][sid]
         print(f"  {sid}: «{site.get('name')}» system {site['system_id']} pop {site.get('population')} -> {p['size']} {p['shape']} "
               f"style '{p['style']}' under {p['under']} port {p['port']}")

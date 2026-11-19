@@ -1,0 +1,61 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "plant.008.hyperion.museum_yard",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1750.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1650.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1550.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1403.3,
+    -6174.0,
+    161.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1403.3,
+    -6174.0,
+    61.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1403.3,
+    -6174.0,
+    -38.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

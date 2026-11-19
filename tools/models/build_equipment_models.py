@@ -134,7 +134,7 @@ def build(only=None):
     # model folder, position, rotation_deg, role, parent)]}}, e.g. a repair drone + std.drone.toolbox on its saddle):
     # the view meshes are the models placed, the package takes the referenced modules' own meshes
     for sid, spec in SETS.items():
-        if only and only not in sid and not any(only in n[1] for n in spec["nodes"]):
+        if only and only not in sid and (getattr(spec, "lazy", False) or not any(only in n[1] for n in spec["nodes"])):
             continue
         # a big assembly (a hub district: hundreds of nodes) views only some LOD levels, from the modules' coarse levels
         # (spec "view_lods": {set LOD: module lod}); every node's placed copy merges into one part per module folder

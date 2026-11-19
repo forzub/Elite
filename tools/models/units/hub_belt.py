@@ -942,7 +942,7 @@ def _module_obb():
     builders.update({k: hd.ASSETS[k] for k in ("hubk_hab_a", "hubk_hab_b", "hubk_hab_c")})
     # the service modules and the national style kits (cards of the hub maps too)
     import importlib
-    for unit in ("hub_services", "hub_style_east", "hub_style_west", "hub_landmarks"):
+    for unit in ("hub_services", "hub_style_east", "hub_style_west", "hub_landmarks", "hub_spire"):
         try:
             builders.update(getattr(importlib.import_module(f"units.{unit}"), "ASSETS", {}))
         except ImportError:

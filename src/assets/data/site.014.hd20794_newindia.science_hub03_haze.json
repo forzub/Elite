@@ -1,0 +1,97 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.014.hd20794_newindia.science_hub03",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    1200.0,
+    -6174.0,
+    -1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1100.0,
+    -6174.0,
+    -1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1000.0,
+    -6174.0,
+    -1183.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1089.0,
+    -6174.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1189.0,
+    -6174.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1289.0,
+    -6174.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2047.7,
+    -6226.0,
+    -213.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2011.0,
+    -6174.0,
+    53.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2111.0,
+    -6174.0,
+    53.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2211.0,
+    -6174.0,
+    53.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

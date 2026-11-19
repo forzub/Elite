@@ -1,0 +1,70 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.mercury_orbit",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    1200.0,
+    -6174.0,
+    1053.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1100.0,
+    -6174.0,
+    1053.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1000.0,
+    -6174.0,
+    1053.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2133.3,
+    -6174.0,
+    897.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2133.3,
+    -6174.0,
+    997.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2133.3,
+    -6174.0,
+    1097.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2301.5,
+    -6226.0,
+    1333.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

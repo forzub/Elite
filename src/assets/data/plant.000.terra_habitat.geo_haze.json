@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "plant.000.terra_habitat.geo",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1561.0,
+    -6174.0,
+    -163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1461.0,
+    -6174.0,
+    -163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1361.0,
+    -6174.0,
+    -163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1413.2,
+    -6226.0,
+    223.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

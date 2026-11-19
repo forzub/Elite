@@ -1,0 +1,79 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.016.hd69830_verde.military_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1650.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1550.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1450.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1413.2,
+    -6226.0,
+    -103.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1550.0,
+    -6174.0,
+    163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1650.0,
+    -6174.0,
+    163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1750.0,
+    -6174.0,
+    163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1653.5,
+    -6226.0,
+    -259.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

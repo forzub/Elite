@@ -310,10 +310,14 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
         {
             const std::string folder = type == ObjectType::HubBeltCity ? "hub_" + hub.id : dock.type;
             std::vector<game::damage::HitVolume> volumes;
-            // a city with a frozen layout: the same in-memory assembly the client renders (HubCityAssembly.h)
+            // a city with a frozen layout: its collision volumes assembled aside (HubCityAssembly.h) - not the
+            // process-wide render asset: the server spawns every system's colony cities at start (~290, 2026-11-19),
+            // caching their render assets here held 14 GB; the client assembles the cities it draws on demand
+            elite::model_asset::ModelAsset cityCollision;
             const elite::model_asset::ModelAsset* city =
-                type == ObjectType::HubBeltCity && std::filesystem::exists(elite::model_asset::hubCityLayoutPath(hub.id))
-                    ? elite::model_asset::hubCityAsset(hub.id)
+                type == ObjectType::HubBeltCity && std::filesystem::exists(elite::model_asset::hubCityLayoutPath(hub.id)) &&
+                        elite::model_asset::assembleHubCityCollision(hub.id, "assets/compiled/hub_modules", cityCollision)
+                    ? &cityCollision
                     : nullptr;
             if (packageHitVolumes(type, city ? "layout:" + hub.id : "assets/compiled/hub_modules/" + folder + "/" + folder + ".elmodel",
                                   volumes, city))

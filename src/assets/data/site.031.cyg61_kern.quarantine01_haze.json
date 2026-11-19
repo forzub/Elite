@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.031.cyg61_kern.quarantine01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1305.0,
+    -6226.0,
+    -224.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1377.7,
+    -6174.0,
+    1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1477.7,
+    -6174.0,
+    1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1577.7,
+    -6174.0,
+    1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

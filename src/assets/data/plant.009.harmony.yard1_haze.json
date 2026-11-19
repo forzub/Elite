@@ -1,0 +1,70 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "plant.009.harmony.yard1",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    639.0,
+    -6174.0,
+    -1233.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    739.0,
+    -6174.0,
+    -1233.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    839.0,
+    -6174.0,
+    -1233.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    753.5,
+    -6226.0,
+    -987.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    650.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    750.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    850.0,
+    -6174.0,
+    1146.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

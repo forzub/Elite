@@ -447,6 +447,8 @@ def _generate_map(hub_id):
     noise = {(i, j): rng.uniform(-0.28, 0.22) for i in range(N) for j in range(M)}
     if shape == "disc":                                    # a round outline: almost no noise on the rim
         noise = {k: v * 0.2 for k, v in noise.items()}
+    elif shape == "spire":                                 # a spire cluster (units/hub_spire.py): a compact round core
+        noise = {k: v * 0.35 for k, v in noise.items()}
     elif shape == "long":                                  # a long city: the ends rounded, the sides straight
         noise = {k: v * 0.5 for k, v in noise.items()}
     rr = {(i, j): math.hypot((i - ci) / (N / 2), (j - cj) / (M / 2)) for i in range(N) for j in range(M)}
@@ -480,7 +482,7 @@ def _generate_map(hub_id):
             kind[k] = rng.choice(["port"] * 3 + ["logistics"])
         elif k in rim and r > 0.5:
             kind[k] = rng.choice(["industry"] * 3 + ["storage"] * 3 + ["refuel", "repair", "rig", "logistics"])
-        elif r < 0.4:
+        elif r < (0.62 if shape == "spire" else 0.4):     # a spire cluster: a wider downtown (its towers)
             kind[k] = "downtown"
         elif r < 0.66:
             kind[k] = rng.choice(["residential"] * 6 + ["hotel", "hab_rot"])
@@ -549,6 +551,10 @@ def _generate_map(hub_id):
     if prof.get("landmarks"):
         from units.hub_landmark_place import add_landmarks
         mp = add_landmarks(mp, hub_id, prof.get("style", ""))
+    if shape == "spire":
+        # the spire cluster pass (units/hub_spire.py): spires on the centre / downtown blocks, causeways, the berth
+        from units.hub_spire import add_spires
+        mp = add_spires(mp, hub_id)
     return mp
 
 
@@ -705,7 +711,8 @@ def layout_from_map(mp):
             y = LAYERS[layer]
             for card in cell.get(layer, []):
                 folder, rot = card["module"], _card_rot(card.get("yaw", 0), down)
-                wp = _add(c, (card["x"], y, card["z"]))
+                # a card's optional "y": its height over (under) the layer's plane - the spire causeways
+                wp = _add(c, (card["x"], y + (-1.0 if down else 1.0) * card.get("y", 0.0), card["z"]))
                 add(f"{g}_m{mi}", folder, wp, rot, "module", g)
                 mi += 1
                 if folder in ("hubb_works", "hubv_refinery"):
@@ -816,6 +823,11 @@ def layout_from_map(mp):
             R = pads.euler(rot)
             red_zones.append({"id": f"red.{nid}", "center": tuple(round(v, 1) for v in _add(pos, apply(R, (0.0, 0.0, L / 2)))),
                               "half_extents": (20.0 + bw + 10.0, 70.0, L / 2 + 20.0), "rotation_deg": rot})
+        if folder == "hubsp_capital_berth":                     # the moored capital ship and its gantry arms
+            from units.hub_spire import berth_red_zone
+            cz_, he_ = berth_red_zone(pos, pads.euler(rot))
+            red_zones.append({"id": f"red.{nid}", "center": tuple(round(v, 1) for v in cz_), "half_extents": he_,
+                              "rotation_deg": rot})
     for rz in mp.get("red_zones") or []:                        # drawn on the map
         red_zones.append({"id": f"red.map.{rz['id']}", "center": (rz["x"], 0.0, rz["z"]),
                           "half_extents": (rz["w"] / 2, rz.get("h", 600.0) / 2, rz["d"] / 2), "rotation_deg": (0.0, 0.0, 0.0)})
@@ -856,18 +868,43 @@ PLANE_HUBS = ["plane_demo", "plane_ruin"] + sorted(f[:-5] for f in (os.listdir(M
 if os.path.exists(PROFILES_PATH):
     import json as _json
     PLANE_HUBS += sorted(h for h in _json.load(open(PROFILES_PATH, encoding="utf-8")).get("hubs", {}) if h not in PLANE_HUBS)
+class _LazyHubSet:
+    """a planar hub's set spec, computed on first access: importing this unit must not lay out every city (hundreds
+    of hubs since the colony batch - an eager loop made each import take minutes); build_equipment_models skips a lazy
+    set under --only unless the set id itself matches"""
+    lazy = True
+
+    def __init__(self, hub_id):
+        self.hub_id, self._spec = hub_id, None
+
+    def _load(self):
+        if self._spec is None:
+            from units.hub_belt import belt_proxies as _bp
+            _L = plane_layout(self.hub_id)
+            hid = self.hub_id
+            self._spec = {
+                "title": f"Плоский парящий город «{hid}» (генератор)",
+                "description": f"Сгенерировано из id «{hid}»: {len(_L['districts'])} кварталов, {_L['links']} улиц, "
+                               f"{len(_L['nodes'])} неподвижных узлов + {len(_L['spinning'])} вращающихся тел (отдельные объекты).",
+                "nodes": _L["nodes"],
+                "view_mode": "boxes",
+                "modules": _L["module_of"],
+                "proxies": _bp(_L),
+                "proxy_error_m": 12.0,
+                "view_lods": {0: 1, 1: 2, 2: 2}}
+        return self._spec
+
+    def __getitem__(self, k):
+        return self._load()[k]
+
+    def get(self, k, default=None):
+        return self._load().get(k, default)
+
+    def __contains__(self, k):
+        return k in self._load()
+
+
 SETS = {}
 for _hid in PLANE_HUBS:
-    from units.hub_belt import belt_proxies as _bp
-    _L = plane_layout(_hid)
     ROOTS[f"hub_{_hid}"] = "hub"
-    SETS[f"hub_{_hid}"] = {
-        "title": f"Плоский парящий город «{_hid}» (генератор)",
-        "description": f"Сгенерировано из id «{_hid}»: {len(_L['districts'])} кварталов, {_L['links']} улиц, "
-                       f"{len(_L['nodes'])} неподвижных узлов + {len(_L['spinning'])} вращающихся тел (отдельные объекты).",
-        "nodes": _L["nodes"],
-        "view_mode": "boxes",
-        "modules": _L["module_of"],
-        "proxies": _bp(_L),
-        "proxy_error_m": 12.0,
-        "view_lods": {0: 1, 1: 2, 2: 2}}
+    SETS[f"hub_{_hid}"] = _LazyHubSet(_hid)

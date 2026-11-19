@@ -1,0 +1,70 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.jupiter_gas",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -461.0,
+    -6174.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -361.0,
+    -6174.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -261.0,
+    -6174.0,
+    1163.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    570.0,
+    -6174.0,
+    1061.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    570.0,
+    -6174.0,
+    1161.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    570.0,
+    -6174.0,
+    1261.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    750.0,
+    -6226.0,
+    1111.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

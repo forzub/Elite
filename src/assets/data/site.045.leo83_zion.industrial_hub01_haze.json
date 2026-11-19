@@ -1,0 +1,61 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.045.leo83_zion.industrial_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    2126.7,
+    -5818.0,
+    -1346.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2393.3,
+    -5818.0,
+    -1346.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2300.0,
+    -5870.0,
+    -1080.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2200.0,
+    -5870.0,
+    -1080.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2100.0,
+    -5870.0,
+    -1080.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2336.8,
+    -6226.0,
+    -1204.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

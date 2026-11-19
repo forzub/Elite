@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.010.gj581_europa.military_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    180.0,
+    -6226.0,
+    877.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    11.0,
+    -6174.0,
+    1263.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -89.0,
+    -6174.0,
+    1263.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -189.0,
+    -6174.0,
+    1263.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

@@ -1,0 +1,61 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.012.gj832_gaia_zone.industrial_hub01",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1568.5,
+    -6226.0,
+    -1313.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1361.0,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1461.0,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1561.0,
+    -6174.0,
+    -957.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1743.3,
+    -6226.0,
+    -214.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1476.7,
+    -6226.0,
+    -214.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

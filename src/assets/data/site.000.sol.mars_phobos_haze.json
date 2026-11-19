@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.mars_phobos",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -450.0,
+    -6174.0,
+    -1603.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -550.0,
+    -6174.0,
+    -1603.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -650.0,
+    -6174.0,
+    -1603.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -619.0,
+    -6226.0,
+    -1437.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

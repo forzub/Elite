@@ -1,0 +1,34 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.000.sol.jupiter_fleet",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    481.0,
+    -6226.0,
+    854.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    710.0,
+    -6226.0,
+    1050.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    481.0,
+    -6226.0,
+    1246.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

@@ -224,7 +224,9 @@ std::string hubCityLayoutPath(const std::string& hubId)
     return "assets/data/navigation/hub_cities/" + hubId + ".json";
 }
 
-bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, ModelAsset& out, std::string* error)
+namespace
+{
+bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsset& out, std::string* error, bool collisionOnly)
 {
     const auto t0 = std::chrono::steady_clock::now();
     const std::string path = hubCityLayoutPath(hubId);
@@ -298,7 +300,8 @@ bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, Mo
     out.physicalSize.sourceToMeters = 1.0f;
     out.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;
 
-    // the component LODs: one geometry per module (shared by all its nodes)
+    // the component LODs: one geometry per module (shared by all its nodes); a collision-only assembly keeps the
+    // LOD shells (the nodes' bounds) without the geometry
     for (int l = 0; l < CityLods; ++l)
     {
         RenderLod lod;
@@ -306,7 +309,7 @@ bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, Mo
         lod.sourceKind = "generated";
         lod.role = RenderLodRole::Component;
         lod.relativeGeometricError = l == 0 ? 0.0f : 0.004f * static_cast<float>(l * l);
-        for (std::size_t k = 0; k < kits.size(); ++k)
+        for (std::size_t k = 0; k < kits.size() && !collisionOnly; ++k)
         {
             RenderGeometryDefinition g;
             g.id = kits[k]->folder + ".lod" + std::to_string(l);
@@ -351,6 +354,8 @@ bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, Mo
         const ModuleKit& kit = *kits[mi];
         for (int l = 0; l < CityLods; ++l)
         {
+            if (collisionOnly)
+                continue;
             RenderNode rn;
             rn.id = id;
             rn.geometryIndex = static_cast<std::int32_t>(mi);
@@ -372,8 +377,11 @@ bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, Mo
                 lod.maxBounds = glm::max(lod.maxBounds, p);
             }
         }
-        out.minBounds = glm::min(out.minBounds, out.renderLods[0].minBounds);
-        out.maxBounds = glm::max(out.maxBounds, out.renderLods[0].maxBounds);
+        if (!collisionOnly)
+        {
+            out.minBounds = glm::min(out.minBounds, out.renderLods[0].minBounds);
+            out.maxBounds = glm::max(out.maxBounds, out.renderLods[0].maxBounds);
+        }
         // collision: the module's volumes placed by the node; id "<node>.<folder>.<k>" (city damage reads the folder)
         int k = 0;
         for (const auto& c : kit.collision)
@@ -390,7 +398,7 @@ bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, Mo
         }
         // the far proxy of the node's group: its OBB as a box (a girder as a thinner bar, as the generator did)
         glm::vec3 lo = boxLo[mi], hi = boxHi[mi];
-        if (hi.x > lo.x)
+        if (hi.x > lo.x && !collisionOnly)
         {
             if (kit.folder == "hubb_girder")
             {
@@ -406,6 +414,13 @@ bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, Mo
         }
     }
 
+    if (collisionOnly)
+    {
+        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        std::cerr << "[HubCityAssembly] " << hubId << ": collision only, " << out.nodes.size() << " nodes, "
+                  << out.collisionVolumes.size() << " collision, " << ms << " ms\n";
+        return true;
+    }
     // the module-proxy LOD: one mesh per group in asset space, bound to the group's first node
     RenderLod proxyLod;
     proxyLod.level = CityLods;
@@ -456,6 +471,17 @@ bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, Mo
               << out.collisionVolumes.size() << " collision, " << out.renderLods.back().nodes.size() << " group proxies, "
               << ms << " ms\n";
     return true;
+}
+} // namespace
+
+bool assembleHubCity(const std::string& hubId, const std::string& moduleRoot, ModelAsset& out, std::string* error)
+{
+    return assemble(hubId, moduleRoot, out, error, false);
+}
+
+bool assembleHubCityCollision(const std::string& hubId, const std::string& moduleRoot, ModelAsset& out, std::string* error)
+{
+    return assemble(hubId, moduleRoot, out, error, true);
 }
 
 const ModelAsset* hubCityAsset(const std::string& hubId)

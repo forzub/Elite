@@ -1,0 +1,43 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.009.eps_eri_harmony.industrial_hub02",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    1722.3,
+    -6174.0,
+    1017.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1622.3,
+    -6174.0,
+    1017.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1522.3,
+    -6174.0,
+    1017.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1778.5,
+    -6226.0,
+    1203.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

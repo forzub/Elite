@@ -1,0 +1,70 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.008.tau_ceti_cognium.industrial_hub06",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -1719.0,
+    -6226.0,
+    -213.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1539.0,
+    -6174.0,
+    133.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1639.0,
+    -6174.0,
+    133.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -1739.0,
+    -6174.0,
+    133.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1550.0,
+    -6174.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1450.0,
+    -6174.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1350.0,
+    -6174.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

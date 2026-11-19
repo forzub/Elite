@@ -1,0 +1,70 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.057.hd10360_relay",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -2140.0,
+    -6226.0,
+    -1313.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2400.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2300.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -2200.0,
+    -6174.0,
+    -1037.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -27.7,
+    -6174.0,
+    1060.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    72.3,
+    -6174.0,
+    1060.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    172.3,
+    -6174.0,
+    1060.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

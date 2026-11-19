@@ -1,0 +1,169 @@
+{
+ "schema": "elite.hub_haze.v1",
+ "hub": "site.004.lalande_mecca.science_hub02",
+ "frame": "hub local metres (the dock modules' frame)",
+ "sources": [
+  {
+   "position": [
+    -953.3,
+    -6174.0,
+    -1303.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -953.3,
+    -6174.0,
+    -1203.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -953.3,
+    -6174.0,
+    -1103.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    224.2,
+    -6226.0,
+    875.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    -219.2,
+    -6226.0,
+    1111.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1000.0,
+    -5870.0,
+    1243.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1100.0,
+    -5870.0,
+    1243.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1200.0,
+    -5870.0,
+    1243.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1100.0,
+    -6174.0,
+    1243.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    1000.0,
+    -6174.0,
+    1243.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    900.0,
+    -6174.0,
+    1243.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2100.0,
+    -5870.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2200.0,
+    -5870.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2300.0,
+    -5870.0,
+    -63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2000.0,
+    -6174.0,
+    63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2100.0,
+    -6174.0,
+    63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2200.0,
+    -6174.0,
+    63.0
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  },
+  {
+   "position": [
+    2445.0,
+    -6226.0,
+    875.5
+   ],
+   "radius_m": 300.0,
+   "density": 1.0
+  }
+ ]
+}

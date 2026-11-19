@@ -167,6 +167,11 @@ inline SettlementMesh buildSettlementMesh(const SettlementLayout& layout, const 
     // emissive (albedo - 2 shown unlit)
     const glm::vec3 padLight(2.0f + 0.55f, 2.0f + 1.0f, 2.0f + 0.60f), warning(2.0f + 1.0f, 2.0f + 0.12f, 2.0f + 0.08f),
         portalLight(2.0f + 1.0f, 2.0f + 0.85f, 2.0f + 0.55f);
+    // construction
+    const glm::vec3 freshConcrete(0.55f, 0.55f, 0.53f), primer(0.42f, 0.17f, 0.10f), container(0.20f, 0.33f, 0.45f),
+        facade(0.48f, 0.50f, 0.53f), net(0.85f, 0.38f, 0.06f), scaffold(0.55f, 0.52f, 0.40f), craneYellow(0.85f, 0.66f, 0.08f),
+        hutGrey(0.46f, 0.48f, 0.45f), hutRust(0.47f, 0.31f, 0.20f), grating(0.32f, 0.33f, 0.34f), windowDark(0.05f, 0.06f, 0.07f);
+    const glm::vec3 flood(2.0f + 0.9f, 2.0f + 0.95f, 2.0f + 1.0f), windowLit(2.0f + 1.0f, 2.0f + 0.74f, 2.0f + 0.42f);
     for (const auto& s : layout.structures)
     {
         const glm::dvec3 up = glm::normalize(s.bodyDirection);
@@ -243,6 +248,135 @@ inline SettlementMesh buildSettlementMesh(const SettlementLayout& layout, const 
             b.arch(f, s.radiusM * 0.5, s.radiusM * 1.2, 16, metal, dark);
             for (const double x : {-s.radiusM * 0.42, s.radiusM * 0.42})
                 b.box(f, {x, 0.6, s.radiusM * 0.6 + 0.4}, {0.4, 0.4, 0.2}, portalLight);
+            break;
+        }
+        // construction (docs/HUB_CONSTRUCTION.md): a stopped site keeps its shape, its work lights are off
+        case StructureKind::BuildFrame:
+        {
+            const double w = s.radiusM * 0.72, H = s.heightM;
+            const double hb = H * (s.stage <= 1 ? 0.0 : s.stage == 2 ? 0.35 : s.stage == 3 ? 0.7 : s.stage == 4 ? 0.97 : 1.0);
+            b.box(f, {0.0, 0.0, 0.0}, {w * 1.08, 0.9, w * 1.08}, freshConcrete);                  // the raft
+            if (s.stage <= 1)
+            {
+                for (int i = -1; i <= 1; ++i)                                                     // starter stubs
+                    for (int k = -1; k <= 1; ++k)
+                        b.box(f, {i * w * 0.85, 2.4, k * w * 0.85}, {0.5, 1.6, 0.5}, primer);
+                b.box(f, {w * 1.35, 1.2, 0.0}, {2.0, 1.2, w * 0.35}, primer);                    // a beam stack
+                b.box(f, {-w * 1.35, 1.5, w * 0.3}, {3.0, 1.5, 1.3}, container);                   // a container
+            }
+            else
+            {
+                const double floorH = 4.0 * std::max(1.0, std::round(H / 40.0));               // a deck every few storeys
+                const double clad = s.stage == 3 ? hb * 0.5 : s.stage == 4 ? hb * 0.9 : s.stage >= 5 ? hb : 0.0;
+                if (s.stage < 5)
+                {
+                    for (int i = -1; i <= 1; ++i)                                                 // the column grid
+                        for (int k = -1; k <= 1; ++k)
+                            b.box(f, {i * w * 0.85, hb * 0.5, k * w * 0.85}, {0.45, hb * 0.5, 0.45}, primer);
+                    b.box(f, {0.0, hb * 0.54, 0.0}, {w * 0.2, hb * 0.54, w * 0.2}, freshConcrete);   // the core runs ahead
+                    for (double y = floorH; y <= hb + 0.1; y += floorH)                          // decks + edge beams
+                    {
+                        b.box(f, {0.0, y, 0.0}, {w * 0.9, 0.18, w * 0.9}, y < clad + floorH ? freshConcrete : primer);
+                        if (y > clad && s.stage >= 3)
+                            b.box(f, {0.0, y + 0.6, w * 0.9}, {w * 0.9, 0.6, 0.05}, net);          // edge protection
+                    }
+                }
+                if (clad > 0.0)
+                {
+                    // the cladding: four faces up to `clad`; nearly done: the +z face still open near the top
+                    const double cz = s.stage == 4 ? clad * 0.75 : clad;
+                    b.box(f, {0.0, clad * 0.5, -w * 0.92}, {w * 0.92, clad * 0.5, 0.3}, facade);
+                    b.box(f, {0.0, cz * 0.5, w * 0.92}, {w * 0.92, cz * 0.5, 0.3}, facade);
+                    b.box(f, {-w * 0.92, clad * 0.5, 0.0}, {0.3, clad * 0.5, w * 0.92}, facade);
+                    b.box(f, {w * 0.92, clad * 0.5, 0.0}, {0.3, clad * 0.5, w * 0.92}, facade);
+                    const glm::vec3 win = s.stage >= 5 && !s.stopped ? windowLit : windowDark;
+                    for (double y = 5.0; y < cz - 2.0; y += 8.0)                                 // window bands
+                        for (const double sz : {-1.0, 1.0})
+                            b.box(f, {0.0, y, sz * (w * 0.92 + 0.32)}, {w * 0.7, 0.9, 0.05}, win);
+                    if (s.stage >= 5)
+                        b.box(f, {0.0, hb + 1.2, 0.0}, {w * 0.6, 1.2, w * 0.6}, metal);           // roof plant
+                }
+                if (s.stage == 4)                                                                  // scaffold on the open face
+                    b.box(f, {0.0, hb * 0.5, w * 0.92 + 1.6}, {w * 0.8, hb * 0.5, 0.9}, scaffold);
+            }
+            if (!s.stopped && s.stage < 5)
+                for (const double x : {-w * 1.1, w * 1.1})                                       // work floodlights
+                    b.box(f, {x, 6.0, -w * 1.1}, {0.6, 0.4, 0.6}, flood);
+            break;
+        }
+        case StructureKind::Crane:
+        {
+            const double H = s.heightM;
+            b.box(f, {0.0, 0.8, 0.0}, {3.2, 0.8, 3.2}, freshConcrete);                          // the ballast base
+            for (const double x : {-1.1, 1.1})
+                for (const double z : {-1.1, 1.1})
+                    b.box(f, {x, H * 0.5, z}, {0.18, H * 0.5, 0.18}, craneYellow);              // the mast chords
+            for (double y = 4.0; y < H; y += 5.0)                                                  // lattice rings
+            {
+                b.box(f, {0.0, y, -1.1}, {1.1, 0.08, 0.08}, craneYellow);
+                b.box(f, {0.0, y, 1.1}, {1.1, 0.08, 0.08}, craneYellow);
+                b.box(f, {-1.1, y, 0.0}, {0.08, 0.08, 1.1}, craneYellow);
+                b.box(f, {1.1, y, 0.0}, {0.08, 0.08, 1.1}, craneYellow);
+            }
+            // the slewing part: f.fwd is the jib's bearing
+            const double jib = std::max(30.0, H * 0.55);
+            b.box(f, {0.0, H + 0.8, 0.0}, {1.5, 0.8, 1.5}, craneYellow);
+            b.box(f, {0.0, H + 1.6 + 1.0, -1.8}, {0.9, 1.0, 1.0}, metal);                          // the cab
+            b.box(f, {0.0, H + 1.6 + 3.5, 0.0}, {0.35, 3.5, 0.35}, craneYellow);                  // the tower head
+            b.box(f, {0.0, H + 2.2, jib * 0.5}, {0.6, 0.6, jib * 0.5}, craneYellow);              // the jib
+            b.box(f, {0.0, H + 2.2, -jib * 0.15}, {0.6, 0.5, jib * 0.15}, craneYellow);           // the counter-jib
+            b.box(f, {0.0, H + 1.2, -jib * 0.27}, {1.2, 1.2, 1.0}, freshConcrete);               // counterweight
+            const double trolley = jib * (0.4 + 0.4 * std::fmod(s.headingRad * 3.7, 1.0));
+            const double hookY = H * (s.stopped ? 0.92 : 0.45);
+            b.box(f, {0.0, (H + 1.6 + hookY) * 0.5, trolley}, {0.05, (H + 1.6 - hookY) * 0.5, 0.05}, metal);   // the rope
+            b.box(f, {0.0, hookY, trolley}, {0.5, 0.6, 0.5}, craneYellow);                        // the hook block
+            if (!s.stopped)
+                b.box(f, {0.0, hookY - 1.6, trolley}, {3.0, 0.6, 0.6}, primer);                    // a beam on the hook
+            b.box(f, {0.0, H + 8.8, 0.0}, {0.35, 0.35, 0.35}, warning);                            // aviation lights
+            b.box(f, {0.0, H + 3.0, jib}, {0.35, 0.35, 0.35}, warning);
+            break;
+        }
+        case StructureKind::Barracks:
+        {
+            // two levels of 12 container huts (6 x 2.6 x 2.9 m), corrugated, small windows, an open gallery and stairs
+            const double L = s.radiusM, unit = L / 6.0;
+            for (int lv = 0; lv < 2; ++lv)
+                for (int u = 0; u < 12; ++u)
+                {
+                    const double z = -L + unit * (u + 0.5);
+                    const glm::vec3 col = ((u * 7 + lv * 3 + s.number) % 3 == 0) ? hutRust : hutGrey;
+                    b.box(f, {0.0, 1.45 + lv * 2.95, z}, {3.0, 1.42, unit * 0.48}, col);
+                    const bool lit = !s.stopped && ((u * 5 + lv + s.number) % 3) != 0;
+                    b.box(f, {3.02, 1.7 + lv * 2.95, z}, {0.04, 0.45, 0.55}, lit ? windowLit : windowDark);
+                    if (lv == 1 && u % 3 == 0)
+                        b.box(f, {0.0, 6.2, z}, {0.8, 0.35, 0.6}, metal);                         // roof AC boxes
+                }
+            b.box(f, {3.9, 2.9, 0.0}, {0.9, 0.08, L}, metal);                                     // the gallery
+            b.box(f, {4.75, 3.45, 0.0}, {0.04, 0.5, L}, metal);                                    // its rail
+            for (int k = 0; k < 4; ++k)                                                            // the stair at the end
+                b.box(f, {3.9, 0.36 + k * 0.72, L + 1.0 + k * 0.9}, {0.6, 0.36, 0.45}, metal);
+            if (!s.stopped)
+                b.box(f, {4.75, 4.2, -L}, {0.25, 0.25, 0.25}, flood);
+            break;
+        }
+        case StructureKind::TempPad:
+        {
+            const double r = s.radiusM, h = s.heightM;
+            for (const double x : {-r * 0.85, r * 0.85})                                           // truss legs
+                for (const double z : {-r * 0.6, r * 0.6})
+                    b.box(f, {x, h * 0.5, z}, {0.5, h * 0.5, 0.5}, primer);
+            b.box(f, {0.0, h, 0.0}, {r, 0.4, r * 0.7}, grating);                                   // the deck
+            b.box(f, {0.0, h + 0.42, 0.0}, {r * 0.5, 0.03, 0.5}, yellow);                          // the box marking
+            b.box(f, {0.0, h + 0.42, 0.0}, {0.5, 0.03, r * 0.4}, yellow);
+            for (int k = 0; k < 6; ++k)                                                            // the ramp (steps)
+                b.box(f, {0.0, h * (k + 0.5) / 6.0, -r * 0.7 - 2.5 - (5 - k) * 3.0}, {4.0, h * 0.5 / 6.0, 1.5}, grating);
+            for (const double x : {-r * 0.9, r * 0.9})
+                for (const double z : {-r * 0.55, 0.0, r * 0.55})
+                    b.box(f, {x, h + 0.9, z}, {0.3, 0.5, 0.3}, yellow);                            // bollards
+            b.box(f, {r * 0.5, h + 1.6, r * 0.3}, {3.0, 1.3, 1.3}, container);                     // a container on it
+            if (!s.stopped)
+                for (const double x : {-r, r})
+                    b.box(f, {x, h + 6.0, r * 0.7}, {0.6, 0.4, 0.6}, flood);
             break;
         }
         }

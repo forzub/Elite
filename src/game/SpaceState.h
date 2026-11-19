@@ -896,6 +896,7 @@ private:
     void launchPlannedRoute(bool official, bool launch = true);
     void sendRouteControl(bool pause);
     bool m_routeLaunched = false;
+    std::uint16_t m_lastSecuritySerial = 0xFFFF;        // the server's traffic-control event seen (GameSimulationHubSecurity)
     std::uint16_t m_lastZoneViolationSerial = 0xFFFF;   // the server's violation record seen   // a route was flying (for the \"route complete\" notice)
     void updateZoneViolations(double dt);
     void renderZoneViolationBanner(const Viewport& viewport);

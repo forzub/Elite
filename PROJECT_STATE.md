@@ -6673,6 +6673,24 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   erased Newtonian centripetal feed-forward» ALSO on the baseline (pre-existing; it stops at the first failure).
   DEV: ELITE_DEV_ROUTE_START_DUMP=1 ([RouteStart] accepted profile + geometry); runs go under the scratchpad
   watchdog.sh (docking stall / silent log / player destroyed -> kill). NEXT: the colony tour again under the watchdog.
+- 2026-11-19 HUB SECURITY / TRAFFIC CONTROL / COLLISION AVOIDANCE (author: «оборонительные установки ... увязать все
+  компоненты хаба в работающую реагирующую на все систему ... красные корридоры ... санкции»; «любой мирный корабль ...
+  маневр уклонения в меру своих возможностей»; «любой корабль попавший в близкую зону видимости игрока становится
+  настоящим»). docs/HUB_SECURITY.md. Server GameSimulationHubSecurity.cpp (+ pure src/game/traffic/HubSecurity): wrong-way
+  judge in hub lanes (warning -> 1500 Cr -> +750/10 s +300/km, x1.5 repeat, cap 15 000, lock at 30 s; never fire in
+  peace), fines banked via economy::service::chargeFine (BankingModel payFine: unpayable = 0 % fine debt; zone fines
+  too, ECONOMY_BANKING §9a); air-traffic slots shared (navigation/traffic/HubAirTraffic) and PROMOTED to kinematic
+  catalog ships within 5 km of a player (hand-back > 6.5 km on track / lane end; cap 16; replicated city
+  promotedAirSlots); Newtonian evasion offset layer (CPA, RCS / main drive after turning, starboard rule) for promoted +
+  dock traffic; deterministic defence ring (rim PD lasers / coilguns, radar, 8 pickets; strays every 60 s killed at the
+  engagement radius); client HubDefencePresentation + hubd_* models (tools/models/units/hub_defence.py); wire schema 49.
+  Unit check EliteHubSecurityCheck 29/29. Audit fixes in: per-system caches/timers, threat cache per (time, system),
+  thread-safe catalog init, forgetShipState on despawn, fine totals mirror the bank result. LIVE (Debug,
+  D:/tmp/hubsec1..4): promotion works (16 slots promoted / handed back at lane ends, no crash); the wrong-way judge and
+  the evasion did NOT trigger live - a free-flying player measured against the city object in stage 3 sits ~0.6-0.7 km
+  off where it was put (y/z, both with and without a one-step velocity projection; projection left at 0), so it was
+  never inside a lane; the same offset shows in the CPA (d ~600-700 m for a head-on lane ship). OPEN: find the frame
+  / epoch of a free-flying ship vs the city static object in stage 3. Unit check passes. NOT accepted.
 - 2026-11-19 NIGHT BATCH (author away; agents + lead; built together, gates 204 pass / 6 known / the 3 old new-reds:
   check_client_galaxy_map_catalog, check_ui_platform_fonts, system_map/check_architecture - pre-existing):
   HUBS: docs/HUB_COVERAGE.md (tools/models/hub_coverage.py): 637 inhabited sites; 277 new orbital colony cities
@@ -6703,3 +6721,8 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   OPEN for the author: questions in each doc (banks/currency names, start money, fuel tax; Fortuna risk display and the
   trapped-inside rule; HD 102195 only via the ice shoal; «Парамита»; mine placement; who owns Sol hubs in
   initial_world_state.json - world_sites.py overwrites them).
+
+### Author's future notes (2026-11-19, not to implement yet)
+- Pirate hubs built from the hulls of old ships, once full ship hull models exist (welded / docked derelicts as modules).
+- Fortuna approaches through low-visibility clouds with glitches (dolphins alongside), another wrecked lost ship there,
+  flocks of thousands of birds = souls (Windaria image).

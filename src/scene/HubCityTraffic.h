@@ -8,6 +8,7 @@
 //    a vehicle leaving the street at its far crossing comes back in at the near one (the streams look continuous);
 //  - a 3-car monorail train on every monorail beam, shuttling between the street's ends with a dwell at each.
 // Models: assets/compiled/hub_modules/hubt_* (tools/models/units/hub_traffic.py), +Z forward, +Y up.
+#include <cstdint>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -64,5 +65,6 @@ class HubLaneNetwork;
 namespace scene
 {
 void hubCityAirTraffic(const game::navigation::HubPlan& plan, const game::navigation::traffic::HubLaneNetwork& lanes,
-                       double timeSeconds, const glm::vec3& cameraLocal, float radius, std::vector<HubAirTrafficInstance>& out);
+                       double timeSeconds, const glm::vec3& cameraLocal, float radius, std::vector<HubAirTrafficInstance>& out,
+                       const std::vector<std::uint32_t>* promotedSlots = nullptr);   // slots the server made real ships
 } // namespace scene

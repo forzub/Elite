@@ -31,6 +31,7 @@
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/damage/HitVolume.h"
 #include "src/model_asset/HubCityAssembly.h"
+#include "src/model_asset/HubExpansion.h"
 #include "src/model_asset/ModelAssetBinary.h"
 
 #include <algorithm>
@@ -1314,6 +1315,37 @@ EntityId buildPromoScene(
 }
 
 } // namespace
+
+bool refreshHubCityConstructionCollision(GameSimulation& sim)
+{
+    namespace ma = elite::model_asset;
+    // the stage key each city's hit volumes were assembled with (recorded on the first visit: the spawn assembled
+    // the city with the stages of that day)
+    static std::unordered_map<std::string, std::uint64_t> keys;
+    static std::uint64_t lastScan = 0;
+    if (++lastScan % 60 != 0)            // the stages change once a game day: a scan every 60 steps is plenty
+        return false;
+    for (const auto& [oid, obj] : sim.staticObjects())
+    {
+        if (obj.type != ObjectType::HubBeltCity || obj.hubId.empty() || !ma::hubExpansionPlan(obj.hubId))
+            continue;
+        const std::uint64_t key = ma::hubExpansionStageKey(obj.hubId);
+        const auto [it, inserted] = keys.try_emplace(obj.hubId, key);
+        if (inserted || it->second == key)
+            continue;
+        it->second = key;
+        ma::ModelAsset cityCollision;
+        std::vector<game::damage::HitVolume> volumes;
+        if (ma::assembleHubCityCollision(obj.hubId, "assets/compiled/hub_modules", cityCollision) &&
+            packageHitVolumes(obj.type, "layout:" + obj.hubId + "#" + std::to_string(key), volumes, &cityCollision))
+        {
+            sim.setStaticObjectPackageHitVolumes(oid, std::move(volumes));
+            std::cerr << "[HubConstruction] " << obj.hubId << ": hit volumes of the new construction stages\n";
+        }
+        return true;                     // one city per call
+    }
+    return false;
+}
 
 EntityId buildInitialScene(
     GameSimulation& sim,

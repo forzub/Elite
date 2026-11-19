@@ -41,6 +41,7 @@ import logistics as lg
 import lotus_model
 import outposts
 import worlds_ass_region
+import hub_construction
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out", "world_3126")
@@ -1548,6 +1549,8 @@ def runtime_export(I, out):
     if out.get("worlds_ass_region"):
         # known wrecks of the World's Ass as future derelict objects (no runtime spawner yet; the C++ loader ignores the key)
         doc["derelicts"] = worlds_ass_region.runtime_rows(out["worlds_ass_region"])
+    # construction state + expansion plans of every hub and beacon (hub_construction.py, author 2026-11-19)
+    hub_construction.annotate(doc["sites"] + doc.get("hidden_sites", []), doc["relays"])
     objs = []
     for d in out["frontier"]["deep_space_objects"]:
         if d["hidden"]:

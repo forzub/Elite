@@ -550,6 +550,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         if (obj.type == ObjectType::HubBeltCity)
             o.buildingStates = cityBuildingStates(id);   // its damaged / destroyed buildings (GameSimulationCityDamage)
             o.materializedVisits = cityMaterializedVisits(id);   // its scheduled visits that are real ships now
+        if (obj.type == ObjectType::HubBeltCity)
+            o.promotedAirSlots = cityPromotedAirSlots(id);       // its air-traffic slots that are real ships now
 
         if (obj.attachedToHub &&
             obj.systemId >= 0 &&

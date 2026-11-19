@@ -110,6 +110,7 @@ add_library(EliteModelAsset STATIC
     src/model_asset/ModelAssetPresentation.cpp
     src/model_asset/RuntimeMeshNormalizer.cpp
     src/model_asset/HubCityAssembly.cpp
+    src/model_asset/HubExpansion.cpp
 )
 target_include_directories(EliteModelAsset PUBLIC
     "${CMAKE_SOURCE_DIR}"
@@ -343,6 +344,20 @@ target_compile_features(EliteDockingInfrastructure PUBLIC cxx_std_17)
 # dock structure). Writes D:/tmp/elite_dock_dispatcher_*.log.
 add_executable(EliteDockTrafficCheck tools/navigation_runtime/DockTrafficCheck.cpp)
 target_link_libraries(EliteDockTrafficCheck PRIVATE EliteDockingInfrastructure)
+
+# Unit checks of hub security / traffic control (docs/HUB_SECURITY.md): wrong-way fines, fine banking, CPA / evasion,
+# promoted air-traffic tracks, the defence layout and stray bodies. Run from the repository root.
+add_executable(EliteHubSecurityCheck
+    tests/hub_security/HubSecurityCheck.cpp
+    src/game/traffic/HubSecurity.cpp
+    src/game/navigation/traffic/HubAirTraffic.cpp
+    src/game/navigation/traffic/HubLaneNetwork.cpp
+    src/game/navigation/HubPlanCatalog.cpp
+    src/game/economy/BankingModel.cpp
+)
+target_include_directories(EliteHubSecurityCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+target_compile_features(EliteHubSecurityCheck PRIVATE cxx_std_17)
+target_link_libraries(EliteHubSecurityCheck PRIVATE nlohmann_json::nlohmann_json EliteNavigationWorldRuntime)
 
 # Game-level maneuver selection sits deliberately above NavigationWorld.
 # It consumes already-produced candidate annotations and active control-law
@@ -672,6 +687,9 @@ add_executable(EliteGame
     src/game/navigation/rules/NavDataBanks.cpp
     src/game/navigation/rules/JumpSumps.cpp
     src/game/simulation/GameSimulationZones.cpp
+    src/game/simulation/GameSimulationHubSecurity.cpp
+    src/game/traffic/HubSecurity.cpp
+    src/game/navigation/traffic/HubAirTraffic.cpp
     src/game/simulation/GameSimulationCombat.cpp
     src/game/simulation/GameSimulationCityDamage.cpp
     src/game/simulation/GameSimulationScheduledTraffic.cpp
@@ -737,6 +755,8 @@ add_executable(EliteGame
 
     src/scene/SceneRenderer.cpp
     src/scene/HubCityTraffic.cpp
+    src/scene/HubConstructionTraffic.cpp
+    src/scene/HubDefencePresentation.cpp
     
     src/ui/components/radar/RadarWidgetBase.cpp
     src/ui/components/radar/RadarWidgetFactory.cpp
@@ -1007,6 +1027,11 @@ if(ELITE_BUILD_SERVER)
         src/game/economy/EconomyServer.cpp
         src/game/economy/EconomyService.cpp
         src/game/simulation/GameSimulationZones.cpp
+        src/game/simulation/GameSimulationHubSecurity.cpp
+        src/game/traffic/HubSecurity.cpp
+        src/game/navigation/traffic/HubAirTraffic.cpp
+        src/game/navigation/traffic/HubLaneNetwork.cpp
+        src/game/navigation/HubPlanCatalog.cpp
         src/game/simulation/GameSimulationCombat.cpp
         src/game/simulation/GameSimulationCityDamage.cpp
         src/game/simulation/GameSimulationScheduledTraffic.cpp
@@ -1389,6 +1414,7 @@ set(ELITE_RUNTIME_ASSETS_DIR
 if(MINGW)
     set_source_files_properties(
         src/game/SpaceState.cpp
+        src/game/network/TcpTransport.cpp   # the wire schema of DynamicMotionState (49: + hub security fields)
         PROPERTIES COMPILE_OPTIONS "-Wa,-mbig-obj"
     )
 endif()

@@ -30,6 +30,7 @@
 #include "src/game/navigation/rules/JumpRules.h"
 #include <random>
 #include "src/game/scene/GameSceneSetup.h"
+#include "src/world/time/ConstructionClock.h"
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/economy/EconomyService.h"
@@ -1091,6 +1092,9 @@ void GameServer::update(double dt)
     m_universeClock.update(dt);
     m_serverTick++;
     applyDevStartPoint(dt);
+    // the hubs' construction stages follow the server's universe time (docs/HUB_CONSTRUCTION.md)
+    world::time::setConstructionUniverseTime(m_universeClock.timeSeconds());
+    game::scene::refreshHubCityConstructionCollision(m_simulation);
 
     const double universeTime =
         m_universeClock.timeSeconds();

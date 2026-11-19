@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <utility>
 #include <fstream>
 #include <map>
 #include <string>
@@ -94,6 +96,18 @@ struct WorldSite
     double utilisation = 0.0;
     double storageTonnes = 0.0;
     double security = 0.0;
+
+    // construction (tools/colonization_lab/hub_construction.py, docs/HUB_CONSTRUCTION.md): the build of the site itself
+    // (kind "build", from construction.project) and its expansion projects; days from 3126-01-01, a halt with to < 0 =
+    // abandoned for good. Progress at a day: src/model_asset/HubExpansion.h projectProgress (the same rule).
+    struct Project
+    {
+        std::string kind;
+        int startDay = 0;
+        int workDays = 1;
+        std::vector<std::pair<int, int>> halts;
+    };
+    std::vector<Project> projects;
 };
 
 // Aggregate traffic route (not individual flights): drawn dashed on the System Map.
@@ -233,6 +247,24 @@ public:
             s.utilisation = dbl(j, "utilisation");
             s.storageTonnes = dbl(j, "storage_t");
             s.security = dbl(j, "security");
+            const auto readProject = [&s](const nlohmann::json& p, const std::string& kind) {
+                if (!p.is_object())
+                    return;
+                WorldSite::Project pr;
+                pr.kind = kind.empty() ? p.value("kind", std::string()) : kind;
+                pr.startDay = p.value("start_day", 0);
+                pr.workDays = std::max(1, p.value("work_days", 1));
+                if (p.contains("halts") && p["halts"].is_array())
+                    for (const auto& h : p["halts"])
+                        if (h.is_array() && h.size() >= 2)
+                            pr.halts.emplace_back(h[0].get<int>(), h[1].is_null() ? -1 : h[1].get<int>());
+                s.projects.push_back(std::move(pr));
+            };
+            if (j.contains("construction") && j["construction"].is_object() && j["construction"].contains("project"))
+                readProject(j["construction"]["project"], "build");
+            if (j.contains("expansion") && j["expansion"].is_array())
+                for (const auto& p : j["expansion"])
+                    readProject(p, std::string());
             if (s.id.empty() || s.systemId < 0 || s.placement == WorldSitePlacementKind::None)
                 continue;
             m_bySystem[s.systemId].push_back(std::move(s));

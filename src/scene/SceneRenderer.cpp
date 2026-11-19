@@ -56,6 +56,9 @@
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/navigation/traffic/HubTrafficSchedule.h"
 #include "src/scene/HubCityTraffic.h"
+#include "src/scene/HubConstructionTraffic.h"
+#include "src/model_asset/HubExpansion.h"
+#include "src/scene/HubDefencePresentation.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 
 namespace
@@ -1596,6 +1599,7 @@ void SceneRenderer::prepareScene(
                 item.buildingStates = obj.buildingStates;
                 item.hubModuleId = obj.hubAttachment.moduleId;
                 item.materializedVisits = obj.materializedVisits;
+                item.promotedAirSlots = obj.promotedAirSlots;
                 item.nodeModel.resize(modelAsset->nodeModule.size(), objectBaseModel);
                 for (std::size_t n = 0; n < modelAsset->nodeModule.size(); ++n)
                     for (const auto& module : obj.assembly->modules)
@@ -3865,6 +3869,66 @@ if (policy.drawObjects)
                                 m_lastStats.partsDrawn++;
                             }
                         }
+                        // the construction bustle (src/scene/HubConstructionTraffic.h): haulers on the temporary decks, claw
+                        // ships feeding elements to the build front with their tugs, worker pods, crane jibs in gravity -
+                        // a function of the universe time and the hub's construction plan; the same day drives the city's
+                        // construction stages (HubExpansion.h). DEV A/B: ELITE_DEV_HUB_CONSTRUCTION=0 (no craft)
+                        {
+                            elite::model_asset::setHubExpansionUniverseTime(trafficTime);
+                            static const bool constructionOn = [] {
+                                const char* v = std::getenv("ELITE_DEV_HUB_CONSTRUCTION");
+                                return !(v && std::string(v) == "0");
+                            }();
+                            static std::vector<scene::ConstructionTrafficInstance> crafts;
+                            crafts.clear();
+                            if (constructionOn)
+                                scene::hubConstructionTraffic(plan->hubId(), trafficTime, cameraCity, 4000.0f, crafts);
+                            static const render::geometry::ModelAssetGpu* craftPackages[static_cast<int>(scene::ConstructionCraft::Count)] = {};
+                            static bool craftLooked[static_cast<int>(scene::ConstructionCraft::Count)] = {};
+                            for (const auto& v : crafts)
+                            {
+                                const int m = static_cast<int>(v.model);
+                                if (!craftLooked[m])
+                                {
+                                    craftLooked[m] = true;
+                                    const std::string id = scene::constructionCraftModelId(v.model);
+                                    const std::string path = "assets/compiled/hub_modules/" + id + "/" + id + ".elmodel";
+                                    if (std::filesystem::exists(path))
+                                        craftPackages[m] = render::geometry::ModelAssetGpuLibrary::getPackage(object.type, path);
+                                }
+                                const auto* pkg = craftPackages[m];
+                                if (!pkg || pkg->asset.renderLods.empty() ||
+                                    !inView(v.local, v.model == scene::ConstructionCraft::CraneJib ? 60.0f : 30.0f))
+                                    continue;
+                                pkg->pumpPrewarm(1.0);
+                                const int lods = static_cast<int>(pkg->asset.renderLods.size());
+                                const int lod = std::min(lods - 1, v.distance < 400.0f ? 0 : v.distance < 1200.0f ? 1 : v.distance < 2500.0f ? 2 : 3);
+                                const auto& rl = pkg->asset.renderLods[static_cast<std::size_t>(lod)];
+                                const glm::mat4 base = cityModel * v.local * pkg->assetToLogical;
+                                for (std::size_t rn = 0; rn < rl.nodes.size(); ++rn)
+                                {
+                                    const render::MeshGPU* g = pkg->gpuFor(lod, rl.nodes[rn].geometryIndex);
+                                    if (!g || rn >= pkg->index.renderNodes[static_cast<std::size_t>(lod)].size())
+                                        continue;
+                                    const glm::mat4 model = base * pkg->index.renderNodes[static_cast<std::size_t>(lod)][rn].assetTransform;
+                                    QueuedMeshDraw qd {g, proj * renderView * model, model};
+                                    qd.seed = 0.5f;
+                                    queuedModelAssetStationDraws.push_back(qd);
+                                    m_lastStats.partsDrawn++;
+                                }
+                            }
+                            static const bool constructionLog = std::getenv("ELITE_DEV_TRAFFIC_LOG") != nullptr;
+                            if (constructionLog && !crafts.empty())
+                            {
+                                static double lastLog = -10.0;
+                                const double nowS = renderProfileNowMs() * 0.001;
+                                if (nowS - lastLog > 2.0)
+                                {
+                                    lastLog = nowS;
+                                    std::fprintf(stderr, "[HubConstruction] %s: %zu craft near the camera\n", plan->hubId().c_str(), crafts.size());
+                                }
+                            }
+                        }
                         // one ship package in the city frame: a LOD by distance; far away (the ship packages carry LOD0 only:
                         // 24-68 parts each) only its 4 biggest parts (2026-11-18 A/B: 40 ships in view = 1100 mesh draws,
                         // +2.9 ms p50) -> the mesh draws queued
@@ -3987,7 +4051,7 @@ if (policy.drawObjects)
                             static std::vector<scene::HubAirTrafficInstance> air;
                             air.clear();
                             if (trafficMode & 2)
-                                scene::hubCityAirTraffic(*plan, *laneNet, trafficTime, cameraCity, 5000.0f, air);
+                                scene::hubCityAirTraffic(*plan, *laneNet, trafficTime, cameraCity, 5000.0f, air, &object.promotedAirSlots);
                             const auto& fleet = plan->airFleet();
                             static const bool trafficLog = std::getenv("ELITE_DEV_TRAFFIC_LOG") != nullptr;
                             if (trafficLog)
@@ -4040,6 +4104,60 @@ if (policy.drawObjects)
                                 {
                                     lastShown = nowS;
                                     std::fprintf(stderr, "[HubTraffic] air in view %d ships, %d mesh draws\n", airShown, airDraws);
+                                }
+                            }
+                        }
+                        // the defence ring (src/scene/HubDefencePresentation.h, docs/HUB_SECURITY.md): turrets slewing to
+                        // their targets, stray bodies, shots, flashes; the turrets track the ships the server locked.
+                        // DEV A/B of the frame cost: ELITE_DEV_HUB_DEFENCE=0
+                        static const bool defenceOn = [] {
+                            const char* v = std::getenv("ELITE_DEV_HUB_DEFENCE");
+                            return !(v && v[0] == '0');
+                        }();
+                        if (defenceOn)
+                        {
+                            static std::vector<glm::dvec3> locked;
+                            locked.clear();
+                            if (prepared.world)
+                                for (const auto& [sid, ship] : prepared.world->ships())
+                                    if (ship.transform.motion.securityLevel >= 3)
+                                    {
+                                        const glm::vec3 rl = world::coordinates::toRenderLocal(ship.renderTransform.worldPosition, prepared.frame);
+                                        locked.push_back(glm::dvec3(glm::inverse(cityModel) * glm::vec4(rl, 1.0f)));
+                                    }
+                            static std::vector<scene::HubDefenceInstance> defence;
+                            scene::HubDefenceStats dstats;
+                            const auto* defLanes = game::navigation::traffic::HubLaneCatalog::forFrameModule(object.hubModuleId);
+                            scene::hubDefencePresentation(*plan, defLanes, trafficTime, cameraCity, 12000.0f, locked, defence, &dstats);
+                            static const render::geometry::ModelAssetGpu* defencePackages[static_cast<int>(scene::HubDefenceModel::Count)] = {};
+                            for (int k = 0; k < static_cast<int>(scene::HubDefenceModel::Count); ++k)
+                            {
+                                if (!defencePackages[k])
+                                {
+                                    const std::string id = scene::hubDefenceModelId(static_cast<scene::HubDefenceModel>(k));
+                                    defencePackages[k] = render::geometry::ModelAssetGpuLibrary::getPackage(
+                                        object.type, "assets/compiled/hub_modules/" + id + "/" + id + ".elmodel");
+                                }
+                                if (defencePackages[k])
+                                    defencePackages[k]->pumpPrewarm(1.0);
+                            }
+                            int defenceDraws = 0;
+                            for (const auto& v : defence)
+                            {
+                                if (!inView(v.local, v.radius))
+                                    continue;
+                                defenceDraws += drawShip(defencePackages[static_cast<int>(v.model)], v.local, v.distance);
+                            }
+                            static const bool defenceLog = std::getenv("ELITE_DEV_TRAFFIC_LOG") != nullptr;
+                            if (defenceLog)
+                            {
+                                static double lastDefenceLog = -10.0;
+                                const double nowS = renderProfileNowMs() * 0.001;
+                                if (nowS - lastDefenceLog > 2.0)
+                                {
+                                    lastDefenceLog = nowS;
+                                    std::fprintf(stderr, "[HubDefence] %d sites, %zu instances (%d mesh draws), %d bodies, %d shots, %d locked\n",
+                                                 dstats.sites, defence.size(), defenceDraws, dstats.bodies, dstats.shots, dstats.locked);
                                 }
                             }
                         }

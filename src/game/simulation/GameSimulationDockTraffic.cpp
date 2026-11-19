@@ -360,10 +360,21 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
         if (!target)
             continue;
         auto& tr = *target;
-        tr.setWorldPositionMeters(position);
+        // collision avoidance (docs/HUB_SECURITY.md): a flying traffic ship evades a real ship on a collision course within
+        // its own limits - its scripted pose + the Newtonian offset layer; not on / near the pads (the dispatcher's area)
+        glm::dvec3 flownPosition = position;
+        glm::dvec3 flownVelocity = velocity;
+        if ((glm::length(pose.velocity) > 3.0 && glm::length(pose.position) > 300.0) || m_evasion.count(shellIt->second) != 0)
+        {
+            const bool shuttleHull = actor.kind == game::traffic::dock::TrafficShipKind::CargoShuttle;
+            const glm::dvec3 forward = glm::length(pose.velocity) > 1.0e-3 ? glm::normalize(fixedBasis * pose.velocity) : -basis[2];
+            applyTrafficEvasion(shellIt->second, flownPosition, flownVelocity, forward, basis[1], shuttleHull ? 56.0 : 25.0, 0.0,
+                                dock->hubId);
+        }
+        tr.setWorldPositionMeters(flownPosition);
         tr.orientation = orientation;
-        tr.motion.worldVelocityMps = velocity;
-        tr.motion.localVelocityMps = velocity;
+        tr.motion.worldVelocityMps = flownVelocity;
+        tr.motion.localVelocityMps = flownVelocity;
         // Map ownership: inside the dock's controlled zone the ship belongs to
         // this hub (Hub Map); outside it, to the wider maps.
         tr.motion.hubId =
@@ -452,7 +463,7 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
 
 bool GameSimulation::isDockStationControlledShip(EntityId id) const noexcept
 {
-    return m_dockStationControlledShips.count(id) != 0 || m_dockTrafficShells.count(id) != 0;
+    return m_dockStationControlledShips.count(id) != 0 || m_dockTrafficShells.count(id) != 0 || m_airTrafficShells.count(id) != 0;
 }
 
 game::docking::traffic::DockTrafficShipStatus GameSimulation::dockDispatcherStatus(EntityId shipId) const

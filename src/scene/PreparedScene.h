@@ -111,6 +111,7 @@ struct PreparedScene
         std::vector<game::simulation::CityBuildingState> buildingStates;
         std::string hubModuleId;                        // the hub module this object is ("<hub>.city": its plan, traffic)
         std::vector<std::uint32_t> materializedVisits;  // its scheduled visits that are real ships now: not drawn
+        std::vector<std::uint32_t> promotedAirSlots;    // its air-traffic slots that are real ships now: not drawn
     };
     std::vector<ModelAssetObjectItem> modelAssetObjects;
 

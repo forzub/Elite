@@ -45,6 +45,7 @@
 #include "src/game/simulation/activation/ActivationPlanner.h"
 #include "src/game/simulation/activation/ActivationExecutionPolicy.h"
 #include "src/game/simulation/ShipSimulationTier.h"
+#include "src/game/traffic/HubSecurity.h"
 #include "src/game/simulation/ShipSimulationDetailPolicy.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
@@ -992,6 +993,95 @@ private:
     // the visits of a city now real ships (replicated: the clients stop drawing them)
     std::vector<std::uint32_t> cityMaterializedVisits(EntityId objectId) const;
     std::unordered_map<std::uint64_t, std::vector<std::uint32_t>> m_materializedVisits;
+
+    // ---- hub security / traffic control (GameSimulationHubSecurity.cpp, docs/HUB_SECURITY.md)
+    void updateHubSecurity(double dt);
+    // a kinematic (scripted) traffic ship's pose with its collision-avoidance offset layer applied (any peaceful server
+    // ship on a collision course with a real ship evades within its own Newtonian limits); hubId: whose control reports it
+    void applyTrafficEvasion(EntityId self, glm::dvec3& position, glm::dvec3& velocity, const glm::dvec3& forward,
+                             const glm::dvec3& up, double lengthMeters, double dt, const std::string& hubId);
+    void refreshEvasionThreats();
+    void noteHubSecurityEvent(const std::string& hubId, int kind, EntityId ship, const std::string& text);
+    void despawnPromotedAirShip(EntityId shipId);
+    std::vector<std::uint32_t> cityPromotedAirSlots(EntityId objectId) const;
+    struct HubSecurityCity
+    {
+        EntityId city {};
+        std::string hubId;
+        const game::navigation::HubPlan* plan = nullptr;
+        const game::navigation::traffic::HubLaneNetwork* lanes = nullptr;
+        game::traffic::security::DefenceLayout defence;
+        double lastStrayCheck = -1.0;
+    };
+    // per system (GameServer runs one simulation pass per active system each tick): the cities and the 4 Hz timer
+    struct HubSecuritySystem
+    {
+        std::vector<HubSecurityCity> cities;
+        std::size_t staticCount = static_cast<std::size_t>(-1);
+        double checkSeconds = 0.0;
+    };
+    std::unordered_map<int, HubSecuritySystem> m_securityBySystem;
+    void forgetShipState(EntityId id);   // erase an id from every EntityId-keyed side table (a despawned traffic ship)
+    struct HubSecurityState
+    {
+        game::traffic::security::HubAlert alert = game::traffic::security::HubAlert::Calm;
+        std::unordered_map<std::uint64_t, int> violators;   // ship -> ShipSecurityLevel
+        double finesCr = 0.0;
+        int intercepts = 0;
+        int evasions = 0;
+        int promotions = 0;
+        int tracked = 0;
+        double lastSummary = -1.0e30;
+        bool dirty = false;
+    };
+    std::unordered_map<std::string, HubSecurityState> m_hubSecurity;
+    struct WrongWayShip
+    {
+        game::traffic::security::WrongWayWatch watch;
+        std::vector<double> incidentTimes;   // closed incidents (server time): the repeat escalation window
+        std::string hubId;
+        std::string laneId;
+        double levelUntil = 0.0;
+        double debugLogAt = -1.0e30;
+    };
+    std::unordered_map<EntityId, WrongWayShip> m_wrongWay;
+    struct PromotedAirShip
+    {
+        EntityId city {};
+        std::string hubId;
+        std::uint32_t slot = 0;
+        int lane = -1;
+        double along0 = 0.0;
+        double time0 = 0.0;
+        double speedMps = 0.0;
+        double lengthMeters = 30.0;
+    };
+    std::unordered_map<EntityId, PromotedAirShip> m_promotedAir;
+    std::unordered_set<EntityId> m_airTrafficShells;
+    struct EvasionThreat
+    {
+        EntityId id {};
+        glm::dvec3 position {0.0};
+        glm::dvec3 velocity {0.0};
+        double radius = 20.0;
+    };
+    std::vector<EvasionThreat> m_evasionThreats;
+    double m_evasionThreatsTime = -1.0;
+    int m_evasionThreatsSystem = -999;
+    // in stage 3 (dock traffic, hub security) the hub objects are already at the next epoch while the free-flying
+    // ships are not (a step behind: 35 km/s x 20 ms = 0.7 km at Earth): the ships are projected by velocity x this
+    double m_securityStepDt = 0.0;
+    struct EvasionTrack
+    {
+        game::traffic::security::EvasionOffset offset;
+        std::uint64_t threat = 0;
+        double nextLog = 0.0;
+        double lastTime = -1.0;
+    };
+    std::unordered_map<EntityId, EvasionTrack> m_evasion;
+    double m_securityPerfMs = 0.0;
+    long long m_securityPerfTicks = 0;
+    double m_securityPerfLogAt = 0.0;
     double m_combatClockS = 0.0;
     std::unordered_map<EntityId, double> m_devTargetMissileClockS;   // DEV duel: last missile launch
     std::unordered_set<EntityId> m_devTargetLaserOn;

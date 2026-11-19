@@ -1,4 +1,5 @@
 #include "src/model_asset/HubCityAssembly.h"
+#include "src/model_asset/HubExpansion.h"
 
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/model_asset/ModelAssetLodError.h"
@@ -22,6 +23,9 @@
 
 namespace elite::model_asset
 {
+// HubExpansion.cpp: the construction plan of the hub at the current game day applied to the layout document
+int applyHubExpansion(const std::string& hubId, nlohmann::json& doc);
+
 namespace
 {
 using json = nlohmann::json;
@@ -251,6 +255,8 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
         if (error) *error = path + ": unknown schema";
         return false;
     }
+    // the hub's construction plan (HubExpansion.h): stages of a hub being built, its expansions and their props
+    const int constructionNodes = applyHubExpansion(hubId, doc);
 
     // modules: their kits, the city's material table (union by id), each module's material map
     const auto& jm = doc.at("modules");
@@ -277,6 +283,11 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
         kits.push_back(std::move(kit));
         boxLo.push_back(vec3Of(m.at("lo"), 0));
         boxHi.push_back(vec3Of(m.at("hi"), 0));
+        if (boxHi.back() == boxLo.back())    // a module added by the construction plan: its mesh bounds
+        {
+            boxLo.back() = kits.back()->lods[0].minBounds;
+            boxHi.back() = kits.back()->lods[0].maxBounds;
+        }
         proxyMaterial.push_back(m.value("proxy_material", std::string("default")));
     }
     std::vector<std::int32_t> proxyMat(proxyMaterial.size());
@@ -469,7 +480,7 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
     const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     std::cerr << "[HubCityAssembly] " << hubId << ": " << out.nodes.size() << " nodes, " << kits.size() << " modules, "
               << out.collisionVolumes.size() << " collision, " << out.renderLods.back().nodes.size() << " group proxies, "
-              << ms << " ms\n";
+              << constructionNodes << " construction nodes, " << ms << " ms\n";
     return true;
 }
 } // namespace
@@ -486,6 +497,8 @@ bool assembleHubCityCollision(const std::string& hubId, const std::string& modul
 
 const ModelAsset* hubCityAsset(const std::string& hubId)
 {
+    // the first assembly (with the construction stages of that day); a later stage change is re-assembled by the
+    // renderer's library off-thread (ModelAssetGpuLibrary::get) - this asset stays what it was
     static std::mutex mutex;
     static std::unordered_map<std::string, std::unique_ptr<ModelAsset>> cache;
     std::lock_guard<std::mutex> lock(mutex);

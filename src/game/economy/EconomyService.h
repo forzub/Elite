@@ -44,6 +44,17 @@ void uninstall(const EconomyServer* economy);
 // charge the account of the player flying `shipEntityId`; fuel / tow / repair reasons may draw lifeline credit.
 // false = refused. AI ships (no player) and 0 Cr always succeed.
 bool chargeAccount(std::uint32_t shipEntityId, double amountCr, const std::string& reason);
+// an administrative fine (hub traffic control, navigation zones; docs/HUB_SECURITY.md) to the authority of `hubId`
+// (empty = where the ship is): never refused - what the player cannot pay becomes a fine debt at that polity's bank.
+// Result: what was paid now / booked as debt (Cr); AI ships and no economy: both 0.
+struct FineResult
+{
+    bool charged = false;
+    double paidCr = 0.0;
+    double debtCr = 0.0;
+    std::string bankId;
+};
+FineResult chargeFine(std::uint32_t shipEntityId, const std::string& hubId, double amountCr, const std::string& reason);
 // optional: the fuel physically left station `stationId` (its stock and tomorrow's price feel it; the player's
 // "received free of charge" list value grows). Call once per finished delivery.
 void noteFuelDelivered(std::uint32_t shipEntityId, const std::string& stationId, const std::string& commodity, double tonnes);

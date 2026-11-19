@@ -38,6 +38,8 @@ enum class Purpose : int
     Trade = 4,
     Fee = 5,
     Other = 6,
+    Fine = 7,    // an administrative fine (traffic control, navigation zones): never refused - booked as debt
+
 };
 [[nodiscard]] inline bool isLifelinePurpose(Purpose p) { return p == Purpose::Fuel || p == Purpose::Tow || p == Purpose::Repair; }
 
@@ -225,6 +227,12 @@ void logEvent(ClientLedger& ledger, int day, std::string text);
 // All or nothing: a failed payment changes nothing.
 PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::string& payeeBank, double amountCr, Purpose purpose,
                   int day, bool allowLifeline, const std::string& memo);
+// An administrative fine payable to the authority banking with `authorityBank` (docs/HUB_SECURITY.md): paid like any
+// payment (cash, the account incl. its arranged overdraft, other accounts); what cannot be paid is NOT refused - it is
+// booked as a fine debt at that bank (a 0 % term loan over 360 days, PaymentResult::lifelineCr = the booked part), so a
+// fine never empties the ship or blocks fuel (the no-death-spiral rules then cover the debt like any other).
+PaymentResult payFine(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, int day,
+                      const std::string& memo);
 // Income paid by someone banking with `payerBank`: garnish share to restructured debt first, the rest to
 // the account at that bank if the client has one, else home (converted, FX fee).
 void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& payerBank, double amountCr, int day,

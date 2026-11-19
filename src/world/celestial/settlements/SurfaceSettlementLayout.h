@@ -13,6 +13,8 @@
 // Player role (every element needs one): the pads are where the player lands to trade, take
 // missions or rescue; the entrance / domes / antenna mark the settlement from the approach.
 
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -24,6 +26,7 @@
 #include <glm/glm.hpp>
 
 #include "src/world/celestial/WorldSitesCatalog.h"
+#include "src/world/time/ConstructionClock.h"
 
 namespace world::celestial::settlements
 {
@@ -34,7 +37,12 @@ enum class StructureKind : std::uint8_t
     Entrance,     // the portal into the underground settlement
     Dome,         // a small pressurised dome
     Antenna,      // a communication mast
-    RockPassage   // a small body: the passage cut into the rock
+    RockPassage,  // a small body: the passage cut into the rock
+    // construction (docs/HUB_CONSTRUCTION.md; the site's projects of WorldSitesCatalog, by the game day)
+    BuildFrame,   // a building going up: stage 1 foundation .. 4 nearly clad, 5 finished (heightM = its final height)
+    Crane,        // a tower crane (only where there is gravity): heightM = hook height, headingRad = the jib's bearing
+    Barracks,     // the workers' camp: a row of two-level container huts
+    TempPad       // a temporary loading / unloading deck on legs
 };
 
 struct Structure
@@ -46,6 +54,8 @@ struct Structure
     double headingRad = 0.0;                      // bearing of the structure's axis (from north)
     double flattenRadiusM = 0.0;                  // the terrain is flat out to here
     int number = 0;                               // pads: 1, 2, 3 ...
+    int stage = 0;                                // BuildFrame: 1..5
+    bool stopped = false;                         // construction: halted / abandoned (no work lights)
 };
 
 struct SettlementLayout
@@ -104,6 +114,129 @@ inline glm::dvec3 offsetDirection(const glm::dvec3& dir, double bodyRadiusM, dou
     return glm::normalize(up * std::cos(angle) + along * std::sin(angle));
 }
 
+// the game day (0 = 3126-01-01) of the universe time the construction follows (src/world/time/ConstructionClock.h:
+// the server's clock); the layout is taken when the body's settlements are built (server terrain / client mesh)
+inline int constructionDayNow()
+{
+    return world::time::constructionDay(world::time::constructionUniverseTime());
+}
+
+// progress 0..1 of a site project on a day; status 0 planned, 1 building, 2 halted, 3 abandoned, 4 done (the rule of
+// src/model_asset/HubExpansion.cpp projectProgress)
+inline double siteProjectProgress(const WorldSite::Project& p, int day, int& status)
+{
+    if (day < p.startDay)
+    {
+        status = 0;
+        return 0.0;
+    }
+    status = 1;
+    int worked = day - p.startDay;
+    for (const auto& [from, to] : p.halts)
+    {
+        if (day <= from)
+            continue;
+        if (to < 0)
+        {
+            worked -= day - from;
+            status = 3;
+        }
+        else
+        {
+            worked -= std::min(day, to) - from;
+            if (day < to)
+                status = 2;
+        }
+    }
+    const double prog = std::clamp(static_cast<double>(worked) / static_cast<double>(std::max(1, p.workDays)), 0.0, 1.0);
+    if (prog >= 1.0)
+        status = 4;
+    return prog;
+}
+
+// the construction sites of a surface settlement at `day`: the frames of the buildings (inner ones first for the
+// settlement's own build: the core is ready, the edge only starts), cranes where the gravity holds a hook load
+// (bodies of >= 600 km radius: >= ~0.3 m/s2; on a small body tugs and tethers do the job), the barracks of the
+// workers, a temporary deck; finished expansions stay as finished blocks (the settlement grows)
+inline void appendSurfaceConstruction(SettlementLayout& out, const WorldSite& site, double bodyRadiusM, double heading, int day)
+{
+    constexpr double Pi = 3.14159265358979323846;
+    if (site.projects.empty())
+        return;
+    const std::uint64_t h = layoutHash(site.id + "#construction");
+    const bool gravity = bodyRadiusM >= 600000.0;
+    const auto at = [&](double distanceM, double bearing) {
+        return offsetDirection(out.centreDirection, bodyRadiusM, distanceM, bearing);
+    };
+    struct Kind { double r, h; };
+    const auto kindOf = [](const std::string& k, int i) -> Kind {
+        if (k == "tower") return {28.0, 90.0};
+        if (k == "slab") return {40.0, 45.0};
+        if (k == "hall" || k == "minehead") return {45.0, 28.0};
+        if (k == "dock" || k == "yard") return {38.0, 12.0};
+        if (k == "mast") return {8.0, 60.0};
+        if (k == "hab") return {18.0, 30.0};
+        static const Kind build[3] = {{18.0, 30.0}, {45.0, 28.0}, {28.0, 70.0}};   // the hub's own: hab / hall / tower
+        return build[i % 3];
+    };
+    int expansionSlot = 0, finishedShown = 0;
+    for (std::size_t pi = 0; pi < site.projects.size(); ++pi)
+    {
+        const auto& p = site.projects[pi];
+        int status = 0;
+        const double prog = siteProjectProgress(p, day, status);
+        if (status == 0)
+            continue;
+        const bool own = p.kind == "build";
+        const bool stopped = status == 2 || status == 3;
+        if (status == 4 && (own || ++finishedShown > 4))
+            continue;
+        const int frames = own ? 3 + static_cast<int>(layoutUnit(h, 3) * 3.0) : 1;
+        const double baseBearing = own ? heading + Pi : heading + Pi * 0.5 + expansionSlot * 0.9;
+        const double baseDist = own ? 230.0 : 470.0 + 70.0 * (expansionSlot % 4);
+        if (!own)
+            ++expansionSlot;
+        for (int i = 0; i < frames; ++i)
+        {
+            const Kind k = kindOf(p.kind, i);
+            const double bearing = baseBearing + (i - (frames - 1) * 0.5) * 0.55 +
+                                   (layoutUnit(h, 40 + static_cast<int>(pi) * 8 + i) - 0.5) * 0.15;
+            const double dist = baseDist + (own ? 70.0 * (i % 2) : 0.0);
+            // the readiness window of this frame in the project (the settlement's own build: inner / earlier first)
+            const double a = own ? 0.12 * i : 0.0, b = own ? std::min(1.0, a + 0.45) : 1.0;
+            const double u = (prog - a) / std::max(1e-6, b - a);
+            const int stage = status == 4 || u >= 1.0 ? 5 : u < 0.0 ? 1 : 1 + std::min(3, static_cast<int>(u * 4.0));
+            Structure f {StructureKind::BuildFrame, at(dist, bearing), k.r, k.h, bearing, k.r + 6.0, 0};
+            f.stage = stage;
+            f.stopped = stopped;
+            out.structures.push_back(f);
+            if (status == 4)
+                continue;
+            if (gravity && stage < 5)
+            {
+                Structure c {StructureKind::Crane, at(dist + k.r + 10.0, bearing + 0.02), 4.0, k.h * 1.2 + 15.0,
+                             layoutUnit(h, 60 + static_cast<int>(pi) * 8 + i) * 2.0 * Pi, 7.0, 0};
+                c.stopped = stopped;
+                out.structures.push_back(c);
+            }
+        }
+        if (status == 4)
+            continue;
+        // the camp and the temporary deck beside the site
+        const int rows = own ? 3 : (p.kind == "mast" || p.kind == "yard" || p.kind == "hab") ? 0 : 1;
+        for (int r = 0; r < rows; ++r)
+        {
+            Structure br {StructureKind::Barracks, at(baseDist + 150.0 + 14.0 * r, baseBearing + 0.42), 38.0, 6.0,
+                          baseBearing + Pi * 0.5, 42.0, r + 1};
+            br.stopped = stopped;
+            out.structures.push_back(br);
+        }
+        Structure tp {StructureKind::TempPad, at(baseDist + 140.0, baseBearing - 0.4), 24.0, 8.0, baseBearing, 30.0, 0};
+        tp.stopped = stopped;
+        out.structures.push_back(tp);
+    }
+}
+
 inline SettlementLayout layoutSurfaceSettlement(const WorldSite& site, double bodyRadiusM)
 {
     constexpr double Pi = 3.14159265358979323846;
@@ -142,6 +275,7 @@ inline SettlementLayout layoutSurfaceSettlement(const WorldSite& site, double bo
     for (int i = 0; i < pads; ++i)
         out.structures.push_back({StructureKind::Pad, at(smallBody ? 150.0 + 80.0 * i : 320.0 + 95.0 * i, heading), 30.0, 0.4, heading,
                                   36.0, i + 1});
+    appendSurfaceConstruction(out, site, bodyRadiusM, heading, constructionDayNow());
     return out;
 }
 

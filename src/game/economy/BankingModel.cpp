@@ -456,6 +456,36 @@ double riskPremium(double annualNetIncomeCr, double routeRisk, double legalRisk,
            0.04 * (priorDefaults > 0 ? 1.0 : 0.0) + 0.01 * std::clamp(debtToIncome, 0.0, 2.0);
 }
 
+PaymentResult payFine(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, int day,
+                      const std::string& memo)
+{
+    PaymentResult r = pay(ledger, dir, authorityBank, amountCr, Purpose::Fine, day, false, memo);
+    if (r.ok || !(amountCr > 0.0))
+        return r;
+    const NationalBank* b = dir.bank(authorityBank) ? dir.bank(authorityBank) : dir.reserve();
+    if (!b)
+        return r;
+    // not payable now: a fine debt at the authority's bank - 0 %, 12 monthly installments; the standing machine and the
+    // restructuring rules then treat it like any debt (never a seizure, never a refused fuel lifeline)
+    Loan l;
+    l.id = ledger.nextLoanId++;
+    l.bankId = b->id;
+    l.kind = LoanKind::Term;
+    l.principal = toMinor(amountCr * dir.fx(b->id));
+    l.outstanding = l.principal;
+    l.annualRate = 0.0;
+    l.startDay = day;
+    l.termDays = 360;
+    l.nextDueDay = day + 30;
+    l.installment = annuityInstallment(l.principal, 0.0, 12);
+    ledger.loans.push_back(l);
+    logEvent(ledger, day, "штраф в долг " + money(toUnits(l.principal), b->code) + " " + memo);
+    r.ok = true;
+    r.reason.clear();
+    r.lifelineCr = amountCr;
+    return r;
+}
+
 Loan* takeLoan(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int termDays,
                double extraRate, int day)
 {

@@ -174,9 +174,10 @@ struct CatalogData
 
 CatalogData& catalog()
 {
-    static CatalogData data;
-    if (!data.scanned)
-    {
+    // thread-safe first use (a function-local static's initializer): the server thread (hub security, promoted air
+    // traffic) and the client main thread (the renderer) may ask first at the same time
+    static CatalogData data = [] {
+        CatalogData data;
         data.scanned = true;
         std::error_code ec;
         for (const auto& entry : std::filesystem::directory_iterator("assets/data/navigation/hub_schedules", ec))
@@ -187,7 +188,8 @@ CatalogData& catalog()
             if (s->load(entry.path().string()))
                 data.schedules.push_back(std::move(s));
         }
-    }
+        return data;
+    }();
     return data;
 }
 } // namespace

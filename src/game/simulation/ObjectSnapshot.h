@@ -41,6 +41,7 @@ struct ObjectSnapshot
     std::vector<game::simulation::CityBuildingState> buildingStates;
     // a hub city's scheduled visits that are real ships now (indices into its HubTrafficSchedule visits)
     std::vector<std::uint32_t> materializedVisits;
+    std::vector<std::uint32_t> promotedAirSlots;   // its air-traffic slots now real ships (HubAirTraffic): not drawn as presentation
 
 
     void setWorldPosition(

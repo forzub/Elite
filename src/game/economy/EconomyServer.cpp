@@ -673,6 +673,20 @@ PaymentResult EconomyServer::chargeService(std::uint64_t playerId, const std::st
     return pay(*l, m_banks, bankOf(hubId, systemId), amountCr, purpose, m_day, true, memo);
 }
 
+PaymentResult EconomyServer::chargeFine(std::uint64_t playerId, const std::string& hubId, int systemId, double amountCr,
+                                        const std::string& memo)
+{
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+    {
+        PaymentResult r;
+        r.ok = playerId == 0;
+        r.reason = r.ok ? "" : "нет счёта";
+        return r;
+    }
+    return payFine(*l, m_banks, bankOf(hubId, systemId), amountCr, m_day, memo);
+}
+
 void EconomyServer::credit(std::uint64_t playerId, const std::string& hubId, int systemId, double amountCr, const std::string& memo)
 {
     if (ClientLedger* l = ledger(playerId))

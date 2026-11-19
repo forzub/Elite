@@ -1,15 +1,20 @@
 #include "src/render/geometry/ModelAssetGpuLibrary.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <future>
+#include <utility>
+#include <vector>
 #include <iostream>
 #include <unordered_map>
 
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "src/model_asset/HubCityAssembly.h"
+#include "src/model_asset/HubExpansion.h"
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 
@@ -429,8 +434,64 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
         const auto found = cache.find(hubId);
         return found == cache.end() ? nullptr : found->second.get();
     }
+    // a city under construction / expanding (src/model_asset/HubExpansion.h): when today's construction stages differ
+    // from the ones its package was assembled with, the new city is assembled OFF-THREAD (one job at a time) while
+    // the old package keeps drawing; the finished one is uploaded at most once per 50 ms (one city a frame); a
+    // replaced package is freed only 10 s later (a fence: draws of PreparedScenes queued before still reference it)
+    struct Rebuild
+    {
+        std::future<std::unique_ptr<ma::ModelAsset>> job;
+        std::uint64_t key = 0;
+    };
+    static std::unordered_map<std::string, std::uint64_t> stageKeys;
+    static std::unordered_map<std::string, Rebuild> rebuilds;
+    static std::vector<std::pair<std::chrono::steady_clock::time_point, std::unique_ptr<ModelAssetGpu>>> retired;
+    static std::chrono::steady_clock::time_point lastSwap {};
+    const auto now = std::chrono::steady_clock::now();
+    while (!retired.empty() && now - retired.front().first > std::chrono::seconds(10))
+        retired.erase(retired.begin());
+    const std::uint64_t stageKey = ma::hubExpansionStageKey(hubId);
     const auto [it, inserted] = cache.try_emplace(hubId);
+    const bool reload = inserted;
     if (inserted)
+        stageKeys[hubId] = stageKey;
+    else if (it->second && stageKeys[hubId] != stageKey && std::filesystem::exists(ma::hubCityLayoutPath(hubId)))
+    {
+        auto job = rebuilds.find(hubId);
+        const bool running = std::any_of(rebuilds.begin(), rebuilds.end(), [](const auto& r) {
+            return r.second.job.wait_for(std::chrono::seconds(0)) != std::future_status::ready;
+        });
+        if (job == rebuilds.end() && !running)
+        {
+            Rebuild r;
+            r.key = stageKey;
+            r.job = std::async(std::launch::async, [hubId] {
+                auto asset = std::make_unique<ma::ModelAsset>();
+                std::string error;
+                if (ma::assembleHubCity(hubId, "assets/compiled/hub_modules", *asset, &error))
+                    return asset;
+                std::cerr << "[HubCityAssembly] " << hubId << " (construction stage change): " << error << "\n";
+                return std::unique_ptr<ma::ModelAsset>();
+            });
+            rebuilds.emplace(hubId, std::move(r));
+        }
+        else if (job != rebuilds.end() && job->second.job.wait_for(std::chrono::seconds(0)) == std::future_status::ready &&
+                 now - lastSwap > std::chrono::milliseconds(50))
+        {
+            lastSwap = now;
+            std::unique_ptr<ma::ModelAsset> asset = job->second.job.get();
+            stageKeys[hubId] = job->second.key;
+            rebuilds.erase(job);
+            if (asset)
+                if (auto gpu = load(type, ("layout:" + hubId).c_str(), asset.get()))
+                {
+                    retired.emplace_back(now, std::move(it->second));
+                    it->second = std::move(gpu);
+                    std::cerr << "[HubCityAssembly] " << hubId << ": construction stages of the day swapped in\n";
+                }
+        }
+    }
+    if (reload)
     {
         // a frozen city layout (assets/data/navigation/hub_cities/<hub>.json) is assembled in memory from the shared
         // module packages; a hub without one keeps its per-hub package. DEV A/B: ELITE_DEV_CITY_PACKAGE=1 prefers

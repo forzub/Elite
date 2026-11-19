@@ -331,6 +331,14 @@ ELITE_WIRE_SCHEMA(
     v.zoneViolationSerial,
     v.zoneViolationKind,
     v.zoneViolationZoneId,
+    v.securityLevel,
+    v.securitySerial,
+    v.securityEvent,
+    v.securityEventFineCr,
+    v.securityEventDebtCr,
+    v.securityHubId,
+    v.securityLaneId,
+    v.securityFinesTotalCr,
     v.assistedThrottleTrimWasActive,
     v.forwardSpeedMps,
     v.strafeSpeedMps,
@@ -907,7 +915,8 @@ ELITE_WIRE_SCHEMA(
     v.orbitalMotion,
     v.graph,
     v.buildingStates,
-    v.materializedVisits
+    v.materializedVisits,
+    v.promotedAirSlots
 );
 
 ELITE_WIRE_SCHEMA(

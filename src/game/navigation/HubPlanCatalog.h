@@ -78,6 +78,7 @@ struct HubPlanAirShip
     std::string name;
     double lengthMeters = 30.0;
     double weight = 1.0;
+    std::string passport;       // the catalog ship (empty: a presentation-only hull, e.g. the city shuttle)
 };
 
 class HubPlan

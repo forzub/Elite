@@ -468,7 +468,38 @@ void SpaceState::updateZoneViolations(double dt)
                     m_violationShowSeconds = 8.0;
                 }
     }
-    m_finesTotalCr = motion.zoneFinesTotalCr;
+    // hub traffic control (GameSimulationHubSecurity.cpp, docs/HUB_SECURITY.md): the controller's warning, the fines
+    // (banked at the hub polity's bank; the part booked as debt), the fire-control lock, the incident closed
+    if (motion.securitySerial != m_lastSecuritySerial)
+    {
+        const bool first = m_lastSecuritySerial == 0xFFFF;
+        m_lastSecuritySerial = motion.securitySerial;
+        const std::string hub = motion.securityHubId;
+        const std::string lane = motion.securityLaneId;
+        std::string text;
+        switch (first ? 0 : motion.securityEvent)
+        {
+        case 1: text = routeText(context().app, "cockpit.security.warning", {hub, lane}); break;
+        case 2:
+            text = routeText(context().app, "cockpit.security.fine",
+                             {hub, std::to_string(static_cast<long long>(motion.securityEventFineCr)), lane,
+                              motion.securityEventDebtCr > 0.5
+                                  ? routeText(context().app, "cockpit.security.debt",
+                                              {std::to_string(static_cast<long long>(motion.securityEventDebtCr))})
+                                  : std::string()});
+            break;
+        case 3: text = routeText(context().app, "cockpit.security.lock", {hub}); break;
+        case 4: text = routeText(context().app, "cockpit.security.clear", {hub}); break;
+        default: break;
+        }
+        if (!text.empty())
+        {
+            m_violationText = text;
+            m_violationShowSeconds = 8.0;
+            std::cerr << "[Corridor] client notice: " << text << std::endl;
+        }
+    }
+    m_finesTotalCr = motion.zoneFinesTotalCr + motion.securityFinesTotalCr;
 }
 
 void SpaceState::renderZoneViolationBanner(const Viewport& viewport)

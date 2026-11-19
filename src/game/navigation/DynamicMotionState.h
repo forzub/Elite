@@ -219,6 +219,18 @@ struct DynamicMotionState
     std::uint16_t zoneViolationSerial = 0;
     std::uint8_t zoneViolationKind = 0;
     std::string zoneViolationZoneId;
+    // hub traffic control (GameSimulationHubSecurity.cpp, docs/HUB_SECURITY.md), judged by the SERVER: the ship's
+    // security level (game::traffic::security::ShipSecurityLevel: 0 none, 1 warned, 2 fined, 3 fire-control lock), a
+    // serial bumped on every event, the last event (1 wrong-way warning, 2 fine, 3 lock, 4 incident closed, 5 zone fine),
+    // its fine (Cr; the part booked as debt), the hub and lane, and the total of the traffic-control fines
+    std::uint8_t securityLevel = 0;
+    std::uint16_t securitySerial = 0;
+    std::uint8_t securityEvent = 0;
+    double securityEventFineCr = 0.0;
+    double securityEventDebtCr = 0.0;
+    std::string securityHubId;
+    std::string securityLaneId;
+    double securityFinesTotalCr = 0.0;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

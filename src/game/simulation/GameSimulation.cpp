@@ -358,7 +358,7 @@ void GameSimulation::updateShipShells(double dt)
     for (auto& [id, shell] : m_shipShells)
     {
         // Dock traffic poses are written by updateDockServiceTraffic().
-        if (m_dockTrafficShells.count(id) != 0)
+        if (m_dockTrafficShells.count(id) != 0 || m_airTrafficShells.count(id) != 0)
             continue;
         shell.authoritativeMotionAccumulatorSeconds += dt;
 
@@ -1757,7 +1757,10 @@ m_hubVelocityMetersPerSecond[hubId] =
             updateCatalogShipLineup();
             updateShipShells(dt);
         }
+        // m_securityStepDt (the free-flying ships vs the hub objects epoch projection) stays 0: the live check 2026-11-19
+        // did not confirm the one-step theory (docs/HUB_SECURITY.md §7)
         updateDockServiceTraffic(dt);
+        updateHubSecurity(dt);   // traffic control, promoted air traffic, collision avoidance, defence (docs/HUB_SECURITY.md)
         if (firstPass)
         {
             updateShipSimulationDetail(dt);

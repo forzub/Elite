@@ -26,4 +26,9 @@ bool spawnOrbitalHub(
     const game::world_state::InitialWorldStateOrbitalHub& hub
 );
 
+// The construction stages of the hub cities follow the universe time (src/model_asset/HubExpansion.h): when the
+// stages of a spawned city change (a new game day), its hit volumes are re-assembled - at most one city per call
+// (the server calls it every step). Returns true when a city was refreshed.
+bool refreshHubCityConstructionCollision(GameSimulation& sim);
+
 } // namespace game::scene

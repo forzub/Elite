@@ -2445,6 +2445,41 @@
       "es": "INFRACCIÓN ADMINISTRATIVA: {0} «{1}»  ·  multa {2} cr  ·  {3}",
       "ja": "行政違反：{0}「{1}」  ·  罰金 {2} cr  ·  {3}"
     },
+    "cockpit.security.warning": {
+      "en": "TRAFFIC CONTROL {0}: you are flying AGAINST the traffic in lane {1}  ·  leave the lane or you will be fined",
+      "ru": "УПРАВЛЕНИЕ ДВИЖЕНИЕМ {0}: вы летите НАВСТРЕЧУ потоку в коридоре {1}  ·  покиньте коридор, иначе штраф",
+      "zh-Hans": "交通管制 {0}：您正在航道 {1} 逆向飞行  ·  请离开航道，否则将被罚款",
+      "es": "CONTROL DE TRÁFICO {0}: vuela EN CONTRA del tráfico en el carril {1}  ·  salga del carril o será multado",
+      "ja": "交通管制 {0}：航路 {1} を逆走中  ·  航路を離れなければ罰金"
+    },
+    "cockpit.security.fine": {
+      "en": "TRAFFIC CONTROL {0}: fine {1} cr for flying against the traffic in lane {2}{3}",
+      "ru": "УПРАВЛЕНИЕ ДВИЖЕНИЕМ {0}: штраф {1} кр за встречное движение в коридоре {2}{3}",
+      "zh-Hans": "交通管制 {0}：因在航道 {2} 逆向飞行罚款 {1} 信用点{3}",
+      "es": "CONTROL DE TRÁFICO {0}: multa de {1} cr por volar en contra del tráfico en el carril {2}{3}",
+      "ja": "交通管制 {0}：航路 {2} の逆走で罰金 {1} cr{3}"
+    },
+    "cockpit.security.debt": {
+      "en": "  ·  {0} cr booked as a fine debt",
+      "ru": "  ·  {0} кр записано в долг",
+      "zh-Hans": "  ·  {0} 信用点记为罚款欠款",
+      "es": "  ·  {0} cr anotados como deuda",
+      "ja": "  ·  {0} cr を罰金債務として計上"
+    },
+    "cockpit.security.lock": {
+      "en": "TRAFFIC CONTROL {0}: FIRE-CONTROL LOCK  ·  the defence turrets are tracking you, a patrol is called  ·  leave the lane",
+      "ru": "УПРАВЛЕНИЕ ДВИЖЕНИЕМ {0}: ЗАХВАТ СИСТЕМОЙ ОГНЯ  ·  турели обороны ведут вас, вызван патруль  ·  покиньте коридор",
+      "zh-Hans": "交通管制 {0}：火控锁定  ·  防御炮塔正在跟踪您，已呼叫巡逻队  ·  请离开航道",
+      "es": "CONTROL DE TRÁFICO {0}: BLOQUEO DE TIRO  ·  las torretas le siguen, patrulla en camino  ·  salga del carril",
+      "ja": "交通管制 {0}：火器管制ロック  ·  防衛砲塔が追尾中、哨戒艇を要請  ·  航路を離れよ"
+    },
+    "cockpit.security.clear": {
+      "en": "TRAFFIC CONTROL {0}: lane clear  ·  incident closed",
+      "ru": "УПРАВЛЕНИЕ ДВИЖЕНИЕМ {0}: коридор свободен  ·  инцидент закрыт",
+      "zh-Hans": "交通管制 {0}：航道已清空  ·  事件结束",
+      "es": "CONTROL DE TRÁFICO {0}: carril despejado  ·  incidente cerrado",
+      "ja": "交通管制 {0}：航路クリア  ·  インシデント終了"
+    },
     "cockpit.route.violation_red_zone": {
       "en": "entering a red zone",
       "ru": "вход в красную зону",

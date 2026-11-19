@@ -107,7 +107,7 @@ bool HubPlan::load(const std::string& path)
         m_bloc = f.value("bloc", std::string());
         for (const auto& s : f.value("ships", nlohmann::json::array()))
             m_airFleet.push_back({s.value("model", std::string()), s.value("name", std::string()), s.value("length_m", 30.0),
-                                  s.value("weight", 1.0)});
+                                  s.value("weight", 1.0), s.value("passport", std::string())});
     }
     if (m_frameModuleId.empty() || m_blocks.empty())
     {
@@ -143,9 +143,10 @@ struct CatalogData
 
 CatalogData& catalog()
 {
-    static CatalogData data;
-    if (!data.scanned)
-    {
+    // thread-safe first use (a function-local static's initializer): the server thread (hub security, promoted air
+    // traffic) and the client main thread (the renderer) may ask first at the same time
+    static CatalogData data = [] {
+        CatalogData data;
         data.scanned = true;
         std::error_code ec;
         for (const auto& entry : std::filesystem::directory_iterator("assets/data/navigation/hub_plans", ec))
@@ -156,7 +157,8 @@ CatalogData& catalog()
             if (plan->load(entry.path().string()))
                 data.plans.push_back(std::move(plan));
         }
-    }
+        return data;
+    }();
     return data;
 }
 } // namespace

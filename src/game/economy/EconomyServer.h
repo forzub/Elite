@@ -89,6 +89,9 @@ public:
     PaymentResult chargeService(std::uint64_t playerId, const std::string& hubId, int systemId, Purpose purpose, double amountCr,
                                 const std::string& memo);
     void credit(std::uint64_t playerId, const std::string& hubId, int systemId, double amountCr, const std::string& memo);
+    // an administrative fine to the authority of `hubId` (its polity's national bank): never refused - what cannot be
+    // paid becomes a fine debt (BankingModel payFine). playerId 0 (AI): nothing booked.
+    PaymentResult chargeFine(std::uint64_t playerId, const std::string& hubId, int systemId, double amountCr, const std::string& memo);
     [[nodiscard]] double towCostCr() const { return m_banks.rules.towCostCr; }
     [[nodiscard]] double minRepairCostCr() const { return m_banks.rules.minRepairCr; }
 

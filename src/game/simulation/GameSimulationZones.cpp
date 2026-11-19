@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 
+#include "src/game/economy/EconomyService.h"
 #include "src/game/navigation/route/RouteZones.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 
@@ -90,12 +91,21 @@ void GameSimulation::updateZoneViolations(double dt)
         }
         auto& watch = m_zoneWatch[id];
         const auto fine = [&](const route::RouteZone& z, int kind) {
-            motion.zoneFinesTotalCr += z.fineCr;
             motion.zoneViolationKind = static_cast<std::uint8_t>(kind);
             motion.zoneViolationZoneId = z.id;
             ++motion.zoneViolationSerial;
+            // the fine is banked (docs/HUB_SECURITY.md, ECONOMY_BANKING.md): the account of the ship's owner at the bank of the
+            // polity where it is - never refused, an unpayable fine becomes a fine debt
+            const auto paid = game::economy::service::chargeFine(static_cast<std::uint32_t>(id.value), std::string(), z.fineCr,
+                                                                 "штраф: навигационная зона " + z.id);
+            // the display mirror of the bank (the payment / fine debt is the truth); no economy / AI: the fine assessed
+            motion.zoneFinesTotalCr += paid.charged ? paid.paidCr + paid.debtCr : z.fineCr;
             std::cerr << "[Zones] ship " << id.value << " VIOLATION: " << (kind == 1 ? "entered red zone " : "skipped gate ") << z.id
-                      << ", fine " << z.fineCr << " cr (total " << motion.zoneFinesTotalCr << ")" << std::endl;
+                      << ", fine " << z.fineCr << " cr (total " << motion.zoneFinesTotalCr << "; "
+                      << (paid.charged ? "banked: paid " + std::to_string(static_cast<long long>(paid.paidCr)) + ", debt " +
+                                             std::to_string(static_cast<long long>(paid.debtCr))
+                                       : std::string("not banked: no economy / AI"))
+                      << ")" << std::endl;
         };
         for (const auto& g : geometry)
         {

@@ -107,3 +107,30 @@ void noteFuelDelivered(std::uint32_t shipEntityId, const std::string& stationId,
     b.economy->recordFuelDelivery(player, stationId, systemOf(stationId), k, tonnes);
 }
 } // namespace game::economy::service
+
+namespace game::economy::service
+{
+FineResult chargeFine(std::uint32_t shipEntityId, const std::string& hubId, double amountCr, const std::string& reason)
+{
+    FineResult out;
+    if (!(amountCr > 0.0) || !installed())
+        return out;
+    const auto& b = bindings();
+    const std::uint64_t player = b.playerOfShip ? b.playerOfShip(shipEntityId) : 0;
+    if (player == 0)
+        return out;
+    auto where = b.locationOfShip ? b.locationOfShip(shipEntityId) : std::pair<std::string, int>{std::string(), -1};
+    if (!hubId.empty())
+    {
+        where.first = hubId;
+        const int sys = systemOf(hubId);
+        if (sys >= 0)
+            where.second = sys;
+    }
+    const PaymentResult r = b.economy->chargeFine(player, where.first, where.second, amountCr, reason);
+    out.charged = r.ok;
+    out.debtCr = r.ok ? r.lifelineCr : 0.0;
+    out.paidCr = r.ok ? amountCr - out.debtCr : 0.0;
+    return out;
+}
+} // namespace game::economy::service

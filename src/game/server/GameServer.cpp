@@ -1568,6 +1568,8 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     }
     m_simulation.setSystemPass(0);
     m_lastTickSystemPasses = passSystems.size();
+    game::server::serverTickProfile().systemPasses += static_cast<long long>(passSystems.size());
+    game::server::serverTickProfile().simulatedShips += static_cast<long long>(m_simulation.ships().size());
     m_lastTickSimulationSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - passStart).count();
     game::server::serverTickProfile().simulation += m_lastTickSimulationSeconds;
 }

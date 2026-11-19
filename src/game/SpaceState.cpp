@@ -1,3 +1,4 @@
+#include "src/game/server/ServerTickProfile.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/navigation/rules/JDrive.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
@@ -3117,6 +3118,22 @@ void SpaceState::renderUI()
                 << " draw_calls=" << m_perfMainStats.drawCalls
                 << " parts=" << m_perfMainStats.partsDrawn
                 << '\n';
+            // the embedded server's stages since the last report (ServerTickProfile; EliteServer --load-test prints
+            // the same) - where a slow fixed_sim goes
+            {
+                auto& p = game::server::serverTickProfile();
+                const double n = std::max<long long>(1, p.ticks);
+                std::fprintf(stderr,
+                             "[SimPerf] ticks %lld, %.1f system passes, %.0f ships: per tick ms simulation %.2f snapshot %.2f "
+                             "sessions %.2f | stages: ships %.2f hubs %.2f frames+freeflight %.2f static %.2f ai/controls %.2f "
+                             "physics %.2f radar %.2f\n",
+                             p.ticks, p.systemPasses / n, p.simulatedShips / n, 1000 * p.simulation / n, 1000 * p.snapshotBuild / n,
+                             1000 * (p.sessionPlan + p.sessionSelect + p.sessionCopy + p.sessionPublish) / n,
+                             1000 * p.simStage[0] / n, 1000 * p.simStage[1] / n, 1000 * p.simStage[2] / n,
+                             1000 * p.simStage[3] / n, 1000 * p.simStage[4] / n, 1000 * p.simStage[5] / n,
+                             1000 * p.simStage[6] / n);
+                p = {};
+            }
             lastFramePerfReportMs = now;
         }
     }

@@ -71,30 +71,44 @@ bool GameSimulation::removeTrafficShell(EntityId id)
     return true;
 }
 
-std::vector<std::pair<const StaticObject*, const StaticObject*>> GameSimulation::hexDockPairs() const
+const std::vector<std::pair<const StaticObject*, const StaticObject*>>& GameSimulation::hexDockPairs() const
 {
-    std::vector<std::pair<const StaticObject*, const StaticObject*>> out;
+    // Cached (live 2026-11-19: with 293 cities the old O(docks x static objects) scan, several times a tick, cost
+    // ~12 ms of a 20 ms tick - the game fell into catch-up batches at ~5 FPS and the docking autopilot lost its
+    // corridor). Static objects are only ever added (spawnStation) and an unordered_map keeps its elements' addresses
+    // on insertion, so the pairs stay valid until the count changes.
+    if (m_hexDockPairsCacheValid && m_hexDockPairsCacheSize == m_staticObjects.size())
+        return m_hexDockPairsCache;
+    auto& out = m_hexDockPairsCache;
+    out.clear();
+    std::unordered_map<std::string, std::vector<const StaticObject*>> serviceBlocksByHub;
+    for (const auto& [bid, b] : m_staticObjects)
+        if (b.attachedToHub && b.type == ObjectType::HubDockServiceBlock)
+            serviceBlocksByHub[b.hubId].push_back(&b);
     for (const auto& [id, obj] : m_staticObjects)
     {
         if (!obj.attachedToHub || obj.type != ObjectType::HubHexDock)
             continue;
+        const auto blocks = serviceBlocksByHub.find(obj.hubId);
+        if (blocks == serviceBlocksByHub.end())
+            continue;
         const StaticObject* base = nullptr;
         double best = 1.0e30;
-        for (const auto& [bid, b] : m_staticObjects)
+        for (const StaticObject* b : blocks->second)
         {
-            if (!b.attachedToHub || b.type != ObjectType::HubDockServiceBlock || b.hubId != obj.hubId)
-                continue;
-            const double d = glm::length(b.hubLocalOffsetMeters - obj.hubLocalOffsetMeters);
+            const double d = glm::length(b->hubLocalOffsetMeters - obj.hubLocalOffsetMeters);
             if (d < best)
             {
                 best = d;
-                base = &b;
+                base = b;
             }
         }
         if (base)
             out.emplace_back(&obj, base);
     }
     std::sort(out.begin(), out.end(), [](const auto& x, const auto& y) { return x.first->hubModuleId < y.first->hubModuleId; });
+    m_hexDockPairsCacheSize = m_staticObjects.size();
+    m_hexDockPairsCacheValid = true;
     return out;
 }
 

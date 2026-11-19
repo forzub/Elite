@@ -771,7 +771,10 @@ private:
     };
     std::map<std::string, DockSite> m_dockSites;
     std::unordered_map<EntityId, std::string> m_pilotDockSite;   // pilot ship -> the dock site handling it
-    std::vector<std::pair<const StaticObject*, const StaticObject*>> hexDockPairs() const;
+    const std::vector<std::pair<const StaticObject*, const StaticObject*>>& hexDockPairs() const;
+    mutable std::vector<std::pair<const StaticObject*, const StaticObject*>> m_hexDockPairsCache;
+    mutable std::size_t m_hexDockPairsCacheSize = 0;
+    mutable bool m_hexDockPairsCacheValid = false;
     bool hexDockPair(const std::string& dockModuleId, const StaticObject*& dock, const StaticObject*& base) const;
     DockSite* pilotDockSite(EntityId shipId);
     const DockSite* pilotDockSite(EntityId shipId) const;

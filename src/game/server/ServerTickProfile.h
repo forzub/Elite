@@ -21,6 +21,8 @@ struct ServerTickProfile
     // GameSimulation::update stages, summed over the system passes: 0 ship maintenance, 1 hubs,
     // 2 hub frames + free flight, 3 static objects, 4 AI / controls, 5 physics, 6 signals / radar
     double simStage[7] {};
+    long long systemPasses = 0;       // summed system passes (the DEV [SimPerf] average per tick)
+    long long simulatedShips = 0;     // summed ships of all passes
     // snapshot build: 0 simulation DTOs, 1 session data, 2 canonical merge
     double snapshotParts[3] {};
     double economy = 0.0;             // DEV economy ticks (ELITE_DEV_ECONOMY_TICK_S)

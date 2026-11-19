@@ -277,6 +277,11 @@ public:
     void applyClientBodyAutopilotDisplay(game::navigation::DynamicMotionState& motion) const;
     bool clientBodyAutopilotWorld(game::navigation::globalflight::BodyAutopilotEnvironment& env,
                                   game::navigation::globalflight::BodyAutopilotShip& sample);
+    // sensor-limited speed (docs/SENSOR_LIMITED_SPEED.md): is the ship's point charted; if not, the sensor range and
+    // the reaction go into the sample (the route pilot / J autopilot bound their speed with them)
+    void applySensorSpeedInputs(game::navigation::globalflight::BodyAutopilotShip& sample);
+    int m_sensorChartedBy = -1;        // the last charted reason logged (rules::sensor::ChartedBy), -1 none yet
+    double m_sensorShownRangeM = 0.0;  // the sensor range of the bound (HUD)
 
     bool composeHubMapSnapshot(
         int systemId,

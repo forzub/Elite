@@ -18,6 +18,7 @@
 #include "src/game/navigation/landing/SurfaceLandingPilot.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/navigation/rules/JDrive.h"
+#include "src/game/navigation/rules/SensorSpeedRules.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 
@@ -402,8 +403,16 @@ void BodyAutopilot::stepTransfer(const BodyAutopilotEnvironment& env, const Body
         const double tail = d / ApproachTauS;
         if (phase == AutopilotStage::Cruise && tail < braking)
             phase = AutopilotStage::Approach;
+        // uncharted space (docs/SENSOR_LIMITED_SPEED.md): the closing speed at which the ship still sees, decides and
+        // stops inside its sensor range, braking on the field it has now
+        double closing = std::min(braking, tail);
+        if (ship.sensorRangeM > 0.0)
+        {
+            out.sensorSpeedLimitMps = game::navigation::rules::sensor::sensorSpeedLimitMps(ship.sensorRangeM, ship.sensorReactionS, ramp);
+            closing = std::min(closing, out.sensorSpeedLimitMps);
+        }
         // tangential: the closing velocity on top of the orbit velocity at the insertion point
-        wanted = dir * std::min(braking, tail) + orbitTangent * orbitSpeed;
+        wanted = dir * closing + orbitTangent * orbitSpeed;
         if ((phase == AutopilotStage::Approach || m_orbitAcquire) && d < 1000.0 && glm::length(w - orbitTangent * orbitSpeed) < 5.0)
         {
             phase = AutopilotStage::OrbitHold;

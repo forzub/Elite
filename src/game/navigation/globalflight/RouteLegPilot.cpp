@@ -10,6 +10,7 @@
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/navigation/rules/JDrive.h"
+#include "src/game/navigation/rules/SensorSpeedRules.h"
 
 namespace game::navigation::globalflight
 {
@@ -323,6 +324,15 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     const double braking = (-rampLeft + std::sqrt(rampLeft * rampLeft + 4.0 * kBrake * dEff)) / (2.0 * kBrake);
     const double tail = dEff / jd::ApproachTauS;
     double speed = std::min({braking, tail, jd::SpeedCapMps});
+    // uncharted space (docs/SENSOR_LIMITED_SPEED.md): never faster than the speed at which the ship still sees, decides
+    // and stops inside its sensor range - braking on the field it has now
+    double sensorCap = 0.0;
+    if (ship.sensorRangeM > 0.0)
+    {
+        sensorCap = game::navigation::rules::sensor::sensorSpeedLimitMps(ship.sensorRangeM, ship.sensorReactionS, limit);
+        speed = std::min(speed, sensorCap);
+    }
+    out.sensorSpeedLimitMps = sensorCap;
     if (nearDeparture)
         speed = std::min(speed, jd::GentleSpeedMps);
     if (phase == 2 && tail < braking)
@@ -461,7 +471,9 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     {
         m_lastLog = m_seconds;
         std::cerr << "[Route] ship " << m_shipId << " t+" << m_seconds << " s phase " << int(out.displayPhase) << ": to aim " << d / 1000.0
-                  << " km, speed vs destination " << glm::length(wAfter) << " m/s, accel " << glm::length(accel) << " m/s2" << std::endl;
+                  << " km, speed vs destination " << glm::length(wAfter) << " m/s, accel " << glm::length(accel) << " m/s2"
+                  << (sensorCap > 0.0 ? ", sensor v_max " + std::to_string(static_cast<long long>(sensorCap)) + " m/s (uncharted)" : std::string())
+                  << std::endl;
     }
 
     // ---- a guide point passed: the route goes on in J (no stop, no matching); passed within 1 % of

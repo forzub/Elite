@@ -1283,6 +1283,13 @@
       "es": "en órbita (estabilización), esperando la salida",
       "ja": "軌道上（安定化）、離脱待ち"
     },
+    "cockpit.autopilot.sensor_speed": {
+      "en": "sensor range {0} · speed by sensors {1} · uncharted space",
+      "ru": "обзор {0} · скорость по обзору {1} · участок не обследован",
+      "zh-Hans": "探测范围 {0} · 按探测限速 {1} · 未勘测区域",
+      "es": "alcance del radar {0} · velocidad por sensores {1} · zona sin cartografiar",
+      "ja": "探知範囲 {0} · 探知速度制限 {1} · 未測量宙域"
+    },
     "cockpit.autopilot.line_short": {
       "en": "AUTOPILOT -> {0}:  {1}",
       "ru": "АВТОПИЛОТ -> {0}:  {1}",

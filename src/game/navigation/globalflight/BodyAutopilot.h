@@ -94,6 +94,10 @@ struct BodyAutopilotShip
     bool jAccelKnown = false;          // the plant's J field acceleration now (replicated)
     double jAccelMps2 = 0.0;
     double jFieldLevelMps2 = 0.0;      // the field's own level (its ramp), not net of the medium (replicated)
+    // sensor-limited speed (rules/SensorSpeedRules.h): > 0 - the space here is uncharted, the autopilot keeps the speed
+    // at which it stops inside this sensor range (with sensorReactionS); 0 - charted, no bound
+    double sensorRangeM = 0.0;
+    double sensorReactionS = 0.0;
 };
 
 struct BodyAutopilotOutput
@@ -110,6 +114,7 @@ struct BodyAutopilotOutput
     double displayRelSpeedMps = 0.0;
     float displayAccelMps2 = 0.0f;
     bool finished = false;             // the target vanished: the autopilot is off
+    double sensorSpeedLimitMps = 0.0;  // the sensor-limited speed applied this step (0: none - charted space)
 };
 
 class BodyAutopilot

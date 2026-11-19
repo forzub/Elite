@@ -2112,6 +2112,16 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         text.solidRectPx(ax, ay, aw, 30.0f, glm::vec4(0.01f, 0.05f, 0.08f, 0.85f));
         text.solidRectPx(ax, ay, aw, 2.0f, glm::vec4(0.30f, 0.80f, 1.0f, 0.95f));
         text.textDrawPx(ap, ax + 20.0f, ay + 21.0f, 16, glm::vec4(0.62f, 0.90f, 1.0f, 1.0f));
+        // uncharted space: the autopilot holds the speed by its sensors (docs/SENSOR_LIMITED_SPEED.md)
+        if (m_bodyAutopilotDisplay.sensorSpeedLimitMps > 0.0)
+        {
+            const std::string sl = tr("cockpit.autopilot.sensor_speed",
+                                      {jDistance(lookup, m_sensorShownRangeM), jSpeed(lookup, m_bodyAutopilotDisplay.sensorSpeedLimitMps)});
+            const float sw = text.measureTextPx(sl, 14) + 40.0f;
+            const float sx = std::max(8.0f, (static_cast<float>(viewport.width) - sw) * 0.5f);
+            text.solidRectPx(sx, ay + 32.0f, sw, 24.0f, glm::vec4(0.08f, 0.05f, 0.01f, 0.85f));
+            text.textDrawPx(sl, sx + 20.0f, ay + 49.0f, 14, glm::vec4(1.0f, 0.80f, 0.40f, 1.0f));
+        }
     }
 
     if (!motion.freeFlight)

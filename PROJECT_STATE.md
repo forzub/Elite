@@ -6996,3 +6996,27 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   reputation, framework contract, x1.3 repost, operator's own ship, shortage on failure, NPC virtual delivery, event
   postings (shortage / state order / passengers / relief / smuggling), insurance, licences; the F8 header day is the
   client's (no DEV offset); server messages Russian; ФИНАНСЫ memo lines overflow into the right column (cosmetic).
+
+## SENSOR-LIMITED SPEED (docs/SENSOR_LIMITED_SPEED.md, minimal set) - SOURCE + UNIT + LIVE PASS 2026-11-19
+
+- Rule: `src/game/navigation/rules/SensorSpeedRules.h` (pure): v_max = 2kR / (t_r + sqrt(t_r^2 + 2kR/a_b)), k 0.8,
+  t_r 1.5 s (3 s with navComputerState == 2), R = max(radar, 150 km optics); `chartedBy`: green corridor -> hub radar zone
+  (route_zones.json hub_radar_km 3000) -> local catalogue system within 1.5 x its farthest body (proxy "surveyed shell")
+  -> approaches with a usable lane record (proxy, nav computer alive). Uncharted: deep space, approaches without records,
+  distant catalogue systems, beyond the shell. No new survey data.
+- Applied only in the client autopilots: `RouteLegPilot::step` (speed vs destination, a_b = current J limit) and
+  `BodyAutopilot::stepTransfer` (closing speed, a_b = ramp); inputs `BodyAutopilotShip::sensorRangeM / sensorReactionS`
+  filled by `SpaceState::applySensorSpeedInputs` (SpaceStateRoute.cpp) from `clientBodyAutopilotWorld`; output
+  `BodyAutopilotOutput::sensorSpeedLimitMps`. Manual flight untouched. HUD line `cockpit.autopilot.sensor_speed`
+  (5 languages) under the autopilot panel. Log `[SensorSpeed]` on a change of reason; `[Route]` lines add "sensor v_max".
+- Unit: EliteBodyFlightRulesCheck PASSED (doc table 834.5 / 164.5 / 32.9 km/s - the doc's row 3 "~40" was k = 1, fixed).
+  EliteEconomyCheck 131/131; check_architecture, check_entity_lifetime, check_active_system_context,
+  check_localization_boundary PASS. Other check_*.py reds (client_galaxy_map_catalog, model_asset_* x7, ui_platform_fonts)
+  are in files not touched here (baseline). No snapshot / wire change.
+- LIVE (D:/tmp/sensorspeed): point:300,0,0 + leg orbit Mars -> speed holds 77 935 m/s from t+30 s (far3.log,
+  far3_95.png: HUD "обзор 150.0 км · скорость по обзору 77.94 км/с · участок не обследован"); J autopilot to the Moon from
+  there holds 77.61 km/s (farap2.log, farap2_95.png); hub:earth_orbital_hub@40 + same leg -> corridor -> hub zone -> shell,
+  no bound, 28 853 km/s at t+60 s (near.log, near_80.png).
+- Finding: the player hull is a legacy descriptor (no passport, catalog radar 0, installed PPI LCD radar 1000 m) - hence
+  the 150 km optics floor (otherwise v_max 533 m/s). Not done: route-map time estimate, radar damage, server-side
+  bound / NPC, live check of approaches + lane record / deep space / failed nav computer.

@@ -9,6 +9,7 @@
 #include "src/game/navigation/route/RoutePlanner.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/navigation/rules/JDrive.h"
+#include "src/game/navigation/rules/SensorSpeedRules.h"
 
 namespace
 {
@@ -111,6 +112,46 @@ int main()
     check(c1 > 0.0 && c2 > c1, "charge grows with distance");
     check(std::abs(c3 - c4) < 1e-9, "coast at 0.9 c costs nothing");
     check(jd::jLegRatio(150.0, 500.0) < jd::jLegRatio(480.0, 500.0), "a heavier load of the core costs more");
+
+    // sensor-limited speed (docs/SENSOR_LIMITED_SPEED.md): the doc's table and the charted rule
+    {
+        namespace sn = game::navigation::rules::sensor;
+        const double v1 = sn::sensorSpeedLimitMps(2.0e6, 1.5, 1.0e6);
+        const double v2 = sn::sensorSpeedLimitMps(2.0e6, 1.5, 1.0e4);
+        const double v3 = sn::sensorSpeedLimitMps(1.5e5, 2.0, 1.0e4);
+        std::printf("      sensor v_max: 2000 km 1.5 s 1e6 -> %.1f km/s; 1e4 -> %.1f km/s; 150 km 2 s 1e4 -> %.1f km/s; full J %.1f km/s\n",
+                    v1 / 1000.0, v2 / 1000.0, v3 / 1000.0, sn::sensorSpeedLimitMps(2.0e6, 1.5, jd::MaxAccelMps2) / 1000.0);
+        check(std::abs(v1 - 834.5e3) < 1.0e3, "sensor: 2000 km, 1.5 s, 1e6 m/s2 -> ~834 km/s");
+        check(std::abs(v2 - 164.5e3) < 1.0e3, "sensor: 2000 km, 1.5 s, 1e4 m/s2 -> ~164 km/s");
+        check(std::abs(v3 - 32.9e3) < 0.5e3, "sensor: 150 km optics, 2 s, 1e4 m/s2 -> ~33 km/s");
+        // the bound is the stopping law itself: reaction run + braking run = k R
+        check(std::abs(v1 * 1.5 + v1 * v1 / 2.0e6 - 0.8 * 2.0e6) < 1.0, "sensor: v t + v^2/2a = k R");
+        check(sn::sensorSpeedLimitMps(2.0e6, 3.0, 1.0e6) < v1, "sensor: a failed nav computer (longer reaction) is slower");
+        check(sn::sensorSpeedLimitMps(5.0e7, 1.5, 1.0e6) > v1, "sensor: a longer radar range is faster");
+        check(sn::sensorSpeedLimitMps(2.0e6, 1.5, 0.0) == 0.0 && sn::sensorSpeedLimitMps(0.0, 1.5, 1.0e6) == 0.0,
+              "sensor: no braking / no range -> 0");
+        check(std::abs(sn::sensorSpeedLimitMps(2.0e6, 1.5, 1.0e30) - 0.8 * 2.0e6 / 1.5) < 1.0, "sensor: unlimited braking -> k R / t_r");
+        check(sn::sensorRangeM(0.0) == sn::OpticsRangeM && sn::sensorRangeM(1000.0) == sn::OpticsRangeM && sn::sensorRangeM(2.0e6) == 2.0e6,
+              "sensor: no radar / a 1 km docking radar -> optics range");
+        sn::ChartedQuery q;
+        q.catalogueSystem = true;
+        q.farthestBodyM = 30.0 * au;
+        q.hubZoneM = 3.0e6;
+        q.distanceFromStarM = 40.0 * au;
+        check(sn::chartedBy(q) == sn::ChartedBy::SurveyShell, "charted: 40 AU in a 30 AU system (1.5 x shell)");
+        q.distanceFromStarM = 60.0 * au;
+        check(sn::chartedBy(q) == sn::ChartedBy::None, "uncharted: 60 AU, beyond the shell");
+        q.nearestHubM = 2.0e6;
+        check(sn::chartedBy(q) == sn::ChartedBy::HubZone, "charted: a hub's radar zone beyond the shell");
+        q.nearestHubM = 1.0e9;
+        q.inGreenCorridor = true;
+        check(sn::chartedBy(q) == sn::ChartedBy::Corridor, "charted: a green corridor");
+        sn::ChartedQuery deep;   // a deep-space place / approaches: no shell
+        deep.distanceFromStarM = 1.0;
+        check(sn::chartedBy(deep) == sn::ChartedBy::None, "uncharted: deep space / approaches without records");
+        deep.approachLaneRecord = true;
+        check(sn::chartedBy(deep) == sn::ChartedBy::LaneRecord, "charted: approaches with a usable lane record");
+    }
     std::printf("%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures, failures == 1 ? "" : "s");
     return failures ? 1 : 0;
 }

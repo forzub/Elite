@@ -13,6 +13,9 @@
 #include "src/game/navigation/route/RoutePlanner.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 #include "src/game/navigation/rules/JDrive.h"
+#include "src/game/navigation/rules/InterstellarJumpRoute.h"
+#include "src/game/navigation/rules/SensorSpeedRules.h"
+#include "src/world/celestial/StarAtlasDatabase.h"
 
 namespace
 {
@@ -515,4 +518,80 @@ void SpaceState::renderZoneViolationBanner(const Viewport& viewport)
     text.solidRectPx(x, y, w, 2.0f, glm::vec4(1.0f, 0.3f, 0.2f, 1.0f));
     text.textDrawPx(m_violationText, x + 20.0f, y + 22.0f, 16, glm::vec4(1.0f, 0.85f, 0.8f, 1.0f));
     text.endFrame();
+}
+
+// Sensor-limited speed (docs/SENSOR_LIMITED_SPEED.md, rules/SensorSpeedRules.h): the charted test from data the client
+// already has - the green corridors and the hub radar zone of route_zones.json, the catalogue system's surveyed shell
+// (its farthest body now x SurveyShellFactor), the lane records the ship carries (a system's approaches). Uncharted:
+// the radar range of the hull's passport (no radar: optics) and the reaction (a failed nav computer: longer) go into
+// the sample; the route pilot / J autopilot bound their speed with them. Manual flight is not touched.
+void SpaceState::applySensorSpeedInputs(game::navigation::globalflight::BodyAutopilotShip& sample)
+{
+    namespace sn = game::navigation::rules::sensor;
+    namespace jr = game::navigation::jump;
+    using Atlas = world::celestial::StarAtlasDatabase;
+    sample.sensorRangeM = 0.0;
+    sample.sensorReactionS = 0.0;
+    if (!m_client)
+        return;
+    const auto shipIt = m_client->world().ships().find(m_playerId.value);
+    if (shipIt == m_client->world().ships().end() || !shipIt->second.descriptor)
+        return;
+    const auto& motion = shipIt->second.transform.motion;
+    const int systemId = motion.systemId;
+    const glm::dvec3 p = sample.positionM;
+    const auto* atlas = m_client->starAtlas();
+    sn::ChartedQuery q;
+    const auto* summary = atlas ? atlas->findSystemSummary(systemId) : nullptr;
+    q.catalogueSystem = summary && !Atlas::isDeepSpace(systemId) && summary->catalogScope == world::celestial::StarSystemCatalogScope::Local;
+    // the star: the heaviest body; the shell: the farthest body from it
+    const game::navigation::GravityBody* star = nullptr;
+    for (const auto& b : m_bodyAutopilotBodies)
+        if (!star || b.gravitationalParameterM3s2 > star->gravitationalParameterM3s2)
+            star = &b;
+    if (star)
+    {
+        q.distanceFromStarM = glm::length(p - star->centerMeters);
+        for (const auto& b : m_bodyAutopilotBodies)
+            q.farthestBodyM = std::max(q.farthestBodyM, glm::length(b.centerMeters - star->centerMeters));
+    }
+    for (const auto& [hubId, hub] : m_client->world().hubs())
+        if (hub.systemId == systemId)
+            q.nearestHubM = std::min(q.nearestHubM, glm::length(world::coordinates::fullMeters(hub.worldPosition) - p));
+    q.hubZoneM = zoneCatalog().hubRadarM;
+    for (const auto& z : route::resolveZones(zoneCatalog(), systemId, routeAnchorResolver()))
+        if (z.zone && z.zone->colour == route::ZoneColour::Green && z.contains(p))
+            q.inGreenCorridor = true;
+    // the lane records live in the nav computer (JUMP_MECHANICS 10k): a failed one reads none
+    const bool navDown = motion.navComputerState == 2;
+    if (atlas && !navDown && Atlas::isApproach(systemId))
+    {
+        const int sys = Atlas::systemOfApproach(systemId);
+        if (const auto* shell = jr::approachShellOf(*atlas, sys))
+            for (const auto& r : jr::parseLaneRecords(motion.laneRecords))
+                if (r.systemId == sys && jr::laneState(*shell, r, m_client->lastSimulationMetadata().universeTimeSeconds) != jr::LaneState::Unknown)
+                    q.approachLaneRecord = true;
+    }
+    const sn::ChartedBy by = sn::chartedBy(q);
+    // the passport radar (a catalogue hull), else the installed default radar (the legacy descriptors)
+    const auto& desc = *shipIt->second.descriptor;
+    const double range = sn::sensorRangeM(desc.catalog.radarRangeMeters > 0.0 ? desc.catalog.radarRangeMeters
+                                          : desc.defaultEquipment.radar ? desc.defaultEquipment.radar->maxRange : 0.0);
+    m_sensorShownRangeM = range;
+    if (by == sn::ChartedBy::None)
+    {
+        sample.sensorRangeM = range;
+        sample.sensorReactionS = sn::reactionSeconds(navDown);
+    }
+    if (static_cast<int>(by) != m_sensorChartedBy)
+    {
+        static const char* reasons[] = {"UNCHARTED - speed by the sensors", "a green corridor", "a hub radar zone", "the system's surveyed shell",
+                                        "a lane record of the approaches"};
+        std::cerr << "[SensorSpeed] system " << systemId << ": " << reasons[static_cast<int>(by)] << " (star " << q.distanceFromStarM / 1.495978707e11
+                  << " AU, shell " << sn::SurveyShellFactor * q.farthestBodyM / 1.495978707e11 << " AU, nearest hub " << q.nearestHubM / 1000.0
+                  << " km); hull " << desc.catalog.passportId << ", radar " << range / 1000.0 << " km, reaction " << sn::reactionSeconds(navDown) << " s, v_max at full J "
+                  << sn::sensorSpeedLimitMps(range, sn::reactionSeconds(navDown), game::navigation::jdrive::MaxAccelMps2) / 1000.0 << " km/s"
+                  << std::endl;
+        m_sensorChartedBy = static_cast<int>(by);
+    }
 }

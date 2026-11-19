@@ -177,6 +177,7 @@ bool SpaceState::clientBodyAutopilotWorld(gf::BodyAutopilotEnvironment& env, gf:
     sample.jAccelKnown = true;
     sample.jAccelMps2 = std::abs(motion.jAccelMps2);
     sample.jFieldLevelMps2 = motion.jFieldLevelMps2;
+    applySensorSpeedInputs(sample);   // uncharted space: the speed by the sensors (docs/SENSOR_LIMITED_SPEED.md)
     return true;
 }
 

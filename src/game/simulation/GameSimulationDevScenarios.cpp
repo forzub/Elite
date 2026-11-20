@@ -126,6 +126,25 @@ EntityId GameSimulation::spawnShipBeside(EntityId near, ShipRole role, const Shi
     return id;
 }
 
+EntityId GameSimulation::spawnShipAtHub(ShipRole role, const ShipDescriptor& d, const ShipInitData& init, int systemId, const std::string& hubId,
+                                        const glm::dvec3& localOffsetM)
+{
+    const auto* frameOf = hubNavigationFrame(hubId);
+    if (!frameOf || hubId.empty())
+        return {};
+    const EntityId id = spawnShip(role, systemId, d, glm::dvec3(0.0), init);
+    if (id.value == 0)
+        return {};
+    game::navigation::ReferenceFrame frame;
+    frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
+    frame.systemId = systemId;
+    frame.hubId = hubId;
+    frame.localOffsetMeters = localOffsetM;
+    if (!placeShipInReferenceFrame(id, frame))
+        std::cerr << "[ShipSave] restore: ship " << id.value << " could not be placed in the frame of " << hubId << '\n';
+    return id;
+}
+
 void GameSimulation::updateCatalogShipLineup()
 {
     if (m_catalogLineupRequest.empty() || m_catalogLineupSpawned)

@@ -1549,7 +1549,10 @@ void GameServer::update(double dt)
                     else if (const std::string why = chargeRefit(id, subject, op); !why.empty())
                         m_simulation.refuseRefit(id, subject, why);
                     else
+                    {
                         m_simulation.applyRefit(id, subject, op);
+                        m_shipsDirty = true;
+                    }
                     break;
                 }
 
@@ -1720,6 +1723,10 @@ void GameServer::update(double dt)
     m_pendingPurchases.clear();
 
     // rescue (step 12): a pilot whose ship reached the hub of the accepted SOS call completes it
+    // ship persistence: restore once the hubs exist; save on a change and every ~minute
+    restoreRuntimeShipsIfDue();
+    if (!m_runtimeShips.empty() && (m_shipsDirty || m_serverTick - m_shipsSavedTick >= 3600))
+        saveRuntimeShips();
     // the world's hubs (a route can reach them) anchor the SOS calls; refreshed when their count changes
     if (m_economy.loaded() && m_serverTick % 30 == 0 && m_lastSnapshot.hubs.size() != m_economy.routableHubCount())
     {
@@ -2276,6 +2283,8 @@ std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
     if (employer.value == 0)
         return refuse("работодатель не выдал корабль");
     m_hires[player.value] = {from, employer};
+    m_runtimeShips.insert(init.registry.instanceId);
+    m_shipsDirty = true;
     if (const std::string why = transferPlayerControl(player, employer); !why.empty())
     {
         m_hires.erase(player.value);
@@ -2358,12 +2367,14 @@ std::string GameServer::buyShip(EntityId from, const std::string& passportId, co
         m_economy.credit(player, hub, system, offer->priceCr, "возврат: корабль не создан");
         return refuse("верфь не смогла выдать корабль (деньги возвращены)");
     }
+    m_runtimeShips.insert(init.registry.instanceId);
+    m_shipsDirty = true;
     m_economy.recordOperation(player, "ship_bought", "куплен корабль " + name + " за " + std::to_string(static_cast<long long>(offer->priceCr)) +
                                                          " Cr: ждёт в 5 км от хаба (F7 -> ПЕРЕСЕСТЬ)", -offer->priceCr);
     return {};
 }
 
-std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target)
+std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target, bool restoring)
 {
     const PlayerState* player = m_players.find(playerId);
     const EntityId from = m_controls.controlledEntity(playerId);
@@ -2387,7 +2398,7 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
     // two ships at the same station are "here" by its frame (a demoted, uncontrolled ship keeps a stale world position while
     // the station orbits - found live: 533 km after 3 days); elsewhere the world distance
     const bool sameStation = !a.motion.hubId.empty() && a.motion.hubId == b.motion.hubId;
-    if (a.motion.systemId != b.motion.systemId || (!sameStation && glm::length(a.fullWorldMeters() - b.fullWorldMeters()) > 20000.0))
+    if (!restoring && (a.motion.systemId != b.motion.systemId || (!sameStation && glm::length(a.fullWorldMeters() - b.fullWorldMeters()) > 20000.0)))
         return "корабль далеко (нужно <= 20 км в той же системе): " + std::to_string(static_cast<long long>(glm::length(a.fullWorldMeters() - b.fullWorldMeters()))) +
                " м, системы " + std::to_string(a.motion.systemId) + " / " + std::to_string(b.motion.systemId);
     // the persistent identity of a ship spawned after the bootstrap
@@ -2426,8 +2437,135 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
     m_simulation.setPlayerControlled(target, true);
     configurePlayerRadar(target, instance);
     ++m_controlEpochs[playerId.value];
+    m_shipsDirty = true;   // who flies what is saved with the ships
     return {};
 }
+
+void GameServer::saveRuntimeShips()
+{
+    m_shipsDirty = false;
+    m_shipsSavedTick = m_serverTick;
+    const std::string path = m_economy.stateFilePath();
+    if (path.empty())
+        return;
+    nlohmann::json j;
+    j["schema"] = "runtime_ships/1";
+    j["next_instance"] = m_nextBoughtShipInstance;
+    j["ships"] = nlohmann::json::array();
+    for (const auto& [eid, sp] : m_simulation.ships())
+    {
+        if (!sp || !m_runtimeShips.count(sp->core().registry().instanceId) || sp->core().transform().motion.destroyedCause != 0)
+            continue;
+        const auto& core = sp->core();
+        const auto& tr = core.transform();
+        const PlayerId flier = m_players.playerForShip(core.registry().instanceId);
+        std::string employerOf;
+        for (const auto& [player, hire] : m_hires)
+            if (hire.employerShip == eid)
+                employerOf = std::to_string(player);
+        j["ships"].push_back({{"instance", core.registry().instanceId}, {"passport", core.desc().catalog.passportId},
+                              {"overrides", core.productOverrides()}, {"owner_actor", core.registry().ownerActor},
+                              {"owner_name", core.registry().ownerName}, {"registration", core.registry().registrationId},
+                              {"name", core.visualIdentity().shipName}, {"military", core.registry().shipRole == ShipRoleType::Military},
+                              {"system", tr.motion.systemId}, {"hub", tr.motion.hubId},
+                              {"local", {tr.motion.localPositionMeters.x, tr.motion.localPositionMeters.y, tr.motion.localPositionMeters.z}},
+                              {"flown_by", flier ? flier.value : 0}, {"employer_of", employerOf}});
+    }
+    // the own ships of hired pilots (to go back to)
+    j["hires"] = nlohmann::json::array();
+    for (const auto& [player, hire] : m_hires)
+    {
+        const Ship* own = m_simulation.getShip(hire.ownShip);
+        const Ship* emp = m_simulation.getShip(hire.employerShip);
+        if (own && emp)
+            j["hires"].push_back({player, own->core().registry().instanceId, emp->core().registry().instanceId});
+    }
+    if (!game::economy::writeFileAtomically(path + ".ships.json", j.dump(1)))
+        std::cerr << "[ShipSave] NOT saved: " << path << ".ships.json" << std::endl;
+}
+
+void GameServer::restoreRuntimeShipsIfDue()
+{
+    if (m_shipsRestored || m_lastSnapshot.hubs.empty())
+        return;
+    m_shipsRestored = true;
+    const std::string path = m_economy.stateFilePath();
+    if (path.empty())
+        return;
+    std::ifstream f(path + ".ships.json", std::ios::binary);
+    if (!f)
+        return;
+    nlohmann::json j;
+    try
+    {
+        f >> j;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[ShipSave] restore failed: " << e.what() << std::endl;
+        return;
+    }
+    if (j.value("schema", std::string()) != "runtime_ships/1")
+        return;
+    m_nextBoughtShipInstance = std::max(m_nextBoughtShipInstance, j.value("next_instance", m_nextBoughtShipInstance));
+    std::unordered_map<std::uint64_t, EntityId> byInstance;
+    for (const auto& [eid, sp] : m_simulation.ships())
+        if (sp)
+            byInstance[sp->core().registry().instanceId] = eid;
+    std::vector<std::pair<std::uint64_t, EntityId>> flown;
+    for (const auto& s : j.value("ships", nlohmann::json::array()))
+    {
+        const std::string passport = s.value("passport", std::string());
+        const ShipDescriptor* base = game::ship::descriptors::findCatalogShip(passport);
+        if (!base)
+            continue;
+        const auto overrides = s.value("overrides", std::vector<std::string>());
+        const ShipDescriptor* d = overrides.empty() ? base : game::ship::refit::configuredDescriptor(*base, overrides);
+        if (!d)
+            d = base;
+        ShipInitData init;
+        init.visual.shipType = d->identity.shipType;
+        init.visual.shipName = s.value("name", d->identity.shipName);
+        init.registry.instanceId = s.value("instance", std::uint64_t{0});
+        init.registry.ownerName = s.value("owner_name", std::string());
+        init.registry.ownerActor = s.value("owner_actor", ActorId{0});
+        init.registry.registrationId = s.value("registration", std::string());
+        init.registry.shipRole = s.value("military", false) ? ShipRoleType::Military : ShipRoleType::Civilian;
+        const auto local = s.value("local", std::vector<double>{0.0, 0.0, 0.0});
+        const EntityId id = m_simulation.spawnShipAtHub(ShipRole::Player, *d, init, s.value("system", -1), s.value("hub", std::string()),
+                                                        local.size() == 3 ? glm::dvec3(local[0], local[1], local[2]) : glm::dvec3(0.0));
+        if (id.value == 0)
+        {
+            std::cerr << "[ShipSave] restore: " << passport << " at '" << s.value("hub", std::string()) << "' skipped (no hub frame)" << std::endl;
+            continue;
+        }
+        if (Ship* ship = m_simulation.getShip(id))
+            for (const auto& o : overrides)
+                if (const auto eq = o.find('='); eq != std::string::npos)
+                    ship->core().recordProductOverride(o.substr(0, eq), o.substr(eq + 1));
+        m_runtimeShips.insert(init.registry.instanceId);
+        byInstance[init.registry.instanceId] = id;
+        if (const std::uint64_t p = s.value("flown_by", std::uint64_t{0}); p != 0)
+            flown.push_back({p, id});
+        std::cerr << "[ShipSave] restored " << passport << " (" << init.registry.instanceId << ") at " << s.value("hub", std::string()) << " -> entity "
+                  << id.value << std::endl;
+    }
+    for (const auto& h : j.value("hires", nlohmann::json::array()))
+    {
+        const std::uint64_t player = h.at(0).get<std::uint64_t>();
+        const auto own = byInstance.find(h.at(1).get<std::uint64_t>());
+        const auto emp = byInstance.find(h.at(2).get<std::uint64_t>());
+        if (own != byInstance.end() && emp != byInstance.end())
+            m_hires[player] = {own->second, emp->second};
+    }
+    for (const auto& [player, id] : flown)
+    {
+        const std::string why = transferPlayerControl(PlayerId{player}, id, true);
+        std::cerr << "[ShipSave] the pilot back in ship " << id.value << ": " << (why.empty() ? std::string("DONE") : why) << std::endl;
+    }
+}
+
+
 
 bool GameServer::disconnectPlayerSession(
     game::network::ServerSessionId sessionId

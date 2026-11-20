@@ -7515,3 +7515,19 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   "phase=station-handoff" once per request, releaseClientAutopilot and stop (the server flies its corridor; the docked
   state ends the request as before). LIVE (D:/tmp/regime8/run.log): "[DockClient] request=1 phase=station-handoff ...",
   docked after 289.8 s as before; no DockClientTrack lines against the old line after the capture.
+
+## Ship persistence for runtime ships (bought, employers') - SOURCE + LIVE PASS 2026-11-20
+- The server remembers the instance ids of the ships it spawns at runtime (BuyShip, HireJob) and saves them next to
+  the economy state ("<economy state>.ships.json", runtime_ships/1): passport, product overrides, owner, registration,
+  name, the hub + the local offset in its frame, who flies it, the hire links (own ship / employer ship by instance id);
+  on a purchase / hire / boarding / refit apply and every ~3600 ticks. On start, once the world's hubs exist, the ships
+  are spawned again at their hubs (GameSimulation::spawnShipAtHub) with the configured descriptor and the override
+  list, the hire links restored, and a pilot who flew one is moved back into it (transferPlayerControl(restoring =
+  true) skips the distance rule). Same instance ids -> the economy's bots / manifests / policies keep pointing at them.
+- LIVE (D:/tmp/shipsave/run1.log, run2.log): run 1 bought a C-120, boarded it, swapped its drive to U-33 ("APPLIED",
+  overrides [C-120-A1A1.1=ofu.drive.u33]); run 2 on the same files: "[ShipSave] restored bharat.ship.c-120.konveyer
+  (970001) at earth_orbital_hub -> entity 1548", "the pilot back in ship 1548: DONE", F7 lists it first with the same
+  override.
+- Not covered: damage / wear / cargo mass of a restored ship (the manifest is the economy's and restores), the
+  bootstrap ships and the DEV lineup (not runtime ships), ships in free space away from a hub (saved with their last
+  hub frame).

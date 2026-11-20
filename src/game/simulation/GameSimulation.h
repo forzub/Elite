@@ -416,6 +416,9 @@ public:
     void refuseRefit(EntityId commandingShip, EntityId subject, const std::string& why);
     // a new ship `offsetM` ahead of `near` in its hub's frame (orbits with the station), at rest relative to it
     EntityId spawnShipBeside(EntityId near, ShipRole role, const ShipDescriptor& d, const ShipInitData& init, double offsetM);
+    // a ship at `hubId`'s frame + localOffsetM (the restore of a saved ship); {} = no such hub frame
+    EntityId spawnShipAtHub(ShipRole role, const ShipDescriptor& d, const ShipInitData& init, int systemId, const std::string& hubId,
+                            const glm::dvec3& localOffsetM);
     [[nodiscard]] game::simulation::ShipRefitSnapshot refitSnapshotFor(EntityId ship) const;
     const ActiveFreeFlight* freeFlight(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).

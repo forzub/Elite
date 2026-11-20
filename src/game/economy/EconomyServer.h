@@ -242,6 +242,7 @@ public:
     // the pilot's ship is at `hubId`: completes the pilot's active call there; true = completed now
     bool completeSosAt(std::uint64_t playerId, const std::string& hubId, int systemId);
     void setRoutableHubs(std::set<std::string> hubs) { m_routableHubs = std::move(hubs); }
+    [[nodiscard]] const std::string& stateFilePath() const { return m_stateFile; }
     [[nodiscard]] std::size_t routableHubCount() const { return m_routableHubs.size(); }
     // ---- the employment service (F5, TRADE_DESIGN §11b)
     struct Vacancy

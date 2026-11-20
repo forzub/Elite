@@ -420,7 +420,7 @@ public:
     std::string chargeRefit(EntityId id, EntityId subject, const game::ship::refit::RefitOperation& op);
     // base 2 (2026-11-20): the player moves to another ship (owned, Player-role, free, same system, <= 20 km);
     // "" = done, otherwise why not. Runs between ticks (boardings queued by the command drain).
-    std::string transferPlayerControl(PlayerId playerId, EntityId target);
+    std::string transferPlayerControl(PlayerId playerId, EntityId target, bool restoring = false);
     void configurePlayerRadar(EntityId entity, ShipInstanceId instance);
     std::vector<std::pair<EntityId, EntityId>> m_pendingBoardings;   // (from, to)
     struct PendingPurchase
@@ -430,6 +430,15 @@ public:
     };
     std::vector<PendingPurchase> m_pendingPurchases;
     std::uint64_t m_nextBoughtShipInstance = 970000;
+    // ship persistence (2026-11-20): the ships the server spawned at runtime (bought, employers') survive a restart;
+    // saved next to the economy state ("<economy state>.ships.json") on a change and every minute, restored once the
+    // world's hubs exist
+    std::set<std::uint64_t> m_runtimeShips;      // instance ids
+    bool m_shipsDirty = false;
+    bool m_shipsRestored = false;
+    std::uint64_t m_shipsSavedTick = 0;
+    void saveRuntimeShips();
+    void restoreRuntimeShipsIfDue();
     // the employment service: the employer's ship and the pilot's own ship to go back to
     struct Hire
     {

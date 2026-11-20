@@ -153,6 +153,51 @@ int main()
         check(sn::chartedBy(deep) == sn::ChartedBy::None, "uncharted: deep space / approaches without records");
         deep.approachLaneRecord = true;
         check(sn::chartedBy(deep) == sn::ChartedBy::LaneRecord, "charted: approaches with a usable lane record");
+
+        // variant 1 (author 2026-11-20): uncharted space is bound only in / near a hazard
+        sn::HazardZone belt;   // Sol's main belt: 2.06 - 3.27 AU, half-height 2 x 0.456 AU
+        belt.kind = sn::HazardKind::Belt;
+        belt.normal = glm::dvec3(0.0, 1.0, 0.0);
+        belt.innerM = 2.06 * au;
+        belt.outerM = 3.27 * au;
+        belt.halfThicknessM = 2.0 * 0.456 * au;
+        check(sn::hazardDistanceM(belt, glm::dvec3(2.5 * au, 0.3 * au, 0.0)) == 0.0, "hazard: inside the belt");
+        check(std::abs(sn::hazardDistanceM(belt, glm::dvec3(0.0, 0.0, 1.96 * au)) - 0.1 * au) < 1.0e3, "hazard: 0.1 AU inside the belt's inner edge");
+        check(std::abs(sn::hazardDistanceM(belt, glm::dvec3(2.5 * au, 1.912 * au, 0.0)) - 1.0 * au) < 1.0e3, "hazard: 1 AU above the belt");
+        sn::HazardZone trojans = belt;   // an arc +-34 deg around +x
+        trojans.arcCentreDir = glm::dvec3(1.0, 0.0, 0.0);
+        trojans.arcHalfRad = sn::TrojanHalfArcRad;
+        check(sn::hazardDistanceM(trojans, glm::dvec3(2.5 * au, 0.0, 0.5 * au)) == 0.0, "hazard: inside a trojan arc");
+        check(sn::hazardDistanceM(trojans, glm::dvec3(-2.5 * au, 0.0, 0.0)) > 5.0 * au, "hazard: the far side of the orbit is clear of the trojans");
+        sn::HazardZone body;   // the Earth: a sphere of 10 R
+        body.kind = sn::HazardKind::Body;
+        body.outerM = sn::NearBodyRadii * 6.371e6;
+        check(sn::hazardDistanceM(body, glm::dvec3(4.2164e7, 0.0, 0.0)) == 0.0, "hazard: geostationary orbit is near the Earth (10 R)");
+        check(std::abs(sn::hazardDistanceM(body, glm::dvec3(3.844e8, 0.0, 0.0)) - (3.844e8 - 6.371e7)) < 1.0, "hazard: the Moon's distance is 320 000 km clear");
+        double d = 0.0;
+        check(sn::nearestHazard({belt, body}, glm::dvec3(1.0e8, 0.0, 0.0), d) == 1 && std::abs(d - (1.0e8 - 6.371e7)) < 1.0, "hazard: the nearest zone");
+        check(sn::nearestHazard({}, glm::dvec3(0.0), d) == -1 && std::isinf(d), "hazard: no data -> none");
+        // the margin: the stopping run at the speed now (at rest only inside counts)
+        const double brake = sn::HazardBrakeFraction * jd::MaxAccelMps2;
+        const double run = sn::stoppingDistanceM(1.0e8, 1.5, brake);
+        std::printf("      hazard margin: 100 000 km/s -> %.3f AU; 0.9 c -> %.3f AU; v_max 77.9 km/s -> %.0f km\n", run / au,
+                    sn::stoppingDistanceM(jd::SpeedCapMps, 1.5, brake) / au, sn::stoppingDistanceM(77.9e3, 1.5, brake) / 1000.0);
+        check(std::abs(run - (1.5e8 + 1.0e16 / (2.0 * brake))) < 1.0, "hazard: stopping run v t + v^2/2a");
+        check(!sn::inHazard(0.1 * au, 0.0, 1.5, brake) && sn::inHazard(0.0, 0.0, 1.5, brake), "hazard: at rest 0.1 AU off - free; inside - bound");
+        check(!sn::inHazard(0.1 * au, 3.0e7, 1.5, brake), "hazard: 30 000 km/s, 0.1 AU off - free (stops in 0.008 AU)");
+        check(sn::inHazard(0.1 * au, 1.5e8, 1.5, brake), "hazard: 150 000 km/s, 0.1 AU off - bound (stops in 0.19 AU)");
+        check(!sn::inHazard(1.0 * au, jd::SpeedCapMps, 1.5, brake), "hazard: 0.9 c, 1 AU off - free (stops in 0.62 AU)");
+        check(std::isinf(sn::stoppingDistanceM(10.0, 1.5, 0.0)) && sn::stoppingDistanceM(0.0, 1.5, 0.0) == 0.0, "hazard: no braking -> never stops");
+        // the envelope: v_max at the edge (and inside), faster further off; the speed it allows keeps the ship "near"
+        const double vmax = sn::sensorSpeedLimitMps(sn::OpticsRangeM, 1.5, jd::MaxAccelMps2);
+        check(std::abs(sn::hazardApproachSpeedMps(vmax, 0.0, brake) - vmax) < 1e-9 && std::abs(sn::hazardApproachSpeedMps(vmax, -5.0, brake) - vmax) < 1e-9,
+              "hazard envelope: v_max at the edge / inside");
+        bool latched = true;
+        for (double dd : {1.0e3, 1.0e6, 1.0e9, 0.1 * au, 1.0 * au, 30.0 * au})
+            latched = latched && sn::inHazard(dd, sn::hazardApproachSpeedMps(vmax, dd, brake), 1.5, brake);
+        check(latched, "hazard envelope: flying the envelope stays within the margin (no on / off chatter)");
+        check(std::abs(sn::hazardApproachSpeedMps(vmax, 0.1 * au, brake) - std::sqrt(vmax * vmax + 2.0 * brake * 0.1 * au)) < 1e-6,
+              "hazard envelope: sqrt(v_max^2 + 2 a d)");
     }
     std::printf("%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures, failures == 1 ? "" : "s");
     return failures ? 1 : 0;

@@ -1284,11 +1284,46 @@
       "ja": "軌道上（安定化）、離脱待ち"
     },
     "cockpit.autopilot.sensor_speed": {
-      "en": "sensor range {0} · speed by sensors {1} · uncharted space",
-      "ru": "обзор {0} · скорость по обзору {1} · участок не обследован",
-      "zh-Hans": "探测范围 {0} · 按探测限速 {1} · 未勘测区域",
-      "es": "alcance del radar {0} · velocidad por sensores {1} · zona sin cartografiar",
-      "ja": "探知範囲 {0} · 探知速度制限 {1} · 未測量宙域"
+      "en": "sensor range {0} · speed by sensors {1} · uncharted, {2}",
+      "ru": "обзор {0} · скорость по обзору {1} · не обследовано, {2}",
+      "zh-Hans": "探测范围 {0} · 按探测限速 {1} · 未勘测，{2}",
+      "es": "alcance del radar {0} · velocidad por sensores {1} · sin cartografiar, {2}",
+      "ja": "探知範囲 {0} · 探知速度制限 {1} · 未測量、{2}"
+    },
+    "cockpit.autopilot.hazard.belt": {
+      "en": "asteroid field {0}",
+      "ru": "поле астероидов «{0}»",
+      "zh-Hans": "小行星带 {0}",
+      "es": "campo de asteroides {0}",
+      "ja": "小惑星帯 {0}"
+    },
+    "cockpit.autopilot.hazard.rings": {
+      "en": "rings of {0}",
+      "ru": "кольца: {0}",
+      "zh-Hans": "{0} 的行星环",
+      "es": "anillos de {0}",
+      "ja": "{0} の環"
+    },
+    "cockpit.autopilot.hazard.body": {
+      "en": "near {0}",
+      "ru": "у тела: {0}",
+      "zh-Hans": "靠近 {0}",
+      "es": "cerca de {0}",
+      "ja": "{0} 付近"
+    },
+    "cockpit.autopilot.hazard.debris": {
+      "en": "debris field {0}",
+      "ru": "поле обломков «{0}»",
+      "zh-Hans": "碎片场 {0}",
+      "es": "campo de escombros {0}",
+      "ja": "破片帯 {0}"
+    },
+    "cockpit.autopilot.hazard.ahead": {
+      "en": "{0} in {1}",
+      "ru": "{0} через {1}",
+      "zh-Hans": "{0}，距离 {1}",
+      "es": "{0} a {1}",
+      "ja": "{0} まで {1}"
     },
     "cockpit.autopilot.line_short": {
       "en": "AUTOPILOT -> {0}:  {1}",

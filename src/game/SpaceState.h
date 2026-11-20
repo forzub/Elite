@@ -282,6 +282,10 @@ public:
     void applySensorSpeedInputs(game::navigation::globalflight::BodyAutopilotShip& sample);
     int m_sensorChartedBy = -1;        // the last charted reason logged (rules::sensor::ChartedBy), -1 none yet
     double m_sensorShownRangeM = 0.0;  // the sensor range of the bound (HUD)
+    int m_sensorHazardKind = 0;        // the hazard that set the bound (rules::sensor::HazardKind), its name, distance (HUD)
+    std::string m_sensorHazardName;
+    double m_sensorHazardDistanceM = 0.0;
+    std::string m_sensorHazardLogged;  // the last hazard state logged
 
     bool composeHubMapSnapshot(
         int systemId,

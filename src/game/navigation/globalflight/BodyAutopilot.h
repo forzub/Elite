@@ -98,6 +98,9 @@ struct BodyAutopilotShip
     // at which it stops inside this sensor range (with sensorReactionS); 0 - charted, no bound
     double sensorRangeM = 0.0;
     double sensorReactionS = 0.0;
+    // with the bound on: the distance to the hazard that set it (0 inside) - on the way in the speed follows the
+    // braking envelope down to the bound at its edge (rules::sensor::hazardApproachSpeedMps)
+    double sensorHazardDistanceM = 0.0;
 };
 
 struct BodyAutopilotOutput

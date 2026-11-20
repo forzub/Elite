@@ -2115,8 +2115,14 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         // uncharted space: the autopilot holds the speed by its sensors (docs/SENSOR_LIMITED_SPEED.md)
         if (m_bodyAutopilotDisplay.sensorSpeedLimitMps > 0.0)
         {
+            // why: the hazard that set it (variant 1, 2026-11-20: uncharted space is bound only in / near a hazard)
+            static const char* hazardKeys[] = {"cockpit.autopilot.hazard.belt", "cockpit.autopilot.hazard.belt", "cockpit.autopilot.hazard.rings",
+                                               "cockpit.autopilot.hazard.body", "cockpit.autopilot.hazard.debris"};
+            std::string why = tr(hazardKeys[std::clamp(m_sensorHazardKind, 0, 4)], {m_sensorHazardName});
+            if (m_sensorHazardDistanceM > 0.0)
+                why = tr("cockpit.autopilot.hazard.ahead", {why, jDistance(lookup, m_sensorHazardDistanceM)});
             const std::string sl = tr("cockpit.autopilot.sensor_speed",
-                                      {jDistance(lookup, m_sensorShownRangeM), jSpeed(lookup, m_bodyAutopilotDisplay.sensorSpeedLimitMps)});
+                                      {jDistance(lookup, m_sensorShownRangeM), jSpeed(lookup, m_bodyAutopilotDisplay.sensorSpeedLimitMps), why});
             const float sw = text.measureTextPx(sl, 14) + 40.0f;
             const float sx = std::max(8.0f, (static_cast<float>(viewport.width) - sw) * 0.5f);
             text.solidRectPx(sx, ay + 32.0f, sw, 24.0f, glm::vec4(0.08f, 0.05f, 0.01f, 0.85f));

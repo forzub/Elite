@@ -325,11 +325,14 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     const double tail = dEff / jd::ApproachTauS;
     double speed = std::min({braking, tail, jd::SpeedCapMps});
     // uncharted space (docs/SENSOR_LIMITED_SPEED.md): never faster than the speed at which the ship still sees, decides
-    // and stops inside its sensor range - braking on the field it has now
+    // and stops inside its sensor range - braking on the field it has now; only in / near a hazard (variant 1,
+    // 2026-11-20): on the way in, the braking envelope down to that speed at the hazard's edge
     double sensorCap = 0.0;
     if (ship.sensorRangeM > 0.0)
     {
-        sensorCap = game::navigation::rules::sensor::sensorSpeedLimitMps(ship.sensorRangeM, ship.sensorReactionS, limit);
+        namespace sn = game::navigation::rules::sensor;
+        sensorCap = sn::hazardApproachSpeedMps(sn::sensorSpeedLimitMps(ship.sensorRangeM, ship.sensorReactionS, limit),
+                                               ship.sensorHazardDistanceM, sn::HazardBrakeFraction * jd::MaxAccelMps2);
         speed = std::min(speed, sensorCap);
     }
     out.sensorSpeedLimitMps = sensorCap;

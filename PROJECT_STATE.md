@@ -7021,6 +7021,38 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   the 150 km optics floor (otherwise v_max 533 m/s). Not done: route-map time estimate, radar damage, server-side
   bound / NPC, live check of approaches + lane record / deep space / failed nav computer.
 
+### SENSOR-LIMITED SPEED variant 1: the hard bound only in / near a hazard - SOURCE + UNIT + LIVE PASS 2026-11-20
+
+- Author decision 2026-11-20 (variant 1): uncharted space is bound only in / near a known or suspected hazard; empty
+  uncharted space has no bound (pilot's / autopilot's risk); charted space unchanged (no bound).
+- Rules (SensorSpeedRules.h, pure): `HazardZone` (annulus with optional arc, or sphere), `hazardDistanceM`,
+  `nearestHazard`, `stoppingDistanceM`, `inHazard(d, v, t, a)` = d <= v t + v^2/2a at the CURRENT speed (t = reaction +
+  the field's ramp to full, a = 0.4 a_max = `HazardBrakeFraction`, the autopilots' planned braking),
+  `hazardApproachSpeedMps` = sqrt(v_max^2 + 2 a d) - the braking envelope the route pilot / J autopilot fly on the way
+  in (same a as the margin -> no on/off chatter, unit-checked). Near a body = 10 R (`NearBodyRadii`; or the atmosphere
+  top) - low orbits to past GEO, giants' inner moons / rings; Hill spheres would cap whole systems.
+- Data (existing only, `SpaceState::applySensorSpeedInputs`): generated belts / Kuiper belts / debris disks / trojans via
+  `jumpSumpsOfSystem` (x-z annulus, half-height 2 x the sump scale height, trojans = +-34 deg arcs at L4/L5); planetary
+  rings (body ring bands, equatorial plane, 1 km half-thickness); every autopilot gravity body; a deep-space place's swarm
+  (icy_debris_field radii_ly max / debris_group extent_au, sphere at the frame origin). NOT covered: in-system gas / ice
+  clouds and wreck fields (no data), comet clouds (Oort: 11 orders sparser than the main belt - deliberately not a hazard,
+  as in the sumps), red route zones (administrative), Hill spheres.
+- Input: new `BodyAutopilotShip::sensorHazardDistanceM`; pilots bound by the envelope (RouteLegPilot, BodyAutopilot).
+  HUD line only while bound, with the reason: keys `cockpit.autopilot.hazard.{belt,rings,body,debris,ahead}` + changed
+  `cockpit.autopilot.sensor_speed` ({2} = reason), 5 languages. Log `[SensorSpeed] hazard: ...`. DEV:
+  `ELITE_DEV_NO_BEACONS` now also clears "inhabited" (Sol's shell uncharted; hub zones / corridors stay).
+- Unit: EliteBodyFlightRulesCheck PASSED; EliteEconomyCheck 142/142; check_architecture, check_localization_boundary,
+  check_active_system_context PASS.
+- LIVE (D:/tmp/sensorspeed): hzfar (point:300,0,0, leg Mars): "clear (nearest Пояс Койпера)", no bound, 33 563 km/s
+  (hzfar_110.png, no bound line; was 77.9 km/s). hzbelt (NO_BEACONS, point:3.4,0,0, leg Mars across the main belt):
+  unbound to 105 021 km/s, bound AHEAD at 1.42e7 km (= stopping run) t+139 s, envelope braking (hzbelt_260/380.png
+  "через 7.63 / 1.44 млн км"), enters the belt at t+426 s at 77 935 m/s and holds it (hzbelt_500.png). hzbody
+  (NO_BEACONS, body:deimos, J autopilot to the Moon): hub zone -> "near body Марс INSIDE", 77.61 km/s (hzbody_100.png).
+- Findings / limits: leaving a hub radar zone that lies inside a hazard puts the ship INSIDE at once (997 km/s -> hard
+  braking to v_max, no envelope); only the nearest zone, heading ignored (conservative); belts are solid annuli (Kirkwood
+  gaps / passages not modelled); predicate uses world speed, bound is vs the destination. Deep-space field, rings,
+  trojans: unit / source only.
+
 ## ECONOMY: state save off the action path + the open port call persisted (economy_state/4) - SOURCE + UNIT + LIVE PASS 2026-11-19
 
 - Measured first (DEV `ELITE_DEV_ECONOMY_SAVE_TIMING=1`, `[EconomySave]` lines; relwithdebinfo, D:/tmp/econsave): the old

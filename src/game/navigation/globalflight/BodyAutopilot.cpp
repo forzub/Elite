@@ -404,11 +404,14 @@ void BodyAutopilot::stepTransfer(const BodyAutopilotEnvironment& env, const Body
         if (phase == AutopilotStage::Cruise && tail < braking)
             phase = AutopilotStage::Approach;
         // uncharted space (docs/SENSOR_LIMITED_SPEED.md): the closing speed at which the ship still sees, decides and
-        // stops inside its sensor range, braking on the field it has now
+        // stops inside its sensor range, braking on the field it has now; only in / near a hazard (variant 1,
+        // 2026-11-20): on the way in, the braking envelope down to that speed at the hazard's edge
         double closing = std::min(braking, tail);
         if (ship.sensorRangeM > 0.0)
         {
-            out.sensorSpeedLimitMps = game::navigation::rules::sensor::sensorSpeedLimitMps(ship.sensorRangeM, ship.sensorReactionS, ramp);
+            namespace sn = game::navigation::rules::sensor;
+            out.sensorSpeedLimitMps = sn::hazardApproachSpeedMps(sn::sensorSpeedLimitMps(ship.sensorRangeM, ship.sensorReactionS, ramp),
+                                                                 ship.sensorHazardDistanceM, sn::HazardBrakeFraction * jd::MaxAccelMps2);
             closing = std::min(closing, out.sensorSpeedLimitMps);
         }
         // tangential: the closing velocity on top of the orbit velocity at the insertion point

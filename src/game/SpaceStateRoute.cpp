@@ -16,6 +16,7 @@
 #include "src/game/navigation/rules/InterstellarJumpRoute.h"
 #include "src/game/navigation/rules/SensorSpeedRules.h"
 #include "src/game/navigation/rules/JumpSumps.h"
+#include "src/game/system_map/PlanetBodyOrientation.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 
 namespace
@@ -526,13 +527,19 @@ void SpaceState::renderZoneViolationBanner(const Viewport& viewport)
 // (its farthest body now x SurveyShellFactor), the lane records the ship carries (a system's approaches). Uncharted:
 // the radar range of the hull's passport (no radar: optics) and the reaction (a failed nav computer: longer) go into
 // the sample; the route pilot / J autopilot bound their speed with them. Manual flight is not touched.
+// Variant 1 (author 2026-11-20): uncharted space is bound only in / near a hazard the client already has data for - the
+// system's generated belts / debris disks / trojans (JumpSumps), the planets' rings, the space near a body, a deep-space
+// place's swarm; "near" = within the stopping run at the current speed (rules::sensor::inHazard).
 void SpaceState::applySensorSpeedInputs(game::navigation::globalflight::BodyAutopilotShip& sample)
 {
     namespace sn = game::navigation::rules::sensor;
     namespace jr = game::navigation::jump;
+    namespace jd = game::navigation::jdrive;
     using Atlas = world::celestial::StarAtlasDatabase;
     sample.sensorRangeM = 0.0;
     sample.sensorReactionS = 0.0;
+    sample.sensorHazardDistanceM = 0.0;
+    m_sensorHazardKind = 0;
     if (!m_client)
         return;
     const auto shipIt = m_client->world().ships().find(m_playerId.value);
@@ -563,6 +570,9 @@ void SpaceState::applySensorSpeedInputs(game::navigation::globalflight::BodyAuto
             q.inhabited = true;
         }
     q.inhabited = q.inhabited || jr::systemHasBeacons(systemId);   // world places = beacons (JumpSumps.h)
+    static const bool devNoBeacons = std::getenv("ELITE_DEV_NO_BEACONS") != nullptr;
+    if (devNoBeacons)
+        q.inhabited = false;   // DEV: no system has beacons -> none counts as surveyed (its shell); hub zones / corridors stay
     q.hubZoneM = zoneCatalog().hubRadarM;
     for (const auto& z : route::resolveZones(zoneCatalog(), systemId, routeAnchorResolver()))
         if (z.zone && z.zone->colour == route::ZoneColour::Green && z.contains(p))
@@ -583,14 +593,140 @@ void SpaceState::applySensorSpeedInputs(game::navigation::globalflight::BodyAuto
     const double range = sn::sensorRangeM(desc.catalog.radarRangeMeters > 0.0 ? desc.catalog.radarRangeMeters
                                           : desc.defaultEquipment.radar ? desc.defaultEquipment.radar->maxRange : 0.0);
     m_sensorShownRangeM = range;
+    // uncharted: the hazards the client has data for; the bound only in / near the nearest one
+    std::string hazardLog = "-";
     if (by == sn::ChartedBy::None)
     {
-        sample.sensorRangeM = range;
-        sample.sensorReactionS = sn::reactionSeconds(navDown);
+        std::vector<sn::HazardZone> zones;
+        const auto& bodies = m_bodyAutopilotSnapshot.bodies;   // the same universe time as the sample (clientBodyAutopilotWorld)
+        if (const auto* system = atlas ? atlas->findSystem(systemId) : nullptr)
+        {
+            std::unordered_map<std::string, glm::dvec3> centres;
+            for (const auto& b : bodies)
+                centres[b.id] = b.worldMeters;
+            for (const auto& s : jr::jumpSumpsOfSystem(*system))
+            {
+                const auto c = centres.find(s.centreBodyId);
+                if (c == centres.end())
+                    continue;
+                sn::HazardZone z;
+                z.kind = sn::HazardKind::Belt;
+                z.name = s.name;
+                z.centreM = c->second;
+                z.normal = glm::dvec3(0.0, 1.0, 0.0);   // the system frame's x-z plane (JumpSumps.h)
+                z.innerM = s.innerM;
+                z.outerM = s.outerM;
+                z.halfThicknessM = sn::BeltHeightSigmas * s.halfThicknessM;
+                if (s.kind == "trojans")
+                {
+                    const auto planet = centres.find(s.planetId);
+                    if (planet == centres.end())
+                        continue;
+                    glm::dvec3 pl = planet->second - c->second;
+                    pl.y = 0.0;
+                    if (glm::length(pl) <= 0.0)
+                        continue;
+                    pl = glm::normalize(pl);
+                    z.arcHalfRad = sn::TrojanHalfArcRad;
+                    for (const double lagrange : {1.0471975511965976, -1.0471975511965976})   // L4 / L5: +-60 deg
+                    {
+                        // turned about +y in the x-z plane the way atan2(z, x) grows (JumpSumps' azimuth)
+                        z.arcCentreDir = glm::dvec3(pl.x * std::cos(lagrange) - pl.z * std::sin(lagrange), 0.0,
+                                                    pl.x * std::sin(lagrange) + pl.z * std::cos(lagrange));
+                        zones.push_back(z);
+                    }
+                    continue;
+                }
+                zones.push_back(z);
+            }
+        }
+        for (const auto& b : bodies)
+        {
+            if (b.rings.empty())
+                continue;
+            sn::HazardZone z;
+            z.kind = sn::HazardKind::Ring;
+            z.name = b.name.empty() ? b.id : b.name;
+            z.centreM = b.worldMeters;
+            z.normal = glm::dvec3(game::system_map::makePlanetTextureOrientation(b.axialTiltDeg, b.axisNodeDeg, 0.0, 0.0).north);
+            z.innerM = std::numeric_limits<double>::infinity();
+            for (const auto& r : b.rings)
+            {
+                z.innerM = std::min(z.innerM, r.innerRadiusKm * 1000.0);
+                z.outerM = std::max(z.outerM, r.outerRadiusKm * 1000.0);
+            }
+            z.halfThicknessM = sn::RingHalfThicknessM;
+            if (glm::length(z.normal) > 0.5 && z.outerM > z.innerM)
+                zones.push_back(z);
+        }
+        for (const auto& g : m_bodyAutopilotBodies)
+        {
+            sn::HazardZone z;
+            z.kind = sn::HazardKind::Body;
+            z.name = g.id;
+            for (const auto& b : bodies)
+                if (b.id == g.id && !b.name.empty())
+                    z.name = b.name;
+            z.centreM = g.centerMeters;
+            z.outerM = std::max(sn::NearBodyRadii * g.radiusMeters, g.atmosphereRadiusMeters);
+            zones.push_back(z);
+        }
+        // a deep-space place: the frame is centred on its swarm (StarAtlasDatabase::buildDeepSpacePlaces)
+        if (const auto* o = atlas && Atlas::isDeepSpace(systemId) ? atlas->deepSpaceObject(systemId) : nullptr)
+        {
+            constexpr double LyM = 9.4607304725808e15;
+            double radiusM = 0.0;
+            const auto& props = o->properties;
+            if (props.contains("geometry") && props["geometry"].contains("radii_ly") && props["geometry"]["radii_ly"].is_array())
+                for (const auto& r : props["geometry"]["radii_ly"])
+                    if (r.is_number())
+                        radiusM = std::max(radiusM, r.get<double>() * LyM);   // the ellipsoid's longest semi-axis (conservative)
+            if (props.contains("extent_au") && props["extent_au"].is_number())
+                radiusM = std::max(radiusM, props["extent_au"].get<double>() * 1.495978707e11);
+            if (radiusM > 0.0)
+            {
+                sn::HazardZone z;
+                z.kind = sn::HazardKind::DebrisField;
+                z.name = o->name.empty() ? o->id : o->name;
+                z.outerM = radiusM;
+                zones.push_back(z);
+            }
+        }
+        double distance = 0.0;
+        const int k = sn::nearestHazard(zones, p, distance);
+        // the margin: the stopping run at the speed now - the reaction plus the field's ramp to full, then the planned braking
+        const double rampLeftS = jd::DriveRampDoublingS * std::log2(std::max(1.0, jd::MaxAccelMps2 / std::max(9.81, sample.jFieldLevelMps2)));
+        const double delayS = sn::reactionSeconds(navDown) + rampLeftS;
+        const double brake = sn::HazardBrakeFraction * jd::MaxAccelMps2;
+        const double speed = glm::length(sample.velocityMps);
+        if (k >= 0 && sn::inHazard(distance, speed, delayS, brake))
+        {
+            const auto& z = zones[static_cast<std::size_t>(k)];
+            sample.sensorRangeM = range;
+            sample.sensorReactionS = sn::reactionSeconds(navDown);
+            sample.sensorHazardDistanceM = distance;
+            m_sensorHazardKind = static_cast<int>(z.kind);
+            m_sensorHazardName = z.name;
+            m_sensorHazardDistanceM = distance;
+            static const char* kinds[] = {"-", "belt", "rings", "near body", "debris field"};
+            hazardLog = std::string(kinds[static_cast<int>(z.kind)]) + " " + z.name + (distance > 0.0 ? " AHEAD" : " INSIDE");
+        }
+        else if (k >= 0)
+            hazardLog = "clear (nearest " + zones[static_cast<std::size_t>(k)].name + ")";
+        else
+            hazardLog = "clear (no hazard data)";
+        if (hazardLog != m_sensorHazardLogged)
+        {
+            std::cerr << "[SensorSpeed] hazard: " << hazardLog << ", distance " << distance / 1000.0 << " km, speed " << speed / 1000.0
+                      << " km/s, stopping run " << sn::stoppingDistanceM(speed, delayS, brake) / 1000.0 << " km" << std::endl;
+            m_sensorHazardLogged = hazardLog;
+        }
     }
+    else
+        m_sensorHazardLogged.clear();
     if (static_cast<int>(by) != m_sensorChartedBy)
     {
-        static const char* reasons[] = {"UNCHARTED - speed by the sensors", "a green corridor", "a hub radar zone", "the system's surveyed shell",
+        static const char* reasons[] = {"UNCHARTED - speed by the sensors in / near a hazard", "a green corridor", "a hub radar zone", "the system's surveyed shell",
                                         "a lane record of the approaches"};
         std::cerr << "[SensorSpeed] system " << systemId << ": " << reasons[static_cast<int>(by)] << " (star " << q.distanceFromStarM / 1.495978707e11
                   << " AU, shell " << sn::SurveyShellFactor * q.farthestBodyM / 1.495978707e11 << " AU, nearest hub " << q.nearestHubM / 1000.0

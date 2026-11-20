@@ -28,7 +28,7 @@ TradePresentation buildTradePresentation(
     page.day = EconomyModel::dayOf(universeSeconds);
     // 4 = finance (the session wallet), 5 = cargo (the server manifest) - filled by the caller; 3 (navigation data) moved
     // to F5 (TRADE_DESIGN §11a) - an old id opens the market
-    page.tab = std::clamp(tab, 0, 5);
+    page.tab = std::clamp(tab, 0, 6);
     if (page.tab == 3)
         page.tab = 1;
     page.events = model.events(hubId, page.day);

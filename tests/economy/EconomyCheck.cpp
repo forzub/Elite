@@ -1554,7 +1554,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/11" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/12" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1669,7 +1669,7 @@ void testIncomeTax()
     EconomyServer t;
     t.load();
     t.start(1095);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
               near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
@@ -1834,7 +1834,7 @@ void testSmuggling()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
               nlohmann::json::parse(saved)["seizures"].size() == 1,
           "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
 }
@@ -1964,7 +1964,7 @@ void testLicences()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
               t.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "licensed",
           "economy_state/8: the licence survives save / restore byte-exact");
     for (int day = 1001; day <= 1360; ++day)
@@ -2017,7 +2017,7 @@ void testInsurance()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
               nlohmann::json::parse(saved)["cargo_policies"].size() == 1,
           "economy_state/9: the policy survives save / restore byte-exact");
 }
@@ -2084,6 +2084,73 @@ void testArrest()
     check(!s.arrestClaim(1, "earth_orbital_hub", 0).due, "more than half repaid: no arrest (the restructuring works)");
 }
 
+// TRADE step 15 (TRADE_DESIGN §6.4): bot pilots - the agency, hire onto an owned ship, the abstract trade loop, wages
+void testBots()
+{
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  bots (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    const auto c1 = s.botCandidatesAt("earth_orbital_hub", 0);
+    const auto c2 = s.botCandidatesAt("earth_orbital_hub", 0);
+    check(c1.size() == 3 && c1[0].id == c2[0].id && c1[0].name == c2[0].name && c1[0].wageCr > 0.0,
+          "the agency: 3 deterministic candidates (" + c1[0].name + ", wage " + std::to_string(c1[0].wageCr) + ")");
+    bool embellished = true;
+    for (const auto& c : c1)
+        embellished = embellished && c.skillShown >= c.traits.skill - 1e-9;
+    check(embellished, "a CV never understates the skill (it may embellish it)");
+    const CargoCapacity hold{120.0, 6};
+    check(!s.hireBot(1, c1[0].id, "earth_orbital_hub", 0, 0, "-", hold, 260.0, 1).ok, "no ship: refused");
+    const auto hired = s.hireBot(1, c1[0].id, "earth_orbital_hub", 0, 4242, "test ship", hold, 260.0, 2);
+    check(hired.ok && s.bots().size() == 1 && s.botCandidatesAt("earth_orbital_hub", 0).size() == 2, "hired onto ship 4242; the agency lists 2 now");
+    const std::string botId = s.bots()[0].id;
+    const auto order = s.orderBotLoop(1, botId, "earth_orbital_hub", 0, 3);
+    check(order.ok && !s.bots()[0].hubB.empty() && !s.bots()[0].goodId.empty(),
+          "the loop order: " + order.message);
+    const double w0 = netWorthCr(*s.ledger(1), s.banks());
+    for (int day = 1001; day <= 1010; ++day)
+        s.advanceTo(day);
+    const auto& b = s.bots()[0];
+    std::printf("INFO  bot after 10 days: state %s, trips %d, profit %.0f, net worth %.0f -> %.0f\n", b.state.c_str(), b.trips, b.profitCr, w0,
+                netWorthCr(*s.ledger(1), s.banks()));
+    check(b.trips >= 1 && b.unpaidDays == 0, "10 days: the bot made " + std::to_string(b.trips) + " trip(s), the wage paid daily");
+    auto w = s.walletSnapshot(1, "earth_orbital_hub", 0);
+    // delivered = exactly the reports whose delivery day (the event day + 1) has come
+    std::size_t due = 0;
+    bool laterThanEvent = true;
+    for (const auto& [visible, text] : b.reports)
+        due += visible <= s.day() ? 1u : 0u;
+    for (std::size_t k = 0; k < b.reports.size(); ++k)   // hire / order lines are back-dated; the trip reports are day + 1
+        if (b.reports[k].second.rfind("погрузка", 0) == 0 || b.reports[k].second.rfind("продажа", 0) == 0)
+            laterThanEvent = laterThanEvent && b.reports[k].first >= 1001 + 1;
+    check(!w.bots.empty() && !w.bots[0].reports.empty() && w.bots[0].reports.size() == due && laterThanEvent,
+          "reports reach the owner a day after the event (" + std::to_string(w.bots[0].reports.size()) + " of " + std::to_string(b.reports.size()) +
+              " delivered by day " + std::to_string(s.day()) + ")");
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(1010);
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" && t.bots().size() == 1,
+          "economy_state/12: the bot survives save / restore byte-exact");
+    // unpaid: a trading bot pays its own wage from its sales; an idle one with a broke owner leaves after 30 days
+    s.fireBot(1, botId);
+    const auto c2list = s.botCandidatesAt("earth_orbital_hub", 0);
+    check(!c2list.empty() && s.hireBot(1, c2list[0].id, "earth_orbital_hub", 0, 4343, "idle ship", hold, 260.0, 4).ok, "a second bot, no order");
+    (void)s.devSpendAll(1, "earth_orbital_hub", 0);
+    for (int day = 1011; day <= 1090; ++day)
+    {
+        (void)s.devSpendAll(1, "earth_orbital_hub", 0);   // late VAT refunds of the first bot's buys would pay a few wages
+        s.advanceTo(day);
+    }
+    std::printf("INFO  idle bot: state %s, unpaid %d, free money %.0f, debt %.0f\n", s.bots()[1].state.c_str(), s.bots()[1].unpaidDays,
+                freeMoneyCr(*s.ledger(1), s.banks()), totalDebtCr(*s.ledger(1), s.banks()));
+    check(s.bots()[0].state == "quit" && s.bots()[1].state == "quit", "fired: gone; 30 days without the wage: the idle bot left too");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -2109,6 +2176,7 @@ int main()
     testLicences();
     testInsurance();
     testArrest();
+    testBots();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

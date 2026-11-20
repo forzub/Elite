@@ -24,6 +24,13 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "bots": {
+  "note": "TRADE_DESIGN §6.4 (step 15, minimal set). A hub's agency offers candidates per week (hidden traits 0..1 from a hash: skill, discipline, punctuality, thrift, honesty, nerve - a beta-like spread with a tail of idiots); the CV shows an estimate of the skill embellished by (1 - honesty). Hired onto an owned ship not flown by the player; the order 'trade loop' (this hub <-> the other market hub of the system with the best margin) runs abstractly once a day with the server's own deals on the owner's money: route error p = 0.02 + 0.25 (1 - skill)^2 -> +1..2 days; a late leg p = 0.5 (1 - punctuality) -> +1 day; theft p = 0.02 (1 - honesty)^2 per trip, 5-30 % of the cargo. The wage 4 000 x (0.6 + 0.8 skill) / 30 days is paid daily; 30 unpaid days -> the bot quits. Reports reach the owner a day later. The bot's ship stays where it was (it materializes near the player only - HUB_SECURITY §3). Not yet: other orders, panic, wilfulness, hijacking, fines to the owner, the Bayesian trait estimate.",
+  "candidates_per_hub": 3,
+  "base_wage_cr": 4000,
+  "leg_days": 1,
+  "report_delay_days": 1
+ },
  "rescue": {
   "note": "TRADE_DESIGN §4.2 (step 12, minimal set - variant A only). SOS calls come from the world, not a random spawn: per hub and day with probability sos_per_hub_day a call appears near that hub whose own service is busy (a capsule 60 %, a ship without power 25 %, a medical evacuation 15 %), open for open_days. A licensee (the 'sar' licence of that hub's polity) takes it in F5 -> МЧС and completes it by reaching that hub (the search near the hub is abstracted until the navigation can target a point in space); the reward is paid by that polity's bank and is taxable. Not yet: variant B (duty for tax credits), towing, salvage rights, inter-stellar search, the obligation to help without a licence.",
   "sos_per_hub_day": 0.15,

@@ -2885,6 +2885,46 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
                   << " Cr" << std::endl;
         return;
     }
+    if (command.op == Op::HireBot || command.op == Op::OrderBotLoop || command.op == Op::FireBot)   // step 15
+    {
+        if (command.op == Op::FireBot)
+        {
+            m_economy.fireBot(player, command.goodId);
+            return;
+        }
+        // the bot's ship: an owned ship the player does not fly (quantity = its entity id); its hub
+        const EntityId botShipId{static_cast<std::uint32_t>(std::max(0.0, command.quantity))};
+        const Ship* botShip = m_simulation.getShip(botShipId);
+        if (command.op == Op::HireBot)
+        {
+            if (!botShip || botShipId == id || botShip->core().registry().ownerActor != ship->core().registry().ownerActor)
+            {
+                m_economy.recordTradeRefusal(player, command.requestId, "bot_no_ship", "нужен свой корабль, которым вы сейчас не управляете");
+                return;
+            }
+            const auto& bm = botShip->core().transform().motion;
+            const std::string hub = !bm.hubId.empty() ? bm.hubId : motion.hubId;
+            (void)m_economy.hireBot(player, command.goodId, hub, bm.systemId, botShip->core().registry().instanceId,
+                                    botShip->core().desc().catalog.passportId.empty() ? botShip->core().visualIdentity().shipName
+                                                                                     : botShip->core().desc().catalog.passportId,
+                                    cargoCapacityOf(*botShip), botShip->core().effectivePhysics().massKg / 1000.0, command.requestId);
+            return;
+        }
+        // the loop starts at the bot ship's hub
+        std::string hub = motion.hubId;
+        int system = motion.systemId;
+        for (const auto& b : m_economy.bots())
+            if (b.id == command.goodId)
+                if (const auto* key = &b.shipKey; *key != 0)
+                    for (const auto& [eid, sp] : m_simulation.ships())
+                        if (sp && sp->core().registry().instanceId == *key && !sp->core().transform().motion.hubId.empty())
+                        {
+                            hub = sp->core().transform().motion.hubId;
+                            system = sp->core().transform().motion.systemId;
+                        }
+        (void)m_economy.orderBotLoop(player, command.goodId, hub, system, command.requestId);
+        return;
+    }
     if (command.op == Op::TakeSos)   // F5 МЧС (step 12): anywhere - the licence and the call decide
     {
         (void)m_economy.takeSos(player, command.goodId, command.requestId);

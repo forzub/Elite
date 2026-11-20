@@ -1038,6 +1038,31 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientBotCandidate,
+    v.id,
+    v.name,
+    v.skillShown,
+    v.yearsShown,
+    v.wageCr
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientBot,
+    v.id,
+    v.name,
+    v.skillShown,
+    v.wageCr,
+    v.shipKey,
+    v.shipRu,
+    v.stateRu,
+    v.loopRu,
+    v.trips,
+    v.profitCr,
+    v.unpaidDays,
+    v.reports
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientSos,
     v.id,
     v.kindRu,
@@ -1121,6 +1146,8 @@ ELITE_WIRE_SCHEMA(
     v.sos,
     v.activeSosId,
     v.sarLicence,
+    v.botCandidates,
+    v.bots,
     v.localPolity,
     v.localBank,
     v.localCurrency,

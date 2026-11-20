@@ -7483,3 +7483,29 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   never finished in 480 s - the docking / departure flakiness recorded for step 17.
 - Not done: variant B (duty for tax credits), the dispatcher's obligation / refusal fines, towing, salvage rights, a
   real search in space (a derelict / capsule object), inter-stellar search.
+
+## TRADE step 15: bot pilots (minimal set) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built: a hub agency (3 candidates / week, hidden traits skill / discipline / punctuality / thrift / honesty / nerve from
+  a hash, a beta-like spread; the CV embellishes the skill by (1 - honesty)); hire onto an owned ship the player does
+  not fly (HireBot, the server maps the entity to its instance key, capacity, dry mass); the order "trade loop" (this
+  hub <-> the other market hub of the system with the best legal margin); a daily abstract run with the server's own
+  deals on the owner's money (sized by the money - a C-120's hold first asked 3.8 M Cr), docking fees, route errors /
+  late legs / theft by traits, the wage 4 000 x (0.6 + 0.8 skill) / 30 days daily (30 unpaid days -> the bot leaves),
+  reports delivered a day late. F8 tab ФЛОТ (key 5; ХАБЫ moved to 6): the bots with ПЕТЛЯ / УВОЛИТЬ, the last
+  reports, the agency with «НАНЯТЬ на <ship>». ClientEconomyCommand HireBot / OrderBotLoop / FireBot (protocol 43),
+  snapshot schema 64, economy_state/12. DEV bot:hire:<n> / bot:loop:<n> / bot:fire:<n>.
+- Checks: EliteEconomyCheck 234/234 (testBots: the deterministic agency, the CV never understates, hire / refuse, the
+  loop, trips over 10 days with the wage paid, reports a day late, economy_state/12 byte-exact, a fired bot and an
+  idle bot of a broke owner leaving after 30 days - its late VAT refunds paid a few wages first).
+- LIVE (D:/tmp/bots/run.log, 01..03_*.png; the lineup C-120 near Высокий): hire «Нур Олсен» (skill 0.69, CV 0.75) ->
+  loop Высокий <-> «Гермес» fertilizers -> after 6 days: bought 10.97 t @ 1 415, sold @ 1 696 (+2 738 to the basis).
+- Fixed on the way: the trip result counted the reclaimable input VAT as a cost (showed -335 for a +2 738 trip).
+- Balance note: the loop picks by the list margin (20 %) without the fees; with the wage and VAT refunds 30 days out the
+  owner's net worth falls in the first weeks - to tune (a net margin estimate by explainDeal; a minimum margin).
+- Not done: other orders (contract delivery, mining, patrol, ferry), wilfulness, panic, hijacking, fines to the owner,
+  the Bayesian trait estimate, bots in other systems.
+- Docking investigation (subagent, 2026-11-20): not a drift - the station captures the ship ~190 m before the client
+  route ends and flies its own corridor (12 -> 8 m/s, an arc to the pad, 6 s touchdown, ~75 s); the client keeps
+  logging DockClientTrack against its old line (the "growing cross-track"). The one "never docked" run hit my own 300 s
+  script limit (215 s approach + 75 s station). To do: the client should release its autopilot on station capture
+  (SpaceStateDocking updateDockingExecuting, check dockDispatcher.stationControlled).

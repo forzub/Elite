@@ -1083,6 +1083,73 @@ void renderRescue(TextRenderer& t, const game::simulation::ClientWalletSnapshot&
         ry += static_cast<float>(small) + 9.0f;
     }
 }
+// F8 -> ФЛОТ (TRADE_DESIGN §6.4, step 15): the agency's candidates (a CV, not the traits) and the owner's bots - state,
+// loop, trips, profit, the delivered reports; hire puts the bot on the first owned ship the player does not fly
+void renderFleet(TextRenderer& t, const game::presentation::TradePresentation& page, float x, float y, float w, float h, int px, int small,
+                 const std::function<void(float, float, float, float, ServicePanelActionType, const std::string&)>& addButton)
+{
+    const auto& f = page.finance;
+    t.solidRectPx(x, y, w, h, Panel);
+    float ry = y + 10.0f;
+    const float right = x + w - 12.0f;
+    const auto button = [&](const std::string& label, float bxRight, ServicePanelActionType type, const std::string& id, const glm::vec4& col) {
+        const float bw = t.measureTextPx(label, small) + 20.0f, bh = small * 1.7f;
+        t.solidRectPx(bxRight - bw, ry - small * 0.3f, bw, bh, Selected);
+        t.textDrawPx(label, bxRight - bw + 10, ry, small, col);
+        addButton(bxRight - bw, ry - small * 0.3f, bxRight, ry - small * 0.3f + bh, type, id);
+        return bw;
+    };
+    t.textDrawPx("Мои пилоты", x + 12, ry, px, Title);
+    ry += static_cast<float>(px) + 6.0f;
+    if (f.bots.empty())
+    {
+        t.textDrawPx("пока нет", x + 14, ry, small, Muted);
+        ry += static_cast<float>(small) + 7.0f;
+    }
+    for (const auto& b : f.bots)
+    {
+        if (ry > y + h * 0.62f)
+            break;
+        t.textDrawPx(b.name + "  ·  " + b.shipRu + "  ·  " + b.stateRu, x + 14, ry, small, b.stateRu == "ушёл" ? Muted : Text);
+        if (b.stateRu != "ушёл")
+        {
+            const float w1 = button("УВОЛИТЬ", right, ServicePanelActionType::BotFire, b.id, Warn);
+            button("ПЕТЛЯ", right - w1 - 8.0f, ServicePanelActionType::BotLoop, b.id, Good);
+        }
+        ry += static_cast<float>(small) + 5.0f;
+        t.textDrawPx((b.loopRu.empty() ? std::string("приказа нет") : b.loopRu) + "  ·  рейсов " + std::to_string(b.trips) + "  ·  итог " +
+                         (b.profitCr >= 0.0 ? "+" : "") + grouped(b.profitCr) + " Cr  ·  зарплата " + grouped(b.wageCr) + " Cr / 30 сут" +
+                         (b.unpaidDays > 0 ? "  ·  НЕ ПЛАЧЕНО " + std::to_string(b.unpaidDays) + " сут" : std::string()),
+                     x + 24, ry, small, b.unpaidDays > 0 ? Bad : Muted);
+        ry += static_cast<float>(small) + 5.0f;
+        const std::size_t from = b.reports.size() > 3 ? b.reports.size() - 3 : 0;
+        for (std::size_t k = from; k < b.reports.size(); ++k)
+        {
+            t.textDrawPx(b.reports[k], x + 24, ry, small, Muted);
+            ry += static_cast<float>(small) + 3.0f;
+        }
+        ry += 6.0f;
+    }
+    ry += 6.0f;
+    t.textDrawPx("Агентство хаба: кандидаты", x + 12, ry, px, Title);
+    ry += static_cast<float>(px) + 6.0f;
+    if (page.botShipEntity == 0)
+    {
+        t.textDrawPx("нужен свой корабль, которым вы сейчас не управляете (F6: купить)", x + 14, ry, small, Warn);
+        ry += static_cast<float>(small) + 7.0f;
+    }
+    for (const auto& c : f.botCandidates)
+    {
+        if (ry > y + h - 2.0f * static_cast<float>(small))
+            break;
+        t.textDrawPx(c.name + "  ·  по резюме: стаж " + std::to_string(c.yearsShown) + " лет, мастерство " + fmt("%.0f %%", c.skillShown * 100.0) +
+                         "  ·  " + grouped(c.wageCr) + " Cr / 30 сут",
+                     x + 14, ry, small, Text);
+        if (page.botShipEntity != 0)
+            button("НАНЯТЬ на " + page.botShipName, right, ServicePanelActionType::BotHire, c.id, Good);
+        ry += static_cast<float>(small) + 9.0f;
+    }
+}
 } // namespace
 
 void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page)
@@ -1126,7 +1193,7 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     const auto tabIt = page.contractText.find("tab");
     const std::string contractsTab = tabIt == page.contractText.end() ? std::string("КОНТРАКТЫ") : tabIt->second;
     // by id: 0 contracts, 1 market, 2 hubs, 4 finance, 5 cargo; drawn in TradeTabOrder, keys 1..5 = that order
-    const char* tabs[] = {contractsTab.c_str(), "РЫНОК", "ХАБЫ СИСТЕМЫ", "", "ФИНАНСЫ", "ГРУЗ"};
+    const char* tabs[] = {contractsTab.c_str(), "РЫНОК", "ХАБЫ СИСТЕМЫ", "", "ФИНАНСЫ", "ГРУЗ", "ФЛОТ"};
     float tx = 24.0f;
     int key = 1;
     for (const int i : game::presentation::TradeTabOrder)
@@ -1141,6 +1208,15 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
 
     // ---- left list
     const float listX = 24.0f, listY = tabY + px * 2.4f, listW = w * 0.58f, listH = h - listY - 40.0f;
+    if (page.tab == 6)
+    {
+        renderFleet(t, page, listX, listY, listW, listH, px, small,
+                    [this](float x0, float y0, float x1, float y1, ServicePanelActionType type, const std::string& id) {
+                        m_hits.push_back({x0, y0, x1, y1, 0, {type, id}});
+                    });
+        t.endFrame();
+        return;
+    }
     if (page.tab == 4)
     {
         renderFinance(t, page.finance, page.financeText, listX, listY, listW, listH, w, h, px, small, big);

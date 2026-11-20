@@ -1013,6 +1013,21 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         for (const auto& c : w.sos)
             std::cerr << "[Rescue]   " << c.id << " " << c.kindRu << " at " << c.hubId << " +" << c.rewardCr << " " << c.status << std::endl;
     }
+    // step 15: "bot:hire:<n>" (the n-th candidate onto the first owned ship not flown), "bot:loop:<n>", "bot:fire:<n>" (the n-th bot)
+    else if (cmd.rfind("bot:", 0) == 0)
+    {
+        const auto& w = s.m_client->sessionSnapshot().wallet;
+        const std::size_t n = static_cast<std::size_t>(std::max(0, std::atoi(cmd.c_str() + cmd.rfind(':') + 1)));
+        const auto page = s.buildTradePage();
+        if (cmd.rfind("bot:hire:", 0) == 0 && n < w.botCandidates.size())
+            s.sendEconomyCommand(game::network::ClientEconomyCommand::HireBot, w.botCandidates[n].id, static_cast<double>(page.botShipEntity));
+        else if (cmd.rfind("bot:loop:", 0) == 0 && n < w.bots.size())
+            s.sendEconomyCommand(game::network::ClientEconomyCommand::OrderBotLoop, w.bots[n].id, 0.0);
+        else if (cmd.rfind("bot:fire:", 0) == 0 && n < w.bots.size())
+            s.sendEconomyCommand(game::network::ClientEconomyCommand::FireBot, w.bots[n].id, 0.0);
+        std::cerr << "[Bots] DEV " << cmd << " (candidates " << w.botCandidates.size() << ", bots " << w.bots.size() << ", ship " << page.botShipEntity
+                  << ")" << std::endl;
+    }
     else if (cmd.rfind("job:hire:", 0) == 0 || cmd == "job:quit")
     {
         game::network::ClientMessage msg;

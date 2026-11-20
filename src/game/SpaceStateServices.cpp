@@ -132,6 +132,25 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
                                                            distanceText);
     // the finance tab: the server's ledger for this session (docs/ECONOMY_BANKING.md)
     page.finance = m_client->sessionSnapshot().wallet;
+    // ФЛОТ (step 15): the first owned ship the player does not fly takes a new bot (F7's list: the controlled one first)
+    if (m_client)
+    {
+        const auto& ships = m_client->world().ships();
+        std::uint32_t owner = 0;
+        if (const auto it = ships.find(m_playerId.value); it != ships.end())
+            owner = it->second.refit.ownerActor;
+        std::vector<std::uint32_t> ids;
+        for (const auto& [sid, sh] : ships)
+            if (sid != m_playerId.value && owner != 0 && sh.refit.owned && sh.refit.ownerActor == owner)
+                ids.push_back(sid);
+        std::sort(ids.begin(), ids.end());
+        if (!ids.empty())
+        {
+            page.botShipEntity = ids.front();
+            const auto& sh = ships.at(ids.front());
+            page.botShipName = sh.refit.shipName.empty() ? std::to_string(ids.front()) : sh.refit.shipName;
+        }
+    }
     for (const char* key : {"garnish", "garnish_value"})
         page.financeText[key] = localizedUiText(context().app, std::string("service.trade.finance.") + key, key);
     // the market and the cargo: the server's (docs/TRADE_DESIGN.md §7.5) - one price of record, what is shown is what
@@ -347,7 +366,7 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
         const bool shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
         static const int Keys[] = {GLFW_KEY_UP, GLFW_KEY_DOWN, GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_TAB, GLFW_KEY_ENTER,
                                    GLFW_KEY_KP_ENTER, GLFW_KEY_BACKSPACE, GLFW_KEY_R, GLFW_KEY_U, GLFW_KEY_1, GLFW_KEY_2,
-                                   GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5};
+                                   GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6};
         for (const int key : Keys)
         {
             const bool down = glfwGetKey(window, key) == GLFW_PRESS;
@@ -410,7 +429,16 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
 
     if (service == ui::services::ServiceUiId::Trade)
     {
-        if (action->type == ServicePanelActionType::CargoInsure)   // the own lots aboard (step 13)
+        if (action->type == ServicePanelActionType::BotHire || action->type == ServicePanelActionType::BotLoop ||
+            action->type == ServicePanelActionType::BotFire)   // F8 ФЛОТ (step 15): the server decides
+        {
+            const auto op = action->type == ServicePanelActionType::BotHire ? game::network::ClientEconomyCommand::HireBot
+                            : action->type == ServicePanelActionType::BotLoop ? game::network::ClientEconomyCommand::OrderBotLoop
+                                                                              : game::network::ClientEconomyCommand::FireBot;
+            const auto page = buildTradePage();
+            sendEconomyCommand(op, action->text, action->type == ServicePanelActionType::BotHire ? static_cast<double>(page.botShipEntity) : 0.0);
+        }
+        else if (action->type == ServicePanelActionType::CargoInsure)   // the own lots aboard (step 13)
             sendEconomyCommand(game::network::ClientEconomyCommand::InsureCargo, std::string(), 0.0);
         else if (action->type == ServicePanelActionType::CargoBlackSell)   // all of it aboard to the black market (step 9)
             sendEconomyCommand(game::network::ClientEconomyCommand::SellBlack, action->text, 0.0);
@@ -579,7 +607,7 @@ void SpaceState::tradeDealKey(int key, bool shift)
     using ui::presentation::ServicePanelActionType;
     if (!m_client)
         return;
-    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_5)
+    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_6)
     {
         m_tradeTab = game::presentation::TradeTabOrder[key - GLFW_KEY_1];   // keys = the shown order (TRADE_DESIGN §11a)
         return;

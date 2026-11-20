@@ -26,7 +26,10 @@ struct ClientEconomyCommand
         InsureCargo = 11,    // the own lots aboard, at a berth (step 13)
         DevGrant = 12,       // DEV: `quantity` Cr credited to the player (live checks of purchases)
         TakeSos = 13,        // goodId = SOS call id (F5 МЧС, step 12): the licensee takes it
-        Last = TakeSos
+        HireBot = 14,        // goodId = candidate id, quantity = the owned ship's entity id (step 15)
+        OrderBotLoop = 15,   // goodId = bot id: the trade loop from the bot ship's hub
+        FireBot = 16,        // goodId = bot id
+        Last = FireBot
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

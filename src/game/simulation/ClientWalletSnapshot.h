@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -74,6 +75,32 @@ struct ClientSos
     bool mine = false;
 };
 
+// bot pilots (step 15): a candidate of this hub's agency and the owner's bots
+struct ClientBotCandidate
+{
+    std::string id;
+    std::string name;
+    double skillShown = 0.0;   // the CV's estimate (embellished)
+    int yearsShown = 0;
+    double wageCr = 0.0;
+};
+
+struct ClientBot
+{
+    std::string id;
+    std::string name;
+    double skillShown = 0.0;
+    double wageCr = 0.0;
+    std::uint64_t shipKey = 0;
+    std::string shipRu;
+    std::string stateRu;
+    std::string loopRu;        // "A <-> B, good"
+    int trips = 0;
+    double profitCr = 0.0;
+    int unpaidDays = 0;
+    std::vector<std::string> reports;   // newest last (already delivered)
+};
+
 struct ClientWalletSnapshot
 {
     bool valid = false;
@@ -137,6 +164,9 @@ struct ClientWalletSnapshot
     std::vector<ClientSos> sos;
     std::string activeSosId;
     bool sarLicence = false;
+    // bot pilots (step 15)
+    std::vector<ClientBotCandidate> botCandidates;
+    std::vector<ClientBot> bots;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

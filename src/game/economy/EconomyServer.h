@@ -190,6 +190,43 @@ public:
     [[nodiscard]] std::string legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
     [[nodiscard]] std::string licenceForGood(const std::string& goodId) const;   // "" = none lists it
     [[nodiscard]] bool hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const;
+    // ---- bot pilots (TRADE_DESIGN §6.4, step 15): hired onto an owned ship, a trade loop run abstractly once a day
+    struct BotTraits
+    {
+        double skill = 0.5, discipline = 0.5, punctuality = 0.5, thrift = 0.5, honesty = 0.5, nerve = 0.5;
+    };
+    struct BotCandidate
+    {
+        std::string id, name, hubId;
+        BotTraits traits;
+        double skillShown = 0.0;
+        int yearsShown = 0;
+        double wageCr = 0.0;
+    };
+    struct Bot
+    {
+        std::string id, name;
+        BotTraits traits;
+        double skillShown = 0.0, wageCr = 0.0;
+        std::uint64_t owner = 0, shipKey = 0;
+        std::string shipRu;
+        CargoCapacity capacity;
+        double dryMassT = 0.0;
+        std::string state = "idle";   // idle / at_a / leg_to_b / at_b / leg_to_a / quit
+        std::string hubA, hubB, goodId;
+        int systemId = -1, legDaysLeft = 0, trips = 0, unpaidDays = 0;
+        double profitCr = 0.0, tripCostCr = 0.0;
+        std::vector<std::pair<int, std::string>> reports;   // (the day the owner learns it, text)
+    };
+    [[nodiscard]] std::vector<BotCandidate> botCandidatesAt(const std::string& hubId, int systemId) const;
+    game::simulation::ClientTradeResult hireBot(std::uint64_t playerId, const std::string& candidateId, const std::string& hubId, int systemId,
+                                                std::uint64_t shipKey, const std::string& shipRu, const CargoCapacity& capacity, double dryMassT,
+                                                std::uint32_t requestId);
+    // the trade loop from the bot ship's hub to the other market hub of the system with the best margin
+    game::simulation::ClientTradeResult orderBotLoop(std::uint64_t playerId, const std::string& botId, const std::string& hubId, int systemId,
+                                                     std::uint32_t requestId);
+    void fireBot(std::uint64_t playerId, const std::string& botId);
+    [[nodiscard]] const std::vector<Bot>& bots() const { return m_bots; }
     // ---- rescue (TRADE_DESIGN §4.2, step 12): SOS calls near busy hubs; a licensee takes one and reaches the hub
     struct SosCall
     {
@@ -439,6 +476,12 @@ private:
     std::map<std::string, std::pair<std::uint64_t, std::string>> m_sosState;   // call id -> (player, "taken" | "done")
     std::unordered_map<std::uint64_t, std::string> m_activeSos;               // player -> call id
     std::set<std::string> m_routableHubs;   // the world hubs a route can reach (set by the server; empty = all)
+    std::vector<Bot> m_bots;
+    std::set<std::string> m_hiredCandidates;
+    int m_botCandidatesPerHub = 3, m_botLegDays = 1, m_botReportDelayDays = 1;
+    double m_botBaseWageCr = 4000.0;
+    void stepBots(int day);
+    void botReport(Bot& b, int day, const std::string& text);
     int m_militaryTermDays = 720;
     std::vector<std::string> m_courierShips, m_militaryShips;
     std::unordered_map<std::uint64_t, Employment> m_employment;

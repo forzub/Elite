@@ -57,7 +57,7 @@ struct NavDataPage
     std::string selected;                 // the selected bank record id
 };
 
-inline constexpr int TradeTabOrder[] = {1, 0, 5, 4, 2};
+inline constexpr int TradeTabOrder[] = {1, 0, 5, 4, 6, 2};   // 6 = ФЛОТ (bot pilots, step 15)
 
 // F5 Government services (TRADE_DESIGN §11a, author 2026-11-20): two apps as tabs - 0 the state services app (its name
 // is localized like Дія / Госуслуги: "service.government.app"; sections: navigation data now, licences in trade step 11,
@@ -80,7 +80,7 @@ struct TradePresentation
     bool atHub = false;
     int day = 0;
     // ids: 0 contracts, 1 market, 2 hubs, 4 finance, 5 cargo (3 = the navigation data, now in F5); shown in the order of
-    // TradeTabOrder (TRADE_DESIGN §11a: РЫНОК, КОНТРАКТЫ, ГРУЗ, ФИНАНСЫ, ХАБЫ), keys 1..5 = that order
+    // TradeTabOrder (TRADE_DESIGN §11a: РЫНОК, КОНТРАКТЫ, ГРУЗ, ФИНАНСЫ, АКТИВЫ И ФЛОТ, ХАБЫ), keys 1..6 = that order
     int tab = 0;
     // the CONTRACTS tab (trade step 5): the server's board of this hub and the player's contracts come in `trade`
     // (ClientTradeSnapshot board / contracts); the selected posting and the confirm state are the window's
@@ -105,6 +105,9 @@ struct TradePresentation
     std::map<std::string, std::string> contractText;
     // the FINANCE tab's strings ("service.trade.finance.<key>" without the prefix)
     std::map<std::string, std::string> financeText;
+    // ФЛОТ (step 15): the entity id of the owned ship a new bot would take (the first owned ship not flown; 0 = none)
+    std::uint32_t botShipEntity = 0;
+    std::string botShipName;
 };
 
 // distanceText(hubId) -> "12 400 km" / "4.3 ly" / "" (unknown)

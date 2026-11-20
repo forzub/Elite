@@ -553,6 +553,11 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json botsJ = fees.value("bots", json::object());
+        m_botCandidatesPerHub = static_cast<int>(num(botsJ, "candidates_per_hub", m_botCandidatesPerHub));
+        m_botBaseWageCr = num(botsJ, "base_wage_cr", m_botBaseWageCr);
+        m_botLegDays = std::max(1, static_cast<int>(num(botsJ, "leg_days", m_botLegDays)));
+        m_botReportDelayDays = std::max(0, static_cast<int>(num(botsJ, "report_delay_days", m_botReportDelayDays)));
         const json rescue = fees.value("rescue", json::object());
         m_sosPerHubDay = num(rescue, "sos_per_hub_day", m_sosPerHubDay);
         m_sosOpenDays = std::max(1, static_cast<int>(num(rescue, "open_days", m_sosOpenDays)));
@@ -880,6 +885,7 @@ void EconomyServer::stepDay(int day)
 
     stepTaxes(day);
     payWages(day);
+    stepBots(day);
 
     std::sort(jumpPrices.begin(), jumpPrices.end());
     char line[512];
@@ -992,6 +998,300 @@ void EconomyServer::stepNpcFlows(int day)
         std::cerr << "[NpcFlows] day " << day << ": " << shipped << " shipments today (" << grouped(tonnes) << " t), "
                   << m_npcShipments.size() << " in flight, step " << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()
                   << " ms" << '\n';
+}
+
+// ---------------------------------------------------------------- bot pilots (TRADE_DESIGN §6.4, step 15)
+namespace
+{
+// a beta-like trait: most are middling, a tail of idiots and a few aces
+double traitOf(std::uint64_t h)
+{
+    const double a = unit(h), b = unit(h ^ 0x9e3779b97f4a7c15ull);
+    return std::clamp(0.5 * (a + b) * 1.1 - 0.05, 0.0, 1.0);
+}
+} // namespace
+
+std::vector<EconomyServer::BotCandidate> EconomyServer::botCandidatesAt(const std::string& hubId, int systemId) const
+{
+    std::vector<BotCandidate> out;
+    if (hubId.empty() || m_marketIndex.find(hubId) == m_marketIndex.end())
+        return out;
+    (void)systemId;
+    static const char* const First[] = {"Ари", "Бо", "Вик", "Гао", "Дара", "Ено", "Жан", "Зоя", "Иво", "Кай", "Лин", "Мира", "Нур", "Ода", "Пэй", "Рин"};
+    static const char* const Last[] = {"Ковач", "Сато", "Мендес", "Олсен", "Рао", "Дюбуа", "Ким", "Новак", "Фаррелл", "Ибрагим", "Хольм", "Чен"};
+    const int week = std::max(0, m_day) / 7;
+    for (int k = 0; k < m_botCandidatesPerHub; ++k)
+    {
+        const std::uint64_t h = hashOf(hubId + "#bot" + std::to_string(k), static_cast<std::uint64_t>(week) + 0xb07ull);
+        BotCandidate c;
+        c.id = hubId + "#bot" + std::to_string(k) + "@" + std::to_string(week);
+        if (m_hiredCandidates.count(c.id))
+            continue;
+        c.hubId = hubId;
+        c.name = std::string(First[h % 16]) + " " + Last[(h >> 8) % 12];
+        c.traits.skill = traitOf(h ^ 1);
+        c.traits.discipline = traitOf(h ^ 2);
+        c.traits.punctuality = traitOf(h ^ 3);
+        c.traits.thrift = traitOf(h ^ 4);
+        c.traits.honesty = traitOf(h ^ 5);
+        c.traits.nerve = traitOf(h ^ 6);
+        // the CV: the skill embellished by a dishonest candidate (TRADE_DESIGN §6.4: "резюме может быть приукрашено")
+        c.skillShown = std::clamp(c.traits.skill + (1.0 - c.traits.honesty) * 0.35 * unit(h ^ 7), 0.0, 1.0);
+        c.yearsShown = 1 + static_cast<int>(c.skillShown * 14.0);
+        c.wageCr = std::round(m_botBaseWageCr * (0.6 + 0.8 * c.traits.skill));
+        out.push_back(c);
+    }
+    return out;
+}
+
+void EconomyServer::botReport(Bot& b, int day, const std::string& text)
+{
+    b.reports.push_back({day + m_botReportDelayDays, text});
+    if (b.reports.size() > 12)
+        b.reports.erase(b.reports.begin());
+}
+
+game::simulation::ClientTradeResult EconomyServer::hireBot(std::uint64_t playerId, const std::string& candidateId, const std::string& hubId,
+                                                           int systemId, std::uint64_t shipKey, const std::string& shipRu,
+                                                           const CargoCapacity& capacity, double dryMassT, std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    if (!ledger(playerId))
+        return refuse("no_account", "нет счёта");
+    const BotCandidate* c = nullptr;
+    const auto list = botCandidatesAt(hubId, systemId);
+    for (const auto& x : list)
+        if (x.id == candidateId)
+            c = &x;
+    if (!c)
+        return refuse("bot_unknown", "кандидат уже не в списке агентства");
+    if (shipKey == 0 || !(capacity.netT > 0.0))
+        return refuse("bot_no_ship", "нужен свой корабль с трюмом, которым вы сейчас не управляете");
+    for (const auto& b : m_bots)
+        if (b.shipKey == shipKey && b.state != "quit")
+            return refuse("bot_ship_busy", "на этом корабле уже есть пилот-бот");
+    Bot b;
+    b.id = "bot:" + c->id;
+    b.name = c->name;
+    b.traits = c->traits;
+    b.skillShown = c->skillShown;
+    b.wageCr = c->wageCr;
+    b.owner = playerId;
+    b.shipKey = shipKey;
+    b.shipRu = shipRu;
+    b.capacity = capacity;
+    b.dryMassT = dryMassT;
+    b.systemId = systemId;
+    b.hubA = hubId;
+    m_hiredCandidates.insert(c->id);
+    botReport(b, m_day - m_botReportDelayDays, "нанят(а) на корабль " + shipRu + ", зарплата " + grouped(b.wageCr) + " Cr / 30 сут");
+    m_bots.push_back(b);
+    r.ok = true;
+    r.code = "bot_hired";
+    r.message = "нанят пилот " + b.name + " (" + shipRu + ")";
+    pushResult(playerId, r);
+    saveNow("bot hired");
+    std::cerr << "[Bots] player " << playerId << " hires " << b.id << " " << b.name << " (skill " << b.traits.skill << ", shown "
+              << b.skillShown << ", honesty " << b.traits.honesty << ") on ship " << shipKey << '\n';
+    return r;
+}
+
+game::simulation::ClientTradeResult EconomyServer::orderBotLoop(std::uint64_t playerId, const std::string& botId, const std::string& hubId,
+                                                                int systemId, std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    Bot* bot = nullptr;
+    for (auto& b : m_bots)
+        if (b.id == botId && b.owner == playerId && b.state != "quit")
+            bot = &b;
+    if (!bot)
+        return refuse("bot_unknown", "нет такого пилота");
+    const std::string from = bot->state == "idle" && !hubId.empty() ? hubId : bot->hubA;
+    const auto itA = m_marketIndex.find(from);
+    if (itA == m_marketIndex.end())
+        return refuse("bot_no_market", "у хаба корабля бота нет рынка");
+    // the best margin: buy at A (ask), sell at B (bid), the same system
+    std::string bestHub, bestGood;
+    double bestMargin = 0.0;
+    const auto& goods = EconomyModel::instance().goods();
+    for (const auto& m : m_markets)
+    {
+        if (m.hubId == from || m.systemId != systemId)
+            continue;
+        for (std::size_t g = 0; g < goods.size(); ++g)
+        {
+            MarketSide a, b;
+            if (!marketSide(from, goods[g].id, a) || !marketSide(m.hubId, goods[g].id, b))
+                continue;
+            if (legalityFor(playerId, static_cast<int>(g), from, systemId) != "legal" || legalityFor(playerId, static_cast<int>(g), m.hubId, systemId) != "legal")
+                continue;
+            const double margin = (bidCr(b) - askCr(a)) / std::max(1.0, askCr(a));
+            if (margin > bestMargin)
+            {
+                bestMargin = margin;
+                bestHub = m.hubId;
+                bestGood = goods[g].id;
+            }
+        }
+    }
+    if (bestHub.empty())
+        return refuse("bot_no_loop", "в системе нет выгодной петли от этого хаба");
+    bot->hubA = from;
+    bot->hubB = bestHub;
+    bot->goodId = bestGood;
+    bot->systemId = systemId;
+    bot->state = "at_a";
+    botReport(*bot, m_day - m_botReportDelayDays, "приказ: петля " + hubDisplayName(from) + " <-> " + hubDisplayName(bestHub) + ", товар " + bestGood +
+                                                      " (маржа " + std::to_string(static_cast<int>(bestMargin * 100.0)) + " %)");
+    r.ok = true;
+    r.code = "bot_order";
+    r.message = bot->name + ": петля " + hubDisplayName(from) + " <-> " + hubDisplayName(bestHub) + ", " + bestGood;
+    pushResult(playerId, r);
+    saveNow("bot order");
+    std::cerr << "[Bots] " << bot->id << " loop " << from << " <-> " << bestHub << " " << bestGood << " margin " << bestMargin << '\n';
+    return r;
+}
+
+void EconomyServer::fireBot(std::uint64_t playerId, const std::string& botId)
+{
+    for (auto& b : m_bots)
+        if (b.id == botId && b.owner == playerId && b.state != "quit")
+        {
+            b.state = "quit";
+            botReport(b, m_day - m_botReportDelayDays, "уволен владельцем");
+            saveNow("bot fired");
+        }
+}
+
+void EconomyServer::stepBots(int day)
+{
+    for (auto& b : m_bots)
+    {
+        if (b.state == "quit")
+            continue;
+        ClientLedger* l = ledger(b.owner);
+        if (!l)
+            continue;
+        // the wage: daily; 30 days unpaid -> the bot leaves
+        const PaymentResult paid = pay(*l, m_banks, l->homeBank, std::round(b.wageCr / 30.0 * 100.0) / 100.0, Purpose::Fee, day, false,
+                                       "зарплата пилота " + b.name);
+        b.unpaidDays = paid.ok ? 0 : b.unpaidDays + 1;
+        if (paid.ok)
+            if (TaxBook* t = taxBook(b.owner))
+                addExpense(*t, b.wageCr / 30.0);
+        if (b.unpaidDays >= 30)
+        {
+            b.state = "quit";
+            botReport(b, day, "ушёл: 30 суток без зарплаты");
+            continue;
+        }
+        const std::uint64_t h = hashOf(b.id, static_cast<std::uint64_t>(day) * 977ull);
+        const auto& t = b.traits;
+        const auto good = goodIndex(b.goodId);
+        const double density = good >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(good)].densityTM3 : 1.0;
+        if (b.state == "at_a" || b.state == "at_b")
+        {
+            const bool atA = b.state == "at_a";
+            const std::string hub = atA ? b.hubA : b.hubB;
+            (void)chargeDocking(b.owner, b.id + "@" + std::to_string(day) + (atA ? "a" : "b"), hub, b.systemId, b.dryMassT);
+            TradeOrder o;
+            o.playerId = b.owner;
+            o.shipKey = b.shipKey;
+            o.hubId = hub;
+            o.systemId = b.systemId;
+            o.goodId = b.goodId;
+            o.capacity = b.capacity;
+            o.requestId = 0;
+            if (atA)
+            {
+                // buy what fits (half again if the money / the hub limit refuses)
+                const CargoManifest* m = m_cargo.find(b.shipKey);
+                o.buy = true;
+                o.tonnes = std::max(0.0, b.capacity.netT - (m ? m->netT() : 0.0)) * 0.9;
+                // what the owner's money pays for (ask + VAT + handling ~ x1.35), leaving a reserve for fees and wages
+                if (MarketSide side; marketSide(hub, b.goodId, side))
+                {
+                    const double money = std::max(0.0, spendableCr(*l, m_banks, bankOf(hub, b.systemId)) - 2000.0);
+                    o.tonnes = std::min(o.tonnes, money / std::max(1.0, askCr(side) * 1.35));
+                }
+                game::simulation::ClientTradeResult res;
+                for (int k = 0; k < 4 && o.tonnes > 0.5; ++k, o.tonnes *= 0.5)
+                {
+                    res = trade(o);
+                    if (res.ok)
+                        break;
+                }
+                // the trip's cost = the lots' cost basis (the reclaimable input VAT excluded - it comes back later)
+                b.tripCostCr = 0.0;
+                if (const CargoManifest* after = m_cargo.find(b.shipKey))
+                    for (const auto& lot : after->lots)
+                        if (lot.goodId == b.goodId && lot.contractId.empty())
+                            b.tripCostCr += lot.costBasisCr;
+                botReport(b, day, res.ok ? "погрузка у " + hubDisplayName(hub) + ": " + res.message : "не смог купить у " + hubDisplayName(hub) + ": " + res.message);
+            }
+            else
+            {
+                // theft on the trip (honesty)
+                if (unit(h ^ 0x7e) < 0.02 * (1.0 - t.honesty) * (1.0 - t.honesty))
+                    if (const CargoManifest* m = m_cargo.find(b.shipKey))
+                    {
+                        const double aboard = m->ownTonnesOf(b.goodId);
+                        const double stolen = aboard * (0.05 + 0.25 * unit(h ^ 0x7f));
+                        double basis = 0.0;
+                        if (stolen > 0.01)
+                            (void)m_cargo.unload(b.shipKey, b.goodId, stolen, density, basis);
+                        // the owner sees a shortfall, not a theft
+                        botReport(b, day, "недостача груза: " + grouped(stolen, 2) + " т");
+                    }
+                const CargoManifest* m = m_cargo.find(b.shipKey);
+                o.buy = false;
+                o.tonnes = m ? m->ownTonnesOf(b.goodId) : 0.0;
+                const auto res = o.tonnes > 0.01 ? trade(o) : game::simulation::ClientTradeResult{};
+                if (res.ok)
+                {
+                    const double tripProfit = res.totalCr - b.tripCostCr;
+                    b.profitCr += tripProfit;
+                    ++b.trips;
+                    botReport(b, day, "продажа у " + hubDisplayName(hub) + ": " + res.message + "; рейс " + (tripProfit >= 0 ? "+" : "") + grouped(tripProfit) + " Cr");
+                }
+                else
+                    botReport(b, day, "не смог продать у " + hubDisplayName(hub) + (res.message.empty() ? std::string() : ": " + res.message));
+            }
+            // the leg: base days + a route error (skill) + a late arrival (punctuality)
+            int legs = m_botLegDays;
+            if (unit(h ^ 0x11) < 0.02 + 0.25 * (1.0 - t.skill) * (1.0 - t.skill))
+            {
+                legs += 1 + static_cast<int>(unit(h ^ 0x12) * 2.0);
+                botReport(b, day, "ошиблся маршрутом: +" + std::to_string(legs - m_botLegDays) + " сут");
+            }
+            if (unit(h ^ 0x13) < 0.5 * (1.0 - t.punctuality))
+                legs += 1;
+            b.legDaysLeft = legs;
+            b.state = atA ? "leg_to_b" : "leg_to_a";
+            continue;
+        }
+        if (b.state == "leg_to_b" || b.state == "leg_to_a")
+        {
+            if (--b.legDaysLeft <= 0)
+                b.state = b.state == "leg_to_b" ? "at_b" : "at_a";
+        }
+    }
 }
 
 // ---------------------------------------------------------------- rescue (TRADE_DESIGN §4.2, step 12)
@@ -2696,6 +2996,30 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         for (const auto& c : m_pilotCategories)
             w.pilotCategories.push_back({c.ru, c.control, c.start, c.note});
     }
+    // bot pilots (step 15): this hub's agency and the owner's bots (reports already delivered)
+    for (const auto& c : botCandidatesAt(hubId, systemId))
+        w.botCandidates.push_back({c.id, c.name, c.skillShown, c.yearsShown, c.wageCr});
+    for (const auto& b : m_bots)
+        if (b.owner == playerId)
+        {
+            game::simulation::ClientBot cb;
+            cb.id = b.id;
+            cb.name = b.name;
+            cb.skillShown = b.skillShown;
+            cb.wageCr = b.wageCr;
+            cb.shipKey = b.shipKey;
+            cb.shipRu = b.shipRu;
+            cb.stateRu = b.state == "idle" ? "ждёт приказа" : b.state == "at_a" || b.state == "at_b" ? "у хаба: сделка"
+                         : b.state == "quit" ? "ушёл" : "в пути, " + std::to_string(b.legDaysLeft) + " сут";
+            cb.loopRu = b.hubB.empty() ? std::string() : hubDisplayName(b.hubA) + " <-> " + hubDisplayName(b.hubB) + ", " + b.goodId;
+            cb.trips = b.trips;
+            cb.profitCr = b.profitCr;
+            cb.unpaidDays = b.unpaidDays;
+            for (const auto& [visible, text] : b.reports)
+                if (visible <= m_day)
+                    cb.reports.push_back("день " + std::to_string(visible) + ": " + text);
+            w.bots.push_back(cb);
+        }
     // rescue (F5 МЧС)
     for (const auto& c : sosCallsIn(systemId))
     {
@@ -2945,9 +3269,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/11";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+    j["schema"] = "economy_state/12";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
                                        // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
-                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment; 11: SOS
+                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment; 11: SOS; 12: bots
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -2988,6 +3312,22 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
                                    {"cause", r.cause}});
+    j["bots"] = json::array();
+    for (const auto& b : m_bots)
+    {
+        json reports = json::array();
+        for (const auto& [d, text] : b.reports)
+            reports.push_back({d, text});
+        j["bots"].push_back({{"id", b.id}, {"name", b.name}, {"traits", {b.traits.skill, b.traits.discipline, b.traits.punctuality, b.traits.thrift,
+                                                                            b.traits.honesty, b.traits.nerve}},
+                             {"shown", b.skillShown}, {"wage", b.wageCr}, {"owner", b.owner}, {"ship", b.shipKey}, {"ship_ru", b.shipRu},
+                             {"cap", {b.capacity.netT, b.capacity.c20Slots}}, {"dry", b.dryMassT}, {"state", b.state}, {"a", b.hubA},
+                             {"b", b.hubB}, {"good", b.goodId}, {"system", b.systemId}, {"leg", b.legDaysLeft}, {"trips", b.trips},
+                             {"unpaid", b.unpaidDays}, {"profit", b.profitCr}, {"cost", b.tripCostCr}, {"reports", reports}});
+    }
+    j["bot_hired"] = json::array();
+    for (const auto& id : m_hiredCandidates)
+        j["bot_hired"].push_back(id);
     j["sos"] = json::array();
     for (const auto& [id, st] : m_sosState)
         j["sos"].push_back({id, st.first, st.second});
@@ -3159,7 +3499,7 @@ bool EconomyServer::restoreState(const std::string& text)
         schema != "economy_state/4" && schema != "economy_state/5" && schema != "economy_state/6" &&
         schema != "economy_state/7" && schema != "economy_state/8" &&
         schema != "economy_state/9" && schema != "economy_state/10" &&
-        schema != "economy_state/11")   // /1: no trade registries; /2: no contracts;
+        schema != "economy_state/11" && schema != "economy_state/12")   // /1: no trade registries; /2: no contracts;
                                                                        // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
@@ -3232,6 +3572,41 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_bots) bots;   // economy_state/12
+        for (const auto& x : j.value("bots", json::array()))
+        {
+            Bot b;
+            b.id = x.value("id", std::string());
+            b.name = x.value("name", std::string());
+            const json tr = x.value("traits", json::array());
+            if (tr.size() == 6)
+                b.traits = {tr[0].get<double>(), tr[1].get<double>(), tr[2].get<double>(), tr[3].get<double>(), tr[4].get<double>(), tr[5].get<double>()};
+            b.skillShown = x.value("shown", 0.0);
+            b.wageCr = x.value("wage", 0.0);
+            b.owner = x.value("owner", std::uint64_t{0});
+            b.shipKey = x.value("ship", std::uint64_t{0});
+            b.shipRu = x.value("ship_ru", std::string());
+            const json cap = x.value("cap", json::array());
+            if (cap.size() == 2)
+                b.capacity = {cap[0].get<double>(), cap[1].get<int>()};
+            b.dryMassT = x.value("dry", 0.0);
+            b.state = x.value("state", std::string("idle"));
+            b.hubA = x.value("a", std::string());
+            b.hubB = x.value("b", std::string());
+            b.goodId = x.value("good", std::string());
+            b.systemId = x.value("system", -1);
+            b.legDaysLeft = x.value("leg", 0);
+            b.trips = x.value("trips", 0);
+            b.unpaidDays = x.value("unpaid", 0);
+            b.profitCr = x.value("profit", 0.0);
+            b.tripCostCr = x.value("cost", 0.0);
+            for (const auto& r : x.value("reports", json::array()))
+                b.reports.push_back({r.at(0).get<int>(), r.at(1).get<std::string>()});
+            bots.push_back(std::move(b));
+        }
+        decltype(m_hiredCandidates) hiredCandidates;
+        for (const auto& id : j.value("bot_hired", json::array()))
+            hiredCandidates.insert(id.get<std::string>());
         decltype(m_sosState) sosState;   // economy_state/11
         for (const auto& x : j.value("sos", json::array()))
             sosState[x.at(0).get<std::string>()] = {x.at(1).get<std::uint64_t>(), x.at(2).get<std::string>()};
@@ -3336,6 +3711,8 @@ bool EconomyServer::restoreState(const std::string& text)
         m_cargoPolicies.swap(policies);
         m_employment.swap(employment);
         m_sosState.swap(sosState);
+        m_bots.swap(bots);
+        m_hiredCandidates.swap(hiredCandidates);
         m_activeSos.swap(activeSos);
         m_lossEvents.swap(lossEvents);
         m_lostCargo.swap(lostCargo);

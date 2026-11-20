@@ -1087,7 +1087,8 @@ void renderRescue(TextRenderer& t, const game::simulation::ClientWalletSnapshot&
 // contracts (progress, the stage s1..s4, paid of the price, status, income once let to the operator)
 void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, const std::map<std::string, std::string>& text, bool docked,
                  float x, float y, float w, float h, int px, int small,
-                 const std::function<void(float, float, float, float, const std::string&)>& addButton)
+                 const std::function<void(float, float, float, float, const std::string&)>& addButton,
+                 const std::function<void(float, float, float, float, const std::string&)>& addLease)
 {
     const auto tx = [&](const char* key) -> std::string {
         const auto it = text.find(key);
@@ -1096,6 +1097,43 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
     t.solidRectPx(x, y, w, h, Panel);
     float ry = y + 10.0f;
     const float right = x + w - 12.0f;
+    // step 16 part 2: the player's mines and the sites offered here
+    if (!f.mines.empty())
+    {
+        t.textDrawPx(tx("mine_mine"), x + 12, ry, px, Title);
+        ry += static_cast<float>(px) + 6.0f;
+        for (const auto& m : f.mines)
+        {
+            t.textDrawPx(m.nameRu + "  ·  " + m.hubName + "  ·  " + m.goodRu + "  ·  " + m.statusRu, x + 14, ry, small, Text);
+            ry += static_cast<float>(small) + 5.0f;
+            t.textDrawPx(tx("mine_reserve") + " " + grouped(m.reserveLeftT) + " / " + grouped(m.reserveT) + " т  ·  " + tx("mine_today") + " " +
+                             grouped(m.lastOutputT) + " т  ·  " + tx("mine_sold") + " " + grouped(m.soldT) + " т  ·  " + tx("mine_revenue") + " " +
+                             grouped(m.revenueCr) + " Cr  ·  " + tx("mine_rent") + " " + grouped(m.rentYearCr) + " Cr/" + tx("mine_year"),
+                         x + 24, ry, small, m.lastOutputT > 0.0 ? Good : Muted);
+            ry += static_cast<float>(small) + 10.0f;
+        }
+    }
+    if (!f.siteOffers.empty())
+    {
+        t.textDrawPx(tx("mine_offers"), x + 12, ry, px, Title);
+        ry += static_cast<float>(px) + 6.0f;
+        for (const auto& s : f.siteOffers)
+        {
+            t.textDrawPx(s.nameRu + "  ·  " + s.goodRu + "  ·  r " + grouped(s.radiusM) + " м  ·  " + tx("mine_grade") + " " + std::to_string(s.grade).substr(0, 4) + "  ·  " +
+                             tx("mine_reserve") + " " + grouped(s.reserveT) + " т  ·  " + tx("mine_rent") + " " + grouped(s.rentYearCr) + " Cr/" + tx("mine_year") +
+                             "  ·  " + tx("mine_lease_cost") + " " + grouped(s.leaseCostCr) + " Cr",
+                         x + 14, ry, small, Text);
+            {
+                const std::string lease = tx("mine_lease");
+                const float bw = t.measureTextPx(lease, small) + 20.0f, bh = small * 1.7f;
+                t.solidRectPx(right - bw, ry - small * 0.3f, bw, bh, Selected);
+                t.textDrawPx(lease, right - bw + 10, ry, small, Good);
+                addLease(right - bw, ry - small * 0.3f, right, ry - small * 0.3f + bh, s.id);
+            }
+            ry += static_cast<float>(small) + 9.0f;
+        }
+        ry += 6.0f;
+    }
     t.textDrawPx(tx("build_mine"), x + 12, ry, px, Title);
     ry += static_cast<float>(px) + 6.0f;
     if (f.buildProjects.empty())
@@ -1129,7 +1167,6 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
         t.textDrawPx(o.projectRu + "  ·  " + o.contractorRu + "  ·  " + grouped(o.priceCr) + " Cr  ·  " + std::to_string(o.workDays) + " " +
                          tx("build_days") + "  ·  " + tx("build_reliability") + " " + std::to_string(static_cast<int>(o.reliability * 100.0 + 0.5)) + " %",
                      x + 14, ry, small, Text);
-        if (docked)
         {
             const std::string sign = tx("build_sign");
             const float bw = t.measureTextPx(sign, small) + 20.0f, bh = small * 1.7f;
@@ -1140,7 +1177,7 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
         ry += static_cast<float>(small) + 9.0f;
     }
     if (!docked)
-        t.textDrawPx(tx("build_dock_hint"), x + 14, ry + 4.0f, small, Muted);
+        t.textDrawPx(tx("build_dock_hint"), x + 14, ry + 4.0f, small, Muted);   // a hint only: the server takes it in the hub's frame too
 }
 // F8 -> ФЛОТ (TRADE_DESIGN §6.4, step 15): the agency's candidates (a CV, not the traits) and the owner's bots - state,
 // loop, trips, profit, the delivered reports; hire puts the bot on the first owned ship the player does not fly
@@ -1850,6 +1887,9 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
             renderBuild(t, page.wallet, page.text, page.docked, listX, y0, listW, listH - (y0 - listY), px, small,
                         [this](float x0, float y0b, float x1, float y1, const std::string& id) {
                             m_hits.push_back({x0, y0b, x1, y1, 0, {ServicePanelActionType::GovernmentSignBuild, id}});
+                        },
+                        [this](float x0, float y0b, float x1, float y1, const std::string& id) {
+                            m_hits.push_back({x0, y0b, x1, y1, 0, {ServicePanelActionType::GovernmentLeaseSite, id}});
                         });
         else if (page.section == 4)
             renderRescue(t, page.wallet, page.text, listX, y0, listW, listH - (y0 - listY), px, small,

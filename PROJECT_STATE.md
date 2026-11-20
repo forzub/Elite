@@ -7558,3 +7558,23 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   7 499 000, строится) - 02_signed.png.
 - Not yet (part 2/3): asteroid sites / concessions, own production with depletion, staff, supply series paid by the
   owner, the customer's-materials option, replication of overrides to remote clients (same process only now).
+
+## TRADE step 16 part 2: mining concessions (2026-11-20) - SOURCE + TESTS + LIVE PASS
+- EconomyServer (economy_state/14): siteOffersAt (mining_hub / belt_hub hubs one can fly to - the routable set; 3 bodies
+  a week: r 50..2000 m skewed small, grade 0.5..3, ore_rare 1 in 5, reserve = sphere x 2.4 t/m3 x 0.3, rent = 2000 +
+  6 x r x grade a year), leaseSite (application 50 000 + survey 200 000), the rig = a construction contract
+  (kind 'minehead', 3.05 M x 1.15..1.30; offered only to the concession's owner; never drawn - mine hub meshes untouched),
+  stepMines (daily rent, 90 days unpaid -> lapsed; once the rig is accepted: a shift of 12 x 3 000 Cr/month + 2 %/yr
+  upkeep, output 150 x (0.5 + grade/3) t/day x the reserve tail, into the mine's stockpile manifest and sold at the
+  hub's market by the ordinary deal (price impact, VAT, taxes), royalty 7 % to the state). trade_fees.json "mining".
+- Protocol 45 (LeaseSite), snapshot 66 (wallet siteOffers / mines); F5 «Стройка» lists my mines + the sites here.
+  Lease / sign need the ship AT the hub (docked or in its frame; free flight -> "not_at_hub" - before, an empty hub fell
+  back to the home hub). The buttons are always shown: hubs of other bodies (Ceres) have no berths yet.
+- Tests: EliteEconomyCheck 253/253 (testMining: offers only at mining/belt hubs, refusal, lease, rig offers only to the
+  owner, rig accepted day 1040, 10 days: 2 068 t mined + sold, save / restore, 95 days broke -> lapsed).
+- LIVE (D:/tmp/mine16/run.log, 01_mine_f5.png): DEV start at Ceres, route to the hub, 3 sites; leased астероид 8554
+  (r 505 m, reserve 388 Mt, rent 6 242 Cr/yr); 3 rig offers; signed «Тяжмонтаж» 3.609 M (s1 541 350). Hygiea (belt
+  reservoir) is not a world hub - hence the routable filter.
+- BALANCE NOTE: selling at the producing hub dumps the price (~11 Cr/t net of everything in the test: ~2.3 k/day
+  proceeds vs ~1.4 k/day costs) -> payback of the rig takes years. Part 3: pick the ore up from the stockpile / ore
+  haul contracts to processing hubs; check the ore bid at belt markets.

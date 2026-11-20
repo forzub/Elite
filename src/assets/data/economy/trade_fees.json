@@ -28,12 +28,26 @@
   "note": "TRADE_DESIGN §6.2 (step 16, minimal set). The player's construction contract takes over a PLANNED expansion project of a city hub (the hub's own plan: geometry and the s1..s4 stage kits are drawn as they are; the mine hub meshes are never touched). 3 contractor offers per hub and week: price = base_cost_cr x kind factor x (1.15..1.30), work days = base_work_days x (0.9..1.4) (a game-time scale: the hubs' own projects take years), reliability 0.6..0.95. Milestones s1..s4 pay 15 / 30 / 30 / 20 % at 0 / 25 / 50 / 75 % progress, the last 5 % (the retention) at the acceptance; an unpaid milestone halts the work ('funding'), 180 days unpaid -> the contractor leaves (abandoned); random halts p = halt_p_day x (1.5 - r), 1..5 days. The finished module is let to the hub operator: income income_share_year x price a year, maintenance maintenance_share_year (daily, taxable). Not yet: asteroid sites, own production / depletion, staff, supply series paid by the owner, the customer's materials option.",
   "base_cost_cr": 3050000,
   "base_work_days": 30,
-  "kind_factor": {"hall": 1.5, "yard": 1.2, "slab": 2.0, "hab": 2.0, "tower": 3.0, "dock": 2.5},
+  "kind_factor": {"hall": 1.5, "yard": 1.2, "slab": 2.0, "hab": 2.0, "tower": 3.0, "dock": 2.5, "minehead": 1.0},
   "milestones": [0.15, 0.30, 0.30, 0.20],
   "retention_share": 0.05,
   "abandon_after_unpaid_days": 180,
   "halt_p_day": 0.01,
   "income_share_year": 0.20,
+  "maintenance_share_year": 0.02
+ },
+ "mining": {
+  "note": "TRADE_DESIGN §6.1 (step 16 part 2, minimal set): a concession on a small asteroid at a mining / belt hub. 3 bodies per hub and week (radius 50..2000 m, skewed small; grade 0.5..3; ore_rare 1 in 5). Lease: application + survey at signing, rent per year = 2000 + 6 Cr x radius m x grade (daily), 90 days unpaid -> the lease lapses. The rig is a construction contract (kind 'minehead', base cost 3.05 M = PLAYER_ECONOMY §4 minimum; not drawn - the mine hub meshes are not touched). Once built: a shift of 12 (wage per month each), output t/day = base x (0.5 + grade / 3) x min(1, reserve left / 5 % of the reserve); reserve = the body's volume x 2.4 t/m3 x the recoverable share. The ore goes to the mine's stockpile and is sold daily at the hub's market (the ordinary deal: the price falls with the stock); royalty to the state on the proceeds. Anchors: a standard 3126 mine object (MINES.md) = 120 workers, 6 000 t equipment, ~1.3 Mt/yr in Sol -> a player rig ~1/10 of it in people and ~1/25 in output; royalties 2..10 % of value (real mining law).",
+  "application_cr": 50000,
+  "survey_cr": 200000,
+  "rent_base_cr": 2000,
+  "rent_per_radius_cr": 6,
+  "base_t_day": 150,
+  "staff": 12,
+  "wage_month_cr": 3000,
+  "royalty_share": 0.07,
+  "lapse_after_unpaid_days": 90,
+  "recoverable_share": 0.3,
   "maintenance_share_year": 0.02
  },
  "bots": {

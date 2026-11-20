@@ -1048,6 +1048,34 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientSiteOffer,
+    v.id,
+    v.nameRu,
+    v.goodRu,
+    v.radiusM,
+    v.grade,
+    v.reserveT,
+    v.rentYearCr,
+    v.leaseCostCr
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientMine,
+    v.id,
+    v.nameRu,
+    v.hubName,
+    v.goodRu,
+    v.statusRu,
+    v.reserveT,
+    v.reserveLeftT,
+    v.lastOutputT,
+    v.minedT,
+    v.soldT,
+    v.revenueCr,
+    v.rentYearCr
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientBuildProject,
     v.id,
     v.hubName,
@@ -1174,6 +1202,8 @@ ELITE_WIRE_SCHEMA(
     v.bots,
     v.buildOffers,
     v.buildProjects,
+    v.siteOffers,
+    v.mines,
     v.localPolity,
     v.localBank,
     v.localCurrency,

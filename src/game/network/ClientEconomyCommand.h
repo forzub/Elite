@@ -30,7 +30,8 @@ struct ClientEconomyCommand
         OrderBotLoop = 15,   // goodId = bot id: the trade loop from the bot ship's hub
         FireBot = 16,        // goodId = bot id
         SignConstruction = 17,   // goodId = offer id (step 16): the contract on a planned project of this hub
-        Last = SignConstruction
+        LeaseSite = 18,          // goodId = site offer id (step 16 part 2): a mining concession at this hub
+        Last = LeaseSite
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

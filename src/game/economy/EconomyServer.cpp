@@ -566,6 +566,18 @@ bool EconomyServer::load()
         const json kindFactor = cons.value("kind_factor", json::object());
         for (const auto& [k, v] : kindFactor.items())
             m_buildKindFactor[k] = v.get<double>();
+        const json mineJ = fees.value("mining", json::object());
+        m_mineApplicationCr = num(mineJ, "application_cr", m_mineApplicationCr);
+        m_mineSurveyCr = num(mineJ, "survey_cr", m_mineSurveyCr);
+        m_mineRentBaseCr = num(mineJ, "rent_base_cr", m_mineRentBaseCr);
+        m_mineRentPerRadiusCr = num(mineJ, "rent_per_radius_cr", m_mineRentPerRadiusCr);
+        m_mineBaseTDay = num(mineJ, "base_t_day", m_mineBaseTDay);
+        m_mineStaff = static_cast<int>(num(mineJ, "staff", m_mineStaff));
+        m_mineWageMonthCr = num(mineJ, "wage_month_cr", m_mineWageMonthCr);
+        m_mineRoyalty = num(mineJ, "royalty_share", m_mineRoyalty);
+        m_mineLapseDays = static_cast<int>(num(mineJ, "lapse_after_unpaid_days", m_mineLapseDays));
+        m_mineRecoverable = num(mineJ, "recoverable_share", m_mineRecoverable);
+        m_mineMaintYear = num(mineJ, "maintenance_share_year", m_mineMaintYear);
         const json botsJ = fees.value("bots", json::object());
         m_botCandidatesPerHub = static_cast<int>(num(botsJ, "candidates_per_hub", m_botCandidatesPerHub));
         m_botBaseWageCr = num(botsJ, "base_wage_cr", m_botBaseWageCr);
@@ -900,6 +912,7 @@ void EconomyServer::stepDay(int day)
     payWages(day);
     stepBots(day);
     stepConstruction(day);
+    stepMines(day);
 
     std::sort(jumpPrices.begin(), jumpPrices.end());
     char line[512];
@@ -1019,36 +1032,48 @@ namespace
 {
 const char* buildKindRu(const std::string& kind)
 {
-    return kind == "hall" ? "цех (зал)" : kind == "yard" ? "верфь-двор" : kind == "slab" ? "жилой корпус" : kind == "hab" ? "жилой модуль"
+    return kind == "minehead" ? "добычная установка" : kind == "hall" ? "цех (зал)" : kind == "yard" ? "верфь-двор" : kind == "slab" ? "жилой корпус" : kind == "hab" ? "жилой модуль"
          : kind == "tower" ? "башня" : kind == "dock" ? "причал" : "модуль";
 }
 } // namespace
 
-std::vector<EconomyServer::BuildOffer> EconomyServer::buildOffersAt(const std::string& hubId) const
+std::vector<EconomyServer::BuildOffer> EconomyServer::buildOffersAt(const std::string& hubId, std::uint64_t playerId) const
 {
     std::vector<BuildOffer> out;
-    const auto it = m_buildable.find(hubId);
-    if (it == m_buildable.end())
-        return out;
-    for (const auto& p : m_buildProjects)
-        if (p.offer.projectId == it->second.projectId && p.status != "abandoned")
-            return out;   // already contracted
+    std::vector<PlannedProject> targets;
+    if (const auto it = m_buildable.find(hubId); it != m_buildable.end())
+        targets.push_back(it->second);
+    // step 16 part 2: the rig of the player's leased site here
+    for (const auto& c : m_concessions)
+        if (playerId != 0 && c.owner == playerId && c.site.hubId == hubId && c.status == "leased")
+            targets.push_back({"site:" + c.site.id, "minehead"});
     static const char* const Firms[] = {"«Орбиталь-Строй»", "«Кольцо и Ферма»", "«Тяжмонтаж»", "«Хабитат-Сервис»", "«Звёздный подряд»", "«Стапель»"};
     const int week = std::max(0, m_day) / 7;
-    const double kf = m_buildKindFactor.count(it->second.kind) ? m_buildKindFactor.at(it->second.kind) : 1.5;
-    for (int k = 0; k < 3; ++k)
+    for (const auto& target : targets)
     {
-        const std::uint64_t h = hashOf(hubId + "#build" + std::to_string(k), static_cast<std::uint64_t>(week) + 0xb11dull);
-        BuildOffer o;
-        o.id = hubId + "#build" + std::to_string(k) + "@" + std::to_string(week);
-        o.hubId = hubId;
-        o.projectId = it->second.projectId;
-        o.kind = it->second.kind;
-        o.contractorRu = Firms[(hashOf(hubId + "#firms", static_cast<std::uint64_t>(week)) % 6 + 2 * static_cast<std::uint64_t>(k)) % 6];   // 3 different firms
-        o.priceCr = std::round(m_buildBaseCostCr * kf * (1.15 + 0.15 * unit(h ^ 1)) / 1000.0) * 1000.0;
-        o.workDays = std::max(1, static_cast<int>(std::lround(m_buildBaseDays * (0.9 + 0.5 * unit(h ^ 2)))));
-        o.reliability = 0.6 + 0.35 * unit(h ^ 3);
-        out.push_back(o);
+        bool taken = false;
+        for (const auto& p : m_buildProjects)
+            taken = taken || (p.offer.projectId == target.projectId && p.status != "abandoned");
+        if (taken)
+            continue;
+        const bool rig = target.projectId.rfind("site:", 0) == 0;
+        const std::string tag = rig ? "#rig" : "#build";
+        const double kf = m_buildKindFactor.count(target.kind) ? m_buildKindFactor.at(target.kind) : 1.5;
+        for (int k = 0; k < 3; ++k)
+        {
+            const std::uint64_t h = hashOf(hubId + tag + std::to_string(k) + (rig ? target.projectId : std::string()),
+                                           static_cast<std::uint64_t>(week) + 0xb11dull);
+            BuildOffer o;
+            o.id = hubId + tag + std::to_string(k) + "@" + std::to_string(week) + (rig ? ":" + target.projectId.substr(5) : std::string());
+            o.hubId = hubId;
+            o.projectId = target.projectId;
+            o.kind = target.kind;
+            o.contractorRu = Firms[(hashOf(hubId + "#firms", static_cast<std::uint64_t>(week)) % 6 + 2 * static_cast<std::uint64_t>(k)) % 6];   // 3 different firms
+            o.priceCr = std::round(m_buildBaseCostCr * kf * (1.15 + 0.15 * unit(h ^ 1)) / 1000.0) * 1000.0;
+            o.workDays = std::max(1, static_cast<int>(std::lround(m_buildBaseDays * (0.9 + 0.5 * unit(h ^ 2)))));
+            o.reliability = 0.6 + 0.35 * unit(h ^ 3);
+            out.push_back(o);
+        }
     }
     return out;
 }
@@ -1078,7 +1103,7 @@ game::simulation::ClientTradeResult EconomyServer::signConstruction(std::uint64_
     if (!l)
         return refuse("no_account", "нет счёта");
     const BuildOffer* o = nullptr;
-    const auto offers = buildOffersAt(hubId);
+    const auto offers = buildOffersAt(hubId, playerId);
     for (const auto& x : offers)
         if (x.id == offerId)
             o = &x;
@@ -1122,6 +1147,8 @@ void EconomyServer::stepConstruction(int day)
         const std::string& hub = p.offer.hubId;
         const auto* info = EconomyModel::instance().hub(hub);
         const int system = info ? info->systemId : -1;
+        if (p.status == "done" && p.offer.projectId.rfind("site:", 0) == 0)
+            continue;   // a mine rig: stepMines runs it
         if (p.status == "done")
         {
             // the module is let to the hub operator: income, maintenance (taxable)
@@ -1197,9 +1224,196 @@ void EconomyServer::stepConstruction(int day)
                 if (r.ok)
                     p.paidCr += p.retentionCr;
             }
-            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + " завершена: модуль сдан оператору хаба");
+            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + (p.offer.projectId.rfind("site:", 0) == 0 ? " завершена: установка готова к добыче"
+                                                                                                            : " завершена: модуль сдан оператору хаба"));
             std::cerr << "[Build] " << p.offer.id << " DONE, paid " << p.paidCr << " Cr, retention " << p.retentionCr << (p.retentionPaid ? " paid" : " held") << '\n';
         }
+    }
+}
+
+// ---------------------------------------------------------------- mining concessions (TRADE_DESIGN §6.1, step 16 part 2)
+namespace
+{
+std::uint64_t mineStockKey(const std::string& siteId)
+{
+    return 0x6D00000000000000ull | (hashOf(siteId, 0x5170ull) & 0x00FFFFFFFFFFFFFFull);   // the mine's stockpile manifest
+}
+} // namespace
+
+std::vector<EconomyServer::SiteOffer> EconomyServer::siteOffersAt(const std::string& hubId) const
+{
+    std::vector<SiteOffer> out;
+    const auto* info = EconomyModel::instance().hub(hubId);
+    if (!info || (info->typeId != "mining_hub" && info->typeId != "belt_hub") || (!m_routableHubs.empty() && !m_routableHubs.count(hubId)))   // a hub one can fly to
+        return out;
+    const int week = std::max(0, m_day) / 7;
+    for (int k = 0; k < 3; ++k)
+    {
+        const std::uint64_t h = hashOf(hubId + "#site" + std::to_string(k), static_cast<std::uint64_t>(week) + 0x5173ull);
+        SiteOffer o;
+        o.id = hubId + "#site" + std::to_string(k) + "@" + std::to_string(week);
+        bool leased = false;
+        for (const auto& c : m_concessions)
+            leased = leased || (c.site.id == o.id && c.status != "lapsed");
+        if (leased)
+            continue;
+        o.hubId = hubId;
+        o.nameRu = "астероид " + std::to_string(1000 + (h >> 8) % 9000);
+        o.goodId = unit(h ^ 5) < 0.2 ? "ore_rare" : "ore_common";
+        const double u = unit(h ^ 6);
+        o.radiusM = std::round(50.0 + 1950.0 * u * u);
+        o.grade = std::round((0.5 + 2.5 * unit(h ^ 7)) * 100.0) / 100.0;
+        o.reserveT = std::round(4.0 / 3.0 * 3.14159265358979 * o.radiusM * o.radiusM * o.radiusM * 2.4 * m_mineRecoverable);
+        o.rentYearCr = std::round(m_mineRentBaseCr + m_mineRentPerRadiusCr * o.radiusM * o.grade);
+        o.leaseCostCr = m_mineApplicationCr + m_mineSurveyCr;
+        out.push_back(o);
+    }
+    return out;
+}
+
+game::simulation::ClientTradeResult EconomyServer::leaseSite(std::uint64_t playerId, const std::string& offerId, const std::string& hubId, int systemId,
+                                                             std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+        return refuse("no_account", "нет счёта");
+    const auto offers = siteOffersAt(hubId);
+    const SiteOffer* o = nullptr;
+    for (const auto& x : offers)
+        if (x.id == offerId)
+            o = &x;
+    if (!o)
+        return refuse("site_unknown", "участок уже не предлагается");
+    const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), o->leaseCostCr, Purpose::Fee, m_day, false,
+                                "концессия: заявка и разведка (" + o->nameRu + ")");
+    if (!p.ok)
+        return refuse("no_money", "не хватает денег на заявку и разведку: " + grouped(o->leaseCostCr) + " Cr");
+    if (TaxBook* t = taxBook(playerId))
+        addExpense(*t, o->leaseCostCr);
+    Concession c;
+    c.site = *o;
+    c.owner = playerId;
+    c.startDay = m_day;
+    c.reserveLeftT = o->reserveT;
+    m_concessions.push_back(c);
+    ++m_buildRevision;
+    logEvent(*l, m_day, "концессия: " + o->nameRu + " у " + hubDisplayName(hubId) + ", радиус " + grouped(o->radiusM) + " м, запас " + grouped(o->reserveT) +
+                            " т, аренда " + grouped(o->rentYearCr) + " Cr/год; дальше - договор на добычную установку (Стройка)");
+    r.ok = true;
+    r.code = "site_leased";
+    r.totalCr = -o->leaseCostCr;
+    r.message = "концессия: " + o->nameRu + " у " + hubDisplayName(hubId);
+    pushResult(playerId, r);
+    saveNow("concession");
+    std::cerr << "[Mine] player " << playerId << " leases " << o->id << " (" << o->nameRu << ", r " << o->radiusM << " m, grade " << o->grade << ", "
+              << o->goodId << ", reserve " << o->reserveT << " t, rent " << o->rentYearCr << " Cr/yr)" << '\n';
+    return r;
+}
+
+void EconomyServer::stepMines(int day)
+{
+    for (auto& c : m_concessions)
+    {
+        if (c.status == "lapsed" || c.status == "depleted")
+            continue;
+        ClientLedger* l = ledger(c.owner);
+        if (!l)
+            continue;
+        const std::string& hub = c.site.hubId;
+        const auto* info = EconomyModel::instance().hub(hub);
+        const int system = info ? info->systemId : -1;
+        const std::string bank = bankOf(hub, system);
+        // the rent (a daily share of the year); unpaid for 90 days -> the state takes the site back
+        const double rent = std::round(c.site.rentYearCr / 360.0 * 100.0) / 100.0;
+        if (pay(*l, m_banks, bank, rent, Purpose::Fee, day, false, "аренда участка: " + c.site.nameRu).ok)
+        {
+            c.unpaidDays = 0;
+            if (TaxBook* t = taxBook(c.owner))
+                addExpense(*t, rent);
+        }
+        else if (++c.unpaidDays >= m_mineLapseDays)
+        {
+            c.status = "lapsed";
+            ++m_buildRevision;
+            logEvent(*l, day, "концессия " + c.site.nameRu + " отозвана: " + std::to_string(m_mineLapseDays) + " сут без арендной платы");
+            continue;
+        }
+        if (c.status == "leased")
+        {
+            for (const auto& p : m_buildProjects)
+                if (p.offer.projectId == "site:" + c.site.id && p.status == "done")
+                {
+                    c.status = "mining";
+                    c.rigPriceCr = p.offer.priceCr;
+                    ++m_buildRevision;
+                    logEvent(*l, day, "рудник " + c.site.nameRu + ": установка принята, добыча начата");
+                }
+            if (c.status != "mining")
+                continue;
+        }
+        // the shift's wages and the rig's upkeep; unpaid -> no output today
+        const double wage = std::round(m_mineStaff * m_mineWageMonthCr / 30.0 * 100.0) / 100.0;
+        const double upkeep = std::round(c.rigPriceCr * m_mineMaintYear / 360.0 * 100.0) / 100.0;
+        if (!pay(*l, m_banks, bank, wage + upkeep, Purpose::Fee, day, false, "рудник " + c.site.nameRu + ": смена и обслуживание").ok)
+        {
+            c.lastOutputT = 0.0;
+            continue;
+        }
+        if (TaxBook* t = taxBook(c.owner))
+            addExpense(*t, wage + upkeep);
+        // the output: the grade, then the tail of the reserve
+        const double depletion = std::clamp(c.reserveLeftT / std::max(1.0, 0.05 * c.site.reserveT), 0.0, 1.0);
+        const double t = std::min(c.reserveLeftT, m_mineBaseTDay * (0.5 + c.site.grade / 3.0) * depletion);
+        c.reserveLeftT -= t;
+        c.minedT += t;
+        c.lastOutputT = t;
+        if (c.reserveLeftT < 1.0)
+        {
+            c.status = "depleted";
+            ++m_buildRevision;
+            logEvent(*l, day, "рудник " + c.site.nameRu + " выработан");
+        }
+        // the stockpile -> the hub's market (the ordinary deal; the price falls with the stock), the royalty to the state
+        const std::uint64_t key = mineStockKey(c.site.id);
+        const int g = goodIndex(c.site.goodId);
+        const double density = g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].densityTM3 : 2.4;
+        CargoLot lot;
+        lot.lotId = c.site.id + "@" + std::to_string(day);
+        lot.goodId = c.site.goodId;
+        lot.tonnes = t;
+        lot.owner = "player:" + std::to_string(c.owner);
+        lot.originHub = hub;
+        lot.loadedDay = day;
+        if (t > 0.01)
+            (void)m_cargo.load(key, c.owner, lot, density);
+        const CargoManifest* m = m_cargo.find(key);
+        TradeOrder o;
+        o.buy = false;
+        o.playerId = c.owner;
+        o.shipKey = key;
+        o.hubId = hub;
+        o.systemId = system;
+        o.goodId = c.site.goodId;
+        o.tonnes = m ? m->ownTonnesOf(c.site.goodId) : 0.0;
+        o.capacity = {1.0e9, 0};
+        if (o.tonnes < 0.01)
+            continue;
+        const auto res = trade(o);
+        if (!res.ok)
+            continue;   // no buyer today: the ore waits in the stockpile
+        const double royalty = std::round(res.totalCr * m_mineRoyalty * 100.0) / 100.0;
+        (void)pay(*l, m_banks, bank, royalty, Purpose::Tax, day, false, "роялти: " + c.site.nameRu);
+        c.soldT += o.tonnes;
+        c.revenueCr += res.totalCr - royalty;
     }
 }
 
@@ -3209,8 +3423,34 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         for (const auto& c : m_pilotCategories)
             w.pilotCategories.push_back({c.ru, c.control, c.start, c.note});
     }
+    // mining concessions (step 16 part 2)
+    for (const auto& o : siteOffersAt(hubId))
+    {
+        const int g = goodIndex(o.goodId);
+        w.siteOffers.push_back({o.id, o.nameRu, g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].ru : o.goodId, o.radiusM, o.grade,
+                                o.reserveT, o.rentYearCr, o.leaseCostCr});
+    }
+    for (const auto& c : m_concessions)
+        if (c.owner == playerId)
+        {
+            const int g = goodIndex(c.site.goodId);
+            game::simulation::ClientMine cm;
+            cm.id = c.site.id;
+            cm.nameRu = c.site.nameRu;
+            cm.hubName = hubDisplayName(c.site.hubId);
+            cm.goodRu = g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].ru : c.site.goodId;
+            cm.statusRu = c.status == "leased" ? "арендован: нужна добычная установка" : c.status == "mining" ? "добыча" : c.status == "depleted" ? "выработан" : "отозван";
+            cm.reserveT = c.site.reserveT;
+            cm.reserveLeftT = c.reserveLeftT;
+            cm.lastOutputT = c.lastOutputT;
+            cm.minedT = c.minedT;
+            cm.soldT = c.soldT;
+            cm.revenueCr = c.revenueCr;
+            cm.rentYearCr = c.site.rentYearCr;
+            w.mines.push_back(cm);
+        }
     // construction (step 16)
-    for (const auto& o : buildOffersAt(hubId))
+    for (const auto& o : buildOffersAt(hubId, playerId))
         w.buildOffers.push_back({o.id, std::string(buildKindRu(o.kind)) + " (" + o.projectId + ")", o.contractorRu, o.priceCr, o.workDays, o.reliability});
     for (const auto& p : m_buildProjects)
         if (p.owner == playerId)
@@ -3226,7 +3466,7 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
             cp.stage = std::min(4, 1 + static_cast<int>(prog * 4.0));
             cp.priceCr = p.offer.priceCr;
             cp.paidCr = p.paidCr;
-            cp.incomeCrPerDay = p.status == "done" ? p.offer.priceCr * (m_buildIncomeYear - m_buildMaintYear) / 360.0 : 0.0;
+            cp.incomeCrPerDay = p.status == "done" && p.offer.projectId.rfind("site:", 0) != 0 ? p.offer.priceCr * (m_buildIncomeYear - m_buildMaintYear) / 360.0 : 0.0;
             w.buildProjects.push_back(cp);
         }
     // bot pilots (step 15): this hub's agency and the owner's bots (reports already delivered)
@@ -3502,9 +3742,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/13";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+    j["schema"] = "economy_state/14";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
                                        // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
-                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment; 11: SOS; 12: bots; 13: construction
+                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment; 11: SOS; 12: bots; 13: construction; 14: mining concessions
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -3557,6 +3797,12 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                               {"retention", p.retentionCr}, {"halts", halts}, {"unpaid", p.unpaidSince}, {"status", p.status},
                               {"retention_paid", p.retentionPaid}});
     }
+    j["mines"] = json::array();
+    for (const auto& c : m_concessions)
+        j["mines"].push_back({{"id", c.site.id}, {"hub", c.site.hubId}, {"name", c.site.nameRu}, {"good", c.site.goodId}, {"radius", c.site.radiusM},
+                              {"grade", c.site.grade}, {"reserve", c.site.reserveT}, {"rent", c.site.rentYearCr}, {"lease", c.site.leaseCostCr},
+                              {"owner", c.owner}, {"start", c.startDay}, {"status", c.status}, {"left", c.reserveLeftT}, {"mined", c.minedT},
+                              {"sold", c.soldT}, {"revenue", c.revenueCr}, {"last", c.lastOutputT}, {"rig", c.rigPriceCr}, {"unpaid", c.unpaidDays}});
     j["bots"] = json::array();
     for (const auto& b : m_bots)
     {
@@ -3745,7 +3991,7 @@ bool EconomyServer::restoreState(const std::string& text)
         schema != "economy_state/7" && schema != "economy_state/8" &&
         schema != "economy_state/9" && schema != "economy_state/10" &&
         schema != "economy_state/11" && schema != "economy_state/12" &&
-        schema != "economy_state/13")   // /1: no trade registries; /2: no contracts;
+        schema != "economy_state/13" && schema != "economy_state/14")   // /1: no trade registries; /2: no contracts;
                                                                        // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
@@ -3818,6 +4064,31 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_concessions) concessions;   // economy_state/14
+        for (const auto& x : j.value("mines", json::array()))
+        {
+            Concession c;
+            c.site.id = x.value("id", std::string());
+            c.site.hubId = x.value("hub", std::string());
+            c.site.nameRu = x.value("name", std::string());
+            c.site.goodId = x.value("good", std::string("ore_common"));
+            c.site.radiusM = x.value("radius", 0.0);
+            c.site.grade = x.value("grade", 1.0);
+            c.site.reserveT = x.value("reserve", 0.0);
+            c.site.rentYearCr = x.value("rent", 0.0);
+            c.site.leaseCostCr = x.value("lease", 0.0);
+            c.owner = x.value("owner", std::uint64_t{0});
+            c.startDay = x.value("start", 0);
+            c.status = x.value("status", std::string("leased"));
+            c.reserveLeftT = x.value("left", 0.0);
+            c.minedT = x.value("mined", 0.0);
+            c.soldT = x.value("sold", 0.0);
+            c.revenueCr = x.value("revenue", 0.0);
+            c.lastOutputT = x.value("last", 0.0);
+            c.rigPriceCr = x.value("rig", 0.0);
+            c.unpaidDays = x.value("unpaid", 0);
+            concessions.push_back(std::move(c));
+        }
         decltype(m_buildProjects) buildProjects;   // economy_state/13
         for (const auto& x : j.value("build", json::array()))
         {
@@ -3983,6 +4254,7 @@ bool EconomyServer::restoreState(const std::string& text)
         m_sosState.swap(sosState);
         m_bots.swap(bots);
         m_buildProjects.swap(buildProjects);
+        m_concessions.swap(concessions);
         ++m_buildRevision;
         m_hiredCandidates.swap(hiredCandidates);
         m_activeSos.swap(activeSos);

@@ -1554,7 +1554,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/13" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/14" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1669,7 +1669,7 @@ void testIncomeTax()
     EconomyServer t;
     t.load();
     t.start(1095);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/14" &&
               near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
@@ -1834,7 +1834,7 @@ void testSmuggling()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/14" &&
               nlohmann::json::parse(saved)["seizures"].size() == 1,
           "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
 }
@@ -1964,7 +1964,7 @@ void testLicences()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/14" &&
               t.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "licensed",
           "economy_state/8: the licence survives save / restore byte-exact");
     for (int day = 1001; day <= 1360; ++day)
@@ -2017,7 +2017,7 @@ void testInsurance()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/14" &&
               nlohmann::json::parse(saved)["cargo_policies"].size() == 1,
           "economy_state/9: the policy survives save / restore byte-exact");
 }
@@ -2134,7 +2134,7 @@ void testBots()
     EconomyServer t;
     t.load();
     t.start(1010);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" && t.bots().size() == 1,
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/14" && t.bots().size() == 1,
           "economy_state/13: the bot survives save / restore byte-exact");
     // unpaid: a trading bot pays its own wage from its sales; an idle one with a broke owner leaves after 30 days
     s.fireBot(1, botId);
@@ -2203,6 +2203,59 @@ void testConstruction()
     check(t.restoreState(saved) && t.saveState() == saved && t.buildProjects().size() == 1, "economy_state/13: the project survives save / restore");
 }
 
+void testMining()
+{
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  mining (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    const std::string hub = "site.000.sol.hygiea";   // a belt hub with a full market
+    check(s.siteOffersAt("earth_orbital_hub").empty(), "no concessions at a city hub");
+    const auto sites = s.siteOffersAt(hub);
+    check(sites.size() == 3 && sites[0].radiusM >= 50.0 && sites[0].reserveT > 0.0 && sites[0].rentYearCr > 2000.0,
+          "3 sites at Гигея (" + sites[0].nameRu + ", r " + std::to_string(sites[0].radiusM) + " m, " + sites[0].goodId + ")");
+    (void)s.devSpendAll(1, hub, 0);
+    check(!s.leaseSite(1, sites[0].id, hub, 0, 1).ok, "no money for the application + survey: refused");
+    s.credit(1, hub, 0, 20000000.0, "test");
+    check(s.leaseSite(1, sites[0].id, hub, 0, 2).ok && s.concessions().size() == 1 && s.siteOffersAt(hub).size() == 2, "leased; 2 sites left on offer");
+    std::vector<EconomyServer::BuildOffer> rigs;
+    for (const auto& o : s.buildOffersAt(hub, 1))
+        if (o.kind == "minehead")
+            rigs.push_back(o);
+    check(rigs.size() == 3 && s.buildOffersAt(hub, 2).empty(), "the rig offers: only to the concession's owner (" + std::to_string(rigs.size()) + ")");
+    check(s.signConstruction(1, rigs[0].id, hub, 0, 3).ok, "the rig contract signed (" + std::to_string(rigs[0].priceCr) + " Cr)");
+    int day = 1000;
+    while (s.concessions()[0].status != "mining" && day < 1200)
+        s.advanceTo(++day);
+    check(s.concessions()[0].status == "mining", "the rig accepted on day " + std::to_string(day) + ": mining");
+    const double before = s.concessions()[0].reserveLeftT;
+    for (int k = 1; k <= 10; ++k)
+        s.advanceTo(day + k);
+    const auto& c = s.concessions()[0];
+    std::printf("INFO  mine after 10 days: mined %.0f t, sold %.0f t, net proceeds %.0f Cr, today %.1f t\n", c.minedT, c.soldT, c.revenueCr, c.lastOutputT);
+    check(c.minedT > 500.0 && c.reserveLeftT < before && c.soldT > 0.0 && c.revenueCr > 0.0, "10 days: the ore mined and sold at the hub's market");
+    const auto w = s.walletSnapshot(1, hub, 0);
+    check(w.mines.size() == 1 && w.mines[0].lastOutputT > 0.0, "the wallet lists the mine: " + w.mines[0].statusRu);
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(s.day());
+    check(t.restoreState(saved) && t.saveState() == saved && t.concessions().size() == 1 && nlohmann::json::parse(saved)["schema"] == "economy_state/14",
+          "economy_state/14: the concession survives save / restore");
+    // broke: no output, then the lease lapses after 90 days
+    day = s.day();
+    for (int k = 1; k <= 95; ++k)
+    {
+        (void)s.devSpendAll(1, hub, 0);
+        s.advanceTo(day + k);
+    }
+    check(s.concessions()[0].status == "lapsed", "95 days without rent: the concession lapsed (" + s.concessions()[0].status + ")");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -2230,6 +2283,7 @@ int main()
     testArrest();
     testBots();
     testConstruction();
+    testMining();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

@@ -1761,7 +1761,9 @@ void GameServer::update(double dt)
     {
         m_appliedBuildRevision = m_economy.buildRevision();
         for (const auto& p : m_economy.buildProjects())
-            if (const auto* plan = elite::model_asset::hubExpansionPlan(p.offer.hubId))
+            if (p.offer.projectId.rfind("site:", 0) == 0)
+                continue;   // a mine rig: not drawn (the mine hub meshes are not touched)
+            else if (const auto* plan = elite::model_asset::hubExpansionPlan(p.offer.hubId))
             {
                 const int planToday = elite::model_asset::hubExpansionDay(*plan, m_universeClock.timeSeconds());
                 const int offset = planToday - m_economy.day();   // economy day -> the plan's day
@@ -3064,10 +3066,17 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
                   << " Cr" << std::endl;
         return;
     }
-    if (command.op == Op::SignConstruction)   // step 16: at the hub the ship is at (docked or in its frame)
+    if (command.op == Op::LeaseSite || command.op == Op::SignConstruction)   // step 16: at the hub (docked or in its frame)
     {
-        const std::string hub = !motion.hubId.empty() ? motion.hubId : std::string();
-        (void)m_economy.signConstruction(player, command.goodId, hub, motion.systemId, command.requestId);
+        if (motion.hubId.empty())
+        {
+            m_economy.recordTradeRefusal(player, command.requestId, "not_at_hub", "договор оформляется у хаба: подлетите к нему");
+            return;
+        }
+        if (command.op == Op::LeaseSite)
+            (void)m_economy.leaseSite(player, command.goodId, motion.hubId, motion.systemId, command.requestId);
+        else
+            (void)m_economy.signConstruction(player, command.goodId, motion.hubId, motion.systemId, command.requestId);
         return;
     }
     if (command.op == Op::HireBot || command.op == Op::OrderBotLoop || command.op == Op::FireBot)   // step 15

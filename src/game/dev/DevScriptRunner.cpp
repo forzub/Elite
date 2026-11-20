@@ -1017,6 +1017,17 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
     else if (cmd.rfind("build:", 0) == 0)
     {
         const auto& w = s.m_client->sessionSnapshot().wallet;
+        if (cmd.rfind("build:lease:", 0) == 0)
+        {
+            const std::size_t n = static_cast<std::size_t>(std::max(0, std::atoi(cmd.c_str() + 12)));
+            if (n < w.siteOffers.size())
+                s.sendEconomyCommand(game::network::ClientEconomyCommand::LeaseSite, w.siteOffers[n].id, 0.0);
+        }
+        for (const auto& so : w.siteOffers)
+            std::cerr << "[Mine]   site " << so.id << " " << so.nameRu << " " << so.goodRu << " r " << so.radiusM << " grade " << so.grade << std::endl;
+        for (const auto& m : w.mines)
+            std::cerr << "[Mine]   mine " << m.id << " " << m.statusRu << " left " << m.reserveLeftT << " today " << m.lastOutputT << " sold " << m.soldT
+                      << " revenue " << m.revenueCr << std::endl;
         if (cmd.rfind("build:sign:", 0) == 0)
         {
             const std::size_t n = static_cast<std::size_t>(std::max(0, std::atoi(cmd.c_str() + 11)));

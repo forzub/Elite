@@ -654,11 +654,88 @@
       "ja": "署名"
     },
     "service.government.build_dock_hint": {
-      "en": "a contract is signed at the berth of this hub",
-      "ru": "договор подписывается на причале этого хаба",
-      "zh-Hans": "需在本枢纽泊位签约",
-      "es": "el contrato se firma en el atracadero de este hub",
-      "ja": "契約はこのハブのバースで署名"
+      "en": "a contract is signed at this hub: at its berth or in its frame",
+      "ru": "договор оформляется у этого хаба: на причале или рядом с ним",
+      "zh-Hans": "需在本枢纽签约：泊位或其附近",
+      "es": "el contrato se firma en este hub: en su atracadero o junto a él",
+      "ja": "契約はこのハブで：バースまたはその付近で",
+    },
+    "service.government.mine_mine": {
+      "en": "My mines",
+      "ru": "Мои рудники",
+      "zh-Hans": "我的矿场",
+      "es": "Mis minas",
+      "ja": "私の鉱山"
+    },
+    "service.government.mine_reserve": {
+      "en": "reserve",
+      "ru": "запас",
+      "zh-Hans": "储量",
+      "es": "reserva",
+      "ja": "埋蔵量"
+    },
+    "service.government.mine_today": {
+      "en": "today",
+      "ru": "сегодня",
+      "zh-Hans": "今日",
+      "es": "hoy",
+      "ja": "本日"
+    },
+    "service.government.mine_sold": {
+      "en": "sold",
+      "ru": "продано",
+      "zh-Hans": "已售",
+      "es": "vendido",
+      "ja": "販売"
+    },
+    "service.government.mine_revenue": {
+      "en": "net proceeds",
+      "ru": "выручка",
+      "zh-Hans": "净收入",
+      "es": "ingresos netos",
+      "ja": "純売上"
+    },
+    "service.government.mine_rent": {
+      "en": "rent",
+      "ru": "аренда",
+      "zh-Hans": "租金",
+      "es": "renta",
+      "ja": "賃料"
+    },
+    "service.government.mine_year": {
+      "en": "yr",
+      "ru": "год",
+      "zh-Hans": "年",
+      "es": "año",
+      "ja": "年"
+    },
+    "service.government.mine_offers": {
+      "en": "Sites for a concession at this hub",
+      "ru": "Участки под концессию у этого хаба",
+      "zh-Hans": "本枢纽可租赁的矿区",
+      "es": "Parcelas en concesión en este hub",
+      "ja": "このハブの採掘権区画"
+    },
+    "service.government.mine_grade": {
+      "en": "grade",
+      "ru": "качество",
+      "zh-Hans": "品位",
+      "es": "ley",
+      "ja": "品位"
+    },
+    "service.government.mine_lease_cost": {
+      "en": "application + survey",
+      "ru": "заявка + разведка",
+      "zh-Hans": "申请+勘探",
+      "es": "solicitud + prospección",
+      "ja": "申請＋探査"
+    },
+    "service.government.mine_lease": {
+      "en": "LEASE",
+      "ru": "АРЕНДОВАТЬ",
+      "zh-Hans": "租赁",
+      "es": "ARRENDAR",
+      "ja": "借りる"
     }
   }
 }

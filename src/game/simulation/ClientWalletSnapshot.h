@@ -112,6 +112,34 @@ struct ClientBuildOffer
     double reliability = 0.0;
 };
 
+struct ClientSiteOffer
+{
+    std::string id;
+    std::string nameRu;
+    std::string goodRu;
+    double radiusM = 0.0;
+    double grade = 0.0;
+    double reserveT = 0.0;
+    double rentYearCr = 0.0;
+    double leaseCostCr = 0.0;
+};
+
+struct ClientMine
+{
+    std::string id;
+    std::string nameRu;
+    std::string hubName;
+    std::string goodRu;
+    std::string statusRu;
+    double reserveT = 0.0;
+    double reserveLeftT = 0.0;
+    double lastOutputT = 0.0;
+    double minedT = 0.0;
+    double soldT = 0.0;
+    double revenueCr = 0.0;
+    double rentYearCr = 0.0;
+};
+
 struct ClientBuildProject
 {
     std::string id;
@@ -195,6 +223,8 @@ struct ClientWalletSnapshot
     // construction (step 16)
     std::vector<ClientBuildOffer> buildOffers;
     std::vector<ClientBuildProject> buildProjects;
+    std::vector<ClientSiteOffer> siteOffers;   // step 16 part 2
+    std::vector<ClientMine> mines;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

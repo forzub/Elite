@@ -217,7 +217,26 @@ public:
         std::string status = "building";   // building / halted / done / abandoned
         bool retentionPaid = false;
     };
-    [[nodiscard]] std::vector<BuildOffer> buildOffersAt(const std::string& hubId) const;
+    [[nodiscard]] std::vector<BuildOffer> buildOffersAt(const std::string& hubId, std::uint64_t playerId = 0) const;
+    // ---- mining concessions (TRADE_DESIGN §6.1, step 16 part 2): a small asteroid at a mining / belt hub
+    struct SiteOffer
+    {
+        std::string id, hubId, nameRu, goodId;
+        double radiusM = 0.0, grade = 1.0, reserveT = 0.0, rentYearCr = 0.0, leaseCostCr = 0.0;
+    };
+    struct Concession
+    {
+        SiteOffer site;
+        std::uint64_t owner = 0;
+        int startDay = 0;
+        std::string status = "leased";   // leased (the rig not built yet) / mining / depleted / lapsed
+        double reserveLeftT = 0.0, minedT = 0.0, soldT = 0.0, revenueCr = 0.0, lastOutputT = 0.0, rigPriceCr = 0.0;
+        int unpaidDays = 0;
+    };
+    [[nodiscard]] std::vector<SiteOffer> siteOffersAt(const std::string& hubId) const;
+    game::simulation::ClientTradeResult leaseSite(std::uint64_t playerId, const std::string& offerId, const std::string& hubId, int systemId,
+                                                  std::uint32_t requestId);
+    [[nodiscard]] const std::vector<Concession>& concessions() const { return m_concessions; }
     game::simulation::ClientTradeResult signConstruction(std::uint64_t playerId, const std::string& offerId, const std::string& hubId, int systemId,
                                                          std::uint32_t requestId);
     [[nodiscard]] const std::vector<BuildProject>& buildProjects() const { return m_buildProjects; }
@@ -519,6 +538,11 @@ private:
     std::vector<double> m_buildMilestones {0.15, 0.30, 0.30, 0.20};
     std::map<std::string, double> m_buildKindFactor;
     void stepConstruction(int day);
+    std::vector<Concession> m_concessions;
+    double m_mineApplicationCr = 50000.0, m_mineSurveyCr = 200000.0, m_mineRentBaseCr = 2000.0, m_mineRentPerRadiusCr = 6.0, m_mineBaseTDay = 150.0,
+           m_mineWageMonthCr = 3000.0, m_mineRoyalty = 0.07, m_mineRecoverable = 0.3, m_mineMaintYear = 0.02;
+    int m_mineStaff = 12, m_mineLapseDays = 90;
+    void stepMines(int day);
     std::set<std::string> m_hiredCandidates;
     int m_botCandidatesPerHub = 3, m_botLegDays = 1, m_botReportDelayDays = 1;
     double m_botBaseWageCr = 4000.0;

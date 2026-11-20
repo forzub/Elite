@@ -7315,3 +7315,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   turns «ПРОДЛИТЬ»; reactor fuel without the class C licence -> "REFUSED (licence) ... (F5 -> Лицензии)".
 - Deferred (§9j): VAT registration, passengers, mining, rescue, mercenary, bloc licence, Lotus cordon, late fines,
   requirements.
+
+## Ship arrest / auction and the hiring board - BLOCKED by missing base layers (finding 2026-11-20)
+- The plan (TRADE_DESIGN §11b, ECONOMY_BANKING 2026-11-20) needs either per-instance ship configuration (install
+  another product - applyRefitOperation refuses it) or a runtime player ship change (F6 purchase transaction, boarding,
+  ControlRegistry rebind; the client learns its controlled entity only in the session welcome). Neither exists. A bare
+  arrest without an auction can strand a broke pilot forever - not shipped. Recorded in TRADE_DESIGN §11c. Next by
+  plan meanwhile: step 17 (money-command journal), then step 13 (insurance).

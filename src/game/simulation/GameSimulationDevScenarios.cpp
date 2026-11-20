@@ -95,6 +95,37 @@ void GameSimulation::initializeShipStateFlightTest()
         << " continuous=1 reset_kinematics=0\n";
 }
 
+EntityId GameSimulation::spawnShipBeside(EntityId near, ShipRole role, const ShipDescriptor& d, const ShipInitData& init, double offsetM)
+{
+    const Ship* anchor = getShip(near);
+    if (!anchor)
+        return {};
+    const auto& ptr = anchor->core().transform();
+    const glm::dvec3 origin = world::coordinates::fullMeters(ptr.worldPosition);
+    const glm::dvec3 position = origin + glm::dvec3(ptr.forward()) * offsetM;
+    const EntityId id = spawnShip(role, ptr.motion.systemId, d, position, init, ptr.orientation);
+    Ship* ship = id.value ? getShip(id) : nullptr;
+    if (!ship)
+        return {};
+    auto& tr = ship->core().transform();
+    game::navigation::ReferenceFrame frame;
+    frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
+    frame.systemId = ptr.motion.systemId;
+    frame.hubId = ptr.motion.hubId;
+    frame.localOffsetMeters = ptr.motion.localPositionMeters + ptr.motion.travelFrame.worldToLocalVector(position - origin);
+    if (frame.hubId.empty() || !placeShipInReferenceFrame(id, frame))
+    {
+        tr.motion.mode = game::navigation::MotionMode::HubTactical;
+        tr.motion.travelFrame = ptr.motion.travelFrame;
+        tr.motion.localPositionMeters = tr.motion.travelFrame.worldToLocalPosition(position);
+        tr.motion.localVelocityMps = glm::dvec3(0.0);
+        tr.motion.worldVelocityMps = ptr.motion.worldVelocityMps;
+        tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
+        tr.referenceVelocityMetersPerSecond = ptr.referenceVelocityMetersPerSecond;
+    }
+    return id;
+}
+
 void GameSimulation::updateCatalogShipLineup()
 {
     if (m_catalogLineupRequest.empty() || m_catalogLineupSpawned)

@@ -136,6 +136,8 @@ public:
     game::simulation::ClientTradeResult trade(const TradeOrder& order);
     // a refusal decided outside the economy (not docked, ...) recorded as the command's result
     void recordTradeRefusal(std::uint64_t playerId, std::uint32_t requestId, const std::string& code, const std::string& message);
+    // a completed non-market operation the client should see in its results (a ship purchase)
+    void recordOperation(std::uint64_t playerId, const std::string& code, const std::string& message, double totalCr);
     // DEV: put cargo aboard without paying (cost basis 0) / empty the hold; "" = done, else the reason
     std::string devAddCargo(std::uint64_t playerId, std::uint64_t shipKey, const std::string& goodId, double tonnes,
                             const CargoCapacity& capacity, const std::string& hubId);

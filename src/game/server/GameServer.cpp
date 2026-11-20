@@ -35,6 +35,8 @@
 #include "src/game/scene/GameSceneSetup.h"
 #include "src/world/time/ConstructionClock.h"
 #include "src/game/server/ServerTickProfile.h"
+#include "src/game/ship/refit/ShipMarket.h"
+#include "src/game/ship/descriptors/CatalogShipRegistry.h"
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/economy/EconomyService.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
@@ -1517,6 +1519,10 @@ void GameServer::update(double dt)
                     m_simulation.startHubService(id, shipCmd.target, shipCmd.detail);
                     break;
 
+                case ClientShipCommand::BuyShip:     // F6: spawns a ship - after the drain too
+                    m_pendingPurchases.push_back({id, shipCmd.detail, shipCmd.target});
+                    break;
+
                 case ClientShipCommand::BoardShip:   // base 2: executed after the drain (the queues are reset)
                     m_pendingBoardings.push_back({id, EntityId{static_cast<std::uint32_t>(std::max(0.0, shipCmd.amount))}});
                     break;
@@ -1688,6 +1694,14 @@ void GameServer::update(double dt)
     }
 
 
+
+    for (const auto& p : m_pendingPurchases)
+    {
+        const std::string why = buyShip(p.from, p.passportId, p.offerId);
+        std::cerr << "[Shipyard] ship " << p.from.value << " buys " << p.passportId << " (" << p.offerId << "): "
+                  << (why.empty() ? std::string("DONE") : "REFUSED: " + why) << std::endl;
+    }
+    m_pendingPurchases.clear();
 
     // ship changes asked this tick (base 2): after the drain - they reset the per-entity queues
     for (const auto& [from, to] : m_pendingBoardings)
@@ -2184,6 +2198,60 @@ void GameServer::configurePlayerRadar(EntityId entity, ShipInstanceId instance)
     runtime.navigationSolution =
         runtime.unit.navigationSolution(m_universeClock.timeSeconds(), transform.worldPosition, transform.motion.worldVelocityMps);
     runtime.hasNavigationSolution = true;
+}
+
+std::string GameServer::buyShip(EntityId from, const std::string& passportId, const std::string& offerId)
+{
+    Ship* ship = m_simulation.getShip(from);
+    if (!ship || !m_economy.loaded())
+        return "нет корабля или экономики";
+    const std::uint64_t player = m_players.playerForShip(ship->core().registry().instanceId).value;
+    bool tender = false;
+    const std::string hub = m_simulation.serviceStationOf(from, &tender);
+    auto refuse = [&](const std::string& why) {
+        if (player)
+            m_economy.recordTradeRefusal(player, 0, "ship_purchase", why);
+        return why;
+    };
+    if (player == 0)
+        return "нет пилота";
+    if (hub.empty() || tender)
+        return refuse("корабль покупают у причала хаба");
+    const auto* design = game::catalog::ships::ShipDesignCatalog::instance().findShip(passportId);
+    const ShipDescriptor* d = game::ship::descriptors::findCatalogShip(passportId);
+    if (!design || !d)
+        return refuse("нет такой модели: " + passportId);
+    const auto offers = game::ship::refit::devShipOffers(*design);
+    const game::ship::refit::ShipOffer* offer = nullptr;
+    for (const auto& o : offers)
+        if (o.offerId == offerId)
+            offer = &o;
+    if (!offer)
+        return refuse("нет такого предложения");
+    if (offer->condition != "new")
+        return refuse("подержанные корабли — позже: износ и повреждения ещё не переносятся на корабль");
+    const int system = ship->core().transform().motion.systemId;
+    const std::string name = design->name.empty() ? passportId : design->designation + " «" + design->name + "»";
+    const auto paid = m_economy.chargeService(player, hub, system, game::economy::Purpose::Other, offer->priceCr, "покупка корабля " + name);
+    if (!paid.ok)
+        return refuse("не хватает денег: " + std::to_string(static_cast<long long>(offer->priceCr)) + " Cr (" + paid.reason + ")");
+    ShipInitData init;
+    init.visual.shipType = d->identity.shipType;
+    init.visual.shipName = d->identity.shipName;
+    init.registry.instanceId = ++m_nextBoughtShipInstance;
+    init.registry.ownerName = "player";
+    init.registry.ownerActor = ship->core().registry().ownerActor;
+    init.registry.registrationId = d->catalog.passportId + "-" + std::to_string(init.registry.instanceId);
+    init.registry.shipRole = ShipRoleType::Civilian;
+    const EntityId id = m_simulation.spawnShipBeside(from, ShipRole::Player, *d, init, 5000.0);
+    if (id.value == 0)
+    {
+        m_economy.credit(player, hub, system, offer->priceCr, "возврат: корабль не создан");
+        return refuse("верфь не смогла выдать корабль (деньги возвращены)");
+    }
+    m_economy.recordOperation(player, "ship_bought", "куплен корабль " + name + " за " + std::to_string(static_cast<long long>(offer->priceCr)) +
+                                                         " Cr: ждёт в 5 км от хаба (F7 -> ПЕРЕСЕСТЬ)", -offer->priceCr);
+    return {};
 }
 
 std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target)
@@ -2700,6 +2768,14 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
             return;
         std::cerr << "[Trade] DEV spend all: player " << player << " paid " << m_economy.devSpendAll(player, motion.hubId, motion.systemId)
                   << " Cr" << std::endl;
+        return;
+    }
+    if (command.op == Op::DevGrant)
+    {
+        if (!devCommandAccepted("grant", id))
+            return;
+        m_economy.credit(player, motion.hubId, motion.systemId, std::max(0.0, command.quantity), "DEV: начислено");
+        std::cerr << "[Trade] DEV grant " << command.quantity << " Cr to player " << player << std::endl;
         return;
     }
     if (command.op == Op::DevCustoms)

@@ -38,8 +38,10 @@
                                     //     2 = carrier number `amount` into the computer
             RequestRefuel,          // docked at a station (or held in a hub's frame): index 1 = fill the jump charge,
                                     //     index 0 = stop (docs/FUEL_STATIONS.md); the server decides
-            BoardShip               // base 2 (2026-11-20): the pilot moves to another owned, Player-role ship nearby;
+            BoardShip,              // base 2 (2026-11-20): the pilot moves to another owned, Player-role ship nearby;
                                     //     amount = its entity id; the server decides (owner, distance, free)
+            BuyShip                 // F6 (step 14): detail = passport id, target = offer id; at a berth; a new ship of
+                                    //     the player appears 5 km off (boarded from F7)
         };
         Type type;
 

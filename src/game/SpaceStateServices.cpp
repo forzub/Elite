@@ -424,6 +424,16 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             m_shipyardModel = action->text;
         else if (action->type == ServicePanelActionType::ShipyardTogglePassport)
             m_shipyardPassport = !m_shipyardPassport;
+        else if (action->type == ServicePanelActionType::ShipyardBuy && m_client)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::BuyShip;
+            command.detail = m_shipyardModel;
+            command.target = action->text;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+        }
         return true;
     }
 
@@ -431,6 +441,16 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
     const auto selectedId = [&]() -> std::string {
         return page.selectedModule >= 0 ? page.modules[static_cast<std::size_t>(page.selectedModule)].moduleId : std::string();
     };
+    if (action->type == ServicePanelActionType::RefitBoard && m_client)
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::BoardShip;
+        command.amount = std::atof(action->text.c_str());
+        msg.payload = command;
+        m_client->sendMessage(msg);
+        return true;
+    }
     switch (action->type)
     {
         case ServicePanelActionType::RefitPreviousShip:

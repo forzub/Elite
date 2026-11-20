@@ -1987,6 +1987,19 @@ void EconomyServer::pushResult(std::uint64_t playerId, game::simulation::ClientT
     ++m_tradeSerial;
 }
 
+void EconomyServer::recordOperation(std::uint64_t playerId, const std::string& code, const std::string& message, double totalCr)
+{
+    game::simulation::ClientTradeResult r;
+    r.ok = true;
+    r.code = code;
+    r.message = message;
+    r.totalCr = totalCr;
+    pushResult(playerId, r);
+    if (ClientLedger* l = ledger(playerId))
+        logEvent(*l, m_day, message);
+    saveNow(code.c_str());
+}
+
 void EconomyServer::recordTradeRefusal(std::uint64_t playerId, std::uint32_t requestId, const std::string& code, const std::string& message)
 {
     game::simulation::ClientTradeResult r;

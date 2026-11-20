@@ -24,7 +24,8 @@ struct ClientEconomyCommand
         DevCustoms = 9,      // DEV: the customs inspection probability forced to `quantity` (< 0 = the rules again)
         BuyLicence = 10,     // goodId = licence type: from the polity of the hub the ship is docked at (step 11)
         InsureCargo = 11,    // the own lots aboard, at a berth (step 13)
-        Last = InsureCargo
+        DevGrant = 12,       // DEV: `quantity` Cr credited to the player (live checks of purchases)
+        Last = DevGrant
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

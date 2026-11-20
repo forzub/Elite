@@ -5,6 +5,7 @@
 #include "src/core/DevFrameCapture.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/dev/DevScriptRunner.h"
+#include "src/game/ship/refit/ShipMarket.h"
 #include "src/game/economy/CargoRegistry.h"
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/network/ClientEconomyCommand.h"
@@ -498,6 +499,8 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.sendEconomyCommand(game::network::ClientEconomyCommand::SellBlack, cmd.substr(12), 0.0);
     else if (cmd.rfind("econ:customs:", 0) == 0)
         s.sendEconomyCommand(game::network::ClientEconomyCommand::DevCustoms, std::string(), std::atof(cmd.c_str() + 13));
+    else if (cmd.rfind("econ:grant:", 0) == 0)   // DEV: Cr credited (live checks of purchases)
+        s.sendEconomyCommand(game::network::ClientEconomyCommand::DevGrant, std::string(), std::atof(cmd.c_str() + 11));
     else if (cmd == "econ:spendall")   // DEV: a broke pilot - all spendable money spent (cash, account, overdraft)
         s.sendEconomyCommand(game::network::ClientEconomyCommand::DevSpendAll, std::string(), 0.0);
     else if (cmd.rfind("econ:await:", 0) == 0)   // DEV: the clock runs to the next publication of that series here
@@ -950,6 +953,27 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
             std::cerr << "[Control] DEV board ship " << page.ships[n].id.value << " (from " << s.m_playerId.value << ")" << std::endl;
         }
     }
+    // step 14: "buyship:<passport id>" - buys the manufacturer's (new) offer of that model, as the F6 button
+    else if (cmd.rfind("buyship:", 0) == 0)
+    {
+        const std::string passport = cmd.substr(8);
+        if (const auto* design = game::catalog::ships::ShipDesignCatalog::instance().findShip(passport))
+            for (const auto& o : game::ship::refit::devShipOffers(*design))
+                if (o.condition == "new")
+                {
+                    game::network::ClientMessage msg;
+                    ClientShipCommand command;
+                    command.type = ClientShipCommand::BuyShip;
+                    command.detail = passport;
+                    command.target = o.offerId;
+                    msg.payload = command;
+                    s.m_client->sendMessage(msg);
+                    std::cerr << "[Shipyard] DEV buy " << passport << " offer " << o.offerId << " " << o.priceCr << " Cr" << std::endl;
+                    break;
+                }
+    }
+    else if (cmd == "service:shipyard")
+        s.context().app->requestServicePanel(ui::services::ServiceUiId::Shipyard);
     else if (cmd == "service:refit")   // F7
         s.context().app->requestServicePanel(ui::services::ServiceUiId::RepairRefit);
     else if (cmd == "service:trade")

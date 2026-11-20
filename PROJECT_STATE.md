@@ -7426,3 +7426,20 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Limits: only Player-role ships can be boarded (no role change API; an NPC-role ship would lack the ideal radar and
   freeze the cockpit view); the old ship stays Player-role and idle; inputs in flight at the switch may reach the new
   ship for one tick; no persistence of ships; the multiplayer acceptance harnesses assume fixed identities (not run).
+
+## TRADE step 14 core: buying a ship in F6 + boarding it (on bases 1-2) - SOURCE + LIVE PASS 2026-11-20
+- Built: ClientShipCommand::BuyShip (protocol 39; detail = passport, target = offer id), executed after the command
+  drain: GameServer::buyShip at a berth recomputes the same deterministic offer (devShipOffers), only the
+  manufacturer's NEW offer for now (a used offer would hand out a pristine ship - wear / damage are not carried yet),
+  charges it (EconomyServer::chargeService, Purpose::Other - not deductible, a capital purchase), spawns a Player-role
+  ship owned by the player's actor 5 km ahead in the hub's frame (GameSimulation::spawnShipBeside - the lineup's
+  placement factored out), refunds if the spawn fails, EconomyServer::recordOperation shows the result. F6: «КУПИТЬ» on
+  a new offer; F7: «ПЕРЕСЕСТЬ НА ЭТОТ КОРАБЛЬ» on an owned, not controlled ship (BoardShip). DEV: econ:grant:<Cr>
+  (ClientEconomyCommand::DevGrant, protocol 40), buyship:<passport>, service:shipyard. Also: F7 apply costs money
+  (previous commit) is exercised by the same build.
+- LIVE (D:/tmp/buyship/run.log, 01..03_*.png): DEV grant 20 000 000 -> "buys bharat.ship.c-120.konveyer
+  (#manufacturer) 14 879 000 Cr: DONE" -> F7 lists it -> "[Board] ship 201 -> 1577: DONE", the client and the cockpit
+  follow, "[FreeFlight] ship 1577 thrust FULL" / BRAKE; the account 5 141 620 CR afterwards.
+- Not done (step 14): used ships (wear / damage onto the instance), leasing, a ship as loan collateral, selling a ship,
+  ship persistence (a bought ship is lost on restart like every ship), the hiring board (next: an employer's ship is
+  the same spawn + boarding with an employer owner).

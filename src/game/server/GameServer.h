@@ -423,6 +423,15 @@ public:
     std::string transferPlayerControl(PlayerId playerId, EntityId target);
     void configurePlayerRadar(EntityId entity, ShipInstanceId instance);
     std::vector<std::pair<EntityId, EntityId>> m_pendingBoardings;   // (from, to)
+    struct PendingPurchase
+    {
+        EntityId from;
+        std::string passportId, offerId;
+    };
+    std::vector<PendingPurchase> m_pendingPurchases;
+    std::uint64_t m_nextBoughtShipInstance = 970000;
+    // F6 (step 14): buy a NEW ship (the manufacturer's offer) at a berth; "" = bought (it appears 5 km off)
+    std::string buyShip(EntityId from, const std::string& passportId, const std::string& offerId);
     std::unordered_map<std::uint64_t, std::uint32_t> m_controlEpochs;  // player -> epoch (0 = bootstrap ship)
     void arrestShip(EntityId id, std::uint64_t player, const std::string& hubId,
                     const game::economy::EconomyServer::ArrestClaim& claim);

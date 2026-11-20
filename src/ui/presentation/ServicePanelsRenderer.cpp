@@ -230,6 +230,15 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
             t.textDrawPx(grouped(o.operatingHours) + " ч", cx + cw * cols[3], y, small, Text);
             t.textDrawPx(fmt("%.0f%%", o.wear01 * 100.0) + " / " + fmt("%.0f%%", o.damage01 * 100.0), cx + cw * cols[4], y, small, Text);
             t.textDrawPx(grouped(o.priceCr) + " Cr", cx + cw * cols[5], y, small, Title);
+            // step 14: a new ship can be bought at a berth (the server decides); used ones later (wear not carried yet)
+            if (o.condition == "new")
+            {
+                const std::string buy = "КУПИТЬ";
+                const float bx = cx + cw - t.measureTextPx(buy, small) - 16, bw = t.measureTextPx(buy, small) + 14;
+                t.solidRectPx(bx - 4, y - 2, bw, static_cast<float>(small) + 6, Selected);
+                t.textDrawPx(buy, bx + 3, y, small, Warn);
+                m_hits.push_back({bx - 4, y - 2, bx - 4 + bw, y + static_cast<float>(small) + 4, 0, {ServicePanelActionType::ShipyardBuy, o.offerId}});
+            }
             y += static_cast<float>(small) + 7;
         }
         y += 8;
@@ -296,6 +305,15 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
     const float headEnd = 24 + arrowW + t.measureTextPx(head, big) + 16;
     t.textDrawPx(">", headEnd, 16, big, page.ships.size() > 1 ? Line : Muted);
     m_hits.push_back({headEnd - 8, 12, headEnd + arrowW, 20 + static_cast<float>(big), 0, {ServicePanelActionType::RefitNextShip, {}}});
+    // base 2: another owned ship (the controlled one is listed first) - the pilot can move to it
+    if (page.currentShip > 0)
+    {
+        const std::string board = "ПЕРЕСЕСТЬ НА ЭТОТ КОРАБЛЬ";
+        const float bx = headEnd + arrowW + 16, bw = t.measureTextPx(board, small) + 20;
+        t.solidRectPx(bx, 18, bw, static_cast<float>(small) * 1.8f, Selected);
+        t.textDrawPx(board, bx + 10, 18 + small * 0.4f, small, Warn);
+        m_hits.push_back({bx, 18, bx + bw, 18 + small * 1.8f, 0, {ServicePanelActionType::RefitBoard, std::to_string(tab.id.value)}});
+    }
     t.textDrawPx("F7  /  ремонт и переоборудование  ·  " + page.modelName + "  ·  корабль " + std::to_string(page.currentShip + 1) + " из " +
                      std::to_string(page.ships.size()),
                  24, 22 + static_cast<float>(big), small, Muted);

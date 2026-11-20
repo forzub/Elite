@@ -19,6 +19,8 @@ enum class ServicePanelActionType
 {
     ShipyardSelectModel,
     ShipyardTogglePassport,
+    ShipyardBuy,             // F6 (step 14): text = offer id of the selected model (new ships only)
+    RefitBoard,              // F7 (base 2): text = ship entity id - the pilot moves to this owned ship
     RefitPreviousShip,
     RefitNextShip,
     RefitSelectGroup,

@@ -9,7 +9,7 @@
 #include "src/game/presentation/ShipyardPresentation.h"
 #include "src/game/presentation/TradePresentation.h"
 
-// Native F6 Shipyard and F7 Repair & Refit surfaces (same single OpenGL
+// Native F5 Government services, F6 Shipyard, F7 Repair & Refit and F8 Trade surfaces (same single OpenGL
 // presentation surface as every F1-F12 target). Immediate-mode: each render
 // records its clickable regions; the next input pass resolves a click
 // against the regions of the frame the player actually saw.
@@ -26,9 +26,11 @@ enum class ServicePanelActionType
     RefitPreviewRepair,
     RefitPreviewReplace,     // text = product id ("" = same product)
     RefitApply,
-    TradeTab,                // text = "0" contracts / "1" market / "2" hubs / "3" nav data / "4" finance / "5" cargo
+    TradeTab,                // text = "0" contracts / "1" market / "2" hubs / "4" finance / "5" cargo (TradeTabOrder)
+    GovernmentTab,           // F5: text = "0" the state services app / "1" Галера+
     TradeSelectHub,          // text = hub id
     TradeShowOnMap,          // text = hub id
+    // F5 state app -> navigation data (moved from F8, TRADE_DESIGN §11a)
     NavDataSelect,           // text = bank record id
     NavDataLoad,             // text = bank record id -> the onboard computer
     NavDataCarrier,          // text = bank record id -> a new data carrier
@@ -63,6 +65,7 @@ public:
     void renderShipyard(const Viewport& viewport, const game::presentation::ShipyardPresentation& page);
     void renderRepairRefit(const Viewport& viewport, const game::presentation::RepairRefitPresentation& page);
     void renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page);
+    void renderGovernment(const Viewport& viewport, const game::presentation::GovernmentPresentation& page);
 
     // Mouse in window pixels; returns the action of a fresh left press.
     void renderNavData(const game::presentation::NavDataPage& nav, float listX, float listY, float listW, float listH, float w,

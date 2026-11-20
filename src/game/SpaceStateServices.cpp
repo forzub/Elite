@@ -1,4 +1,4 @@
-// SpaceState: F6 Shipyard and F7 Repair & Refit native pages. Page models
+// SpaceState: F5 Government services, F6 Shipyard, F7 Repair & Refit and F8 Trade native pages. Page models
 // come from the ship catalog / runtime descriptors (F6) and from the player's
 // replicated ship instances + the server's Repair & Refit previews (F7).
 
@@ -59,6 +59,11 @@ bool SpaceState::renderServicePage(const Viewport& viewport, ui::services::Servi
     if (service == ui::services::ServiceUiId::Trade && m_client)
     {
         m_servicePanels.renderTrade(viewport, buildTradePage());
+        return true;
+    }
+    if (service == ui::services::ServiceUiId::GovernmentServices)
+    {
+        m_servicePanels.renderGovernment(viewport, buildGovernmentPage());
         return true;
     }
     return false;
@@ -182,7 +187,30 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
         for (const char* key : DealKeys)
             page.dealText[key] = localizedUiText(context().app, std::string("service.trade.deal.") + key, key);
     }
-    // the navigation data tab (JUMP_MECHANICS 10l)
+    return page;
+}
+
+game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
+{
+    game::presentation::GovernmentPresentation page;
+    page.tab = std::clamp(m_governmentTab, 0, 1);
+    static const char* const Keys[] = {
+        "app", "app_subtitle", "nav_data", "galley", "galley_subtitle", "galley_not_enlisted", "galley_unit", "galley_ship",
+        "galley_rank", "galley_term", "galley_reports", "galley_report_transfer_ship", "galley_report_transfer_unit",
+        "galley_report_leave", "galley_report_discharge", "galley_hint"};
+    for (const char* key : Keys)
+        page.text[key] = localizedUiText(context().app, std::string("service.government.") + key, key);
+    if (!m_client)
+        return page;
+    // the navigation data (JUMP_MECHANICS 10l; moved from F8, TRADE_DESIGN §11a)
+    bool atHub = false;
+    int playerSystem = -1;
+    if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+    {
+        const auto& motion = it->second.transform.motion;
+        playerSystem = motion.systemId;
+        atHub = !motion.hubId.empty() && !motion.freeFlight;
+    }
     namespace jr = game::navigation::jump;
     auto& nav = page.nav;
     nav.atHub = atHub;
@@ -294,7 +322,7 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
 {
     using ui::presentation::ServicePanelActionType;
     if (service != ui::services::ServiceUiId::Shipyard && service != ui::services::ServiceUiId::RepairRefit &&
-        service != ui::services::ServiceUiId::Trade)
+        service != ui::services::ServiceUiId::Trade && service != ui::services::ServiceUiId::GovernmentServices)
         return false;
     GLFWwindow* window = glfwGetCurrentContext();
     if (!window)
@@ -309,7 +337,7 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
         const bool shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
         static const int Keys[] = {GLFW_KEY_UP, GLFW_KEY_DOWN, GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_TAB, GLFW_KEY_ENTER,
                                    GLFW_KEY_KP_ENTER, GLFW_KEY_BACKSPACE, GLFW_KEY_R, GLFW_KEY_U, GLFW_KEY_1, GLFW_KEY_2,
-                                   GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6};
+                                   GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5};
         for (const int key : Keys)
         {
             const bool down = glfwGetKey(window, key) == GLFW_PRESS;
@@ -319,20 +347,23 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             was = down;
         }
     }
+    if (service == ui::services::ServiceUiId::GovernmentServices)
+        for (const int key : {GLFW_KEY_1, GLFW_KEY_2})
+        {
+            const bool down = glfwGetKey(window, key) == GLFW_PRESS;
+            bool& was = m_tradeKeyWasDown[key];
+            if (down && !was)
+                m_governmentTab = key - GLFW_KEY_1;
+            was = down;
+        }
     const auto action = m_servicePanels.handleInput(viewport, mx, my, leftDown, scrollY);
     if (!action)
         return true;
 
-    if (service == ui::services::ServiceUiId::Trade)
+    if (service == ui::services::ServiceUiId::GovernmentServices)
     {
-        if (action->type >= ServicePanelActionType::TradeContractSelect && action->type <= ServicePanelActionType::TradeContractCancel)
-            applyTradeContractAction(*action);
-        else if (action->type >= ServicePanelActionType::TradeSelectGood)
-            applyTradeDealAction(*action);
-        else if (action->type == ServicePanelActionType::TradeTab)
-            m_tradeTab = std::atoi(action->text.c_str());
-        else if (action->type == ServicePanelActionType::TradeSelectHub)
-            m_tradeHub = action->text;
+        if (action->type == ServicePanelActionType::GovernmentTab)
+            m_governmentTab = std::atoi(action->text.c_str());
         else if (action->type == ServicePanelActionType::NavDataSelect)
             m_navDataSelected = action->text;
         else if (action->type == ServicePanelActionType::NavDataLoad || action->type == ServicePanelActionType::NavDataCarrier ||
@@ -349,6 +380,19 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             msg.payload = command;
             m_client->sendMessage(msg);
         }
+        return true;
+    }
+
+    if (service == ui::services::ServiceUiId::Trade)
+    {
+        if (action->type >= ServicePanelActionType::TradeContractSelect && action->type <= ServicePanelActionType::TradeContractCancel)
+            applyTradeContractAction(*action);
+        else if (action->type >= ServicePanelActionType::TradeSelectGood)
+            applyTradeDealAction(*action);
+        else if (action->type == ServicePanelActionType::TradeTab)
+            m_tradeTab = std::atoi(action->text.c_str());
+        else if (action->type == ServicePanelActionType::TradeSelectHub)
+            m_tradeHub = action->text;
         else if (action->type == ServicePanelActionType::TradeShowOnMap && context().app)
         {
             // the System map focused on that hub (the same path as a list pick)
@@ -486,9 +530,9 @@ void SpaceState::tradeDealKey(int key, bool shift)
     using ui::presentation::ServicePanelActionType;
     if (!m_client)
         return;
-    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_6)
+    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_5)
     {
-        m_tradeTab = key - GLFW_KEY_1;
+        m_tradeTab = game::presentation::TradeTabOrder[key - GLFW_KEY_1];   // keys = the shown order (TRADE_DESIGN §11a)
         return;
     }
     if (m_tradeTab == 0)

@@ -7201,3 +7201,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - 2026-11-20 author: "25 % may be too much - milk the cow, don't milk it dry": garnish_share 0.25 -> 0.10 in
   national_banks.json (+ canon); the standing / restructuring texts no longer hard-code 25 %. Unit tests keep their
   own 25 % (testBanks). Not re-run live.
+
+## F5 GOVERNMENT SERVICES: navigation data moved from F8; Галера+ (docs/TRADE_DESIGN.md §11a, §11b) - SOURCE + LIVE PASS 2026-11-20
+- Built: F5 has a native page (was a blank target): two apps as tabs - the state services app (localized name
+  `service.government.app`: ru КОСМОУСЛУГИ / en GOV.SPACE / zh 星网通办 / es MI CARPETA ESTELAR / ja マイ星ポータル -
+  a proposal, the author may rename) with the navigation data section (moved from F8; licences step 11, taxes step 7
+  join it), and Галера+ (military service, empty fields until enlisted). GovernmentPresentation, SpaceState::
+  buildGovernmentPage, ServicePanelsRenderer::renderGovernment, ServicePanelActionType::GovernmentTab; keys 1 / 2.
+- F8 tabs in the §11a order РЫНОК · КОНТРАКТЫ · ГРУЗ · ФИНАНСЫ · ХАБЫ (TradeTabOrder, keys 1..5 = that order); tab ids
+  unchanged so `tradetab:N` scripts keep their meaning, the retired id 3 opens the market. DEV: `service:government`,
+  `govtab:0|1`.
+- Checks: check_service_panel_shell, check_architecture, check_localization_boundary,
+  check_function_key_presentation_route, check_client_service_ui_polish PASS; EliteServicePagesCheck PASS (run from
+  build-relwithdebinfo - from the repo root it cannot find the star atlas); EliteEconomyCheck 142/142.
+- LIVE (earth_orbital_hub, D:/tmp/f5gov/run.log, 01..06_*.png): F5 app in space and docked (Sol nav archive, 4 records,
+  onboard memory / carriers), Галера+ empty form, F8 market on key 1, cargo on key 3, tradetab:3 -> market.
+- Seen, not of this slice: on every F5-F8 page the big title is clipped at the top and the selected tab's box sits
+  ~half a line below its label (text y vs box y) - a shared layout offset, left as is.
+- Author's open items (§11b): pilot licence categories in the state app (step 11); a shipless pilot - the hiring board
+  (where: F5 employment service or F8 private hire).

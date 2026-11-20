@@ -26,7 +26,11 @@ TradePresentation buildTradePresentation(
     page.hubName = here->name;
     page.atHub = atHub;
     page.day = EconomyModel::dayOf(universeSeconds);
-    page.tab = std::clamp(tab, 0, 5);   // 4 = finance (the session wallet), 5 = cargo (the server manifest) - filled by the caller
+    // 4 = finance (the session wallet), 5 = cargo (the server manifest) - filled by the caller; 3 (navigation data) moved
+    // to F5 (TRADE_DESIGN §11a) - an old id opens the market
+    page.tab = std::clamp(tab, 0, 5);
+    if (page.tab == 3)
+        page.tab = 1;
     page.events = model.events(hubId, page.day);
     page.hubs = model.hubsOfSystem(here->systemId);
 

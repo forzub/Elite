@@ -449,6 +449,7 @@ private:
     bool handleServicePageInput(const Viewport& viewport, ui::services::ServiceUiId service);
     game::presentation::RepairRefitPresentation buildRepairRefitPage();
     game::presentation::TradePresentation buildTradePage();
+    game::presentation::GovernmentPresentation buildGovernmentPage();
     void sendRefitCommand(bool apply, const game::ship::refit::RefitOperation& operation);
     // F8 trade (TRADE_DESIGN §7.4): a request to the server - it prices and charges; returns the request id
     std::uint32_t sendEconomyCommand(int op, const std::string& goodId, double tonnes, double limitUnitCr = 0.0);
@@ -816,7 +817,8 @@ private:
     game::ship::refit::RefitOperation m_refitLastOperation;
     // F8 Trade: tab (0 board / 1 market / 2 hubs) and the hub on the card
     int m_tradeTab = 0;
-    std::string m_navDataSelected;   // F8 navigation data: the selected bank record
+    std::string m_navDataSelected;   // F5 state app -> navigation data: the selected bank record
+    int m_governmentTab = 0;         // F5: 0 the state services app, 1 Галера+
     std::uint32_t m_economyRequestId = 0;
     game::presentation::TradeDealRequest m_tradeDeal;   // the MARKET deal window's own state (never authoritative)
     std::map<int, bool> m_tradeKeyWasDown;

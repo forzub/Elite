@@ -364,7 +364,7 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
     //   tradeclick:<what>[:<arg>] - a click on the region of the LAST RENDERED frame that carries that action (good:<good id>,
     //     side:buy|sell, units:t|c20, step:+1|-10, slider:<fraction 0..1>, max, confirm, cancel, retry); a region the
     //     frame did not draw is logged, not faked
-    //   tradekey:<up|down|left|right|tab|enter|backspace|r|u|1..6>[+shift] - the key handler
+    //   tradekey:<up|down|left|right|tab|enter|backspace|r|u|1..5>[+shift] - the key handler (1..5 = the shown tab order)
     //   tradedeal:report - the window's preview / limits / answer to the log
     else if (cmd.rfind("tradeclick:", 0) == 0)
     {
@@ -788,7 +788,7 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         s.m_client->sendMessage(msg);
     }
     // navigation data (JUMP_MECHANICS 10l): "navdata:load:<record id>" into the computer, "navdata:carrier:<record id>"
-    // onto a new carrier, "navdata:insert:<carrier number>"; "service:trade" opens F8
+    // onto a new carrier, "navdata:insert:<carrier number>"; shown in F5 ("service:government")
     else if (cmd.rfind("navdata:", 0) == 0)
     {
         const std::string rest = cmd.substr(8);
@@ -877,6 +877,11 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
     }
     else if (cmd == "service:trade")
         s.context().app->requestServicePanel(ui::services::ServiceUiId::Trade);
+    // F5 Government services (TRADE_DESIGN §11a): "service:government", "govtab:<0 state app | 1 Галера+>"
+    else if (cmd == "service:government")
+        s.context().app->requestServicePanel(ui::services::ServiceUiId::GovernmentServices);
+    else if (cmd.rfind("govtab:", 0) == 0)
+        s.m_governmentTab = std::atoi(cmd.c_str() + 7);
     // refuel at the station the ship stands at, as Ctrl+U (docs/FUEL_STATIONS.md): "refuel" | "refuel:cancel";
     // "waitfor:refueled" waits for the job to end (done / refused / cancelled - the log says which)
     else if (cmd == "refuel" || cmd == "refuel:cancel")

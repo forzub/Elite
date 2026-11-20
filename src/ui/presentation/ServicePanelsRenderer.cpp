@@ -797,7 +797,8 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     }
     t.textDrawPx("ТОРГОВЛЯ — " + page.hubName, 24, 18, big, Title);
     t.textDrawPx(std::string(page.atHub ? "F8  /  вы в хабе" : "F8  /  ближайший хаб") + "  ·  день " + std::to_string(page.day) +
-                     "  ·  контракты, рынок, хабы системы", 24, 18 + big + 6, small, Muted);
+                     "  ·  рынок, контракты, груз, финансы, хабы системы  ·  навигационные данные — F5", 24, 18 + big + 6, small,
+                 Muted);
     if (!page.events.empty())
     {
         std::string ev = "События: ";
@@ -810,25 +811,22 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     const float tabY = 18.0f + big + 18.0f + 2.0f * small;
     const auto tabIt = page.contractText.find("tab");
     const std::string contractsTab = tabIt == page.contractText.end() ? std::string("КОНТРАКТЫ") : tabIt->second;
-    const char* tabs[] = {contractsTab.c_str(), "РЫНОК", "ХАБЫ СИСТЕМЫ", "НАВИГ. ДАННЫЕ", "ФИНАНСЫ", "ГРУЗ"};
+    // by id: 0 contracts, 1 market, 2 hubs, 4 finance, 5 cargo; drawn in TradeTabOrder, keys 1..5 = that order
+    const char* tabs[] = {contractsTab.c_str(), "РЫНОК", "ХАБЫ СИСТЕМЫ", "", "ФИНАНСЫ", "ГРУЗ"};
     float tx = 24.0f;
-    for (int i = 0; i < 6; ++i)
+    int key = 1;
+    for (const int i : game::presentation::TradeTabOrder)
     {
-        const float tw = t.measureTextPx(tabs[i], px) + 24.0f;
+        const std::string label = std::to_string(key++) + "  " + tabs[i];
+        const float tw = t.measureTextPx(label, px) + 24.0f;
         t.solidRectPx(tx, tabY, tw, px * 1.8f, page.tab == i ? Selected : Panel);
-        t.textDrawPx(tabs[i], tx + 12, tabY + px * 0.35f, px, page.tab == i ? Title : Text);
+        t.textDrawPx(label, tx + 12, tabY + px * 0.35f, px, page.tab == i ? Title : Text);
         m_hits.push_back({tx, tabY, tx + tw, tabY + px * 1.8f, 0, {ServicePanelActionType::TradeTab, std::to_string(i)}});
         tx += tw + 8.0f;
     }
 
     // ---- left list
     const float listX = 24.0f, listY = tabY + px * 2.4f, listW = w * 0.58f, listH = h - listY - 40.0f;
-    if (page.tab == 3)
-    {
-        renderNavData(page.nav, listX, listY, listW, listH, w, h, px, small, big);
-        t.endFrame();
-        return;
-    }
     if (page.tab == 4)
     {
         renderFinance(t, page.finance, page.financeText, listX, listY, listW, listH, w, h, px, small, big);
@@ -1214,7 +1212,7 @@ void ServicePanelsRenderer::renderTradeDeal(const game::presentation::TradePrese
     keysHint(bottom - 8.0f);
 }
 
-// F8 tab 3: the colony's navigation data bank, the onboard computer's memory, the data carriers (JUMP_MECHANICS 10l)
+// F5 state app: the colony's navigation data bank, the onboard computer's memory, the data carriers (JUMP_MECHANICS 10l)
 void ServicePanelsRenderer::renderNavData(const game::presentation::NavDataPage& nav, float listX, float listY, float listW, float listH,
                                           float w, float h, int px, int small, int big)
 {
@@ -1325,6 +1323,78 @@ void ServicePanelsRenderer::renderNavData(const game::presentation::NavDataPage&
     }
     (void)cw;
     t.textDrawPx("Клик по записи - карточка; открытые данные выдаёт банк колонии, остальное - по допуску", 24, h - 26, small, Muted);
+}
+
+// F5 Government services (TRADE_DESIGN §11a, author 2026-11-20): everything of the state. Two apps as tabs: the state
+// services app (localized like Дія / Госуслуги) and Галера+ (military service). The app's sections so far: navigation
+// data; licences (trade step 11), taxes (step 7), fines and debts to the state, citizenship come as they are built.
+void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const game::presentation::GovernmentPresentation& page)
+{
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+    m_hits.clear();
+    m_zones.clear();
+    glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
+    glScissor(viewport.x, viewport.y, viewport.width, viewport.height);
+    glDisable(GL_DEPTH_TEST);
+    auto& t = TextRenderer::instance();
+    t.beginFrameForViewport(viewport.width, viewport.height);
+    const float w = static_cast<float>(viewport.width), h = static_cast<float>(viewport.height);
+    const int px = std::clamp(static_cast<int>(h * 0.018f), 12, 17);
+    const int small = std::clamp(static_cast<int>(h * 0.015f), 11, 14);
+    const int big = std::clamp(static_cast<int>(h * 0.034f), 20, 34);
+    const auto text = [&](const char* key) -> std::string {
+        const auto it = page.text.find(key);
+        return it == page.text.end() ? std::string(key) : it->second;
+    };
+    t.solidRectPx(0, 0, w, h, Bg);
+    t.solidRectPx(0, 0, w, 2, Line);
+    t.textDrawPx(page.tab == 1 ? text("galley") : text("app"), 24, 18, big, Title);
+    t.textDrawPx("F5  /  " + text(page.tab == 1 ? "galley_subtitle" : "app_subtitle"), 24, 18 + big + 6, small, Muted);
+
+    const float tabY = 18.0f + big + 18.0f + 2.0f * small;
+    const std::string tabs[] = {text("app"), text("galley")};
+    float tx = 24.0f;
+    for (int i = 0; i < 2; ++i)
+    {
+        const std::string label = std::to_string(i + 1) + "  " + tabs[i];
+        const float tw = t.measureTextPx(label, px) + 24.0f;
+        t.solidRectPx(tx, tabY, tw, px * 1.8f, page.tab == i ? Selected : Panel);
+        t.textDrawPx(label, tx + 12, tabY + px * 0.35f, px, page.tab == i ? Title : Text);
+        m_hits.push_back({tx, tabY, tx + tw, tabY + px * 1.8f, 0, {ServicePanelActionType::GovernmentTab, std::to_string(i)}});
+        tx += tw + 8.0f;
+    }
+
+    const float listX = 24.0f, listY = tabY + px * 2.4f, listW = w * 0.58f, listH = h - listY - 40.0f;
+    if (page.tab == 0)
+    {
+        t.textDrawPx(text("nav_data"), listX, listY + px * 0.6f, px, Title);   // below the selected tab's box
+        const float y0 = listY + px * 2.4f;
+        renderNavData(page.nav, listX, y0, listW, listH - (y0 - listY), w, h, px, small, big);
+        t.endFrame();
+        return;
+    }
+    // Галера+: not enlisted - the forms are there, the fields empty (author: "пока игрок не нанялся - там пустые графы")
+    t.solidRectPx(listX, listY, listW, listH, Panel);
+    float y = listY + 10.0f;
+    t.textDrawPx(text("galley_not_enlisted"), listX + 12, y, px, Muted);
+    y += px * 2.2f;
+    for (const char* key : {"galley_unit", "galley_ship", "galley_rank", "galley_term"})
+    {
+        t.textDrawPx(text(key), listX + 12, y, small, Muted);
+        t.textDrawPx("—", listX + listW * 0.4f, y, small, Muted);
+        y += small + 10.0f;
+    }
+    y += 10.0f;
+    t.textDrawPx(text("galley_reports"), listX + 12, y, px, Text);
+    y += px + 10.0f;
+    for (const char* key : {"galley_report_transfer_ship", "galley_report_transfer_unit", "galley_report_leave", "galley_report_discharge"})
+    {
+        t.textDrawPx(text(key), listX + 24, y, small, Muted);
+        y += small + 8.0f;
+    }
+    t.textDrawPx(text("galley_hint"), 24, h - 26, small, Muted);
+    t.endFrame();
 }
 
 std::optional<ServicePanelAction> ServicePanelsRenderer::handleInput(const Viewport& viewport, double mouseX, double mouseY, bool leftDown,

@@ -8,6 +8,118 @@
       "zh-Hans": "政府服务",
       "es": "SERVICIOS GUBERNAMENTALES",
       "ja": "行政・公共サービス"
+    },
+    "service.government.app": {
+      "en": "GOV.SPACE",
+      "ru": "КОСМОУСЛУГИ",
+      "zh-Hans": "星网通办",
+      "es": "MI CARPETA ESTELAR",
+      "ja": "マイ星ポータル"
+    },
+    "service.government.app_subtitle": {
+      "en": "the state's app: navigation data; licences, taxes, fines and citizenship to come",
+      "ru": "государственное приложение: навигационные данные; лицензии, налоги, штрафы, гражданство — позже",
+      "zh-Hans": "政府应用：导航数据；执照、税务、罚款、国籍即将上线",
+      "es": "la app del Estado: datos de navegación; licencias, impuestos, multas y ciudadanía, más adelante",
+      "ja": "行政アプリ：航法データ。免許・税・罰金・国籍は今後"
+    },
+    "service.government.nav_data": {
+      "en": "Navigation data",
+      "ru": "Навигационные данные",
+      "zh-Hans": "导航数据",
+      "es": "Datos de navegación",
+      "ja": "航法データ"
+    },
+    "service.government.galley": {
+      "en": "GALLEY+",
+      "ru": "ГАЛЕРА+",
+      "zh-Hans": "苦役船+",
+      "es": "GALERA+",
+      "ja": "ガレー船+"
+    },
+    "service.government.galley_subtitle": {
+      "en": "military service: reports, transfers, leave",
+      "ru": "военная служба: рапорты, переводы, отпуск",
+      "zh-Hans": "兵役：报告、调动、休假",
+      "es": "servicio militar: partes, traslados, permisos",
+      "ja": "兵役：報告・転属・休暇"
+    },
+    "service.government.galley_not_enlisted": {
+      "en": "You are not in military service",
+      "ru": "Вы не проходите военную службу",
+      "zh-Hans": "您未在服兵役",
+      "es": "No está en servicio militar",
+      "ja": "兵役に就いていません"
+    },
+    "service.government.galley_unit": {
+      "en": "Unit",
+      "ru": "Часть",
+      "zh-Hans": "部队",
+      "es": "Unidad",
+      "ja": "部隊"
+    },
+    "service.government.galley_ship": {
+      "en": "Ship",
+      "ru": "Корабль",
+      "zh-Hans": "舰船",
+      "es": "Nave",
+      "ja": "艦"
+    },
+    "service.government.galley_rank": {
+      "en": "Rank",
+      "ru": "Звание",
+      "zh-Hans": "军衔",
+      "es": "Rango",
+      "ja": "階級"
+    },
+    "service.government.galley_term": {
+      "en": "Term of service",
+      "ru": "Срок службы",
+      "zh-Hans": "服役期限",
+      "es": "Tiempo de servicio",
+      "ja": "服務期間"
+    },
+    "service.government.galley_reports": {
+      "en": "Reports",
+      "ru": "Рапорты",
+      "zh-Hans": "报告",
+      "es": "Partes",
+      "ja": "報告"
+    },
+    "service.government.galley_report_transfer_ship": {
+      "en": "transfer to another ship",
+      "ru": "перевод на другой корабль",
+      "zh-Hans": "调往其他舰船",
+      "es": "traslado a otra nave",
+      "ja": "他艦への転属"
+    },
+    "service.government.galley_report_transfer_unit": {
+      "en": "transfer to another unit",
+      "ru": "перевод в другую часть",
+      "zh-Hans": "调往其他部队",
+      "es": "traslado a otra unidad",
+      "ja": "他部隊への転属"
+    },
+    "service.government.galley_report_leave": {
+      "en": "health leave (once a year)",
+      "ru": "оздоровительный отпуск (раз в год)",
+      "zh-Hans": "疗养假（每年一次）",
+      "es": "permiso de salud (una vez al año)",
+      "ja": "保養休暇（年1回）"
+    },
+    "service.government.galley_report_discharge": {
+      "en": "discharge (not during hostilities)",
+      "ru": "увольнение (не во время боевых действий)",
+      "zh-Hans": "退役（战时不可）",
+      "es": "baja (no durante hostilidades)",
+      "ja": "除隊（戦時は不可）"
+    },
+    "service.government.galley_hint": {
+      "en": "Reports open once you enlist",
+      "ru": "Рапорты станут доступны после поступления на службу",
+      "zh-Hans": "入伍后可提交报告",
+      "es": "Los partes estarán disponibles al alistarse",
+      "ja": "入隊後に報告が可能になります"
     }
   }
 }

@@ -31,7 +31,8 @@ struct TradeHubCard
     std::string channel;
 };
 
-// the navigation data tab (JUMP_MECHANICS 10l): the colony bank, the onboard computer's memory, the data carriers
+// F5 Government services -> the state app -> navigation data (JUMP_MECHANICS 10l, TRADE_DESIGN §11a: everything of the
+// state is in F5): the colony bank, the onboard computer's memory, the data carriers
 struct NavDataRow
 {
     std::string id;           // the bank record id ("" for a memory / carrier line)
@@ -56,6 +57,18 @@ struct NavDataPage
     std::string selected;                 // the selected bank record id
 };
 
+inline constexpr int TradeTabOrder[] = {1, 0, 5, 4, 2};
+
+// F5 Government services (TRADE_DESIGN §11a, author 2026-11-20): two apps as tabs - 0 the state services app (its name
+// is localized like Дія / Госуслуги: "service.government.app"; sections: navigation data now, licences in trade step 11,
+// taxes in step 7), 1 Галера+ (military service; empty fields until the pilot enlists)
+struct GovernmentPresentation
+{
+    int tab = 0;
+    NavDataPage nav;
+    std::map<std::string, std::string> text;   // "service.government.<key>" without the prefix
+};
+
 struct TradePresentation
 {
     bool valid = false;
@@ -63,7 +76,9 @@ struct TradePresentation
     std::string hubName;
     bool atHub = false;
     int day = 0;
-    int tab = 0;                        // 0 contracts, 1 market, 2 hubs, 3 navigation data, 4 finance, 5 cargo
+    // ids: 0 contracts, 1 market, 2 hubs, 4 finance, 5 cargo (3 = the navigation data, now in F5); shown in the order of
+    // TradeTabOrder (TRADE_DESIGN §11a: РЫНОК, КОНТРАКТЫ, ГРУЗ, ФИНАНСЫ, ХАБЫ), keys 1..5 = that order
+    int tab = 0;
     // the CONTRACTS tab (trade step 5): the server's board of this hub and the player's contracts come in `trade`
     // (ClientTradeSnapshot board / contracts); the selected posting and the confirm state are the window's
     std::string selectedContract;
@@ -77,7 +92,6 @@ struct TradePresentation
     std::vector<const game::economy::HubEconomyInfo*> hubs;
     std::string selectedHub;
     TradeHubCard card;
-    NavDataPage nav;
     game::simulation::ClientWalletSnapshot finance;   // the server ledger as replicated to this session
     game::simulation::ClientTradeSnapshot trade;      // the server market, the manifest, the latest results
     // the MARKET tab's deal window (trade step 3): the selected row's deal priced like the server will charge it

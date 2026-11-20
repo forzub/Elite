@@ -40,6 +40,7 @@
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
 #include "src/game/simulation/ClientWalletSnapshot.h"
 #include "src/game/economy/EconomyServer.h"
+#include "src/game/ship/refit/RepairRefit.h"
 
 struct ServerQueueDiagnostics
 {
@@ -416,6 +417,7 @@ public:
     // navigation data (JUMP_MECHANICS 10l): a bank record into the computer / onto a carrier, a carrier into the computer
     void handleNavDataCommand(EntityId id, int op, const std::string& recordId, int carrier);
     // the trade layer (TRADE_DESIGN steps 1-2): a Buy / Sell / DEV cargo request of ship `id`
+    std::string chargeRefit(EntityId id, EntityId subject, const game::ship::refit::RefitOperation& op);
     void arrestShip(EntityId id, std::uint64_t player, const std::string& hubId,
                     const game::economy::EconomyServer::ArrestClaim& claim);
     void handleEconomyCommand(EntityId id, const game::network::ClientEconomyCommand& command);

@@ -412,6 +412,8 @@ public:
     // Results are published in the subject's ShipSnapshot::refit.
     void requestRefitPreview(EntityId commandingShip, EntityId subject, const game::ship::refit::RefitOperation& operation);
     void applyRefit(EntityId commandingShip, EntityId subject, const game::ship::refit::RefitOperation& operation);
+    // a refused apply (no money, not at a berth): published like an apply result, the ship untouched
+    void refuseRefit(EntityId commandingShip, EntityId subject, const std::string& why);
     [[nodiscard]] game::simulation::ShipRefitSnapshot refitSnapshotFor(EntityId ship) const;
     const ActiveFreeFlight* freeFlight(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).

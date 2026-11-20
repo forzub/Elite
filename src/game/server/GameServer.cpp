@@ -1528,6 +1528,8 @@ void GameServer::update(double dt)
                     const EntityId subject {static_cast<std::uint32_t>(std::max(0.0, shipCmd.amount))};
                     if (shipCmd.type == ClientShipCommand::RefitPreview)
                         m_simulation.requestRefitPreview(id, subject, op);
+                    else if (const std::string why = chargeRefit(id, subject, op); !why.empty())
+                        m_simulation.refuseRefit(id, subject, why);
                     else
                         m_simulation.applyRefit(id, subject, op);
                     break;
@@ -2515,6 +2517,43 @@ void GameServer::applyCargoLoad(EntityId id)
 // Exchange seizure (ZPO §811 Austauschpfändung, ECONOMY_BANKING 2026-11-20): the court swaps the catalog modules with the
 // largest price gap to their cheapest compatible working product until the auction proceeds cover the debt at that bank.
 // Uses the refit layer (per-instance configuration), so the ship stays flyable; nothing seizable -> left alone.
+// F7 apply costs money (2026-11-20): the preview's labour + materials, paid at a berth (a repair may draw the lifeline
+// credit - the minimum repair is always payable, ECONOMY_BANKING §4; a replacement is a fee). DEV off a berth: free.
+// "" = paid (or free), otherwise why not.
+std::string GameServer::chargeRefit(EntityId id, EntityId subject, const game::ship::refit::RefitOperation& op)
+{
+    const Ship* commander = m_simulation.getShip(id);
+    const Ship* target = m_simulation.getShip(subject.value == 0 ? id : subject);
+    if (!commander || !target || !m_economy.loaded())
+        return {};
+    const std::uint64_t player = m_players.playerForShip(commander->core().registry().instanceId).value;
+    if (player == 0)
+        return {};
+    const auto preview = game::ship::refit::previewRefit(target->core(), op);
+    if (!preview.ok)
+        return preview.error.empty() ? std::string("операция невозможна") : preview.error;
+    bool tender = false;
+    const std::string hub = m_simulation.serviceStationOf(id, &tender);
+    if (hub.empty() || tender)
+    {
+        if (g_devCommandsAllowed.load())
+        {
+            std::cerr << "[Refit] DEV: free apply off a berth (" << preview.cost.totalCr << " Cr not charged)" << std::endl;
+            return {};
+        }
+        return "ремонт и замена — у причала хаба";
+    }
+    const int system = commander->core().transform().motion.systemId;
+    const auto kind = op.kind == game::ship::refit::RefitOperationKind::Repair ? game::economy::Purpose::Repair : game::economy::Purpose::Fee;
+    const std::string memo = std::string(op.kind == game::ship::refit::RefitOperationKind::Repair ? "ремонт " : "замена ") + op.moduleId +
+                             (op.productId.empty() ? std::string() : " -> " + op.productId);
+    const auto paid = m_economy.chargeService(player, hub, system, kind, preview.cost.totalCr, memo);
+    if (!paid.ok)
+        return "не хватает денег: " + std::to_string(static_cast<long long>(preview.cost.totalCr)) + " Cr (" + paid.reason + ")";
+    std::cerr << "[Refit] player " << player << " paid " << preview.cost.totalCr << " Cr at " << hub << " for " << memo << std::endl;
+    return {};
+}
+
 void GameServer::arrestShip(EntityId id, std::uint64_t player, const std::string& hubId, const game::economy::EconomyServer::ArrestClaim& claim)
 {
     Ship* ship = m_simulation.getShip(id);

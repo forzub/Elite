@@ -46,6 +46,15 @@ void GameSimulation::applyRefit(EntityId commandingShip, EntityId subject, const
               << (pub.applyResult.empty() ? std::string("APPLIED") : pub.applyResult) << '\n';
 }
 
+void GameSimulation::refuseRefit(EntityId commandingShip, EntityId subject, const std::string& why)
+{
+    const EntityId target = subject.value == 0 ? commandingShip : subject;
+    auto& pub = m_refitPublications[target.value];
+    pub.applyResult = why;
+    ++pub.applySerial;
+    std::cerr << "[Refit] apply ship=" << target.value << " REFUSED: " << why << '\n';
+}
+
 game::simulation::ShipRefitSnapshot GameSimulation::refitSnapshotFor(EntityId shipId) const
 {
     game::simulation::ShipRefitSnapshot out;

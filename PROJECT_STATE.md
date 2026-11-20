@@ -7394,3 +7394,10 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Observed: the step-17 urgent-save check failed 3 of 5 runs right after a build (the rename refused for ~1.2-2 s -
   most likely Defender scanning the fresh 650 KB file) and passed 9 of 9 on an idle machine. Writer retries extended
   to ~3 s; a failed write now logs the Win32 error code. Recorded as a load-dependent risk.
+
+## F7 apply costs money (2026-11-20) - SOURCE, built; live pending (with the ship-change run)
+- GameServer::chargeRefit before GameSimulation::applyRefit: the preview's labour + materials paid at a berth through
+  EconomyServer::chargeService (a repair may draw the lifeline credit - the minimum repair is always payable; a
+  replacement is a fee); not enough money / not at a berth -> GameSimulation::refuseRefit publishes the reason (F7 shows
+  it); DEV off a berth = free with a log line (the DEV refit verbs keep working). The arrest's exchange seizure stays
+  free (the court).

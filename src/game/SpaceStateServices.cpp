@@ -213,7 +213,7 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
 {
     game::presentation::GovernmentPresentation page;
     page.tab = std::clamp(m_governmentTab, 0, 1);
-    page.section = std::clamp(m_governmentSection, 0, 4);
+    page.section = std::clamp(m_governmentSection, 0, 5);
     static const char* const Keys[] = {
         "app", "app_subtitle", "nav_data", "taxes", "tax_no_data", "tax_residence", "tax_style", "tax_rate", "tax_admin_fee",
         "tax_rules", "tax_days", "tax_declare", "tax_open_period", "tax_revenue", "tax_expenses", "tax_profit", "tax_withheld_credit",
@@ -224,7 +224,8 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
         "job_hire", "job_term", "rescue", "sos_licence_yes", "sos_licence_no", "sos_active", "sos_fly_to", "sos_list", "sos_none", "sos_until",
         "sos_take", "sos_status_taken", "sos_status_done", "sos_status_expired", "galley", "galley_subtitle", "galley_not_enlisted", "galley_unit", "galley_ship",
         "galley_rank", "galley_term", "galley_reports", "galley_report_transfer_ship", "galley_report_transfer_unit",
-        "galley_report_leave", "galley_report_discharge", "galley_hint"};
+        "galley_report_leave", "galley_report_discharge", "galley_hint", "build", "build_mine", "build_none", "build_stage", "build_paid",
+        "build_day", "build_offers", "build_no_offers", "build_days", "build_reliability", "build_sign", "build_dock_hint"};
     for (const char* key : Keys)
         page.text[key] = localizedUiText(context().app, std::string("service.government.") + key, key);
     if (!m_client)
@@ -395,6 +396,8 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             m_governmentTab = std::atoi(action->text.c_str());
         else if (action->type == ServicePanelActionType::GovernmentSection)
             m_governmentSection = std::atoi(action->text.c_str());
+        else if (action->type == ServicePanelActionType::GovernmentSignBuild)   // step 16: the server decides (money, offer)
+            sendEconomyCommand(game::network::ClientEconomyCommand::SignConstruction, action->text, 0.0);
         else if (action->type == ServicePanelActionType::GovernmentTakeSos)   // step 12: the server decides (licence, call)
             sendEconomyCommand(game::network::ClientEconomyCommand::TakeSos, action->text, 0.0);
         else if ((action->type == ServicePanelActionType::GovernmentHire || action->type == ServicePanelActionType::GovernmentQuit) && m_client)

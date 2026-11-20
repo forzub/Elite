@@ -553,6 +553,19 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json cons = fees.value("construction", json::object());
+        m_buildBaseCostCr = num(cons, "base_cost_cr", m_buildBaseCostCr);
+        m_buildBaseDays = std::max(1, static_cast<int>(num(cons, "base_work_days", m_buildBaseDays)));
+        m_buildRetention = num(cons, "retention_share", m_buildRetention);
+        m_buildAbandonDays = static_cast<int>(num(cons, "abandon_after_unpaid_days", m_buildAbandonDays));
+        m_buildHaltPDay = num(cons, "halt_p_day", m_buildHaltPDay);
+        m_buildIncomeYear = num(cons, "income_share_year", m_buildIncomeYear);
+        m_buildMaintYear = num(cons, "maintenance_share_year", m_buildMaintYear);
+        if (cons.contains("milestones"))
+            m_buildMilestones = cons["milestones"].get<std::vector<double>>();
+        const json kindFactor = cons.value("kind_factor", json::object());
+        for (const auto& [k, v] : kindFactor.items())
+            m_buildKindFactor[k] = v.get<double>();
         const json botsJ = fees.value("bots", json::object());
         m_botCandidatesPerHub = static_cast<int>(num(botsJ, "candidates_per_hub", m_botCandidatesPerHub));
         m_botBaseWageCr = num(botsJ, "base_wage_cr", m_botBaseWageCr);
@@ -886,6 +899,7 @@ void EconomyServer::stepDay(int day)
     stepTaxes(day);
     payWages(day);
     stepBots(day);
+    stepConstruction(day);
 
     std::sort(jumpPrices.begin(), jumpPrices.end());
     char line[512];
@@ -998,6 +1012,195 @@ void EconomyServer::stepNpcFlows(int day)
         std::cerr << "[NpcFlows] day " << day << ": " << shipped << " shipments today (" << grouped(tonnes) << " t), "
                   << m_npcShipments.size() << " in flight, step " << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()
                   << " ms" << '\n';
+}
+
+// ---------------------------------------------------------------- construction (TRADE_DESIGN §6.2, step 16)
+namespace
+{
+const char* buildKindRu(const std::string& kind)
+{
+    return kind == "hall" ? "цех (зал)" : kind == "yard" ? "верфь-двор" : kind == "slab" ? "жилой корпус" : kind == "hab" ? "жилой модуль"
+         : kind == "tower" ? "башня" : kind == "dock" ? "причал" : "модуль";
+}
+} // namespace
+
+std::vector<EconomyServer::BuildOffer> EconomyServer::buildOffersAt(const std::string& hubId) const
+{
+    std::vector<BuildOffer> out;
+    const auto it = m_buildable.find(hubId);
+    if (it == m_buildable.end())
+        return out;
+    for (const auto& p : m_buildProjects)
+        if (p.offer.projectId == it->second.projectId && p.status != "abandoned")
+            return out;   // already contracted
+    static const char* const Firms[] = {"«Орбиталь-Строй»", "«Кольцо и Ферма»", "«Тяжмонтаж»", "«Хабитат-Сервис»", "«Звёздный подряд»", "«Стапель»"};
+    const int week = std::max(0, m_day) / 7;
+    const double kf = m_buildKindFactor.count(it->second.kind) ? m_buildKindFactor.at(it->second.kind) : 1.5;
+    for (int k = 0; k < 3; ++k)
+    {
+        const std::uint64_t h = hashOf(hubId + "#build" + std::to_string(k), static_cast<std::uint64_t>(week) + 0xb11dull);
+        BuildOffer o;
+        o.id = hubId + "#build" + std::to_string(k) + "@" + std::to_string(week);
+        o.hubId = hubId;
+        o.projectId = it->second.projectId;
+        o.kind = it->second.kind;
+        o.contractorRu = Firms[(hashOf(hubId + "#firms", static_cast<std::uint64_t>(week)) % 6 + 2 * static_cast<std::uint64_t>(k)) % 6];   // 3 different firms
+        o.priceCr = std::round(m_buildBaseCostCr * kf * (1.15 + 0.15 * unit(h ^ 1)) / 1000.0) * 1000.0;
+        o.workDays = std::max(1, static_cast<int>(std::lround(m_buildBaseDays * (0.9 + 0.5 * unit(h ^ 2)))));
+        o.reliability = 0.6 + 0.35 * unit(h ^ 3);
+        out.push_back(o);
+    }
+    return out;
+}
+
+double EconomyServer::buildProgress(const BuildProject& p, int day) const
+{
+    int worked = day - p.startDay;
+    for (const auto& [from, to] : p.halts)
+        if (day > from)
+            worked -= (to < 0 ? day : std::min(day, to)) - from;
+    return std::clamp(static_cast<double>(worked) / std::max(1, p.offer.workDays), 0.0, 1.0);
+}
+
+game::simulation::ClientTradeResult EconomyServer::signConstruction(std::uint64_t playerId, const std::string& offerId, const std::string& hubId,
+                                                                    int systemId, std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+        return refuse("no_account", "нет счёта");
+    const BuildOffer* o = nullptr;
+    const auto offers = buildOffersAt(hubId);
+    for (const auto& x : offers)
+        if (x.id == offerId)
+            o = &x;
+    if (!o)
+        return refuse("build_unknown", "предложение подрядчика уже не действует");
+    // the first milestone (s1, 15 %) at signing; the milestones sum to 95 %, the last 5 % (the retention) at the acceptance
+    const double payNow = std::round(o->priceCr * m_buildMilestones[0] * 100.0) / 100.0;
+    const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), payNow, Purpose::Other, m_day, false,
+                                "стройка: первая веха (" + std::string(buildKindRu(o->kind)) + ", " + o->contractorRu + ")");
+    if (!p.ok)
+        return refuse("no_money", "не хватает денег на первую веху: " + grouped(payNow) + " Cr");
+    BuildProject bp;
+    bp.offer = *o;
+    bp.owner = playerId;
+    bp.startDay = m_day;
+    bp.paidMilestones = 1;
+    bp.paidCr = payNow;
+    bp.retentionCr = 0.0;
+    m_buildProjects.push_back(bp);
+    ++m_buildRevision;
+    logEvent(*l, m_day, "договор подряда: " + std::string(buildKindRu(o->kind)) + " у " + hubDisplayName(hubId) + ", " + o->contractorRu + ", " +
+                            grouped(o->priceCr) + " Cr, " + std::to_string(o->workDays) + " сут");
+    r.ok = true;
+    r.code = "build_signed";
+    r.totalCr = -payNow;
+    r.message = "договор: " + std::string(buildKindRu(o->kind)) + " у " + hubDisplayName(hubId) + " за " + grouped(o->priceCr) + " Cr";
+    pushResult(playerId, r);
+    saveNow("construction signed");
+    std::cerr << "[Build] player " << playerId << " signs " << o->id << " (" << o->projectId << ", " << o->kind << ") " << o->priceCr << " Cr, "
+              << o->workDays << " days, r " << o->reliability << '\n';
+    return r;
+}
+
+void EconomyServer::stepConstruction(int day)
+{
+    for (auto& p : m_buildProjects)
+    {
+        ClientLedger* l = ledger(p.owner);
+        if (!l || p.status == "abandoned")
+            continue;
+        const std::string& hub = p.offer.hubId;
+        const auto* info = EconomyModel::instance().hub(hub);
+        const int system = info ? info->systemId : -1;
+        if (p.status == "done")
+        {
+            // the module is let to the hub operator: income, maintenance (taxable)
+            const double net = p.offer.priceCr * (m_buildIncomeYear - m_buildMaintYear) / 360.0;
+            receive(*l, m_banks, bankOf(hub, system), net, day, "доход модуля у " + hubDisplayName(hub));
+            if (TaxBook* t = taxBook(p.owner))
+                addRevenue(*t, net);
+            continue;
+        }
+        const double prog = buildProgress(p, day);
+        // the next milestone due by progress (s2 at 25 %, s3 at 50 %, s4 at 75 %)
+        const int due = std::min(4, 1 + static_cast<int>(prog * 4.0 + 1e-9));
+        bool funding = false;
+        while (p.paidMilestones < due && p.paidMilestones < static_cast<int>(m_buildMilestones.size()))
+        {
+            const double amount = std::round(p.offer.priceCr * m_buildMilestones[static_cast<std::size_t>(p.paidMilestones)] * 100.0) / 100.0;
+            const double payNow = amount;
+            const PaymentResult r = pay(*l, m_banks, bankOf(hub, system), payNow, Purpose::Other, day, false,
+                                        "стройка: веха s" + std::to_string(p.paidMilestones + 1));
+            if (!r.ok)
+            {
+                funding = true;
+                break;
+            }
+            p.paidCr += payNow;
+            ++p.paidMilestones;
+            ++m_buildRevision;
+            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + ": оплачена веха s" + std::to_string(p.paidMilestones) + " (" + grouped(payNow) + " Cr)");
+        }
+        const bool openHalt = !p.halts.empty() && p.halts.back().second < 0;
+        if (funding && !openHalt)
+        {
+            p.halts.push_back({day, -1});   // halted: funding
+            p.unpaidSince = day;
+            p.status = "halted";
+            ++m_buildRevision;
+            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + " остановлена: нет оплаты вехи");
+        }
+        else if (!funding && openHalt && p.unpaidSince >= 0)
+        {
+            p.halts.back().second = day;   // paid: the work resumes
+            p.unpaidSince = -1;
+            p.status = "building";
+            ++m_buildRevision;
+        }
+        if (p.unpaidSince >= 0 && day - p.unpaidSince >= m_buildAbandonDays)
+        {
+            p.status = "abandoned";
+            ++m_buildRevision;
+            logEvent(*l, day, "подрядчик ушёл со стройки у " + hubDisplayName(hub) + ": 180 сут без оплаты");
+            continue;
+        }
+        // a random halt (supply, accident, politics) x (1.5 - reliability), 1..5 days
+        if (p.status == "building" && unit(hashOf(p.offer.id, static_cast<std::uint64_t>(day))) < m_buildHaltPDay * (1.5 - p.offer.reliability))
+        {
+            const int len = 1 + static_cast<int>(unit(hashOf(p.offer.id, static_cast<std::uint64_t>(day) + 7)) * 5.0);
+            p.halts.push_back({day, day + len});
+            ++m_buildRevision;
+            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + ": простой " + std::to_string(len) + " сут (снабжение / авария)");
+        }
+        if (buildProgress(p, day) >= 1.0 && p.paidMilestones >= static_cast<int>(m_buildMilestones.size()))
+        {
+            p.status = "done";
+            ++m_buildRevision;
+            // the retention (price - the milestones) at the acceptance (minimal set: no 180-day guarantee period)
+            p.retentionCr = std::max(0.0, std::round((p.offer.priceCr - p.paidCr) * 100.0) / 100.0);
+            if (!p.retentionPaid && p.retentionCr > 0.0)
+            {
+                const PaymentResult r = pay(*l, m_banks, bankOf(hub, system), p.retentionCr, Purpose::Other, day, false, "стройка: удержание при приёмке");
+                p.retentionPaid = r.ok;
+                if (!r.ok)
+                    std::cerr << "[Build] " << p.offer.id << " retention " << p.retentionCr << " NOT paid: " << r.reason << '\n';
+                if (r.ok)
+                    p.paidCr += p.retentionCr;
+            }
+            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + " завершена: модуль сдан оператору хаба");
+            std::cerr << "[Build] " << p.offer.id << " DONE, paid " << p.paidCr << " Cr, retention " << p.retentionCr << (p.retentionPaid ? " paid" : " held") << '\n';
+        }
+    }
 }
 
 // ---------------------------------------------------------------- bot pilots (TRADE_DESIGN §6.4, step 15)
@@ -3006,6 +3209,26 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         for (const auto& c : m_pilotCategories)
             w.pilotCategories.push_back({c.ru, c.control, c.start, c.note});
     }
+    // construction (step 16)
+    for (const auto& o : buildOffersAt(hubId))
+        w.buildOffers.push_back({o.id, std::string(buildKindRu(o.kind)) + " (" + o.projectId + ")", o.contractorRu, o.priceCr, o.workDays, o.reliability});
+    for (const auto& p : m_buildProjects)
+        if (p.owner == playerId)
+        {
+            const double prog = buildProgress(p, m_day);
+            game::simulation::ClientBuildProject cp;
+            cp.id = p.offer.id;
+            cp.hubName = hubDisplayName(p.offer.hubId);
+            cp.projectRu = buildKindRu(p.offer.kind);
+            cp.contractorRu = p.offer.contractorRu;
+            cp.statusRu = p.status == "building" ? "строится" : p.status == "halted" ? "остановлена: нет оплаты" : p.status == "done" ? "сдан, приносит доход" : "брошена";
+            cp.progress = prog;
+            cp.stage = std::min(4, 1 + static_cast<int>(prog * 4.0));
+            cp.priceCr = p.offer.priceCr;
+            cp.paidCr = p.paidCr;
+            cp.incomeCrPerDay = p.status == "done" ? p.offer.priceCr * (m_buildIncomeYear - m_buildMaintYear) / 360.0 : 0.0;
+            w.buildProjects.push_back(cp);
+        }
     // bot pilots (step 15): this hub's agency and the owner's bots (reports already delivered)
     for (const auto& c : botCandidatesAt(hubId, systemId))
         w.botCandidates.push_back({c.id, c.name, c.skillShown, c.yearsShown, c.wageCr});
@@ -3279,9 +3502,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/12";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+    j["schema"] = "economy_state/13";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
                                        // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
-                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment; 11: SOS; 12: bots
+                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment; 11: SOS; 12: bots; 13: construction
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -3322,6 +3545,18 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
                                    {"cause", r.cause}});
+    j["build"] = json::array();
+    for (const auto& p : m_buildProjects)
+    {
+        json halts = json::array();
+        for (const auto& [a, b] : p.halts)
+            halts.push_back({a, b});
+        j["build"].push_back({{"id", p.offer.id}, {"hub", p.offer.hubId}, {"project", p.offer.projectId}, {"kind", p.offer.kind},
+                              {"contractor", p.offer.contractorRu}, {"price", p.offer.priceCr}, {"days", p.offer.workDays}, {"r", p.offer.reliability},
+                              {"owner", p.owner}, {"start", p.startDay}, {"paid_m", p.paidMilestones}, {"paid", p.paidCr},
+                              {"retention", p.retentionCr}, {"halts", halts}, {"unpaid", p.unpaidSince}, {"status", p.status},
+                              {"retention_paid", p.retentionPaid}});
+    }
     j["bots"] = json::array();
     for (const auto& b : m_bots)
     {
@@ -3509,7 +3744,8 @@ bool EconomyServer::restoreState(const std::string& text)
         schema != "economy_state/4" && schema != "economy_state/5" && schema != "economy_state/6" &&
         schema != "economy_state/7" && schema != "economy_state/8" &&
         schema != "economy_state/9" && schema != "economy_state/10" &&
-        schema != "economy_state/11" && schema != "economy_state/12")   // /1: no trade registries; /2: no contracts;
+        schema != "economy_state/11" && schema != "economy_state/12" &&
+        schema != "economy_state/13")   // /1: no trade registries; /2: no contracts;
                                                                        // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
@@ -3582,6 +3818,30 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_buildProjects) buildProjects;   // economy_state/13
+        for (const auto& x : j.value("build", json::array()))
+        {
+            BuildProject p;
+            p.offer.id = x.value("id", std::string());
+            p.offer.hubId = x.value("hub", std::string());
+            p.offer.projectId = x.value("project", std::string());
+            p.offer.kind = x.value("kind", std::string());
+            p.offer.contractorRu = x.value("contractor", std::string());
+            p.offer.priceCr = x.value("price", 0.0);
+            p.offer.workDays = x.value("days", 1);
+            p.offer.reliability = x.value("r", 0.8);
+            p.owner = x.value("owner", std::uint64_t{0});
+            p.startDay = x.value("start", 0);
+            p.paidMilestones = x.value("paid_m", 0);
+            p.paidCr = x.value("paid", 0.0);
+            p.retentionCr = x.value("retention", 0.0);
+            for (const auto& h : x.value("halts", json::array()))
+                p.halts.push_back({h.at(0).get<int>(), h.at(1).get<int>()});
+            p.unpaidSince = x.value("unpaid", -1);
+            p.status = x.value("status", std::string("building"));
+            p.retentionPaid = x.value("retention_paid", false);
+            buildProjects.push_back(std::move(p));
+        }
         decltype(m_bots) bots;   // economy_state/12
         for (const auto& x : j.value("bots", json::array()))
         {
@@ -3722,6 +3982,8 @@ bool EconomyServer::restoreState(const std::string& text)
         m_employment.swap(employment);
         m_sosState.swap(sosState);
         m_bots.swap(bots);
+        m_buildProjects.swap(buildProjects);
+        ++m_buildRevision;
         m_hiredCandidates.swap(hiredCandidates);
         m_activeSos.swap(activeSos);
         m_lossEvents.swap(lossEvents);

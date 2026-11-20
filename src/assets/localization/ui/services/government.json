@@ -575,6 +575,90 @@
       "zh-Hans": "已过期",
       "es": "caducada",
       "ja": "期限切れ"
+    },
+    "service.government.build": {
+      "en": "Construction",
+      "ru": "Стройка",
+      "zh-Hans": "建设",
+      "es": "Construcción",
+      "ja": "建設"
+    },
+    "service.government.build_mine": {
+      "en": "My construction contracts",
+      "ru": "Мои договоры подряда",
+      "zh-Hans": "我的施工合同",
+      "es": "Mis contratos de obra",
+      "ja": "私の工事契約"
+    },
+    "service.government.build_none": {
+      "en": "no contracts",
+      "ru": "договоров нет",
+      "zh-Hans": "无合同",
+      "es": "sin contratos",
+      "ja": "契約なし"
+    },
+    "service.government.build_stage": {
+      "en": "stage",
+      "ru": "стадия",
+      "zh-Hans": "阶段",
+      "es": "fase",
+      "ja": "段階"
+    },
+    "service.government.build_paid": {
+      "en": "paid",
+      "ru": "оплачено",
+      "zh-Hans": "已付",
+      "es": "pagado",
+      "ja": "支払済"
+    },
+    "service.government.build_day": {
+      "en": "day",
+      "ru": "сут",
+      "zh-Hans": "天",
+      "es": "día",
+      "ja": "日"
+    },
+    "service.government.build_offers": {
+      "en": "Contractors for this hub's planned module",
+      "ru": "Подрядчики на плановый модуль этого хаба",
+      "zh-Hans": "本枢纽规划模块的承包商",
+      "es": "Contratistas para el módulo previsto del hub",
+      "ja": "このハブの計画モジュールの請負業者"
+    },
+    "service.government.build_no_offers": {
+      "en": "no planned module here (or already contracted)",
+      "ru": "здесь нет планового модуля (или он уже в подряде)",
+      "zh-Hans": "此处无规划模块（或已签约）",
+      "es": "no hay módulo previsto aquí (o ya contratado)",
+      "ja": "計画モジュールなし（または契約済み）"
+    },
+    "service.government.build_days": {
+      "en": "days",
+      "ru": "сут",
+      "zh-Hans": "天",
+      "es": "días",
+      "ja": "日"
+    },
+    "service.government.build_reliability": {
+      "en": "reliability",
+      "ru": "надёжность",
+      "zh-Hans": "可靠性",
+      "es": "fiabilidad",
+      "ja": "信頼性"
+    },
+    "service.government.build_sign": {
+      "en": "SIGN",
+      "ru": "ПОДПИСАТЬ",
+      "zh-Hans": "签约",
+      "es": "FIRMAR",
+      "ja": "署名"
+    },
+    "service.government.build_dock_hint": {
+      "en": "a contract is signed at the berth of this hub",
+      "ru": "договор подписывается на причале этого хаба",
+      "zh-Hans": "需在本枢纽泊位签约",
+      "es": "el contrato se firma en el atracadero de este hub",
+      "ja": "契約はこのハブのバースで署名"
     }
   }
 }

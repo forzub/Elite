@@ -24,6 +24,18 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "construction": {
+  "note": "TRADE_DESIGN §6.2 (step 16, minimal set). The player's construction contract takes over a PLANNED expansion project of a city hub (the hub's own plan: geometry and the s1..s4 stage kits are drawn as they are; the mine hub meshes are never touched). 3 contractor offers per hub and week: price = base_cost_cr x kind factor x (1.15..1.30), work days = base_work_days x (0.9..1.4) (a game-time scale: the hubs' own projects take years), reliability 0.6..0.95. Milestones s1..s4 pay 15 / 30 / 30 / 20 % at 0 / 25 / 50 / 75 % progress, the last 5 % (the retention) at the acceptance; an unpaid milestone halts the work ('funding'), 180 days unpaid -> the contractor leaves (abandoned); random halts p = halt_p_day x (1.5 - r), 1..5 days. The finished module is let to the hub operator: income income_share_year x price a year, maintenance maintenance_share_year (daily, taxable). Not yet: asteroid sites, own production / depletion, staff, supply series paid by the owner, the customer's materials option.",
+  "base_cost_cr": 3050000,
+  "base_work_days": 30,
+  "kind_factor": {"hall": 1.5, "yard": 1.2, "slab": 2.0, "hab": 2.0, "tower": 3.0, "dock": 2.5},
+  "milestones": [0.15, 0.30, 0.30, 0.20],
+  "retention_share": 0.05,
+  "abandon_after_unpaid_days": 180,
+  "halt_p_day": 0.01,
+  "income_share_year": 0.20,
+  "maintenance_share_year": 0.02
+ },
  "bots": {
   "note": "TRADE_DESIGN §6.4 (step 15, minimal set). A hub's agency offers candidates per week (hidden traits 0..1 from a hash: skill, discipline, punctuality, thrift, honesty, nerve - a beta-like spread with a tail of idiots); the CV shows an estimate of the skill embellished by (1 - honesty). Hired onto an owned ship not flown by the player; the order 'trade loop' (this hub <-> the other market hub of the system with the best margin) runs abstractly once a day with the server's own deals on the owner's money: route error p = 0.02 + 0.25 (1 - skill)^2 -> +1..2 days; a late leg p = 0.5 (1 - punctuality) -> +1 day; theft p = 0.02 (1 - honesty)^2 per trip, 5-30 % of the cargo. The wage 4 000 x (0.6 + 0.8 skill) / 30 days is paid daily; 30 unpaid days -> the bot quits. Reports reach the owner a day later. The bot's ship stays where it was (it materializes near the player only - HUB_SECURITY §3). Not yet: other orders, panic, wilfulness, hijacking, fines to the owner, the Bayesian trait estimate.",
   "candidates_per_hub": 3,

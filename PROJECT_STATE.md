@@ -7534,3 +7534,27 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - (2026-11-20, later) Bot loop choice by the NET margin: a 20 t trip priced by explainDeal on both ends (handling, VAT
   minus what comes back, duty, turnover) plus two dockings; the Sol test loop moved from fertilizers (list 20 %) to
   household goods (net 17.6 %), trips over 10 days +5 907 Cr. EliteEconomyCheck 234/234.
+
+## TRADE step 16 part 1: construction contracts on a hub's planned module (2026-11-20) - SOURCE + TESTS + LIVE PASS
+- Design choice (subagent survey): a brand-new runtime hub would touch ~6 load-frozen subsystems (EconomyModel hubs,
+  markets, channels, routable set, spawn, persistence); the player's construction instead TAKES OVER a PLANNED expansion
+  project of a world hub (its own geometry + hubc_* s1..s4 kits, no meshes touched; mine hub meshes untouched).
+- HubExpansion: setHubExpansionProjectOverride(hub, project, start, workDays, halts) (runtime, mutex'd plan cache, a
+  generation counter invalidates the stage keys -> client re-assembly + server hit volumes as for the hubs' own days).
+- EconomyServer (economy_state/13): setBuildableProjects (server: per world hub the first planned hall/yard/slab/hab/
+  tower/dock project), buildOffersAt (3 firms a week: price = 3.05 M x kind factor x 1.15..1.30, 30 x 0.9..1.4 days,
+  reliability 0.6..0.95), signConstruction (s1 = 15 % at signing), stepConstruction (s2/s3/s4 30/30/20 % due at 25/50/75 %
+  progress; unpaid -> 'funding' halt, paid -> resumes; 180 days unpaid -> abandoned; random 1..5-day halts p = 1 %/day x
+  (1.5 - r); done: the 5 % retention paid at the acceptance, then the module is let to the hub operator: (20 % - 2 %)
+  of the price a year, daily, taxable). GameServer applies the economy-day halts to the plan's days (offset by today).
+- Protocol 44 (SignConstruction), snapshot 65 (wallet buildOffers / buildProjects), F5 КОСМОУСЛУГИ -> «Стройка» section,
+  DEV build:sign:<n> / build:report. trade_fees.json "construction".
+- Tests: EliteEconomyCheck 242/242 (testConstruction: offers, refusal without money, s1, a 'funding' halt at 25 %,
+  resume, done = the price exactly, income, save / restore). First run caught the double retention (the milestones
+  already sum to 95 %) - fixed.
+- LIVE (D:/tmp/build16/run.log): docked at Высокий after 290.6 s; 3 offers for earth_orbital_hub.x02 (жилой модуль,
+  7.4-7.8 M Cr); signed -> "drawing earth_orbital_hub.x02 ... start 324, 30 days -> ok", "[HubConstruction]
+  earth_orbital_hub: hit volumes of the new construction stages"; F5 shows the contract (s1, 0 %, paid 1 124 850 /
+  7 499 000, строится) - 02_signed.png.
+- Not yet (part 2/3): asteroid sites / concessions, own production with depletion, staff, supply series paid by the
+  owner, the customer's-materials option, replication of overrides to remote clients (same process only now).

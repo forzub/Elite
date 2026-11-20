@@ -190,6 +190,39 @@ public:
     [[nodiscard]] std::string legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
     [[nodiscard]] std::string licenceForGood(const std::string& goodId) const;   // "" = none lists it
     [[nodiscard]] bool hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const;
+    // ---- construction (TRADE_DESIGN §6.2, step 16): a contract on a PLANNED expansion project of a city hub
+    struct PlannedProject
+    {
+        std::string projectId, kind;
+    };
+    // the server passes the hubs' planned (not started) projects it can draw (HubExpansion), one per hub
+    void setBuildableProjects(std::map<std::string, PlannedProject> byHub) { m_buildable = std::move(byHub); }
+    [[nodiscard]] std::size_t buildableCount() const { return m_buildable.size(); }
+    struct BuildOffer
+    {
+        std::string id, hubId, projectId, kind, contractorRu;
+        double priceCr = 0.0, reliability = 0.0;
+        int workDays = 0;
+    };
+    struct BuildProject
+    {
+        BuildOffer offer;
+        std::uint64_t owner = 0;
+        int startDay = 0;
+        int paidMilestones = 0;      // 0..4
+        double paidCr = 0.0;
+        double retentionCr = 0.0;
+        std::vector<std::pair<int, int>> halts;   // economy days [from, to); to < 0 = open
+        int unpaidSince = -1;
+        std::string status = "building";   // building / halted / done / abandoned
+        bool retentionPaid = false;
+    };
+    [[nodiscard]] std::vector<BuildOffer> buildOffersAt(const std::string& hubId) const;
+    game::simulation::ClientTradeResult signConstruction(std::uint64_t playerId, const std::string& offerId, const std::string& hubId, int systemId,
+                                                         std::uint32_t requestId);
+    [[nodiscard]] const std::vector<BuildProject>& buildProjects() const { return m_buildProjects; }
+    [[nodiscard]] double buildProgress(const BuildProject& p, int day) const;
+    [[nodiscard]] std::uint64_t buildRevision() const { return m_buildRevision; }
     // ---- bot pilots (TRADE_DESIGN §6.4, step 15): hired onto an owned ship, a trade loop run abstractly once a day
     struct BotTraits
     {
@@ -478,6 +511,14 @@ private:
     std::unordered_map<std::uint64_t, std::string> m_activeSos;               // player -> call id
     std::set<std::string> m_routableHubs;   // the world hubs a route can reach (set by the server; empty = all)
     std::vector<Bot> m_bots;
+    std::map<std::string, PlannedProject> m_buildable;
+    std::vector<BuildProject> m_buildProjects;
+    std::uint64_t m_buildRevision = 0;
+    double m_buildBaseCostCr = 3050000.0, m_buildRetention = 0.05, m_buildHaltPDay = 0.01, m_buildIncomeYear = 0.20, m_buildMaintYear = 0.02;
+    int m_buildBaseDays = 30, m_buildAbandonDays = 180;
+    std::vector<double> m_buildMilestones {0.15, 0.30, 0.30, 0.20};
+    std::map<std::string, double> m_buildKindFactor;
+    void stepConstruction(int day);
     std::set<std::string> m_hiredCandidates;
     int m_botCandidatesPerHub = 3, m_botLegDays = 1, m_botReportDelayDays = 1;
     double m_botBaseWageCr = 4000.0;

@@ -35,6 +35,7 @@ enum class ServicePanelActionType
     GovernmentHire,          // F5 employment service: text = vacancy id
     GovernmentQuit,          // F5 employment service: quit the job
     GovernmentTakeSos,       // F5 МЧС (step 12): text = SOS call id
+    GovernmentSignBuild,     // F5 стройка (step 16): text = contractor offer id
     TradeSelectHub,          // text = hub id
     TradeShowOnMap,          // text = hub id
     // F5 state app -> navigation data (moved from F8, TRADE_DESIGN §11a)

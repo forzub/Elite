@@ -1554,7 +1554,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/12" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/13" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1669,7 +1669,7 @@ void testIncomeTax()
     EconomyServer t;
     t.load();
     t.start(1095);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
               near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
@@ -1834,7 +1834,7 @@ void testSmuggling()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
               nlohmann::json::parse(saved)["seizures"].size() == 1,
           "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
 }
@@ -1964,7 +1964,7 @@ void testLicences()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
               t.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "licensed",
           "economy_state/8: the licence survives save / restore byte-exact");
     for (int day = 1001; day <= 1360; ++day)
@@ -2017,7 +2017,7 @@ void testInsurance()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" &&
               nlohmann::json::parse(saved)["cargo_policies"].size() == 1,
           "economy_state/9: the policy survives save / restore byte-exact");
 }
@@ -2134,8 +2134,8 @@ void testBots()
     EconomyServer t;
     t.load();
     t.start(1010);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/12" && t.bots().size() == 1,
-          "economy_state/12: the bot survives save / restore byte-exact");
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/13" && t.bots().size() == 1,
+          "economy_state/13: the bot survives save / restore byte-exact");
     // unpaid: a trading bot pays its own wage from its sales; an idle one with a broke owner leaves after 30 days
     s.fireBot(1, botId);
     const auto c2list = s.botCandidatesAt("earth_orbital_hub", 0);
@@ -2149,6 +2149,58 @@ void testBots()
     std::printf("INFO  idle bot: state %s, unpaid %d, free money %.0f, debt %.0f\n", s.bots()[1].state.c_str(), s.bots()[1].unpaidDays,
                 freeMoneyCr(*s.ledger(1), s.banks()), totalDebtCr(*s.ledger(1), s.banks()));
     check(s.bots()[0].state == "quit" && s.bots()[1].state == "quit", "fired: gone; 30 days without the wage: the idle bot left too");
+}
+
+void testConstruction()
+{
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  construction (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    s.setBuildableProjects({{"earth_orbital_hub", {"test.project.x05", "hall"}}});
+    const auto offers = s.buildOffersAt("earth_orbital_hub");
+    check(offers.size() == 3 && offers[0].priceCr >= 3050000.0 * 1.5 * 1.15 - 1.0 && offers[0].workDays >= 27 && offers[0].reliability >= 0.6,
+          "3 contractor offers (" + offers[0].contractorRu + ": " + std::to_string(offers[0].priceCr) + " Cr, " + std::to_string(offers[0].workDays) + " days)");
+    check(!s.signConstruction(1, offers[0].id, "earth_orbital_hub", 0, 1).ok, "no money for the first milestone: refused");
+    s.credit(1, "earth_orbital_hub", 0, offers[0].priceCr * 0.15, "test");
+    const auto signedR = s.signConstruction(1, offers[0].id, "earth_orbital_hub", 0, 2);
+    check(signedR.ok && s.buildProjects().size() == 1 && s.buildOffersAt("earth_orbital_hub").empty(),
+          "signed: s1 paid (" + std::to_string(-signedR.totalCr) + " Cr), the project taken off the offers");
+    // broke: the s2 milestone at 25 % halts the work
+    const int days = s.buildProjects()[0].offer.workDays;
+    for (int day = 1001; day <= 1000 + days / 4 + 3; ++day)
+    {
+        (void)s.devSpendAll(1, "earth_orbital_hub", 0);
+        s.advanceTo(day);
+    }
+    const auto& p = s.buildProjects()[0];
+    check(p.status == "halted" && p.paidMilestones == 1 && s.buildProgress(p, s.day()) < 0.30,
+          "s2 unpaid: halted at " + std::to_string(s.buildProgress(p, s.day())) + " (status " + p.status + ")");
+    // money: the work resumes and runs to the end
+    s.credit(1, "earth_orbital_hub", 0, offers[0].priceCr, "test");
+    int day = s.day();
+    while (s.buildProjects()[0].status != "done" && day < s.day() + 400)
+        s.advanceTo(++day);
+    const auto& d = s.buildProjects()[0];
+    check(d.status == "done" && d.paidMilestones == 4 && d.retentionPaid && std::abs(d.paidCr - d.offer.priceCr) < 1.0,
+          "done on day " + std::to_string(day) + ": 4 milestones + the retention = the price (" + std::to_string(d.paidCr) + ")");
+    const double w0 = netWorthCr(*s.ledger(1), s.banks());
+    for (int k = 1; k <= 30; ++k)
+        s.advanceTo(day + k);
+    const double gain = netWorthCr(*s.ledger(1), s.banks()) - w0;
+    std::printf("INFO  construction: the module's net income over 30 days %.0f Cr\n", gain);
+    check(gain > 0.0, "the finished module pays its owner");
+    const auto w = s.walletSnapshot(1, "earth_orbital_hub", 0);
+    check(w.buildProjects.size() == 1 && w.buildProjects[0].incomeCrPerDay > 0.0, "the wallet lists the project: " + w.buildProjects[0].statusRu);
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(s.day());
+    check(t.restoreState(saved) && t.saveState() == saved && t.buildProjects().size() == 1, "economy_state/13: the project survives save / restore");
 }
 
 int main()
@@ -2177,6 +2229,7 @@ int main()
     testInsurance();
     testArrest();
     testBots();
+    testConstruction();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

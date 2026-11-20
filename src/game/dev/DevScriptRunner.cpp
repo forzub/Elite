@@ -1013,6 +1013,23 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         for (const auto& c : w.sos)
             std::cerr << "[Rescue]   " << c.id << " " << c.kindRu << " at " << c.hubId << " +" << c.rewardCr << " " << c.status << std::endl;
     }
+    // step 16: "build:sign:<n>" (the n-th contractor offer here), "build:report"
+    else if (cmd.rfind("build:", 0) == 0)
+    {
+        const auto& w = s.m_client->sessionSnapshot().wallet;
+        if (cmd.rfind("build:sign:", 0) == 0)
+        {
+            const std::size_t n = static_cast<std::size_t>(std::max(0, std::atoi(cmd.c_str() + 11)));
+            if (n < w.buildOffers.size())
+                s.sendEconomyCommand(game::network::ClientEconomyCommand::SignConstruction, w.buildOffers[n].id, 0.0);
+        }
+        std::cerr << "[Build] DEV " << cmd << ": " << w.buildOffers.size() << " offer(s), " << w.buildProjects.size() << " project(s)" << std::endl;
+        for (const auto& o : w.buildOffers)
+            std::cerr << "[Build]   offer " << o.id << " " << o.projectRu << " " << o.contractorRu << " " << o.priceCr << " Cr " << o.workDays << " d" << std::endl;
+        for (const auto& p : w.buildProjects)
+            std::cerr << "[Build]   project " << p.id << " " << p.projectRu << " s" << p.stage << " " << p.progress << " paid " << p.paidCr << " / "
+                      << p.priceCr << " " << p.statusRu << std::endl;
+    }
     // step 15: "bot:hire:<n>" (the n-th candidate onto the first owned ship not flown), "bot:loop:<n>", "bot:fire:<n>" (the n-th bot)
     else if (cmd.rfind("bot:", 0) == 0)
     {

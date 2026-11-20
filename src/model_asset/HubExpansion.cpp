@@ -135,15 +135,50 @@ bool propsShown(ConstructionStatus s)
 }
 } // namespace
 
+namespace
+{
+std::mutex& planMutex()
+{
+    static std::mutex m;
+    return m;
+}
+std::unordered_map<std::string, std::unique_ptr<HubExpansionPlan>>& planCache()
+{
+    static std::unordered_map<std::string, std::unique_ptr<HubExpansionPlan>> cache;
+    return cache;
+}
+std::atomic<std::uint64_t> g_overrideGeneration {0};   // bumps on a runtime override: the stage keys are recomputed
+} // namespace
+
 const HubExpansionPlan* hubExpansionPlan(const std::string& hubId)
 {
-    static std::mutex mutex;
-    static std::unordered_map<std::string, std::unique_ptr<HubExpansionPlan>> cache;
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::mutex> lock(planMutex());
+    auto& cache = planCache();
     const auto [it, inserted] = cache.try_emplace(hubId);
     if (inserted)
         it->second = loadPlan(hubId);
     return it->second.get();
+}
+
+bool setHubExpansionProjectOverride(const std::string& hubId, const std::string& projectId, int startDay, int workDays,
+                                    const std::vector<ExpansionProject::Halt>& halts)
+{
+    (void)hubExpansionPlan(hubId);   // loaded
+    std::lock_guard<std::mutex> lock(planMutex());
+    auto& cache = planCache();
+    const auto it = cache.find(hubId);
+    if (it == cache.end() || !it->second)
+        return false;
+    for (auto& p : it->second->projects)
+        if (p.id == projectId)
+        {
+            p.startDay = startDay;
+            p.workDays = std::max(1, workDays);
+            p.halts = halts;
+            ++g_overrideGeneration;
+            return true;
+        }
+    return false;
 }
 
 int hubExpansionDay(const HubExpansionPlan& plan, double universeSeconds)
@@ -211,8 +246,14 @@ std::uint64_t hubExpansionStageKey(const std::string& hubId)
     const int day = hubExpansionDay(*plan, hubExpansionUniverseTime());
     static std::mutex mutex;
     static std::unordered_map<std::string, std::pair<int, std::uint64_t>> cache;
+    static std::uint64_t seenGeneration = 0;
     {
         std::lock_guard<std::mutex> lock(mutex);
+        if (seenGeneration != g_overrideGeneration.load())
+        {
+            cache.clear();   // a runtime override changed some project: recompute every key
+            seenGeneration = g_overrideGeneration.load();
+        }
         const auto it = cache.find(hubId);
         if (it != cache.end() && it->second.first == day)
             return it->second.second;

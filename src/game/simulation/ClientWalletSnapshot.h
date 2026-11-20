@@ -101,6 +101,31 @@ struct ClientBot
     std::vector<std::string> reports;   // newest last (already delivered)
 };
 
+// construction (step 16): an offer at this hub and the player's projects
+struct ClientBuildOffer
+{
+    std::string id;
+    std::string projectRu;
+    std::string contractorRu;
+    double priceCr = 0.0;
+    int workDays = 0;
+    double reliability = 0.0;
+};
+
+struct ClientBuildProject
+{
+    std::string id;
+    std::string hubName;
+    std::string projectRu;
+    std::string contractorRu;
+    std::string statusRu;
+    double progress = 0.0;
+    int stage = 0;               // 1..4
+    double priceCr = 0.0;
+    double paidCr = 0.0;
+    double incomeCrPerDay = 0.0;
+};
+
 struct ClientWalletSnapshot
 {
     bool valid = false;
@@ -167,6 +192,9 @@ struct ClientWalletSnapshot
     // bot pilots (step 15)
     std::vector<ClientBotCandidate> botCandidates;
     std::vector<ClientBot> bots;
+    // construction (step 16)
+    std::vector<ClientBuildOffer> buildOffers;
+    std::vector<ClientBuildProject> buildProjects;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

@@ -434,6 +434,7 @@ public:
     // saved next to the economy state ("<economy state>.ships.json") on a change and every minute, restored once the
     // world's hubs exist
     std::set<std::uint64_t> m_runtimeShips;      // instance ids
+    std::uint64_t m_appliedBuildRevision = ~std::uint64_t{0};   // step 16: the drawn construction overrides
     bool m_shipsDirty = false;
     bool m_shipsRestored = false;
     std::uint64_t m_shipsSavedTick = 0;

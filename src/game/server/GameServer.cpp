@@ -1,4 +1,5 @@
 #include <atomic>
+#include "src/model_asset/HubExpansion.h"
 #include <cstdio>
 #include <chrono>
 #include <thread>
@@ -1734,6 +1735,46 @@ void GameServer::update(double dt)
         for (const auto& hub : m_lastSnapshot.hubs)
             hubs.insert(hub.id);
         m_economy.setRoutableHubs(std::move(hubs));
+        // step 16: per world hub with an expansion plan, its first PLANNED project with a 4-stage kit (the contract target)
+        std::map<std::string, game::economy::EconomyServer::PlannedProject> buildable;
+        for (const auto& hub : m_lastSnapshot.hubs)
+            if (const auto* plan = elite::model_asset::hubExpansionPlan(hub.id))
+            {
+                const int today = elite::model_asset::hubExpansionDay(*plan, m_universeClock.timeSeconds());
+                std::string id, kind;
+                int start = 1 << 30;
+                for (const auto& p : plan->projects)
+                    if (p.startDay > today && p.startDay < start &&
+                        (p.kind == "hall" || p.kind == "yard" || p.kind == "slab" || p.kind == "hab" || p.kind == "tower" || p.kind == "dock"))
+                    {
+                        start = p.startDay;
+                        id = p.id;
+                        kind = p.kind;
+                    }
+                if (!id.empty())
+                    buildable[hub.id] = {id, kind};
+            }
+        m_economy.setBuildableProjects(std::move(buildable));
+    }
+    // step 16: the player's contracts drawn as the hubs' own projects (start / work days / halts in the plan's days)
+    if (m_economy.loaded() && m_economy.buildRevision() != m_appliedBuildRevision)
+    {
+        m_appliedBuildRevision = m_economy.buildRevision();
+        for (const auto& p : m_economy.buildProjects())
+            if (const auto* plan = elite::model_asset::hubExpansionPlan(p.offer.hubId))
+            {
+                const int planToday = elite::model_asset::hubExpansionDay(*plan, m_universeClock.timeSeconds());
+                const int offset = planToday - m_economy.day();   // economy day -> the plan's day
+                std::vector<elite::model_asset::ExpansionProject::Halt> halts;
+                for (const auto& [from, to] : p.halts)
+                    halts.push_back({from + offset, to < 0 ? -1 : to + offset});
+                if (p.status == "abandoned" && (halts.empty() || halts.back().to >= 0))
+                    halts.push_back({planToday, -1});
+                const bool ok = elite::model_asset::setHubExpansionProjectOverride(p.offer.hubId, p.offer.projectId, p.startDay + offset,
+                                                                             p.offer.workDays, halts);
+                std::cerr << "[Build] drawing " << p.offer.projectId << " at " << p.offer.hubId << ": start " << (p.startDay + offset) << ", "
+                          << p.offer.workDays << " days, " << halts.size() << " halt(s) -> " << (ok ? "ok" : "NO PLAN") << std::endl;
+            }
     }
     if (m_economy.loaded() && m_serverTick % 30 == 0)
         for (const EntityId pid : m_simulation.playerControlledShipIds())
@@ -3021,6 +3062,12 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
             return;
         std::cerr << "[Trade] DEV spend all: player " << player << " paid " << m_economy.devSpendAll(player, motion.hubId, motion.systemId)
                   << " Cr" << std::endl;
+        return;
+    }
+    if (command.op == Op::SignConstruction)   // step 16: at the hub the ship is at (docked or in its frame)
+    {
+        const std::string hub = !motion.hubId.empty() ? motion.hubId : std::string();
+        (void)m_economy.signConstruction(player, command.goodId, hub, motion.systemId, command.requestId);
         return;
     }
     if (command.op == Op::HireBot || command.op == Op::OrderBotLoop || command.op == Op::FireBot)   // step 15

@@ -66,6 +66,12 @@ struct HubExpansionPlan
 // the plan of `hubId` (cached per process; nullptr: none)
 const HubExpansionPlan* hubExpansionPlan(const std::string& hubId);
 
+// TRADE step 16 (2026-11-20): a player's construction contract takes over a PLANNED project of a hub - its start, work
+// days and halts are replaced at runtime (the project's own geometry / stage kits are drawn as before, no new meshes);
+// the stage keys are recomputed at once. false = no such hub plan / project. Same process only (no replication yet).
+bool setHubExpansionProjectOverride(const std::string& hubId, const std::string& projectId, int startDay, int workDays,
+                                    const std::vector<ExpansionProject::Halt>& halts);
+
 // the game day of a universe time (day 0 = 3126-01-01)
 int hubExpansionDay(const HubExpansionPlan& plan, double universeSeconds);
 

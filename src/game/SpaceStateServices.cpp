@@ -392,7 +392,9 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
 
     if (service == ui::services::ServiceUiId::Trade)
     {
-        if (action->type >= ServicePanelActionType::TradeContractSelect && action->type <= ServicePanelActionType::TradeContractCancel)
+        if (action->type == ServicePanelActionType::CargoBlackSell)   // all of it aboard to the black market (step 9)
+            sendEconomyCommand(game::network::ClientEconomyCommand::SellBlack, action->text, 0.0);
+        else if (action->type >= ServicePanelActionType::TradeContractSelect && action->type <= ServicePanelActionType::TradeContractCancel)
             applyTradeContractAction(*action);
         else if (action->type >= ServicePanelActionType::TradeSelectGood)
             applyTradeDealAction(*action);

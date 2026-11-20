@@ -220,7 +220,10 @@ PortFeeResult chargeDockingFee(std::uint32_t shipEntityId, const std::string& hu
 {
     return portFee(shipEntityId, hubId, [&](EconomyServer& e, std::uint64_t player, const std::string& hub, int sys) {
         e.openPortCall(shipKeyOf(shipEntityId), callId, hub, dockModuleId, player);   // saved: survives a restart
-        return e.chargeDocking(player, callId, hub, sys, dryMassT);
+        const auto c = e.chargeDocking(player, callId, hub, sys, dryMassT);
+        if (c.booked && !c.duplicate)   // the customs inspection: once per port call (TRADE_DESIGN §2.8, step 9)
+            (void)e.customsInspection(player, shipKeyOf(shipEntityId), callId, hub, sys);
+        return c;
     });
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -25,6 +26,8 @@ struct TradeGood
     std::string groupRu;
     double baseCrPerTonne = 0.0;
     double densityTM3 = 0.0;   // t / m3 (a C20 holds 23.3 m3: light goods fill it by volume)
+    // regime family (open / strict / faith / military) -> "legal" | "restricted" | "banned" (TRADE_DESIGN §2.8)
+    std::map<std::string, std::string> legality;
 };
 
 struct HubEconomyInfo
@@ -102,6 +105,10 @@ public:
 
     [[nodiscard]] bool loaded() const { return m_loaded; }
     [[nodiscard]] const std::vector<TradeGood>& goods() const { return m_goods; }
+    // the regime family of a government regime (trade_goods.json regime_family; unknown / no state -> "open")
+    [[nodiscard]] std::string regimeFamily(const std::string& regime) const;
+    // "legal" | "restricted" | "banned" of a good in a regime family (unknown -> "legal")
+    [[nodiscard]] std::string legalityOf(int good, const std::string& family) const;
     [[nodiscard]] const std::vector<HubEconomyInfo>& hubs() const { return m_hubs; }
     [[nodiscard]] const HubEconomyInfo* hub(const std::string& id) const;
     [[nodiscard]] std::vector<const HubEconomyInfo*> hubsOfSystem(int systemId) const;
@@ -144,6 +151,7 @@ private:
 
     bool m_loaded = false;
     std::vector<TradeGood> m_goods;
+    std::map<std::string, std::string> m_regimeFamily;
     std::vector<HubEconomyInfo> m_hubs;
     std::unordered_map<std::string, std::size_t> m_hubIndex;
     std::unordered_map<std::string, HubMarketBase> m_markets;

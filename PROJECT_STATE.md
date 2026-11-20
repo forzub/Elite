@@ -7259,3 +7259,23 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - LIVE (earth_orbital_hub docked, D:/tmp/regime8/01_f8_market_sol.png): the basket rows carry «цена в коридоре», food at
   -10 % (was -11 % before the side clamp), other groups free.
 - Deferred (§9g): the pre-election ceiling, the black market / shadow orders and closed borders (step 9), requisition.
+
+## TRADE MVP step 9: contraband - customs at docking, seizure + fine, the black market (docs/TRADE_DESIGN.md §2.8, §9h) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): legality by the hub polity's regime family (EconomyModel loads trade_goods legality +
+  regime_family; Sol = strict). Default (author may revise): until licences (step 11) only "banned" is contraband;
+  "restricted" trades openly with a note. The open market refuses banned goods. Customs at docking (EconomyService,
+  once per port call after the docking fee): p = customs inspect_p by channel (home bank vs hub bank) x 1.5 strict x 1.5
+  planned, deterministic roll; inspection fee 600 Cr; found (hidden in legal cargo 0.7, attention +25 %/seizure by that
+  polity in a year, <= x2) -> seized, fine 2 x value via payFine (never refused), a contract carrying it fails;
+  seizures persisted (economy_state/7). Black market: F8 ГРУЗ button on a banned lot / trade:black:<good>: shadow price
+  x 2.5, no VAT / handling, <= 50 t/day/hub, not in the tax book. Protocol 35 (SellBlack, DevCustoms), snapshot schema
+  57 (cargo legalityHere / blackBidCrPerT). Rules: trade_fees.json "smuggling".
+- Checks: EliteEconomyCheck 180/180 (testSmuggling); architecture / wire / replication / localization / service panel
+  contracts PASS.
+- LIVE (D:/tmp/smuggle9/run.log, 01..04_*.png): DEV 2 t narcotics + 10 t grain, econ:customs:1, docked at Высокий ->
+  "[Smuggling] SEIZED 2 t worth 162 000 Cr, fine 324 000 Cr" (grain kept; F8 ФИНАНСЫ: досмотр -600, штраф в долг
+  324 000); then 3 t narcotics -> ГРУЗ shows «ЗАПРЕЩЕНО ЗДЕСЬ» + «ЧЁРНЫЙ РЫНОК +607 500 Cr» -> "BLACK SALE 3 t x 202 500".
+- Balance note (to tune): narcotics 81 000 Cr/t makes one seizure a -300k debt and one black sale +600k - the balance
+  list (prices) covers it.
+- Deferred (§9h): patrols in space, bribes, reputation, hidden compartments, re-stamping, closed borders, the planned
+  economies' black market, contraband contracts.

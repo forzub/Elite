@@ -1095,7 +1095,9 @@ ELITE_WIRE_SCHEMA(
     v.loadedDay,
     v.owner,
     v.contractId,
-    v.dutyShare
+    v.dutyShare,
+    v.legalityHere,
+    v.blackBidCrPerT
 );
 
 ELITE_WIRE_SCHEMA(

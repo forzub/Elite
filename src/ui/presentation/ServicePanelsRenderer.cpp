@@ -1,6 +1,7 @@
 #include "src/ui/presentation/ServicePanelsRenderer.h"
 
 #include <algorithm>
+#include <functional>
 #include <cmath>
 #include <cstdio>
 
@@ -681,7 +682,8 @@ void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot
 // F8 -> ГРУЗ: the server's manifest of the ship (docs/TRADE_DESIGN.md §8.3, read-only in step 1), the hull figures and
 // the latest trade results
 void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s, const game::simulation::ClientWalletSnapshot& f,
-                 float listX, float listY, float listW, float listH, float w, float h, int px, int small, int big)
+                 float listX, float listY, float listW, float listH, float w, float h, int px, int small, int big,
+                 const std::function<void(float, float, float, float, const std::string&)>& addBlackButton)
 {
     t.solidRectPx(listX, listY, listW, listH, Panel);
     if (!s.valid)
@@ -715,6 +717,26 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
                                    grouped(c.costBasisCrPerT) + " Cr/т";
         t.textDrawPx(detail, x + 10, y, small, Muted);
         y += static_cast<float>(small) + 8.0f;
+        // TRADE step 9: contraband here - the black market; restricted - open until licences (step 11)
+        if (c.legalityHere == "banned" && c.contractId.empty())
+        {
+            t.textDrawPx("ЗАПРЕЩЕНО ЗДЕСЬ: таможня изымет, штраф 2 x стоимость", x + 10, y, small, Bad);
+            if (c.blackBidCrPerT > 0.0 && c.good >= 0)
+            {
+                const std::string label = "ЧЁРНЫЙ РЫНОК  +" + grouped(c.tonnes * c.blackBidCrPerT) + " Cr";
+                const float bw = t.measureTextPx(label, small) + 20.0f, bh = small * 1.7f;
+                const float bx = right - bw;
+                t.solidRectPx(bx, y - small * 0.3f, bw, bh, Selected);
+                t.textDrawPx(label, bx + 10, y, small, Warn);
+                addBlackButton(bx, y - small * 0.3f, bx + bw, y - small * 0.3f + bh, goods[static_cast<std::size_t>(c.good)].id);
+            }
+            y += static_cast<float>(small) * 1.8f + 6.0f;
+        }
+        else if (c.legalityHere == "restricted")
+        {
+            t.textDrawPx("ограничен здесь: понадобится лицензия (пока торгуется открыто)", x + 10, y, small, Warn);
+            y += static_cast<float>(small) + 6.0f;
+        }
     }
     if (!s.results.empty())
     {
@@ -899,7 +921,10 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     }
     if (page.tab == 5)
     {
-        renderCargo(t, page.trade, page.finance, listX, listY, listW, listH, w, h, px, small, big);
+        renderCargo(t, page.trade, page.finance, listX, listY, listW, listH, w, h, px, small, big,
+                    [this](float x0, float y0, float x1, float y1, const std::string& good) {
+                        m_hits.push_back({x0, y0, x1, y1, 0, {ServicePanelActionType::CargoBlackSell, good}});
+                    });
         t.endFrame();
         return;
     }

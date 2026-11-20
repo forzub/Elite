@@ -20,7 +20,9 @@ struct ClientEconomyCommand
         AbandonContract = 5, // contractId: at its origin hub before the deadline = cancel (fee); elsewhere = failure
         DevEconomyDays = 6,  // DEV: the economy clock runs `quantity` days ahead (the board's days without waiting)
         DevSpendAll = 7,     // DEV: the player spends all spendable money here (cash + the overdraft to its limit)
-        Last = DevSpendAll
+        SellBlack = 8,       // goodId, quantity t: to the black market of the hub (contraband here: banned / restricted; step 9)
+        DevCustoms = 9,      // DEV: the customs inspection probability forced to `quantity` (< 0 = the rules again)
+        Last = DevCustoms
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

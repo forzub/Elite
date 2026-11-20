@@ -142,9 +142,18 @@ void EconomyModel::load()
         t.groupRu = groupRu[t.group];
         t.baseCrPerTonne = num(g, "base_cr_t");
         t.densityTM3 = num(g, "density_t_m3", 0.0);
+        if (const auto it = g.find("legality"); it != g.end() && it->is_object())
+            for (const auto& [family, status] : it->items())
+                if (status.is_string())
+                    t.legality[family] = status.get<std::string>();
         goodIndex[t.id] = m_goods.size();
         m_goods.push_back(std::move(t));
     }
+
+    if (const auto it = goods.find("regime_family"); it != goods.end() && it->is_object())
+        for (const auto& [regime, family] : it->items())
+            if (family.is_string())
+                m_regimeFamily[regime] = family.get<std::string>();
 
     std::unordered_map<std::string, std::string> moduleRu;
     if (hubs.contains("module_types") && hubs["module_types"].is_object())
@@ -281,6 +290,21 @@ void EconomyModel::load()
     m_loaded = !m_goods.empty() && !m_hubs.empty();
     std::cerr << "[Economy] " << m_goods.size() << " goods, " << m_hubs.size() << " hubs, " << m_markets.size()
               << " markets, " << m_eventTypes.size() << " event types" << '\n';
+}
+
+std::string EconomyModel::regimeFamily(const std::string& regime) const
+{
+    const auto it = m_regimeFamily.find(regime);
+    return it == m_regimeFamily.end() ? std::string("open") : it->second;
+}
+
+std::string EconomyModel::legalityOf(int good, const std::string& family) const
+{
+    if (good < 0 || good >= static_cast<int>(m_goods.size()))
+        return "legal";
+    const auto& l = m_goods[static_cast<std::size_t>(good)].legality;
+    const auto it = l.find(family);
+    return it == l.end() ? std::string("legal") : it->second;
 }
 
 const HubEconomyInfo* EconomyModel::hub(const std::string& id) const

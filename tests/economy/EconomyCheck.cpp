@@ -1507,7 +1507,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/6" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/7" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1622,7 +1622,7 @@ void testIncomeTax()
     EconomyServer t;
     t.load();
     t.start(1095);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/6" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/7" &&
               near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
@@ -1705,6 +1705,93 @@ void testMarketRegimes()
     check(someBasket && inCorridor, "Sol (corridor): after a year every basket price is within anchor x [0.9, 1.15]");
 }
 
+// TRADE step 9 (TRADE_DESIGN §2.8): contraband - legality by the hub's regime family, the customs at docking, the
+// seizure + 2 x fine, the black market
+void testSmuggling()
+{
+    const auto& model = EconomyModel::instance();
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  smuggling (economy data not found from this working directory)\n");
+        return;
+    }
+    const auto gi = [&](const char* id) {
+        for (std::size_t k = 0; k < model.goods().size(); ++k)
+            if (model.goods()[k].id == id)
+                return static_cast<int>(k);
+        return -1;
+    };
+    check(model.legalityOf(gi("narcotics"), "strict") == "banned" && model.legalityOf(gi("narcotics"), "open") == "restricted" &&
+              model.legalityOf(gi("lotosite"), "open") == "banned" && model.legalityOf(gi("food_staples"), "faith") == "legal" &&
+              model.regimeFamily("sol_authority") == "strict" && model.regimeFamily("unknown_regime") == "open",
+          "legality by regime family (trade_goods.json): narcotics banned in strict, restricted in open; lotosite banned everywhere");
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    check(s.legalityAt(gi("narcotics"), "earth_orbital_hub", 0) == "banned" && s.legalityAt(gi("jump_charge"), "earth_orbital_hub", 0) == "restricted",
+          "Sol (strict): narcotics are contraband, J charge restricted (open until licences)");
+    const CargoCapacity cobrett{120.0, 6};
+    EconomyServer::TradeOrder o;
+    o.playerId = 1;
+    o.shipKey = 701;
+    o.hubId = "earth_orbital_hub";
+    o.systemId = 0;
+    o.goodId = "narcotics";
+    o.tonnes = 1.0;
+    o.capacity = cobrett;
+    o.requestId = 1;
+    check(s.trade(o).code == "contraband", "the open market refuses contraband (a buy)");
+    check(s.devAddCargo(1, 701, "narcotics", 2.0, cobrett, "earth_orbital_hub").empty() &&
+              s.devAddCargo(1, 701, "food_staples", 10.0, cobrett, "earth_orbital_hub").empty(), "DEV: 2 t narcotics + 10 t grain aboard");
+    o.buy = false;
+    check(s.trade(o).code == "contraband", "the open market refuses contraband (a sale)");
+
+    s.setDevCustomsProbability(0.0);
+    const auto none = s.customsInspection(1, 701, "call-a", "earth_orbital_hub", 0);
+    check(!none.inspected && s.cargo().find(701)->ownTonnesOf("narcotics") == 2.0, "p = 0: no inspection, the cargo stays");
+    s.setDevCustomsProbability(-1.0);
+    const auto rules = s.customsInspection(1, 701, "call-b", "earth_orbital_hub", 0);
+    check(near(rules.probability, 0.05 * 1.5, 1e-9), "by the rules: own bloc (open 5 %) x strict 1.5 = 7.5 % (" + std::to_string(rules.probability) + ")");
+    const double debt0 = totalDebtCr(*s.ledger(1), s.banks()), worth0 = netWorthCr(*s.ledger(1), s.banks());
+    s.setDevCustomsProbability(1.0);
+    const auto found = s.customsInspection(1, 701, "call-c", "earth_orbital_hub", 0);
+    const auto* m = s.cargo().find(701);
+    check(found.inspected && found.found && near(found.seizedT, 2.0, 1e-9) && near(found.fineCr, 2.0 * found.valueCr, 0.01) &&
+              (!m || m->ownTonnesOf("narcotics") == 0.0) && m && near(m->ownTonnesOf("food_staples"), 10.0, 1e-9),
+          "forced inspection: the 2 t of narcotics seized (worth " + std::to_string(found.valueCr) + " Cr), fine 2 x; the grain stays");
+    check(near(worth0 - netWorthCr(*s.ledger(1), s.banks()), found.fineCr + found.feeCr, 1.0) && totalDebtCr(*s.ledger(1), s.banks()) >= debt0,
+          "the fine + the 600 Cr inspection fee leave the net worth (a debt when unpaid, never refused)");
+
+    // the black market: banned goods at the shadow price x 2.5, not declared income
+    check(s.devAddCargo(1, 701, "narcotics", 3.0, cobrett, "earth_orbital_hub").empty(), "DEV: 3 t narcotics again");
+    const double bid = s.blackBidCrPerT(gi("narcotics"), "earth_orbital_hub", 0);
+    const double revenue0 = s.walletSnapshot(1, "earth_orbital_hub", 0).taxRevenueCr, w1 = netWorthCr(*s.ledger(1), s.banks());
+    o.black = true;
+    o.tonnes = 0.0;   // all aboard
+    o.requestId = 2;
+    const auto sold = s.trade(o);
+    check(sold.ok && sold.code == "black_sold" && near(sold.totalCr, 3.0 * bid, 0.01) && bid > 2.4 * model.goods()[static_cast<std::size_t>(gi("narcotics"))].baseCrPerTonne * 0.5 &&
+              near(netWorthCr(*s.ledger(1), s.banks()) - w1, sold.totalCr, 0.05) && s.walletSnapshot(1, "earth_orbital_hub", 0).taxRevenueCr == revenue0,
+          "black market: 3 t sold at " + std::to_string(bid) + " Cr/t (shadow x 2.5), not in the tax book");
+    o.goodId = "food_staples";
+    o.requestId = 3;
+    check(s.trade(o).code == "legal_here", "grain is legal here: the black market sends it to the open market");
+    const auto snap = s.tradeSnapshot(1, 701, "earth_orbital_hub", 0, true);
+    bool grainLegal = false;
+    for (const auto& c : snap.cargo)
+        grainLegal = grainLegal || (c.good == gi("food_staples") && c.legalityHere == "legal" && c.blackBidCrPerT == 0.0);
+    check(grainLegal, "the cargo line knows its legality here (grain: legal, no black price)");
+
+    // attention: a seizure is remembered (economy_state/7)
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(1000);
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/7" &&
+              nlohmann::json::parse(saved)["seizures"].size() == 1,
+          "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -1725,6 +1812,7 @@ int main()
     testProtectedMinimum();
     testIncomeTax();
     testMarketRegimes();
+    testSmuggling();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

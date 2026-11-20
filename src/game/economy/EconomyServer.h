@@ -128,6 +128,7 @@ public:
         int quoteDay = -1;               // the day the client priced it (-1 = any)
         std::uint32_t requestId = 0;
         CargoCapacity capacity;
+        bool black = false;              // a sale to the hub's black market (contraband here, TRADE_DESIGN §2.8, step 9)
     };
     // all or nothing: the stock, the manifest and the money move together or nothing changes; the result is also kept
     // for the session (tradeSnapshot().results)
@@ -176,6 +177,24 @@ public:
     [[nodiscard]] const std::vector<LostCargo>& lostCargo() const { return m_lostCargo; }
     [[nodiscard]] bool lossRecorded(const std::string& eventId) const { return m_lossEvents.count(eventId) != 0; }
     [[nodiscard]] FiscalStyle fiscalStyleOf(const std::string& hubId, int systemId) const;
+    // TRADE step 9: "legal" | "restricted" | "banned" of a good at a hub (its polity's regime family); until licences
+    // (step 11) only "banned" is contraband - "restricted" trades openly with a note
+    [[nodiscard]] std::string legalityAt(int good, const std::string& hubId, int systemId) const;
+    [[nodiscard]] double blackBidCrPerT(int good, const std::string& hubId, int systemId) const;   // 0 = no black market for it
+    struct CustomsResult
+    {
+        bool inspected = false;
+        bool found = false;
+        double probability = 0.0;
+        double seizedT = 0.0;
+        double valueCr = 0.0;
+        double fineCr = 0.0;
+        double feeCr = 0.0;
+    };
+    // the customs inspection at docking (once per port call): a deterministic roll by hub / ship / call / day
+    CustomsResult customsInspection(std::uint64_t playerId, std::uint64_t shipKey, const std::string& callId, const std::string& hubId,
+                                    int systemId);
+    void setDevCustomsProbability(double p) { m_devCustomsP = p; }
     // the import duty rate (share of the goods value) for goods bought at `originHub` and sold at `hubId` (TRADE_DESIGN
     // §5.2, step 4): 0 inside one polity or for an unknown origin; else the selling hub's style rate x the customs
     // channel multiplier between the two polities' banks
@@ -283,6 +302,19 @@ private:
         std::vector<double> transportCrT;   // delivery cost from the nearest producer (fuel goods)
     };
     void stepDay(int day);
+    // ---- smuggling (TRADE_DESIGN §2.8, step 9)
+    struct SmugglingRules
+    {
+        double strictMult = 1.5, plannedMult = 1.5, hiddenInLegal = 0.7, attentionPerSeizure = 0.25, attentionCap = 2.0;
+        double fineMult = 2.0, inspectionFeeCr = 600.0, blackMultRestricted = 1.3, blackMultBanned = 2.5, blackCapT = 50.0;
+        double inspectP[5] = {0.05, 0.25, 0.7, 1.0, 1.0};   // by Channel (economy_rules customs.by_channel inspect_p)
+    };
+    SmugglingRules m_smuggling;
+    double m_devCustomsP = -1.0;                                                  // DEV: forced inspection probability
+    std::unordered_map<std::uint64_t, std::vector<std::pair<std::string, int>>> m_seizures;   // player -> (polity, day)
+    std::map<std::string, std::pair<int, double>> m_blackSold;                    // hub -> (day, tonnes bought by its fence)
+    [[nodiscard]] std::string familyAt(const std::string& hubId, int systemId) const;
+    game::simulation::ClientTradeResult sellBlack(const TradeOrder& o);
     // the market regime (TRADE_DESIGN §2.5, step 8): "free" | "corridor" | "planned" | "mobilization" | "no_state"
     [[nodiscard]] std::string marketRegimeOf(const std::string& polity) const;
     // the side a deal / the snapshot sees: the cell + the regime (the state price, the cap; for a player the day's

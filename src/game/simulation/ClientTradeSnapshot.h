@@ -41,6 +41,9 @@ struct ClientCargoLine
     std::string owner;
     std::string contractId;
     double dutyShare = 0.0;      // the import duty rate for selling this lot HERE (share of the goods value; 0 = this polity)
+    // TRADE step 9: "legal" | "restricted" | "banned" at THIS hub; the black market's price for it here (0 = none)
+    std::string legalityHere;
+    double blackBidCrPerT = 0.0;
 };
 
 struct ClientTradeResult

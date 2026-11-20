@@ -2548,6 +2548,15 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
                   << " Cr" << std::endl;
         return;
     }
+    if (command.op == Op::DevCustoms)
+    {
+        if (!devCommandAccepted("customs", id))
+            return;
+        m_economy.setDevCustomsProbability(command.quantity);
+        std::cerr << "[Smuggling] DEV customs inspection probability " << (command.quantity < 0.0 ? std::string("by the rules") : std::to_string(command.quantity))
+                  << std::endl;
+        return;
+    }
     if (command.op == Op::DevEconomyDays)
     {
         // DEV: the board's days without waiting them out (the economy steps <= 3 days a tick toward the new day)
@@ -2610,6 +2619,7 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
     }
     game::economy::EconomyServer::TradeOrder order;
     order.buy = command.op == Op::Buy;
+    order.black = command.op == Op::SellBlack;
     order.playerId = player;
     order.shipKey = shipKey;
     order.hubId = at;

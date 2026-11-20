@@ -492,6 +492,12 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.logContracts("report");
     else if (cmd.rfind("econ:days:", 0) == 0)
         s.sendEconomyCommand(game::network::ClientEconomyCommand::DevEconomyDays, std::string(), std::atof(cmd.c_str() + 10));
+    // TRADE step 9: "trade:black:<good>" - all of it aboard to the black market (the ГРУЗ button); "econ:customs:<p>" - DEV:
+    // the customs inspection probability forced to p (1 = always inspect and find; -1 = by the rules)
+    else if (cmd.rfind("trade:black:", 0) == 0)
+        s.sendEconomyCommand(game::network::ClientEconomyCommand::SellBlack, cmd.substr(12), 0.0);
+    else if (cmd.rfind("econ:customs:", 0) == 0)
+        s.sendEconomyCommand(game::network::ClientEconomyCommand::DevCustoms, std::string(), std::atof(cmd.c_str() + 13));
     else if (cmd == "econ:spendall")   // DEV: a broke pilot - all spendable money spent (cash, account, overdraft)
         s.sendEconomyCommand(game::network::ClientEconomyCommand::DevSpendAll, std::string(), 0.0);
     else if (cmd.rfind("econ:await:", 0) == 0)   // DEV: the clock runs to the next publication of that series here

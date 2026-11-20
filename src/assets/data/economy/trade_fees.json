@@ -24,6 +24,17 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "smuggling": {
+  "note": "TRADE_DESIGN §2.8 (step 9, minimal set). The customs inspection at docking: p = economy_rules customs.by_channel[channel].inspect_p (channel = the player's home bank vs the hub's bank; the same bloc = open) x regime_mult (the hub's regime family strict / its market regime planned x1.5). Found: p_find = hide x attention (in the open: the hold holds nothing legal; hidden in legal cargo 0.7), attention = 1 + 0.25 x seizures by this polity in 365 days (<= 2). Found contraband (banned here, or restricted without a licence - licences are step 11) is seized, fine_mult x its value at the hub (chargeFine: never refused), a contract carrying it fails. An inspection costs inspection_fee_cr (the importer pays, as in US customs). The black market buys contraband at the shadow price (the free cell price, or the base price where the good is not traded) x black_mult[legality]; no VAT, no handling, not declared income; at most black_cap_t a day per hub.",
+  "regime_mult": {"strict": 1.5, "planned": 1.5},
+  "hidden_in_legal": 0.7,
+  "attention_per_seizure": 0.25,
+  "attention_cap": 2.0,
+  "fine_mult": 2.0,
+  "inspection_fee_cr": 600,
+  "black_mult": {"restricted": 1.3, "banned": 2.5},
+  "black_cap_t": 50
+ },
  "market_regimes": {
   "note": "TRADE_DESIGN §2.5 (step 8). corridor: the basket's price held in anchor x [price_min, price_max]; below ration_below_stock_share of the target stock a buyer gets max(ration_min_t, ration_stock_share x stock) a day (rationing, not a price). planned: the state price = anchor x [state_price_min, state_price_max] (a hash per polity / good / plan period of plan_days), no deal impact; the hub sells only the stock above state_need_share x target ('нет в продаже' otherwise - Kornai's shortage economy). mobilization: planned for its groups only. The shadow price (the free cell price) keeps moving underneath - the black market of step 9 trades at it.",
   "corridor": {"basket_groups": ["food", "water_gas", "medical"], "price_min": 0.9, "price_max": 1.15, "ration_below_stock_share": 0.5, "ration_min_t": 1.0, "ration_stock_share": 0.02},

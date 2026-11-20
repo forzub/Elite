@@ -4001,6 +4001,32 @@ bool GameSimulation::debugResetShipStructure(EntityId id)
     return changed;
 }
 
+bool GameSimulation::debugFullRestoreShip(EntityId id)
+{
+    if (!debugResetShipStructure(id))
+        return false;
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
+    const std::string prefix = std::to_string(id.value) + "#";
+    for (auto it = m_containment.begin(); it != m_containment.end();)
+        it = it->shipId == id ? m_containment.erase(it) : std::next(it);
+    for (auto it = m_explodedReactors.begin(); it != m_explodedReactors.end();)
+        it = it->rfind(prefix, 0) == 0 ? m_explodedReactors.erase(it) : std::next(it);
+    auto& core = ship->core();
+    core.setContainmentAlarms({});
+    core.debugSetServiceCoolantTemperatureK(293.0);
+    auto& tr = core.transform();
+    tr.pitchRate = 0.0f;
+    tr.yawRate = 0.0f;
+    tr.rollRate = 0.0f;
+    tr.motion.destroyedCause = 0;
+    core.refreshRuntimeState();
+    markShipGraphDirty(id);
+    std::cerr << "[DevRestore] ship " << id.value << ": fully restored (structure, reactors, containment, heat, spin)" << std::endl;
+    return true;
+}
+
 void GameSimulation::debugResetAllShipStructures()
 {
     for (auto& [id, ship] : m_ships)

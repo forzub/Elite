@@ -43,7 +43,9 @@
             BuyShip,                // F6 (step 14): detail = passport id, target = offer id; at a berth; a new ship of
                                     //     the player appears 5 km off (boarded from F7)
             HireJob,                // F5 employment service: detail = vacancy id, at a berth of that hub
-            QuitJob                 // F5: back to the pilot's own ship (within 20 km)
+            QuitJob,                // F5: back to the pilot's own ship (within 20 km)
+            DevFullRestore          // TEMPORARY (author 2026-11-21): Ctrl+Alt+R - the ship fully restored (structure,
+                                    //     reactors, containment, heat, spin, "out of the fight" cleared)
         };
         Type type;
 

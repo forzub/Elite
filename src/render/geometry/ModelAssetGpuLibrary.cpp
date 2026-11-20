@@ -362,6 +362,8 @@ const MeshGPU* ModelAssetGpu::gpuFor(std::int32_t lod, std::int32_t geometry) co
     auto& slot = m_gpu[static_cast<std::size_t>(lod)][static_cast<std::size_t>(geometry)];
     if (slot && m_complete[static_cast<std::size_t>(lod)][static_cast<std::size_t>(geometry)])
         return slot.get();
+    if (lazyUpload)
+        return nullptr;   // pumpPrewarm puts it on the GPU within its budget; skipped until then
     if (slot)
     {
         finishCurrent();   // the one being uploaded in chunks: finish it now
@@ -412,15 +414,35 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type)
 
 const ModelAssetGpu* ModelAssetGpuLibrary::getPackage(ObjectType type, const std::string& path)
 {
-    static std::unordered_map<std::string, std::unique_ptr<ModelAssetGpu>> cache;
-    const auto [it, inserted] = cache.try_emplace(path);
-    if (inserted)
+    // the file read + parse runs on a loader thread (author 2026-11-21: a city coming into view loaded dozens of module
+    // packages - defence, traffic, construction craft - synchronously in one frame, 0.4-0.5 s freezes); nullptr until
+    // ready: the callers skip the object for those frames and ask again
+    struct Entry
     {
-        it->second = load(type, path.c_str());
-        if (it->second)
-            it->second->startPrewarm();
+        std::unique_ptr<ModelAssetGpu> gpu;
+        std::future<std::unique_ptr<ModelAssetGpu>> job;
+        bool done = false;
+    };
+    static std::unordered_map<std::string, Entry> cache;
+    Entry& e = cache[path];
+    if (!e.done)
+    {
+        if (!e.job.valid())
+        {
+            e.job = std::async(std::launch::async, [type, path] { return load(type, path.c_str()); });
+            return nullptr;
+        }
+        if (e.job.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+            return nullptr;
+        e.gpu = e.job.get();
+        e.done = true;
+        if (e.gpu)
+        {
+            e.gpu->lazyUpload = true;
+            e.gpu->startPrewarm();
+        }
     }
-    return it->second.get();
+    return e.gpu.get();
 }
 
 const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::string& hubId, bool loadIfMissing)
@@ -438,9 +460,11 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
     // from the ones its package was assembled with, the new city is assembled OFF-THREAD (one job at a time) while
     // the old package keeps drawing; the finished one is uploaded at most once per 50 ms (one city a frame); a
     // replaced package is freed only 10 s later (a fence: draws of PreparedScenes queued before still reference it)
+    // the job assembles the city AND builds its GPU package object (the asset copy + the index of ~6 000 components
+    // took ~0.5 s on the render thread, author 2026-11-21); the render thread only swaps the finished object in
     struct Rebuild
     {
-        std::future<std::unique_ptr<ma::ModelAsset>> job;
+        std::future<std::unique_ptr<ModelAssetGpu>> job;
         std::uint64_t key = 0;
     };
     static std::unordered_map<std::string, std::uint64_t> stageKeys;
@@ -474,13 +498,13 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
             {
                 Rebuild r;
                 r.key = stageKey;
-                r.job = std::async(std::launch::async, [hubId] {
+                r.job = std::async(std::launch::async, [hubId, type] {
                     auto asset = std::make_unique<ma::ModelAsset>();
                     std::string error;
                     if (ma::assembleHubCity(hubId, "assets/compiled/hub_modules", *asset, &error))
-                        return asset;
+                        return load(type, ("layout:" + hubId).c_str(), asset.get());
                     std::cerr << "[HubCityAssembly] " << hubId << ": " << error << "\n";
-                    return std::unique_ptr<ma::ModelAsset>();
+                    return std::unique_ptr<ModelAssetGpu>();
                 });
                 firstLoads.emplace(hubId, std::move(r));
             }
@@ -490,13 +514,12 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
             now - lastSwap <= std::chrono::milliseconds(50))
             return nullptr;
         lastSwap = now;
-        std::unique_ptr<ma::ModelAsset> asset = job->second.job.get();
+        std::unique_ptr<ModelAssetGpu> built = job->second.job.get();
         const std::uint64_t key = job->second.key;
         firstLoads.erase(job);
         auto& slot = cache[hubId];
         stageKeys[hubId] = key;
-        if (asset)
-            slot = load(type, ("layout:" + hubId).c_str(), asset.get());
+        slot = std::move(built);
         if (!slot)
             slot = load(type, packagePath.c_str());   // the layout failed: the per-hub package, if any
         return slot.get();
@@ -515,13 +538,13 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
         {
             Rebuild r;
             r.key = stageKey;
-            r.job = std::async(std::launch::async, [hubId] {
+            r.job = std::async(std::launch::async, [hubId, type] {
                 auto asset = std::make_unique<ma::ModelAsset>();
                 std::string error;
                 if (ma::assembleHubCity(hubId, "assets/compiled/hub_modules", *asset, &error))
-                    return asset;
+                    return load(type, ("layout:" + hubId).c_str(), asset.get());
                 std::cerr << "[HubCityAssembly] " << hubId << " (construction stage change): " << error << "\n";
-                return std::unique_ptr<ma::ModelAsset>();
+                return std::unique_ptr<ModelAssetGpu>();
             });
             rebuilds.emplace(hubId, std::move(r));
         }
@@ -529,11 +552,10 @@ const ModelAssetGpu* ModelAssetGpuLibrary::get(ObjectType type, const std::strin
                  now - lastSwap > std::chrono::milliseconds(50))
         {
             lastSwap = now;
-            std::unique_ptr<ma::ModelAsset> asset = job->second.job.get();
+            std::unique_ptr<ModelAssetGpu> gpu = job->second.job.get();
             stageKeys[hubId] = job->second.key;
             rebuilds.erase(job);
-            if (asset)
-                if (auto gpu = load(type, ("layout:" + hubId).c_str(), asset.get()))
+            if (gpu)
                 {
                     retired.emplace_back(now, std::move(it->second));
                     it->second = std::move(gpu);

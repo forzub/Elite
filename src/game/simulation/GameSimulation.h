@@ -100,6 +100,9 @@ public:
     bool debugDestroyShipModule(EntityId id, const std::string& moduleId);
     bool debugRestoreShipModule(EntityId id, const std::string& moduleId);
     bool debugResetShipStructure(EntityId id);
+    // TEMPORARY (author 2026-11-21, Ctrl+Alt+R): structure + modules, reactors (containment emergencies, the dead-reactor
+    // marks), heat, spin and the "out of the fight" state back to new
+    bool debugFullRestoreShip(EntityId id);
     void debugResetAllShipStructures();
 
     bool debugDetachShipModule(EntityId id, const std::string& moduleId);

@@ -972,6 +972,18 @@ const bool ctrlDown =
     Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
     Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
 
+// TEMPORARY (author 2026-11-21): Ctrl+Alt+R - the ship fully restored (before Ctrl+R, the repair job)
+if (ctrlDown && (Input::instance().isKeyPressed(GLFW_KEY_LEFT_ALT) || Input::instance().isKeyPressed(GLFW_KEY_RIGHT_ALT)) &&
+    Input::instance().isKeyPressedOnce(GLFW_KEY_R))
+{
+    game::network::ClientMessage msg;
+    ClientShipCommand command;
+    command.type = ClientShipCommand::DevFullRestore;
+    msg.payload = command;
+    m_client->sendMessage(msg);
+    m_pilotNotice = "DEV: корабль полностью восстановлен";
+    return;
+}
 if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 {
     game::network::ClientMessage msg;

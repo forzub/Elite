@@ -18,8 +18,10 @@ void main()
     vec3 c = edgeColor;
     if (uSceneStyle == 0)
     {
-        c = vec3(0.86, 0.87, 0.88);
-        alpha = max(alpha, 0.7);
+        // Elite Classic (author 2026-11-21): dark far away, lighter near (the station preset's far / near edge
+        // colours), no alpha floor - the near-white 0.86 lines with a fixed 0.7 floor made a whole city's edges pop in
+        // at once where the CPU starts drawing them
+        c = mix(vec3(0.18, 0.20, 0.26), vec3(0.58, 0.60, 0.66), vEdgeAlpha);
     }
     else if (uSceneStyle == 2)
     {

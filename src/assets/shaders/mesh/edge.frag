@@ -33,9 +33,11 @@ void main()
 
     if (uSceneStyle == 0)
     {
-        // Elite Classic: light grey vector edges, fading to grey far away.
-        finalColor = mix(vec3(0.92, 0.93, 0.94), vec3(0.62), t);
-        finalAlpha = max(finalAlpha, 0.95 * (1.0 - t * 0.4));
+        // Elite Classic (author 2026-11-21): the edges come out of the dark - dark far away, lighter as one
+        // approaches (the preset's colour -> farColor), never bright white, no alpha floor. The near-white lines
+        // with a ~57 % floor (2026-10-31) popped in at fadeEnd, where the CPU starts drawing them.
+        finalColor = mix(color, farColor, t);
+        finalAlpha = alpha * (1.0 - t);
     }
     else if (uSceneStyle == 2)
     {

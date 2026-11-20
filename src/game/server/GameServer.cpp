@@ -1528,6 +1528,10 @@ void GameServer::update(double dt)
                     m_pendingHires.push_back({id, std::string()});
                     break;
 
+                case ClientShipCommand::DevFullRestore:   // TEMPORARY (author 2026-11-21): Ctrl+Alt+R
+                    m_simulation.debugFullRestoreShip(id);
+                    break;
+
                 case ClientShipCommand::BuyShip:     // F6: spawns a ship - after the drain too
                     m_pendingPurchases.push_back({id, shipCmd.detail, shipCmd.target});
                     break;

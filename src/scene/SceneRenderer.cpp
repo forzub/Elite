@@ -3888,13 +3888,16 @@ if (policy.drawObjects)
                             for (const auto& v : crafts)
                             {
                                 const int m = static_cast<int>(v.model);
-                                if (!craftLooked[m])
+                                if (!craftLooked[m] && !craftPackages[m])
                                 {
-                                    craftLooked[m] = true;
+                                    // asked again until the loader thread has it (getPackage is asynchronous); a missing
+                                    // file is looked up once
                                     const std::string id = scene::constructionCraftModelId(v.model);
                                     const std::string path = "assets/compiled/hub_modules/" + id + "/" + id + ".elmodel";
                                     if (std::filesystem::exists(path))
                                         craftPackages[m] = render::geometry::ModelAssetGpuLibrary::getPackage(object.type, path);
+                                    else
+                                        craftLooked[m] = true;
                                 }
                                 const auto* pkg = craftPackages[m];
                                 if (!pkg || pkg->asset.renderLods.empty() ||
@@ -3985,11 +3988,12 @@ if (policy.drawObjects)
                         static std::unordered_map<std::string, const render::geometry::ModelAssetGpu*> shipPackages;
                         const auto shipPackage = [&](const std::string& model) {
                             auto it = shipPackages.find(model);
-                            if (it == shipPackages.end())
+                            if (it == shipPackages.end() || !it->second)   // asked again until the loader thread has it
                             {
                                 const std::string base = model.substr(model.find_last_of('/') + 1);
-                                it = shipPackages.emplace(model, render::geometry::ModelAssetGpuLibrary::getPackage(
-                                                                     object.type, "assets/compiled/" + model + "/" + base + ".elmodel")).first;
+                                const auto* pkg = render::geometry::ModelAssetGpuLibrary::getPackage(
+                                    object.type, "assets/compiled/" + model + "/" + base + ".elmodel");
+                                it = shipPackages.insert_or_assign(model, pkg).first;
                             }
                             return it->second;
                         };

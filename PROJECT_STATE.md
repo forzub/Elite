@@ -7595,3 +7595,80 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   handling 1 200 -> 360 (+VAT 240 -> 72); the test mine's 10-day net 23 264 -> 42 650 Cr (11.2 -> 20.6 Cr/t).
   257/257. Known gap: the trade snapshot's handlingCrPerT (the client's estimate) is still the general tariff.
   The low ore bid at Высокий (~30 Cr/t vs base 96) is the market's surplus, left as is.
+
+## Author's play session 2026-11-21: hub city freezes + visual issues - IN PROGRESS
+Author's notes (live play, normal window, D:/tmp/user_play.log):
+1. Freezes when a hub city comes into view. LOG: [M8E-HITCH] frame gaps 409-531 ms (render phase) = dozens of module
+   packages (hubd_* defence, hubt_* traffic, hub_proto_*) loaded SYNCHRONOUSLY by ModelAssetGpuLibrary::getPackage in
+   one frame (file read + parse; the GPU upload itself is 4-13 ms from the prewarm loader); 45-66 ms frames when the
+   construction craft (hubc_tug / clawship / hauler / pod) appear; 527 ms for the procedural Saturn moons (MapProceduralBodies,
+   Titan 74 ms ...). Not caused by step 16 (no contract in the author's state).
+   FIX (source, compiled; link blocked while the author's game runs): getPackage loads on a std::async loader thread
+   and returns nullptr until ready; the craft and ship-package caches no longer keep a nullptr forever. To verify: the
+   frame gaps near Высокий after a restart.
+2. "The edges pop in sharply" (author): edge.frag (Elite Classic) kept alpha >= 0.95 x (1 - 0.4 t) -> ~0.57 at
+   fadeEnd, and edge_instanced.frag a fixed 0.7 floor, while the CPU culls edges beyond fadeEnd -> whole cities' edges
+   appeared at ~60 % at once. FIX: the floors fade to 0 over the last part of the range. To verify visually.
+3. Many corridors overlap near a dock ("выглядит стрёмно"): they should merge at a junction, then ONE corridor leads to
+   the dock. TODO (design + navigation lanes).
+4. A ship flew through the player's ship during the approach - no collision. TODO: which ship (presentation traffic vs a
+   promoted real ship), ship-ship collision coverage.
+5. The corridors (HubCorridorHudRenderer: a screen-space HUD, no depth) show through the station even in the dock;
+   the author wants them hidden behind objects. TODO: depth-tested corridors (scene depth at the HUD stage or a 3D
+   pass).
+6. Author's request: the hub map gets its own button (top right, on the map itself) "План хаба" -> a 2D plan of the hub
+   like the mesh editor's hub mode (blocks / streets / lanes / docks / piers): all docks and ships marked, the docking
+   function kept (pick a dock -> the same docking request). Note: the editor's overlay comes from the python hub_map_tool
+   "derive"; in the game the plan must be drawn from the runtime city layout (hub_cities nodes + footprints), the dock
+   modules, the green lanes and the ships of the snapshot. HubMapView already has applyPlanCamera (a top-down 3D view).
+   + on the plan, at the same place (top right), a button back to the 3D hub map: one toggle button, "ПЛАН ХАБА" in 3D
+     and "3D-ВИД" on the plan (author suggested "назад"; a toggle label avoids confusing it with closing the map).
+7. "After leaving the dock the control is not handed over" (author): by design (2026-11-07) the station flies a
+   departing pilot 11 km out (HexDockFacility departureTurnZ -11000), flips, brakes and releases at rest (~3 min); an
+   early takeover = hold the controls 3 s (SpaceState takeover, Owner::StationAxis) - not discoverable, no attempt in
+   the log. AND a bug: "[Corridor] ship 201 WRONG WAY ... fined 1500 cr" while the station was flying the ship.
+   PLAN: release to the pilot right past the dock portal / chamber zone (+ a big "УПРАВЛЕНИЕ ВАШЕ"); no corridor
+   fines while station-controlled.
+8. "A ship slowly flies through me" (author, twice): decorative hub traffic has no collision until promoted, or a
+   ship-ship collision gap. Author: a ram must have consequences (damage / destruction by the impact energy, a
+   message who hit). PLAN: identify the ship type from the log, then collisions between the player and traffic.
+9. "Only red lanes when flying from the dock into the hub" (author): the HUD colours a lane RED when it runs against
+   the player's travel (2026-11-17 rule). Высокий's lanes: green city lanes are pairs (p at y 320 / n at y 430, both
+   directions); the 14 blue dock lanes are ALL "dock.from.green" (city -> dock) - there are no dock -> city lanes, the
+   departure is the station's axis flight. PLAN (with item 3): the dock's IN and OUT: the inbound lanes merge at a
+   junction / holding node -> ONE corridor into the dock; ONE outbound corridor from the dock to a junction -> the city
+   lanes (green for a departing ship); the station hands over at the start of the outbound corridor (item 7).
+10. AUTHOR'S DESIGN for the departure (2026-11-21, supersedes 7's plan): the station flies a departing ship to the
+    11 km point only while the player does nothing; touching the controls disengages the auto-guidance at once. The hub
+    keeps its waiting areas like a FLOWER: the 6-pad dock has 6 outer spaces; the central axis is always free except for
+    the arriving ships. Existing geometry (HexDockFacility): 6 arrival holds at z -2600 / r 450 (the flower), queue
+    gates at z -8000 / r 2000, departures along the axis to departureTurnZ -11000 (on the axis - against the rule).
+    PLAN: out of the chamber -> off the axis into the ship's sector -> a DEPARTURE petal (between the arrival petals,
+    ~1.5 km out, off-axis), stop, "УПРАВЛЕНИЕ ВАШЕ"; the outbound corridor starts there (item 9); beyond the chamber any
+    control input = instant takeover (inside: "внутри дока ведёт станция"); no corridor fines while the station
+    flies; NPC departures use the same petals. PRIORITY: first after verifying items 1-2.
+11. "The front view shakes, the rear view and the drone camera look fine" (author, flying a green lane): LOG - the ship
+    hit STATION OBJECT 4 (Высокий) 26 times at 8-110 m/s closing (at 100-125 m/s in law A): panels and the centre frame
+    torn, the reactor bay frame destroyed -> both drive reactors CONTAINMENT FAILING -> dead quietly at t+31 / t+49 s;
+    now tumbling at 30.6 m/s without propulsion. The player got no clear message (only shake + siren). The impact shake
+    is (likely) on the cockpit camera only -> the views disagree. Unknown: how a green-lane flight got into the
+    geometry (no position in the collision log). PLAN: a clear crash message (impact force, damage report, reactor
+    containment countdown), the same shake on every view (or none), hub-local position in [Collision], a lane vs
+    geometry clearance check (no lane tube may touch the station's collision).
+12. "While spinning, a desync: the planet holds, the hub shakes" (author, the tumbling wreck): the hub's render pose
+    vs the camera's orientation disagree at high body rates (interpolation of the hub's frame vs the ship's attitude
+    sampled at different times, or float precision of the hub position relative to the camera). Same family as 11's
+    "front view shakes, the rear view / drone do not". TODO: reproduce with a DEV spin and compare the poses per view.
+13. TEMPORARY Ctrl+Alt+R (author): the ship fully restored - GameSimulation::debugFullRestoreShip (structure reset,
+    containment emergencies + dead-reactor marks cleared, alarms off, coolant 293 K, body rates 0, destroyedCause 0),
+    ClientShipCommand::DevFullRestore.
+- (2026-11-21) Items 1-2 + 13 - SOURCE + LIVE (approach + docking at Высокий, D:/tmp/build16/run.log, 3 runs):
+  * getPackage loads on a loader thread (nullptr until ready); module packages are lazyUpload (gpuFor never uploads
+    synchronously, pumpPrewarm does it within its budget); the city's GPU package object (the asset copy + index of
+    6 360 components) is built in the assembly job, not on the render thread. Worst ScenePerf frame 540 -> 109 ms;
+    "117 meshes in one frame" gone. REMAINING: two 400-500 ms render frames in the first ~16 s after the start (the
+    station.elmodel 761k tris, hub_proto_mega 8 884 comps, ring core, Earth's curated sea - the generic get(type) path,
+    where nullptr means the legacy path; to be made asynchronous carefully) + session-start updates 0.4-1.4 s.
+  * Edges (author's wish): Elite Classic edges dark far -> lighter near (the preset's far / near colours), no alpha
+    floor, never white (edge.frag, edge_instanced.frag). Visual check by the author pending.
+  * Ctrl+Alt+R full restore built (live check by the author pending).

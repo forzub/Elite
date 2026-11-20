@@ -37,6 +37,10 @@ struct ModelAssetGpu
     // Semantic node -> legacy assembly module id (rotating modules), "" = none.
     std::vector<std::string> nodeModule;
     std::string path;
+    // module packages (getPackage: defence, traffic, construction craft, ships at the rim, variants): gpuFor never
+    // uploads synchronously - a mesh not on the GPU yet is skipped (nullptr) until pumpPrewarm has put it there
+    // (author 2026-11-21: 117 meshes uploaded in the first frame at a city = a 450 ms freeze)
+    bool lazyUpload = false;
 
     ~ModelAssetGpu();
     const MeshGPU* gpuFor(std::int32_t lod, std::int32_t geometry) const;

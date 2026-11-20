@@ -973,6 +973,46 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
                 }
     }
     // the employment service: "job:hire:<n>" - the n-th vacancy of this hub (the F5 button), "job:quit"
+    // rescue (step 12): "sos:take:<n>" - the n-th SOS call of this system (the F5 button); "sos:report"
+    else if (cmd.rfind("sos:take:", 0) == 0)
+    {
+        // "sos:take:<n>" by index, or "sos:take:<part of a hub id>" - the first call at that hub
+        const auto& calls = s.m_client->sessionSnapshot().wallet.sos;
+        const std::string what = cmd.substr(9);
+        std::string id = "?";
+        if (!what.empty() && std::isdigit(static_cast<unsigned char>(what[0])))
+        {
+            const std::size_t n = static_cast<std::size_t>(std::atoi(what.c_str()));
+            if (n < calls.size())
+                id = calls[n].id;
+        }
+        else
+            for (const auto& c : calls)
+                if (id == "?" && c.hubId.find(what) != std::string::npos)
+                    id = c.id;
+        s.sendEconomyCommand(game::network::ClientEconomyCommand::TakeSos, id, 0.0);
+        std::cerr << "[Rescue] DEV take " << id << " (" << calls.size() << " calls here)" << std::endl;
+    }
+    else if (cmd == "sos:goto")   // the route's finish = the hub of the accepted call (as finish:hub:<id>)
+    {
+        const std::string& id = s.m_client->sessionSnapshot().wallet.activeSosId;
+        const auto at = id.rfind('@');
+        if (id.rfind("sos:", 0) == 0 && at != std::string::npos)
+        {
+            const std::string hub = id.substr(4, at - 4);
+            std::cerr << "[Rescue] DEV goto " << hub << std::endl;
+            (void)runRouteVerb(s, "finish:hub:" + hub);
+        }
+        else
+            std::cerr << "[Rescue] DEV goto: no accepted call" << std::endl;
+    }
+    else if (cmd == "sos:report")
+    {
+        const auto& w = s.m_client->sessionSnapshot().wallet;
+        std::cerr << "[Rescue] report: licence " << w.sarLicence << ", active '" << w.activeSosId << "', " << w.sos.size() << " calls" << std::endl;
+        for (const auto& c : w.sos)
+            std::cerr << "[Rescue]   " << c.id << " " << c.kindRu << " at " << c.hubId << " +" << c.rewardCr << " " << c.status << std::endl;
+    }
     else if (cmd.rfind("job:hire:", 0) == 0 || cmd == "job:quit")
     {
         game::network::ClientMessage msg;

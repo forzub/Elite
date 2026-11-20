@@ -7463,3 +7463,23 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Not done: reports in Галера+ (transfer, leave, discharge), the term's end, hijacking an employer's ship, jobs needing
   other licence categories, a pilot WITHOUT an own ship (after a total loss) - the board is the way back to flying
   once ship loss leaves the pilot shipless (not modelled yet).
+
+## TRADE step 12: rescue (МЧС), variant A - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): the "sar" licence (18 000 Cr / year, any berth of the polity); SOS calls from the world per
+  hub and day (p 0.15, open 2 days; a capsule 60 % / a ship without power 25 % / medevac 15 %; 4 000 / 6 000 /
+  10 000 Cr) only at hubs a route can reach (the server passes the world's hub list - economy-only plants and surface
+  cities have no world position: the first live run offered 28 calls incl. those and "no position for the hub");
+  ClientEconomyCommand::TakeSos (protocol 42) by a licensee; the call completes when the pilot's ship reaches that hub
+  (checked every 30 ticks; the search near the hub is abstracted until navigation can target a point in space); the
+  reward is paid by that polity's bank and is taxable. F5 state app -> МЧС (the licence here, the calls with «ПРИНЯТЬ»,
+  the accepted one "fly to"). Snapshot schema 63, economy_state/11. DEV: sos:take:<n | part of a hub id>, sos:goto,
+  sos:report; a licence off a berth in the hub frame in DEV only (the docking queue was too slow for the check).
+- Missed earlier and fixed now: the employment step bumped economy_state to /10 without rerunning EliteEconomyCheck -
+  6 schema / offer-count checks failed; updated (224/224).
+- LIVE (D:/tmp/sos/run.log, 01..03_*.png): start 40 km from Вэньчан, licence, 8 calls in Sol; take the capsule at
+  Вэньчан -> route 40 km, ARRIVED -> "[Rescue] player 1 completed sos:earth_hub.wenchang@10195: +4000 Cr"; F5 МЧС shows
+  it «выполнен».
+- Observed again, not of this slice: docking at Высокий took 287 s in one run and the first route leg from the berth
+  never finished in 480 s - the docking / departure flakiness recorded for step 17.
+- Not done: variant B (duty for tax credits), the dispatcher's obligation / refusal fines, towing, salvage rights, a
+  real search in space (a derelict / capsule object), inter-stellar search.

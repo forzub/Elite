@@ -940,6 +940,7 @@ void renderLicences(TextRenderer& t, const game::simulation::ClientWalletSnapsho
             break;
         t.textDrawPx(o.ru, x + 14, ry, small, Text);
         const std::string fee = grouped(o.feeCr) + " Cr";
+        const bool covers = !o.goodsRu.empty();
         if (docked)
         {
             const std::string label = (o.held ? tx("lic_extend") : tx("lic_buy")) + "  " + fee;
@@ -951,7 +952,8 @@ void renderLicences(TextRenderer& t, const game::simulation::ClientWalletSnapsho
         else
             t.textDrawPx(fee, right - t.measureTextPx(fee, small), ry, small, Muted);
         ry += static_cast<float>(small) + 4.0f;
-        t.textDrawPx(tx("lic_covers") + ": " + o.goodsRu, x + 24, ry, small, Muted);
+        if (covers)
+            t.textDrawPx(tx("lic_covers") + ": " + o.goodsRu, x + 24, ry, small, Muted);
         ry += static_cast<float>(small) + 10.0f;
     }
 }
@@ -1027,6 +1029,58 @@ void renderJobs(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f
             ry += static_cast<float>(small) + 4.0f;
         }
         ry += 6.0f;
+    }
+}
+// F5 state app -> МЧС (TRADE_DESIGN §4.2, step 12): the licence here, the SOS calls of this system, the active call
+void renderRescue(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, const std::map<std::string, std::string>& text,
+                  float x, float y, float w, float h, int px, int small,
+                  const std::function<void(float, float, float, float, const std::string&)>& addButton)
+{
+    const auto tx = [&](const char* key) -> std::string {
+        const auto it = text.find(key);
+        return it == text.end() ? std::string(key) : it->second;
+    };
+    t.solidRectPx(x, y, w, h, Panel);
+    float ry = y + 10.0f;
+    const float right = x + w - 12.0f;
+    t.textDrawPx(f.sarLicence ? tx("sos_licence_yes") : tx("sos_licence_no"), x + 12, ry, small, f.sarLicence ? Good : Warn);
+    ry += static_cast<float>(small) + 10.0f;
+    if (!f.activeSosId.empty())
+    {
+        for (const auto& c : f.sos)
+            if (c.id == f.activeSosId)
+                t.textDrawPx(tx("sos_active") + ": " + c.kindRu + " — " + tx("sos_fly_to") + " " + c.hubName + " (+" + grouped(c.rewardCr) + " Cr)",
+                             x + 12, ry, px, Title);
+        ry += static_cast<float>(px) + 10.0f;
+    }
+    t.textDrawPx(tx("sos_list"), x + 12, ry, px, Title);
+    ry += static_cast<float>(px) + 6.0f;
+    if (f.sos.empty())
+    {
+        t.textDrawPx(tx("sos_none"), x + 14, ry, small, Muted);
+        return;
+    }
+    for (const auto& c : f.sos)
+    {
+        if (ry > y + h - 2.0f * static_cast<float>(small))
+            break;
+        const bool open = c.status == "open";
+        t.textDrawPx(c.kindRu + "  ·  " + c.hubName + "  ·  +" + grouped(c.rewardCr) + " Cr  ·  " + tx("sos_until") + " " + std::to_string(c.expiresDay),
+                     x + 14, ry, small, open ? Text : Muted);
+        if (open && f.sarLicence && f.activeSosId.empty())
+        {
+            const std::string take = tx("sos_take");
+            const float bw = t.measureTextPx(take, small) + 20.0f, bh = small * 1.7f;
+            t.solidRectPx(right - bw, ry - small * 0.3f, bw, bh, Selected);
+            t.textDrawPx(take, right - bw + 10, ry, small, Good);
+            addButton(right - bw, ry - small * 0.3f, right, ry - small * 0.3f + bh, c.id);
+        }
+        else if (!open)
+        {
+            const std::string st = tx(("sos_status_" + c.status).c_str());
+            t.textDrawPx(st, right - t.measureTextPx(st, small), ry, small, c.mine ? Good : Muted);
+        }
+        ry += static_cast<float>(small) + 9.0f;
     }
 }
 } // namespace
@@ -1645,10 +1699,10 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
     if (page.tab == 0)
     {
         // the app's sections (below the selected tab's box)
-        const std::string sections[] = {text("taxes"), text("licences"), text("nav_data"), text("jobs")};
+        const std::string sections[] = {text("taxes"), text("licences"), text("nav_data"), text("jobs"), text("rescue")};
         float sx = listX;
         const float sy = listY + px * 0.4f;
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 5; ++i)
         {
             const float sw = t.measureTextPx(sections[i], small) + 20.0f;
             t.solidRectPx(sx, sy, sw, small * 1.7f, page.section == i ? Selected : Panel);
@@ -1657,7 +1711,12 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
             sx += sw + 6.0f;
         }
         const float y0 = listY + px * 2.6f;
-        if (page.section == 3)
+        if (page.section == 4)
+            renderRescue(t, page.wallet, page.text, listX, y0, listW, listH - (y0 - listY), px, small,
+                         [this](float x0, float y0b, float x1, float y1, const std::string& id) {
+                             m_hits.push_back({x0, y0b, x1, y1, 0, {ServicePanelActionType::GovernmentTakeSos, id}});
+                         });
+        else if (page.section == 3)
             renderJobs(t, page.wallet, page.text, page.docked, listX, y0, listW, listH - (y0 - listY), px, small,
                        [this](float x0, float y0b, float x1, float y1, const std::string& id) {
                            m_hits.push_back({x0, y0b, x1, y1, 0, {id.empty() ? ServicePanelActionType::GovernmentQuit

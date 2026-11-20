@@ -25,7 +25,8 @@ struct ClientEconomyCommand
         BuyLicence = 10,     // goodId = licence type: from the polity of the hub the ship is docked at (step 11)
         InsureCargo = 11,    // the own lots aboard, at a berth (step 13)
         DevGrant = 12,       // DEV: `quantity` Cr credited to the player (live checks of purchases)
-        Last = DevGrant
+        TakeSos = 13,        // goodId = SOS call id (F5 МЧС, step 12): the licensee takes it
+        Last = TakeSos
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

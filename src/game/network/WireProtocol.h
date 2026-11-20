@@ -36,7 +36,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 41u;   // 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4); 33: its contractId + TakeContract / AbandonContract / DevEconomyDays (trade step 5); 34: DevSpendAll; 35: SellBlack + DevCustoms (trade step 9); 36: BuyLicence (step 11); 37: InsureCargo (step 13); 38: ClientShipCommand::BoardShip (ship change); 39: BuyShip (F6); 40: ClientEconomyCommand::DevGrant; 41: HireJob / QuitJob (the employment service)
+inline constexpr std::uint16_t WireProtocolVersion = 42u;   // 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4); 33: its contractId + TakeContract / AbandonContract / DevEconomyDays (trade step 5); 34: DevSpendAll; 35: SellBlack + DevCustoms (trade step 9); 36: BuyLicence (step 11); 37: InsureCargo (step 13); 38: ClientShipCommand::BoardShip (ship change); 39: BuyShip (F6); 40: ClientEconomyCommand::DevGrant; 41: HireJob / QuitJob (the employment service); 42: TakeSos (rescue)
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;

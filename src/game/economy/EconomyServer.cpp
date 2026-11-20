@@ -553,6 +553,12 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json rescue = fees.value("rescue", json::object());
+        m_sosPerHubDay = num(rescue, "sos_per_hub_day", m_sosPerHubDay);
+        m_sosOpenDays = std::max(1, static_cast<int>(num(rescue, "open_days", m_sosOpenDays)));
+        m_sosCapsuleCr = num(rescue, "reward_capsule_cr", m_sosCapsuleCr);
+        m_sosDerelictCr = num(rescue, "reward_derelict_cr", m_sosDerelictCr);
+        m_sosMedevacCr = num(rescue, "reward_medevac_cr", m_sosMedevacCr);
         const json emp = fees.value("employment", json::object());
         m_courierWageCr = num(emp, "courier_wage_cr", m_courierWageCr);
         m_militaryWageCr = num(emp, "military_wage_cr", m_militaryWageCr);
@@ -986,6 +992,130 @@ void EconomyServer::stepNpcFlows(int day)
         std::cerr << "[NpcFlows] day " << day << ": " << shipped << " shipments today (" << grouped(tonnes) << " t), "
                   << m_npcShipments.size() << " in flight, step " << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()
                   << " ms" << '\n';
+}
+
+// ---------------------------------------------------------------- rescue (TRADE_DESIGN §4.2, step 12)
+std::vector<EconomyServer::SosCall> EconomyServer::sosCallsIn(int systemId) const
+{
+    std::vector<SosCall> out;
+    if (systemId < 0 || m_day < 0)
+        return out;
+    for (const auto* h : EconomyModel::instance().hubsOfSystem(systemId))
+    {
+        if (!m_routableHubs.empty() && !m_routableHubs.count(h->id))
+            continue;   // only a hub a route can reach (an economy-only plant / surface city has no world position)
+        for (int d = m_day - m_sosOpenDays + 1; d <= m_day; ++d)
+        {
+            const std::uint64_t key = hashOf(h->id, static_cast<std::uint64_t>(d) * 31ull + 0x5050ull);
+            if (unit(key) >= m_sosPerHubDay)
+                continue;
+            SosCall c;
+            c.id = "sos:" + h->id + "@" + std::to_string(d);
+            c.hubId = h->id;
+            c.systemId = systemId;
+            c.day = d;
+            c.expiresDay = d + m_sosOpenDays;
+            const double kind = unit(key ^ 0xabcdefull);
+            c.kind = kind < 0.60 ? "capsule" : kind < 0.85 ? "derelict" : "medevac";
+            c.kindRu = c.kind == "capsule" ? "спасательная капсула" : c.kind == "derelict" ? "корабль без хода, экипаж жив" : "медэвакуация";
+            c.rewardCr = c.kind == "capsule" ? m_sosCapsuleCr : c.kind == "derelict" ? m_sosDerelictCr : m_sosMedevacCr;
+            out.push_back(c);
+        }
+    }
+    return out;
+}
+
+std::string EconomyServer::sosStatus(const SosCall& c) const
+{
+    if (const auto it = m_sosState.find(c.id); it != m_sosState.end())
+        return it->second.second;
+    return m_day >= c.expiresDay ? "expired" : "open";
+}
+
+game::simulation::ClientTradeResult EconomyServer::takeSos(std::uint64_t playerId, const std::string& sosId, std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+        return refuse("no_account", "нет счёта");
+    if (m_activeSos.count(playerId))
+        return refuse("sos_busy", "у вас уже есть принятый вызов");
+    // the call: "sos:<hub>@<day>"
+    const auto at = sosId.rfind('@');
+    if (sosId.rfind("sos:", 0) != 0 || at == std::string::npos)
+        return refuse("sos_unknown", "нет такого вызова");
+    const std::string hubId = sosId.substr(4, at - 4);
+    const auto* hub = EconomyModel::instance().hub(hubId);
+    if (!hub)
+        return refuse("sos_unknown", "нет такого вызова");
+    const SosCall* call = nullptr;
+    const auto calls = sosCallsIn(hub->systemId);
+    for (const auto& c : calls)
+        if (c.id == sosId)
+            call = &c;
+    if (!call)
+        return refuse("sos_unknown", "вызов уже закрыт");
+    if (sosStatus(*call) != "open")
+        return refuse("sos_closed", "вызов уже " + sosStatus(*call));
+    if (!hasLicence(playerId, polityOf(hubId, hub->systemId), "sar"))
+        return refuse("licence", "нужна лицензия МЧС этой политии (F5 -> Лицензии)");
+    m_sosState[sosId] = {playerId, "taken"};
+    m_activeSos[playerId] = sosId;
+    logEvent(*l, m_day, "принят вызов SOS: " + call->kindRu + " у " + hubDisplayName(hubId));
+    r.ok = true;
+    r.code = "sos_taken";
+    r.message = "вызов принят: " + call->kindRu + " у " + hubDisplayName(hubId) + " — летите туда";
+    pushResult(playerId, r);
+    saveNow("sos taken");
+    std::cerr << "[Rescue] player " << playerId << " takes " << sosId << " (" << call->kind << ", " << call->rewardCr << " Cr)" << '\n';
+    return r;
+}
+
+bool EconomyServer::completeSosAt(std::uint64_t playerId, const std::string& hubId, int systemId)
+{
+    const auto it = m_activeSos.find(playerId);
+    if (it == m_activeSos.end() || hubId.empty())
+        return false;
+    const std::string id = it->second;
+    if (id.rfind("sos:" + hubId + "@", 0) != 0)
+        return false;
+    ClientLedger* l = ledger(playerId);
+    double reward = 0.0;
+    std::string kindRu;
+    for (const auto& c : sosCallsIn(systemId))
+        if (c.id == id)
+        {
+            reward = c.rewardCr;
+            kindRu = c.kindRu;
+        }
+    if (reward <= 0.0)   // the call's day left the window while flying: paid by its kind from the id's hash anyway
+        reward = m_sosCapsuleCr;
+    if (l)
+    {
+        const auto* bank = m_banks.bankForPolity(polityOf(hubId, systemId));
+        receive(*l, m_banks, bank ? bank->id : l->homeBank, reward, m_day, "МЧС: " + (kindRu.empty() ? std::string("спасение") : kindRu) + " у " + hubDisplayName(hubId));
+        if (TaxBook* t = taxBook(playerId))
+            addRevenue(*t, reward);
+    }
+    m_sosState[id] = {playerId, "done"};
+    m_activeSos.erase(it);
+    game::simulation::ClientTradeResult r;
+    r.ok = true;
+    r.code = "sos_done";
+    r.totalCr = reward;
+    r.message = "спасение выполнено у " + hubDisplayName(hubId) + ": +" + grouped(reward) + " Cr";
+    pushResult(playerId, r);
+    saveNow("sos done");
+    std::cerr << "[Rescue] player " << playerId << " completed " << id << ": +" << reward << " Cr" << '\n';
+    return true;
 }
 
 // ---------------------------------------------------------------- the employment service (F5, TRADE_DESIGN §11b)
@@ -2566,6 +2696,16 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         for (const auto& c : m_pilotCategories)
             w.pilotCategories.push_back({c.ru, c.control, c.start, c.note});
     }
+    // rescue (F5 МЧС)
+    for (const auto& c : sosCallsIn(systemId))
+    {
+        const auto* h = EconomyModel::instance().hub(c.hubId);
+        w.sos.push_back({c.id, c.kindRu, c.hubId, h ? h->name : c.hubId, c.rewardCr, c.expiresDay, sosStatus(c),
+                         m_sosState.count(c.id) && m_sosState.at(c.id).first == playerId});
+    }
+    if (const auto it = m_activeSos.find(playerId); it != m_activeSos.end())
+        w.activeSosId = it->second;
+    w.sarLicence = hasLicence(playerId, polityOf(hubId, systemId), "sar");
     // the employment service (F5)
     for (const auto& v : vacanciesAt(hubId, systemId))
     {
@@ -2805,9 +2945,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/10";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+    j["schema"] = "economy_state/11";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
                                        // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
-                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment
+                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment; 11: SOS
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -2848,6 +2988,18 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
                                    {"cause", r.cause}});
+    j["sos"] = json::array();
+    for (const auto& [id, st] : m_sosState)
+        j["sos"].push_back({id, st.first, st.second});
+    j["sos_active"] = json::array();
+    {
+        std::vector<std::uint64_t> ids;
+        for (const auto& [p, id] : m_activeSos)
+            ids.push_back(p);
+        std::sort(ids.begin(), ids.end());
+        for (const auto p : ids)
+            j["sos_active"].push_back({p, m_activeSos.at(p)});
+    }
     j["employment"] = json::array();
     {
         std::vector<std::uint64_t> ids;
@@ -3006,7 +3158,8 @@ bool EconomyServer::restoreState(const std::string& text)
     if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3" &&
         schema != "economy_state/4" && schema != "economy_state/5" && schema != "economy_state/6" &&
         schema != "economy_state/7" && schema != "economy_state/8" &&
-        schema != "economy_state/9" && schema != "economy_state/10")   // /1: no trade registries; /2: no contracts;
+        schema != "economy_state/9" && schema != "economy_state/10" &&
+        schema != "economy_state/11")   // /1: no trade registries; /2: no contracts;
                                                                        // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
@@ -3079,6 +3232,12 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_sosState) sosState;   // economy_state/11
+        for (const auto& x : j.value("sos", json::array()))
+            sosState[x.at(0).get<std::string>()] = {x.at(1).get<std::uint64_t>(), x.at(2).get<std::string>()};
+        decltype(m_activeSos) activeSos;
+        for (const auto& x : j.value("sos_active", json::array()))
+            activeSos[x.at(0).get<std::uint64_t>()] = x.at(1).get<std::string>();
         decltype(m_employment) employment;   // economy_state/10
         for (const auto& x : j.value("employment", json::array()))
         {
@@ -3176,6 +3335,8 @@ bool EconomyServer::restoreState(const std::string& text)
         m_licences.swap(licences);
         m_cargoPolicies.swap(policies);
         m_employment.swap(employment);
+        m_sosState.swap(sosState);
+        m_activeSos.swap(activeSos);
         m_lossEvents.swap(lossEvents);
         m_lostCargo.swap(lostCargo);
         m_nextLostCargo = nextLostCargo;

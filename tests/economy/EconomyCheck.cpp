@@ -1554,7 +1554,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/9" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/11" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1669,7 +1669,7 @@ void testIncomeTax()
     EconomyServer t;
     t.load();
     t.start(1095);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
               near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
@@ -1834,7 +1834,7 @@ void testSmuggling()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
               nlohmann::json::parse(saved)["seizures"].size() == 1,
           "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
 }
@@ -1957,14 +1957,14 @@ void testLicences()
     bool offerHeld = false;
     for (const auto& of : w.licenceOffers)
         offerHeld = offerHeld || (of.type == "export_control" && of.held);
-    check(w.licences.size() == 1 && w.licences[0].active && w.licences[0].expiresDay == 1360 && w.licenceOffers.size() == 3 && offerHeld &&
+    check(w.licences.size() == 1 && w.licences[0].active && w.licences[0].expiresDay == 1360 && w.licenceOffers.size() == 4 && offerHeld &&
               w.pilotCategories.size() == 2 && w.pilotCategories[0].granted && !w.pilotCategories[1].granted,
-          "the wallet: 1 licence to day 1360, 3 offers here, pilot categories + cargo courier / - newtonian");
+          "the wallet: 1 licence to day 1360, 4 offers here (incl. the rescue licence), pilot categories + cargo courier / - newtonian");
     const std::string saved = s.saveState();
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
               t.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "licensed",
           "economy_state/8: the licence survives save / restore byte-exact");
     for (int day = 1001; day <= 1360; ++day)
@@ -2017,7 +2017,7 @@ void testInsurance()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/11" &&
               nlohmann::json::parse(saved)["cargo_policies"].size() == 1,
           "economy_state/9: the policy survives save / restore byte-exact");
 }

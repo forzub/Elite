@@ -24,6 +24,14 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "rescue": {
+  "note": "TRADE_DESIGN §4.2 (step 12, minimal set - variant A only). SOS calls come from the world, not a random spawn: per hub and day with probability sos_per_hub_day a call appears near that hub whose own service is busy (a capsule 60 %, a ship without power 25 %, a medical evacuation 15 %), open for open_days. A licensee (the 'sar' licence of that hub's polity) takes it in F5 -> МЧС and completes it by reaching that hub (the search near the hub is abstracted until the navigation can target a point in space); the reward is paid by that polity's bank and is taxable. Not yet: variant B (duty for tax credits), towing, salvage rights, inter-stellar search, the obligation to help without a licence.",
+  "sos_per_hub_day": 0.15,
+  "open_days": 2,
+  "reward_capsule_cr": 4000,
+  "reward_derelict_cr": 6000,
+  "reward_medevac_cr": 10000
+ },
  "employment": {
   "note": "TRADE_DESIGN §11b (author 2026-11-20: the hiring board is in F5 as the state employment service). Each hub posts, per week, two courier vacancies (a transport company flies its ship, the pilot is paid a wage) and one military post of the hub's polity (Галера+; citizens only - the home bank's polity). The courier needs the pilot licence category cargo_courier (granted at the start). Hiring spawns the employer's ship next to the pilot (Player-role, the employer owns it) and moves the pilot into it; the wage is paid daily (wage / 30) by the employer's bank and is taxable income; quitting moves the pilot back to his own ship (it must be within 20 km). Anchors: the pilot wage anchor 4 000 Cr / month (ECONOMY_BANKING); a conscript is paid less.",
   "courier_wage_cr": 4000,
@@ -49,7 +57,8 @@
   "types": {
    "export_control": {"ru": "экспортный контроль (стратегические товары)", "fee_cr": 15000, "goods": ["jump_charge", "nav_sensors", "computing", "small_arms", "munitions"]},
    "hazardous_c": {"ru": "опасные грузы, класс C", "fee_cr": 2000, "goods": ["reactor_fuel"]},
-   "excise": {"ru": "акцизная (алкоголь, табак, роскошь, контролируемые вещества)", "fee_cr": 3000, "goods": ["alcohol_tobacco", "luxury_goods", "narcotics"]}
+   "excise": {"ru": "акцизная (алкоголь, табак, роскошь, контролируемые вещества)", "fee_cr": 3000, "goods": ["alcohol_tobacco", "luxury_goods", "narcotics"]},
+   "sar": {"ru": "МЧС: спасательные работы (вариант А, за плату)", "fee_cr": 18000, "goods": []}
   },
   "pilot_categories": [
    {"id": "cargo_courier", "ru": "малый / средний грузовик — курьер", "control": "assisted", "start": true, "note": ""},

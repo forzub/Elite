@@ -65,7 +65,7 @@ inline constexpr int TradeTabOrder[] = {1, 0, 5, 4, 2};
 struct GovernmentPresentation
 {
     int tab = 0;
-    int section = 0;                                 // the state app: 0 taxes, 1 licences, 2 navigation data, 3 employment
+    int section = 0;                                 // the state app: 0 taxes, 1 licences, 2 navigation data, 3 employment, 4 rescue
     bool docked = false;                             // licences are issued at a berth of the polity
     game::simulation::ClientWalletSnapshot wallet;   // the taxes (session.wallet tax*)
     NavDataPage nav;

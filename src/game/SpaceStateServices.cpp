@@ -194,7 +194,7 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
 {
     game::presentation::GovernmentPresentation page;
     page.tab = std::clamp(m_governmentTab, 0, 1);
-    page.section = std::clamp(m_governmentSection, 0, 3);
+    page.section = std::clamp(m_governmentSection, 0, 4);
     static const char* const Keys[] = {
         "app", "app_subtitle", "nav_data", "taxes", "tax_no_data", "tax_residence", "tax_style", "tax_rate", "tax_admin_fee",
         "tax_rules", "tax_days", "tax_declare", "tax_open_period", "tax_revenue", "tax_expenses", "tax_profit", "tax_withheld_credit",
@@ -202,7 +202,8 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
         "tax_in", "tax_status", "tax_nothing", "tax_paid", "tax_debt", "tax_penalty", "licences", "lic_pilot", "lic_control", "lic_held",
         "lic_none", "lic_until", "lic_expired", "lic_offers", "lic_dock_hint", "lic_buy", "lic_extend", "lic_covers", "jobs", "job_current",
         "job_none", "job_quit", "job_wage", "job_days", "job_ship", "job_since", "job_vacancies", "job_no_vacancies", "job_dock_hint",
-        "job_hire", "job_term", "galley", "galley_subtitle", "galley_not_enlisted", "galley_unit", "galley_ship",
+        "job_hire", "job_term", "rescue", "sos_licence_yes", "sos_licence_no", "sos_active", "sos_fly_to", "sos_list", "sos_none", "sos_until",
+        "sos_take", "sos_status_taken", "sos_status_done", "sos_status_expired", "galley", "galley_subtitle", "galley_not_enlisted", "galley_unit", "galley_ship",
         "galley_rank", "galley_term", "galley_reports", "galley_report_transfer_ship", "galley_report_transfer_unit",
         "galley_report_leave", "galley_report_discharge", "galley_hint"};
     for (const char* key : Keys)
@@ -375,6 +376,8 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             m_governmentTab = std::atoi(action->text.c_str());
         else if (action->type == ServicePanelActionType::GovernmentSection)
             m_governmentSection = std::atoi(action->text.c_str());
+        else if (action->type == ServicePanelActionType::GovernmentTakeSos)   // step 12: the server decides (licence, call)
+            sendEconomyCommand(game::network::ClientEconomyCommand::TakeSos, action->text, 0.0);
         else if ((action->type == ServicePanelActionType::GovernmentHire || action->type == ServicePanelActionType::GovernmentQuit) && m_client)
         {
             game::network::ClientMessage msg;

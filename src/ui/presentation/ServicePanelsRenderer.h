@@ -34,6 +34,7 @@ enum class ServicePanelActionType
     GovernmentBuyLicence,    // F5 state app -> licences: text = licence type (step 11)
     GovernmentHire,          // F5 employment service: text = vacancy id
     GovernmentQuit,          // F5 employment service: quit the job
+    GovernmentTakeSos,       // F5 МЧС (step 12): text = SOS call id
     TradeSelectHub,          // text = hub id
     TradeShowOnMap,          // text = hub id
     // F5 state app -> navigation data (moved from F8, TRADE_DESIGN §11a)

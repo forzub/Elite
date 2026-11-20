@@ -1038,6 +1038,18 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientSos,
+    v.id,
+    v.kindRu,
+    v.hubId,
+    v.hubName,
+    v.rewardCr,
+    v.expiresDay,
+    v.status,
+    v.mine
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientVacancy,
     v.id,
     v.kind,
@@ -1106,6 +1118,9 @@ ELITE_WIRE_SCHEMA(
     v.jobWageCr,
     v.jobSinceDay,
     v.jobTermEndDay,
+    v.sos,
+    v.activeSosId,
+    v.sarLicence,
     v.localPolity,
     v.localBank,
     v.localCurrency,

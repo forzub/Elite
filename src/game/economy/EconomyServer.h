@@ -190,6 +190,22 @@ public:
     [[nodiscard]] std::string legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
     [[nodiscard]] std::string licenceForGood(const std::string& goodId) const;   // "" = none lists it
     [[nodiscard]] bool hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const;
+    // ---- rescue (TRADE_DESIGN §4.2, step 12): SOS calls near busy hubs; a licensee takes one and reaches the hub
+    struct SosCall
+    {
+        std::string id, kind, kindRu, hubId;
+        int systemId = -1;
+        int day = 0;
+        int expiresDay = 0;
+        double rewardCr = 0.0;
+    };
+    [[nodiscard]] std::vector<SosCall> sosCallsIn(int systemId) const;
+    [[nodiscard]] std::string sosStatus(const SosCall& c) const;   // open / taken / done / expired
+    game::simulation::ClientTradeResult takeSos(std::uint64_t playerId, const std::string& sosId, std::uint32_t requestId);
+    // the pilot's ship is at `hubId`: completes the pilot's active call there; true = completed now
+    bool completeSosAt(std::uint64_t playerId, const std::string& hubId, int systemId);
+    void setRoutableHubs(std::set<std::string> hubs) { m_routableHubs = std::move(hubs); }
+    [[nodiscard]] std::size_t routableHubCount() const { return m_routableHubs.size(); }
     // ---- the employment service (F5, TRADE_DESIGN §11b)
     struct Vacancy
     {
@@ -418,6 +434,11 @@ private:
     int m_insuranceDays = 30;
     int m_arrestAfterDays = 90;
     double m_courierWageCr = 4000.0, m_militaryWageCr = 2500.0;
+    double m_sosPerHubDay = 0.15, m_sosCapsuleCr = 4000.0, m_sosDerelictCr = 6000.0, m_sosMedevacCr = 10000.0;
+    int m_sosOpenDays = 2;
+    std::map<std::string, std::pair<std::uint64_t, std::string>> m_sosState;   // call id -> (player, "taken" | "done")
+    std::unordered_map<std::uint64_t, std::string> m_activeSos;               // player -> call id
+    std::set<std::string> m_routableHubs;   // the world hubs a route can reach (set by the server; empty = all)
     int m_militaryTermDays = 720;
     std::vector<std::string> m_courierShips, m_militaryShips;
     std::unordered_map<std::uint64_t, Employment> m_employment;

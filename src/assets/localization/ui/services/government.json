@@ -491,6 +491,90 @@
       "zh-Hans": "期限",
       "es": "plazo",
       "ja": "期間"
+    },
+    "service.government.rescue": {
+      "en": "Rescue (SAR)",
+      "ru": "МЧС",
+      "zh-Hans": "紧急救援",
+      "es": "Rescate",
+      "ja": "救難"
+    },
+    "service.government.sos_licence_yes": {
+      "en": "Rescue licence of this polity: active",
+      "ru": "Лицензия МЧС этой политии: есть",
+      "zh-Hans": "本政体救援执照：有效",
+      "es": "Licencia de rescate de esta entidad: activa",
+      "ja": "この政体の救難免許：有効"
+    },
+    "service.government.sos_licence_no": {
+      "en": "No rescue licence of this polity (F5 -> Licences)",
+      "ru": "Нет лицензии МЧС этой политии (F5 -> Лицензии)",
+      "zh-Hans": "无本政体救援执照（F5 -> 执照）",
+      "es": "Sin licencia de rescate de esta entidad (F5 -> Licencias)",
+      "ja": "この政体の救難免許なし（F5 -> 免許）"
+    },
+    "service.government.sos_active": {
+      "en": "Accepted call",
+      "ru": "Принятый вызов",
+      "zh-Hans": "已接受的呼叫",
+      "es": "Llamada aceptada",
+      "ja": "受諾した要請"
+    },
+    "service.government.sos_fly_to": {
+      "en": "fly to",
+      "ru": "летите к",
+      "zh-Hans": "前往",
+      "es": "vuele a",
+      "ja": "向かう先"
+    },
+    "service.government.sos_list": {
+      "en": "SOS calls in this system",
+      "ru": "Вызовы SOS в системе",
+      "zh-Hans": "本星系求救信号",
+      "es": "Llamadas SOS en este sistema",
+      "ja": "この星系のSOS"
+    },
+    "service.government.sos_none": {
+      "en": "no calls now",
+      "ru": "вызовов сейчас нет",
+      "zh-Hans": "暂无呼叫",
+      "es": "no hay llamadas",
+      "ja": "要請なし"
+    },
+    "service.government.sos_until": {
+      "en": "until day",
+      "ru": "до дня",
+      "zh-Hans": "截至第",
+      "es": "hasta el día",
+      "ja": "期限 日"
+    },
+    "service.government.sos_take": {
+      "en": "TAKE",
+      "ru": "ПРИНЯТЬ",
+      "zh-Hans": "接受",
+      "es": "ACEPTAR",
+      "ja": "受諾"
+    },
+    "service.government.sos_status_taken": {
+      "en": "taken",
+      "ru": "принят",
+      "zh-Hans": "已接受",
+      "es": "aceptada",
+      "ja": "受諾済み"
+    },
+    "service.government.sos_status_done": {
+      "en": "done",
+      "ru": "выполнен",
+      "zh-Hans": "已完成",
+      "es": "completada",
+      "ja": "完了"
+    },
+    "service.government.sos_status_expired": {
+      "en": "expired",
+      "ru": "истёк",
+      "zh-Hans": "已过期",
+      "es": "caducada",
+      "ja": "期限切れ"
     }
   }
 }

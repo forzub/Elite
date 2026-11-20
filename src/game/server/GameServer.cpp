@@ -1719,6 +1719,25 @@ void GameServer::update(double dt)
     }
     m_pendingPurchases.clear();
 
+    // rescue (step 12): a pilot whose ship reached the hub of the accepted SOS call completes it
+    // the world's hubs (a route can reach them) anchor the SOS calls; refreshed when their count changes
+    if (m_economy.loaded() && m_serverTick % 30 == 0 && m_lastSnapshot.hubs.size() != m_economy.routableHubCount())
+    {
+        std::set<std::string> hubs;
+        for (const auto& hub : m_lastSnapshot.hubs)
+            hubs.insert(hub.id);
+        m_economy.setRoutableHubs(std::move(hubs));
+    }
+    if (m_economy.loaded() && m_serverTick % 30 == 0)
+        for (const EntityId pid : m_simulation.playerControlledShipIds())
+            if (const Ship* ps = m_simulation.getShip(pid))
+            {
+                const std::uint64_t player = m_players.playerForShip(ps->core().registry().instanceId).value;
+                const auto& motion = ps->core().transform().motion;
+                if (player != 0 && !motion.hubId.empty())
+                    (void)m_economy.completeSosAt(player, motion.hubId, motion.systemId);
+            }
+
     // ship changes asked this tick (base 2): after the drain - they reset the per-entity queues
     for (const auto& [from, to] : m_pendingBoardings)
         if (const Ship* fromShip = m_simulation.getShip(from))
@@ -2866,6 +2885,11 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
                   << " Cr" << std::endl;
         return;
     }
+    if (command.op == Op::TakeSos)   // F5 МЧС (step 12): anywhere - the licence and the call decide
+    {
+        (void)m_economy.takeSos(player, command.goodId, command.requestId);
+        return;
+    }
     if (command.op == Op::DevGrant)
     {
         if (!devCommandAccepted("grant", id))
@@ -2935,6 +2959,15 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
             (void)m_economy.abandonContract(order);
         (void)m_economy.takeCargoChange(shipKey);
         applyCargoLoad(id);
+        return;
+    }
+    // DEV: a licence off a berth, in the hub's frame (live checks of rescue without the slow docking queue)
+    std::string licenceHub = at;
+    if (command.op == Op::BuyLicence && at.empty() && g_devCommandsAllowed.load() && !motion.hubId.empty())
+    {
+        licenceHub = motion.hubId;
+        std::cerr << "[Licence] DEV: off a berth, in the frame of " << licenceHub << std::endl;
+        (void)m_economy.buyLicence(player, command.goodId, licenceHub, motion.systemId, command.requestId);
         return;
     }
     if (at.empty() || tender || (!command.hubId.empty() && command.hubId != at))

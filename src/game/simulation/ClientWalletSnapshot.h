@@ -61,6 +61,19 @@ struct ClientVacancy
     std::string whyNotRu;
 };
 
+// SOS calls of this system (F5 МЧС, step 12)
+struct ClientSos
+{
+    std::string id;
+    std::string kindRu;
+    std::string hubId;
+    std::string hubName;
+    double rewardCr = 0.0;
+    int expiresDay = 0;
+    std::string status;        // open / taken / done / expired
+    bool mine = false;
+};
+
 struct ClientWalletSnapshot
 {
     bool valid = false;
@@ -120,6 +133,10 @@ struct ClientWalletSnapshot
     double jobWageCr = 0.0;
     int jobSinceDay = -1;
     int jobTermEndDay = -1;
+    // rescue (step 12): the SOS calls of this system, the pilot's active call, the licence here
+    std::vector<ClientSos> sos;
+    std::string activeSosId;
+    bool sarLicence = false;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

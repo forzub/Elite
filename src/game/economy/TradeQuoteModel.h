@@ -67,6 +67,8 @@ struct MarketSide
     // only; a cap on what the hub sells (planned: the stock above the state's need; corridor: the day's ration), < 0 = none
     double fixedPriceCr = 0.0;
     double giveCapT = -1.0;
+    // bulk goods (ore, water / gas) go through a bulk terminal: a share of the general cargo handling tariff
+    double handlingMult = 1.0;
 };
 
 [[nodiscard]] double bidCr(const MarketSide& m);

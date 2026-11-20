@@ -526,6 +526,9 @@ bool EconomyServer::load()
         m_dealRules.minStockShare = num(deal, "min_stock_share", m_dealRules.minStockShare);
         m_dealRules.hubBuyCapShare = num(deal, "hub_buy_cap_share", m_dealRules.hubBuyCapShare);
         m_dealRules.handlingCrPerT = num(deal, "handling_cr_per_t", m_dealRules.handlingCrPerT);
+        m_bulkHandlingShare = num(deal, "bulk_handling_share", m_bulkHandlingShare);
+        if (deal.contains("bulk_groups"))
+            m_bulkGroups = deal["bulk_groups"].get<std::vector<std::string>>();
         m_dealRules.dockingBaseCr = num(deal, "docking_base_cr", m_dealRules.dockingBaseCr);
         m_dealRules.dockingCrPerDryT = num(deal, "docking_cr_per_dry_t", m_dealRules.dockingCrPerDryT);
         m_dealRules.vatRefundFeeShare = num(deal, "vat_refund_fee_share", m_dealRules.vatRefundFeeShare);
@@ -2462,6 +2465,8 @@ MarketSide EconomyServer::regimeSide(const HubMarket& m, int good, std::uint64_t
     const std::string polity = polityOf(m.hubId, m.systemId);
     const std::string regime = marketRegimeOf(polity);
     const std::string& group = EconomyModel::instance().goods()[static_cast<std::size_t>(good)].group;
+    if (std::find(m_bulkGroups.begin(), m_bulkGroups.end(), group) != m_bulkGroups.end())
+        side.handlingMult = m_bulkHandlingShare;
     const auto in = [&](const std::vector<std::string>& v) { return std::find(v.begin(), v.end(), group) != v.end(); };
     const auto& R = m_regimeRules;
     if (regime == "planned" || (regime == "mobilization" && in(R.mobilizationGroups)))

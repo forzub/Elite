@@ -7589,3 +7589,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - BALANCE (open): 100 t of ore_common sold at Высокий = 1 554 Cr (15.5 Cr/t) vs base 96 Cr/t; at the mine 11.2 Cr/t
   net. Per-tonne fees appear to eat cheap bulk goods - investigate the deal breakdown for ore next.
 - Also fixed: a trailing comma in government.json (the ja build_dock_hint line) from the previous hint edit.
+- (2026-11-20, later) BALANCE fix: bulk goods (groups ore, water_gas) pay 0.3 of the 12 Cr/t handling tariff (a bulk
+  terminal; real iron ore port handling a few $/t vs ~$10/t general cargo): MarketSide.handlingMult set in regimeSide,
+  used by explainDeal; trade_fees deal.bulk_handling_share / bulk_groups. The ore deal at Высокий: proceeds 2 994,
+  handling 1 200 -> 360 (+VAT 240 -> 72); the test mine's 10-day net 23 264 -> 42 650 Cr (11.2 -> 20.6 Cr/t).
+  257/257. Known gap: the trade snapshot's handlingCrPerT (the client's estimate) is still the general tariff.
+  The low ore bid at Высокий (~30 Cr/t vs base 96) is the market's surplus, left as is.

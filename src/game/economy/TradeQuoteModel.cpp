@@ -84,7 +84,7 @@ DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const Fiscal
     q.unitCr = buy ? buyUnitCr(m, tonnes, r) : sellUnitCr(m, tonnes, r);
     q.impactShare = q.listUnitCr > 0.0 ? q.unitCr / q.listUnitCr - 1.0 : 0.0;
     q.goodsCr = tonnes * q.unitCr;
-    q.handlingCr = tonnes * r.handlingCrPerT * style.portIndex;
+    q.handlingCr = tonnes * r.handlingCrPerT * style.portIndex * m.handlingMult;
     char label[96];
     if (buy)
     {

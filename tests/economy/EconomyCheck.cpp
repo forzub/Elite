@@ -2271,6 +2271,8 @@ void testMining()
     const auto sold = s.trade(sell);
     std::printf("INFO  100 t of %s hauled to Высокий: %s (%.0f Cr; at the mine the 10-day average was %.1f Cr/t net)\n", ore.c_str(),
                 sold.ok ? "sold" : sold.message.c_str(), sold.totalCr, c.soldT > 0.0 ? c.revenueCr / c.soldT : 0.0);
+    for (const auto& line : sold.lines)
+        std::printf("INFO    ore deal: %s\n", line.c_str());
     check(sold.ok || !sold.message.empty(), "the hauled ore is an ordinary lot of the hold (sold or refused by the market)");
     s.setMineSale(1, site, true);
     // broke: no output, then the lease lapses after 90 days

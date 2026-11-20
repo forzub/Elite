@@ -545,6 +545,8 @@ private:
     std::map<std::string, double> m_buildKindFactor;
     void stepConstruction(int day);
     std::vector<Concession> m_concessions;
+    double m_bulkHandlingShare = 0.3;                          // the bulk terminal tariff share (ore, water / gas)
+    std::vector<std::string> m_bulkGroups {"ore", "water_gas"};
     double m_mineApplicationCr = 50000.0, m_mineSurveyCr = 200000.0, m_mineRentBaseCr = 2000.0, m_mineRentPerRadiusCr = 6.0, m_mineBaseTDay = 150.0,
            m_mineWageMonthCr = 3000.0, m_mineRoyalty = 0.07, m_mineRecoverable = 0.3, m_mineMaintYear = 0.02;
     int m_mineStaff = 12, m_mineLapseDays = 90;

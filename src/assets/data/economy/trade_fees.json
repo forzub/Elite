@@ -24,6 +24,12 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "insurance": {
+  "note": "TRADE_DESIGN §3.6 (step 13, minimal set). Cargo insurance bought at a berth (F8 ГРУЗ): covers the player's own lots aboard at that moment for days_valid days; premium = cargo_premium_share x value x (1 + 2 x risk) (risk 0 until routes carry one); value = the hub's mid price x tonnes (the good's base price where it is not traded). A loss of the ship (combat, impact, atmosphere, crush) pays (1 - deductible_share) of the insured lots that were lost; contraband (banned here, restricted without the licence) cannot be insured. Hull insurance needs the ship's value and the ship change base - deferred.",
+  "cargo_premium_share": 0.004,
+  "deductible_share": 0.10,
+  "days_valid": 30
+ },
  "licences": {
   "note": "TRADE_DESIGN §4 (step 11, minimal set). A licence is issued by a polity, valid on its hubs, for days_valid days; bought at a berth of that polity (F5 -> the state app -> licences), the fee x the style's port index, into the polity's bank (refused without the money - not a debt). A good 'restricted' in the hub's regime family needs the licence that lists it; without it the good is contraband (the open market refuses, customs seize, the black market pays shadow x 1.3). Pilot licence categories (author 2026-11-20, like a driving licence in Дія): the start grants 'cargo_courier' (assisted); 'newtonian' opens later. Not in the minimal set: trader (VAT) registration, passengers, mining, salvage, SAR, mercenary, bloc licence, Lotus cordon.",
   "days_valid": 360,

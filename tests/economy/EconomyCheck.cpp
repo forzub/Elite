@@ -1554,7 +1554,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/8" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/9" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1669,7 +1669,7 @@ void testIncomeTax()
     EconomyServer t;
     t.load();
     t.start(1095);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/8" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
               near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
@@ -1834,7 +1834,7 @@ void testSmuggling()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/8" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
               nlohmann::json::parse(saved)["seizures"].size() == 1,
           "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
 }
@@ -1964,12 +1964,62 @@ void testLicences()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/8" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
               t.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "licensed",
           "economy_state/8: the licence survives save / restore byte-exact");
     for (int day = 1001; day <= 1360; ++day)
         s.advanceTo(day);
     check(s.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "restricted", "after 360 days the licence has expired");
+}
+
+// TRADE step 13 (TRADE_DESIGN §3.6): cargo insurance - 0.4 % premium, 90 % of the insured lots on a loss, no contraband
+void testInsurance()
+{
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  insurance (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    const CargoCapacity cobrett{120.0, 6};
+    check(s.devAddCargo(1, 901, "food_staples", 10.0, cobrett, "earth_orbital_hub").empty() &&
+              s.devAddCargo(1, 901, "narcotics", 1.0, cobrett, "earth_orbital_hub").empty() &&
+              s.devAddCargo(1, 902, "food_staples", 10.0, cobrett, "earth_orbital_hub").empty(),
+          "DEV: ship 901 grain 10 t + narcotics 1 t, ship 902 grain 10 t (uninsured)");
+    MarketSide grain;
+    check(s.marketSide("earth_orbital_hub", "food_staples", grain), "Sol grain market");
+    const auto q = s.quoteCargoInsurance(1, 901, "earth_orbital_hub", 0);
+    check(q.why.empty() && q.lotIds.size() == 1 && near(q.valueCr, 10.0 * grain.priceCr, 0.01) && near(q.premiumCr, 0.004 * q.valueCr, 0.01),
+          "the quote covers the grain only (narcotics are contraband here): value " + std::to_string(q.valueCr) + ", premium 0.4 %");
+    const double w0 = netWorthCr(*s.ledger(1), s.banks());
+    const auto ins = s.insureCargo(1, 901, "earth_orbital_hub", 0, 1);
+    check(ins.ok && near(w0 - netWorthCr(*s.ledger(1), s.banks()), q.premiumCr, 0.01) && !s.insureCargo(1, 901, "", 0, 2).ok,
+          "insured at the berth for the premium; not without a berth");
+    const auto snap = s.tradeSnapshot(1, 901, "earth_orbital_hub", 0, true);
+    check(near(snap.insuredCr, q.valueCr, 0.01) && snap.insuredUntilDay == 1030, "the snapshot shows the policy to day 1030");
+    const double w1 = netWorthCr(*s.ledger(1), s.banks());
+    EconomyServer::ShipLoss loss;
+    loss.eventId = "loss:901:1";
+    loss.shipKey = 901;
+    loss.systemId = 0;
+    loss.cause = "disabled in combat";
+    check(s.recordShipLoss(loss), "ship 901 lost in combat");
+    check(near(netWorthCr(*s.ledger(1), s.banks()) - w1, 0.9 * q.valueCr, 0.05), "the payout: 90 % of the insured grain (10 % deductible), nothing for the narcotics");
+    const double w2 = netWorthCr(*s.ledger(1), s.banks());
+    loss.eventId = "loss:902:1";
+    loss.shipKey = 902;
+    check(s.recordShipLoss(loss) && near(netWorthCr(*s.ledger(1), s.banks()), w2, 1e-6), "an uninsured ship's cargo pays nothing");
+    check(s.devAddCargo(1, 903, "food_staples", 5.0, cobrett, "earth_orbital_hub").empty() && s.insureCargo(1, 903, "earth_orbital_hub", 0, 3).ok,
+          "ship 903 insured");
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(1000);
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/9" &&
+              nlohmann::json::parse(saved)["cargo_policies"].size() == 1,
+          "economy_state/9: the policy survives save / restore byte-exact");
 }
 
 int main()
@@ -1995,6 +2045,7 @@ int main()
     testSmuggling();
     testNpcMarket();
     testLicences();
+    testInsurance();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

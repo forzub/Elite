@@ -126,6 +126,11 @@ struct ClientTradeSnapshot
     double jumpRangeLy = 0.0;         // one full J charge at this mass
     double jumpRangeEmptyLy = 0.0;    // the same with an empty hold
     double vatReclaimCr = 0.0;        // input VAT waiting for its refund
+    // cargo insurance (step 13): the active policy of this ship (0 = none) and the premium to insure what is aboard now
+    double insuredCr = 0.0;
+    int insuredUntilDay = -1;
+    double insuranceQuoteCr = 0.0;
+    double insuranceValueCr = 0.0;    // the value the quote covers
 
     std::vector<ClientTradeResult> results;   // newest last, at most 4
 

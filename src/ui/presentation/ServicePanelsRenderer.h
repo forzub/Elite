@@ -53,7 +53,8 @@ enum class ServicePanelActionType
     TradeDealConfirm,
     TradeDealCancel,
     TradeDealRetry,
-    CargoBlackSell           // F8 ГРУЗ: text = good id - all of it aboard to the hub's black market (TRADE_DESIGN §2.8, step 9)
+    CargoBlackSell,          // F8 ГРУЗ: text = good id - all of it aboard to the hub's black market (TRADE_DESIGN §2.8, step 9)
+    CargoInsure              // F8 ГРУЗ: insure the own lots aboard (step 13)
 };
 
 struct ServicePanelAction

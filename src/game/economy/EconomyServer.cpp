@@ -548,6 +548,10 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json ins = fees.value("insurance", json::object());
+        m_cargoPremiumShare = num(ins, "cargo_premium_share", m_cargoPremiumShare);
+        m_deductibleShare = num(ins, "deductible_share", m_deductibleShare);
+        m_insuranceDays = std::max(1, static_cast<int>(num(ins, "days_valid", m_insuranceDays)));
         const json lic = fees.value("licences", json::object());
         m_licenceDays = std::max(1, static_cast<int>(num(lic, "days_valid", m_licenceDays)));
         const json licTypes = lic.value("types", json::object());   // named: items() of a temporary dangles
@@ -965,6 +969,97 @@ void EconomyServer::stepNpcFlows(int day)
         std::cerr << "[NpcFlows] day " << day << ": " << shipped << " shipments today (" << grouped(tonnes) << " t), "
                   << m_npcShipments.size() << " in flight, step " << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()
                   << " ms" << '\n';
+}
+
+// ---------------------------------------------------------------- cargo insurance (TRADE_DESIGN §3.6, step 13)
+EconomyServer::InsuranceQuote EconomyServer::quoteCargoInsurance(std::uint64_t playerId, std::uint64_t shipKey, const std::string& hubId,
+                                                                  int systemId) const
+{
+    InsuranceQuote q;
+    const CargoManifest* m = m_cargo.find(shipKey);
+    if (!m || m->lots.empty())
+    {
+        q.why = "трюм пуст";
+        return q;
+    }
+    for (const auto& lot : m->lots)
+    {
+        if (!lot.contractId.empty())
+            continue;   // the issuer's goods: the issuer insures them
+        const int g = goodIndex(lot.goodId);
+        const std::string legal = legalityFor(playerId, g, hubId, systemId);
+        if (legal == "banned" || legal == "restricted")
+            continue;   // contraband is not insurable
+        double unit = g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].baseCrPerTonne : 0.0;
+        if (MarketSide side; g >= 0 && marketSide(hubId, lot.goodId, side))   // the price the market trades at (regime applied)
+            unit = side.fixedPriceCr > 0.0 ? side.fixedPriceCr : side.priceCr;
+        q.valueCr += unit * lot.tonnes;
+        q.lotIds.push_back(lot.lotId);
+    }
+    if (q.lotIds.empty())
+        q.why = "нечего страховать: груз контракта или контрабанда";
+    q.premiumCr = std::round(m_cargoPremiumShare * q.valueCr * 100.0) / 100.0;   // x (1 + 2 x risk): risk 0 for now
+    return q;
+}
+
+game::simulation::ClientTradeResult EconomyServer::insureCargo(std::uint64_t playerId, std::uint64_t shipKey, const std::string& hubId,
+                                                               int systemId, std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+        return refuse("no_account", "нет счёта");
+    if (hubId.empty())
+        return refuse("not_docked", "страховку оформляют у причала");
+    const InsuranceQuote q = quoteCargoInsurance(playerId, shipKey, hubId, systemId);
+    if (!q.why.empty())
+        return refuse("not_insurable", q.why);
+    const std::string bank = bankOf(hubId, systemId);
+    const PaymentResult p = pay(*l, m_banks, bank, q.premiumCr, Purpose::Fee, m_day, false, "страховка груза");
+    if (!p.ok)
+        return refuse("no_money", "не хватает денег на премию " + grouped(q.premiumCr) + " Cr");
+    if (TaxBook* t = taxBook(playerId))
+        addExpense(*t, q.premiumCr);
+    // one policy per ship: a new one replaces the old
+    m_cargoPolicies.erase(std::remove_if(m_cargoPolicies.begin(), m_cargoPolicies.end(), [&](const CargoPolicy& c) { return c.shipKey == shipKey; }),
+                          m_cargoPolicies.end());
+    CargoPolicy pol;
+    pol.playerId = playerId;
+    pol.shipKey = shipKey;
+    pol.bankId = bank;
+    pol.insuredCr = q.valueCr;
+    pol.endDay = m_day + m_insuranceDays;
+    // per insured lot: its tonnes and value now (the same unit prices as the quote)
+    if (const CargoManifest* m = m_cargo.find(shipKey))
+        for (const auto& lot : m->lots)
+            if (std::find(q.lotIds.begin(), q.lotIds.end(), lot.lotId) != q.lotIds.end())
+            {
+                const int g = goodIndex(lot.goodId);
+                double unit = g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].baseCrPerTonne : 0.0;
+                if (MarketSide side; g >= 0 && marketSide(hubId, lot.goodId, side))   // the price the market trades at (regime applied)
+                    unit = side.fixedPriceCr > 0.0 ? side.fixedPriceCr : side.priceCr;
+                pol.lotTonnes[lot.lotId] = lot.tonnes;
+                pol.lotValueCr[lot.lotId] = unit * lot.tonnes;
+            }
+    m_cargoPolicies.push_back(pol);
+    logEvent(*l, m_day, "страховка груза на " + grouped(q.valueCr) + " Cr до дня " + std::to_string(pol.endDay) + ": -" + grouped(q.premiumCr) + " Cr");
+    r.ok = true;
+    r.code = "insured";
+    r.totalCr = -q.premiumCr;
+    r.message = "груз застрахован на " + grouped(q.valueCr) + " Cr до дня " + std::to_string(pol.endDay);
+    pushResult(playerId, r);
+    saveNow("cargo insurance");
+    std::cerr << "[Insurance] player " << playerId << ": cargo of ship " << shipKey << " insured for " << grouped(q.valueCr) << " Cr, premium "
+              << grouped(q.premiumCr) << " Cr, until day " << pol.endDay << '\n';
+    return r;
 }
 
 // ---------------------------------------------------------------- smuggling (TRADE_DESIGN §2.8, step 9)
@@ -2111,6 +2206,18 @@ game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t
     for (const auto& v : m_vatRefunds)
         if (v.playerId == playerId)
             s.vatReclaimCr += v.amountCr;
+    for (const auto& pol : m_cargoPolicies)
+        if (pol.shipKey == shipKey && pol.endDay >= m_day)
+        {
+            s.insuredCr = pol.insuredCr;
+            s.insuredUntilDay = pol.endDay;
+        }
+    if (!hubId.empty())
+    {
+        const InsuranceQuote q = quoteCargoInsurance(playerId, shipKey, hubId, systemId);
+        s.insuranceQuoteCr = q.why.empty() ? q.premiumCr : 0.0;
+        s.insuranceValueCr = q.why.empty() ? q.valueCr : 0.0;
+    }
     if (const auto it = m_results.find(playerId); it != m_results.end())
         s.results = it->second;
     // the contract board of this hub (shared) and the player's contracts (trade step 5)
@@ -2474,9 +2581,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/8";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+    j["schema"] = "economy_state/9";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
                                        // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
-                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11)
+                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13)
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -2517,6 +2624,15 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
                                    {"cause", r.cause}});
+    j["cargo_policies"] = json::array();
+    for (const auto& pol : m_cargoPolicies)
+    {
+        json lots = json::array();
+        for (const auto& [id, v] : pol.lotValueCr)
+            lots.push_back({id, v, pol.lotTonnes.count(id) ? pol.lotTonnes.at(id) : 0.0});
+        j["cargo_policies"].push_back({{"player", pol.playerId}, {"ship", pol.shipKey}, {"bank", pol.bankId}, {"cr", pol.insuredCr},
+                                       {"end", pol.endDay}, {"lots", lots}});
+    }
     j["licences"] = json::array();
     {
         std::vector<std::uint64_t> ids;
@@ -2580,6 +2696,30 @@ bool EconomyServer::recordShipLoss(const ShipLoss& loss)
     m_openPortCalls.erase(loss.shipKey);   // a ship lost at the berth: no berth fee (as before: no release event)
     std::uint64_t player = 0;
     const std::vector<CargoLot> lots = m_cargo.takeAll(loss.shipKey, player);
+    // cargo insurance (step 13): the insured lots that were lost pay (1 - deductible) of their insured value
+    for (auto it = m_cargoPolicies.begin(); it != m_cargoPolicies.end();)
+    {
+        if (it->shipKey != loss.shipKey)
+        {
+            ++it;
+            continue;
+        }
+        double payout = 0.0;
+        if (it->endDay >= m_day)
+            for (const auto& lot : lots)
+                if (const auto v = it->lotValueCr.find(lot.lotId); v != it->lotValueCr.end())
+                {
+                    const double insuredT = it->lotTonnes.count(lot.lotId) ? it->lotTonnes.at(lot.lotId) : lot.tonnes;
+                    payout += v->second * std::min(1.0, insuredT > 0.0 ? lot.tonnes / insuredT : 0.0);
+                }
+        payout = std::round(payout * (1.0 - m_deductibleShare) * 100.0) / 100.0;
+        if (ClientLedger* pl = ledger(it->playerId); pl && payout > 0.0)
+        {
+            receive(*pl, m_banks, it->bankId, payout, m_day, "страховая выплата за груз (" + loss.cause + ")");
+            std::cerr << "[Insurance] player " << it->playerId << ": cargo payout " << grouped(payout) << " Cr (" << loss.cause << ")" << '\n';
+        }
+        it = m_cargoPolicies.erase(it);
+    }
     double tonnes = 0.0;
     for (const auto& lot : lots)
     {
@@ -2627,7 +2767,8 @@ bool EconomyServer::restoreState(const std::string& text)
     const std::string schema = j.value("schema", std::string());
     if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3" &&
         schema != "economy_state/4" && schema != "economy_state/5" && schema != "economy_state/6" &&
-        schema != "economy_state/7" && schema != "economy_state/8")   // /1: no trade registries; /2: no contracts;
+        schema != "economy_state/7" && schema != "economy_state/8" &&
+        schema != "economy_state/9")   // /1: no trade registries; /2: no contracts;
                                                                        // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
@@ -2700,6 +2841,22 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_cargoPolicies) policies;   // economy_state/9
+        for (const auto& x : j.value("cargo_policies", json::array()))
+        {
+            CargoPolicy pol;
+            pol.playerId = x.value("player", std::uint64_t{0});
+            pol.shipKey = x.value("ship", std::uint64_t{0});
+            pol.bankId = x.value("bank", std::string());
+            pol.insuredCr = x.value("cr", 0.0);
+            pol.endDay = x.value("end", 0);
+            for (const auto& lot : x.value("lots", json::array()))
+            {
+                pol.lotValueCr[lot.at(0).get<std::string>()] = lot.at(1).get<double>();
+                pol.lotTonnes[lot.at(0).get<std::string>()] = lot.at(2).get<double>();
+            }
+            policies.push_back(std::move(pol));
+        }
         decltype(m_licences) licences;   // economy_state/8
         for (const auto& x : j.value("licences", json::array()))
             licences[x.at(0).get<std::uint64_t>()].push_back({x.at(1).get<std::string>(), x.at(2).get<std::string>(), x.at(3).get<int>()});
@@ -2762,6 +2919,7 @@ bool EconomyServer::restoreState(const std::string& text)
         m_taxBooks.swap(taxBooks);
         m_seizures.swap(seizures);
         m_licences.swap(licences);
+        m_cargoPolicies.swap(policies);
         m_lossEvents.swap(lossEvents);
         m_lostCargo.swap(lostCargo);
         m_nextLostCargo = nextLostCargo;

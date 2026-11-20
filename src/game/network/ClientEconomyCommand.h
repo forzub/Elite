@@ -23,7 +23,8 @@ struct ClientEconomyCommand
         SellBlack = 8,       // goodId, quantity t: to the black market of the hub (contraband here: banned / restricted; step 9)
         DevCustoms = 9,      // DEV: the customs inspection probability forced to `quantity` (< 0 = the rules again)
         BuyLicence = 10,     // goodId = licence type: from the polity of the hub the ship is docked at (step 11)
-        Last = BuyLicence
+        InsureCargo = 11,    // the own lots aboard, at a berth (step 13)
+        Last = InsureCargo
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

@@ -7338,3 +7338,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Observed, not of this slice (first attempt of the same run): the client dock tracker diverged at the
   earth_orbital_hub gate (DockClientTrack segment 1, remaining 0, cross_track 100 -> 112 m growing, actual 5-6 m/s) and
   never docked within 300 s; the retry docked normally. Flaky docking - to investigate separately.
+
+## TRADE MVP step 13: cargo insurance (docs/TRADE_DESIGN.md §3.6, §9k) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): a per-ship cargo policy bought at a berth (F8 ГРУЗ button / cargo:insure): the own lots aboard
+  for 30 days, premium 0.4 % of their value at the hub's traded price (regime applied); a ship loss pays 90 % of the
+  insured lots lost (10 % deductible); contract cargo and contraband excluded. trade_fees.json "insurance". Protocol 37
+  (InsureCargo), snapshot schema 59, economy_state/9.
+- First run of the check: the quote valued Sol grain at the raw cell price (below the corridor) while the market trades
+  at the corridor price - switched to the regime market side.
+- Checks: EliteEconomyCheck 213/213 (testInsurance). LIVE (D:/tmp/insure13): 10 t grain -> "insured for 5 629 Cr,
+  premium 23 Cr, until day 10226", ГРУЗ shows the policy.
+- Deferred (§9k): hull insurance, surety bonds, route risk.

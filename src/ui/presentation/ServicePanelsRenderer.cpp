@@ -704,6 +704,21 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
         t.textDrawPx("трюм пуст", x, y, px, Muted);
         y += static_cast<float>(px) + 6.0f;
     }
+    // cargo insurance (step 13): the active policy; the button insures what is aboard now (at a berth)
+    {
+        const std::string pol = s.insuredUntilDay >= 0 ? "Страховка груза: " + grouped(s.insuredCr) + " Cr до дня " + std::to_string(s.insuredUntilDay)
+                                                       : std::string("Страховка груза: нет");
+        t.textDrawPx(pol, x, y, small, s.insuredUntilDay >= 0 ? Good : Muted);
+        if (s.docked && s.insuranceQuoteCr > 0.0)
+        {
+            const std::string label = "ЗАСТРАХОВАТЬ " + grouped(s.insuranceValueCr) + " Cr  ·  премия " + grouped(s.insuranceQuoteCr) + " Cr";
+            const float bw = t.measureTextPx(label, small) + 20.0f, bh = small * 1.7f;
+            t.solidRectPx(right - bw, y - small * 0.3f, bw, bh, Selected);
+            t.textDrawPx(label, right - bw + 10, y, small, Warn);
+            addBlackButton(right - bw, y - small * 0.3f, right, y - small * 0.3f + bh, "#insure");
+        }
+        y += static_cast<float>(small) * 1.8f + 6.0f;
+    }
     for (const auto& c : s.cargo)
     {
         if (y > listY + listH - 2.0f * static_cast<float>(px))
@@ -990,7 +1005,8 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     {
         renderCargo(t, page.trade, page.finance, listX, listY, listW, listH, w, h, px, small, big,
                     [this](float x0, float y0, float x1, float y1, const std::string& good) {
-                        m_hits.push_back({x0, y0, x1, y1, 0, {ServicePanelActionType::CargoBlackSell, good}});
+                        m_hits.push_back({x0, y0, x1, y1, 0, {good == "#insure" ? ServicePanelActionType::CargoInsure
+                                                                                : ServicePanelActionType::CargoBlackSell, good}});
                     });
         t.endFrame();
         return;

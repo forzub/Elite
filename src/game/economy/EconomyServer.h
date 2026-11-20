@@ -188,6 +188,17 @@ public:
     [[nodiscard]] std::string legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
     [[nodiscard]] std::string licenceForGood(const std::string& goodId) const;   // "" = none lists it
     [[nodiscard]] bool hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const;
+    // ---- cargo insurance (TRADE_DESIGN §3.6, step 13)
+    struct InsuranceQuote
+    {
+        double valueCr = 0.0;
+        double premiumCr = 0.0;
+        std::vector<std::string> lotIds;
+        std::string why;               // "" = insurable
+    };
+    [[nodiscard]] InsuranceQuote quoteCargoInsurance(std::uint64_t playerId, std::uint64_t shipKey, const std::string& hubId, int systemId) const;
+    game::simulation::ClientTradeResult insureCargo(std::uint64_t playerId, std::uint64_t shipKey, const std::string& hubId, int systemId,
+                                                    std::uint32_t requestId);
     game::simulation::ClientTradeResult buyLicence(std::uint64_t playerId, const std::string& type, const std::string& hubId, int systemId,
                                                    std::uint32_t requestId);
     struct CustomsResult
@@ -357,7 +368,20 @@ private:
     std::vector<LicenceType> m_licenceTypes;
     std::vector<PilotCategory> m_pilotCategories;
     int m_licenceDays = 360;
-    std::unordered_map<std::uint64_t, std::vector<HeldLicence>> m_licences;   // market x good: held by the state (no speculation)
+    std::unordered_map<std::uint64_t, std::vector<HeldLicence>> m_licences;
+    struct CargoPolicy
+    {
+        std::uint64_t playerId = 0;
+        std::uint64_t shipKey = 0;
+        std::string bankId;
+        std::map<std::string, double> lotValueCr;   // lot id -> insured value per tonne x tonnes at the time
+        std::map<std::string, double> lotTonnes;
+        double insuredCr = 0.0;
+        int endDay = 0;
+    };
+    std::vector<CargoPolicy> m_cargoPolicies;
+    double m_cargoPremiumShare = 0.004, m_deductibleShare = 0.10;
+    int m_insuranceDays = 30;   // market x good: held by the state (no speculation)
     void stepNpcFlows(int day);
     // ---- smuggling (TRADE_DESIGN §2.8, step 9)
     struct SmugglingRules

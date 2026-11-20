@@ -30,6 +30,9 @@ struct ClientSessionSnapshot
 
     bool universeTimeSimulation = false;
     std::string universeDate;
+    // the ship this session flies and its control epoch (base 2: a ship change mid-session; 0 = the bootstrap ship)
+    std::uint32_t controlledEntityId = 0;
+    std::uint32_t controlEpoch = 0;
 };
 
 } // namespace game::simulation

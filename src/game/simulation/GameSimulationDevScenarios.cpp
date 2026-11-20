@@ -142,7 +142,10 @@ void GameSimulation::updateCatalogShipLineup()
         init.registry.ownerActor = ActorIds::Player();   // the player fleet: F7 lists them
         init.registry.registrationId = d->catalog.passportId;
         init.registry.shipRole = ShipRoleType::Civilian;
-        const EntityId id = spawnShip(ShipRole::NPC, ptr.motion.systemId, *d, position, init, ptr.orientation);
+        // ELITE_CATALOG_SHIPS_BOARDABLE=1: Player-role (a pilot can board them - base 2 ship change)
+        const char* boardable = std::getenv("ELITE_CATALOG_SHIPS_BOARDABLE");
+        const ShipRole role = boardable && *boardable == '1' ? ShipRole::Player : ShipRole::NPC;
+        const EntityId id = spawnShip(role, ptr.motion.systemId, *d, position, init, ptr.orientation);
         Ship* ship = id.value ? getShip(id) : nullptr;
         if (!ship)
             continue;

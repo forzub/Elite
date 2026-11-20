@@ -7401,3 +7401,28 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   replacement is a fee); not enough money / not at a berth -> GameSimulation::refuseRefit publishes the reason (F7 shows
   it); DEV off a berth = free with a log line (the DEV refit verbs keep working). The arrest's exchange seizure stays
   free (the court).
+
+## F6/F7 BASE 2: the player changes ship mid-session - SOURCE + LIVE PASS 2026-11-20
+- Map first (subagent): GameSimulation::m_playerId is only a bootstrap alias (no live flight / replication use);
+  the live flag is m_playerControlledShipIds; ControlRegistry had no rebind; the server already rebuilds every
+  session snapshot from the current binding; the client learned its ship only in the welcome; ShipRole cannot change.
+- Built: ControlRegistry::rebindHuman; GameServer::transferPlayerControl (owned by the same actor, ShipRole::Player,
+  free, not destroyed, same system <= 20 km; registers a ship spawned after the bootstrap in the instance registry,
+  ownership -> the player, resetSessionControlState on both ships, setPlayerControlled moves, PlayerRegistry::assignShip,
+  the ideal-radar runtime configured, a per-player control epoch); ClientShipCommand::BoardShip (protocol 38) queued
+  and executed after the command drain (the reset clears the per-entity queues); ClientSessionSnapshot
+  controlledEntityId + controlEpoch (snapshot schema 61); GameClient follows a new epoch (m_playerId,
+  setLocalControlledEntity, prediction resync); SpaceState::followControlledShip re-inits PlayerShipView with the new
+  descriptor, cancels the route / body autopilot, points F7 at it. DEV: ELITE_CATALOG_SHIPS_BOARDABLE=1 spawns the
+  lineup as Player-role; board:<n> boards F7's n-th owned ship.
+- LIVE (D:/tmp/board/run.log, 01..04_*.png; no DEV start relocation - the lineup spawns at the bootstrap position):
+  "[Board] ship 201 -> 1380: DONE", "[Control] client: controlled ship 201 -> 1380 (epoch 1)", "SpaceState: the cockpit
+  moves 201 -> 1380", then freeflight + HOME: "[FreeFlight] ship 1380 thrust FULL ... main 6.69595 m/s2" (the C-120's
+  acceleration), END brakes; F7 lists the C-120 first ("корабль 1 из 2"). EliteEconomyCheck 224/224, ServicePages,
+  RepairRefit, architecture / wire / replication / function-key contracts PASS.
+- Found on the way: the first attempts were refused "far" (38 km) - ELITE_DEV_START moved the player 40 km away from
+  the lineup spawned at the bootstrap position; the C-120 has a 5 000 t jump core but no J-charge capacity, so the
+  client planner says "no jump drive" (data, not the handover; the message is misleading - to fix wording).
+- Limits: only Player-role ships can be boarded (no role change API; an NPC-role ship would lack the ideal radar and
+  freeze the cockpit view); the old ship stays Player-role and idle; inputs in flight at the switch may reach the new
+  ship for one tick; no persistence of ships; the multiplayer acceptance harnesses assume fixed identities (not run).

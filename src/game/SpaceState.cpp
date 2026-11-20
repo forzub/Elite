@@ -1488,6 +1488,26 @@ void SpaceState::updateShipObservationInterest(float dt)
 }
 
 
+void SpaceState::followControlledShip()
+{
+    if (!m_client)
+        return;
+    const EntityId now = m_client->localControlledEntityId();
+    if (now.value == 0 || now.value == m_playerId.value)
+        return;
+    const auto it = m_client->world().ships().find(now.value);
+    if (it == m_client->world().ships().end() || !it->second.descriptor)
+        return;   // not replicated yet: the next frame
+    std::cerr << "[Control] SpaceState: the cockpit moves " << m_playerId.value << " -> " << now.value << std::endl;
+    cancelClientRoute();
+    cancelClientBodyAutopilot();
+    m_playerId = now;
+    m_playerView = std::make_unique<PlayerShipView>();
+    m_playerView->init(context(), it->second.descriptor, it->second.transform);
+    m_playerView->setAttachmentOverrides(&m_attachmentEditorOverrides);
+    m_refitShip = now;
+}
+
 void SpaceState::update(float dt)
 {
     const double updateStartMs = nowMs();
@@ -1500,6 +1520,7 @@ void SpaceState::update(float dt)
     // DEV scripted acceptance steps (ELITE_DEV_SOL_MAP_SCRIPT, *_AT timers,
     // service script): src/game/dev/DevScriptRunner.
     game::dev::DevScriptRunner::instance().update(*this);
+    followControlledShip();
 
 
 

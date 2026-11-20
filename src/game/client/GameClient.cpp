@@ -663,6 +663,22 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             snapshot.session.universeTimelineRevision
         );
 
+        // base 2: the server moved this session to another ship (a new control epoch): follow it
+        if (snapshot.session.controlEpoch != m_controlEpoch && snapshot.session.controlledEntityId != 0)
+        {
+            m_controlEpoch = snapshot.session.controlEpoch;
+            if (snapshot.session.controlledEntityId != m_playerId.value)
+            {
+                std::cerr << "[Control] client: controlled ship " << m_playerId.value << " -> " << snapshot.session.controlledEntityId
+                          << " (epoch " << m_controlEpoch << ")" << std::endl;
+                m_playerId = EntityId{snapshot.session.controlledEntityId};
+                m_world.setLocalControlledEntity(m_playerId);
+                m_pendingInputs.clear();
+                m_predictionSuspended = false;
+                m_accumulator = 0.0f;
+                ++m_predictionResyncCount;
+            }
+        }
         if (timelineRevisionChanged || playerSystemChanged)
         {
             m_pendingInputs.clear();

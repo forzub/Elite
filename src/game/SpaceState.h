@@ -241,6 +241,8 @@ public:
     // the planned route flown by the client (SpaceStateRouteRun.cpp)
     void startClientRoute(const std::vector<game::navigation::route::RoutePoint>& legs);
     void cancelClientRoute();
+    // base 2: the session's controlled ship changed - re-bind the cockpit and drop the old ship's flight state
+    void followControlledShip();
     // The pilot's takeover of an autopilot / the station's departure (3 s of handling).
     void updatePilotTakeover(bool touching);
     double m_takeoverSinceSeconds = -1.0;

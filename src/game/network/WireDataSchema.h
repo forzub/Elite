@@ -1228,7 +1228,9 @@ ELITE_WIRE_SCHEMA(
     v.universeTimelineRevision,
     v.configuredUniverseTimeScale,
     v.universeTimeSimulation,
-    v.universeDate
+    v.universeDate,
+    v.controlledEntityId,
+    v.controlEpoch
 );
 
 ELITE_WIRE_SCHEMA(

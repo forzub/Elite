@@ -218,6 +218,7 @@ private:
     bool                            m_hasPendingAssistedMaxSpeedCommand = false;
 
     float                           m_accumulator = 0.0f;
+    std::uint32_t                   m_controlEpoch = 0;   // base 2: the server's control epoch of this session
     std::uint64_t                   m_clientTick = 0;
     std::uint64_t                   m_lastAcceptedSnapshotTick = 0;
     bool                            m_hasAcceptedSnapshot = false;

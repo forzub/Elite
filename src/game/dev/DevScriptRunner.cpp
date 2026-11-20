@@ -934,6 +934,22 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
                       << game::ship::refit::moduleFacts(*it->second.descriptor, s.m_refitModule).productId << '\n';
         }
     }
+    // base 2: "board:<n>" - the pilot moves to the n-th owned ship of F7 (Player-role, <= 20 km; the server decides)
+    else if (cmd.rfind("board:", 0) == 0)
+    {
+        const auto page = s.buildRepairRefitPage();
+        const std::size_t n = static_cast<std::size_t>(std::max(0, std::atoi(cmd.c_str() + 6)));
+        if (n < page.ships.size())
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::BoardShip;
+            command.amount = static_cast<double>(page.ships[n].id.value);
+            msg.payload = command;
+            s.m_client->sendMessage(msg);
+            std::cerr << "[Control] DEV board ship " << page.ships[n].id.value << " (from " << s.m_playerId.value << ")" << std::endl;
+        }
+    }
     else if (cmd == "service:refit")   // F7
         s.context().app->requestServicePanel(ui::services::ServiceUiId::RepairRefit);
     else if (cmd == "service:trade")

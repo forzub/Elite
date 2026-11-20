@@ -62,6 +62,22 @@ public:
         return true;
     }
 
+    // A ship change (base 2, 2026-11-20): the player's human authority moves to another entity; the old one is released.
+    bool rebindHuman(PlayerId playerId, EntityId entityId)
+    {
+        if (!playerId || entityId.value == 0)
+            return false;
+        const auto entityIt = m_byEntity.find(entityId.value);
+        if (entityIt != m_byEntity.end() && entityIt->second.playerId != playerId)
+            return false;   // somebody else flies it
+        if (const auto playerIt = m_humanEntityByPlayer.find(playerId.value); playerIt != m_humanEntityByPlayer.end())
+        {
+            m_byEntity.erase(playerIt->second.value);
+            m_humanEntityByPlayer.erase(playerIt);
+        }
+        return bindHuman(playerId, entityId);
+    }
+
     bool takeAutopilotControl(PlayerId playerId, EntityId entityId)
     {
         if (!playerId || entityId.value == 0)

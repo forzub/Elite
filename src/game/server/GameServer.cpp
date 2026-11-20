@@ -1517,6 +1517,10 @@ void GameServer::update(double dt)
                     m_simulation.startHubService(id, shipCmd.target, shipCmd.detail);
                     break;
 
+                case ClientShipCommand::BoardShip:   // base 2: executed after the drain (the queues are reset)
+                    m_pendingBoardings.push_back({id, EntityId{static_cast<std::uint32_t>(std::max(0.0, shipCmd.amount))}});
+                    break;
+
                 case ClientShipCommand::RefitPreview:
                 case ClientShipCommand::RefitApply:
                 {
@@ -1684,6 +1688,17 @@ void GameServer::update(double dt)
     }
 
 
+
+    // ship changes asked this tick (base 2): after the drain - they reset the per-entity queues
+    for (const auto& [from, to] : m_pendingBoardings)
+        if (const Ship* fromShip = m_simulation.getShip(from))
+        {
+            const PlayerId player = m_players.playerForShip(fromShip->core().registry().instanceId);
+            const std::string why = player ? transferPlayerControl(player, to) : std::string("нет пилота");
+            std::cerr << "[Board] ship " << from.value << " -> " << to.value << ": " << (why.empty() ? std::string("DONE") : "REFUSED: " + why)
+                      << std::endl;
+        }
+    m_pendingBoardings.clear();
 
     // Player movement is fully driven by the ordinary numbered
     // ShipControlState stream. Navigation/autopilot lives on the client and
@@ -2147,6 +2162,88 @@ game::network::ServerSessionId GameServer::createPlayerSession(
     }
 
     return sessionId;
+}
+
+void GameServer::configurePlayerRadar(EntityId entity, ShipInstanceId instance)
+{
+    Ship* ship = m_simulation.getShip(entity);
+    if (!ship)
+        return;
+    const auto& radar = ship->core().radar();
+    const auto& desc = radar.getDesc();
+    if (desc.backendKind != game::RadarBackendKind::TestIdeal)
+        return;
+    auto& runtime = m_playerRadarRuntimes[instance];
+    if (!runtime.configured)
+    {
+        runtime.unit.configure(desc, instance);
+        runtime.configured = true;
+    }
+    runtime.radarOperational = radar.isOperational() && radar.getAvailablePower() + 1.0e-9 >= desc.powerConsumption;
+    const auto& transform = ship->core().transform();
+    runtime.navigationSolution =
+        runtime.unit.navigationSolution(m_universeClock.timeSeconds(), transform.worldPosition, transform.motion.worldVelocityMps);
+    runtime.hasNavigationSolution = true;
+}
+
+std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target)
+{
+    const PlayerState* player = m_players.find(playerId);
+    const EntityId from = m_controls.controlledEntity(playerId);
+    Ship* fromShip = m_simulation.getShip(from);
+    Ship* toShip = m_simulation.getShip(target);
+    if (!player || !fromShip || !toShip || from == target)
+        return "нет такого корабля";
+    auto& to = toShip->core();
+    if (to.role() != ShipRole::Player)
+        return "корабль не подготовлен для пилота (роль NPC)";
+    if (to.registry().ownerActor == 0 || to.registry().ownerActor != fromShip->core().registry().ownerActor)
+        return "чужой корабль";
+    if (to.transform().motion.destroyedCause != 0)
+        return "корабль разрушен";
+    if (m_simulation.isPlayerControlled(target) || m_players.playerForShip(to.registry().instanceId))
+        return "кораблём уже управляют";
+    const auto& a = fromShip->core().transform();
+    const auto& b = to.transform();
+    if (a.motion.systemId != b.motion.systemId || glm::length(a.fullWorldMeters() - b.fullWorldMeters()) > 20000.0)
+        return "корабль далеко (нужно <= 20 км в той же системе): " + std::to_string(static_cast<long long>(glm::length(a.fullWorldMeters() - b.fullWorldMeters()))) +
+               " м, системы " + std::to_string(a.motion.systemId) + " / " + std::to_string(b.motion.systemId);
+    // the persistent identity of a ship spawned after the bootstrap
+    ShipInstanceId instance = m_shipInstances.instanceForEntity(target);
+    if (instance == 0)
+    {
+        game::server::ShipInstanceRecord record;
+        record.instanceId = to.registry().instanceId;
+        record.materializedEntityId = target;
+        record.typeId = to.desc().typeId;
+        record.catalogShipId = to.desc().catalog.passportId;
+        record.roleType = to.registry().shipRole;
+        record.ownerActor = to.registry().ownerActor;
+        record.name = to.visualIdentity().shipName;
+        record.registrationId = to.registry().registrationId;
+        if (!m_shipInstances.registerMaterialized(std::move(record)))
+            return "реестр кораблей отказал";
+        instance = m_shipInstances.instanceForEntity(target);
+    }
+    (void)m_shipOwnership.assign(instance, game::server::ShipOwnerRef::player(playerId));
+    resetSessionControlState(from, "ship-change-out");
+    m_simulation.setPlayerControlled(from, false);
+    if (!m_controls.rebindHuman(playerId, target))
+    {
+        m_simulation.setPlayerControlled(from, true);
+        return "управление не передано";
+    }
+    if (!m_players.assignShip(playerId, instance))
+    {
+        (void)m_controls.rebindHuman(playerId, from);
+        m_simulation.setPlayerControlled(from, true);
+        return "реестр пилотов отказал";
+    }
+    resetSessionControlState(target, "ship-change-in");
+    m_simulation.setPlayerControlled(target, true);
+    configurePlayerRadar(target, instance);
+    ++m_controlEpochs[playerId.value];
+    return {};
 }
 
 bool GameServer::disconnectPlayerSession(
@@ -2882,6 +2979,8 @@ bool GameServer::copySnapshotForSession(
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
     outSnapshot.session.wallet = walletForSession(sessionId);
+    outSnapshot.session.controlledEntityId = controlledEntityForSession(sessionId).value;
+    outSnapshot.session.controlEpoch = m_controlEpochs.count(playerForSession(sessionId).value) ? m_controlEpochs.at(playerForSession(sessionId).value) : 0;
     outSnapshot.session.trade = tradeForSession(sessionId);
 
     // Full copy remains available for diagnostics/contracts. Production normal
@@ -2915,6 +3014,8 @@ bool GameServer::copyHydratedSnapshotForSession(
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
     outSnapshot.session.wallet = walletForSession(sessionId);
+    outSnapshot.session.controlledEntityId = controlledEntityForSession(sessionId).value;
+    outSnapshot.session.controlEpoch = m_controlEpochs.count(playerForSession(sessionId).value) ? m_controlEpochs.at(playerForSession(sessionId).value) : 0;
     outSnapshot.session.trade = tradeForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
@@ -2976,6 +3077,8 @@ bool GameServer::copySparseSnapshotForSession(
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
     outSnapshot.session.wallet = walletForSession(sessionId);
+    outSnapshot.session.controlledEntityId = controlledEntityForSession(sessionId).value;
+    outSnapshot.session.controlEpoch = m_controlEpochs.count(playerForSession(sessionId).value) ? m_controlEpochs.at(playerForSession(sessionId).value) : 0;
     outSnapshot.session.trade = tradeForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;

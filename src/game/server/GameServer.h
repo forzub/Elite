@@ -418,6 +418,12 @@ public:
     void handleNavDataCommand(EntityId id, int op, const std::string& recordId, int carrier);
     // the trade layer (TRADE_DESIGN steps 1-2): a Buy / Sell / DEV cargo request of ship `id`
     std::string chargeRefit(EntityId id, EntityId subject, const game::ship::refit::RefitOperation& op);
+    // base 2 (2026-11-20): the player moves to another ship (owned, Player-role, free, same system, <= 20 km);
+    // "" = done, otherwise why not. Runs between ticks (boardings queued by the command drain).
+    std::string transferPlayerControl(PlayerId playerId, EntityId target);
+    void configurePlayerRadar(EntityId entity, ShipInstanceId instance);
+    std::vector<std::pair<EntityId, EntityId>> m_pendingBoardings;   // (from, to)
+    std::unordered_map<std::uint64_t, std::uint32_t> m_controlEpochs;  // player -> epoch (0 = bootstrap ship)
     void arrestShip(EntityId id, std::uint64_t player, const std::string& hubId,
                     const game::economy::EconomyServer::ArrestClaim& claim);
     void handleEconomyCommand(EntityId id, const game::network::ClientEconomyCommand& command);

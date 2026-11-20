@@ -2246,6 +2246,33 @@ void testMining()
     t.start(s.day());
     check(t.restoreState(saved) && t.saveState() == saved && t.concessions().size() == 1 && nlohmann::json::parse(saved)["schema"] == "economy_state/14",
           "economy_state/14: the concession survives save / restore");
+    // part 3: keep the ore, haul it in a hold to a better market
+    const std::string site = s.concessions()[0].site.id;
+    const std::string ore = s.concessions()[0].site.goodId;
+    s.setMineSale(1, site, false);
+    day = s.day();
+    for (int k = 1; k <= 3; ++k)
+        s.advanceTo(day + k);
+    const double stock = s.mineStockT(site, ore);
+    check(stock > 300.0, "kept: the stockpile grows (" + std::to_string(stock) + " t in 3 days)");
+    const CargoCapacity hold{100.0, 4};
+    check(!s.loadFromMine(1, site, 7070, hold, "earth_orbital_hub", 0.0, 10).ok, "loading away from the mine's hub: refused");
+    const auto loaded = s.loadFromMine(1, site, 7070, hold, hub, 0.0, 11);
+    check(loaded.ok && std::abs(s.mineStockT(site, ore) - (stock - 100.0)) < 0.05, "loaded what fits (100 t): " + loaded.message);
+    EconomyServer::TradeOrder sell;
+    sell.buy = false;
+    sell.playerId = 1;
+    sell.shipKey = 7070;
+    sell.hubId = "earth_orbital_hub";
+    sell.systemId = 0;
+    sell.goodId = ore;
+    sell.tonnes = 100.0;
+    sell.capacity = hold;
+    const auto sold = s.trade(sell);
+    std::printf("INFO  100 t of %s hauled to Высокий: %s (%.0f Cr; at the mine the 10-day average was %.1f Cr/t net)\n", ore.c_str(),
+                sold.ok ? "sold" : sold.message.c_str(), sold.totalCr, c.soldT > 0.0 ? c.revenueCr / c.soldT : 0.0);
+    check(sold.ok || !sold.message.empty(), "the hauled ore is an ordinary lot of the hold (sold or refused by the market)");
+    s.setMineSale(1, site, true);
     // broke: no output, then the lease lapses after 90 days
     day = s.day();
     for (int k = 1; k <= 95; ++k)

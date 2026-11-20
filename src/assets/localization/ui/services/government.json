@@ -658,7 +658,7 @@
       "ru": "договор оформляется у этого хаба: на причале или рядом с ним",
       "zh-Hans": "需在本枢纽签约：泊位或其附近",
       "es": "el contrato se firma en este hub: en su atracadero o junto a él",
-      "ja": "契約はこのハブで：バースまたはその付近で",
+      "ja": "契約はこのハブで：バースまたはその付近で"
     },
     "service.government.mine_mine": {
       "en": "My mines",
@@ -736,6 +736,48 @@
       "zh-Hans": "租赁",
       "es": "ARRENDAR",
       "ja": "借りる"
+    },
+    "service.government.mine_stock": {
+      "en": "stockpile",
+      "ru": "на складе",
+      "zh-Hans": "库存",
+      "es": "en acopio",
+      "ja": "貯鉱"
+    },
+    "service.government.mine_selling": {
+      "en": "sold at the hub daily",
+      "ru": "продаётся у хаба ежедневно",
+      "zh-Hans": "每日在枢纽出售",
+      "es": "se vende en el hub a diario",
+      "ja": "毎日ハブで販売"
+    },
+    "service.government.mine_keeping": {
+      "en": "kept for hauling",
+      "ru": "копится для вывоза",
+      "zh-Hans": "留存待运",
+      "es": "se guarda para transporte",
+      "ja": "輸送用に保管"
+    },
+    "service.government.mine_keep": {
+      "en": "KEEP",
+      "ru": "КОПИТЬ",
+      "zh-Hans": "留存",
+      "es": "GUARDAR",
+      "ja": "保管"
+    },
+    "service.government.mine_sell": {
+      "en": "SELL HERE",
+      "ru": "ПРОДАВАТЬ ЗДЕСЬ",
+      "zh-Hans": "就地出售",
+      "es": "VENDER AQUÍ",
+      "ja": "ここで販売"
+    },
+    "service.government.mine_load": {
+      "en": "LOAD",
+      "ru": "ПОГРУЗИТЬ",
+      "zh-Hans": "装载",
+      "es": "CARGAR",
+      "ja": "積込"
     }
   }
 }

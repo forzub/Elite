@@ -31,7 +31,9 @@ struct ClientEconomyCommand
         FireBot = 16,        // goodId = bot id
         SignConstruction = 17,   // goodId = offer id (step 16): the contract on a planned project of this hub
         LeaseSite = 18,          // goodId = site offer id (step 16 part 2): a mining concession at this hub
-        Last = LeaseSite
+        SetMineSale = 19,        // goodId = site id, quantity 1 = sell at the hub daily / 0 = keep in the stockpile (part 3)
+        LoadFromMine = 20,       // goodId = site id, quantity = tonnes (0 = what fits): the stockpile -> the hold, at the hub
+        Last = LoadFromMine
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

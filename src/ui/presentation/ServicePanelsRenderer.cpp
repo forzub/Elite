@@ -1088,7 +1088,8 @@ void renderRescue(TextRenderer& t, const game::simulation::ClientWalletSnapshot&
 void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, const std::map<std::string, std::string>& text, bool docked,
                  float x, float y, float w, float h, int px, int small,
                  const std::function<void(float, float, float, float, const std::string&)>& addButton,
-                 const std::function<void(float, float, float, float, const std::string&)>& addLease)
+                 const std::function<void(float, float, float, float, const std::string&)>& addLease,
+                 const std::function<void(float, float, float, float, ServicePanelActionType, const std::string&)>& addMine)
 {
     const auto tx = [&](const char* key) -> std::string {
         const auto it = text.find(key);
@@ -1110,6 +1111,22 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
                              grouped(m.lastOutputT) + " т  ·  " + tx("mine_sold") + " " + grouped(m.soldT) + " т  ·  " + tx("mine_revenue") + " " +
                              grouped(m.revenueCr) + " Cr  ·  " + tx("mine_rent") + " " + grouped(m.rentYearCr) + " Cr/" + tx("mine_year"),
                          x + 24, ry, small, m.lastOutputT > 0.0 ? Good : Muted);
+            ry += static_cast<float>(small) + 5.0f;
+            // part 3: the sale mode and the stockpile
+            t.textDrawPx(tx("mine_stock") + " " + grouped(m.stockT) + " т  ·  " + (m.sellLocal ? tx("mine_selling") : tx("mine_keeping")), x + 24, ry, small,
+                         Text);
+            float bx = right;
+            const auto button = [&](const std::string& label, ServicePanelActionType type, const std::string& arg) {
+                const float bw = t.measureTextPx(label, small) + 20.0f, bh = small * 1.7f;
+                bx -= bw;
+                t.solidRectPx(bx, ry - small * 0.3f, bw, bh, Selected);
+                t.textDrawPx(label, bx + 10, ry, small, Good);
+                addMine(bx, ry - small * 0.3f, bx + bw, ry - small * 0.3f + bh, type, arg);
+                bx -= 8.0f;
+            };
+            button(m.sellLocal ? tx("mine_keep") : tx("mine_sell"), ServicePanelActionType::GovernmentMineSale, (m.sellLocal ? "0|" : "1|") + m.id);
+            if (m.here && m.stockT >= 0.01)
+                button(tx("mine_load"), ServicePanelActionType::GovernmentMineLoad, m.id);
             ry += static_cast<float>(small) + 10.0f;
         }
     }
@@ -1890,6 +1907,9 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
                         },
                         [this](float x0, float y0b, float x1, float y1, const std::string& id) {
                             m_hits.push_back({x0, y0b, x1, y1, 0, {ServicePanelActionType::GovernmentLeaseSite, id}});
+                        },
+                        [this](float x0, float y0b, float x1, float y1, ServicePanelActionType type, const std::string& arg) {
+                            m_hits.push_back({x0, y0b, x1, y1, 0, {type, arg}});
                         });
         else if (page.section == 4)
             renderRescue(t, page.wallet, page.text, listX, y0, listW, listH - (y0 - listY), px, small,

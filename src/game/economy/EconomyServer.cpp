@@ -1319,6 +1319,75 @@ game::simulation::ClientTradeResult EconomyServer::leaseSite(std::uint64_t playe
     return r;
 }
 
+void EconomyServer::setMineSale(std::uint64_t playerId, const std::string& siteId, bool sellLocal)
+{
+    for (auto& c : m_concessions)
+        if (c.owner == playerId && c.site.id == siteId && c.sellLocal != sellLocal)
+        {
+            c.sellLocal = sellLocal;
+            ++m_buildRevision;
+            saveNow("mine sale");
+            std::cerr << "[Mine] " << siteId << ": " << (sellLocal ? "sold at the hub daily" : "kept in the stockpile") << '\n';
+        }
+}
+
+double EconomyServer::mineStockT(const std::string& siteId, const std::string& goodId) const
+{
+    const CargoManifest* m = m_cargo.find(mineStockKey(siteId));
+    return m ? m->ownTonnesOf(goodId) : 0.0;
+}
+
+game::simulation::ClientTradeResult EconomyServer::loadFromMine(std::uint64_t playerId, const std::string& siteId, std::uint64_t shipKey,
+                                                                const CargoCapacity& capacity, const std::string& hubId, double tonnes,
+                                                                std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    const Concession* c = nullptr;
+    for (const auto& x : m_concessions)
+        if (x.owner == playerId && x.site.id == siteId)
+            c = &x;
+    if (!c)
+        return refuse("mine_unknown", "это не ваш рудник");
+    if (c->site.hubId != hubId)
+        return refuse("mine_far", "склад рудника у " + hubDisplayName(c->site.hubId) + ": подлетите туда");
+    const std::uint64_t key = mineStockKey(siteId);
+    const double stock = mineStockT(siteId, c->site.goodId);
+    const CargoManifest* aboard = m_cargo.find(shipKey);
+    const double room = std::max(0.0, capacity.netT - (aboard ? aboard->netT() : 0.0));
+    const double t = std::floor(std::min({tonnes > 0.0 ? tonnes : stock, stock, room}) * 100.0) / 100.0;
+    if (t < 0.01)
+        return refuse(stock < 0.01 ? "mine_empty" : "no_room", stock < 0.01 ? "на складе рудника пусто" : "трюм полон");
+    const int g = goodIndex(c->site.goodId);
+    const double density = g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].densityTM3 : 2.4;
+    double basis = 0.0;
+    if (!m_cargo.unload(key, c->site.goodId, t, density, basis))
+        return refuse("mine_empty", "на складе рудника пусто");
+    CargoLot lot;
+    lot.lotId = siteId + "#haul@" + std::to_string(m_day);
+    lot.goodId = c->site.goodId;
+    lot.tonnes = t;
+    lot.owner = "player:" + std::to_string(playerId);
+    lot.costBasisCr = basis;
+    lot.originHub = hubId;
+    lot.loadedDay = m_day;
+    (void)m_cargo.load(shipKey, playerId, lot, density);
+    r.ok = true;
+    r.code = "mine_loaded";
+    r.message = "погружено со склада рудника: " + grouped(t, 2) + " т";
+    pushResult(playerId, r);
+    saveNow("mine haul");
+    std::cerr << "[Mine] player " << playerId << " loads " << t << " t of " << c->site.goodId << " from " << siteId << " into " << shipKey << '\n';
+    return r;
+}
+
 void EconomyServer::stepMines(int day)
 {
     for (auto& c : m_concessions)
@@ -1395,6 +1464,8 @@ void EconomyServer::stepMines(int day)
         lot.loadedDay = day;
         if (t > 0.01)
             (void)m_cargo.load(key, c.owner, lot, density);
+        if (!c.sellLocal)
+            continue;   // kept for the owner to haul
         const CargoManifest* m = m_cargo.find(key);
         TradeOrder o;
         o.buy = false;
@@ -3447,6 +3518,9 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
             cm.soldT = c.soldT;
             cm.revenueCr = c.revenueCr;
             cm.rentYearCr = c.site.rentYearCr;
+            cm.stockT = mineStockT(c.site.id, c.site.goodId);
+            cm.sellLocal = c.sellLocal;
+            cm.here = c.site.hubId == hubId;
             w.mines.push_back(cm);
         }
     // construction (step 16)
@@ -3802,7 +3876,7 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
         j["mines"].push_back({{"id", c.site.id}, {"hub", c.site.hubId}, {"name", c.site.nameRu}, {"good", c.site.goodId}, {"radius", c.site.radiusM},
                               {"grade", c.site.grade}, {"reserve", c.site.reserveT}, {"rent", c.site.rentYearCr}, {"lease", c.site.leaseCostCr},
                               {"owner", c.owner}, {"start", c.startDay}, {"status", c.status}, {"left", c.reserveLeftT}, {"mined", c.minedT},
-                              {"sold", c.soldT}, {"revenue", c.revenueCr}, {"last", c.lastOutputT}, {"rig", c.rigPriceCr}, {"unpaid", c.unpaidDays}});
+                              {"sold", c.soldT}, {"revenue", c.revenueCr}, {"last", c.lastOutputT}, {"rig", c.rigPriceCr}, {"unpaid", c.unpaidDays}, {"sell_local", c.sellLocal}});
     j["bots"] = json::array();
     for (const auto& b : m_bots)
     {
@@ -4087,6 +4161,7 @@ bool EconomyServer::restoreState(const std::string& text)
             c.lastOutputT = x.value("last", 0.0);
             c.rigPriceCr = x.value("rig", 0.0);
             c.unpaidDays = x.value("unpaid", 0);
+            c.sellLocal = x.value("sell_local", true);
             concessions.push_back(std::move(c));
         }
         decltype(m_buildProjects) buildProjects;   // economy_state/13

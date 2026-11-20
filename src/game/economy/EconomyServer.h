@@ -232,7 +232,13 @@ public:
         std::string status = "leased";   // leased (the rig not built yet) / mining / depleted / lapsed
         double reserveLeftT = 0.0, minedT = 0.0, soldT = 0.0, revenueCr = 0.0, lastOutputT = 0.0, rigPriceCr = 0.0;
         int unpaidDays = 0;
+        bool sellLocal = true;   // false: the ore stays in the stockpile for the owner to haul (part 3)
     };
+    // part 3: the owner's choice - sell at the mine's hub daily or keep the ore; haul it from the stockpile into a hold
+    void setMineSale(std::uint64_t playerId, const std::string& siteId, bool sellLocal);
+    [[nodiscard]] double mineStockT(const std::string& siteId, const std::string& goodId) const;
+    game::simulation::ClientTradeResult loadFromMine(std::uint64_t playerId, const std::string& siteId, std::uint64_t shipKey, const CargoCapacity& capacity,
+                                                     const std::string& hubId, double tonnes, std::uint32_t requestId);
     [[nodiscard]] std::vector<SiteOffer> siteOffersAt(const std::string& hubId) const;
     game::simulation::ClientTradeResult leaseSite(std::uint64_t playerId, const std::string& offerId, const std::string& hubId, int systemId,
                                                   std::uint32_t requestId);

@@ -37,6 +37,8 @@ enum class ServicePanelActionType
     GovernmentTakeSos,       // F5 МЧС (step 12): text = SOS call id
     GovernmentSignBuild,     // F5 стройка (step 16): text = contractor offer id
     GovernmentLeaseSite,     // F5 стройка (step 16 part 2): text = site offer id
+    GovernmentMineSale,      // F5 стройка (part 3): text = "1|<site id>" sell at the hub / "0|<site id>" keep
+    GovernmentMineLoad,      // F5 стройка (part 3): text = site id - load what fits from the stockpile
     TradeSelectHub,          // text = hub id
     TradeShowOnMap,          // text = hub id
     // F5 state app -> navigation data (moved from F8, TRADE_DESIGN §11a)

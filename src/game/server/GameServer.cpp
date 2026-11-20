@@ -3066,6 +3066,17 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
                   << " Cr" << std::endl;
         return;
     }
+    if (command.op == Op::SetMineSale)   // part 3: anywhere (the order goes by radio)
+    {
+        m_economy.setMineSale(player, command.goodId, command.quantity > 0.5);
+        return;
+    }
+    if (command.op == Op::LoadFromMine)   // part 3: at the mine's hub
+    {
+        (void)m_economy.loadFromMine(player, command.goodId, shipKey, cargoCapacityOf(*ship), motion.hubId, std::max(0.0, command.quantity),
+                                     command.requestId);
+        return;
+    }
     if (command.op == Op::LeaseSite || command.op == Op::SignConstruction)   // step 16: at the hub (docked or in its frame)
     {
         if (motion.hubId.empty())

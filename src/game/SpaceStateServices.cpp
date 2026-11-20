@@ -226,7 +226,7 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
         "galley_rank", "galley_term", "galley_reports", "galley_report_transfer_ship", "galley_report_transfer_unit",
         "galley_report_leave", "galley_report_discharge", "galley_hint", "build", "build_mine", "build_none", "build_stage", "build_paid",
         "build_day", "build_offers", "build_no_offers", "build_days", "build_reliability", "build_sign", "build_dock_hint", "mine_mine", "mine_reserve",
-        "mine_today", "mine_sold", "mine_revenue", "mine_rent", "mine_year", "mine_offers", "mine_grade", "mine_lease_cost", "mine_lease"};
+        "mine_today", "mine_sold", "mine_revenue", "mine_rent", "mine_year", "mine_offers", "mine_grade", "mine_lease_cost", "mine_lease", "mine_stock", "mine_selling", "mine_keeping", "mine_keep", "mine_sell", "mine_load"};
     for (const char* key : Keys)
         page.text[key] = localizedUiText(context().app, std::string("service.government.") + key, key);
     if (!m_client)
@@ -397,6 +397,10 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             m_governmentTab = std::atoi(action->text.c_str());
         else if (action->type == ServicePanelActionType::GovernmentSection)
             m_governmentSection = std::atoi(action->text.c_str());
+        else if (action->type == ServicePanelActionType::GovernmentMineSale && action->text.size() > 2)   // part 3
+            sendEconomyCommand(game::network::ClientEconomyCommand::SetMineSale, action->text.substr(2), action->text[0] == '1' ? 1.0 : 0.0);
+        else if (action->type == ServicePanelActionType::GovernmentMineLoad)   // part 3: what fits (the server decides)
+            sendEconomyCommand(game::network::ClientEconomyCommand::LoadFromMine, action->text, 0.0);
         else if (action->type == ServicePanelActionType::GovernmentLeaseSite)   // step 16 part 2: the server decides (money, offer)
             sendEconomyCommand(game::network::ClientEconomyCommand::LeaseSite, action->text, 0.0);
         else if (action->type == ServicePanelActionType::GovernmentSignBuild)   // step 16: the server decides (money, offer)

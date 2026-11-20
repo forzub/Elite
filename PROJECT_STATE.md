@@ -7578,3 +7578,14 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - BALANCE NOTE: selling at the producing hub dumps the price (~11 Cr/t net of everything in the test: ~2.3 k/day
   proceeds vs ~1.4 k/day costs) -> payback of the rig takes years. Part 3: pick the ore up from the stockpile / ore
   haul contracts to processing hubs; check the ore bid at belt markets.
+
+## TRADE step 16 part 3: the mine's ore can be kept and hauled (2026-11-20) - SOURCE + TESTS (live: pending)
+- Concession.sellLocal (economy_state/14 field "sell_local"): SetMineSale (protocol 46, op 19, by radio, anywhere) -
+  sold at the hub daily / kept in the stockpile; LoadFromMine (op 20) at the mine's hub: the stockpile -> the hold
+  (what fits, an own lot with the stockpile's basis), then an ordinary lot to sell anywhere. Wallet mine: stockT,
+  sellLocal, here (snapshot 67). F5 «Стройка»: КОПИТЬ / ПРОДАВАТЬ ЗДЕСЬ, ПОГРУЗИТЬ. DEV build:keep/sell/load:<n>.
+- Tests 257/257: kept -> 564 t in 3 days; loading away from the hub refused; 100 t loaded; sold at Высокий.
+- Live: not yet - a rig needs 30+ economy days before any ore exists; to be checked with a DEV day skip / a long run.
+- BALANCE (open): 100 t of ore_common sold at Высокий = 1 554 Cr (15.5 Cr/t) vs base 96 Cr/t; at the mine 11.2 Cr/t
+  net. Per-tonne fees appear to eat cheap bulk goods - investigate the deal breakdown for ore next.
+- Also fixed: a trailing comma in government.json (the ja build_dock_hint line) from the previous hint edit.

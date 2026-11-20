@@ -1072,7 +1072,10 @@ ELITE_WIRE_SCHEMA(
     v.minedT,
     v.soldT,
     v.revenueCr,
-    v.rentYearCr
+    v.rentYearCr,
+    v.stockT,
+    v.sellLocal,
+    v.here
 );
 
 ELITE_WIRE_SCHEMA(

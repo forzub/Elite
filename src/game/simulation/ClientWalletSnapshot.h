@@ -138,6 +138,9 @@ struct ClientMine
     double soldT = 0.0;
     double revenueCr = 0.0;
     double rentYearCr = 0.0;
+    double stockT = 0.0;       // in the mine's stockpile (part 3)
+    bool sellLocal = true;
+    bool here = false;         // the ship is at the mine's hub
 };
 
 struct ClientBuildProject

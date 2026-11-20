@@ -28,6 +28,7 @@ enum class ServicePanelActionType
     RefitApply,
     TradeTab,                // text = "0" contracts / "1" market / "2" hubs / "4" finance / "5" cargo (TradeTabOrder)
     GovernmentTab,           // F5: text = "0" the state services app / "1" Галера+
+    GovernmentSection,       // F5 state app: text = "0" taxes / "1" navigation data
     TradeSelectHub,          // text = hub id
     TradeShowOnMap,          // text = hub id
     // F5 state app -> navigation data (moved from F8, TRADE_DESIGN §11a)

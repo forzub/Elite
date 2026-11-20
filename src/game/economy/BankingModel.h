@@ -41,6 +41,7 @@ enum class Purpose : int
     Fine = 7,    // an administrative fine (traffic control, navigation zones): never refused - booked as debt
     Parking = 8, // the berth fee beyond the hours the docking fee covers (TRADE_DESIGN §5.2, step 4): never refused
     ContractPenalty = 9, // a contract's late / failure penalty, the advance clawed back (TRADE_DESIGN §3.5, step 5): never refused
+    Tax = 10,    // the income tax of the residence polity (TRADE_DESIGN §5.2, step 7): never refused - booked as debt
 };
 [[nodiscard]] inline bool isLifelinePurpose(Purpose p) { return p == Purpose::Fuel || p == Purpose::Tow || p == Purpose::Repair; }
 

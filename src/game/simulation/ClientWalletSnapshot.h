@@ -38,6 +38,29 @@ struct ClientWalletSnapshot
     double lastWithheldCr = 0.0;
     int lastWithheldDay = -1;
     double protectedCr = 0.0;
+    // the income tax of the residence polity (TRADE_DESIGN §5.2, step 7; shown in F5)
+    std::string taxResidence;
+    std::string taxStyleRu;
+    double taxRate = 0.0;
+    double taxAdminFeeShare = 0.0;
+    int taxPeriodDays = 90;
+    int taxDeclareDays = 15;
+    double taxWithholdingShare = 0.0;
+    int taxPeriodStartDay = -1;           // the open period
+    double taxRevenueCr = 0.0;
+    double taxExpensesCr = 0.0;
+    double taxWithheldCreditCr = 0.0;
+    double taxWithheldLostCr = 0.0;
+    double taxEstimateCr = 0.0;           // if the period closed today
+    int taxAssessedPeriodStartDay = -1;   // the last closed period (-1: none yet)
+    double taxAssessedProfitCr = 0.0;
+    double taxAssessedCr = 0.0;
+    double taxAssessedFeeCr = 0.0;
+    int taxDueDay = -1;
+    bool taxSettled = true;
+    double taxPaidCr = 0.0;
+    double taxDebtCr = 0.0;
+    double taxPenaltyCr = 0.0;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

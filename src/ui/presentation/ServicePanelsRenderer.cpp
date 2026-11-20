@@ -769,6 +769,70 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
     if (s.vatReclaimCr > 0.0)
         line("Входной НДС к возврату", grouped(s.vatReclaimCr) + " Cr", Muted);
 }
+// F5 state app -> НАЛОГИ (TRADE_DESIGN §5.2, step 7): the server's tax book of the residence polity as replicated
+void renderTaxes(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, const std::map<std::string, std::string>& text,
+                 float x, float y, float w, float h, float /*screenW*/, float /*screenH*/, int px, int small, int big)
+{
+    const auto tx = [&](const char* key) -> std::string {
+        const auto it = text.find(key);
+        return it == text.end() ? std::string(key) : it->second;
+    };
+    t.solidRectPx(x, y, w, h, Panel);
+    if (!f.valid)
+    {
+        t.textDrawPx(tx("tax_no_data"), x + 12, y + 10, px, Muted);
+        return;
+    }
+    float ry = y + 10.0f;
+    const auto line = [&](const std::string& label, const std::string& value, const glm::vec4& col) {
+        t.textDrawPx(label, x + 12, ry, small, Muted);
+        t.textDrawPx(value, x + w * 0.55f, ry, small, col);
+        ry += static_cast<float>(small) + 7.0f;
+    };
+    const auto pct = [](double v) { return fmt("%.0f %%", v * 100.0); };
+    t.textDrawPx(tx("tax_residence") + ": " + f.taxResidence, x + 12, ry, px, Title);
+    ry += static_cast<float>(px) + 6.0f;
+    line(tx("tax_style"), f.taxStyleRu, Text);
+    line(tx("tax_rate"), pct(f.taxRate) + (f.taxAdminFeeShare > 0.0 ? "  + " + pct(f.taxAdminFeeShare) + " " + tx("tax_admin_fee") : ""), Text);
+    line(tx("tax_rules"), std::to_string(f.taxPeriodDays) + " " + tx("tax_days") + ", " + tx("tax_declare") + " " + std::to_string(f.taxDeclareDays) + " " +
+                              tx("tax_days"), Muted);
+    ry += 8.0f;
+    t.textDrawPx(tx("tax_open_period") + (f.taxPeriodStartDay >= 0 ? "  " + std::to_string(f.taxPeriodStartDay) + "-" +
+                                                                     std::to_string(f.taxPeriodStartDay + f.taxPeriodDays - 1) : std::string()),
+                 x + 12, ry, px, Text);
+    ry += static_cast<float>(px) + 6.0f;
+    line(tx("tax_revenue"), grouped(f.taxRevenueCr) + " Cr", Text);
+    line(tx("tax_expenses"), (f.taxExpensesCr > 0.0 ? "-" : "") + grouped(f.taxExpensesCr) + " Cr", Text);
+    const double profit = f.taxRevenueCr - f.taxExpensesCr;
+    line(tx("tax_profit"), (profit >= 0.0 ? "" : "-") + grouped(std::fabs(profit)) + " Cr", profit >= 0.0 ? Good : Warn);
+    if (f.taxWithheldCreditCr > 0.0)
+        line(tx("tax_withheld_credit"), "-" + grouped(f.taxWithheldCreditCr) + " Cr", Text);
+    if (f.taxWithheldLostCr > 0.0)
+        line(tx("tax_withheld_lost"), grouped(f.taxWithheldLostCr) + " Cr", Warn);
+    line(tx("tax_estimate"), grouped(f.taxEstimateCr) + " Cr", f.taxEstimateCr > 0.0 ? Warn : Muted);
+    ry += 8.0f;
+    t.textDrawPx(tx("tax_last_period"), x + 12, ry, px, Text);
+    ry += static_cast<float>(px) + 6.0f;
+    if (f.taxAssessedPeriodStartDay < 0)
+    {
+        line(tx("tax_none_yet"), "", Muted);
+        return;
+    }
+    line(tx("tax_period"), std::to_string(f.taxAssessedPeriodStartDay) + "-" + std::to_string(f.taxAssessedPeriodStartDay + f.taxPeriodDays - 1), Text);
+    line(tx("tax_profit"), (f.taxAssessedProfitCr >= 0.0 ? "" : "-") + grouped(std::fabs(f.taxAssessedProfitCr)) + " Cr", Text);
+    line(tx("tax_assessed"), grouped(f.taxAssessedCr + f.taxAssessedFeeCr) + " Cr", Text);
+    if (!f.taxSettled)
+        line(tx("tax_due"), tx("tax_until_day") + " " + std::to_string(f.taxDueDay) + "  (" + tx("tax_in") + " " + std::to_string(f.taxDueDay - f.day) +
+                                " " + tx("tax_days") + ")", Warn);
+    else if (f.taxAssessedCr + f.taxAssessedFeeCr <= 0.0)
+        line(tx("tax_status"), tx("tax_nothing"), Good);
+    else
+    {
+        line(tx("tax_paid"), grouped(f.taxPaidCr) + " Cr", Good);
+        if (f.taxDebtCr > 0.0)
+            line(tx("tax_debt"), grouped(f.taxDebtCr) + " Cr  + " + tx("tax_penalty") + " " + grouped(f.taxPenaltyCr) + " Cr", Bad);
+    }
+}
 } // namespace
 
 void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page)
@@ -1368,9 +1432,23 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
     const float listX = 24.0f, listY = tabY + px * 2.4f, listW = w * 0.58f, listH = h - listY - 40.0f;
     if (page.tab == 0)
     {
-        t.textDrawPx(text("nav_data"), listX, listY + px * 0.6f, px, Title);   // below the selected tab's box
-        const float y0 = listY + px * 2.4f;
-        renderNavData(page.nav, listX, y0, listW, listH - (y0 - listY), w, h, px, small, big);
+        // the app's sections (below the selected tab's box)
+        const std::string sections[] = {text("taxes"), text("nav_data")};
+        float sx = listX;
+        const float sy = listY + px * 0.4f;
+        for (int i = 0; i < 2; ++i)
+        {
+            const float sw = t.measureTextPx(sections[i], small) + 20.0f;
+            t.solidRectPx(sx, sy, sw, small * 1.7f, page.section == i ? Selected : Panel);
+            t.textDrawPx(sections[i], sx + 10, sy + small * 0.35f, small, page.section == i ? Title : Text);
+            m_hits.push_back({sx, sy, sx + sw, sy + small * 1.7f, 0, {ServicePanelActionType::GovernmentSection, std::to_string(i)}});
+            sx += sw + 6.0f;
+        }
+        const float y0 = listY + px * 2.6f;
+        if (page.section == 1)
+            renderNavData(page.nav, listX, y0, listW, listH - (y0 - listY), w, h, px, small, big);
+        else
+            renderTaxes(t, page.wallet, page.text, listX, y0, listW, listH - (y0 - listY), w, h, px, small, big);
         t.endFrame();
         return;
     }

@@ -1,7 +1,8 @@
 {
  "schema": "trade_fees/1",
  "status": "PROPOSAL",
- "note": "Hand-authored (docs/TRADE_DESIGN.md §2.3, §5.1, §5.2; step 2 of §9). The deal price (kappa, the hub limits) and the fiscal styles: the regime of a polity (national_banks.json banks[].regime) -> its style. A polity without a bank (a no-state zone) takes 'no_state'. Anchors: ship_economics.json fees (docking 150 + 0.9 Cr/t dry mass, cargo handling 12 Cr/t), EU VAT 17-27 %, Singapore GST 9 %, tithe 10 %. Step 4: the docking fee covers berth_included_hours at the berth, then berth_cr_per_hour (<= berth_cr_per_day_cap per 24 h), both x port_index; 'duty' = the import duty base on goods bought in another polity, x economy_rules.json customs.by_channel[].fee_mult (WTO average tariffs ~5-9 %).",
+ "note": "Hand-authored (docs/TRADE_DESIGN.md §2.3, §5.1, §5.2; step 2 of §9). The deal price (kappa, the hub limits) and the fiscal styles: the regime of a polity (national_banks.json banks[].regime) -> its style. A polity without a bank (a no-state zone) takes 'no_state'. Anchors: ship_economics.json fees (docking 150 + 0.9 Cr/t dry mass, cargo handling 12 Cr/t), EU VAT 17-27 %, Singapore GST 9 %, tithe 10 %. Step 4: the docking fee covers berth_included_hours at the berth, then berth_cr_per_hour (<= berth_cr_per_day_cap per 24 h), both x port_index; 'duty' = the import duty base on goods bought in another polity, x economy_rules.json customs.by_channel[].fee_mult (WTO average tariffs ~5-9 %). Step 7: income_tax = the residence polity's tax on the profit of a 90-day period (OECD average corporate tax ~23 %), declared and due 15 days after it ends (quarterly returns); tax_admin_fee of the tax (bureaucratic); a late (unpaid) tax becomes a debt + a one-off 5 % penalty; withholding_share at source on a contract reward from another polity's issuer, credited at home only through an open / licensed channel (tax treaties).",
+ "income_tax": {"period_days": 90, "declare_days": 15, "late_penalty_share": 0.05, "withholding_share": 0.05},
  "deal": {
   "kappa": 0.5,
   "stock_exponent": 0.6,
@@ -16,12 +17,12 @@
   "berth_cr_per_day_cap": 400.0
  },
  "styles": {
-  "bureaucratic": {"ru": "бюрократический", "vat": 0.20, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.0, "duty": 0.04},
-  "corporate":    {"ru": "корпоративный",   "vat": 0.08, "vat_refund_days": 14, "turnover": 0.0, "turnover_ru": "", "port_index": 1.4, "duty": 0.03},
-  "planned":      {"ru": "плановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "налог с оборота", "port_index": 0.7, "duty": 0.06},
-  "theocratic":   {"ru": "теократический",  "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.10, "turnover_ru": "десятина", "port_index": 0.9, "duty": 0.05},
-  "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08},
-  "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02}
+  "bureaucratic": {"ru": "бюрократический", "vat": 0.20, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.0, "duty": 0.04, "income_tax": 0.25, "tax_admin_fee": 0.02},
+  "corporate":    {"ru": "корпоративный",   "vat": 0.08, "vat_refund_days": 14, "turnover": 0.0, "turnover_ru": "", "port_index": 1.4, "duty": 0.03, "income_tax": 0.15, "tax_admin_fee": 0.0},
+  "planned":      {"ru": "плановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "налог с оборота", "port_index": 0.7, "duty": 0.06, "income_tax": 0.10, "tax_admin_fee": 0.0},
+  "theocratic":   {"ru": "теократический",  "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.10, "turnover_ru": "десятина", "port_index": 0.9, "duty": 0.05, "income_tax": 0.0, "tax_admin_fee": 0.0},
+  "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
+  "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
  "regime_style": {
   "parliamentary_bureaucracy": "bureaucratic",

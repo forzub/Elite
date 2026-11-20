@@ -354,6 +354,7 @@ add_executable(EliteHubSecurityCheck
     src/game/navigation/traffic/HubLaneNetwork.cpp
     src/game/navigation/HubPlanCatalog.cpp
     src/game/economy/BankingModel.cpp
+    src/game/economy/TaxModel.cpp
 )
 target_include_directories(EliteHubSecurityCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
 target_compile_features(EliteHubSecurityCheck PRIVATE cxx_std_17)
@@ -722,6 +723,7 @@ add_executable(EliteGame
     src/game/presentation/TradeDealPresentation.cpp
     src/game/economy/EconomyModel.cpp
     src/game/economy/BankingModel.cpp
+    src/game/economy/TaxModel.cpp
     src/game/economy/PriceModel.cpp
     src/game/economy/EconomyServer.cpp
     src/game/economy/CargoRegistry.cpp
@@ -1027,6 +1029,7 @@ if(ELITE_BUILD_SERVER)
         src/game/navigation/rules/JumpSumps.cpp
         src/game/economy/EconomyModel.cpp
         src/game/economy/BankingModel.cpp
+        src/game/economy/TaxModel.cpp
         src/game/economy/PriceModel.cpp
         src/game/economy/EconomyServer.cpp
         src/game/economy/CargoRegistry.cpp
@@ -1322,6 +1325,7 @@ if(ELITE_BUILD_SERVER)
         tests/economy/EconomyCheck.cpp
         src/game/presentation/TradeDealPresentation.cpp
         src/game/economy/BankingModel.cpp
+        src/game/economy/TaxModel.cpp
         src/game/economy/PriceModel.cpp
         src/game/economy/EconomyServer.cpp
         src/game/economy/CargoRegistry.cpp

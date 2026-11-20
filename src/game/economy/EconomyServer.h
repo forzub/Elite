@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "src/game/economy/BankingModel.h"
+#include "src/game/economy/TaxModel.h"
 #include "src/game/economy/PriceModel.h"
 #include <set>
 #include <deque>
@@ -298,6 +299,15 @@ private:
     std::unordered_map<std::string, std::string> m_hubPolity;      // every economy hub (incl. no market)
     std::unordered_map<int, std::string> m_systemPolity;           // the system's dominant polity
     std::unordered_map<std::uint64_t, ClientLedger> m_ledgers;
+    // the income tax (TaxModel, TRADE_DESIGN step 7): one book per player, the residence = the ledger's home bank
+    std::unordered_map<std::uint64_t, TaxBook> m_taxBooks;
+    TaxRules m_taxRules;
+    TaxBook* taxBook(std::uint64_t playerId);
+    [[nodiscard]] FiscalStyle residenceStyle(const ClientLedger& l) const;
+    // a contract's money from its issuer: the tax withheld at source when the issuer is of another polity
+    void receiveContractMoney(std::uint64_t playerId, ClientLedger& l, const std::string& issuerBank, double amountCr,
+                              const std::string& memo);
+    void stepTaxes(int day);
     std::string m_stateFile;
     double m_aiFreeFuelListCr = 0.0;
     // trade

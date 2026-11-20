@@ -17,11 +17,11 @@
       "ja": "マイ星ポータル"
     },
     "service.government.app_subtitle": {
-      "en": "the state's app: navigation data; licences, taxes, fines and citizenship to come",
-      "ru": "государственное приложение: навигационные данные; лицензии, налоги, штрафы, гражданство — позже",
-      "zh-Hans": "政府应用：导航数据；执照、税务、罚款、国籍即将上线",
-      "es": "la app del Estado: datos de navegación; licencias, impuestos, multas y ciudadanía, más adelante",
-      "ja": "行政アプリ：航法データ。免許・税・罰金・国籍は今後"
+      "en": "the state's app: taxes, navigation data; licences, fines and citizenship to come",
+      "ru": "государственное приложение: налоги, навигационные данные; лицензии, штрафы, гражданство — позже",
+      "zh-Hans": "政府应用：税务、导航数据；执照、罚款、国籍即将上线",
+      "es": "la app del Estado: impuestos, datos de navegación; licencias, multas y ciudadanía, más adelante",
+      "ja": "行政アプリ：税金・航法データ。免許・罰金・国籍は今後"
     },
     "service.government.nav_data": {
       "en": "Navigation data",
@@ -120,6 +120,202 @@
       "zh-Hans": "入伍后可提交报告",
       "es": "Los partes estarán disponibles al alistarse",
       "ja": "入隊後に報告が可能になります"
+    },
+    "service.government.taxes": {
+      "en": "Taxes",
+      "ru": "Налоги",
+      "zh-Hans": "税务",
+      "es": "Impuestos",
+      "ja": "税金"
+    },
+    "service.government.tax_no_data": {
+      "en": "No tax data from the server",
+      "ru": "Нет налоговых данных сервера",
+      "zh-Hans": "无服务器税务数据",
+      "es": "Sin datos fiscales del servidor",
+      "ja": "サーバーの税データなし"
+    },
+    "service.government.tax_residence": {
+      "en": "Tax residence",
+      "ru": "Налоговое резидентство",
+      "zh-Hans": "税务居民身份",
+      "es": "Residencia fiscal",
+      "ja": "納税居住地"
+    },
+    "service.government.tax_style": {
+      "en": "Fiscal style",
+      "ru": "Фискальный стиль",
+      "zh-Hans": "财政类型",
+      "es": "Estilo fiscal",
+      "ja": "財政様式"
+    },
+    "service.government.tax_rate": {
+      "en": "Income tax rate",
+      "ru": "Ставка налога на доход",
+      "zh-Hans": "所得税率",
+      "es": "Tipo del impuesto sobre la renta",
+      "ja": "所得税率"
+    },
+    "service.government.tax_admin_fee": {
+      "en": "administration fee",
+      "ru": "плата за администрирование",
+      "zh-Hans": "征管费",
+      "es": "tasa de administración",
+      "ja": "事務手数料"
+    },
+    "service.government.tax_rules": {
+      "en": "Period / return",
+      "ru": "Период / декларация",
+      "zh-Hans": "期间 / 申报",
+      "es": "Periodo / declaración",
+      "ja": "期間 / 申告"
+    },
+    "service.government.tax_days": {
+      "en": "days",
+      "ru": "сут",
+      "zh-Hans": "天",
+      "es": "días",
+      "ja": "日"
+    },
+    "service.government.tax_declare": {
+      "en": "due in",
+      "ru": "срок уплаты",
+      "zh-Hans": "缴纳期限",
+      "es": "pago en",
+      "ja": "納期"
+    },
+    "service.government.tax_open_period": {
+      "en": "Current period, days",
+      "ru": "Текущий период, дни",
+      "zh-Hans": "当前期间（日）",
+      "es": "Periodo actual, días",
+      "ja": "現在の期間（日）"
+    },
+    "service.government.tax_revenue": {
+      "en": "Revenue",
+      "ru": "Выручка",
+      "zh-Hans": "收入",
+      "es": "Ingresos",
+      "ja": "収入"
+    },
+    "service.government.tax_expenses": {
+      "en": "Deductible expenses",
+      "ru": "Расходы к вычету",
+      "zh-Hans": "可扣除费用",
+      "es": "Gastos deducibles",
+      "ja": "控除可能経費"
+    },
+    "service.government.tax_profit": {
+      "en": "Profit",
+      "ru": "Прибыль",
+      "zh-Hans": "利润",
+      "es": "Beneficio",
+      "ja": "利益"
+    },
+    "service.government.tax_withheld_credit": {
+      "en": "Withheld abroad (credited)",
+      "ru": "Удержано за рубежом (зачёт)",
+      "zh-Hans": "境外预扣（抵免）",
+      "es": "Retenido en el extranjero (deducible)",
+      "ja": "国外源泉徴収（控除）"
+    },
+    "service.government.tax_withheld_lost": {
+      "en": "Withheld abroad (no treaty)",
+      "ru": "Удержано за рубежом (без соглашения)",
+      "zh-Hans": "境外预扣（无协定）",
+      "es": "Retenido en el extranjero (sin convenio)",
+      "ja": "国外源泉徴収（協定なし）"
+    },
+    "service.government.tax_estimate": {
+      "en": "Tax if the period closed today",
+      "ru": "Налог, если период закрыть сегодня",
+      "zh-Hans": "若今日结算的税额",
+      "es": "Impuesto si el periodo cerrara hoy",
+      "ja": "本日締めた場合の税額"
+    },
+    "service.government.tax_last_period": {
+      "en": "Last closed period",
+      "ru": "Последний закрытый период",
+      "zh-Hans": "上一结算期间",
+      "es": "Último periodo cerrado",
+      "ja": "前回の締め期間"
+    },
+    "service.government.tax_none_yet": {
+      "en": "no closed period yet",
+      "ru": "закрытых периодов ещё нет",
+      "zh-Hans": "尚无结算期间",
+      "es": "aún no hay periodos cerrados",
+      "ja": "まだ締め期間なし"
+    },
+    "service.government.tax_period": {
+      "en": "Period, days",
+      "ru": "Период, дни",
+      "zh-Hans": "期间（日）",
+      "es": "Periodo, días",
+      "ja": "期間（日）"
+    },
+    "service.government.tax_assessed": {
+      "en": "Assessed tax",
+      "ru": "Начислено",
+      "zh-Hans": "核定税额",
+      "es": "Impuesto liquidado",
+      "ja": "課税額"
+    },
+    "service.government.tax_due": {
+      "en": "To pay",
+      "ru": "К уплате",
+      "zh-Hans": "应缴",
+      "es": "A pagar",
+      "ja": "納付"
+    },
+    "service.government.tax_until_day": {
+      "en": "by day",
+      "ru": "до дня",
+      "zh-Hans": "截至第",
+      "es": "hasta el día",
+      "ja": "期日"
+    },
+    "service.government.tax_in": {
+      "en": "in",
+      "ru": "через",
+      "zh-Hans": "还剩",
+      "es": "en",
+      "ja": "あと"
+    },
+    "service.government.tax_status": {
+      "en": "Status",
+      "ru": "Статус",
+      "zh-Hans": "状态",
+      "es": "Estado",
+      "ja": "状態"
+    },
+    "service.government.tax_nothing": {
+      "en": "nothing to pay",
+      "ru": "платить нечего",
+      "zh-Hans": "无需缴纳",
+      "es": "nada que pagar",
+      "ja": "納付なし"
+    },
+    "service.government.tax_paid": {
+      "en": "Paid",
+      "ru": "Уплачено",
+      "zh-Hans": "已缴",
+      "es": "Pagado",
+      "ja": "納付済み"
+    },
+    "service.government.tax_debt": {
+      "en": "Tax debt",
+      "ru": "Налоговый долг",
+      "zh-Hans": "欠税",
+      "es": "Deuda tributaria",
+      "ja": "滞納税"
+    },
+    "service.government.tax_penalty": {
+      "en": "penalty",
+      "ru": "пени",
+      "zh-Hans": "滞纳金",
+      "es": "recargo",
+      "ja": "延滞金"
     }
   }
 }

@@ -819,6 +819,7 @@ private:
     int m_tradeTab = 0;
     std::string m_navDataSelected;   // F5 state app -> navigation data: the selected bank record
     int m_governmentTab = 0;         // F5: 0 the state services app, 1 Галера+
+    int m_governmentSection = 0;     // F5 state app: 0 taxes, 1 navigation data
     std::uint32_t m_economyRequestId = 0;
     game::presentation::TradeDealRequest m_tradeDeal;   // the MARKET deal window's own state (never authoritative)
     std::map<int, bool> m_tradeKeyWasDown;

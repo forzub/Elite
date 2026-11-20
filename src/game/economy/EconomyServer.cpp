@@ -487,6 +487,11 @@ bool EconomyServer::load()
         m_dealRules.berthIncludedHours = num(deal, "berth_included_hours", m_dealRules.berthIncludedHours);
         m_dealRules.berthCrPerHour = num(deal, "berth_cr_per_hour", m_dealRules.berthCrPerHour);
         m_dealRules.berthCrPerDayCap = num(deal, "berth_cr_per_day_cap", m_dealRules.berthCrPerDayCap);
+        const json tax = fees.value("income_tax", json::object());
+        m_taxRules.periodDays = std::max(1, static_cast<int>(num(tax, "period_days", m_taxRules.periodDays)));
+        m_taxRules.declareDays = std::clamp(static_cast<int>(num(tax, "declare_days", m_taxRules.declareDays)), 0, m_taxRules.periodDays - 1);
+        m_taxRules.latePenaltyShare = num(tax, "late_penalty_share", m_taxRules.latePenaltyShare);
+        m_taxRules.withholdingShare = num(tax, "withholding_share", m_taxRules.withholdingShare);
         const json styles = fees.value("styles", json::object());
         for (const auto& [id, s] : styles.items())
         {
@@ -499,6 +504,8 @@ bool EconomyServer::load()
             st.turnoverRu = str(s, "turnover_ru");
             st.portIndex = num(s, "port_index", 1.0);
             st.dutyShare = num(s, "duty", st.dutyShare);
+            st.incomeTaxShare = num(s, "income_tax", 0.0);
+            st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
         const json regimes = fees.value("regime_style", json::object());
@@ -733,6 +740,8 @@ void EconomyServer::stepDay(int day)
                       << grouped(rep.interestChargedCr, 2) << " Cr" << '\n';
     }
 
+    stepTaxes(day);
+
     std::sort(jumpPrices.begin(), jumpPrices.end());
     char line[512];
     std::snprintf(line, sizeof line,
@@ -748,6 +757,93 @@ void EconomyServer::stepDay(int day)
 }
 
 // ---------------------------------------------------------------- players
+// ---------------------------------------------------------------- the income tax (TaxModel, TRADE_DESIGN step 7)
+TaxBook* EconomyServer::taxBook(std::uint64_t playerId)
+{
+    if (playerId == 0 || !m_ledgers.count(playerId))
+        return nullptr;   // AI: no books
+    return &m_taxBooks[playerId];
+}
+
+FiscalStyle EconomyServer::residenceStyle(const ClientLedger& l) const
+{
+    // the residence polity = the home bank's (a bank id is its polity id); its regime -> the fiscal style
+    const auto* bank = m_banks.bank(l.homeBank);
+    const std::string regime = bank && !bank->regime.empty() ? bank->regime : std::string("no_state");
+    if (const auto it = m_regimeStyle.find(regime); it != m_regimeStyle.end())
+        if (const auto st = m_styles.find(it->second); st != m_styles.end())
+            return st->second;
+    return FiscalStyle{};
+}
+
+void EconomyServer::receiveContractMoney(std::uint64_t playerId, ClientLedger& l, const std::string& issuerBank, double amountCr,
+                                         const std::string& memo)
+{
+    if (!(amountCr > 0.0))
+        return;
+    double withheld = 0.0;
+    bool credited = false;
+    if (!issuerBank.empty() && issuerBank != l.homeBank && m_taxRules.withholdingShare > 0.0)
+    {
+        // withheld at source by the issuer's country; credited at home only through a treaty (an open / licensed channel)
+        withheld = std::round(amountCr * m_taxRules.withholdingShare * 100.0) / 100.0;
+        const Channel ch = m_banks.channel(l.homeBank, issuerBank);
+        credited = ch == Channel::Open || ch == Channel::Licensed;
+    }
+    receive(l, m_banks, issuerBank, amountCr - withheld, m_day, memo);
+    if (withheld > 0.0)
+    {
+        const auto* b = m_banks.bank(issuerBank);
+        logEvent(l, m_day, "налог у источника -" + grouped(withheld) + " Cr (" + (b ? b->polityName : issuerBank) + ", " +
+                               (credited ? "зачтётся дома" : "дома не зачитывается: нет соглашения") + ")");
+    }
+    if (TaxBook* t = taxBook(playerId))
+    {
+        addRevenue(*t, amountCr);
+        addWithheld(*t, withheld, credited);
+    }
+}
+
+void EconomyServer::stepTaxes(int day)
+{
+    for (auto& [id, l] : m_ledgers)
+    {
+        TaxBook* t = taxBook(id);
+        if (!t)
+            continue;
+        const FiscalStyle rs = residenceStyle(l);
+        const TaxAssessment a = rollTaxPeriod(*t, day, rs.incomeTaxShare, rs.taxAdminFeeShare, m_taxRules);
+        if (a.closed)
+        {
+            const int from = a.period * m_taxRules.periodDays;
+            logEvent(l, day, "налоговый период " + std::to_string(from) + "-" + std::to_string(from + m_taxRules.periodDays - 1) +
+                                 ": прибыль " + grouped(a.profitCr) + " Cr, налог " + grouped(a.taxCr + a.feeCr) + " Cr к уплате до дня " +
+                                 std::to_string(a.dueDay));
+            std::cerr << "[Tax] player " << id << ": period " << from << ".." << (from + m_taxRules.periodDays - 1) << " closed: profit "
+                      << grouped(a.profitCr) << " Cr x " << rs.incomeTaxShare << " (" << rs.ru << ") -> tax " << grouped(a.taxCr)
+                      << " + fee " << grouped(a.feeCr) << " Cr, due day " << a.dueDay << '\n';
+            saveNow("tax");
+        }
+        if (!taxDue(*t, day))
+            continue;
+        const double amount = t->assessedTaxCr + t->assessedFeeCr;
+        const std::string memo = "налог на доход за период с дня " + std::to_string(t->assessedPeriod * m_taxRules.periodDays) +
+                                 (t->assessedFeeCr > 0.0 ? " (с платой за администрирование " + grouped(t->assessedFeeCr) + " Cr)" : std::string());
+        const PaymentResult p = payOrDebt(l, m_banks, l.homeBank, amount, Purpose::Tax, day, memo, "налог в долг");
+        const double debt = p.ok ? p.lifelineCr : amount;
+        const double penalty = settleTax(*t, amount - debt, debt, m_taxRules);
+        if (penalty > 0.0)
+            (void)payOrDebt(l, m_banks, l.homeBank, penalty, Purpose::Fine, day,
+                            "пени по налогу (" + std::to_string(static_cast<int>(std::lround(m_taxRules.latePenaltyShare * 100.0))) +
+                                " % неуплаченного)", "пени в долг");
+        logEvent(l, day, "налог на доход " + grouped(amount) + " Cr: " + (debt > 0.0 ? "в долг" + std::string(penalty > 0.0 ? " + пени " + grouped(penalty) + " Cr" : "") : "уплачен"));
+        std::cerr << "[Tax] player " << id << ": day " << day << " DUE " << grouped(amount) << " Cr -> paid " << grouped(amount - debt)
+                  << ", debt " << grouped(debt) << ", penalty " << grouped(penalty) << "; net worth " << grouped(netWorthCr(l, m_banks))
+                  << " Cr" << '\n';
+        saveNow("tax");
+    }
+}
+
 void EconomyServer::ensurePlayer(std::uint64_t playerId, int homeSystemId)
 {
     if (!m_loaded || playerId == 0 || m_ledgers.count(playerId))
@@ -897,6 +993,8 @@ FuelCharge EconomyServer::chargeFuel(std::uint64_t playerId, const std::string& 
         r.ok = true;
         r.listCr = granted * r.quote.listCrPerT;
         r.chargedCr = r.listCr;
+        if (TaxBook* t = taxBook(playerId))
+            addExpense(*t, r.chargedCr);
         r.lifelineCr = p.lifelineCr;
     }
     r.tonnesGranted = granted;
@@ -968,7 +1066,10 @@ PaymentResult EconomyServer::chargeService(std::uint64_t playerId, const std::st
         r.reason = r.ok ? "" : "нет счёта";
         return r;
     }
-    return pay(*l, m_banks, bankOf(hubId, systemId), amountCr, purpose, m_day, true, memo);
+    const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), amountCr, purpose, m_day, true, memo);
+    if (TaxBook* t = taxBook(playerId); t && p.ok && purpose != Purpose::Fine && purpose != Purpose::Other)
+        addExpense(*t, amountCr);
+    return p;
 }
 
 PaymentResult EconomyServer::chargeFine(std::uint64_t playerId, const std::string& hubId, int systemId, double amountCr,
@@ -1044,6 +1145,8 @@ EconomyServer::PortCharge EconomyServer::chargeDocking(std::uint64_t playerId, c
     std::snprintf(memo, sizeof memo, "стыковка %s (%.0f т сухой массы, индекс порта %.1f)", (hubName.empty() ? hubDisplayName(hubId) : hubName).c_str(),
                   dryMassT, style.portIndex);
     const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Docking, m_day, memo, "сбор в долг");
+    if (TaxBook* t = taxBook(playerId); t && p.ok)
+        addExpense(*t, c.feeCr);
     c.booked = p.ok;
     c.debtCr = p.ok ? p.lifelineCr : 0.0;
     c.paidCr = p.ok ? c.feeCr - c.debtCr : 0.0;
@@ -1082,6 +1185,8 @@ EconomyServer::PortCharge EconomyServer::chargeBerth(std::uint64_t playerId, con
     std::snprintf(memo, sizeof memo, "стоянка %s: %.1f ч (сверх %.0f ч по %.0f Cr/ч)", (hubName.empty() ? hubDisplayName(hubId) : hubName).c_str(),
                   c.hours, m_dealRules.berthIncludedHours, m_dealRules.berthCrPerHour * style.portIndex);
     const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Parking, m_day, memo, "сбор в долг");
+    if (TaxBook* t = taxBook(playerId); t && p.ok)
+        addExpense(*t, c.feeCr);
     c.booked = p.ok;
     c.debtCr = p.ok ? p.lifelineCr : 0.0;
     c.paidCr = p.ok ? c.feeCr - c.debtCr : 0.0;
@@ -1263,6 +1368,8 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         if (q.vatReclaimCr > 0.0 && style.vatRefundDays > 0)
             m_vatRefunds.push_back({o.playerId, bank, q.vatReclaimCr, m_day + style.vatRefundDays});
         lot.costBasisCr = -q.totalCr - (style.vatRefundDays > 0 ? q.vatReclaimCr * (1.0 - m_dealRules.vatRefundFeeShare) : 0.0);
+        if (TaxBook* t = taxBook(o.playerId))
+            addExpense(*t, lot.costBasisCr);   // net of the input VAT that comes back
         m_cargo.load(o.shipKey, o.playerId, lot, good.densityTM3);
         r.message = std::string("куплено ") + grouped(o.tonnes, 2) + " т по " + grouped(q.unitCr) + " Cr/т";
     }
@@ -1282,6 +1389,8 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         (void)m_cargo.unload(o.shipKey, o.goodId, o.tonnes, good.densityTM3, basisOut);
         if (q.totalCr > 0.0)
             receive(*l, m_banks, bank, q.totalCr, m_day, memo);
+        if (TaxBook* t = taxBook(o.playerId))
+            q.totalCr > 0.0 ? addRevenue(*t, q.totalCr) : addExpense(*t, -q.totalCr);   // the proceeds after the deal's fees
         cell.stockT += o.tonnes;
         r.message = std::string("продано ") + grouped(o.tonnes, 2) + " т по " + grouped(q.unitCr) + " Cr/т; к себестоимости " +
                     (q.totalCr - basisOut >= 0.0 ? "+" : "") + grouped(q.totalCr - basisOut) + " Cr";
@@ -1554,6 +1663,38 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
     w.lastWithheldCr = l->lastWithheldCr;
     w.lastWithheldDay = l->lastWithheldDay;
     w.protectedCr = m_banks.rules.garnishProtectedCr;
+    // the income tax of the residence polity (TaxModel, TRADE_DESIGN step 7)
+    {
+        const FiscalStyle rs = residenceStyle(*l);
+        const auto* home = m_banks.bank(l->homeBank);
+        w.taxResidence = home ? home->polityName : l->homeBank;
+        w.taxStyleRu = rs.ru;
+        w.taxRate = rs.incomeTaxShare;
+        w.taxAdminFeeShare = rs.taxAdminFeeShare;
+        w.taxPeriodDays = m_taxRules.periodDays;
+        w.taxDeclareDays = m_taxRules.declareDays;
+        w.taxWithholdingShare = m_taxRules.withholdingShare;
+        if (const auto it = m_taxBooks.find(playerId); it != m_taxBooks.end())
+        {
+            const TaxBook& t = it->second;
+            const int period = t.period >= 0 ? t.period : taxPeriodOf(m_day, m_taxRules);
+            w.taxPeriodStartDay = period * m_taxRules.periodDays;
+            w.taxRevenueCr = t.revenueCr;
+            w.taxExpensesCr = t.expensesCr;
+            w.taxWithheldCreditCr = t.withheldCreditCr;
+            w.taxWithheldLostCr = t.withheldLostCr;
+            w.taxEstimateCr = estimatedTaxCr(t, rs.incomeTaxShare, rs.taxAdminFeeShare);
+            w.taxAssessedPeriodStartDay = t.assessedPeriod >= 0 ? t.assessedPeriod * m_taxRules.periodDays : -1;
+            w.taxAssessedProfitCr = t.assessedProfitCr;
+            w.taxAssessedCr = t.assessedTaxCr;
+            w.taxAssessedFeeCr = t.assessedFeeCr;
+            w.taxDueDay = t.dueDay;
+            w.taxSettled = t.settled;
+            w.taxPaidCr = t.paidCr;
+            w.taxDebtCr = t.debtCr;
+            w.taxPenaltyCr = t.penaltyCr;
+        }
+    }
 
     w.localPolity = polityOf(hubId, systemId);
     if (const auto* b = m_banks.bankForPolity(w.localPolity))
@@ -1732,8 +1873,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/5";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
-                                       // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum)
+    j["schema"] = "economy_state/6";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+                                       // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
+                                       // 6: tax books (the income tax, step 7)
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -1774,6 +1916,22 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
                                    {"cause", r.cause}});
+    j["taxes"] = json::array();
+    {
+        std::vector<std::uint64_t> ids;
+        for (const auto& [id, t] : m_taxBooks)
+            ids.push_back(id);
+        std::sort(ids.begin(), ids.end());
+        for (const auto id : ids)
+        {
+            const TaxBook& t = m_taxBooks.at(id);
+            j["taxes"].push_back({{"player", id}, {"period", t.period}, {"rev", t.revenueCr}, {"exp", t.expensesCr},
+                                  {"wh_credit", t.withheldCreditCr}, {"wh_lost", t.withheldLostCr}, {"a_period", t.assessedPeriod},
+                                  {"a_profit", t.assessedProfitCr}, {"a_tax", t.assessedTaxCr}, {"a_fee", t.assessedFeeCr},
+                                  {"due", t.dueDay}, {"settled", t.settled}, {"paid", t.paidCr}, {"debt", t.debtCr},
+                                  {"penalty", t.penaltyCr}, {"paid_total", t.paidTotalCr}});
+        }
+    }
     j["vat_refunds"] = json::array();
     for (const auto& v : m_vatRefunds)
         j["vat_refunds"].push_back({{"player", v.playerId}, {"bank", v.bankId}, {"cr", v.amountCr}, {"due", v.dueDay}});
@@ -1847,8 +2005,8 @@ bool EconomyServer::restoreState(const std::string& text)
     }
     const std::string schema = j.value("schema", std::string());
     if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3" &&
-        schema != "economy_state/4" && schema != "economy_state/5")   // /1: no trade registries; /2: no contracts;
-                                                                       // /3: no port calls; /4: no last_withheld
+        schema != "economy_state/4" && schema != "economy_state/5" && schema != "economy_state/6")   // /1: no trade registries; /2: no contracts;
+                                                                       // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
     // 2026-11-19: an exception half-way left fx / markets restored, the ledgers cleared, and the caller started a
@@ -1920,6 +2078,27 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_taxBooks) taxBooks;   // economy_state/6 (older files: none - the books open on the next day)
+        for (const auto& x : j.value("taxes", json::array()))
+        {
+            TaxBook t;
+            t.period = x.value("period", -1);
+            t.revenueCr = x.value("rev", 0.0);
+            t.expensesCr = x.value("exp", 0.0);
+            t.withheldCreditCr = x.value("wh_credit", 0.0);
+            t.withheldLostCr = x.value("wh_lost", 0.0);
+            t.assessedPeriod = x.value("a_period", -1);
+            t.assessedProfitCr = x.value("a_profit", 0.0);
+            t.assessedTaxCr = x.value("a_tax", 0.0);
+            t.assessedFeeCr = x.value("a_fee", 0.0);
+            t.dueDay = x.value("due", -1);
+            t.settled = x.value("settled", true);
+            t.paidCr = x.value("paid", 0.0);
+            t.debtCr = x.value("debt", 0.0);
+            t.penaltyCr = x.value("penalty", 0.0);
+            t.paidTotalCr = x.value("paid_total", 0.0);
+            taxBooks[x.at("player").get<std::uint64_t>()] = t;
+        }
         decltype(m_vatRefunds) vatRefunds;
         for (const auto& v : j.value("vat_refunds", json::array()))
             vatRefunds.push_back({v.value("player", std::uint64_t{0}), v.value("bank", std::string()), v.value("cr", 0.0), v.value("due", 0)});
@@ -1952,6 +2131,7 @@ bool EconomyServer::restoreState(const std::string& text)
         m_ledgers.swap(ledgers);
         m_cargo.fromJson(j.value("cargo", json::array()));   // already parsed once above (cannot throw now); keeps the registry serial
         m_vatRefunds.swap(vatRefunds);
+        m_taxBooks.swap(taxBooks);
         m_lossEvents.swap(lossEvents);
         m_lostCargo.swap(lostCargo);
         m_nextLostCargo = nextLostCargo;
@@ -2061,7 +2241,7 @@ game::simulation::ClientTradeResult EconomyServer::takeContract(const ContractOr
             return refuse("no_deposit", "нечем обеспечить залог " + grouped(p->depositCr) + " Cr: нужны свободные деньги на счёте (не овердрафт)");
     }
     if (p->advanceCr > 0.0)
-        receive(*l, m_banks, c.issuerBank, p->advanceCr, m_day, "аванс по контракту " + p->id);
+        receiveContractMoney(o.playerId, *l, c.issuerBank, p->advanceCr, "аванс по контракту " + p->id);
     m_cargo.load(o.shipKey, o.playerId, lot, p->densityTM3);
     p->status = "taken";
     p->takenBy = o.playerId;
@@ -2108,7 +2288,7 @@ int EconomyServer::deliverContracts(std::uint64_t playerId, std::uint64_t shipKe
         c.closedDay = m_day;
         c.paidCr = std::max(0.0, c.p.rewardCr - c.p.advanceCr);
         if (c.paidCr > 0.0)
-            receive(*l, m_banks, c.issuerBank, c.paidCr, m_day,
+            receiveContractMoney(playerId, *l, c.issuerBank, c.paidCr,
                     "контракт " + c.p.id + " сдан на " + hubDisplayName(hubId) + (c.lateDays > 0 ? " с опозданием" : " в срок"));
         if (c.holdId != 0)
             releaseHold(*l, c.holdId);
@@ -2121,6 +2301,8 @@ int EconomyServer::deliverContracts(std::uint64_t playerId, std::uint64_t shipKe
             const std::string memo = "неустойка за опоздание " + std::to_string(c.lateDays) + " сут по контракту " + c.p.id;
             const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, "неустойка в долг");
             debt = p.ok ? p.lifelineCr : 0.0;
+            if (TaxBook* t = taxBook(playerId))
+                addExpense(*t, c.penaltyCr);
         }
         else
             c.status = "delivered";
@@ -2164,6 +2346,8 @@ void EconomyServer::failContract(Contract& c, const std::string& status, const s
                                  grouped(c.p.advanceCr);
         const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, "неустойка в долг");
         debt = p.ok ? p.lifelineCr : 0.0;
+        if (TaxBook* t = taxBook(c.playerId))
+            addExpense(*t, c.penaltyCr + (c.holdId != 0 ? c.p.depositCr : 0.0));   // the penalty + the forfeited deposit
         if (c.holdId != 0)
             captureHold(*l, m_banks, c.holdId, m_day, "по контракту " + c.p.id);
     }
@@ -2199,6 +2383,8 @@ game::simulation::ClientTradeResult EconomyServer::abandonContract(const Contrac
         c->penaltyCr = std::round(c->p.rewardCr * m_board.rules().abandonFeeShare) + c->p.advanceCr;
         const PaymentResult p = payOrDebt(*l, m_banks, c->issuerBank, c->penaltyCr, Purpose::ContractPenalty, m_day,
                                           "отказ от контракта " + c->p.id + " (сбор + возврат аванса)", "неустойка в долг");
+        if (TaxBook* t = taxBook(o.playerId))
+            addExpense(*t, c->penaltyCr);
         if (c->holdId != 0)
             releaseHold(*l, c->holdId);
         c->holdId = 0;

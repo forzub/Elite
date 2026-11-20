@@ -37,6 +37,8 @@ struct FiscalStyle
     std::string turnoverRu;
     double portIndex = 1.0;       // multiplies docking, berth and handling
     double dutyShare = 0.04;      // import duty base (x the customs channel multiplier), §5.1
+    double incomeTaxShare = 0.25; // of the profit, for residents (TaxModel, step 7)
+    double taxAdminFeeShare = 0.0;// the tax administration fee, of the tax (bureaucratic 2 %)
 };
 
 struct TradeDealRules

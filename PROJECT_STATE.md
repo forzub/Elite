@@ -7220,3 +7220,23 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   ~half a line below its label (text y vs box y) - a shared layout offset, left as is.
 - Author's open items (§11b): pilot licence categories in the state app (step 11); a shipless pilot - the hiring board
   (where: F5 employment service or F8 private hire).
+
+## TRADE MVP step 7: the income tax (docs/TRADE_DESIGN.md §5.2, §9 row 7, §9f) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): TaxModel (pure: TaxBook, rollTaxPeriod, settleTax), one book per player in EconomyServer;
+  residence = the home bank's polity, rate / admin fee by its fiscal style (trade_fees.json income_tax + tax_admin_fee:
+  bureaucratic 25 % + 2 %, corporate 15, planned 10, security 20, theocratic / clan 0; income_tax block: 90-day period,
+  due 15 days later, 5 % penalty, 5 % withholding). Cash basis: sales (after the deal's fees), contract rewards /
+  advances = revenue; purchases (net of reclaimable VAT), docking, berth, fuel, services, contract penalties and a
+  forfeited deposit = expenses; fines not deductible. Due day: payOrDebt(Purpose::Tax) - unpaid -> 0 % debt + a one-off
+  5 % penalty (Purpose::Fine, "пени в долг"). Withholding at source 5 % on a foreign issuer's contract money, credited
+  at home only via an open / licensed channel. economy_state/6 ("taxes"; /1../5 still load), snapshot schema 55
+  (session.wallet tax*). F5 state app -> НАЛОГИ section (govsec:0 / navigation data govsec:1).
+- Checks: EliteEconomyCheck 158/158 (testIncomeTax: the pure book, a sale + docking -> estimate, day 1080 assessment,
+  day 1095 paid / broke player 2 -> debt + 5 % penalty, economy_state/6 byte-exact round trip); check_architecture,
+  service_panel_shell, localization_boundary, wire_data_schema, wire_protocol_boundary, replication_snapshot PASS;
+  EliteServicePagesCheck PASS.
+- LIVE (earth_orbital_hub, D:/tmp/tax7/run.log + 01..04_*.png): DEV grain sold +7 362 Cr, docking -384 -> F5 profit
+  6 978, estimate 1 779; clock +80 days -> "[Tax] period 10170..10259 closed: profit 6 978 x 0.25 -> tax 1 745 + fee 35,
+  due day 10275" -> "day 10275 DUE 1 779 Cr -> paid 1 779". The first run showed integer fields as 0 (fmt %d with a
+  double) - fixed, re-captured.
+- Not in the minimal set (§9f): monthly advances, loss carry-forward, VAT on port services, stamp duty.

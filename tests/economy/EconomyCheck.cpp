@@ -24,6 +24,7 @@
 #include "src/game/economy/CargoRegistry.h"
 #include "src/game/economy/ContractBoard.h"
 #include "src/game/economy/TradeQuoteModel.h"
+#include "src/game/economy/TaxModel.h"
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/presentation/TradeDealPresentation.h"
 
@@ -1505,7 +1506,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/5" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/6" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1520,6 +1521,109 @@ void testProtectedMinimum()
     check(u.restoreState(old.dump()) && u.ledger(1) && u.ledger(1)->lastWithheldDay == -1 && u.ledger(1)->lastWithheldCr == 0.0 &&
               near(totalDebtCr(*u.ledger(1), u.banks()), before - withheld, 0.005),
           "an economy_state/4 file (no last_withheld) loads: the debt as saved, no withholding recorded");
+}
+
+// TRADE step 7 (TRADE_DESIGN §5.2, §9f): the income tax of the residence polity - the pure book, then the server
+void testIncomeTax()
+{
+    TaxRules rules;   // 90-day periods, due 15 days after, 5 % penalty, 5 % withholding
+    TaxBook b;
+    check(!rollTaxPeriod(b, 1000, 0.25, 0.02, rules).closed && b.period == 11, "the book opens on its first day (period 11 = days 990..1079)");
+    addRevenue(b, 100000.0);
+    addExpense(b, 60000.0);
+    addWithheld(b, 1000.0, true);
+    addWithheld(b, 500.0, false);
+    addRevenue(b, -5.0);
+    addExpense(b, std::nan(""));
+    check(near(estimatedTaxCr(b, 0.25, 0.02), (0.25 * 40000.0 - 1000.0) * 1.02, 1e-9),
+          "the estimate: 25 % of the 40 000 profit minus the 1 000 credited abroad, + the 2 % administration fee = 9 180");
+    check(!rollTaxPeriod(b, 1079, 0.25, 0.02, rules).closed, "the period's last day does not close it");
+    const TaxAssessment a = rollTaxPeriod(b, 1080, 0.25, 0.02, rules);
+    check(a.closed && near(a.profitCr, 40000.0, 1e-9) && near(a.taxCr, 9000.0, 1e-9) && near(a.feeCr, 180.0, 1e-9) && a.dueDay == 1095 &&
+              !b.settled && b.period == 12 && b.revenueCr == 0.0 && b.expensesCr == 0.0 && b.withheldCreditCr == 0.0,
+          "day 1080 closes it: tax 9 000 + fee 180, due day 1095; the new period starts empty");
+    check(!taxDue(b, 1094) && taxDue(b, 1095), "due on day 1095, not before");
+    const double penalty = settleTax(b, 0.0, 9180.0, rules);
+    check(b.settled && near(penalty, 459.0, 1e-9) && near(b.debtCr, 9180.0, 1e-9) && !taxDue(b, 1096),
+          "not payable: all 9 180 Cr booked as debt + a one-off 5 % penalty (459 Cr)");
+    addRevenue(b, 1000.0);
+    addExpense(b, 5000.0);
+    const TaxAssessment loss = rollTaxPeriod(b, 1170, 0.25, 0.02, rules);
+    check(loss.closed && loss.taxCr == 0.0 && b.settled && !taxDue(b, 1200), "a loss-making period: no tax, nothing due");
+    TaxBook zero;
+    (void)rollTaxPeriod(zero, 10, 0.0, 0.0, rules);
+    addRevenue(zero, 50000.0);
+    check(!rollTaxPeriod(zero, 90, 0.0, 0.0, rules).closed || zero.settled, "a 0 % style (theocratic / clan): nothing ever due");
+
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  income tax server run (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    s.ensurePlayer(2, 0);
+    const CargoCapacity cobrett{120.0, 6};
+    const auto worth = [&](std::uint64_t p) { return netWorthCr(*s.ledger(p), s.banks()); };
+    const auto sellAll = [&](std::uint64_t p, std::uint64_t ship, double t) {
+        EconomyServer::TradeOrder o;
+        o.playerId = p;
+        o.shipKey = ship;
+        o.hubId = "earth_orbital_hub";
+        o.systemId = 0;
+        o.goodId = "food_staples";
+        o.tonnes = t;
+        o.buy = false;
+        o.capacity = cobrett;
+        o.requestId = 7;
+        return s.trade(o);
+    };
+    // DEV goods (cost basis 0): the whole sale is profit
+    check(s.devAddCargo(1, 601, "food_staples", 15.0, cobrett, "earth_orbital_hub").empty() &&
+              s.devAddCargo(2, 602, "food_staples", 15.0, cobrett, "earth_orbital_hub").empty(), "DEV grain aboard both ships");
+    const auto sold = sellAll(1, 601, 15.0);
+    (void)sellAll(2, 602, 15.0);
+    auto w = s.walletSnapshot(1, "earth_orbital_hub", 0);
+    check(sold.ok && near(w.taxRevenueCr, sold.totalCr, 1e-6) && w.taxExpensesCr == 0.0 && near(w.taxRate, 0.25, 1e-9) &&
+              near(w.taxAdminFeeShare, 0.02, 1e-9) && w.taxStyleRu == "бюрократический" && w.taxPeriodDays == 90,
+          "a sale is revenue (" + std::to_string(sold.totalCr) + " Cr); a Sol resident pays 25 % + 2 % fee (trade_fees.json)");
+    const auto dock = s.chargeDocking(1, "call-tax-1", "earth_orbital_hub", 0, 260.0, "");
+    w = s.walletSnapshot(1, "earth_orbital_hub", 0);
+    check(dock.booked && near(w.taxExpensesCr, dock.feeCr, 1e-6), "the docking fee is a deductible expense");
+    const double profit = sold.totalCr - dock.feeCr;
+    check(near(w.taxEstimateCr, 0.25 * profit * 1.02, 0.01), "the F5 estimate = 25 % x profit x 1.02");
+
+    (void)s.devSpendAll(2, "earth_orbital_hub", 0);   // player 2 will be broke on the due day
+    for (int day = 1001; day <= 1080; ++day)
+        s.advanceTo(day);
+    w = s.walletSnapshot(1, "earth_orbital_hub", 0);
+    check(w.taxAssessedPeriodStartDay == 990 && near(w.taxAssessedCr, 0.25 * profit, 0.01) && near(w.taxAssessedFeeCr, 0.005 * profit, 0.01) &&
+              !w.taxSettled && w.taxDueDay == 1095 && w.taxRevenueCr == 0.0,
+          "day 1080: the period 990..1079 is assessed (" + std::to_string(w.taxAssessedCr) + " + fee), due day 1095");
+    for (int day = 1081; day <= 1094; ++day)
+        s.advanceTo(day);
+    // measured across the due day only (a day of interest on the accounts is a few Cr)
+    const double before1 = worth(1), before2 = worth(2), debt2 = totalDebtCr(*s.ledger(2), s.banks());
+    s.advanceTo(1095);
+    w = s.walletSnapshot(1, "earth_orbital_hub", 0);
+    const double due = w.taxAssessedCr + w.taxAssessedFeeCr;
+    check(w.taxSettled && near(w.taxPaidCr, due, 0.01) && w.taxDebtCr == 0.0 && near(before1 - worth(1), due, 10.0),
+          "day 1095: player 1 pays " + std::to_string(due) + " Cr at once");
+    const auto w2 = s.walletSnapshot(2, "earth_orbital_hub", 0);
+    const double due2 = w2.taxAssessedCr + w2.taxAssessedFeeCr;
+    check(w2.taxSettled && w2.taxPaidCr == 0.0 && near(w2.taxDebtCr, due2, 0.01) && near(w2.taxPenaltyCr, 0.05 * due2, 0.01) &&
+              near(totalDebtCr(*s.ledger(2), s.banks()) - debt2, due2 * 1.05, 10.0) && near(before2 - worth(2), due2 * 1.05, 10.0),
+          "a broke player 2: the tax " + std::to_string(due2) + " Cr is booked as debt + a 5 % penalty, never refused");
+
+    // persistence: economy_state/6 carries the books
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(1095);
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/6" &&
+              near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
+          "economy_state/6: the tax books survive save / restore byte-exact");
 }
 
 int main()
@@ -1540,6 +1644,7 @@ int main()
     testPortCallPersistence();
     testContracts();
     testProtectedMinimum();
+    testIncomeTax();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

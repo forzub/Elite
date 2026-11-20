@@ -882,6 +882,8 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         s.context().app->requestServicePanel(ui::services::ServiceUiId::GovernmentServices);
     else if (cmd.rfind("govtab:", 0) == 0)
         s.m_governmentTab = std::atoi(cmd.c_str() + 7);
+    else if (cmd.rfind("govsec:", 0) == 0)   // the state app's section: 0 taxes, 1 navigation data
+        s.m_governmentSection = std::atoi(cmd.c_str() + 7);
     // refuel at the station the ship stands at, as Ctrl+U (docs/FUEL_STATIONS.md): "refuel" | "refuel:cancel";
     // "waitfor:refueled" waits for the job to end (done / refused / cancelled - the log says which)
     else if (cmd == "refuel" || cmd == "refuel:cancel")

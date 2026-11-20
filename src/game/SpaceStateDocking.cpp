@@ -3694,6 +3694,23 @@ bool SpaceState::updateDockingExecuting(Frame& f)
         game::navigation::autopilot::AutopilotAgentState;
     auto& pending = f.pending;
     auto& releaseClientAutopilot = f.releaseClientAutopilot;
+    // the station captured the ship (GameSimulationDockTraffic: entry cleared, within 60 m of the axis, < 25 m/s): from here
+    // the server flies its own corridor to the pad and ignores our control - stop the client follower instead of logging a
+    // "growing cross-track" against our old line (docking diagnosis 2026-11-20); the docked state ends the request as before
+    if (m_client)
+        if (const auto it = m_client->world().ships().find(m_playerId.value);
+            it != m_client->world().ships().end() && it->second.dockDispatcher.active && it->second.dockDispatcher.stationControlled)
+        {
+            static std::uint64_t loggedSerial = 0;
+            if (pending.valid() && loggedSerial != pending.serial)
+            {
+                loggedSerial = pending.serial;
+                std::cerr << "[DockClient] request=" << pending.serial
+                          << " phase=station-handoff: the station flies the ship, the client follower released" << std::endl;
+            }
+            releaseClientAutopilot();
+            return false;
+        }
     auto& motion = f.motion;
     auto& effectivePhysics = f.effectivePhysics;
     auto& controlLaw = f.controlLaw;

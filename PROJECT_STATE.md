@@ -7509,3 +7509,9 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   logging DockClientTrack against its old line (the "growing cross-track"). The one "never docked" run hit my own 300 s
   script limit (215 s approach + 75 s station). To do: the client should release its autopilot on station capture
   (SpaceStateDocking updateDockingExecuting, check dockDispatcher.stationControlled).
+
+## Docking: the client follower releases on the station's capture (2026-11-20) - SOURCE + LIVE PASS
+- SpaceState::updateDockingExecuting: when the player's dockDispatcher says active && stationControlled, log
+  "phase=station-handoff" once per request, releaseClientAutopilot and stop (the server flies its corridor; the docked
+  state ends the request as before). LIVE (D:/tmp/regime8/run.log): "[DockClient] request=1 phase=station-handoff ...",
+  docked after 289.8 s as before; no DockClientTrack lines against the old line after the capture.

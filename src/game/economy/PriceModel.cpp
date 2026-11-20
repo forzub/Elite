@@ -39,10 +39,20 @@ double stepCell(GoodCell& cell, const CellDrivers& d, const PriceRules& rules)
         restock *= std::min(1.0, d.supplyMult);
     cell.stockT = std::max(0.0, cell.stockT + supply - demand + restock);
 
-    const double target = targetPriceCr(cell, rules);
+    double target = targetPriceCr(cell, rules);
+    const double ratio = cell.targetT > 0.0 ? cell.stockT / cell.targetT : 1.0;
+    if (ratio > rules.dumpFromRatio && rules.dumpSpan > 0.0)
+    {
+        // dumping (§2.4): the holders of a glut cut below the scarcity price - deeper for goods that spoil
+        const double spoil = d.shelfDays > 0.0 ? rules.dumpShelfRefDays / d.shelfDays : 0.0;
+        const double dump = 1.0 - rules.dumpDepth * std::clamp((ratio - rules.dumpFromRatio) / rules.dumpSpan, 0.0, 1.0) * (1.0 + spoil);
+        target *= std::max(rules.dumpFloor, dump);
+    }
     const double before = cell.priceCr > 0.0 ? cell.priceCr : cell.anchorCr;
     double next = before + rules.smoothing * (target - before);
-    next = std::clamp(next, before * (1.0 - rules.maxDailyChange), before * (1.0 + rules.maxDailyChange));
+    const double down = ratio > rules.glutRatio ? std::max(rules.maxDailyChange, rules.extremeDailyChange) : rules.maxDailyChange;
+    const double up = ratio < rules.shortageRatio ? std::max(rules.maxDailyChange, rules.extremeDailyChange) : rules.maxDailyChange;
+    next = std::clamp(next, before * (1.0 - down), before * (1.0 + up));
     next = std::clamp(next, cell.anchorCr * rules.clampLo, cell.anchorCr * rules.clampHi);
     cell.priceCr = next;
     return next / before - 1.0;

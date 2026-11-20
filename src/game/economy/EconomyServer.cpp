@@ -386,6 +386,30 @@ bool EconomyServer::load()
     m_priceRules.supplyNoise = num(p, "supply_noise", m_priceRules.supplyNoise);
     m_priceRules.slowDemandAmp = num(p, "slow_demand_amp", m_priceRules.slowDemandAmp);
     m_priceRules.slowDemandPeriodDays = num(p, "slow_demand_period_days", m_priceRules.slowDemandPeriodDays);
+    {
+        // TRADE step 10: dumping, glut / shortage step limits, NPC flows (trade_fees.json "npc_market")
+        json fees;
+        if (readJson("trade_fees.json", fees))
+        {
+            const json n = fees.value("npc_market", json::object());
+            m_priceRules.dumpFromRatio = num(n, "dump_from_ratio", m_priceRules.dumpFromRatio);
+            m_priceRules.dumpSpan = num(n, "dump_span", m_priceRules.dumpSpan);
+            m_priceRules.dumpDepth = num(n, "dump_depth", m_priceRules.dumpDepth);
+            m_priceRules.dumpShelfRefDays = num(n, "dump_shelf_ref_days", m_priceRules.dumpShelfRefDays);
+            m_priceRules.dumpFloor = num(n, "dump_floor", m_priceRules.dumpFloor);
+            m_priceRules.glutRatio = num(n, "glut_ratio", m_priceRules.glutRatio);
+            m_priceRules.shortageRatio = num(n, "shortage_ratio", m_priceRules.shortageRatio);
+            m_priceRules.extremeDailyChange = num(n, "extreme_daily_change", m_priceRules.extremeDailyChange);
+            m_npcRules.k = num(n, "npc_k", m_npcRules.k);
+            m_npcRules.minMargin = num(n, "npc_min_margin", m_npcRules.minMargin);
+            m_npcRules.deliveryCrT = num(n, "npc_delivery_cr_t", m_npcRules.deliveryCrT);
+            m_npcRules.lagMin = static_cast<int>(num(n, "npc_lag_min_days", m_npcRules.lagMin));
+            m_npcRules.lagMax = std::max(m_npcRules.lagMin, static_cast<int>(num(n, "npc_lag_max_days", m_npcRules.lagMax)));
+            m_npcRules.travelMin = static_cast<int>(num(n, "npc_travel_min_days", m_npcRules.travelMin));
+            m_npcRules.travelMax = std::max(m_npcRules.travelMin, static_cast<int>(num(n, "npc_travel_max_days", m_npcRules.travelMax)));
+            m_npcRules.maxShareOfFlow = num(n, "npc_max_share_of_flow", m_npcRules.maxShareOfFlow);
+        }
+    }
     const json lead = p.value("restock_lead_days", json::object());
     const double c20Jump = num(p, "c20_jump_cr", 4700.0), c20Leg = num(p, "c20_leg_cr", 1300.0), c20T = num(p, "c20_payload_t", 20.0);
     const json splits = p.value("production_split", json::object());   // a local: see ledgerFromJson
@@ -746,6 +770,7 @@ void EconomyServer::stepDay(int day)
             d.supplyShock = signedUnit(key ^ mix(static_cast<std::uint64_t>(day) * 2 + 1));
             d.demandShock = signedUnit(key ^ mix(static_cast<std::uint64_t>(day) * 2 + 2));
             d.slowDemand = dayNoise(key, day, m_priceRules.slowDemandPeriodDays);
+            d.shelfDays = goods[g].shelfDays;
             double move = stepCell(c, d, m_priceRules);
             if (corridor && c.anchorCr > 0.0 &&
                 std::find(m_regimeRules.corridorGroups.begin(), m_regimeRules.corridorGroups.end(), goods[g].group) !=
@@ -767,6 +792,9 @@ void EconomyServer::stepDay(int day)
                 jumpPrices.push_back(c.priceCr * (1.0 + 0.5 * m.spread));
         }
     }
+
+    // NPC speculators between the hubs of a system (TRADE_DESIGN §2.6, step 10)
+    stepNpcFlows(day);
 
     // input VAT refunds that came due (trade, TRADE_DESIGN §5.2)
     payDueVatRefunds(day);
@@ -810,6 +838,104 @@ void EconomyServer::stepDay(int day)
 }
 
 // ---------------------------------------------------------------- players
+// ---------------------------------------------------------------- NPC flows (TRADE_DESIGN §2.6, step 10)
+// Not ships: flows. A speculator at hub n sees hub h's price from a bulletin a few days old; when h's bid beats n's ask
+// plus the haul by more than the minimum margin, it buys at n now and the goods land at h after the trip. Everybody
+// sees the same old bulletin, so they all ship at once into a market that has already turned - the cobweb of §2.4,
+// damped by the restock loop and the dumping. The stock moves; nobody pays (no AI wallets, ECONOMY_BANKING §10).
+void EconomyServer::stepNpcFlows(int day)
+{
+    const auto t0 = std::chrono::steady_clock::now();
+    const auto& goods = EconomyModel::instance().goods();
+    // arrivals (one pass, no erase in the middle)
+    std::size_t keep = 0;
+    for (std::size_t k = 0; k < m_npcShipments.size(); ++k)
+    {
+        const auto& sh = m_npcShipments[k];
+        if (sh.arriveDay <= day)
+            m_markets[sh.market].cells[static_cast<std::size_t>(sh.good)].stockT += sh.tonnes;
+        else
+            m_npcShipments[keep++] = sh;
+    }
+    m_npcShipments.resize(keep);
+    // today's bulletins
+    if (m_npcRingFirstDay < 0 || day < m_npcRingFirstDay)
+        m_npcRingFirstDay = day;
+    for (auto& m : m_markets)
+    {
+        if (m.priceRing.size() != m.cells.size())
+            m.priceRing.assign(m.cells.size(), std::array<float, 8>{});
+        for (std::size_t g = 0; g < m.cells.size(); ++g)
+            m.priceRing[g][static_cast<std::size_t>(day) % 8] = static_cast<float>(m.cells[g].priceCr);
+    }
+    if (m_systemMarkets.empty())
+        for (std::size_t i = 0; i < m_markets.size(); ++i)
+            m_systemMarkets[m_markets[i].systemId].push_back(i);
+    // per market once: which goods the state holds (planned / mobilization) - those do not move by speculation
+    if (m_npcStateGood.size() != m_markets.size())
+    {
+        m_npcStateGood.assign(m_markets.size(), std::vector<char>(goods.size(), 0));
+        for (std::size_t i = 0; i < m_markets.size(); ++i)
+        {
+            const std::string regime = marketRegimeOf(polityOf(m_markets[i].hubId, m_markets[i].systemId));
+            for (std::size_t g = 0; g < goods.size(); ++g)
+                m_npcStateGood[i][g] = regime == "planned" ||
+                                       (regime == "mobilization" && std::find(m_regimeRules.mobilizationGroups.begin(),
+                                                                              m_regimeRules.mobilizationGroups.end(), goods[g].group) !=
+                                                                        m_regimeRules.mobilizationGroups.end());
+        }
+    }
+    const auto& R = m_npcRules;
+    std::size_t shipped = 0;
+    double tonnes = 0.0;
+    for (const auto& [system, list] : m_systemMarkets)
+    {
+        if (list.size() < 2)
+            continue;
+        for (const std::size_t ni : list)
+            for (const std::size_t hi : list)
+            {
+                if (ni == hi)
+                    continue;
+                auto& n = m_markets[ni];
+                const auto& h = m_markets[hi];
+                const std::uint64_t pair = mix((static_cast<std::uint64_t>(ni) << 32) ^ hi ^ 0x4e9cull);
+                const int lag = R.lagMin + static_cast<int>(pair % static_cast<std::uint64_t>(R.lagMax - R.lagMin + 1));
+                if (day - lag < m_npcRingFirstDay)
+                    continue;   // no bulletin that old yet
+                const std::size_t slot = static_cast<std::size_t>(day - lag) % 8;
+                const auto& stateN = m_npcStateGood[ni];
+                const auto& stateH = m_npcStateGood[hi];
+                for (std::size_t g = 0; g < n.cells.size(); ++g)
+                {
+                    auto& cn = n.cells[g];
+                    const auto& ch = h.cells[g];
+                    if (!cn.traded || !ch.traded || cn.priceCr <= 0.0 || stateN[g] || stateH[g])
+                        continue;
+                    const double bidH = h.priceRing[g][slot] * (1.0 - 0.5 * h.spread);
+                    const double askN = cn.priceCr * (1.0 + 0.5 * n.spread);
+                    const double excess = (bidH - askN - R.deliveryCrT) / askN - R.minMargin;
+                    if (excess <= 0.0)
+                        continue;
+                    const double available = std::max(0.0, cn.stockT - 0.5 * cn.targetT);
+                    const double q = std::min({R.k * ch.flowTDay * excess, R.maxShareOfFlow * ch.flowTDay, available});
+                    if (!(q > 1.0e-3))
+                        continue;
+                    cn.stockT -= q;
+                    const int travel = R.travelMin + static_cast<int>((pair >> 8) % static_cast<std::uint64_t>(R.travelMax - R.travelMin + 1));
+                    m_npcShipments.push_back({hi, static_cast<int>(g), q, day + travel});
+                    ++shipped;
+                    tonnes += q;
+                }
+            }
+    }
+    m_npcTonnesShipped += tonnes;
+    if (day % 10 == 0)
+        std::cerr << "[NpcFlows] day " << day << ": " << shipped << " shipments today (" << grouped(tonnes) << " t), "
+                  << m_npcShipments.size() << " in flight, step " << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()
+                  << " ms" << '\n';
+}
+
 // ---------------------------------------------------------------- smuggling (TRADE_DESIGN §2.8, step 9)
 std::string EconomyServer::familyAt(const std::string& hubId, int systemId) const
 {

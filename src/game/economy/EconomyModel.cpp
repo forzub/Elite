@@ -142,6 +142,7 @@ void EconomyModel::load()
         t.groupRu = groupRu[t.group];
         t.baseCrPerTonne = num(g, "base_cr_t");
         t.densityTM3 = num(g, "density_t_m3", 0.0);
+        t.shelfDays = num(g, "shelf_days", 0.0);
         if (const auto it = g.find("legality"); it != g.end() && it->is_object())
             for (const auto& [family, status] : it->items())
                 if (status.is_string())

@@ -24,6 +24,13 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "npc_market": {
+  "note": "TRADE_DESIGN §2.4 / §2.6 (step 10, minimal set). Dumping: above dump_from_ratio x target the price target x (1 - dump_depth x clamp((S/T - from)/span) x (1 + dump_shelf_ref_days / shelf_days)), >= dump_floor (fresh food 20 days spoils fast); a glut (> glut_ratio) may fall and a shortage (< shortage_ratio) rise extreme_daily_change a day (panic buying / clearance). NPC speculators between the hubs of ONE system: they see the destination's bulletin npc_lag days old, ship when bid_dest - ask_src - npc_delivery_cr_t beats npc_min_margin of the ask, q = npc_k x dest turnover x excess margin (<= npc_max_share_of_flow x turnover, only the source's stock above half its target), landing after npc_travel days. Inter-system speculators need the jump graph in the economy - deferred.",
+  "dump_from_ratio": 1.3, "dump_span": 1.2, "dump_depth": 0.25, "dump_shelf_ref_days": 30, "dump_floor": 0.5,
+  "glut_ratio": 2.0, "shortage_ratio": 0.3, "extreme_daily_change": 0.12,
+  "npc_k": 0.5, "npc_min_margin": 0.15, "npc_delivery_cr_t": 40, "npc_lag_min_days": 1, "npc_lag_max_days": 3,
+  "npc_travel_min_days": 1, "npc_travel_max_days": 3, "npc_max_share_of_flow": 2.0
+ },
  "smuggling": {
   "note": "TRADE_DESIGN §2.8 (step 9, minimal set). The customs inspection at docking: p = economy_rules customs.by_channel[channel].inspect_p (channel = the player's home bank vs the hub's bank; the same bloc = open) x regime_mult (the hub's regime family strict / its market regime planned x1.5). Found: p_find = hide x attention (in the open: the hold holds nothing legal; hidden in legal cargo 0.7), attention = 1 + 0.25 x seizures by this polity in 365 days (<= 2). Found contraband (banned here, or restricted without a licence - licences are step 11) is seized, fine_mult x its value at the hub (chargeFine: never refused), a contract carrying it fails. An inspection costs inspection_fee_cr (the importer pays, as in US customs). The black market buys contraband at the shadow price (the free cell price, or the base price where the good is not traded) x black_mult[legality]; no VAT, no handling, not declared income; at most black_cap_t a day per hub.",
   "regime_mult": {"strict": 1.5, "planned": 1.5},

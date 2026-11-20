@@ -25,6 +25,17 @@ struct PriceRules
     double supplyNoise = 0.08;
     double slowDemandAmp = 0.10;   // weeks-long demand swing
     double slowDemandPeriodDays = 9.0;
+    // TRADE_DESIGN §2.4 (step 10): dumping in a glut - storage and spoilage make holders cut the price:
+    // dump = 1 - depth x clamp((S/T - from) / span, 0, 1) x (1 + shelfRef / shelf_days), >= floor
+    double dumpFromRatio = 1.3;
+    double dumpSpan = 1.2;
+    double dumpDepth = 0.25;
+    double dumpShelfRefDays = 30.0;
+    double dumpFloor = 0.5;
+    // a glut (S > glutRatio x T) may fall, a shortage (S < shortageRatio x T) may rise up to extremeDailyChange a day
+    double glutRatio = 2.0;
+    double shortageRatio = 0.3;
+    double extremeDailyChange = 0.12;
 };
 
 struct GoodCell
@@ -47,6 +58,7 @@ struct CellDrivers
     double supplyMult = 1.0;   // events (fuel crunch, blockade, ...)
     double demandMult = 1.0;
     double supplyShock = 0.0;  // [-1, 1] daily noise
+    double shelfDays = 0.0;    // the good's shelf life (0 = keeps forever): spoilage deepens the dumping
     double demandShock = 0.0;
     double slowDemand = 0.0;   // [-1, 1] smooth weeks-long swing
 };

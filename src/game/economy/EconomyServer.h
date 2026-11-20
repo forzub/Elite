@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -195,6 +196,9 @@ public:
     CustomsResult customsInspection(std::uint64_t playerId, std::uint64_t shipKey, const std::string& callId, const std::string& hubId,
                                     int systemId);
     void setDevCustomsProbability(double p) { m_devCustomsP = p; }
+    // NPC flows (step 10): shipments in flight now and the tonnes shipped since the start (checks)
+    [[nodiscard]] std::size_t npcShipmentsInFlight() const { return m_npcShipments.size(); }
+    [[nodiscard]] double npcTonnesShipped() const { return m_npcTonnesShipped; }
     // the import duty rate (share of the goods value) for goods bought at `originHub` and sold at `hubId` (TRADE_DESIGN
     // §5.2, step 4): 0 inside one polity or for an unknown origin; else the selling hub's style rate x the customs
     // channel multiplier between the two polities' banks
@@ -300,8 +304,33 @@ private:
         double spread = 0.1;
         std::vector<GoodCell> cells;        // by EconomyModel::goods() index
         std::vector<double> transportCrT;   // delivery cost from the nearest producer (fuel goods)
+        std::vector<std::array<float, 8>> priceRing;   // the last 8 days' prices by good (day % 8): the NPCs' bulletins
     };
     void stepDay(int day);
+    // ---- NPC flows (TRADE_DESIGN §2.6, step 10): speculators between the hubs of a system, on bulletins a few days old
+    struct NpcRules
+    {
+        double k = 0.5;              // t / day per t / day of the destination's turnover, per unit of excess margin
+        double minMargin = 0.15;     // below this margin over the ask nobody bothers
+        double deliveryCrT = 40.0;   // in-system haul, Cr / t
+        int lagMin = 1, lagMax = 3;  // the bulletin's age in days (in-system beacons)
+        int travelMin = 1, travelMax = 3;
+        double maxShareOfFlow = 2.0; // one route's daily shipment <= this x the destination's daily turnover
+    };
+    struct NpcShipment
+    {
+        std::size_t market = 0;
+        int good = 0;
+        double tonnes = 0.0;
+        int arriveDay = 0;
+    };
+    NpcRules m_npcRules;
+    std::vector<NpcShipment> m_npcShipments;               // in flight (not saved: a restart drops them - minimal set)
+    std::unordered_map<int, std::vector<std::size_t>> m_systemMarkets;
+    int m_npcRingFirstDay = -1;
+    double m_npcTonnesShipped = 0.0;
+    std::vector<std::vector<char>> m_npcStateGood;   // market x good: held by the state (no speculation)
+    void stepNpcFlows(int day);
     // ---- smuggling (TRADE_DESIGN §2.8, step 9)
     struct SmugglingRules
     {

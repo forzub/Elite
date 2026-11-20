@@ -28,6 +28,7 @@ struct TradeGood
     double densityTM3 = 0.0;   // t / m3 (a C20 holds 23.3 m3: light goods fill it by volume)
     // regime family (open / strict / faith / military) -> "legal" | "restricted" | "banned" (TRADE_DESIGN §2.8)
     std::map<std::string, std::string> legality;
+    double shelfDays = 0.0;    // shelf life (0 = keeps): the dumping of a glut (TRADE_DESIGN §2.4)
 };
 
 struct HubEconomyInfo

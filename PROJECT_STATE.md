@@ -7279,3 +7279,18 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   list (prices) covers it.
 - Deferred (§9h): patrols in space, bribes, reputation, hidden compartments, re-stamping, closed borders, the planned
   economies' black market, contraband contracts.
+
+## TRADE MVP step 10: NPC flows and dumping (docs/TRADE_DESIGN.md §2.4, §2.6, §9i) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): stepCell dumping above 1.3 x target (deeper for short shelf life; trade_goods shelf_days now
+  loaded), glut (> 2 x) / shortage (< 0.3 x) step limits 12 %/day (normal 8 %); NPC speculators between the hubs of one
+  system on 1-3-day-old bulletins (an 8-day price ring per market), shipping when the margin over ask + 40 Cr/t beats
+  15 %, landing in 1-3 days; state-held goods (planned / mobilization) excluded. Rules: trade_fees.json "npc_market".
+- Performance: the first version cost 60 ms per economy day on the server thread (erase from the middle of the
+  shipment vector, a polity / regime lookup and string compares per hub pair); rewritten to one-pass arrivals and a
+  per-market state-good table -> 2.8-3.0 ms (unit run and live).
+- Checks: EliteEconomyCheck 186/186 (testNpcMarket: dumping settles at the formula for ore / fresh food, -12 % glut /
+  +12 % shortage limits, a year of flows ~2.8 Mt shipped, Sol worst drift bounded).
+- LIVE (D:/tmp/npc10/run.log): econ:days 40 -> "[NpcFlows] day 10230: 5000 shipments today (7 134 t), 9994 in
+  flight, step 2.99 ms", mean daily |dp| 0.08-0.10 %.
+- Deferred (§9i): inter-system speculators (no jump graph in the economy), the player's bulletin ring (§2.7), saving
+  shipments in flight.

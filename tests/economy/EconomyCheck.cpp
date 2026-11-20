@@ -1792,6 +1792,60 @@ void testSmuggling()
           "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
 }
 
+// TRADE step 10 (TRADE_DESIGN §2.4, §2.6): dumping in a glut, the glut / shortage step limits, NPC speculators
+void testNpcMarket()
+{
+    PriceRules rules;
+    const auto settle = [&](double ratio, double shelf) {
+        GoodCell c;
+        c.traded = true;
+        c.anchorCr = c.priceCr = 1000.0;
+        c.targetT = 1000.0;
+        c.stockT = c.normalStockT = ratio * 1000.0;   // no flow, no restock: the stock stays
+        CellDrivers d;
+        d.shelfDays = shelf;
+        for (int i = 0; i < 300; ++i)
+            (void)stepCell(c, d, rules);
+        return c.priceCr;
+    };
+    const double f16 = std::pow(1.0 / 1.6, 0.6) * 1000.0;
+    check(near(settle(1.6, 0.0), f16 * (1.0 - 0.25 * 0.25), 0.5) && near(settle(1.6, 20.0), f16 * (1.0 - 0.25 * 0.25 * 2.5), 0.5),
+          "dumping at 1.6 x target: ore (keeps) x0.94, fresh food (20-day shelf) x0.84 below the scarcity price");
+    check(near(settle(1.0, 20.0), 1000.0, 0.5), "no glut, no dumping");
+    GoodCell glut;
+    glut.traded = true;
+    glut.anchorCr = glut.priceCr = 1000.0;
+    glut.targetT = 1000.0;
+    glut.stockT = glut.normalStockT = 2500.0;
+    GoodCell mild = glut;
+    mild.stockT = mild.normalStockT = 1800.0;
+    CellDrivers d;
+    d.shelfDays = 20.0;
+    check(near(stepCell(glut, d, rules), -0.12, 1e-9) && near(stepCell(mild, d, rules), -0.08, 1e-9),
+          "a glut (2.5 x) falls up to 12 %/day (clearance), a milder surplus at most 8 %");
+    GoodCell scarce = glut;
+    scarce.stockT = scarce.normalStockT = 200.0;
+    check(near(stepCell(scarce, d, rules), 0.12, 1e-9), "a shortage (0.2 x) rises up to 12 %/day (panic buying)");
+
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  NPC market server run (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    for (int day = 1001; day <= 1365; ++day)
+        s.advanceTo(day);
+    std::printf("INFO  NPC flows over a year: %.0f t shipped, %zu in flight\n", s.npcTonnesShipped(), s.npcShipmentsInFlight());
+    check(s.npcTonnesShipped() > 0.0, "NPC speculators moved goods between the hubs of a system over a year");
+    // a quiet year stays quiet: Sol's market rows near their anchors
+    const auto sol = s.tradeSnapshot(0, 0, "earth_orbital_hub", 0, true);
+    double worst = 0.0;
+    for (const auto& row : sol.market)
+        worst = std::max(worst, std::fabs(row.drift));
+    check(!sol.market.empty() && worst < 0.6, "a quiet year: no Sol price runs away (worst drift " + std::to_string(worst) + ")");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -1813,6 +1867,7 @@ int main()
     testIncomeTax();
     testMarketRegimes();
     testSmuggling();
+    testNpcMarket();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

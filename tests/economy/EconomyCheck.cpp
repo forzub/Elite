@@ -776,6 +776,53 @@ void testPortCallPersistence()
                   std::to_string(text.size()) + " B, == saveState(), no .tmp left)");
         std::filesystem::remove(path);
     }
+
+    // TRADE step 17: money moved = written at the next tick, not after the 2 s throttle (a crash keeps the deal)
+    {
+        const std::string path = "economy_check_urgent_state.json";
+        std::filesystem::remove(path);
+#ifdef _WIN32
+        _putenv_s("ELITE_ECONOMY_STATE_FILE", path.c_str());
+#else
+        setenv("ELITE_ECONOMY_STATE_FILE", path.c_str(), 1);
+#endif
+        bool dealOnDisk = false;
+        std::size_t lastSize = 0, expectSize = 0;
+        double waitedMs = 0.0;
+        {
+            EconomyServer w;
+            w.load();
+            w.setUniverseTime(t0);
+            w.start(1000);
+            w.ensurePlayer(1, 0);
+            w.openPortCall(ship, call, "earth_orbital_hub", "hub_hex_dock_a", 1);
+            w.advanceTo(1000);   // the first save (throttle window starts now)
+            const CargoCapacity cobrett{120.0, 6};
+            (void)w.devAddCargo(1, ship, "steel", 20.0, cobrett, "earth_orbital_hub");   // money / cargo moved: urgent
+            w.advanceTo(1000);   // the next tick: handed to the writer at once
+            const std::string expect = w.saveState();
+            const auto t = std::chrono::steady_clock::now();
+            while (!dealOnDisk && std::chrono::steady_clock::now() - t < std::chrono::milliseconds(1500))
+            {
+                std::ifstream f(path, std::ios::binary);
+                const std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+                dealOnDisk = text == expect;
+                lastSize = text.size();
+                expectSize = expect.size();
+                if (!dealOnDisk)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));   // a polite reader: a reader holding the file blocks the rename (retried by the writer)
+            }
+            waitedMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
+        }
+#ifdef _WIN32
+        _putenv_s("ELITE_ECONOMY_STATE_FILE", "");
+#else
+        unsetenv("ELITE_ECONOMY_STATE_FILE");
+#endif
+        check(dealOnDisk && waitedMs < 1500.0, "an urgent save (cargo / money moved) is on disk " + std::to_string(waitedMs) +
+                                                   " ms later - inside the 2 s throttle window (file " + std::to_string(lastSize) + " B, expected " + std::to_string(expectSize) + " B)");
+        std::filesystem::remove(path);
+    }
 }
 // ---------------------------------------------------------------- contracts (TRADE_DESIGN §3, step 5)
 void testContracts()

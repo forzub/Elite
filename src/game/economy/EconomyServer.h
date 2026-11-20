@@ -434,7 +434,10 @@ private:
     // flushStateIfDue (each advanceTo = each server tick) serializes it on the server thread at most once per
     // kSaveIntervalS and hands the text to ONE background writer (latest wins, atomic .tmp + replace); the destructor
     // writes the last dirty state and joins the writer. A crash loses at most ~2 s, never leaves a torn file.
-    void saveNow(const char* what);
+    // urgent (money moved: a deal, a fee, a contract, a tax...) = written at the next tick, not after the 2 s throttle
+    // (TRADE step 17: a crash right after a deal keeps the deal); the daily step stays throttled
+    void saveNow(const char* what, bool urgent = true);
+    bool m_urgentSave = false;
     void flushStateIfDue(bool force = false);
     // saveState = finishState(saveStateParts()): the server thread builds the small JSON tree (ledgers, cargo, ...) and
     // copies the market cells and the board's postings / contracts; the markets / board JSON + dump run in the writer

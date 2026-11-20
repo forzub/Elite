@@ -7322,3 +7322,19 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   ControlRegistry rebind; the client learns its controlled entity only in the session welcome). Neither exists. A bare
   arrest without an auction can strand a broke pilot forever - not shipped. Recorded in TRADE_DESIGN §11c. Next by
   plan meanwhile: step 17 (money-command journal), then step 13 (insurance).
+
+## TRADE MVP step 17: a crash right after a deal keeps the deal (docs/TRADE_DESIGN.md §9 row 17) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Minimal form instead of a JSONL command journal: every money / cargo event (deal, fees, customs, black market,
+  taxes, licences, contracts, ship loss, DEV cargo) asks for an URGENT save - handed to the background writer at the
+  next tick, not after the 2 s throttle; the daily step and the port-call open stay throttled. EconomyServer::saveNow(what,
+  urgent = true), m_urgentSave.
+- Bug found by the new check: on Windows the atomic rename fails while another process holds the state file open (the
+  check's own polling reader; in life an antivirus / a backup) and the save was silently dropped until the next change.
+  The writer now retries (10 x 20 ms, then 10 x 100 ms) unless a newer state is already waiting.
+- Checks: EliteEconomyCheck 203/203 ("an urgent save is on disk 54-70 ms later", 4 runs stable after the retry; it was
+  flaky 2 of 3 before).
+- LIVE (D:/tmp/crash17/run1.log, run2.log): docked, BUY 15 t grain, taskkill /F 0.3 s after the server's deal line;
+  restart -> "state restored ... day 10196", account 9 963.24 CR, lot L1 food_staples 15 t, VAT to reclaim 1 739.46.
+- Observed, not of this slice (first attempt of the same run): the client dock tracker diverged at the
+  earth_orbital_hub gate (DockClientTrack segment 1, remaining 0, cross_track 100 -> 112 m growing, actual 5-6 m/s) and
+  never docked within 300 s; the retry docked normally. Flaky docking - to investigate separately.

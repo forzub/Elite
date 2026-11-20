@@ -274,7 +274,23 @@ struct EconomyServer::StateWriter
             const double t0 = steadyS();
             const std::string text = finishState(std::move(parts));
             const double t1 = steadyS();
-            const bool ok = writeFileAtomically(path, text);
+            // the rename over the old file fails while another process holds it open (a reader, an antivirus, a backup
+            // on Windows): retry briefly; still failing - keep this state queued unless a newer one arrived meanwhile
+            // (TRADE step 17: found by the urgent-save check - a reader made the save silently drop the deal)
+            bool ok = false;
+            for (int attempt = 0; attempt < 20 && !ok; ++attempt)
+            {
+                ok = writeFileAtomically(path, text);
+                if (!ok)
+                {
+                    {
+                        std::lock_guard<std::mutex> lock(mutex);
+                        if (hasPending)
+                            break;   // a newer state is waiting: write that one instead
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(attempt < 10 ? 20 : 100));
+                }
+            }
             if (!ok)
                 std::cerr << "[EconomyServer] state NOT saved to " << path << " (the previous file is kept)" << '\n';
             if (saveTiming())
@@ -849,7 +865,7 @@ void EconomyServer::stepDay(int day)
                   m_fuelFree ? " (charged 0: fuel free)" : "", 100.0 * fxMax, fxMaxCode.c_str(), m_ledgers.size());
     std::cerr << line << '\n';
 
-    saveNow("the daily step");
+    saveNow("the daily step", false);
 }
 
 // ---------------------------------------------------------------- players
@@ -1739,7 +1755,7 @@ void EconomyServer::openPortCall(std::uint64_t shipKey, const std::string& callI
     if (it != m_openPortCalls.end() && it->second.callId == callId)
         return;   // the same call (a repeated docked event)
     m_openPortCalls[shipKey] = {callId, hubId, dockModuleId, playerId, m_universeS};
-    saveNow("the port call opened");
+    saveNow("the port call opened", false);
 }
 
 const EconomyServer::OpenPortCall* EconomyServer::openPortCall(std::uint64_t shipKey) const
@@ -2764,12 +2780,13 @@ bool EconomyServer::restoreState(const std::string& text)
 }
 
 // ---------------------------------------------------------------- contracts (TRADE_DESIGN §3, step 5)
-void EconomyServer::saveNow(const char* what)
+void EconomyServer::saveNow(const char* what, bool urgent)
 {
     if (m_stateFile.empty())
         return;
     m_stateDirty = true;
     m_dirtyWhat = what;
+    m_urgentSave = m_urgentSave || urgent;
 }
 
 void EconomyServer::flushStateIfDue(bool force)
@@ -2777,9 +2794,10 @@ void EconomyServer::flushStateIfDue(bool force)
     if (!m_stateDirty || m_stateFile.empty())
         return;
     const double now = steadyS();
-    if (!force && now - m_lastSaveS < kSaveIntervalS)
+    if (!force && !m_urgentSave && now - m_lastSaveS < kSaveIntervalS)
         return;
     m_stateDirty = false;
+    m_urgentSave = false;
     m_lastSaveS = now;
     StateParts parts = saveStateParts();
     const double serialized = steadyS();

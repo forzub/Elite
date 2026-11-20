@@ -17,11 +17,11 @@
       "ja": "マイ星ポータル"
     },
     "service.government.app_subtitle": {
-      "en": "the state's app: taxes, licences, navigation data; fines, citizenship and the employment service to come",
-      "ru": "государственное приложение: налоги, лицензии, навигационные данные; штрафы, гражданство, служба занятости — позже",
-      "zh-Hans": "政府应用：税务、执照、导航数据；罚款、国籍、就业服务即将上线",
-      "es": "la app del Estado: impuestos, licencias, datos de navegación; multas, ciudadanía y empleo, más adelante",
-      "ja": "行政アプリ：税金・免許・航法データ。罰金・国籍・職業紹介は今後"
+      "en": "the state's app: taxes, licences, navigation data, the employment service; fines and citizenship to come",
+      "ru": "государственное приложение: налоги, лицензии, навигационные данные, служба занятости; штрафы и гражданство — позже",
+      "zh-Hans": "政府应用：税务、执照、导航数据、就业服务；罚款、国籍即将上线",
+      "es": "la app del Estado: impuestos, licencias, datos de navegación, empleo; multas y ciudadanía, más adelante",
+      "ja": "行政アプリ：税金・免許・航法データ・職業紹介。罰金・国籍は今後"
     },
     "service.government.nav_data": {
       "en": "Navigation data",
@@ -400,6 +400,97 @@
       "zh-Hans": "涵盖",
       "es": "cubre",
       "ja": "対象"
+    },
+    "service.government.jobs": {
+      "en": "Employment service",
+      "ru": "Служба занятости",
+      "zh-Hans": "就业服务",
+      "es": "Servicio de empleo",
+      "ja": "職業紹介"
+    },
+    "service.government.job_current": {
+      "en": "My job",
+      "ru": "Моя работа",
+      "zh-Hans": "我的工作",
+      "es": "Mi empleo",
+      "ja": "現在の仕事"
+    },
+    "service.government.job_none": {
+      "en": "not employed",
+      "ru": "не трудоустроен",
+      "zh-Hans": "未就业",
+      "es": "sin empleo",
+      "ja": "無職"
+    },
+    "service.government.job_quit": {
+      "en": "QUIT",
+      "ru": "УВОЛИТЬСЯ",
+      "zh-Hans": "辞职",
+      "es": "DIMITIR",
+      "ja": "退職"
+    },
+    "service.government.job_wage": {
+      "en": "Wage",
+      "ru": "Зарплата",
+      "zh-Hans": "工资",
+      "es": "Salario",
+      "ja": "給与"
+    },
+    "service.government.job_days": {
+      "en": "days",
+      "ru": "сут",
+      "zh-Hans": "天",
+      "es": "días",
+      "ja": "日"
+    },
+    "service.government.job_ship": {
+      "en": "ship",
+      "ru": "корабль",
+      "zh-Hans": "舰船",
+      "es": "nave",
+      "ja": "船"
+    },
+    "service.government.job_since": {
+      "en": "since day",
+      "ru": "с дня",
+      "zh-Hans": "自第",
+      "es": "desde el día",
+      "ja": "開始日"
+    },
+    "service.government.job_vacancies": {
+      "en": "Vacancies here",
+      "ru": "Вакансии здесь",
+      "zh-Hans": "本地职位",
+      "es": "Vacantes aquí",
+      "ja": "ここの求人"
+    },
+    "service.government.job_no_vacancies": {
+      "en": "no vacancies",
+      "ru": "вакансий нет",
+      "zh-Hans": "无职位",
+      "es": "sin vacantes",
+      "ja": "求人なし"
+    },
+    "service.government.job_dock_hint": {
+      "en": "Hiring is done at a berth of this hub",
+      "ru": "Наём — у причала этого хаба",
+      "zh-Hans": "须在本港泊位办理",
+      "es": "La contratación se hace en un atraque de este puerto",
+      "ja": "採用はこの港の係留所で"
+    },
+    "service.government.job_hire": {
+      "en": "APPLY",
+      "ru": "НАНЯТЬСЯ",
+      "zh-Hans": "应聘",
+      "es": "CONTRATARSE",
+      "ja": "応募"
+    },
+    "service.government.job_term": {
+      "en": "term",
+      "ru": "срок",
+      "zh-Hans": "期限",
+      "es": "plazo",
+      "ja": "期間"
     }
   }
 }

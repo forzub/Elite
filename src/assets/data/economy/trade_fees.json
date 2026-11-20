@@ -24,6 +24,14 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "employment": {
+  "note": "TRADE_DESIGN §11b (author 2026-11-20: the hiring board is in F5 as the state employment service). Each hub posts, per week, two courier vacancies (a transport company flies its ship, the pilot is paid a wage) and one military post of the hub's polity (Галера+; citizens only - the home bank's polity). The courier needs the pilot licence category cargo_courier (granted at the start). Hiring spawns the employer's ship next to the pilot (Player-role, the employer owns it) and moves the pilot into it; the wage is paid daily (wage / 30) by the employer's bank and is taxable income; quitting moves the pilot back to his own ship (it must be within 20 km). Anchors: the pilot wage anchor 4 000 Cr / month (ECONOMY_BANKING); a conscript is paid less.",
+  "courier_wage_cr": 4000,
+  "military_wage_cr": 2500,
+  "military_term_days": 720,
+  "courier_ships": ["kb.ship.cobrett-i.frnu.n1", "kb.ship.cobrett-i.frnu-inta.a3"],
+  "military_ships": ["sol.ship.pk-30.strazh", "hyp.ship.r-7.argus"]
+ },
  "arrest": {
   "note": "ECONOMY_BANKING 2026-11-20 (author: «могут тупо арестовать корабль и спустить его с молотка»), TRADE_DESIGN §11d, minimal set. A ship docking at a hub of the polity whose bank holds a debt of the player overdue >= after_days is arrested at once: an exchange seizure (ZPO §811 Austauschpfändung) - the court swaps the most expensive catalog modules for the cheapest compatible working products (largest price gap first) until the proceeds cover that bank's debt; the gap sells at auction_share (judicial sales ~60 %); the proceeds repay the bank, the rest goes to the client. The ship is not detained (no stranding) and stays flyable; a hull with nothing seizable (the legacy Cobra, already-cheapest modules) is left alone - the tool of trade is protected.",
   "after_days": 90,

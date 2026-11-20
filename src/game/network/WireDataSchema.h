@@ -1038,6 +1038,20 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientVacancy,
+    v.id,
+    v.kind,
+    v.employerRu,
+    v.roleRu,
+    v.shipRu,
+    v.requirementRu,
+    v.wageCr,
+    v.termDays,
+    v.eligible,
+    v.whyNotRu
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientWalletSnapshot,
     v.valid,
     v.day,
@@ -1081,6 +1095,17 @@ ELITE_WIRE_SCHEMA(
     v.licenceOffers,
     v.licencePolity,
     v.pilotCategories,
+    v.vacancies,
+    v.employed,
+    v.jobKind,
+    v.jobEmployerRu,
+    v.jobRoleRu,
+    v.jobShipRu,
+    v.jobUnitRu,
+    v.jobRankRu,
+    v.jobWageCr,
+    v.jobSinceDay,
+    v.jobTermEndDay,
     v.localPolity,
     v.localBank,
     v.localCurrency,

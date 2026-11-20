@@ -430,6 +430,16 @@ public:
     };
     std::vector<PendingPurchase> m_pendingPurchases;
     std::uint64_t m_nextBoughtShipInstance = 970000;
+    // the employment service: the employer's ship and the pilot's own ship to go back to
+    struct Hire
+    {
+        EntityId ownShip;
+        EntityId employerShip;
+    };
+    std::unordered_map<std::uint64_t, Hire> m_hires;   // player -> ships
+    std::vector<std::pair<EntityId, std::string>> m_pendingHires;   // (from, vacancy id; "" = quit)
+    std::string hireJob(EntityId from, const std::string& vacancyId);
+    std::string quitJob(EntityId from);
     // F6 (step 14): buy a NEW ship (the manufacturer's offer) at a berth; "" = bought (it appears 5 km off)
     std::string buyShip(EntityId from, const std::string& passportId, const std::string& offerId);
     std::unordered_map<std::uint64_t, std::uint32_t> m_controlEpochs;  // player -> epoch (0 = bootstrap ship)

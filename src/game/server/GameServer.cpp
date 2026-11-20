@@ -1519,6 +1519,14 @@ void GameServer::update(double dt)
                     m_simulation.startHubService(id, shipCmd.target, shipCmd.detail);
                     break;
 
+                case ClientShipCommand::HireJob:     // F5 employment service: spawns + boards - after the drain
+                    m_pendingHires.push_back({id, shipCmd.detail.empty() ? std::string("?") : shipCmd.detail});
+                    break;
+
+                case ClientShipCommand::QuitJob:
+                    m_pendingHires.push_back({id, std::string()});
+                    break;
+
                 case ClientShipCommand::BuyShip:     // F6: spawns a ship - after the drain too
                     m_pendingPurchases.push_back({id, shipCmd.detail, shipCmd.target});
                     break;
@@ -1694,6 +1702,14 @@ void GameServer::update(double dt)
     }
 
 
+
+    for (const auto& [from, vacancy] : m_pendingHires)
+    {
+        const std::string why = vacancy.empty() ? quitJob(from) : hireJob(from, vacancy);
+        std::cerr << "[Employment] ship " << from.value << (vacancy.empty() ? " quits" : " hires " + vacancy) << ": "
+                  << (why.empty() ? std::string("DONE") : "REFUSED: " + why) << std::endl;
+    }
+    m_pendingHires.clear();
 
     for (const auto& p : m_pendingPurchases)
     {
@@ -2200,6 +2216,80 @@ void GameServer::configurePlayerRadar(EntityId entity, ShipInstanceId instance)
     runtime.hasNavigationSolution = true;
 }
 
+std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
+{
+    Ship* ship = m_simulation.getShip(from);
+    if (!ship || !m_economy.loaded())
+        return "нет корабля или экономики";
+    const PlayerId player = m_players.playerForShip(ship->core().registry().instanceId);
+    if (!player)
+        return "нет пилота";
+    auto refuse = [&](const std::string& why) {
+        m_economy.recordTradeRefusal(player.value, 0, "employment", why);
+        return why;
+    };
+    bool tender = false;
+    const std::string hub = m_simulation.serviceStationOf(from, &tender);
+    if (hub.empty() || tender)
+        return refuse("наём — у причала хаба (служба занятости)");
+    const int system = ship->core().transform().motion.systemId;
+    const auto list = m_economy.vacanciesAt(hub, system);
+    const game::economy::EconomyServer::Vacancy* v = nullptr;
+    for (const auto& x : list)
+        if (x.id == vacancyId)
+            v = &x;
+    if (!v)
+        return refuse("вакансия закрыта");
+    if (const std::string why = m_economy.vacancyRefusal(player.value, *v, hub, system); !why.empty())
+        return refuse(why);
+    const ShipDescriptor* d = game::ship::descriptors::findCatalogShip(v->passportId);
+    if (!d)
+        return refuse("нет корабля работодателя в каталоге: " + v->passportId);
+    ShipInitData init;
+    init.visual.shipType = d->identity.shipType;
+    init.visual.shipName = d->identity.shipName;
+    init.registry.instanceId = ++m_nextBoughtShipInstance;
+    init.registry.ownerName = v->employerRu;
+    init.registry.ownerActor = 0x7E000000u + static_cast<ActorId>(std::hash<std::string>{}(v->employerRu) & 0xFFFFu);   // the employer
+    init.registry.registrationId = d->catalog.passportId + "-" + std::to_string(init.registry.instanceId);
+    init.registry.shipRole = v->kind == "military" ? ShipRoleType::Military : ShipRoleType::Civilian;
+    const EntityId employer = m_simulation.spawnShipBeside(from, ShipRole::Player, *d, init, 5000.0);
+    if (employer.value == 0)
+        return refuse("работодатель не выдал корабль");
+    m_hires[player.value] = {from, employer};
+    if (const std::string why = transferPlayerControl(player, employer); !why.empty())
+    {
+        m_hires.erase(player.value);
+        return refuse("не удалось пересесть: " + why);
+    }
+    m_economy.startEmployment(player.value, *v);
+    m_economy.recordOperation(player.value, "hired", "принят: " + v->roleRu + " — " + v->employerRu + ", корабль " + v->passportId, 0.0);
+    return {};
+}
+
+std::string GameServer::quitJob(EntityId from)
+{
+    Ship* ship = m_simulation.getShip(from);
+    const PlayerId player = ship ? m_players.playerForShip(ship->core().registry().instanceId) : PlayerId{};
+    if (!player)
+        return "нет пилота";
+    const auto it = m_hires.find(player.value);
+    if (it == m_hires.end())
+    {
+        m_economy.endEmployment(player.value, "без корабля работодателя");
+        return {};
+    }
+    if (const std::string why = transferPlayerControl(player, it->second.ownShip); !why.empty())
+    {
+        m_economy.recordTradeRefusal(player.value, 0, "employment", "вернуться на свой корабль: " + why);
+        return why;
+    }
+    m_hires.erase(it);
+    m_economy.endEmployment(player.value, "по собственному желанию");
+    m_economy.recordOperation(player.value, "quit", "уволился: снова на своём корабле", 0.0);
+    return {};
+}
+
 std::string GameServer::buyShip(EntityId from, const std::string& passportId, const std::string& offerId)
 {
     Ship* ship = m_simulation.getShip(from);
@@ -2265,7 +2355,9 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
     auto& to = toShip->core();
     if (to.role() != ShipRole::Player)
         return "корабль не подготовлен для пилота (роль NPC)";
-    if (to.registry().ownerActor == 0 || to.registry().ownerActor != fromShip->core().registry().ownerActor)
+    const auto hireIt = m_hires.find(playerId.value);
+    const bool employerShip = hireIt != m_hires.end() && hireIt->second.employerShip == target;
+    if (!employerShip && (to.registry().ownerActor == 0 || to.registry().ownerActor != player->actor))
         return "чужой корабль";
     if (to.transform().motion.destroyedCause != 0)
         return "корабль разрушен";
@@ -2273,7 +2365,10 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
         return "кораблём уже управляют";
     const auto& a = fromShip->core().transform();
     const auto& b = to.transform();
-    if (a.motion.systemId != b.motion.systemId || glm::length(a.fullWorldMeters() - b.fullWorldMeters()) > 20000.0)
+    // two ships at the same station are "here" by its frame (a demoted, uncontrolled ship keeps a stale world position while
+    // the station orbits - found live: 533 km after 3 days); elsewhere the world distance
+    const bool sameStation = !a.motion.hubId.empty() && a.motion.hubId == b.motion.hubId;
+    if (a.motion.systemId != b.motion.systemId || (!sameStation && glm::length(a.fullWorldMeters() - b.fullWorldMeters()) > 20000.0))
         return "корабль далеко (нужно <= 20 км в той же системе): " + std::to_string(static_cast<long long>(glm::length(a.fullWorldMeters() - b.fullWorldMeters()))) +
                " м, системы " + std::to_string(a.motion.systemId) + " / " + std::to_string(b.motion.systemId);
     // the persistent identity of a ship spawned after the bootstrap
@@ -2293,7 +2388,8 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
             return "реестр кораблей отказал";
         instance = m_shipInstances.instanceForEntity(target);
     }
-    (void)m_shipOwnership.assign(instance, game::server::ShipOwnerRef::player(playerId));
+    if (!employerShip)
+        (void)m_shipOwnership.assign(instance, game::server::ShipOwnerRef::player(playerId));   // the employer keeps its ship
     resetSessionControlState(from, "ship-change-out");
     m_simulation.setPlayerControlled(from, false);
     if (!m_controls.rebindHuman(playerId, target))

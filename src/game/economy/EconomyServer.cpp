@@ -553,6 +553,14 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json emp = fees.value("employment", json::object());
+        m_courierWageCr = num(emp, "courier_wage_cr", m_courierWageCr);
+        m_militaryWageCr = num(emp, "military_wage_cr", m_militaryWageCr);
+        m_militaryTermDays = static_cast<int>(num(emp, "military_term_days", m_militaryTermDays));
+        if (emp.contains("courier_ships"))
+            m_courierShips = emp["courier_ships"].get<std::vector<std::string>>();
+        if (emp.contains("military_ships"))
+            m_militaryShips = emp["military_ships"].get<std::vector<std::string>>();
         const json arrest = fees.value("arrest", json::object());
         m_arrestAfterDays = std::max(1, static_cast<int>(num(arrest, "after_days", m_arrestAfterDays)));
         m_auctionShare = std::clamp(num(arrest, "auction_share", m_auctionShare), 0.0, 1.0);
@@ -865,6 +873,7 @@ void EconomyServer::stepDay(int day)
     }
 
     stepTaxes(day);
+    payWages(day);
 
     std::sort(jumpPrices.begin(), jumpPrices.end());
     char line[512];
@@ -977,6 +986,112 @@ void EconomyServer::stepNpcFlows(int day)
         std::cerr << "[NpcFlows] day " << day << ": " << shipped << " shipments today (" << grouped(tonnes) << " t), "
                   << m_npcShipments.size() << " in flight, step " << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()
                   << " ms" << '\n';
+}
+
+// ---------------------------------------------------------------- the employment service (F5, TRADE_DESIGN §11b)
+std::vector<EconomyServer::Vacancy> EconomyServer::vacanciesAt(const std::string& hubId, int systemId) const
+{
+    std::vector<Vacancy> out;
+    if (hubId.empty())
+        return out;
+    const std::string polity = polityOf(hubId, systemId);
+    const auto* bank = m_banks.bankForPolity(polity);
+    const std::string where = hubDisplayName(hubId);
+    const int week = std::max(0, m_day) / 7;
+    const std::uint64_t seed = hashOf(hubId, static_cast<std::uint64_t>(week) + 0x10bull);
+    static const char* const Companies[] = {"курьерская служба", "транспортная компания", "почтово-грузовая линия", "логистика"};
+    for (int k = 0; k < 2 && !m_courierShips.empty(); ++k)
+    {
+        Vacancy v;
+        v.id = hubId + "#courier" + std::to_string(k) + "@" + std::to_string(week);
+        v.kind = "courier";
+        v.employerRu = std::string(Companies[(seed >> (8 * k)) % 4]) + " «" + where + "»";
+        v.roleRu = "пилот-курьер на зарплате";
+        v.bankId = bank ? bank->id : std::string();
+        v.passportId = m_courierShips[(seed >> (16 + 8 * k)) % m_courierShips.size()];
+        v.requirementRu = "права: малый / средний грузовик — курьер";
+        v.wageCr = m_courierWageCr;
+        out.push_back(v);
+    }
+    if (bank && !m_militaryShips.empty())
+    {
+        Vacancy v;
+        v.id = hubId + "#military@" + std::to_string(week);
+        v.kind = "military";
+        v.employerRu = "силы обороны: " + bank->polityName;
+        v.roleRu = "пилот патрульного корабля";
+        v.bankId = bank->id;
+        v.passportId = m_militaryShips[(seed >> 40) % m_militaryShips.size()];
+        v.unitRu = "патрульная эскадрилья «" + where + "»";
+        v.rankRu = "пилот (рядовой)";
+        v.requirementRu = "гражданство: " + bank->polityName;
+        v.wageCr = m_militaryWageCr;
+        v.termDays = m_militaryTermDays;
+        out.push_back(v);
+    }
+    return out;
+}
+
+std::string EconomyServer::vacancyRefusal(std::uint64_t playerId, const Vacancy& v, const std::string& hubId, int systemId) const
+{
+    const ClientLedger* l = ledger(playerId);
+    if (!l)
+        return "нет учётной записи";
+    if (m_employment.count(playerId))
+        return "вы уже работаете — сначала увольтесь";
+    if (v.kind == "courier")
+    {
+        bool category = false;
+        for (const auto& c : m_pilotCategories)
+            category = category || (c.id == "cargo_courier" && c.start);
+        if (!category)
+            return "нет категории прав «курьер»";
+    }
+    if (v.kind == "military")
+    {
+        const auto* home = m_banks.bank(l->homeBank);
+        const auto* here = m_banks.bankForPolity(polityOf(hubId, systemId));
+        if (!home || !here || home->id != here->id)
+            return "служба только для граждан: " + (here ? here->polityName : std::string("?"));
+    }
+    return {};
+}
+
+void EconomyServer::startEmployment(std::uint64_t playerId, const Vacancy& v)
+{
+    m_employment[playerId] = {v, m_day};
+    if (ClientLedger* l = ledger(playerId))
+        logEvent(*l, m_day, "принят: " + v.roleRu + ", " + v.employerRu + ", " + grouped(v.wageCr) + " Cr / 30 сут");
+    saveNow("employment");
+}
+
+void EconomyServer::endEmployment(std::uint64_t playerId, const std::string& why)
+{
+    const auto it = m_employment.find(playerId);
+    if (it == m_employment.end())
+        return;
+    if (ClientLedger* l = ledger(playerId))
+        logEvent(*l, m_day, "уволен: " + it->second.job.employerRu + " (" + why + ")");
+    m_employment.erase(it);
+    saveNow("employment");
+}
+
+const EconomyServer::Employment* EconomyServer::employment(std::uint64_t playerId) const
+{
+    const auto it = m_employment.find(playerId);
+    return it == m_employment.end() ? nullptr : &it->second;
+}
+
+void EconomyServer::payWages(int day)
+{
+    for (const auto& [player, e] : m_employment)
+        if (ClientLedger* l = ledger(player); l && day > e.sinceDay)
+        {
+            const double wage = std::round(e.job.wageCr / 30.0 * 100.0) / 100.0;
+            receive(*l, m_banks, e.job.bankId.empty() ? l->homeBank : e.job.bankId, wage, day, "зарплата: " + e.job.employerRu);
+            if (TaxBook* t = taxBook(player))
+                addRevenue(*t, wage);
+        }
 }
 
 // ---------------------------------------------------------------- ship arrest (ECONOMY_BANKING 2026-11-20, TRADE_DESIGN §11d)
@@ -2451,6 +2566,35 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         for (const auto& c : m_pilotCategories)
             w.pilotCategories.push_back({c.ru, c.control, c.start, c.note});
     }
+    // the employment service (F5)
+    for (const auto& v : vacanciesAt(hubId, systemId))
+    {
+        game::simulation::ClientVacancy cv;
+        cv.id = v.id;
+        cv.kind = v.kind;
+        cv.employerRu = v.employerRu;
+        cv.roleRu = v.roleRu;
+        cv.shipRu = v.passportId;
+        cv.requirementRu = v.requirementRu;
+        cv.wageCr = v.wageCr;
+        cv.termDays = v.termDays;
+        cv.whyNotRu = vacancyRefusal(playerId, v, hubId, systemId);
+        cv.eligible = cv.whyNotRu.empty();
+        w.vacancies.push_back(cv);
+    }
+    if (const Employment* e = employment(playerId))
+    {
+        w.employed = true;
+        w.jobKind = e->job.kind;
+        w.jobEmployerRu = e->job.employerRu;
+        w.jobRoleRu = e->job.roleRu;
+        w.jobShipRu = e->job.passportId;
+        w.jobUnitRu = e->job.unitRu;
+        w.jobRankRu = e->job.rankRu;
+        w.jobWageCr = e->job.wageCr;
+        w.jobSinceDay = e->sinceDay;
+        w.jobTermEndDay = e->job.termDays > 0 ? e->sinceDay + e->job.termDays : -1;
+    }
     // the income tax of the residence polity (TaxModel, TRADE_DESIGN step 7)
     {
         const FiscalStyle rs = residenceStyle(*l);
@@ -2661,9 +2805,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/9";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+    j["schema"] = "economy_state/10";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
                                        // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
-                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13)
+                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11); 9: cargo policies (step 13); 10: employment
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -2704,6 +2848,20 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
                                    {"cause", r.cause}});
+    j["employment"] = json::array();
+    {
+        std::vector<std::uint64_t> ids;
+        for (const auto& [id, e] : m_employment)
+            ids.push_back(id);
+        std::sort(ids.begin(), ids.end());
+        for (const auto id : ids)
+        {
+            const auto& e = m_employment.at(id);
+            j["employment"].push_back({{"player", id}, {"id", e.job.id}, {"kind", e.job.kind}, {"employer", e.job.employerRu},
+                                       {"role", e.job.roleRu}, {"bank", e.job.bankId}, {"ship", e.job.passportId}, {"unit", e.job.unitRu},
+                                       {"rank", e.job.rankRu}, {"wage", e.job.wageCr}, {"term", e.job.termDays}, {"since", e.sinceDay}});
+        }
+    }
     j["cargo_policies"] = json::array();
     for (const auto& pol : m_cargoPolicies)
     {
@@ -2848,7 +3006,7 @@ bool EconomyServer::restoreState(const std::string& text)
     if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3" &&
         schema != "economy_state/4" && schema != "economy_state/5" && schema != "economy_state/6" &&
         schema != "economy_state/7" && schema != "economy_state/8" &&
-        schema != "economy_state/9")   // /1: no trade registries; /2: no contracts;
+        schema != "economy_state/9" && schema != "economy_state/10")   // /1: no trade registries; /2: no contracts;
                                                                        // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
@@ -2921,6 +3079,23 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_employment) employment;   // economy_state/10
+        for (const auto& x : j.value("employment", json::array()))
+        {
+            Employment e;
+            e.job.id = x.value("id", std::string());
+            e.job.kind = x.value("kind", std::string());
+            e.job.employerRu = x.value("employer", std::string());
+            e.job.roleRu = x.value("role", std::string());
+            e.job.bankId = x.value("bank", std::string());
+            e.job.passportId = x.value("ship", std::string());
+            e.job.unitRu = x.value("unit", std::string());
+            e.job.rankRu = x.value("rank", std::string());
+            e.job.wageCr = x.value("wage", 0.0);
+            e.job.termDays = x.value("term", 0);
+            e.sinceDay = x.value("since", 0);
+            employment[x.at("player").get<std::uint64_t>()] = e;
+        }
         decltype(m_cargoPolicies) policies;   // economy_state/9
         for (const auto& x : j.value("cargo_policies", json::array()))
         {
@@ -3000,6 +3175,7 @@ bool EconomyServer::restoreState(const std::string& text)
         m_seizures.swap(seizures);
         m_licences.swap(licences);
         m_cargoPolicies.swap(policies);
+        m_employment.swap(employment);
         m_lossEvents.swap(lossEvents);
         m_lostCargo.swap(lostCargo);
         m_nextLostCargo = nextLostCargo;

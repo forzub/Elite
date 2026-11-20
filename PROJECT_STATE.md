@@ -7443,3 +7443,23 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Not done (step 14): used ships (wear / damage onto the instance), leasing, a ship as loan collateral, selling a ship,
   ship persistence (a bought ship is lost on restart like every ship), the hiring board (next: an employer's ship is
   the same spawn + boarding with an employer owner).
+
+## The employment service in F5 (the hiring board, TRADE_DESIGN §11b) - SOURCE + LIVE PASS 2026-11-20
+- Built on bases 1-2: per hub and week two courier vacancies (a transport company's Cobrett-I, 4 000 Cr / 30 days,
+  needs the pilot licence category cargo_courier) and one military post of the hub's polity (PK-30 / R-7, 2 500 Cr /
+  30 days, 720 days, citizens only - the home bank's polity). Hire (F5 «НАНЯТЬСЯ» / job:hire:<n>, at a berth): the
+  employer's Player-role ship spawns 5 km off and the pilot boards it (transferPlayerControl allows the hired ship of
+  that player; the ownership stays with the employer); the wage is paid daily (wage / 30) by the employer's bank and is
+  taxable revenue; quit («УВОЛИТЬСЯ» / job:quit) boards the own ship back. Галера+ shows the unit, ship, rank and term of
+  a military job. EconomyServer vacanciesAt / vacancyRefusal / start- / endEmployment / payWages (economy_state/10);
+  ClientShipCommand HireJob / QuitJob (protocol 41); wallet vacancies + the job (snapshot schema 62);
+  trade_fees.json "employment".
+- Found live: quitting was refused "far, 533 km" - the docked own ship, uncontrolled, keeps a stale world position while
+  the station orbits; two ships at the same station now count as "here" by the station frame.
+- LIVE (D:/tmp/jobs/run.log, 01..04_*.png): F5 -> Служба занятости lists 3 vacancies; hire courier0 -> "DONE", the
+  client 201 -> 1577; 3 economy days -> wages (account 20 404); quit -> "DONE", the client 1577 -> 201; enlist ->
+  "DONE", 201 -> 1578; Галера+: «силы обороны: Солнечная Администрация», патрульная эскадрилья «Высокий»,
+  sol.ship.pk-30.strazh, пилот (рядовой), 10199 - 10919.
+- Not done: reports in Галера+ (transfer, leave, discharge), the term's end, hijacking an employer's ship, jobs needing
+  other licence categories, a pilot WITHOUT an own ship (after a total loss) - the board is the way back to flying
+  once ship loss leaves the pilot shipless (not modelled yet).

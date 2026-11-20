@@ -972,6 +972,22 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
                     break;
                 }
     }
+    // the employment service: "job:hire:<n>" - the n-th vacancy of this hub (the F5 button), "job:quit"
+    else if (cmd.rfind("job:hire:", 0) == 0 || cmd == "job:quit")
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = cmd == "job:quit" ? ClientShipCommand::QuitJob : ClientShipCommand::HireJob;
+        if (command.type == ClientShipCommand::HireJob)
+        {
+            const auto& vacancies = s.m_client->sessionSnapshot().wallet.vacancies;
+            const std::size_t n = static_cast<std::size_t>(std::max(0, std::atoi(cmd.c_str() + 9)));
+            command.detail = n < vacancies.size() ? vacancies[n].id : std::string("?");
+        }
+        msg.payload = command;
+        s.m_client->sendMessage(msg);
+        std::cerr << "[Employment] DEV " << cmd << " " << command.detail << std::endl;
+    }
     else if (cmd == "service:shipyard")
         s.context().app->requestServicePanel(ui::services::ServiceUiId::Shipyard);
     else if (cmd == "service:refit")   // F7

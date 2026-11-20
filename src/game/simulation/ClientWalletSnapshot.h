@@ -46,6 +46,21 @@ struct ClientPilotCategory
     std::string note;
 };
 
+// the employment service (F5, TRADE_DESIGN §11b)
+struct ClientVacancy
+{
+    std::string id;
+    std::string kind;          // "courier" | "military"
+    std::string employerRu;
+    std::string roleRu;
+    std::string shipRu;
+    std::string requirementRu;
+    double wageCr = 0.0;       // per 30 days
+    int termDays = 0;          // 0 = open-ended
+    bool eligible = true;
+    std::string whyNotRu;
+};
+
 struct ClientWalletSnapshot
 {
     bool valid = false;
@@ -93,6 +108,18 @@ struct ClientWalletSnapshot
     std::vector<ClientLicenceOffer> licenceOffers;
     std::string licencePolity;
     std::vector<ClientPilotCategory> pilotCategories;
+    // the employment service: this hub's vacancies and the pilot's current job
+    std::vector<ClientVacancy> vacancies;
+    bool employed = false;
+    std::string jobKind;
+    std::string jobEmployerRu;
+    std::string jobRoleRu;
+    std::string jobShipRu;
+    std::string jobUnitRu;
+    std::string jobRankRu;
+    double jobWageCr = 0.0;
+    int jobSinceDay = -1;
+    int jobTermEndDay = -1;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

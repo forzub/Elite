@@ -194,13 +194,15 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
 {
     game::presentation::GovernmentPresentation page;
     page.tab = std::clamp(m_governmentTab, 0, 1);
-    page.section = std::clamp(m_governmentSection, 0, 2);
+    page.section = std::clamp(m_governmentSection, 0, 3);
     static const char* const Keys[] = {
         "app", "app_subtitle", "nav_data", "taxes", "tax_no_data", "tax_residence", "tax_style", "tax_rate", "tax_admin_fee",
         "tax_rules", "tax_days", "tax_declare", "tax_open_period", "tax_revenue", "tax_expenses", "tax_profit", "tax_withheld_credit",
         "tax_withheld_lost", "tax_estimate", "tax_last_period", "tax_none_yet", "tax_period", "tax_assessed", "tax_due", "tax_until_day",
         "tax_in", "tax_status", "tax_nothing", "tax_paid", "tax_debt", "tax_penalty", "licences", "lic_pilot", "lic_control", "lic_held",
-        "lic_none", "lic_until", "lic_expired", "lic_offers", "lic_dock_hint", "lic_buy", "lic_extend", "lic_covers", "galley", "galley_subtitle", "galley_not_enlisted", "galley_unit", "galley_ship",
+        "lic_none", "lic_until", "lic_expired", "lic_offers", "lic_dock_hint", "lic_buy", "lic_extend", "lic_covers", "jobs", "job_current",
+        "job_none", "job_quit", "job_wage", "job_days", "job_ship", "job_since", "job_vacancies", "job_no_vacancies", "job_dock_hint",
+        "job_hire", "job_term", "galley", "galley_subtitle", "galley_not_enlisted", "galley_unit", "galley_ship",
         "galley_rank", "galley_term", "galley_reports", "galley_report_transfer_ship", "galley_report_transfer_unit",
         "galley_report_leave", "galley_report_discharge", "galley_hint"};
     for (const char* key : Keys)
@@ -373,6 +375,15 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
             m_governmentTab = std::atoi(action->text.c_str());
         else if (action->type == ServicePanelActionType::GovernmentSection)
             m_governmentSection = std::atoi(action->text.c_str());
+        else if ((action->type == ServicePanelActionType::GovernmentHire || action->type == ServicePanelActionType::GovernmentQuit) && m_client)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = action->type == ServicePanelActionType::GovernmentHire ? ClientShipCommand::HireJob : ClientShipCommand::QuitJob;
+            command.detail = action->text;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+        }
         else if (action->type == ServicePanelActionType::GovernmentBuyLicence)   // step 11: the server decides (money, berth)
             sendEconomyCommand(game::network::ClientEconomyCommand::BuyLicence, action->text, 0.0);
         else if (action->type == ServicePanelActionType::NavDataSelect)

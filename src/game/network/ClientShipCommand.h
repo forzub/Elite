@@ -40,8 +40,10 @@
                                     //     index 0 = stop (docs/FUEL_STATIONS.md); the server decides
             BoardShip,              // base 2 (2026-11-20): the pilot moves to another owned, Player-role ship nearby;
                                     //     amount = its entity id; the server decides (owner, distance, free)
-            BuyShip                 // F6 (step 14): detail = passport id, target = offer id; at a berth; a new ship of
+            BuyShip,                // F6 (step 14): detail = passport id, target = offer id; at a berth; a new ship of
                                     //     the player appears 5 km off (boarded from F7)
+            HireJob,                // F5 employment service: detail = vacancy id, at a berth of that hub
+            QuitJob                 // F5: back to the pilot's own ship (within 20 km)
         };
         Type type;
 

@@ -955,6 +955,80 @@ void renderLicences(TextRenderer& t, const game::simulation::ClientWalletSnapsho
         ry += static_cast<float>(small) + 10.0f;
     }
 }
+// F5 state app -> СЛУЖБА ЗАНЯТОСТИ (TRADE_DESIGN §11b, author: the hiring board is the state employment service): the
+// pilot's job (with a quit button) and this hub's vacancies (a hire button at a berth, the reason when not eligible)
+void renderJobs(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, const std::map<std::string, std::string>& text,
+                bool docked, float x, float y, float w, float h, int px, int small,
+                const std::function<void(float, float, float, float, const std::string&)>& addButton)
+{
+    const auto tx = [&](const char* key) -> std::string {
+        const auto it = text.find(key);
+        return it == text.end() ? std::string(key) : it->second;
+    };
+    t.solidRectPx(x, y, w, h, Panel);
+    float ry = y + 10.0f;
+    const float right = x + w - 12.0f;
+    t.textDrawPx(tx("job_current"), x + 12, ry, px, Title);
+    ry += static_cast<float>(px) + 6.0f;
+    if (!f.employed)
+    {
+        t.textDrawPx(tx("job_none"), x + 14, ry, small, Muted);
+        ry += static_cast<float>(small) + 7.0f;
+    }
+    else
+    {
+        t.textDrawPx(f.jobRoleRu + "  ·  " + f.jobEmployerRu, x + 14, ry, small, Text);
+        const std::string quit = tx("job_quit");
+        const float bw = t.measureTextPx(quit, small) + 20.0f, bh = small * 1.7f;
+        t.solidRectPx(right - bw, ry - small * 0.3f, bw, bh, Selected);
+        t.textDrawPx(quit, right - bw + 10, ry, small, Warn);
+        addButton(right - bw, ry - small * 0.3f, right, ry - small * 0.3f + bh, std::string());
+        ry += static_cast<float>(small) + 7.0f;
+        t.textDrawPx(tx("job_wage") + ": " + grouped(f.jobWageCr) + " Cr / 30 " + tx("job_days") + "  ·  " + tx("job_ship") + ": " + f.jobShipRu +
+                         "  ·  " + tx("job_since") + " " + std::to_string(f.jobSinceDay),
+                     x + 14, ry, small, Muted);
+        ry += static_cast<float>(small) + 7.0f;
+    }
+    ry += 8.0f;
+    t.textDrawPx(tx("job_vacancies"), x + 12, ry, px, Title);
+    ry += static_cast<float>(px) + 6.0f;
+    if (f.vacancies.empty())
+    {
+        t.textDrawPx(tx("job_no_vacancies"), x + 14, ry, small, Muted);
+        return;
+    }
+    if (!docked)
+    {
+        t.textDrawPx(tx("job_dock_hint"), x + 14, ry, small, Warn);
+        ry += static_cast<float>(small) + 7.0f;
+    }
+    for (const auto& v : f.vacancies)
+    {
+        if (ry > y + h - 3.0f * static_cast<float>(small))
+            break;
+        t.textDrawPx(v.roleRu + "  ·  " + v.employerRu, x + 14, ry, small, Text);
+        if (docked && v.eligible && !f.employed)
+        {
+            const std::string hire = tx("job_hire");
+            const float bw = t.measureTextPx(hire, small) + 20.0f, bh = small * 1.7f;
+            t.solidRectPx(right - bw, ry - small * 0.3f, bw, bh, Selected);
+            t.textDrawPx(hire, right - bw + 10, ry, small, Good);
+            addButton(right - bw, ry - small * 0.3f, right, ry - small * 0.3f + bh, v.id);
+        }
+        ry += static_cast<float>(small) + 4.0f;
+        std::string line = grouped(v.wageCr) + " Cr / 30 " + tx("job_days") + "  ·  " + tx("job_ship") + ": " + v.shipRu + "  ·  " + v.requirementRu;
+        if (v.termDays > 0)
+            line += "  ·  " + tx("job_term") + " " + std::to_string(v.termDays) + " " + tx("job_days");
+        t.textDrawPx(line, x + 24, ry, small, Muted);
+        ry += static_cast<float>(small) + 4.0f;
+        if (!v.eligible)
+        {
+            t.textDrawPx(v.whyNotRu, x + 24, ry, small, Bad);
+            ry += static_cast<float>(small) + 4.0f;
+        }
+        ry += 6.0f;
+    }
+}
 } // namespace
 
 void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page)
@@ -1516,6 +1590,17 @@ void ServicePanelsRenderer::renderNavData(const game::presentation::NavDataPage&
     t.textDrawPx("Клик по записи - карточка; открытые данные выдаёт банк колонии, остальное - по допуску", 24, h - 26, small, Muted);
 }
 
+namespace
+{
+std::string serving_label(const game::presentation::GovernmentPresentation& page)
+{
+    if (page.wallet.employed && page.wallet.jobKind == "military")
+        return page.wallet.jobEmployerRu;
+    const auto it = page.text.find("galley_not_enlisted");
+    return it == page.text.end() ? std::string("galley_not_enlisted") : it->second;
+}
+} // namespace
+
 // F5 Government services (TRADE_DESIGN §11a, author 2026-11-20): everything of the state. Two apps as tabs: the state
 // services app (localized like Дія / Госуслуги) and Галера+ (military service). The app's sections so far: navigation
 // data; licences (trade step 11), taxes (step 7), fines and debts to the state, citizenship come as they are built.
@@ -1560,10 +1645,10 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
     if (page.tab == 0)
     {
         // the app's sections (below the selected tab's box)
-        const std::string sections[] = {text("taxes"), text("licences"), text("nav_data")};
+        const std::string sections[] = {text("taxes"), text("licences"), text("nav_data"), text("jobs")};
         float sx = listX;
         const float sy = listY + px * 0.4f;
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < 4; ++i)
         {
             const float sw = t.measureTextPx(sections[i], small) + 20.0f;
             t.solidRectPx(sx, sy, sw, small * 1.7f, page.section == i ? Selected : Panel);
@@ -1572,7 +1657,13 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
             sx += sw + 6.0f;
         }
         const float y0 = listY + px * 2.6f;
-        if (page.section == 2)
+        if (page.section == 3)
+            renderJobs(t, page.wallet, page.text, page.docked, listX, y0, listW, listH - (y0 - listY), px, small,
+                       [this](float x0, float y0b, float x1, float y1, const std::string& id) {
+                           m_hits.push_back({x0, y0b, x1, y1, 0, {id.empty() ? ServicePanelActionType::GovernmentQuit
+                                                                             : ServicePanelActionType::GovernmentHire, id}});
+                       });
+        else if (page.section == 2)
             renderNavData(page.nav, listX, y0, listW, listH - (y0 - listY), w, h, px, small, big);
         else if (page.section == 1)
             renderLicences(t, page.wallet, page.text, page.docked, listX, y0, listW, listH - (y0 - listY), px, small,
@@ -1587,12 +1678,17 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
     // Галера+: not enlisted - the forms are there, the fields empty (author: "пока игрок не нанялся - там пустые графы")
     t.solidRectPx(listX, listY, listW, listH, Panel);
     float y = listY + 10.0f;
-    t.textDrawPx(text("galley_not_enlisted"), listX + 12, y, px, Muted);
+    t.textDrawPx(serving_label(page), listX + 12, y, px, page.wallet.employed && page.wallet.jobKind == "military" ? Good : Muted);
     y += px * 2.2f;
+    const bool serving = page.wallet.employed && page.wallet.jobKind == "military";
+    const std::string values[] = {serving ? page.wallet.jobUnitRu : std::string("—"), serving ? page.wallet.jobShipRu : std::string("—"),
+                                  serving ? page.wallet.jobRankRu : std::string("—"),
+                                  serving ? std::to_string(page.wallet.jobSinceDay) + " - " + std::to_string(page.wallet.jobTermEndDay) : std::string("—")};
+    int fieldIndex = 0;
     for (const char* key : {"galley_unit", "galley_ship", "galley_rank", "galley_term"})
     {
         t.textDrawPx(text(key), listX + 12, y, small, Muted);
-        t.textDrawPx("—", listX + listW * 0.4f, y, small, Muted);
+        t.textDrawPx(values[fieldIndex++], listX + listW * 0.4f, y, small, serving ? Text : Muted);
         y += small + 10.0f;
     }
     y += 10.0f;

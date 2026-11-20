@@ -190,6 +190,24 @@ public:
     [[nodiscard]] std::string legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
     [[nodiscard]] std::string licenceForGood(const std::string& goodId) const;   // "" = none lists it
     [[nodiscard]] bool hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const;
+    // ---- the employment service (F5, TRADE_DESIGN §11b)
+    struct Vacancy
+    {
+        std::string id, kind, employerRu, roleRu, bankId, passportId, unitRu, rankRu, requirementRu;
+        double wageCr = 0.0;
+        int termDays = 0;
+    };
+    struct Employment
+    {
+        Vacancy job;
+        int sinceDay = 0;
+    };
+    [[nodiscard]] std::vector<Vacancy> vacanciesAt(const std::string& hubId, int systemId) const;
+    // "" = may take it, otherwise why not (licence category, citizenship, already employed)
+    [[nodiscard]] std::string vacancyRefusal(std::uint64_t playerId, const Vacancy& v, const std::string& hubId, int systemId) const;
+    void startEmployment(std::uint64_t playerId, const Vacancy& v);
+    void endEmployment(std::uint64_t playerId, const std::string& why);
+    [[nodiscard]] const Employment* employment(std::uint64_t playerId) const;
     // ---- ship arrest (ECONOMY_BANKING 2026-11-20, TRADE_DESIGN §11d): a debt overdue >= arrestAfterDays at the bank of
     // the polity whose hub the ship docks at -> an exchange seizure (expensive modules swapped for the cheapest working
     // ones by the caller, the difference sold at auctionShare); the proceeds repay that bank, the rest is the client's
@@ -399,6 +417,11 @@ private:
     double m_cargoPremiumShare = 0.004, m_deductibleShare = 0.10;
     int m_insuranceDays = 30;
     int m_arrestAfterDays = 90;
+    double m_courierWageCr = 4000.0, m_militaryWageCr = 2500.0;
+    int m_militaryTermDays = 720;
+    std::vector<std::string> m_courierShips, m_militaryShips;
+    std::unordered_map<std::uint64_t, Employment> m_employment;
+    void payWages(int day);
     double m_auctionShare = 0.6;   // market x good: held by the state (no speculation)
     void stepNpcFlows(int day);
     // ---- smuggling (TRADE_DESIGN §2.8, step 9)

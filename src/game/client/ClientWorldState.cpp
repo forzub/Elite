@@ -12,6 +12,7 @@
 #include "src/game/ship/ShipPropulsionState.h"
 #include <iostream>
 #include "src/game/ship/ShipDescriptorRegistry.h"
+#include "src/game/ship/refit/RepairRefit.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
@@ -744,6 +745,12 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.catalogShipId = s.catalogShipId;
             state.descriptor =
                 &ShipDescriptorRegistry::resolve(s.typeId, s.catalogShipId);
+            // per-instance configuration (refit: another product in a slot): the same configured descriptor the
+            // server flies (append-only store, stable pointers)
+            if (!s.refit.productOverrides.empty())
+                if (const auto* configured =
+                        game::ship::refit::configuredDescriptor(*state.descriptor, s.refit.productOverrides))
+                    state.descriptor = configured;
                 // &ObjectDescriptorRegistry::get(s.typeId);
 
             state.transform       = s.transform;
@@ -769,7 +776,17 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
             state.traffic = s.traffic;
+            // per-instance configuration: a new override list (an applied refit) re-resolves the descriptor
+            const bool configurationChanged = state.refit.productOverrides != s.refit.productOverrides;
             state.refit = s.refit;
+            if (configurationChanged)
+            {
+                const auto* base = &ShipDescriptorRegistry::resolve(state.typeId, state.catalogShipId);
+                const auto* configured = state.refit.productOverrides.empty()
+                                             ? base
+                                             : game::ship::refit::configuredDescriptor(*base, state.refit.productOverrides);
+                state.descriptor = configured ? configured : base;
+            }
             state.combat = s.combat;
             {
                 const auto phaseBegin = HydrateClock::now();
@@ -865,7 +882,17 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
             state.traffic = s.traffic;
+            // per-instance configuration: a new override list (an applied refit) re-resolves the descriptor
+            const bool configurationChanged = state.refit.productOverrides != s.refit.productOverrides;
             state.refit = s.refit;
+            if (configurationChanged)
+            {
+                const auto* base = &ShipDescriptorRegistry::resolve(state.typeId, state.catalogShipId);
+                const auto* configured = state.refit.productOverrides.empty()
+                                             ? base
+                                             : game::ship::refit::configuredDescriptor(*base, state.refit.productOverrides);
+                state.descriptor = configured ? configured : base;
+            }
             state.combat = s.combat;
             {
                 const auto phaseBegin = HydrateClock::now();

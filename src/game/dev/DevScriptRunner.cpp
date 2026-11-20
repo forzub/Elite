@@ -881,6 +881,61 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
             std::cerr << "[TradeReport]   result #" << r.requestId << " " << (r.ok ? "OK " : "REFUSED ") << r.code << " " << r.message
                       << " total " << r.totalCr << '\n';
     }
+    // per-instance configuration (F7, 2026-11-20): "refitship:<n>" selects the player's n-th owned ship in F7;
+    // "refit:replace:<module id | radar | drive>:<product id | first>" applies another product (the F7 apply request);
+    // "refit:report" logs what the CLIENT sees: the overrides and the product of the last module in its descriptor
+    else if (cmd.rfind("refitship:", 0) == 0)
+    {
+        const auto page = s.buildRepairRefitPage();
+        const std::size_t n = static_cast<std::size_t>(std::max(0, std::atoi(cmd.c_str() + 10)));
+        if (n < page.ships.size())
+            s.m_refitShip = page.ships[n].id;
+        std::cerr << "[RefitReport] selected ship " << s.m_refitShip.value << " (" << page.ships.size() << " owned)" << '\n';
+    }
+    else if (cmd.rfind("refit:replace:", 0) == 0)
+    {
+        std::string module = cmd.substr(14), product = "first";
+        if (const auto colon = module.find(':'); colon != std::string::npos)
+        {
+            product = module.substr(colon + 1);
+            module.resize(colon);
+        }
+        const auto page = s.buildRepairRefitPage();
+        if (module == "radar" || module == "drive")
+            for (const auto& m : page.modules)
+                if ((module == "radar" && m.group == "sensors") || (module == "drive" && m.group == "propulsion"))
+                {
+                    module = m.moduleId;
+                    break;
+                }
+        const auto it = s.m_client->world().ships().find(s.m_refitShip.value);
+        if (it != s.m_client->world().ships().end() && it->second.descriptor && product == "first")
+            for (const auto& r : game::ship::refit::compatibleReplacements(*it->second.descriptor, module))
+                if (!r.sameProduct && product == "first")
+                    product = r.productId;
+        if (it != s.m_client->world().ships().end())
+            s.m_refitSeenApplySerial = it->second.refit.applySerial;
+        s.m_refitModule = module;
+        s.sendRefitCommand(true, {game::ship::refit::RefitOperationKind::Replace, module, product});
+        std::cerr << "[RefitReport] apply ship " << s.m_refitShip.value << " module " << module << " <- " << product << '\n';
+    }
+    else if (cmd == "refit:report")
+    {
+        const auto it = s.m_client->world().ships().find(s.m_refitShip.value);
+        if (it == s.m_client->world().ships().end() || !it->second.descriptor)
+            std::cerr << "[RefitReport] no such ship " << s.m_refitShip.value << '\n';
+        else
+        {
+            std::string overrides;
+            for (const auto& o : it->second.refit.productOverrides)
+                overrides += o + " ";
+            std::cerr << "[RefitReport] ship " << s.m_refitShip.value << " apply #" << it->second.refit.applySerial << " result '"
+                      << it->second.refit.applyResult << "' overrides [" << overrides << "] client module " << s.m_refitModule << " product "
+                      << game::ship::refit::moduleFacts(*it->second.descriptor, s.m_refitModule).productId << '\n';
+        }
+    }
+    else if (cmd == "service:refit")   // F7
+        s.context().app->requestServicePanel(ui::services::ServiceUiId::RepairRefit);
     else if (cmd == "service:trade")
         s.context().app->requestServicePanel(ui::services::ServiceUiId::Trade);
     // F5 Government services (TRADE_DESIGN §11a): "service:government", "govtab:<0 state app | 1 Галера+>"

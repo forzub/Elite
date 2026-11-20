@@ -306,6 +306,14 @@ public:
     // Refreshes module-derived actuator state once at the ship-control seam.
     // Diagnostic actuator/construction overrides are never overwritten here.
     void                                        refreshRuntimeState();
+    // Per-instance configuration (refit: another product in a slot): the core switches to a configured descriptor of
+    // the same hull (module ids / geometry unchanged), keeps its modules, load, reactors, motion, and rebuilds what is
+    // derived from the descriptor - the same rebuilds as adoptInstanceState, so the result equals the refit preview.
+    // Catalog hulls only (no Cobra hardware profiles). The descriptor must outlive the core (refit's append-only store).
+    bool reinstallConfiguration(const ShipDescriptor& configured);
+    // the product overrides of this instance ("moduleId=productId", in the order applied) - replicated to the client
+    void recordProductOverride(const std::string& moduleId, const std::string& productId);
+    const std::vector<std::string>& productOverrides() const { return m_productOverrides; }
     bool                                        selectPhysicalConstructionForDiagnostic(
                                                     game::ship::plant::PhysicalControlModelId model
                                                 );
@@ -453,6 +461,7 @@ private:
     // Состояние
     // ───────────────
     ShipTransform                               m_transform;
+    std::vector<std::string>                    m_productOverrides;   // per-instance configuration (refit)
     game::ship::state::ShipState                m_state;
     // Authoritative Newtonian RCS demands and actual nozzle usage for the
     // next systems tick. The old control law expresses intent only; installed

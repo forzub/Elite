@@ -61,6 +61,7 @@ game::simulation::ShipRefitSnapshot GameSimulation::refitSnapshotFor(EntityId sh
     out.owned = true;
     out.ownerActor = registry.ownerActor;
     out.registrationId = registry.registrationId;
+    out.productOverrides = ship->core().productOverrides();
     out.shipName = ship->core().visualIdentity().shipName.empty() ? ship->core().descriptor().identity.shipName
                                                                    : ship->core().visualIdentity().shipName;
     return out;

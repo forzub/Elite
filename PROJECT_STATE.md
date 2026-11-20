@@ -7349,3 +7349,30 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Checks: EliteEconomyCheck 213/213 (testInsurance). LIVE (D:/tmp/insure13): 10 t grain -> "insured for 5 629 Cr,
   premium 23 Cr, until day 10226", ГРУЗ shows the policy.
 - Deferred (§9k): hull insurance, surety bonds, route risk.
+
+## F6/F7 BASE 1: per-instance ship configuration (another product in a slot) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Why: ship arrest's "exchange seizure" and refit trade need installing ANOTHER product (applyRefitOperation refused
+  it). Investigation (subagent map of ShipCore / replication) -> the narrow path, not a full re-init:
+  - refit::configuredDescriptor(base, module, product): a process-wide APPEND-ONLY store (mutex; never freed - cores
+    and demoted shells keep raw descriptor pointers; the same key returns the same pointer), built by the preview's own
+    swapProduct; configuredDescriptor(base, overrides) applies a "moduleId=productId" list (the client's resolve).
+  - ShipCore::reinstallConfiguration(d): switches m_desc / native descriptor, construction.bind, the same rebuilds as
+    adoptInstanceState (hits, mass, devices, runtime) + re-inits the radar unit from the new passport (the slot stays
+    occupied, init would silently keep the old radar - found by the check); catalog hulls only (Cobra profiles refused).
+    Motion, modules, load, reactors untouched. recordProductOverride keeps the list.
+  - apply of another product = reinstall + a new unit (serviceModule replace); the preview is applicable now.
+  - Replication: ShipRefitSnapshot::productOverrides (snapshot schema 60); the client re-resolves the descriptor when
+    the list changes (it resolved only on a ship's first snapshot - found live: the client kept the catalog product).
+  - DEV verbs service:refit, refitship:<n>, refit:replace:<module|radar|drive>:<product|first>, refit:report.
+- Checks: EliteRepairRefitCheck PASS (radar N-2 -> N-10: live 10 000 km = preview; drive U-43 -> U-33: forward 6.696 ->
+  5.107 m/s2 live = preview, mass 1 938.48 t = preview; the configured descriptor shared / stable); ShipCatalogCheck,
+  ServicePagesCheck, ShipThermalCheck, NavigationCapabilityCheck PASS; EliteEconomyCheck 213/213; architecture / wire /
+  replication contracts PASS.
+- LIVE (D:/tmp/config_f7/run.log, 01..02_*.png; ELITE_CATALOG_SHIPS=bharat.ship.c-120.konveyer near earth_orbital_hub):
+  "[Refit] apply ship=1380 module=C-120-A6A2.1 result=APPLIED", the client: overrides [C-120-A6A2.1=xz.radar.n10],
+  module product xz.radar.n10; then the drive -> ofu.drive.u33, F7 shows «U-33 · Урал-33» installed and Урал-43 among
+  the alternatives. The player's own Cobra (legacy, not catalog) is refused with a clear reason.
+- Limits (recorded): no ship persistence exists - a configuration is lost on restart like every ship state; a demoted
+  shell keeps the configured descriptor but a re-materialized core starts with an empty override list (the client
+  then shows the catalog product); a player ship's radar stays the synthetic ideal sensor (pre-existing rule); refit
+  apply is still free (payment is the next layer); the Cobra hull cannot be reconfigured.

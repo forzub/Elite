@@ -153,4 +153,13 @@ struct RefitModuleFacts
 // another product needs the per-instance configuration layer). Returns the
 // error or empty on success.
 std::string applyRefitOperation(core::ShipCore& live, const RefitOperation& operation);
+
+// Per-instance configuration (the F6 / F7 base, 2026-11-20): `base` with the product of `moduleId` swapped, from a
+// process-wide APPEND-ONLY store (never freed: ship cores and demoted shells keep raw descriptor pointers); the same
+// (base, module, product) returns the same pointer. nullptr = not possible (unknown product / design / module).
+[[nodiscard]] const ShipDescriptor* configuredDescriptor(const ShipDescriptor& base, const std::string& moduleId,
+                                                         const std::string& productId);
+// the catalog `base` with every "moduleId=productId" override applied in order - how a client resolves a configured
+// ship (the overrides travel in ShipRefitSnapshot::productOverrides); base itself when the list is empty
+[[nodiscard]] const ShipDescriptor* configuredDescriptor(const ShipDescriptor& base, const std::vector<std::string>& overrides);
 } // namespace game::ship::refit

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "src/game/ship/refit/RepairRefit.h"
 
@@ -22,5 +23,8 @@ struct ShipRefitSnapshot
     game::ship::refit::RefitPreview preview;
     std::uint32_t applySerial = 0;      // bumps on every apply
     std::string applyResult;            // empty = applied, otherwise why not
+    // per-instance configuration: "moduleId=productId" in the order applied - the client resolves the same descriptor
+    // (refit::configuredDescriptor) instead of the bare catalog passport
+    std::vector<std::string> productOverrides;
 };
 } // namespace game::simulation

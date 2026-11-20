@@ -148,9 +148,41 @@ int main()
             hasN10 = hasN10 || r.productId == "xz.radar.n10";
         const auto p = previewRefit(*s, {RefitOperationKind::Replace, radar, "xz.radar.n10"});
         check(hasN10 && p.ok && p.after.radar && std::abs(p.after.radarRangeKm - 10000.0) < 1e-6 && p.before.radarRangeKm == 2000.0 &&
-                  !p.applicable,
+                  p.applicable,
               "compatible replacement radar N-2 -> N-10: range " + num(p.before.radarRangeKm, 0) + " -> " + num(p.after.radarRangeKm, 0) +
-                  " km (" + std::to_string(list.size()) + " compatible radars; apply needs the instance configuration layer)");
+                  " km (" + std::to_string(list.size()) + " compatible radars; applicable: per-instance configuration)");
+        // per-instance configuration: the live ship takes the product; the result equals the preview
+        const auto err = applyRefitOperation(*s, {RefitOperationKind::Replace, radar, "xz.radar.n10"});
+        const auto live = measureShip(*s, radar, 8.0);
+        check(err.empty() && std::abs(live.radarRangeKm - p.after.radarRangeKm) < 1e-6 && s->productOverrides().size() == 1 &&
+                  s->productOverrides()[0] == radar + "=xz.radar.n10" && moduleFacts(s->descriptor(), radar).productId == "xz.radar.n10",
+              "apply another product: the live radar range " + num(live.radarRangeKm, 0) + " km = the preview (" + err + "), override recorded");
+        const auto* again = configuredDescriptor(*c120, radar, "xz.radar.n10");
+        check(again == &s->descriptor() && configuredDescriptor(*c120, s->productOverrides()) == again,
+              "the configured descriptor is shared and stable (the client resolves the same pointer from the overrides)");
+    }
+
+    // ---- another drive: the live ship flies like the preview said
+    {
+        auto s = spawn(*c120);
+        const std::string drive = c120->mainPropulsion.aftEngineModuleIds.front();
+        std::string other;
+        for (const auto& r : compatibleReplacements(*c120, drive))
+            if (!r.sameProduct && other.empty())
+                other = r.productId;
+        if (other.empty())
+            std::cout << "SKIP another drive: no compatible drive product for " << drive << "\n";
+        else
+        {
+            const auto p = previewRefit(*s, {RefitOperationKind::Replace, drive, other});
+            const auto err = applyRefitOperation(*s, {RefitOperationKind::Replace, drive, other});
+            const auto live = measureShip(*s, drive, 8.0);
+            check(p.ok && err.empty() && std::abs(live.forwardAccelerationMps2 - p.after.forwardAccelerationMps2) < 1e-6 &&
+                      std::abs(live.massTonnes - p.after.massTonnes) < 1e-6,
+                  "apply another drive (" + other + "): forward " + num(p.before.forwardAccelerationMps2, 3) + " -> live " +
+                      num(live.forwardAccelerationMps2, 3) + " m/s2 = preview " + num(p.after.forwardAccelerationMps2, 3) + ", mass " +
+                      num(live.massTonnes, 3) + " t = preview (" + err + ")");
+        }
     }
 
     std::cout << (failures ? "REPAIR REFIT CHECK: FAILED (" + std::to_string(failures) + ")" : "REPAIR REFIT CHECK: PASS") << "\n";

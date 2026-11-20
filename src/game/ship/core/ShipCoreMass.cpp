@@ -231,6 +231,45 @@ bool ShipCore::serviceModule(const std::string& moduleId, bool replaceWithNewUni
     return true;
 }
 
+bool ShipCore::reinstallConfiguration(const ShipDescriptor& configured)
+{
+    if (!m_state.construction.valid() || m_cobraHardwareProfiles || !m_desc || configured.modules.size() != m_desc->modules.size())
+        return false;
+    m_desc = &configured;
+    m_nativeDescriptor = &configured;
+    m_state.construction.bind(configured);
+    // equipment installed by init from the descriptor (the radar): the slot stays occupied - re-init the unit from the
+    // configured passport by the same rule init uses (a player keeps the synthetic ideal sensor until a real backend)
+    if (configured.defaultEquipment.radar && m_systems.radar.value > 0)
+    {
+        const RadarDesc& radarDesc = m_role == ShipRole::Player && configured.defaultEquipment.radar->backendKind != game::RadarBackendKind::TestIdeal
+                                         ? game::TEST_IDEAL_RADAR
+                                         : *configured.defaultEquipment.radar;
+        if (canInstallRadar(configured, radarDesc))
+            m_equipment.radar.init(radarDesc);
+    }
+    ++m_state.revision;
+    m_lastModuleProjectionRevision = ~std::uint64_t{0};
+    m_massModuleRevision = ~std::uint64_t{0};
+    m_cachedCapability = {};
+    m_assistedManeuvers = {};
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent, m_desc->typeId, *m_desc, m_moduleRuntime, m_structuralLinkRuntime, m_assemblyRuntime);
+    recomputeMassProperties();
+    refreshDeviceState();
+    refreshRuntimeState();
+    return m_state.valid();
+}
+
+void ShipCore::recordProductOverride(const std::string& moduleId, const std::string& productId)
+{
+    const std::string prefix = moduleId + "=";
+    m_productOverrides.erase(std::remove_if(m_productOverrides.begin(), m_productOverrides.end(),
+                                            [&](const std::string& o) { return o.rfind(prefix, 0) == 0; }),
+                             m_productOverrides.end());
+    m_productOverrides.push_back(prefix + productId);
+}
+
 void ShipCore::adoptInstanceState(const ShipCore& source)
 {
     m_moduleRuntime = source.m_moduleRuntime;

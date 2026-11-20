@@ -2,7 +2,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <deque>
+#include <map>
 #include <memory>
+#include <mutex>
 
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
 #include "src/game/navigation/DynamicMotionState.h"
@@ -466,17 +470,69 @@ RefitPreview previewRefit(const core::ShipCore& live, const RefitOperation& oper
     out.cost.totalCr = out.cost.labourCr + out.cost.materialCr;
 
     out.ok = true;
-    out.applicable = !otherProduct;
+    out.applicable = true;   // another product too: per-instance configuration (2026-11-20)
     out.applyNote = otherProduct ? "установка другого изделия требует экземплярной конфигурации корабля (следующий этап); предпросмотр точный"
                                  : "DEV: применяется к живому кораблю без оплаты";
     return out;
+}
+
+const ShipDescriptor* configuredDescriptor(const ShipDescriptor& base, const std::string& moduleId, const std::string& productId)
+{
+    static std::mutex mutex;
+    static std::deque<std::unique_ptr<ShipDescriptor>> store;          // never shrinks
+    static std::map<std::string, const ShipDescriptor*> byKey;
+    char key[64];
+    std::snprintf(key, sizeof key, "%p|", static_cast<const void*>(&base));
+    const std::string k = key + moduleId + "|" + productId;
+    std::lock_guard<std::mutex> lock(mutex);
+    if (const auto it = byKey.find(k); it != byKey.end())
+        return it->second;
+    const auto* s = designOf(base);
+    const auto* p = ShipDesignCatalog::instance().findProduct(productId);
+    if (!s || !p || !findModule(base, moduleId) || !replacementIncompatibility(base, moduleId, productId).empty())
+        return nullptr;
+    auto d = std::make_unique<ShipDescriptor>(base);
+    if (!swapProduct(*d, moduleId, *p, *s))
+        return nullptr;
+    store.push_back(std::move(d));
+    byKey[k] = store.back().get();
+    return store.back().get();
+}
+
+const ShipDescriptor* configuredDescriptor(const ShipDescriptor& base, const std::vector<std::string>& overrides)
+{
+    const ShipDescriptor* d = &base;
+    for (const auto& o : overrides)
+    {
+        const auto eq = o.find('=');
+        if (eq == std::string::npos)
+            return nullptr;
+        d = configuredDescriptor(*d, o.substr(0, eq), o.substr(eq + 1));
+        if (!d)
+            return nullptr;
+    }
+    return d;
 }
 
 std::string applyRefitOperation(core::ShipCore& live, const RefitOperation& operation)
 {
     const auto facts = moduleFacts(live.descriptor(), operation.moduleId);
     if (operation.kind == RefitOperationKind::Replace && !operation.productId.empty() && operation.productId != facts.productId)
-        return "установка другого изделия требует экземплярной конфигурации корабля (следующий этап)";
+    {
+        // another product (per-instance configuration): the ship takes a configured descriptor, then a new unit of it
+        const std::string why = replacementIncompatibility(live.descriptor(), operation.moduleId, operation.productId);
+        if (!why.empty())
+            return why;
+        const ShipDescriptor* configured = configuredDescriptor(live.descriptor(), operation.moduleId, operation.productId);
+        if (!configured)
+            return "не удалось собрать конфигурацию с изделием " + operation.productId;
+        if (!live.reinstallConfiguration(*configured))
+            return "корабль не принял новую конфигурацию";
+        live.recordProductOverride(operation.moduleId, operation.productId);
+        if (!live.serviceModule(operation.moduleId, true))
+            return "операция отклонена модульным runtime";
+        return {};
+    }
     if (operation.kind == RefitOperationKind::Repair && !facts.repairable)
         return "ремонт на месте невозможен: только замена";
     if (operation.kind != RefitOperationKind::Repair && operation.kind != RefitOperationKind::Replace)

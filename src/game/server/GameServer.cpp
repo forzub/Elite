@@ -2617,6 +2617,11 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
                                      "сделка только у причала хаба" + (command.hubId.empty() ? std::string() : " " + command.hubId));
         return;
     }
+    if (command.op == Op::BuyLicence)   // TRADE step 11: from the polity of this berth's hub
+    {
+        (void)m_economy.buyLicence(player, command.goodId, at, motion.systemId, command.requestId);
+        return;
+    }
     game::economy::EconomyServer::TradeOrder order;
     order.buy = command.op == Op::Buy;
     order.black = command.op == Op::SellBlack;

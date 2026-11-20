@@ -181,7 +181,15 @@ public:
     // TRADE step 9: "legal" | "restricted" | "banned" of a good at a hub (its polity's regime family); until licences
     // (step 11) only "banned" is contraband - "restricted" trades openly with a note
     [[nodiscard]] std::string legalityAt(int good, const std::string& hubId, int systemId) const;
-    [[nodiscard]] double blackBidCrPerT(int good, const std::string& hubId, int systemId) const;   // 0 = no black market for it
+    // the black market's price for a good the player holds (0 = not contraband here for this player)
+    [[nodiscard]] double blackBidCrPerT(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
+    // ---- licences (TRADE_DESIGN §4, step 11)
+    // "legal" | "licensed" (restricted, the licence held) | "restricted" (no licence: contraband) | "banned"
+    [[nodiscard]] std::string legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
+    [[nodiscard]] std::string licenceForGood(const std::string& goodId) const;   // "" = none lists it
+    [[nodiscard]] bool hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const;
+    game::simulation::ClientTradeResult buyLicence(std::uint64_t playerId, const std::string& type, const std::string& hubId, int systemId,
+                                                   std::uint32_t requestId);
     struct CustomsResult
     {
         bool inspected = false;
@@ -329,7 +337,27 @@ private:
     std::unordered_map<int, std::vector<std::size_t>> m_systemMarkets;
     int m_npcRingFirstDay = -1;
     double m_npcTonnesShipped = 0.0;
-    std::vector<std::vector<char>> m_npcStateGood;   // market x good: held by the state (no speculation)
+    std::vector<std::vector<char>> m_npcStateGood;
+    struct LicenceType
+    {
+        std::string id, ru;
+        double feeCr = 0.0;
+        std::vector<std::string> goods;
+    };
+    struct HeldLicence
+    {
+        std::string type, polity;
+        int expiresDay = 0;
+    };
+    struct PilotCategory
+    {
+        std::string id, ru, control, note;
+        bool start = false;
+    };
+    std::vector<LicenceType> m_licenceTypes;
+    std::vector<PilotCategory> m_pilotCategories;
+    int m_licenceDays = 360;
+    std::unordered_map<std::uint64_t, std::vector<HeldLicence>> m_licences;   // market x good: held by the state (no speculation)
     void stepNpcFlows(int day);
     // ---- smuggling (TRADE_DESIGN §2.8, step 9)
     struct SmugglingRules

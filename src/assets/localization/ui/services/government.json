@@ -17,11 +17,11 @@
       "ja": "マイ星ポータル"
     },
     "service.government.app_subtitle": {
-      "en": "the state's app: taxes, navigation data; licences, fines and citizenship to come",
-      "ru": "государственное приложение: налоги, навигационные данные; лицензии, штрафы, гражданство — позже",
-      "zh-Hans": "政府应用：税务、导航数据；执照、罚款、国籍即将上线",
-      "es": "la app del Estado: impuestos, datos de navegación; licencias, multas y ciudadanía, más adelante",
-      "ja": "行政アプリ：税金・航法データ。免許・罰金・国籍は今後"
+      "en": "the state's app: taxes, licences, navigation data; fines, citizenship and the employment service to come",
+      "ru": "государственное приложение: налоги, лицензии, навигационные данные; штрафы, гражданство, служба занятости — позже",
+      "zh-Hans": "政府应用：税务、执照、导航数据；罚款、国籍、就业服务即将上线",
+      "es": "la app del Estado: impuestos, licencias, datos de navegación; multas, ciudadanía y empleo, más adelante",
+      "ja": "行政アプリ：税金・免許・航法データ。罰金・国籍・職業紹介は今後"
     },
     "service.government.nav_data": {
       "en": "Navigation data",
@@ -316,6 +316,90 @@
       "zh-Hans": "滞纳金",
       "es": "recargo",
       "ja": "延滞金"
+    },
+    "service.government.licences": {
+      "en": "Licences",
+      "ru": "Лицензии",
+      "zh-Hans": "执照",
+      "es": "Licencias",
+      "ja": "免許"
+    },
+    "service.government.lic_pilot": {
+      "en": "Pilot licence",
+      "ru": "Права пилота",
+      "zh-Hans": "飞行员执照",
+      "es": "Licencia de piloto",
+      "ja": "操縦免許"
+    },
+    "service.government.lic_control": {
+      "en": "control",
+      "ru": "управление",
+      "zh-Hans": "操控",
+      "es": "control",
+      "ja": "操縦"
+    },
+    "service.government.lic_held": {
+      "en": "My licences",
+      "ru": "Мои лицензии",
+      "zh-Hans": "我的执照",
+      "es": "Mis licencias",
+      "ja": "保有免許"
+    },
+    "service.government.lic_none": {
+      "en": "none yet",
+      "ru": "пока нет",
+      "zh-Hans": "暂无",
+      "es": "ninguna aún",
+      "ja": "まだなし"
+    },
+    "service.government.lic_until": {
+      "en": "valid to day",
+      "ru": "до дня",
+      "zh-Hans": "有效至第",
+      "es": "válida hasta el día",
+      "ja": "有効期限 日"
+    },
+    "service.government.lic_expired": {
+      "en": "expired on day",
+      "ru": "истекла в день",
+      "zh-Hans": "已于第",
+      "es": "caducó el día",
+      "ja": "失効 日"
+    },
+    "service.government.lic_offers": {
+      "en": "Issued here",
+      "ru": "Выдаёт здесь",
+      "zh-Hans": "本地签发",
+      "es": "Emite aquí",
+      "ja": "ここで発行"
+    },
+    "service.government.lic_dock_hint": {
+      "en": "Licences are issued at a berth of this polity",
+      "ru": "Лицензии оформляют у причала хаба этой политии",
+      "zh-Hans": "执照须在该政体港口泊位办理",
+      "es": "Las licencias se tramitan en un atraque de esta entidad",
+      "ja": "免許はこの政体の係留所で発行"
+    },
+    "service.government.lic_buy": {
+      "en": "GET",
+      "ru": "ОФОРМИТЬ",
+      "zh-Hans": "办理",
+      "es": "TRAMITAR",
+      "ja": "取得"
+    },
+    "service.government.lic_extend": {
+      "en": "EXTEND",
+      "ru": "ПРОДЛИТЬ",
+      "zh-Hans": "续期",
+      "es": "RENOVAR",
+      "ja": "更新"
+    },
+    "service.government.lic_covers": {
+      "en": "covers",
+      "ru": "покрывает",
+      "zh-Hans": "涵盖",
+      "es": "cubre",
+      "ja": "対象"
     }
   }
 }

@@ -19,6 +19,33 @@ struct ClientMoneyLine
     std::string state;        // "", "заморожен", "просрочка 12 сут", ...
 };
 
+// licences (TRADE_DESIGN §4, step 11; shown in F5)
+struct ClientLicenceLine
+{
+    std::string type;
+    std::string ru;
+    std::string polity;        // the issuing polity (name)
+    int expiresDay = 0;
+    bool active = false;
+};
+
+struct ClientLicenceOffer
+{
+    std::string type;
+    std::string ru;
+    double feeCr = 0.0;        // at this hub's polity, x its port index
+    std::string goodsRu;       // what it covers
+    bool held = false;         // already active here
+};
+
+struct ClientPilotCategory
+{
+    std::string ru;
+    std::string control;       // "assisted" / "newtonian"
+    bool granted = false;
+    std::string note;
+};
+
 struct ClientWalletSnapshot
 {
     bool valid = false;
@@ -61,6 +88,11 @@ struct ClientWalletSnapshot
     double taxPaidCr = 0.0;
     double taxDebtCr = 0.0;
     double taxPenaltyCr = 0.0;
+    // licences (step 11): held, offered by this hub's polity, the pilot licence categories
+    std::vector<ClientLicenceLine> licences;
+    std::vector<ClientLicenceOffer> licenceOffers;
+    std::string licencePolity;
+    std::vector<ClientPilotCategory> pilotCategories;
 
     // where the ship is: the polity whose bank serves payments here
     std::string localPolity;

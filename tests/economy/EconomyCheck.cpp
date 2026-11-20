@@ -466,10 +466,10 @@ void testTradeServer()
     (void)s.chargeService(2, "earth_orbital_hub", 0, Purpose::Other, worth(2) + 3000.0, "test: spent down");
     o.playerId = 2;
     o.shipKey = 502;
-    o.goodId = "computing";
+    o.goodId = "medical_equipment";   // legal everywhere (computing needs the export licence since step 11)
     o.tonnes = 10.0;
     const double w2 = worth(2);
-    unchanged("a broke player buying 10 t of computers", s.trade(o), "no_money");
+    unchanged("a broke player buying 10 t of medical equipment", s.trade(o), "no_money");
     check(near(worth(1), w1, 1e-9) && near(worth(2), w2, 1e-9) && near(stockOf("earth_orbital_hub", "food_staples"), s1, 1e-9) &&
               s.cargo().find(502) && s.cargo().find(502)->lots.empty(),
           "refused deals moved no money, no stock, no cargo");
@@ -1507,7 +1507,7 @@ void testProtectedMinimum()
     t.start(1000);
     const bool restored = t.restoreState(saved);
     const auto w = t.walletSnapshot(1, "earth_orbital_hub", 0);
-    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/7" &&
+    check(withheld > 0.0 && near(before - debt(*sl), withheld, 0.005) && restored && t.saveState() == saved && json::parse(saved)["schema"] == "economy_state/8" &&
               t.ledger(1)->lastWithheldDay == 1000 && t.ledger(1)->lastWithheldCr == withheld && near(w.lastWithheldCr, withheld, 1e-9) &&
               near(w.garnishDebtCr, before - withheld, 0.005) && w.protectedCr == s.banks().rules.garnishProtectedCr && w.protectedCr > 0.0,
           "economy_state/5: the latest withholding (" + std::to_string(withheld) + " Cr) survives save / restore byte-exact; the wallet shows debt " +
@@ -1622,7 +1622,7 @@ void testIncomeTax()
     EconomyServer t;
     t.load();
     t.start(1095);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/7" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/8" &&
               near(t.walletSnapshot(2, "earth_orbital_hub", 0).taxPenaltyCr, w2.taxPenaltyCr, 1e-9),
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
@@ -1764,7 +1764,7 @@ void testSmuggling()
 
     // the black market: banned goods at the shadow price x 2.5, not declared income
     check(s.devAddCargo(1, 701, "narcotics", 3.0, cobrett, "earth_orbital_hub").empty(), "DEV: 3 t narcotics again");
-    const double bid = s.blackBidCrPerT(gi("narcotics"), "earth_orbital_hub", 0);
+    const double bid = s.blackBidCrPerT(1, gi("narcotics"), "earth_orbital_hub", 0);
     const double revenue0 = s.walletSnapshot(1, "earth_orbital_hub", 0).taxRevenueCr, w1 = netWorthCr(*s.ledger(1), s.banks());
     o.black = true;
     o.tonnes = 0.0;   // all aboard
@@ -1787,7 +1787,7 @@ void testSmuggling()
     EconomyServer t;
     t.load();
     t.start(1000);
-    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/7" &&
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/8" &&
               nlohmann::json::parse(saved)["seizures"].size() == 1,
           "economy_state/7: the seizure (customs attention) survives save / restore byte-exact");
 }
@@ -1846,6 +1846,85 @@ void testNpcMarket()
     check(!sol.market.empty() && worst < 0.6, "a quiet year: no Sol price runs away (worst drift " + std::to_string(worst) + ")");
 }
 
+// TRADE step 11 (TRADE_DESIGN §4): licences - a restricted good needs the polity's licence, else it is contraband
+void testLicences()
+{
+    const auto& model = EconomyModel::instance();
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  licences (economy data not found from this working directory)\n");
+        return;
+    }
+    const auto gi = [&](const char* id) {
+        for (std::size_t k = 0; k < model.goods().size(); ++k)
+            if (model.goods()[k].id == id)
+                return static_cast<int>(k);
+        return -1;
+    };
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    const CargoCapacity cobrett{120.0, 6};
+    check(s.licenceForGood("jump_charge") == "export_control" && s.licenceForGood("reactor_fuel") == "hazardous_c" &&
+              s.licenceForGood("alcohol_tobacco") == "excise" && s.licenceForGood("food_staples").empty(),
+          "every restricted good is listed by a licence (trade_fees.json licences)");
+    bool covered = true;
+    for (const auto& g : model.goods())
+        for (const auto& [family, status] : g.legality)
+            covered = covered && (status != "restricted" || !s.licenceForGood(g.id).empty());
+    check(covered, "no restricted good is left without a licence type");
+    check(s.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "restricted", "Sol: J charge without the export licence = restricted");
+    EconomyServer::TradeOrder o;
+    o.playerId = 1;
+    o.shipKey = 801;
+    o.hubId = "earth_orbital_hub";
+    o.systemId = 0;
+    o.goodId = "jump_charge";
+    o.tonnes = 1.0;
+    o.capacity = cobrett;
+    o.requestId = 1;
+    check(s.trade(o).code == "licence", "the open market refuses a restricted good without the licence");
+    check(s.devAddCargo(1, 801, "nav_sensors", 0.5, cobrett, "earth_orbital_hub").empty(), "DEV: 0.5 t nav sensors aboard");
+    check(s.blackBidCrPerT(1, gi("nav_sensors"), "earth_orbital_hub", 0) > 0.0, "unlicensed restricted goods: the black market takes them (x1.3)");
+    s.setDevCustomsProbability(1.0);
+    const auto seized = s.customsInspection(1, 801, "call-l1", "earth_orbital_hub", 0);
+    check(seized.found && near(seized.seizedT, 0.5, 1e-9), "customs seize restricted goods carried without the licence");
+
+    const double w0 = netWorthCr(*s.ledger(1), s.banks());
+    const auto lic = s.buyLicence(1, "export_control", "earth_orbital_hub", 0, 2);
+    check(lic.ok && near(w0 - netWorthCr(*s.ledger(1), s.banks()), 15000.0, 0.01) &&
+              s.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "licensed" &&
+              s.blackBidCrPerT(1, gi("nav_sensors"), "earth_orbital_hub", 0) == 0.0,
+          "the export licence (15 000 Cr in Sol): J charge and nav sensors become licensed, no black market for them");
+    o.requestId = 3;
+    const auto bought = s.trade(o);
+    check(bought.ok, "with the licence the open market sells J charge (" + bought.code + ")");
+    check(s.devAddCargo(1, 801, "nav_sensors", 0.5, cobrett, "earth_orbital_hub").empty(), "DEV: 0.5 t nav sensors again");
+    const auto clean = s.customsInspection(1, 801, "call-l2", "earth_orbital_hub", 0);
+    check(clean.inspected && !clean.found, "customs: licensed goods are not contraband");
+    s.setDevCustomsProbability(-1.0);
+    check(s.legalityFor(1, gi("alcohol_tobacco"), "earth_orbital_hub", 0) == "restricted", "the export licence does not cover alcohol (excise)");
+    check(!s.buyLicence(1, "export_control", "", 0, 4).ok && !s.buyLicence(1, "no_such", "earth_orbital_hub", 0, 5).ok,
+          "a licence needs a berth and a known type");
+    const auto w = s.walletSnapshot(1, "earth_orbital_hub", 0);
+    bool offerHeld = false;
+    for (const auto& of : w.licenceOffers)
+        offerHeld = offerHeld || (of.type == "export_control" && of.held);
+    check(w.licences.size() == 1 && w.licences[0].active && w.licences[0].expiresDay == 1360 && w.licenceOffers.size() == 3 && offerHeld &&
+              w.pilotCategories.size() == 2 && w.pilotCategories[0].granted && !w.pilotCategories[1].granted,
+          "the wallet: 1 licence to day 1360, 3 offers here, pilot categories + cargo courier / - newtonian");
+    const std::string saved = s.saveState();
+    EconomyServer t;
+    t.load();
+    t.start(1000);
+    check(t.restoreState(saved) && t.saveState() == saved && nlohmann::json::parse(saved)["schema"] == "economy_state/8" &&
+              t.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "licensed",
+          "economy_state/8: the licence survives save / restore byte-exact");
+    for (int day = 1001; day <= 1360; ++day)
+        s.advanceTo(day);
+    check(s.legalityFor(1, gi("jump_charge"), "earth_orbital_hub", 0) == "restricted", "after 360 days the licence has expired");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -1868,6 +1947,7 @@ int main()
     testMarketRegimes();
     testSmuggling();
     testNpcMarket();
+    testLicences();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

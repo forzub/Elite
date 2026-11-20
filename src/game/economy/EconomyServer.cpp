@@ -532,6 +532,21 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json lic = fees.value("licences", json::object());
+        m_licenceDays = std::max(1, static_cast<int>(num(lic, "days_valid", m_licenceDays)));
+        const json licTypes = lic.value("types", json::object());   // named: items() of a temporary dangles
+        for (const auto& [id, t] : licTypes.items())
+        {
+            LicenceType lt;
+            lt.id = id;
+            lt.ru = str(t, "ru", id);
+            lt.feeCr = num(t, "fee_cr", 0.0);
+            if (t.contains("goods"))
+                lt.goods = t["goods"].get<std::vector<std::string>>();
+            m_licenceTypes.push_back(std::move(lt));
+        }
+        for (const auto& c : lic.value("pilot_categories", json::array()))
+            m_pilotCategories.push_back({str(c, "id"), str(c, "ru"), str(c, "control"), str(c, "note"), c.value("start", false)});
         const json sm = fees.value("smuggling", json::object());
         {
             auto& S = m_smuggling;
@@ -948,17 +963,102 @@ std::string EconomyServer::legalityAt(int good, const std::string& hubId, int sy
     return EconomyModel::instance().legalityOf(good, familyAt(hubId, systemId));
 }
 
-double EconomyServer::blackBidCrPerT(int good, const std::string& hubId, int systemId) const
+double EconomyServer::blackBidCrPerT(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const
 {
-    const std::string legality = legalityAt(good, hubId, systemId);
-    if (legality != "banned")
-        return 0.0;   // restricted: open trade until licences (step 11); legal: the market
+    if (good < 0)
+        return 0.0;
+    const std::string legality = legalityFor(playerId, good, hubId, systemId);
+    if (legality != "banned" && legality != "restricted")
+        return 0.0;   // legal / licensed: the open market
     // the shadow price: the free cell price (under a state price it keeps moving), else the good's base price
     double shadow = EconomyModel::instance().goods()[static_cast<std::size_t>(good)].baseCrPerTonne;
     if (const auto it = m_marketIndex.find(hubId); it != m_marketIndex.end())
         if (const auto& c = m_markets[it->second].cells[static_cast<std::size_t>(good)]; c.traded && c.priceCr > 0.0)
             shadow = c.priceCr;
-    return shadow * m_smuggling.blackMultBanned;
+    return shadow * (legality == "banned" ? m_smuggling.blackMultBanned : m_smuggling.blackMultRestricted);
+}
+
+std::string EconomyServer::licenceForGood(const std::string& goodId) const
+{
+    for (const auto& t : m_licenceTypes)
+        if (std::find(t.goods.begin(), t.goods.end(), goodId) != t.goods.end())
+            return t.id;
+    return {};
+}
+
+bool EconomyServer::hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const
+{
+    const auto it = m_licences.find(playerId);
+    if (it == m_licences.end())
+        return false;
+    for (const auto& l : it->second)
+        if (l.type == type && l.polity == polity && l.expiresDay > m_day)
+            return true;
+    return false;
+}
+
+std::string EconomyServer::legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const
+{
+    const std::string raw = legalityAt(good, hubId, systemId);
+    if (raw != "restricted" || good < 0)
+        return raw;
+    const std::string type = licenceForGood(EconomyModel::instance().goods()[static_cast<std::size_t>(good)].id);
+    if (type.empty())
+        return "licensed";   // no licence type covers it: treated as open (data gap, logged by the checks)
+    return hasLicence(playerId, polityOf(hubId, systemId), type) ? "licensed" : "restricted";
+}
+
+game::simulation::ClientTradeResult EconomyServer::buyLicence(std::uint64_t playerId, const std::string& type, const std::string& hubId,
+                                                               int systemId, std::uint32_t requestId)
+{
+    game::simulation::ClientTradeResult r;
+    r.requestId = requestId;
+    r.day = m_day;
+    const auto refuse = [&](const std::string& code, const std::string& message) {
+        recordTradeRefusal(playerId, requestId, code, message);
+        r.code = code;
+        r.message = message;
+        return r;
+    };
+    ClientLedger* l = ledger(playerId);
+    const LicenceType* lt = nullptr;
+    for (const auto& t : m_licenceTypes)
+        if (t.id == type)
+            lt = &t;
+    if (!l || !lt)
+        return refuse("no_licence_type", "нет такой лицензии: " + type);
+    if (hubId.empty())
+        return refuse("not_docked", "лицензию оформляют у причала хаба политии");
+    const std::string polity = polityOf(hubId, systemId);
+    const double fee = std::round(lt->feeCr * fiscalStyleOf(hubId, systemId).portIndex * 100.0) / 100.0;
+    const auto* bank = m_banks.bankForPolity(polity);
+    const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), fee, Purpose::Fee, m_day, false,
+                                "лицензия «" + lt->ru + "» (" + (bank ? bank->polityName : polity) + ")");
+    if (!p.ok)
+        return refuse("no_money", "не хватает денег на лицензию: " + grouped(fee) + " Cr (" + p.reason + ")");
+    if (TaxBook* t = taxBook(playerId))
+        addExpense(*t, fee);
+    auto& held = m_licences[playerId];
+    HeldLicence* existing = nullptr;
+    for (auto& h : held)
+        if (h.type == type && h.polity == polity)
+            existing = &h;
+    if (!existing)
+    {
+        held.push_back({type, polity, m_day});
+        existing = &held.back();
+    }
+    existing->expiresDay = std::max(existing->expiresDay, m_day) + m_licenceDays;
+    logEvent(*l, m_day, "лицензия «" + lt->ru + "»: -" + grouped(fee) + " Cr, действует до дня " + std::to_string(existing->expiresDay));
+    r.ok = true;
+    r.code = "licence";
+    r.totalCr = -fee;
+    r.message = "лицензия «" + lt->ru + "» до дня " + std::to_string(existing->expiresDay);
+    pushResult(playerId, r);
+    saveNow("licence");
+    std::cerr << "[Licence] player " << playerId << ": " << type << " from " << polity << " for " << grouped(fee) << " Cr, until day "
+              << existing->expiresDay << '\n';
+    return r;
 }
 
 game::simulation::ClientTradeResult EconomyServer::sellBlack(const TradeOrder& o)
@@ -977,7 +1077,7 @@ game::simulation::ClientTradeResult EconomyServer::sellBlack(const TradeOrder& o
     if (!l || g < 0)
         return refuse("no_good", "неизвестный товар " + o.goodId);
     const auto& good = EconomyModel::instance().goods()[static_cast<std::size_t>(g)];
-    const double price = blackBidCrPerT(g, o.hubId, o.systemId);
+    const double price = blackBidCrPerT(o.playerId, g, o.hubId, o.systemId);
     if (!(price > 0.0))
         return refuse("legal_here", "«" + good.ru + "» здесь не запрещён: продавайте на рынке");
     const CargoManifest* m = m_cargo.find(o.shipKey);
@@ -1047,7 +1147,8 @@ EconomyServer::CustomsResult EconomyServer::customsInspection(std::uint64_t play
     if (m)
         for (const auto& lot : m->lots)
         {
-            const bool banned = legalityAt(goodIndex(lot.goodId), hubId, systemId) == "banned";
+            const std::string legal = legalityFor(playerId, goodIndex(lot.goodId), hubId, systemId);
+            const bool banned = legal == "banned" || legal == "restricted";   // contraband (no licence for a restricted good)
             if (banned && std::find(contraband.begin(), contraband.end(), lot.goodId) == contraband.end())
                 contraband.push_back(lot.goodId);
             anyLegal = anyLegal || !banned;
@@ -1737,9 +1838,21 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
     if (o.black)
         return sellBlack(o);
     const int g = goodIndex(o.goodId);
-    if (g >= 0 && legalityAt(g, o.hubId, o.systemId) == "banned")
-        return refuse("contraband", "«" + EconomyModel::instance().goods()[static_cast<std::size_t>(g)].ru +
-                                        "» здесь запрещён: только из-под полы (F8 ГРУЗ -> чёрный рынок)");
+    if (g >= 0)
+    {
+        const std::string legal = legalityFor(o.playerId, g, o.hubId, o.systemId);
+        const std::string& ru = EconomyModel::instance().goods()[static_cast<std::size_t>(g)].ru;
+        if (legal == "banned")
+            return refuse("contraband", "«" + ru + "» здесь запрещён: только из-под полы (F8 ГРУЗ -> чёрный рынок)");
+        if (legal == "restricted")
+        {
+            std::string licRu = licenceForGood(o.goodId);
+            for (const auto& t : m_licenceTypes)
+                if (t.id == licRu)
+                    licRu = t.ru;
+            return refuse("licence", "«" + ru + "» здесь только по лицензии «" + licRu + "» (F5 -> Лицензии)");
+        }
+    }
     if (g < 0 && !o.buy)
         if (const CargoManifest* held = m_cargo.find(o.shipKey))
             for (const auto& lot : held->lots)
@@ -1973,8 +2086,8 @@ game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t
             s.cargo.push_back({lot.lotId, goodIndex(lot.goodId), lot.tonnes, lot.c20, lot.tonnes > 0.0 ? lot.costBasisCr / lot.tonnes : 0.0,
                                lot.originHub, lot.loadedDay, lot.owner, lot.contractId,
                                hubId.empty() ? 0.0 : importDutyRate(lot.originHub, hubId, systemId),
-                               hubId.empty() ? std::string("legal") : legalityAt(goodIndex(lot.goodId), hubId, systemId),
-                               hubId.empty() ? 0.0 : blackBidCrPerT(goodIndex(lot.goodId), hubId, systemId)});
+                               hubId.empty() ? std::string("legal") : legalityFor(playerId, goodIndex(lot.goodId), hubId, systemId),
+                               hubId.empty() ? 0.0 : blackBidCrPerT(playerId, goodIndex(lot.goodId), hubId, systemId)});
         s.cargoNetT = m->netT();
         s.cargoGrossT = m->grossT();
         s.c20Used = m->c20();
@@ -2106,6 +2219,35 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
     w.lastWithheldCr = l->lastWithheldCr;
     w.lastWithheldDay = l->lastWithheldDay;
     w.protectedCr = m_banks.rules.garnishProtectedCr;
+    // licences (step 11): held, offered here, the pilot licence categories
+    {
+        const std::string here = polityOf(hubId, systemId);
+        const auto* hereBank = m_banks.bank(here);
+        w.licencePolity = hereBank ? hereBank->polityName : here;
+        const auto typeRu = [&](const std::string& id) {
+            for (const auto& t : m_licenceTypes)
+                if (t.id == id)
+                    return t.ru;
+            return id;
+        };
+        if (const auto it = m_licences.find(playerId); it != m_licences.end())
+            for (const auto& h : it->second)
+            {
+                const auto* b = m_banks.bank(h.polity);
+                w.licences.push_back({h.type, typeRu(h.type), b ? b->polityName : h.polity, h.expiresDay, h.expiresDay > m_day});
+            }
+        const double portIndex = fiscalStyleOf(hubId, systemId).portIndex;
+        for (const auto& t : m_licenceTypes)
+        {
+            std::string goodsRu;
+            for (const auto& gid : t.goods)
+                if (const int g = goodIndex(gid); g >= 0)
+                    goodsRu += (goodsRu.empty() ? "" : ", ") + EconomyModel::instance().goods()[static_cast<std::size_t>(g)].ru;
+            w.licenceOffers.push_back({t.id, t.ru, std::round(t.feeCr * portIndex * 100.0) / 100.0, goodsRu, hasLicence(playerId, here, t.id)});
+        }
+        for (const auto& c : m_pilotCategories)
+            w.pilotCategories.push_back({c.ru, c.control, c.start, c.note});
+    }
     // the income tax of the residence polity (TaxModel, TRADE_DESIGN step 7)
     {
         const FiscalStyle rs = residenceStyle(*l);
@@ -2316,9 +2458,9 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
 {
     StateParts parts;
     json& j = parts.head;
-    j["schema"] = "economy_state/7";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
+    j["schema"] = "economy_state/8";   // 2: cargo manifests, input VAT refunds, holds (TRADE_DESIGN §7.6); 3: contracts (step 5);
                                        // 4: port calls (open + booked); 5: ledger last_withheld (the protected minimum);
-                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9)
+                                       // 6: tax books (the income tax, step 7); 7: seizures (customs attention, step 9); 8: licences (step 11)
     j["day"] = m_day;
     // (fuel_free is a RULE - economy_rules / ELITE_FUEL_FREE - not world state: not saved; it was written and never read)
     json fx = json::object();
@@ -2359,6 +2501,16 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
                                    {"cause", r.cause}});
+    j["licences"] = json::array();
+    {
+        std::vector<std::uint64_t> ids;
+        for (const auto& [id, v] : m_licences)
+            ids.push_back(id);
+        std::sort(ids.begin(), ids.end());
+        for (const auto id : ids)
+            for (const auto& h : m_licences.at(id))
+                j["licences"].push_back({id, h.type, h.polity, h.expiresDay});
+    }
     j["seizures"] = json::array();
     {
         std::vector<std::uint64_t> ids;
@@ -2459,7 +2611,7 @@ bool EconomyServer::restoreState(const std::string& text)
     const std::string schema = j.value("schema", std::string());
     if (schema != "economy_state/1" && schema != "economy_state/2" && schema != "economy_state/3" &&
         schema != "economy_state/4" && schema != "economy_state/5" && schema != "economy_state/6" &&
-        schema != "economy_state/7")   // /1: no trade registries; /2: no contracts;
+        schema != "economy_state/7" && schema != "economy_state/8")   // /1: no trade registries; /2: no contracts;
                                                                        // /3: no port calls; /4: no last_withheld; /5: no taxes
         return false;
     // Parse EVERYTHING into temporaries first; the live state changes only after the whole file parsed (audit
@@ -2532,6 +2684,9 @@ bool EconomyServer::restoreState(const std::string& text)
         const std::uint64_t nextLostCargo = j.value("next_lost_cargo", std::uint64_t{1});
         CargoRegistry cargo;   // a dry run of the cargo parse (throws here, not in the commit)
         cargo.fromJson(j.value("cargo", json::array()));
+        decltype(m_licences) licences;   // economy_state/8
+        for (const auto& x : j.value("licences", json::array()))
+            licences[x.at(0).get<std::uint64_t>()].push_back({x.at(1).get<std::string>(), x.at(2).get<std::string>(), x.at(3).get<int>()});
         decltype(m_seizures) seizures;   // economy_state/7
         for (const auto& x : j.value("seizures", json::array()))
             seizures[x.at(0).get<std::uint64_t>()].push_back({x.at(1).get<std::string>(), x.at(2).get<int>()});
@@ -2590,6 +2745,7 @@ bool EconomyServer::restoreState(const std::string& text)
         m_vatRefunds.swap(vatRefunds);
         m_taxBooks.swap(taxBooks);
         m_seizures.swap(seizures);
+        m_licences.swap(licences);
         m_lossEvents.swap(lossEvents);
         m_lostCargo.swap(lostCargo);
         m_nextLostCargo = nextLostCargo;

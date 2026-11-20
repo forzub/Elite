@@ -7294,3 +7294,24 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   flight, step 2.99 ms", mean daily |dp| 0.08-0.10 %.
 - Deferred (§9i): inter-system speculators (no jump graph in the economy), the player's bulletin ring (§2.7), saving
   shipments in flight.
+
+## TRADE MVP step 11: licences + the pilot licence categories (docs/TRADE_DESIGN.md §4, §9j, §11b) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): licence types in trade_fees.json "licences" (export_control 15 000: J charge, nav sensors,
+  computing, arms, munitions; hazardous_c 2 000: reactor fuel; excise 3 000: alcohol, luxury, narcotics), issued by
+  the berth hub's polity for 360 days, fee x port index, paid (refused without the money); EconomyServer legalityFor /
+  licenceForGood / hasLicence / buyLicence. A restricted good without the licence is now contraband (the step-9
+  interim rule removed): open market "licence" refusal, customs seize, black market shadow x 1.3. Pilot licence
+  categories (author: like Дія): + cargo courier (assisted) at start, - newtonian (later) - shown only, the hiring board
+  will check them. F5 state app sections: taxes / licences / navigation data (govsec 0/1/2). Protocol 36 (BuyLicence),
+  snapshot schema 58, economy_state/8. DEV licence:buy:<type>.
+- Bugs on the way: a "\n" in a patch script became a real newline inside a C++ char literal (build error, fixed); the
+  GameServer BuyLicence branch was not applied by the patch (the first live run answered "unknown good
+  export_control") - added, re-run. The trade-server test "a broke player buying computers" now hit the licence
+  refusal first: switched to medical equipment (legal).
+- Checks: EliteEconomyCheck 202/202 (testLicences); architecture / wire / replication / localization / service panel
+  contracts PASS.
+- LIVE (D:/tmp/licence11/run.log, 01..03_*.png): F5 -> Лицензии lists the pilot categories (+/-), 3 offers of Sol;
+  licence:buy:export_control -> "[Licence] export_control from sol_authority for 15 000 Cr, until day 10556", the row
+  turns «ПРОДЛИТЬ»; reactor fuel without the class C licence -> "REFUSED (licence) ... (F5 -> Лицензии)".
+- Deferred (§9j): VAT registration, passengers, mining, rescue, mercenary, bloc licence, Lotus cordon, late fines,
+  requirements.

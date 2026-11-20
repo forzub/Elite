@@ -22,7 +22,8 @@ struct ClientEconomyCommand
         DevSpendAll = 7,     // DEV: the player spends all spendable money here (cash + the overdraft to its limit)
         SellBlack = 8,       // goodId, quantity t: to the black market of the hub (contraband here: banned / restricted; step 9)
         DevCustoms = 9,      // DEV: the customs inspection probability forced to `quantity` (< 0 = the rules again)
-        Last = DevCustoms
+        BuyLicence = 10,     // goodId = licence type: from the polity of the hub the ship is docked at (step 11)
+        Last = BuyLicence
     };
     Op op = Buy;
     std::uint32_t requestId = 0;

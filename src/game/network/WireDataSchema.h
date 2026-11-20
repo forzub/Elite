@@ -1012,6 +1012,32 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ClientLicenceLine,
+    v.type,
+    v.ru,
+    v.polity,
+    v.expiresDay,
+    v.active
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientLicenceOffer,
+    v.type,
+    v.ru,
+    v.feeCr,
+    v.goodsRu,
+    v.held
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientPilotCategory,
+    v.ru,
+    v.control,
+    v.granted,
+    v.note
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientWalletSnapshot,
     v.valid,
     v.day,
@@ -1051,6 +1077,10 @@ ELITE_WIRE_SCHEMA(
     v.taxPaidCr,
     v.taxDebtCr,
     v.taxPenaltyCr,
+    v.licences,
+    v.licenceOffers,
+    v.licencePolity,
+    v.pilotCategories,
     v.localPolity,
     v.localBank,
     v.localCurrency,

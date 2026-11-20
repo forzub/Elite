@@ -24,6 +24,19 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "licences": {
+  "note": "TRADE_DESIGN §4 (step 11, minimal set). A licence is issued by a polity, valid on its hubs, for days_valid days; bought at a berth of that polity (F5 -> the state app -> licences), the fee x the style's port index, into the polity's bank (refused without the money - not a debt). A good 'restricted' in the hub's regime family needs the licence that lists it; without it the good is contraband (the open market refuses, customs seize, the black market pays shadow x 1.3). Pilot licence categories (author 2026-11-20, like a driving licence in Дія): the start grants 'cargo_courier' (assisted); 'newtonian' opens later. Not in the minimal set: trader (VAT) registration, passengers, mining, salvage, SAR, mercenary, bloc licence, Lotus cordon.",
+  "days_valid": 360,
+  "types": {
+   "export_control": {"ru": "экспортный контроль (стратегические товары)", "fee_cr": 15000, "goods": ["jump_charge", "nav_sensors", "computing", "small_arms", "munitions"]},
+   "hazardous_c": {"ru": "опасные грузы, класс C", "fee_cr": 2000, "goods": ["reactor_fuel"]},
+   "excise": {"ru": "акцизная (алкоголь, табак, роскошь, контролируемые вещества)", "fee_cr": 3000, "goods": ["alcohol_tobacco", "luxury_goods", "narcotics"]}
+  },
+  "pilot_categories": [
+   {"id": "cargo_courier", "ru": "малый / средний грузовик — курьер", "control": "assisted", "start": true, "note": ""},
+   {"id": "newtonian", "ru": "ручное ньютоновское управление", "control": "newtonian", "start": false, "note": "откроется позже"}
+  ]
+ },
  "npc_market": {
   "note": "TRADE_DESIGN §2.4 / §2.6 (step 10, minimal set). Dumping: above dump_from_ratio x target the price target x (1 - dump_depth x clamp((S/T - from)/span) x (1 + dump_shelf_ref_days / shelf_days)), >= dump_floor (fresh food 20 days spoils fast); a glut (> glut_ratio) may fall and a shortage (< shortage_ratio) rise extreme_daily_change a day (panic buying / clearance). NPC speculators between the hubs of ONE system: they see the destination's bulletin npc_lag days old, ship when bid_dest - ask_src - npc_delivery_cr_t beats npc_min_margin of the ask, q = npc_k x dest turnover x excess margin (<= npc_max_share_of_flow x turnover, only the source's stock above half its target), landing after npc_travel days. Inter-system speculators need the jump graph in the economy - deferred.",
   "dump_from_ratio": 1.3, "dump_span": 1.2, "dump_depth": 0.25, "dump_shelf_ref_days": 30, "dump_floor": 0.5,

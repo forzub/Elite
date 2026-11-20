@@ -38,7 +38,7 @@ game::economy::FiscalStyle fiscalStyleOf(const game::simulation::ClientTradeSnap
 
 game::economy::MarketSide marketSideOf(const game::simulation::ClientTradeSnapshot& s, const game::simulation::ClientMarketRow& row)
 {
-    return {row.priceCr, s.spread, row.stockT, row.targetT};
+    return {row.priceCr, s.spread, row.stockT, row.targetT, row.fixedPriceCr, row.giveCapT};   // + the market regime (step 8)
 }
 
 std::vector<long long> roundLinesToTotal(const std::vector<double>& cr, long long& totalOut)

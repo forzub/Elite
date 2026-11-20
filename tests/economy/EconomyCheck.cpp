@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <climits>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -1626,6 +1627,84 @@ void testIncomeTax()
           "economy_state/6: the tax books survive save / restore byte-exact");
 }
 
+// TRADE step 8 (TRADE_DESIGN §2.5): market regimes - the state price, the "not for sale" cap, the corridor ration
+void testMarketRegimes()
+{
+    TradeDealRules r;
+    MarketSide free{1000.0, 0.1, 500.0, 1000.0};
+    MarketSide state = free;
+    state.fixedPriceCr = 850.0;
+    check(near(askCr(state), 850.0 * 1.05, 1e-9) && near(bidCr(state), 850.0 * 0.95, 1e-9) &&
+              near(buyUnitCr(state, 300.0, r), askCr(state), 1e-9) && near(sellUnitCr(state, 300.0, r), bidCr(state), 1e-9),
+          "a state price: the spread only, a big deal does not move it");
+    check(buyUnitCr(free, 300.0, r) > askCr(free), "a free market: the same deal moves the price");
+    state.giveCapT = 0.0;
+    check(hubGivesUpToT(state, r) == 0.0 && explainDeal(true, state, 1.0, FiscalStyle{}, r, 0.0).code == "hub_empty",
+          "a cap of 0 (the state's need first): nothing for sale to the player");
+    state.giveCapT = 3.0;
+    check(near(hubGivesUpToT(state, r), 3.0, 1e-9), "a ration: the hub sells at most the day's quota");
+
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  market regimes server run (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    // a planned polity's hub (Tianhe / Harmony / Providence / New Karma): state prices, "нет в продаже" below the need
+    const auto& model = EconomyModel::instance();
+    std::string plannedHub, freeHub;
+    int plannedSystem = -1, freeSystem = -1;
+    for (const auto& h : model.hubs())
+    {
+        MarketSide probe;
+        if (!s.marketSide(h.id, "food_staples", probe))
+            continue;
+        const auto st = s.fiscalStyleOf(h.id, h.systemId);
+        if (plannedHub.empty() && st.id == "planned")
+            plannedHub = h.id, plannedSystem = h.systemId;
+        if (freeHub.empty() && st.id == "corporate")
+            freeHub = h.id, freeSystem = h.systemId;
+    }
+    check(!plannedHub.empty() && !freeHub.empty(), "a planned hub (" + plannedHub + ") and a free one (" + freeHub + ") have markets");
+    const auto planned = s.tradeSnapshot(1, 0, plannedHub, plannedSystem, true);
+    bool allState = !planned.market.empty(), someCapped = false, capRule = true;
+    for (const auto& row : planned.market)
+    {
+        allState = allState && row.fixedPriceCr > 0.0 && near(row.askCr, row.fixedPriceCr * (1.0 + 0.5 * planned.spread), 1e-6);
+        someCapped = someCapped || (row.giveCapT == 0.0 && row.hubGivesUpToT == 0.0 && row.regimeNote.find("нет в продаже") == 0);
+        capRule = capRule && near(row.giveCapT, std::max(0.0, row.stockT - 0.7 * row.targetT), 1e-6);
+    }
+    check(allState && capRule, "planned: every row at the state price; the hub sells only the stock above 70 % of the target");
+    std::printf("INFO  planned %s: %s capped rows\n", plannedHub.c_str(), someCapped ? "some" : "no");
+    if (!planned.market.empty())
+        std::printf("INFO  planned row0: fixed %.2f ask %.2f spread %.3f cap %.2f stock %.1f target %.1f note '%s'\n",
+                    planned.market[0].fixedPriceCr, planned.market[0].askCr, planned.spread, planned.market[0].giveCapT,
+                    planned.market[0].stockT, planned.market[0].targetT, planned.market[0].regimeNote.c_str());
+    const auto freeSnap = s.tradeSnapshot(1, 0, freeHub, freeSystem, true);
+    bool noneState = !freeSnap.market.empty();
+    for (const auto& row : freeSnap.market)
+        noneState = noneState && row.fixedPriceCr == 0.0 && row.giveCapT < 0.0 && row.regimeNote.empty();
+    check(noneState, "a free market (" + freeHub + "): no state price, no cap, no note");
+    // Sol is a managed corridor: its basket stays in anchor x [0.9, 1.15] for a year
+    for (int day = 1001; day <= 1365; ++day)
+        s.advanceTo(day);
+    const auto sol = s.tradeSnapshot(1, 0, "earth_orbital_hub", 0, true);
+    bool inCorridor = true, someBasket = false;
+    for (const auto& row : sol.market)
+    {
+        const auto& g = model.goods()[static_cast<std::size_t>(row.good)];
+        if (g.group != "food" && g.group != "water_gas" && g.group != "medical")
+            continue;
+        someBasket = true;
+        if (row.drift < -0.1 - 1e-9 || row.drift > 0.15 + 1e-9)
+            std::printf("INFO  Sol out of corridor: %s drift %.4f\n", g.id.c_str(), row.drift);
+        inCorridor = inCorridor && row.drift >= -0.1 - 1e-9 && row.drift <= 0.15 + 1e-9;
+    }
+    check(someBasket && inCorridor, "Sol (corridor): after a year every basket price is within anchor x [0.9, 1.15]");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -1645,6 +1724,7 @@ int main()
     testContracts();
     testProtectedMinimum();
     testIncomeTax();
+    testMarketRegimes();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

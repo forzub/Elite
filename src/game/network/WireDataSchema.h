@@ -1078,7 +1078,10 @@ ELITE_WIRE_SCHEMA(
     v.targetT,
     v.hubTakesUpToT,
     v.hubGivesUpToT,
-    v.drift
+    v.drift,
+    v.fixedPriceCr,
+    v.giveCapT,
+    v.regimeNote
 );
 
 ELITE_WIRE_SCHEMA(

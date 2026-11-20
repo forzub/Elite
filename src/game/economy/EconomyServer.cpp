@@ -508,6 +508,30 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json mr = fees.value("market_regimes", json::object());
+        {
+            const json corridor = mr.value("corridor", json::object());
+            const json planned = mr.value("planned", json::object());
+            const json mob = mr.value("mobilization", json::object());
+            auto& R = m_regimeRules;
+            if (corridor.contains("basket_groups"))
+                R.corridorGroups = corridor["basket_groups"].get<std::vector<std::string>>();
+            R.corridorMin = num(corridor, "price_min", R.corridorMin);
+            R.corridorMax = num(corridor, "price_max", R.corridorMax);
+            R.rationBelowStockShare = num(corridor, "ration_below_stock_share", R.rationBelowStockShare);
+            R.rationMinT = num(corridor, "ration_min_t", R.rationMinT);
+            R.rationStockShare = num(corridor, "ration_stock_share", R.rationStockShare);
+            R.stateMin = num(planned, "state_price_min", R.stateMin);
+            R.stateMax = num(planned, "state_price_max", R.stateMax);
+            R.planDays = std::max(1, static_cast<int>(num(planned, "plan_days", R.planDays)));
+            R.stateNeedShare = num(planned, "state_need_share", R.stateNeedShare);
+            if (mob.contains("groups"))
+                R.mobilizationGroups = mob["groups"].get<std::vector<std::string>>();
+        }
+        const json regimeMarket = fees.value("regime_market", json::object());   // named: items() of a temporary dangles
+        for (const auto& [regime, market] : regimeMarket.items())
+            if (market.is_string())
+                m_regimeMarket[regime] = market.get<std::string>();
         const json regimes = fees.value("regime_style", json::object());
         for (const auto& [regime, style] : regimes.items())
             if (style.is_string())
@@ -685,6 +709,7 @@ void EconomyServer::stepDay(int day)
     for (std::size_t mi = 0; mi < m_markets.size(); ++mi)
     {
         auto& m = m_markets[mi];
+        const bool corridor = marketRegimeOf(polityOf(m.hubId, m.systemId)) == "corridor";
         const auto events = model.events(m.hubId, day);
         eventCount += events.size();
         for (std::size_t g = 0; g < goods.size(); ++g)
@@ -702,7 +727,16 @@ void EconomyServer::stepDay(int day)
             d.supplyShock = signedUnit(key ^ mix(static_cast<std::uint64_t>(day) * 2 + 1));
             d.demandShock = signedUnit(key ^ mix(static_cast<std::uint64_t>(day) * 2 + 2));
             d.slowDemand = dayNoise(key, day, m_priceRules.slowDemandPeriodDays);
-            const double move = stepCell(c, d, m_priceRules);
+            double move = stepCell(c, d, m_priceRules);
+            if (corridor && c.anchorCr > 0.0 &&
+                std::find(m_regimeRules.corridorGroups.begin(), m_regimeRules.corridorGroups.end(), goods[g].group) !=
+                    m_regimeRules.corridorGroups.end())
+            {
+                // a managed corridor (§2.5): the basket's price stays in anchor x [min, max]; a shortage becomes rationing
+                const double before = c.priceCr / (1.0 + move);
+                c.priceCr = std::clamp(c.priceCr, c.anchorCr * m_regimeRules.corridorMin, c.anchorCr * m_regimeRules.corridorMax);
+                move = before > 0.0 ? c.priceCr / before - 1.0 : move;
+            }
             sumAbs += std::fabs(move);
             ++cells;
             if (std::fabs(move) > std::fabs(maxMove))
@@ -757,6 +791,70 @@ void EconomyServer::stepDay(int day)
 }
 
 // ---------------------------------------------------------------- players
+// ---------------------------------------------------------------- market regimes (TRADE_DESIGN §2.5, step 8)
+std::string EconomyServer::marketRegimeOf(const std::string& polity) const
+{
+    const auto* bank = m_banks.bank(polity);   // the polity's own bank carries its regime; none -> no state
+    const std::string regime = bank && !bank->regime.empty() ? bank->regime : std::string("no_state");
+    const auto it = m_regimeMarket.find(regime);
+    return it == m_regimeMarket.end() ? std::string("free") : it->second;
+}
+
+MarketSide EconomyServer::regimeSide(const HubMarket& m, int good, std::uint64_t playerId, std::string* note) const
+{
+    const auto& c = m.cells[static_cast<std::size_t>(good)];
+    MarketSide side{c.priceCr, m.spread, c.stockT, c.targetT};
+    const std::string polity = polityOf(m.hubId, m.systemId);
+    const std::string regime = marketRegimeOf(polity);
+    const std::string& group = EconomyModel::instance().goods()[static_cast<std::size_t>(good)].group;
+    const auto in = [&](const std::vector<std::string>& v) { return std::find(v.begin(), v.end(), group) != v.end(); };
+    const auto& R = m_regimeRules;
+    if (regime == "planned" || (regime == "mobilization" && in(R.mobilizationGroups)))
+    {
+        // the state price: fixed for a plan period; the hub sells only what is above the state's need (Kornai)
+        const int plan = std::max(0, m_day) / R.planDays;
+        const double h = static_cast<double>(hashOf(polity + "|" + std::to_string(good), static_cast<std::uint64_t>(plan) + 0x91a7ull) % 10000ull) / 10000.0;
+        side.fixedPriceCr = c.anchorCr * (R.stateMin + (R.stateMax - R.stateMin) * h);
+        side.giveCapT = std::max(0.0, c.stockT - R.stateNeedShare * c.targetT);
+        if (note)
+            *note = side.giveCapT > 0.0 ? std::string("госцена") : std::string("нет в продаже: госпотребность");
+        return side;
+    }
+    if (regime == "corridor" && in(R.corridorGroups) && c.anchorCr > 0.0)   // the corridor holds from the first day, not only after a daily step
+        side.priceCr = std::clamp(side.priceCr, c.anchorCr * R.corridorMin, c.anchorCr * R.corridorMax);
+    if (regime == "corridor" && in(R.corridorGroups) && c.stockT < R.rationBelowStockShare * c.targetT)
+    {
+        // a shortage under a held price: rationing - a buyer's day quota
+        const double ration = std::max(R.rationMinT, R.rationStockShare * c.stockT);
+        double used = 0.0;
+        if (playerId != 0)
+            if (const auto it = m_rationUsed.find(std::to_string(playerId) + "|" + m.hubId + "|" + std::to_string(good));
+                it != m_rationUsed.end() && it->second.first == m_day)
+                used = it->second.second;
+        side.giveCapT = std::max(0.0, ration - used);
+        if (note)
+        {
+            char b[96];
+            std::snprintf(b, sizeof b, "по карточкам: %.1f т на сегодня", side.giveCapT);
+            *note = b;
+        }
+        return side;
+    }
+    if (regime == "corridor" && in(R.corridorGroups) && note)
+        *note = "цена в коридоре";
+    return side;
+}
+
+void EconomyServer::recordRation(const HubMarket& m, int good, std::uint64_t playerId, double tonnes)
+{
+    if (playerId == 0)
+        return;
+    auto& r = m_rationUsed[std::to_string(playerId) + "|" + m.hubId + "|" + std::to_string(good)];
+    if (r.first != m_day)
+        r = {m_day, 0.0};
+    r.second += tonnes;
+}
+
 // ---------------------------------------------------------------- the income tax (TaxModel, TRADE_DESIGN step 7)
 TaxBook* EconomyServer::taxBook(std::uint64_t playerId)
 {
@@ -1263,7 +1361,7 @@ bool EconomyServer::marketSide(const std::string& hubId, const std::string& good
     const auto& c = m.cells[static_cast<std::size_t>(g)];
     if (!c.traded)
         return false;
-    out = {c.priceCr, m.spread, c.stockT, c.targetT};
+    out = regimeSide(m, g, 0, nullptr);
     return true;
 }
 
@@ -1332,7 +1430,10 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
                                      "): цена пересчитана, повторите");
     auto& market = m_markets[mit->second];
     auto& cell = market.cells[static_cast<std::size_t>(g)];
-    const MarketSide side{cell.priceCr, market.spread, cell.stockT, cell.targetT};
+    std::string regimeNote;
+    const MarketSide side = regimeSide(market, g, o.playerId, &regimeNote);
+    if (o.buy && side.giveCapT >= 0.0 && side.giveCapT + 1.0e-6 < o.tonnes)
+        return refuse("regime", regimeNote.empty() ? "нет в продаже" : regimeNote);
     const FiscalStyle style = fiscalStyleOf(o.hubId, o.systemId);
     // a sale pays the import duty on the tonnes bought in another polity (the lots unload() takes, oldest first)
     double dutyShare = 0.0;
@@ -1365,6 +1466,7 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         if (!p.ok)
             return refuse("no_money", "недостаточно средств: нужно " + grouped(-q.totalCr) + " Cr (" + p.reason + ")");
         cell.stockT = std::max(0.0, cell.stockT - o.tonnes);
+        recordRation(market, g, o.playerId, o.tonnes);
         if (q.vatReclaimCr > 0.0 && style.vatRefundDays > 0)
             m_vatRefunds.push_back({o.playerId, bank, q.vatReclaimCr, m_day + style.vatRefundDays});
         lot.costBasisCr = -q.totalCr - (style.vatRefundDays > 0 ? q.vatReclaimCr * (1.0 - m_dealRules.vatRefundFeeShare) : 0.0);
@@ -1518,10 +1620,11 @@ game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t
             const auto& c = m.cells[g];
             if (!c.traded)
                 continue;
-            const MarketSide side{c.priceCr, m.spread, c.stockT, c.targetT};
-            s.market.push_back({static_cast<int>(g), true, c.priceCr, bidCr(side), askCr(side), c.stockT, c.targetT,
+            std::string note;
+            const MarketSide side = regimeSide(m, static_cast<int>(g), playerId, &note);
+            s.market.push_back({static_cast<int>(g), true, side.priceCr, bidCr(side), askCr(side), c.stockT, c.targetT,
                                 hubTakesUpToT(side, m_dealRules), hubGivesUpToT(side, m_dealRules),
-                                c.anchorCr > 0.0 ? c.priceCr / c.anchorCr - 1.0 : 0.0});
+                                c.anchorCr > 0.0 ? side.priceCr / c.anchorCr - 1.0 : 0.0, side.fixedPriceCr, side.giveCapT, note});
         }
     }
     else

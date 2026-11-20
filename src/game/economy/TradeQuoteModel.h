@@ -63,6 +63,10 @@ struct MarketSide
     double spread = 0.1;
     double stockT = 0.0;
     double targetT = 0.0;
+    // the market regime (TRADE_DESIGN §2.5, step 8): a state price (planned / mobilization) - no deal impact, the spread
+    // only; a cap on what the hub sells (planned: the stock above the state's need; corridor: the day's ration), < 0 = none
+    double fixedPriceCr = 0.0;
+    double giveCapT = -1.0;
 };
 
 [[nodiscard]] double bidCr(const MarketSide& m);

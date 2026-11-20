@@ -22,6 +22,11 @@ struct ClientMarketRow
     double hubTakesUpToT = 0.0;  // the most the hub buys now ("склад полон" beyond)
     double hubGivesUpToT = 0.0;  // the most the hub sells now
     double drift = 0.0;          // price vs the cell's structural anchor
+    // the market regime (TRADE_DESIGN §2.5, step 8): the state price (0 = none), the cap on what the hub sells to THIS
+    // player (< 0 = none), a short note ("госцена", "по карточкам: 1.2 т на сегодня", "нет в продаже: госпотребность")
+    double fixedPriceCr = 0.0;
+    double giveCapT = -1.0;
+    std::string regimeNote;
 };
 
 struct ClientCargoLine

@@ -7240,3 +7240,22 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   due day 10275" -> "day 10275 DUE 1 779 Cr -> paid 1 779". The first run showed integer fields as 0 (fmt %d with a
   double) - fixed, re-captured.
 - Not in the minimal set (§9f): monthly advances, loss carry-forward, VAT on port services, stamp duty.
+
+## TRADE MVP step 8: market regimes (docs/TRADE_DESIGN.md §2.5, §9 row 8, §9g) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): regime by the polity's government (trade_fees.json regime_market + market_regimes): corridor
+  (Sol, Selva-Verde, Novo-Thebaid: basket food / water_gas / medical held in anchor x [0.9, 1.15] - in the daily step AND
+  in the deal / snapshot side from the first day; below 50 % of target a buyer's day ration max(1 t, 2 % stock)),
+  planned (state price anchor x [0.8, 1.0] hashed per polity / good / 360-day plan, no deal impact; the hub sells only
+  the stock above 70 % of target, "нет в продаже: госпотребность"), mobilization (planned for fuel / weapons / metals /
+  machinery), no_state, free. MarketSide fixedPriceCr / giveCapT (TradeQuoteModel), EconomyServer::regimeSide /
+  recordRation; ClientMarketRow fixedPriceCr / giveCapT / regimeNote (snapshot schema 56), the client deal preview uses
+  the same side; the market row shows the note.
+- Bugs found on the way: regime_market iterated items() of a temporary json (dangling - nothing loaded; the code
+  already warned about it); the build's assets copy is refreshed only by the full build (ninja EliteEconomyCheck alone
+  ran with the old trade_fees.json); the corridor applied only after a daily step (first live run showed -11 %).
+- Checks: EliteEconomyCheck 166/166 (testMarketRegimes: state price / cap / ration in the quote model; a planned hub
+  beacon.BCN-009-BR at the state price with the 70 % cap; a corporate hub untouched; Sol basket in the corridor after a
+  year).
+- LIVE (earth_orbital_hub docked, D:/tmp/regime8/01_f8_market_sol.png): the basket rows carry «цена в коридоре», food at
+  -10 % (was -11 % before the side clamp), other groups free.
+- Deferred (§9g): the pre-election ceiling, the black market / shadow orders and closed borders (step 9), requisition.

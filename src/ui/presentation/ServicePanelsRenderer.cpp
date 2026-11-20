@@ -937,7 +937,8 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
             std::string sub = g.groupRu + "  ·  запас " + grouped(q.stockT) + " т";
             if (i < page.marketLimits.size())
                 sub += "  ·  хаб берёт ≤ " + grouped(page.marketLimits[i].hubTakesUpToT) + " т, отпускает ≤ " +
-                       grouped(page.marketLimits[i].hubGivesUpToT) + " т";
+                       grouped(page.marketLimits[i].hubGivesUpToT) + " т" +
+                       (page.marketLimits[i].regimeNote.empty() ? std::string() : "  ·  " + page.marketLimits[i].regimeNote);
             t.textDrawPx(sub, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
             const std::string prices = "купить " + priceText(q.buyCr) + "   продать " + priceText(q.sellCr);
             t.textDrawPx(prices, listX + listW - t.measureTextPx(prices, small) - 10, y + 4, small, Text);

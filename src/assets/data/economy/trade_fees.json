@@ -24,6 +24,24 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "market_regimes": {
+  "note": "TRADE_DESIGN §2.5 (step 8). corridor: the basket's price held in anchor x [price_min, price_max]; below ration_below_stock_share of the target stock a buyer gets max(ration_min_t, ration_stock_share x stock) a day (rationing, not a price). planned: the state price = anchor x [state_price_min, state_price_max] (a hash per polity / good / plan period of plan_days), no deal impact; the hub sells only the stock above state_need_share x target ('нет в продаже' otherwise - Kornai's shortage economy). mobilization: planned for its groups only. The shadow price (the free cell price) keeps moving underneath - the black market of step 9 trades at it.",
+  "corridor": {"basket_groups": ["food", "water_gas", "medical"], "price_min": 0.9, "price_max": 1.15, "ration_below_stock_share": 0.5, "ration_min_t": 1.0, "ration_stock_share": 0.02},
+  "planned": {"state_price_min": 0.8, "state_price_max": 1.0, "plan_days": 360, "state_need_share": 0.7},
+  "mobilization": {"groups": ["fuel", "weapons", "metals", "machinery"]}
+ },
+ "regime_market": {
+  "sol_authority": "corridor",
+  "grandees_and_church": "corridor",
+  "synod_theocracy": "corridor",
+  "party_technocracy": "planned",
+  "sage_council": "planned",
+  "machine_oracle": "planned",
+  "caste_theocracy": "planned",
+  "security_oligarchy": "mobilization",
+  "none_quiet": "no_state",
+  "no_state": "no_state"
+ },
  "regime_style": {
   "parliamentary_bureaucracy": "bureaucratic",
   "sol_authority": "bureaucratic",

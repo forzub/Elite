@@ -283,6 +283,25 @@ private:
         std::vector<double> transportCrT;   // delivery cost from the nearest producer (fuel goods)
     };
     void stepDay(int day);
+    // the market regime (TRADE_DESIGN §2.5, step 8): "free" | "corridor" | "planned" | "mobilization" | "no_state"
+    [[nodiscard]] std::string marketRegimeOf(const std::string& polity) const;
+    // the side a deal / the snapshot sees: the cell + the regime (the state price, the cap; for a player the day's
+    // ration left); `note` = the short line for the market row
+    [[nodiscard]] MarketSide regimeSide(const HubMarket& m, int good, std::uint64_t playerId, std::string* note) const;
+    void recordRation(const HubMarket& m, int good, std::uint64_t playerId, double tonnes);
+    struct MarketRegimeRules
+    {
+        std::vector<std::string> corridorGroups {"food", "water_gas", "medical"};
+        double corridorMin = 0.9, corridorMax = 1.15;
+        double rationBelowStockShare = 0.5, rationMinT = 1.0, rationStockShare = 0.02;
+        double stateMin = 0.8, stateMax = 1.0;
+        int planDays = 360;
+        double stateNeedShare = 0.7;
+        std::vector<std::string> mobilizationGroups {"fuel", "weapons", "metals", "machinery"};
+    };
+    MarketRegimeRules m_regimeRules;
+    std::unordered_map<std::string, std::string> m_regimeMarket;           // government regime -> market regime
+    std::map<std::string, std::pair<int, double>> m_rationUsed;            // player|hub|good -> (day, tonnes bought)
     [[nodiscard]] int goodIndex(const std::string& id) const;
     [[nodiscard]] const HubMarket* marketFor(const std::string& hubId, int systemId, int good, bool& systemReference) const;
     [[nodiscard]] std::string bankOf(const std::string& hubId, int systemId) const;

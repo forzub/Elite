@@ -8,12 +8,12 @@ namespace game::economy
 {
 double bidCr(const MarketSide& m)
 {
-    return m.priceCr * (1.0 - 0.5 * m.spread);
+    return (m.fixedPriceCr > 0.0 ? m.fixedPriceCr : m.priceCr) * (1.0 - 0.5 * m.spread);
 }
 
 double askCr(const MarketSide& m)
 {
-    return m.priceCr * (1.0 + 0.5 * m.spread);
+    return (m.fixedPriceCr > 0.0 ? m.fixedPriceCr : m.priceCr) * (1.0 + 0.5 * m.spread);
 }
 
 double hubTakesUpToT(const MarketSide& m, const TradeDealRules& r)
@@ -23,19 +23,22 @@ double hubTakesUpToT(const MarketSide& m, const TradeDealRules& r)
 
 double hubGivesUpToT(const MarketSide& m, const TradeDealRules& r)
 {
-    return std::max(0.0, m.stockT - r.minStockShare * m.targetT);
+    const double base = std::max(0.0, m.stockT - r.minStockShare * m.targetT);
+    return m.giveCapT >= 0.0 ? std::min(base, m.giveCapT) : base;
 }
 
 double sellUnitCr(const MarketSide& m, double tonnes, const TradeDealRules& r)
 {
     const double s = std::max(m.stockT, r.minStockShare * m.targetT);
-    if (!(s > 0.0))
+    if (!(s > 0.0) || m.fixedPriceCr > 0.0)   // a state price does not move with the deal
         return bidCr(m);
     return bidCr(m) * std::pow(s / (s + r.kappa * std::max(0.0, tonnes) * 0.5), r.stockExponent);
 }
 
 double buyUnitCr(const MarketSide& m, double tonnes, const TradeDealRules& r)
 {
+    if (m.fixedPriceCr > 0.0)
+        return askCr(m);
     const double s = std::max(m.stockT, 1.0e-9);
     const double after = std::max(s - r.kappa * std::max(0.0, tonnes) * 0.5, std::max(r.minStockShare * m.targetT, 1.0e-9));
     return askCr(m) * std::pow(s / std::min(s, after), r.stockExponent);

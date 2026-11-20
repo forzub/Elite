@@ -188,6 +188,20 @@ public:
     [[nodiscard]] std::string legalityFor(std::uint64_t playerId, int good, const std::string& hubId, int systemId) const;
     [[nodiscard]] std::string licenceForGood(const std::string& goodId) const;   // "" = none lists it
     [[nodiscard]] bool hasLicence(std::uint64_t playerId, const std::string& polity, const std::string& type) const;
+    // ---- ship arrest (ECONOMY_BANKING 2026-11-20, TRADE_DESIGN §11d): a debt overdue >= arrestAfterDays at the bank of
+    // the polity whose hub the ship docks at -> an exchange seizure (expensive modules swapped for the cheapest working
+    // ones by the caller, the difference sold at auctionShare); the proceeds repay that bank, the rest is the client's
+    struct ArrestClaim
+    {
+        bool due = false;
+        std::string bankId;
+        double debtCr = 0.0;
+        int overdueDays = 0;
+    };
+    [[nodiscard]] ArrestClaim arrestClaim(std::uint64_t playerId, const std::string& hubId, int systemId) const;
+    [[nodiscard]] double auctionShare() const { return m_auctionShare; }
+    void settleArrest(std::uint64_t playerId, const std::string& bankId, const std::string& hubId, double proceedsCr,
+                      const std::vector<std::string>& seized);
     // ---- cargo insurance (TRADE_DESIGN §3.6, step 13)
     struct InsuranceQuote
     {
@@ -381,7 +395,9 @@ private:
     };
     std::vector<CargoPolicy> m_cargoPolicies;
     double m_cargoPremiumShare = 0.004, m_deductibleShare = 0.10;
-    int m_insuranceDays = 30;   // market x good: held by the state (no speculation)
+    int m_insuranceDays = 30;
+    int m_arrestAfterDays = 90;
+    double m_auctionShare = 0.6;   // market x good: held by the state (no speculation)
     void stepNpcFlows(int day);
     // ---- smuggling (TRADE_DESIGN §2.8, step 9)
     struct SmugglingRules

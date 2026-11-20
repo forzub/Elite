@@ -514,6 +514,52 @@ const ShipDescriptor* configuredDescriptor(const ShipDescriptor& base, const std
     return d;
 }
 
+ExchangeSeizure exchangeSeizure(core::ShipCore& live, double targetCr, double auctionShare)
+{
+    struct Candidate
+    {
+        std::string moduleId, productId, label;
+        double gainCr = 0.0;
+    };
+    std::vector<Candidate> candidates;
+    const ShipDescriptor& d = live.descriptor();
+    for (const auto& m : d.modules)
+    {
+        const auto facts = moduleFacts(d, m.moduleId);
+        if (facts.productId.empty() || !(facts.priceCr > 0.0))
+            continue;
+        const auto list = compatibleReplacements(d, m.moduleId);
+        const RefitReplacement* cheapest = nullptr;   // into `list`
+        for (const auto& r : list)
+            if (!r.sameProduct && r.priceCr < facts.priceCr && (!cheapest || r.priceCr < cheapest->priceCr))
+                cheapest = &r;
+        if (cheapest)
+            candidates.push_back({m.moduleId, cheapest->productId, facts.productName + " -> " + cheapest->name, facts.priceCr - cheapest->priceCr});
+    }
+    // no excessive seizure (ZPO §803 Überpfändungsverbot): the smallest swap that alone covers what is left of the debt;
+    // when none does, the largest one, and again
+    ExchangeSeizure out;
+    while (out.proceedsCr < targetCr && !candidates.empty())
+    {
+        const double rest = targetCr - out.proceedsCr;
+        std::size_t pick = candidates.size();
+        for (std::size_t k = 0; k < candidates.size(); ++k)
+            if (candidates[k].gainCr * auctionShare >= rest && (pick == candidates.size() || candidates[k].gainCr < candidates[pick].gainCr))
+                pick = k;
+        if (pick == candidates.size())
+            for (std::size_t k = 0; k < candidates.size(); ++k)
+                if (pick == candidates.size() || candidates[k].gainCr > candidates[pick].gainCr)
+                    pick = k;
+        const Candidate c = candidates[pick];
+        candidates.erase(candidates.begin() + static_cast<std::ptrdiff_t>(pick));
+        if (!applyRefitOperation(live, {RefitOperationKind::Replace, c.moduleId, c.productId}).empty())
+            continue;
+        out.proceedsCr += c.gainCr * auctionShare;
+        out.seized.push_back(c.label);
+    }
+    return out;
+}
+
 std::string applyRefitOperation(core::ShipCore& live, const RefitOperation& operation)
 {
     const auto facts = moduleFacts(live.descriptor(), operation.moduleId);

@@ -162,6 +162,33 @@ int main()
               "the configured descriptor is shared and stable (the client resolves the same pointer from the overrides)");
     }
 
+    // ---- exchange seizure (ship arrest): the expensive modules go for the cheapest working ones until the debt is covered
+    {
+        auto s = spawn(*c120);
+        const double before = measureShip(*s, radar, 8.0).forwardAccelerationMps2;
+        const auto small = exchangeSeizure(*s, 50000.0, 0.6);
+        check(!small.seized.empty() && small.proceedsCr >= 50000.0 && small.proceedsCr < 500000.0 && s->productOverrides().size() == small.seized.size(),
+              "exchange seizure for 50 000 Cr: " + std::to_string(small.seized.size()) + " module(s) (" + (small.seized.empty() ? "" : small.seized[0]) +
+                  "), proceeds " + num(small.proceedsCr, 0) + " Cr");
+        // repeated seizures: a swap can make an even cheaper product compatible, prices only fall -> it converges
+        std::size_t total = 0;
+        int rounds = 0;
+        double proceeds = 0.0;
+        for (; rounds < 20; ++rounds)
+        {
+            const auto more = exchangeSeizure(*s, 1.0e12, 0.6);
+            if (more.seized.empty())
+                break;
+            total += more.seized.size();
+            proceeds += more.proceedsCr;
+        }
+        const auto after = measureShip(*s, radar, 8.0);
+        check(rounds < 20 && after.forwardAccelerationMps2 > 0.0,
+              "seize everything: " + std::to_string(total) + " more module(s) in " + std::to_string(rounds) + " round(s), +" +
+                  num(proceeds, 0) + " Cr, then nothing; the ship still flies (forward " + num(before, 3) + " -> " +
+                  num(after.forwardAccelerationMps2, 3) + " m/s2)");
+    }
+
     // ---- another drive: the live ship flies like the preview said
     {
         auto s = spawn(*c120);

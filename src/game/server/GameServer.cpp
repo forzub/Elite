@@ -527,6 +527,10 @@ m_simulation.setCelestialBodyKinematicStateAu(
                     (void)m_economy.takeCargoChange(shipKey);
                     applyCargoLoad(id);
                 }
+                // ship arrest (ECONOMY_BANKING 2026-11-20): a debt overdue at this polity's bank -> an exchange seizure
+                const int systemId = ship->core().transform().motion.systemId;
+                if (const auto claim = m_economy.arrestClaim(player, hubId, systemId); claim.due)
+                    arrestShip(id, player, hubId, claim);
             };
             bindings.shipKeyOf = [this](std::uint32_t shipEntityId) -> std::uint64_t {
                 const Ship* ship = m_simulation.getShip(EntityId{shipEntityId});
@@ -2506,6 +2510,20 @@ void GameServer::applyCargoLoad(EntityId id)
     std::cerr << "[Cargo] ship " << id.value << ": manifest " << net << " t net, " << boxes << " C20 (gross "
               << (manifest ? manifest->grossT() : 0.0) << " t) -> mass " << before << " -> " << after << " t; full-charge jump range "
               << jumpRangeLy(chargeT, before) << " -> " << jumpRangeLy(chargeT, after) << " ly" << std::endl;
+}
+
+// Exchange seizure (ZPO §811 Austauschpfändung, ECONOMY_BANKING 2026-11-20): the court swaps the catalog modules with the
+// largest price gap to their cheapest compatible working product until the auction proceeds cover the debt at that bank.
+// Uses the refit layer (per-instance configuration), so the ship stays flyable; nothing seizable -> left alone.
+void GameServer::arrestShip(EntityId id, std::uint64_t player, const std::string& hubId, const game::economy::EconomyServer::ArrestClaim& claim)
+{
+    Ship* ship = m_simulation.getShip(id);
+    if (!ship)
+        return;
+    const auto seizure = game::ship::refit::exchangeSeizure(ship->core(), claim.debtCr, m_economy.auctionShare());
+    const double proceeds = seizure.proceedsCr;
+    const std::vector<std::string>& seized = seizure.seized;
+    m_economy.settleArrest(player, claim.bankId, hubId, proceeds, seized);
 }
 
 void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEconomyCommand& command)

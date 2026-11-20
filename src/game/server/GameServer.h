@@ -416,6 +416,8 @@ public:
     // navigation data (JUMP_MECHANICS 10l): a bank record into the computer / onto a carrier, a carrier into the computer
     void handleNavDataCommand(EntityId id, int op, const std::string& recordId, int carrier);
     // the trade layer (TRADE_DESIGN steps 1-2): a Buy / Sell / DEV cargo request of ship `id`
+    void arrestShip(EntityId id, std::uint64_t player, const std::string& hubId,
+                    const game::economy::EconomyServer::ArrestClaim& claim);
     void handleEconomyCommand(EntityId id, const game::network::ClientEconomyCommand& command);
     // the simulation's cargo mass follows the server manifest (net tonnes + the C20 boxes, tare in the mass model)
     void applyCargoLoad(EntityId id);

@@ -162,4 +162,14 @@ std::string applyRefitOperation(core::ShipCore& live, const RefitOperation& oper
 // the catalog `base` with every "moduleId=productId" override applied in order - how a client resolves a configured
 // ship (the overrides travel in ShipRefitSnapshot::productOverrides); base itself when the list is empty
 [[nodiscard]] const ShipDescriptor* configuredDescriptor(const ShipDescriptor& base, const std::vector<std::string>& overrides);
+
+// Exchange seizure (ZPO §811 Austauschpfändung; ECONOMY_BANKING 2026-11-20 ship arrest): the catalog modules with the
+// largest price gap to their cheapest compatible (working) product are swapped on the live ship until the auction
+// proceeds (gap x auctionShare) cover targetCr. Nothing seizable (a legacy hull, already-cheapest modules) -> no change.
+struct ExchangeSeizure
+{
+    double proceedsCr = 0.0;
+    std::vector<std::string> seized;   // "old product -> new product"
+};
+ExchangeSeizure exchangeSeizure(core::ShipCore& live, double targetCr, double auctionShare);
 } // namespace game::ship::refit

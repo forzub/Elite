@@ -24,6 +24,11 @@
   "security":     {"ru": "силовой",         "vat": 0.12, "vat_refund_days": 30, "turnover": 0.0, "turnover_ru": "", "port_index": 1.2, "duty": 0.08, "income_tax": 0.20, "tax_admin_fee": 0.0},
   "clan":         {"ru": "клановый",        "vat": 0.0,  "vat_refund_days": 0,  "turnover": 0.03, "turnover_ru": "взнос артели", "port_index": 0.8, "duty": 0.02, "income_tax": 0.0, "tax_admin_fee": 0.0}
  },
+ "arrest": {
+  "note": "ECONOMY_BANKING 2026-11-20 (author: «могут тупо арестовать корабль и спустить его с молотка»), TRADE_DESIGN §11d, minimal set. A ship docking at a hub of the polity whose bank holds a debt of the player overdue >= after_days is arrested at once: an exchange seizure (ZPO §811 Austauschpfändung) - the court swaps the most expensive catalog modules for the cheapest compatible working products (largest price gap first) until the proceeds cover that bank's debt; the gap sells at auction_share (judicial sales ~60 %); the proceeds repay the bank, the rest goes to the client. The ship is not detained (no stranding) and stays flyable; a hull with nothing seizable (the legacy Cobra, already-cheapest modules) is left alone - the tool of trade is protected.",
+  "after_days": 90,
+  "auction_share": 0.6
+ },
  "insurance": {
   "note": "TRADE_DESIGN §3.6 (step 13, minimal set). Cargo insurance bought at a berth (F8 ГРУЗ): covers the player's own lots aboard at that moment for days_valid days; premium = cargo_premium_share x value x (1 + 2 x risk) (risk 0 until routes carry one); value = the hub's mid price x tonnes (the good's base price where it is not traded). A loss of the ship (combat, impact, atmosphere, crush) pays (1 - deductible_share) of the insured lots that were lost; contraband (banned here, restricted without the licence) cannot be insured. Hull insurance needs the ship's value and the ship change base - deferred.",
   "cargo_premium_share": 0.004,

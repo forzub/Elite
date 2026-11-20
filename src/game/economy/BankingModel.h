@@ -268,6 +268,14 @@ PaymentResult payOrDebt(ClientLedger& ledger, const BankDirectory& dir, const st
 void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& payerBank, double amountCr, int day,
              const std::string& memo);
 
+// Proceeds applied to the client's debts at `bankId` (a court sale, ECONOMY_BANKING 2026-11-20): arrears first, then the
+// outstanding of each loan there, then an overdrawn account there; returns what is left over, Cr (the caller pays it
+// to the client).
+double repayFromProceeds(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int day,
+                         const std::string& memo);
+// the client's debt at one bank, Cr (its loans + an overdrawn account there)
+[[nodiscard]] double debtAtBankCr(const ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId);
+
 // ---- credit
 [[nodiscard]] Minor annuityInstallment(Minor principal, double annualRate, int periods30d);
 // BANKING.md: limit = min(LTV x collateral, 3 x annual net income); rate = loanRate + risk premium

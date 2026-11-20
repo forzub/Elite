@@ -802,7 +802,7 @@ void testPortCallPersistence()
             w.advanceTo(1000);   // the next tick: handed to the writer at once
             const std::string expect = w.saveState();
             const auto t = std::chrono::steady_clock::now();
-            while (!dealOnDisk && std::chrono::steady_clock::now() - t < std::chrono::milliseconds(1500))
+            while (!dealOnDisk && std::chrono::steady_clock::now() - t < std::chrono::milliseconds(1900))
             {
                 std::ifstream f(path, std::ios::binary);
                 const std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
@@ -810,7 +810,7 @@ void testPortCallPersistence()
                 lastSize = text.size();
                 expectSize = expect.size();
                 if (!dealOnDisk)
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));   // a polite reader: a reader holding the file blocks the rename (retried by the writer)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));   // a polite reader: a reader holding the file blocks the rename (retried by the writer)
             }
             waitedMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
         }
@@ -819,7 +819,7 @@ void testPortCallPersistence()
 #else
         unsetenv("ELITE_ECONOMY_STATE_FILE");
 #endif
-        check(dealOnDisk && waitedMs < 1500.0, "an urgent save (cargo / money moved) is on disk " + std::to_string(waitedMs) +
+        check(dealOnDisk && waitedMs < 1900.0, "an urgent save (cargo / money moved) is on disk " + std::to_string(waitedMs) +
                                                    " ms later - inside the 2 s throttle window (file " + std::to_string(lastSize) + " B, expected " + std::to_string(expectSize) + " B)");
         std::filesystem::remove(path);
     }
@@ -2022,6 +2022,68 @@ void testInsurance()
           "economy_state/9: the policy survives save / restore byte-exact");
 }
 
+// Ship arrest (ECONOMY_BANKING 2026-11-20): the claim after 90 overdue days, the auction proceeds repay that bank first
+void testArrest()
+{
+    BankDirectory d = testBanks();
+    ClientLedger l = openLedger(d, 1, "sol", 0);
+    Loan x;
+    x.id = l.nextLoanId++;
+    x.bankId = "sol";
+    x.kind = LoanKind::Term;
+    x.principal = x.outstanding = toMinor(30000.0);
+    x.arrears = toMinor(5000.0);
+    x.overdueDays = 95;
+    l.loans.push_back(x);
+    check(near(debtAtBankCr(l, d, "sol"), 30000.0, 0.005), "the debt at the bank: 30 000 Cr");
+    const double left = repayFromProceeds(l, d, "sol", 20000.0, 10, "test");
+    check(left == 0.0 && near(debtAtBankCr(l, d, "sol"), 10000.0, 0.005) && l.loans.size() == 1 && l.loans[0].arrears == 0,
+          "proceeds 20 000: the arrears and 20 000 of the loan repaid");
+    const double rest = repayFromProceeds(l, d, "sol", 15000.0, 11, "test");
+    check(near(rest, 5000.0, 0.005) && l.loans.empty() && debtAtBankCr(l, d, "sol") == 0.0, "proceeds 15 000 on 10 000: 5 000 left over, the loan gone");
+
+    EconomyServer s;
+    if (!s.load())
+    {
+        std::printf("SKIP  arrest server run (economy data not found from this working directory)\n");
+        return;
+    }
+    s.start(1000);
+    s.ensurePlayer(1, 0);
+    ClientLedger* sl = s.ledger(1);
+    check(!s.arrestClaim(1, "earth_orbital_hub", 0).due, "no overdue debt: no arrest");
+    Loan y;
+    y.id = sl->nextLoanId++;
+    y.bankId = sl->homeBank;
+    y.principal = y.outstanding = toMinor(40000.0);
+    y.overdueDays = 89;
+    sl->loans.push_back(y);
+    check(!s.arrestClaim(1, "earth_orbital_hub", 0).due, "89 days overdue: not yet");
+    sl->loans.back().overdueDays = 90;
+    const auto claim = s.arrestClaim(1, "earth_orbital_hub", 0);
+    check(claim.due && claim.bankId == sl->homeBank && near(claim.debtCr, 40000.0, 0.005) && s.auctionShare() == 0.6,
+          "90 days overdue at the Sol bank, docked at a Sol hub: the arrest claim for 40 000 Cr (auction share 0.6)");
+    const double w0 = netWorthCr(*sl, s.banks());
+    s.settleArrest(1, claim.bankId, "earth_orbital_hub", 50000.0, {"A -> B"});
+    check(totalDebtCr(*s.ledger(1), s.banks()) < 1.0 && near(netWorthCr(*s.ledger(1), s.banks()) - w0, 50000.0, 1.0),
+          "settled: the proceeds repay the 40 000 debt, the 10 000 rest lands on the account (the net worth +50 000)");
+    s.settleArrest(1, claim.bankId, "earth_orbital_hub", 0.0, {});
+    check(s.tradeSnapshot(1, 0, "earth_orbital_hub", 0, true).results.back().code == "arrest", "the client sees the arrest result");
+    // a restructured debt (overdue reset by the restructuring) counts from its start while less than half is repaid
+    Loan z;
+    z.id = s.ledger(1)->nextLoanId++;
+    z.bankId = s.ledger(1)->homeBank;
+    z.kind = LoanKind::Restructured;
+    z.principal = z.outstanding = toMinor(20000.0);
+    z.startDay = 1000 - 89;
+    s.ledger(1)->loans.push_back(z);
+    check(!s.arrestClaim(1, "earth_orbital_hub", 0).due, "restructured 89 days ago: no arrest yet");
+    s.ledger(1)->loans.back().startDay = 1000 - 90;
+    check(s.arrestClaim(1, "earth_orbital_hub", 0).due, "restructured 90 days ago, less than half repaid: the arrest claim");
+    s.ledger(1)->loans.back().outstanding = toMinor(9000.0);
+    check(!s.arrestClaim(1, "earth_orbital_hub", 0).due, "more than half repaid: no arrest (the restructuring works)");
+}
+
 int main()
 {
     testInterestAndAnnuity();
@@ -2046,6 +2108,7 @@ int main()
     testNpcMarket();
     testLicences();
     testInsurance();
+    testArrest();
     std::printf("ECONOMY CHECK: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail;
 }

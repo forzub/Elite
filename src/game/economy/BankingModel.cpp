@@ -552,6 +552,55 @@ PaymentResult payOrDebt(ClientLedger& ledger, const BankDirectory& dir, const st
     return r;
 }
 
+double repayFromProceeds(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int day,
+                         const std::string& memo)
+{
+    const double fx = dir.fx(bankId);
+    Minor rest = toMinor(std::max(0.0, amountCr) * fx);
+    Minor paid = 0;
+    for (auto& l : ledger.loans)
+    {
+        if (l.bankId != bankId || l.outstanding <= 0 || rest <= 0)
+            continue;
+        const Minor m = std::min(l.outstanding, rest);
+        l.outstanding -= m;
+        l.arrears = std::max<Minor>(0, l.arrears - m);
+        if (l.outstanding <= 0)
+        {
+            l.outstanding = 0;
+            l.arrears = 0;
+            l.overdueDays = 0;
+        }
+        rest -= m;
+        paid += m;
+    }
+    if (Account* a = findAccount(ledger, bankId); a && a->balance < 0 && rest > 0)
+    {
+        const Minor m = std::min(-a->balance, rest);
+        a->balance += m;
+        rest -= m;
+        paid += m;
+        if (a->balance >= -a->overdraftLimit)
+            a->overdueDays = 0;
+    }
+    ledger.loans.erase(std::remove_if(ledger.loans.begin(), ledger.loans.end(), [](const Loan& l) { return l.outstanding <= 0; }),
+                       ledger.loans.end());
+    if (paid > 0)
+        logEvent(ledger, day, memo + ": долг погашен на " + money(toUnits(paid), dir.bank(bankId) ? dir.bank(bankId)->code : std::string("CR")));
+    return toUnits(rest) / fx;
+}
+
+double debtAtBankCr(const ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId)
+{
+    Minor debt = 0;
+    for (const auto& l : ledger.loans)
+        if (l.bankId == bankId)
+            debt += std::max<Minor>(0, l.outstanding);
+    if (const Account* a = findAccount(ledger, bankId); a && a->balance < 0)
+        debt += -a->balance;
+    return toUnits(debt) / dir.fx(bankId);
+}
+
 Loan* takeLoan(ClientLedger& ledger, const BankDirectory& dir, const std::string& bankId, double amountCr, int termDays,
                double extraRate, int day)
 {

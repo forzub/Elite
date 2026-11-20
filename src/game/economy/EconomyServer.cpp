@@ -32,6 +32,8 @@ namespace game::economy
 
 // Atomic replace (audit 2026-11-19): the accounts were rewritten in place (trunc) - a crash mid-write left a file the
 // next start read as "unreadable, fresh state", silently zeroing every account. Write <file>.tmp, flush, then replace.
+thread_local unsigned long g_lastWriteError = 0;   // the last Win32 error of writeFileAtomically (diagnostics)
+
 bool writeFileAtomically(const std::string& path, const std::string& text)
 {
     const std::string tmp = path + ".tmp";
@@ -39,7 +41,7 @@ bool writeFileAtomically(const std::string& path, const std::string& text)
     // the data reaches the disk (FlushFileBuffers) before the replace: a power loss cannot leave an empty file
     const std::wstring from = std::filesystem::path(tmp).wstring(), to = std::filesystem::path(path).wstring();
     HANDLE h = CreateFileW(from.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (h == INVALID_HANDLE_VALUE)
+    if (h == INVALID_HANDLE_VALUE && (g_lastWriteError = GetLastError(), true))
         return false;
     DWORD written = 0;
     const bool ok = WriteFile(h, text.data(), static_cast<DWORD>(text.size()), &written, nullptr) && written == text.size() &&
@@ -50,7 +52,10 @@ bool writeFileAtomically(const std::string& path, const std::string& text)
         DeleteFileW(from.c_str());
         return false;
     }
-    return MoveFileExW(from.c_str(), to.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+    const bool moved = MoveFileExW(from.c_str(), to.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+    if (!moved)
+        g_lastWriteError = GetLastError();
+    return moved;
 #else
     {
         std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
@@ -278,7 +283,7 @@ struct EconomyServer::StateWriter
             // on Windows): retry briefly; still failing - keep this state queued unless a newer one arrived meanwhile
             // (TRADE step 17: found by the urgent-save check - a reader made the save silently drop the deal)
             bool ok = false;
-            for (int attempt = 0; attempt < 20 && !ok; ++attempt)
+            for (int attempt = 0; attempt < 40 && !ok; ++attempt)   // ~3 s: 10 x 20 ms, then 30 x 100 ms
             {
                 ok = writeFileAtomically(path, text);
                 if (!ok)
@@ -292,7 +297,7 @@ struct EconomyServer::StateWriter
                 }
             }
             if (!ok)
-                std::cerr << "[EconomyServer] state NOT saved to " << path << " (the previous file is kept)" << '\n';
+                std::cerr << "[EconomyServer] state NOT saved to " << path << " (the previous file is kept; Win32 error " << g_lastWriteError << ")" << '\n';
             if (saveTiming())
                 std::cerr << "[EconomySave] writer: " << text.size() << " B, markets + board + dump " << 1000.0 * (t1 - t0) << " ms, write "
                           << 1000.0 * (steadyS() - t1) << " ms (background)" << '\n';
@@ -548,6 +553,9 @@ bool EconomyServer::load()
             st.taxAdminFeeShare = num(s, "tax_admin_fee", 0.0);
             m_styles[id] = st;
         }
+        const json arrest = fees.value("arrest", json::object());
+        m_arrestAfterDays = std::max(1, static_cast<int>(num(arrest, "after_days", m_arrestAfterDays)));
+        m_auctionShare = std::clamp(num(arrest, "auction_share", m_auctionShare), 0.0, 1.0);
         const json ins = fees.value("insurance", json::object());
         m_cargoPremiumShare = num(ins, "cargo_premium_share", m_cargoPremiumShare);
         m_deductibleShare = num(ins, "deductible_share", m_deductibleShare);
@@ -969,6 +977,65 @@ void EconomyServer::stepNpcFlows(int day)
         std::cerr << "[NpcFlows] day " << day << ": " << shipped << " shipments today (" << grouped(tonnes) << " t), "
                   << m_npcShipments.size() << " in flight, step " << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()
                   << " ms" << '\n';
+}
+
+// ---------------------------------------------------------------- ship arrest (ECONOMY_BANKING 2026-11-20, TRADE_DESIGN §11d)
+EconomyServer::ArrestClaim EconomyServer::arrestClaim(std::uint64_t playerId, const std::string& hubId, int systemId) const
+{
+    ArrestClaim c;
+    const ClientLedger* l = ledger(playerId);
+    const auto* bank = m_banks.bankForPolity(polityOf(hubId, systemId));
+    if (!l || !bank)
+        return c;
+    c.bankId = bank->id;
+    for (const auto& loan : l->loans)
+        if (loan.bankId == bank->id)
+        {
+            c.overdueDays = std::max(c.overdueDays, loan.overdueDays);
+            // a restructured debt is never "overdue" (the 60-day restructuring resets it): it counts from its start
+            // while less than half of it was repaid - ~5 months after the first missed payment
+            if (loan.kind == LoanKind::Restructured && loan.outstanding * 2 >= loan.principal)
+                c.overdueDays = std::max(c.overdueDays, m_day - loan.startDay);
+        }
+    if (const Account* a = findAccount(*l, bank->id))
+        c.overdueDays = std::max(c.overdueDays, a->overdueDays);
+    c.debtCr = debtAtBankCr(*l, m_banks, bank->id);
+    c.due = c.overdueDays >= m_arrestAfterDays && c.debtCr > 0.0;
+    return c;
+}
+
+void EconomyServer::settleArrest(std::uint64_t playerId, const std::string& bankId, const std::string& hubId, double proceedsCr,
+                                 const std::vector<std::string>& seized)
+{
+    ClientLedger* l = ledger(playerId);
+    if (!l)
+        return;
+    const std::string where = hubDisplayName(hubId);
+    const double before = debtAtBankCr(*l, m_banks, bankId);
+    double left = 0.0;
+    if (proceedsCr > 0.0)
+        left = repayFromProceeds(*l, m_banks, bankId, proceedsCr, m_day, "арест в порту " + where + ", торги");
+    if (left > 0.005)
+        receive(*l, m_banks, bankId, left, m_day, "остаток выручки от торгов после погашения долга");
+    const double after = debtAtBankCr(*l, m_banks, bankId);
+    std::string list;
+    for (const auto& s : seized)
+        list += (list.empty() ? "" : "; ") + s;
+    logEvent(*l, m_day, seized.empty() ? "арест в порту " + where + ": изымать нечего (орудие труда защищено), долг " + grouped(after) + " Cr"
+                                       : "арест в порту " + where + " (обменный): " + list + "; выручка " + grouped(proceedsCr) +
+                                             " Cr, долг " + grouped(before) + " -> " + grouped(after) + " Cr");
+    game::simulation::ClientTradeResult r;
+    r.ok = false;
+    r.code = "arrest";
+    r.totalCr = proceedsCr;
+    r.message = seized.empty() ? "арест: изымать нечего, долг " + grouped(after) + " Cr"
+                               : "арест: заменено " + std::to_string(seized.size()) + " модул., выручка " + grouped(proceedsCr) + " Cr, долг " +
+                                     grouped(after) + " Cr";
+    pushResult(playerId, r);
+    saveNow("ship arrest");
+    std::cerr << "[Arrest] player " << playerId << " at " << hubId << ": " << seized.size() << " module(s) exchanged, proceeds "
+              << grouped(proceedsCr) << " Cr, debt " << grouped(before) << " -> " << grouped(after) << " Cr, left to the client "
+              << grouped(left) << " Cr" << '\n';
 }
 
 // ---------------------------------------------------------------- cargo insurance (TRADE_DESIGN §3.6, step 13)

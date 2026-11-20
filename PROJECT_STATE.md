@@ -7376,3 +7376,21 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
   shell keeps the configured descriptor but a re-materialized core starts with an empty override list (the client
   then shows the catalog product); a player ship's radar stays the synthetic ideal sensor (pre-existing rule); refit
   apply is still free (payment is the next layer); the Cobra hull cannot be reconfigured.
+
+## Ship arrest - exchange seizure (ECONOMY_BANKING 2026-11-20, TRADE_DESIGN §11d) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built on base 1: at a berth of the polity whose bank holds a debt overdue >= 90 days (a restructured debt counts from
+  its start while < half repaid - the restructuring resets "overdue", found while designing the claim) the court does an
+  exchange seizure: refit::exchangeSeizure swaps catalog modules for their cheapest compatible working products, the
+  smallest swap that covers the rest first (no excessive seizure, ZPO §803; the first version sold the 1.79 M Cr jump
+  core for a 50 000 Cr debt), the gap sells at 60 %; BankingModel::repayFromProceeds repays that bank (arrears first),
+  the rest goes to the client; the ship is not detained and stays flyable. GameServer::arrestShip from the berth
+  binding; EconomyServer::arrestClaim / settleArrest; trade_fees.json "arrest".
+- Checks: EliteEconomyCheck 224/224 (testArrest: repay order, the 89 / 90-day and restructured claims, settlement),
+  EliteRepairRefitCheck PASS (50 000 debt -> life support L-20 -> OFU-O4, proceeds 54 000; seize everything -> 46
+  modules in 2 rounds, the C-120 still flies 6.70 -> 2.46 m/s2), ServicePages / ShipCatalog PASS.
+- LIVE (D:/tmp/arrest/run.log): econ:spendall + 160 economy days (delinquent -> restructured) -> docked at Высокий ->
+  "[Arrest] player 1 at earth_orbital_hub: 0 module(s) exchanged ... debt 4 466 -> 4 466 Cr" - the player flies the
+  legacy Cobra: nothing seizable, the tool of trade is left alone (by design).
+- Observed: the step-17 urgent-save check failed 3 of 5 runs right after a build (the rename refused for ~1.2-2 s -
+  most likely Defender scanning the fresh 650 KB file) and passed 9 of 9 on an idle machine. Writer retries extended
+  to ~3 s; a failed write now logs the Win32 error code. Recorded as a load-dependent risk.

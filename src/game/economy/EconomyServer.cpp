@@ -1141,7 +1141,17 @@ game::simulation::ClientTradeResult EconomyServer::orderBotLoop(std::uint64_t pl
                 continue;
             if (legalityFor(playerId, static_cast<int>(g), from, systemId) != "legal" || legalityFor(playerId, static_cast<int>(g), m.hubId, systemId) != "legal")
                 continue;
-            const double margin = (bidCr(b) - askCr(a)) / std::max(1.0, askCr(a));
+            // the NET margin of a 20 t trip priced like the server will charge it: handling, VAT (minus what comes back),
+            // the import duty and the turnover tax, plus the two dockings of the round trip (step-15 balance note: the list
+            // margin picked loops the fees ate)
+            const double q = 20.0;
+            const DealQuote buyQ = explainDeal(true, a, q, fiscalStyleOf(from, systemId), m_dealRules, 0.0);
+            const DealQuote sellQ = explainDeal(false, b, q, fiscalStyleOf(m.hubId, systemId), m_dealRules, importDutyRate(from, m.hubId, systemId));
+            if (!buyQ.ok || !sellQ.ok)
+                continue;
+            const double cost = -buyQ.totalCr - buyQ.vatReclaimCr * (1.0 - m_dealRules.vatRefundFeeShare) +
+                                2.0 * dockingFeeCr(260.0, fiscalStyleOf(from, systemId), m_dealRules);
+            const double margin = (sellQ.totalCr - cost) / std::max(1.0, cost);
             if (margin > bestMargin)
             {
                 bestMargin = margin;

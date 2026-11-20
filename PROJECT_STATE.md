@@ -7531,3 +7531,6 @@ Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight,
 - Not covered: damage / wear / cargo mass of a restored ship (the manifest is the economy's and restores), the
   bootstrap ships and the DEV lineup (not runtime ships), ships in free space away from a hub (saved with their last
   hub frame).
+- (2026-11-20, later) Bot loop choice by the NET margin: a 20 t trip priced by explainDeal on both ends (handling, VAT
+  minus what comes back, duty, turnover) plus two dockings; the Sol test loop moved from fertilizers (list 20 %) to
+  household goods (net 17.6 %), trips over 10 days +5 907 Cr. EliteEconomyCheck 234/234.

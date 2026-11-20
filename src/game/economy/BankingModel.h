@@ -95,7 +95,7 @@ struct BankRules
     double garnishShare = 0.25;
     // the protected minimum (TRADE_DESIGN §1.3, author 2026-11-19 §11 item 6): a garnish never takes the client's free
     // money below this, Cr - a round trip's fuel and docking, so a pilot in debt can always fly and earn
-    double garnishProtectedCr = 6100.0;
+    double garnishProtectedCr = 6100.0;   // the unit tests (testBanks); the live value is national_banks.json (2 400 Cr)
     double inDuplumCap = 1.0;
     double lifelineLimitCr90d = 25000.0;
     int lifelineFreeDays = 90;

@@ -54,6 +54,9 @@ struct HubPlanModule
     int padPlaces = 1;
     glm::dvec3 padOrigin {0.0};   // where the pad module stands (city frame; HubPlanPads.h)
     double padYawDeg = 0.0;       // its turn about +Y (a garage: its hangar toward the building)
+    // the pad's service (author 2026-11-21: «в дорогих объектах - автоматическая посадка, в дешёвых и трущобах - ручная»):
+    // true = entering its capture zone lands the ship (the pad's service); false = the pilot lands by hand
+    bool autoLanding = false;
 };
 
 struct HubPlanStreet

@@ -191,6 +191,10 @@ m_systemMapRenderer.render(
         // the bottom camera: wide format, the frame letterboxed to 2.35:1
         if (m_activeCameraMode == ShipCameraMode::Bottom)
         {
+            // the landing guide: the hub's zones and the pads' capture boxes (no markers, no panel - a camera view)
+            if (m_client && m_activeMainCamera)
+                m_hubCorridorHudRenderer.render(m_client->world(), playerShip, m_activeMainCamera->viewMatrix(),
+                                                m_activeMainCamera->projectionMatrix(), vp);
             const float band = std::max(0.0f, 0.5f * (static_cast<float>(vp.height) - static_cast<float>(vp.width) / 2.35f));
             TextRenderer::instance().solidRectPx(0.0f, 0.0f, static_cast<float>(vp.width), band, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
             TextRenderer::instance().solidRectPx(0.0f, static_cast<float>(vp.height) - band, static_cast<float>(vp.width), band,

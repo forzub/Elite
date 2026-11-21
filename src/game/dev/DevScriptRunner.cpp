@@ -804,6 +804,15 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         msg.payload = command;
         s.m_client->sendMessage(msg);
     }
+    // "gear": the landing legs out / in (G)
+    else if (cmd == "gear")
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::ToggleLandingGear;
+        msg.payload = command;
+        s.m_client->sendMessage(msg);
+    }
     // navigation data (JUMP_MECHANICS 10l): "navdata:load:<record id>" into the computer, "navdata:carrier:<record id>"
     // onto a new carrier, "navdata:insert:<carrier number>"; shown in F5 ("service:government")
     else if (cmd.rfind("navdata:", 0) == 0)

@@ -46,8 +46,9 @@
             QuitJob,                // F5: back to the pilot's own ship (within 20 km)
             DevFullRestore,         // TEMPORARY (author 2026-11-21): Ctrl+Alt+R - the ship fully restored (structure,
                                     //     reactors, containment, heat, spin, "out of the fight" cleared)
-            LandOnPad               // a hub city pad (author 2026-11-21): index 1 = land at target = the city frame module,
+            LandOnPad,              // a hub city pad (author 2026-11-21): index 1 = land at target = the city frame module,
                                     //     detail = the building address ("B4-07"); index 0 = the pilot takes the controls
+            ToggleLandingGear       // G in flight (author 2026-11-21): the landing legs out / in (a broken set stays broken)
         };
         Type type;
 

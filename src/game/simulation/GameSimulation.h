@@ -106,6 +106,8 @@ public:
     // a hub city pad (ClientShipCommand::LandOnPad; GameSimulationPadLanding.cpp): land = the pad service flies the ship
     // there and holds it; !land = the pilot takes the controls
     bool requestPadLanding(EntityId shipId, const std::string& frameModuleId, const std::string& address, bool land);
+    // G (author 2026-11-21): the landing legs out / in; a broken set stays broken (a repair restores it)
+    void toggleLandingGear(EntityId shipId);
     // DEV: every lane tube of a hub against its static objects' collision boxes ([LaneCheck] lines)
     void devLaneClearanceReport(const std::string& hubId) const;
     void debugResetAllShipStructures();
@@ -783,11 +785,18 @@ private:
         double speedMps = 0.0;
         double sinceS = 0.0;
         double logS = -1.0e9;
+        bool autoLanding = true;     // the pad's service lands the ship (false: brought over the zone and handed over)
+        double gearNagS = -1.0e9;
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time
     std::string padServiceStatus(EntityId shipId) const;   // ShipSnapshot::padService
     void updatePadLandings(double dt);
+    // the pads near the players: an automatic pad's capture zone takes a ship with its legs out; a hand-flown pad counts a soft
+    // touchdown on legs as landed; a hard one breaks the legs (GameSimulationPadLanding.cpp)
+    void updatePadTouchdowns(double dt);
+    bool startPadService(EntityId shipId, const std::string& frameModuleId, const std::string& address, int phase);
+    std::unordered_map<EntityId, std::uint8_t> m_landingGear;   // 0 in, 1 out, 2 broken (ShipSnapshot::landingGear)
     std::unordered_map<EntityId, LiveTraffic> m_liveTraffic;
     std::unordered_map<EntityId, TrafficSlot> m_trafficSlots;
     bool isScriptedTrafficShip(EntityId id) const noexcept;

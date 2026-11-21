@@ -9,6 +9,7 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/HubPlanPads.h"
 #include <vector>
 
 namespace render::cockpit
@@ -80,23 +81,29 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
             glm::dvec3 lo, hi;
         };
         std::vector<Box> blockers;
-        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
-            for (const auto& b : plan->blocks())
-            {
-                const double h = b.halfMeters;
-                blockers.push_back({glm::dvec3(b.centre.x - h, 0.0, b.centre.y - h),
-                                    glm::dvec3(b.centre.x + h, std::max(15.0, b.topHeightMeters), b.centre.y + h)});
-                if (b.underDepthMeters > 1.0)
-                    blockers.push_back({glm::dvec3(b.centre.x - h, -30.0 - b.underDepthMeters, b.centre.y - h),
-                                        glm::dvec3(b.centre.x + h, -30.0, b.centre.y + h)});
-            }
+        // each building of the plan by its own box (a block as one box hid everything from a ship flying low over it,
+        // live 2026-11-21); a box the pilot is inside does not count
         const glm::dmat3 Rt = glm::transpose(R);
         const glm::dvec3 eyeLocal = Rt * (playerMeters - origin);
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
+            for (const auto& m : plan->modules())
+            {
+                const glm::dvec3 lo(std::min(m.rect.x, m.rect.z), std::min(m.y0, m.y1), std::min(m.rect.y, m.rect.w));
+                const glm::dvec3 hi(std::max(m.rect.x, m.rect.z), std::max(m.y0, m.y1), std::max(m.rect.y, m.rect.w));
+                const bool inside = eyeLocal.x > lo.x && eyeLocal.x < hi.x && eyeLocal.y > lo.y && eyeLocal.y < hi.y &&
+                                    eyeLocal.z > lo.z && eyeLocal.z < hi.z;
+                if (!inside && hi.y - lo.y > 1.0)
+                    blockers.push_back({lo, hi});
+            }
         const auto hidden = [&](const glm::dvec3& world) {
             const glm::dvec3 p = Rt * (world - origin);
             const glm::dvec3 d = eyeLocal - p;
+            const glm::dvec3 segLo = glm::min(p, eyeLocal), segHi = glm::max(p, eyeLocal);
             for (const auto& bx : blockers)
             {
+                if (bx.hi.x < segLo.x || bx.lo.x > segHi.x || bx.hi.y < segLo.y || bx.lo.y > segHi.y || bx.hi.z < segLo.z ||
+                    bx.lo.z > segHi.z)
+                    continue;   // not on the way
                 double t0 = 1.0e-3, t1 = 1.0;   // strictly between the sample and the eye
                 bool miss = false;
                 for (int k = 0; k < 3 && !miss; ++k)
@@ -207,6 +214,41 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 seg(a, b, glm::vec4(tint, static_cast<float>(alpha * 0.45)), 1.0f);
             }
         }
+        // the PAD capture zones (author 2026-11-21: «прозрачный куб с белёсыми рёбрами, который появляется, когда до площадки
+        // остаётся метров 100»): an automatic pad's zone whitish, a hand-flown pad's amber; the deck outline under it
+        if (const auto* cityPlan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
+            for (const auto& m : cityPlan->modules())
+            {
+                if (!m.pad)
+                    continue;
+                const glm::dvec3 deck = toWorld(m.padPosition);
+                const double d = glm::length(deck - playerMeters);
+                if (d > game::navigation::HubPadZoneShowMeters)
+                    continue;
+                const double fade = std::clamp((game::navigation::HubPadZoneShowMeters - d) / 30.0, 0.0, 1.0);
+                const glm::vec3 tint = m.autoLanding ? glm::vec3(0.90f, 0.95f, 1.00f) : glm::vec3(1.00f, 0.75f, 0.35f);
+                const glm::vec4 edge(tint, static_cast<float>(0.55 * fade));
+                const double s = game::navigation::HubPadZoneHalf, hgt = game::navigation::HubPadZoneHeight;
+                const double sy = m.under ? -1.0 : 1.0;
+                std::array<glm::dvec3, 8> c {};
+                for (int i = 0; i < 8; ++i)
+                    c[i] = toWorld(m.padPosition + glm::dvec3((i & 1) ? s : -s, (i & 2) ? sy * hgt : 0.0, (i & 4) ? s : -s));
+                for (int i = 0; i < 8; ++i)
+                    for (int bit = 1; bit < 8; bit <<= 1)
+                        if (!(i & bit) && !hidden((c[i] + c[i | bit]) * 0.5))
+                            seg(c[i], c[i | bit], edge, 1.4f);
+                const double half = 0.5 * game::navigation::HubPadDeckSide;
+                const glm::vec4 deckLine(tint, static_cast<float>(0.8 * fade));
+                const glm::dvec3 lift(0.0, sy * 0.3, 0.0);
+                const glm::dvec3 q0 = toWorld(m.padPosition + lift + glm::dvec3(-half, 0, -half)),
+                                 q1 = toWorld(m.padPosition + lift + glm::dvec3(half, 0, -half)),
+                                 q2 = toWorld(m.padPosition + lift + glm::dvec3(half, 0, half)),
+                                 q3 = toWorld(m.padPosition + lift + glm::dvec3(-half, 0, half));
+                seg(q0, q1, deckLine, 2.0f);
+                seg(q1, q2, deckLine, 2.0f);
+                seg(q2, q3, deckLine, 2.0f);
+                seg(q3, q0, deckLine, 2.0f);
+            }
         // RED zones: faint box edges
         for (const auto& zone : network->redZones())
         {

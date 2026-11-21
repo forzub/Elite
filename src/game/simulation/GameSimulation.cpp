@@ -1762,6 +1762,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         updateHubSecurity(dt);   // traffic control, promoted air traffic, collision avoidance, defence (docs/HUB_SECURITY.md)
         updateLiveTraffic(dt);   // traffic at the crosshair / in a fight -> real NPCs (GameSimulationCombat.cpp)
         updatePadLandings(dt);   // the hub city pad service (GameSimulationPadLanding.cpp)
+        updatePadTouchdowns(dt);   // the pads' capture zones, hand-flown touchdowns, the landing legs
         if (firstPass)
         {
             updateShipSimulationDetail(dt);
@@ -4016,6 +4017,8 @@ bool GameSimulation::debugFullRestoreShip(EntityId id)
     if (!ship)
         return false;
     const std::string prefix = std::to_string(id.value) + "#";
+    if (const auto g = m_landingGear.find(id); g != m_landingGear.end() && g->second == 2)
+        g->second = 1;   // the broken landing legs repaired (out)
     for (auto it = m_containment.begin(); it != m_containment.end();)
         it = it->shipId == id ? m_containment.erase(it) : std::next(it);
     for (auto it = m_explodedReactors.begin(); it != m_explodedReactors.end();)

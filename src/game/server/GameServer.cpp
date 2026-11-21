@@ -1532,6 +1532,10 @@ void GameServer::update(double dt)
                     m_simulation.debugFullRestoreShip(id);
                     break;
 
+                case ClientShipCommand::ToggleLandingGear:   // G: the landing legs
+                    m_simulation.toggleLandingGear(id);
+                    break;
+
                 case ClientShipCommand::LandOnPad:   // a hub city pad: land (index 1) / the pilot takes over (0)
                     (void)m_simulation.requestPadLanding(id, shipCmd.target, shipCmd.detail, shipCmd.index != 0);
                     break;

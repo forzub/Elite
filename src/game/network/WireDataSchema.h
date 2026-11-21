@@ -861,7 +861,8 @@ ELITE_WIRE_SCHEMA(
     v.traffic,
     v.refit,
     v.combat,
-    v.padService
+    v.padService,
+    v.landingGear
 );
 
 ELITE_WIRE_SCHEMA(

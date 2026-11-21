@@ -23,6 +23,11 @@ inline constexpr double HubPadDeckSide = 36.0;          // hubl_pad_roof / hubl_
 inline constexpr double HubPadRoofDeckTop = 2.2;        // the roof pad's deck top over the roof
 inline constexpr double HubPadStiltsDeckTop = 25.0;     // the stilts pad's deck top over the plane
 inline constexpr double HubPadClearMeters = 30.0;       // a pad on a free plot: no building nearer than this
+// the pad's capture zone (author 2026-11-21: «прозрачный куб с белёсыми рёбрами, появляется когда до площадки метров
+// 100»): a box over the deck - half side, height; shown within HubPadZoneShowMeters of the pad
+inline constexpr double HubPadZoneHalf = 25.0;
+inline constexpr double HubPadZoneHeight = 60.0;
+inline constexpr double HubPadZoneShowMeters = 100.0;
 
 // the pad module folder of a building's pad ("" none)
 std::string hubPadModuleFolder(const HubPlanModule& m);
@@ -88,6 +93,10 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
         if (module.padKind == Kind::Garage)
             module.padPlaces = half >= 30.0 ? 2 : 1;
         module.pad = true;
+        // the expensive districts have the pad service (automatic landing), the cheap ones / the slums are hand-flown
+        const std::string& zone = blocks[k].zone;
+        module.autoLanding = zone == "downtown" || zone == "hotel" || zone == "residential" || zone == "services" ||
+                             zone == "canopy" || zone == "dock" || zone == "repair" || zone == "refuel";
     }
     // the free-plot pads (on legs, garages): the nearest free plot of the block on a 10 m grid - no building within
     // HubPadClearMeters, no other free-plot pad within twice that; none within 250 m: no pad

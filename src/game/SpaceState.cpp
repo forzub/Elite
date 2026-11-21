@@ -592,12 +592,38 @@ void SpaceState::updatePilotTakeover(bool touching)
         if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
         {
             const std::string& status = it->second.padService;
+            // the service holds the ship though this client did not ask (a capture zone, a hand-flown touchdown): the same
+            // 3 s takeover gives it back; nothing at all (no notice, no service): no takeover owner
+            if (status.rfind("phase:", 0) == 0 && m_padLandingObjectId.empty())
+                m_padLandingObjectId = "pad-service";
+            else if (status.empty() && !m_padLandingObjectId.empty() && glfwGetTime() - padRequestedAt > 2.0)
+                m_padLandingObjectId.clear();
+            if (status.rfind("pad:manual:", 0) == 0)
+                m_padLandingObjectId.clear();   // a hand-flown pad: the pilot flies now
             static std::string lastStatus;
             if (status != lastStatus)
             {
                 lastStatus = status;
                 std::string line;
-                if (status == "taken:flight")
+                if (status == "gear:out")
+                    line = "ОПОРЫ: выпущены";
+                else if (status == "gear:in")
+                    line = "ОПОРЫ: убраны";
+                else if (status == "gear:broken")
+                    line = "ОПОРЫ: сломаны - посадка невозможна до ремонта";
+                else if (status == "gear:broke_hard")
+                    line = "ОПОРЫ: СЛОМАНЫ при жёсткой посадке";
+                else if (status == "pad:gear_up")
+                    line = "СЛУЖБА ПЛОЩАДОК: выпустите опоры (G) - без них посадка не начнётся";
+                else if (status == "pad:no_gear")
+                    line = "ВНИМАНИЕ: посадка без опор (G)";
+                else if (status.rfind("pad:capture:", 0) == 0)
+                    line = "СЛУЖБА ПЛОЩАДОК: зона захвата - автоматическая посадка на " + status.substr(12);
+                else if (status.rfind("pad:manual:", 0) == 0)
+                    line = "СЛУЖБА ПЛОЩАДОК: площадка " + status.substr(11) + " ручная - садитесь сами, опоры выпущены?";
+                else if (status.rfind("pad:landed_manual:", 0) == 0)
+                    line = "ПОСАДКА: на площадке " + status.substr(18) + " (руль - взлёт)";
+                else if (status == "taken:flight")
                     line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
                 else if (status == "taken:frame")
                     line = "СЛУЖБА ПЛОЩАДОК: корабль взят в кадр хаба";
@@ -619,6 +645,15 @@ void SpaceState::updatePilotTakeover(bool touching)
                          : phase == '1' ? "СЛУЖБА ПЛОЩАДОК: над городом к площадке " + address
                          : phase == '2' ? "СЛУЖБА ПЛОЩАДОК: снижение на площадку " + address
                                         : "СЛУЖБА ПЛОЩАДОК: посадка выполнена, площадка " + address + " (руль - взлёт)";
+                }
+                // a phase line comes back after each short notice: printed once (no repeats of the same step)
+                static std::string lastPhaseLine;
+                if (status.rfind("phase:", 0) == 0)
+                {
+                    if (line == lastPhaseLine)
+                        line.clear();
+                    else
+                        lastPhaseLine = line;
                 }
                 if (!line.empty())
                 {
@@ -1136,6 +1171,16 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
     // Ctrl+J: the J engine on / off (the server refuses it near objects / below the J floor).
     // Ctrl+K: stabilization on / off (off = normal flight, no speed envelope; on = the hub /
     // own orbit / ground frame with the 500 m/s manoeuvre envelope; the server picks it).
+    // G: the landing legs out / in (author 2026-11-21: «выдвижные ноги-подставки ... их надо выпустить, только после этого -
+    // посадка»); the server decides (a broken set stays broken)
+    if (!ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_G) && m_client)
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::ToggleLandingGear;
+        msg.payload = command;
+        m_client->sendMessage(msg);
+    }
     const bool jChord = ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_J);
     const bool kChord = ctrlDown && !jChord && Input::instance().isKeyPressedOnce(GLFW_KEY_K);
     if(jChord || kChord)

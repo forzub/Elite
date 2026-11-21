@@ -91,6 +91,7 @@ struct ClientShipState
     game::ship::telemetry::ShipControlAuthorityTelemetry controlAuthorityTelemetry {};
     game::simulation::ShipDockDispatcherSnapshot      dockDispatcher;
     std::string padService;   // the hub city pad service (ShipSnapshot::padService)
+    std::uint8_t landingGear = 0;   // ShipSnapshot::landingGear: 0 in, 1 out, 2 broken
     game::simulation::ShipTrafficSnapshot             traffic;
     std::vector<game::damage::DamageEvent>           damageEvents;
 

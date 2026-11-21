@@ -117,4 +117,6 @@ struct ShipSnapshot
     // the hub city pad service for this ship (author 2026-11-21: its steps in the HUD terminal): "" none,
     // "taken" (normal flight off, taken into the hub frame), "phase:<0..3>:<address>", "refused:<reason>"
     std::string                                          padService;
+    // the landing legs (author 2026-11-21: «выдвижные ноги-подставки ... демпфирующие, могут сломаться»): 0 in, 1 out, 2 broken
+    std::uint8_t                                         landingGear = 0;
 };

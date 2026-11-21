@@ -7870,3 +7870,22 @@ start-up hitches (render), trade step 16 part 3 live.
   the block boxes, CPU); docked / flown by the station / the pad service: no lanes at all. NOT done: the station / dock
   modules as occluders (no client bounds for them yet - needs the model packages' bounds or the scene depth). LIVE:
   builds, the approach run shows the lanes above the city drawn, nothing more conclusive yet.
+- (2026-11-21) QUEUE 5 (pads: capture zone, auto / manual, landing legs). SOURCE: HubPlanModule::autoLanding by the
+  block's zone (downtown / hotel / residential / services / canopy / dock / repair / refuel = the pad service lands the
+  ship; industry / port / logistics / storage / power / rig / hab_rot = hand-flown). Capture zone HubPadZoneHalf 25 m x
+  HubPadZoneHeight 60 m over the deck, drawn (HubCorridorHudRenderer) within 100 m of the pad: whitish (automatic) /
+  amber (hand-flown) edges + the deck outline, occluded by the plan's buildings (each its own box now; a box the pilot
+  is inside does not count - one box per block hid everything from a ship low over it, found live). Landing legs: G
+  (ClientShipCommand::ToggleLandingGear, protocol 48), ShipSnapshot::landingGear (snapshot 69: 0 in / 1 out / 2 broken),
+  HUD terminal lines; Ctrl+Alt+R repairs broken legs. Server (GameSimulationPadLanding.cpp): the service holds over an
+  automatic pad until the legs are out ("выпустите опоры (G)" every 15 s); a hand-flown pad: brought to its zone top
+  and handed over ("площадка X ручная - садитесь сами"); updatePadTouchdowns: an automatic pad's zone takes a ship
+  flying in with legs out (pad:capture), a hand-flown pad counts a soft touchdown on legs (< 2.5 m/s) as landed and
+  holds it, >= 4 m/s breaks the legs, no legs -> warning (the hull contact is the ordinary collision); 15 s after the
+  pilot takes the controls back nothing captures him (take-off). The client treats a service it did not ask for (zone /
+  touchdown) as its own for the 3 s takeover. Bottom camera draws the zones / capture boxes (the landing guide).
+  LIVE (D:/tmp/pad): roof A2-03 (automatic) without legs - held over the pad with the legs prompt, DEV gear -> "ОПОРЫ:
+  выпущены" -> LANDED 208 s; garage A6-02 (hand-flown) - handed over at its zone top 145 s; F4 shows the amber deck
+  outline + zone box over the garage model, the front view the zone's edges. NOT verified live: a hand-flown
+  touchdown, the legs breaking, flying into an automatic zone by hand (need manual flight). Note: the zone deck outline
+  is the 36 m pad square also for garages (their apron is 22 / 40 x 20 m).

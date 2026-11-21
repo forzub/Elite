@@ -7910,3 +7910,11 @@ start-up hitches (render), trade step 16 part 3 live.
 - (2026-11-21) Author: player-founded hubs (a company pools money -> buys an asteroid / a licence -> founds and builds a
   hub; pirates - the same chain). Design PROPOSAL: docs/HUB_FOUNDING.md (company, site, project, construction driven by
   deliveries, operation, risks, pirates, the work order, 5 questions to the author). Nothing implemented.
+- (2026-11-21) Outpost kit for player / small settlements (author: «деревня на десяток ... генератор, очистка воды, ангары,
+  заправка, жилые, ремонтные модули»; «маяк пиратский - по расписанию»): tools/models/units/hub_outpost.py, 12 modules
+  hubo_core / reactor (~2 MW, boom + shadow shield + radiators) / water / hydro / hab (4-6) / hangar (1 ship) / fuel /
+  repair (box + 2 arms) / pad (24 m) / beacon / beacon_hidden (shuttered) / truss; generated + packaged + editor cards;
+  previews checked (the editor preview draws unknown new materials grey - the hydro glass is green in its .mtl). The
+  author's answers 1-6 recorded in docs/HUB_FOUNDING.md. NEXT: the outpost layout generator (a village from these
+  modules on an asteroid / a derelict / a truss), then the founding chain (company -> site -> order -> delivery ->
+  assembly), the city refuel / repair block rule.

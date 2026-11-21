@@ -1845,6 +1845,32 @@ void GameSimulation::collideShips(double dt)
                     markShipGraphDirty(X.id);
                     std::cerr << "[Collision] ship " << X.id.value << ": " << knocked << " link(s) torn - parts knocked loose" << std::endl;
                 }
+                // BREAK-UP by the specific energy the hull absorbed (author 2026-11-21: "why did a strong impact not break
+                // the ship into parts?"): ~2.5 kJ/kg = the full stop of a ~70 m/s impact - far beyond what a light hull's
+                // frames and joints take; every structural link tears, the parts fly off as fragments, the ship is out
+                // of the fight. (A fixed 3 GJ crush threshold was more than a 260 t ship's whole kinetic energy at hub
+                // speeds - it could never happen.)
+                constexpr double BreakUpJPerKg = 2500.0;
+                const double specificJkg = shipMJ * 1.0e6 / std::max(1.0e3, X.m);
+                if (!X.scripted && specificJkg >= BreakUpJPerKg && X.ship->core().transform().motion.destroyedCause != 4)
+                {
+                    int torn = 0;
+                    std::vector<std::string> ids;
+                    for (const auto& m : static_cast<const world::modules::ObjectModuleRuntime&>(X.ship->core().moduleRuntime()).modules())
+                        ids.push_back(m.moduleId);
+                    for (const auto& mod : ids)
+                        torn += X.ship->core().applyPartImpulse(mod, 1.0e7);
+                    markShipGraphDirty(X.id);
+                    disableShipIfCombatLost(X.id, *X.ship);
+                    auto& mo = X.ship->core().transform().motion;
+                    if (mo.destroyedCause == 0)
+                    {
+                        mo.destroyedCause = 3;   // out of the fight: a broken-up hull does not fly
+                        X.ship->setControlState(ShipControlState {});
+                    }
+                    std::cerr << "[Collision] ship " << X.id.value << ": BROKEN UP - " << static_cast<int>(specificJkg) << " J/kg absorbed ("
+                              << shipMJ << " MJ, " << X.m / 1000.0 << " t), " << torn << " link(s) torn" << std::endl;
+                }
                 const auto cause0 = X.ship->core().transform().motion.destroyedCause;
                 if (shipMJ > 3000.0 && (cause0 == 0 || cause0 == 3))   // a disabled hull can still be crushed
                 {

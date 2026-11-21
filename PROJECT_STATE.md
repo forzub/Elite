@@ -7718,3 +7718,10 @@ start-up hitches (render), trade step 16 part 3 live.
     (time-stretch, the braking limited to 15 m/s^2, pose continuous) and resumes when clear ("yields" / "resumes").
   * EliteDockTrafficCheck --yield-test: PASS (a Cobrett at 54 m/s stopped 106 m short of a ship 334 m ahead on its
     track, held 20 s, resumed); the regular 1 h run: 0 invariant / separation / structure violations.
+- (2026-11-21) D. "A strong impact did not break the ship into parts" - SOURCE + LIVE: the only whole-hull rule was a
+  FIXED 3 GJ crush - more than a 260 t ship's entire kinetic energy at hub speeds (1.6 GJ at 110 m/s), so it could not
+  happen; the author's 26 hits (<= 750 MJ = 2.9 kJ/kg) tore a few links only. NEW: break-up by the specific energy the
+  hull absorbed: >= 2.5 kJ/kg (the full stop of a ~70 m/s impact) -> every structural link torn (applyPartImpulse 1e7
+  on every module), the parts fly as detached fragments, the ship out of the fight (scripted traffic exempt). LIVE
+  (D:/tmp/ram/run.log): "ship 1548: BROKEN UP - 10852 J/kg absorbed (2821.74 MJ, 260 t), 137 link(s) torn" after
+  hitting station object 11 ('station_core_rear') at 150.9 m/s.

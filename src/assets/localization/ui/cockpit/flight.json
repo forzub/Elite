@@ -1640,6 +1640,13 @@
       "es": "SALIDA",
       "ja": "出港"
     },
+    "cockpit.dock_widget.title_pad_landing": {
+      "en": "LANDING",
+      "ru": "ПОСАДКА",
+      "zh-Hans": "着陆",
+      "es": "ATERRIZAJE",
+      "ja": "着陸"
+    },
     "cockpit.dock_widget.title_docking": {
       "en": "DOCKING",
       "ru": "СТЫКОВКА",

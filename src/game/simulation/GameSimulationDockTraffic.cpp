@@ -781,6 +781,8 @@ void GameSimulation::updateDockSitePilots(DockSite& site, const StaticObject* do
         if (!shipPtr || !isPlayerControlled(id) ||
             !game::simulation::sameRuntimeSystem(shipPtr->core().transform().motion.systemId, dock->systemId))
             continue;
+        if (m_padLandings.count(id) != 0)
+            continue;   // the pad service flies it (live 2026-11-22: "released by the station" every tick)
         // a pilot belongs to one site: skip the ships another dock is handling
         if (const auto own = m_pilotDockSite.find(id); own != m_pilotDockSite.end() && own->second != site.dockModuleId)
             continue;

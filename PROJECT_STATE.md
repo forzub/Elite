@@ -7950,3 +7950,25 @@ start-up hitches (render), trade step 16 part 3 live.
   <unordered_set> and the build failed silently in a background step - fixed, built. LIVE: 516 pad nodes (536 before),
   the stilts approach runs slower within the ship's thrust. NOT verified: the translucent tunnel in view (not seen in the
   capture), the lift in the game view, the docking reason line live.
+- (2026-11-22) Flight in the hub, live self-tests (offscreen runs, scratchpad run_dev.sh):
+  * Docking from normal flight refused silently ("not matched to target Hub frame"): ClientShipCommand::EnterHubFrame
+    (protocol 49) - the server takes the ship into the hub frame where it is (<= 30 km). LIVE: docked route + frames.
+  * The in-city docking guard removed (it cut the docking 10 m from the dock).
+  * Every city building was inflated 80 m (+ hull + 25 m) for the planner: the whole city a wall, no course off a pad.
+    City clearance 5 m (CityBuildingClearanceMeters). In contact with boxes (on a pad) the docking first lifts the ship
+    straight off them on its thrusters, attitude held (DockLiftClear, ~62 m). LIVE: lifted 62 m gently.
+  * The pad capture re-grabbed a ship lifting off: no capture until it has left the zone (g_padAwaitZoneExit).
+  * Pad landing = planner + autopilot (author): ПОСАДКА makes a docking-route request to "pad:<address>" over the city
+    frame module; its approach point over the pad at the transit height, computed in the planning frame relative to
+    the ship; within 250 m the pad service takes the ship (phase 1/2: the last metres + the descent on the legs).
+    LIVE: route + docking frames over the city, the service took it, landed (dk4).
+  * Lanes joined / left at ANY station (author: dive into the green zone, not through its entry point); every free
+    leg / join straight / exit checked against the buildings and the red zones (author). LIVE: route via a green lane,
+    33548 legs rejected as blocked, no collision.
+  * Touchdown sag on the damped legs (spring-damper, ~0.25 m at 2 m/s, a small rock, ~2 s). Not seen live yet.
+  * Ctrl+Alt+R read from GLFW before every input owner (it did nothing with the map open).
+  * Crosshair live-traffic promotion OFF (promoted OCS-4 fell behind and crashed into the city).
+  OPEN: the follower loses the route on tight lane turns over the city (cross-track 20 m -> 2.4 km at 60 m/s);
+  planning takes 50-75 s; the speed exceeds the hub limit (178 vs 150); a pad route straight leg hit the canopy disc
+  (c4_3_canopy) once before lanes were used; a run died silently right after the pad service took the ship (dock-site
+  loop spammed "released by the station" for pad-held ships - fixed, re-test running).

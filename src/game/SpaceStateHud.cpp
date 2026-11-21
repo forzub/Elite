@@ -2206,6 +2206,7 @@ void SpaceState::renderDockingWidget(const Viewport& viewport)
     const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
     game::presentation::DockingWidgetInput in;
     in.requestPending = pending.valid() && pending.mode == game::navigation::DockingRouteRequest::Mode::Automatic;
+    in.padLanding = pending.valid() && pending.target.semanticAnchorId.rfind("pad:", 0) == 0;
     in.clientPhase = static_cast<game::presentation::DockingWidgetClientPhase>(static_cast<int>(m_clientDockingPhase));
     const auto& dock = ship.dockDispatcher;
     in.dispatcherActive = dock.active;

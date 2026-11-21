@@ -29,6 +29,7 @@ enum class DockingWidgetClientPhase
 struct DockingWidgetInput
 {
     bool requestPending = false;      // an automatic docking request is active on the client
+    bool padLanding = false;          // the request targets a hub city pad (the planner flies to it): ПОСАДКА
     DockingWidgetClientPhase clientPhase = DockingWidgetClientPhase::Idle;
     bool dispatcherActive = false;
     game::docking::traffic::DockTrafficPhase phase = game::docking::traffic::DockTrafficPhase::None;
@@ -112,7 +113,9 @@ using DockingWidgetLookup = TerminalLocalizedText::Lookup;
     if (!in.requestPending && !dispatcher && !in.justReleased)
         return out;
     out.visible = true;
-    out.title = tr(departing || (in.justReleased && !dispatcher) ? "cockpit.dock_widget.title_departure" : "cockpit.dock_widget.title_docking");
+    out.title = tr(departing || (in.justReleased && !dispatcher) ? "cockpit.dock_widget.title_departure"
+                   : in.padLanding                                 ? "cockpit.dock_widget.title_pad_landing"
+                                                                   : "cockpit.dock_widget.title_docking");
     if (in.justReleased && !dispatcher && !in.requestPending)
     {
         out.chip = tr("cockpit.dock_widget.chip_your_control");

@@ -3,12 +3,15 @@
 #include "src/game/presentation/HudSteadyNumber.h"
 #include "src/game/navigation/rules/JDrive.h"
 #include <cstring>
+#include <chrono>
+#include <algorithm>
 #include "src/game/navigation/rules/CapsuleRules.h"
 #include "src/game/fuel/FuelStationCatalog.h"
 #include <cstdio>
 #include "src/game/presentation/DockingWidgetText.h"
 #include "src/game/docking/model/HexDockFacility.h"
 #include "src/game/navigation/FreeFlightCodes.h"
+#include "src/game/navigation/HubPlanPads.h"
 #include "src/game/SpaceStateInternal.h"
 
 
@@ -199,6 +202,109 @@ m_systemMapRenderer.render(
             TextRenderer::instance().solidRectPx(0.0f, 0.0f, static_cast<float>(vp.width), band, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
             TextRenderer::instance().solidRectPx(0.0f, static_cast<float>(vp.height) - band, static_cast<float>(vp.width), band,
                                                  glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            // the landing readout (author 2026-11-21: «высоту от конца опор до того, что сейчас под брюхом корабля -
+            // конкретно, даже пролетающий внизу корабль; максимум 500 м; скорость спуска; при превышении - красным»): a ray
+            // from the hull's centre down its belly (-Y of the ship) against the hub city's roofs, pad decks and plane and
+            // against the other ships (their size spheres); the leg tips are half the hull + the legs under the centre
+            if (m_client)
+            {
+                const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
+                const glm::dvec3 relV(playerShip.renderTransform.relativeVelocityMetersPerSecond);
+                const glm::dvec3 down = -glm::normalize(glm::dvec3(glm::mat3(playerShip.renderTransform.orientation)[1]));
+                double half = 3.0;
+                if (playerShip.descriptor)
+                    if (const auto& dims = playerShip.descriptor->logicalDimensions(); dims.enabled && dims.height > 0.0)
+                        half = 0.5 * dims.height;
+                const double reach = 500.0 + half + game::navigation::HubPadLegLengthMeters;
+                double hit = reach + 1.0;
+                for (const auto& [oid, object] : m_client->world().objects())
+                {
+                    if (!object.hubAttachment.valid)
+                        continue;
+                    const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId);
+                    if (!plan)
+                        continue;
+                    const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
+                    if (glm::length(shipW - origin) > 9000.0)
+                        continue;
+                    const glm::dmat3 R(glm::mat3(object.renderOrientation));
+                    const glm::dvec3 q = glm::transpose(R) * (shipW - origin);
+                    const glm::dvec3 d = glm::transpose(R) * down;
+                    // a horizontal surface at height y spanning [x0,x1] x [z0,z1] (the plane: unbounded)
+                    const auto surface = [&](double y, double x0, double x1, double z0, double z1, bool bounded) {
+                        if (std::abs(d.y) < 1.0e-6)
+                            return;
+                        const double t = (y - q.y) / d.y;
+                        if (t <= 0.0 || t >= hit)
+                            return;
+                        const glm::dvec3 p = q + d * t;
+                        if (!bounded || (p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1))
+                            hit = t;
+                    };
+                    surface(0.0, 0.0, 0.0, 0.0, 0.0, false);
+                    for (const auto& m : plan->modules())
+                    {
+                        if (m.under)
+                            continue;
+                        surface(m.y1, std::min(m.rect.x, m.rect.z), std::max(m.rect.x, m.rect.z), std::min(m.rect.y, m.rect.w),
+                                std::max(m.rect.y, m.rect.w), true);
+                        if (m.pad)
+                        {
+                            const double s = 0.5 * game::navigation::HubPadDeckSide;
+                            surface(m.padPosition.y, m.padPosition.x - s, m.padPosition.x + s, m.padPosition.z - s,
+                                    m.padPosition.z + s, true);
+                        }
+                    }
+                }
+                // the other ships under the belly (a size sphere each)
+                for (const auto& [sid, other] : m_client->world().ships())
+                {
+                    if (sid == m_playerId.value || !other.descriptor)
+                        continue;
+                    const glm::dvec3 c = world::coordinates::fullMeters(other.renderTransform.worldPosition);
+                    const glm::dvec3 rel = c - shipW;
+                    const double along = glm::dot(rel, down);
+                    if (along <= 0.0 || along > hit + 60.0)
+                        continue;
+                    const auto& od = other.descriptor->logicalDimensions();
+                    const double r = od.enabled ? 0.5 * std::max({static_cast<double>(od.length), static_cast<double>(od.width),
+                                                                  static_cast<double>(od.height)}) : 15.0;
+                    const double off2 = glm::dot(rel, rel) - along * along;
+                    if (off2 > r * r)
+                        continue;
+                    hit = std::min(hit, along - std::sqrt(r * r - off2));
+                }
+                const double heightM = hit - half - game::navigation::HubPadLegLengthMeters;
+                // the closing speed to what is under the belly: the height's own rate (smoothed, real time) - right for a held
+                // ship too (its replicated relative velocity is not the service's) and for a ship passing underneath; a jump of
+                // the target (it flew out from under the belly) restarts it
+                static double lastHeight = -1.0, rate = 0.0;
+                static std::chrono::steady_clock::time_point lastAt {};
+                const auto nowAt = std::chrono::steady_clock::now();
+                const double dtS = std::chrono::duration<double>(nowAt - lastAt).count();
+                if (hit <= reach && lastHeight >= 0.0 && dtS > 1.0e-3 && dtS < 0.5 && std::abs(heightM - lastHeight) < 20.0)
+                    rate += (std::clamp((lastHeight - heightM) / dtS, -500.0, 500.0) - rate) * std::min(1.0, dtS / 0.3);
+                else if (hit > reach)
+                    rate = glm::dot(relV, down);
+                lastHeight = hit <= reach ? heightM : -1.0;
+                lastAt = nowAt;
+                const double descentMps = rate;
+                char text[160];
+                if (hit > reach)
+                    std::snprintf(text, sizeof text, "ВЫСОТА  > 500 м        СПУСК  %.1f м/с", descentMps);
+                else
+                    std::snprintf(text, sizeof text, "ВЫСОТА  %.1f м        СПУСК  %.1f м/с", std::max(0.0, heightM), descentMps);
+                // too fast for the height: 2.5 m/s within 30 m of the surface, more allowed higher up (room to brake)
+                const double allowed = game::navigation::HubPadTouchdownMaxMps + std::max(0.0, std::min(heightM, 500.0) - 30.0) * 0.2;
+                const bool tooFast = descentMps > allowed;
+                const glm::vec4 colour = tooFast ? glm::vec4(1.0f, 0.28f, 0.22f, 1.0f) : glm::vec4(0.80f, 0.95f, 1.0f, 0.95f);
+                const int px = 24;
+                auto& tr = TextRenderer::instance();
+                const float w = tr.measureTextPx(text, px);
+                const float y = band > 40.0f ? static_cast<float>(vp.height) - band * 0.5f + px * 0.35f
+                                             : static_cast<float>(vp.height) - 40.0f;
+                tr.textDrawPx(text, 0.5f * (static_cast<float>(vp.width) - w), y, px, colour);
+            }
         }
 
         {

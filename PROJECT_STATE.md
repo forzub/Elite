@@ -7889,3 +7889,16 @@ start-up hitches (render), trade step 16 part 3 live.
   outline + zone box over the garage model, the front view the zone's edges. NOT verified live: a hand-flown
   touchdown, the legs breaking, flying into an automatic zone by hand (need manual flight). Note: the zone deck outline
   is the 36 m pad square also for garages (their apron is 22 / 40 x 20 m).
+- (2026-11-21) Pads as berths + the landing readout (author: «вывод в терминал - опоры вытянуты, посадка не быстрее
+  стольки-то м/с; на нижней камере - высоту от конца опор до того, что сейчас под брюхом (даже пролетающий корабль),
+  максимум 500 м, и скорость спуска, при превышении - красным»). serviceStationOf: a ship landed on a pad (the service
+  holds it, phase 3) is AT A BERTH of the city's hub (trade F8, refit F7, the full-rate refuel); the landing line
+  lists them. Legs out -> "ОПОРЫ: выпущены - касание не быстрее 2.5 м/с, от 4 м/с опоры ломаются (F4)" (thresholds
+  HubPadTouchdownMaxMps / HubPadLegsBreakMps in HubPlanPads.h, the server uses them). Bottom camera: ВЫСОТА (a ray down
+  the ship's belly against the city's roofs / pad decks / plane and the other ships' size spheres, minus half the hull
+  and the legs; > 500 м beyond) and СПУСК (the height's own smoothed rate = the closing speed to what is below; the
+  replicated relative velocity of a held ship is 0), red above 2.5 m/s within 30 m, +0.2 m/s per metre higher.
+  LIVE (D:/tmp/pad, roof A2-03 + F4): b.png ВЫСОТА 155.2 м / СПУСК 6.0 м/с, c.png 89.1 м / 5.9 м/с (red under the old
+  rule - fixed), the pad deck right below. DEV refuel on the pad: "REFUSED ... (the tank is full)" - the berth check
+  passed. OPEN (needs the author's go - it regenerates the frozen cities): refuel + repair blocks on every hub as
+  priority buildings (most hubs have neither / one of them).

@@ -606,7 +606,7 @@ void SpaceState::updatePilotTakeover(bool touching)
                 lastStatus = status;
                 std::string line;
                 if (status == "gear:out")
-                    line = "ОПОРЫ: выпущены";
+                    line = "ОПОРЫ: выпущены - касание не быстрее 2.5 м/с, от 4 м/с опоры ломаются (F4 - нижняя камера)";
                 else if (status == "gear:in")
                     line = "ОПОРЫ: убраны";
                 else if (status == "gear:broken")
@@ -622,7 +622,7 @@ void SpaceState::updatePilotTakeover(bool touching)
                 else if (status.rfind("pad:manual:", 0) == 0)
                     line = "СЛУЖБА ПЛОЩАДОК: площадка " + status.substr(11) + " ручная - садитесь сами, опоры выпущены?";
                 else if (status.rfind("pad:landed_manual:", 0) == 0)
-                    line = "ПОСАДКА: на площадке " + status.substr(18) + " (руль - взлёт)";
+                    line = "ПОСАДКА: на площадке " + status.substr(18) + " - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)";
                 else if (status == "taken:flight")
                     line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
                 else if (status == "taken:frame")
@@ -644,7 +644,8 @@ void SpaceState::updatePilotTakeover(bool touching)
                     line = phase == '0'   ? "СЛУЖБА ПЛОЩАДОК: набор высоты транзита над городом"
                          : phase == '1' ? "СЛУЖБА ПЛОЩАДОК: над городом к площадке " + address
                          : phase == '2' ? "СЛУЖБА ПЛОЩАДОК: снижение на площадку " + address
-                                        : "СЛУЖБА ПЛОЩАДОК: посадка выполнена, площадка " + address + " (руль - взлёт)";
+                                        : "СЛУЖБА ПЛОЩАДОК: посадка выполнена, площадка " + address +
+                                              " - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)";
                 }
                 // a phase line comes back after each short notice: printed once (no repeats of the same step)
                 static std::string lastPhaseLine;

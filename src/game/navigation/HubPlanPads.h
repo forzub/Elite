@@ -28,6 +28,11 @@ inline constexpr double HubPadClearMeters = 30.0;       // a pad on a free plot:
 inline constexpr double HubPadZoneHalf = 25.0;
 inline constexpr double HubPadZoneHeight = 60.0;
 inline constexpr double HubPadZoneShowMeters = 100.0;
+// the landing legs (author 2026-11-21): a touchdown on them up to HubPadTouchdownMaxMps is a landing, from
+// HubPadLegsBreakMps they break; the leg tips are HubPadLegLengthMeters under the hull's bottom
+inline constexpr double HubPadTouchdownMaxMps = 2.5;
+inline constexpr double HubPadLegsBreakMps = 4.0;
+inline constexpr double HubPadLegLengthMeters = 0.5;
 
 // the pad module folder of a building's pad ("" none)
 std::string hubPadModuleFolder(const HubPlanModule& m);

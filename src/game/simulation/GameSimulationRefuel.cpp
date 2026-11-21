@@ -41,6 +41,11 @@ std::string GameSimulation::serviceStationOf(EntityId shipId, bool* tender) cons
     if (const DockSite* site = pilotDockSite(shipId);
         site && dockDispatcherStatus(shipId).phase == game::docking::traffic::DockTrafficPhase::Docked)
         return site->hubId;
+    // landed on a hub city pad (author 2026-11-21: the pads as berths with their services): a berth of that city's hub
+    if (const auto p = m_padLandings.find(shipId); p != m_padLandings.end() && p->second.phase == 3)
+        for (const auto& [oid, obj] : m_staticObjects)
+            if (obj.hubModuleId == p->second.frameModuleId)
+                return obj.hubId;
     if (isDockStationControlledShip(shipId))
         return {};   // landing / leaving under the station's control: not at a berth
     const auto& m = ship->core().transform().motion;

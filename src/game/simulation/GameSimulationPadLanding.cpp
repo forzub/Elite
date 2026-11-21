@@ -390,14 +390,14 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 if (flat > 0.5 * game::navigation::HubPadDeckSide || h - clearance > 1.0)
                     break;
                 const double speed = glm::length(v);
-                if (gear == 1 && speed < 2.5)
+                if (gear == 1 && speed < game::navigation::HubPadTouchdownMaxMps)
                 {
                     m_padNotices[id] = {"pad:landed_manual:" + m.address, now};
                     (void)startPadService(id, obj.hubModuleId, m.address, 3);
                     std::cerr << "[PadLanding] ship " << id.value << " LANDED by hand on " << m.address << " at " << speed << " m/s"
                               << std::endl;
                 }
-                else if (gear == 1 && speed >= 4.0)
+                else if (gear == 1 && speed >= game::navigation::HubPadLegsBreakMps)
                 {
                     m_landingGear[id] = 2;
                     m_padNotices[id] = {"gear:broke_hard", now};

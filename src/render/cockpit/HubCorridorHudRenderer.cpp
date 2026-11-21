@@ -8,6 +8,8 @@
 
 #include "src/game/client/ClientWorldState.h"
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/game/navigation/HubPlanCatalog.h"
+#include <vector>
 
 namespace render::cockpit
 {
@@ -39,6 +41,12 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
 {
     if (viewport.width <= 0 || viewport.height <= 0)
         return;
+    // in a dock / flown by the station (or the pad service): no lanes - the dock walls hide them anyway and the pilot does
+    // not fly them now (author 2026-11-21: «трассы видны даже когда я нахожусь в доке»)
+    if (player.dockDispatcher.active && player.dockDispatcher.stationControlled)
+        return;
+    if (player.padService.rfind("phase:", 0) == 0)
+        return;
     const glm::dvec3 playerMeters = world::coordinates::fullMeters(player.renderTransform.worldPosition);
     // the player's direction of travel (velocity relative to the frame; the nose when nearly at rest): a lane running
     // against it is drawn RED (author 2026-11-17: «тунели для встречного движения делать красными зонами в
@@ -64,6 +72,52 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         const glm::dmat3 R(glm::mat3(object.renderOrientation));
         const auto toWorld = [&](const glm::dvec3& local) { return origin + R * local; };
         const glm::dvec3 up = R * glm::dvec3(0.0, 1.0, 0.0);
+        // what hides the lanes / zones (author 2026-11-21: «если между зоной и игроком находится помеха, за помехой зону не
+        // должно быть видно»): the planar city's blocks as boxes in this frame; a sample is hidden when the segment from it
+        // to the pilot meets one (a ring by its centre, a connector / zone edge by its middle)
+        struct Box
+        {
+            glm::dvec3 lo, hi;
+        };
+        std::vector<Box> blockers;
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
+            for (const auto& b : plan->blocks())
+            {
+                const double h = b.halfMeters;
+                blockers.push_back({glm::dvec3(b.centre.x - h, 0.0, b.centre.y - h),
+                                    glm::dvec3(b.centre.x + h, std::max(15.0, b.topHeightMeters), b.centre.y + h)});
+                if (b.underDepthMeters > 1.0)
+                    blockers.push_back({glm::dvec3(b.centre.x - h, -30.0 - b.underDepthMeters, b.centre.y - h),
+                                        glm::dvec3(b.centre.x + h, -30.0, b.centre.y + h)});
+            }
+        const glm::dmat3 Rt = glm::transpose(R);
+        const glm::dvec3 eyeLocal = Rt * (playerMeters - origin);
+        const auto hidden = [&](const glm::dvec3& world) {
+            const glm::dvec3 p = Rt * (world - origin);
+            const glm::dvec3 d = eyeLocal - p;
+            for (const auto& bx : blockers)
+            {
+                double t0 = 1.0e-3, t1 = 1.0;   // strictly between the sample and the eye
+                bool miss = false;
+                for (int k = 0; k < 3 && !miss; ++k)
+                {
+                    if (std::abs(d[k]) < 1.0e-9)
+                    {
+                        miss = p[k] < bx.lo[k] || p[k] > bx.hi[k];
+                        continue;
+                    }
+                    double a = (bx.lo[k] - p[k]) / d[k], b = (bx.hi[k] - p[k]) / d[k];
+                    if (a > b)
+                        std::swap(a, b);
+                    t0 = std::max(t0, a);
+                    t1 = std::min(t1, b);
+                    miss = t0 > t1;
+                }
+                if (!miss)
+                    return true;
+            }
+            return false;
+        };
         if (!begun)
         {
             m_batch.begin(viewport.width, viewport.height);
@@ -101,7 +155,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 for (int s = 0; s <= steps; ++s)
                 {
                     const glm::dvec3 c = a + ab * (len * s / steps);
-                    const double alpha = alphaAt(c, 0.18);
+                    const double alpha = hidden(c) ? 0.0 : alphaAt(c, 0.18);
                     std::array<glm::dvec3, RingSides> ring {};
                     for (int i = 0; i < RingSides; ++i)
                     {
@@ -144,7 +198,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
             {
                 const glm::dvec3 a = toWorld(cn.pointsLocal[i]);
                 const glm::dvec3 b = toWorld(cn.pointsLocal[i + 1]);
-                const double alpha = alphaAt(a, 0.18);
+                const double alpha = hidden((a + b) * 0.5) ? 0.0 : alphaAt(a, 0.18);
                 if (alpha <= 0.005)
                     continue;
                 const double len = glm::length(b - a);
@@ -172,7 +226,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 c[i] = toWorld(zone.centerLocal + zr * glm::dvec3((i & 1) ? h.x : -h.x, (i & 2) ? h.y : -h.y, (i & 4) ? h.z : -h.z));
             for (int i = 0; i < 8; ++i)
                 for (int bit = 1; bit < 8; bit <<= 1)
-                    if (!(i & bit))
+                    if (!(i & bit) && !hidden((c[i] + c[i | bit]) * 0.5))
                         seg(c[i], c[i | bit], col, 1.0f);
         }
     }

@@ -7865,3 +7865,8 @@ start-up hitches (render), trade step 16 part 3 live.
   map script f2 / f4. LIVE D:/tmp/pad (pad landing + ELITE_DEV_MAP_SCRIPT f4/f2/f3): a.png the bottom view over the
   target roof pad (its H below, letterboxed), b.png rear without panel / markers / scope, c.png drone. Note: the scope's
   text line hid in a second build (checked by source).
+- (2026-11-21) QUEUE 4 PARTLY: the flight HUD lanes / red zones (HubCorridorHudRenderer) - the planar city's blocks hide
+  them (a ring by its centre, a connector / zone edge by its middle: the segment from the sample to the pilot against
+  the block boxes, CPU); docked / flown by the station / the pad service: no lanes at all. NOT done: the station / dock
+  modules as occluders (no client bounds for them yet - needs the model packages' bounds or the scene depth). LIVE:
+  builds, the approach run shows the lanes above the city drawn, nothing more conclusive yet.

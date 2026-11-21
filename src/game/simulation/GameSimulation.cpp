@@ -1761,6 +1761,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         updateDockServiceTraffic(dt);
         updateHubSecurity(dt);   // traffic control, promoted air traffic, collision avoidance, defence (docs/HUB_SECURITY.md)
         updateLiveTraffic(dt);   // traffic at the crosshair / in a fight -> real NPCs (GameSimulationCombat.cpp)
+        updatePadLandings(dt);   // the hub city pad service (GameSimulationPadLanding.cpp)
         if (firstPass)
         {
             updateShipSimulationDetail(dt);
@@ -3357,6 +3358,7 @@ void GameSimulation::forgetShip(EntityId id)
     m_promotedAir.erase(id);
     m_airTrafficShells.erase(id);
     m_liveTraffic.erase(id);
+    m_padLandings.erase(id);
     m_trafficSlots.erase(id);
     m_initializedShipGraphIds.erase(id);
     m_shipGraphPayloadPublicationsRemaining.erase(id);

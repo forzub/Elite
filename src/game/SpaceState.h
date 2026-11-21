@@ -249,6 +249,7 @@ public:
     double m_takeoverLastInputSeconds = -1.0;
     double m_takeoverSecondsLeft = -1.0;      // >= 0: the takeover countdown runs
     double m_takeoverReleaseSentSeconds = -1.0e9;  // glfw time the station release was asked
+    std::string m_padLandingObjectId;   // a hub city pad landing asked (the building card id); empty: none
     std::string m_pilotNotice;                // the takeover / release notice for the HUD console
     bool m_lastStationControlled = false;
     double m_stationReleasedAtSeconds = -1.0; // glfw time the station let the ship go

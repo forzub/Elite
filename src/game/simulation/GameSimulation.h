@@ -103,6 +103,9 @@ public:
     // TEMPORARY (author 2026-11-21, Ctrl+Alt+R): structure + modules, reactors (containment emergencies, the dead-reactor
     // marks), heat, spin and the "out of the fight" state back to new
     bool debugFullRestoreShip(EntityId id);
+    // a hub city pad (ClientShipCommand::LandOnPad; GameSimulationPadLanding.cpp): land = the pad service flies the ship
+    // there and holds it; !land = the pilot takes the controls
+    bool requestPadLanding(EntityId shipId, const std::string& frameModuleId, const std::string& address, bool land);
     // DEV: every lane tube of a hub against its static objects' collision boxes ([LaneCheck] lines)
     void devLaneClearanceReport(const std::string& hubId) const;
     void debugResetAllShipStructures();
@@ -766,6 +769,23 @@ private:
         bool eligible = false;            // in open space (not on / near the pads)
         double atS = -1.0;
     };
+    // Hub city pads (author 2026-11-21, GameSimulationPadLanding.cpp): the city's pad service flies a ship that asked
+    // for a building's pad (ClientShipCommand::LandOnPad): to the transit height over the city, across, down onto the
+    // pad; then it holds it there. Any control input (index 0) gives the ship back to its pilot.
+    struct PadLanding
+    {
+        std::string frameModuleId;   // the city frame module (HubPlan)
+        std::string address;         // the building ("B4-07")
+        glm::dvec3 padLocal {0.0};   // the pad in the city frame
+        glm::dvec3 outLocal {0.0, 1.0, 0.0};   // its outward normal (up; down for the lower tier)
+        double transitLocal = 300.0;           // the transit height over the plane (along outLocal)
+        int phase = 0;               // 0 to the transit height, 1 across, 2 down, 3 landed
+        double speedMps = 0.0;
+        double sinceS = 0.0;
+        double logS = -1.0e9;
+    };
+    std::unordered_map<EntityId, PadLanding> m_padLandings;
+    void updatePadLandings(double dt);
     std::unordered_map<EntityId, LiveTraffic> m_liveTraffic;
     std::unordered_map<EntityId, TrafficSlot> m_trafficSlots;
     bool isScriptedTrafficShip(EntityId id) const noexcept;

@@ -504,7 +504,7 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
 
 bool GameSimulation::isDockStationControlledShip(EntityId id) const noexcept
 {
-    return m_dockStationControlledShips.count(id) != 0 || isScriptedTrafficShip(id);
+    return m_dockStationControlledShips.count(id) != 0 || m_padLandings.count(id) != 0 || isScriptedTrafficShip(id);
 }
 
 bool GameSimulation::isScriptedTrafficShip(EntityId id) const noexcept

@@ -74,6 +74,67 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             item.extraFields.push_back(std::move(padField));
             frame.items.push_back(std::move(item));
         }
+        // the buildings of the upper tier (author 2026-11-21: «меню посадки на площадку вызывать кликом по модулю,
+        // поскольку площадка там всё равно одна»): the card - the address, the building, its pad, СТЫКОВКА
+        const auto& ui = m_navigationMapTextProfile;
+        for (const auto& m : plan->modules())
+        {
+            if (m.under || m.pier || m.block < 0 || m.address.empty())
+                continue;
+            const auto& b = plan->blocks()[static_cast<std::size_t>(m.block)];
+            game::system_map::MapObjectOverlayItem item;
+            item.objectId = "hub-building:" + module.stableId + "/" + m.address;
+            item.semanticTargetId = module.stableId;
+            const glm::dvec2 c(0.5 * (m.rect.x + m.rect.z), 0.5 * (m.rect.y + m.rect.w));
+            item.semanticLocalOffsetMeters = glm::dvec3(c.x, 0.0, c.y);
+            item.trackingSystemId = hub.systemId;
+            item.name = m.address + " \xC2\xB7 " + b.title;
+            item.typeName = m.module;
+            item.kind = game::system_map::MapObjectGlyphKind::Infrastructure;
+            item.infoKind = game::system_map::MapObjectInfoKind::Infrastructure;
+            item.navigationHubId = hub.hubId;
+            item.navigationHubParentBodyId = hub.parentBodyId;
+            const glm::dvec3 centre = local(c.x, c.y);
+            item.trackingWorldPosition =
+                world::coordinates::makeWorldPositionFromMeters(hubLocalToWorldMetersForOverlay(hub, centre));
+            item.hasTrackingWorldPosition = true;
+            item.factionColor = glm::vec4(0.66f, 0.72f, 0.80f, 0.90f);
+            item.screenPx = m_hubPresentation.camera.project(centre);
+            for (const auto& p : {glm::dvec2(m.rect.x, m.rect.y), glm::dvec2(m.rect.z, m.rect.y), glm::dvec2(m.rect.z, m.rect.w),
+                                  glm::dvec2(m.rect.x, m.rect.w)})
+                item.hitPolygonPx.push_back(m_hubPresentation.camera.project(local(p.x, p.y)));
+            const double wPx = std::abs(item.hitPolygonPx[1].x - item.hitPolygonPx[0].x);
+            item.visible = wPx >= 6.0 && item.screenPx.x >= -50.0 && item.screenPx.y >= -50.0 &&
+                           item.screenPx.x <= viewportSize.x + 50.0 && item.screenPx.y <= viewportSize.y + 50.0;
+            item.physicalSizeMeters = std::max(m.rect.z - m.rect.x, m.rect.w - m.rect.y);
+            item.hitRadiusPx = 1.0;
+            item.pickPriority = -5;          // over its block, under the docks / ships
+            item.pointerInteractive = true;
+            item.drawGlyph = false;
+            game::system_map::MapObjectInfoField address;
+            address.labelKey = "hub_address";
+            address.value = plan->hubId() + ":" + m.address;
+            item.extraFields.push_back(std::move(address));
+            game::system_map::MapObjectInfoField building;
+            building.labelKey = "hub_building";
+            building.value = m.module;
+            item.extraFields.push_back(std::move(building));
+            game::system_map::MapObjectInfoField pad;
+            pad.labelKey = "hub_pad";
+            using PadKind = game::navigation::HubPlanModule::PadKind;
+            pad.value = m.padKind == PadKind::Roof     ? ui.hubPadRoof
+                        : m.padKind == PadKind::Garage ? ui.hubPadGarage + std::to_string(m.padPlaces)
+                        : m.padKind == PadKind::Stilts ? ui.hubPadStilts
+                                                       : ui.hubPadNone;
+            item.extraFields.push_back(std::move(pad));
+            game::system_map::MapObjectPanelAction land;
+            land.key = "land_pad";
+            land.labelKey = "start_docking";
+            land.enabled = m.pad;
+            land.active = m_padLandingActive == item.objectId;
+            item.panelActions.push_back(std::move(land));
+            frame.items.push_back(std::move(item));
+        }
     }
 }
 

@@ -2135,6 +2135,12 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.hubBlockBuildings = loc.text("map.object_info.hub_block_buildings");
     mapText.hubAddress = loc.text("map.object_info.hub_address");
     mapText.hubPads = loc.text("map.object_info.hub_pads");
+    mapText.hubBuilding = loc.text("map.object_info.hub_building");
+    mapText.hubPad = loc.text("map.object_info.hub_pad");
+    mapText.hubPadRoof = loc.text("map.object_info.hub_pad_roof");
+    mapText.hubPadGarage = loc.text("map.object_info.hub_pad_garage");
+    mapText.hubPadStilts = loc.text("map.object_info.hub_pad_stilts");
+    mapText.hubPadNone = loc.text("map.object_info.hub_pad_none");
     mapText.dockOpening = loc.text("map.object_info.dock_opening");
     mapText.shipEnvelope = loc.text("map.object_info.ship_envelope");
     mapText.dockFit = loc.text("map.object_info.dock_fit");

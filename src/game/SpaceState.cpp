@@ -563,6 +563,39 @@ void SpaceState::prepareFrame(float dt)
 void SpaceState::updatePilotTakeover(bool touching)
 {
     using game::docking::traffic::DockTrafficPhase;
+    // a hub city pad (author 2026-11-21): a building card's СТЫКОВКА asks the city's pad service to land the ship;
+    // touching the controls on the way or on the pad gives it back to the pilot at once (as the station's departure)
+    const auto sendPadLanding = [&](const std::string& frameModuleId, const std::string& address, bool land) {
+        if (!m_client)
+            return;
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::LandOnPad;
+        command.index = land ? 1 : 0;
+        command.target = frameModuleId;
+        command.detail = address;
+        msg.payload = command;
+        m_client->sendMessage(msg);
+    };
+    static double padRequestedAt = -1.0e9;   // the click itself (the mouse) is not a takeover: 1.5 s grace
+    if (auto request = m_systemMapRenderer.takePadLandingRequest())
+    {
+        padRequestedAt = glfwGetTime();
+        sendPadLanding(request->frameModuleId, request->address, true);
+        m_padLandingObjectId = request->objectId;
+        m_systemMapRenderer.setPadLandingActive(request->objectId);
+        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address;
+        std::cerr << "[PadLanding] request sent: " << request->frameModuleId << "/" << request->address << std::endl;
+    }
+    if (!m_padLandingObjectId.empty() && touching && glfwGetTime() - padRequestedAt > 1.5)
+    {
+        sendPadLanding(std::string(), std::string(), false);
+        m_padLandingObjectId.clear();
+        m_systemMapRenderer.setPadLandingActive(std::string());
+        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: управление у пилота";
+        std::cerr << "[Takeover] " << m_pilotNotice << std::endl;
+        return;
+    }
     enum class Owner { None, Docking, Route, Body, StationAxis, StationInside };
     Owner owner = Owner::None;
     const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();

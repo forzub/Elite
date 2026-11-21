@@ -548,6 +548,48 @@
       "es": "Punto de navegación",
       "ja": "航法ポイント"
     },
+    "map.object_info.hub_building": {
+      "en": "Building",
+      "ru": "Здание",
+      "zh-Hans": "建筑",
+      "es": "Edificio",
+      "ja": "建物"
+    },
+    "map.object_info.hub_pad": {
+      "en": "Landing pad",
+      "ru": "Площадка",
+      "zh-Hans": "着陆平台",
+      "es": "Plataforma",
+      "ja": "着陸パッド"
+    },
+    "map.object_info.hub_pad_roof": {
+      "en": "on the roof",
+      "ru": "на крыше",
+      "zh-Hans": "屋顶",
+      "es": "en la azotea",
+      "ja": "屋上"
+    },
+    "map.object_info.hub_pad_garage": {
+      "en": "garage, places: ",
+      "ru": "гараж, мест: ",
+      "zh-Hans": "车库，位置：",
+      "es": "garaje, plazas: ",
+      "ja": "ガレージ、台数："
+    },
+    "map.object_info.hub_pad_stilts": {
+      "en": "on legs beside it",
+      "ru": "на опорах рядом",
+      "zh-Hans": "旁边的支架平台",
+      "es": "sobre pilotes al lado",
+      "ja": "隣の支柱上"
+    },
+    "map.object_info.hub_pad_none": {
+      "en": "none",
+      "ru": "нет",
+      "zh-Hans": "无",
+      "es": "no hay",
+      "ja": "なし"
+    },
     "map.object_info.hub_address": {
       "en": "Address",
       "ru": "Адрес",

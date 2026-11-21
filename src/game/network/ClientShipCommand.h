@@ -44,8 +44,10 @@
                                     //     the player appears 5 km off (boarded from F7)
             HireJob,                // F5 employment service: detail = vacancy id, at a berth of that hub
             QuitJob,                // F5: back to the pilot's own ship (within 20 km)
-            DevFullRestore          // TEMPORARY (author 2026-11-21): Ctrl+Alt+R - the ship fully restored (structure,
+            DevFullRestore,         // TEMPORARY (author 2026-11-21): Ctrl+Alt+R - the ship fully restored (structure,
                                     //     reactors, containment, heat, spin, "out of the fight" cleared)
+            LandOnPad               // a hub city pad (author 2026-11-21): index 1 = land at target = the city frame module,
+                                    //     detail = the building address ("B4-07"); index 0 = the pilot takes the controls
         };
         Type type;
 

@@ -694,6 +694,7 @@ add_executable(EliteGame
     src/game/simulation/GameSimulationCombat.cpp
     src/game/simulation/GameSimulationCityDamage.cpp
     src/game/simulation/GameSimulationScheduledTraffic.cpp
+    src/game/simulation/GameSimulationPadLanding.cpp
     src/game/combat/WeaponCatalog.cpp
     src/game/combat/Penetration.cpp
     src/game/navigation/route/RoutePlanner.cpp
@@ -1045,6 +1046,7 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationCombat.cpp
         src/game/simulation/GameSimulationCityDamage.cpp
         src/game/simulation/GameSimulationScheduledTraffic.cpp
+        src/game/simulation/GameSimulationPadLanding.cpp
         src/game/navigation/traffic/HubTrafficSchedule.cpp
         src/game/combat/WeaponCatalog.cpp
         src/game/combat/Penetration.cpp

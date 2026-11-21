@@ -274,6 +274,14 @@ private:
     game::system_map::DetailMapBackend m_detailBackend;
     game::system_map::HubMapBackend m_hubBackend;
     std::string m_hubHighlightType;
+    struct PadLandingRequest
+    {
+        std::string frameModuleId;
+        std::string address;
+        std::string objectId;
+    };
+    std::optional<PadLandingRequest> m_padLandingRequest;
+    std::string m_padLandingActive;
 
     void ensureMapTransitionSnapshot(
     const Viewport& viewport
@@ -535,6 +543,34 @@ public:
         m_hubFrameDirty = true;
     }
     const std::string& hubHighlightType() const noexcept { return m_hubHighlightType; }
+    // a building card's СТЫКОВКА (a hub city pad, author 2026-11-21): taken by SpaceState, which asks the server
+    std::optional<PadLandingRequest> takePadLandingRequest()
+    {
+        auto r = std::move(m_padLandingRequest);
+        m_padLandingRequest.reset();
+        return r;
+    }
+    // the card whose pad the ship is landing on (its СТЫКОВКА lit); empty: none
+    void setPadLandingActive(const std::string& objectId) { m_padLandingActive = objectId; m_hubFrameDirty = true; }
+    // DEV: padland:<roof|garage|stilts>[@<city frame module>] - the first building with that pad kind, as its card's button
+    void devRequestPadLanding(const std::string& spec)
+    {
+        const auto at = spec.find('@');
+        const std::string kind = spec.substr(0, at);
+        const std::string frame = at == std::string::npos ? std::string("earth_orbital_hub.city") : spec.substr(at + 1);
+        using PadKind = game::navigation::HubPlanModule::PadKind;
+        const PadKind want = kind == "garage" ? PadKind::Garage : kind == "stilts" ? PadKind::Stilts : PadKind::Roof;
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(frame))
+            for (const auto& m : plan->modules())
+                if (m.pad && !m.under && m.padKind == want)
+                {
+                    m_padLandingRequest = PadLandingRequest {frame, m.address, "hub-building:" + frame + "/" + m.address};
+                    std::cerr << "[PadLanding] DEV request " << kind << " -> " << m.address << " pad at " << m.padPosition.x << ","
+                              << m.padPosition.y << "," << m.padPosition.z << std::endl;
+                    return;
+                }
+        std::cerr << "[PadLanding] DEV request " << spec << ": no such pad" << std::endl;
+    }
     void toggleSystemBeacons() noexcept
     {
         m_systemView.state().showBeacons = !m_systemView.state().showBeacons;

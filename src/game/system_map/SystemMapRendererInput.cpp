@@ -934,6 +934,18 @@ SystemMapRenderer::handleInput(
                         overlayPointer.actionKey
                     );
                 }
+                else if (overlayPointer.actionKey == "land_pad")
+                {
+                    // a building card: its pad ("hub-building:<city frame module>/<address>")
+                    const std::string rest = overlayPointer.actionObjectId.rfind("hub-building:", 0) == 0
+                        ? overlayPointer.actionObjectId.substr(13) : std::string();
+                    if (const auto slash = rest.rfind('/'); slash != std::string::npos)
+                    {
+                        m_padLandingRequest = PadLandingRequest {rest.substr(0, slash), rest.substr(slash + 1),
+                                                                 overlayPointer.actionObjectId};
+                        std::cerr << "[PadLanding] ui: land at " << rest << std::endl;
+                    }
+                }
                 else
                 {
                     applyWaypointAction(

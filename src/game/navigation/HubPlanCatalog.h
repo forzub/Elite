@@ -48,7 +48,7 @@ struct HubPlanModule
     double padRadiusMeters = 0.0;
     // how it is built (author 2026-11-21: «на свободных участках, на крышах, на ножках, как вертолётные площадки на
     // платформах, ... как гараж на 1-2 места»): Roof - a tall wide building; Garage - a low wide one (1-2 places at
-    // the plane, in its ground floor); Stilts - a narrow one: a pad on legs on a free plot of its block beside it
+    // the plane, on a free plot beside it); Stilts - a narrow one: a pad on legs on a free plot of its block beside it
     enum class PadKind { None, Roof, Stilts, Garage };
     PadKind padKind = PadKind::None;
     int padPlaces = 1;

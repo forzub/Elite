@@ -7803,3 +7803,20 @@ start-up hitches (render), trade step 16 part 3 live.
   hidden-line look in 3D at close zoom (the DEV zoom does not zoom the Hub map).
 - FOUND: the composition status ignores the city - "грузовой терминал / склады (в плане)" while the city has port /
   storage blocks (status = runtime hub objects only). To fix: count the city blocks' zones as present.
+- (2026-11-21) HUB CITY PADS - landing (author: «меню посадки на площадку вызывать кликом по модулю, площадка там всё
+  равно одна»; «найди площадку» -> a possible HARD difficulty item later). SOURCE: the plan's upper-tier buildings are
+  overlay items ("hub-building:<city frame>/<address>", priority over the block): card = address, building, pad
+  (на крыше / гараж, мест: N / на опорах рядом / нет), СТЫКОВКА (key land_pad, enabled with a pad). Pads: Roof (tall
+  wide), Garage (low wide: an apron on a free plot of the block at the plane, 1-2 places), Stilts (narrow: a pad on
+  legs on a free plot, 25 m up). ClientShipCommand::LandOnPad (protocol 47): index 1 land (target = city frame module,
+  detail = address), 0 = the pilot takes the controls (any control input, 1.5 s grace after the click). Server
+  GameSimulationPadLanding.cpp: normal flight off + into the hub frame (within 60 km), the city's pad service flies it
+  kinematically (isDockStationControlledShip): to the transit height (tallest building + 80 m, <= 380 m, under the
+  430 m lanes) at <= 150 m/s, across, down at 6 m/s (2 m/s the last 30 m), LANDED, held; its place kept in the city
+  frame by the service (taken once, integrated; reading the ship back fed the hub/ship epoch step into itself and blew
+  up - found live). Found live too: left in normal flight the global integrator flew the held ship into the Earth
+  (fixed: normal flight off at the request). LIVE (D:/tmp/pad, DEV padland:<kind>): roof A2-03 LANDED 190 s (cockpit on
+  the roof, the plan shows the ship on A2); garage A6-02 LANDED 203 s (apron among the port buildings); stilts B4-01
+  LANDED 192 s, then DEV yaw -> "[Takeover] СЛУЖБА ПЛОЩАДОК: управление у пилота", the ship stays put (no jump, no
+  collision). NOT verified: the card's СТЫКОВКА clicked with the mouse (the DEV verb drives the same renderer request ->
+  SpaceState -> server path); pad meshes (no pad / garage / stilts geometry drawn yet); services on a pad.

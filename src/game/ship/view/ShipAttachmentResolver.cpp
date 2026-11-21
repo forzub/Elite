@@ -1,6 +1,11 @@
 #include "ShipAttachmentResolver.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <chrono>
+#include <cmath>
+#include <string>
+#include <unordered_map>
 
 #include "src/game/ship/ShipAttachmentUtils.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
@@ -126,9 +131,38 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
                     shipTransform.worldPosition
                 );
 
+            // The fragment's pose steps at the snapshot rate while the ship's is interpolated every frame: their
+            // difference jumped and a camera riding the fragment (the cockpit on a torn-off frame) shook while the rear
+            // view / drone did not (author 2026-11-21). Smoothed here with a ~0.1 s time constant (real time).
+            struct Smoothed
+            {
+                glm::vec3 position {0.0f};
+                glm::quat rotation {1.0f, 0.0f, 0.0f, 0.0f};
+                std::chrono::steady_clock::time_point at {};
+                bool valid = false;
+            };
+            static std::unordered_map<std::string, Smoothed> smoothed;
+            auto& s = smoothed[fragment.moduleId];
+            const auto nowClock = std::chrono::steady_clock::now();
+            const glm::quat target = glm::quat_cast(glm::mat3(fragment.orientation));
+            if (!s.valid || std::chrono::duration<double>(nowClock - s.at).count() > 1.0)
+            {
+                s.position = fragmentLocalPosition;
+                s.rotation = target;
+            }
+            else
+            {
+                const float dt = static_cast<float>(std::chrono::duration<double>(nowClock - s.at).count());
+                const float k = 1.0f - std::exp(-dt / 0.1f);
+                s.position = glm::mix(s.position, fragmentLocalPosition, k);
+                s.rotation = glm::slerp(s.rotation, glm::dot(s.rotation, target) < 0.0f ? -target : target, k);
+            }
+            s.at = nowClock;
+            s.valid = true;
+
             parentModel =
-                glm::translate(glm::mat4(1.0f), fragmentLocalPosition) *
-                fragment.orientation;
+                glm::translate(glm::mat4(1.0f), s.position) *
+                glm::mat4_cast(s.rotation);
 
             goto found_parent;
         }

@@ -7725,3 +7725,10 @@ start-up hitches (render), trade step 16 part 3 live.
   on every module), the parts fly as detached fragments, the ship out of the fight (scripted traffic exempt). LIVE
   (D:/tmp/ram/run.log): "ship 1548: BROKEN UP - 10852 J/kg absorbed (2821.74 MJ, 260 t), 137 link(s) torn" after
   hitting station object 11 ('station_core_rear') at 150.9 m/s.
+- (2026-11-21) E. "The front view shook while tumbling; the rear view and the drone did not; the hub shook, the planet
+  held" - ROOT CAUSE (source analysis) + FIX (SOURCE, compiled; no live repro yet): all three cameras use the same ship
+  pose, but ShipAttachmentResolver moves an attachment onto its DETACHED FRAGMENT when its parent module tore off (the
+  author's crash tore ship_frame_CF, the cockpit camera's mount). The fragment's pose steps at the snapshot rate while
+  the ship's is interpolated every frame -> the camera's position relative to the ship jumped -> near objects (the hub)
+  shook, far ones (the planet) did not (a translation, not a rotation, jitter). FIX: the fragment's local pose is
+  smoothed (~0.1 s, real time) where the camera rides it. Live repro pending (a torn cockpit mount).

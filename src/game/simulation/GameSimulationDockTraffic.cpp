@@ -235,6 +235,27 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
                   << " hub_zone_m=" << site.zoneRadiusMeters << "\n";
     }
 
+    // the real (player) ships near this dock: the scripted traffic yields to them (FIXED frame of the dock)
+    {
+        std::vector<game::traffic::dock::DockServiceTraffic::Obstacle> obstacles;
+        const glm::dvec3 origin = world::coordinates::fullMeters(dock->worldPosition);
+        const glm::dmat3 toFixed = glm::transpose(glm::dmat3(base->orientation));
+        for (const auto& [sid, sp] : m_ships)
+        {
+            if (!sp || !isPlayerControlled(sid) || isDockStationControlledShip(sid) ||
+                !game::simulation::sameRuntimeSystem(sp->core().transform().motion.systemId, dock->systemId))
+                continue;
+            const glm::dvec3 rel = sp->core().transform().fullWorldMeters() - origin;
+            if (glm::length(rel) > 15000.0)
+                continue;
+            game::traffic::dock::DockServiceTraffic::Obstacle o;
+            o.position = toFixed * rel;
+            o.velocity = toFixed * (sp->core().transform().motion.worldVelocityMps - glm::dvec3(dock->linearVelocity));
+            o.radius = 30.0;
+            obstacles.push_back(o);
+        }
+        site.traffic->setObstacles(std::move(obstacles));
+    }
     site.traffic->advance(now);
     for (const auto& line : site.traffic->drainLog())
     {

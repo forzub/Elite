@@ -444,6 +444,8 @@ struct DockServiceTraffic::Impl
         Segment current;
         int gateSlot = -1;
         int padIndex = -1;
+        double yieldSigma = 0.0;   // 0 = on its script's timing, 1 = stopped for an obstacle (the script time-stretched)
+        bool yieldLogged = false;
         CargoManifest cargo;
         glm::dvec3 farPoint {0.0};
         bool reportedClear = false;
@@ -1136,9 +1138,70 @@ struct DockServiceTraffic::Impl
         return wait > std::max(60.0, config.normalWaitLimitSeconds - tripInSeconds);
     }
 
+    std::vector<DockServiceTraffic::Obstacle> obstacles;
+
+    // a scripted (non-pilot) actor with a real ship ahead within its safety distance slows its script to a stop; the
+    // pose stays continuous (the segment times are shifted), the effective speed is (1 - sigma) x the script's
+    void yieldToObstacles(double dt)
+    {
+        if (dt <= 0.0)
+            return;
+        constexpr double BrakeMps2 = 15.0;   // ~1.5 g: a traffic ship's plausible braking (main drive after a flip / RCS)
+        for (auto& [id, a] : actors)
+        {
+            if (a.external || a.phase == ActorPhase::Gone || a.phase == ActorPhase::Docked || a.phase == ActorPhase::DepartureWait)
+                continue;
+            bool blocked = false;
+            double speed = 0.0;
+            if (!obstacles.empty())
+            {
+                const SegmentPose p = evaluate(a.current, now - a.current.t0, phaseAt(now));
+                const SegmentPose p2 = evaluate(a.current, now + 0.2 - a.current.t0, phaseAt(now + 0.2));
+                const glm::dvec3 vel = (p2.position - p.position) / 0.2;
+                const TrafficShipClass& c = trafficShipClass(a.kind);
+                const glm::dvec3 dir = glm::length(vel) > 0.5 ? glm::normalize(vel) : glm::dvec3(0.0);
+                speed = glm::length(vel);
+                for (const auto& o : obstacles)
+                {
+                    const glm::dvec3 rel = o.position - p.position;
+                    // the stopping distance at the braking limit + a margin (the script speed is the unstretched one)
+                    const double v = glm::length(vel) / std::max(0.05, 1.0 - a.yieldSigma);
+                    const double safe = c.length * 0.5 + o.radius + 60.0 + v * v / (2.0 * BrakeMps2);
+                    if (glm::length(rel) < safe && (glm::dot(rel, dir) > 0.0 || glm::length(rel) < c.length * 0.5 + o.radius + 20.0))
+                        blocked = true;
+                }
+            }
+            const double target = blocked ? 1.0 : 0.0;
+            // sigma's rate = the braking limit over the script's speed (a fast ship takes longer to stop / to resume)
+            const double scriptSpeed = speed / std::max(0.05, 1.0 - a.yieldSigma);
+            const double rate = std::clamp(BrakeMps2 / std::max(1.0, scriptSpeed), 0.05, 2.0);
+            a.yieldSigma += std::clamp(target - a.yieldSigma, -rate * dt, rate * dt);
+            if (blocked && !a.yieldLogged)
+            {
+                a.yieldLogged = true;
+                say(id, "yields: a ship ahead - holding until clear");
+            }
+            else if (!blocked && a.yieldLogged && a.yieldSigma <= 0.0)
+            {
+                a.yieldLogged = false;
+                say(id, "clear - resumes");
+            }
+            if (a.yieldSigma <= 0.0)
+                continue;
+            const double shift = dt * a.yieldSigma;
+            if (std::isfinite(a.current.duration))
+                a.current.t0 += shift;
+            for (auto& s : a.segments)
+                s.t0 += shift;
+        }
+    }
+
     void advance(double t)
     {
+        const double dt = std::max(0.0, t - now);
         now = std::max(now, t);
+        if (initialised)
+            yieldToObstacles(dt);
         if (!initialised)
             initialise();
         while (now >= nextShuttleAt)
@@ -1226,6 +1289,11 @@ DockServiceTraffic::~DockServiceTraffic() = default;
 void DockServiceTraffic::advance(double nowSeconds)
 {
     m_impl->advance(nowSeconds);
+}
+
+void DockServiceTraffic::setObstacles(std::vector<Obstacle> obstacles)
+{
+    m_impl->obstacles = std::move(obstacles);
 }
 
 std::vector<TrafficActorView> DockServiceTraffic::actors() const

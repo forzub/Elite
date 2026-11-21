@@ -7706,3 +7706,15 @@ start-up hitches (render), trade step 16 part 3 live.
   the under.p lanes at -100 m, 1 m from the deck's underside at the tube's edge). Applies to every planar hub with the
   canopy (and the belt settlements' canopy).
   [Collision] log now names the other body's module and the ship's position in its frame.
+- (2026-11-21) B. Ships fly through the player - SOURCE + CHECKS (live run had no conflict to show):
+  * Cause: the dock traffic / promoted air traffic are kinematic scripted ships (materialized near a player) and were
+    left out of the collision step (isDockStationControlledShip covers their shells); the air traffic evades ([Evade]
+    works: 5 events in the author's log), the dock traffic did not.
+  * Collisions: scripted ships take part as kinematic bodies (mass 1e12: the other ship bounces, both are damaged,
+    "half to each"); pairs scripted-scripted / scripted-vs-station-flown and scripted-vs-static geometry are skipped
+    (the dispatcher's business).
+  * Yielding: DockServiceTraffic::setObstacles (the server passes the player ships near the dock, FIXED frame each tick);
+    a non-pilot actor with a real ship ahead within len/2 + r + 60 m + v^2 / (2 x 15 m/s^2) slows its script to a stop
+    (time-stretch, the braking limited to 15 m/s^2, pose continuous) and resumes when clear ("yields" / "resumes").
+  * EliteDockTrafficCheck --yield-test: PASS (a Cobrett at 54 m/s stopped 106 m short of a ship 334 m ahead on its
+    track, held 20 s, resumed); the regular 1 h run: 0 invariant / separation / structure violations.

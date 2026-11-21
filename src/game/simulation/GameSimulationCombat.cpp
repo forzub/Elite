@@ -1590,23 +1590,31 @@ void GameSimulation::collideShips(double dt)
         glm::dmat3 R;
         double m, I, r;
         bool velocityKnown = true;   // a static object's first tick: no velocity yet - push apart, no impulse
+        bool scripted = false;       // a traffic ship flown by its script (kinematic)
     };
     std::vector<Body> bodies;
     for (auto& [id, sp] : m_ships)
     {
         auto& tr = sp->core().transform();
-        if (tr.motion.mode != game::navigation::MotionMode::HubTactical || !tr.motion.travelFrame.valid ||
-            isDockStationControlledShip(id))
+        // scripted traffic (dock traffic / promoted city air traffic, materialized near a player): kinematic bodies -
+        // their script owns the pose, so they take the hit as a very heavy body and both ships are damaged (author
+        // 2026-11-21: "ships fly through me ... no collision")
+        const bool scripted = m_dockTrafficShells.count(id) != 0 || m_airTrafficShells.count(id) != 0;
+        if (!scripted && (tr.motion.mode != game::navigation::MotionMode::HubTactical || !tr.motion.travelFrame.valid ||
+                          isDockStationControlledShip(id)))
             continue;
         Body b;
         b.id = id;
         b.ship = sp.get();
+        b.scripted = scripted;
         b.p = world::coordinates::fullMeters(tr.worldPosition);
         // the ship's own world velocity (its travel frame + its local velocity). NOT the finite-difference combat
         // track: one tick after a position jump (a dev start, a frame hand-over) that is km/s off, and a contact in that
         // tick read 19 km/s "closing" against a city - CRUSHED and spun at 200 rad/s (2026-11-18, author: «пробил ее
         // насквозь ... корабль перестал отвечать на управление, а вид из кабины - очень трясет»)
-        if (tr.motion.travelFrame.valid)
+        if (scripted)
+            b.v = tr.motion.worldVelocityMps;   // the script's velocity
+        else if (tr.motion.travelFrame.valid)
             b.v = tr.motion.travelFrame.localToWorldVelocity(tr.motion.localPositionMeters, tr.motion.localVelocityMps);
         else
         {
@@ -1616,6 +1624,8 @@ void GameSimulation::collideShips(double dt)
         b.R = basisOf(tr);
         b.w = b.R * glm::dvec3(tr.pitchRate, tr.yawRate, tr.rollRate);
         b.m = std::max(1.0e3, static_cast<double>(sp->core().effectivePhysics().massKg));
+        if (scripted)
+            b.m = 1.0e12;   // kinematic: the script holds its track; the other ship bounces off it
         b.r = 1.0;
         for (const auto& v : sp->core().hitComponent().volumes)
             if (!v.destroyed && glm::length(v.center) > 1.0e-4f)
@@ -1669,6 +1679,11 @@ void GameSimulation::collideShips(double dt)
             Body& A = bodies[i];
             Body& B = bodies[k];
             if (B.ship && A.ship->core().transform().motion.systemId != B.ship->core().transform().motion.systemId)
+                continue;
+            if (!B.ship && A.scripted)
+                continue;   // a scripted track vs the station's own geometry: the script's business
+            // two scripted ships (or one and a ship the station flies): their tracks are the dispatcher's business
+            if (B.ship && (A.scripted || isDockStationControlledShip(A.id)) && (B.scripted || isDockStationControlledShip(B.id)))
                 continue;
             if (!B.ship &&
                 !game::simulation::sameRuntimeSystem(statics[k - shipCount]->systemId, A.ship->core().transform().motion.systemId))

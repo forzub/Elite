@@ -171,6 +171,16 @@ public:
 
     // Advances actors and the dispatcher to `nowSeconds` (monotonic).
     void advance(double nowSeconds);
+    // the real ships around the dock (FIXED frame, metres) for this tick: a scripted traffic ship that has one ahead of
+    // it within its safety distance YIELDS - its script slows to a stop (time-stretched, ~4 s) and resumes when clear
+    // (author 2026-11-21: "ships fly through me - they should avoid the obstacle")
+    struct Obstacle
+    {
+        glm::dvec3 position {0.0};
+        glm::dvec3 velocity {0.0};
+        double radius = 30.0;
+    };
+    void setObstacles(std::vector<Obstacle> obstacles);
 
     [[nodiscard]] std::vector<TrafficActorView> actors() const;
     [[nodiscard]] TrafficPose pose(std::uint64_t actorId, double nowSeconds) const;

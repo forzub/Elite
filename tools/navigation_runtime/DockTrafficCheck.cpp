@@ -117,6 +117,65 @@ int main(int argc, char** argv)
     }
     const double omega = hex::hexDockGeometry().spinRadPerSecond();
     DockServiceTraffic traffic(config, [omega](double t) { return omega * t; });
+    // --yield-test (2026-11-21): a real ship parked 120 m ahead of a moving traffic ship -> it slows to a stop and holds;
+    // the obstacle gone -> it resumes on its script
+    if (argc > 1 && !std::strcmp(argv[argc - 1], "--yield-test"))
+    {
+        double t = 0.0;
+        for (; t < 900.0; t += 0.5)
+            traffic.advance(t);
+        std::uint64_t mover = 0;
+        glm::dvec3 dir(0.0);
+        for (int tries = 0; tries < 2000 && mover == 0; ++tries, t += 0.5)
+        {
+            traffic.advance(t);
+            for (const auto& a : traffic.actors())
+            {
+                const auto p0 = traffic.pose(a.id, t), p1 = traffic.pose(a.id, t + 1.0);
+                const double v = p0.present && p1.present ? glm::length(p1.position - p0.position) : 0.0;
+                if (v > 5.0 && v < 60.0 && glm::length(p0.position) < 3000.0)   // near the dock, at approach speeds
+                {
+                    mover = a.id;
+                    dir = glm::normalize(p1.position - p0.position);
+                    break;
+                }
+            }
+        }
+        if (mover == 0)
+        {
+            std::printf("FAIL  yield test: no moving traffic ship found\n");
+            return 1;
+        }
+        const glm::dvec3 start = traffic.pose(mover, t).position;
+        DockServiceTraffic::Obstacle o;
+        // ON its future track (its script's pose 15 s ahead), seen from where it is now - not a straight line (a curve)
+        (void)dir;
+        o.position = traffic.pose(mover, t + 15.0).position;
+        std::printf("INFO  obstacle %.0f m ahead on the track (straight line), the ship at %.0f m/s\n", glm::length(o.position - start),
+                    glm::length(traffic.pose(mover, t + 1.0).position - start));
+        o.radius = 30.0;
+        traffic.setObstacles({o});
+        for (double k = 0.0; k < 10.0; k += 0.5)
+            traffic.advance(t += 0.5);
+        const glm::dvec3 heldFrom = traffic.pose(mover, t).position;
+        for (double k = 0.0; k < 20.0; k += 0.5)
+            traffic.advance(t += 0.5);
+        const double heldMove = glm::length(traffic.pose(mover, t).position - heldFrom);
+        const double gap = glm::length(o.position - traffic.pose(mover, t).position);
+        traffic.setObstacles({});
+        const glm::dvec3 resumeFrom = traffic.pose(mover, t).position;
+        for (double k = 0.0; k < 20.0; k += 0.5)
+            traffic.advance(t += 0.5);
+        const double resumed = glm::length(traffic.pose(mover, t).position - resumeFrom);
+        const bool ok = heldMove < 2.0 && gap > 30.0 && resumed > 20.0;
+        std::printf("%s  yield test: ship %llu - moved %.1f m while held for 20 s (%.0f m short of the obstacle), %.0f m in the 20 s "
+                    "after it left\n",
+                    ok ? "PASS" : "FAIL", static_cast<unsigned long long>(mover), heldMove, gap, resumed);
+        for (const auto& line : traffic.drainLog())
+            if (line.text.find("yields") != std::string::npos || line.text.find("resumes") != std::string::npos)
+                std::printf("INFO  %s\n", line.text.c_str());
+        return ok ? 0 : 1;
+    }
     std::ofstream log(logPath);
     log << "# dock traffic check: hours=" << hours << " cobretts=" << config.cobrettCount
         << " shuttle_interval_s=" << config.shuttleIntervalSeconds << " seed=" << config.seed << "\n";

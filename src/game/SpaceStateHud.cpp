@@ -243,7 +243,9 @@ m_systemMapRenderer.render(
                         if (!bounded || (p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1))
                             hit = t;
                     };
-                    surface(0.0, 0.0, 0.0, 0.0, 0.0, false);
+                    // the city plane within the city's bounds only (beyond its edge the planet is under the belly - live 2026-11-21:
+                    // an unbounded plane read 350 m over the planet)
+                    surface(0.0, plan->bounds().x, plan->bounds().z, plan->bounds().y, plan->bounds().w, true);
                     for (const auto& m : plan->modules())
                     {
                         if (m.under)
@@ -276,7 +278,21 @@ m_systemMapRenderer.render(
                         continue;
                     hit = std::min(hit, along - std::sqrt(r * r - off2));
                 }
-                const double heightM = hit - half - game::navigation::HubPadLegLengthMeters;
+                double heightM = hit - half - game::navigation::HubPadLegLengthMeters;
+                {
+                    // smoothed (~0.25 s): the ship and the city are interpolated apart - their difference wanders by a
+                    // few metres at orbital speed and the figures shook (live 2026-11-21); a jump of the target restarts it
+                    static double smoothH = -1.0;
+                    static std::chrono::steady_clock::time_point smoothAt {};
+                    const auto t = std::chrono::steady_clock::now();
+                    const double dtH = std::chrono::duration<double>(t - smoothAt).count();
+                    smoothAt = t;
+                    if (hit > reach || smoothH < 0.0 || std::abs(heightM - smoothH) > 20.0 || dtH > 0.5)
+                        smoothH = heightM;
+                    else
+                        smoothH += (heightM - smoothH) * std::min(1.0, dtH / 0.25);
+                    heightM = smoothH;
+                }
                 // the closing speed to what is under the belly: the height's own rate (smoothed, real time) - right for a held
                 // ship too (its replicated relative velocity is not the service's) and for a ship passing underneath; a jump of
                 // the target (it flew out from under the belly) restarts it
@@ -290,7 +306,15 @@ m_systemMapRenderer.render(
                     rate = glm::dot(relV, down);
                 lastHeight = hit <= reach ? heightM : -1.0;
                 lastAt = nowAt;
-                const double descentMps = rate;
+                double descentMps = rate;
+                // on the deck (the pad service holds the ship): exactly zero - a 260 t ship standing on its legs does not drift
+                // by 0.3 m / 0.1 m/s (live 2026-11-21)
+                if (playerShip.padService.rfind("phase:3", 0) == 0)
+                {
+                    heightM = 0.0;
+                    descentMps = 0.0;
+                    rate = 0.0;
+                }
                 char text[160];
                 // steady figures (author 2026-11-21: «дрожит высотомер и спидометр - гистерезис или пониженная точность»): a
                 // shown value moves only out of its band; tenths below 10 m, whole metres above
@@ -355,9 +379,38 @@ m_systemMapRenderer.render(
         if (m_activeCameraMode == ShipCameraMode::Cockpit || m_activeCameraMode == ShipCameraMode::Bottom)
         {
             const std::uint8_t gear = playerShip.landingGear;
-            const char* label = gear == 1 ? "ОПОРЫ: ВЫПУЩЕНЫ" : gear == 2 ? "ОПОРЫ: СЛОМАНЫ" : "ОПОРЫ: УБРАНЫ (G)";
+            // the legs are wanted now (author 2026-11-21: «при готовности к посадке ... надо писать - выпустить опоры - и мигать
+            // этим текстом, иначе не догадаются»): the service sets the ship down / asked for them, or a pad is near
+            bool legsWanted = playerShip.padService.rfind("phase:2", 0) == 0 || playerShip.padService == "pad:gear_up" ||
+                              playerShip.padService == "pad:no_gear";
+            if (gear != 1 && !legsWanted && m_client)
+            {
+                const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
+                for (const auto& [oid, object] : m_client->world().objects())
+                {
+                    if (legsWanted || !object.hubAttachment.valid)
+                        continue;
+                    const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId);
+                    const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
+                    if (!plan || glm::length(shipW - origin) > 9000.0)
+                        continue;
+                    const glm::dvec3 q = glm::transpose(glm::dmat3(glm::mat3(object.renderOrientation))) * (shipW - origin);
+                    for (const auto& m : plan->modules())
+                        if (m.pad && glm::length(m.padPosition - q) < game::navigation::HubPadZoneShowMeters)
+                        {
+                            legsWanted = true;
+                            break;
+                        }
+                }
+            }
+            const bool blinkOn = std::fmod(glfwGetTime(), 0.8) < 0.5;
+            const char* label = gear == 1 ? "ОПОРЫ: ВЫПУЩЕНЫ"
+                              : gear == 2 ? "ОПОРЫ: СЛОМАНЫ"
+                              : legsWanted ? (blinkOn ? "ВЫПУСТИТЕ ОПОРЫ (G)" : "")
+                                           : "ОПОРЫ: УБРАНЫ (G)";
             const glm::vec4 colour = gear == 1   ? glm::vec4(0.35f, 1.0f, 0.45f, 0.95f)
                                    : gear == 2 ? glm::vec4(1.0f, 0.28f, 0.22f, 1.0f)
+                                   : legsWanted ? glm::vec4(1.0f, 0.62f, 0.18f, 1.0f)
                                                : glm::vec4(0.62f, 0.70f, 0.78f, 0.80f);
             auto& text = TextRenderer::instance();
             const int px = 16;
@@ -544,7 +597,19 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                 continue;
             const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
             const glm::dmat3 R(glm::mat3(object.renderOrientation));
-            const glm::dvec3 q = glm::transpose(R) * (shipW - origin);
+            // the ship in the city frame, smoothed (~0.25 s): the ship and the city are interpolated apart, their difference
+            // wanders by metres at orbital speed - the gates shook (live 2026-11-21); a big jump restarts it
+            static glm::dvec3 qSmooth(0.0);
+            static std::chrono::steady_clock::time_point qAt {};
+            const glm::dvec3 qRaw = glm::transpose(R) * (shipW - origin);
+            const auto qNow = std::chrono::steady_clock::now();
+            const double qDt = std::chrono::duration<double>(qNow - qAt).count();
+            qAt = qNow;
+            if (qDt > 0.5 || glm::length(qRaw - qSmooth) > 80.0)
+                qSmooth = qRaw;
+            else
+                qSmooth += (qRaw - qSmooth) * std::min(1.0, qDt / 0.25);
+            const glm::dvec3 q = qSmooth;
             double tallest = 0.0;
             for (const auto& b : plan->blocks())
                 tallest = std::max(tallest, pad->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);

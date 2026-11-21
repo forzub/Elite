@@ -7930,3 +7930,12 @@ start-up hitches (render), trade step 16 part 3 live.
   QUEUE: a collision warning on the HUD (by time to impact, >= 500 m) + collisions with buildings with consequences; a
   landed panel (services list) bigger than the terminal line; the cargo lift on the pads; floors on the 2D plan (two
   layer hubs); the outpost layout generator; the founding chain; the city refuel / repair rule.
+- (2026-11-21) SOURCE (compiled objects; full build + live after the author closes the game): the pad service flies within
+  the ship's working thrust (applyAuthorityToControlParams: accel = min(8, max(strafe, 0.5 x main)), turns <= 3 x the
+  angular accel, 2..20 deg/s); < 0.2 m/s2 -> refused at the request ("корабль не управляем (нет тяги)") / let go during
+  the approach (the ship coasts). Take-off from a pad (author: «вращаю на платформе - пробивает кормой платформу»): after
+  the takeover the landing attitude is held (no turning) until 3 m over the deck or 60 s. HUD: the ВЫПУСТИТЕ ОПОРЫ (G)
+  blink (amber) when the service sets down / asked for legs / a pad within 100 m and the legs are in; F4: the city plane
+  bounded by the city (an unbounded plane read 350 m over the planet), the height smoothed (~0.25 s), 0.0 / 0.0 on the
+  deck; the route tunnel from a smoothed ship position (the gates shook). QUEUE: a pad tug for a disabled ship
+  (expensive pads), the tunnel direction to re-check live.

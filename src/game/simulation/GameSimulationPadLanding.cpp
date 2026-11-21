@@ -15,12 +15,25 @@
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/navigation/TravelFrameSystem.h"
+#include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include <glm/gtc/quaternion.hpp>
 
 namespace
 {
 // the pilot took the controls back (server time per ship): no capture / touchdown for a while - he is taking off
 std::unordered_map<std::uint64_t, double> g_padReleasedAt;
+// a ship taken back while standing on a pad (author 2026-11-21: «начинаю вращать корабль на платформе - он пробивает кормой
+// платформу; если он на опорах - так не должно быть»): its legs stand on the deck - the attitude it landed with is held and
+// it may only rise; free once 3 m over the deck (or after a minute)
+struct PadTakeoff
+{
+    std::string frameModuleId;
+    glm::dvec3 pad {0.0};
+    glm::dvec3 out {0.0, 1.0, 0.0};
+    glm::dmat3 attitude {1.0};   // in the city frame
+    double since = 0.0;
+};
+std::unordered_map<std::uint64_t, PadTakeoff> g_padTakeoffs;
 } // namespace
 
 namespace
@@ -41,6 +54,16 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         return false;
     if (!land)
     {
+        if (const auto held = m_padLandings.find(shipId); held != m_padLandings.end() && held->second.phase == 3)
+            for (const auto& [oid, obj] : m_staticObjects)
+                if (obj.hubModuleId == held->second.frameModuleId)
+                {
+                    const glm::dmat3 R(glm::mat3(obj.orientation));
+                    g_padTakeoffs[shipId.value] = {held->second.frameModuleId, held->second.padLocal, held->second.outLocal,
+                                                   glm::transpose(R) * glm::dmat3(glm::mat3(ship->core().transform().orientation)),
+                                                   serverTime()};
+                    break;
+                }
         if (m_padLandings.erase(shipId) != 0)
         {
             g_padReleasedAt[shipId.value] = serverTime();
@@ -63,6 +86,14 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
                             : nullptr;
     if (!refusal && glm::length(tr.fullWorldMeters() - world::coordinates::fullMeters(city->worldPosition)) > 60000.0)
         refusal = "farther than 60 km";
+    if (!refusal)
+    {
+        const auto caps = game::ship::telemetry::applyAuthorityToControlParams(ship->core().effectivePhysics(),
+                                                                                 ship->core().controlAuthorityTelemetry());
+        if (std::max(static_cast<double>(caps.strafeAccel),
+                     caps.forwardMainEngineAvailable ? 0.5 * caps.forwardMainEngineAccelerationMps2 : 0.0) < 0.2)
+            refusal = "no working thrust";
+    }
     // a ship near the city but not in its hub's frame (normal flight): the pad service takes it into the frame where
     // it is (the kinematic hold starts from its place; the frame velocity is the hub's)
     const bool freeFlight = m_freeFlights.count(shipId) != 0;
@@ -107,7 +138,7 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
                   << std::endl;
         const std::string why = refusal;
         const char* key = why == "no such city" ? "no_city" : why == "no pad at that address" ? "no_pad"
-                        : why == "the station flies the ship" ? "station" : why == "farther than 60 km" ? "far" : "frame";
+                        : why == "the station flies the ship" ? "station" : why == "farther than 60 km" ? "far" : why == "no working thrust" ? "no_thrust" : "frame";
         m_padNotices[shipId] = {std::string("refused:") + key, serverTime()};
         return false;
     }
@@ -180,6 +211,22 @@ void GameSimulation::updatePadLandings(double dt)
         }
         glm::dvec3& q = heldIt->second;
         const glm::dvec3& out = p.outLocal;
+        // what the ship can still do (author 2026-11-21: «будет ли отказ двигателя влиять на полёт к посадке?»): the service flies
+        // it within its working thrust (damage included) - no faster than it could brake, no quicker turns than its RCS
+        // allows; with next to no thrust it cannot be landed: the service lets go, the ship coasts
+        const auto caps = game::ship::telemetry::applyAuthorityToControlParams(ship->core().effectivePhysics(),
+                                                                                 ship->core().controlAuthorityTelemetry());
+        const double accel = std::min(8.0, std::max(static_cast<double>(caps.strafeAccel),
+                                                    caps.forwardMainEngineAvailable ? 0.5 * caps.forwardMainEngineAccelerationMps2 : 0.0));
+        const float turnDegPerS = std::clamp(glm::degrees(static_cast<float>(caps.angularAccel)) * 3.0f, 2.0f, 20.0f);
+        if (accel < 0.2 && p.phase < 3)
+        {
+            m_padNotices[id] = {"pad:no_thrust", serverTime()};
+            std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address << ": no working thrust (" << accel
+                      << " m/s2) - the service lets go, the ship coasts" << std::endl;
+            drop.push_back(id);
+            continue;
+        }
         const auto& dims = ship->core().desc().logicalDimensions();
         const double clearance = (dims.enabled && dims.height > 0.0 ? 0.5 * dims.height : 3.0) + 0.5;
         const glm::dvec3 touchdown = p.padLocal + out * clearance;
@@ -225,7 +272,7 @@ void GameSimulation::updatePadLandings(double dt)
                       << static_cast<long long>(q.y) << "," << static_cast<long long>(q.z) << ")" << std::endl;
         }
         // the speed: 8 m/s^2 up, braking-limited to stop at the target; the last 30 m of the descent at 2 m/s
-        const double brake = std::sqrt(2.0 * 8.0 * dist);
+        const double brake = std::sqrt(2.0 * accel * dist);
         double want = std::min(cruise, brake);
         if (p.phase == 2 && dist < 30.0)
             want = std::min(want, 2.0);
@@ -243,7 +290,7 @@ void GameSimulation::updatePadLandings(double dt)
                 m_padNotices[id] = {"pad:gear_up", serverTime()};
             }
         }
-        p.speedMps = std::clamp(want, p.speedMps - 8.0 * dt, p.speedMps + 8.0 * dt);
+        p.speedMps = std::clamp(want, p.speedMps - accel * dt, p.speedMps + accel * dt);
         glm::dvec3 vLocal(0.0);
         if (p.phase < 3)
         {
@@ -300,7 +347,7 @@ void GameSimulation::updatePadLandings(double dt)
             if (glm::dot(from, to) < 0.0f)
                 to = -to;
             const float angle = 2.0f * std::acos(std::clamp(std::abs(glm::dot(from, to)), 0.0f, 1.0f));
-            const float maxStep = glm::radians(20.0f) * static_cast<float>(dt) * std::clamp(angle / glm::radians(10.0f), 0.15f, 1.0f);
+            const float maxStep = glm::radians(turnDegPerS) * static_cast<float>(dt) * std::clamp(angle / glm::radians(10.0f), 0.15f, 1.0f);
             const glm::quat turned = angle <= maxStep ? to : glm::slerp(from, to, maxStep / angle);
             tr.orientation = glm::mat4_cast(glm::normalize(turned));
         }
@@ -370,6 +417,35 @@ void GameSimulation::updatePadTouchdowns(double dt)
         if (!shipPtr || !isPlayerControlled(id) || !passOwns(shipPtr.get()) || m_padLandings.count(id) != 0 ||
             isDockStationControlledShip(id))
             continue;
+        // taking off from a pad: the legs stand on the deck - the landing attitude held, no turning, until 3 m up
+        if (const auto t = g_padTakeoffs.find(id.value); t != g_padTakeoffs.end())
+        {
+            auto& tr = shipPtr->core().transform();
+            const StaticObject* city = nullptr;
+            for (const auto& [oid, obj] : m_staticObjects)
+                if (obj.hubModuleId == t->second.frameModuleId)
+                    city = &obj;
+            const auto& dims = shipPtr->core().desc().logicalDimensions();
+            const double clearance = (dims.enabled && dims.height > 0.0 ? 0.5 * dims.height : 3.0) + 0.5;
+            if (!city || tr.motion.systemId != m_activeCelestialSystemId)
+                g_padTakeoffs.erase(t);
+            else
+            {
+                const glm::dmat3 R(glm::mat3(city->orientation));
+                const glm::dvec3 q = glm::transpose(R) * (tr.fullWorldMeters() - world::coordinates::fullMeters(city->worldPosition));
+                const double h = glm::dot(q - t->second.pad, t->second.out) - clearance;
+                if (h > 3.0 || now - t->second.since > 60.0)
+                {
+                    std::cerr << "[PadLanding] ship " << id.value << " off the pad (" << h << " m up): free to turn" << std::endl;
+                    g_padTakeoffs.erase(t);
+                }
+                else
+                {
+                    tr.orientation = glm::mat4(glm::mat3(R * t->second.attitude));
+                    tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
+                }
+            }
+        }
         if (const auto r = g_padReleasedAt.find(id.value); r != g_padReleasedAt.end() && now - r->second < 15.0)
             continue;   // just taken back: taking off
         auto& tr = shipPtr->core().transform();

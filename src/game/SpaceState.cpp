@@ -609,7 +609,9 @@ void SpaceState::updatePilotTakeover(bool touching)
             {
                 lastStatus = status;
                 std::string line;
-                if (status == "gear:out")
+                if (status == "pad:no_thrust")
+                    line = "СЛУЖБА ПЛОЩАДОК: корабль не управляем (нет тяги) - служба отпускает его, корабль идёт по инерции";
+                else if (status == "gear:out")
                     line = "ОПОРЫ: выпущены - касание не быстрее 2.5 м/с, от 4 м/с опоры ломаются (F4 - нижняя камера)";
                 else if (status == "gear:in")
                     line = "ОПОРЫ: убраны";
@@ -635,9 +637,12 @@ void SpaceState::updatePilotTakeover(bool touching)
                 {
                     const std::string why = status.substr(8);
                     line = std::string("СЛУЖБА ПЛОЩАДОК: отказ - ") +
-                           (why == "no_pad" ? "у здания нет площадки" : why == "far" ? "дальше 60 км от города"
-                            : why == "station" ? "корабль ведёт станция" : why == "no_city" ? "нет такого города"
-                                                                          : "кадр хаба недоступен");
+                           (why == "no_thrust" ? "корабль не управляем (нет тяги)"
+                            : why == "no_pad"  ? "у здания нет площадки"
+                            : why == "far"     ? "дальше 60 км от города"
+                            : why == "station" ? "корабль ведёт станция"
+                            : why == "no_city" ? "нет такого города"
+                                               : "кадр хаба недоступен");
                     m_padLandingObjectId.clear();
                     m_systemMapRenderer.setPadLandingActive(std::string());
                 }

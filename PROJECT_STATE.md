@@ -7840,3 +7840,14 @@ start-up hitches (render), trade step 16 part 3 live.
   line in the terminal. Previews checked (build/tools/mesh_editor/web/previews/hub_modules/hubl_pad_*.png): fixed the
   wreck's floating under-frame and the stage plates on a leg top. NOT done: pad construction kits in the expansion
   projects (tools/models/hub_expansion.py kits), a close outside view of a placed pad in the game.
+- QUEUE (author 2026-11-21, after the pads play test), in this order:
+  1. info cards: only the last clicked card stays open (ships and docks keep theirs); pad buildings: a ПОСАДКА button;
+     the picked block highlighted on the 3D Hub map too.
+  2. the composition list rows expand into their blocks / addresses (pick by address).
+  3. cameras: F4 = a bottom camera (wide format, at the ship's geometry centre: landing / cargo drop); the rear view and
+     the drone view without the pilot panel, the marker frame and the markers.
+  4. the red / green / blue zones in flight hidden behind objects (a blocker between the zone and the player hides it).
+  5. pads: a capture zone (a transparent cube with whitish edges) shown within ~100 m of the pad - entering it lands
+     the ship automatically on expensive objects; cheap ones / slums: manual landing; landing gear (extendable damped
+     legs) must be down before landing, they break on a hard impact.
+  6. refuel and repair blocks on every hub as priority buildings, like the trade platform (their menus, lanes to them).

@@ -11,6 +11,7 @@
 #include <cmath>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
@@ -22,6 +23,9 @@ namespace
 {
 // the pilot took the controls back (server time per ship): no capture / touchdown for a while - he is taking off
 std::unordered_map<std::uint64_t, double> g_padReleasedAt;
+// released from a pad: no capture again until the ship has been out of every pad zone once (live 2026-11-21: the docking
+// lift-off was re-captured and set back down)
+std::unordered_set<std::uint64_t> g_padAwaitZoneExit;
 // a ship taken back while standing on a pad (author 2026-11-21: «начинаю вращать корабль на платформе - он пробивает кормой
 // платформу; если он на опорах - так не должно быть»): its legs stand on the deck - the attitude it landed with is held and
 // it may only rise; free once 3 m over the deck (or after a minute)
@@ -47,6 +51,68 @@ const StaticObject* findCityFrame(const std::unordered_map<EntityId, StaticObjec
 }
 } // namespace
 
+// the ship is taken into `hubId`'s navigation frame where it is: normal flight (the global integrator) off, the frame's
+// local position from its world position, the attitude kept. The pad service and the docking request near a hub in
+// normal flight use it (live 2026-11-21: the docking autopilot refused silently - "not matched to target Hub frame").
+bool GameSimulation::takeShipIntoHubFrame(EntityId shipId, const std::string& hubId)
+{
+    Ship* ship = getShip(shipId);
+    if (!ship)
+        return false;
+    auto& tr = ship->core().transform();
+    if (!m_freeFlights.count(shipId) && tr.motion.mode == game::navigation::MotionMode::HubTactical && tr.motion.hubId == hubId)
+        return true;
+    const auto* hubFrame = hubNavigationFrame(hubId);
+    if (!hubFrame || !hubFrame->valid)
+        return false;
+    if (m_freeFlights.count(shipId))
+    {
+        // left running, the global step flew a held ship into the Earth (live 2026-11-21)
+        auto& motion = tr.motion;
+        motion.freeFlight = false;
+        motion.freeFlightThrust = 0;
+        motion.jEngine = false;
+        motion.velocityReferenceKind = 0;
+        motion.freeFlightReferenceId.clear();
+        motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
+        motion.freeFlightOrbitBodyId.clear();
+        m_freeFlights.erase(shipId);
+    }
+    game::navigation::ReferenceFrame frame;
+    frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
+    frame.systemId = tr.motion.systemId;
+    frame.hubId = hubId;
+    frame.localOffsetMeters = hubFrame->worldToLocalPosition(tr.fullWorldMeters());
+    const glm::mat4 orientation = tr.orientation;
+    if (!placeShipInReferenceFrame(shipId, frame))
+        return false;
+    tr.orientation = orientation;
+    std::cerr << "[HubFrame] ship " << shipId.value << " taken into hub " << hubId << "'s frame" << std::endl;
+    return true;
+}
+
+bool GameSimulation::enterHubFrameForModule(EntityId shipId, const std::string& moduleId)
+{
+    for (const auto& [oid, o] : m_staticObjects)
+        if (o.hubModuleId == moduleId && !o.hubId.empty())
+        {
+            // only near the hub (its traffic space): farther the route to the hub (orbital transfer) comes first
+            const Ship* ship = getShip(shipId);
+            const auto* hubFrame = hubNavigationFrame(o.hubId);
+            if (!ship || !hubFrame || !hubFrame->valid)
+                return false;
+            const double d = glm::length(hubFrame->worldToLocalPosition(ship->core().transform().fullWorldMeters()));
+            if (d > 30000.0)
+            {
+                std::cerr << "[HubFrame] ship " << shipId.value << ": " << d << " m from hub " << o.hubId << " - too far" << std::endl;
+                return false;
+            }
+            return takeShipIntoHubFrame(shipId, o.hubId);
+        }
+    std::cerr << "[HubFrame] ship " << shipId.value << ": module " << moduleId << " not found" << std::endl;
+    return false;
+}
+
 bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frameModuleId, const std::string& address, bool land)
 {
     Ship* ship = getShip(shipId);
@@ -67,6 +133,7 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         if (m_padLandings.erase(shipId) != 0)
         {
             g_padReleasedAt[shipId.value] = serverTime();
+            g_padAwaitZoneExit.insert(shipId.value);
             ship->setControlState(ShipControlState {});
             std::cerr << "[PadLanding] ship " << shipId.value << ": the pilot takes the controls" << std::endl;
         }
@@ -97,40 +164,12 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
     // a ship near the city but not in its hub's frame (normal flight): the pad service takes it into the frame where
     // it is (the kinematic hold starts from its place; the frame velocity is the hub's)
     const bool freeFlight = m_freeFlights.count(shipId) != 0;
-    if (!refusal && freeFlight)
+    if (!refusal && (freeFlight || tr.motion.mode != game::navigation::MotionMode::HubTactical || tr.motion.hubId != city->hubId))
     {
-        // normal flight (the global integrator) ends here: the pad service holds the ship from now on (left running,
-        // the global step flew the held ship into the Earth - live 2026-11-21)
-        auto& motion = tr.motion;
-        motion.freeFlight = false;
-        motion.freeFlightThrust = 0;
-        motion.jEngine = false;
-        motion.velocityReferenceKind = 0;
-        motion.freeFlightReferenceId.clear();
-        motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
-        motion.freeFlightOrbitBodyId.clear();
-        m_freeFlights.erase(shipId);
-        std::cerr << "[PadLanding] ship " << shipId.value << ": normal flight off for the pad service" << std::endl;
-    }
-    if (!refusal &&
-        (freeFlight || tr.motion.mode != game::navigation::MotionMode::HubTactical || tr.motion.hubId != city->hubId))
-    {
-        const auto* hubFrame = hubNavigationFrame(city->hubId);
-        game::navigation::ReferenceFrame frame;
-        frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
-        frame.systemId = city->systemId;
-        frame.hubId = city->hubId;
-        const glm::mat4 orientation = tr.orientation;
-        if (hubFrame && hubFrame->valid)
-            frame.localOffsetMeters = hubFrame->worldToLocalPosition(tr.fullWorldMeters());
-        if (!hubFrame || !hubFrame->valid || !placeShipInReferenceFrame(shipId, frame))
+        if (!takeShipIntoHubFrame(shipId, city->hubId))
             refusal = "the hub frame is unavailable";
         else
-        {
-            tr.orientation = orientation;
-            std::cerr << "[PadLanding] ship " << shipId.value << " taken into hub " << city->hubId << "'s frame" << std::endl;
             m_padNotices[shipId] = {freeFlight ? "taken:flight" : "taken:frame", serverTime()};
-        }
     }
     if (refusal)
     {
@@ -142,7 +181,24 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         m_padNotices[shipId] = {std::string("refused:") + key, serverTime()};
         return false;
     }
-    return startPadService(shipId, frameModuleId, address, 0);
+    // brought over the pad by the planner and the autopilot (the route to its approach point, author 2026-11-21): the
+    // service only flies the last metres across and sets the ship down on its legs; from elsewhere it climbs first
+    int phase = 0;
+    {
+        const glm::dmat3 R(glm::mat3(city->orientation));
+        const glm::dvec3 q = glm::transpose(R) * (tr.fullWorldMeters() - world::coordinates::fullMeters(city->worldPosition));
+        const glm::dvec3 out = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
+        glm::dvec3 flat = q - building->padPosition;
+        const double height = glm::dot(flat, out);
+        flat -= out * height;
+        double tallest = 0.0;
+        for (const auto& b : plan->blocks())
+            tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
+        const double transitAbovePad = std::min(380.0, tallest + 80.0) - glm::dot(building->padPosition, out);
+        if (glm::length(flat) < 300.0 && height > transitAbovePad - 150.0)
+            phase = 1;
+    }
+    return startPadService(shipId, frameModuleId, address, phase);
 }
 
 bool GameSimulation::startPadService(EntityId shipId, const std::string& frameModuleId, const std::string& address, int phase)
@@ -310,6 +366,11 @@ void GameSimulation::updatePadLandings(double dt)
                           << (next == 1 ? "at the transit height, across" : next == 2 ? "over the pad, descending" : p.autoLanding ? "LANDED" : "at its zone top")
                           << " (" << static_cast<long long>(serverTime() - p.sinceS) << " s)" << std::endl;
                 p.phase = next;
+                if (p.phase == 3)
+                {
+                    p.touchdownS = serverTime();          // the legs take the ship: the damped sag below
+                    p.touchdownMps = std::max(0.5, p.speedMps);
+                }
                 if (p.phase == 2 || p.phase == 3)
                     p.speedMps = 0.0;
                 if (p.phase == 3 && !p.autoLanding)
@@ -351,7 +412,30 @@ void GameSimulation::updatePadLandings(double dt)
             const glm::quat turned = angle <= maxStep ? to : glm::slerp(from, to, maxStep / angle);
             tr.orientation = glm::mat4_cast(glm::normalize(turned));
         }
-        const glm::dvec3 position = cpos + R * q;
+        // the touchdown on the damped legs (author 2026-11-21: «при посадке на лапы корабль должен слегка сдемпфировать.
+        // просесть на лапах, а потом стать ровно»): the legs a spring + damper - the hull sinks with the touchdown speed
+        // (2 m/s -> ~0.25 m), rocks a little nose-down / up and settles level in ~2 s
+        glm::dvec3 sagLocal(0.0);
+        if (p.phase == 3 && p.touchdownS > 0.0)
+        {
+            constexpr double Omega = 5.0, Zeta = 0.45;
+            const double t = serverTime() - p.touchdownS;
+            const double wd = Omega * std::sqrt(1.0 - Zeta * Zeta);
+            const double decay = std::exp(-Zeta * Omega * t);
+            const double x = p.touchdownMps / wd * decay * std::sin(wd * t);                       // the compression, m
+            const double xv = p.touchdownMps * decay * (std::cos(wd * t) - Zeta * Omega / wd * std::sin(wd * t));
+            if (t < 4.0)
+            {
+                sagLocal = -out * x;
+                vLocal += -out * xv;
+                // the rock: applied as its change since the last tick (the attitude persists between ticks)
+                const double pitch = glm::radians(0.8) * (p.touchdownMps / 2.0) * decay * std::sin(wd * t);
+                const glm::vec3 axis = glm::normalize(glm::vec3(tr.orientation[0]));                  // the hull's right
+                tr.orientation = glm::rotate(glm::mat4(1.0f), static_cast<float>(pitch - p.touchdownPitch), axis) * tr.orientation;
+                p.touchdownPitch = pitch;
+            }
+        }
+        const glm::dvec3 position = cpos + R * (q + sagLocal);
         const glm::dvec3 velocity = cvel + R * vLocal;
         {
             static int nanLogs = 0;
@@ -456,6 +540,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
         const double clearance = (dims.enabled && dims.height > 0.0 ? 0.5 * dims.height : 3.0) + 0.5;
         const auto gearIt = m_landingGear.find(id);
         const std::uint8_t gear = gearIt == m_landingGear.end() ? 0 : gearIt->second;
+        bool inZone = false;
         for (const auto& [oid, obj] : m_staticObjects)
         {
             if (obj.type != ObjectType::HubBeltCity || obj.systemId != m_activeCelestialSystemId)
@@ -487,9 +572,16 @@ void GameSimulation::updatePadTouchdowns(double dt)
                         m_padNotices[id] = {what, now};
                     }
                 };
+                inZone = true;
+                if (m.autoLanding && g_padAwaitZoneExit.count(id.value) != 0)
+                    break;   // just released from a pad: not taken again before it has left the zone
                 if (m.autoLanding)
                 {
-                    // the capture zone: the pad's service sets the ship down (its legs out first)
+                    // the capture zone: the pad's service sets the ship down (its legs out first) - only a ship coming
+                    // DOWN to it: one taking off / hovering is not grabbed again (live 2026-11-21: the docking lift-off
+                    // from a pad was re-captured and set back down every 15 s)
+                    if (glm::dot(v, out) > -0.3)
+                        break;
                     if (gear == 1)
                     {
                         m_padNotices[id] = {"pad:capture:" + m.address, now};
@@ -506,7 +598,12 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 if (gear == 1 && speed < game::navigation::HubPadTouchdownMaxMps)
                 {
                     m_padNotices[id] = {"pad:landed_manual:" + m.address, now};
-                    (void)startPadService(id, obj.hubModuleId, m.address, 3);
+                    if (startPadService(id, obj.hubModuleId, m.address, 3))
+                        if (const auto landed = m_padLandings.find(id); landed != m_padLandings.end())
+                        {
+                            landed->second.touchdownS = now;   // the damped sag from the real touchdown speed
+                            landed->second.touchdownMps = std::max(0.3, speed);
+                        }
                     std::cerr << "[PadLanding] ship " << id.value << " LANDED by hand on " << m.address << " at " << speed << " m/s"
                               << std::endl;
                 }
@@ -522,5 +619,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 break;
             }
         }
+        if (!inZone)
+            g_padAwaitZoneExit.erase(id.value);
     }
 }

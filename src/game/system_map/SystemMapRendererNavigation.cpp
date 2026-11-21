@@ -581,6 +581,15 @@ void SystemMapRenderer::cancelDockingTaskForClosedCard(
     const std::string& objectId
 )
 {
+    // the card of the building / block the ship is landing on closed: the pad landing is cancelled too (author 2026-11-21:
+    // «если я удаляю инфокарточку - задача не снимается»)
+    if (!m_padLandingActive.empty() && objectId == m_padLandingActive)
+    {
+        m_padLandingCancelRequested = true;
+        m_padLandingActive.clear();
+        m_hubFrameDirty = true;
+        return;
+    }
     std::string moduleId;
     std::string anchorId;
     if (!parseHubDockOverlayId(objectId, moduleId, anchorId))

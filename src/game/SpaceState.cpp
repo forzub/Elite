@@ -581,15 +581,43 @@ void SpaceState::updatePilotTakeover(bool touching)
     if (auto request = m_systemMapRenderer.takePadLandingRequest())
     {
         padRequestedAt = glfwGetTime();
-        sendPadLanding(request->frameModuleId, request->address, true);
+        // the route to the pad is the planner's and the autopilot's, as to a dock (author 2026-11-21: «для места посадки
+        // использовал бы планировщик и автопилот, а не скрипты»; the route drawn with the docking frames): the request
+        // targets the pad's anchor over the city frame module; over the pad the pad service takes the ship for the descent
+        // on its legs (updateDockingExecuting -> LandOnPad)
+        {
+            game::navigation::RouteTargetRef target;
+            target.kind = game::navigation::NavigationRouteAnchorKind::SemanticAnchor;
+            if (m_client)
+                if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+                    target.systemId = it->second.transform.motion.systemId;
+            target.stableObjectId = request->frameModuleId;
+            target.semanticAnchorId = "pad:" + request->address;
+            m_navigationWorkspace.dockingRouteRequests().request(target, game::navigation::DockingRouteRequest::Mode::Automatic);
+            m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::RoutePlanning, true);
+            m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::LocalGuidance, true);
+            m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::HudGuidanceCorridor, true);
+        }
         m_padLandingObjectId = request->objectId;
         m_systemMapRenderer.setPadLandingActive(request->objectId);
-        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address;
+        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address + " - расчёт маршрута";
         std::cerr << "[PadLanding] request sent: " << request->frameModuleId << "/" << request->address << std::endl;
         // the answer you can see (author 2026-11-21: «после нажатия на кнопку посадка визуально ничего не меняется»): back to
         // the front view - the service's line in the terminal, its route tunnel ahead
         if (context().app)
             context().app->requestFlightView(FlightPresentationView::Front);
+    }
+    // the landing card closed on the map: the landing is cancelled, the pilot has the ship
+    if (m_systemMapRenderer.consumePadLandingCancel())
+    {
+        // the route to the pad (the planner's) ends too
+        if (const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
+            pending.valid() && pending.target.semanticAnchorId.rfind("pad:", 0) == 0)
+            m_navigationWorkspace.dockingRouteRequests().clear();
+        sendPadLanding(std::string(), std::string(), false);
+        m_padLandingObjectId.clear();
+        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: посадка отменена (карточка закрыта) - управление у пилота";
+        std::cerr << "[PadLanding] cancelled: the card was closed" << std::endl;
     }
     // the pad service's steps in the HUD terminal (author 2026-11-21: «информацию ... выводить в терминале на HUD»)
     if (m_client)
@@ -839,6 +867,28 @@ void SpaceState::handleInput()
             m_persistedPhysicalModelApplied = true;
         }
     }
+    // TEMPORARY (author 2026-11-21): Ctrl+Alt+R - the ship fully restored. Read straight from GLFW and before every other
+    // input owner: with the map or a service page open the key never reached the flight input (live 2026-11-21)
+    if (GLFWwindow* w = m_client ? glfwGetCurrentContext() : nullptr)
+    {
+        const bool combo = (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(w, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) &&
+                           (glfwGetKey(w, GLFW_KEY_LEFT_ALT) == GLFW_PRESS || glfwGetKey(w, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS) &&
+                           glfwGetKey(w, GLFW_KEY_R) == GLFW_PRESS;
+        if (combo && !m_devRestoreComboDown)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::DevFullRestore;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+            m_pilotNotice = "DEV: корабль полностью восстановлен";
+            std::cerr << "[DevRestore] Ctrl+Alt+R sent" << std::endl;
+        }
+        m_devRestoreComboDown = combo;
+        if (combo)
+            return;
+    }
+
 
     if (context().app &&
         context().app->gameUiMode() == GameUiMode::ServicePanel)
@@ -1107,6 +1157,7 @@ if (ctrlDown && (Input::instance().isKeyPressed(GLFW_KEY_LEFT_ALT) || Input::ins
     msg.payload = command;
     m_client->sendMessage(msg);
     m_pilotNotice = "DEV: корабль полностью восстановлен";
+    std::cerr << "[DevRestore] Ctrl+Alt+R sent" << std::endl;
     return;
 }
 if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))

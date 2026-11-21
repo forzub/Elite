@@ -245,7 +245,17 @@ m_systemMapRenderer.render(
                     };
                     // the city plane within the city's bounds only (beyond its edge the planet is under the belly - live 2026-11-21:
                     // an unbounded plane read 350 m over the planet)
-                    surface(0.0, plan->bounds().x, plan->bounds().z, plan->bounds().y, plan->bounds().w, true);
+                    // the plane where it is built: the blocks and the streets (between them there is nothing - live 2026-11-21:
+                    // the whole city rectangle read 377 m over the void)
+                    for (const auto& b : plan->blocks())
+                        surface(0.0, b.centre.x - b.halfMeters, b.centre.x + b.halfMeters, b.centre.y - b.halfMeters,
+                                b.centre.y + b.halfMeters, true);
+                    for (const auto& st : plan->streets())
+                    {
+                        const double w = st.avenue ? 20.0 : 13.0;
+                        surface(0.0, std::min(st.a.x, st.b.x) - w, std::max(st.a.x, st.b.x) + w, std::min(st.a.y, st.b.y) - w,
+                                std::max(st.a.y, st.b.y) + w, true);
+                    }
                     for (const auto& m : plan->modules())
                     {
                         if (m.under)

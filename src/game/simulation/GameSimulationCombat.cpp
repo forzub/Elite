@@ -2046,7 +2046,10 @@ void GameSimulation::updateLiveTraffic(double dt)
         }
         const bool fights = m_combatHostility.count(id) != 0;
         const bool damaged = liveTrafficDamaged(*ship);
-        const char* reason = fights ? "fight" : damaged ? "damaged" : inSight ? "crosshair" : nullptr;
+        // the crosshair promotion is OFF until the live pilot can follow its lane exactly (live 2026-11-21: two promoted
+        // OCS-4 fell behind their points and flew into the city at 85-106 m/s); a fight / damage still makes it real
+        constexpr bool CrosshairPromotion = false;
+        const char* reason = fights ? "fight" : damaged ? "damaged" : (CrosshairPromotion && inSight) ? "crosshair" : nullptr;
         const auto live = m_liveTraffic.find(id);
         if (live == m_liveTraffic.end())
         {

@@ -614,6 +614,10 @@ void RouteExecutionCore::dumpAcceptedRoute(
             std::fprintf(file, "V %.1f %.2f\n",
                 state.continuousProgressMeters[i],
                 state.runtimeSpeedProfileMps[i]);
+            if (i < state.continuousSamples.size())   // the route itself (the map frame): where it runs
+                std::fprintf(file, "P %.1f %.1f %.1f %.1f\n", state.continuousProgressMeters[i],
+                             state.continuousSamples[i].positionMapMeters.x, state.continuousSamples[i].positionMapMeters.y,
+                             state.continuousSamples[i].positionMapMeters.z);
             nextS = state.continuousProgressMeters[i] + 50.0;
         }
     std::fflush(file);

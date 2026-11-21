@@ -284,6 +284,7 @@ private:
     };
     std::optional<PadLandingRequest> m_padLandingRequest;
     std::string m_padLandingActive;
+    bool m_padLandingCancelRequested = false;
 
     void ensureMapTransitionSnapshot(
     const Viewport& viewport
@@ -566,9 +567,18 @@ public:
     }
     // the card whose pad the ship is landing on (its СТЫКОВКА lit); empty: none
     void setPadLandingActive(const std::string& objectId) { m_padLandingActive = objectId; m_hubFrameDirty = true; }
+    // the landing card closed: SpaceState tells the server the pilot takes the ship back
+    bool consumePadLandingCancel() { const bool c = m_padLandingCancelRequested; m_padLandingCancelRequested = false; return c; }
     // DEV: padland:<roof|garage|stilts>[@<city frame module>] - the first building with that pad kind, as its card's button
     void devRequestPadLanding(const std::string& spec)
     {
+        if (spec == "cancel")   // as the landing card closed
+        {
+            m_padLandingCancelRequested = true;
+            m_padLandingActive.clear();
+            std::cerr << "[PadLanding] DEV cancel (the card closed)" << std::endl;
+            return;
+        }
         const auto at = spec.find('@');
         const std::string kind = spec.substr(0, at);
         const std::string frame = at == std::string::npos ? std::string("earth_orbital_hub.city") : spec.substr(at + 1);

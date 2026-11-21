@@ -1532,6 +1532,10 @@ void GameServer::update(double dt)
                     m_simulation.debugFullRestoreShip(id);
                     break;
 
+                case ClientShipCommand::EnterHubFrame:   // a docking request near a hub in normal flight
+                    (void)m_simulation.enterHubFrameForModule(id, shipCmd.target);
+                    break;
+
                 case ClientShipCommand::ToggleLandingGear:   // G: the landing legs
                     m_simulation.toggleLandingGear(id);
                     break;

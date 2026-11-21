@@ -106,6 +106,9 @@ public:
     // a hub city pad (ClientShipCommand::LandOnPad; GameSimulationPadLanding.cpp): land = the pad service flies the ship
     // there and holds it; !land = the pilot takes the controls
     bool requestPadLanding(EntityId shipId, const std::string& frameModuleId, const std::string& address, bool land);
+    // the ship into a hub's navigation frame where it is (normal flight off): the pad service, the docking request
+    bool takeShipIntoHubFrame(EntityId shipId, const std::string& hubId);
+    bool enterHubFrameForModule(EntityId shipId, const std::string& moduleId);   // ClientShipCommand::EnterHubFrame
     // G (author 2026-11-21): the landing legs out / in; a broken set stays broken (a repair restores it)
     void toggleLandingGear(EntityId shipId);
     // DEV: every lane tube of a hub against its static objects' collision boxes ([LaneCheck] lines)
@@ -789,6 +792,9 @@ private:
         double gearNagS = -1.0e9;
         std::vector<glm::dvec3> route;   // hubPadRoute: the climb point, the detours, over the pad (city frame)
         std::size_t leg = 0;             // the across leg flown now (route index)
+        double touchdownS = 0.0;         // the legs took the ship (phase 3): the damped sag runs from here
+        double touchdownMps = 0.0;       // its touchdown speed
+        double touchdownPitch = 0.0;     // the rock of the sag applied so far
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time

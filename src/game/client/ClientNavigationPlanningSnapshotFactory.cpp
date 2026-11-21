@@ -433,8 +433,12 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
                 obstaclePrefix,
                 {
                     false,
-                    game::navigation::
-                        DiagnosticHubInfrastructureClearanceMeters
+                    // a generated city (thousands of volumes): its streets are 26-40 m wide - the 80 m infrastructure
+                    // clearance (+ the hull + the 25 m margin = 122 m off every wall) walled the whole city and no course
+                    // off a pad was ever proven (live 2026-11-21); the hull and the margin still apply
+                    exactVolumes.size() > 500
+                        ? game::navigation::CityBuildingClearanceMeters
+                        : game::navigation::DiagnosticHubInfrastructureClearanceMeters
                 }
             );
 

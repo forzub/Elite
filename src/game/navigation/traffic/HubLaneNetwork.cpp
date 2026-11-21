@@ -1,4 +1,5 @@
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -141,9 +142,20 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     double startLeadMeters,
     const glm::dvec3& goalArriveForward,
     const FreeLegModel& freeLegs,
-    std::string* summary
+    std::string* summary,
+    const std::vector<world::navigation::NavigationObstacle>* obstacles,
+    double agentRadiusMeters
 ) const
 {
+    // a straight free piece clear of the buildings and the red zones (the hull + 10 m); no obstacle list = not checked
+    int blockedLegs = 0;
+    const auto clear = [&](const glm::dvec3& a, const glm::dvec3& b) {
+        if (!obstacles || obstacles->empty())
+            return true;
+        const bool ok = world::navigation::segmentClearOfNavigationObstacles(a, b, *obstacles, agentRadiusMeters, 10.0);
+        blockedLegs += ok ? 0 : 1;
+        return ok;
+    };
     CompiledTrafficRoute out;
     const std::size_t laneCount = m_lanes.size();
     // world stations, per-station travel directions, the global station index base of every lane
@@ -173,10 +185,14 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             C[c].push_back(frame.pointToWorld(p));
         outgoing[sbase[cn.fromLane] + cn.fromStation].push_back(c);
     }
-    const auto joinStart = [&](std::size_t l) { return P[l][0] - F[l][0] * JoinStraightMeters; };
-    // where a free leg into lane l really ends: the start of the planner's hard terminal approach before the join
-    const auto joinApproach = [&](std::size_t l) { return joinStart(l) - F[l][0] * freeLegs.joinApproachMeters; };
-    const auto leaveEnd = [&](std::size_t l) { return P[l].back() + F[l].back() * LeaveStraightMeters; };
+    // a lane is joined at ANY of its stations, merging from the side along its course, and left at any station it rode
+    // to (author 2026-11-22: «возможность планировщика нырять прямо в зелёную зону без пересечения её точки входа - это
+    // существенно бы ему всё упростило»; joining only at a lane's first station cost 8-11 km loops through the city)
+    const auto joinStartAt = [&](std::size_t l, std::size_t k) { return P[l][k] - F[l][k] * JoinStraightMeters; };
+    const auto joinApproachAt = [&](std::size_t l, std::size_t k) {
+        return joinStartAt(l, k) - F[l][k] * freeLegs.joinApproachMeters;
+    };
+    const auto leaveEndAt = [&](std::size_t l, std::size_t k) { return P[l][k] + F[l][k] * LeaveStraightMeters; };
 
     // states: (global station, ridden) + the goal
     const std::size_t goal = 2 * sbase[laneCount];
@@ -220,6 +236,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         // a leg that is (nearly) one straight - e.g. a blue approach's end on the dock axis -> the goal - needs no room
         if (turn > glm::radians(5.0) && glm::length(d) < MinFreeLegMeters + freeLegs.turnRadiusMeters * turn)
             return Inf;
+        if (!clear(from, target))
+            return Inf;
         return glm::length(d) + TurnPenaltyMeters * turn;
     };
     // the goal is reached along goalArriveForward after a hard straight: a free leg into it ends that far out
@@ -232,13 +250,15 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     int entriesOk = 0, exitsTried = 0, exitsOk = 0;
     for (std::size_t l = 0; l < laneCount; ++l)
         if (usable[l])
-        {
-            const double c = freeLeg(leadEnd, heading, joinApproach(l), F[l][0]);
-            entriesOk += std::isfinite(c) ? 1 : 0;
-            if (std::isfinite(c))
-                relax(state(l, 0, 0), leadLength + c + freeLegs.joinApproachMeters + JoinStraightMeters, count,
-                      EdgeFromShip);
-        }
+            for (std::size_t k = 0; k + 1 < P[l].size(); ++k)
+            {
+                const double c = clear(joinApproachAt(l, k), P[l][k]) ? freeLeg(leadEnd, heading, joinApproachAt(l, k), F[l][k])
+                                                                       : Inf;
+                entriesOk += std::isfinite(c) ? 1 : 0;
+                if (std::isfinite(c))
+                    relax(state(l, k, 0), leadLength + c + freeLegs.joinApproachMeters + JoinStraightMeters, count,
+                          EdgeFromShip);
+            }
     while (!open.empty())
     {
         const auto [d, s] = open.top();
@@ -259,33 +279,39 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             const auto& cn = m_connectors[c];
             relax(state(cn.toLane, cn.toStation, 1), d + LaneCostFactor * cn.lengthMeters, s, static_cast<int>(c));
         }
-        if (k + 1 != n)
-            continue;
-        // the lane's end beyond the rim: leave for the goal or transfer (open sky) to another lane's start
-        const glm::dvec3 out0 = leaveEnd(l);
+        // leave at this station (any station it rode to; the lane's end beyond the rim included): for the goal, or a
+        // transfer (open sky) into another lane at any of its stations
+        const glm::dvec3 out0 = leaveEndAt(l, k);
         // the final leg has its own fixed straights (start + turn budget + the goal's axis): shorter -> it loops back
         // (live run 14: 1.1 km -> assisted reverse flight)
-        const double exitLeg = glm::length(goalWorld - out0) < freeLegs.exitMinimumMeters
+        const double exitLeg = glm::length(goalWorld - out0) < freeLegs.exitMinimumMeters || !clear(P[l][k], out0)
                                    ? Inf
-                                   : freeLeg(out0, F[l].back(), goalApproach, goalDirection);
+                                   : freeLeg(out0, F[l][k], goalApproach, goalDirection);
         ++exitsTried;
         exitsOk += std::isfinite(exitLeg) ? 1 : 0;
         if (std::isfinite(exitLeg))
             relax(goal, d + LeaveStraightMeters + exitLeg + goalApproachLength, s, EdgeExit);
         for (std::size_t m = 0; m < laneCount; ++m)
         {
-            if (m == l || !usable[m] || glm::length(joinStart(m) - out0) > MaxTransferMeters)
+            if (m == l || !usable[m])
                 continue;
-            const double hop = freeLeg(out0, F[l].back(), joinApproach(m), F[m][0]);
-            if (std::isfinite(hop))
-                relax(state(m, 0, 0), d + LeaveStraightMeters + hop + freeLegs.joinApproachMeters + JoinStraightMeters,
-                      s, EdgeTransfer);
+            for (std::size_t j = 0; j + 1 < P[m].size(); ++j)
+            {
+                if (glm::length(joinStartAt(m, j) - out0) > MaxTransferMeters)
+                    continue;
+                const double hop = clear(joinApproachAt(m, j), P[m][j]) ? freeLeg(out0, F[l][k], joinApproachAt(m, j), F[m][j])
+                                                                         : Inf;
+                if (std::isfinite(hop))
+                    relax(state(m, j, 0), d + LeaveStraightMeters + hop + freeLegs.joinApproachMeters + JoinStraightMeters,
+                          s, EdgeTransfer);
+            }
         }
     }
     std::ostringstream text;
     const glm::dmat3 toLocal = glm::transpose(frame.localToWorldBasis);
     const glm::dvec3 goalLocal = toLocal * (goalWorld - frame.originWorldMeters);
     const glm::dvec3 arriveLocal = toLocal * goalDirection;
+    text << "blocked_legs=" << blockedLegs << " ";
     text << "direct_m=" << direct << " chain_cost=" << dist[goal] << " entries_ok=" << entriesOk << " exits_ok=" << exitsOk
          << "/" << exitsTried << " goal_local=(" << goalLocal.x << "," << goalLocal.y << "," << goalLocal.z << ") arrive_local=("
          << arriveLocal.x << "," << arriveLocal.y << "," << arriveLocal.z << ")";

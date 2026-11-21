@@ -48,7 +48,9 @@
                                     //     reactors, containment, heat, spin, "out of the fight" cleared)
             LandOnPad,              // a hub city pad (author 2026-11-21): index 1 = land at target = the city frame module,
                                     //     detail = the building address ("B4-07"); index 0 = the pilot takes the controls
-            ToggleLandingGear       // G in flight (author 2026-11-21): the landing legs out / in (a broken set stays broken)
+            ToggleLandingGear,      // G in flight (author 2026-11-21): the landing legs out / in (a broken set stays broken)
+            EnterHubFrame           // a docking / route request near a hub in normal flight (2026-11-21): the ship is taken
+                                    // into the frame of the hub of the module `target` where it is (no jump, the hub's velocity)
         };
         Type type;
 

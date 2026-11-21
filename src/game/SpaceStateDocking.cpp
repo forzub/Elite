@@ -4,6 +4,7 @@
 #include "src/game/SpaceStateInternal.h"
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/navigation/traffic/HubLaneRouting.h"
+#include "src/game/navigation/HubPlanCatalog.h"
 #include <memory>
 
 
@@ -517,6 +518,7 @@ void SpaceState::updateDockingAdvisory()
             << std::endl;
     }
 
+
     const auto eraseVisibleRoute = [&]()
     {
         if (m_dockAdviceJob)
@@ -537,6 +539,7 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
         m_dockAssistedSafeRecovery = {};
+        m_dockLiftClear = {};
         m_dockSafeCourse = {};
         m_clientDockingRouteProgressMeters = 0.0;
         m_clientDockingRouteCurveIndex = 0;
@@ -580,6 +583,7 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
         m_dockAssistedSafeRecovery = {};
+        m_dockLiftClear = {};
         m_dockSafeCourse = {};
     };
 
@@ -630,6 +634,24 @@ void SpaceState::updateDockingAdvisory()
         motion.matchedReferenceFrameId != motion.hubId ||
         !player.referenceFrame.valid)
     {
+        // near the hub in normal flight: the server takes the ship into the hub's frame where it is, the request waits for
+        // it (live 2026-11-21: the docking refused silently from normal flight - the frame only came with a hub route)
+        if (motion.systemId == pending.target.systemId && m_hubFrameRequestSerial != pending.serial)
+        {
+            m_hubFrameRequestSerial = pending.serial;
+            m_hubFrameRequestS = glfwGetTime();
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::EnterHubFrame;
+            command.target = pending.target.stableObjectId;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+            std::cerr << "[DockClient] request=" << pending.serial << " asks the hub frame (normal flight)" << std::endl;
+            return;
+        }
+        if (m_hubFrameRequestSerial == pending.serial && glfwGetTime() - m_hubFrameRequestS < 3.0)
+            return;   // the server's answer is on its way
+        m_pilotNotice = "СТЫКОВКА: хаб далеко (> 30 км) - сначала маршрут к хабу";
         fail("ship is not matched to target Hub frame");
         return;
     }
@@ -642,6 +664,65 @@ void SpaceState::updateDockingAdvisory()
         pending.target.stableObjectId,
         pending.target.semanticAnchorId
     );
+    // a hub city pad ("pad:<address>" over the city frame module, author 2026-11-21): the planner goal is its approach
+    // point - over the pad at the transit height (over the tallest building by 80 m), approached from where the ship is
+    if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0)
+    {
+        definition = nullptr;
+        runtime = nullptr;
+        if (m_padAnchor.serial != pending.serial)
+        {
+            m_padAnchor = {};
+            const std::string address = pending.target.semanticAnchorId.substr(4);
+            const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(pending.target.stableObjectId);
+            const game::navigation::HubPlanModule* building = nullptr;
+            if (plan)
+                for (const auto& m : plan->modules())
+                    if (m.address == address && m.pad)
+                        building = &m;
+            const auto* city = padRouteCityObject(pending.target.stableObjectId);
+            const auto shipIt = m_client->world().ships().find(m_playerId.value);
+            if (plan && building && city && shipIt != m_client->world().ships().end())
+            {
+                const glm::dvec3 out = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
+                double tallest = 0.0;
+                for (const auto& b : plan->blocks())
+                    tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
+                const double transit = std::min(380.0, tallest + 80.0);
+                const glm::dvec3 hover = building->padPosition + out * (transit - glm::dot(building->padPosition, out));
+                glm::dvec3 from = padRouteCityLocal(*city, shipIt->second) - hover;
+                from -= out * glm::dot(from, out);
+                const glm::dvec3 forward = glm::length(from) > 1.0 ? glm::normalize(from) : glm::dvec3(0.0, 0.0, 1.0);
+                auto& d = m_padAnchor.definition;
+                d.id = pending.target.semanticAnchorId;
+                d.hubModuleId = pending.target.stableObjectId;
+                d.displayName = "pad " + address;
+                d.kind = HubSemanticAnchorKind::DockingPort;   // flown as a port approach; the pad service lands it
+                d.localPositionMeters = hover;
+                d.localForward = forward;                       // the route arrives along -forward (toward the pad)
+                d.localUp = out;
+                d.extentMeters = glm::dvec3(400.0);             // the open air over the pad
+                d.requiredClearanceMeters = 5.0;
+                d.maxEntrySpeedMps = 30.0;
+                d.captureDepthMeters = 1.0;
+                m_padAnchor.runtime.hubModuleId = d.hubModuleId;
+                m_padAnchor.runtime.anchorId = d.id;
+                m_padAnchor.runtime.operational = DockingOperationalState::Online;
+                m_padAnchor.runtime.occupancy = DockingOccupancyState::Free;
+                m_padAnchor.runtime.access = DockingAccessState::Allowed;
+                m_padAnchor.address = address;
+                m_padAnchor.valid = true;
+                std::cerr << "[PadRoute] request=" << pending.serial << " pad " << address << ": approach point (" << hover.x << ","
+                          << hover.y << "," << hover.z << ") city frame, transit " << transit << " m" << std::endl;
+            }
+            m_padAnchor.serial = pending.serial;
+        }
+        if (m_padAnchor.valid)
+        {
+            definition = &m_padAnchor.definition;
+            runtime = &m_padAnchor.runtime;
+        }
+    }
     if (!definition || !runtime ||
         !definition->enabled ||
         definition->kind != HubSemanticAnchorKind::DockingPort)
@@ -1045,6 +1126,7 @@ void SpaceState::updateDockingAdvisory()
         m_lastDockingRequestTraceSerial = pending.serial;
         m_dockLateEntry = {};
         m_dockAssistedSafeRecovery = {};
+        m_dockLiftClear = {};
         m_dockSafeCourse = {};
         m_dockPlannedAssistedAuthority = {};
         m_dockAcceptedAssistedAuthority = {};
@@ -1158,6 +1240,54 @@ void SpaceState::updateDockingAdvisory()
 
     if (!updateDockingDispatcherGate(f))
         return;
+
+    // LIFT CLEAR (live 2026-11-21): the ship touches boxes (stands on a pad, at a wall) - before any route it rises
+    // straight off them on its thrusters, the hull attitude held (no nose-up turn: the stern hit the deck), at most
+    // 5 m/s, until it is the inflated clearance + a margin away; then it settles and the route is planned from there
+    if (m_dockLiftClear.active && m_dockLiftClear.serial == pending.serial)
+    {
+        const auto agent = makeAgent();
+        const double risen = glm::dot(agent.positionMapMeters - m_dockLiftClear.startMap, m_dockLiftClear.direction);
+        if (risen >= m_dockLiftClear.meters)
+        {
+            std::cerr << "[DockLiftClear] request=" << pending.serial << " clear after " << risen << " m - planning" << std::endl;
+            m_pilotNotice = "СТЫКОВКА: корабль поднят над постройками - расчёт маршрута";
+            m_dockLiftClear = {};
+            m_clientDockingPhase = ClientDockingPhase::Stabilizing;
+            m_clientDockingSettledSinceServerSeconds = -1.0;
+            submitAutopilotControl(manualStopControl());
+            return;
+        }
+        // slow at the start and near the end (the legs leave the deck gently)
+        const double left = m_dockLiftClear.meters - risen;
+        const double speed = std::clamp(std::min(0.5 + risen * 0.4, left * 0.3), 0.5, 5.0);
+        game::navigation::autopilot::AutopilotControlRequest lift;
+        lift.desiredVelocityMapMps = m_dockLiftClear.direction * speed;
+        lift.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
+        lift.desiredForwardMap = m_dockLiftClear.forward;
+        lift.desiredUpMap = m_dockLiftClear.up;
+        lift.actualVelocityMapMps = agent.velocityMapMetersPerSecond;
+        lift.forwardMap = agent.forwardMap;
+        lift.rightMap = agent.rightMap;
+        lift.upMap = agent.upMap;
+        lift.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+        lift.yawRateRadPerSec = agent.yawRateRadPerSec;
+        lift.rollRateRadPerSec = agent.rollRateRadPerSec;
+        lift.stopRequested = false;
+        lift.deltaSeconds = std::max(1.0e-4, m_client->serverFixedStepSeconds());
+        submitAutopilotControl(
+            controlLaw == game::navigation::LocalFlightControlLaw::Assisted
+                ? m_clientDockingAssistedStabilizePilotController.update(lift, effectivePhysics)
+                : m_clientDockingNewtonianStabilizePilotController.update(lift, effectivePhysics));
+        static double lastTrace = -1.0e9;
+        if (authoritativeServerSeconds - lastTrace >= 2.0)
+        {
+            lastTrace = authoritativeServerSeconds;
+            std::cerr << "[DockLiftClear] request=" << pending.serial << " risen " << risen << " / " << m_dockLiftClear.meters
+                      << " m at " << glm::length(agent.velocityMapMetersPerSecond) << " m/s" << std::endl;
+        }
+        return;
+    }
 
     if (m_clientDockingPhase ==
         ClientDockingPhase::SecuringCourse)
@@ -1828,6 +1958,7 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
     auto& startVelocityMps = l.startVelocityMps;
     auto& hullForwardLocal = l.hullForwardLocal;
     auto& planningWhileSecuringCourse = l.planningWhileSecuringCourse;
+    auto& makeAgent = f.makeAgent;
 
     const glm::dvec3 preferredSafetyDirection =
         glm::length(request.goalMeters - request.startMeters) >
@@ -1903,6 +2034,24 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
             << " ray_m=" << safetyResult.sceneRayMeters
             << " reason=\"" << safetyResult.message << "\""
             << std::endl;
+
+        if (safetyResult.message.rfind("in contact", 0) == 0)
+        {
+            const auto agent = makeAgent();
+            m_dockLiftClear = {};
+            m_dockLiftClear.active = true;
+            m_dockLiftClear.serial = pending.serial;
+            m_dockLiftClear.direction = safetyResult.safeCourse;
+            m_dockLiftClear.startMap = agent.positionMapMeters;
+            m_dockLiftClear.forward = agent.forwardMap;
+            m_dockLiftClear.up = agent.upMap;
+            m_dockLiftClear.meters = safety.hullRadiusMeters + safety.additionalClearanceMeters + 20.0;
+            m_pilotNotice = "СТЫКОВКА: взлёт - подъём над постройками";
+            std::cerr << "[DockLiftClear] request=" << pending.serial << " " << safetyResult.message << ": rise "
+                      << m_dockLiftClear.meters << " m along (" << safetyResult.safeCourse.x << "," << safetyResult.safeCourse.y
+                      << "," << safetyResult.safeCourse.z << ")" << std::endl;
+            return false;
+        }
 
         if (!safetyResult.currentCourseSafe)
         {
@@ -2486,12 +2635,37 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         return;
     }
 
-    const auto localPort =
+    auto localPort =
         resolveDockingAdvisoryLocalPortAt(
             snapshot.targetObject.hubAttachment,
             *definition,
             snapshot.epoch.universeTimeSeconds
         );
+    // a city pad: its approach point is known in the city object's own frame (the plan's coordinates - the pad service's
+    // frame); the attachment path above put it elsewhere (live 2026-11-22: the ship flew away from the pad). Taken here
+    // relative to the ship at one moment (the rendered city and ship), turned into the planning frame
+    if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid)
+    {
+        localPort.valid = false;
+        const auto* city = padRouteCityObject(pending.target.stableObjectId);
+        const auto shipIt = m_client->world().ships().find(m_playerId.value);
+        if (city && shipIt != m_client->world().ships().end())
+        {
+            const glm::dmat3 R(glm::mat3(city->renderOrientation));
+            const glm::dvec3 shipWorld = world::coordinates::fullMeters(shipIt->second.renderTransform.worldPosition);
+            const glm::dvec3 hoverWorld = world::coordinates::fullMeters(city->renderWorldPosition) +
+                                          R * m_padAnchor.definition.localPositionMeters;
+            localPort.positionMeters = snapshot.controlledShip.localPositionMeters +
+                                       snapshot.planningFrame.worldToLocalVector(hoverWorld - shipWorld);
+            localPort.forward = glm::normalize(snapshot.planningFrame.worldToLocalVector(R * m_padAnchor.definition.localForward));
+            localPort.up = glm::normalize(snapshot.planningFrame.worldToLocalVector(R * m_padAnchor.definition.localUp));
+            localPort.valid = true;
+            std::cerr << "[PadRoute] request=" << pending.serial << " approach point in the planning frame (" << localPort.positionMeters.x
+                      << "," << localPort.positionMeters.y << "," << localPort.positionMeters.z << "), the ship at ("
+                      << snapshot.controlledShip.localPositionMeters.x << "," << snapshot.controlledShip.localPositionMeters.y << ","
+                      << snapshot.controlledShip.localPositionMeters.z << ")" << std::endl;
+        }
+    }
     if (!localPort.valid)
     {
         fail("dock local pose unavailable at planning epoch");
@@ -2573,11 +2747,13 @@ void SpaceState::updateDockingStabilizing(Frame& f)
     request.initialForwardLeadMeters =
         std::max(1000.0, hull.lengthMeters * 10.0);
     request.terminalReferenceDistanceMeters =
-        std::max(
-            300.0,
-            hull.lengthMeters * 10.0 +
-                definition->requiredClearanceMeters * 4.0
-        );
+        pending.target.semanticAnchorId.rfind("pad:", 0) == 0
+            ? std::max(80.0, hull.lengthMeters * 2.0)   // a pad: the route ends close to its approach point
+            : std::max(
+                  300.0,
+                  hull.lengthMeters * 10.0 +
+                      definition->requiredClearanceMeters * 4.0
+              );
     request.goalMeters =
         localPort.positionMeters +
         localPort.forward *
@@ -2977,6 +3153,21 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         request.initialSpeedMps;
     std::cerr << "[DockWorker] request=" << pending.serial << " launched obstacles=" << request.obstacles.size()
               << std::endl;
+    if (const char* dump = std::getenv("ELITE_ROUTE_DUMP"); dump && *dump)
+    {
+        // DEV: the obstacles the planner got near the start (route dumps: did it know the building it hit?)
+        if (std::FILE* f2 = std::fopen((std::string(dump) + ".obstacles").c_str(), "w"))
+        {
+            std::fprintf(f2, "START %.1f %.1f %.1f GOAL %.1f %.1f %.1f\n", request.startMeters.x, request.startMeters.y, request.startMeters.z,
+                         request.goalMeters.x, request.goalMeters.y, request.goalMeters.z);
+            for (const auto& o : request.obstacles)
+                if (glm::length(o.centerMeters - request.startMeters) < 1.0e9)
+                    std::fprintf(f2, "O %s shape=%d c=%.1f %.1f %.1f h=%.1f %.1f %.1f r=%.1f clear=%.1f\n", o.id.c_str(), static_cast<int>(o.shape),
+                                 o.centerMeters.x, o.centerMeters.y, o.centerMeters.z, o.halfExtentsMeters.x, o.halfExtentsMeters.y,
+                                 o.halfExtentsMeters.z, o.radiusMeters, o.requiredClearanceMeters);
+            std::fclose(f2);
+        }
+    }
 
     std::thread(
         [job,
@@ -3411,6 +3602,11 @@ bool SpaceState::updateDockingPlanning(Frame& f)
         }
         return false;
     }
+    if (std::getenv("ELITE_ROUTE_DUMP"))   // DEV: the adopted route's curves (where it runs, the planning frame)
+        for (const auto& c : m_dockAdviceJob->plan.routeCurves)
+            std::cerr << "[DockRouteCurve] request=" << pending.serial << " kind=" << static_cast<int>(c.kind) << " s=" << c.startProgressMeters
+                      << ".." << c.endProgressMeters << " (" << c.startMeters.x << "," << c.startMeters.y << "," << c.startMeters.z << ") -> ("
+                      << c.endMeters.x << "," << c.endMeters.y << "," << c.endMeters.z << ") r=" << c.arcRadiusMeters << " vmax=" << c.maxSpeedMps << std::endl;
     std::cerr << "[DockClient] request=" << pending.serial << " plan ready: adopting (valid=" << m_dockAdviceJob->plan.valid()
               << ")" << std::endl;
 
@@ -3696,6 +3892,45 @@ bool SpaceState::updateDockingExecuting(Frame& f)
         game::navigation::autopilot::AutopilotAgentState;
     auto& pending = f.pending;
     auto& releaseClientAutopilot = f.releaseClientAutopilot;
+    // a pad route: close to the approach point over the pad the pad service takes the ship - across the last metres and
+    // down onto the deck on its legs (the only scripted stage, author 2026-11-21)
+    if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid && m_padAnchor.serial == pending.serial)
+    {
+        const auto* city = padRouteCityObject(pending.target.stableObjectId);
+        const auto shipIt = m_client->world().ships().find(m_playerId.value);
+        if (city && shipIt != m_client->world().ships().end())
+        {
+            const glm::dvec3 qShip = padRouteCityLocal(*city, shipIt->second);
+            const double d = glm::length(qShip - m_padAnchor.definition.localPositionMeters);
+            {
+                static double lastTrace = -1.0e9;
+                if (glfwGetTime() - lastTrace >= 3.0)
+                {
+                    lastTrace = glfwGetTime();
+                    std::cerr << "[PadRoute] request=" << pending.serial << " ship at (" << qShip.x << "," << qShip.y << "," << qShip.z
+                              << ") city frame, " << d << " m from the approach point" << std::endl;
+                }
+            }
+            if (d < 250.0)
+            {
+                std::cerr << "[PadRoute] request=" << pending.serial << " " << d << " m from the approach point of "
+                          << m_padAnchor.address << ": the pad service takes the ship" << std::endl;
+                game::network::ClientMessage msg;
+                ClientShipCommand command;
+                command.type = ClientShipCommand::LandOnPad;
+                command.index = 1;
+                command.target = pending.target.stableObjectId;
+                command.detail = m_padAnchor.address;
+                msg.payload = command;
+                m_client->sendMessage(msg);
+                m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: над площадкой " + m_padAnchor.address + " - посадка на опорах";
+                releaseClientAutopilot();
+                f.requests.clear();
+                m_padAnchor = {};
+                return false;
+            }
+        }
+    }
     // the station captured the ship (GameSimulationDockTraffic: entry cleared, within 60 m of the axis, < 25 m/s): from here
     // the server flies its own corridor to the pad and ignores our control - stop the client follower instead of logging a
     // "growing cross-track" against our old line (docking diagnosis 2026-11-20); the docked state ends the request as before

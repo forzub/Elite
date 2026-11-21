@@ -79,7 +79,7 @@ CompiledTrafficRoute applyHubLanes(
     auto route = network.chooseRoute(
         frame, request.startMeters, request.goalMeters, request.vehicleLengthMeters,
         request.hasInitialForward ? request.initialForward : glm::dvec3(0.0), request.initialForwardLeadMeters,
-        -request.terminalOutward, freeLegs, &summary);
+        -request.terminalOutward, freeLegs, &summary, &request.obstacles, request.agentRadiusMeters);
     text << summary;
     if (route.valid)
     {

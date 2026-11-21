@@ -513,10 +513,79 @@ CandidateCheck courseTransferClear(
 
 PreplanningSafetyCourseResult
 PreplanningSafetyCourse::evaluate(
-    const PreplanningSafetyCourseRequest& request
+    const PreplanningSafetyCourseRequest& originalRequest
 )
 {
     PreplanningSafetyCourseResult out;
+
+    // The obstacles the ship already touches (its inflated hull overlaps them: standing on a pad deck, a roof, next to a
+    // wall) block every segment from the start, so no course was ever "proven" and the docking autopilot held an
+    // emergency stop forever on a pad (live 2026-11-21). They are left out of the segment checks; instead a course must
+    // lead away from each of them (from its centre outwards, at least 30 deg off its surface) - off a deck that is up.
+    PreplanningSafetyCourseRequest request = originalRequest;
+    std::vector<glm::dvec3> contactAway;
+    {
+        std::vector<world::navigation::NavigationObstacle> free;
+        free.reserve(originalRequest.obstacles.size());
+        for (const auto& obstacle : originalRequest.obstacles)
+        {
+            const std::vector<world::navigation::NavigationObstacle> one {obstacle};
+            if (obstacle.finite() &&
+                !world::navigation::segmentClearOfNavigationObstacles(
+                    originalRequest.positionMeters, originalRequest.positionMeters, one,
+                    originalRequest.hullRadiusMeters, originalRequest.additionalClearanceMeters))
+            {
+                // away from its SURFACE (from the centre a tall wall beside the deck pulled the course sideways into the
+                // next building, live): the box's nearest point; inside the box itself - its nearest face's normal
+                const glm::dvec3 p = originalRequest.positionMeters;
+                glm::dvec3 away = p - obstacle.centerMeters;
+                if (obstacle.shape == world::navigation::NavigationObstacleShape::Box)
+                {
+                    const glm::dmat3& R = obstacle.localToWorldBasis;
+                    const glm::dvec3 local = glm::transpose(R) * (p - obstacle.centerMeters);
+                    const glm::dvec3 h = glm::max(obstacle.halfExtentsMeters, glm::dvec3(0.0));
+                    const glm::dvec3 clamped = glm::clamp(local, -h, h);
+                    if (clamped != local)
+                        away = R * (local - clamped);
+                    else
+                    {
+                        int axis = 0;
+                        double best = std::numeric_limits<double>::infinity();
+                        for (int k = 0; k < 3; ++k)
+                            if (h[k] - std::abs(local[k]) < best)
+                            {
+                                best = h[k] - std::abs(local[k]);
+                                axis = k;
+                            }
+                        glm::dvec3 n(0.0);
+                        n[axis] = local[axis] >= 0.0 ? 1.0 : -1.0;
+                        away = R * n;
+                    }
+                }
+                contactAway.push_back(normalizedOr(away, {0.0, 1.0, 0.0}));
+            }
+            else
+                free.push_back(obstacle);
+        }
+        if (!contactAway.empty())
+            request.obstacles = std::move(free);
+    }
+    // several touching boxes surround a ship on a pad (deck, nets, lift, the roof - 15 of them, live): the course leads away
+    // from all of them together (their mean outward direction - off a deck that is up) and straight into none
+    glm::dvec3 meanAway(0.0);
+    for (const auto& away : contactAway)
+        meanAway += away;
+    meanAway = normalizedOr(meanAway, {0.0, 1.0, 0.0});
+    const auto leadsAway = [&](const glm::dvec3& course) {
+        if (contactAway.empty())
+            return true;
+        if (glm::dot(course, meanAway) < 0.5)
+            return false;
+        for (const auto& away : contactAway)
+            if (glm::dot(course, away) < -0.3)
+                return false;
+        return true;
+    };
 
     if (!finite3(request.positionMeters) ||
         !finite3(request.velocityMps) ||
@@ -568,6 +637,22 @@ PreplanningSafetyCourse::evaluate(
              request.maxAngularVelocityRadPerSecond);
     }
 
+    // In contact with boxes (standing on a pad, at a berth, brushing a wall) no straight ray from here is ever clear and
+    // the route planner cannot start from inside them (it never returned, live 2026-11-21): first get clear - the
+    // recovery course is straight away from their surfaces (off a deck: vertically up); the route is planned once the
+    // ship is out of contact.
+    if (!contactAway.empty())
+    {
+        out.valid = true;
+        out.currentCourseSafe = false;
+        out.safeCourseFound = true;
+        out.physicallyRecoverable = true;
+        out.safeCourse = meanAway;
+        out.turnAngleRad = angleBetween(out.currentCourse, meanAway);
+        out.message = "in contact (" + std::to_string(contactAway.size()) + " boxes): lift clear along their normal first";
+        return out;
+    }
+
     out.sceneRayMeters =
         sceneRayLength(
             request,
@@ -575,7 +660,8 @@ PreplanningSafetyCourse::evaluate(
             out.stopDistanceMeters + SceneExitMarginMeters
         );
 
-    if (clearSegment(
+    if (leadsAway(out.currentCourse) &&
+        clearSegment(
             request,
             request.positionMeters,
             request.positionMeters +
@@ -627,6 +713,8 @@ PreplanningSafetyCourse::evaluate(
 
             const glm::dvec3 candidate =
                 normalizedOr(direction, out.currentCourse);
+            if (!leadsAway(candidate))
+                return;
             const CandidateCheck check =
                 courseTransferClear(
                     request,
@@ -725,6 +813,30 @@ PreplanningSafetyCourse::evaluate(
         out.stopFallbackClear
             ? "no safe ballistic course; collision-free stop required"
             : "no proven safe course or stopping corridor";
+    {
+        // why: the obstacles in contact, and what blocks the course away from the first of them (live 2026-11-21 diagnosis)
+        std::string why = " contacts=" + std::to_string(contactAway.size());
+        const glm::dvec3 probe = meanAway;
+        const glm::dvec3 a = request.positionMeters;
+        const glm::dvec3 b = a + probe * sceneRayLength(request, a, 0.0);
+        why += " probe=(" + std::to_string(probe.x) + "," + std::to_string(probe.y) + "," + std::to_string(probe.z) + ")";
+        for (const auto& obstacle : request.obstacles)
+        {
+            PreplanningSafetyCourseRequest single = request;
+            single.obstacles = {obstacle};
+            if (!clearSegment(single, a, b))
+            {
+                const glm::dvec3 rel = obstacle.centerMeters - a;
+                why += " rel=(" + std::to_string(rel.x) + "," + std::to_string(rel.y) + "," + std::to_string(rel.z) + ")"; why += " shape=" + std::to_string(static_cast<int>(obstacle.shape)) + " req_clear=" + std::to_string(obstacle.requiredClearanceMeters) + " half=(" + std::to_string(obstacle.halfExtentsMeters.x) + "," + std::to_string(obstacle.halfExtentsMeters.y) + "," + std::to_string(obstacle.halfExtentsMeters.z) + ") caplen=" + std::to_string(obstacle.capsuleHalfLengthMeters) + " rad=" + std::to_string(obstacle.radiusMeters);
+                why += " probe_blocked_by=" + obstacle.id + " d=" + std::to_string(glm::length(obstacle.centerMeters - a)) +
+                       " r=" + std::to_string(obstacle.conservativeRadiusMeters());
+                break;
+            }
+        }
+        why += " hull_r=" + std::to_string(request.hullRadiusMeters) + " clear=" + std::to_string(request.additionalClearanceMeters) +
+               " spot=" + std::to_string(request.courseSafetySpotRadiusMeters);
+        out.message += why;
+    }
     return out;
 }
 

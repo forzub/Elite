@@ -28,10 +28,10 @@ namespace game::navigation::traffic
       - the hub speed limit and the radius of its zone.
 
     chooseRoute() picks the cheapest chain by a Dijkstra search over (lane, station): a metre of lane or connector
-    costs LaneCostFactor of a free metre. A ship ENTERS the network only at a lane's first station and LEAVES it only
-    at a lane's last station - the lanes' ends lie beyond the rim, in open sky; inside the city there is no free leg,
-    every turn is pre-written. Between a lane end and another lane's start a free transfer (open sky, <= MaxTransfer)
-    is allowed. Each continuous piece of the chain (lanes + connectors) becomes ONE VolumeTransit stage (PreferInside)
+    costs LaneCostFactor of a free metre. A ship ENTERS a lane at ANY of its stations (merging along the lane's course
+    after the mandatory join straight) and LEAVES it at any station it rode to (author 2026-11-22: diving straight into
+    a green zone, not through its entry point - joining only at a lane's first station cost 8-11 km loops); a free
+    transfer (<= MaxTransfer) joins any station of another lane. The free legs are planned against the obstacles. Each continuous piece of the chain (lanes + connectors) becomes ONE VolumeTransit stage (PreferInside)
     whose centreline is the whole pre-written polyline, with a mandatory tangent straight before its entry and after
     its exit - the same product the authored traffic graph compiles to, so SegmentedRouteComposer flies it unchanged.
     A lane / connector whose max ship length is below the ship's is not used. No chain beats the direct leg -> invalid
@@ -112,7 +112,11 @@ public:
         double startLeadMeters,                     // the straight the ship flies before it may turn
         const glm::dvec3& goalArriveForward,       // the direction the ship must reach the goal in (zero = free)
         const FreeLegModel& freeLegs,
-        std::string* summary = nullptr
+        std::string* summary = nullptr,
+        // the buildings + the red zones (the planning frame): a free leg into / out of a lane that crosses one is not
+        // offered (author 2026-11-22: «при манёврах входа в зелёную зону не попадать в красную зону. и в здания»)
+        const std::vector<world::navigation::NavigationObstacle>* obstacles = nullptr,
+        double agentRadiusMeters = 0.0
     ) const;
 
     // the red zones as planner obstacles in the planning frame

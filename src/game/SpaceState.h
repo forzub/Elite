@@ -546,6 +546,29 @@ private:
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
     game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;
+    // a hub city pad as the docking planner's target ("pad:<address>"; SpaceStateDocking.cpp): its approach point
+    struct PadRouteAnchor
+    {
+        std::uint64_t serial = 0;
+        bool valid = false;
+        std::string address;
+        game::navigation::HubSemanticAnchorDefinition definition;
+        game::navigation::DockingPortRuntimeState runtime;
+    } m_padAnchor;
+    const ClientObjectState* padRouteCityObject(const std::string& frameModuleId) const
+    {
+        if (m_client)
+            for (const auto& [oid, object] : m_client->world().objects())
+                if (object.hubAttachment.valid && object.hubAttachment.moduleId == frameModuleId)
+                    return &object;
+        return nullptr;
+    }
+    static glm::dvec3 padRouteCityLocal(const ClientObjectState& city, const ClientShipState& ship)
+    {
+        const glm::dmat3 R(glm::mat3(city.renderOrientation));
+        return glm::transpose(R) * (world::coordinates::fullMeters(ship.renderTransform.worldPosition) -
+                                    world::coordinates::fullMeters(city.renderWorldPosition));
+    }
     std::uint64_t m_lastDockingPathRequestSerial = 0;
     std::uint64_t m_lastDockingRequestTraceSerial = 0;
 
@@ -559,6 +582,19 @@ private:
         SecuringCourse = 5
     };
 
+    bool m_devRestoreComboDown = false;   // Ctrl+Alt+R edge (TEMPORARY dev restore)
+    struct DockLiftClear   // docking from a pad / a wall: the straight rise off the touching boxes before the route
+    {
+        bool active = false;
+        std::uint64_t serial = 0;
+        glm::dvec3 direction {0.0, 1.0, 0.0};
+        glm::dvec3 startMap {0.0};
+        glm::dvec3 forward {0.0, 0.0, -1.0};
+        glm::dvec3 up {0.0, 1.0, 0.0};
+        double meters = 60.0;
+    } m_dockLiftClear;
+    std::uint64_t m_hubFrameRequestSerial = 0;   // the docking request that asked the server for the hub frame
+    double m_hubFrameRequestS = 0.0;
     ClientDockingPhase m_clientDockingPhase =
         ClientDockingPhase::Idle;
     // Dock dispatcher gate (author 2026-11-07: hold points for the pilot).

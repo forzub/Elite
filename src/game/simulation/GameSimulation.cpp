@@ -4011,11 +4011,16 @@ bool GameSimulation::debugResetShipStructure(EntityId id)
 
 bool GameSimulation::debugFullRestoreShip(EntityId id)
 {
-    if (!debugResetShipStructure(id))
-        return false;
+    // the structure reset reports "nothing changed" as false - the rest of the restore must still run (live 2026-11-21:
+    // Ctrl+Alt+R did nothing at all after a break-up)
+    const bool structure = debugResetShipStructure(id);
     Ship* ship = getShip(id);
     if (!ship)
+    {
+        std::cerr << "[DevRestore] ship " << id.value << ": not found" << std::endl;
         return false;
+    }
+    std::cerr << "[DevRestore] ship " << id.value << ": structure reset " << (structure ? "applied" : "had nothing to do") << std::endl;
     const std::string prefix = std::to_string(id.value) + "#";
     if (const auto g = m_landingGear.find(id); g != m_landingGear.end() && g->second == 2)
         g->second = 1;   // the broken landing legs repaired (out)

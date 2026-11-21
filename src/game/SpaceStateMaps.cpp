@@ -896,7 +896,13 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                         ? nullptr : game::navigation::HubPlanCatalog::forFrameModule(rest.substr(0, slash));
                     const auto* block = plan ? plan->block(rest.substr(slash + 1)) : nullptr;
                     if (block)
-                        m_systemMapRenderer.setHubHighlightType(game::navigation::hubCompositionTypeForZone(block->zone));
+                    {
+                        // its row highlighted and expanded, the block itself picked (its address row lit)
+                        const std::string type = game::navigation::hubCompositionTypeForZone(block->zone);
+                        m_systemMapRenderer.setHubHighlightType(type);
+                        m_systemMapRenderer.setHubExpandedType(type);
+                        m_systemMapRenderer.setHubHighlightBlock(rest);
+                    }
                 }
             }
             info.highlightedModuleType = m_systemMapRenderer.hubHighlightType();
@@ -986,6 +992,33 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                 info.selectedHubName = hubIt->second.name.empty() ? hubId : hubIt->second.name;
         }
         game::presentation::buildSystemMapInfo(info, panel.infoTitle, panel.info);
+        // the expanded composition row: its city blocks by address under it (author 2026-11-21: «пункты раскрывающимися,
+        // что бы можно было выбрать по адресу»)
+        if (infoMode == SystemMapRenderer::Mode::Hub && !m_systemMapRenderer.hubExpandedType().empty())
+            if (const auto* plan = game::navigation::HubPlanCatalog::forHub(hubId))
+            {
+                const auto& zones = game::navigation::hubCompositionZones(m_systemMapRenderer.hubExpandedType());
+                using Line = game::presentation::SystemMapInfoLine;
+                std::vector<Line> blocks;
+                for (const auto& b : plan->blocks())
+                    if (std::find(zones.begin(), zones.end(), b.zone) != zones.end())
+                    {
+                        Line line;
+                        line.kind = Line::Kind::Address;
+                        line.label = b.address + " \xC2\xB7 " + b.title;
+                        line.target = "block:" + plan->frameModuleId() + "/" + b.id;
+                        line.selected = m_systemMapRenderer.hubHighlightBlock() == plan->frameModuleId() + "/" + b.id;
+                        blocks.push_back(std::move(line));
+                    }
+                std::sort(blocks.begin(), blocks.end(), [](const Line& a, const Line& b) { return a.label < b.label; });
+                const std::string want = "type:" + m_systemMapRenderer.hubExpandedType();
+                for (auto it = panel.info.begin(); it != panel.info.end(); ++it)
+                    if (it->kind == Line::Kind::Module && it->target == want)
+                    {
+                        panel.info.insert(it + 1, blocks.begin(), blocks.end());
+                        break;
+                    }
+            }
         // the star-system list belongs to the Galaxy map; here: every hub and beacon of this system
         if (infoMode != SystemMapRenderer::Mode::Hub)
             panel.objects = game::presentation::buildSystemMapObjectList(info);
@@ -1073,10 +1106,23 @@ void SpaceState::applyNativeSystemMapPanelAction(
             return;
 
         case SystemMapPanelCommandType::SelectHubModuleType:
-            // a composition row: its city part framed on the Hub map (the same row again: off)
-            m_systemMapRenderer.setHubHighlightType(
-                m_systemMapRenderer.hubHighlightType() == command.objectId ? std::string() : command.objectId);
+        {
+            // a composition row ("type:<module type>"): its blocks framed on the Hub map and the row expanded into its
+            // addresses; the same row again: off. An address ("block:<city frame>/<block id>"): that block picked.
+            const std::string& target = command.objectId;
+            if (target.rfind("block:", 0) == 0)
+            {
+                const std::string block = target.substr(6);
+                m_systemMapRenderer.setHubHighlightBlock(m_systemMapRenderer.hubHighlightBlock() == block ? std::string() : block);
+                return;
+            }
+            const std::string type = target.rfind("type:", 0) == 0 ? target.substr(5) : target;
+            const bool off = m_systemMapRenderer.hubHighlightType() == type;
+            m_systemMapRenderer.setHubHighlightType(off ? std::string() : type);
+            m_systemMapRenderer.setHubExpandedType(off ? std::string() : type);
+            m_systemMapRenderer.setHubHighlightBlock(std::string());
             return;
+        }
     }
 }
 
@@ -2152,6 +2198,7 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.calculateRoute = loc.text("map.object_info.calculate_route");
     mapText.showDockingRoute = loc.text("map.object_info.show_docking_route");
     mapText.startDocking = loc.text("map.object_info.start_docking");
+    mapText.landPad = loc.text("map.object_info.land_pad");
     mapText.statusAvailable = loc.text("map.status.available");
     mapText.statusUnavailable = loc.text("map.status.unavailable");
     mapText.statusFree = loc.text("map.status.free");

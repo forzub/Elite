@@ -651,12 +651,14 @@ void HubMapBackend::renderHubMapPasses(
                 const glm::vec4 solid(0.10f + 0.55f * zone.r, 0.10f + 0.55f * zone.g, 0.12f + 0.55f * zone.b, 1.0f);
                 const double side = 2.0 * b.halfMeters;
                 const double top = std::max(15.0, b.topHeightMeters);
-                const bool lit = std::find(m_highlightZones.begin(), m_highlightZones.end(), b.zone) != m_highlightZones.end();
+                const bool picked = b.id == m_highlightBlock;
+                const bool lit = picked || std::find(m_highlightZones.begin(), m_highlightZones.end(), b.zone) != m_highlightZones.end();
                 m_geometryPass.drawHubMapSolidBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes, glm::dvec3(side, top, side),
                                                   solid);
                 if (lit)
                     m_geometryPass.drawHubMapBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes,
-                                                 glm::dvec3(side + 24.0, top + 24.0, side + 24.0), glm::vec4(1.0f, 0.78f, 0.30f, 1.0f),
+                                                 glm::dvec3(side + 24.0, top + 24.0, side + 24.0),
+                                                 picked ? glm::vec4(0.55f, 1.00f, 0.95f, 1.0f) : glm::vec4(1.0f, 0.78f, 0.30f, 1.0f),
                                                  scale, centerPx);
                 if (b.underDepthMeters > 1.0)
                     m_geometryPass.drawHubMapSolidBox(local(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y), mod.axes,
@@ -856,16 +858,17 @@ void HubMapBackend::renderHubMapPasses(
                                 glm::vec4(0.86f, 0.91f, 0.96f, 0.80f));
             }
             // the composition row picked in the panel: its blocks framed (author 2026-11-21)
-            if (!m_highlightZones.empty())
+            if (!m_highlightZones.empty() || !m_highlightBlock.empty())
                 for (const auto& b : city.plan->blocks())
                 {
-                    if (std::find(m_highlightZones.begin(), m_highlightZones.end(), b.zone) == m_highlightZones.end())
+                    const bool picked = b.id == m_highlightBlock;
+                    if (!picked && std::find(m_highlightZones.begin(), m_highlightZones.end(), b.zone) == m_highlightZones.end())
                         continue;
                     const glm::dvec4 r = rectPx(b.centre.x - b.halfMeters, b.centre.y - b.halfMeters, b.centre.x + b.halfMeters,
                                                 b.centre.y + b.halfMeters);
                     const float x = static_cast<float>(r.x) - 3.0f, y = static_cast<float>(r.y) - 3.0f;
-                    const float w = static_cast<float>(r.z) + 6.0f, hh = static_cast<float>(r.w) + 6.0f, t = 3.0f;
-                    const glm::vec4 frameColour(1.00f, 0.78f, 0.30f, 0.98f);
+                    const float w = static_cast<float>(r.z) + 6.0f, hh = static_cast<float>(r.w) + 6.0f, t = picked ? 5.0f : 3.0f;
+                    const glm::vec4 frameColour = picked ? glm::vec4(0.55f, 1.00f, 0.95f, 1.0f) : glm::vec4(1.00f, 0.78f, 0.30f, 0.98f);
                     text.solidRectPx(x, y, w, t, frameColour);
                     text.solidRectPx(x, y + hh - t, w, t, frameColour);
                     text.solidRectPx(x, y, t, hh, frameColour);

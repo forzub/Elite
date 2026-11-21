@@ -274,6 +274,8 @@ private:
     game::system_map::DetailMapBackend m_detailBackend;
     game::system_map::HubMapBackend m_hubBackend;
     std::string m_hubHighlightType;
+    std::string m_hubExpandedType;
+    std::string m_hubHighlightBlock;
     struct PadLandingRequest
     {
         std::string frameModuleId;
@@ -543,6 +545,18 @@ public:
         m_hubFrameDirty = true;
     }
     const std::string& hubHighlightType() const noexcept { return m_hubHighlightType; }
+    // the composition row expanded into its blocks (author 2026-11-21: pick by address) and the block picked ("<city frame>/<block
+    // id>"): framed on the plan, caged in 3D
+    void setHubExpandedType(const std::string& type) { m_hubExpandedType = type; m_hubFrameDirty = true; }
+    const std::string& hubExpandedType() const noexcept { return m_hubExpandedType; }
+    void setHubHighlightBlock(const std::string& block)
+    {
+        m_hubHighlightBlock = block;
+        const auto slash = block.rfind('/');
+        m_hubBackend.setHighlightBlock(slash == std::string::npos ? std::string() : block.substr(slash + 1));
+        m_hubFrameDirty = true;
+    }
+    const std::string& hubHighlightBlock() const noexcept { return m_hubHighlightBlock; }
     // a building card's СТЫКОВКА (a hub city pad, author 2026-11-21): taken by SpaceState, which asks the server
     std::optional<PadLandingRequest> takePadLandingRequest()
     {

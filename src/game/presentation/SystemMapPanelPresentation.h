@@ -62,13 +62,16 @@ struct SystemMapInfoLine
     // Subheading: a small group title (a hub block); Module: one hub module
     // row - pictogram `icon` (module type), name `label`, `value` = "×N" and
     // its build status in brackets.
-    enum class Kind { Heading, Field, Paragraph, Bullet, Subheading, Module };
+    enum class Kind { Heading, Field, Paragraph, Bullet, Subheading, Module, Address };
     Kind kind = Kind::Field;
     std::string label;
     std::string value;
     std::string icon;
     int status = 0;            // Module: 0 operating, 1 under construction, 2 planned
     bool selected = false;     // Module: the row picked (the list or the Hub plan) - its city part is framed on the plan
+    // Module / Address: what a click picks ("type:<module type>" expands / highlights the type; "block:<city frame>/<block
+    // id>" highlights that block, author 2026-11-21: «пункты раскрывающимися, что бы можно было выбрать по адресу»)
+    std::string target;
 };
 
 struct SystemMapPanelPresentationInput

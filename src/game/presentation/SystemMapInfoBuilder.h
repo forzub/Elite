@@ -161,6 +161,7 @@ inline void addComposition(const SystemMapInfoInput& in, std::vector<SystemMapIn
         line.icon = m.type;
         line.status = m.status;
         line.selected = !in.highlightedModuleType.empty() && m.type == in.highlightedModuleType;
+        line.target = "type:" + m.type;
         out.push_back(std::move(line));
     }
 }

@@ -672,7 +672,7 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
                 {
                     std::replace(t.begin(), t.end(), '~', ' ');
                     rows.push_back({t, infoPx, textColor, textX, lineGap});
-                    rows.back().type = line.icon;
+                    rows.back().type = line.target.empty() ? "type:" + line.icon : line.target;
                     rows.back().selected = line.selected;
                     if (first)
                     {
@@ -682,6 +682,20 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
                     first = false;
                 }
                 rows.back().gapAfter = std::max(lineGap + 2.0f, iconSize + 4.0f - static_cast<float>(infoPx));
+            }
+            else if (line.kind == K::Address)
+            {
+                // a block / address under its expanded composition row: indented, clickable
+                const float textX = panelX + pad + 6.0f + iconSize + 20.0f;
+                for (const auto& t : wrapText(text, line.label, infoPx - 1, contentW - (textX - panelX - pad)))
+                {
+                    rows.push_back({t, infoPx - 1,
+                                    line.selected ? glm::vec4(1.0f, 0.86f, 0.55f, 0.99f) : glm::vec4(0.74f, 0.86f, 0.96f, 0.95f),
+                                    textX, lineGap});
+                    rows.back().type = line.target;
+                    rows.back().selected = line.selected;
+                }
+                rows.back().gapAfter = lineGap + 1.0f;
             }
             else if (line.kind == K::Paragraph || line.kind == K::Bullet)
             {

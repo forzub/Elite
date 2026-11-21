@@ -83,6 +83,7 @@ struct NavigationMapTextProfile
     std::string calculateRoute;
     std::string showDockingRoute;
     std::string startDocking;
+    std::string landPad;
 
     std::string statusAvailable;
     std::string statusUnavailable;

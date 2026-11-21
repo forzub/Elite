@@ -7851,3 +7851,10 @@ start-up hitches (render), trade step 16 part 3 live.
      the ship automatically on expensive objects; cheap ones / slums: manual landing; landing gear (extendable damped
      legs) must be down before landing, they break on a hard impact.
   6. refuel and repair blocks on every hub as priority buildings, like the trade platform (their menus, lanes to them).
+- (2026-11-21) QUEUE 1-2 DONE. Cards: one exclusive card at a time (MapObjectInfoPanelState::exclusive - everything but
+  ships (Tactical) and docks); ПОСАДКА (map.object_info.land_pad) on building cards AND block cards (a block lands on its
+  pad nearest its centre). Composition rows: click = highlight + expand into the type's blocks by address
+  (SystemMapInfoLine::Kind::Address, target "type:<t>" / "block:<frame>/<id>"); an address row picks that one block
+  (cyan frame on the plan / cyan cage in 3D, the type's others yellow); a block clicked on the plan picks its row,
+  expands it and lights its address. LIVE D:/tmp/hubplan a-c.png (жилой модуль -> 6 addresses, B4 picked; plan click A6
+  -> грузовой терминал expanded with 11 addresses, A6 lit, card A6 · Порт with ПОСАДКА).

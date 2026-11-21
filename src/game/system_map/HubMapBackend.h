@@ -53,6 +53,8 @@ public:
 
     // the composition row picked in the map panel: its city zones framed on the plan / the 3D view (empty: none)
     void setHighlightZones(std::vector<std::string> zones) { m_highlightZones = std::move(zones); }
+    // one block picked by its address (its id, "b<i>_<j>"; empty: none)
+    void setHighlightBlock(std::string blockId) { m_highlightBlock = std::move(blockId); }
 
     const HubMapPerformanceStats& performanceStats() const noexcept
     {
@@ -101,6 +103,7 @@ private:
     HubMapPerformanceStats m_performanceStats;
     std::string m_playerLabel = "PLAYER";
     std::vector<std::string> m_highlightZones;
+    std::string m_highlightBlock;
 
     std::array<
         std::array<GLuint, kGpuStageCount>,

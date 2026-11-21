@@ -227,6 +227,9 @@ struct MapObjectInfoPanelState
     double expandedHeightPx = 170.0;
     bool dragging = false;
     bool collapsed = false;
+    // one exclusive card at a time (author 2026-11-21: «инфоокна открывать только у кликнутого объекта, остальные
+    // закрываются при открытии нового; кораблей и доков это не касается»)
+    bool exclusive = false;
 };
 
 inline glm::dvec2 normalizedScreenDirection(
@@ -460,6 +463,10 @@ public:
             item.screenPx.x + 36.0,
             item.screenPx.y - panel.expandedHeightPx * 0.5
         );
+        panel.exclusive = item.infoKind != MapObjectInfoKind::Tactical && item.infoKind != MapObjectInfoKind::DockingPort;
+        if (panel.exclusive)
+            for (auto it = m_panels.begin(); it != m_panels.end();)
+                it = it->second.exclusive && it->first != item.objectId ? m_panels.erase(it) : std::next(it);
         clampPanel(panel, viewportSizePx);
         m_panels[panel.objectId] = std::move(panel);
     }

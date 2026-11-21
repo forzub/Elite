@@ -937,8 +937,29 @@ SystemMapRenderer::handleInput(
                 else if (overlayPointer.actionKey == "land_pad")
                 {
                     // a building card: its pad ("hub-building:<city frame module>/<address>")
-                    const std::string rest = overlayPointer.actionObjectId.rfind("hub-building:", 0) == 0
+                    std::string rest = overlayPointer.actionObjectId.rfind("hub-building:", 0) == 0
                         ? overlayPointer.actionObjectId.substr(13) : std::string();
+                    if (overlayPointer.actionObjectId.rfind("hub-block:", 0) == 0)
+                    {
+                        // a block card: its pad nearest the block's centre
+                        const std::string blockRest = overlayPointer.actionObjectId.substr(10);
+                        const auto cut = blockRest.rfind('/');
+                        const auto* plan = cut == std::string::npos
+                            ? nullptr : game::navigation::HubPlanCatalog::forFrameModule(blockRest.substr(0, cut));
+                        const auto* block = plan ? plan->block(blockRest.substr(cut + 1)) : nullptr;
+                        double best = 1.0e30;
+                        if (block)
+                            for (const auto& m : plan->modules())
+                                if (m.pad && !m.under && m.block >= 0 && plan->blocks()[static_cast<std::size_t>(m.block)].id == block->id)
+                                {
+                                    const double d = glm::length(glm::dvec2(m.padPosition.x, m.padPosition.z) - block->centre);
+                                    if (d < best)
+                                    {
+                                        best = d;
+                                        rest = blockRest.substr(0, cut) + "/" + m.address;
+                                    }
+                                }
+                    }
                     if (const auto slash = rest.rfind('/'); slash != std::string::npos)
                     {
                         m_padLandingRequest = PadLandingRequest {rest.substr(0, slash), rest.substr(slash + 1),

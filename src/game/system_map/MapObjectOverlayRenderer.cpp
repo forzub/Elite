@@ -720,6 +720,7 @@ std::string MapObjectOverlayRenderer::text(
     if (key == "calculate_route") return textProfile.calculateRoute;
     if (key == "show_docking_route") return textProfile.showDockingRoute;
     if (key == "start_docking") return textProfile.startDocking;
+    if (key == "land_pad") return textProfile.landPad;
 
     // Internal semantic keys are never intended as user-facing strings. If a
     // producer introduces a new key without extending the profile, show the

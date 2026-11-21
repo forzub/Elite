@@ -72,6 +72,12 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             padField.labelKey = "hub_pads";
             padField.value = std::to_string(pads);
             item.extraFields.push_back(std::move(padField));
+            game::system_map::MapObjectPanelAction landBlock;   // the block's pad nearest its centre
+            landBlock.key = "land_pad";
+            landBlock.labelKey = "land_pad";
+            landBlock.enabled = pads > 0;
+            landBlock.active = !m_padLandingActive.empty() && m_padLandingActive.rfind("hub-building:" + module.stableId + "/" + b.address + "-", 0) == 0;
+            item.panelActions.push_back(std::move(landBlock));
             frame.items.push_back(std::move(item));
         }
         // the buildings of the upper tier (author 2026-11-21: «меню посадки на площадку вызывать кликом по модулю,
@@ -129,7 +135,7 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             item.extraFields.push_back(std::move(pad));
             game::system_map::MapObjectPanelAction land;
             land.key = "land_pad";
-            land.labelKey = "start_docking";
+            land.labelKey = "land_pad";
             land.enabled = m.pad;
             land.active = m_padLandingActive == item.objectId;
             item.panelActions.push_back(std::move(land));

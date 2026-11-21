@@ -7695,3 +7695,14 @@ start-up hitches (render), trade step 16 part 3 live.
   from P1 -> off the axis -> stopped 893 m off the axis at ~1.46 km (speed 2.7 -> 0) -> "released by the station: free
   flight"; the dispatcher dropped the ship (traces end); no [Corridor] fine. NPC departures unchanged (still the long
   axis to -11 km then their sectors) - to align later.
+- (2026-11-21) C. "How did I hit the station in a green lane" - ROOT CAUSE FOUND + FIXED (SOURCE + LIVE check):
+  GameSimulation::devLaneClearanceReport (ELITE_DEV_LANE_CHECK=<hub>, server tick 1800): every lane tube vs every
+  collision box of the hub's static objects in the lanes' frame. Высокий BEFORE: 4 lanes INTRUDED - the X lanes at
+  +-430 m (green.x2.5.0 / x3.5.0, top.n by 55 m = the tube's centre inside, under.n by 21 m) by c4_3_canopy: the canopy
+  disc's hit cylinder (tools/models/units/hub_vista.py canopy_hits) ran from CANOPY_Y - 180 = 420 m to 650 m while the
+  visible disc is 600-650 m - an INVISIBLE 180 m slab under the disc across 1.4 km, right where the 430 m lanes run.
+  FIX: the disc's cylinder Y - 5 .. Y + 50; hubv_canopy regenerated (build_equipment_models --only hubv_canopy) and
+  packaged by the mesh editor (scratchpad package.mjs). AFTER: "64 lanes vs 7103 boxes, 0 lane(s) intruded" (tightest:
+  the under.p lanes at -100 m, 1 m from the deck's underside at the tube's edge). Applies to every planar hub with the
+  canopy (and the belt settlements' canopy).
+  [Collision] log now names the other body's module and the ship's position in its frame.

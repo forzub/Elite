@@ -727,7 +727,9 @@ def canopy_parts(lod):
 
 def canopy_hits():
     return [hcyl("hubv_canopy", (0, 10.0, 0), (0, 470.0, 0), 70.0), hcyl("hubv_canopy", (0, 470.0, 0), (0, CANOPY_Y, 0), 262.0),
-            hcyl("hubv_canopy", (0, CANOPY_Y - 180.0, 0), (0, CANOPY_Y + 50.0, 0), CANOPY_R)]
+            # the disc itself: Y .. Y + 50 (the visual lathe); it reached 180 m BELOW the disc before - an invisible slab
+            # the X lanes at 430 m flew into (author's crash, 2026-11-21; [LaneCheck]: 4 lanes intruded)
+            hcyl("hubv_canopy", (0, CANOPY_Y - 5.0, 0), (0, CANOPY_Y + 50.0, 0), CANOPY_R)]
 
 
 KIT = {"hubv_crown_spire": (crown_spire_parts, crown_spire_hits, "Шпиль с короной 425 м (по ролику, 4:39:42)"),

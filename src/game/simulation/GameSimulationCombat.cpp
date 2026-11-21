@@ -1843,9 +1843,24 @@ void GameSimulation::collideShips(double dt)
                     std::cerr << "[Collision] ship " << X.id.value << ": CRUSHED (" << shipMJ << " MJ at " << -vn << " m/s)" << std::endl;
                 }
             }
+            // what was hit, where (author 2026-11-21: a crash inside a green lane could not be explained from the log):
+            // the other body's module and the ship's position in the other body's frame
+            std::string hitModule;
+            if (!touching.empty())
+            {
+                const auto& volsB = B.ship ? B.ship->core().hitComponent().volumes
+                                           : statics[static_cast<std::size_t>(&B - &bodies[shipCount])]->hitComponent.volumes;
+                if (touching.front().second < volsB.size())
+                {
+                    const auto& v = volsB[touching.front().second];
+                    hitModule = !v.moduleId.empty() ? v.moduleId : v.m_label;
+                }
+            }
+            const glm::dvec3 inB = glm::transpose(B.R) * (A.p - B.p);
             std::cerr << "[Collision] ship " << A.id.value << " x " << (B.ship ? "ship " : "STATION OBJECT ") << B.id.value << ": closing " << -vn << " m/s, "
                       << touching.size() << " touching box pairs, dissipated " << dissipatedMJ << " MJ, spin "
-                      << glm::length(dwA) << " / " << glm::length(dwB) << " rad/s" << std::endl;
+                      << glm::length(dwA) << " / " << glm::length(dwB) << " rad/s; hit '" << hitModule << "', ship at (" << inB.x << ", "
+                      << inB.y << ", " << inB.z << ") in its frame" << std::endl;
             std::cerr << "[Ram] ships " << A.id.value << " x " << B.id.value << ": closing " << -vn << " m/s, masses "
                       << A.m / 1000.0 << " / " << B.m / 1000.0 << " t, dissipated " << dissipatedMJ << " MJ, impulse "
                       << J / 1000.0 << " kN s" << std::endl;

@@ -33,6 +33,7 @@ void PlayerShipView::init(
         m_cameras[ShipCameraMode::Cockpit] = Camera();
         m_cameras[ShipCameraMode::Rear]    = Camera();
         m_cameras[ShipCameraMode::Drone]   = Camera();
+        m_cameras[ShipCameraMode::Bottom]  = Camera();
 
 
         // Устанавливаем проекционные матрицы для каждой камеры
@@ -49,6 +50,10 @@ void PlayerShipView::init(
         
         m_cameras[ShipCameraMode::Drone].setPerspective(fov, nearPlane, farPlane);
         m_cameras[ShipCameraMode::Drone].setAspect(aspect);
+
+        // the bottom camera: a wide view (about 100 deg across at 16:9; the HUD letterboxes it to 2.35:1)
+        m_cameras[ShipCameraMode::Bottom].setPerspective(68.0f, nearPlane, farPlane);
+        m_cameras[ShipCameraMode::Bottom].setAspect(aspect);
 
         mainCamera = ShipCameraMode::Cockpit;
 
@@ -516,6 +521,15 @@ void PlayerShipView::update(
         m_shipDesc,
         tempTransform,
         m_cameras[ShipCameraMode::Drone],
+        &detachedFragments
+    );
+
+    cameraController.updateMode(
+        ShipCameraMode::Bottom,
+        dt,
+        m_shipDesc,
+        tempTransform,
+        m_cameras[ShipCameraMode::Bottom],
         &detachedFragments
     );
 

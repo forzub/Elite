@@ -1381,6 +1381,10 @@ if ((systemMapMode || serviceMode))
                 std::cerr << "[MapScript] t=" << glfwGetTime() << " " << step.action << std::endl;
                 if (step.action == "f1")
                     requestFlightView(FlightPresentationView::Front);
+                else if (step.action == "f4")
+                    requestFlightView(FlightPresentationView::Bottom);
+                else if (step.action == "f2")
+                    requestFlightView(FlightPresentationView::Rear);
                 else if (step.action == "f3")
                     requestFlightView(FlightPresentationView::Drone);
                 else if (step.action == "f10")
@@ -1721,6 +1725,7 @@ void Application::requestPresentationTarget(GameUiTarget target)
             case FlightPresentationView::Front: mode = ShipCameraMode::Cockpit; break;
             case FlightPresentationView::Rear: mode = ShipCameraMode::Rear; break;
             case FlightPresentationView::Drone: mode = ShipCameraMode::Drone; break;
+            case FlightPresentationView::Bottom: mode = ShipCameraMode::Bottom; break;
         }
         space->setFlightCameraMode(mode);
         m_gameUi.armSceneTarget(target);

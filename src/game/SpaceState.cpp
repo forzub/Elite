@@ -1412,7 +1412,7 @@ void SpaceState::setFlightCameraMode(ShipCameraMode mode)
     PlayerShipView::g_debugLogNextFrame = true;
     m_activeCameraMode = mode;
     std::cerr << "[FlightCamera] main camera mode="
-              << (mode == ShipCameraMode::Cockpit ? "front" : mode == ShipCameraMode::Rear ? "rear" : "drone")
+              << (mode == ShipCameraMode::Cockpit ? "front" : mode == ShipCameraMode::Rear ? "rear" : mode == ShipCameraMode::Bottom ? "bottom" : "drone")
               << '\n';
 }
 
@@ -2724,6 +2724,8 @@ m_playerView->updateCockpitStateFromSnapshot(
     {
         if (m_radarWidget)
         {
+            // the scope belongs to the pilot's panel: the front view only (author 2026-11-21: the camera views without it)
+            m_radarWidget->visible = m_activeCameraMode == ShipCameraMode::Cockpit;
             m_radarWidget->setPlayerTransform(
                 world::coordinates::legacyFloatMeters(
                     ship.renderTransform.worldPosition
@@ -2820,6 +2822,7 @@ m_playerView->updateCockpitStateFromSnapshot(
                     std::snprintf(text, sizeof text, forwardScope ? "RADAR FWD %.0f km  |  %zu tracks" : "RADAR %.0f km  |  %zu tracks  [R]",
                                   m_radarDisplayRangeMeters / 1000.0, views.size());
                 label->label = text;
+                label->visible = m_activeCameraMode == ShipCameraMode::Cockpit;   // with the scope: the front view only
             }
         }
     }
@@ -2963,6 +2966,9 @@ void SpaceState::renderUI()
                     break;
                 case ShipCameraMode::Drone:
                     text->label = localizedUiText(context().app, "cockpit.drone", "RECON DRONE");
+                    break;
+                case ShipCameraMode::Bottom:
+                    text->label = localizedUiText(context().app, "cockpit.bottom", "BOTTOM");
                     break;
             }
         }

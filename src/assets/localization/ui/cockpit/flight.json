@@ -16,6 +16,13 @@
       "es": "TRASERA",
       "ja": "後方"
     },
+    "cockpit.bottom": {
+      "en": "BOTTOM",
+      "ru": "НИЗ",
+      "zh-Hans": "下方",
+      "es": "ABAJO",
+      "ja": "下方"
+    },
     "cockpit.drone": {
       "en": "DRONE",
       "ru": "ДРОН",

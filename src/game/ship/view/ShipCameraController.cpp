@@ -94,6 +94,17 @@ void ShipCameraController::updateMode(
             break;
         }
 
+        case ShipCameraMode::Bottom:
+        {
+            // the bottom camera (F4, author 2026-11-21): at the ship's geometry centre looking down its -Y, the nose at the
+            // top of the frame (forward -Z turned to -Y, up +Y to -Z): landing on a pad, a cargo drop
+            camera.setPosition(glm::vec3(0.0f));
+            camera.setOrientationMatrix(
+                transform.orientation *
+                glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0)));
+            break;
+        }
+
         case ShipCameraMode::Drone:
         {
             auto resolved = resolveShipAttachment(

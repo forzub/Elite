@@ -25,7 +25,8 @@ enum class FlightPresentationView
     // single main camera looks (F1 front, F2 rear, F3 recon drone).
     Front,
     Rear,
-    Drone
+    Drone,
+    Bottom   // F4: the bottom camera (landing / cargo drop)
 };
 
 enum class NavigationPresentationView

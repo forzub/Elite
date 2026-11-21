@@ -133,13 +133,18 @@ m_systemMapRenderer.render(
     // HUD boundary, world labels/markers, cockpit overlay, rear/miniview UI, radar.
     if (debug::get().render.shouldRenderShipUi())
     {
-        m_playerView->renderHudBoundary();
+        // the pilot's glass (the marker frame, the markers, the guidance, the cockpit and its instruments) only in the
+        // front view; the rear, drone and bottom cameras are cameras (author 2026-11-21: «в остальных двух - нет панели
+        // пилота и ограничительной рамки для меток. метки - не выводятся»; the bottom one wide format)
+        const bool pilotGlass = m_activeCameraMode == ShipCameraMode::Cockpit;
+        if (pilotGlass)
+            m_playerView->renderHudBoundary();
 
         // -------------------------------------------------
         // 3. Подготовка матриц для меток
         // -------------------------------------------------
 
-        if (m_activeCameraMode != ShipCameraMode::Drone)
+        if (pilotGlass)
         {
             renderHudWorldLabels(vp);
         }
@@ -149,19 +154,19 @@ m_systemMapRenderer.render(
         // corridor/compass pixels outside the visible windshield instead of
         // letting them paint over the dashboard or canopy frame.
         if (debug::get().render.shouldRenderCockpit() &&
-            m_activeCameraMode != ShipCameraMode::Drone &&
+            pilotGlass &&
             m_activeMainCamera)
         {
             renderHudGuidanceAndCompass(vp, playerShip);
         }
 
         // the jump's star rays: on the glass, under the cockpit frame (like the guidance)
-        if (m_activeCameraMode != ShipCameraMode::Drone && m_activeMainCamera)
+        if (pilotGlass && m_activeMainCamera)
             renderJumpStarRays(vp);
 
         // The recon drone is an external camera: no cockpit frame.
         if (debug::get().render.shouldRenderCockpit() &&
-            m_activeCameraMode != ShipCameraMode::Drone)
+            pilotGlass)
         {
             m_playerView->renderCockpit();
         }
@@ -172,7 +177,7 @@ m_systemMapRenderer.render(
         );
 
         if (debug::get().render.shouldRenderCockpit() &&
-            m_activeCameraMode != ShipCameraMode::Drone)
+            pilotGlass)
         {
             renderHudCockpitInstruments(vp, playerShip, cockpit);
         }
@@ -183,6 +188,15 @@ m_systemMapRenderer.render(
         // the pure terminal output. No navigation code can be reached from the
         // terminal module.
         // ------------------------------------------------------------
+        // the bottom camera: wide format, the frame letterboxed to 2.35:1
+        if (m_activeCameraMode == ShipCameraMode::Bottom)
+        {
+            const float band = std::max(0.0f, 0.5f * (static_cast<float>(vp.height) - static_cast<float>(vp.width) / 2.35f));
+            TextRenderer::instance().solidRectPx(0.0f, 0.0f, static_cast<float>(vp.width), band, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            TextRenderer::instance().solidRectPx(0.0f, static_cast<float>(vp.height) - band, static_cast<float>(vp.width), band,
+                                                 glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        }
+
         {
             renderHudDockingTerminal(vp, playerShip, cockpit);
         }

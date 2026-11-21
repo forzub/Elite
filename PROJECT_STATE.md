@@ -7858,3 +7858,10 @@ start-up hitches (render), trade step 16 part 3 live.
   (cyan frame on the plan / cyan cage in 3D, the type's others yellow); a block clicked on the plan picks its row,
   expands it and lights its address. LIVE D:/tmp/hubplan a-c.png (жилой модуль -> 6 addresses, B4 picked; plan click A6
   -> грузовой терминал expanded with 11 addresses, A6 lit, card A6 · Порт with ПОСАДКА).
+- (2026-11-21) QUEUE 3 DONE: F4 = the bottom camera (ShipCameraMode::Bottom / FlightPresentationView::Bottom): at the
+  ship's geometry centre looking down its -Y, the nose at the top, 68 deg vertical (about 100 deg across at 16:9),
+  letterboxed to 2.35:1, label НИЗ. The pilot's glass (marker frame, world markers, guidance, cockpit, instruments, the
+  radar scope + its line) only in the front view: rear / drone / bottom are camera views; the HUD terminal stays. DEV
+  map script f2 / f4. LIVE D:/tmp/pad (pad landing + ELITE_DEV_MAP_SCRIPT f4/f2/f3): a.png the bottom view over the
+  target roof pad (its H below, letterboxed), b.png rear without panel / markers / scope, c.png drone. Note: the scope's
+  text line hid in a second build (checked by source).

@@ -11,7 +11,7 @@ std::optional<GameUiTarget> directTargetForFunctionKey(int functionKey)
         case 1: return GameUiTarget::forFlight(FlightPresentationView::Front);
         case 2: return GameUiTarget::forFlight(FlightPresentationView::Rear);
         case 3: return GameUiTarget::forFlight(FlightPresentationView::Drone);
-        case 4: return std::nullopt; // reserved
+        case 4: return GameUiTarget::forFlight(FlightPresentationView::Bottom);
         case 9: return GameUiTarget::forNavigation(NavigationPresentationView::Galaxy);
         case 10: return GameUiTarget::forNavigation(NavigationPresentationView::System);
         case 11: return GameUiTarget::forNavigation(NavigationPresentationView::Detail);

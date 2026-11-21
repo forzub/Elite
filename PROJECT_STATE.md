@@ -7902,3 +7902,11 @@ start-up hitches (render), trade step 16 part 3 live.
   rule - fixed), the pad deck right below. DEV refuel on the pad: "REFUSED ... (the tank is full)" - the berth check
   passed. OPEN (needs the author's go - it regenerates the frozen cities): refuel + repair blocks on every hub as
   priority buildings (most hubs have neither / one of them).
+- (2026-11-21) Author: refuel / repair NOT on every hub - "главное, чтобы вокруг не было места вообще без заправки";
+  the cities may change (nobody has seen them). Coverage check: docs/FUEL_STATIONS.md - every hub with a market sells the
+  jump charge (609 markets), no system without fuel except Fomalhaut (a black tanker only) / TRAPPIST-1 (one small).
+  PROPOSED rule: a city gets a refuel block iff its hub's economy composition has refuel_dock, a repair block iff
+  service_dock (the city matches its «Состав» list); needs the city generator (hub_plane.py) + regeneration - next.
+- (2026-11-21) Author: player-founded hubs (a company pools money -> buys an asteroid / a licence -> founds and builds a
+  hub; pirates - the same chain). Design PROPOSAL: docs/HUB_FOUNDING.md (company, site, project, construction driven by
+  deliveries, operation, risks, pirates, the work order, 5 questions to the author). Nothing implemented.

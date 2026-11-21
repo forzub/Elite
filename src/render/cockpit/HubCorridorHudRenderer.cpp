@@ -225,7 +225,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                     continue;
                 const double fade = std::clamp((game::navigation::HubPadZoneShowMeters - d) / 30.0, 0.0, 1.0);
                 const glm::vec3 tint = m.autoLanding ? glm::vec3(0.90f, 0.95f, 1.00f) : glm::vec3(1.00f, 0.75f, 0.35f);
-                const glm::vec4 edge(tint, static_cast<float>(0.55 * fade));
+                const glm::vec4 edge(tint, static_cast<float>(0.22 * fade));   // translucent (author: «слишком яркая»)
                 const double s = game::navigation::HubPadZoneHalf, hgt = game::navigation::HubPadZoneHeight;
                 const double sy = m.under ? -1.0 : 1.0;
                 std::array<glm::dvec3, 8> c {};
@@ -234,9 +234,9 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 for (int i = 0; i < 8; ++i)
                     for (int bit = 1; bit < 8; bit <<= 1)
                         if (!(i & bit) && !hidden((c[i] + c[i | bit]) * 0.5))
-                            seg(c[i], c[i | bit], edge, 1.4f);
+                            seg(c[i], c[i | bit], edge, 1.0f);
                 const double half = 0.5 * game::navigation::HubPadDeckSide;
-                const glm::vec4 deckLine(tint, static_cast<float>(0.8 * fade));
+                const glm::vec4 deckLine(tint, static_cast<float>(0.35 * fade));
                 const glm::dvec3 lift(0.0, sy * 0.3, 0.0);
                 const glm::dvec3 q0 = toWorld(m.padPosition + lift + glm::dvec3(-half, 0, -half)),
                                  q1 = toWorld(m.padPosition + lift + glm::dvec3(half, 0, -half)),

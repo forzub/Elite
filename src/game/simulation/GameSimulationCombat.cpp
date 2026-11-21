@@ -2111,7 +2111,10 @@ void GameSimulation::updateLiveTraffic(double dt)
         if (lt.outSinceS < 0.0)
             lt.outSinceS = now;
         const double err = glm::length(tr.motion.localPositionMeters - slot.localPosition);
-        if ((now - lt.outSinceS >= OutHoldS || !slot.eligible) && err <= OnPointM && now - lt.promotedS >= MinLiveS)
+        // far from every player (> 5 km) it goes back to its script wherever it is - nobody sees the snap; it fell behind its
+        // point by 1.3 km 46 km away and stayed live for good (live 2026-11-21)
+        if (((now - lt.outSinceS >= OutHoldS || !slot.eligible) && err <= OnPointM && now - lt.promotedS >= MinLiveS) ||
+            (bestDist > 5000.0 && now - lt.outSinceS >= OutHoldS))
             release.push_back(id);
     }
     for (const EntityId id : release)

@@ -1933,6 +1933,7 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
                     << " request=" << pending.serial
                     << " phase=emergency-stop"
                     << std::endl;
+                m_pilotNotice = "СТЫКОВКА: нет безопасного курса отсюда (рядом постройки / площадка) - отведите корабль на 100-200 м и повторите";   // the reason in the terminal (author 2026-11-21: «нет ни расчёта маршрута, ни причин»)
                 submitAutopilotControl(manualStopControl());
                 return false;
             }
@@ -2096,6 +2097,7 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
                             : 0
                     )
                     << std::endl;
+                m_pilotNotice = "СТЫКОВКА: нет безопасного курса отсюда (рядом постройки / площадка) - отведите корабль на 100-200 м и повторите";
                 submitAutopilotControl(
                     manualStopControl()
                 );
@@ -4382,6 +4384,7 @@ void SpaceState::updateDockingSecuringCourse(Frame& f)
                     << " reason=\"" << check.message << "\""
                     << std::endl;
 
+                m_pilotNotice = "СТЫКОВКА: нет безопасного курса отсюда (рядом постройки / площадка) - отведите корабль на 100-200 м и повторите";   // the reason in the terminal (author 2026-11-21: «нет ни расчёта маршрута, ни причин»)
                 submitAutopilotControl(manualStopControl());
                 return;
             }

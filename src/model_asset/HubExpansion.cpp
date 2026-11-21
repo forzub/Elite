@@ -16,6 +16,8 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <unordered_set>
+#include <cstdio>
 #include <unordered_map>
 
 namespace elite::model_asset
@@ -403,6 +405,41 @@ int applyHubPads(const std::string& hubId, json& doc)
         planModules.push_back(std::move(module));
     }
     game::navigation::assignHubPlanAddressesAndPads(blocks, planModules);
+    // the buildings still being built today (the construction plan's replaced layout nodes not finished yet): no pad on
+    // them - a roof pad hung in the air over a building still at its frame stage (live 2026-11-21)
+    std::unordered_set<std::uint32_t> unfinished;
+    if (const HubExpansionPlan* expansion = hubExpansionPlan(hubId))
+    {
+        const int day = hubExpansionDay(*expansion, hubExpansionUniverseTime());
+        for (const auto& p : expansion->projects)
+        {
+            ConstructionStatus s;
+            const float prog = projectProgress(p, day, &s);
+            for (const auto& r : p.replace)
+            {
+                const float u = s == ConstructionStatus::Planned ? -1.0f : r.b > r.a ? (prog - r.a) / (r.b - r.a) : 1.0f;
+                if (u < 1.0f)
+                    unfinished.insert(r.node);
+            }
+        }
+    }
+    // a plan building -> its layout node: the same module folder at the same footprint centre
+    std::unordered_map<std::string, std::uint32_t> nodeAt;
+    {
+        const auto& layoutModules = doc.at("modules");
+        const auto& layoutNodes = doc.at("nodes");
+        for (std::size_t i = 0; i < layoutNodes.size(); ++i)
+        {
+            const auto& n = layoutNodes[i];
+            const std::size_t mi = n[1].get<std::size_t>();
+            if (mi >= layoutModules.size())
+                continue;
+            char key[160];
+            std::snprintf(key, sizeof key, "%s@%.0f,%.0f", layoutModules[mi].at("folder").get<std::string>().c_str(),
+                          n[3].get<double>(), n[5].get<double>());
+            nodeAt.emplace(key, static_cast<std::uint32_t>(i));
+        }
+    }
 
     auto& modules = doc.at("modules");
     auto& nodes = doc.at("nodes");
@@ -418,6 +455,12 @@ int applyHubPads(const std::string& hubId, json& doc)
         const std::string folder = game::navigation::hubPadModuleFolder(m);
         if (folder.empty() || m.block < 0 || !packaged(folder))
             continue;
+        {
+            char key[160];
+            std::snprintf(key, sizeof key, "%s@%.0f,%.0f", m.module.c_str(), 0.5 * (m.rect.x + m.rect.z), 0.5 * (m.rect.y + m.rect.w));
+            if (const auto it = nodeAt.find(key); it != nodeAt.end() && unfinished.count(it->second) != 0)
+                continue;   // its building is still going up
+        }
         const auto [mit, newModule] = moduleOf.try_emplace(folder, modules.size());
         if (newModule)   // bounds 0: the assembly takes the module's mesh bounds for its far proxy
             modules.push_back({{"folder", folder}, {"lo", {0, 0, 0}}, {"hi", {0, 0, 0}}, {"proxy_material", "eq_hub_hull"}});

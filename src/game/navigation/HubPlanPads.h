@@ -73,6 +73,9 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
         char buf[32];
         std::snprintf(buf, sizeof(buf), "%s-%s%02d", blocks[k].address.c_str(), module.under ? "U" : "", module.number);
         module.address = buf;
+        // a power plant: nobody lands on a reactor hall (author 2026-11-21: a pad «висит в воздухе» over the power block)
+        if (blocks[k].zone == "power")
+            continue;
         // a dock / pad / pier of its own: no pad
         if (module.module.find("dock") != std::string::npos || module.module.find("pad") != std::string::npos ||
             module.module.find("pier") != std::string::npos)

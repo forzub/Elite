@@ -7939,3 +7939,14 @@ start-up hitches (render), trade step 16 part 3 live.
   bounded by the city (an unbounded plane read 350 m over the planet), the height smoothed (~0.25 s), 0.0 / 0.0 on the
   deck; the route tunnel from a smoothed ship position (the gates shook). QUEUE: a pad tug for a disabled ship
   (expensive pads), the tunnel direction to re-check live.
+- (2026-11-21) Fixes after the play test: the docking from the map "did nothing" - the safe-course check found no course
+  ("no proven safe course or stopping corridor") and the autopilot held an emergency stop silently; the reason now goes
+  to the HUD terminal ("СТЫКОВКА: нет безопасного курса отсюда ... отведите корабль на 100-200 м"). Live traffic far
+  from every player (> 5 km) goes back to its script (one fell 1.3 km behind its point 46 km away and stayed live).
+  The pad tunnel only in phases 0-2 and translucent (0.45); the capture box translucent (edges 0.22, deck 0.35); no pads
+  on power blocks; no pad on a building still under construction today (HubExpansion replace nodes not finished;
+  plan module -> layout node by folder + footprint centre); a cargo lift (shaft, platform with a container, bridge) at
+  the -X edge of the roof / stilts pads. The previous source batch had NOT been in the game: HubExpansion.cpp missed
+  <unordered_set> and the build failed silently in a background step - fixed, built. LIVE: 516 pad nodes (536 before),
+  the stilts approach runs slower within the ship's thrust. NOT verified: the translucent tunnel in view (not seen in the
+  capture), the lift in the game view, the docking reason line live.

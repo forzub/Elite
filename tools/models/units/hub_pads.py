@@ -23,7 +23,7 @@ import zlib
 
 from eqlib import *  # noqa: F401,F403 - the unit kernel
 from units.hub_district import BEACON, DARK, FLOOD, HAZ, HULL, LIGHT, STEEL, beacon  # noqa: F401
-from units.hub_belt import GRATE, MARK  # noqa: F401
+from units.hub_belt import CONT, GRATE, MARK  # noqa: F401
 from units.hub_construction import CONC, NET, PLY, PRIM, REBAR, TARP, YEL  # noqa: F401 (registers the materials)
 import units.hub_damage  # noqa: F401 (registers eq_hub_burnt / eq_hub_soot / eq_hub_rebar)
 
@@ -217,13 +217,32 @@ def apron(p, w, lod, holes=None):
                 box(p, FLOOD, (s * (w / 2 - 0.4), 0.3, -APRON / 2 + 2.5 + k * 5.0), (0.5, 0.5, 0.5))
 
 
+
+
+def cargo_lift(p, top, lod, ground):
+    """the cargo lift at the deck's -X edge (author 2026-11-21: «на самом краю площадки - грузовой лифт: кобра таскает всё
+    контейнерами, приземлилась - что-то должно приехать и забрать / отдать контейнеры»): a lift shaft frame down to
+    `ground`, its platform level with the deck carrying a container, a hazard rim, the lift's lamp"""
+    x0 = -PAD / 2 - 4.0
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            box(p, STEEL, (x0 + sx * 3.4, (ground + top + 3.0) / 2, sz * 3.4), (0.5, top + 3.0 - ground, 0.5))
+    box(p, STEEL, (x0, top + 3.0, 0), (7.4, 0.5, 7.4))                     # the head frame (the hoist)
+    box(p, HULL, (x0, top - 0.3, 0), (6.4, 0.6, 6.4))                       # the platform at the deck's level
+    box(p, HAZ, (x0, top + 0.02, 0), (6.6, 0.06, 0.4))
+    box(p, CONT[0], (x0, top + 1.3, 0), (2.4, 2.6, 6.0))                     # a container on it
+    box(p, GRATE, (-PAD / 2 - 0.5, top - 0.1, 0), (1.6, 0.2, 6.0))           # the bridge onto the deck
+    if lod < 2:
+        box(p, FLOOD, (x0, top + 2.6, 0), (1.0, 0.3, 1.0))
+        beacon(p, (x0 + 3.4, top + 3.6, 3.4), 0.5)
 # ================================================================ finished modules
 def pad_roof_parts(lod):
     P = {"hubl_pad_roof": Part("hubl_pad_roof")}
     p = P["hubl_pad_roof"]
     roof_frame(p, lod)
     deck(p, ROOF_FRAME + DECK_T, lod)
-    nets(p, ROOF_FRAME + DECK_T, lod)
+    nets(p, ROOF_FRAME + DECK_T, lod, skip=lambda x, z: x < 0 and abs(z) < 5.0)
+    cargo_lift(p, ROOF_FRAME + DECK_T, lod, -8.0)
     return P
 
 
@@ -236,8 +255,9 @@ def pad_stilts_parts(lod):
     p = P["hubl_pad_stilts"]
     stilts_legs(p, STILT_H, lod)
     deck(p, STILT_H, lod)
-    nets(p, STILT_H, lod)
+    nets(p, STILT_H, lod, skip=lambda x, z: x < 0 and abs(z) < 5.0)
     stair_tower(p, STILT_H, lod)
+    cargo_lift(p, STILT_H, lod, 0.0)
     return P
 
 

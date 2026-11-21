@@ -577,7 +577,9 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
         );
     // the pad service's route as the docking tunnel (author 2026-11-21: «нет рамок, показывающих маршрут»; «тоннель
     // маршрута, как при посадке в док»): the same gates along what is left of the route (hubPadRoute) from here
-    if (!guidance.visible && m_client && playerShip.padService.rfind("phase:", 0) == 0 && playerShip.padService.size() > 8)
+    // only while the service flies the ship there (phases 0-2): landed / handed over / cancelled - no tunnel
+    if (!guidance.visible && m_client && playerShip.padService.size() > 8 && playerShip.padService.rfind("phase:", 0) == 0 &&
+        playerShip.padService[6] != '3')
     {
         const char phase = playerShip.padService[6];
         const std::string address = playerShip.padService.substr(8);
@@ -647,7 +649,8 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                     f.orientation = glm::quat_cast(R) * local;
                     f.widthMeters = 40.0;
                     f.heightMeters = 30.0;
-                    f.opacity = static_cast<float>(std::clamp(1.0 - dist / 3000.0, 0.15, 1.0));
+                    // translucent like the docking tunnel (author 2026-11-21: «тоннель надо сделать полупрозрачным»)
+                    f.opacity = static_cast<float>(0.45 * std::clamp(1.0 - dist / 3000.0, 0.2, 1.0));
                     guidance.frames.push_back(f);
                 }
                 prev = wp;

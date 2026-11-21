@@ -273,6 +273,7 @@ private:
     game::system_map::MapCelestialRenderResources m_mapResources;
     game::system_map::DetailMapBackend m_detailBackend;
     game::system_map::HubMapBackend m_hubBackend;
+    std::string m_hubHighlightType;
 
     void ensureMapTransitionSnapshot(
     const Viewport& viewport
@@ -526,6 +527,14 @@ public:
         m_hubFrameDirty = true;
     }
     bool hubPlanView() const noexcept { return m_hubView.planView(); }
+    // the composition row picked in the panel (a module type, author 2026-11-21): framed on the Hub map
+    void setHubHighlightType(const std::string& type)
+    {
+        m_hubHighlightType = type;
+        m_hubBackend.setHighlightZones(game::navigation::hubCompositionZones(type));
+        m_hubFrameDirty = true;
+    }
+    const std::string& hubHighlightType() const noexcept { return m_hubHighlightType; }
     void toggleSystemBeacons() noexcept
     {
         m_systemView.state().showBeacons = !m_systemView.state().showBeacons;

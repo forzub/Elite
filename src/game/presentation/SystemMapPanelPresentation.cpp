@@ -21,6 +21,9 @@ SystemMapPanelCommand resolveSystemMapPanelAction(
         case SystemMapPanelActionType::SelectObject:
             return {SystemMapPanelCommandType::SelectObject, -1, action.objectId};
 
+        case SystemMapPanelActionType::SelectHubModuleType:
+            return {SystemMapPanelCommandType::SelectHubModuleType, -1, action.objectId};
+
         case SystemMapPanelActionType::OpenGalaxy:
             return mode == MapMode::Galaxy
                 ? SystemMapPanelCommand{}

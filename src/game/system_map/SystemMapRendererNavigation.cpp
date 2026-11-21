@@ -1780,6 +1780,67 @@ void SystemMapRenderer::decorateTrafficRoutes(
                      : m_detailPresentation.camera.project(p);
         return std::isfinite(px.x) && std::isfinite(px.y);
     };
+    // The 3D Hub map: the lanes / routes hide behind the city's solid blocks (author 2026-11-21: «стрелки маршрутов
+    // прятать за объектами, что бы не перегружать карту линиями»). The blocks are boxes in their city frame; a lane
+    // sample is hidden when the ray from it toward the (orthographic) camera meets one. The lines are split there.
+    struct Occluder
+    {
+        glm::dvec3 origin;
+        world::celestial::LocalSceneAxes axes;
+        glm::dvec3 lo, hi;   // city-frame box
+    };
+    std::vector<Occluder> occluders;
+    glm::dvec3 towardCamera(0.0);
+    if (hubMode && !m_hubView.planView())
+    {
+        towardCamera = glm::normalize(m_hubPresentation.camera.vectorFromCamera(glm::dvec3(0.0, 0.0, 1.0)));
+        for (const auto& object : scene->objects)
+        {
+            if (!object.valid || object.objectClass != world::celestial::DetailObjectClass::Hub)
+                continue;
+            const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.stableId);
+            if (!plan)
+                continue;
+            for (const auto& b : plan->blocks())
+            {
+                const double h = b.halfMeters, top = std::max(15.0, b.topHeightMeters);
+                occluders.push_back({object.positionMeters, object.axes, glm::dvec3(b.centre.x - h, 0.0, b.centre.y - h),
+                                     glm::dvec3(b.centre.x + h, top, b.centre.y + h)});
+                if (b.underDepthMeters > 1.0)
+                    occluders.push_back({object.positionMeters, object.axes,
+                                         glm::dvec3(b.centre.x - h, -30.0 - b.underDepthMeters, b.centre.y - h),
+                                         glm::dvec3(b.centre.x + h, -30.0, b.centre.y + h)});
+            }
+        }
+    }
+    const auto hidden = [&](const glm::dvec3& p)
+    {
+        for (const auto& o : occluders)
+        {
+            const glm::dvec3 d = p - o.origin;
+            const glm::dvec3 lp(glm::dot(d, o.axes.x), glm::dot(d, o.axes.y), glm::dot(d, o.axes.z));
+            const glm::dvec3 ld(glm::dot(towardCamera, o.axes.x), glm::dot(towardCamera, o.axes.y), glm::dot(towardCamera, o.axes.z));
+            double t0 = 0.5, t1 = 1.0e9;   // a point on a box face is not hidden by it
+            bool miss = false;
+            for (int k = 0; k < 3 && !miss; ++k)
+            {
+                if (std::abs(ld[k]) < 1.0e-12)
+                {
+                    miss = lp[k] < o.lo[k] || lp[k] > o.hi[k];
+                    continue;
+                }
+                double a = (o.lo[k] - lp[k]) / ld[k], b = (o.hi[k] - lp[k]) / ld[k];
+                if (a > b)
+                    std::swap(a, b);
+                t0 = std::max(t0, a);
+                t1 = std::min(t1, b);
+                miss = t0 > t1;
+            }
+            if (!miss)
+                return true;
+        }
+        return false;
+    };
     const auto addPolyline = [&](const std::string& id,
                                  game::system_map::MapTrajectoryKind kind,
                                  const std::vector<glm::dvec3>& scenePoints)
@@ -1787,16 +1848,36 @@ void SystemMapRenderer::decorateTrafficRoutes(
         game::system_map::MapObjectTrajectory trajectory;
         trajectory.objectId = id;
         trajectory.kind = kind;
-        for (const auto& p : scenePoints)
-        {
+        const auto flush = [&]() {
+            if (trajectory.points.size() >= 2)
+                overlay->trajectories.push_back(trajectory);
+            trajectory.points.clear();
+        };
+        const auto addPoint = [&](const glm::dvec3& p) {
+            if (!occluders.empty() && hidden(p))
+            {
+                flush();   // a hidden run: the line breaks here
+                return;
+            }
             game::system_map::MapTrajectoryPoint point;
             point.position = p;
             point.screenProjected = project(p, point.screenPx);
             if (point.screenProjected)
                 trajectory.points.push_back(point);
+        };
+        for (std::size_t i = 0; i < scenePoints.size(); ++i)
+        {
+            if (i > 0 && !occluders.empty())
+            {
+                // samples every ~40 m between the stations, so a line enters / leaves a block at its edge
+                const glm::dvec3 a = scenePoints[i - 1], b = scenePoints[i];
+                const int n = std::min(200, static_cast<int>(glm::length(b - a) / 40.0));
+                for (int s = 1; s < n; ++s)
+                    addPoint(a + (b - a) * (static_cast<double>(s) / n));
+            }
+            addPoint(scenePoints[i]);
         }
-        if (trajectory.points.size() >= 2)
-            overlay->trajectories.push_back(std::move(trajectory));
+        flush();
     };
 
     // The selected ship's route (every traffic route while T is on). This is

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <glad/gl.h>
 
@@ -14,7 +15,6 @@
 #include "src/game/system_map/HubMapGeometryPass.h"
 #include "src/game/system_map/HubMapPlanetPass.h"
 
-namespace render::hud { class HudPrimitiveBatch; }
 #include "src/game/system_map/MapCelestialRenderResources.h"
 
 
@@ -50,6 +50,9 @@ public:
         const Viewport& viewport,
         const world::celestial::HubMapSnapshot& snapshot
     ) override;
+
+    // the composition row picked in the map panel: its city zones framed on the plan / the 3D view (empty: none)
+    void setHighlightZones(std::vector<std::string> zones) { m_highlightZones = std::move(zones); }
 
     const HubMapPerformanceStats& performanceStats() const noexcept
     {
@@ -95,9 +98,9 @@ private:
     const LocalMapCameraSnapshot* m_activeCamera = nullptr;
     HubMapGeometryPass m_geometryPass;
     HubMapPlanetPass m_planetPass;
-    std::unique_ptr<render::hud::HudPrimitiveBatch> m_fillBatch;   // the 3D view: the city blocks filled (author 2026-11-21)
     HubMapPerformanceStats m_performanceStats;
     std::string m_playerLabel = "PLAYER";
+    std::vector<std::string> m_highlightZones;
 
     std::array<
         std::array<GLuint, kGpuStageCount>,

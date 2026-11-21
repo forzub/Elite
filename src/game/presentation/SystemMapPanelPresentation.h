@@ -19,7 +19,8 @@ enum class SystemMapPanelActionType
     OpenSystem,
     OpenDetail,
     OpenHub,
-    SelectObject    // System / Detail: a hub or beacon picked from the object list
+    SelectObject,   // System / Detail: a hub or beacon picked from the object list
+    SelectHubModuleType   // Hub map: a composition row clicked (objectId = its module type; again = off)
 };
 
 struct SystemMapPanelAction
@@ -39,7 +40,8 @@ enum class SystemMapPanelCommandType
     LoadedDetail,
     SelectedDetail,
     Hub,
-    SelectObject
+    SelectObject,
+    SelectHubModuleType
 };
 
 struct SystemMapPanelCommand
@@ -66,6 +68,7 @@ struct SystemMapInfoLine
     std::string value;
     std::string icon;
     int status = 0;            // Module: 0 operating, 1 under construction, 2 planned
+    bool selected = false;     // Module: the row picked (the list or the Hub plan) - its city part is framed on the plan
 };
 
 struct SystemMapPanelPresentationInput

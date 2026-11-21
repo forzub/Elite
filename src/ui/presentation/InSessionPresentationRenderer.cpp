@@ -209,6 +209,7 @@ std::string navigationButtonLabel(
             return loc.text("map.hub", "HUB");
         case Action::SelectSystem:
         case Action::SelectObject:
+        case Action::SelectHubModuleType:
             break;
     }
 
@@ -530,6 +531,12 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
     if (m_systemDropdownOpen)
         m_systemDropdownOpen = false;
 
+    // a composition row of the info block (the last drawn frame's rows): its module type to the Hub map
+    if (infoMode && localY >= m_infoBoxTop && localY <= m_infoBoxBottom)
+        for (const auto& hit : m_infoModuleHits)
+            if (localY >= hit.y0 && localY <= hit.y1)
+                return SystemMapPanelAction{SystemMapPanelActionType::SelectHubModuleType, -1, hit.type};
+
     const auto buttons = game::presentation::buildSystemMapPanelNavigationActions(panel);
     for (std::size_t i = 0; i < buttons.size(); ++i)
     {
@@ -623,6 +630,7 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         {
             std::string text; int px; glm::vec4 color; float x; float gapAfter;
             std::string icon = {}; glm::vec4 iconColor = glm::vec4(0.0f);
+            std::string type = {}; bool selected = false;   // a composition row: its module type (clickable)
         };
         const float iconSize = static_cast<float>(infoPx + 4);
         std::vector<Row> rows;
@@ -664,6 +672,8 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
                 {
                     std::replace(t.begin(), t.end(), '~', ' ');
                     rows.push_back({t, infoPx, textColor, textX, lineGap});
+                    rows.back().type = line.icon;
+                    rows.back().selected = line.selected;
                     if (first)
                     {
                         rows.back().icon = line.icon;
@@ -708,6 +718,27 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
             if (r.gapAfter >= 0.0f)
                 total += static_cast<float>(r.px) + r.gapAfter;
         const float boxH = std::max(0.0f, boxBottom - boxTop);
+        // a newly picked composition row (the list or the Hub plan): scrolled into view
+        {
+            std::string selectedType;
+            float at = 0.0f, selectedAt = -1.0f;
+            for (const auto& r : rows)
+            {
+                if (r.selected && selectedAt < 0.0f)
+                {
+                    selectedAt = at;
+                    selectedType = r.type;
+                }
+                if (r.gapAfter >= 0.0f)
+                    at += static_cast<float>(r.px) + r.gapAfter;
+            }
+            if (selectedType != m_infoSelectedType)
+            {
+                m_infoSelectedType = selectedType;
+                if (selectedAt >= 0.0f && (selectedAt < m_infoScrollPx || selectedAt > m_infoScrollPx + boxH - 40.0f))
+                    m_infoScrollPx = selectedAt - boxH * 0.35f;
+            }
+        }
         m_infoScrollPx = std::clamp(m_infoScrollPx, 0.0f, std::max(0.0f, total - boxH));
         text.endFrame();                                   // flush what is above the box
         text.beginFrameForViewport(viewport.width, viewport.height);
@@ -718,10 +749,23 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         glScissor(viewport.x + static_cast<int>(panelX), viewport.y + static_cast<int>(h - boxBottom), static_cast<int>(panelW),
                   static_cast<int>(std::max(0.0f, boxH + rise)));
         float ry = boxTop + rise - m_infoScrollPx;
+        m_infoModuleHits.clear();
+        m_infoBoxTop = boxTop;
+        m_infoBoxBottom = boxBottom;
         for (const auto& r : rows)
         {
             if (ry + static_cast<float>(r.px) >= boxTop && ry <= boxBottom)
             {
+                if (!r.type.empty())
+                {
+                    // a composition row: a click picks its module type (the Hub map frames its city part)
+                    const float top = ry - static_cast<float>(r.px) * 0.9f - 3.0f;
+                    const float bottom = ry + std::max(4.0f, r.gapAfter);
+                    m_infoModuleHits.push_back({top, bottom, r.type});
+                    if (r.selected)
+                        text.solidRectPx(panelX + pad - 2.0f, top, contentW + 4.0f, bottom - top,
+                                         glm::vec4(1.00f, 0.78f, 0.30f, 0.22f));
+                }
                 text.textDrawPx(r.text, r.x, ry, r.px, r.color);
                 // the pictogram is centred on the text's x-height band (pen y = baseline)
                 if (!r.icon.empty())

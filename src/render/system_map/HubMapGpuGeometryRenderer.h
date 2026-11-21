@@ -42,6 +42,15 @@ public:
         const glm::vec4& color
     );
 
+    // a solid face (hub-local metres): written to the depth so edges and lines behind it hide (the 3D Hub map
+    // city blocks, author 2026-11-21). Any triangle submitted turns the frame's depth test on.
+    void submitHubTriangle(
+        const glm::dvec3& a,
+        const glm::dvec3& b,
+        const glm::dvec3& c,
+        const glm::vec4& color
+    );
+
     void submitScreenLine(
         const glm::dvec2& a,
         const glm::dvec2& b,
@@ -161,6 +170,8 @@ private:
     std::vector<
         DynamicLineVertex
     > m_dynamicLineVertices;
+
+    std::vector<DynamicLineVertex> m_dynamicTriangleVertices;
 
     bool m_frameActive = false;
     bool m_missingShaderWarningPrinted = false;

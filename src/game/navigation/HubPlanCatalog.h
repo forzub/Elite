@@ -5,6 +5,7 @@
 // HUD»). assets/data/navigation/hub_plans/<hub>.json (elite.hub_plan.v1, written by tools/models/hub_belt_world.py from
 // the hub map): in the frame of the city module (frame_module_id, metres; the city plane is local X-Z, +Y up).
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -45,6 +46,12 @@ struct HubPlanModule
     bool pad = false;
     glm::dvec3 padPosition {0.0};   // city frame
     double padRadiusMeters = 0.0;
+    // how it is built (author 2026-11-21: «на свободных участках, на крышах, на ножках, как вертолётные площадки на
+    // платформах, ... как гараж на 1-2 места»): Roof - a tall wide building; Garage - a low wide one (1-2 places at
+    // the plane, in its ground floor); Stilts - a narrow one: a pad on legs on a free plot of its block beside it
+    enum class PadKind { None, Roof, Stilts, Garage };
+    PadKind padKind = PadKind::None;
+    int padPlaces = 1;
 };
 
 struct HubPlanStreet
@@ -142,4 +149,40 @@ public:
 // the localization key of a block's zone title ("hub.zone.<zone>", flight.json) and its Russian fallback
 std::string hubPlanZoneKey(const std::string& zone);
 
+} // namespace game::navigation
+
+namespace game::navigation
+{
+// The hub composition (economy module types, the map panel's "Состав") <-> the city plan's block zones (author
+// 2026-11-21: «клик по элементу хаба на схеме выделяет элемент в списке, клик по элементу списка - выделяет рамочкой
+// часть хаба»). Types with no city zone (the station, the customs post, the medical bay ...) map to none.
+inline const std::vector<std::string>& hubCompositionZones(const std::string& economyType)
+{
+    static const std::vector<std::string> none;
+    static const std::vector<std::pair<std::string, std::vector<std::string>>> table = {
+        {"habitat", {"residential", "hab_rot"}},
+        {"hotel", {"hotel"}},
+        {"shuttle_dock", {"dock"}},
+        {"liner_platform", {"rig"}},
+        {"cargo_terminal", {"port", "logistics"}},
+        {"warehouse", {"storage"}},
+        {"refuel_dock", {"refuel"}},
+        {"service_dock", {"repair"}},
+        {"market_exchange", {"downtown"}},
+    };
+    for (const auto& [type, zones] : table)
+        if (type == economyType)
+            return zones;
+    return none;
+}
+
+inline std::string hubCompositionTypeForZone(const std::string& zone)
+{
+    for (const char* type : {"habitat", "hotel", "shuttle_dock", "liner_platform", "cargo_terminal", "warehouse", "refuel_dock",
+                             "service_dock", "market_exchange"})
+        for (const auto& z : hubCompositionZones(type))
+            if (z == zone)
+                return type;
+    return {};
+}
 } // namespace game::navigation

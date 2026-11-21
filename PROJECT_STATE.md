@@ -7786,3 +7786,20 @@ start-up hitches (render), trade step 16 part 3 live.
 - QUEUE (author 2026-11-21) PADS: a pad for every city module without a dock - on free plots, on roofs, on legs (like
   oil-platform helipads), or a 1-2 place garage; the pad card: address, what the object is, a СТЫКОВКА button; then
   the pad landing itself (approach, hover, set down - the docking stack knows hex docks only).
+- (2026-11-21) Hub map: the composition list <-> the plan, solid 3D, hidden lines (author: «клик по элементу хаба на
+  схеме выделяет элемент в списке, клик по элементу списка - выделяет рамочкой часть хаба»; «убрать прозрачность для
+  рёбер здания, стрелки маршрутов прятать за объектами»). SOURCE: hubCompositionZones / hubCompositionTypeForZone
+  (HubPlanCatalog.h: habitat=residential+hab_rot, hotel, shuttle_dock=dock, liner_platform=rig,
+  cargo_terminal=port+logistics, warehouse=storage, refuel_dock=refuel, service_dock=repair, market_exchange=downtown);
+  the panel's composition rows are clickable (SystemMapPanelActionType::SelectHubModuleType; again = off), the picked
+  row highlighted and scrolled into view; a block picked on the plan picks its row; the picked type's blocks framed
+  on the plan and caged in 3D. 3D city blocks are real solid boxes in the hub GPU geometry pass (depth-writing
+  triangles, NDC depth along the view in hub_map_*.vert; edges / hub lines depth-tested -> the wires behind a block
+  hide); the lanes / routes (screen-space overlay) are split where a sample's ray toward the camera meets a block
+  (CPU, ~80 boxes). Pads: kinds Roof (tall wide), Garage 1-2 places (low wide, ground floor), Stilts (narrow: a pad
+  on legs on the nearest free plot of the block, 25 m up). DEV: panel:module:<type>. LIVE (D:/tmp/hubplan): row
+  жилой модуль -> 6 blocks framed on the plan + the row highlighted; plan click A6 (Порт) -> the cargo terminal row
+  highlighted + scrolled into view, 11 port / logistics blocks framed; 3D solid boxes. NOT verified closely: the
+  hidden-line look in 3D at close zoom (the DEV zoom does not zoom the Hub map).
+- FOUND: the composition status ignores the city - "грузовой терминал / склады (в плане)" while the city has port /
+  storage blocks (status = runtime hub objects only). To fix: count the city blocks' zones as present.

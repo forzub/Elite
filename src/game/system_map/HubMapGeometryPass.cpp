@@ -517,3 +517,29 @@ glm::dvec3 HubMapGeometryPass::visualSizeForHubShip(
 }
 
 }
+
+namespace game::system_map
+{
+void HubMapGeometryPass::drawHubMapSolidBox(
+    const glm::dvec3& center,
+    const world::celestial::LocalSceneAxes& axes,
+    const glm::dvec3& size,
+    const glm::vec4& color
+)
+{
+    if (!m_gpuGeometryRenderer.active())
+        return;
+    const glm::dvec3 hx = axes.x * (size.x * 0.5), hy = axes.y * (size.y * 0.5), hz = axes.z * (size.z * 0.5);
+    const glm::dvec3 p[8] = {center - hx - hy - hz, center + hx - hy - hz, center + hx + hy - hz, center - hx + hy - hz,
+                             center - hx - hy + hz, center + hx - hy + hz, center + hx + hy + hz, center - hx + hy + hz};
+    // the faces lit a little differently (top brightest) so the box reads as a solid
+    constexpr int faces[6][4] = {{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 5, 4}, {3, 2, 6, 7}, {0, 3, 7, 4}, {1, 2, 6, 5}};
+    constexpr float shade[6] = {0.80f, 0.80f, 0.62f, 1.00f, 0.70f, 0.70f};
+    for (int f = 0; f < 6; ++f)
+    {
+        const glm::vec4 c(glm::vec3(color) * shade[f], color.a);
+        m_gpuGeometryRenderer.submitHubTriangle(p[faces[f][0]], p[faces[f][1]], p[faces[f][2]], c);
+        m_gpuGeometryRenderer.submitHubTriangle(p[faces[f][0]], p[faces[f][2]], p[faces[f][3]], c);
+    }
+}
+} // namespace game::system_map

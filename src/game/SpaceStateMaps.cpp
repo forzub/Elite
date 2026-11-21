@@ -878,6 +878,29 @@ SpaceState::buildNativeSystemMapPanelPresentation()
         info.system = &m_systemMapSnapshot;
         info.selectedObjectId = m_systemMapRenderer.activeObjectId();
         info.selectedBodyId = m_systemMapRenderer.selectedBodyId();
+        // the Hub plan <-> the composition list (author 2026-11-21): a block picked on the plan highlights its
+        // composition row (and frames the blocks of that type); a row clicked in the list does the same
+        // (SelectHubModuleType). Only a NEW pick on the plan changes the row, so a list click is not overridden.
+        if (infoMode == SystemMapRenderer::Mode::Hub)
+        {
+            static std::string lastPlanPick;
+            const std::string& active = info.selectedObjectId;
+            if (active != lastPlanPick)
+            {
+                lastPlanPick = active;
+                if (active.rfind("hub-block:", 0) == 0)
+                {
+                    const std::string rest = active.substr(10);
+                    const auto slash = rest.rfind('/');
+                    const auto* plan = slash == std::string::npos
+                        ? nullptr : game::navigation::HubPlanCatalog::forFrameModule(rest.substr(0, slash));
+                    const auto* block = plan ? plan->block(rest.substr(slash + 1)) : nullptr;
+                    if (block)
+                        m_systemMapRenderer.setHubHighlightType(game::navigation::hubCompositionTypeForZone(block->zone));
+                }
+            }
+            info.highlightedModuleType = m_systemMapRenderer.hubHighlightType();
+        }
         // A hub selected on the map (its marker or one of its module
         // markers): the hub's facts + its composition (modules by block,
         // economy hub_modules data) in the panel.
@@ -1047,6 +1070,12 @@ void SpaceState::applyNativeSystemMapPanelAction(
             if (m_systemMapRenderer.mode() != SystemMapRenderer::Mode::System)
                 setSystemMapLoadedSystemMode();
             m_systemMapRenderer.focusObjectFromList(command.objectId);
+            return;
+
+        case SystemMapPanelCommandType::SelectHubModuleType:
+            // a composition row: its city part framed on the Hub map (the same row again: off)
+            m_systemMapRenderer.setHubHighlightType(
+                m_systemMapRenderer.hubHighlightType() == command.objectId ? std::string() : command.objectId);
             return;
     }
 }

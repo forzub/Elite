@@ -535,6 +535,12 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
             action.type = PanelAction::SelectObject;
             action.objectId = which.substr(7);
         }
+        else if (which.rfind("module:", 0) == 0)
+        {
+            // a composition row of the info block (the Hub map frames its city part)
+            action.type = PanelAction::SelectHubModuleType;
+            action.objectId = which.substr(7);
+        }
         else
         action.type = which == "hub"      ? PanelAction::OpenHub
                       : which == "detail" ? PanelAction::OpenDetail

@@ -94,13 +94,76 @@ bool HubPlan::load(const std::string& path)
         module.address = buf;
         const bool ownDock = module.module.find("dock") != std::string::npos || module.module.find("pad") != std::string::npos ||
                              module.module.find("pier") != std::string::npos;
-        const double half = 0.5 * std::min(module.rect.z - module.rect.x, module.rect.w - module.rect.y);
-        if (ownDock || half < 15.0)
+        if (ownDock)
             continue;
+        const double half = 0.5 * std::min(module.rect.z - module.rect.x, module.rect.w - module.rect.y);
+        const double height = module.under ? -module.y0 : module.y1;
+        const glm::dvec2 centre(0.5 * (module.rect.x + module.rect.z), 0.5 * (module.rect.y + module.rect.w));
+        const double side = module.under ? -1.0 : 1.0;
+        if (half >= 15.0 && height > 60.0)
+        {
+            // a tall wide building: the pad on its roof (the lower tier: its underside)
+            module.padKind = HubPlanModule::PadKind::Roof;
+            module.padRadiusMeters = std::min(40.0, 0.8 * half);
+            module.padPosition = glm::dvec3(centre.x, module.under ? module.y0 : module.y1, centre.y);
+        }
+        else if (half >= 15.0)
+        {
+            // a low wide one: a garage for 1-2 small ships in its ground floor, at the plane (the gate on its side)
+            module.padKind = HubPlanModule::PadKind::Garage;
+            module.padPlaces = half >= 30.0 ? 2 : 1;
+            module.padRadiusMeters = 16.0;
+            module.padPosition = glm::dvec3(centre.x, side * 8.0, centre.y);
+        }
+        else
+            module.padKind = HubPlanModule::PadKind::Stilts;   // placed on a free plot below (needs every rect)
         module.pad = true;
-        module.padRadiusMeters = std::min(40.0, 0.8 * half);
-        module.padPosition = glm::dvec3(0.5 * (module.rect.x + module.rect.z), module.under ? module.y0 : module.y1,
-                                        0.5 * (module.rect.y + module.rect.w));
+    }
+    // the pads on legs: the nearest free plot of the block (no building within the pad + 12 m) on a 10 m grid,
+    // the deck 25 m over the plane (under it for the lower tier); none free: no pad
+    for (auto& module : m_modules)
+    {
+        if (module.padKind != HubPlanModule::PadKind::Stilts || module.block < 0)
+            continue;
+        const auto& block = m_blocks[static_cast<std::size_t>(module.block)];
+        const double radius = 18.0, clear = radius + 12.0;
+        const glm::dvec2 centre(0.5 * (module.rect.x + module.rect.z), 0.5 * (module.rect.y + module.rect.w));
+        std::vector<const HubPlanModule*> near;   // this block, this tier: the buildings and the pads on legs placed so far
+        for (const auto& other : m_modules)
+            if (other.block == module.block && other.under == module.under)
+                near.push_back(&other);
+        double best = 1.0e30;
+        glm::dvec2 at(0.0);
+        for (double x = block.centre.x - block.halfMeters + clear; x <= block.centre.x + block.halfMeters - clear; x += 10.0)
+            for (double z = block.centre.y - block.halfMeters + clear; z <= block.centre.y + block.halfMeters - clear; z += 10.0)
+            {
+                bool free = true;
+                for (const HubPlanModule* o : near)
+                    if (const auto& other = *o; x > other.rect.x - clear && x < other.rect.z + clear && z > other.rect.y - clear && z < other.rect.w + clear)
+                    {
+                        free = false;
+                        break;
+                    }
+                for (const HubPlanModule* o : near)   // and no other pad on legs already there
+                    if (const auto& other = *o; free && o != &module && other.padKind == HubPlanModule::PadKind::Stilts &&
+                        other.padRadiusMeters > 0.0 && glm::length(glm::dvec2(other.padPosition.x, other.padPosition.z) - glm::dvec2(x, z)) <
+                            2.0 * clear)
+                        free = false;
+                const double d = glm::length(glm::dvec2(x, z) - centre);
+                if (free && d < best)
+                {
+                    best = d;
+                    at = glm::dvec2(x, z);
+                }
+            }
+        if (best > 1.0e29 || best > 250.0)
+        {
+            module.pad = false;
+            module.padKind = HubPlanModule::PadKind::None;
+            continue;
+        }
+        module.padRadiusMeters = radius;
+        module.padPosition = glm::dvec3(at.x, module.under ? -25.0 : 25.0, at.y);
     }
     for (const auto& s : j.value("streets", nlohmann::json::array()))
         m_streets.push_back({vec2(s.value("a", nlohmann::json::array())), vec2(s.value("b", nlohmann::json::array())),

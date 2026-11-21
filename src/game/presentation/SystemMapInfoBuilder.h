@@ -45,6 +45,8 @@ struct SystemMapInfoInput
         int status = 0;        // 0 operating, 1 under construction, 2 planned
     };
     std::vector<HubModule> selectedHubModules;
+    // the composition row picked on the Hub map (its module type), highlighted in the list
+    std::string highlightedModuleType;
     // relation of the player to this place: from warrants / reputation when they exist
     std::string playerRelation = "нейтральное: записей, ордеров и претензий нет";
 };
@@ -158,6 +160,7 @@ inline void addComposition(const SystemMapInfoInput& in, std::vector<SystemMapIn
                      (m.status > 0 ? std::string(m.count > 1 ? " " : "") + moduleStatusText(m.status) : std::string());
         line.icon = m.type;
         line.status = m.status;
+        line.selected = !in.highlightedModuleType.empty() && m.type == in.highlightedModuleType;
         out.push_back(std::move(line));
     }
 }

@@ -13,7 +13,6 @@
 #include <GLFW/glfw3.h>
 
 #include "render/HUD/TextRenderer.h"
-#include "src/render/HUD/HudPrimitiveBatch.h"
 #include <vector>
 #include "src/game/navigation/HubPlanCatalog.h"
 
@@ -37,32 +36,6 @@ namespace
         return glm::vec4(0.50f, 0.55f, 0.60f, 0.18f);
     }
 
-    // the screen silhouette of a projected box: the convex hull of its 8 corners (monotone chain)
-    std::vector<glm::vec2> convexHull(std::vector<glm::vec2> p)
-    {
-        std::sort(p.begin(), p.end(), [](const glm::vec2& a, const glm::vec2& b) { return a.x < b.x || (a.x == b.x && a.y < b.y); });
-        if (p.size() < 3)
-            return p;
-        const auto cross = [](const glm::vec2& o, const glm::vec2& a, const glm::vec2& b) {
-            return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-        };
-        std::vector<glm::vec2> h(2 * p.size());
-        std::size_t k = 0;
-        for (std::size_t i = 0; i < p.size(); ++i)
-        {
-            while (k >= 2 && cross(h[k - 2], h[k - 1], p[i]) <= 0.0f)
-                --k;
-            h[k++] = p[i];
-        }
-        for (std::size_t i = p.size() - 1, t = k + 1; i > 0; --i)
-        {
-            while (k >= t && cross(h[k - 2], h[k - 1], p[i - 1]) <= 0.0f)
-                --k;
-            h[k++] = p[i - 1];
-        }
-        h.resize(k - 1);
-        return h;
-    }
     double hubPerfNowMs()
     {
         using Clock = std::chrono::steady_clock;
@@ -658,18 +631,10 @@ void HubMapBackend::renderHubMapPasses(
         for (const auto& o : hub.scene.objects)
             planCity = planCity || (o.valid && o.objectClass == world::celestial::DetailObjectClass::Hub && game::system_map::isHubCityModule(o.stableId));
 
-    // the 3D view: the city blocks as solid boxes coloured by zone (author 2026-11-21: «кубики хаба-города закрашивать,
-    // иначе их почти не видно на фоне планеты» -> «делать непрозрачными»): each box's screen silhouette, far to near,
-    // under the wire edges drawn next
+    // the 3D view: the city blocks as solid boxes coloured by zone (author 2026-11-21: «кубики хаба-города закрашивать»
+    // -> «непрозрачными» -> «убрать прозрачность для рёбер»): depth-writing faces in the GPU geometry pass, so every
+    // hub-space edge / line behind a block hides; the composition row picked in the panel: its blocks get a bright cage
     if (!planView)
-    {
-        struct Fill
-        {
-            std::vector<glm::vec2> hull;
-            glm::vec4 colour;
-            double depth;
-        };
-        std::vector<Fill> fills;
         for (const auto& mod : hub.scene.objects)
         {
             if (!mod.valid || mod.objectClass != world::celestial::DetailObjectClass::Hub)
@@ -677,17 +642,8 @@ void HubMapBackend::renderHubMapPasses(
             const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(mod.stableId);
             if (!plan)
                 continue;
-            const auto addBox = [&](const glm::dvec3& centre, const glm::dvec3& size, const glm::vec4& colour) {
-                std::vector<glm::vec2> corners;
-                for (int c = 0; c < 8; ++c)
-                {
-                    const glm::dvec3 p = centre + glm::dvec3((c & 1 ? 0.5 : -0.5) * size.x, (c & 2 ? 0.5 : -0.5) * size.y,
-                                                             (c & 4 ? 0.5 : -0.5) * size.z);
-                    corners.push_back(glm::vec2(
-                        activeCamera().project(mod.positionMeters + mod.axes.x * p.x + mod.axes.y * p.y + mod.axes.z * p.z)));
-                }
-                const glm::dvec3 w = mod.positionMeters + mod.axes.x * centre.x + mod.axes.y * centre.y + mod.axes.z * centre.z;
-                fills.push_back({convexHull(std::move(corners)), colour, activeCamera().pointToCamera(w).z});
+            const auto local = [&](double x, double y, double z) {
+                return mod.positionMeters + mod.axes.x * x + mod.axes.y * y + mod.axes.z * z;
             };
             for (const auto& b : plan->blocks())
             {
@@ -695,24 +651,19 @@ void HubMapBackend::renderHubMapPasses(
                 const glm::vec4 solid(0.10f + 0.55f * zone.r, 0.10f + 0.55f * zone.g, 0.12f + 0.55f * zone.b, 1.0f);
                 const double side = 2.0 * b.halfMeters;
                 const double top = std::max(15.0, b.topHeightMeters);
-                addBox(glm::dvec3(b.centre.x, top * 0.5, b.centre.y), glm::dvec3(side, top, side), solid);
+                const bool lit = std::find(m_highlightZones.begin(), m_highlightZones.end(), b.zone) != m_highlightZones.end();
+                m_geometryPass.drawHubMapSolidBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes, glm::dvec3(side, top, side),
+                                                  solid);
+                if (lit)
+                    m_geometryPass.drawHubMapBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes,
+                                                 glm::dvec3(side + 24.0, top + 24.0, side + 24.0), glm::vec4(1.0f, 0.78f, 0.30f, 1.0f),
+                                                 scale, centerPx);
                 if (b.underDepthMeters > 1.0)
-                    addBox(glm::dvec3(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y),
-                           glm::dvec3(side, b.underDepthMeters, side), solid * glm::vec4(0.75f, 0.75f, 0.75f, 1.0f));
+                    m_geometryPass.drawHubMapSolidBox(local(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y), mod.axes,
+                                                      glm::dvec3(side, b.underDepthMeters, side),
+                                                      solid * glm::vec4(0.75f, 0.75f, 0.75f, 1.0f));
             }
         }
-        if (!fills.empty())
-        {
-            std::sort(fills.begin(), fills.end(), [](const Fill& a, const Fill& b) { return a.depth < b.depth; });
-            if (!m_fillBatch)
-                m_fillBatch = std::make_unique<render::hud::HudPrimitiveBatch>();
-            m_fillBatch->begin(viewport.width, viewport.height);
-            for (const auto& f : fills)
-                for (std::size_t i = 1; i + 1 < f.hull.size(); ++i)
-                    m_fillBatch->filledTriangle(f.hull[0], f.hull[i], f.hull[i + 1], f.colour);
-            m_fillBatch->flush();
-        }
-    }
 
     // Модули станции.
     for (const auto& mod : hub.scene.objects)
@@ -904,6 +855,22 @@ void HubMapBackend::renderHubMapPasses(
                 text.textDrawPx(r.z < 70.0 ? b.address : b.address + "  " + b.title, static_cast<float>(r.x + 4.0), static_cast<float>(r.y + 3.0), px,
                                 glm::vec4(0.86f, 0.91f, 0.96f, 0.80f));
             }
+            // the composition row picked in the panel: its blocks framed (author 2026-11-21)
+            if (!m_highlightZones.empty())
+                for (const auto& b : city.plan->blocks())
+                {
+                    if (std::find(m_highlightZones.begin(), m_highlightZones.end(), b.zone) == m_highlightZones.end())
+                        continue;
+                    const glm::dvec4 r = rectPx(b.centre.x - b.halfMeters, b.centre.y - b.halfMeters, b.centre.x + b.halfMeters,
+                                                b.centre.y + b.halfMeters);
+                    const float x = static_cast<float>(r.x) - 3.0f, y = static_cast<float>(r.y) - 3.0f;
+                    const float w = static_cast<float>(r.z) + 6.0f, hh = static_cast<float>(r.w) + 6.0f, t = 3.0f;
+                    const glm::vec4 frameColour(1.00f, 0.78f, 0.30f, 0.98f);
+                    text.solidRectPx(x, y, w, t, frameColour);
+                    text.solidRectPx(x, y + hh - t, w, t, frameColour);
+                    text.solidRectPx(x, y, t, hh, frameColour);
+                    text.solidRectPx(x + w - t, y, t, hh, frameColour);
+                }
             // the landing pads on the roofs of the upper tier (shown once they are a few pixels wide)
             for (const auto& m : city.plan->modules())
             {

@@ -67,6 +67,17 @@ vec2 hubPositionToScreenPx(
         uPixelsPerMeter;
 }
 
+// the depth along the view (author 2026-11-21: the city blocks are solid - edges and lines behind them hide):
+// camera-space z grows toward the viewer; NDC z = -z / 200 km (nearer = smaller)
+float hubPositionToNdcDepth(
+    vec3 hubPosition
+)
+{
+    float rotatedZ = hubPosition.x * uCameraTrig.y + hubPosition.z * uCameraTrig.x;
+    float towardCamera = hubPosition.y * uCameraTrig.w + rotatedZ * uCameraTrig.z;
+    return clamp(-towardCamera / 200000.0, -0.999, 0.999);
+}
+
 vec2 screenPxToNdc(
     vec2 screenPx
 )
@@ -112,7 +123,9 @@ void main()
             screenPxToNdc(
                 screenPx
             ),
-            0.0,
+            hubPositionToNdcDepth(
+                hubPosition
+            ),
             1.0
         );
 

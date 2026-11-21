@@ -76,6 +76,14 @@ public:
         const glm::dvec2& centerPx
     );
 
+    // a solid box (12 depth-writing triangles; the GPU path only): the 3D city blocks hide what is behind them
+    void drawHubMapSolidBox(
+        const glm::dvec3& center,
+        const world::celestial::LocalSceneAxes& axes,
+        const glm::dvec3& size,
+        const glm::vec4& color
+    );
+
     void drawHubMapAxes(
         const glm::dvec3& center,
         const world::celestial::LocalSceneAxes& axes,

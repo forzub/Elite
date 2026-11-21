@@ -52,5 +52,14 @@ private:
     bool m_systemPanelLeftWasDown = false;
     int m_systemDropdownFirstRow = 0;
     float m_infoScrollPx = 0.0f;
+    // the composition rows of the last drawn info block (viewport-local y): a click picks the module type
+    struct InfoModuleHit
+    {
+        float y0 = 0.0f, y1 = 0.0f;
+        std::string type;
+    };
+    std::vector<InfoModuleHit> m_infoModuleHits;
+    float m_infoBoxTop = 0.0f, m_infoBoxBottom = 0.0f;
+    std::string m_infoSelectedType;   // the highlighted composition row last frame (a new one is scrolled into view)
 };
 }

@@ -252,6 +252,7 @@ void HubMapGpuGeometryRenderer::beginFrame(
 
     m_meshBatches.clear();
     m_dynamicLineVertices.clear();
+    m_dynamicTriangleVertices.clear();
 
     m_viewportSizePx =
         glm::vec2(
@@ -374,6 +375,25 @@ void HubMapGpuGeometryRenderer::submitMesh(
     );
 }
 
+
+void HubMapGpuGeometryRenderer::submitHubTriangle(
+    const glm::dvec3& a,
+    const glm::dvec3& b,
+    const glm::dvec3& c,
+    const glm::vec4& color
+)
+{
+    if (!m_frameActive)
+        return;
+    for (const glm::dvec3* p : {&a, &b, &c})
+    {
+        DynamicLineVertex v;
+        v.position = glm::vec3(*p);
+        v.color = color;
+        v.coordinateSpace = 0.0f;
+        m_dynamicTriangleVertices.push_back(v);
+    }
+}
 
 void HubMapGpuGeometryRenderer::submitHubLine(
     const glm::dvec3& a,
@@ -665,6 +685,7 @@ void HubMapGpuGeometryRenderer::flush()
     {
         m_meshBatches.clear();
         m_dynamicLineVertices.clear();
+        m_dynamicTriangleVertices.clear();
         return;
     }
 
@@ -755,6 +776,32 @@ void HubMapGpuGeometryRenderer::flush()
     glBlendEquation(
         GL_FUNC_ADD
     );
+
+    // solid faces this frame (the 3D city blocks): a fresh depth, the faces first (pushed back a little so the
+    // edges on them win), then every hub-space edge / line depth-tested - what is behind a block hides
+    const bool solid = !m_dynamicTriangleVertices.empty();
+    GLint previousDepthFunc = GL_LESS;
+    GLboolean previousDepthMask = GL_TRUE;
+    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &previousDepthMask);
+    if (solid)
+    {
+        glDepthMask(GL_TRUE);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+        glUseProgram(m_dynamicLineShader);
+        applyFrameUniforms(m_dynamicLineShader);
+        glBindVertexArray(m_dynamicLineVao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_dynamicLineVbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(m_dynamicTriangleVertices.size() * sizeof(DynamicLineVertex)),
+                     m_dynamicTriangleVertices.data(), GL_STREAM_DRAW);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(2.0f, 8.0f);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_dynamicTriangleVertices.size()));
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    }
 
     glBlendFunc(
         GL_SRC_ALPHA,
@@ -888,6 +935,8 @@ void HubMapGpuGeometryRenderer::flush()
         GL_DEPTH_TEST,
         depthWasEnabled
     );
+    glDepthFunc(static_cast<GLenum>(previousDepthFunc));
+    glDepthMask(previousDepthMask);
 
     restoreCapability(
         GL_CULL_FACE,
@@ -896,6 +945,7 @@ void HubMapGpuGeometryRenderer::flush()
 
     m_meshBatches.clear();
     m_dynamicLineVertices.clear();
+    m_dynamicTriangleVertices.clear();
     m_frameActive = false;
 }
 

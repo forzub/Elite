@@ -7776,3 +7776,13 @@ start-up hitches (render), trade step 16 part 3 live.
   not yet (the docking stack knows hex docks only). Open: the composition list <-> plan link (next).
 - (2026-11-21) Memory: the author's session process grew 3.4 -> 7.7 GB in ~20 min (no memory lines in the log) - to
   investigate.
+- (2026-11-21) 3D Hub map: the city block boxes are SOLID (author: «в 3Д кубики города делать непрозрачными»): zone
+  colour toned for the edges, drawn far -> near before the wire edges. LIVE D:/tmp/hubplan/a.png (DEV mapturn now
+  turns the Hub map camera too): solid coloured blocks readable over the Earth.
+- QUEUE (author 2026-11-21) RING HUBS: one faction builds ALL its orbital hubs as rotating rings (spin gravity - its
+  construction principle): the 2D plan a long narrow strip, the 3D a big ring. Other factions: a few ring hubs "as an
+  experiment"; industrial hubs stay planar. Needs a ring city generator (tools/models/units/hub_plane.py analogue) + the
+  plan / lanes / docking on a rotating frame - to discuss / plan before work.
+- QUEUE (author 2026-11-21) PADS: a pad for every city module without a dock - on free plots, on roofs, on legs (like
+  oil-platform helipads), or a 1-2 place garage; the pad card: address, what the object is, a СТЫКОВКА button; then
+  the pad landing itself (approach, hover, set down - the docking stack knows hex docks only).

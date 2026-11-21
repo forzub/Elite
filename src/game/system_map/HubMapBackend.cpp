@@ -658,6 +658,62 @@ void HubMapBackend::renderHubMapPasses(
         for (const auto& o : hub.scene.objects)
             planCity = planCity || (o.valid && o.objectClass == world::celestial::DetailObjectClass::Hub && game::system_map::isHubCityModule(o.stableId));
 
+    // the 3D view: the city blocks as solid boxes coloured by zone (author 2026-11-21: «кубики хаба-города закрашивать,
+    // иначе их почти не видно на фоне планеты» -> «делать непрозрачными»): each box's screen silhouette, far to near,
+    // under the wire edges drawn next
+    if (!planView)
+    {
+        struct Fill
+        {
+            std::vector<glm::vec2> hull;
+            glm::vec4 colour;
+            double depth;
+        };
+        std::vector<Fill> fills;
+        for (const auto& mod : hub.scene.objects)
+        {
+            if (!mod.valid || mod.objectClass != world::celestial::DetailObjectClass::Hub)
+                continue;
+            const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(mod.stableId);
+            if (!plan)
+                continue;
+            const auto addBox = [&](const glm::dvec3& centre, const glm::dvec3& size, const glm::vec4& colour) {
+                std::vector<glm::vec2> corners;
+                for (int c = 0; c < 8; ++c)
+                {
+                    const glm::dvec3 p = centre + glm::dvec3((c & 1 ? 0.5 : -0.5) * size.x, (c & 2 ? 0.5 : -0.5) * size.y,
+                                                             (c & 4 ? 0.5 : -0.5) * size.z);
+                    corners.push_back(glm::vec2(
+                        activeCamera().project(mod.positionMeters + mod.axes.x * p.x + mod.axes.y * p.y + mod.axes.z * p.z)));
+                }
+                const glm::dvec3 w = mod.positionMeters + mod.axes.x * centre.x + mod.axes.y * centre.y + mod.axes.z * centre.z;
+                fills.push_back({convexHull(std::move(corners)), colour, activeCamera().pointToCamera(w).z});
+            };
+            for (const auto& b : plan->blocks())
+            {
+                const glm::vec4 zone = hubZoneColor(b.zone);
+                const glm::vec4 solid(0.10f + 0.55f * zone.r, 0.10f + 0.55f * zone.g, 0.12f + 0.55f * zone.b, 1.0f);
+                const double side = 2.0 * b.halfMeters;
+                const double top = std::max(15.0, b.topHeightMeters);
+                addBox(glm::dvec3(b.centre.x, top * 0.5, b.centre.y), glm::dvec3(side, top, side), solid);
+                if (b.underDepthMeters > 1.0)
+                    addBox(glm::dvec3(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y),
+                           glm::dvec3(side, b.underDepthMeters, side), solid * glm::vec4(0.75f, 0.75f, 0.75f, 1.0f));
+            }
+        }
+        if (!fills.empty())
+        {
+            std::sort(fills.begin(), fills.end(), [](const Fill& a, const Fill& b) { return a.depth < b.depth; });
+            if (!m_fillBatch)
+                m_fillBatch = std::make_unique<render::hud::HudPrimitiveBatch>();
+            m_fillBatch->begin(viewport.width, viewport.height);
+            for (const auto& f : fills)
+                for (std::size_t i = 1; i + 1 < f.hull.size(); ++i)
+                    m_fillBatch->filledTriangle(f.hull[0], f.hull[i], f.hull[i + 1], f.colour);
+            m_fillBatch->flush();
+        }
+    }
+
     // Модули станции.
     for (const auto& mod : hub.scene.objects)
     {
@@ -884,45 +940,6 @@ void HubMapBackend::renderHubMapPasses(
             }
         }
         text.endFrame();
-    }
-    // the 3D view: the city blocks' boxes filled by zone (author 2026-11-21: «кубики хаба-города закрашивать, иначе их
-    // почти не видно на фоне планеты»): each box's screen silhouette, more opaque over the plane than under it
-    else if (!planView && !planCities.empty())
-    {
-        if (!m_fillBatch)
-            m_fillBatch = std::make_unique<render::hud::HudPrimitiveBatch>();
-        m_fillBatch->begin(viewport.width, viewport.height);
-        for (const auto& city : planCities)
-        {
-            const auto fillBox = [&](const glm::dvec3& centre, const glm::dvec3& size, glm::vec4 colour) {
-                std::vector<glm::vec2> corners;
-                for (int c = 0; c < 8; ++c)
-                {
-                    const glm::dvec3 o((c & 1 ? 0.5 : -0.5) * size.x, (c & 2 ? 0.5 : -0.5) * size.y, (c & 4 ? 0.5 : -0.5) * size.z);
-                    const glm::dvec3 p = centre + o;
-                    corners.push_back(glm::vec2(
-                        activeCamera().project(city.position + city.axes.x * p.x + city.axes.y * p.y + city.axes.z * p.z)));
-                }
-                const auto hull = convexHull(std::move(corners));
-                for (std::size_t i = 1; i + 1 < hull.size(); ++i)
-                    m_fillBatch->filledTriangle(hull[0], hull[i], hull[i + 1], colour);
-            };
-            for (const auto& b : city.plan->blocks())
-            {
-                glm::vec4 colour = hubZoneColor(b.zone);
-                const double side = 2.0 * b.halfMeters;
-                const double top = std::max(15.0, b.topHeightMeters);
-                colour.a = 0.42f;
-                fillBox(glm::dvec3(b.centre.x, top * 0.5, b.centre.y), glm::dvec3(side, top, side), colour);
-                if (b.underDepthMeters > 1.0)
-                {
-                    colour.a = 0.24f;
-                    fillBox(glm::dvec3(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y),
-                            glm::dvec3(side, b.underDepthMeters, side), colour);
-                }
-            }
-        }
-        m_fillBatch->flush();
     }
 
     /*

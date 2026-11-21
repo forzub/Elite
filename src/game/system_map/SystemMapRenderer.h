@@ -569,7 +569,13 @@ public:
     void devEnter(const std::string& id) { m_devEnterId = id; }
     void devZoom(double steps) { m_pendingScrollY += steps; }
     // DEV: turn the Detail / Hub map camera (yaw, pitch in radians) - the result of a drag
-    void devDetailOrbit(double yaw, double pitch) { m_detailView.camera().yaw += yaw; m_detailView.camera().pitch += pitch; }
+    void devDetailOrbit(double yaw, double pitch)
+    {
+        auto& camera = m_modeState.current() == Mode::Hub ? m_hubView.camera() : m_detailView.camera();
+        camera.yaw += yaw;
+        camera.pitch += pitch;
+        m_hubFrameDirty = true;
+    }
     // DEV: a scripted pointer gesture on the current map, fed through the
     // production input path: "click:<objectId>", "dclick:<objectId>",
     // "rclick:<objectId>" (right click = context menu), "menu:<command>"; <objectId> may be

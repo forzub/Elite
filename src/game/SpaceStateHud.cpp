@@ -217,6 +217,7 @@ m_systemMapRenderer.render(
                         half = 0.5 * dims.height;
                 const double reach = 500.0 + half + game::navigation::HubPadLegLengthMeters;
                 double hit = reach + 1.0;
+                glm::dvec3 surfaceUp(0.0);   // the nearest city's up (the level bubble)
                 for (const auto& [oid, object] : m_client->world().objects())
                 {
                     if (!object.hubAttachment.valid)
@@ -230,6 +231,7 @@ m_systemMapRenderer.render(
                     const glm::dmat3 R(glm::mat3(object.renderOrientation));
                     const glm::dvec3 q = glm::transpose(R) * (shipW - origin);
                     const glm::dvec3 d = glm::transpose(R) * down;
+                    surfaceUp = R * glm::dvec3(0.0, 1.0, 0.0);
                     // a horizontal surface at height y spanning [x0,x1] x [z0,z1] (the plane: unbounded)
                     const auto surface = [&](double y, double x0, double x1, double z0, double z1, bool bounded) {
                         if (std::abs(d.y) < 1.0e-6)
@@ -290,10 +292,17 @@ m_systemMapRenderer.render(
                 lastAt = nowAt;
                 const double descentMps = rate;
                 char text[160];
+                // steady figures (author 2026-11-21: «дрожит высотомер и спидометр - гистерезис или пониженная точность»): a
+                // shown value moves only out of its band; tenths below 10 m, whole metres above
+                const double shownH =
+                    game::presentation::hudSteady("f4.height", std::max(0.0, heightM), 0.02, heightM < 10.0 ? 0.1 : 0.6);
+                const double shownV = game::presentation::hudSteady("f4.descent", descentMps, 0.06, 0.15);
                 if (hit > reach)
-                    std::snprintf(text, sizeof text, "ВЫСОТА  > 500 м        СПУСК  %.1f м/с", descentMps);
+                    std::snprintf(text, sizeof text, "ВЫСОТА  > 500 м        СПУСК  %.1f м/с", shownV);
+                else if (shownH < 10.0)
+                    std::snprintf(text, sizeof text, "ВЫСОТА  %.1f м        СПУСК  %.1f м/с", shownH, shownV);
                 else
-                    std::snprintf(text, sizeof text, "ВЫСОТА  %.1f м        СПУСК  %.1f м/с", std::max(0.0, heightM), descentMps);
+                    std::snprintf(text, sizeof text, "ВЫСОТА  %.0f м        СПУСК  %.1f м/с", shownH, shownV);
                 // too fast for the height: 2.5 m/s within 30 m of the surface, more allowed higher up (room to brake)
                 const double allowed = game::navigation::HubPadTouchdownMaxMps + std::max(0.0, std::min(heightM, 500.0) - 30.0) * 0.2;
                 const bool tooFast = descentMps > allowed;
@@ -304,11 +313,62 @@ m_systemMapRenderer.render(
                 const float y = band > 40.0f ? static_cast<float>(vp.height) - band * 0.5f + px * 0.35f
                                              : static_cast<float>(vp.height) - 40.0f;
                 tr.textDrawPx(text, 0.5f * (static_cast<float>(vp.width) - w), y, px, colour);
+                // the level bubble (author 2026-11-21: «пузырёк уровня, чтобы выровнять корпус относительно нижней
+                // поверхности, иначе можно сесть на жопу»): the surface's up in the ship's own axes - the bubble sits in
+                // the middle when the hull is level, shifts by roll (x) and pitch (y); green within 3 deg, red beyond 8
+                if (glm::length(surfaceUp) > 0.5)
+                {
+                    const glm::dmat3 shipBasis(glm::mat3(playerShip.renderTransform.orientation));
+                    const glm::dvec3 n = glm::transpose(shipBasis) * glm::normalize(surfaceUp);
+                    const double tiltDeg = glm::degrees(std::acos(std::clamp(n.y, -1.0, 1.0)));
+                    const float radius = 30.0f;
+                    const float cx = static_cast<float>(vp.width) * 0.82f;
+                    const float cy = band > 40.0f ? static_cast<float>(vp.height) - band * 0.5f : static_cast<float>(vp.height) - 60.0f;
+                    const glm::vec4 ring(0.70f, 0.85f, 0.95f, 0.85f);
+                    for (int k = 0; k < 36; ++k)
+                    {
+                        const float a = 6.2831853f * static_cast<float>(k) / 36.0f;
+                        tr.solidRectPx(cx + radius * std::cos(a) - 1.0f, cy + radius * std::sin(a) - 1.0f, 2.0f, 2.0f, ring);
+                    }
+                    tr.solidRectPx(cx - radius, cy - 0.5f, 2.0f * radius, 1.0f, glm::vec4(ring.r, ring.g, ring.b, 0.35f));
+                    tr.solidRectPx(cx - 0.5f, cy - radius, 1.0f, 2.0f * radius, glm::vec4(ring.r, ring.g, ring.b, 0.35f));
+                    // 15 deg of tilt reach the ring
+                    const float scale = radius / static_cast<float>(std::sin(glm::radians(15.0)));
+                    const float bx = cx + std::clamp(static_cast<float>(n.x) * scale, -radius, radius);
+                    const float by = cy - std::clamp(static_cast<float>(-n.z) * scale, -radius, radius);
+                    const glm::vec4 bubble = tiltDeg <= 3.0   ? glm::vec4(0.35f, 1.0f, 0.45f, 1.0f)
+                                           : tiltDeg <= 8.0   ? glm::vec4(1.0f, 0.85f, 0.30f, 1.0f)
+                                                              : glm::vec4(1.0f, 0.28f, 0.22f, 1.0f);
+                    tr.solidRectPx(bx - 5.0f, by - 5.0f, 10.0f, 10.0f, bubble);
+                    char tilt[48];
+                    std::snprintf(tilt, sizeof tilt, "%.0f°", game::presentation::hudSteady("f4.tilt", tiltDeg, 0.0, 0.8));
+                    tr.textDrawPx(tilt, cx + radius + 8.0f, cy + 6.0f, 16, bubble);
+                }
             }
         }
 
         {
             renderHudDockingTerminal(vp, playerShip, cockpit);
+
+        // the landing legs, always in sight (author 2026-11-21: «какой-то индикатор на HUD, что шасси убраны / выпущены»):
+        // the front view at the glass's lower right, the bottom camera over its readout band; green out, grey in, red broken
+        if (m_activeCameraMode == ShipCameraMode::Cockpit || m_activeCameraMode == ShipCameraMode::Bottom)
+        {
+            const std::uint8_t gear = playerShip.landingGear;
+            const char* label = gear == 1 ? "ОПОРЫ: ВЫПУЩЕНЫ" : gear == 2 ? "ОПОРЫ: СЛОМАНЫ" : "ОПОРЫ: УБРАНЫ (G)";
+            const glm::vec4 colour = gear == 1   ? glm::vec4(0.35f, 1.0f, 0.45f, 0.95f)
+                                   : gear == 2 ? glm::vec4(1.0f, 0.28f, 0.22f, 1.0f)
+                                               : glm::vec4(0.62f, 0.70f, 0.78f, 0.80f);
+            auto& text = TextRenderer::instance();
+            const int px = 16;
+            const float w = text.measureTextPx(label, px);
+            const float band = std::max(0.0f, 0.5f * (static_cast<float>(vp.height) - static_cast<float>(vp.width) / 2.35f));
+            const float x = m_activeCameraMode == ShipCameraMode::Bottom ? 0.5f * (static_cast<float>(vp.width) - w)
+                                                                         : static_cast<float>(vp.width) * 0.70f;
+            const float y = m_activeCameraMode == ShipCameraMode::Bottom ? static_cast<float>(vp.height) - band - 12.0f
+                                                                         : static_cast<float>(vp.height) * 0.70f;
+            text.textDrawPx(label, x, y, px, colour);
+        }
         }
 
         uiRoot->render(vp);
@@ -456,12 +516,80 @@ void SpaceState::renderHudWorldLabels(const Viewport& vp)
 // glass, drawn before the cockpit frame occludes them.
 void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShipState& playerShip)
 {
-    const auto guidance =
+    auto guidance =
         game::presentation::buildGuidanceCorridorHudPresentation(
             m_navigationWorkspace,
             playerShip,
             playerShip.renderReferenceFrame.universeTimeSeconds
         );
+    // the pad service's route as the docking tunnel (author 2026-11-21: «нет рамок, показывающих маршрут»; «тоннель
+    // маршрута, как при посадке в док»): the same gates along what is left of the route (hubPadRoute) from here
+    if (!guidance.visible && m_client && playerShip.padService.rfind("phase:", 0) == 0 && playerShip.padService.size() > 8)
+    {
+        const char phase = playerShip.padService[6];
+        const std::string address = playerShip.padService.substr(8);
+        const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
+        for (const auto& [oid, object] : m_client->world().objects())
+        {
+            if (!object.hubAttachment.valid)
+                continue;
+            const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId);
+            if (!plan)
+                continue;
+            const game::navigation::HubPlanModule* pad = nullptr;
+            for (const auto& m : plan->modules())
+                if (m.address == address)
+                    pad = &m;
+            if (!pad)
+                continue;
+            const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
+            const glm::dmat3 R(glm::mat3(object.renderOrientation));
+            const glm::dvec3 q = glm::transpose(R) * (shipW - origin);
+            double tallest = 0.0;
+            for (const auto& b : plan->blocks())
+                tallest = std::max(tallest, pad->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
+            const double transit = std::min(380.0, tallest + 80.0);
+            std::vector<glm::dvec3> route;
+            if (phase == '0' || phase == '1')
+                route = game::navigation::hubPadRoute(*plan, *pad, q, transit, phase == '0');
+            const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
+            route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0
+                                             : pad->padPosition + out * game::navigation::HubPadZoneHeight);
+            guidance.visible = true;
+            guidance.spatialAdvisoryGates = true;
+            guidance.corridorId = "pad:" + address;
+            glm::dvec3 prev = q;
+            for (const auto& wp : route)
+            {
+                const glm::dvec3 seg = wp - prev;
+                const double len = glm::length(seg);
+                if (len < 1.0)
+                {
+                    prev = wp;
+                    continue;
+                }
+                const glm::dvec3 dir = seg / len;
+                const glm::dvec3 upHint = std::abs(glm::dot(dir, out)) > 0.95 ? glm::dvec3(0.0, 0.0, -1.0) : out;
+                const glm::dquat local = glm::quatLookAt(dir, upHint);
+                for (double s = std::fmod(len, 50.0); s <= len + 1.0e-6 && guidance.frames.size() < 96; s += 50.0)
+                {
+                    const glm::dvec3 p = prev + dir * s;
+                    const double dist = glm::length(p - q);
+                    if (dist < 20.0)
+                        continue;
+                    game::presentation::GuidanceHudFramePresentation f;
+                    f.relativeCenterMeters = R * p + origin - shipW;
+                    f.orientation = glm::quat_cast(R) * local;
+                    f.widthMeters = 40.0;
+                    f.heightMeters = 30.0;
+                    f.opacity = static_cast<float>(std::clamp(1.0 - dist / 3000.0, 0.15, 1.0));
+                    guidance.frames.push_back(f);
+                }
+                prev = wp;
+            }
+            break;
+        }
+    }
 
     TextRenderer::instance().beginFrameForViewport(
         vp.width,

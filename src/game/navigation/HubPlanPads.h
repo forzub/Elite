@@ -162,3 +162,107 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
     }
 }
 } // namespace game::navigation
+
+namespace game::navigation
+{
+// The pad service's route in the city frame (author 2026-11-21: «кобра пролетела сквозь башню - нет обхода башни»;
+// «нет рамок, показывающих маршрут»): from `from` up / down to the transit height (includeClimb), across to over the
+// pad - round every building whose top comes within 40 m of the transit height (its footprint grown by 60 m, passed
+// by its nearest free corner) - ending over the pad at the transit height. The server flies it, the HUD draws it.
+inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanModule& pad, const glm::dvec3& from, double transit,
+                                           bool includeClimb)
+{
+    const glm::dvec3 out = pad.under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
+    const auto atTransit = [&](const glm::dvec3& p) { return p + out * (transit - glm::dot(p, out)); };
+    struct Rect
+    {
+        double x0, z0, x1, z1;
+    };
+    std::vector<Rect> tall;
+    for (const auto& m : plan.modules())
+    {
+        if (m.under != pad.under)
+            continue;
+        const double top = pad.under ? -m.y0 : m.y1;
+        if (top + 40.0 < transit)
+            continue;
+        tall.push_back({std::min(m.rect.x, m.rect.z) - 60.0, std::min(m.rect.y, m.rect.w) - 60.0, std::max(m.rect.x, m.rect.z) + 60.0,
+                        std::max(m.rect.y, m.rect.w) + 60.0});
+    }
+    const auto inside = [&](double x, double z, const Rect* skip) {
+        for (const auto& r : tall)
+            if (&r != skip && x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1)
+                return true;
+        return false;
+    };
+    // the first rect the segment a -> b crosses (slab test in xz), nearest to a
+    const auto blocking = [&](const glm::dvec2& a, const glm::dvec2& b, double& tHit) -> const Rect* {
+        const Rect* best = nullptr;
+        tHit = 2.0;
+        const glm::dvec2 d = b - a;
+        for (const auto& r : tall)
+        {
+            double t0 = 0.0, t1 = 1.0;
+            bool miss = false;
+            for (int k = 0; k < 2 && !miss; ++k)
+            {
+                const double lo = k == 0 ? r.x0 : r.z0, hi = k == 0 ? r.x1 : r.z1;
+                if (std::abs(d[k]) < 1.0e-9)
+                {
+                    miss = a[k] <= lo || a[k] >= hi;
+                    continue;
+                }
+                double u = (lo - a[k]) / d[k], v = (hi - a[k]) / d[k];
+                if (u > v)
+                    std::swap(u, v);
+                t0 = std::max(t0, u);
+                t1 = std::min(t1, v);
+                miss = t0 >= t1;
+            }
+            if (!miss && t0 < tHit)
+            {
+                tHit = t0;
+                best = &r;
+            }
+        }
+        return best;
+    };
+    std::vector<glm::dvec3> route;
+    const glm::dvec3 start = atTransit(from);
+    if (includeClimb)
+        route.push_back(start);
+    const glm::dvec3 goal = atTransit(pad.padPosition);
+    glm::dvec2 at(start.x, start.z);
+    const glm::dvec2 end(goal.x, goal.z);
+    for (int guard = 0; guard < 12; ++guard)
+    {
+        double t = 0.0;
+        const Rect* r = blocking(at, end, t);
+        if (!r)
+            break;
+        // its corner that keeps the way shortest and is not inside another tall footprint
+        const glm::dvec2 corners[4] = {{r->x0 - 1.0, r->z0 - 1.0}, {r->x1 + 1.0, r->z0 - 1.0}, {r->x1 + 1.0, r->z1 + 1.0},
+                                       {r->x0 - 1.0, r->z1 + 1.0}};
+        double best = 1.0e30;
+        glm::dvec2 via = corners[0];
+        for (const auto& c : corners)
+        {
+            double tt = 0.0;
+            if (inside(c.x, c.y, r) || glm::length(c - at) < 1.0 || blocking(at, c, tt) == r)
+                continue;   // inside another footprint, or reached only through this one
+            const double len = glm::length(c - at) + glm::length(end - c);
+            if (len < best)
+            {
+                best = len;
+                via = c;
+            }
+        }
+        if (best > 1.0e29)
+            break;   // boxed in: straight on (the transit height is the fallback)
+        route.push_back(glm::dvec3(via.x, goal.y, via.y));
+        at = via;
+    }
+    route.push_back(goal);
+    return route;
+}
+} // namespace game::navigation

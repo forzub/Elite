@@ -42,11 +42,9 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
 {
     if (viewport.width <= 0 || viewport.height <= 0)
         return;
-    // in a dock / flown by the station (or the pad service): no lanes - the dock walls hide them anyway and the pilot does
+    // in a dock / flown by the station: no lanes - the dock walls hide them anyway and the pilot does
     // not fly them now (author 2026-11-21: «трассы видны даже когда я нахожусь в доке»)
     if (player.dockDispatcher.active && player.dockDispatcher.stationControlled)
-        return;
-    if (player.padService.rfind("phase:", 0) == 0)
         return;
     const glm::dvec3 playerMeters = world::coordinates::fullMeters(player.renderTransform.worldPosition);
     // the player's direction of travel (velocity relative to the frame; the nose when nearly at rest): a lane running

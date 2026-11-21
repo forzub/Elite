@@ -586,6 +586,10 @@ void SpaceState::updatePilotTakeover(bool touching)
         m_systemMapRenderer.setPadLandingActive(request->objectId);
         m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address;
         std::cerr << "[PadLanding] request sent: " << request->frameModuleId << "/" << request->address << std::endl;
+        // the answer you can see (author 2026-11-21: «после нажатия на кнопку посадка визуально ничего не меняется»): back to
+        // the front view - the service's line in the terminal, its route tunnel ahead
+        if (context().app)
+            context().app->requestFlightView(FlightPresentationView::Front);
     }
     // the pad service's steps in the HUD terminal (author 2026-11-21: «информацию ... выводить в терминале на HUD»)
     if (m_client)
@@ -1008,6 +1012,9 @@ void SpaceState::handleInput()
                 m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, charging && !inSystem ? jm.jumpTargetSystemId : -1,
                                                  m_jumpCalculatedBodyId, inSystem ? m_jumpRequestedBodyId : std::string());
             }
+        // a pad landing asked from a building / block card goes out at once, the map open (the flight input path that
+        // also takes it does not run under the map; the request waited for the map to close - «ничего не меняется»)
+        updatePilotTakeover(false);
         if (const int launch = m_systemMapRenderer.consumeRouteLaunchRequest())
             launchPlannedRoute(launch != 2, launch != 3);
         if (const int control = m_systemMapRenderer.consumeRouteControlRequest())

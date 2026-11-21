@@ -787,6 +787,8 @@ private:
         double logS = -1.0e9;
         bool autoLanding = true;     // the pad's service lands the ship (false: brought over the zone and handed over)
         double gearNagS = -1.0e9;
+        std::vector<glm::dvec3> route;   // hubPadRoute: the climb point, the detours, over the pad (city frame)
+        std::size_t leg = 0;             // the across leg flown now (route index)
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time

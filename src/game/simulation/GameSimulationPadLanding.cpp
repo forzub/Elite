@@ -15,6 +15,7 @@
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/navigation/TravelFrameSystem.h"
+#include <glm/gtc/quaternion.hpp>
 
 namespace
 {
@@ -184,10 +185,30 @@ void GameSimulation::updatePadLandings(double dt)
         const glm::dvec3 touchdown = p.padLocal + out * clearance;
         glm::dvec3 target;
         double cruise = 0.0;
+        // the route, once, from where the service took the ship (hubPadRoute: round the tall buildings - author
+        // 2026-11-21: «кобра пролетела сквозь башню»)
+        if (p.phase <= 1 && p.route.empty())
+            if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(p.frameModuleId))
+                for (const auto& m : plan->modules())
+                    if (m.address == p.address)
+                    {
+                        p.route = game::navigation::hubPadRoute(*plan, m, q, p.transitLocal, true);
+                        p.leg = 1;
+                        if (p.route.size() > 2)
+                            std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address << ": route round "
+                                      << p.route.size() - 2 << " tall building(s)" << std::endl;
+                        break;
+                    }
         switch (p.phase)
         {
-            case 0: target = q + out * (p.transitLocal - glm::dot(q, out)); cruise = 150.0; break;    // up / down
-            case 1: target = p.padLocal + out * (p.transitLocal - glm::dot(p.padLocal, out)); cruise = 150.0; break;   // across
+            case 0:   // up / down to the transit height
+                target = p.route.empty() ? q + out * (p.transitLocal - glm::dot(q, out)) : p.route.front();
+                cruise = 150.0;
+                break;
+            case 1:   // across, leg by leg (round the tall buildings)
+                target = p.leg < p.route.size() ? p.route[p.leg] : p.padLocal + out * (p.transitLocal - glm::dot(p.padLocal, out));
+                cruise = 150.0;
+                break;
             case 2:   // down: onto the pad (an automatic pad); a hand-flown one: to the top of its zone, then the pilot
                 target = p.autoLanding ? touchdown : p.padLocal + out * game::navigation::HubPadZoneHeight;
                 cruise = p.autoLanding ? 6.0 : 30.0;
@@ -232,6 +253,11 @@ void GameSimulation::updatePadLandings(double dt)
             if (dist <= std::max(0.3, step))
             {
                 q = target;
+                if (p.phase == 1 && p.leg + 1 < p.route.size())
+                {
+                    ++p.leg;   // the next detour corner: keep the speed, turn the corner
+                    continue;
+                }
                 const int next = p.phase + 1;
                 std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address << ": "
                           << (next == 1 ? "at the transit height, across" : next == 2 ? "over the pad, descending" : p.autoLanding ? "LANDED" : "at its zone top")
@@ -266,7 +292,18 @@ void GameSimulation::updatePadLandings(double dt)
         orientation[0] = glm::vec4(glm::vec3(R * right), 0.0f);
         orientation[1] = glm::vec4(glm::vec3(R * out), 0.0f);
         orientation[2] = glm::vec4(glm::vec3(R * -forward), 0.0f);
-        tr.orientation = orientation;
+        // turned there by its thrusters, not snapped (author 2026-11-21: «очень резкий разворот ... не через управление
+        // кораблём, а тупой подачей нового угла»): at most 20 deg/s, easing in the last 10 deg
+        {
+            const glm::quat from = glm::quat_cast(glm::mat3(tr.orientation));
+            glm::quat to = glm::quat_cast(glm::mat3(orientation));
+            if (glm::dot(from, to) < 0.0f)
+                to = -to;
+            const float angle = 2.0f * std::acos(std::clamp(std::abs(glm::dot(from, to)), 0.0f, 1.0f));
+            const float maxStep = glm::radians(20.0f) * static_cast<float>(dt) * std::clamp(angle / glm::radians(10.0f), 0.15f, 1.0f);
+            const glm::quat turned = angle <= maxStep ? to : glm::slerp(from, to, maxStep / angle);
+            tr.orientation = glm::mat4_cast(glm::normalize(turned));
+        }
         const glm::dvec3 position = cpos + R * q;
         const glm::dvec3 velocity = cvel + R * vLocal;
         {

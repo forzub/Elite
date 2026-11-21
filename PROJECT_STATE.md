@@ -7918,3 +7918,15 @@ start-up hitches (render), trade step 16 part 3 live.
   author's answers 1-6 recorded in docs/HUB_FOUNDING.md. NEXT: the outpost layout generator (a village from these
   modules on an asteroid / a derelict / a truss), then the founding chain (company -> site -> order -> delivery ->
   assembly), the city refuel / repair block rule.
+- (2026-11-21) After the author's pads play test: the service turns the ship (20 deg/s, easing; not snapped); the zones /
+  lanes stay on during the pad service; ПОСАДКА sends at once with the map open (the request waited for the map to close
+  - the flight input path does not run under the map) and returns to the front view; the pad service's route = the
+  docking tunnel (the same gates every 50 m along hubPadRoute from where the ship is); hubPadRoute (HubPlanPads.h)
+  rounds every building whose top is within 40 m of the transit height (footprint + 60 m, nearest clear corner; the
+  server flies it leg by leg); F4: steady figures (HudSteady, tenths under 10 m), the level bubble (the surface's up in
+  the ship's axes, green <= 3 deg / amber <= 8 / red); the landing legs indicator (front view lower right, F4 over the
+  band). LIVE (D:/tmp/pad): the tunnel ahead on the approach, ОПОРЫ: ВЫПУЩЕНЫ in the front view and F4, F4 158 м /
+  5.8 м/с white + bubble 0 deg. NOT verified: a route that needs a detour (none on the test paths).
+  QUEUE: a collision warning on the HUD (by time to impact, >= 500 m) + collisions with buildings with consequences; a
+  landed panel (services list) bigger than the terminal line; the cargo lift on the pads; floors on the 2D plan (two
+  layer hubs); the outpost layout generator; the founding chain; the city refuel / repair rule.

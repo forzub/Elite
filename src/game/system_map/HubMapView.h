@@ -9,10 +9,21 @@
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/ScreenHitTest.h"
+#include "src/game/navigation/HubPlanCatalog.h"
+#include <string>
 
 namespace game::system_map
 {
 
+
+// The hub's 2D plan shows the city only (author 2026-11-21: «на 2Д схеме хаба не нужна отдельно висящая станция и
+// отдельные модули хаба, которые не относятся к самому городу»): the planar city frame (a HubPlan) and the modules
+// generated with it ("<hub>.cty..."). A hub without a city keeps every module on its plan.
+inline bool isHubCityModule(const std::string& stableId)
+{
+    return !stableId.empty() &&
+        (game::navigation::HubPlanCatalog::forFrameModule(stableId) != nullptr || stableId.find(".cty") != std::string::npos);
+}
 struct HubMapViewState
 {
     DetailCameraState camera;
@@ -74,6 +85,7 @@ public:
     // map): the camera looks straight down the hub's +Y (yaw 0, pitch 90 deg: +X right, +Z down the screen, as in
     // the mesh editor's hub mode); no orbiting - a left drag pans. Off: the 3D view comes back as it was.
     bool planView() const noexcept { return m_planView; }
+    void setPlanCentre(const glm::dvec3& centre) const noexcept { m_planCentre = centre; }
     void setPlanView(bool on) noexcept
     {
         if (on == m_planView)
@@ -87,7 +99,7 @@ public:
             m_savedPan = m_state.camera.pan;
             applyPlanCamera();
             // the plan opens on the city, readable (the 3D view frames the hub with its surroundings)
-            m_state.camera.zoom = std::clamp(m_state.camera.zoom * 2.5, m_controls.minZoom, m_controls.maxZoom);
+            m_state.camera.zoom = 1.0;   // the plan fits the city (LocalMapPresentationBuilder::buildHub)
             m_state.camera.pan = glm::dvec2(0.0);
         }
         else
@@ -111,7 +123,7 @@ public:
         snapshot.state = m_state.camera;
         snapshot.scale = scale;
         snapshot.centerPx = centerPx;
-        snapshot.originMeters = glm::dvec3(0.0);
+        snapshot.originMeters = m_planView ? m_planCentre : glm::dvec3(0.0);   // the plan centres on the city
         snapshot.perspectiveEnabled = false;
         snapshot.perspectiveCameraDistanceMeters = 1.0;
         return snapshot;
@@ -258,6 +270,7 @@ private:
     HubMapViewState m_state;
     LocalMapControlSettings m_controls;
     bool m_planView = false;
+    mutable glm::dvec3 m_planCentre {0.0};   // per frame from the presentation builder (the city centre)
     double m_savedYaw = 0.60;
     double m_savedPitch = 0.18;
     double m_savedZoom = 1.0;

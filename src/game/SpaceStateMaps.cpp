@@ -2104,6 +2104,8 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.navigationPoint = loc.text("map.object_info.navigation_point");
     mapText.dockingPorts = loc.text("map.object_info.docking_ports");
     mapText.hubBlockBuildings = loc.text("map.object_info.hub_block_buildings");
+    mapText.hubAddress = loc.text("map.object_info.hub_address");
+    mapText.hubPads = loc.text("map.object_info.hub_pads");
     mapText.dockOpening = loc.text("map.object_info.dock_opening");
     mapText.shipEnvelope = loc.text("map.object_info.ship_envelope");
     mapText.dockFit = loc.text("map.object_info.dock_fit");

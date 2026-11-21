@@ -23,6 +23,9 @@ struct HubPlanBlock
     double topHeightMeters = 0.0;     // the tallest module over the plane
     double underDepthMeters = 0.0;    // the deepest module under it
     int modules = 0;
+    // the address inside the hub (author 2026-11-21: «каждому блоку присвоить адрес ... развозить по заявке»):
+    // the column letter + the row number of the city grid, "C4"
+    std::string address;
 };
 
 struct HubPlanModule
@@ -34,6 +37,14 @@ struct HubPlanModule
     glm::dvec4 rect {0.0}; // x0, z0, x1, z1
     double y0 = 0.0;
     double y1 = 0.0;
+    // its address: the block + the building number, "C4-07" (the upper tier) / "C4-U03" (the lower tier, under the plane)
+    std::string address;
+    int number = 0;
+    // a landing pad on its roof (author 2026-11-21: every city module without a dock of its own); the lower tier
+    // has it on its underside, facing down
+    bool pad = false;
+    glm::dvec3 padPosition {0.0};   // city frame
+    double padRadiusMeters = 0.0;
 };
 
 struct HubPlanStreet

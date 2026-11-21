@@ -1,5 +1,6 @@
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/HubMapBackend.h"
+#include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 
 #include <algorithm>
@@ -12,10 +13,56 @@
 #include <GLFW/glfw3.h>
 
 #include "render/HUD/TextRenderer.h"
+#include "src/render/HUD/HudPrimitiveBatch.h"
+#include <vector>
 #include "src/game/navigation/HubPlanCatalog.h"
 
 namespace
 {
+    // a block's zone colour (the 2D plan's fills; the 3D view's block boxes, more opaque)
+    glm::vec4 hubZoneColor(const std::string& zone)
+    {
+        if (zone == "downtown") return glm::vec4(0.36f, 0.44f, 0.84f, 0.20f);
+        if (zone == "residential") return glm::vec4(0.31f, 0.62f, 0.42f, 0.20f);
+        if (zone == "hotel") return glm::vec4(0.60f, 0.44f, 0.82f, 0.20f);
+        if (zone == "hab_rot") return glm::vec4(0.25f, 0.63f, 0.69f, 0.20f);
+        if (zone == "port") return glm::vec4(0.25f, 0.53f, 0.75f, 0.20f);
+        if (zone == "industry") return glm::vec4(0.69f, 0.38f, 0.28f, 0.20f);
+        if (zone == "storage" || zone == "logistics") return glm::vec4(0.63f, 0.51f, 0.31f, 0.20f);
+        if (zone == "refuel") return glm::vec4(0.75f, 0.60f, 0.19f, 0.20f);
+        if (zone == "canopy") return glm::vec4(0.82f, 0.82f, 0.63f, 0.20f);
+        if (zone == "dock") return glm::vec4(0.91f, 0.64f, 0.24f, 0.24f);
+        if (zone == "power") return glm::vec4(0.82f, 0.82f, 0.25f, 0.22f);
+        if (zone == "services") return glm::vec4(0.25f, 0.44f, 0.88f, 0.24f);
+        return glm::vec4(0.50f, 0.55f, 0.60f, 0.18f);
+    }
+
+    // the screen silhouette of a projected box: the convex hull of its 8 corners (monotone chain)
+    std::vector<glm::vec2> convexHull(std::vector<glm::vec2> p)
+    {
+        std::sort(p.begin(), p.end(), [](const glm::vec2& a, const glm::vec2& b) { return a.x < b.x || (a.x == b.x && a.y < b.y); });
+        if (p.size() < 3)
+            return p;
+        const auto cross = [](const glm::vec2& o, const glm::vec2& a, const glm::vec2& b) {
+            return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+        };
+        std::vector<glm::vec2> h(2 * p.size());
+        std::size_t k = 0;
+        for (std::size_t i = 0; i < p.size(); ++i)
+        {
+            while (k >= 2 && cross(h[k - 2], h[k - 1], p[i]) <= 0.0f)
+                --k;
+            h[k++] = p[i];
+        }
+        for (std::size_t i = p.size() - 1, t = k + 1; i > 0; --i)
+        {
+            while (k >= t && cross(h[k - 2], h[k - 1], p[i - 1]) <= 0.0f)
+                --k;
+            h[k++] = p[i - 1];
+        }
+        h.resize(k - 1);
+        return h;
+    }
     double hubPerfNowMs()
     {
         using Clock = std::chrono::steady_clock;
@@ -27,6 +74,8 @@ namespace
 
 namespace game::system_map
 {
+HubMapBackend::~HubMapBackend() = default;
+
 HubMapBackend::HubMapBackend(
     MapCelestialRenderResources& resources
 ) noexcept
@@ -604,6 +653,10 @@ void HubMapBackend::renderHubMapPasses(
     };
     std::vector<PlanCity> planCities;
     const bool planView = activeCamera().state.pitch > 1.5;   // HubMapView::setPlanView (V)
+    bool planCity = false;   // the plan of a hub with a city shows the city only (isHubCityModule)
+    if (planView)
+        for (const auto& o : hub.scene.objects)
+            planCity = planCity || (o.valid && o.objectClass == world::celestial::DetailObjectClass::Hub && game::system_map::isHubCityModule(o.stableId));
 
     // Модули станции.
     for (const auto& mod : hub.scene.objects)
@@ -614,6 +667,8 @@ void HubMapBackend::renderHubMapPasses(
         {
             continue;
         }
+        if (planCity && !game::system_map::isHubCityModule(mod.stableId))
+            continue;   // the plan: the city only
 
         const glm::dvec2 modScreen =
             activeCamera().project(mod.positionMeters);
@@ -755,21 +810,7 @@ void HubMapBackend::renderHubMapPasses(
     {
         auto& text = TextRenderer::instance();
         text.beginFrameForViewport(viewport.width, viewport.height);
-        const auto zoneColor = [](const std::string& zone) {
-            if (zone == "downtown") return glm::vec4(0.36f, 0.44f, 0.84f, 0.20f);
-            if (zone == "residential") return glm::vec4(0.31f, 0.62f, 0.42f, 0.20f);
-            if (zone == "hotel") return glm::vec4(0.60f, 0.44f, 0.82f, 0.20f);
-            if (zone == "hab_rot") return glm::vec4(0.25f, 0.63f, 0.69f, 0.20f);
-            if (zone == "port") return glm::vec4(0.25f, 0.53f, 0.75f, 0.20f);
-            if (zone == "industry") return glm::vec4(0.69f, 0.38f, 0.28f, 0.20f);
-            if (zone == "storage" || zone == "logistics") return glm::vec4(0.63f, 0.51f, 0.31f, 0.20f);
-            if (zone == "refuel") return glm::vec4(0.75f, 0.60f, 0.19f, 0.20f);
-            if (zone == "canopy") return glm::vec4(0.82f, 0.82f, 0.63f, 0.20f);
-            if (zone == "dock") return glm::vec4(0.91f, 0.64f, 0.24f, 0.24f);
-            if (zone == "power") return glm::vec4(0.82f, 0.82f, 0.25f, 0.22f);
-            if (zone == "services") return glm::vec4(0.25f, 0.44f, 0.88f, 0.24f);
-            return glm::vec4(0.50f, 0.55f, 0.60f, 0.18f);
-        };
+        const auto zoneColor = [](const std::string& zone) { return hubZoneColor(zone); };
         for (const auto& city : planCities)
         {
             const auto screen = [&](double x, double z) {
@@ -801,11 +842,37 @@ void HubMapBackend::renderHubMapPasses(
             {
                 const glm::dvec4 r = rectPx(b.centre.x - b.halfMeters, b.centre.y - b.halfMeters, b.centre.x + b.halfMeters,
                                             b.centre.y + b.halfMeters);
-                if (r.z < 70.0)
+                if (r.z < 34.0)
                     continue;
                 const int px = r.z > 140.0 ? 13 : 11;
-                text.textDrawPx(b.title, static_cast<float>(r.x + 4.0), static_cast<float>(r.y + 3.0), px,
+                text.textDrawPx(r.z < 70.0 ? b.address : b.address + "  " + b.title, static_cast<float>(r.x + 4.0), static_cast<float>(r.y + 3.0), px,
                                 glm::vec4(0.86f, 0.91f, 0.96f, 0.80f));
+            }
+            // the landing pads on the roofs of the upper tier (shown once they are a few pixels wide)
+            for (const auto& m : city.plan->modules())
+            {
+                if (!m.pad || m.under)
+                    continue;
+                const glm::dvec2 c = screen(m.padPosition.x, m.padPosition.z);
+                const glm::dvec2 e = screen(m.padPosition.x + m.padRadiusMeters, m.padPosition.z);
+                const double rpx = glm::length(e - c);
+                if (rpx < 4.0)
+                    continue;
+                const float s = static_cast<float>(rpx), t = std::max(1.0f, s * 0.16f);
+                const glm::vec4 padColour(0.42f, 0.96f, 0.72f, 0.80f);
+                const float x = static_cast<float>(c.x), y = static_cast<float>(c.y);
+                text.solidRectPx(x - s, y - s, 2.0f * s, t, padColour);              // the pad's frame
+                text.solidRectPx(x - s, y + s - t, 2.0f * s, t, padColour);
+                text.solidRectPx(x - s, y - s, t, 2.0f * s, padColour);
+                text.solidRectPx(x + s - t, y - s, t, 2.0f * s, padColour);
+                if (s >= 9.0f)                                                        // its "H"
+                {
+                    text.solidRectPx(x - 0.45f * s, y - 0.5f * s, t, s, padColour);
+                    text.solidRectPx(x + 0.45f * s - t, y - 0.5f * s, t, s, padColour);
+                    text.solidRectPx(x - 0.45f * s, y - 0.5f * t, 0.9f * s, t, padColour);
+                }
+                if (s >= 14.0f)
+                    text.textDrawPx(m.address, x - s, y + s + 2.0f, 11, glm::vec4(0.70f, 0.98f, 0.84f, 0.85f));
             }
             for (const auto& d : city.plan->docks())
             {
@@ -817,6 +884,45 @@ void HubMapBackend::renderHubMapPasses(
             }
         }
         text.endFrame();
+    }
+    // the 3D view: the city blocks' boxes filled by zone (author 2026-11-21: «кубики хаба-города закрашивать, иначе их
+    // почти не видно на фоне планеты»): each box's screen silhouette, more opaque over the plane than under it
+    else if (!planView && !planCities.empty())
+    {
+        if (!m_fillBatch)
+            m_fillBatch = std::make_unique<render::hud::HudPrimitiveBatch>();
+        m_fillBatch->begin(viewport.width, viewport.height);
+        for (const auto& city : planCities)
+        {
+            const auto fillBox = [&](const glm::dvec3& centre, const glm::dvec3& size, glm::vec4 colour) {
+                std::vector<glm::vec2> corners;
+                for (int c = 0; c < 8; ++c)
+                {
+                    const glm::dvec3 o((c & 1 ? 0.5 : -0.5) * size.x, (c & 2 ? 0.5 : -0.5) * size.y, (c & 4 ? 0.5 : -0.5) * size.z);
+                    const glm::dvec3 p = centre + o;
+                    corners.push_back(glm::vec2(
+                        activeCamera().project(city.position + city.axes.x * p.x + city.axes.y * p.y + city.axes.z * p.z)));
+                }
+                const auto hull = convexHull(std::move(corners));
+                for (std::size_t i = 1; i + 1 < hull.size(); ++i)
+                    m_fillBatch->filledTriangle(hull[0], hull[i], hull[i + 1], colour);
+            };
+            for (const auto& b : city.plan->blocks())
+            {
+                glm::vec4 colour = hubZoneColor(b.zone);
+                const double side = 2.0 * b.halfMeters;
+                const double top = std::max(15.0, b.topHeightMeters);
+                colour.a = 0.42f;
+                fillBox(glm::dvec3(b.centre.x, top * 0.5, b.centre.y), glm::dvec3(side, top, side), colour);
+                if (b.underDepthMeters > 1.0)
+                {
+                    colour.a = 0.24f;
+                    fillBox(glm::dvec3(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y),
+                            glm::dvec3(side, b.underDepthMeters, side), colour);
+                }
+            }
+        }
+        m_fillBatch->flush();
     }
 
     /*

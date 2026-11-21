@@ -713,8 +713,32 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
     */
     double maxDistance = 2500.0;
 
+    // the 2D plan of a hub with a city: the city only, centred and fitted (HubMapView::setPlanCentre)
+    bool planCity = false;
+    glm::dvec3 planCentre(0.0);
+    if (view.planView())
+    {
+        glm::dvec3 lo(1.0e30), hi(-1.0e30);
+        for (const auto& object : snapshot.scene.objects)
+            if (object.valid && object.objectClass == world::celestial::DetailObjectClass::Hub &&
+                isHubCityModule(object.stableId))
+            {
+                const glm::dvec3 half = object.sizeMeters * 0.5;
+                lo = glm::min(lo, object.positionMeters - half);
+                hi = glm::max(hi, object.positionMeters + half);
+                planCity = true;
+            }
+        if (planCity)
+        {
+            planCentre = (lo + hi) * 0.5;
+            maxDistance = std::max(1000.0, 0.5 * std::max(hi.x - lo.x, hi.z - lo.z));
+        }
+    }
+    view.setPlanCentre(planCentre);
     for (const auto& object : snapshot.scene.objects)
     {
+        if (planCity)
+            break;
         if (!object.valid ||
             object.objectClass !=
                 world::celestial::DetailObjectClass::Hub)
@@ -809,6 +833,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         {
             continue;
         }
+        if (planCity && !isHubCityModule(object.stableId))
+            continue;   // the plan: the city only
 
         MapObjectOverlayItem item;
         item.objectId = "hub-module:" + object.stableId;

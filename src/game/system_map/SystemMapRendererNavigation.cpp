@@ -35,7 +35,7 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             item.semanticTargetId = module.stableId;
             item.semanticLocalOffsetMeters = glm::dvec3(b.centre.x, 0.0, b.centre.y);
             item.trackingSystemId = hub.systemId;
-            item.name = b.title + " " + std::to_string(b.i) + "," + std::to_string(b.j);
+            item.name = b.address + " · " + b.title;   // the block address first (deliveries by address)
             item.typeName = b.title;
             item.kind = game::system_map::MapObjectGlyphKind::Infrastructure;
             item.infoKind = game::system_map::MapObjectInfoKind::Infrastructure;
@@ -59,8 +59,19 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             item.drawGlyph = false;          // the plan itself draws the block
             game::system_map::MapObjectInfoField buildings;
             buildings.labelKey = "hub_block_buildings";
+            game::system_map::MapObjectInfoField address;
+            address.labelKey = "hub_address";
+            address.value = plan->hubId() + ":" + b.address;
+            item.extraFields.push_back(std::move(address));
             buildings.value = std::to_string(b.modules);
             item.extraFields.push_back(std::move(buildings));
+            int pads = 0;
+            for (const auto& m : plan->modules())
+                pads += m.pad && m.block >= 0 && plan->blocks()[static_cast<std::size_t>(m.block)].id == b.id ? 1 : 0;
+            game::system_map::MapObjectInfoField padField;
+            padField.labelKey = "hub_pads";
+            padField.value = std::to_string(pads);
+            item.extraFields.push_back(std::move(padField));
             frame.items.push_back(std::move(item));
         }
     }
@@ -198,6 +209,11 @@ void SystemMapRenderer::decorateHubDockingOverlay(
     // Do not make the player select the much larger parent module first: every
     // authored enabled port is projected each Hub frame and receives first
     // refusal inside the exact projected opening rectangle.
+    bool planCity = false;   // the plan of a hub with a city shows the city only
+    if (m_hubView.planView())
+        for (const auto& o : hub.scene.objects)
+            planCity = planCity || (o.valid && o.objectClass == world::celestial::DetailObjectClass::Hub &&
+                                    game::system_map::isHubCityModule(o.stableId));
     for (const auto& module : hub.scene.objects)
     {
         if (!module.valid ||
@@ -206,6 +222,8 @@ void SystemMapRenderer::decorateHubDockingOverlay(
         {
             continue;
         }
+        if (planCity && !game::system_map::isHubCityModule(module.stableId))
+            continue;   // the plan: the city's docks only
 
         const auto& anchors =
             m_hubSemanticAnchors->anchorsForModule(module.stableId);

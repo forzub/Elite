@@ -548,6 +548,20 @@
       "es": "Punto de navegación",
       "ja": "航法ポイント"
     },
+    "map.object_info.hub_address": {
+      "en": "Address",
+      "ru": "Адрес",
+      "zh-Hans": "地址",
+      "es": "Dirección",
+      "ja": "住所"
+    },
+    "map.object_info.hub_pads": {
+      "en": "Landing pads",
+      "ru": "Посадочных площадок",
+      "zh-Hans": "着陆平台",
+      "es": "Plataformas de aterrizaje",
+      "ja": "着陸パッド"
+    },
     "map.object_info.hub_block_buildings": {
       "en": "Buildings",
       "ru": "Зданий",

@@ -1,6 +1,8 @@
 #include "src/game/navigation/HubPlanCatalog.h"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -74,6 +76,31 @@ bool HubPlan::load(const std::string& path)
             module.y1 = y[1].get<double>();
         }
         m_modules.push_back(std::move(module));
+    }
+    // addresses: the block = the grid column letter + the row number ("C4"); a building = its number in the block, the
+    // lower tier with a U ("C4-07", "C4-U03"). Pads: every building that is not a dock of its own (a pier, a dock / pad
+    // module) and is wide enough for a small ship gets one on its roof (the lower tier: on its underside).
+    for (auto& block : m_blocks)
+        block.address = std::string(1, static_cast<char>('A' + std::clamp(block.i, 0, 25))) + std::to_string(block.j + 1);
+    std::vector<int> upper(m_blocks.size(), 0), lower(m_blocks.size(), 0);
+    for (auto& module : m_modules)
+    {
+        if (module.block < 0 || module.pier)
+            continue;
+        const auto k = static_cast<std::size_t>(module.block);
+        module.number = module.under ? ++lower[k] : ++upper[k];
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%s-%s%02d", m_blocks[k].address.c_str(), module.under ? "U" : "", module.number);
+        module.address = buf;
+        const bool ownDock = module.module.find("dock") != std::string::npos || module.module.find("pad") != std::string::npos ||
+                             module.module.find("pier") != std::string::npos;
+        const double half = 0.5 * std::min(module.rect.z - module.rect.x, module.rect.w - module.rect.y);
+        if (ownDock || half < 15.0)
+            continue;
+        module.pad = true;
+        module.padRadiusMeters = std::min(40.0, 0.8 * half);
+        module.padPosition = glm::dvec3(0.5 * (module.rect.x + module.rect.z), module.under ? module.y0 : module.y1,
+                                        0.5 * (module.rect.y + module.rect.w));
     }
     for (const auto& s : j.value("streets", nlohmann::json::array()))
         m_streets.push_back({vec2(s.value("a", nlohmann::json::array())), vec2(s.value("b", nlohmann::json::array())),

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -12,6 +13,8 @@
 #include "src/game/system_map/LocalMapPresentation.h"
 #include "src/game/system_map/HubMapGeometryPass.h"
 #include "src/game/system_map/HubMapPlanetPass.h"
+
+namespace render::hud { class HudPrimitiveBatch; }
 #include "src/game/system_map/MapCelestialRenderResources.h"
 
 
@@ -40,6 +43,7 @@ class HubMapBackend final : public HubMapRenderContext
 {
 public:
     explicit HubMapBackend(MapCelestialRenderResources& resources) noexcept;
+    ~HubMapBackend();
 
     void renderHubMapPasses(
         const HubMapPresentation& presentation,
@@ -91,6 +95,7 @@ private:
     const LocalMapCameraSnapshot* m_activeCamera = nullptr;
     HubMapGeometryPass m_geometryPass;
     HubMapPlanetPass m_planetPass;
+    std::unique_ptr<render::hud::HudPrimitiveBatch> m_fillBatch;   // the 3D view: the city blocks filled (author 2026-11-21)
     HubMapPerformanceStats m_performanceStats;
     std::string m_playerLabel = "PLAYER";
 

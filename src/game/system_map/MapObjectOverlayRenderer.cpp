@@ -705,6 +705,8 @@ std::string MapObjectOverlayRenderer::text(
     if (key == "intermediate_target") return textProfile.intermediateTarget;
     if (key == "docking_ports") return textProfile.dockingPorts;
     if (key == "hub_block_buildings") return textProfile.hubBlockBuildings;
+    if (key == "hub_address") return textProfile.hubAddress;
+    if (key == "hub_pads") return textProfile.hubPads;
     if (key == "dock_opening") return textProfile.dockOpening;
     if (key == "ship_envelope") return textProfile.shipEnvelope;
     if (key == "dock_fit") return textProfile.dockFit;

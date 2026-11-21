@@ -7761,3 +7761,18 @@ start-up hitches (render), trade step 16 part 3 live.
   `local`): a.png 3D with ПЛАН ХАБА top right; click -> "[HubMap] plan (2D) - the map button", b.png the plan
   (blocks, streets, lanes, the docks, ships) with 3D-ВИД; click again -> "3D view"; on the plan a click on
   hub-dock:hub_hex_dock_a/dock_gate_front opens the dock card with ПОКАЗАТЬ МАРШРУТ / СТЫКОВКА (c.png).
+- (2026-11-21) Hub plan follow-ups (author: «на 2Д схеме не нужна отдельно висящая станция и модули не из города»;
+  «каждому блоку адрес ... развозить по заявке»; «каждому модулю города посадочную площадку, кроме тех, у кого есть
+  доки»; «в 3Д кубики города закрашивать»). SOURCE: isHubCityModule (HubMapView.h: the HubPlan frame + "<hub>.cty*"
+  modules); the plan of a hub with a city draws / lists / picks only those (wires, module cards, docks) and is
+  centred + fitted on the city (HubMapView::setPlanCentre -> camera origin). HubPlanCatalog: block address = grid
+  letter + row ("B4"), building = "B4-07" / lower tier "B4-U03"; a roof pad (underside for the lower tier) on every
+  building that is not a dock / pad / pier and is >= 30 m wide (radius <= 40 m). Block card: name "B4 · <title>",
+  Адрес <hub>:B4, Зданий, Посадочных площадок; plan labels show the address from 34 px; pads drawn (frame + H, the
+  building address from 14 px) once >= 4 px. 3D view: the block boxes filled by zone colour (convex hull of each
+  projected box, HudPrimitiveBatch). LIVE (D:/tmp/hubplan): plan city-only + centred, block addresses on the plan,
+  card "B4 · Жилой район / earth_orbital_hub:B4 / 49 / 45". NOT verified: the 3D fill (the DEV mapturn did not tilt
+  the camera; the city edge-on), pads at close zoom (the DEV zoom verb does not zoom the hub plan). Landing on a pad:
+  not yet (the docking stack knows hex docks only). Open: the composition list <-> plan link (next).
+- (2026-11-21) Memory: the author's session process grew 3.4 -> 7.7 GB in ~20 min (no memory lines in the log) - to
+  investigate.

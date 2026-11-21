@@ -64,6 +64,8 @@ struct NavigationMapTextProfile
 
     std::string dockingPorts;
     std::string hubBlockBuildings;
+    std::string hubAddress;
+    std::string hubPads;
     std::string dockOpening;
     std::string shipEnvelope;
     std::string dockFit;

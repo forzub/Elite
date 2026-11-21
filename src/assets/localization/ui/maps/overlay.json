@@ -85,6 +85,20 @@
       "zh-Hans": "跟踪开启",
       "es": "SEGUIMIENTO",
       "ja": "追跡中"
+    },
+    "overlay.hub_plan": {
+      "en": "HUB PLAN",
+      "ru": "ПЛАН ХАБА",
+      "zh-Hans": "枢纽平面图",
+      "es": "PLANO DEL HUB",
+      "ja": "ハブ平面図"
+    },
+    "overlay.hub_3d": {
+      "en": "3D VIEW",
+      "ru": "3D-ВИД",
+      "zh-Hans": "3D 视图",
+      "es": "VISTA 3D",
+      "ja": "3D 表示"
     }
   }
 }

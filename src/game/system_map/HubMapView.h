@@ -83,12 +83,19 @@ public:
         {
             m_savedYaw = m_state.camera.yaw;
             m_savedPitch = m_state.camera.pitch;
+            m_savedZoom = m_state.camera.zoom;
+            m_savedPan = m_state.camera.pan;
             applyPlanCamera();
+            // the plan opens on the city, readable (the 3D view frames the hub with its surroundings)
+            m_state.camera.zoom = std::clamp(m_state.camera.zoom * 2.5, m_controls.minZoom, m_controls.maxZoom);
+            m_state.camera.pan = glm::dvec2(0.0);
         }
         else
         {
             m_state.camera.yaw = m_savedYaw;
             m_state.camera.pitch = m_savedPitch;
+            m_state.camera.zoom = m_savedZoom;
+            m_state.camera.pan = m_savedPan;
         }
         m_state.orbitPivotActive = false;
     }
@@ -253,6 +260,8 @@ private:
     bool m_planView = false;
     double m_savedYaw = 0.60;
     double m_savedPitch = 0.18;
+    double m_savedZoom = 1.0;
+    glm::dvec2 m_savedPan {0.0};
 };
 
 } // namespace game::system_map

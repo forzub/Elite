@@ -49,6 +49,8 @@ struct NavigationOverlayTextProfile
 
     std::string track = "TRACK";
     std::string trackOn = "TRACK ON";
+    std::string hubPlan = "HUB PLAN";
+    std::string hub3d = "3D VIEW";
 
     std::string hierarchicalFormat = "STRAIGHT THERE";
     std::string axisFormat = "THREE AXES";

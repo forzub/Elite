@@ -2,6 +2,7 @@
 // and the object context menu - the same in every map.
 
 #include "src/game/system_map/SystemMapRendererInternal.h"
+#include "src/render/navigation/NavigationOverlayVisualSettings.h"
 
 namespace
 {
@@ -65,6 +66,19 @@ std::vector<SystemMapRenderer::MapButton> SystemMapRenderer::mapButtons(
             add("up", "↑", upBounds);
         // The back slot stays left of the up slot (stable positions).
         leftmost = upBounds;
+    }
+    // the Hub map: one toggle at the top right of the map (author 2026-11-21: «кнопку вверху справа на самой карте -
+    // план хаба»; on the plan the same place takes you back to the 3D view)
+    if (mode == Mode::Hub)
+    {
+        const render::navigation::NavigationOverlayVisualSettings visuals;
+        const float s = std::clamp(static_cast<float>(viewport.height) / visuals.referenceHeightPx, visuals.minimumScreenScale,
+                                   visuals.maximumScreenScale);
+        const float w = visuals.levelZeroButtonWidthPx * s, h = visuals.levelZeroButtonHeightPx * s;
+        const float right = static_cast<float>(viewport.width) - visuals.levelZeroButtonRightPx * s;
+        const float top = visuals.levelZeroButtonRightPx * s;
+        add("hubplan", m_hubView.planView() ? ui.hub3d : ui.hubPlan, {right - w, top, right, top + h}, true,
+            m_hubView.planView());
     }
     if (!m_mapHistory.empty())
         add("back", "←",

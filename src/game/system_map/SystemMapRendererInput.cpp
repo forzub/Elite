@@ -400,6 +400,11 @@ SystemMapRenderer::handleInput(
         {
             toggleSelectedBodyTracking();
         }
+        else if (chromePressed && m_hoveredMapButton == "hubplan")
+        {
+            toggleHubPlanView();
+            std::cerr << "[HubMap] " << (m_hubView.planView() ? "plan (2D)" : "3D view") << " - the map button" << std::endl;
+        }
         else if (chromePressed && m_hoveredMapButton == "back")
         {
             buttonIntent = navigateBack();
@@ -1341,6 +1346,14 @@ bool SystemMapRenderer::driveDevPointer(
         const glm::vec2 c = m_planetCarousel.itemScreenCenter(arg.substr(9));
         if (c.x >= 0.0f)
             at = glm::dvec2(c.x, c.y);
+    }
+    else if (arg.rfind("button:", 0) == 0)
+    {
+        // a map button (pointer:click:button:hubplan)
+        for (const auto& button : mapButtons(vp))
+            if (button.id == arg.substr(7))
+                at = glm::dvec2((button.view.bounds.left + button.view.bounds.right) * 0.5,
+                                (button.view.bounds.top + button.view.bounds.bottom) * 0.5);
     }
     else
     {

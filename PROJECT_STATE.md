@@ -7751,3 +7751,13 @@ start-up hitches (render), trade step 16 part 3 live.
   the player with ~6.4 km/s local velocity and with ELITE_DEV_START the observer does not hold the real ship (both
   pre-existing stand quirks). NOT covered yet: the client-only city presentation traffic and the scheduled visits
   (those still become real only when a beam hits them: materializeScheduledVisit -> default cruise AI).
+- (2026-11-21) F. Hub map 2D/3D toggle (author: «в карте хаба ... кнопку вверху справа на самой карте - план хаба ...
+  на самом плане в том же месте нужна кнопка возврат в 3Д»). SOURCE: a "hubplan" map button (mapButtons, Hub mode,
+  top right of the map viewport) labelled ПЛАН ХАБА / 3D-ВИД (overlay.hub_plan / overlay.hub_3d, 5 locales), drawn
+  on the map (the only map button drawn there - the old map-chrome buttons stay in the panel), click ->
+  toggleHubPlanView (V still works). The plan: no planet backdrop (a dark sheet, like the mesh editor's hub mode),
+  opens 2.5x zoomed on the city (pan reset); back to 3D restores the 3D camera (yaw, pitch, zoom, pan). DEV pointer
+  target "button:<id>" (pointer:click:button:hubplan). LIVE (D:/tmp/hubplan, ELITE_DEV_START=hub:earth_orbital_hub@5,
+  `local`): a.png 3D with ПЛАН ХАБА top right; click -> "[HubMap] plan (2D) - the map button", b.png the plan
+  (blocks, streets, lanes, the docks, ships) with 3D-ВИД; click again -> "3D view"; on the plan a click on
+  hub-dock:hub_hex_dock_a/dock_gate_front opens the dock card with ПОКАЗАТЬ МАРШРУТ / СТЫКОВКА (c.png).

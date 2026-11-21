@@ -513,11 +513,13 @@ void HubMapBackend::renderHubMapPasses(
     const double cpuPlanetBackdropStartMs =
         hubPerfNowMs();
 
-    m_planetPass.drawHubMapPlanetSurfaceHint(
-        hub,
-        scale,
-        centerPx
-    );
+    // the 2D plan reads like the mesh editor's hub mode: a dark sheet, no planet under the city (author 2026-11-21)
+    if (activeCamera().state.pitch <= 1.5)
+        m_planetPass.drawHubMapPlanetSurfaceHint(
+            hub,
+            scale,
+            centerPx
+        );
 
     m_performanceStats.cpuPlanetBackdropMs =
         hubPerfNowMs() -

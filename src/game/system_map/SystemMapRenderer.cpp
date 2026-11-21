@@ -650,6 +650,14 @@ void SystemMapRenderer::render(
     );
 
     // The context menu is above everything of the map.
+    // the map buttons drawn on the map itself (the Hub map plan / 3D toggle; the others live in the map panel)
+    {
+        std::vector<render::navigation::NavigationOverlayButton> views;
+        for (const auto& button : mapButtons(vp))
+            if (button.id == "hubplan")
+                views.push_back(button.view);
+        m_navigationCoordinateOverlay.drawButtons(vp, views);
+    }
     drawContextMenu(vp);
 
     /*

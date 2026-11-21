@@ -2067,6 +2067,8 @@ void SpaceState::applyClientCatalogLocalization()
     overlayText.level = loc.text("overlay.level", "LEVEL");
     overlayText.track = loc.text("overlay.track", "TRACK");
     overlayText.trackOn = loc.text("overlay.track_on", "TRACK ON");
+    overlayText.hubPlan = loc.text("overlay.hub_plan", "HUB PLAN");
+    overlayText.hub3d = loc.text("overlay.hub_3d", "3D VIEW");
     overlayText.hierarchicalFormat =
         loc.text("nav.format.hierarchical", "STRAIGHT THERE");
     overlayText.axisFormat =

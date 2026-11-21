@@ -63,6 +63,12 @@ struct HexDockGeometry
     double gateRadius = 2000.0;
     double departureClearZ = -2400.0;  // departures release the outer lane
     double departureTurnZ = -11000.0;  // and leave the axis only here (beyond every queue gate)
+    // a PILOT's departure (author 2026-11-21: "the axis is always free except for the arrivals; the dock is a flower"):
+    // a short burn-out to departureAxisStopZ, then off the axis to the ship's departure petal (between the arrival
+    // holds, nearer than them, well clear of the arrival paths), released there at rest
+    double departureAxisStopZ = -500.0;
+    double departurePetalZ = -1500.0;
+    double departurePetalRadius = 900.0;
 
     [[nodiscard]] double serviceCenterZ() const noexcept
     {
@@ -101,6 +107,13 @@ inline constexpr int HoldCount = 6;
 {
     const double a = holdAzimuthRad(k);
     return {g.holdRadius * std::cos(a), g.holdRadius * std::sin(a), g.holdZ};
+}
+
+// the departure petal of pad k: between the arrival holds k and k + 1 (30 deg off them), off the axis
+[[nodiscard]] inline glm::dvec3 departurePetalPosition(const HexDockGeometry& g, int k)
+{
+    const double a = holdAzimuthRad(k) + 30.0 * Pi / 180.0;
+    return {g.departurePetalRadius * std::cos(a), g.departurePetalRadius * std::sin(a), g.departurePetalZ};
 }
 
 [[nodiscard]] inline glm::dmat3 rotationAboutZ(double angleRad)

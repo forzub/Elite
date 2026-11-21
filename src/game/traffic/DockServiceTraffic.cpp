@@ -421,6 +421,7 @@ const char* actorPhaseName(ActorPhase phase) noexcept
         case ActorPhase::ToChamberGate: return "to-chamber-gate";
         case ActorPhase::CorridorOut: return "corridor-out";
         case ActorPhase::AxialOut: return "axial-out";
+        case ActorPhase::PetalOut: return "petal-out";
         case ActorPhase::Disperse: return "disperse";
         case ActorPhase::Outbound: return "outbound";
         case ActorPhase::FarLeg: return "far-leg";
@@ -965,7 +966,11 @@ struct DockServiceTraffic::Impl
                     axial.kind = SegmentKind::AxialOut;
                     axial.p0 = {0.0, 0.0, g.entryFaceZ};
                     axial.flipSeconds = c.flipSeconds;
-                    axial.profile = Profile::make(g.entryFaceZ - g.departureTurnZ, DepartureOutSpeedMps, 0.0, c.localAccel, 80.0, c.flipSeconds + 2.0);
+                    // a pilot ship stops short on the axis and goes to its departure petal (author 2026-11-21: the
+                    // axis stays free; the pilot is not left 11 km out on the road)
+                    const double axialStop = a.external ? g.departureAxisStopZ : g.departureTurnZ;
+                    axial.profile = Profile::make(g.entryFaceZ - axialStop, DepartureOutSpeedMps, 0.0, c.localAccel, a.external ? 30.0 : 80.0,
+                                                  c.flipSeconds + 2.0);
                     axial.duration = axial.profile.total;
                     const double t0 = endTime(a);
                     axial.rollStart = phaseAt(t0) + hex::Pi * 0.5;
@@ -1009,9 +1014,10 @@ struct DockServiceTraffic::Impl
                 }
                 if (segmentsDone && a.external)
                 {
-                    // the pilot ship: at rest beyond the queue gates - the pilot takes over
-                    say(a.id, "released to the pilot beyond the dock lanes");
-                    setPhase(a, ActorPhase::Gone);
+                    // the pilot ship: off the axis to its departure petal, released there at rest
+                    pushBurn(a, hex::departurePetalPosition(g, a.padIndex), 0.0, 0.0, c.localAccel, 40.0, {0.0, 1.0, 0.0}, true);
+                    setPhase(a, ActorPhase::PetalOut);
+                    say(a.id, "off the axis to the departure petal");
                     break;
                 }
                 if (segmentsDone)
@@ -1027,6 +1033,19 @@ struct DockServiceTraffic::Impl
                 }
                 break;
             }
+            case ActorPhase::PetalOut:
+                if (segmentsDone)
+                {
+                    if (!a.reportedClear)
+                    {
+                        a.reportedClear = true;
+                        dispatcher.reportClear(a.id, now);
+                        ++stats.departures;
+                    }
+                    say(a.id, "released to the pilot at the departure petal");
+                    setPhase(a, ActorPhase::Gone);
+                }
+                break;
             case ActorPhase::Disperse:
                 if (a.segments.empty() && !std::isfinite(a.current.duration))
                 {
@@ -1381,7 +1400,8 @@ bool DockServiceTraffic::requestExternalDeparture(std::uint64_t shipId, double n
 bool DockServiceTraffic::releaseExternalToPilot(std::uint64_t shipId, double nowSeconds)
 {
     auto it = m_impl->actors.find(shipId);
-    if (it == m_impl->actors.end() || !it->second.external || it->second.phase != ActorPhase::AxialOut)
+    if (it == m_impl->actors.end() || !it->second.external ||
+        (it->second.phase != ActorPhase::AxialOut && it->second.phase != ActorPhase::PetalOut))
         return false;
     m_impl->now = std::max(m_impl->now, nowSeconds);
     m_impl->say(shipId, "the pilot took the controls on the axis - released early");

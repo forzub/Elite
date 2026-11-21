@@ -1,6 +1,7 @@
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/ship/descriptors/CatalogShipRegistry.h"
 #include "src/game/simulation/GameSimulationInternal.h"
+#include "src/game/navigation/traffic/HubLaneNetwork.h"
 
 
 GameSimulation::GameSimulation(
@@ -4025,6 +4026,119 @@ bool GameSimulation::debugFullRestoreShip(EntityId id)
     markShipGraphDirty(id);
     std::cerr << "[DevRestore] ship " << id.value << ": fully restored (structure, reactors, containment, heat, spin)" << std::endl;
     return true;
+}
+
+
+// DEV (author 2026-11-21: "how did I hit the station inside a green lane?"): every lane tube of `hubId` against the
+// collision boxes of every static object of that hub, in the lanes' frame (the frame module's pose). Reports, per lane,
+// the smallest clearance (box surface to the tube's surface; < 0 = the box intrudes into the tube) and the object /
+// module of that box. ELITE_DEV_LANE_CHECK=<hub id> runs it once from the server.
+void GameSimulation::devLaneClearanceReport(const std::string& hubId) const
+{
+    const auto* network = game::navigation::traffic::HubLaneCatalog::forHub(hubId);
+    if (!network)
+    {
+        std::cerr << "[LaneCheck] " << hubId << ": no lane network" << std::endl;
+        return;
+    }
+    const StaticObject* frameObject = nullptr;
+    for (const auto& [oid, o] : m_staticObjects)
+        if (o.hubModuleId == network->frameModuleId())
+            frameObject = &o;
+    if (!frameObject)
+    {
+        std::cerr << "[LaneCheck] " << hubId << ": the frame module " << network->frameModuleId() << " is not spawned" << std::endl;
+        return;
+    }
+    const glm::dvec3 framePos = world::coordinates::fullMeters(frameObject->worldPosition);
+    const glm::dmat3 frameR(glm::mat3(frameObject->orientation));
+    const glm::dmat3 frameRt = glm::transpose(frameR);
+    struct Box
+    {
+        glm::dvec3 c;
+        glm::dmat3 R;
+        glm::dvec3 h;
+        double radius;
+        std::uint32_t object;
+        std::string module;
+        ObjectType type;
+    };
+    std::vector<Box> boxes;
+    for (const auto& [oid, o] : m_staticObjects)
+    {
+        if (o.hubId != hubId || o.hitComponent.volumes.empty())
+            continue;
+        const glm::dvec3 p = world::coordinates::fullMeters(o.worldPosition);
+        const glm::dmat3 R(glm::mat3(o.orientation));
+        for (const auto& v : o.hitComponent.volumes)
+        {
+            if (v.destroyed || glm::length(v.center) < 1.0e-4f)
+                continue;
+            Box b;
+            b.c = frameRt * (p + R * glm::dvec3(v.center) - framePos);
+            b.R = frameRt * R * glm::dmat3(v.orientation);
+            b.h = glm::dvec3(v.halfSize);
+            b.radius = glm::length(b.h);
+            b.object = oid.value;
+            b.module = !v.moduleId.empty() ? v.moduleId : v.m_label;
+            b.type = o.type;
+            boxes.push_back(std::move(b));
+        }
+    }
+    const auto distToBox = [](const Box& b, const glm::dvec3& q) {
+        const glm::dvec3 l = glm::transpose(b.R) * (q - b.c);
+        const glm::dvec3 d = glm::max(glm::abs(l) - b.h, glm::dvec3(0.0));
+        return glm::length(d);
+    };
+    int intruded = 0;
+    for (const auto& lane : network->lanes())
+    {
+        double worst = 1.0e30;
+        const Box* worstBox = nullptr;
+        glm::dvec3 worstAt(0.0);
+        for (std::size_t s = 0; s + 1 < lane.stationsLocal.size(); ++s)
+        {
+            const glm::dvec3 a = lane.stationsLocal[s], e = lane.stationsLocal[s + 1];
+            const double len = glm::length(e - a);
+            if (len < 1.0e-6)
+                continue;
+            const glm::dvec3 dir = (e - a) / len;
+            std::vector<const Box*> near;
+            for (const auto& b : boxes)
+            {
+                const double t = std::clamp(glm::dot(b.c - a, dir), 0.0, len);
+                if (glm::length(b.c - (a + dir * t)) <= lane.radiusMeters + b.radius + 1.0)
+                    near.push_back(&b);
+            }
+            if (near.empty())
+                continue;
+            for (double t = 0.0; t <= len; t += 5.0)
+            {
+                const glm::dvec3 q = a + dir * t;
+                for (const Box* b : near)
+                {
+                    const double clear = distToBox(*b, q) - lane.radiusMeters;
+                    if (clear < worst)
+                    {
+                        worst = clear;
+                        worstBox = b;
+                        worstAt = q;
+                    }
+                }
+            }
+        }
+        if (!worstBox)
+            continue;
+        const bool bad = worst < 0.0;
+        intruded += bad ? 1 : 0;
+        if (bad || worst < 30.0)
+            std::cerr << "[LaneCheck] " << hubId << " lane " << lane.id << " (r " << lane.radiusMeters << " m): "
+                      << (bad ? "INTRUDED by " : "clearance ") << std::abs(worst) << " m - object " << worstBox->object << " ("
+                      << "type " << static_cast<int>(worstBox->type) << ") " << worstBox->module << " at (" << worstAt.x << ", " << worstAt.y << ", " << worstAt.z
+                      << ")" << std::endl;
+    }
+    std::cerr << "[LaneCheck] " << hubId << ": " << network->lanes().size() << " lanes vs " << boxes.size() << " boxes, " << intruded
+              << " lane(s) intruded" << std::endl;
 }
 
 void GameSimulation::debugResetAllShipStructures()

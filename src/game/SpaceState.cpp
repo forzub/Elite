@@ -629,7 +629,8 @@ void SpaceState::updatePilotTakeover(bool touching)
     }
     if (m_takeoverSinceSeconds < 0.0)
         return;
-    m_takeoverSecondsLeft = std::max(0.0, 3.0 - (now - m_takeoverSinceSeconds));
+    // the station's departure: any control input takes over at once (author 2026-11-21); the autopilots: 3 s
+    m_takeoverSecondsLeft = std::max(0.0, (owner == Owner::StationAxis ? 0.0 : 3.0) - (now - m_takeoverSinceSeconds));
     if (m_takeoverSecondsLeft > 0.0)
         return;
     reset();

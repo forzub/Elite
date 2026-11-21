@@ -1728,6 +1728,10 @@ void GameServer::update(double dt)
     m_pendingPurchases.clear();
 
     // rescue (step 12): a pilot whose ship reached the hub of the accepted SOS call completes it
+    // DEV: ELITE_DEV_LANE_CHECK=<hub id> - the lane tubes vs the hub's collision, once the city volumes exist
+    if (m_serverTick == 1800)
+        if (const char* hub = std::getenv("ELITE_DEV_LANE_CHECK"); hub && *hub)
+            m_simulation.devLaneClearanceReport(hub);
     // ship persistence: restore once the hubs exist; save on a change and every ~minute
     restoreRuntimeShipsIfDue();
     if (!m_runtimeShips.empty() && (m_shipsDirty || m_serverTick - m_shipsSavedTick >= 3600))

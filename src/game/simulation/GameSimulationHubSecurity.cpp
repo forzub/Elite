@@ -410,6 +410,8 @@ void GameSimulation::updateHubSecurity(double dt)
                 nearLocal.push_back(local);
                 if (!c.lanes)
                     continue;
+                if (isDockStationControlledShip(p.id))
+                    continue;   // the station flies it (a departure / an arrival): not the pilot's lane violation
                 judged.insert(p.id.value);
                 // -------- the lanes: flying against the traffic
                 auto& ww = m_wrongWay[p.id];

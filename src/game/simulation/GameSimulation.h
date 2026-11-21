@@ -103,6 +103,8 @@ public:
     // TEMPORARY (author 2026-11-21, Ctrl+Alt+R): structure + modules, reactors (containment emergencies, the dead-reactor
     // marks), heat, spin and the "out of the fight" state back to new
     bool debugFullRestoreShip(EntityId id);
+    // DEV: every lane tube of a hub against its static objects' collision boxes ([LaneCheck] lines)
+    void devLaneClearanceReport(const std::string& hubId) const;
     void debugResetAllShipStructures();
 
     bool debugDetachShipModule(EntityId id, const std::string& moduleId);

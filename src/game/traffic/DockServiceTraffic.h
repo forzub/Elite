@@ -93,6 +93,7 @@ enum class ActorPhase : std::uint8_t
     ToChamberGate,
     CorridorOut,
     AxialOut,       // along the axis, brake to the dispersal stop
+    PetalOut,       // a pilot ship: off the axis to its departure petal, released there (2026-11-21)
     Disperse,       // into the own departure sector
     Outbound,       // shuttle: burn towards Earth and leave the local zone
     FarLeg,         // Cobrett: out ~20 km and stop

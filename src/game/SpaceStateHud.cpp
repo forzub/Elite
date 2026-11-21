@@ -1899,7 +1899,8 @@ void SpaceState::renderDockingWidget(const Viewport& viewport)
         const auto& g = game::docking::hex::hexDockGeometry();
         const double along = glm::dot(ship.transform.motion.localPositionMeters - dock.entryLocalMeters, dock.axisOutLocal);
         in.releaseKnown = true;
-        in.releaseDistanceMeters = std::max(0.0, (g.entryFaceZ - g.departureTurnZ) - along);
+        in.releaseDistanceMeters = std::max(0.0, (g.entryFaceZ - g.departureAxisStopZ) - along) +
+                                   std::hypot(g.departurePetalRadius, g.departurePetalZ - g.departureAxisStopZ);
         in.beyondGate = along > 30.0;
     }
     // the station let the ship go: "управление ваше" for a few seconds

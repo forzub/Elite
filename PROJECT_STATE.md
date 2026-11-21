@@ -7672,3 +7672,26 @@ Author's notes (live play, normal window, D:/tmp/user_play.log):
   * Edges (author's wish): Elite Classic edges dark far -> lighter near (the preset's far / near colours), no alpha
     floor, never white (edge.frag, edge_instanced.frag). Visual check by the author pending.
   * Ctrl+Alt+R full restore built (live check by the author pending).
+
+### Author's queue after the play session (2026-11-21, in this order unless said otherwise)
+A. Departure (item 10): out of the chamber -> a departure petal off the axis -> "УПРАВЛЕНИЕ ВАШЕ"; instant takeover
+   beyond the chamber; no corridor fines while the station flies; NPCs the same.
+B. Ships fly through the player: they should AVOID an obstacle (discussed before) - traffic avoidance of the player /
+   of each other; and a ship-ship collision when it does happen (no collision now).
+C. How the player hit the station inside a green lane: lane tubes vs the city collision check + a clearer collision
+   log (object, module, hub-local position, lane).
+D. A strong impact did not break the ship into parts (26 hits up to 110 m/s, 750 MJ): the break-up / fragment rule.
+E. Everything shook while the wreck tumbled (items 11-12): the views / hub pose desync at high body rates.
+F. Hub map 2D / 3D with docks and ships to pick (item 6).
+G. Not implemented: fly to a selected ship and take up a formation position (escort / form up).
+Plus: lanes hidden behind objects (5), the dock's one-corridor in / out (9), crash HUD message (11), the remaining
+start-up hitches (render), trade step 16 part 3 live.
+- (2026-11-21) A. Departure petal - SOURCE + LIVE PASS (D:/tmp/depart/run.log, ELITE_DEV_DOCK_AUTO_DEPART=15):
+  HexDockGeometry departureAxisStopZ -500 / departurePetalZ -1500 / departurePetalRadius 900, departurePetalPosition(k)
+  = between the arrival holds k and k+1; DockServiceTraffic: a pilot's AxialOut stops at -500 (30 m/s cap), then
+  ActorPhase::PetalOut burns to the petal and releases there (reportClear + Gone; early takeover allowed in PetalOut too);
+  SpaceState: beyond the chamber any control input takes over at once (StationAxis 0 s, autopilots still 3 s); the HUD
+  release distance = to the petal; GameSimulationHubSecurity: no lane judging while station-controlled. LIVE: cleared
+  from P1 -> off the axis -> stopped 893 m off the axis at ~1.46 km (speed 2.7 -> 0) -> "released by the station: free
+  flight"; the dispatcher dropped the ship (traces end); no [Corridor] fine. NPC departures unchanged (still the long
+  axis to -11 km then their sectors) - to align later.

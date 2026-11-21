@@ -89,12 +89,17 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         {
             tr.orientation = orientation;
             std::cerr << "[PadLanding] ship " << shipId.value << " taken into hub " << city->hubId << "'s frame" << std::endl;
+            m_padNotices[shipId] = {freeFlight ? "taken:flight" : "taken:frame", serverTime()};
         }
     }
     if (refusal)
     {
         std::cerr << "[PadLanding] ship " << shipId.value << " pad " << frameModuleId << "/" << address << " refused: " << refusal
                   << std::endl;
+        const std::string why = refusal;
+        const char* key = why == "no such city" ? "no_city" : why == "no pad at that address" ? "no_pad"
+                        : why == "the station flies the ship" ? "station" : why == "farther than 60 km" ? "far" : "frame";
+        m_padNotices[shipId] = {std::string("refused:") + key, serverTime()};
         return false;
     }
     PadLanding p;
@@ -239,4 +244,14 @@ void GameSimulation::updatePadLandings(double dt)
     }
     for (const EntityId id : drop)
         m_padLandings.erase(id);
+}
+
+std::string GameSimulation::padServiceStatus(EntityId shipId) const
+{
+    // a fresh notice first (4 s: the client prints each change once), then the phase while the service flies the ship
+    if (const auto n = m_padNotices.find(shipId); n != m_padNotices.end() && serverTime() - n->second.second < 4.0)
+        return n->second.first;
+    if (const auto p = m_padLandings.find(shipId); p != m_padLandings.end())
+        return "phase:" + std::to_string(p->second.phase) + ":" + p->second.address;
+    return {};
 }

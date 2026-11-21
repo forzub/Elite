@@ -114,4 +114,7 @@ struct ShipSnapshot
     game::simulation::ShipRefitSnapshot                   refit;
     // Weapons / hits: beams this tick, own missiles in flight, recent impacts.
     game::simulation::ShipCombatSnapshot                  combat;
+    // the hub city pad service for this ship (author 2026-11-21: its steps in the HUD terminal): "" none,
+    // "taken" (normal flight off, taken into the hub frame), "phase:<0..3>:<address>", "refused:<reason>"
+    std::string                                          padService;
 };

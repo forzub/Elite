@@ -52,6 +52,8 @@ struct HubPlanModule
     enum class PadKind { None, Roof, Stilts, Garage };
     PadKind padKind = PadKind::None;
     int padPlaces = 1;
+    glm::dvec3 padOrigin {0.0};   // where the pad module stands (city frame; HubPlanPads.h)
+    double padYawDeg = 0.0;       // its turn about +Y (a garage: its hangar toward the building)
 };
 
 struct HubPlanStreet

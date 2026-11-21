@@ -785,6 +785,8 @@ private:
         double logS = -1.0e9;
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
+    std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time
+    std::string padServiceStatus(EntityId shipId) const;   // ShipSnapshot::padService
     void updatePadLandings(double dt);
     std::unordered_map<EntityId, LiveTraffic> m_liveTraffic;
     std::unordered_map<EntityId, TrafficSlot> m_trafficSlots;

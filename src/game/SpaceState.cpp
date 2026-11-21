@@ -587,16 +587,47 @@ void SpaceState::updatePilotTakeover(bool touching)
         m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address;
         std::cerr << "[PadLanding] request sent: " << request->frameModuleId << "/" << request->address << std::endl;
     }
-    if (!m_padLandingObjectId.empty() && touching && glfwGetTime() - padRequestedAt > 1.5)
-    {
-        sendPadLanding(std::string(), std::string(), false);
-        m_padLandingObjectId.clear();
-        m_systemMapRenderer.setPadLandingActive(std::string());
-        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: управление у пилота";
-        std::cerr << "[Takeover] " << m_pilotNotice << std::endl;
-        return;
-    }
-    enum class Owner { None, Docking, Route, Body, StationAxis, StationInside };
+    // the pad service's steps in the HUD terminal (author 2026-11-21: «информацию ... выводить в терминале на HUD»)
+    if (m_client)
+        if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+        {
+            const std::string& status = it->second.padService;
+            static std::string lastStatus;
+            if (status != lastStatus)
+            {
+                lastStatus = status;
+                std::string line;
+                if (status == "taken:flight")
+                    line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
+                else if (status == "taken:frame")
+                    line = "СЛУЖБА ПЛОЩАДОК: корабль взят в кадр хаба";
+                else if (status.rfind("refused:", 0) == 0)
+                {
+                    const std::string why = status.substr(8);
+                    line = std::string("СЛУЖБА ПЛОЩАДОК: отказ - ") +
+                           (why == "no_pad" ? "у здания нет площадки" : why == "far" ? "дальше 60 км от города"
+                            : why == "station" ? "корабль ведёт станция" : why == "no_city" ? "нет такого города"
+                                                                          : "кадр хаба недоступен");
+                    m_padLandingObjectId.clear();
+                    m_systemMapRenderer.setPadLandingActive(std::string());
+                }
+                else if (status.rfind("phase:", 0) == 0 && status.size() > 8)
+                {
+                    const char phase = status[6];
+                    const std::string address = status.substr(8);
+                    line = phase == '0'   ? "СЛУЖБА ПЛОЩАДОК: набор высоты транзита над городом"
+                         : phase == '1' ? "СЛУЖБА ПЛОЩАДОК: над городом к площадке " + address
+                         : phase == '2' ? "СЛУЖБА ПЛОЩАДОК: снижение на площадку " + address
+                                        : "СЛУЖБА ПЛОЩАДОК: посадка выполнена, площадка " + address + " (руль - взлёт)";
+                }
+                if (!line.empty())
+                {
+                    m_pilotNotice = line;
+                    std::cerr << "[PadLanding] HUD: " << line << std::endl;
+                }
+            }
+        }
+    enum class Owner { None, Docking, Route, Body, StationAxis, StationInside, Pad };
     Owner owner = Owner::None;
     const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
     bool stationControlled = false;
@@ -624,6 +655,10 @@ void SpaceState::updatePilotTakeover(bool touching)
         else if (m_clientAutopilotControlActive && pending.valid() && pending.mode == game::navigation::DockingRouteRequest::Mode::Automatic)
             owner = Owner::Docking;
     }
+    // the city pad service flies / holds the ship: the same 3 s takeover (author 2026-11-21: «раньше было лучше ... задержка
+    // 3 сек с предупреждением»; the click on the card itself is not a touch: 1.5 s grace)
+    if (!m_padLandingObjectId.empty() && glfwGetTime() - padRequestedAt > 1.5)
+        owner = Owner::Pad;
     const double now = glfwGetTime();
     const auto reset = [&] {
         m_takeoverSinceSeconds = -1.0;
@@ -646,9 +681,9 @@ void SpaceState::updatePilotTakeover(bool touching)
         if (m_takeoverSinceSeconds < 0.0)
         {
             m_takeoverSinceSeconds = now;
-            m_pilotNotice = owner == Owner::StationAxis
-                ? "ВНИМАНИЕ: руль - станция отпустит через 3 с"
-                : "ВНИМАНИЕ: руль - автопилот выкл. через 3 с";
+            m_pilotNotice = owner == Owner::StationAxis ? "ВНИМАНИЕ: руль - станция отпустит через 3 с"
+                          : owner == Owner::Pad       ? "ВНИМАНИЕ: руль - служба площадок отпустит через 3 с"
+                                                      : "ВНИМАНИЕ: руль - автопилот выкл. через 3 с";
             std::cerr << "[Takeover] the pilot touches the controls - warning (3 s)" << std::endl;
         }
         m_takeoverLastInputSeconds = now;
@@ -656,7 +691,9 @@ void SpaceState::updatePilotTakeover(bool touching)
     else if (m_takeoverSinceSeconds >= 0.0 && now - m_takeoverLastInputSeconds > 1.0)
     {
         reset();
-        m_pilotNotice = owner == Owner::StationAxis ? "Руль отпущен: станция ведёт дальше" : "Руль отпущен: автопилот продолжает";
+        m_pilotNotice = owner == Owner::StationAxis ? "Руль отпущен: станция ведёт дальше"
+                      : owner == Owner::Pad       ? "Руль отпущен: служба площадок ведёт дальше"
+                                                  : "Руль отпущен: автопилот продолжает";
         std::cerr << "[Takeover] controls released - the autopilot continues" << std::endl;
         return;
     }
@@ -693,6 +730,12 @@ void SpaceState::updatePilotTakeover(bool touching)
             }
             m_pilotNotice = "СТАНЦИЯ: управление передано пилоту";
             m_takeoverReleaseSentSeconds = now;   // the release is on its way: no second takeover
+            break;
+        case Owner::Pad:
+            sendPadLanding(std::string(), std::string(), false);
+            m_padLandingObjectId.clear();
+            m_systemMapRenderer.setPadLandingActive(std::string());
+            m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: управление передано пилоту";
             break;
         default:
             break;

@@ -775,6 +775,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.shipCoreStatus = s.shipCoreStatus;
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
+            state.padService = s.padService;
             state.traffic = s.traffic;
             // per-instance configuration: a new override list (an applied refit) re-resolves the descriptor
             const bool configurationChanged = state.refit.productOverrides != s.refit.productOverrides;
@@ -881,6 +882,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.shipCoreStatus = s.shipCoreStatus;
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
+            state.padService = s.padService;
             state.traffic = s.traffic;
             // per-instance configuration: a new override list (an applied refit) re-resolves the descriptor
             const bool configurationChanged = state.refit.productOverrides != s.refit.productOverrides;

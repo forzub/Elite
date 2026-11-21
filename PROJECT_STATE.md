@@ -7820,3 +7820,23 @@ start-up hitches (render), trade step 16 part 3 live.
   LANDED 192 s, then DEV yaw -> "[Takeover] СЛУЖБА ПЛОЩАДОК: управление у пилота", the ship stays put (no jump, no
   collision). NOT verified: the card's СТЫКОВКА clicked with the mouse (the DEV verb drives the same renderer request ->
   SpaceState -> server path); pad meshes (no pad / garage / stilts geometry drawn yet); services on a pad.
+- (2026-11-21) PADS "полный фарш" (author: «сгенерируй площадки»; «добавь площадки в модули в мешэдиторе и также их
+  строящийся вид и повреждённый»; «информацию ... выводить в терминале на HUD»; «раньше было лучше с касанием руля - 3
+  сек ... с предупреждением»). SOURCE / ASSETS: tools/models/units/hub_pads.py - hubl_pad_roof (36 m deck on a low roof
+  frame: H, touchdown ring, hazard edge, edge lights, corner beacons, safety nets, hatch), hubl_pad_stilts (the deck
+  25 m up on four braced legs, stair tower, beacon), hubl_garage1 / hubl_garage2 (hangar + marked apron); construction
+  stages hubc_padroof_s1..3, hubc_padstilts_s1..3, hubc_garage1_s1..3, hubc_garage2_s1..3; damaged <module>_dmg_missile
+  / _dmg_laser / _dmg_gutted (CityDamage swaps them by _dmg_missile presence). 28 modules generated + packaged
+  (mesh editor), cards in the editor's hub mode (hub_belt._module_obb + hub_map_tool titles). The pad placement moved to
+  src/game/navigation/HubPlanPads.h (header-only, the plan loader and the city assembler share it): roof pad only on a
+  roof >= 36 m wide (deck top 2.2 m over the roof = the touchdown), garage = an apron at the plane with its hangar's
+  back to its building (yaw), stilts deck 25 m; the lower tier upside down. HubCityAssembly: applyHubPads appends one
+  node per pad right AFTER the layout's nodes and BEFORE the construction plan's (stable node indices for the damage
+  state) into the block's group. HUD terminal: ShipSnapshot::padService (snapshot 68) -> "СЛУЖБА ПЛОЩАДОК: нормальный
+  полёт выключен, корабль взят в кадр хаба / набор высоты транзита / над городом к площадке X / снижение / посадка
+  выполнена (руль - взлёт)" and refusals; the takeover is the common 3 s one with the warning (Owner::Pad).
+  LIVE (D:/tmp/pad): "[HubCityAssembly] earth_orbital_hub: 6896 nodes, 43 modules, 7950 collision, ... 536 pad nodes"
+  (collision assembly 1579 -> 1644 ms, render 97 -> 128 ms: not a new hitch); roof A2-03 LANDED 190 s with every HUD
+  line in the terminal. Previews checked (build/tools/mesh_editor/web/previews/hub_modules/hubl_pad_*.png): fixed the
+  wreck's floating under-frame and the stage plates on a leg top. NOT done: pad construction kits in the expansion
+  projects (tools/models/hub_expansion.py kits), a close outside view of a placed pad in the game.

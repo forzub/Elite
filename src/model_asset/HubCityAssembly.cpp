@@ -25,6 +25,8 @@ namespace elite::model_asset
 {
 // HubExpansion.cpp: the construction plan of the hub at the current game day applied to the layout document
 int applyHubExpansion(const std::string& hubId, nlohmann::json& doc);
+// HubExpansion.cpp: the city's landing pads (HubPlanPads.h) after the layout's own nodes, before the construction plan's
+int applyHubPads(const std::string& hubId, nlohmann::json& doc);
 
 namespace
 {
@@ -256,6 +258,7 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
         return false;
     }
     // the hub's construction plan (HubExpansion.h): stages of a hub being built, its expansions and their props
+    const int padNodes = applyHubPads(hubId, doc);   // first: their node indices stay put (the damage state)
     const int constructionNodes = applyHubExpansion(hubId, doc);
 
     // modules: their kits, the city's material table (union by id), each module's material map
@@ -480,7 +483,7 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
     const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     std::cerr << "[HubCityAssembly] " << hubId << ": " << out.nodes.size() << " nodes, " << kits.size() << " modules, "
               << out.collisionVolumes.size() << " collision, " << out.renderLods.back().nodes.size() << " group proxies, "
-              << constructionNodes << " construction nodes, " << ms << " ms\n";
+              << padNodes << " pad nodes, " << constructionNodes << " construction nodes, " << ms << " ms\n";
     return true;
 }
 } // namespace

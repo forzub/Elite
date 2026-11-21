@@ -1,6 +1,7 @@
 #include "src/model_asset/HubExpansion.h"
 
 #include "src/world/time/ConstructionClock.h"
+#include "src/game/navigation/HubPlanPads.h"
 
 #include <nlohmann/json.hpp>
 
@@ -344,4 +345,95 @@ int applyHubExpansion(const std::string& hubId, json& doc)
     return changed;
 }
 
+} // namespace elite::model_asset
+
+namespace elite::model_asset
+{
+// The hub city's landing pads (HubPlanPads.h, author 2026-11-21): one pad module per building that has a pad, placed
+// from the hub's plan right after the layout's own nodes (before the construction plan's: their count changes with the
+// game day, the pads' node indices must not - the server's damage state is per node index). Not packaged: left out.
+int applyHubPads(const std::string& hubId, json& doc)
+{
+    std::ifstream in("assets/data/navigation/hub_plans/" + hubId + ".json");
+    if (!in)
+        return 0;
+    json plan;
+    try
+    {
+        in >> plan;
+    }
+    catch (const std::exception&)
+    {
+        return 0;
+    }
+    std::vector<game::navigation::HubPlanBlock> blocks;
+    std::vector<game::navigation::HubPlanModule> planModules;
+    for (const auto& b : plan.value("blocks", json::array()))
+    {
+        game::navigation::HubPlanBlock block;
+        block.id = b.value("id", std::string());
+        block.i = b.value("i", 0);
+        block.j = b.value("j", 0);
+        block.zone = b.value("zone", std::string());
+        const auto c = b.value("centre", json::array());
+        if (c.size() == 2)
+            block.centre = glm::dvec2(c[0].get<double>(), c[1].get<double>());
+        block.halfMeters = b.value("half_m", 300.0);
+        blocks.push_back(std::move(block));
+    }
+    for (const auto& m : plan.value("modules", json::array()))
+    {
+        game::navigation::HubPlanModule module;
+        const std::string blockId = m.value("block", json()).is_string() ? m["block"].get<std::string>() : std::string();
+        for (std::size_t k = 0; k < blocks.size(); ++k)
+            if (blocks[k].id == blockId)
+                module.block = static_cast<int>(k);
+        module.under = m.value("layer", std::string()) == "under";
+        module.pier = m.value("role", std::string()) == "dock";
+        module.module = m.value("module", std::string());
+        const auto r = m.value("rect", json::array());
+        if (r.size() == 4)
+            module.rect = glm::dvec4(r[0].get<double>(), r[1].get<double>(), r[2].get<double>(), r[3].get<double>());
+        const auto y = m.value("y", json::array());
+        if (y.size() == 2)
+        {
+            module.y0 = y[0].get<double>();
+            module.y1 = y[1].get<double>();
+        }
+        planModules.push_back(std::move(module));
+    }
+    game::navigation::assignHubPlanAddressesAndPads(blocks, planModules);
+
+    auto& modules = doc.at("modules");
+    auto& nodes = doc.at("nodes");
+    auto& groups = doc.at("groups");
+    std::unordered_map<std::string, std::size_t> moduleOf, groupOf;
+    for (std::size_t i = 0; i < modules.size(); ++i)
+        moduleOf[modules[i].at("folder").get<std::string>()] = i;
+    for (std::size_t i = 0; i < groups.size(); ++i)
+        groupOf[groups[i].get<std::string>()] = i;
+    int added = 0;
+    for (const auto& m : planModules)
+    {
+        const std::string folder = game::navigation::hubPadModuleFolder(m);
+        if (folder.empty() || m.block < 0 || !packaged(folder))
+            continue;
+        const auto [mit, newModule] = moduleOf.try_emplace(folder, modules.size());
+        if (newModule)   // bounds 0: the assembly takes the module's mesh bounds for its far proxy
+            modules.push_back({{"folder", folder}, {"lo", {0, 0, 0}}, {"hi", {0, 0, 0}}, {"proxy_material", "eq_hub_hull"}});
+        // the block's own group (its far proxy) - "c<i>_<j>_<zone>" as the layout names them; else a "pads" group
+        const auto& b = blocks[static_cast<std::size_t>(m.block)];
+        auto git = groupOf.find("c" + std::to_string(b.i) + "_" + std::to_string(b.j) + "_" + b.zone);
+        if (git == groupOf.end())
+        {
+            git = groupOf.try_emplace("pads", groups.size()).first;
+            if (git->second == groups.size())
+                groups.push_back("pads");
+        }
+        nodes.push_back({"pad_" + m.address, mit->second, git->second, m.padOrigin.x, m.padOrigin.y, m.padOrigin.z,
+                         m.under ? 180.0 : 0.0, m.padYawDeg, 0.0});
+        ++added;
+    }
+    return added;
+}
 } // namespace elite::model_asset

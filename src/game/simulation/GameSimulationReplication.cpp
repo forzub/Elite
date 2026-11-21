@@ -191,6 +191,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         // when its large ObjectGraphSnapshot is sparse or suppressed.
         s.controlAuthorityTelemetry =
             ship.core().controlAuthorityTelemetry();
+        if (isPlayerControlled(id))
+            s.padService = padServiceStatus(id);   // the hub city pad service (HUD terminal lines)
         if (const auto info = m_dockTrafficInfo.find(id); info != m_dockTrafficInfo.end())
             s.traffic = info->second;
         if (!m_dockSites.empty() && isPlayerControlled(id))

@@ -36,7 +36,7 @@ def _write(path, doc):
 def _titles():
     import importlib
     out = {}
-    for name in ("hub_district", "hub_mega", "hub_belt", "hub_vista", "hub_plane", "hub_damage"):
+    for name in ("hub_district", "hub_mega", "hub_belt", "hub_vista", "hub_plane", "hub_damage", "hub_pads"):
         mod = importlib.import_module(f"units.{name}")
         for k, v in getattr(mod, "PASSPORTS", {}).items():
             out[k] = v[0]

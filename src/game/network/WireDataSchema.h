@@ -860,7 +860,8 @@ ELITE_WIRE_SCHEMA(
     v.dockDispatcher,
     v.traffic,
     v.refit,
-    v.combat
+    v.combat,
+    v.padService
 );
 
 ELITE_WIRE_SCHEMA(

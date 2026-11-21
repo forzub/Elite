@@ -2,6 +2,7 @@
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -147,6 +148,7 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     double agentRadiusMeters
 ) const
 {
+    const auto searchStart = std::chrono::steady_clock::now();
     // a straight free piece clear of the buildings and the red zones (the hull + 10 m); no obstacle list = not checked
     int blockedLegs = 0;
     const auto clear = [&](const glm::dvec3& a, const glm::dvec3& b) {
@@ -193,6 +195,15 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         return joinStartAt(l, k) - F[l][k] * freeLegs.joinApproachMeters;
     };
     const auto leaveEndAt = [&](std::size_t l, std::size_t k) { return P[l][k] + F[l][k] * LeaveStraightMeters; };
+    // the join straight of every station checked ONCE (the search reuses it; per pop it froze the game - live 2026-11-22)
+    std::vector<std::vector<char>> joinClear(laneCount);
+    for (std::size_t l = 0; l < laneCount; ++l)
+    {
+        joinClear[l].assign(P[l].size(), 0);
+        if (usable[l])
+            for (std::size_t k = 0; k + 1 < P[l].size(); ++k)
+                joinClear[l][k] = clear(joinApproachAt(l, k), P[l][k]) ? 1 : 0;
+    }
 
     // states: (global station, ridden) + the goal
     const std::size_t goal = 2 * sbase[laneCount];
@@ -252,8 +263,7 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         if (usable[l])
             for (std::size_t k = 0; k + 1 < P[l].size(); ++k)
             {
-                const double c = clear(joinApproachAt(l, k), P[l][k]) ? freeLeg(leadEnd, heading, joinApproachAt(l, k), F[l][k])
-                                                                       : Inf;
+                const double c = joinClear[l][k] ? freeLeg(leadEnd, heading, joinApproachAt(l, k), F[l][k]) : Inf;
                 entriesOk += std::isfinite(c) ? 1 : 0;
                 if (std::isfinite(c))
                     relax(state(l, k, 0), leadLength + c + freeLegs.joinApproachMeters + JoinStraightMeters, count,
@@ -291,16 +301,17 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         exitsOk += std::isfinite(exitLeg) ? 1 : 0;
         if (std::isfinite(exitLeg))
             relax(goal, d + LeaveStraightMeters + exitLeg + goalApproachLength, s, EdgeExit);
+        if (k + 1 != n)
+            continue;   // a transfer to another lane: from this lane's end only (from every station it froze the game)
         for (std::size_t m = 0; m < laneCount; ++m)
         {
             if (m == l || !usable[m])
                 continue;
             for (std::size_t j = 0; j + 1 < P[m].size(); ++j)
             {
-                if (glm::length(joinStartAt(m, j) - out0) > MaxTransferMeters)
+                if (!joinClear[m][j] || glm::length(joinStartAt(m, j) - out0) > MaxTransferMeters)
                     continue;
-                const double hop = clear(joinApproachAt(m, j), P[m][j]) ? freeLeg(out0, F[l][k], joinApproachAt(m, j), F[m][j])
-                                                                         : Inf;
+                const double hop = freeLeg(out0, F[l][k], joinApproachAt(m, j), F[m][j]);
                 if (std::isfinite(hop))
                     relax(state(m, j, 0), d + LeaveStraightMeters + hop + freeLegs.joinApproachMeters + JoinStraightMeters,
                           s, EdgeTransfer);
@@ -311,7 +322,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     const glm::dmat3 toLocal = glm::transpose(frame.localToWorldBasis);
     const glm::dvec3 goalLocal = toLocal * (goalWorld - frame.originWorldMeters);
     const glm::dvec3 arriveLocal = toLocal * goalDirection;
-    text << "blocked_legs=" << blockedLegs << " ";
+    text << "search_ms=" << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - searchStart).count()
+         << " blocked_legs=" << blockedLegs << " ";
     text << "direct_m=" << direct << " chain_cost=" << dist[goal] << " entries_ok=" << entriesOk << " exits_ok=" << exitsOk
          << "/" << exitsTried << " goal_local=(" << goalLocal.x << "," << goalLocal.y << "," << goalLocal.z << ") arrive_local=("
          << arriveLocal.x << "," << arriveLocal.y << "," << arriveLocal.z << ")";

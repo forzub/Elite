@@ -585,8 +585,9 @@ public:
         using PadKind = game::navigation::HubPlanModule::PadKind;
         const PadKind want = kind == "garage" ? PadKind::Garage : kind == "stilts" ? PadKind::Stilts : PadKind::Roof;
         if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(frame))
+            for (int pass = 0; pass < 2; ++pass)   // the exact address first, then the first pad of that kind
             for (const auto& m : plan->modules())
-                if (m.pad && !m.under && m.padKind == want)
+                if (m.pad && (pass == 0 ? m.address == kind : (!m.under && m.padKind == want)))   // padland:<address> / <kind>
                 {
                     m_padLandingRequest = PadLandingRequest {frame, m.address, "hub-building:" + frame + "/" + m.address};
                     std::cerr << "[PadLanding] DEV request " << kind << " -> " << m.address << " pad at " << m.padPosition.x << ","

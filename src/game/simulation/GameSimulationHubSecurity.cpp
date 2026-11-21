@@ -308,6 +308,11 @@ void GameSimulation::updateHubSecurity(double dt)
         glm::dvec3 velocity = cvel + R * pose.velocity;
         applyTrafficEvasion(sid, position, velocity, R * pose.forward, R * pose.up, pa.lengthMeters, dt, pa.hubId);
         glm::mat4 orientation(glm::mat3(R) * glm::mat3(pose.local));
+        // a live traffic ship (GameSimulationLiveTraffic): the lane gives only its point, its pilot flies it
+        const bool live = getShip(sid) &&
+            !noteTrafficSlot(sid, c->hubId, cpos + R * pose.position, cvel + R * pose.velocity, orientation, true);
+        if (live)
+            continue;   // no hand-back while it flies itself (it goes back to the script first)
         target->setWorldPositionMeters(position);
         target->orientation = orientation;
         target->motion.worldVelocityMps = velocity;

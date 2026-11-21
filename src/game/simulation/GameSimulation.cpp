@@ -692,6 +692,7 @@ void GameSimulation::updateShipSimulationDetail(double dt)
             isHubMotionLabShip(id) ||
             isNavigationRuntimeLabShip(id) ||
             isShipStateFlightTestShip(id) ||
+            isLiveTrafficShip(id) ||
             forcedFullStress(id);
 
         game::simulation::ShipMotionFidelity requested =
@@ -1759,6 +1760,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         }
         updateDockServiceTraffic(dt);
         updateHubSecurity(dt);   // traffic control, promoted air traffic, collision avoidance, defence (docs/HUB_SECURITY.md)
+        updateLiveTraffic(dt);   // traffic at the crosshair / in a fight -> real NPCs (GameSimulationCombat.cpp)
         if (firstPass)
         {
             updateShipSimulationDetail(dt);
@@ -1835,7 +1837,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
 
             NpcNavigationGoal goal;
-            if (!buildFiveHundredShipHerdGoal(id, goal))
+            if (!buildFiveHundredShipHerdGoal(id, goal) && !liveTrafficGoal(id, ship, goal))
             {
                 goal =
                     m_npcAiSystem.computeGoal(
@@ -3354,6 +3356,8 @@ void GameSimulation::forgetShip(EntityId id)
     m_combatTargetDummies.erase(id);
     m_promotedAir.erase(id);
     m_airTrafficShells.erase(id);
+    m_liveTraffic.erase(id);
+    m_trafficSlots.erase(id);
     m_initializedShipGraphIds.erase(id);
     m_shipGraphPayloadPublicationsRemaining.erase(id);
     m_shipsWithDetachedFragmentPayload.erase(id);

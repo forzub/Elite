@@ -7732,3 +7732,22 @@ start-up hitches (render), trade step 16 part 3 live.
   the ship's is interpolated every frame -> the camera's position relative to the ship jumped -> near objects (the hub)
   shook, far ones (the planet) did not (a translation, not a rotation, jitter). FIX: the fragment's local pose is
   smoothed (~0.1 s, real time) where the camera rides it. Live repro pending (a torn cockpit mount).
+- (2026-11-21) LIVE TRAFFIC (author: "a ship in front of the player - the front camera - at attack range must become
+  real and an NPC, traffic or not"; "a hysteresis zone, a narrow area - a radius around the crosshair; a ship that
+  attacks the player is an NPC anyway"). SOURCE: GameSimulation::updateLiveTraffic (GameSimulationCombat.cpp, every
+  tick after updateHubSecurity). A MATERIALIZED traffic ship (dock traffic / promoted city air traffic) becomes live
+  when its hull is within 4 deg of a player's boresight inside the player's laser range (fallback 3 km), or when it
+  fights (m_combatHostility) or was damaged. Live = placed in its hub frame (HubTactical), physics + collisions as a
+  free body (isScriptedTrafficShip false), its own pilot: TrackFormationSlot to its script's point (the script keeps
+  running and only gives the point - noteTrafficSlot; hub-local offset, free of the hub/ship epoch gap). Hysteresis:
+  back to the script only after 8 s beyond 12 deg / 1.3 x range, intact, no fight, within 25 m of its point, >= 3 s
+  live (then kinematic again, no jump). Not promoted on / near the pads (|dock pose| <= 300 m) unless it fights/was
+  hit. A fighting/damaged live ship whose dock script ends stays a free NPC. LOD keeps live ships materialized.
+  LIVE (D:/tmp/live, ELITE_DEV_DOCK_OBSERVER=2 at the Earth dock): ship 1544 promoted at 2213 m / 3.49 deg, flew itself
+  27 s within 2-8 m of its point (37 -> 80 m/s), released at 34 deg off "on its point". With ELITE_DEV_CITY_FIRE laser:
+  the beam hit it -> "[Combat] ship 1544 fights back against ship 201" -> reason fight, left its route (stays live).
+  Known: the combat AI's chase speeds were absurd (1-8 km/s) there because its enemy is the teleport-held observer
+  (the enemy track velocity is garbage) - stand artefact, a real-flight duel check is still owed. Observer =1 places
+  the player with ~6.4 km/s local velocity and with ELITE_DEV_START the observer does not hold the real ship (both
+  pre-existing stand quirks). NOT covered yet: the client-only city presentation traffic and the scheduled visits
+  (those still become real only when a beam hits them: materializeScheduledVisit -> default cruise AI).

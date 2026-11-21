@@ -391,14 +391,20 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
             applyTrafficEvasion(shellIt->second, flownPosition, flownVelocity, forward, basis[1], shuttleHull ? 56.0 : 25.0, 0.0,
                                 dock->hubId);
         }
-        tr.setWorldPositionMeters(flownPosition);
-        tr.orientation = orientation;
-        tr.motion.worldVelocityMps = flownVelocity;
-        tr.motion.localVelocityMps = flownVelocity;
-        // Map ownership: inside the dock's controlled zone the ship belongs to
-        // this hub (Hub Map); outside it, to the wider maps.
-        tr.motion.hubId =
-            glm::length(pose.position) <= site.zoneRadiusMeters ? dock->hubId : std::string {};
+        // a live traffic ship (GameSimulationLiveTraffic): the script only gives its point, its pilot flies it
+        if (!getShip(shellIt->second) ||
+            noteTrafficSlot(shellIt->second, dock->hubId, position, velocity, orientation,
+                            glm::length(pose.position) > 300.0))
+        {
+            tr.setWorldPositionMeters(flownPosition);
+            tr.orientation = orientation;
+            tr.motion.worldVelocityMps = flownVelocity;
+            tr.motion.localVelocityMps = flownVelocity;
+            // Map ownership: inside the dock's controlled zone the ship belongs to
+            // this hub (Hub Map); outside it, to the wider maps.
+            tr.motion.hubId =
+                glm::length(pose.position) <= site.zoneRadiusMeters ? dock->hubId : std::string {};
+        }
 
         if (refreshRoutes)
         {
@@ -469,6 +475,21 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
     {
         if (alive.count(it->first) == 0)
         {
+            // a live ship that fights / was damaged leaves the script for good: an ordinary NPC from now on
+            if (const auto live = m_liveTraffic.find(it->second);
+                live != m_liveTraffic.end() && live->second.reason != "crosshair")
+            {
+                std::cerr << "[LiveTraffic] ship " << it->second.value << ": its dock script ended - stays a free NPC ("
+                          << live->second.reason << ")" << std::endl;
+                m_dockTrafficShells.erase(it->second);
+                m_liveTraffic.erase(live);
+                m_trafficSlots.erase(it->second);
+                m_dockTrafficInfo.erase(it->second);
+                it = site.shellByActor.erase(it);
+                continue;
+            }
+            if (m_liveTraffic.count(it->second))
+                releaseLiveTraffic(it->second, "dock script ended");
             m_dockTrafficShells.erase(it->second);
             m_dockTrafficInfo.erase(it->second);
             if (getShip(it->second))
@@ -483,7 +504,12 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
 
 bool GameSimulation::isDockStationControlledShip(EntityId id) const noexcept
 {
-    return m_dockStationControlledShips.count(id) != 0 || m_dockTrafficShells.count(id) != 0 || m_airTrafficShells.count(id) != 0;
+    return m_dockStationControlledShips.count(id) != 0 || isScriptedTrafficShip(id);
+}
+
+bool GameSimulation::isScriptedTrafficShip(EntityId id) const noexcept
+{
+    return (m_dockTrafficShells.count(id) != 0 || m_airTrafficShells.count(id) != 0) && m_liveTraffic.count(id) == 0;
 }
 
 game::docking::traffic::DockTrafficShipStatus GameSimulation::dockDispatcherStatus(EntityId shipId) const

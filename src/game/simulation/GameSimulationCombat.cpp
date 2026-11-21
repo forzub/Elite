@@ -1599,7 +1599,7 @@ void GameSimulation::collideShips(double dt)
         // scripted traffic (dock traffic / promoted city air traffic, materialized near a player): kinematic bodies -
         // their script owns the pose, so they take the hit as a very heavy body and both ships are damaged (author
         // 2026-11-21: "ships fly through me ... no collision")
-        const bool scripted = m_dockTrafficShells.count(id) != 0 || m_airTrafficShells.count(id) != 0;
+        const bool scripted = isScriptedTrafficShip(id);
         if (!scripted && (tr.motion.mode != game::navigation::MotionMode::HubTactical || !tr.motion.travelFrame.valid ||
                           isDockStationControlledShip(id)))
             continue;
@@ -1909,4 +1909,211 @@ void GameSimulation::collideShips(double dt)
                 if (m_combatTargetDummies.count(sid))
                     m_devRamRetreatUntilS[sid] = m_combatClockS + 6.0;
         }
+}
+
+// ---- live traffic (author 2026-11-21): "a ship in front of the player, at attack range, becomes real and an NPC -
+//      traffic or not; a hysteresis zone, a narrow area around the crosshair; a ship that attacks is an NPC anyway"
+namespace
+{
+bool liveTrafficDamaged(const Ship& ship)
+{
+    for (const auto& module : static_cast<const world::modules::ObjectModuleRuntime&>(ship.core().moduleRuntime()).modules())
+        if (module.maxHealth > 0.0f && module.health + 1.0e-4f < module.maxHealth)
+            return true;
+    for (const auto& link : ship.core().structuralLinkRuntime().links())
+        if (link.destroyed || link.health + 1.0e-4f < link.maxHealth)
+            return true;
+    return !ship.core().detachedFragmentRuntime().fragments().empty();
+}
+} // namespace
+
+bool GameSimulation::noteTrafficSlot(EntityId id, const std::string& hubId, const glm::dvec3& worldPosition,
+                                     const glm::dvec3& worldVelocity, const glm::mat4& orientation, bool eligible)
+{
+    auto& s = m_trafficSlots[id];
+    s.hubId = hubId;
+    s.worldPosition = worldPosition;
+    s.worldVelocity = worldVelocity;
+    s.orientation = orientation;
+    s.eligible = eligible;
+    s.atS = serverTime();
+    if (const auto* frame = hubId.empty() ? nullptr : hubNavigationFrame(hubId); frame && frame->valid)
+    {
+        s.localPosition = frame->worldToLocalPosition(worldPosition);
+        s.localVelocity = frame->worldToLocalVelocity(worldPosition, worldVelocity);
+    }
+    else
+        s.atS = -1.0;   // no hub frame: never live
+    return m_liveTraffic.count(id) == 0;
+}
+
+bool GameSimulation::liveTrafficGoal(EntityId id, const Ship& ship, NpcNavigationGoal& outGoal) const
+{
+    if (m_liveTraffic.count(id) == 0)
+        return false;
+    const auto s = m_trafficSlots.find(id);
+    const auto& tr = ship.core().transform();
+    if (s == m_trafficSlots.end() || s->second.atS < 0.0 || !tr.motion.travelFrame.valid)
+        return false;
+    // the script point through the local offset (the hub frame and the ship's matched travel frame share the axes;
+    // the difference keeps the goal free of the one-step epoch gap between the hub objects and the free ships)
+    outGoal = {};
+    outGoal.revision = static_cast<std::uint64_t>(std::floor(serverTime() * 10.0)) + 1;
+    outGoal.mode = NpcNavigationGoalMode::TrackFormationSlot;
+    outGoal.desiredPositionSystemMeters =
+        tr.fullWorldMeters() + tr.motion.travelFrame.localToWorldVector(s->second.localPosition - tr.motion.localPositionMeters);
+    outGoal.desiredVelocitySystemMps = tr.motion.travelFrame.localToWorldVector(s->second.localVelocity);
+    outGoal.positionResponsePerSecond = 0.45;
+    outGoal.maximumPositionCorrectionSpeedMps = 40.0;
+    outGoal.velocityResponsePerSecond = 0.90;
+    outGoal.angularDampingPerSecond = 2.0;
+    return true;
+}
+
+void GameSimulation::releaseLiveTraffic(EntityId id, const char* why)
+{
+    const auto it = m_liveTraffic.find(id);
+    if (it == m_liveTraffic.end())
+        return;
+    if (Ship* ship = getShip(id))
+    {
+        auto& m = ship->core().transform().motion;
+        m.mode = it->second.savedMode;
+        m.travelFrame = it->second.savedTravelFrame;
+        m.matchedToReferenceFrame = it->second.savedMatched;
+        m.matchedReferenceFrameId = it->second.savedMatchedId;
+        ship->setControlState(ShipControlState {});
+    }
+    m_npcNavigationControlBridges.erase(id);
+    m_npcNavigationExecutionSnapshots.erase(id);
+    m_npcNavigationLastExecutionTimeSeconds.erase(id);
+    m_npcAutopilotLawControllers.erase(id);
+    std::cerr << "[LiveTraffic] ship " << id.value << " back to its script (" << why << ", live "
+              << static_cast<long long>(serverTime() - it->second.promotedS) << " s)" << std::endl;
+    m_liveTraffic.erase(it);
+}
+
+void GameSimulation::updateLiveTraffic(double dt)
+{
+    (void)dt;
+    const double now = serverTime();
+    const auto& cat = weaponCatalog();
+    // the crosshair zone: in - the hull within 4 deg of the boresight and inside the laser range; out - beyond 12 deg or
+    // 1.3 x the range for 8 s, then back to the script once it is on its point (no jump)
+    constexpr double InDeg = 4.0, OutDeg = 12.0, OutRangeScale = 1.3, OutHoldS = 8.0, OnPointM = 25.0, MinLiveS = 3.0;
+    struct Eye
+    {
+        glm::dvec3 p, f;
+        double range;
+    };
+    std::vector<Eye> eyes;
+    for (const auto& [id, s] : m_ships)
+    {
+        if (!s || !isPlayerControlled(id) || !passOwns(s.get()) || s->core().transform().motion.systemId != m_activeCelestialSystemId)
+            continue;
+        const auto& tr = s->core().transform();
+        double range = 3000.0;
+        if (const auto* l = cat.laser(combatLoadout(id).laserId))
+            range = std::max(500.0, static_cast<double>(l->rangeM));
+        eyes.push_back({tr.fullWorldMeters(), basisOf(tr) * glm::dvec3(0.0, 0.0, -1.0), range});
+    }
+    std::vector<EntityId> release;
+    for (auto& [id, slot] : m_trafficSlots)
+    {
+        Ship* ship = getShip(id);
+        if (!ship || slot.atS < 0.0 || slot.atS < now - 1.0)
+            continue;
+        if (m_dockTrafficShells.count(id) == 0 && m_airTrafficShells.count(id) == 0)
+            continue;
+        auto& tr = ship->core().transform();
+        const glm::dvec3 p = tr.fullWorldMeters();
+        const double radius = shipRadiusM(ship->core().desc());
+        bool inSight = false, nearSight = false;
+        double bestDist = 0.0, bestOff = 1.0e9;
+        for (const auto& e : eyes)
+        {
+            const glm::dvec3 d = p - e.p;
+            const double dist = glm::length(d);
+            const double axisDeg = dist < 1.0 ? 0.0 : glm::degrees(std::acos(std::clamp(glm::dot(d / dist, e.f), -1.0, 1.0)));
+            const double off = dist < 1.0 ? 0.0 : std::max(0.0, axisDeg - glm::degrees(std::atan2(radius, dist)));
+            inSight = inSight || (off <= InDeg && dist <= e.range);
+            nearSight = nearSight || (off <= OutDeg && dist <= e.range * OutRangeScale);
+            if (off < bestOff)
+            {
+                bestOff = off;
+                bestDist = dist;
+            }
+        }
+        const bool fights = m_combatHostility.count(id) != 0;
+        const bool damaged = liveTrafficDamaged(*ship);
+        const char* reason = fights ? "fight" : damaged ? "damaged" : inSight ? "crosshair" : nullptr;
+        const auto live = m_liveTraffic.find(id);
+        if (live == m_liveTraffic.end())
+        {
+            if (!reason || (!slot.eligible && !fights && !damaged))
+                continue;   // on / near the pads the dispatcher keeps it (unless it fights or was hit)
+            const auto* hf = hubNavigationFrame(slot.hubId);
+            if (!hf || !hf->valid)
+                continue;
+            LiveTraffic lt;
+            lt.promotedS = now;
+            lt.reason = reason;
+            lt.savedMode = tr.motion.mode;
+            lt.savedTravelFrame = tr.motion.travelFrame;
+            lt.savedMatched = tr.motion.matchedToReferenceFrame;
+            lt.savedMatchedId = tr.motion.matchedReferenceFrameId;
+            const glm::dvec3 worldP = p;
+            const glm::dvec3 worldV = tr.motion.worldVelocityMps;
+            const glm::mat4 orientation = tr.orientation;
+            game::navigation::ReferenceFrame frame;
+            frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
+            frame.systemId = tr.motion.systemId;
+            frame.hubId = slot.hubId;
+            frame.localOffsetMeters = hf->worldToLocalPosition(worldP);
+            if (!placeShipInReferenceFrame(id, frame))
+                continue;
+            tr.orientation = orientation;
+            tr.motion.localVelocityMps = hf->worldToLocalVelocity(worldP, worldV);
+            (void)promoteShipToDetailedSimulation(id);
+            m_npcNavigationControlBridges.erase(id);
+            m_npcNavigationExecutionSnapshots.erase(id);
+            m_npcNavigationLastExecutionTimeSeconds.erase(id);
+            m_npcAutopilotLawControllers.erase(id);
+            m_liveTraffic[id] = lt;
+            std::cerr << "[LiveTraffic] ship " << id.value << " -> a real NPC (" << reason << "): "
+                      << static_cast<long long>(bestDist) << " m, " << bestOff << " deg off the crosshair, "
+                      << static_cast<long long>(glm::length(tr.motion.localVelocityMps)) << " m/s" << std::endl;
+            continue;
+        }
+        auto& lt = live->second;
+        static std::unordered_map<EntityId, double> logAt;
+        if (double& logS = logAt.try_emplace(id, -1.0e9).first->second; now - logS >= 2.0)
+        {
+            logS = now;
+            std::cerr << "[LiveTraffic] ship " << id.value << " " << lt.reason << ": off its point "
+                      << static_cast<long long>(glm::length(tr.motion.localPositionMeters - slot.localPosition)) << " m, v "
+                      << static_cast<long long>(glm::length(tr.motion.localVelocityMps)) << " m/s (point "
+                      << static_cast<long long>(glm::length(slot.localVelocity)) << "), crosshair " << static_cast<long long>(bestDist)
+                      << " m / " << bestOff << " deg" << std::endl;
+        }
+        if (fights || damaged)
+        {
+            lt.reason = reason;
+            lt.outSinceS = -1.0;
+            continue;
+        }
+        lt.reason = "crosshair";
+        if (nearSight && slot.eligible)
+        {
+            lt.outSinceS = -1.0;
+            continue;
+        }
+        if (lt.outSinceS < 0.0)
+            lt.outSinceS = now;
+        const double err = glm::length(tr.motion.localPositionMeters - slot.localPosition);
+        if ((now - lt.outSinceS >= OutHoldS || !slot.eligible) && err <= OnPointM && now - lt.promotedS >= MinLiveS)
+            release.push_back(id);
+    }
+    for (const EntityId id : release)
+        releaseLiveTraffic(id, "out of the crosshair zone, on its point");
 }

@@ -741,6 +741,41 @@ private:
     // capture at the portal, kinematic pose while station-controlled.
     void updateDockPilotShips();
     bool isDockStationControlledShip(EntityId id) const noexcept;
+    // Live traffic (author 2026-11-21): a materialized traffic ship (dock traffic / promoted city air traffic) near a
+    // player's crosshair at weapon range, a ship that fights or was damaged, becomes a real NPC: physics, collisions as a
+    // free body, its own pilot. While it has no fight it flies to its script's point (TrackFormationSlot); it goes back
+    // to the script with a hysteresis (long out of the crosshair, intact, no fight, on its point).
+    struct LiveTraffic
+    {
+        double promotedS = 0.0;
+        double outSinceS = -1.0;
+        game::navigation::MotionMode savedMode = game::navigation::MotionMode::Inertial;
+        game::navigation::KinematicFrame savedTravelFrame;
+        bool savedMatched = false;
+        std::string savedMatchedId;
+        std::string reason;
+    };
+    struct TrafficSlot
+    {
+        std::string hubId;
+        glm::dvec3 localPosition {0.0};   // in the hub navigation frame
+        glm::dvec3 localVelocity {0.0};
+        glm::mat4 orientation {1.0f};
+        glm::dvec3 worldPosition {0.0};
+        glm::dvec3 worldVelocity {0.0};
+        bool eligible = false;            // in open space (not on / near the pads)
+        double atS = -1.0;
+    };
+    std::unordered_map<EntityId, LiveTraffic> m_liveTraffic;
+    std::unordered_map<EntityId, TrafficSlot> m_trafficSlots;
+    bool isScriptedTrafficShip(EntityId id) const noexcept;
+    bool isLiveTrafficShip(EntityId id) const noexcept { return m_liveTraffic.count(id) != 0; }
+    // the script's pose of a materialized traffic ship this tick; true when the script may write it (not live)
+    bool noteTrafficSlot(EntityId id, const std::string& hubId, const glm::dvec3& worldPosition,
+                         const glm::dvec3& worldVelocity, const glm::mat4& orientation, bool eligible);
+    void updateLiveTraffic(double dt);
+    bool liveTrafficGoal(EntityId id, const Ship& ship, NpcNavigationGoal& outGoal) const;
+    void releaseLiveTraffic(EntityId id, const char* why);
     bool removeTrafficShell(EntityId id);
     void updateShipSimulationDetail(double dt);
     void updateShipTierTransitionTest();

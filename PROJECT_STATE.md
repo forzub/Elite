@@ -8001,3 +8001,13 @@ start-up hitches (render), trade step 16 part 3 live.
     (it ping-ponged between its corners). LIVE dk27: H2-03 -> E4-01 hop, climb to 996, across, over the pad.
   * The pad service tunnel always shows while it flies the ship (a stale route guidance hid it).
   OPEN: lane network connectivity after the dropped turns not measured; touchdown sag not seen in a dev run.
+
+- 2026-11-22 (night): DESYNC fixed at the root + two invariant checks.
+  * Server tick: the hub-attached statics (city, modules, hit volumes) now move to the tick's epoch RIGHT AFTER the hubs
+    (stage 2 block moved before every consumer: free flights, zones, reference frames, combat lasers/missiles,
+    collisions, traffic, planners). Collisions stay after the scripted traffic is posed.
+  * ELITE_DEV_EPOCH_CHECK=1 (server): a player's place in the nearest city frame vs its relative velocity x dt -
+    LIVE dk33: 0.004 m near the city (0.36-0.8 m at 10 km = the rotating-frame term, not a desync).
+  * ELITE_DEV_RENDER_EPOCH_CHECK=1 (client HUD): the city in the player's render frame must not move - LIVE dk34:
+    1e-4 m while in the hub frame (7 m drift only in free flight before the hub frame, legitimate).
+  * Both checks belong in every navigator scenario run.

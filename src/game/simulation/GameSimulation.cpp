@@ -1488,32 +1488,13 @@ m_hubVelocityMetersPerSecond[hubId] =
     stageMark(1);
     rebuildHubNavigationFrames(trajectoryDeltaSeconds);
     initializeNavigationRuntimeLab();
-
-    // HubNavigationFrame above now belongs to the current fixed-step epoch.
-    // Refresh every matched ship before AI/navigation consumes worldPosition.
-    // Otherwise a ship keeps the previous epoch's world pose while the planner
-    // measures it against the current hub origin/basis, producing an apparent
-    // offset of roughly frameVelocity * dt (hundreds of metres at orbital
-    // world speeds).
-    if (!trajectoryDebugMode)
-    {
-        // J flies against the bodies of THIS epoch: the gravity context below was
-        // still last tick's, so a ship resting on the Moon was placed one tick
-        // behind it (0.01 s x 29 km/s heliocentric ~ 300 m) and drawn under the
-        // rendered surface. Refresh it first (it is rebuilt again further down).
-        rebuildNavigationGravityContext();
-        updateFreeFlights(dt);
-        updateZoneViolations(dt);
-        updateShipReferenceFrames(dt);
-        updateCombat(dt, firstPass);   // bookkeeping once per tick, lasers / missiles per system pass
-    }
-
-    if (!trajectoryDebugMode)
-        endUniverseTrajectoryDiagnostic();
-
-
-
     stageMark(2);
+    // ONE epoch for the whole tick (author 2026-11-22: «рассинхроны ... постоянно эта проблема вылазит. надо её как-то
+    // однозначно пофиксить»): the hub-attached statics (the city, its modules, their hit volumes) move to this epoch
+    // right after the hubs, BEFORE any consumer - the free flights, the zones, the reference frames, the combat
+    // (lasers, missiles), the collisions, the traffic and the planners. Moved after those (as stage 2 was) they read
+    // the city where it stood one tick ago: hub velocity x dt, ~450 m at an orbital hub (ghost crashes into the city,
+    // a lane ship flown through, live 2026-11-22).
     for (auto& [id, obj] : m_staticObjects)
     {
         if (obj.systemId != m_activeCelestialSystemId)
@@ -1747,6 +1728,32 @@ m_hubVelocityMetersPerSecond[hubId] =
     // after both have been updated, never from stale first-frame poses.
     publishNavigationRuntimeLabStaticGeometry();
 
+    // HubNavigationFrame above now belongs to the current fixed-step epoch.
+    // Refresh every matched ship before AI/navigation consumes worldPosition.
+    // Otherwise a ship keeps the previous epoch's world pose while the planner
+    // measures it against the current hub origin/basis, producing an apparent
+    // offset of roughly frameVelocity * dt (hundreds of metres at orbital
+    // world speeds).
+    if (!trajectoryDebugMode)
+    {
+        // J flies against the bodies of THIS epoch: the gravity context below was
+        // still last tick's, so a ship resting on the Moon was placed one tick
+        // behind it (0.01 s x 29 km/s heliocentric ~ 300 m) and drawn under the
+        // rendered surface. Refresh it first (it is rebuilt again further down).
+        rebuildNavigationGravityContext();
+        updateFreeFlights(dt);
+        updateZoneViolations(dt);
+        updateShipReferenceFrames(dt);
+        updateCombat(dt, firstPass);   // bookkeeping once per tick, lasers / missiles per system pass
+    }
+
+    if (!trajectoryDebugMode)
+        endUniverseTrajectoryDiagnostic();
+
+
+
+    // (the hub-attached statics moved to this epoch right after the hubs, stage 1 - see there)
+
     stageMark(3);
     // === 1. AI / controls / attitude ===
     if (!trajectoryDebugMode)
@@ -1776,6 +1783,52 @@ m_hubVelocityMetersPerSecond[hubId] =
             }();
             if (collisions)
                 collideShips(dt);
+        }
+        // DEV: ELITE_DEV_EPOCH_CHECK=1 - the one-epoch invariant, measured where the collisions read it: a player's
+        // place in the nearest city's frame must change by its relative velocity x dt; a stale city (or ship) epoch
+        // shows as a residual of hub velocity x dt (hundreds of metres). Once a second: the worst residual.
+        if (static const bool epochCheck = [] { const char* v = std::getenv("ELITE_DEV_EPOCH_CHECK"); return v && *v == '1'; }();
+            epochCheck)
+        {
+            struct Track { glm::dvec3 q {0.0}; glm::dvec3 v {0.0}; bool valid = false; std::uint64_t city = 0; };
+            static std::unordered_map<std::uint64_t, Track> tracks;
+            static double worst = 0.0, logAt = 0.0;
+            for (auto& [id, shipPtr] : m_ships)
+            {
+                if (!shipPtr || !isPlayerControlled(id) ||
+                    !game::simulation::sameRuntimeSystem(shipPtr->core().transform().motion.systemId, m_activeCelestialSystemId))
+                    continue;
+                const auto& tr = shipPtr->core().transform();
+                const glm::dvec3 p = tr.fullWorldMeters();
+                const StaticObject* city = nullptr;
+                double best = 30000.0;
+                for (const auto& [oid, o] : m_staticObjects)
+                    if (o.type == ObjectType::HubBeltCity && o.systemId == m_activeCelestialSystemId)
+                        if (const double d = glm::length(world::coordinates::fullMeters(o.worldPosition) - p); d < best)
+                        {
+                            best = d;
+                            city = &o;
+                        }
+                auto& t = tracks[id.value];
+                if (!city)
+                {
+                    t.valid = false;
+                    continue;
+                }
+                const glm::dmat3 R(glm::mat3(city->orientation));
+                const glm::dvec3 q = glm::transpose(R) * (p - world::coordinates::fullMeters(city->worldPosition));
+                const glm::dvec3 v = glm::transpose(R) * (tr.motion.worldVelocityMps - glm::dvec3(city->linearVelocity));
+                if (t.valid && t.city == city->id.value && dt > 0.0)
+                    worst = std::max(worst, glm::length((q - t.q) - 0.5 * (v + t.v) * dt));
+                t = {q, v, true, city->id.value};
+            }
+            if (m_serverTimelineClock.timeSeconds() - logAt >= 1.0)
+            {
+                logAt = m_serverTimelineClock.timeSeconds();
+                std::cerr << "[EpochCheck] worst residual of a player's place in its city frame over 1 s: " << worst << " m"
+                          << std::endl;
+                worst = 0.0;
+            }
         }
         if (firstPass)
         {

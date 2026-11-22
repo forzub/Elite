@@ -586,6 +586,46 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             playerShip,
             playerShip.renderReferenceFrame.universeTimeSeconds
         );
+    // DEV: ELITE_DEV_RENDER_EPOCH_CHECK=1 - the client's one-epoch invariant: the city is fixed in its hub frame, so its
+    // place in the player's RENDER reference frame must not move; whatever it does is how far the drawn world and the drawn
+    // ship disagree (the tunnel / frames shake by that much). Once a second: the worst frame-to-frame step and the drift.
+    if (static const bool renderEpochCheck = [] { const char* v = std::getenv("ELITE_DEV_RENDER_EPOCH_CHECK"); return v && *v == '1'; }();
+        renderEpochCheck && m_client && playerShip.renderReferenceFrame.valid && !playerShip.renderReferenceFrame.hubId.empty())
+    {
+        const auto& fr = playerShip.renderReferenceFrame;
+        for (const auto& [oid, object] : m_client->world().objects())
+        {
+            if (!object.hubAttachment.valid || object.hubAttachment.hubId != fr.hubId)
+                continue;
+            const std::string& mid = object.hubAttachment.moduleId;
+            if (mid.size() < 5 || mid.compare(mid.size() - 5, 5, ".city") != 0)
+                continue;
+            const glm::dmat3 B(fr.progradeAxis, fr.radialAxis, fr.normalAxis);
+            const glm::dvec3 local = glm::transpose(B) * (world::coordinates::fullMeters(object.renderWorldPosition) - fr.originMeters);
+            static glm::dvec3 prev(0.0), first(0.0);
+            static bool have = false;
+            static double worstStep = 0.0, worstDrift = 0.0;
+            static auto logAt = std::chrono::steady_clock::now();
+            if (have && glm::length(local - prev) < 5000.0)
+            {
+                worstStep = std::max(worstStep, glm::length(local - prev));
+                worstDrift = std::max(worstDrift, glm::length(local - first));
+            }
+            else
+                first = local;
+            prev = local;
+            have = true;
+            if (std::chrono::steady_clock::now() - logAt > std::chrono::seconds(1))
+            {
+                logAt = std::chrono::steady_clock::now();
+                std::cerr << "[RenderEpochCheck] the city in the player's render frame: worst step " << worstStep
+                          << " m, drift " << worstDrift << " m" << std::endl;
+                worstStep = worstDrift = 0.0;
+                first = local;
+            }
+            break;
+        }
+    }
     // the pad service's route as the docking tunnel (author 2026-11-21: «нет рамок, показывающих маршрут»; «тоннель
     // маршрута, как при посадке в док»): the same gates along what is left of the route (hubPadRoute) from here
     // only while the service flies the ship there (phases 0-2): landed / handed over / cancelled - no tunnel

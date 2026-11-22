@@ -22,7 +22,7 @@ import random as _random
 import zlib
 
 from eqlib import *  # noqa: F401,F403 - the unit kernel
-from units.hub_district import BEACON, DARK, FLOOD, HAZ, HULL, LIGHT, STEEL, beacon  # noqa: F401
+from units.hub_district import BEACON, DARK, FLOOD, HAZ, HULL, LIGHT, STEEL, WARM, beacon  # noqa: F401
 from units.hub_belt import CONT, GRATE, MARK  # noqa: F401
 from units.hub_construction import CONC, NET, PLY, PRIM, REBAR, TARP, YEL  # noqa: F401 (registers the materials)
 import units.hub_damage  # noqa: F401 (registers eq_hub_burnt / eq_hub_soot / eq_hub_rebar)
@@ -480,84 +480,117 @@ def dmg_garage_builder(name, w, kind):
 # A box RH_W x RH_D x RH_H, the door the whole front (+Z) RH_DOOR_W x RH_DOOR_H; RH_BAYS bays side by side, each with
 # its marked floor, a scissor lift and a gantry crane under the roof; benches + lockers along the back wall, wrecked
 # parts along the side walls. The hit volumes are the shell only (floor, roof, walls, the lintel): a ship flies in.
-RH_W, RH_D, RH_H = 90.0, 50.0, 22.0
-RH_DOOR_W, RH_DOOR_H = 80.0, 18.0
-RH_BAYS = 3
+RH_W, RH_D, RH_H = 110.0, 60.0, 26.0
+RH_DOOR_W, RH_DOOR_H = 100.0, 22.0
+RH_BAYS = 2                     # the wide one (author 2026-11-22: «делай ангар пошире» - ships up to ~40 m)
+RH_BAY_X = 26.5                 # the bays' centres left / right (HubPlanPads.h HubHangarBayX)
 RH_T = 0.8                      # wall / roof thickness
 
 
 def repair_hangar_parts(lod):
+    """a SHIPYARD repair hall, not a tyre shop (author 2026-11-22: «выглядит как шиномонтаж»): per bay a cradle of hull
+    supports with service towers (scaffolds, platforms, hoses) both sides, a full-span gantry crane, welding screens and
+    floodlights; an engine stripped on its stand, tool carts, a glazed control booth over the door, wall ribs, floor
+    grating strips, light bands"""
     name = "hubl_repair_hangar"
     P = {name: Part(name)}
     p = P[name]
-    rng = _random.Random(20261122)
-    zb = -RH_D / 2                                                      # the back wall plane (door at +RH_D/2)
+    rng = _random.Random(20261123)
+    zb = -RH_D / 2
+    zf = RH_D / 2
     # ---- the shell
-    box(p, CONC, (0, -0.25, 0), (RH_W + 2.0, 0.5, RH_D + 2.0))                          # the floor slab
-    box(p, HULL, (0, RH_H - RH_T / 2, 0), (RH_W, RH_T, RH_D))                           # the roof
-    box(p, HULL, (0, RH_H / 2, zb + RH_T / 2), (RH_W, RH_H, RH_T))                       # the back wall
+    box(p, CONC, (0, -0.25, 0), (RH_W + 2.0, 0.5, RH_D + 2.0))
+    box(p, HULL, (0, RH_H - RH_T / 2, 0), (RH_W, RH_T, RH_D))
+    box(p, HULL, (0, RH_H / 2, zb + RH_T / 2), (RH_W, RH_H, RH_T))
+    jw = (RH_W - RH_DOOR_W) / 2
     for sx in (-1, 1):
-        box(p, HULL, (sx * (RH_W / 2 - RH_T / 2), RH_H / 2, 0), (RH_T, RH_H, RH_D))     # the side walls
-        # the door's jambs (the door narrower than the box)
-        jw = (RH_W - RH_DOOR_W) / 2
-        box(p, STEEL, (sx * (RH_W / 2 - jw / 2), RH_H / 2, RH_D / 2 - RH_T / 2), (jw, RH_H, RH_T))
-    box(p, STEEL, (0, (RH_DOOR_H + RH_H) / 2, RH_D / 2 - RH_T / 2), (RH_DOOR_W, RH_H - RH_DOOR_H, RH_T))   # the lintel
-    box(p, HAZ, (0, RH_DOOR_H - 0.4, RH_D / 2 + 0.05), (RH_DOOR_W, 0.6, 0.1))                           # its stripe
-    # roof trusses
+        box(p, HULL, (sx * (RH_W / 2 - RH_T / 2), RH_H / 2, 0), (RH_T, RH_H, RH_D))
+        box(p, STEEL, (sx * (RH_W / 2 - jw / 2), RH_H / 2, zf - RH_T / 2), (jw, RH_H, RH_T))
+    box(p, STEEL, (0, (RH_DOOR_H + RH_H) / 2, zf - RH_T / 2), (RH_DOOR_W, RH_H - RH_DOOR_H, RH_T))
+    box(p, HAZ, (0, RH_DOOR_H - 0.4, zf + 0.05), (RH_DOOR_W, 0.6, 0.1))
     if lod < 2:
-        for i in range(-4, 5):
-            box(p, STEEL, (i * RH_W / 9, RH_H - RH_T - 0.6, 0), (0.6, 1.2, RH_D - 1.0))
+        # the wall ribs (the frame), the roof trusses, the light bands
+        for i in range(-6, 7):
+            box(p, STEEL, (i * RH_W / 13, RH_H / 2, zb + RH_T + 0.3), (0.7, RH_H, 0.6))
+            box(p, STEEL, (i * RH_W / 13, RH_H - RH_T - 0.8, 0), (0.7, 1.6, RH_D - 1.0))
+        for sx in (-1, 1):
+            for k in range(-3, 4):
+                box(p, STEEL, (sx * (RH_W / 2 - RH_T - 0.3), RH_H / 2, k * RH_D / 7), (0.6, RH_H, 0.7))
+        for k in (-1, 1):
+            box(p, FLOOD, (k * RH_W / 4, RH_H - RH_T - 1.8, 0), (1.0, 0.25, RH_D - 6.0))
+        # the glazed control booth over the door, inside
+        box(p, HULL, (0, RH_DOOR_H + 1.6, zf - 4.0), (14.0, 3.2, 5.0))
+        box(p, WARM, (0, RH_DOOR_H + 1.8, zf - 6.55), (12.0, 1.6, 0.1))
     # ---- the bays
-    bay_w = (RH_W - 4.0) / RH_BAYS
     for b in range(RH_BAYS):
-        cx = -RH_W / 2 + 2.0 + bay_w * (b + 0.5)
-        # the marked floor of the bay
+        cx = -RH_BAY_X if b == 0 else RH_BAY_X
+        # the floor: hazard edges, a grating strip down the middle
         for sx in (-1, 1):
-            box(p, HAZ, (cx + sx * (bay_w / 2 - 1.0), 0.03, 2.0), (0.4, 0.06, RH_D - 10.0))
-        box(p, MARK, (cx, 0.03, zb + 6.0), (bay_w - 4.0, 0.06, 0.4))
-        # the scissor lift (a ship stands on it for the work under its hull)
-        box(p, STEEL, (cx, 1.6, 2.0), (12.0, 0.4, 20.0))
-        if lod < 2:
-            for k in (-1, 1):
-                for z in (-6.0, 6.0):
-                    box(p, STEEL, (cx + k * 4.0, 0.8, 2.0 + z), (0.4, 1.6, 0.4), R=rot_x(0.6 * k))
-        # the gantry crane: two runways along the bay under the roof, the bridge, the hoist and its hook
+            box(p, HAZ, (cx + sx * 22.0, 0.03, 2.0), (0.5, 0.06, RH_D - 8.0))
+        box(p, GRATE, (cx, 0.04, 2.0), (6.0, 0.08, RH_D - 12.0))
+        # the cradle: four hull supports (padded arms) the ship sits on
+        for dz in (-10.0, 10.0):
+            for dx in (-6.0, 6.0):
+                box(p, STEEL, (cx + dx, 0.9, 2.0 + dz), (1.2, 1.8, 1.2))
+                box(p, YEL, (cx + dx, 1.9, 2.0 + dz), (2.0, 0.3, 2.0))
+        # the service towers both sides: a scaffold with three platforms, a hose down to the bay
         for sx in (-1, 1):
-            box(p, STEEL, (cx + sx * (bay_w / 2 - 1.5), RH_H - 3.0, 0), (0.8, 1.0, RH_D - 2.0))
-        bz = rng.uniform(-12.0, 12.0)
-        box(p, YEL, (cx, RH_H - 3.6, bz), (bay_w - 2.0, 1.2, 1.4))                     # the bridge
-        box(p, YEL, (cx + rng.uniform(-4.0, 4.0), RH_H - 4.8, bz), (2.0, 1.4, 2.0))   # the hoist
+            tx = cx + sx * 17.0
+            for dz in (-12.0, 0.0, 12.0):
+                box(p, STEEL, (tx, 8.0, 2.0 + dz), (0.4, 16.0, 0.4))
+            for y in (5.0, 10.0, 15.0):
+                box(p, GRATE, (tx - sx * 1.2, y, 2.0), (3.2, 0.3, 25.0))
+                if lod < 2:
+                    box(p, HAZ, (tx - sx * 2.8, y + 0.6, 2.0), (0.1, 0.9, 25.0))   # the railing
+            if lod < 2:
+                cyl(p, DARK, (tx - sx * 2.6, 15.0, 2.0 + rng.uniform(-8, 8)), (cx + sx * 4.0, 3.0, 2.0 + rng.uniform(-6, 6)),
+                    0.22, 6)   # a hose to the hull
+                box(p, FLOOD, (tx - sx * 2.0, 16.5, 2.0), (0.6, 0.6, 0.6))
+        # welding screens (yellow-green curtains on frames) beside one end of the bay
         if lod < 2:
-            hy = rng.uniform(8.0, 14.0)
-            box(p, STEEL, (cx, (RH_H - 5.5 + hy) / 2, bz), (0.15, RH_H - 5.5 - hy, 0.15))   # the cable
-            box(p, DARK, (cx, hy, bz), (1.0, 0.8, 1.0))                                # the hook block
-        # lights over the bay
-        box(p, FLOOD, (cx, RH_H - RH_T - 0.3, 0), (2.0, 0.3, 2.0))
-    # ---- along the back wall: benches with their lockers and tool racks
+            for k in range(3):
+                box(p, YEL, (cx + rng.uniform(-8, 8), 1.4, zb + 9.0 + k * 1.6), (3.0, 2.8, 0.08))
+    # ---- the full-span gantry crane (two runways on the side walls, the bridge across the hall, the trolley, the hook)
+    for sx in (-1, 1):
+        box(p, STEEL, (sx * (RH_W / 2 - 2.0), RH_H - 4.0, 0), (1.0, 1.2, RH_D - 2.0))
+    bz = 6.0
+    box(p, YEL, (0, RH_H - 4.8, bz), (RH_W - 4.0, 1.6, 2.0))
+    box(p, YEL, (RH_BAY_X * 0.6, RH_H - 6.2, bz), (3.0, 1.6, 2.6))
+    if lod < 2:
+        box(p, STEEL, (RH_BAY_X * 0.6, RH_H - 12.0, bz), (0.18, 10.0, 0.18))
+        box(p, DARK, (RH_BAY_X * 0.6, RH_H - 17.5, bz), (1.4, 1.2, 1.4))
+    # ---- the middle aisle: an engine stripped on its stand, tool carts
+    cyl(p, BURNT, (0, 2.6, zb + 14.0), (0, 2.6, zb + 20.0), 2.2, 12)          # the engine casing on its side
+    box(p, STEEL, (0, 0.6, zb + 17.0), (3.0, 1.2, 7.0))                        # its stand
+    if lod < 2:
+        cyl(p, SOOT, (0, 2.6, zb + 20.0), (0, 2.6, zb + 22.5), 1.4, 12)       # the nozzle, off
+        for k in range(4):
+            x = rng.uniform(-8.0, 8.0)
+            z = rng.uniform(zb + 24.0, zf - 12.0)
+            box(p, PRIM, (x, 0.55, z), (1.6, 1.1, 0.9))                       # a tool cart
+    # ---- along the back wall: benches with their lockers; along the side walls: wrecked parts
     x = -RH_W / 2 + 3.0
-    while x < RH_W / 2 - 9.5:   # the bench (4 m) + its three lockers (2.1 m) inside the wall
-        box(p, STEEL, (x + 2.0, 0.9, zb + 1.6), (4.0, 0.15, 1.6))                     # the bench top
+    while x < RH_W / 2 - 9.5:
+        box(p, STEEL, (x + 2.0, 0.9, zb + 1.6), (4.0, 0.15, 1.6))
         if lod < 2:
             for lx in (0.2, 3.8):
                 box(p, STEEL, (x + lx, 0.45, zb + 1.6), (0.15, 0.9, 1.4))
-            box(p, DARK, (x + 1.0, 1.2, zb + 1.6), (0.8, 0.5, 0.6))                    # a vice / a box on it
-        for k in range(3):                                                             # the lockers beside it
+            box(p, DARK, (x + 1.0, 1.2, zb + 1.6), (0.8, 0.5, 0.6))
+        for k in range(3):
             box(p, PRIM if (k + int(x)) % 2 else HULL, (x + 4.6 + k * 0.7, 1.0, zb + 0.9), (0.62, 2.0, 0.6))
         x += 7.0
-    # ---- wrecked ship parts along the side walls: nozzles, bent panels, tanks
     for sx in (-1, 1):
         z = zb + 4.0
-        while z < RH_D / 2 - 6.0:
+        while z < zf - 8.0:
             kind = rng.random()
             xw = sx * (RH_W / 2 - 3.0 - rng.uniform(0.0, 1.5))
             if kind < 0.35:
                 r = rng.uniform(0.6, 1.4)
-                cyl(p, BURNT, (xw, r, z), (xw + sx * 0.2, r, z + rng.uniform(1.5, 3.0)), r, 10)        # a nozzle on its side
+                cyl(p, BURNT, (xw, r, z), (xw + sx * 0.2, r, z + rng.uniform(1.5, 3.0)), r, 10)
             elif kind < 0.7:
-                box(p, SOOT, (xw, 1.2, z), (0.2, rng.uniform(1.5, 2.6), rng.uniform(2.0, 4.0)),
-                    R=rot_z(sx * rng.uniform(0.15, 0.45)))                                           # a panel leant on the wall
+                box(p, SOOT, (xw, 1.2, z), (0.2, rng.uniform(1.5, 2.6), rng.uniform(2.0, 4.0)), R=rot_z(sx * rng.uniform(0.15, 0.45)))
             else:
-                cyl(p, HULL, (xw, 0.0, z), (xw, rng.uniform(1.6, 2.8), z), rng.uniform(0.6, 1.0), 10)    # a tank
+                cyl(p, HULL, (xw, 0.0, z), (xw, rng.uniform(1.6, 2.8), z), rng.uniform(0.6, 1.0), 10)
             z += rng.uniform(3.0, 5.5)
     return P
 
@@ -578,7 +611,7 @@ def repair_hangar_hits(name="hubl_repair_hangar"):
 # ================================================================ the kit
 KIT = {
     "hubl_repair_hangar": (repair_hangar_parts, repair_hangar_hits,
-                           "Ремонтный ангар на 3 места: подъёмники, кран-балки, верстаки, широкий заезд 80 м"),
+                           "Ремонтный ангар на 2 места (корабли до ~40 м): ложементы, сервисные башни, кран-балка, заезд 100 м"),
     "hubl_pad_roof": (pad_roof_parts, pad_roof_hits, "Посадочная площадка на крыше 36 м"),
     "hubl_pad_stilts": (pad_stilts_parts, pad_stilts_hits, "Посадочная площадка на опорах 36 м, 25 м над плоскостью"),
     "hubl_garage1": (garage_builder("hubl_garage1", G1_W), garage_hits_for("hubl_garage1", G1_W), "Гараж на 1 корабль с площадкой"),

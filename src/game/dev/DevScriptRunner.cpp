@@ -516,6 +516,12 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.m_systemMapRenderer.devFocusHub(arg("hub:"));
     else if (cmd.rfind("object:", 0) == 0)
         s.m_systemMapRenderer.devActivateObject(arg("object:"));
+    else if (cmd.rfind("camera:", 0) == 0)    // DEV: the main camera like F1-F4 (front / rear / drone / bottom) - see it as the player
+    {
+        const std::string c = arg("camera:");
+        s.setFlightCameraMode(c == "rear" ? ShipCameraMode::Rear : c == "drone" ? ShipCameraMode::Drone
+                              : c == "bottom" ? ShipCameraMode::Bottom : ShipCameraMode::Cockpit);
+    }
     else if (cmd.rfind("join:", 0) == 0)      // DEV: join a ship's formation (join:<ship id>:<wedge|...>:<slot>, join:off)
         s.devJoinFormation(arg("join:"));
     else if (cmd.rfind("padland:", 0) == 0)   // DEV: a hub city pad landing (padland:roof|garage|stilts[@frame])

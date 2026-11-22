@@ -125,7 +125,8 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
             module.padOrigin = glm::dvec3(centre.x, roof, centre.y);
             module.padPosition = glm::dvec3(centre.x, roof + side * HubPadRoofDeckTop, centre.y);
         }
-        else if ((zoneHere == "repair" || zoneHere == "rig" || zoneHere == "port") && module.number == 1)
+        else if ((zoneHere == "repair" || zoneHere == "rig" || zoneHere == "port" || zoneHere == "logistics" ||
+                  zoneHere == "storage") && module.number == 1)
             module.padKind = Kind::Hangar;   // a repair block: its repair hangar (3 bays) on a free plot - flown into
         else if (half >= 15.0)
             module.padKind = Kind::Garage;   // a wide one: a 1-2 place garage box beside it at the base (a free plot)
@@ -156,6 +157,43 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
                 near.push_back(&other);
         double best = 1.0e30;
         glm::dvec2 at(0.0);
+        double hangarYaw = 0.0;
+        if (hangar)
+        {
+            // the wide hangar by its own rectangle (110 x 60 m + 5 m), square to the block, its door away from the
+            // building - the 62 m circle found no plot in any block (Earth hub, 2026-11-22)
+            constexpr double HalfW = 55.0 + 5.0, HalfD = 30.0 + 5.0;
+            for (double x = block.centre.x - block.halfMeters; x <= block.centre.x + block.halfMeters; x += 10.0)
+                for (double z = block.centre.y - block.halfMeters; z <= block.centre.y + block.halfMeters; z += 10.0)
+                    for (int o = 0; o < 2; ++o)
+                    {
+                        const double hx = o == 0 ? HalfW : HalfD, hz = o == 0 ? HalfD : HalfW;
+                        if (x - hx < block.centre.x - block.halfMeters || x + hx > block.centre.x + block.halfMeters ||
+                            z - hz < block.centre.y - block.halfMeters || z + hz > block.centre.y + block.halfMeters)
+                            continue;
+                        bool free = true;
+                        for (const HubPlanModule* other : near)
+                        {
+                            if (x + hx > other->rect.x && x - hx < other->rect.z && z + hz > other->rect.y && z - hz < other->rect.w)
+                                free = false;
+                            else if (other != &module && other->padRadiusMeters > 0.0 &&
+                                     std::abs(other->padPosition.x - x) < hx + other->padRadiusMeters &&
+                                     std::abs(other->padPosition.z - z) < hz + other->padRadiusMeters)
+                                free = false;
+                            if (!free)
+                                break;
+                        }
+                        const double d = glm::length(glm::dvec2(x, z) - centre);
+                        if (free && d < best)
+                        {
+                            best = d;
+                            at = glm::dvec2(x, z);
+                            // the door (+Z of the module): o 0 - the width along x, the door faces +-z; o 1 - faces +-x
+                            hangarYaw = o == 0 ? (z >= centre.y ? 0.0 : 180.0) : (x >= centre.x ? 90.0 : 270.0);
+                        }
+                    }
+        }
+        else
         for (double x = block.centre.x - block.halfMeters + clear; x <= block.centre.x + block.halfMeters - clear; x += 10.0)
             for (double z = block.centre.y - block.halfMeters + clear; z <= block.centre.y + block.halfMeters - clear; z += 10.0)
             {
@@ -195,6 +233,11 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
         {
             const glm::dvec2 to = centre - at;
             module.padYawDeg = glm::degrees(std::atan2(-to.x, -to.y));
+        }
+        if (hangar)
+        {
+            module.padYawDeg = hangarYaw;
+            module.autoLanding = true;   // the hangar's crew brings every ship in (the zone label "A")
         }
         if (hangar)
         {

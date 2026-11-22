@@ -699,7 +699,7 @@ std::vector<std::string> GameSimulation::cityOccupiedBerths(EntityId cityId) con
         return out;
     for (const auto& [ship, p] : m_padLandings)
         if (p.frameModuleId == it->second.hubModuleId)
-            out.push_back(p.address + "#" + std::to_string(p.bay) + (p.phase < 3 ? "!" : ""));
+            out.push_back(p.address + "#" + std::to_string(p.bay) + "@" + std::to_string(ship.value) + (p.phase < 3 ? "!" : ""));
     std::sort(out.begin(), out.end());
     return out;
 }

@@ -1,3 +1,4 @@
+#include "src/game/navigation/HubPlanPads.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
@@ -579,7 +580,36 @@ void SpaceState::updatePilotTakeover(bool touching)
         m_client->sendMessage(msg);
     };
     static double padRequestedAt = -1.0e9;   // the click itself (the mouse) is not a takeover: 1.5 s grace
-    if (auto request = m_systemMapRenderer.takePadLandingRequest())
+    auto padRequest = m_systemMapRenderer.takePadLandingRequest();
+    if (padRequest && m_client)
+    {
+        // the dispatcher at the click: all the places of that module taken -> refused here and now, the red line with
+        // the wait (not after the whole route to it - author 2026-11-22: «если места все заняты - вход запрещён»)
+        int places = 0, taken = 0;
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(padRequest->frameModuleId))
+            for (const auto& m : plan->modules())
+                if (m.address == padRequest->address)
+                    places = game::navigation::hubBerthPlaces(m);
+        for (const auto& [oid, object] : m_client->world().objects())
+            if (object.hubAttachment.valid && object.hubAttachment.moduleId == padRequest->frameModuleId)
+                for (const auto& b : object.occupiedBerths)
+                    if (b.compare(0, padRequest->address.size() + 1, padRequest->address + "#") == 0 &&
+                        b.find("@" + std::to_string(m_playerId.value)) == std::string::npos)
+                        ++taken;
+        if (places > 0 && taken >= places)
+        {
+            m_berthWatch = {};
+            m_berthWatch.active = true;
+            m_berthWatch.frameModuleId = padRequest->frameModuleId;
+            m_berthWatch.address = padRequest->address;
+            m_berthWatch.waitMin = 20;
+            m_berthWatch.since = glfwGetTime();
+            std::cerr << "[PadLanding] ui: " << padRequest->address << " - all " << places
+                      << " place(s) taken, refused at the click" << std::endl;
+            padRequest.reset();
+        }
+    }
+    if (auto request = std::move(padRequest))
     {
         padRequestedAt = glfwGetTime();
         // the route to the pad is the planner's and the autopilot's, as to a dock (author 2026-11-21: «для места посадки
@@ -699,6 +729,23 @@ void SpaceState::updatePilotTakeover(bool touching)
                     line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
                 else if (status == "taken:frame")
                     line = "СЛУЖБА ПЛОЩАДОК: корабль взят в кадр хаба";
+                else if (status.rfind("refused:taken:", 0) == 0)
+                {
+                    // "refused:taken:<frame>/<address>:<wait min>" - the dispatcher's red line follows (SpaceStateHud)
+                    const std::string rest = status.substr(14);
+                    const auto slash = rest.find('/'), colon = rest.rfind(':');
+                    if (slash != std::string::npos && colon != std::string::npos && colon > slash)
+                    {
+                        m_berthWatch = {};
+                        m_berthWatch.active = true;
+                        m_berthWatch.frameModuleId = rest.substr(0, slash);
+                        m_berthWatch.address = rest.substr(slash + 1, colon - slash - 1);
+                        m_berthWatch.waitMin = std::atoi(rest.c_str() + colon + 1);
+                        m_berthWatch.since = glfwGetTime();
+                    }
+                    m_padLandingObjectId.clear();
+                    m_systemMapRenderer.setPadLandingActive(std::string());
+                }
                 else if (status.rfind("refused:", 0) == 0)
                 {
                     const std::string why = status.substr(8);

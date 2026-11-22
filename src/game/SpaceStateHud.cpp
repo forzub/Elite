@@ -1330,6 +1330,45 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
         terminal.pilotNotice = m_pilotNotice;
         terminal.visible = true;
     }
+    // THE DISPATCHER'S LIGHT (author 2026-11-22: «если док занят - сообщение красным в терминале HUD и время ожидания. как
+    // только док свободен - зелёный свет»): a refused place is watched - red with the wait counting down while all its
+    // places are taken, green (15 s) the moment one is free
+    if (m_berthWatch.active && m_client)
+    {
+        int places = 0, taken = 0;
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(m_berthWatch.frameModuleId))
+            for (const auto& m : plan->modules())
+                if (m.address == m_berthWatch.address)
+                    places = game::navigation::hubBerthPlaces(m);
+        for (const auto& [oid, object] : m_client->world().objects())
+            if (object.hubAttachment.valid && object.hubAttachment.moduleId == m_berthWatch.frameModuleId)
+                for (const auto& b : object.occupiedBerths)
+                    if (b.compare(0, m_berthWatch.address.size() + 1, m_berthWatch.address + "#") == 0)
+                        ++taken;
+        const double now = glfwGetTime();
+        if (places > 0 && taken < places)
+        {
+            if (m_berthWatch.freeSince < 0.0)
+                m_berthWatch.freeSince = now;
+            terminal.diagnostics.emplace_back("СВОБОДНО: " + m_berthWatch.address + " - место освободилось, можно садиться",
+                                              game::presentation::DockingTerminalSeverity::Go);
+            if (now - m_berthWatch.freeSince > 15.0)
+                m_berthWatch = {};
+        }
+        else
+        {
+            m_berthWatch.freeSince = -1.0;
+            // the wait in 5-minute steps: the line changes (is printed again) every 5 minutes, not every minute
+            const int raw = std::max(1, m_berthWatch.waitMin - static_cast<int>((now - m_berthWatch.since) / 60.0));
+            const int left = raw <= 5 ? raw : 5 * ((raw + 4) / 5);
+            terminal.diagnostics.emplace_back("ЗАНЯТО: " + m_berthWatch.address + " - все места заняты, ожидание ~" +
+                                                  std::to_string(left) + " мин",
+                                              game::presentation::DockingTerminalSeverity::Alert);
+            if (now - m_berthWatch.since > 1800.0)
+                m_berthWatch = {};
+        }
+        terminal.visible = true;
+    }
     terminal.jumpLines = m_jumpTerminalLines;
     terminal.live = m_jumpTerminalLive;
     if (!m_jumpTerminalLive.empty())
@@ -1709,7 +1748,9 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
 
         // author 2026-11-18: «сделать его прозрачным, чтобы он не перетягивал на себя внимание» (alpha ~-40%)
         const glm::vec4 color =
-            line.severity ==
+            line.severity == game::presentation::DockingTerminalSeverity::Alert ? glm::vec4(1.0f, 0.32f, 0.28f, 0.92f)
+            : line.severity == game::presentation::DockingTerminalSeverity::Go  ? glm::vec4(0.35f, 1.0f, 0.45f, 0.92f)
+            : line.severity ==
                     game::presentation::
                         DockingTerminalSeverity::Error
                 ? glm::vec4(

@@ -244,6 +244,14 @@ public:
     // ONE flight task at a time (author 2026-11-22: «надо держать один слот под задачу маршрута и перелёта, тогда не будет
     // параллельных задач и таких ошибок»): the task started last owns the ship, every other one ends
     void arbitrateFlightTask();
+    // a refused landing place watched for the dispatcher's red / green line (SpaceStateHud)
+    struct BerthWatch
+    {
+        bool active = false;
+        std::string frameModuleId, address;
+        int waitMin = 0;
+        double since = 0.0, freeSince = -1.0;
+    } m_berthWatch;
     struct FlightTaskSlot
     {
         std::uint64_t dockSerial = 0;

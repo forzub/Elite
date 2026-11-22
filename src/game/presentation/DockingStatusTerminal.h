@@ -14,7 +14,9 @@ enum class DockingTerminalSeverity
 {
     Info,
     Warning,
-    Error
+    Error,
+    Alert,   // the dispatcher: a place taken - bright red (author 2026-11-22: «сообщение красным в терминале HUD»)
+    Go       // the dispatcher: free again - green («как только док свободен - зелёный свет»)
 };
 
 struct DockingTerminalSnapshot
@@ -161,6 +163,9 @@ public:
                 }
                 for (const auto& previous : m_last.diagnostics)
                 {
+                    // the dispatcher's lines are events, not faults: no "recovered" echo when they change / end
+                    if (previous.second == DockingTerminalSeverity::Alert || previous.second == DockingTerminalSeverity::Go)
+                        continue;
                     if (std::find(snapshot.diagnostics.begin(),
                                   snapshot.diagnostics.end(),
                                   previous) == snapshot.diagnostics.end())
@@ -178,7 +183,8 @@ public:
                 nowSeconds - m_lastReminderSeconds >= 10.0)
             {
                 for (const auto& diagnostic : snapshot.diagnostics)
-                    enqueuePriority(diagnostic.first,diagnostic.second);
+                    if (diagnostic.second != DockingTerminalSeverity::Alert && diagnostic.second != DockingTerminalSeverity::Go)   // events: no 10 s reminder
+                        enqueuePriority(diagnostic.first,diagnostic.second);
                 m_lastReminderSeconds = nowSeconds;
             }
             enqueueChanged(m_last.dispatcher, snapshot.dispatcher,

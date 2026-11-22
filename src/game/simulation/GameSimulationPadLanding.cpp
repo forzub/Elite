@@ -202,6 +202,30 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
     return startPadService(shipId, frameModuleId, address, phase);
 }
 
+
+namespace
+{
+// DEV: ELITE_DEV_OCCUPY_BERTHS="<address>@<seconds>,..." - that module's places taken by a phantom until that server time
+// (the dispatcher's red / green line checked without a second ship)
+bool devBerthOccupied(const std::string& address, double now)
+{
+    static const std::string spec = [] { const char* v = std::getenv("ELITE_DEV_OCCUPY_BERTHS"); return std::string(v ? v : ""); }();
+    std::size_t at = 0;
+    while (at < spec.size())
+    {
+        const auto comma = spec.find(',', at);
+        const std::string item = spec.substr(at, comma == std::string::npos ? std::string::npos : comma - at);
+        const auto sep = item.find('@');
+        if (sep != std::string::npos && item.substr(0, sep) == address && now < std::atof(item.c_str() + sep + 1))
+            return true;
+        if (comma == std::string::npos)
+            break;
+        at = comma + 1;
+    }
+    return false;
+}
+}
+
 bool GameSimulation::startPadService(EntityId shipId, const std::string& frameModuleId, const std::string& address, int phase)
 {
     Ship* ship = getShip(shipId);
@@ -229,11 +253,13 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     for (int b = 0; b < places && bay < 0; ++b)
         if (!taken[static_cast<std::size_t>(b)])
             bay = b;
+    if (devBerthOccupied(address, serverTime()))
+        bay = -1;
     if (bay < 0)
     {
         // the wait: a berth is held ~20 min on average; the one there longest frees first
         const int waitMin = std::max(1, static_cast<int>(std::ceil((1200.0 - std::min(longestStay, 1140.0)) / 60.0)));
-        m_padNotices[shipId] = {"refused:taken:" + address + ":" + std::to_string(waitMin), serverTime()};
+        m_padNotices[shipId] = {"refused:taken:" + frameModuleId + "/" + address + ":" + std::to_string(waitMin), serverTime()};
         std::cerr << "[PadLanding] ship " << shipId.value << " pad " << address << " of " << frameModuleId << ": all " << places
                   << " place(s) taken - refused, wait ~" << waitMin << " min" << std::endl;
         return false;
@@ -697,6 +723,11 @@ std::vector<std::string> GameSimulation::cityOccupiedBerths(EntityId cityId) con
     const auto it = m_staticObjects.find(cityId);
     if (it == m_staticObjects.end())
         return out;
+    if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(it->second.hubModuleId))
+        for (const auto& m : plan->modules())
+            if (m.pad && devBerthOccupied(m.address, serverTime()))
+                for (int b = 0; b < game::navigation::hubBerthPlaces(m); ++b)
+                    out.push_back(m.address + "#" + std::to_string(b) + "@0");
     for (const auto& [ship, p] : m_padLandings)
         if (p.frameModuleId == it->second.hubModuleId)
             out.push_back(p.address + "#" + std::to_string(p.bay) + "@" + std::to_string(ship.value) + (p.phase < 3 ? "!" : ""));

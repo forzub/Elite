@@ -291,6 +291,18 @@ DefenceLayout buildDefenceLayout(const game::navigation::HubPlan& plan, const ga
     const double zone = lanes ? lanes->speedLimitZoneMeters() : 0.0;
     L.perimeterMeters = std::max(L.cityRadiusMeters + 1500.0, zone > 0.0 ? zone : 1.4 * L.cityRadiusMeters);
     L.engageMeters = std::max(L.cityRadiusMeters + 800.0, 0.75 * L.perimeterMeters);
+    {
+        // the debris field: past the rim on the diagonal (the lanes leave the rim along the avenue axes)
+        std::uint32_t h = 2166136261u;
+        for (const char ch : L.hubId)
+            h = (h ^ static_cast<std::uint8_t>(ch)) * 16777619u;
+        L.debrisSeed = h;
+        const double ang = 0.7853981 + 1.5707963 * static_cast<double>(h % 4u);
+        const double reach = L.cityRadiusMeters + 1500.0;
+        L.debrisCentre = glm::dvec3(centre.x + reach * std::cos(ang), 0.0, centre.y + reach * std::sin(ang));
+        L.debrisRadiusMeters = 500.0;
+        L.debrisCount = 40;
+    }
     int services = 0;
     int minI = 1 << 30, maxI = -(1 << 30), minJ = 1 << 30, maxJ = -(1 << 30);
     for (const auto& blk : plan.blocks())
@@ -482,6 +494,31 @@ StrayBody strayBody(const DefenceLayout& L, std::uint32_t index)
 glm::dvec3 strayPosition(const StrayBody& body, double t)
 {
     return body.start + body.velocity * (t - body.spawnSeconds);
+}
+
+void debrisFieldAt(const DefenceLayout& L, double t, std::vector<DebrisPiece>& out)
+{
+    out.clear();
+    for (int i = 0; i < L.debrisCount; ++i)
+    {
+        const std::uint32_t k = static_cast<std::uint32_t>(i);
+        // its own slow circle about the field's centre: radius, plane tilt, phase, period 15-40 min
+        const double r = L.debrisRadiusMeters * std::sqrt(hash01(L.debrisSeed + 1u, k));
+        const double tilt = (hash01(L.debrisSeed + 2u, k) - 0.5) * 1.2;
+        const double phase = hash01(L.debrisSeed + 3u, k) * 6.2831853;
+        const double omega = 6.2831853 / (900.0 + 1500.0 * hash01(L.debrisSeed + 4u, k));
+        const double yaw = hash01(L.debrisSeed + 5u, k) * 6.2831853;
+        const double a = phase + omega * t;
+        const glm::dvec3 u(std::cos(yaw), 0.0, std::sin(yaw));
+        const glm::dvec3 v = glm::normalize(glm::dvec3(-std::sin(yaw) * std::cos(tilt), std::sin(tilt), std::cos(yaw) * std::cos(tilt)));
+        DebrisPiece p;
+        p.index = k;
+        p.position = L.debrisCentre + r * (std::cos(a) * u + std::sin(a) * v);
+        p.velocity = r * omega * (-std::sin(a) * u + std::cos(a) * v);
+        const double h = hash01(L.debrisSeed + 6u, k);
+        p.sizeMeters = 0.5 + 5.5 * h * h * h;   // mostly small, a few large plates
+        out.push_back(p);
+    }
 }
 
 void strayBodiesAt(const DefenceLayout& L, double t, double fx, std::vector<StrayBody>& out)

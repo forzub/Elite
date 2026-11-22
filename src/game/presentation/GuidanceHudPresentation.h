@@ -18,6 +18,17 @@
 namespace game::presentation
 {
 
+// the tunnel's density by the distance from the MOVING ship, every frame (author 2026-11-22: «чем дальше от движущегося
+// корабля, тем прозрачнее; к 5-6 км еле различимы ... не рассчитывается в статике»): the nearest frame at the full
+// density, a smooth fade to a trace at TunnelFadeMeters
+inline constexpr double TunnelFadeMeters = 5500.0;
+inline float tunnelFrameOpacity(double distanceMeters, double fullOpacity)
+{
+    const double u = std::clamp(distanceMeters / TunnelFadeMeters, 0.0, 1.0);
+    const double smooth = u * u * (3.0 - 2.0 * u);
+    return static_cast<float>(fullOpacity * (1.0 - smooth) + 0.02 * smooth);
+}
+
 struct GuidanceHudFramePresentation
 {
     double timeAheadSeconds = 0.0;
@@ -325,13 +336,8 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
         const std::size_t lastIndex = out.frames.size() - 1;
         for (std::size_t i = 0; i < out.frames.size(); ++i)
         {
-            const double u = lastIndex > 0
-                ? static_cast<double>(i) / static_cast<double>(lastIndex)
-                : 0.0;
-            const double smooth = u * u * (3.0 - 2.0 * u);
-            out.frames[i].opacity = static_cast<float>(
-                0.34 * (1.0 - smooth) + 0.07 * smooth
-            );
+            (void)lastIndex;
+            out.frames[i].opacity = tunnelFrameOpacity(glm::length(out.frames[i].relativeCenterMeters), 0.34);
         }
     }
 

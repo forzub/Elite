@@ -45,6 +45,8 @@ struct RadarTrackReport
 inline constexpr std::uint8_t RadarTrackKindUnknown = 0;
 inline constexpr std::uint8_t RadarTrackKindShip = 1;
 inline constexpr std::uint8_t RadarTrackKindStructure = 2;   // station, dock, hub module
+inline constexpr std::uint8_t RadarTrackKindDebris = 3;      // a wreck piece, a rock (author 2026-11-22: «радар должен
+                                                              // показывать всё, даже обломки - именно так их и будем искать»)
 
 struct RadarScanReport
 {

@@ -1,3 +1,4 @@
+#include "src/game/equipment/radar/RadarSensorTypes.h"
 // GameSimulation: hub security / traffic control (docs/HUB_SECURITY.md). One component per hub that the lanes, the
 // promoted air traffic, the dock traffic, the defence ring and the fines report to:
 //  - a ship flying a hub lane AGAINST its direction: the controller's warning, then fines charged to its owner's account
@@ -200,16 +201,17 @@ std::vector<std::uint32_t> GameSimulation::cityPromotedAirSlots(EntityId objectI
 }
 
 
-void GameSimulation::appendHubRadarContacts(const glm::dvec3& observerWorld, int systemId, std::size_t maxCount,
-                                            std::vector<world::RadarContactInput>& out) const
+std::vector<GameSimulation::HubRadarContact> GameSimulation::hubRadarContacts(const glm::dvec3& observerWorld, int systemId,
+                                                                          std::size_t maxCount) const
 {
+    std::vector<HubRadarContact> out;
     const auto sys = m_securityBySystem.find(systemId);
     if (sys == m_securityBySystem.end() || maxCount == 0)
-        return;
+        return out;
     struct Candidate
     {
         double distance;
-        world::RadarContactInput input;
+        HubRadarContact contact;
     };
     std::vector<Candidate> found;
     const double universe = m_orbitalUniverseTimeSeconds;
@@ -221,15 +223,17 @@ void GameSimulation::appendHubRadarContacts(const glm::dvec3& observerWorld, int
         const StaticObject& city = objIt->second;
         const glm::dmat3 R(glm::mat3(city.orientation));
         const glm::dvec3 cpos = world::coordinates::fullMeters(city.worldPosition);
+        const glm::dvec3 cvel(city.linearVelocity);
         if (glm::length(cpos - observerWorld) > 60000.0)
             continue;   // beyond any hull radar
-        const auto push = [&](std::uint32_t key, const glm::dvec3& local, double rcs) {
-            const glm::dvec3 w = cpos + R * local;
-            world::RadarContactInput in;
-            in.id = EntityId {key};
-            in.worldPosition = world::coordinates::makeWorldPositionFromMeters(w);
-            in.radarCrossSection = rcs;
-            found.push_back({glm::length(w - observerWorld), in});
+        const auto push = [&](std::uint32_t key, const glm::dvec3& local, const glm::dvec3& localVel, double rcs, std::uint8_t kind) {
+            HubRadarContact k;
+            k.key = key;
+            k.worldPosition = cpos + R * local;
+            k.worldVelocity = cvel + R * localVel;
+            k.radarCrossSection = rcs;
+            k.kind = kind;
+            found.push_back({glm::length(k.worldPosition - observerWorld), k});
         };
         const std::uint32_t cityBits = (static_cast<std::uint32_t>(c.city.value) & 0x3FFu) << 18;
         if (c.plan && c.lanes && !c.plan->airFleet().empty())
@@ -243,7 +247,8 @@ void GameSimulation::appendHubRadarContacts(const glm::dvec3& observerWorld, int
                     if (pa.city == c.city && pa.slot == slot.id)
                         promoted = true;   // a real ship now: on the radar as itself
                 if (!promoted && layout.pose(slot, universe, pose))
-                    push(0xC0000000u | cityBits | (slot.id & 0xFFFFu), pose.position, 1.0);
+                    push(0xC0000000u | cityBits | (slot.id & 0xFFFFu), pose.position, pose.velocity, 1.0,
+                         game::radar::RadarTrackKindShip);
             }
         }
         if (c.plan && !c.defence.sites.empty())
@@ -251,18 +256,40 @@ void GameSimulation::appendHubRadarContacts(const glm::dvec3& observerWorld, int
             std::vector<game::traffic::security::StrayBody> bodies;
             game::traffic::security::strayBodiesAt(c.defence, universe, 0.0, bodies);
             for (const auto& b : bodies)
-                push(0xE0000000u | cityBits | (b.index & 0x3FFFFu),
-                     game::traffic::security::strayPosition(b, universe), std::max(0.01, b.sizeMeters * b.sizeMeters / 400.0));
+                push(0xE0000000u | cityBits | (b.index & 0x3FFFFu), game::traffic::security::strayPosition(b, universe),
+                     b.velocity, std::max(0.01, b.sizeMeters * b.sizeMeters / 400.0), game::radar::RadarTrackKindDebris);
+        }
+        if (c.plan)
+        {
+            std::vector<game::traffic::security::DebrisPiece> pieces;
+            game::traffic::security::debrisFieldAt(c.defence, universe, pieces);
+            for (const auto& p : pieces)
+                push(0xA0000000u | cityBits | (p.index & 0x3FFFFu), p.position, p.velocity,
+                     std::max(0.01, p.sizeMeters * p.sizeMeters / 400.0), game::radar::RadarTrackKindDebris);
         }
     }
     if (found.size() > maxCount)
     {
         std::nth_element(found.begin(), found.begin() + static_cast<std::ptrdiff_t>(maxCount), found.end(),
-                         [](const Candidate& a, const Candidate& b) { return a.distance < b.distance; });
+                         [](const Candidate& x, const Candidate& y) { return x.distance < y.distance; });
         found.resize(maxCount);
     }
     for (auto& f : found)
-        out.push_back(f.input);
+        out.push_back(f.contact);
+    return out;
+}
+
+void GameSimulation::appendHubRadarContacts(const glm::dvec3& observerWorld, int systemId, std::size_t maxCount,
+                                            std::vector<world::RadarContactInput>& out) const
+{
+    for (const auto& k : hubRadarContacts(observerWorld, systemId, maxCount))
+    {
+        world::RadarContactInput in;
+        in.id = EntityId {k.key};
+        in.worldPosition = world::coordinates::makeWorldPositionFromMeters(k.worldPosition);
+        in.radarCrossSection = k.radarCrossSection;
+        out.push_back(in);
+    }
 }
 
 void GameSimulation::despawnPromotedAirShip(EntityId id)

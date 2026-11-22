@@ -176,7 +176,8 @@ double polylineLength(
     return total;
 }
 
-void appendMandatoryBlock(
+// -> the metres the corner arcs took off the polyline (the stage length accounting expects the polyline)
+double appendMandatoryBlock(
     planner::RoutePlan& out,
     const CompiledTrafficStage& stage,
     const glm::dvec3& blockStart,
@@ -203,7 +204,7 @@ void appendMandatoryBlock(
     appendPoint(blockEnd);
 
     if (points.size() < 2)
-        return;
+        return 0.0;
 
     const double stageSpeed =
         game::navigation::OrdinaryRoutePolicy::
@@ -212,59 +213,116 @@ void appendMandatoryBlock(
                 stage.volumeConstraint.maxSpeedMps
             );
 
-    for (std::size_t i = 1; i < points.size(); ++i)
+    // ONE SMOOTH CURVE through the lane's stations (author 2026-11-22: «траекторию ему надо считать плавной дугой, а не
+    // набором сплайнов. Тогда и рывки на коротких промежутках уйдут»): every corner of the polyline (25 m pieces, 8-10
+    // deg each through a lane turn) is replaced by a circular arc tangent to both of its legs; neighbouring arcs meet
+    // at the legs' midpoints - the heading never jumps, the curvature changes arc by arc. A (nearly) straight run stays
+    // a line.
+    struct Primitive
     {
-        const glm::dvec3 delta = points[i] - points[i - 1];
-        const double length = glm::length(delta);
+        bool arc = false;
+        glm::dvec3 a {0.0}, b {0.0};
+        glm::dvec3 centre {0.0}, normal {0.0, 1.0, 0.0};
+        double radius = 0.0, sweep = 0.0;
+    };
+    std::vector<Primitive> prims;
+    {
+        std::vector<double> trim(points.size(), 0.0);   // the tangent length cut off each corner
+        for (std::size_t i = 1; i + 1 < points.size(); ++i)
+        {
+            const glm::dvec3 in = points[i] - points[i - 1], out2 = points[i + 1] - points[i];
+            const double li = glm::length(in), lo = glm::length(out2);
+            if (li < 1.0e-6 || lo < 1.0e-6)
+                continue;
+            const double c = std::clamp(glm::dot(in / li, out2 / lo), -1.0, 1.0);
+            const double theta = std::acos(c);
+            if (theta < glm::radians(0.3) || theta > glm::radians(150.0))
+                continue;
+            // a leg shared by two corners gives each its half (the middle one: a lane's own straight keeps the rest)
+            const bool inShared = i >= 2, outShared = i + 2 < points.size();
+            trim[i] = std::min(inShared ? 0.5 * li : 0.9 * li, outShared ? 0.5 * lo : 0.9 * lo);
+        }
+        glm::dvec3 cursor = points.front();
+        for (std::size_t i = 1; i < points.size(); ++i)
+        {
+            const glm::dvec3 leg = points[i] - points[i - 1];
+            const double len = glm::length(leg);
+            if (len < 1.0e-9)
+                continue;
+            const glm::dvec3 d = leg / len;
+            const glm::dvec3 lineEnd = (i + 1 < points.size() && trim[i] > 0.0) ? points[i] - d * trim[i] : points[i];
+            if (glm::length(lineEnd - cursor) > 1.0e-6)
+                prims.push_back({false, cursor, lineEnd});
+            cursor = lineEnd;
+            if (i + 1 < points.size() && trim[i] > 0.0)
+            {
+                const glm::dvec3 dOut = glm::normalize(points[i + 1] - points[i]);
+                const double theta = std::acos(std::clamp(glm::dot(d, dOut), -1.0, 1.0));
+                Primitive arc;
+                arc.arc = true;
+                arc.a = cursor;
+                arc.b = points[i] + dOut * trim[i];
+                arc.normal = glm::normalize(glm::cross(d, dOut));
+                arc.radius = trim[i] / std::tan(0.5 * theta);
+                arc.centre = arc.a + arc.radius * glm::cross(arc.normal, d);
+                arc.sweep = theta;
+                prims.push_back(arc);
+                cursor = arc.b;
+            }
+        }
+    }
+
+    double composedMeters = 0.0;
+    for (const auto& prim : prims)
+    {
+        planner::RouteCurveSegment curve;
+        curve.kind = prim.arc ? planner::RouteCurveKind::CircularArc : planner::RouteCurveKind::Line;
+        curve.startMeters = prim.a;
+        curve.endMeters = prim.b;
+        curve.maxSpeedMps = stageSpeed;
+        double length = glm::length(prim.b - prim.a);
+        if (prim.arc)
+        {
+            curve.arcCenterMeters = prim.centre;
+            curve.arcNormal = prim.normal;
+            curve.arcRadiusMeters = prim.radius;
+            curve.arcSweepRadians = prim.sweep;
+            length = prim.radius * prim.sweep;
+            curve.startForward = glm::normalize(curve.derivativeAtParameter(0.0));
+            curve.endForward = glm::normalize(curve.derivativeAtParameter(1.0));
+        }
+        else
+        {
+            curve.startForward = (prim.b - prim.a) / std::max(length, 1.0e-12);
+            curve.endForward = curve.startForward;
+        }
         if (length <= 1.0e-9)
             continue;
+        curve.startProgressMeters = out.routeCurves.empty() ? 0.0 : out.routeCurves.back().endProgressMeters;
+        curve.endProgressMeters = curve.startProgressMeters + length;
+        composedMeters += length;
+        out.routeCurves.push_back(curve);
 
-        const glm::dvec3 forward = delta / length;
-
-        planner::RouteCurveSegment curve;
-        curve.kind = planner::RouteCurveKind::Line;
-        curve.startProgressMeters =
-            out.routeCurves.empty()
-                ? 0.0
-                : out.routeCurves.back().endProgressMeters;
-        curve.endProgressMeters =
-            curve.startProgressMeters + length;
-        curve.maxSpeedMps = stageSpeed;
-        curve.startMeters = points[i - 1];
-        curve.endMeters = points[i];
-        curve.startForward = forward;
-        curve.endForward = forward;
-        out.routeCurves.push_back(std::move(curve));
-
-        const double spacing =
-            std::max(
-                1.0,
-                std::min(10.0, base.gateSpacingMeters)
-            );
-        const int subdivisions =
-            std::max(1, static_cast<int>(std::ceil(length / spacing)));
-
+        const double spacing = std::max(1.0, std::min(10.0, base.gateSpacingMeters));
+        const int subdivisions = std::max(1, static_cast<int>(std::ceil(length / spacing)));
         for (int j = 1; j <= subdivisions; ++j)
         {
-            const double t =
-                static_cast<double>(j) /
-                static_cast<double>(subdivisions);
+            const double t = static_cast<double>(j) / static_cast<double>(subdivisions);
             planner::RouteGate gate;
-            gate.positionMeters =
-                j == subdivisions
-                    ? points[i]
-                    : glm::mix(points[i - 1], points[i], t);
-            gate.forward = forward;
+            gate.positionMeters = j == subdivisions ? prim.b : curve.positionAtParameter(t);
+            const glm::dvec3 tangent = curve.derivativeAtParameter(t);
+            gate.forward = glm::length(tangent) > 1.0e-12 ? glm::normalize(tangent) : curve.endForward;
             gate.speedMps = stageSpeed;
             appendUniqueGate(out.executionGates, gate);
         }
 
         planner::RouteGate sparse;
-        sparse.positionMeters = points[i];
-        sparse.forward = forward;
+        sparse.positionMeters = prim.b;
+        sparse.forward = curve.endForward;
         sparse.speedMps = stageSpeed;
         appendUniqueGate(out.gates, sparse);
     }
+    return std::max(0.0, polylineLength(points) - composedMeters);
 }
 
 void recomputeGlobalSpeeds(
@@ -711,7 +769,7 @@ static planner::RoutePlan composeOnce(
         const double mandatoryStart =
             routeEndProgress(out);
 
-        appendMandatoryBlock(
+        const double arcShortening = appendMandatoryBlock(
             out,
             stage,
             blockStart,
@@ -747,7 +805,7 @@ static planner::RoutePlan composeOnce(
         const double volumeEnd =
             entryEnd + volumeLength;
         const double expectedMandatoryEnd =
-            volumeEnd + exitLength;
+            volumeEnd + exitLength - arcShortening;
         const double mandatoryEnd =
             routeEndProgress(out);
 

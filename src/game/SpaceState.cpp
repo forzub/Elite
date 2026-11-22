@@ -643,6 +643,8 @@ void SpaceState::updatePilotTakeover(bool touching)
         if (context().app)
             context().app->requestFlightView(FlightPresentationView::Front);
     }
+    if (std::string notice = m_systemMapRenderer.takePadLandingNotice(); !notice.empty())
+        m_pilotNotice = notice;
     // the landing card closed on the map: the landing is cancelled, the pilot has the ship
     if (m_systemMapRenderer.consumePadLandingCancel())
     {
@@ -2744,6 +2746,7 @@ void SpaceState::update(float dt)
     }
     else
     {
+        arbitrateFlightTask();
         updateDockingAdvisory();
         updateClientRoute();
         updateClientBodyAutopilot();

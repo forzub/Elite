@@ -926,6 +926,7 @@ SystemMapRenderer::handleInput(
 
             if (!overlayPointer.actionObjectId.empty())
             {
+                std::cerr << "[HubUi] card action " << overlayPointer.actionKey << " on " << overlayPointer.actionObjectId << std::endl;
                 if (overlayPointer.actionKey == "show_docking_route" ||
                     overlayPointer.actionKey == "start_docking")
                 {
@@ -948,9 +949,13 @@ SystemMapRenderer::handleInput(
                             ? nullptr : game::navigation::HubPlanCatalog::forFrameModule(blockRest.substr(0, cut));
                         const auto* block = plan ? plan->block(blockRest.substr(cut + 1)) : nullptr;
                         double best = 1.0e30;
+                        // the upper side first; a block with pads only under the plane lands there (it used to give
+                        // nothing at all - the button did nothing, silently, author 2026-11-22)
+                        for (int pass = 0; pass < 2 && best >= 1.0e30; ++pass)
                         if (block)
                             for (const auto& m : plan->modules())
-                                if (m.pad && !m.under && m.block >= 0 && plan->blocks()[static_cast<std::size_t>(m.block)].id == block->id)
+                                if (m.pad && (pass == 1 || !m.under) && m.block >= 0 &&
+                                    plan->blocks()[static_cast<std::size_t>(m.block)].id == block->id)
                                 {
                                     const double d = glm::length(glm::dvec2(m.padPosition.x, m.padPosition.z) - block->centre);
                                     if (d < best)
@@ -965,6 +970,11 @@ SystemMapRenderer::handleInput(
                         m_padLandingRequest = PadLandingRequest {rest.substr(0, slash), rest.substr(slash + 1),
                                                                  overlayPointer.actionObjectId};
                         std::cerr << "[PadLanding] ui: land at " << rest << std::endl;
+                    }
+                    else
+                    {
+                        std::cerr << "[PadLanding] ui: " << overlayPointer.actionObjectId << " - no pad to land on" << std::endl;
+                        m_padLandingNotice = "СЛУЖБА ПЛОЩАДОК: в этом квартале нет площадки для посадки";
                     }
                 }
                 else

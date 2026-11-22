@@ -238,6 +238,22 @@ void hubDefencePresentation(const game::navigation::HubPlan& plan, const game::n
         push(HubDefenceModel::Flash, compose(target, rotY(t * 7.0), glm::dvec3(spot)), static_cast<float>(spot));
     }
 
+    // ---- the debris field beside the city (old wreckage: tumbling plates and rocks, the same on the radar)
+    {
+        static std::vector<sec::DebrisPiece> pieces;
+        sec::debrisFieldAt(L, t, pieces);
+        for (const auto& pc : pieces)
+        {
+            const double d = glm::length(pc.position - camera);
+            if (d > radius + 50.0)
+                continue;
+            const double scale = std::max(pc.sizeMeters, d * 0.0015);
+            push(HubDefenceModel::Rock,
+                 compose(pc.position, rotY(t * (0.05 + 0.02 * (pc.index % 7)) + pc.index) * rotX(t * 0.03 + pc.index * 1.3),
+                         glm::dvec3(scale, scale * 0.35, scale * 0.8)),
+                 static_cast<float>(scale));
+        }
+    }
     // ---- the bodies, the kills, the fragments
     int bodyCount = 0;
     for (const auto& b : bodies)

@@ -460,9 +460,13 @@ public:
             // speed swung 85-169 m/s around a planned 120 and came into the turns at 76 m/s against a planned 20-45
             // (author 2026-11-22: «автопилот не придерживается скоростного режима, определённого планировщиком»).
             // With the setpoint known it follows the planned speed itself; the assist does the rest.
+            constexpr double SetpointTrackSeconds = 1.0;
             const bool setpointKnown = request.assistedTargetSpeedMps >= 0.0;
             const double feedbackAcceleration =
-                setpointKnown ? (desiredSpeed - request.assistedTargetSpeedMps) / 0.25
+                // 1 s, not 0.25: the setpoint the client sees is 0.1-0.2 s old (the snapshot + the interpolation) -
+                // fed back that hard it overshot and came back, a +-12 m/s limit cycle around a flat 120 (author
+                // 2026-11-22: «летит рывками ... разогнался - пора тормозить»). The ramps ride the feed-forward.
+                setpointKnown ? (desiredSpeed - request.assistedTargetSpeedMps) / SetpointTrackSeconds
                               : (desiredSpeed - actualSpeed) / horizon;
 
             out.targetSpeedRate = finiteClamp(

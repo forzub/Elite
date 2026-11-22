@@ -2923,6 +2923,41 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
                 truth.push_back(row);
             }
 
+            // the hub cities' traffic not made real, the stray bodies, the debris field - the nearest 128 (author
+            // 2026-11-22: «радар должен показывать всё, даже обломки»; «если есть ограничение по количеству - то ближайшие»)
+            const auto hubContacts = m_simulation.hubRadarContacts(
+                world::coordinates::fullMeters(observerTransform.worldPosition), observerSystemId, 128);
+            {
+                static double logAt = -1.0e9;
+                if (universeTimeSeconds - logAt >= 15.0 && !hubContacts.empty())
+                {
+                    logAt = universeTimeSeconds;
+                    int debris = 0, nearestDebris = -1;
+                    double best = 1.0e30;
+                    const glm::dvec3 me = world::coordinates::fullMeters(observerTransform.worldPosition);
+                    for (const auto& k : hubContacts)
+                        if (k.kind == game::radar::RadarTrackKindDebris)
+                        {
+                            ++debris;
+                            best = std::min(best, glm::length(k.worldPosition - me));
+                            nearestDebris = 1;
+                        }
+                    std::cerr << "[Radar] player radar: " << truth.size() << " ships / structures + " << hubContacts.size()
+                              << " hub contacts (" << debris << " debris / stray, nearest "
+                              << (nearestDebris > 0 ? static_cast<long long>(best) : -1) << " m)" << std::endl;
+                }
+            }
+            for (const auto& k : hubContacts)
+            {
+                game::radar::TestIdealRadarTruthContact row;
+                row.sourceKey = 0x3000000000000000ULL | static_cast<std::uint64_t>(k.key);
+                row.worldPosition = world::coordinates::makeWorldPositionFromMeters(k.worldPosition);
+                row.worldVelocityMps = k.worldVelocity;
+                row.radarCrossSection = k.radarCrossSection;
+                row.kind = k.kind;
+                truth.push_back(row);
+            }
+
             runtime.unit.captureMeasurement(
                 universeTimeSeconds,
                 observerTransform.worldPosition,

@@ -513,6 +513,16 @@ public:
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
     const std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships() const;
     const std::unordered_map<EntityId, StaticObject>& staticObjects() const;
+    // the hub cities' radar set (traffic not made real, stray bodies, the debris field) with velocity and kind - the player's radar (GameServer) reads this
+    struct HubRadarContact
+    {
+        std::uint32_t key = 0;
+        glm::dvec3 worldPosition {0.0};
+        glm::dvec3 worldVelocity {0.0};
+        double radarCrossSection = 1.0;
+        std::uint8_t kind = 0;   // game::radar::RadarTrackKind*
+    };
+    std::vector<HubRadarContact> hubRadarContacts(const glm::dvec3& observerWorld, int systemId, std::size_t maxCount) const;
     bool setStaticObjectMapInfo(
         EntityId id,
         const std::string& name,

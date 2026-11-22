@@ -8032,3 +8032,10 @@ start-up hitches (render), trade step 16 part 3 live.
     planner (route to the safe point), direct guidance only for the last stretch / the slot; not in the UI yet.
   * Give way (reflex rule 1): slow for a ship crossing / coming with its CPA < 8 s nearer than the hulls + 15 m.
   * Junction turns <= 30 m/s (lane data). Suite v5: all 4 scenarios clean.
+  * 2026-11-22 (late): one flight-task slot (arbitrateFlightTask: the task started last owns the ship); lane corners
+    filleted into tangent arcs (one smooth curve; stage accounting takes the arc shortening); Assisted setpoint
+    feedback 0.25 -> 1 s (a +-12 m/s limit cycle on the 0.1-0.2 s old setpoint); tunnel opacity by the distance from
+    the moving ship (full near, a trace at 5.5 km); the player's radar (GameServer truth) gets the hub traffic not made
+    real, the stray bodies and a DEBRIS FIELD per city (40 pieces, 500 m, past the rim on a diagonal) - kind Debris,
+    grey cross on the PPI; land button on a block with only lower pads now lands there (it did nothing silently).
+    Suite v7: all 4 clean, peak cross-track 31-40 -> 11 m, speed error rms 2.2-4.3 m/s.

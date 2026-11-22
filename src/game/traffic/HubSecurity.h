@@ -178,7 +178,22 @@ struct DefenceLayout
     double engageMeters = 4500.0;        // weapons free on an inbound body inside this
     double cityRadiusMeters = 4000.0;    // the city itself (what an inbound body would hit)
     std::vector<DefenceSite> sites;
+    // a small DEBRIS FIELD beside the city (old wreckage; author 2026-11-22: «сделать возле хаба небольшое поле обломков»):
+    // out past the rim on a diagonal (between the lanes' portals), in the city plane; the pieces circle its centre slowly
+    glm::dvec3 debrisCentre {0.0};
+    double debrisRadiusMeters = 500.0;
+    int debrisCount = 0;
+    std::uint32_t debrisSeed = 0;
 };
+struct DebrisPiece
+{
+    std::uint32_t index = 0;
+    glm::dvec3 position {0.0};       // city frame
+    glm::dvec3 velocity {0.0};
+    double sizeMeters = 1.0;
+};
+// the debris field's pieces at `timeSeconds` (deterministic: the server, the radar and every client agree)
+void debrisFieldAt(const DefenceLayout& layout, double timeSeconds, std::vector<DebrisPiece>& out);
 // the defence ring of a planar city: deterministic from its plan (blocks at the rim, the services / police blocks) and
 // its lanes' speed-limit zone; military hubs (hub id or many services blocks) are denser and carry missile cells
 DefenceLayout buildDefenceLayout(const game::navigation::HubPlan& plan, const game::navigation::traffic::HubLaneNetwork* lanes);

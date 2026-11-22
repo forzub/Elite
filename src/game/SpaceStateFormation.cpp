@@ -151,3 +151,71 @@ void SpaceState::updateFormationTask(double dt)
                   << std::endl;
     }
 }
+
+void SpaceState::arbitrateFlightTask()
+{
+    if (!m_client)
+        return;
+    const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
+    FlightTaskSlot now;
+    now.dock = pending.valid();
+    now.dockSerial = now.dock ? pending.serial : 0;
+    now.formation = m_formationTask.active;
+    now.route = m_clientRoute.state != ClientRouteRun::State::Idle;
+    now.body = !now.route && (m_bodyAutopilot.active() || m_bodyAutopilotEngagePending);   // a route flies its legs on it
+    if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+    {
+        const auto& svc = it->second.padService;
+        now.pad = svc.size() > 8 && svc.rfind("phase:", 0) == 0 && svc[6] != '3';
+    }
+    const auto& was = m_flightSlot;
+    const char* started = now.dock && now.dockSerial != was.dockSerial ? "docking / landing route"
+                        : now.formation && !was.formation               ? "formation"
+                        : now.route && !was.route                       ? "map route"
+                        : now.body && !was.body                         ? "body autopilot"
+                        : now.pad && !was.pad                           ? "pad service"
+                                                                        : nullptr;
+    if (started)
+    {
+        std::string ended;
+        const std::string s = started;
+        if (s != "docking / landing route" && now.dock && s != "pad service")
+        {
+            m_navigationWorkspace.dockingRouteRequests().clear();
+            now.dock = false;
+            ended += " the docking route;";
+        }
+        if (s != "formation" && now.formation)
+        {
+            devJoinFormation("off");
+            now.formation = false;
+            ended += " the formation;";
+        }
+        if (s != "map route" && now.route)
+        {
+            cancelClientRoute();
+            now.route = false;
+            ended += " the map route;";
+        }
+        if (s != "body autopilot" && s != "map route" && now.body)
+        {
+            cancelClientBodyAutopilot();
+            now.body = false;
+            ended += " the body autopilot;";
+        }
+        if (s != "pad service" && now.pad)
+        {
+            // the service lets the ship go (the docking route itself also does it when it launches)
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::LandOnPad;
+            command.index = 0;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+            ended += " the pad service;";
+        }
+        if (!ended.empty())
+            std::cerr << "[FlightTask] " << started << " takes the flight slot - ended:" << ended << std::endl;
+    }
+    m_flightSlot = now;
+}

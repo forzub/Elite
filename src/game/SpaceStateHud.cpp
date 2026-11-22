@@ -733,7 +733,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                     f.widthMeters = 40.0;
                     f.heightMeters = 30.0;
                     // translucent like the docking tunnel (author 2026-11-21: «тоннель надо сделать полупрозрачным»)
-                    f.opacity = static_cast<float>(0.45 * std::clamp(1.0 - dist / 3000.0, 0.2, 1.0));
+                    f.opacity = game::presentation::tunnelFrameOpacity(dist, 0.45);
                     guidance.frames.push_back(f);
                 }
                 prev = wp;

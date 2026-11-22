@@ -553,8 +553,11 @@ void RadarPPIWidget::renderContacts()
         float horizontalDist = std::sqrt(local.x * local.x + local.z * local.z);
         const bool beyond = horizontalDist > m_displayRange;
         const bool structure = contact.data.kind == 2;
+        const bool debris = contact.data.kind == 3;   // a wreck piece / a rock: a small grey cross
 
-        glm::vec4 finalColor = structure ? glm::vec4(1.0f, 0.70f, 0.25f, 0.9f) : m_visualConfig.contact.color;
+        glm::vec4 finalColor = structure ? glm::vec4(1.0f, 0.70f, 0.25f, 0.9f)
+                             : debris    ? glm::vec4(0.72f, 0.74f, 0.78f, 0.75f)
+                                         : m_visualConfig.contact.color;
         finalColor.a = std::clamp(finalColor.a * (beyond ? 0.45f : 0.75f + 0.25f * glow), 0.0f, 1.0f);
 
         float radial = beyond ? 1.0f : horizontalDist / m_displayRange;
@@ -578,6 +581,19 @@ void RadarPPIWidget::renderContacts()
             elite::render::core_legacy::vertex2f(baseX + d, baseY);
             elite::render::core_legacy::vertex2f(baseX, baseY + d);
             elite::render::core_legacy::vertex2f(baseX - d, baseY);
+            elite::render::core_legacy::end();
+            continue;
+        }
+        if (debris)
+        {
+            const float b = m_visualConfig.contact.boxSize * 0.7f;
+            elite::render::core_legacy::begin(GL_LINES);
+            elite::render::core_legacy::vertex2f(baseX, baseY);
+            elite::render::core_legacy::vertex2f(baseX, finalY);
+            elite::render::core_legacy::vertex2f(baseX - b, finalY - b);
+            elite::render::core_legacy::vertex2f(baseX + b, finalY + b);
+            elite::render::core_legacy::vertex2f(baseX - b, finalY + b);
+            elite::render::core_legacy::vertex2f(baseX + b, finalY - b);
             elite::render::core_legacy::end();
             continue;
         }

@@ -241,6 +241,14 @@ public:
     void updateClientBodyAutopilot();
     // joining a ship / keeping a formation slot (SpaceStateFormation.cpp, autopilot/FormationGuidance.h)
     void updateFormationTask(double dt);
+    // ONE flight task at a time (author 2026-11-22: «надо держать один слот под задачу маршрута и перелёта, тогда не будет
+    // параллельных задач и таких ошибок»): the task started last owns the ship, every other one ends
+    void arbitrateFlightTask();
+    struct FlightTaskSlot
+    {
+        std::uint64_t dockSerial = 0;
+        bool dock = false, formation = false, body = false, route = false, pad = false;
+    } m_flightSlot;
     void devJoinFormation(const std::string& spec);
     struct FormationTask
     {

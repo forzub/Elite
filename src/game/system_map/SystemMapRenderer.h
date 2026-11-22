@@ -284,6 +284,11 @@ private:
     };
     std::optional<PadLandingRequest> m_padLandingRequest;
     std::string m_padLandingActive;
+public:
+    // a line for the HUD terminal from the landing button (no pad in the block ...); taken once
+    std::string takePadLandingNotice() { std::string n = std::move(m_padLandingNotice); m_padLandingNotice.clear(); return n; }
+private:
+    std::string m_padLandingNotice;
     bool m_padLandingCancelRequested = false;
 
     void ensureMapTransitionSnapshot(

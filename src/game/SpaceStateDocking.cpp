@@ -719,7 +719,7 @@ void SpaceState::updateDockingAdvisory()
                 double tallest = 0.0;
                 for (const auto& b : plan->blocks())
                     tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
-                const double transit = std::min(380.0, tallest + 80.0);
+                const double transit = std::max(std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0);
                 const glm::dvec3 hover = building->padPosition + out * (transit - glm::dot(building->padPosition, out));
                 glm::dvec3 from = padRouteCityLocal(*city, shipIt->second) - hover;
                 from -= out * glm::dot(from, out);
@@ -2800,6 +2800,14 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         );
     request.initialForwardLeadMeters =
         std::max(1000.0, hull.lengthMeters * 10.0);
+    // an Assisted craft (nearly) at rest turns where it hangs: no committed start course and no 1 km straight lead -
+    // a ship sinking onto a pad at 6 m/s had its course straight DOWN and every route from there "ran into the city"
+    // (5 retries, 200 s, the planner looked dead - author 2026-11-22: «планировщик не работает»)
+    if (controlLaw == game::navigation::LocalFlightControlLaw::Assisted && glm::length(startVelocityMps) < 8.0)
+    {
+        request.hasInitialForward = false;
+        request.initialForwardLeadMeters = 0.0;
+    }
     request.terminalReferenceDistanceMeters =
         pending.target.semanticAnchorId.rfind("pad:", 0) == 0
             ? std::max(80.0, hull.lengthMeters * 2.0)   // a pad: the route ends close to its approach point
@@ -3207,6 +3215,26 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         request.startMeters;
     const double planningInitialSpeedMps =
         request.initialSpeedMps;
+    // a new route while the pad service still flies the ship (phases 0-2): the service lets go first - two pilots at
+    // once (the service holding it over a pad, the route's autopilot) made the tunnel shake between the two (author
+    // 2026-11-22: «коридор планировщика дрожит, как будто не может понять координаты рамок»)
+    if (m_client)
+        if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+        {
+            const auto& svc = it->second.padService;
+            if (svc.size() > 8 && svc.rfind("phase:", 0) == 0 && svc[6] != '3')
+            {
+                game::network::ClientMessage msg;
+                ClientShipCommand command;
+                command.type = ClientShipCommand::LandOnPad;
+                command.index = 0;
+                command.detail = svc.substr(8);
+                msg.payload = command;
+                m_client->sendMessage(msg);
+                std::cerr << "[DockWorker] request=" << pending.serial << " the pad service (" << svc
+                          << ") lets the ship go for the new route" << std::endl;
+            }
+        }
     std::cerr << "[DockWorker] request=" << pending.serial << " launched obstacles=" << request.obstacles.size()
               << std::endl;
     if (const char* dump = std::getenv("ELITE_ROUTE_DUMP"); dump && *dump)

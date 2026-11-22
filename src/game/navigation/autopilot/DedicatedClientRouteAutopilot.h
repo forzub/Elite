@@ -616,11 +616,21 @@ public:
                 std::abs(glm::length(agent.velocityMapMetersPerSecond) -
                          plannedHere) <=
                 NewtonianSpeedTolerancePolicy::programRefreshMps(plannedHere);
+            // Assisted: a craft lagging its profile keeps the profile (the flight assist's speed setpoint follows it
+            // and catches up); re-seeded from the lagging actual speed at every checkpoint (~500 m) the target fell
+            // back 10-20 m/s and ramped up again - a 120-140 m/s sawtooth on a straight lane (author 2026-11-22:
+            // «скорость опять идёт раскачкой ... разогнался - пролетел - затормозил»). Faster than the profile it is
+            // re-seeded from the actual speed: that excess must really be braked off.
+            const double actualHere = glm::length(agent.velocityMapMetersPerSecond);
+            const double seedSpeed =
+                law == LocalFlightControlLaw::Newtonian || actualHere > plannedHere
+                    ? actualHere
+                    : plannedHere;
             recomputeRuntimeSpeedSuffix(
                     state.nominalSpeedProfileMps,
                     state.continuousProgressMeters,
                     state.currentContinuousSegment,
-                    glm::length(agent.velocityMapMetersPerSecond),
+                    seedSpeed,
                     forwardAuthority,
                     brakingAuthority,
                     state.runtimeSpeedProfileMps,
@@ -628,7 +638,7 @@ public:
                     state.pilotController.telemetry(params).
                         thrustReversalLeadSeconds,
                     toleratedPlateauEnd(state, state.currentContinuousSegment,
-                        glm::length(agent.velocityMapMetersPerSecond))
+                        seedSpeed)
                 );
             ++state.speedProfileRevision;
             ++state.nextCheckpointIndex;

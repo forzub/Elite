@@ -135,6 +135,9 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 m_batch.line(pa, pb, w, c);
         };
         // GREEN lanes: rings + four rails
+        // oncoming lanes amber: in the red of the RED zones they read as "crossed a red zone" (author 2026-11-22:
+        // «долетел, но ценой того, что три раза пересек красную зону» - the route kept 30+ m off every red zone)
+        const glm::vec3 OncomingLaneTint(1.00f, 0.80f, 0.22f);
         constexpr int RingSides = 12;
         for (const auto& lane : network->lanes())
         {
@@ -170,7 +173,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                     if (alpha > 0.005)
                     {
                         const bool oncoming = glm::dot(ab, travel) < -0.3;
-                        const glm::vec3 tint = oncoming    ? glm::vec3(1.00f, 0.32f, 0.26f)
+                        const glm::vec3 tint = oncoming    ? OncomingLaneTint
                                                : lane.blue ? glm::vec3(0.35f, 0.62f, 1.00f)
                                                            : glm::vec3(0.40f, 1.00f, 0.50f);
                         const glm::vec4 col(tint, static_cast<float>(alpha * 0.55));
@@ -208,7 +211,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                     continue;
                 const double len = glm::length(b - a);
                 const bool oncoming = len > 1.0e-6 && glm::dot((b - a) / len, travel) < -0.3;
-                const glm::vec3 tint = oncoming ? glm::vec3(1.00f, 0.32f, 0.26f) : glm::vec3(0.40f, 1.00f, 0.50f);
+                const glm::vec3 tint = oncoming ? OncomingLaneTint : glm::vec3(0.40f, 1.00f, 0.50f);
                 seg(a, b, glm::vec4(tint, static_cast<float>(alpha * 0.45)), 1.0f);
             }
         }

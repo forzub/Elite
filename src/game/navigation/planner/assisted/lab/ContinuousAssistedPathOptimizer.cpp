@@ -1686,9 +1686,12 @@ SearchResult patternOptimize(
          iteration < iterations;
          ++iteration)
     {
-        if (out.evaluation.feasible &&
-            std::chrono::duration<double>(std::chrono::steady_clock::now() - polishStarted).count() >
-                FeasiblePolishBudgetSeconds)
+        // ... and a branch that finds nothing feasible gives up as well: 500 iterations among a city's ~4000 volumes
+        // took minutes per attempt x 5 slower retries - the game "hung" (author 2026-11-22: «после 5 перелёта завис»)
+        constexpr double InfeasibleSearchBudgetSeconds = 1.5;
+        const double searchedSeconds =
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - polishStarted).count();
+        if (searchedSeconds > (out.evaluation.feasible ? FeasiblePolishBudgetSeconds : InfeasibleSearchBudgetSeconds))
             break;
         bool improved = false;
 

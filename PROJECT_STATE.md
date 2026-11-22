@@ -7984,3 +7984,20 @@ start-up hitches (render), trade step 16 part 3 live.
     pad route 2.5 s (was 50-234 s). Lanes joined only from open sky (34cd912ea). Dock regression dk23: plan 6.3 s, docked.
   OPEN: touchdown sag / legs not seen in a dev run (script has no gear key); lower-tier lanes z4.5.1.under and its dock
   exit look to pass through buildings in the planner's obstacles (coarse check - verify).
+
+- 2026-11-22 (evening): traffic rules + planner hangs.
+  * Collisions now run AFTER the scripted traffic is posed (stage 3: dock traffic, promoted air traffic, pad service) -
+    a lane ship the player caught up with was one tick (~450 m) behind in the collision pass: flown through.
+  * Junction level rule (tools/models/units/hub_lane_levels.py, applied by hub_belt_world.py and to all 293 lane files):
+    a turn changes level on a street before / after the junction, never through an oncoming lane's tube (the opposite
+    lanes are stacked); <= 35 deg climb; a turn with no clear street is dropped. Totals: kept 3218, rebuilt 6444,
+    dropped 3218. Oncoming lanes drawn amber (they read as red zones).
+  * Assisted checkpoint re-seed: a craft lagging its profile keeps it (the target fell back 10-20 m/s every ~500 m:
+    the 120-140 sawtooth). The 0.8 x vmax gate cruise vs the curves' vmax may still cause a sawtooth - check live.
+  * Planner hang: an infeasible branch gives up after 1.5 s; an Assisted ship < 8 m/s has no committed start course /
+    1 km lead (a ship sinking onto a pad had it pointing down); a new route makes the pad service let go first; a pad
+    request over the city at the transit height is a HOP flown by the pad service (no planner).
+  * Tower-top pads (E4-01 at 936 m): transit = max(city transit, pad + 60 m); hubPadRoute skips the pad's own tower
+    (it ping-ponged between its corners). LIVE dk27: H2-03 -> E4-01 hop, climb to 996, across, over the pad.
+  * The pad service tunnel always shows while it flies the ship (a stale route guidance hid it).
+  OPEN: lane network connectivity after the dropped turns not measured; touchdown sag not seen in a dev run.

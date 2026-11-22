@@ -589,7 +589,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
     // the pad service's route as the docking tunnel (author 2026-11-21: «нет рамок, показывающих маршрут»; «тоннель
     // маршрута, как при посадке в док»): the same gates along what is left of the route (hubPadRoute) from here
     // only while the service flies the ship there (phases 0-2): landed / handed over / cancelled - no tunnel
-    if (!guidance.visible && m_client && playerShip.padService.size() > 8 && playerShip.padService.rfind("phase:", 0) == 0 &&
+    if (m_client && playerShip.padService.size() > 8 && playerShip.padService.rfind("phase:", 0) == 0 &&
         playerShip.padService[6] != '3')
     {
         const char phase = playerShip.padService[6];
@@ -626,13 +626,16 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             double tallest = 0.0;
             for (const auto& b : plan->blocks())
                 tallest = std::max(tallest, pad->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
-            const double transit = std::min(380.0, tallest + 80.0);
+            const double transit = std::max(std::min(380.0, tallest + 80.0), std::abs(pad->padPosition.y) + 60.0);
             std::vector<glm::dvec3> route;
             if (phase == '0' || phase == '1')
                 route = game::navigation::hubPadRoute(*plan, *pad, q, transit, phase == '0');
             const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
             route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0
                                              : pad->padPosition + out * game::navigation::HubPadZoneHeight);
+            // the service flies the ship: ITS tunnel, whatever guidance was left (author 2026-11-22: «потерял тоннель на пол
+            // дороги» - the route handed over 2.2 km out, a stale guidance hid the service tunnel)
+            guidance.frames.clear();
             guidance.visible = true;
             guidance.spatialAdvisoryGates = true;
             guidance.corridorId = "pad:" + address;

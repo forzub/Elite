@@ -1,3 +1,4 @@
+#include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/server/ServerTickProfile.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/navigation/rules/JDrive.h"
@@ -585,6 +586,36 @@ void SpaceState::updatePilotTakeover(bool touching)
         // использовал бы планировщик и автопилот, а не скрипты»; the route drawn with the docking frames): the request
         // targets the pad's anchor over the city frame module; over the pad the pad service takes the ship for the descent
         // on its legs (updateDockingExecuting -> LandOnPad)
+        // ... a HOP from pad to pad (the ship already over the city at its transit height, nearly at rest): the pad
+        // service flies it straight across over the roofs (round the tall buildings, hubPadRoute) - the very leg every
+        // pad route ends with; the planner's direct leg through that sky was "infeasible" every time (5 retries, the
+        // planner looked dead - author 2026-11-22: «после 5 перелёта завис ... планировщик не работает»)
+        bool hop = false;
+        if (m_client)
+            if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end())
+                if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(request->frameModuleId))
+                    if (const auto* city = padRouteCityObject(request->frameModuleId))
+                        for (const auto& m : plan->modules())
+                            if (m.address == request->address && m.pad)
+                            {
+                                double tallest = 0.0;
+                                for (const auto& b : plan->blocks())
+                                    tallest = std::max(tallest, m.under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
+                                const double transit = std::min(380.0, tallest + 80.0);   // the city transit level (the service climbs to a tower pad itself)
+                                const glm::dvec3 q = padRouteCityLocal(*city, shipIt->second);
+                                const double height = m.under ? -q.y : q.y;
+                                const glm::dvec3 flat(q.x - m.padPosition.x, 0.0, q.z - m.padPosition.z);
+                                const double speed = glm::length(shipIt->second.transform.motion.localVelocityMps);
+                                hop = std::abs(height - transit) < 200.0 && glm::length(flat) < 8000.0 && speed < 15.0;
+                                break;
+                            }
+        if (hop)
+        {
+            sendPadLanding(request->frameModuleId, request->address, true);
+            std::cerr << "[PadLanding] hop: over the city at the transit height - the pad service flies the ship across to "
+                      << request->address << std::endl;
+        }
+        else
         {
             game::navigation::RouteTargetRef target;
             target.kind = game::navigation::NavigationRouteAnchorKind::SemanticAnchor;

@@ -1094,6 +1094,8 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         // why the attempt failed (each attempt costs a whole composition - 20 s a pad route, live 2026-11-22)
         std::fprintf(stderr, "[RouteRetry] attempt at speed x%.2f failed: %s\n", scale == SlowerSpeedScales[0] ? 1.0 : scale,
                      out.failure.substr(0, 600).c_str());
+        if (!out.diagnosticSummary.empty())
+            std::fprintf(stderr, "[RouteRetry]   detail: %s\n", out.diagnosticSummary.substr(0, 900).c_str());
         auto slower = terminalRequest;
         slower.maxSpeedMps = terminalRequest.maxSpeedMps * scale;
         auto retry = composeOnce(slower, trafficRoute);

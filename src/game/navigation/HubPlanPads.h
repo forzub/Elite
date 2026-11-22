@@ -186,6 +186,12 @@ inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanMod
     {
         if (m.under != pad.under)
             continue;
+        // not the pad's own tower: its goal is over it - as an obstacle it was never reached and the service flew the
+        // ship back and forth between its corners (a tower-top pad, live 2026-11-22)
+        if (&m == &pad ||
+            (pad.padPosition.x > std::min(m.rect.x, m.rect.z) && pad.padPosition.x < std::max(m.rect.x, m.rect.z) &&
+             pad.padPosition.z > std::min(m.rect.y, m.rect.w) && pad.padPosition.z < std::max(m.rect.y, m.rect.w)))
+            continue;
         const double top = pad.under ? -m.y0 : m.y1;
         if (top + 40.0 < transit)
             continue;

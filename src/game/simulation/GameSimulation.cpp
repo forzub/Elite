@@ -1747,20 +1747,6 @@ m_hubVelocityMetersPerSecond[hubId] =
     // after both have been updated, never from stale first-frame poses.
     publishNavigationRuntimeLabStaticGeometry();
 
-    // ship collisions: the ships (moved at stage 1) and the hub-attached statics (just above) now stand at the same
-    // epoch. Run from updateCombat before the statics moved, a ship met the city where it stood one tick ago - hub
-    // velocity x dt, ~450 m at an orbital hub: crashes into buildings nobody saw (the planner kept 190+ m off), live
-    // 2026-11-22. ELITE_DEV_SHIP_COLLISIONS=0 turns them off.
-    if (!trajectoryDebugMode)
-    {
-        static const bool collisions = [] {
-            const char* v = std::getenv("ELITE_DEV_SHIP_COLLISIONS");
-            return !(v && *v == '0');
-        }();
-        if (collisions)
-            collideShips(dt);
-    }
-
     stageMark(3);
     // === 1. AI / controls / attitude ===
     if (!trajectoryDebugMode)
@@ -1777,6 +1763,20 @@ m_hubVelocityMetersPerSecond[hubId] =
         updateLiveTraffic(dt);   // traffic at the crosshair / in a fight -> real NPCs (GameSimulationCombat.cpp)
         updatePadLandings(dt);   // the hub city pad service (GameSimulationPadLanding.cpp)
         updatePadTouchdowns(dt);   // the pads' capture zones, hand-flown touchdowns, the landing legs
+        // ship collisions: everything at the SAME epoch - the free ships (moved at stage 1), the hub-attached statics
+        // (stage 2) and the scripted ones posed just above (dock traffic, promoted air traffic, the pad service). Run
+        // from updateCombat (stage 1) a ship met the city where it stood one tick ago - hub velocity x dt, ~450 m at
+        // an orbital hub: crashes into buildings nobody saw; run before the traffic was posed it flew THROUGH a lane
+        // ship it caught up with (author 2026-11-22: «догнал корабль в коридоре и пролетел сквозь него").
+        // ELITE_DEV_SHIP_COLLISIONS=0 turns them off.
+        {
+            static const bool collisions = [] {
+                const char* v = std::getenv("ELITE_DEV_SHIP_COLLISIONS");
+                return !(v && *v == '0');
+            }();
+            if (collisions)
+                collideShips(dt);
+        }
         if (firstPass)
         {
             updateShipSimulationDetail(dt);

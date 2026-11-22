@@ -8011,3 +8011,16 @@ start-up hitches (render), trade step 16 part 3 live.
   * ELITE_DEV_RENDER_EPOCH_CHECK=1 (client HUD): the city in the player's render frame must not move - LIVE dk34:
     1e-4 m while in the hub frame (7 m drift only in free flight before the hub frame, legitimate).
   * Both checks belong in every navigator scenario run.
+
+- 2026-11-22 (night, author away): navigator step 1 - scenario suite + fixes (docs/navigation/NAVIGATOR_PLAN.md).
+  * Suite scratchpad/navsuite.sh + navmetrics.py (pad from outside, pad series across the hub, tower-top pad, hub dock;
+    both epoch checks on). base -> v3 + fixes: collisions 2/0/0/0 -> 0 everywhere, dock speed error rms 40 -> 8 m/s,
+    series target reversals 14 -> 4.
+  * Turn speed: a continuous braking curve to the turn (was a yes/no switch flipping 130 <-> 320 m/s every sample).
+  * Traffic rule both ways: the player's autopilot keeps the gap to a ship ahead on its way (map-frame velocities -
+    world ones carry the hub orbit); a promoted lane ship keeps the gap to a player ahead in its lane (6 m/s2).
+  * Promotion of lane traffic nearest-first; a much nearer candidate takes the farthest real one's place.
+  * Lane turns rebuilt from the originals with a 20 deg climb, 12.5 m points (35 deg made a 46 deg peak - the autopilot
+    left a turn by 194 m).
+  * White noise on the front camera when the cockpit is gone (pilot-lost screen).
+  OPEN: cross-track spikes ~40 m on some lane turns; target reversals 30-44 on long legs (gentle 5 m/s waves of the plan).

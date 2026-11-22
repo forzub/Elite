@@ -947,6 +947,51 @@ void SpaceState::updateDockingAdvisory()
         agent.yawRateRadPerSec = transform.yawRate;
         agent.rollRateRadPerSec = transform.rollRate;
         agent.assistedTargetSpeedMps = std::max(0.0, static_cast<double>(player.transform.motion.targetForwardSpeedMps));
+        // the TRAFFIC RULE: a ship ahead on the way (going our way, within our hull's corridor) sets a ceiling - its
+        // speed + the closing the gap still allows (gap 50 m + 2 s of our speed); oncoming / crossing ships are the
+        // evasion layer's (a lane ship was rear-ended at 65 m/s, live 2026-11-22)
+        {
+            // everything in the route's map frame: the WORLD velocities carry the hub's orbit (30 km/s - "we fly
+            // 35027 m/s", the ceiling went to 0 and a lane ship was rear-ended at 63 m/s, suite v2)
+            const glm::dvec3 myW = world::coordinates::fullMeters(player.renderTransform.worldPosition);
+            const glm::dvec3 myWorldV = player.transform.motion.worldVelocityMps;
+            const glm::dvec3 myV = motion.localVelocityMps;
+            const double mySpeed = glm::length(myV);
+            if (mySpeed > 5.0)
+            {
+                const glm::dvec3 fwd = myV / mySpeed;
+                const double myRadius = std::max(10.0, 0.5 * hull.lengthMeters);
+                double ceiling = 0.0;
+                for (const auto& [sid, other] : m_client->world().ships())
+                {
+                    if (sid == m_playerId.value)
+                        continue;
+                    const glm::dvec3 rel =
+                        frame.worldToLocalVector(world::coordinates::fullMeters(other.renderTransform.worldPosition) - myW);
+                    const double along = glm::dot(rel, fwd);
+                    if (along <= 0.0 || along > 2000.0)
+                        continue;
+                    const double lateral = glm::length(rel - fwd * along);
+                    if (lateral > myRadius + 40.0)
+                        continue;
+                    const glm::dvec3 ov = myV + frame.worldToLocalVector(other.transform.motion.worldVelocityMps - myWorldV);
+                    const double lead = glm::dot(ov, fwd);
+                    if (glm::length(ov) < 1.0 || lead < 0.5 * glm::length(ov))
+                        continue;   // not going our way
+                    const double gap = 50.0 + myRadius + 2.0 * mySpeed;
+                    const double cap = std::max(0.0, lead + 0.5 * (along - gap));
+                    ceiling = ceiling > 0.0 ? std::min(ceiling, cap) : std::max(cap, 0.01);
+                }
+                agent.trafficSpeedCeilingMps = ceiling;
+                static double logAt = 0.0;
+                if (ceiling > 0.0 && glfwGetTime() - logAt > 3.0)
+                {
+                    logAt = glfwGetTime();
+                    std::cerr << "[TrafficRule] a ship ahead on our way: speed ceiling " << ceiling << " m/s (we fly "
+                              << mySpeed << ")" << std::endl;
+                }
+            }
+        }
         return agent;
     };
 

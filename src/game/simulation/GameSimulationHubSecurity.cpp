@@ -364,9 +364,37 @@ void GameSimulation::updateHubSecurity(double dt)
         const glm::dmat3 R(glm::mat3(city.orientation));
         const glm::dvec3 cpos = world::coordinates::fullMeters(city.worldPosition);
         const glm::dvec3 cvel(city.linearVelocity);
-        const double along = pa.along0 + pa.speedMps * (universe - pa.time0);
+        if (pa.curSpeedMps < 0.0)
+            pa.curSpeedMps = pa.speedMps;
+        const double along = pa.along0 + pa.curSpeedMps * (universe - pa.time0);
         tr::HubAirSlotPose pose;
-        layout.poseAt(pa.lane, std::min(along, lt->lengthMeters), pa.speedMps, pose);
+        layout.poseAt(pa.lane, std::min(along, lt->lengthMeters), pa.curSpeedMps, pose);
+        // the TRAFFIC RULE for the lane ship too: a player ahead in its lane - keep the gap (60 m + 2 s), at most its
+        // speed + the closing the gap allows; free road - back to the lane speed. At most 6 m/s2 either way (a lane
+        // ship re-entering at its lane's portal ran into the player from behind at 27 m/s, suite v3)
+        {
+            const glm::dmat3 Rt = glm::transpose(R);
+            double want = pa.speedMps;
+            for (const auto& pl : players)
+            {
+                const glm::dvec3 rel = Rt * (pl.position - (cpos + R * pose.position));
+                const double ahead = glm::dot(rel, pose.forward);
+                if (ahead <= 0.0 || ahead > 1500.0 || glm::length(rel - pose.forward * ahead) > 60.0 + pa.lengthMeters)
+                    continue;
+                const double vp = glm::dot(Rt * (pl.velocity - cvel), pose.forward);
+                const double gap = 60.0 + pa.lengthMeters + 2.0 * pa.curSpeedMps;
+                want = std::min(want, std::max(0.0, vp + 0.5 * (ahead - gap)));
+            }
+            const double step = 6.0 * dt;
+            const double next = std::clamp(want, pa.curSpeedMps - step, pa.curSpeedMps + step);
+            if (std::abs(next - pa.curSpeedMps) > 1.0e-9)
+            {
+                pa.along0 = along;
+                pa.time0 = universe;
+                pa.curSpeedMps = next;
+                layout.poseAt(pa.lane, std::min(along, lt->lengthMeters), pa.curSpeedMps, pose);
+            }
+        }
         if (along > lt->lengthMeters)
             pose.position += pose.forward * (along - lt->lengthMeters);   // past the lane's end: straight on into open sky
         glm::dvec3 position = cpos + R * pose.position;
@@ -595,11 +623,18 @@ void GameSimulation::updateHubSecurity(double dt)
                 std::size_t count = 0;
                 for (const auto& [id, pa] : m_promotedAir)
                     count += pa.city == c.city ? 1 : 0;
-                tr::HubAirSlotPose pose;
+                // the NEAREST slots are made real first (author 2026-11-22: a slot made real 47 m from the player, inside
+                // its lane - the cap had been filled in list order, the ghost ahead of the player stayed a ghost); a
+                // candidate much nearer than the farthest real one takes its place
+                struct Candidate
+                {
+                    const tr::HubAirSlot* slot;
+                    tr::HubAirSlotPose pose;
+                    double nearest;
+                };
+                std::vector<Candidate> candidates;
                 for (const auto& slot : layout.slots())
                 {
-                    if (count >= MaxPromotedPerHub)
-                        break;
                     const auto& hull = c.plan->airFleet()[static_cast<std::size_t>(slot.fleetIndex)];
                     if (hull.passport.empty())
                         continue;   // a presentation-only hull (the city shuttle): no catalog ship to make real
@@ -607,13 +642,51 @@ void GameSimulation::updateHubSecurity(double dt)
                     for (const auto& [id, pa] : m_promotedAir)
                         if (pa.city == c.city && pa.slot == slot.id)
                             taken = true;
-                    if (taken || !layout.pose(slot, universe, pose))
+                    tr::HubAirSlotPose cpose;
+                    if (taken || !layout.pose(slot, universe, cpose))
                         continue;
                     double nearest = 1.0e30;
                     for (const auto& l : nearLocal)
-                        nearest = std::min(nearest, glm::length(l - pose.position));
-                    if (nearest > PromoteMeters)
-                        continue;
+                        nearest = std::min(nearest, glm::length(l - cpose.position));
+                    if (nearest <= PromoteMeters)
+                        candidates.push_back({&slot, cpose, nearest});
+                }
+                std::sort(candidates.begin(), candidates.end(),
+                          [](const Candidate& a, const Candidate& b) { return a.nearest < b.nearest; });
+                tr::HubAirSlotPose pose;
+                for (const auto& cand : candidates)
+                {
+                    if (count >= MaxPromotedPerHub)
+                    {
+                        // the farthest real one of this city gives its place to a much nearer candidate
+                        EntityId farthest {};
+                        double farD = -1.0;
+                        for (const auto& [id, pa] : m_promotedAir)
+                        {
+                            if (pa.city != c.city)
+                                continue;
+                            const Ship* sh = getShip(id);
+                            if (!sh)
+                                continue;
+                            const glm::dvec3 l = glm::transpose(R) * (sh->core().transform().fullWorldMeters() - cpos);
+                            double d = 1.0e30;
+                            for (const auto& n : nearLocal)
+                                d = std::min(d, glm::length(n - l));
+                            if (d > farD)
+                            {
+                                farD = d;
+                                farthest = id;
+                            }
+                        }
+                        if (farthest.value == 0 || farD < cand.nearest + 1000.0)
+                            break;
+                        despawnPromotedAirShip(farthest);
+                        --count;
+                    }
+                    const auto& slot = *cand.slot;
+                    const auto& hull = c.plan->airFleet()[static_cast<std::size_t>(slot.fleetIndex)];
+                    pose = cand.pose;
+                    const double nearest = cand.nearest;
                     const glm::dvec3 position = cpos + R * pose.position;
                     const glm::dvec3 velocity = cvel + R * pose.velocity;
                     const glm::mat4 orientation(glm::mat3(R) * glm::mat3(pose.local));

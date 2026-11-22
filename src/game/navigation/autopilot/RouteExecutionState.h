@@ -61,6 +61,9 @@ struct AutopilotAgentState
     double rollRateRadPerSec = 0.0;
     // Assisted: the ship's own speed setpoint (target VREL) the flight assist drives the speed to; < 0 = unknown
     double assistedTargetSpeedMps = -1.0;
+    // the traffic rule (author 2026-11-22: «надо вводить правила движения»; «радар должен помогать автопилоту»): the speed
+    // the craft may not exceed for the ship ahead on its way (its speed + the closing the gap allows); 0 = none
+    double trafficSpeedCeilingMps = 0.0;
 };
 
 // Route execution state shared by both route-autopilot laws (everything but

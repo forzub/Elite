@@ -1181,6 +1181,7 @@ private:
         double time0 = 0.0;
         double speedMps = 0.0;
         double lengthMeters = 30.0;
+        double curSpeedMps = -1.0;   // the speed it flies now (< 0: its lane speed) - the traffic rule slows it
     };
     std::unordered_map<EntityId, PromotedAirShip> m_promotedAir;
     std::unordered_set<EntityId> m_airTrafficShells;

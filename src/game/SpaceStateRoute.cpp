@@ -564,7 +564,34 @@ void SpaceState::renderPilotLostOverlay(const Viewport& viewport)
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);
     const float W = static_cast<float>(viewport.width), H = static_cast<float>(viewport.height);
-    text.solidRectPx(0.0f, 0.0f, W, H, glm::vec4(0.0f, 0.0f, 0.0f, 0.72f));
+    // the cockpit camera is gone with the cockpit: WHITE NOISE on the front view (author 2026-11-22: «если кабина
+    // разрушается, можно выводить на фронтальной камере белый шум. хоть так будет понятно, что что-то произошло») - the
+    // other cameras (rear, bottom, drone) still see the wreck
+    if (m_activeCameraMode == ShipCameraMode::Cockpit)
+    {
+        static std::uint32_t seed = 0x9E3779B9u;
+        const auto next = [&]() {
+            seed ^= seed << 13;
+            seed ^= seed >> 17;
+            seed ^= seed << 5;
+            return seed;
+        };
+        constexpr float Cell = 8.0f;
+        text.solidRectPx(0.0f, 0.0f, W, H, glm::vec4(0.12f, 0.12f, 0.12f, 1.0f));
+        for (float y = 0.0f; y < H; y += Cell)
+        {
+            // a rolling band now and then, as a dead feed does
+            const float band = (next() & 31u) == 0u ? 0.25f : 0.0f;
+            for (float x = 0.0f; x < W; x += Cell)
+            {
+                const float g = static_cast<float>(next() & 255u) / 255.0f;
+                if (g < 0.35f)
+                    continue;
+                text.solidRectPx(x, y, Cell, Cell, glm::vec4(glm::vec3(std::min(1.0f, g * 0.85f + band)), 1.0f));
+            }
+        }
+    }
+    text.solidRectPx(0.0f, 0.0f, W, H, glm::vec4(0.0f, 0.0f, 0.0f, m_activeCameraMode == ShipCameraMode::Cockpit ? 0.35f : 0.72f));
     const std::string title = "ПИЛОТ ПОГИБ";
     const std::string line = "Корабль разбит: " + cause + ". Экипаж погиб вместе с кабиной.";
     const std::string hint = "Esc - меню";

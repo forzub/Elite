@@ -1064,10 +1064,18 @@ public:
                     requiredTurnSlowdownDistanceMeters =
                         slowdown.requiredPreparationDistanceMeters;
 
-                    if (slowdown.slowdownRequiredNow)
+                    // a continuous BRAKING CURVE to the turn, not a yes/no "brake now": the switch flipped the
+                    // target 130 <-> 320 m/s every sample (the craft never braked - speed error rms 40 m/s on a dock
+                    // approach, 2026-11-22; the author: «автопилот должен понимать, когда ему надо затормозить»).
+                    // Allowed here: the turn speed + what the distance left (less the response / slew run) can brake.
                     {
-                        targetSpeed =
-                            std::min(targetSpeed, turnSpeedCeilingMps);
+                        const double margin =
+                            actualSpeed * (feedbackResponseSeconds + std::max(0.0, slowdown.setpointSlewSeconds));
+                        const double room = std::max(0.0, distanceToTurnMeters - margin);
+                        const double allowed = std::sqrt(
+                            turnSpeedCeilingMps * turnSpeedCeilingMps +
+                            2.0 * slowdownRequest.effectiveBrakingMps2 * room);
+                        targetSpeed = std::min(targetSpeed, std::max(turnSpeedCeilingMps, allowed));
                     }
                 }
             }
@@ -1141,6 +1149,9 @@ public:
             targetSpeed =
                 std::min(targetSpeed, recoveryCeiling);
         }
+        // keep the gap to the ship ahead (the traffic rule; the client fills it from the ships around)
+        if (agent.trafficSpeedCeilingMps > 0.0)
+            targetSpeed = std::min(targetSpeed, agent.trafficSpeedCeilingMps);
 
         // VELOCITY-COURSE CONTRACT.
         //

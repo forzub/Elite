@@ -6,7 +6,7 @@ The opposite lanes of a street are stacked over each other (x3.5.0: 320 m one wa
 used to ease its height over its whole length - through the oncoming lane's tube at the junction. The rule:
   * a turn changes its level ONLY on a street, before the junction (on the lane it leaves) or after it (on the lane
     it joins) - whichever has no other lane's tube in the way; through the junction square it flies at one level;
-  * the climb / descent is no steeper than CLIMB_DEG (its run starts / ends further along the street - a station is
+  * the climb / descent is no steeper than CLIMB_DEG (20 deg) (its run starts / ends further along the street - a station is
     inserted there);
   * a turn that has no clear street (an oncoming lane between the levels on both) does not exist at that junction -
     the router takes another junction (a forbidden turn).
@@ -25,9 +25,9 @@ import sys
 import numpy as np
 
 TURN_R, TURN_RUN = 100.0, 150.0          # hub_lanes.py: the arc radius inside the junction, the minimum street run
-CLIMB_DEG = 35.0
+CLIMB_DEG = 20.0          # 35: a 46 deg peak over ~300 m - the autopilot left a turn by 194 m at 45 m/s (2026-11-22)
 SHIP_MARGIN_M = 10.0
-STEP_M = 25.0
+STEP_M = 12.5
 
 
 def _smooth(t):

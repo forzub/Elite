@@ -7972,3 +7972,15 @@ start-up hitches (render), trade step 16 part 3 live.
   planning takes 50-75 s; the speed exceeds the hub limit (178 vs 150); a pad route straight leg hit the canopy disc
   (c4_3_canopy) once before lanes were used; a run died silently right after the pad service took the ship (dock-site
   loop spammed "released by the station" for pad-held ships - fixed, re-test running).
+
+- 2026-11-22 (later): crashes in the city found and fixed at the root.
+  * Ship collisions ran in updateCombat (tick stage 1) BEFORE the hub-attached statics moved to the tick's epoch
+    (stage 2): ships met the city where it stood one tick ago - hub velocity x dt, ~450 m at the orbital hub. The
+    "unexplained" crashes (c3_4_downtown, s29) were against ghost geometry 190+ m from anything real. collideShips now
+    runs after the statics move, per system pass (58007e021).
+  * Pad routes end ON the lane nearest the pad (RoutePlanRequest::endAtLaneExit; lane exits costed by straight distance,
+    no final free leg); the pad service climbs to transit height, flies across, descends after the legs. LIVE dk20-22.
+  * Continuous Assisted optimizer: a feasible path is polished <= 0.35 s per search branch (5000 polish evals = 59 s);
+    pad route 2.5 s (was 50-234 s). Lanes joined only from open sky (34cd912ea). Dock regression dk23: plan 6.3 s, docked.
+  OPEN: touchdown sag / legs not seen in a dev run (script has no gear key); lower-tier lanes z4.5.1.under and its dock
+  exit look to pass through buildings in the planner's obstacles (coarse check - verify).

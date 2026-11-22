@@ -190,7 +190,8 @@ bool RouteExecutionCore::initializeRuntimeProfile(
     const std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
     std::vector<double>& nominalSpeeds,
     std::vector<double>& runtimeSpeeds,
-    std::vector<double>& runtimeAccelerations
+    std::vector<double>& runtimeAccelerations,
+    bool smoothRipple
 )
 {
     if (samples.size() < 2)
@@ -208,6 +209,41 @@ bool RouteExecutionCore::initializeRuntimeProfile(
             return false;
         nominalSpeeds[i] = speed;
         runtimeSpeeds[i] = speed;
+    }
+
+    if (smoothRipple)
+    {
+        constexpr double RippleWindowMeters = 75.0;
+        constexpr double SmoothAccelMps2 = 8.0;
+        const std::size_t n = samples.size();
+        std::vector<double> s(n, 0.0);
+        for (std::size_t i = 1; i < n; ++i)
+            s[i] = s[i - 1] + glm::length(samples[i].positionMapMeters - samples[i - 1].positionMapMeters);
+        std::vector<double> low(n, 0.0);
+        std::size_t lo = 0;
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            while (s[i] - s[lo] > RippleWindowMeters)
+                ++lo;
+            double m = nominalSpeeds[i];
+            for (std::size_t j = lo; j < n && s[j] - s[i] <= RippleWindowMeters; ++j)
+                if (j != 0 && j + 1 != n)   // not the boundary speeds (a start at rest would hold the first metres at 0)
+                    m = std::min(m, nominalSpeeds[j]);
+            constexpr double RippleMps = 6.0;   // only the ripple is shaved: a real ramp (a stop, a turn) keeps its shape
+            low[i] = std::max(m, nominalSpeeds[i] - RippleMps);
+        }
+        // the start and the end keep their own boundary speeds
+        low.front() = nominalSpeeds.front();
+        low.back() = nominalSpeeds.back();
+        for (std::size_t i = 0; i + 1 < n; ++i)
+            low[i + 1] = std::min(low[i + 1], std::sqrt(low[i] * low[i] + 2.0 * SmoothAccelMps2 * (s[i + 1] - s[i])));
+        for (std::size_t i = n - 1; i > 0; --i)
+            low[i - 1] = std::min(low[i - 1], std::sqrt(low[i] * low[i] + 2.0 * SmoothAccelMps2 * (s[i] - s[i - 1])));
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            nominalSpeeds[i] = low[i];
+            runtimeSpeeds[i] = low[i];
+        }
     }
 
     // A speed sample is a boundary condition. Derive the acceleration

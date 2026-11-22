@@ -44,11 +44,16 @@ protected:
         std::size_t minimumSegmentIndex
     ) noexcept;
 
+    // smoothRipple (Assisted): the planner's samples ripple by 2-4 m/s every ~25 m; their v^2 differences read as
+    // +45 / -15 m/s2 every few metres - the speed sawtooth the author saw on every straight («разогнался - пролетел -
+    // затормозил»). The nominal is then its lower envelope over +-RippleWindowMeters, re-limited to SmoothAccelMps2 both
+    // ways: speeds only go DOWN (never above the plan anywhere), the turns keep their limits, a straight is flat.
     [[nodiscard]] static bool initializeRuntimeProfile(
         const std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
         std::vector<double>& nominalSpeeds,
         std::vector<double>& runtimeSpeeds,
-        std::vector<double>& runtimeAccelerations
+        std::vector<double>& runtimeAccelerations,
+        bool smoothRipple = false
     );
 
     [[nodiscard]] static bool buildCheckpointProgress(

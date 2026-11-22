@@ -241,7 +241,8 @@ public:
                 state.continuousSamples,
                 state.nominalSpeedProfileMps,
                 state.runtimeSpeedProfileMps,
-                state.runtimeLongitudinalAccelerationMps2
+                state.runtimeLongitudinalAccelerationMps2,
+                law == LocalFlightControlLaw::Assisted
             ))
         {
             if (failureReason)
@@ -249,6 +250,23 @@ public:
             state = {};
             return false;
         }
+        // DEV (ELITE_DEV_PROFILE_DUMP=<file>): the whole accepted speed profile every ~25 m - the nominal (the plan's
+        // samples) and the runtime one (the speed sawtooth hunt, 2026-11-22)
+        if (const char* path = std::getenv("ELITE_DEV_PROFILE_DUMP"); path && *path)
+            if (std::FILE* f = std::fopen(path, "a"))
+            {
+                std::fprintf(f, "PROFILE samples=%zu\n", state.continuousSamples.size());
+                double next = 0.0;
+                for (std::size_t i = 0; i < state.continuousSamples.size(); ++i)
+                    if (state.continuousProgressMeters[i] >= next || i + 1 == state.continuousSamples.size())
+                    {
+                        next = state.continuousProgressMeters[i] + 25.0;
+                        std::fprintf(f, "S %.1f nominal %.2f runtime %.2f a %.2f\n", state.continuousProgressMeters[i],
+                                     state.nominalSpeedProfileMps[i], state.runtimeSpeedProfileMps[i],
+                                     state.runtimeLongitudinalAccelerationMps2[i]);
+                    }
+                std::fclose(f);
+            }
         // DEV (ELITE_DEV_ROUTE_START_DUMP=1): the start of the accepted profile
         if (const char* d = std::getenv("ELITE_DEV_ROUTE_START_DUMP"); d && *d == '1')
         {

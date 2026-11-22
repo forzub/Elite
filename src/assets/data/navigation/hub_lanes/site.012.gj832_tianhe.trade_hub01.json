@@ -5735,7 +5735,7 @@
    "to_lane": "green.z1.5.0.top.p",
    "to_station": 4,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -6102,7 +6102,7 @@
    "to_lane": "green.z1.5.0.top.n",
    "to_station": 12,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -6224,7 +6224,7 @@
    "to_lane": "green.z1.5.0.top.n",
    "to_station": 13,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -6591,7 +6591,7 @@
    "to_lane": "green.x0.5.0.top.p",
    "to_station": 8,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -6958,7 +6958,7 @@
    "to_lane": "green.x0.5.0.top.p",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -7080,7 +7080,7 @@
    "to_lane": "green.x0.5.0.top.n",
    "to_station": 7,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -7447,7 +7447,7 @@
    "to_lane": "green.z1.5.0.under.p",
    "to_station": 4,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -7814,7 +7814,7 @@
    "to_lane": "green.z1.5.0.under.n",
    "to_station": 12,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -7936,7 +7936,7 @@
    "to_lane": "green.z1.5.0.under.n",
    "to_station": 13,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -8303,7 +8303,7 @@
    "to_lane": "green.x0.5.0.under.p",
    "to_station": 8,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -8670,7 +8670,7 @@
    "to_lane": "green.x0.5.0.under.p",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -8792,7 +8792,7 @@
    "to_lane": "green.x0.5.0.under.n",
    "to_station": 7,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -9159,7 +9159,7 @@
    "to_lane": "green.z1.5.0.top.p",
    "to_station": 7,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -9526,7 +9526,7 @@
    "to_lane": "green.z1.5.0.top.n",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -9648,7 +9648,7 @@
    "to_lane": "green.z1.5.0.top.n",
    "to_station": 8,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -10015,7 +10015,7 @@
    "to_lane": "green.x1.5.0.top.p",
    "to_station": 8,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -10382,7 +10382,7 @@
    "to_lane": "green.x1.5.0.top.p",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -10504,7 +10504,7 @@
    "to_lane": "green.x1.5.0.top.n",
    "to_station": 10,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -10871,7 +10871,7 @@
    "to_lane": "green.z1.5.0.under.p",
    "to_station": 7,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -11238,7 +11238,7 @@
    "to_lane": "green.z1.5.0.under.n",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -11360,7 +11360,7 @@
    "to_lane": "green.z1.5.0.under.n",
    "to_station": 8,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -11727,7 +11727,7 @@
    "to_lane": "green.x1.5.0.under.p",
    "to_station": 8,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -12094,7 +12094,7 @@
    "to_lane": "green.x1.5.0.under.p",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -12216,7 +12216,7 @@
    "to_lane": "green.x1.5.0.under.n",
    "to_station": 10,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -12583,7 +12583,7 @@
    "to_lane": "green.z2.5.0.top.p",
    "to_station": 5,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -12950,7 +12950,7 @@
    "to_lane": "green.z2.5.0.top.n",
    "to_station": 10,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -13072,7 +13072,7 @@
    "to_lane": "green.z2.5.0.top.n",
    "to_station": 11,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -13439,7 +13439,7 @@
    "to_lane": "green.x0.5.0.top.p",
    "to_station": 13,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -13806,7 +13806,7 @@
    "to_lane": "green.x0.5.0.top.p",
    "to_station": 12,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -13928,7 +13928,7 @@
    "to_lane": "green.x0.5.0.top.n",
    "to_station": 4,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -14295,7 +14295,7 @@
    "to_lane": "green.z2.5.0.under.p",
    "to_station": 5,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -14662,7 +14662,7 @@
    "to_lane": "green.z2.5.0.under.n",
    "to_station": 10,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -14784,7 +14784,7 @@
    "to_lane": "green.z2.5.0.under.n",
    "to_station": 11,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -15151,7 +15151,7 @@
    "to_lane": "green.x0.5.0.under.p",
    "to_station": 13,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -15518,7 +15518,7 @@
    "to_lane": "green.x0.5.0.under.p",
    "to_station": 12,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -15640,7 +15640,7 @@
    "to_lane": "green.x0.5.0.under.n",
    "to_station": 4,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -16007,7 +16007,7 @@
    "to_lane": "green.z2.5.0.top.p",
    "to_station": 9,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -16374,7 +16374,7 @@
    "to_lane": "green.z2.5.0.top.n",
    "to_station": 5,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -16496,7 +16496,7 @@
    "to_lane": "green.z2.5.0.top.n",
    "to_station": 7,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -16863,7 +16863,7 @@
    "to_lane": "green.x1.5.0.top.p",
    "to_station": 12,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -17230,7 +17230,7 @@
    "to_lane": "green.x1.5.0.top.p",
    "to_station": 11,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -17352,7 +17352,7 @@
    "to_lane": "green.x1.5.0.top.n",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -17719,7 +17719,7 @@
    "to_lane": "green.z2.5.0.under.p",
    "to_station": 9,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -18086,7 +18086,7 @@
    "to_lane": "green.z2.5.0.under.n",
    "to_station": 5,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -18208,7 +18208,7 @@
    "to_lane": "green.z2.5.0.under.n",
    "to_station": 7,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -18575,7 +18575,7 @@
    "to_lane": "green.x1.5.0.under.p",
    "to_station": 12,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -18942,7 +18942,7 @@
    "to_lane": "green.x1.5.0.under.p",
    "to_station": 11,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [
@@ -19064,7 +19064,7 @@
    "to_lane": "green.x1.5.0.under.n",
    "to_station": 6,
    "radius_m": 55.0,
-   "max_speed_mps": 150.0,
+   "max_speed_mps": 30.0,
    "max_ship_length_m": 100.0,
    "points_local_m": [
     [

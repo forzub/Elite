@@ -27,6 +27,7 @@ import numpy as np
 TURN_R, TURN_RUN = 100.0, 150.0          # hub_lanes.py: the arc radius inside the junction, the minimum street run
 CLIMB_DEG = 20.0          # 35: a 46 deg peak over ~300 m - the autopilot left a turn by 194 m at 45 m/s (2026-11-22)
 SHIP_MARGIN_M = 10.0
+TURN_SPEED_MPS = 30.0
 STEP_M = 12.5
 
 
@@ -105,6 +106,11 @@ def apply(doc):
     kept = rebuilt = dropped = 0
     run = lambda dy: max(TURN_RUN, abs(dy) / math.tan(math.radians(CLIMB_DEG)))
     for cn, (p_from, p_to) in zip(conns, ends):
+        if cn["id"].startswith("turn."):
+            # a junction turn (a TURN_R arc) is flown slowly: TURN_SPEED_MPS ~ 9 m/s2 on the arc (at 36-47 m/s the
+            # autopilot left the arc by 40 m, suite v3; the author: «повороты крутые, скорость надо сбрасывать почти до
+            # нуля»)
+            cn["max_speed_mps"] = min(cn.get("max_speed_mps", TURN_SPEED_MPS), TURN_SPEED_MPS)
         if not cn["id"].startswith("turn."):
             out.append(cn)
             out_ends.append((p_from, p_to))

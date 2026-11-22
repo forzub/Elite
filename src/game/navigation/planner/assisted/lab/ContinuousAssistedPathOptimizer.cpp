@@ -1,5 +1,6 @@
 #include "src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h"
 
+#include <chrono>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -1676,10 +1677,19 @@ SearchResult patternOptimize(
             }
         };
 
+    // a feasible path is only polished for so long (author 2026-11-22: «он ужасно долго считает маршрут»): a leg among a
+    // city's ~2800 volumes found its feasible path at evaluation 71 and then polished it for 5000 more - 59 s; the polish
+    // after that moved the length by 3 %. The accepted route is checked against all obstacles afterwards ([RouteCheck])
+    constexpr double FeasiblePolishBudgetSeconds = 0.35;
+    const auto polishStarted = std::chrono::steady_clock::now();
     for (std::size_t iteration = 0;
          iteration < iterations;
          ++iteration)
     {
+        if (out.evaluation.feasible &&
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - polishStarted).count() >
+                FeasiblePolishBudgetSeconds)
+            break;
         bool improved = false;
 
         for (std::size_t axis = 0;

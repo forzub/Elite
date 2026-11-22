@@ -196,13 +196,23 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     };
     const auto leaveEndAt = [&](std::size_t l, std::size_t k) { return P[l][k] + F[l][k] * LeaveStraightMeters; };
     // the join straight of every station checked ONCE (the search reuses it; per pop it froze the game - live 2026-11-22)
+    constexpr double OpenSkyMeters = 1500.0;
     std::vector<std::vector<char>> joinClear(laneCount);
     for (std::size_t l = 0; l < laneCount; ++l)
     {
         joinClear[l].assign(P[l].size(), 0);
         if (usable[l])
             for (std::size_t k = 0; k + 1 < P[l].size(); ++k)
-                joinClear[l][k] = clear(joinApproachAt(l, k), P[l][k]) ? 1 : 0;
+            {
+                // ... and joined only from open sky (author 2026-11-22: «в зелёную зону входим из открытого
+                // пространства»): straight out of the city (up over the top tier, down under the lower one) from the
+                // approach's start nothing stands - a join under the roofs made the inbound leg dive between the
+                // buildings (50 s of search, a 1.3 km turn radius among 26-40 m streets)
+                const glm::dvec3 a = joinApproachAt(l, k);
+                const glm::dvec3 up = frame.localToWorldBasis[1] *
+                                      (m_lanes[l].stationsLocal[k].y >= 0.0 ? 1.0 : -1.0);
+                joinClear[l][k] = clear(a, P[l][k]) && clear(a, a + up * OpenSkyMeters) ? 1 : 0;
+            }
     }
 
     // states: (global station, ridden) + the goal

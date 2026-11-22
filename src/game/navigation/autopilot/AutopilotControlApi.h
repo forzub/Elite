@@ -59,6 +59,8 @@ struct AutopilotControlRequest
     glm::dvec3 desiredUpMap {0.0, 1.0, 0.0};
 
     glm::dvec3 actualVelocityMapMps {0.0};
+    // Assisted: the ship's current speed setpoint (target VREL); < 0 = unknown (the old actual-speed feedback)
+    double assistedTargetSpeedMps = -1.0;
     glm::dvec3 forwardMap {0.0, 0.0, -1.0};
     glm::dvec3 rightMap {1.0, 0.0, 0.0};
     glm::dvec3 upMap {0.0, 1.0, 0.0};

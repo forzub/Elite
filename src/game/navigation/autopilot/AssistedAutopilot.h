@@ -452,8 +452,15 @@ public:
                     request.desiredLinearAccelerationMapMps2,
                     desiredCourse
                 );
+            // The flight assist drives the speed to its own setpoint; this law moves the SETPOINT. Fed back on the
+            // actual (lagging) speed it kept pushing the setpoint past the profile - two integrators in a row: the
+            // speed swung 85-169 m/s around a planned 120 and came into the turns at 76 m/s against a planned 20-45
+            // (author 2026-11-22: «автопилот не придерживается скоростного режима, определённого планировщиком»).
+            // With the setpoint known it follows the planned speed itself; the assist does the rest.
+            const bool setpointKnown = request.assistedTargetSpeedMps >= 0.0;
             const double feedbackAcceleration =
-                (desiredSpeed - actualSpeed) / horizon;
+                setpointKnown ? (desiredSpeed - request.assistedTargetSpeedMps) / 0.25
+                              : (desiredSpeed - actualSpeed) / horizon;
 
             out.targetSpeedRate = finiteClamp(
                 (feedForwardAcceleration + feedbackAcceleration) /

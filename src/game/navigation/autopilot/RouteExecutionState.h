@@ -59,6 +59,8 @@ struct AutopilotAgentState
     double pitchRateRadPerSec = 0.0;
     double yawRateRadPerSec = 0.0;
     double rollRateRadPerSec = 0.0;
+    // Assisted: the ship's own speed setpoint (target VREL) the flight assist drives the speed to; < 0 = unknown
+    double assistedTargetSpeedMps = -1.0;
 };
 
 // Route execution state shared by both route-autopilot laws (everything but

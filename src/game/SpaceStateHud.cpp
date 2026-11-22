@@ -472,6 +472,7 @@ m_systemMapRenderer.render(
     renderHudJump(vp);
     renderDockingWidget(vp);
     renderZoneViolationBanner(vp);
+    renderPilotLostOverlay(vp);
     if (context().app)
     {
         game::presentation::TemporaryShortcutStrip::render(

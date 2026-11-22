@@ -5,6 +5,7 @@
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/fuel/FuelStationCatalog.h"
 #include "src/game/SpaceStateInternal.h"
+#include "src/game/navigation/rules/CapsuleRules.h"
 
 #include <algorithm>
 #include <cmath>
@@ -519,6 +520,60 @@ void SpaceState::renderZoneViolationBanner(const Viewport& viewport)
     text.solidRectPx(x, y, w, 32.0f, glm::vec4(0.35f, 0.02f, 0.02f, 0.9f));
     text.solidRectPx(x, y, w, 2.0f, glm::vec4(1.0f, 0.3f, 0.2f, 1.0f));
     text.textDrawPx(m_violationText, x + 20.0f, y + 22.0f, 16, glm::vec4(1.0f, 0.85f, 0.8f, 1.0f));
+    text.endFrame();
+}
+
+// The pilot is dead (author 2026-11-22: «врезание в здание не дало никакого эффекта, игра по-идее должна была
+// закончиться»): the player's ship is wrecked / disabled (destroyedCause) and its cockpit is gone (the crew lost with it)
+// -> the whole screen says so and the flight controls are over (handleInput); the menu (Esc) stays, and the DEV restore
+// (Ctrl+Alt+R) for the tests. A crew that escaped in the EC-2 cockpit is not dead (the capsule states show it).
+bool SpaceState::playerPilotLost(std::string* cause) const
+{
+    if (!m_client)
+        return false;
+    const auto it = m_client->world().ships().find(m_playerId.value);
+    if (it == m_client->world().ships().end())
+        return false;
+    const auto& ship = it->second;
+    const auto& motion = ship.transform.motion;
+    if (motion.destroyedCause == 0)
+        return false;
+    bool cockpitLost = false;
+    for (const auto& m : ship.modules)
+        if (m.moduleId == "ship_cockpit")
+            cockpitLost = m.health <= 0.0f;
+    namespace cap = game::navigation::capsule;
+    const auto capsule = static_cast<cap::State>(motion.capsuleState);
+    const bool killed = cockpitLost || capsule == cap::State::PilotKilled ||
+                        motion.destroyedCause == 4;   // crushed against a structure
+    if (!killed)
+        return false;
+    if (cause)
+        *cause = motion.destroyedCause == 1 ? "удар о поверхность"
+               : motion.destroyedCause == 4 ? "столкновение с постройкой"
+               : motion.destroyedCause == 3 ? "кабина разрушена"
+                                            : "перегрузка";
+    return true;
+}
+
+void SpaceState::renderPilotLostOverlay(const Viewport& viewport)
+{
+    std::string cause;
+    if (viewport.width <= 0 || !playerPilotLost(&cause))
+        return;
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+    const float W = static_cast<float>(viewport.width), H = static_cast<float>(viewport.height);
+    text.solidRectPx(0.0f, 0.0f, W, H, glm::vec4(0.0f, 0.0f, 0.0f, 0.72f));
+    const std::string title = "ПИЛОТ ПОГИБ";
+    const std::string line = "Корабль разбит: " + cause + ". Экипаж погиб вместе с кабиной.";
+    const std::string hint = "Esc - меню";
+    const float tw = text.measureTextPx(title, 40);
+    text.solidRectPx(0.0f, H * 0.38f, W, 2.0f, glm::vec4(0.9f, 0.15f, 0.1f, 0.9f));
+    text.textDrawPx(title, 0.5f * (W - tw), H * 0.38f + 58.0f, 40, glm::vec4(1.0f, 0.25f, 0.2f, 1.0f));
+    text.textDrawPx(line, 0.5f * (W - text.measureTextPx(line, 18)), H * 0.38f + 100.0f, 18, glm::vec4(0.95f, 0.9f, 0.88f, 1.0f));
+    text.textDrawPx(hint, 0.5f * (W - text.measureTextPx(hint, 14)), H * 0.38f + 132.0f, 14, glm::vec4(0.7f, 0.72f, 0.76f, 0.9f));
+    text.solidRectPx(0.0f, H * 0.38f + 150.0f, W, 2.0f, glm::vec4(0.9f, 0.15f, 0.1f, 0.9f));
     text.endFrame();
 }
 

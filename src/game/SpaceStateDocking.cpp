@@ -912,6 +912,7 @@ void SpaceState::updateDockingAdvisory()
         agent.pitchRateRadPerSec = transform.pitchRate;
         agent.yawRateRadPerSec = transform.yawRate;
         agent.rollRateRadPerSec = transform.rollRate;
+        agent.assistedTargetSpeedMps = std::max(0.0, static_cast<double>(player.transform.motion.targetForwardSpeedMps));
         return agent;
     };
 

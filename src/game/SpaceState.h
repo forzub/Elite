@@ -441,6 +441,9 @@ private:
     // ends the request when docked; the planner / autopilot fly as before.
     template <class Frame> bool updateDockingDispatcherGate(Frame& f);
     void sendDockArrivalRequest(bool engage, const std::string& dockModuleId = {});
+    // the player's pilot is dead (the ship wrecked, the cockpit gone): the end screen, the flight controls over
+    bool playerPilotLost(std::string* cause = nullptr) const;
+    void renderPilotLostOverlay(const Viewport& viewport);
     template <class Frame> void publishDockingAdvisoryPresentation(Frame& f);
     void updateShipObservationInterest(float dt);
     game::presentation::SystemMapPanelPresentation

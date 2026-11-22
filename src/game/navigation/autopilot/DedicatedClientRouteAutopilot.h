@@ -371,6 +371,7 @@ public:
         request.desiredForwardMap = agent.forwardMap;
         request.desiredUpMap = agent.upMap;
         request.actualVelocityMapMps = agent.velocityMapMetersPerSecond;
+        request.assistedTargetSpeedMps = agent.assistedTargetSpeedMps;
         request.forwardMap = agent.forwardMap;
         request.rightMap = agent.rightMap;
         request.upMap = agent.upMap;
@@ -1595,6 +1596,7 @@ public:
 
         request.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;
+        request.assistedTargetSpeedMps = agent.assistedTargetSpeedMps;
         request.forwardMap = agent.forwardMap;
         request.rightMap = agent.rightMap;
         request.upMap = agent.upMap;

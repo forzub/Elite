@@ -888,6 +888,9 @@ void SpaceState::handleInput()
         if (combo)
             return;
     }
+    // the pilot is dead: no flight controls any more (the end screen; Esc - the menu - is the application's)
+    if (playerPilotLost())
+        return;
 
 
     if (context().app &&

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <string>
+#include <cstdlib>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -20,6 +22,7 @@ namespace render::cockpit
 void HubCorridorHudRenderer::init()
 {
     m_batch.init();
+    m_depthBatch.init();
 }
 
 bool HubCorridorHudRenderer::project(const glm::dvec3& relative, const glm::mat4& view, const glm::mat4& proj,
@@ -55,6 +58,10 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
     glm::dvec3 travel(player.renderTransform.relativeVelocityMetersPerSecond);
     travel = glm::length(travel) > 5.0 ? glm::normalize(travel) : glm::dvec3(player.renderTransform.forward());
     bool begun = false;
+    static const bool depthTested = [] {
+        const char* v = std::getenv("ELITE_DEV_ZONE_DEPTH");
+        return !(v && std::string(v) == "0");
+    }();
     const auto alphaAt = [&](const glm::dvec3& w, double peak) {
         const double d = glm::length(w - playerMeters);
         return d >= FadeMeters ? 0.0 : peak * (1.0 - d / FadeMeters);
@@ -128,8 +135,11 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         if (!begun)
         {
             m_batch.begin(viewport.width, viewport.height);
+            m_depthBatch.begin(viewport.width, viewport.height);
             begun = true;
         }
+        // the lines are depth-tested now: the per-sample box test only hides the TEXT labels (no depth for text)
+        const auto lineHidden = [&](const glm::dvec3& w) { return depthTested ? false : hidden(w); };
         // a segment CLIPPED at a near plane in view space, not dropped when one end is behind / beside the camera: flying
         // inside a tube the rings' pieces went on and off as their ends crossed the camera - the rings seemed to be
         // redrawn in new places (author 2026-11-22: «при пролёте внутри ведут себя нестабильно»)
@@ -157,6 +167,12 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                        (1.0f - (ndc.y * 0.5f + 0.5f)) * static_cast<float>(viewport.height)};
                 return true;
             };
+            if (depthTested)
+            {
+                m_depthBatch.line(projectionMatrix * glm::vec4(va.x, va.y, va.z, 1.0f),
+                                  projectionMatrix * glm::vec4(vb.x, vb.y, vb.z, 1.0f), w, c);
+                return;
+            }
             glm::vec2 pa, pb;
             if (toPx(va, pa) && toPx(vb, pb))
                 m_batch.line(pa, pb, w, c);
@@ -192,7 +208,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 for (int s = 0; s <= steps; ++s)
                 {
                     const glm::dvec3 c = a + ab * (len * s / steps);
-                    const double alpha = hidden(c) ? 0.0 : alphaAt(c, 0.18);
+                    const double alpha = lineHidden(c) ? 0.0 : alphaAt(c, 0.18);
                     std::array<glm::dvec3, RingSides> ring {};
                     for (int i = 0; i < RingSides; ++i)
                     {
@@ -235,7 +251,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
             {
                 const glm::dvec3 a = toWorld(cn.pointsLocal[i]);
                 const glm::dvec3 b = toWorld(cn.pointsLocal[i + 1]);
-                const double alpha = hidden((a + b) * 0.5) ? 0.0 : alphaAt(a, 0.18);
+                const double alpha = lineHidden((a + b) * 0.5) ? 0.0 : alphaAt(a, 0.18);
                 if (alpha <= 0.005)
                     continue;
                 const double len = glm::length(b - a);
@@ -257,7 +273,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 const bool queued = dd.active && dd.queuePosition > 1;
                 const glm::vec3 tint = queued ? glm::vec3(1.00f, 0.28f, 0.22f) : glm::vec3(0.92f, 0.96f, 1.00f);
                 glm::vec2 px;
-                if (!project(toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0)) - playerMeters,
+                if (hidden(toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0))) || !project(toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0)) - playerMeters,
                              viewMatrix, projectionMatrix, viewport, px))
                     continue;
                 char label[160];
@@ -309,7 +325,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                     const double sideUp = m.under ? -1.0 : 1.0;
                     const glm::dvec3 labelAt = toWorld(m.padPosition + glm::dvec3(0.0, sideUp * (game::navigation::HubPadZoneHeight + 4.0), 0.0));
                     glm::vec2 px;
-                    if (project(labelAt - playerMeters, viewMatrix, projectionMatrix, viewport, px))
+                    if (!hidden(labelAt) && project(labelAt - playerMeters, viewMatrix, projectionMatrix, viewport, px))
                     {
                         char label[128];
                         if (ours)   // our own place: say so (not "free 2/2" while we stand on it)
@@ -333,7 +349,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                     c[i] = toWorld(m.padPosition + glm::dvec3((i & 1) ? s : -s, (i & 2) ? sy * hgt : 0.0, (i & 4) ? s : -s));
                 for (int i = 0; i < 8; ++i)
                     for (int bit = 1; bit < 8; bit <<= 1)
-                        if (!(i & bit) && !hidden((c[i] + c[i | bit]) * 0.5))
+                        if (!(i & bit) && !lineHidden((c[i] + c[i | bit]) * 0.5))
                             seg(c[i], c[i | bit], edge, 1.0f);
                 const double half = 0.5 * game::navigation::HubPadDeckSide;
                 const glm::vec4 deckLine(tint, static_cast<float>(0.35 * fade));
@@ -366,12 +382,15 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 c[i] = toWorld(zone.centerLocal + zr * glm::dvec3((i & 1) ? h.x : -h.x, (i & 2) ? h.y : -h.y, (i & 4) ? h.z : -h.z));
             for (int i = 0; i < 8; ++i)
                 for (int bit = 1; bit < 8; bit <<= 1)
-                    if (!(i & bit) && !hidden((c[i] + c[i | bit]) * 0.5))
+                    if (!(i & bit) && !lineHidden((c[i] + c[i | bit]) * 0.5))
                         seg(c[i], c[i | bit], col, 1.0f);
         }
     }
     if (begun)
+    {
+        m_depthBatch.flush();
         m_batch.flush();
+    }
 }
 
 } // namespace render::cockpit

@@ -667,6 +667,7 @@ add_executable(EliteGame
     src/render/cockpit/EngineThrustIndicatorRenderer.cpp
     src/render/cockpit/GuidanceCorridorRenderer.cpp
     src/render/cockpit/HubCorridorHudRenderer.cpp
+    src/render/cockpit/DepthLineBatch.cpp
     src/render/cockpit/GalacticCompassRenderer.cpp
     src/render/HUD/HudPrimitiveBatch.cpp
     src/render/JumpScreenEffect.cpp

@@ -8,6 +8,7 @@
 
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/render/HUD/HudPrimitiveBatch.h"
+#include "src/render/cockpit/DepthLineBatch.h"
 #include "src/render/types/Viewport.h"
 
 class ClientWorldState;
@@ -43,6 +44,7 @@ private:
                  glm::vec2& outPx) const;
 
     render::hud::HudPrimitiveBatch m_batch;
+    DepthLineBatch m_depthBatch;   // the zones' lines: depth-tested against the scene (hidden behind / inside buildings)
 };
 
 } // namespace render::cockpit

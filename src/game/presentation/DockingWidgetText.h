@@ -260,6 +260,9 @@ using DockingWidgetLookup = TerminalLocalizedText::Lookup;
         if (!place.empty())
             out.fields.push_back({tr("cockpit.dock_widget.field_place"), place});
     }
+    // the berth fee (author 2026-11-22: «писать стоимость в час» over the docks too): every dispatcher-held dock
+    if (dispatcher && !departing)
+        out.fields.push_back({tr("cockpit.dock_widget.field_fee"), "250 Cr/\xD1\x87"});
     if (ph == DockTrafficPhase::Docked)
         out.fields.push_back({tr("cockpit.dock_widget.field_departure"), "Ctrl+L"});
     return out;

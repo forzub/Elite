@@ -295,6 +295,14 @@ inline int hubBerthPricePerHour(const HubPlan& plan, const HubPlanModule& m)
     return static_cast<int>(std::round(base * k / 5.0) * 5.0);
 }
 
+// the hub dock's berth fee per hour: a pressurised hall with service, the dearest place in a city (author 2026-11-22:
+// «над белыми и красными зонами захвата площадок и доков писать стоимость в час»)
+inline int hubDockPricePerHour(const HubPlan& plan)
+{
+    (void)plan;
+    return 250;
+}
+
 // a place's touchdown point (city frame): a hangar's bay left / right of its centre line; the others: the pad itself
 inline glm::dvec3 hubBerthTouchdown(const HubPlanModule& pad, int bay)
 {

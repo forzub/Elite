@@ -244,6 +244,33 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 seg(a, b, glm::vec4(tint, static_cast<float>(alpha * 0.45)), 1.0f);
             }
         }
+        // the DOCK's capture zone label: the fee per hour and the dispatcher's queue (white free, red a queue ahead of us)
+        if (const auto* dockPlan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
+            for (const auto& dk : dockPlan->docks())
+            {
+                const glm::dvec3 gate = toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0);
+                const double d = glm::length(gate - playerMeters);
+                if (d > 2500.0)
+                    continue;
+                const double fade = std::clamp((2500.0 - d) / 300.0, 0.0, 1.0);
+                const auto& dd = player.dockDispatcher;
+                const bool queued = dd.active && dd.queuePosition > 1;
+                const glm::vec3 tint = queued ? glm::vec3(1.00f, 0.28f, 0.22f) : glm::vec3(0.92f, 0.96f, 1.00f);
+                glm::vec2 px;
+                if (!project(toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0)) - playerMeters,
+                             viewMatrix, projectionMatrix, viewport, px))
+                    continue;
+                char label[160];
+                if (queued)
+                    std::snprintf(label, sizeof(label), "ÐÐÐ Â· Ð Â· %d Cr/Ñ Â· Ð¾ÑÐµÑÐµÐ´Ñ %u/%u",
+                                  game::navigation::hubDockPricePerHour(*dockPlan), dd.queuePosition, dd.queueLength);
+                else
+                    std::snprintf(label, sizeof(label), "ÐÐÐ Â· Ð Â· %d Cr/Ñ",
+                                  game::navigation::hubDockPricePerHour(*dockPlan));
+                auto& text = TextRenderer::instance();
+                const float w = text.measureTextPx(label, 14);
+                text.textDrawPx(label, px.x - 0.5f * w, px.y, 14, glm::vec4(tint, static_cast<float>(0.9 * fade)));
+            }
         // the PAD capture zones (author 2026-11-21: «прозрачный куб с белёсыми рёбрами, который появляется, когда до площадки
         // остаётся метров 100»): an automatic pad's zone whitish, a hand-flown pad's amber; the deck outline under it
         if (const auto* cityPlan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))

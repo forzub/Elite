@@ -1969,6 +1969,13 @@
       "es": "LUGAR",
       "ja": "場所"
     },
+    "cockpit.dock_widget.field_fee": {
+      "en": "FEE",
+      "ru": "ТАРИФ",
+      "zh-Hans": "费用",
+      "es": "TARIFA",
+      "ja": "料金"
+    },
     "cockpit.dock_widget.field_departure": {
       "en": "DEPART",
       "ru": "ВЫЛЕТ",

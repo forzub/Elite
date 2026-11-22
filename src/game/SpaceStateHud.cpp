@@ -655,7 +655,9 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             // wanders by metres at orbital speed - the gates shook (live 2026-11-21); a big jump restarts it
             static glm::dvec3 qSmooth(0.0);
             static std::chrono::steady_clock::time_point qAt {};
-            const glm::dvec3 qRaw = glm::transpose(R) * (shipW - origin);
+            // ... in the plan's STRIP metres (a ring hub: unbent, HubRingBend.h) - the service's route is there
+            const auto& ring = plan->ring();
+            const glm::dvec3 qRaw = ring.toStrip(glm::transpose(R) * (shipW - origin));
             const auto qNow = std::chrono::steady_clock::now();
             const double qDt = std::chrono::duration<double>(qNow - qAt).count();
             qAt = qNow;
@@ -747,8 +749,8 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                     if (dist < 20.0)
                         continue;
                     game::presentation::GuidanceHudFramePresentation f;
-                    f.relativeCenterMeters = R * p + origin - shipW;
-                    f.orientation = glm::quat_cast(R) * local;
+                    f.relativeCenterMeters = R * ring.toFrame(p) + origin - shipW;
+                    f.orientation = glm::quat_cast(R * ring.basisAt(p.x)) * local;
                     f.widthMeters = 40.0;
                     f.heightMeters = 30.0;
                     // translucent like the docking tunnel (author 2026-11-21: «тоннель надо сделать полупрозрачным»)

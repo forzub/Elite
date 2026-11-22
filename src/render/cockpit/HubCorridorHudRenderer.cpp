@@ -79,6 +79,10 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
             continue;
         const glm::dmat3 R(glm::mat3(object.renderOrientation));
         const auto toWorld = [&](const glm::dvec3& local) { return origin + R * local; };
+        // the plan's points (pads, docks) are in its STRIP metres: a ring hub bends them into the frame (HubRingBend.h)
+        const auto* planHere = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId);
+        const game::navigation::HubRingBend ringHere = planHere ? planHere->ring() : game::navigation::HubRingBend {};
+        const auto stripWorld = [&](const glm::dvec3& strip) { return toWorld(ringHere.toFrame(strip)); };
         const glm::dvec3 up = R * glm::dvec3(0.0, 1.0, 0.0);
         // what hides the lanes / zones (author 2026-11-21: «если между зоной и игроком находится помеха, за помехой зону не
         // должно быть видно»): the planar city's blocks as boxes in this frame; a sample is hidden when the segment from it
@@ -264,7 +268,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         if (const auto* dockPlan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
             for (const auto& dk : dockPlan->docks())
             {
-                const glm::dvec3 gate = toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0);
+                const glm::dvec3 gate = stripWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0);
                 const double d = glm::length(gate - playerMeters);
                 if (d > 2500.0)
                     continue;
@@ -273,7 +277,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 const bool queued = dd.active && dd.queuePosition > 1;
                 const glm::vec3 tint = queued ? glm::vec3(1.00f, 0.28f, 0.22f) : glm::vec3(0.92f, 0.96f, 1.00f);
                 glm::vec2 px;
-                if (hidden(toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0))) || !project(toWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0)) - playerMeters,
+                if (hidden(stripWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0))) || !project(stripWorld(dk.position + glm::dvec3(dk.out.x, 0.0, dk.out.y) * 60.0 + glm::dvec3(0.0, 45.0, 0.0)) - playerMeters,
                              viewMatrix, projectionMatrix, viewport, px))
                     continue;
                 char label[160];
@@ -294,7 +298,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
             {
                 if (!m.pad)
                     continue;
-                const glm::dvec3 deck = toWorld(m.padPosition);
+                const glm::dvec3 deck = stripWorld(m.padPosition);
                 const double d = glm::length(deck - playerMeters);
                 if (d > game::navigation::HubPadZoneShowMeters)
                     continue;
@@ -323,7 +327,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 // красными зонами захвата писать стоимость в час»)
                 {
                     const double sideUp = m.under ? -1.0 : 1.0;
-                    const glm::dvec3 labelAt = toWorld(m.padPosition + glm::dvec3(0.0, sideUp * (game::navigation::HubPadZoneHeight + 4.0), 0.0));
+                    const glm::dvec3 labelAt = stripWorld(m.padPosition + glm::dvec3(0.0, sideUp * (game::navigation::HubPadZoneHeight + 4.0), 0.0));
                     glm::vec2 px;
                     if (!hidden(labelAt) && project(labelAt - playerMeters, viewMatrix, projectionMatrix, viewport, px))
                     {
@@ -346,7 +350,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 const double sy = m.under ? -1.0 : 1.0;
                 std::array<glm::dvec3, 8> c {};
                 for (int i = 0; i < 8; ++i)
-                    c[i] = toWorld(m.padPosition + glm::dvec3((i & 1) ? s : -s, (i & 2) ? sy * hgt : 0.0, (i & 4) ? s : -s));
+                    c[i] = stripWorld(m.padPosition + glm::dvec3((i & 1) ? s : -s, (i & 2) ? sy * hgt : 0.0, (i & 4) ? s : -s));
                 for (int i = 0; i < 8; ++i)
                     for (int bit = 1; bit < 8; bit <<= 1)
                         if (!(i & bit) && !lineHidden((c[i] + c[i | bit]) * 0.5))
@@ -354,10 +358,10 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 const double half = 0.5 * game::navigation::HubPadDeckSide;
                 const glm::vec4 deckLine(tint, static_cast<float>(0.35 * fade));
                 const glm::dvec3 lift(0.0, sy * 0.3, 0.0);
-                const glm::dvec3 q0 = toWorld(m.padPosition + lift + glm::dvec3(-half, 0, -half)),
-                                 q1 = toWorld(m.padPosition + lift + glm::dvec3(half, 0, -half)),
-                                 q2 = toWorld(m.padPosition + lift + glm::dvec3(half, 0, half)),
-                                 q3 = toWorld(m.padPosition + lift + glm::dvec3(-half, 0, half));
+                const glm::dvec3 q0 = stripWorld(m.padPosition + lift + glm::dvec3(-half, 0, -half)),
+                                 q1 = stripWorld(m.padPosition + lift + glm::dvec3(half, 0, -half)),
+                                 q2 = stripWorld(m.padPosition + lift + glm::dvec3(half, 0, half)),
+                                 q3 = stripWorld(m.padPosition + lift + glm::dvec3(-half, 0, half));
                 seg(q0, q1, deckLine, 2.0f);
                 seg(q1, q2, deckLine, 2.0f);
                 seg(q2, q3, deckLine, 2.0f);

@@ -1,4 +1,6 @@
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
+
+#include "src/game/navigation/HubPlanCatalog.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 
 #include <algorithm>
@@ -571,6 +573,27 @@ const HubLaneNetwork* HubLaneCatalog::forFrameModule(const std::string& moduleId
         if (network->frameModuleId() == moduleId)
             return network.get();
     return nullptr;
+}
+
+double laneTubeCeilingMeters(const HubLaneNetwork* network, bool under)
+{
+    double top = 0.0;
+    if (!network)
+        return top;
+    // a ring hub (HubRingBend.h): the height of a lane point is over the deck towards the axis, not the frame's y
+    const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(network->frameModuleId());
+    const game::navigation::HubRingBend ring = plan ? plan->ring() : game::navigation::HubRingBend {};
+    const auto height = [&](const glm::dvec3& p) { return ring.valid ? ring.toStrip(p).y : p.y; };
+    const auto side = [&](double y) { return under ? y < 0.0 : y >= 0.0; };
+    for (const auto& lane : network->lanes())
+        for (const auto& p : lane.stationsLocal)
+            if (const double y = height(p); side(y))
+                top = std::max(top, std::abs(y) + lane.radiusMeters);
+    for (const auto& cn : network->connectors())
+        for (const auto& p : cn.pointsLocal)
+            if (const double y = height(p); side(y))
+                top = std::max(top, std::abs(y) + cn.radiusMeters);
+    return top;
 }
 
 } // namespace game::navigation::traffic

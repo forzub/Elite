@@ -155,7 +155,8 @@ public:
 // the top of the lane tubes on one side of the plane (|height| + tube radius; lanes and their junction turns): the pad
 // service's transit flies over it (author 2026-11-22: «пролёт с площадки на площадку ... пролетает сквозь тоннели. Это
 // не безопасно» - at 380 m it cut every 430 m x-lane's tube, 375-485 m)
-inline double laneTubeCeilingMeters(const HubLaneNetwork* network, bool under);
+// (HubLaneNetwork.cpp: a ring hub's lanes measured as height over its deck - R minus the distance to the axis)
+double laneTubeCeilingMeters(const HubLaneNetwork* network, bool under);
 
 // the pad service's flight height for a pad (city frame, |height| on the pad's side): over every building and every
 // lane tube - unless the pad berths at the BASE (its deck within 40 m of the plane) and the ship is already down among
@@ -166,23 +167,6 @@ inline double hubPadServiceTransit(double highTransit, double padDeckHeight, dou
     if (padDeckHeight <= 40.0 && shipHeight > padDeckHeight + 30.0 && shipHeight < highTransit - 30.0)
         return shipHeight;
     return highTransit;
-}
-
-inline double laneTubeCeilingMeters(const HubLaneNetwork* network, bool under)
-{
-    double top = 0.0;
-    if (!network)
-        return top;
-    const auto side = [&](double y) { return under ? y < 0.0 : y >= 0.0; };
-    for (const auto& lane : network->lanes())
-        for (const auto& p : lane.stationsLocal)
-            if (side(p.y))
-                top = std::max(top, std::abs(p.y) + lane.radiusMeters);
-    for (const auto& c : network->connectors())
-        for (const auto& p : c.pointsLocal)
-            if (side(p.y))
-                top = std::max(top, std::abs(p.y) + c.radiusMeters);
-    return top;
 }
 
 } // namespace game::navigation::traffic

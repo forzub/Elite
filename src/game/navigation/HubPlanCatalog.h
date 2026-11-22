@@ -10,6 +10,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/navigation/HubRingBend.h"
+
 namespace game::navigation
 {
 struct HubPlanBlock
@@ -126,6 +128,8 @@ public:
     const std::vector<HubPlanDock>& docks() const { return m_docks; }
     const std::vector<HubPlanSpinning>& spinning() const { return m_spinning; }
     const HubPlanRoads& roads() const { return m_roads; }
+    // a RING hub: the plan is the strip, this bends it into the city frame (HubRingBend.h); a flat hub: identity
+    const HubRingBend& ring() const { return m_ring; }
     const std::vector<HubPlanAirShip>& airFleet() const { return m_airFleet; }
     const std::string& bloc() const { return m_bloc; }
     const HubPlanBlock* block(const std::string& id) const;
@@ -145,6 +149,7 @@ private:
     std::vector<HubPlanDock> m_docks;
     std::vector<HubPlanSpinning> m_spinning;
     HubPlanRoads m_roads;
+    HubRingBend m_ring;
     std::vector<HubPlanAirShip> m_airFleet;
     std::string m_bloc;
     std::string m_failure;

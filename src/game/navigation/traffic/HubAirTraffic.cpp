@@ -119,7 +119,9 @@ void HubAirTrafficLayout::build(const game::navigation::HubPlan& plan, const Hub
             outOf[C[c].fromLane].push_back(static_cast<int>(c));
     for (auto& v : outOf)
         std::sort(v.begin(), v.end(), [&](int a, int b) { return C[static_cast<std::size_t>(a)].fromStation < C[static_cast<std::size_t>(b)].fromStation; });
-    const auto isPlaza = [&](std::size_t li) { return L[li].id.find(".plaza.") != std::string::npos; };
+    // the closed loops: the plaza ring and a RING hub's lanes round the ring (units/hub_ring.py "green.ring<k>.<p|n>")
+    const auto isRingLane = [&](std::size_t li) { return L[li].id.find(".ring") != std::string::npos; };
+    const auto isPlaza = [&](std::size_t li) { return L[li].id.find(".plaza.") != std::string::npos || isRingLane(li); };
     const auto direction = [&](std::size_t li, bool atEnd) {
         const auto& st = L[li].stationsLocal;
         return atEnd ? st[st.size() - 1] - st[st.size() - 2] : st[1] - st[0];
@@ -200,7 +202,8 @@ void HubAirTrafficLayout::build(const game::navigation::HubPlan& plan, const Hub
         t.maxShipLengthMeters = L[li].maxShipLengthMeters;
         t.upSign = L[li].stationsLocal[0].y < 0.0 ? -1.0 : 1.0;
         std::vector<double> limit;
-        const std::size_t n = std::min<std::size_t>(L[li].stationsLocal.size(), 37);
+        // the plaza ring runs 1.75 laps (one lap = 37 stations); a ring hub's lane is one closed lap already
+        const std::size_t n = isRingLane(li) ? L[li].stationsLocal.size() : std::min<std::size_t>(L[li].stationsLocal.size(), 37);
         for (std::size_t k = 0; k < n; ++k)
             appendResampled(t.points, limit, L[li].stationsLocal[k], t.cruiseMps);
         finish(t, limit);
@@ -318,10 +321,10 @@ void HubAirTrafficLayout::build(const game::navigation::HubPlan& plan, const Hub
             addTrack(std::move(t), el.blue ? 0.5 : 1.0);
         }
     }
-    static bool logged = false;
-    if (!logged)
+    static std::vector<std::string> logged;   // once per hub
+    if (std::find(logged.begin(), logged.end(), plan.hubId()) == logged.end())
     {
-        logged = true;
+        logged.push_back(plan.hubId());
         for (const auto& t : m_tracks)   // one turning route's profile: the cruise, the slowest point, the time
             if (!t.loop && *std::min_element(t.speed.begin(), t.speed.end()) < t.cruiseMps - 1.0)
             {

@@ -8074,3 +8074,16 @@ start-up hitches (render), trade step 16 part 3 live.
     the sidewalks and platforms; frame A/B (ELITE_DEV_HUB_PEDESTRIANS=0, street view, no vsync, relwithdebinfo):
     p50 21.6-22.0 vs 21.4-21.5 ms (+0.3-0.5 ms), p95 26-28 ms both (noise).
     OPEN: the loop's z=-2468 side crosses the partial rim row (a stretch of beam without blocks under it).
+  * 2026-11-23 ZONES as world objects: the lanes / red zones / capture boxes drawn depth-tested (DepthLineBatch) - hidden
+    behind and inside buildings per pixel (ELITE_DEV_ZONE_DEPTH=0 = the old glass overlay).
+  * 2026-11-23 RING HUB «Кольцо» (earth_ring_hub, tools/models/units/hub_ring.py + hub_ring_world.py): the strip 8 x 2
+    blocks bent round the axis, R 1209.6 m, 1 g at a 69.8 s spin (the hub's self rotation about its Y, the city's axis on
+    it), 40 km ahead of «Высокий» on its orbit. The plan stays the STRIP + "ring"; src/game/navigation/HubRingBend.h bends
+    plan points: the pad nodes (HubExpansion applyHubPads), the pad service (works in strip metres, CityStrip; the
+    released ship's velocity carries omega x r on every hub now), the client's pad approach point, the HUD capture zones
+    + service tunnel, the street traffic, laneTubeCeilingMeters (height over the deck). Ring lanes = closed circles,
+    flown as loops by the air traffic. LIVE: garage A1-03 LANDED on the ring (planner -> service), ring seen from the
+    axis with lanes, ships, cars on the deck.
+    OPEN (ring): the planner fails at random from the axis (1 of 2 runs, "continuous optimizer did not reach a feasible
+    path") - the rotating frame; only 3 air ships (2 loop lanes); no dock (an axis dock to add); no monorail on the ring;
+    launch / Ctrl+L on the ring not checked; the 3D hub map boxes are flat.

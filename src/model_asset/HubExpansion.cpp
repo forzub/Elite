@@ -405,6 +405,15 @@ int applyHubPads(const std::string& hubId, json& doc)
         planModules.push_back(std::move(module));
     }
     game::navigation::assignHubPlanAddressesAndPads(blocks, planModules);
+    // a ring hub: the plan is the strip - the pad nodes bent into the ring's frame (HubRingBend.h)
+    game::navigation::HubRingBend ring;
+    if (plan.contains("ring") && plan["ring"].is_object())
+    {
+        ring.radius = plan["ring"].value("radius_m", 0.0);
+        ring.length = plan["ring"].value("length_m", 0.0);
+        ring.x0 = plan["ring"].value("x0_m", 0.0);
+        ring.valid = ring.radius > 1.0 && ring.length > 1.0;
+    }
     // the buildings still being built today (the construction plan's replaced layout nodes not finished yet): no pad on
     // them - a roof pad hung in the air over a building still at its frame stage (live 2026-11-21)
     std::unordered_set<std::uint32_t> unfinished;
@@ -473,8 +482,11 @@ int applyHubPads(const std::string& hubId, json& doc)
             if (git->second == groups.size())
                 groups.push_back("pads");
         }
-        nodes.push_back({"pad_" + m.address, mit->second, git->second, m.padOrigin.x, m.padOrigin.y, m.padOrigin.z,
-                         m.under ? 180.0 : 0.0, m.padYawDeg, 0.0});
+        const glm::dvec3 at = ring.toFrame(m.padOrigin);
+        const glm::dvec3 rot = ring.valid ? game::navigation::hubEulerXYZ(ring.basisAt(m.padOrigin.x) *
+                                                                         game::navigation::hubRotationXYZ(glm::dvec3(m.under ? 180.0 : 0.0, m.padYawDeg, 0.0)))
+                                          : glm::dvec3(m.under ? 180.0 : 0.0, m.padYawDeg, 0.0);
+        nodes.push_back({"pad_" + m.address, mit->second, git->second, at.x, at.y, at.z, rot.x, rot.y, rot.z});
         ++added;
     }
     return added;

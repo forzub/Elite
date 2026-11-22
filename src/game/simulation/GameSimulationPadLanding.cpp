@@ -22,6 +22,43 @@
 
 namespace
 {
+// a city's frame as the pad service sees it: positions / directions / velocities in the plan's STRIP metres (a flat hub:
+// the city frame itself; a ring hub: the strip bent round the axis, HubRingBend.h). The world velocity of a point carries
+// the frame's spin (omega x r: ~108 m/s on the ring's deck - a ship let go without it flew off the ring)
+struct CityStrip
+{
+    glm::dvec3 cpos {0.0}, cvel {0.0}, omega {0.0};
+    glm::dmat3 R {1.0};
+    game::navigation::HubRingBend bend;
+    glm::dvec3 toStrip(const glm::dvec3& world) const { return bend.toStrip(glm::transpose(R) * (world - cpos)); }
+    glm::dvec3 toWorld(const glm::dvec3& s) const { return cpos + R * bend.toFrame(s); }
+    glm::dmat3 axes(const glm::dvec3& s) const { return R * bend.basisAt(s.x); }
+    glm::dvec3 velocityToWorld(const glm::dvec3& s, const glm::dvec3& v) const
+    {
+        return cvel + glm::cross(omega, toWorld(s) - cpos) + R * bend.vectorToFrame(s, v);
+    }
+    glm::dvec3 velocityToStrip(const glm::dvec3& s, const glm::dvec3& vWorld) const
+    {
+        glm::dvec3 local = glm::transpose(axes(s)) * (vWorld - cvel - glm::cross(omega, toWorld(s) - cpos));
+        if (bend.valid && bend.radius - s.y > 1.0)
+            local.x *= bend.radius / (bend.radius - s.y);
+        return local;
+    }
+};
+
+CityStrip cityStripOf(const GameSimulation& sim, const StaticObject& city)
+{
+    CityStrip c;
+    c.cpos = world::coordinates::fullMeters(city.worldPosition);
+    c.cvel = glm::dvec3(city.linearVelocity);
+    c.R = glm::dmat3(glm::mat3(city.orientation));
+    if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(city.hubModuleId))
+        c.bend = plan->ring();
+    if (const auto* frame = sim.hubNavigationFrame(city.hubId); frame && frame->valid)
+        c.omega = frame->angularVelocityWorldRadPerSecond;
+    return c;
+}
+
 // the pilot took the controls back (server time per ship): no capture / touchdown for a while - he is taking off
 std::unordered_map<std::uint64_t, double> g_padReleasedAt;
 // released from a pad: no capture again until the ship has been out of every pad zone once (live 2026-11-21: the docking
@@ -125,9 +162,10 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
             for (const auto& [oid, obj] : m_staticObjects)
                 if (obj.hubModuleId == held->second.frameModuleId)
                 {
-                    const glm::dmat3 R(glm::mat3(obj.orientation));
+                    const CityStrip cs = cityStripOf(*this, obj);
                     g_padTakeoffs[shipId.value] = {held->second.frameModuleId, held->second.padLocal, held->second.outLocal,
-                                                   glm::transpose(R) * glm::dmat3(glm::mat3(ship->core().transform().orientation)),
+                                                   glm::transpose(cs.axes(held->second.padLocal)) *
+                                                       glm::dmat3(glm::mat3(ship->core().transform().orientation)),
                                                    serverTime()};
                     break;
                 }
@@ -186,8 +224,7 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
     // service only flies the last metres across and sets the ship down on its legs; from elsewhere it climbs first
     int phase = 0;
     {
-        const glm::dmat3 R(glm::mat3(city->orientation));
-        const glm::dvec3 q = glm::transpose(R) * (tr.fullWorldMeters() - world::coordinates::fullMeters(city->worldPosition));
+        const glm::dvec3 q = cityStripOf(*this, *city).toStrip(tr.fullWorldMeters());
         const glm::dvec3 out = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
         glm::dvec3 flat = q - building->padPosition;
         const double height = glm::dot(flat, out);
@@ -310,9 +347,7 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     // a berth at the base reached from a street lane: across at the ship's own height (hubPadServiceTransit)
     if (const StaticObject* cityObj = findCityFrame(m_staticObjects, frameModuleId))
     {
-        const glm::dmat3 R(glm::mat3(cityObj->orientation));
-        const glm::dvec3 q = glm::transpose(R) * (ship->core().transform().fullWorldMeters() -
-                                                  world::coordinates::fullMeters(cityObj->worldPosition));
+        const glm::dvec3 q = cityStripOf(*this, *cityObj).toStrip(ship->core().transform().fullWorldMeters());
         const double shipHeight = glm::dot(q, p.outLocal);
         const double low = game::navigation::traffic::hubPadServiceTransit(p.transitLocal, std::abs(building->padPosition.y), shipHeight);
         if (low < p.transitLocal)
@@ -350,6 +385,8 @@ void GameSimulation::updatePadLandings(double dt)
         auto& tr = ship->core().transform();
         if (tr.motion.systemId != m_activeCelestialSystemId)
             continue;   // another system's pass
+        // the service works in the plan's STRIP metres (a ring hub: bent into the frame only here, CityStrip)
+        const CityStrip strip = cityStripOf(*this, *city);
         const glm::dmat3 R(glm::mat3(city->orientation));
         const glm::dvec3 cpos = world::coordinates::fullMeters(city->worldPosition);
         const glm::dvec3 cvel(city->linearVelocity);
@@ -363,7 +400,7 @@ void GameSimulation::updatePadLandings(double dt)
         if (heldIt == held.end() || p.sinceS > heldSince[id.value])
         {
             heldSince[id.value] = p.sinceS;
-            heldIt = held.insert_or_assign(id.value, glm::transpose(R) * (tr.fullWorldMeters() - cpos)).first;
+            heldIt = held.insert_or_assign(id.value, strip.toStrip(tr.fullWorldMeters())).first;
         }
         glm::dvec3& q = heldIt->second;
         const glm::dvec3& out = p.outLocal;
@@ -539,7 +576,8 @@ void GameSimulation::updatePadLandings(double dt)
             }
         }
         // the attitude: level with the pad (up = its normal), the nose along the way across, kept on the descent
-        glm::dvec3 forward = glm::transpose(R) * glm::dvec3(-glm::dvec3(glm::mat3(tr.orientation)[2]));
+        const glm::dmat3 Rb = strip.axes(q);   // the strip's axes here (a flat hub: R)
+        glm::dvec3 forward = glm::transpose(Rb) * glm::dvec3(-glm::dvec3(glm::mat3(tr.orientation)[2]));
         const glm::dvec3 flat = vLocal - out * glm::dot(vLocal, out);
         if (glm::length(flat) > 1.0)
             forward = flat;
@@ -547,9 +585,9 @@ void GameSimulation::updatePadLandings(double dt)
         forward = glm::length(forward) > 1.0e-6 ? glm::normalize(forward) : glm::dvec3(0.0, 0.0, -1.0);
         const glm::dvec3 right = glm::normalize(glm::cross(forward, out));
         glm::mat4 orientation(1.0f);
-        orientation[0] = glm::vec4(glm::vec3(R * right), 0.0f);
-        orientation[1] = glm::vec4(glm::vec3(R * out), 0.0f);
-        orientation[2] = glm::vec4(glm::vec3(R * -forward), 0.0f);
+        orientation[0] = glm::vec4(glm::vec3(Rb * right), 0.0f);
+        orientation[1] = glm::vec4(glm::vec3(Rb * out), 0.0f);
+        orientation[2] = glm::vec4(glm::vec3(Rb * -forward), 0.0f);
         // turned there by its thrusters, not snapped (author 2026-11-21: «очень резкий разворот ... не через управление
         // кораблём, а тупой подачей нового угла»): at most 20 deg/s, easing in the last 10 deg
         {
@@ -585,8 +623,8 @@ void GameSimulation::updatePadLandings(double dt)
                 p.touchdownPitch = pitch;
             }
         }
-        const glm::dvec3 position = cpos + R * (q + sagLocal);
-        const glm::dvec3 velocity = cvel + R * vLocal;
+        const glm::dvec3 position = strip.toWorld(q + sagLocal);
+        const glm::dvec3 velocity = strip.velocityToWorld(q, vLocal);
         {
             static int nanLogs = 0;
             const auto bad = [](const glm::dvec3& v) { return !std::isfinite(v.x) || !std::isfinite(v.y) || !std::isfinite(v.z); };
@@ -665,8 +703,8 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 g_padTakeoffs.erase(t);
             else
             {
-                const glm::dmat3 R(glm::mat3(city->orientation));
-                const glm::dvec3 q = glm::transpose(R) * (tr.fullWorldMeters() - world::coordinates::fullMeters(city->worldPosition));
+                const CityStrip cs = cityStripOf(*this, *city);
+                const glm::dvec3 q = cs.toStrip(tr.fullWorldMeters());
                 const double h = glm::dot(q - t->second.pad, t->second.out) - clearance;
                 if (h > 3.0 || now - t->second.since > 60.0)
                 {
@@ -675,7 +713,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 }
                 else
                 {
-                    tr.orientation = glm::mat4(glm::mat3(R * t->second.attitude));
+                    tr.orientation = glm::mat4(glm::mat3(cs.axes(t->second.pad) * t->second.attitude));
                     tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
                 }
             }
@@ -701,9 +739,9 @@ void GameSimulation::updatePadTouchdowns(double dt)
             const glm::dvec3 cpos = world::coordinates::fullMeters(obj.worldPosition);
             if (glm::length(shipWorld - cpos) > 20000.0)
                 continue;
-            const glm::dmat3 R(glm::mat3(obj.orientation));
-            const glm::dvec3 q = glm::transpose(R) * (shipWorld - cpos);
-            const glm::dvec3 v = glm::transpose(R) * (tr.motion.worldVelocityMps - glm::dvec3(obj.linearVelocity));
+            const CityStrip cs = cityStripOf(*this, obj);
+            const glm::dvec3 q = cs.toStrip(shipWorld);
+            const glm::dvec3 v = cs.velocityToStrip(q, tr.motion.worldVelocityMps);
             for (const auto& m : plan->modules())
             {
                 if (!m.pad)
@@ -833,8 +871,7 @@ void GameSimulation::filterBerthControl(EntityId shipId, ShipControlState& c)
         m_manoeuvreOnly.erase(m);
         return;
     }
-    const glm::dmat3 R(glm::mat3(city->orientation));
-    const glm::dvec3 q = glm::transpose(R) * (ship->core().transform().fullWorldMeters() - world::coordinates::fullMeters(city->worldPosition));
+    const glm::dvec3 q = cityStripOf(*this, *city).toStrip(ship->core().transform().fullWorldMeters());
     glm::dvec3 d = q - m->second.padLocal;
     const double h = glm::dot(d, m->second.outLocal);
     d -= m->second.outLocal * h;

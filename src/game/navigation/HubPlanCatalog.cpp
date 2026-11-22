@@ -143,6 +143,14 @@ bool HubPlan::load(const std::string& path)
         if (r.contains("lanes_m") && r["lanes_m"].is_array() && !r["lanes_m"].empty())
             m_roads.lanesMeters = r["lanes_m"].get<std::vector<double>>();
     }
+    if (j.contains("ring") && j["ring"].is_object())
+    {
+        const auto& r = j["ring"];
+        m_ring.radius = r.value("radius_m", 0.0);
+        m_ring.length = r.value("length_m", 0.0);
+        m_ring.x0 = r.value("x0_m", 0.0);
+        m_ring.valid = m_ring.radius > 1.0 && m_ring.length > 1.0;
+    }
     if (j.contains("monorail") && j["monorail"].is_object())
     {
         const auto& m = j["monorail"];

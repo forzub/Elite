@@ -186,7 +186,9 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
 {
     out.clear();
     const auto& roads = plan.roads();
-    const glm::dvec3 camera(cameraLocal);
+    // a ring hub: the streets are the plan's STRIP - the camera taken into it, the vehicles bent back (HubRingBend.h)
+    const auto& ring = plan.ring();
+    const glm::dvec3 camera = ring.toStrip(glm::dvec3(cameraLocal));
     const double r = radius;
     // the time folded to a day keeps the float maths of the stream phases exact (the streams repeat anyway)
     const double t = std::fmod(timeSeconds, 86400.0);
@@ -292,6 +294,16 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
             }
         }
     }
+    if (ring.valid)
+        for (auto& v : out)
+        {
+            const glm::dvec3 p(v.local[3]);
+            const glm::dmat3 B = ring.basisAt(p.x);
+            const glm::dmat3 rot = B * glm::dmat3(glm::mat3(v.local));
+            glm::mat4 m = glm::mat4(glm::mat3(rot));
+            m[3] = glm::vec4(glm::vec3(ring.toFrame(p)), 1.0f);
+            v.local = m;
+        }
 }
 
 // THE MONORAIL LOOP: trains round the one closed line (author 2026-11-22: «монорельс - одна петля или зигзаг ...

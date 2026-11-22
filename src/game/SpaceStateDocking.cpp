@@ -720,10 +720,15 @@ void SpaceState::updateDockingAdvisory()
                 for (const auto& b : plan->blocks())
                     tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
                 const double transit = std::max({std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0, game::navigation::traffic::laneTubeCeilingMeters(game::navigation::traffic::HubLaneCatalog::forFrameModule(pending.target.stableObjectId), building->under) + 40.0});
-                const glm::dvec3 hover = building->padPosition + out * (transit - glm::dot(building->padPosition, out));
-                glm::dvec3 from = padRouteCityLocal(*city, shipIt->second) - hover;
+                // worked out in the plan's strip metres, then bent into the city frame (a ring hub, HubRingBend.h)
+                const auto& ring = plan->ring();
+                const glm::dvec3 hoverStrip = building->padPosition + out * (transit - glm::dot(building->padPosition, out));
+                glm::dvec3 from = ring.toStrip(padRouteCityLocal(*city, shipIt->second)) - hoverStrip;
                 from -= out * glm::dot(from, out);
-                const glm::dvec3 forward = glm::length(from) > 1.0 ? glm::normalize(from) : glm::dvec3(0.0, 0.0, 1.0);
+                const glm::dvec3 forwardStrip = glm::length(from) > 1.0 ? glm::normalize(from) : glm::dvec3(0.0, 0.0, 1.0);
+                const glm::dmat3 axes = ring.basisAt(hoverStrip.x);
+                const glm::dvec3 hover = ring.toFrame(hoverStrip);
+                const glm::dvec3 forward = axes * forwardStrip;
                 auto& d = m_padAnchor.definition;
                 d.id = pending.target.semanticAnchorId;
                 d.hubModuleId = pending.target.stableObjectId;
@@ -731,7 +736,7 @@ void SpaceState::updateDockingAdvisory()
                 d.kind = HubSemanticAnchorKind::DockingPort;   // flown as a port approach; the pad service lands it
                 d.localPositionMeters = hover;
                 d.localForward = forward;                       // the route arrives along -forward (toward the pad)
-                d.localUp = out;
+                d.localUp = axes * out;
                 // the "opening" sets the route-following corridor (its half margin): 400 m made a 192 m corridor in
                 // which the autopilot never steered back to the line (19 m dead band, 20-72 m off the route among the
                 // buildings, live 2026-11-22); 70 m -> ~20-25 m, the correction from ~2 m
@@ -747,7 +752,7 @@ void SpaceState::updateDockingAdvisory()
                 m_padAnchor.address = address;
                 m_padAnchor.hoverCity = hover;
                 m_padAnchor.forwardCity = forward;
-                m_padAnchor.upCity = out;
+                m_padAnchor.upCity = axes * out;
                 m_padAnchor.valid = true;
                 std::cerr << "[PadRoute] request=" << pending.serial << " pad " << address << ": approach point (" << hover.x << ","
                           << hover.y << "," << hover.z << ") city frame, transit " << transit << " m" << std::endl;

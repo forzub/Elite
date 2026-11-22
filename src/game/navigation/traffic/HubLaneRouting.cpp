@@ -74,6 +74,7 @@ CompiledTrafficRoute applyHubLanes(
         handoff = std::min(handoff, connector.maxSpeedMps);
     auto freeLegs = freeLegModelFor(request, handoff);
     freeLegs.goalByService = request.endAtLaneExit;
+    freeLegs.serviceDirect = request.serviceDirectAllowed;
     text << "free_legs{join_approach_m=" << freeLegs.joinApproachMeters << " turn_r_m=" << freeLegs.turnRadiusMeters
          << " exit_min_m=" << freeLegs.exitMinimumMeters << "} ";
     std::string summary;

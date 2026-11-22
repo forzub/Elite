@@ -606,7 +606,12 @@ void SpaceState::updatePilotTakeover(bool touching)
                                 const double height = m.under ? -q.y : q.y;
                                 const glm::dvec3 flat(q.x - m.padPosition.x, 0.0, q.z - m.padPosition.z);
                                 const double speed = glm::length(shipIt->second.transform.motion.localVelocityMps);
-                                hop = std::abs(height - transit) < 200.0 && glm::length(flat) < 8000.0 && speed < 15.0;
+                                // OFF (author 2026-11-22: «на территории хаба зелёная зона приоритетнее пустого
+                                // пространства из соображений безопасности» - the hop flew over the roofs past the
+                                // lanes); kept for a later use (a service hop between neighbouring pads)
+                                constexpr bool PadHopEnabled = false;
+                                hop = PadHopEnabled && std::abs(height - transit) < 200.0 && glm::length(flat) < 8000.0 &&
+                                      speed < 15.0;
                                 break;
                             }
         if (hop)

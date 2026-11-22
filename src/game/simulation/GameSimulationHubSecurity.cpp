@@ -200,6 +200,71 @@ std::vector<std::uint32_t> GameSimulation::cityPromotedAirSlots(EntityId objectI
 }
 
 
+void GameSimulation::appendHubRadarContacts(const glm::dvec3& observerWorld, int systemId, std::size_t maxCount,
+                                            std::vector<world::RadarContactInput>& out) const
+{
+    const auto sys = m_securityBySystem.find(systemId);
+    if (sys == m_securityBySystem.end() || maxCount == 0)
+        return;
+    struct Candidate
+    {
+        double distance;
+        world::RadarContactInput input;
+    };
+    std::vector<Candidate> found;
+    const double universe = m_orbitalUniverseTimeSeconds;
+    for (const auto& c : sys->second.cities)
+    {
+        const auto objIt = m_staticObjects.find(c.city);
+        if (objIt == m_staticObjects.end())
+            continue;
+        const StaticObject& city = objIt->second;
+        const glm::dmat3 R(glm::mat3(city.orientation));
+        const glm::dvec3 cpos = world::coordinates::fullMeters(city.worldPosition);
+        if (glm::length(cpos - observerWorld) > 60000.0)
+            continue;   // beyond any hull radar
+        const auto push = [&](std::uint32_t key, const glm::dvec3& local, double rcs) {
+            const glm::dvec3 w = cpos + R * local;
+            world::RadarContactInput in;
+            in.id = EntityId {key};
+            in.worldPosition = world::coordinates::makeWorldPositionFromMeters(w);
+            in.radarCrossSection = rcs;
+            found.push_back({glm::length(w - observerWorld), in});
+        };
+        const std::uint32_t cityBits = (static_cast<std::uint32_t>(c.city.value) & 0x3FFu) << 18;
+        if (c.plan && c.lanes && !c.plan->airFleet().empty())
+        {
+            const auto& layout = game::navigation::traffic::hubAirTrafficLayoutCached(*c.plan, *c.lanes);
+            game::navigation::traffic::HubAirSlotPose pose;
+            for (const auto& slot : layout.slots())
+            {
+                bool promoted = false;
+                for (const auto& [id, pa] : m_promotedAir)
+                    if (pa.city == c.city && pa.slot == slot.id)
+                        promoted = true;   // a real ship now: on the radar as itself
+                if (!promoted && layout.pose(slot, universe, pose))
+                    push(0xC0000000u | cityBits | (slot.id & 0xFFFFu), pose.position, 1.0);
+            }
+        }
+        if (c.plan && !c.defence.sites.empty())
+        {
+            std::vector<game::traffic::security::StrayBody> bodies;
+            game::traffic::security::strayBodiesAt(c.defence, universe, 0.0, bodies);
+            for (const auto& b : bodies)
+                push(0xE0000000u | cityBits | (b.index & 0x3FFFFu),
+                     game::traffic::security::strayPosition(b, universe), std::max(0.01, b.sizeMeters * b.sizeMeters / 400.0));
+        }
+    }
+    if (found.size() > maxCount)
+    {
+        std::nth_element(found.begin(), found.begin() + static_cast<std::ptrdiff_t>(maxCount), found.end(),
+                         [](const Candidate& a, const Candidate& b) { return a.distance < b.distance; });
+        found.resize(maxCount);
+    }
+    for (auto& f : found)
+        out.push_back(f.input);
+}
+
 void GameSimulation::despawnPromotedAirShip(EntityId id)
 {
     m_promotedAir.erase(id);

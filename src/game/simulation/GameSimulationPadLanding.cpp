@@ -328,7 +328,11 @@ void GameSimulation::updatePadLandings(double dt)
                       << static_cast<long long>(q.y) << "," << static_cast<long long>(q.z) << ")" << std::endl;
         }
         // the speed: 8 m/s^2 up, braking-limited to stop at the target; the last 30 m of the descent at 2 m/s
-        const double brake = std::sqrt(2.0 * accel * dist);
+        // ... a corner of the way round the towers (phase 1, more legs ahead) is not a stop: flown at CornerMps, the full
+        // stop only over the pad (stopping at every corner made 5.5 km take 137 s, live 2026-11-22)
+        constexpr double CornerMps = 40.0;
+        const bool cornerAhead = p.phase == 1 && p.leg + 1 < p.route.size();
+        const double brake = std::sqrt(2.0 * accel * dist + (cornerAhead ? CornerMps * CornerMps : 0.0));
         double want = std::min(cruise, brake);
         if (p.phase == 2 && dist < 30.0)
             want = std::min(want, 2.0);

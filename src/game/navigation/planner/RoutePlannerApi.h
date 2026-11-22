@@ -153,6 +153,9 @@ struct RoutePlanRequest
     // A city pad (author 2026-11-22): the route ends ON its last lane (at the exit station nearest the goal, braking
     // to a stop there) - no free final leg through the city lattice; the pad service flies the rest at transit height.
     bool endAtLaneExit = false;
+    // ... and the ship is already over the city (the pad service can fly the straight way): that straight way competes
+    // with the lane chains; from outside the city it does not (it is no route the service flies)
+    bool serviceDirectAllowed = false;
 
     // Minimum straight that must remain untouched before the first curve.
     // Zero keeps the backend legacy heuristic. Segmented mandatory passages

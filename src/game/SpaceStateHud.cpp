@@ -627,9 +627,38 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             for (const auto& b : plan->blocks())
                 tallest = std::max(tallest, pad->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
             const double transit = std::max(std::min(380.0, tallest + 80.0), std::abs(pad->padPosition.y) + 60.0);
+            // the route the SERVER flies: computed once where the service took the ship (as GameSimulationPadLanding
+            // does), then only what is left of it ahead - recomputed every frame from the moving ship it picked other
+            // tower corners and jumped about, "connecting the ship to who knows what" (author 2026-11-22)
+            static std::string routeKey;
+            static std::vector<glm::dvec3> serviceRoute;
+            static std::size_t serviceLeg = 0;
+            const std::string key = std::string(object.hubAttachment.moduleId) + "/" + address;
+            if (phase == '2')
+                routeKey.clear();
+            else if (key != routeKey)
+            {
+                routeKey = key;
+                serviceRoute = game::navigation::hubPadRoute(*plan, *pad, q, transit, true);
+                serviceLeg = 0;
+            }
             std::vector<glm::dvec3> route;
             if (phase == '0' || phase == '1')
-                route = game::navigation::hubPadRoute(*plan, *pad, q, transit, phase == '0');
+            {
+                // the leg the ship is on: the waypoint ahead is the first one not yet passed (never goes back)
+                while (serviceLeg + 1 < serviceRoute.size())
+                {
+                    const glm::dvec3 a = serviceRoute[serviceLeg], b = serviceRoute[serviceLeg + 1];
+                    const glm::dvec3 ab = b - a;
+                    const double len2 = glm::dot(ab, ab);
+                    if (glm::length(q - a) < 60.0 || (len2 > 1.0e-6 && glm::dot(q - a, ab) / len2 > 0.02))
+                        ++serviceLeg;
+                    else
+                        break;
+                }
+                for (std::size_t i = serviceLeg; i < serviceRoute.size(); ++i)
+                    route.push_back(serviceRoute[i]);
+            }
             const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
             route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0
                                              : pad->padPosition + out * game::navigation::HubPadZoneHeight);

@@ -2498,6 +2498,10 @@ m_hubVelocityMetersPerSecond[hubId] =
                     });
                 }
 
+                // a player's radar: the hub traffic not made real and the stray bodies too, the nearest 96
+                if (isPlayerControlled(id))
+                    appendHubRadarContacts(world::coordinates::fullMeters(ship.core().transform().worldPosition),
+                                           observerSystemId, 96, inputs);
                 ship.updatePerception(fdt, inputs);
             }
         }

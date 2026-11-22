@@ -2800,14 +2800,13 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         );
     request.initialForwardLeadMeters =
         std::max(1000.0, hull.lengthMeters * 10.0);
-    // an Assisted craft (nearly) at rest turns where it hangs: no committed start course and no 1 km straight lead -
-    // a ship sinking onto a pad at 6 m/s had its course straight DOWN and every route from there "ran into the city"
-    // (5 retries, 200 s, the planner looked dead - author 2026-11-22: «планировщик не работает»)
-    if (controlLaw == game::navigation::LocalFlightControlLaw::Assisted && glm::length(startVelocityMps) < 8.0)
-    {
-        request.hasInitialForward = false;
-        request.initialForwardLeadMeters = 0.0;
-    }
+    // an Assisted craft (nearly) at rest starts along its NOSE, not along its drift: a ship sinking onto a pad at
+    // 6 m/s had its course straight DOWN and every route from there "ran into the city" (5 retries, 200 s, the planner
+    // looked dead - author 2026-11-22: «планировщик не работает»). No course at all let the route start behind the
+    // nose - "assisted-reverse-flight-not-supported", rejected round and round (the 4th landing never planned)
+    if (controlLaw == game::navigation::LocalFlightControlLaw::Assisted && !assistedEmergencyAtRest &&
+        glm::length(startVelocityMps) < 8.0)
+        request.initialForward = hullForwardLocal;
     request.terminalReferenceDistanceMeters =
         pending.target.semanticAnchorId.rfind("pad:", 0) == 0
             ? std::max(80.0, hull.lengthMeters * 2.0)   // a pad: the route ends close to its approach point
@@ -3003,8 +3002,54 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                 {attachment.localOffsetMeters, attachment.localRotationDeg, attachment.localAngularVelocityDegPerSecond},
                 snapshot.epoch.universeTimeSeconds);
             std::string log;
+            if (request.endAtLaneExit && m_padAnchor.valid && m_padAnchor.serial == pending.serial)
+                if (const auto* city = padRouteCityObject(pending.target.stableObjectId))
+                    if (const auto shipIt = m_client->world().ships().find(m_playerId.value);
+                        shipIt != m_client->world().ships().end())
+                    {
+                        const glm::dvec3 q = padRouteCityLocal(*city, shipIt->second);
+                        glm::dvec3 flat = q - m_padAnchor.hoverCity;
+                        const double dh = glm::dot(flat, m_padAnchor.upCity);
+                        flat -= m_padAnchor.upCity * dh;
+                        request.serviceDirectAllowed = std::abs(dh) < 400.0 && glm::length(flat) < 8000.0;
+                    }
             auto laneRoute = game::navigation::traffic::applyHubLanes(*network, framePose, request, &log);
             std::cerr << "[HubLanes] request=" << pending.serial << " " << log << std::endl;
+            // a city pad whose straight way beats every lane chain (a free metre costs FreeInHubFactor x a lane metre,
+            // author 2026-11-22: «надо иметь баланс ... это не значит, что я должен лететь вниз в зелёную зону») from a
+            // ship already over the city: the pad service flies it straight across over the roofs, round the towers -
+            // the planner's free leg through that sky was never feasible (5 retries, minutes)
+            if (!laneRoute.valid && request.serviceDirectAllowed && m_padAnchor.valid && m_padAnchor.serial == pending.serial)
+                if (const auto* city = padRouteCityObject(pending.target.stableObjectId))
+                    if (const auto shipIt = m_client->world().ships().find(m_playerId.value);
+                        shipIt != m_client->world().ships().end())
+                    {
+                        const glm::dvec3 q = padRouteCityLocal(*city, shipIt->second);
+                        const glm::dvec3 up = m_padAnchor.upCity;
+                        glm::dvec3 flat = q - m_padAnchor.hoverCity;
+                        const double dh = glm::dot(flat, up);
+                        flat -= up * dh;
+                        if (std::abs(dh) < 400.0 && glm::length(flat) < 8000.0)
+                        {
+                            game::network::ClientMessage msg;
+                            ClientShipCommand command;
+                            command.type = ClientShipCommand::LandOnPad;
+                            command.index = 1;
+                            command.target = pending.target.stableObjectId;
+                            command.detail = m_padAnchor.address;
+                            msg.payload = command;
+                            m_client->sendMessage(msg);
+                            std::cerr << "[PadRoute] request=" << pending.serial << " the straight way to "
+                                      << m_padAnchor.address << " beats the lanes (" << glm::length(flat)
+                                      << " m over the city): the pad service flies it" << std::endl;
+                            m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: напрямую над городом к площадке " + m_padAnchor.address;
+                            m_padAnchor = {};
+                            f.requests.clear();
+                            f.releaseClientAutopilot();
+                            m_clientDockingPhase = ClientDockingPhase::Idle;
+                            return;
+                        }
+                    }
             if (laneRoute.valid)
                 compiledTrafficRoute = std::move(laneRoute);
         }

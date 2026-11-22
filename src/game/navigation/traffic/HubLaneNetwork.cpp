@@ -270,7 +270,17 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     const glm::dvec3 goalApproach = goalWorld - goalDirection * (goalHasDirection ? freeLegs.joinApproachMeters : 0.0);
     const double goalApproachLength = goalHasDirection ? freeLegs.joinApproachMeters : 0.0;
     const double direct = leadLength + freeLeg(leadEnd, heading, goalApproach, goalDirection) + goalApproachLength;
-    relax(goal, std::isfinite(direct) ? direct : glm::length(goalWorld - shipWorld) + 1.0e6, count, EdgeFromShip);
+    // a goal reached by a service (a city pad): the lanes only - in the hub the green lanes come before open space
+    // (author 2026-11-22: «на территории хаба зелёная зона приоритетнее пустого пространства из соображений
+    // безопасности»; the clear straight over the roofs beat every lane chain and was never feasible)
+    // a goal reached by a service (a city pad): the straight way costs FreeInHubFactor per metre whether or not a free
+    // leg fits it (the service flies it, not the planner) - balanced against the lane chains (author 2026-11-22: «надо
+    // иметь баланс»)
+    if (freeLegs.goalByService && freeLegs.serviceDirect)
+        relax(goal, (obstacles && !obstacles->empty() ? FreeInHubFactor : 1.0) * glm::length(goalWorld - shipWorld), count,
+              EdgeFromShip);
+    else if (!freeLegs.goalByService)
+        relax(goal, std::isfinite(direct) ? direct : glm::length(goalWorld - shipWorld) + 1.0e6, count, EdgeFromShip);
     int entriesOk = 0, exitsTried = 0, exitsOk = 0;
     for (std::size_t l = 0; l < laneCount; ++l)
         if (usable[l])

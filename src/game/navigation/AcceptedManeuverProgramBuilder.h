@@ -415,7 +415,9 @@ public:
                         sample.velocityMapMetersPerSecond,
                         forward
                     );
-                    if (forwardSpeed < -0.05)
+                    // a hover drifting back (the ship hanging over a pad, ~0.3 m/s against the nose) is not reverse flight:
+                    // the flight assist takes the drift out (author 2026-11-22: «ассистед летит куда угодно»)
+                    if (forwardSpeed < -0.05 && speed > 3.0)
                     {
                         return fail(
                             "assisted-reverse-flight-not-supported"

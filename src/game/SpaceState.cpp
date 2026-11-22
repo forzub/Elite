@@ -1,3 +1,4 @@
+#include "src/game/navigation/HubBerthOccupancy.h"
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/server/ServerTickProfile.h"
@@ -584,7 +585,12 @@ void SpaceState::updatePilotTakeover(bool touching)
     if (m_client)
         for (const auto& [oid, object] : m_client->world().objects())
             if (object.hubAttachment.valid && game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
+            {
                 m_systemMapRenderer.setBerthOccupancy(object.hubAttachment.moduleId, object.occupiedBerths, m_playerId.value);
+                auto& reg = game::navigation::HubBerthOccupancy::instance();
+                reg.byFrameModule[object.hubAttachment.moduleId] = object.occupiedBerths;
+                reg.playerShipId = m_playerId.value;
+            }
     auto padRequest = m_systemMapRenderer.takePadLandingRequest();
     if (padRequest && m_client)
     {

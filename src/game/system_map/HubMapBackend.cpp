@@ -15,6 +15,8 @@
 #include "render/HUD/TextRenderer.h"
 #include <vector>
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/HubBerthOccupancy.h"
+#include "src/game/navigation/HubPlanPads.h"
 
 namespace
 {
@@ -621,6 +623,7 @@ void HubMapBackend::renderHubMapPasses(
     struct PlanCity
     {
         const game::navigation::HubPlan* plan = nullptr;
+        std::string frameModuleId;
         glm::dvec3 position {0.0};
         world::celestial::LocalSceneAxes axes;
     };
@@ -702,7 +705,7 @@ void HubMapBackend::renderHubMapPasses(
         const auto* cityPlan = game::navigation::HubPlanCatalog::forFrameModule(mod.stableId);
         if (cityPlan)
         {
-            planCities.push_back({cityPlan, mod.positionMeters, mod.axes});
+            planCities.push_back({cityPlan, mod.stableId, mod.positionMeters, mod.axes});
             const auto local = [&](double x, double y, double z) {
                 return mod.positionMeters + mod.axes.x * x + mod.axes.y * y + mod.axes.z * z;
             };
@@ -875,17 +878,35 @@ void HubMapBackend::renderHubMapPasses(
                     text.solidRectPx(x + w - t, y, t, hh, frameColour);
                 }
             // the landing pads on the roofs of the upper tier (shown once they are a few pixels wide)
+            // every landing place on the map (author 2026-11-22: «места для посадок должны быть на карте»): a dot by its
+            // kind at any zoom (roof blue, stilts teal, garage grey, hangar orange; RED when all its places are taken;
+            // the lower side smaller and dimmer); the framed "H" / "R" when zoomed in
             for (const auto& m : city.plan->modules())
             {
-                if (!m.pad || m.under)
+                if (!m.pad)
                     continue;
+                using PK = game::navigation::HubPlanModule::PadKind;
+                const int taken = game::navigation::HubBerthOccupancy::instance().takenByOthers(city.frameModuleId, m.address);
+                const bool full = taken >= game::navigation::hubBerthPlaces(m);
+                glm::vec4 kindColour = m.padKind == PK::Roof     ? glm::vec4(0.45f, 0.72f, 1.00f, 0.95f)
+                                     : m.padKind == PK::Stilts   ? glm::vec4(0.42f, 0.96f, 0.80f, 0.95f)
+                                     : m.padKind == PK::Hangar   ? glm::vec4(1.00f, 0.62f, 0.22f, 0.98f)
+                                                                 : glm::vec4(0.78f, 0.80f, 0.84f, 0.85f);
+                if (full)
+                    kindColour = glm::vec4(1.00f, 0.25f, 0.20f, 0.98f);
+                if (m.under)
+                    kindColour.a *= 0.55f;
                 const glm::dvec2 c = screen(m.padPosition.x, m.padPosition.z);
                 const glm::dvec2 e = screen(m.padPosition.x + m.padRadiusMeters, m.padPosition.z);
                 const double rpx = glm::length(e - c);
-                if (rpx < 4.0)
+                if (rpx < 4.0 || m.under)
+                {
+                    const float d = m.padKind == PK::Hangar ? 5.0f : (m.under ? 2.0f : 3.0f);
+                    text.solidRectPx(static_cast<float>(c.x) - 0.5f * d, static_cast<float>(c.y) - 0.5f * d, d, d, kindColour);
                     continue;
+                }
                 const float s = static_cast<float>(rpx), t = std::max(1.0f, s * 0.16f);
-                const glm::vec4 padColour(0.42f, 0.96f, 0.72f, 0.80f);
+                const glm::vec4 padColour = kindColour;
                 const float x = static_cast<float>(c.x), y = static_cast<float>(c.y);
                 text.solidRectPx(x - s, y - s, 2.0f * s, t, padColour);              // the pad's frame
                 text.solidRectPx(x - s, y + s - t, 2.0f * s, t, padColour);

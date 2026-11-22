@@ -98,6 +98,20 @@ bool HubPlan::load(const std::string& path)
                 hmin[k] = std::min(hmin[k], std::abs(m.padPosition.y));
                 hmax[k] = std::max(hmax[k], std::abs(m.padPosition.y));
             }
+        // the buildings with several places (their own + the lower side's under the footprint): several card buttons
+        int multi = 0;
+        for (const auto& m : m_modules)
+        {
+            if (m.under || m.pier || m.address.empty())
+                continue;
+            int places = m.pad ? 1 : 0;
+            for (const auto& u : m_modules)
+                places += u.under && u.pad && u.padPosition.x >= m.rect.x && u.padPosition.x <= m.rect.z &&
+                          u.padPosition.z >= m.rect.y && u.padPosition.z <= m.rect.w ? 1 : 0;
+            if (places > 1 && ++multi <= 6)
+                std::fprintf(stderr, "[PadCensus] %s %s: %d places (upper + under)\n", m_hubId.c_str(), m.address.c_str(), places);
+        }
+        std::fprintf(stderr, "[PadCensus] %s buildings with several places: %d\n", m_hubId.c_str(), multi);
         static const char* names[] = {"none", "roof", "stilts", "garage", "hangar"};
         for (int k = 1; k < 5; ++k)
             std::fprintf(stderr, "[PadCensus] %s %s: %d upper, %d under, deck %.0f..%.0f m\n", m_hubId.c_str(), names[k], n[k][0],

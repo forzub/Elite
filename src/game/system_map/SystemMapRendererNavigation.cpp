@@ -130,20 +130,35 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             pad.labelKey = "hub_pad";
             using PadKind = game::navigation::HubPlanModule::PadKind;
             pad.value = m.padKind == PadKind::Roof     ? ui.hubPadRoof
-                        : m.padKind == PadKind::Hangar ? std::string("ремонтный ангар, 3 места")
+                        : m.padKind == PadKind::Hangar ? "ремонтный ангар, " + std::to_string(game::navigation::hubBerthPlaces(m)) + " места"
                         : m.padKind == PadKind::Garage ? ui.hubPadGarage + std::to_string(m.padPlaces)
                         : m.padKind == PadKind::Stilts ? ui.hubPadStilts
                                                        : ui.hubPadNone;
             item.extraFields.push_back(std::move(pad));
+            // one button per landing place of the building (author 2026-11-22: «несколько уровней - несколько кнопок»):
+            // its own pad, and the lower side's pads under its footprint; the key carries the place's address
+            std::vector<const game::navigation::HubPlanModule*> places;
+            if (m.pad)
+                places.push_back(&m);
+            for (const auto& u : plan->modules())
+                if (u.under && u.pad && u.padPosition.x >= m.rect.x && u.padPosition.x <= m.rect.z && u.padPosition.z >= m.rect.y &&
+                    u.padPosition.z <= m.rect.w)
+                    places.push_back(&u);
+            if (places.empty())
+                places.push_back(&m);   // no place: the button stays, closed
+            for (const auto* place : places)
+            {
+            const auto& pm = *place;
             game::system_map::MapObjectPanelAction land;
-            land.key = "land_pad";
+            land.key = places.size() > 1 ? "land_pad:" + pm.address : std::string("land_pad");
             land.labelKey = "land_pad";
-            land.enabled = m.pad;
+            land.enabled = pm.pad;
             land.active = m_padLandingActive == item.objectId;
             // the landing place on the button (author 2026-11-22: «кнопки с указанием А / М и стоимость в час; игрок сам
             // выберет куда стыковаться»): its kind, automatic / manual, price per hour, free places; all taken - closed
-            if (m.pad)
+            if (pm.pad)
             {
+                const auto& m = pm;
                 const int places = game::navigation::hubBerthPlaces(m);
                 int taken = 0;
                 if (const auto occ = m_berthOccupancy.find(module.stableId); occ != m_berthOccupancy.end())
@@ -162,6 +177,7 @@ void SystemMapRenderer::decorateHubPlanBlocks(
                 land.enabled = !full || land.active || m.padKind == PK::Hangar;   // a hangar keeps a queue
             }
             item.panelActions.push_back(std::move(land));
+            }
             frame.items.push_back(std::move(item));
         }
     }

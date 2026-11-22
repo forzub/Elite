@@ -3,6 +3,7 @@
 #include <map>
 #include <glad/gl.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -642,6 +643,8 @@ public:
             {
                 m_objectOverlayState.activate(objectId);
                 m_objectOverlayState.ensureOpen(item, m_hubPresentation.centerPx * 2.0);
+                for (const auto& a : item.panelActions)   // what the card offers (the scripted check of its buttons)
+                    std::cerr << "[MapScript]   button " << a.key << " '" << a.labelText << "'" << (a.enabled ? "" : " (closed)") << std::endl;
                 return true;
             }
         return false;

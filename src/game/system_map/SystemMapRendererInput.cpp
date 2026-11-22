@@ -935,11 +935,15 @@ SystemMapRenderer::handleInput(
                         overlayPointer.actionKey
                     );
                 }
-                else if (overlayPointer.actionKey == "land_pad")
+                else if (overlayPointer.actionKey.rfind("land_pad", 0) == 0)
                 {
-                    // a building card: its pad ("hub-building:<city frame module>/<address>")
+                    // a building card: its pad ("hub-building:<city frame module>/<address>"); a card with several places:
+                    // the button's own ("land_pad:<address>")
                     std::string rest = overlayPointer.actionObjectId.rfind("hub-building:", 0) == 0
                         ? overlayPointer.actionObjectId.substr(13) : std::string();
+                    if (overlayPointer.actionKey.size() > 9 && overlayPointer.actionKey[8] == ':')
+                        if (const auto slash = rest.rfind('/'); slash != std::string::npos)
+                            rest = rest.substr(0, slash) + "/" + overlayPointer.actionKey.substr(9);
                     if (overlayPointer.actionObjectId.rfind("hub-block:", 0) == 0)
                     {
                         // a block card: its pad nearest the block's centre

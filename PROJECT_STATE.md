@@ -8057,3 +8057,12 @@ start-up hitches (render), trade step 16 part 3 live.
     construction is planned), traffic routes through junctions, monorail (one loop / zigzag line), comic pedestrians,
     the RING HUB 40 km ahead on the same orbit (one storey on the inner side, growth in width, rotating ~1 g, 4 spin
     engines; strip plan = the 2D map; built as the flat strip + one bend mapping), 30 m/s in built-up areas.
+  * 2026-11-22 (berths, autonomous): the wide 2-place repair hangar (ships to ~40 m) in repair / rig / port / logistics /
+    storage blocks (21 at Earth); tariffs hubBerthPricePerHour (garage 40 .. roof 160 Cr/h, lower x0.75, zone factor),
+    dock 250 Cr/h (docking panel ТАРИФ); the DISPATCHER: every place under it (PadLanding.bay, refusal + wait when full,
+    ObjectSnapshot.occupiedBerths "addr#bay@ship[!]" wire 70, HubBerthOccupancy client registry); capture zones white /
+    red with "A|M · price · free n/N"; card buttons per place; map markers per place (kind colour, red when full);
+    BERTH ENGINE RULE (landed: no engines, Ctrl+L launches on the manoeuvre thrusters until out of the zone); hangar
+    QUEUE (waiting point 90 m before the doors, first come first in) and the HUD tunnel to the assigned bay.
+    DEV: ELITE_DEV_OCCUPY_BERTHS=addr[#bay]@serverSeconds, DevScriptRunner launch / hub: / panel:hub.
+    OPEN: a queued ship waits with its nose anywhere (should face the doors).

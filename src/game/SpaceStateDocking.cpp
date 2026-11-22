@@ -977,7 +977,32 @@ void SpaceState::updateDockingAdvisory()
                     const glm::dvec3 ov = myV + frame.worldToLocalVector(other.transform.motion.worldVelocityMps - myWorldV);
                     const double lead = glm::dot(ov, fwd);
                     if (glm::length(ov) < 1.0 || lead < 0.5 * glm::length(ov))
+                    {
+                        // GIVE WAY to a ship crossing / coming at us: its closest approach within 8 s nearer than the
+                        // hulls + 15 m - slow down and let it pass (the reflex layer's first rule; braking is the
+                        // smoothest, most predictable evasion in a lane)
+                        const glm::dvec3 rv = ov - myV;
+                        const double rv2 = glm::dot(rv, rv);
+                        if (rv2 > 1.0e-6)
+                        {
+                            const double tCpa = -glm::dot(rel, rv) / rv2;
+                            const double miss = glm::length(rel + rv * tCpa);
+                            const double otherRadius = other.descriptor ? 0.5 * other.descriptor->logicalDimensions().length : 20.0;
+                            if (tCpa > 0.0 && tCpa < 8.0 && miss < myRadius + otherRadius + 15.0)
+                            {
+                                const double cap = mySpeed * std::clamp((tCpa - 1.0) / 8.0, 0.25, 0.7);
+                                ceiling = ceiling > 0.0 ? std::min(ceiling, cap) : std::max(cap, 0.01);
+                                static double giveLog = 0.0;
+                                if (glfwGetTime() - giveLog > 2.0)
+                                {
+                                    giveLog = glfwGetTime();
+                                    std::cerr << "[TrafficRule] give way: ship " << sid << " crosses in " << tCpa << " s, "
+                                              << miss << " m off - down to " << cap << " m/s" << std::endl;
+                                }
+                            }
+                        }
                         continue;   // not going our way
+                    }
                     const double gap = 50.0 + myRadius + 2.0 * mySpeed;
                     const double cap = std::max(0.0, lead + 0.5 * (along - gap));
                     ceiling = ceiling > 0.0 ? std::min(ceiling, cap) : std::max(cap, 0.01);

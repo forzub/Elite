@@ -128,16 +128,43 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
             m_batch.begin(viewport.width, viewport.height);
             begun = true;
         }
+        // a segment CLIPPED at a near plane in view space, not dropped when one end is behind / beside the camera: flying
+        // inside a tube the rings' pieces went on and off as their ends crossed the camera - the rings seemed to be
+        // redrawn in new places (author 2026-11-22: «при пролёте внутри ведут себя нестабильно»)
         const auto seg = [&](const glm::dvec3& a, const glm::dvec3& b, const glm::vec4& c, float w) {
+            constexpr float Near = 0.5f;
+            glm::vec4 va = viewMatrix * glm::vec4(glm::vec3(a - playerMeters), 0.0f);
+            glm::vec4 vb = viewMatrix * glm::vec4(glm::vec3(b - playerMeters), 0.0f);
+            const bool aIn = va.z < -Near, bIn = vb.z < -Near;
+            if (!aIn && !bIn)
+                return;
+            if (aIn != bIn)
+            {
+                const float t = (-Near - va.z) / (vb.z - va.z);
+                const glm::vec4 cut = va + (vb - va) * t;
+                (aIn ? vb : va) = cut;
+            }
+            const auto toPx = [&](const glm::vec4& v, glm::vec2& out) {
+                const glm::vec4 clip = projectionMatrix * glm::vec4(v.x, v.y, v.z, 1.0f);
+                if (!(clip.w > 1.0e-6f))
+                    return false;
+                const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+                if (!std::isfinite(ndc.x) || !std::isfinite(ndc.y))
+                    return false;
+                out = {(ndc.x * 0.5f + 0.5f) * static_cast<float>(viewport.width),
+                       (1.0f - (ndc.y * 0.5f + 0.5f)) * static_cast<float>(viewport.height)};
+                return true;
+            };
             glm::vec2 pa, pb;
-            if (project(a - playerMeters, viewMatrix, projectionMatrix, viewport, pa) &&
-                project(b - playerMeters, viewMatrix, projectionMatrix, viewport, pb))
+            if (toPx(va, pa) && toPx(vb, pb))
                 m_batch.line(pa, pb, w, c);
         };
         // GREEN lanes: rings + four rails
         // oncoming lanes amber: in the red of the RED zones they read as "crossed a red zone" (author 2026-11-22:
         // «долетел, но ценой того, что три раза пересек красную зону» - the route kept 30+ m off every red zone)
-        const glm::vec3 OncomingLaneTint(1.00f, 0.80f, 0.22f);
+        // ... and back to GREEN (author 2026-11-22: «что такое жёлтая зона? я помню зелёную, красную и синюю»): a lane is a
+        // green lane both ways - its chevrons show the way it runs
+        const glm::vec3 OncomingLaneTint(0.40f, 1.00f, 0.50f);
         constexpr int RingSides = 12;
         for (const auto& lane : network->lanes())
         {

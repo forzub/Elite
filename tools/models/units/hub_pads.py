@@ -227,6 +227,25 @@ def cargo_lift(p, top, lod, ground):
     for sx in (-1, 1):
         for sz in (-1, 1):
             box(p, STEEL, (x0 + sx * 3.4, (ground + top + 3.0) / 2, sz * 3.4), (0.5, top + 3.0 - ground, 0.5))
+    # the SHAFT the platform runs in (author 2026-11-22: «грузовые лифты на площадках не имеют собственно шахт - как лифт
+    # будет подниматься / опускаться?»): three walls down to `ground` (open toward the deck - the container rolls off
+    # there), the two guide rails the car runs on, the landing at the bottom with its door frame; on a roof pad the
+    # shaft goes on down into the building (ground below the roof)
+    h = top - 0.6 - ground
+    if h > 0.5:
+        ymid = ground + h / 2
+        box(p, HULL, (x0 - 3.55, ymid, 0), (0.25, h, 7.1))                          # the back wall
+        for sz in (-1, 1):
+            box(p, HULL, (x0, ymid, sz * 3.55), (7.1, h, 0.25))                     # the side walls
+            box(p, STEEL, (x0 - 2.8, ymid, sz * 2.9), (0.3, h, 0.3))                # a guide rail
+        if lod < 2:
+            # bands round the shaft every ~6 m (its frame), the landing slab and the door frame at the bottom
+            y = ground + 6.0
+            while y < top - 1.5:
+                box(p, STEEL, (x0, y, 0), (7.4, 0.35, 7.4))
+                y += 6.0
+            box(p, GRATE, (x0, ground + 0.15, 0), (6.8, 0.3, 6.8))
+            box(p, HAZ, (x0 + 3.45, ground + 3.2, 0), (0.3, 0.3, 6.2))             # the door head (open side)
     box(p, STEEL, (x0, top + 3.0, 0), (7.4, 0.5, 7.4))                     # the head frame (the hoist)
     box(p, HULL, (x0, top - 0.3, 0), (6.4, 0.6, 6.4))                       # the platform at the deck's level
     box(p, HAZ, (x0, top + 0.02, 0), (6.6, 0.06, 0.4))
@@ -247,7 +266,9 @@ def pad_roof_parts(lod):
 
 
 def pad_roof_hits(name="hubl_pad_roof"):
-    return [hbox(name, (0, (ROOF_FRAME + DECK_T) / 2, 0), (PAD, ROOF_FRAME + DECK_T, PAD))]
+    top = ROOF_FRAME + DECK_T
+    return [hbox(name, (0, top / 2, 0), (PAD, top, PAD)),
+            hbox(name, (-PAD / 2 - 4.0, (top + 3.0 - 8.0) / 2, 0), (7.4, top + 3.0 + 8.0, 7.4))]   # the lift shaft
 
 
 def pad_stilts_parts(lod):
@@ -264,7 +285,8 @@ def pad_stilts_parts(lod):
 def pad_stilts_hits(name="hubl_pad_stilts"):
     return [hbox(name, (0, STILT_H - DECK_T / 2, 0), (PAD, DECK_T + 1.2, PAD)),
             hbox(name, (0, (STILT_H - DECK_T) / 2, 0), (PAD - 4.0, STILT_H - DECK_T, PAD - 4.0)),
-            hbox(name, (PAD / 2 + 4.0, STILT_H / 2, 0), (5.0, STILT_H, 5.0))]
+            hbox(name, (PAD / 2 + 4.0, STILT_H / 2, 0), (5.0, STILT_H, 5.0)),
+            hbox(name, (-PAD / 2 - 4.0, (STILT_H + 3.0) / 2, 0), (7.4, STILT_H + 3.0, 7.4))]   # the lift shaft
 
 
 def garage_builder(name, w):

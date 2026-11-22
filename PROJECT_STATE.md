@@ -8039,3 +8039,11 @@ start-up hitches (render), trade step 16 part 3 live.
     real, the stray bodies and a DEBRIS FIELD per city (40 pieces, 500 m, past the rim on a diagonal) - kind Debris,
     grey cross on the PPI; land button on a block with only lower pads now lands there (it did nothing silently).
     Suite v7: all 4 clean, peak cross-track 31-40 -> 11 m, speed error rms 2.2-4.3 m/s.
+  * 2026-11-22 (later): pad transit over the lane tubes (laneTubeCeilingMeters + 40 = 525 m at the Earth hub; at 380 it
+    cut every 430 m x-lane); a city straight that cuts a lane tube is no way (lanes taken); scripted service-direct
+    pad-to-pad OFF (the planner flies it); oncoming lanes green again (no "yellow zone"); ring segments clipped at the
+    near plane (rings flickered flying inside a tube); resting Assisted start lead 3 hull lengths (1 km straight
+    along the nose from a pad among buildings - the dock route never planned); an in-city leg reaches its lane no
+    faster than its own 40 m/s cap (infeasible at every speed, 2 min of retries); cargo lift shafts on roof / stilts
+    pads (+ hit volumes). OPEN: in-city routes are long and slow (40 m/s cap on whole legs, free-leg turn radius at the
+    hub speed) - waiting for the author's hub speed rule (30 m/s where?); a 75 m cross-track spike in the series.

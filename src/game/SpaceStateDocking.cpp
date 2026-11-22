@@ -719,7 +719,7 @@ void SpaceState::updateDockingAdvisory()
                 double tallest = 0.0;
                 for (const auto& b : plan->blocks())
                     tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
-                const double transit = std::max(std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0);
+                const double transit = std::max({std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0, game::navigation::traffic::laneTubeCeilingMeters(game::navigation::traffic::HubLaneCatalog::forFrameModule(pending.target.stableObjectId), building->under) + 40.0});
                 const glm::dvec3 hover = building->padPosition + out * (transit - glm::dot(building->padPosition, out));
                 glm::dvec3 from = padRouteCityLocal(*city, shipIt->second) - hover;
                 from -= out * glm::dot(from, out);
@@ -3081,7 +3081,10 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                         glm::dvec3 flat = q - m_padAnchor.hoverCity;
                         const double dh = glm::dot(flat, m_padAnchor.upCity);
                         flat -= m_padAnchor.upCity * dh;
-                        request.serviceDirectAllowed = std::abs(dh) < 400.0 && glm::length(flat) < 8000.0;
+                        // OFF (author 2026-11-22: «перемещение внутри хаба между площадками - заскриптовано, тоннель тупо над
+                        // городом»): the planner flies the straight way itself now (its starts were the trouble - fixed)
+                        constexpr bool ServiceDirectEnabled = false;
+                        request.serviceDirectAllowed = ServiceDirectEnabled && std::abs(dh) < 400.0 && glm::length(flat) < 8000.0;
                     }
             auto laneRoute = game::navigation::traffic::applyHubLanes(*network, framePose, request, &log);
             std::cerr << "[HubLanes] request=" << pending.serial << " " << log << std::endl;

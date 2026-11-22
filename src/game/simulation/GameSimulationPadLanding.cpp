@@ -5,6 +5,7 @@
 // pilot (LandOnPad index 0, the client's takeover) gives the ship back at once - on the way or on the pad (take-off).
 // Kinematic like the dock's station control (the same hub-frame refresh on the moving hub).
 
+#include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/simulation/GameSimulation.h"
 
 #include <algorithm>
@@ -194,7 +195,7 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         double tallest = 0.0;
         for (const auto& b : plan->blocks())
             tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
-        const double transitAbovePad = std::max(std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0) - glm::dot(building->padPosition, out);
+        const double transitAbovePad = std::max({std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0, game::navigation::traffic::laneTubeCeilingMeters(game::navigation::traffic::HubLaneCatalog::forFrameModule(frameModuleId), building->under) + 40.0}) - glm::dot(building->padPosition, out);
         if (glm::length(flat) < 300.0 && height > transitAbovePad - 150.0)
             phase = 1;
     }
@@ -222,7 +223,7 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     double tallest = 0.0;
     for (const auto& b : plan->blocks())
         tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
-    p.transitLocal = std::max(std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0);
+    p.transitLocal = std::max({std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0, game::navigation::traffic::laneTubeCeilingMeters(game::navigation::traffic::HubLaneCatalog::forFrameModule(frameModuleId), building->under) + 40.0});
     p.phase = phase;
     p.sinceS = serverTime();
     m_padLandings[shipId] = p;

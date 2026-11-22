@@ -152,4 +152,24 @@ public:
     static const HubLaneNetwork* forFrameModule(const std::string& moduleId);
 };
 
+// the top of the lane tubes on one side of the plane (|height| + tube radius; lanes and their junction turns): the pad
+// service's transit flies over it (author 2026-11-22: «пролёт с площадки на площадку ... пролетает сквозь тоннели. Это
+// не безопасно» - at 380 m it cut every 430 m x-lane's tube, 375-485 m)
+inline double laneTubeCeilingMeters(const HubLaneNetwork* network, bool under)
+{
+    double top = 0.0;
+    if (!network)
+        return top;
+    const auto side = [&](double y) { return under ? y < 0.0 : y >= 0.0; };
+    for (const auto& lane : network->lanes())
+        for (const auto& p : lane.stationsLocal)
+            if (side(p.y))
+                top = std::max(top, std::abs(p.y) + lane.radiusMeters);
+    for (const auto& c : network->connectors())
+        for (const auto& p : c.pointsLocal)
+            if (side(p.y))
+                top = std::max(top, std::abs(p.y) + c.radiusMeters);
+    return top;
+}
+
 } // namespace game::navigation::traffic

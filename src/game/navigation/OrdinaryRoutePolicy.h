@@ -118,6 +118,11 @@ public:
             );
         const double minimum =
             std::max(1000.0, std::max(0.0, vehicleLengthMeters) * 10.0);
+        // an Assisted craft (nearly) at rest turns where it hangs: a few hull lengths, not 1 km straight along its nose
+        // - from a pad among the buildings that straight ran into them and the dock route never planned (author
+        // 2026-11-22: «запросил стыковку из хаба и планировщик - завис»)
+        if (initialSpeedMps < 8.0)
+            return std::max(30.0, 3.0 * std::max(0.0, vehicleLengthMeters));
         // Legacy = max(minimum, 2*(D_brake+R_turn)).
         return std::max(minimum, 0.5 * legacy);
     }

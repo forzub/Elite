@@ -1,5 +1,6 @@
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
+#include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/presentation/HudSteadyNumber.h"
 #include "src/game/navigation/rules/JDrive.h"
 #include <cstring>
@@ -666,7 +667,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             double tallest = 0.0;
             for (const auto& b : plan->blocks())
                 tallest = std::max(tallest, pad->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
-            const double transit = std::max(std::min(380.0, tallest + 80.0), std::abs(pad->padPosition.y) + 60.0);
+            const double transit = std::max({std::min(380.0, tallest + 80.0), std::abs(pad->padPosition.y) + 60.0, game::navigation::traffic::laneTubeCeilingMeters(game::navigation::traffic::HubLaneCatalog::forFrameModule(object.hubAttachment.moduleId), pad->under) + 40.0});
             // the route the SERVER flies: computed once where the service took the ship (as GameSimulationPadLanding
             // does), then only what is left of it ahead - recomputed every frame from the moving ship it picked other
             // tower corners and jumped about, "connecting the ship to who knows what" (author 2026-11-22)

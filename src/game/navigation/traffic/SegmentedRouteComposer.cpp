@@ -671,7 +671,9 @@ static planner::RoutePlan composeOnce(
         legRequest.goalMeters = blockStart;
         legRequest.terminalOutward = -entryForward;
         legRequest.initialSpeedMps = std::min(currentSpeed, legRequest.maxSpeedMps);
-        legRequest.terminalSpeedMps = handoffSpeed;
+        // no faster than the leg itself may fly (a leg starting among the buildings is capped at 40 m/s - asked to reach
+        // the lane at its 80 it was infeasible at every speed: 5 retries, 2 min, live suite v8); the lane speeds it up
+        legRequest.terminalSpeedMps = std::min(handoffSpeed, legRequest.maxSpeedMps);
         legRequest.hasInitialForward = currentHasForward;
         legRequest.initialForward = currentForward;
         legRequest.initialForwardLeadMeters =

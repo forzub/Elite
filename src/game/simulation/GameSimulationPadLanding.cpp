@@ -206,8 +206,8 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
 namespace
 {
 // DEV: ELITE_DEV_OCCUPY_BERTHS="<address>@<seconds>,..." - that module's places taken by a phantom until that server time
-// (the dispatcher's red / green line checked without a second ship)
-bool devBerthOccupied(const std::string& address, double now)
+// (the dispatcher's red / green line checked without a second ship); "<address>#<bay>@<seconds>" takes that bay only
+bool devBerthOccupied(const std::string& address, double now, int bay = -1)
 {
     static const std::string spec = [] { const char* v = std::getenv("ELITE_DEV_OCCUPY_BERTHS"); return std::string(v ? v : ""); }();
     std::size_t at = 0;
@@ -216,8 +216,14 @@ bool devBerthOccupied(const std::string& address, double now)
         const auto comma = spec.find(',', at);
         const std::string item = spec.substr(at, comma == std::string::npos ? std::string::npos : comma - at);
         const auto sep = item.find('@');
-        if (sep != std::string::npos && item.substr(0, sep) == address && now < std::atof(item.c_str() + sep + 1))
-            return true;
+        if (sep != std::string::npos && now < std::atof(item.c_str() + sep + 1))
+        {
+            const std::string who = item.substr(0, sep);
+            const auto hash = who.find('#');
+            if (hash == std::string::npos ? who == address
+                                          : who.substr(0, hash) == address && (bay < 0 || std::atoi(who.c_str() + hash + 1) == bay))
+                return true;
+        }
         if (comma == std::string::npos)
             break;
         at = comma + 1;
@@ -251,10 +257,8 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
         }
     int bay = -1;
     for (int b = 0; b < places && bay < 0; ++b)
-        if (!taken[static_cast<std::size_t>(b)])
+        if (!taken[static_cast<std::size_t>(b)] && !devBerthOccupied(address, serverTime(), b))
             bay = b;
-    if (devBerthOccupied(address, serverTime()))
-        bay = -1;
     if (bay < 0)
     {
         // the wait: a berth is held ~20 min on average; the one there longest frees first
@@ -725,9 +729,10 @@ std::vector<std::string> GameSimulation::cityOccupiedBerths(EntityId cityId) con
         return out;
     if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(it->second.hubModuleId))
         for (const auto& m : plan->modules())
-            if (m.pad && devBerthOccupied(m.address, serverTime()))
+            if (m.pad)
                 for (int b = 0; b < game::navigation::hubBerthPlaces(m); ++b)
-                    out.push_back(m.address + "#" + std::to_string(b) + "@0");
+                    if (devBerthOccupied(m.address, serverTime(), b))
+                        out.push_back(m.address + "#" + std::to_string(b) + "@0");
     for (const auto& [ship, p] : m_padLandings)
         if (p.frameModuleId == it->second.hubModuleId)
             out.push_back(p.address + "#" + std::to_string(p.bay) + "@" + std::to_string(ship.value) + (p.phase < 3 ? "!" : ""));

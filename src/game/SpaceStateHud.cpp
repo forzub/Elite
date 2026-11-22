@@ -707,9 +707,16 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
             if (pad->padKind == game::navigation::HubPlanModule::PadKind::Hangar)
             {
-                route.push_back(game::navigation::hubHangarDoorFront(*pad));
-                route.push_back(game::navigation::hubHangarBayEntry(*pad));
-                route.push_back(pad->padPosition + out * 3.0);
+                // the bay the dispatcher gave US (our own "addr#bay@ship" in the city's occupancy), not always bay 0
+                int bay = 0;
+                const std::string mine = address + "#";
+                const std::string who = "@" + std::to_string(m_playerId.value);
+                for (const auto& b : object.occupiedBerths)
+                    if (b.compare(0, mine.size(), mine) == 0 && b.find(who) != std::string::npos)
+                        bay = std::atoi(b.c_str() + mine.size());
+                route.push_back(game::navigation::hubHangarDoorFront(*pad, bay));
+                route.push_back(game::navigation::hubHangarBayEntry(*pad, bay));
+                route.push_back(game::navigation::hubBerthTouchdown(*pad, bay) + out * 3.0);
             }
             else
                 route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0

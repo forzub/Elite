@@ -219,11 +219,34 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     p.padLocal = building->padPosition;
     p.outLocal = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
     p.autoLanding = building->autoLanding;
+    p.hangar = building->padKind == game::navigation::HubPlanModule::PadKind::Hangar;
+    if (p.hangar)
+    {
+        p.autoLanding = true;   // the hangar's crew brings the ship in
+        p.doorFrontLocal = game::navigation::hubHangarDoorFront(*building);
+        p.bayEntryLocal = game::navigation::hubHangarBayEntry(*building);
+    }
     // the transit height: over the tallest building of its tier by 80 m (the city air lanes fly at 430 m)
     double tallest = 0.0;
     for (const auto& b : plan->blocks())
         tallest = std::max(tallest, building->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
     p.transitLocal = std::max({std::min(380.0, tallest + 80.0), std::abs(building->padPosition.y) + 60.0, game::navigation::traffic::laneTubeCeilingMeters(game::navigation::traffic::HubLaneCatalog::forFrameModule(frameModuleId), building->under) + 40.0});
+    // a berth at the base reached from a street lane: across at the ship's own height (hubPadServiceTransit)
+    if (const StaticObject* cityObj = findCityFrame(m_staticObjects, frameModuleId))
+    {
+        const glm::dmat3 R(glm::mat3(cityObj->orientation));
+        const glm::dvec3 q = glm::transpose(R) * (ship->core().transform().fullWorldMeters() -
+                                                  world::coordinates::fullMeters(cityObj->worldPosition));
+        const double shipHeight = glm::dot(q, p.outLocal);
+        const double low = game::navigation::traffic::hubPadServiceTransit(p.transitLocal, std::abs(building->padPosition.y), shipHeight);
+        if (low < p.transitLocal)
+        {
+            std::cerr << "[PadLanding] ship " << shipId.value << " pad " << address << ": a berth at the base - across at "
+                      << static_cast<long long>(low) << " m (the street level), not over the city at "
+                      << static_cast<long long>(p.transitLocal) << " m" << std::endl;
+            p.transitLocal = low;
+        }
+    }
     p.phase = phase;
     p.sinceS = serverTime();
     m_padLandings[shipId] = p;
@@ -316,6 +339,11 @@ void GameSimulation::updatePadLandings(double dt)
             case 2:   // down: onto the pad (an automatic pad); a hand-flown one: to the top of its zone, then the pilot
                 target = p.autoLanding ? touchdown : p.padLocal + out * game::navigation::HubPadZoneHeight;
                 cruise = p.autoLanding ? 6.0 : 30.0;
+                if (p.hangar)   // a hangar: down in front of its door, in through it, then down onto the bay's lift
+                {
+                    target = p.hangarStep == 0 ? p.doorFrontLocal : p.hangarStep == 1 ? p.bayEntryLocal : touchdown;
+                    cruise = p.hangarStep == 0 ? 12.0 : p.hangarStep == 1 ? 5.0 : 3.0;
+                }
                 break;
             default: target = touchdown; cruise = 0.0; break;                                           // landed
         }
@@ -341,7 +369,7 @@ void GameSimulation::updatePadLandings(double dt)
         // it holds it over the pad until they are out
         const auto gearIt = m_landingGear.find(id);
         const bool legsOut = gearIt != m_landingGear.end() && gearIt->second == 1;
-        const bool waitLegs = p.phase == 2 && p.autoLanding && !legsOut;
+        const bool waitLegs = p.phase == 2 && p.autoLanding && !legsOut && (!p.hangar || p.hangarStep >= 2);
         if (waitLegs)
         {
             want = 0.0;
@@ -364,6 +392,14 @@ void GameSimulation::updatePadLandings(double dt)
                 if (p.phase == 1 && p.leg + 1 < p.route.size())
                 {
                     ++p.leg;   // the next detour corner: keep the speed, turn the corner
+                    continue;
+                }
+                if (p.phase == 2 && p.hangar && p.hangarStep < 2)
+                {
+                    ++p.hangarStep;
+                    p.speedMps = 0.0;
+                    std::cerr << "[PadLanding] ship " << id.value << " hangar " << p.address << ": "
+                              << (p.hangarStep == 1 ? "at its door, flying in" : "over the bay, setting down") << std::endl;
                     continue;
                 }
                 const int next = p.phase + 1;

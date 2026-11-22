@@ -129,6 +129,7 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             pad.labelKey = "hub_pad";
             using PadKind = game::navigation::HubPlanModule::PadKind;
             pad.value = m.padKind == PadKind::Roof     ? ui.hubPadRoof
+                        : m.padKind == PadKind::Hangar ? std::string("ремонтный ангар, 3 места")
                         : m.padKind == PadKind::Garage ? ui.hubPadGarage + std::to_string(m.padPlaces)
                         : m.padKind == PadKind::Stilts ? ui.hubPadStilts
                                                        : ui.hubPadNone;

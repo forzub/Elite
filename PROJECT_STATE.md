@@ -8047,3 +8047,13 @@ start-up hitches (render), trade step 16 part 3 live.
     faster than its own 40 m/s cap (infeasible at every speed, 2 min of retries); cargo lift shafts on roof / stilts
     pads (+ hit volumes). OPEN: in-city routes are long and slow (40 m/s cap on whole legs, free-leg turn radius at the
     hub speed) - waiting for the author's hub speed rule (30 m/s where?); a 75 m cross-track spike in the series.
+  * Pads concept (author 2026-11-22): roof pads only on every third tall premium building (Earth hub: 41 roof, 86
+    stilts, 342 garages, 1 repair hangar); base berths reached at the street-lane level (no climb over the city);
+    REPAIR HANGAR hubl_repair_hangar (90x50x22 m, 80x18 m door, 3 bays: scissor lifts, gantry cranes, benches +
+    lockers, wrecked parts; shell-only hit volumes) placed in repair / rig / port blocks on a 55 m free plot; the pad
+    service flies to its door front, down to 9 m, in through the door, down onto the bay lift. LIVE hg1: F2-01 LANDED
+    inside. ELITE_DEV_PAD_CENSUS=<hub> prints the pads by kind.
+  NEXT (agreed): berth tariffs (hourly; lower = cheaper, higher = priority), dead-end lanes (traffic only where
+    construction is planned), traffic routes through junctions, monorail (one loop / zigzag line), comic pedestrians,
+    the RING HUB 40 km ahead on the same orbit (one storey on the inner side, growth in width, rotating ~1 g, 4 spin
+    engines; strip plan = the 2D map; built as the flat strip + one bend mapping), 30 m/s in built-up areas.

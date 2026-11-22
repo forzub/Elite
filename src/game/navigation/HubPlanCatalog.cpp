@@ -1,5 +1,6 @@
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
+#include <cstdlib>
 
 #include <algorithm>
 #include <cmath>
@@ -79,6 +80,29 @@ bool HubPlan::load(const std::string& path)
         m_modules.push_back(std::move(module));
     }
     assignHubPlanAddressesAndPads(m_blocks, m_modules);   // the addresses and the pads (HubPlanPads.h)
+    // DEV: ELITE_DEV_PAD_CENSUS=<hub id> - the pads of that hub by kind, side and deck height (the pad concept review,
+    // author 2026-11-22: «ты их абсолютно все разместил над крышей»)
+    if (const char* census = std::getenv("ELITE_DEV_PAD_CENSUS"); census && m_hubId == census)
+    {
+        int n[5][2] = {};
+        double hmin[5] = {1e9, 1e9, 1e9, 1e9, 1e9}, hmax[5] = {-1e9, -1e9, -1e9, -1e9, -1e9};
+        for (const auto& m : m_modules)
+            if (m.pad)
+            {
+                const int k = static_cast<int>(m.padKind);
+                if (k < 0 || k > 4)
+                    continue;
+                ++n[k][m.under ? 1 : 0];
+                if (m.padKind == HubPlanModule::PadKind::Hangar)
+                    std::fprintf(stderr, "[PadCensus] %s repair hangar at %s\n", m_hubId.c_str(), m.address.c_str());
+                hmin[k] = std::min(hmin[k], std::abs(m.padPosition.y));
+                hmax[k] = std::max(hmax[k], std::abs(m.padPosition.y));
+            }
+        static const char* names[] = {"none", "roof", "stilts", "garage", "hangar"};
+        for (int k = 1; k < 5; ++k)
+            std::fprintf(stderr, "[PadCensus] %s %s: %d upper, %d under, deck %.0f..%.0f m\n", m_hubId.c_str(), names[k], n[k][0],
+                         n[k][1], hmin[k], hmax[k]);
+    }
     for (const auto& s : j.value("streets", nlohmann::json::array()))
         m_streets.push_back({vec2(s.value("a", nlohmann::json::array())), vec2(s.value("b", nlohmann::json::array())),
                              s.value("avenue", false), s.value("monorail", false)});

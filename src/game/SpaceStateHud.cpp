@@ -680,7 +680,11 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             else if (key != routeKey)
             {
                 routeKey = key;
-                serviceRoute = game::navigation::hubPadRoute(*plan, *pad, q, transit, true);
+                serviceRoute = game::navigation::hubPadRoute(
+                    *plan, *pad, q,
+                    game::navigation::traffic::hubPadServiceTransit(transit, std::abs(pad->padPosition.y),
+                                                                    pad->under ? -q.y : q.y),
+                    true);
                 serviceLeg = 0;
             }
             std::vector<glm::dvec3> route;
@@ -701,8 +705,15 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                     route.push_back(serviceRoute[i]);
             }
             const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
-            route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0
-                                             : pad->padPosition + out * game::navigation::HubPadZoneHeight);
+            if (pad->padKind == game::navigation::HubPlanModule::PadKind::Hangar)
+            {
+                route.push_back(game::navigation::hubHangarDoorFront(*pad));
+                route.push_back(game::navigation::hubHangarBayEntry(*pad));
+                route.push_back(pad->padPosition + out * 3.0);
+            }
+            else
+                route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0
+                                                 : pad->padPosition + out * game::navigation::HubPadZoneHeight);
             // the service flies the ship: ITS tunnel, whatever guidance was left (author 2026-11-22: «потерял тоннель на пол
             // дороги» - the route handed over 2.2 km out, a stale guidance hid the service tunnel)
             guidance.frames.clear();

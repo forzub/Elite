@@ -6,6 +6,7 @@
 // game and the mesh editor) place the same pads from the same plan. The pad modules: tools/models/units/hub_pads.py.
 
 #include <algorithm>
+#include <glm/glm.hpp>
 #include <cmath>
 #include <cstdio>
 #include <string>
@@ -23,6 +24,18 @@ inline constexpr double HubPadDeckSide = 36.0;          // hubl_pad_roof / hubl_
 inline constexpr double HubPadRoofDeckTop = 2.2;        // the roof pad's deck top over the roof
 inline constexpr double HubPadStiltsDeckTop = 25.0;     // the stilts pad's deck top over the plane
 inline constexpr double HubPadClearMeters = 30.0;       // a pad on a free plot: no building nearer than this
+// the repair hangar (hubl_repair_hangar: 90 x 50 x 22 m, the door 80 x 18 m on its +Z): its free plot, the bay's touchdown
+inline constexpr double HubHangarClearMeters = 55.0;
+inline constexpr double HubHangarBayZ = 2.0;             // the middle bay's centre from the box centre (toward the door)
+inline constexpr double HubHangarFloorTop = 1.8;         // the scissor lift's top
+inline constexpr double HubHangarDoorHalfDepth = 25.0;   // the door plane from the box centre
+inline constexpr double HubHangarEntryHeight = 9.0;      // flown in at half the door's height
+// the hangar's door direction in the plan (the module +Z), its entry point outside the door and inside at the bay
+inline glm::dvec3 hubHangarDoorForward(double yawDeg)
+{
+    const double yaw = glm::radians(yawDeg);
+    return glm::dvec3(std::sin(yaw), 0.0, std::cos(yaw));
+}
 // the pad's capture zone (author 2026-11-21: «прозрачный куб с белёсыми рёбрами, появляется когда до площадки метров
 // 100»): a box over the deck - half side, height; shown within HubPadZoneShowMeters of the pad
 inline constexpr double HubPadZoneHalf = 25.0;
@@ -52,6 +65,7 @@ inline std::string hubPadModuleFolder(const HubPlanModule& m)
         case HubPlanModule::PadKind::Roof: return "hubl_pad_roof";
         case HubPlanModule::PadKind::Stilts: return "hubl_pad_stilts";
         case HubPlanModule::PadKind::Garage: return m.padPlaces >= 2 ? "hubl_garage2" : "hubl_garage1";
+        case HubPlanModule::PadKind::Hangar: return "hubl_repair_hangar";
         default: return {};
     }
 }
@@ -84,7 +98,14 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
         const double height = module.under ? -module.y0 : module.y1;
         const glm::dvec2 centre(0.5 * (module.rect.x + module.rect.z), 0.5 * (module.rect.y + module.rect.w));
         const double side = module.under ? -1.0 : 1.0;
-        if (half >= 0.5 * HubPadDeckSide && height > 60.0)
+        // a ROOF pad is the expensive exception, not the rule (author 2026-11-22: «ты их абсолютно все разместил над крышей
+        // - туда действительно нет смысла лететь по зелёному коридору»): only a tall building of a downtown / hotel /
+        // services / canopy block, and only every third of them; the rest berth at the base (a garage box, a pad on
+        // legs on a free plot) - reached along the lanes down the street canyons
+        const std::string& zoneHere = blocks[k].zone;
+        const bool premium = zoneHere == "downtown" || zoneHere == "hotel" || zoneHere == "services" || zoneHere == "canopy";
+        const bool roofSlot = premium && (module.number % 3) == 1;
+        if (half >= 0.5 * HubPadDeckSide && height > 60.0 && roofSlot)
         {
             // a tall building with a roof wide enough for the 36 m deck: the pad on its roof (the lower tier: its
             // underside, the module upside down)
@@ -94,8 +115,10 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
             module.padOrigin = glm::dvec3(centre.x, roof, centre.y);
             module.padPosition = glm::dvec3(centre.x, roof + side * HubPadRoofDeckTop, centre.y);
         }
-        else if (half >= 15.0 && height <= 60.0)
-            module.padKind = Kind::Garage;   // a low wide one: a 1-2 place garage beside it (a free plot below)
+        else if ((zoneHere == "repair" || zoneHere == "rig" || zoneHere == "port") && module.number == 1)
+            module.padKind = Kind::Hangar;   // a repair block: its repair hangar (3 bays) on a free plot - flown into
+        else if (half >= 15.0)
+            module.padKind = Kind::Garage;   // a wide one: a 1-2 place garage box beside it at the base (a free plot)
         else
             module.padKind = Kind::Stilts;   // a narrow one (or a tall narrow one): a pad on legs beside it
         if (module.padKind == Kind::Garage)
@@ -110,11 +133,12 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
     // HubPadClearMeters, no other free-plot pad within twice that; none within 250 m: no pad
     for (auto& module : modules)
     {
-        const bool garage = module.padKind == Kind::Garage;
+        const bool hangar = module.padKind == Kind::Hangar;
+        const bool garage = module.padKind == Kind::Garage || hangar;
         if ((module.padKind != Kind::Stilts && !garage) || module.block < 0)
             continue;
         const auto& block = blocks[static_cast<std::size_t>(module.block)];
-        const double clear = HubPadClearMeters;
+        const double clear = hangar ? HubHangarClearMeters : HubPadClearMeters;
         const glm::dvec2 centre(0.5 * (module.rect.x + module.rect.z), 0.5 * (module.rect.y + module.rect.w));
         std::vector<const HubPlanModule*> near;   // this block, this tier: the buildings and the free-plot pads so far
         for (const auto& other : modules)
@@ -162,6 +186,14 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
             const glm::dvec2 to = centre - at;
             module.padYawDeg = glm::degrees(std::atan2(-to.x, -to.y));
         }
+        if (hangar)
+        {
+            // the touchdown: the middle bay, inside (the module's door is its +Z, away from the building)
+            const double yaw = glm::radians(module.padYawDeg);
+            const glm::dvec2 fwd(std::sin(yaw), std::cos(yaw));   // the module +Z in the plan
+            module.padPosition = glm::dvec3(at.x + fwd.x * HubHangarBayZ, side * HubHangarFloorTop, at.y + fwd.y * HubHangarBayZ);
+            module.padRadiusMeters = 13.0;
+        }
     }
 }
 } // namespace game::navigation
@@ -172,6 +204,21 @@ namespace game::navigation
 // «нет рамок, показывающих маршрут»): from `from` up / down to the transit height (includeClimb), across to over the
 // pad - round every building whose top comes within 40 m of the transit height (its footprint grown by 60 m, passed
 // by its nearest free corner) - ending over the pad at the transit height. The server flies it, the HUD draws it.
+// a hangar's entry point: outside its door, 35 m off, at the entry height (city frame)
+inline glm::dvec3 hubHangarDoorFront(const HubPlanModule& pad)
+{
+    const double side = pad.under ? -1.0 : 1.0;
+    const glm::dvec3 fwd = hubHangarDoorForward(pad.padYawDeg);
+    const glm::dvec3 flat(pad.padPosition.x, 0.0, pad.padPosition.z);
+    return flat + fwd * (HubHangarDoorHalfDepth - HubHangarBayZ + 35.0) + glm::dvec3(0.0, side * HubHangarEntryHeight, 0.0);
+}
+// inside, over the bay at the entry height
+inline glm::dvec3 hubHangarBayEntry(const HubPlanModule& pad)
+{
+    const double side = pad.under ? -1.0 : 1.0;
+    return glm::dvec3(pad.padPosition.x, side * HubHangarEntryHeight, pad.padPosition.z);
+}
+
 inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanModule& pad, const glm::dvec3& from, double transit,
                                            bool includeClimb)
 {
@@ -240,7 +287,8 @@ inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanMod
     const glm::dvec3 start = atTransit(from);
     if (includeClimb)
         route.push_back(start);
-    const glm::dvec3 goal = atTransit(pad.padPosition);
+    // a repair hangar is flown INTO: the route ends in front of its door (the service goes down there and in)
+    const glm::dvec3 goal = atTransit(pad.padKind == HubPlanModule::PadKind::Hangar ? hubHangarDoorFront(pad) : pad.padPosition);
     glm::dvec2 at(start.x, start.z);
     const glm::dvec2 end(goal.x, goal.z);
     for (int guard = 0; guard < 12; ++guard)

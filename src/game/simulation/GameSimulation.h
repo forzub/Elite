@@ -805,6 +805,9 @@ private:
         double touchdownS = 0.0;         // the legs took the ship (phase 3): the damped sag runs from here
         double touchdownMps = 0.0;       // its touchdown speed
         double touchdownPitch = 0.0;     // the rock of the sag applied so far
+        bool hangar = false;             // a repair hangar: phase 2 = down to its door, in, down onto the bay
+        int hangarStep = 0;
+        glm::dvec3 doorFrontLocal {0.0}, bayEntryLocal {0.0};
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time

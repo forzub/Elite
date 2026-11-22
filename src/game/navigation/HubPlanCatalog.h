@@ -49,7 +49,8 @@ struct HubPlanModule
     // how it is built (author 2026-11-21: «на свободных участках, на крышах, на ножках, как вертолётные площадки на
     // платформах, ... как гараж на 1-2 места»): Roof - a tall wide building; Garage - a low wide one (1-2 places at
     // the plane, on a free plot beside it); Stilts - a narrow one: a pad on legs on a free plot of its block beside it
-    enum class PadKind { None, Roof, Stilts, Garage };
+    // Hangar: a repair hangar box on a free plot (hubl_repair_hangar) - flown INTO through its door (author 2026-11-22)
+    enum class PadKind { None, Roof, Stilts, Garage, Hangar };
     PadKind padKind = PadKind::None;
     int padPlaces = 1;
     glm::dvec3 padOrigin {0.0};   // where the pad module stands (city frame; HubPlanPads.h)

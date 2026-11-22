@@ -5,6 +5,7 @@
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/navigation/traffic/HubLaneRouting.h"
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 #include <memory>
 
 
@@ -124,6 +125,34 @@ void runDockAdviceWorker(
             700,
             std::memory_order_release
         );
+
+        // the accepted route against the obstacles it was planned with (the hull radius, no extra margin): a route that
+        // runs through a building is never flown (live 2026-11-22: the free leg from a lane exit to a pad's approach
+        // point curved through a power block). Logged with the obstacle and the place either way.
+        if (job->plan.valid())
+        {
+            const auto& gates = job->plan.executionGates.empty() ? job->plan.gates : job->plan.executionGates;
+            for (std::size_t g = 0; g + 1 < gates.size(); ++g)
+            {
+                const glm::dvec3 a = gates[g].positionMeters, b = gates[g + 1].positionMeters;
+                for (const auto& o : request.obstacles)
+                {
+                    const std::vector<world::navigation::NavigationObstacle> one {o};
+                    if (!world::navigation::segmentClearOfNavigationObstacles(a, b, one, request.agentRadiusMeters, 0.0))
+                    {
+                        std::fprintf(stderr, "[RouteCheck] request=%llu the route runs through %s at gate %zu/%zu (%.0f,%.0f,%.0f)\n",
+                                     static_cast<unsigned long long>(job->context.serial), o.id.c_str(), g, gates.size(),
+                                     a.x, a.y, a.z);
+                        job->plan.failure = "the route runs through " + o.id;
+                        g = gates.size();
+                        break;
+                    }
+                }
+            }
+            if (job->plan.failure.empty())
+                std::fprintf(stderr, "[RouteCheck] request=%llu the route is clear of %zu obstacles (%zu gates)\n",
+                             static_cast<unsigned long long>(job->context.serial), request.obstacles.size(), gates.size());
+        }
 
         if (job->cancelled.load(std::memory_order_acquire))
         {
@@ -701,7 +730,10 @@ void SpaceState::updateDockingAdvisory()
                 d.localPositionMeters = hover;
                 d.localForward = forward;                       // the route arrives along -forward (toward the pad)
                 d.localUp = out;
-                d.extentMeters = glm::dvec3(400.0);             // the open air over the pad
+                // the "opening" sets the route-following corridor (its half margin): 400 m made a 192 m corridor in
+                // which the autopilot never steered back to the line (19 m dead band, 20-72 m off the route among the
+                // buildings, live 2026-11-22); 70 m -> ~20-25 m, the correction from ~2 m
+                d.extentMeters = glm::dvec3(70.0);
                 d.requiredClearanceMeters = 5.0;
                 d.maxEntrySpeedMps = 30.0;
                 d.captureDepthMeters = 1.0;

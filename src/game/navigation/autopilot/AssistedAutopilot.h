@@ -206,7 +206,10 @@ public:
             glm::dvec3 desiredHullForward=actualCourse;
             if(courseSideLength>1.0e-9)
             {
-                constexpr double maxSteeringLeadRad=0.17453292519943295;
+                // 30 deg (was 10): the nose lead IS the lateral demand on the flight assist - at 10 deg a 50 m/s ship
+                // got ~8.7 m/s2 of the ~10 a 250 m lane turn needs, fell behind and never caught up (cross-track 2 ->
+                // 200 m in the turns between lane tiers, live 2026-11-22)
+                constexpr double maxSteeringLeadRad=0.5235987755982988;
                 const double lead=std::min(
                     maxSteeringLeadRad,
                     std::max(0.0,course.courseErrorRad));

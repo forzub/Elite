@@ -991,6 +991,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.buildingStates = o.buildingStates;
             state.materializedVisits = o.materializedVisits;
             state.promotedAirSlots = o.promotedAirSlots;
+            state.occupiedBerths = o.occupiedBerths;
 
             {
                 const auto phaseBegin = HydrateClock::now();
@@ -1062,6 +1063,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.buildingStates = o.buildingStates;
             state.materializedVisits = o.materializedVisits;
             state.promotedAirSlots = o.promotedAirSlots;
+            state.occupiedBerths = o.occupiedBerths;
 
             // Static object payload is sparse: for a rotating station the server sends
             // only graph.assemblyModules every tick. Heavy module/debug payload arrives

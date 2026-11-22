@@ -805,6 +805,7 @@ private:
         double touchdownS = 0.0;         // the legs took the ship (phase 3): the damped sag runs from here
         double touchdownMps = 0.0;       // its touchdown speed
         double touchdownPitch = 0.0;     // the rock of the sag applied so far
+        int bay = 0;                     // the landing place of the module (the dispatcher: hubBerthPlaces)
         bool hangar = false;             // a repair hangar: phase 2 = down to its door, in, down onto the bay
         int hangarStep = 0;
         glm::dvec3 doorFrontLocal {0.0}, bayEntryLocal {0.0};
@@ -812,6 +813,9 @@ private:
     std::unordered_map<EntityId, PadLanding> m_padLandings;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time
     std::string padServiceStatus(EntityId shipId) const;   // ShipSnapshot::padService
+    // the city's landing places reserved / taken now ("<address>#<bay>", "!" after it = reserved, on the way in) -
+    // ObjectSnapshot::occupiedBerths (the cards, the capture zones' colour)
+    std::vector<std::string> cityOccupiedBerths(EntityId cityId) const;
     void updatePadLandings(double dt);
     // the pads near the players: an automatic pad's capture zone takes a ship with its legs out; a hand-flown pad counts a soft
     // touchdown on legs as landed; a hard one breaks the legs (GameSimulationPadLanding.cpp)

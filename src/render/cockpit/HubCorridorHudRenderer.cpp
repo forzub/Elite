@@ -10,6 +10,8 @@
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
+#include "src/render/HUD/TextRenderer.h"
+#include <cstdio>
 #include <vector>
 
 namespace render::cockpit
@@ -254,7 +256,34 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 if (d > game::navigation::HubPadZoneShowMeters)
                     continue;
                 const double fade = std::clamp((game::navigation::HubPadZoneShowMeters - d) / 30.0, 0.0, 1.0);
-                const glm::vec3 tint = m.autoLanding ? glm::vec3(0.90f, 0.95f, 1.00f) : glm::vec3(1.00f, 0.75f, 0.35f);
+                // the dispatcher's state (author 2026-11-22: «если игрок садится вручную - он всё-равно должен видеть, можно
+                // туда садиться или нет: белая или красная зона»): WHITE a free place, RED all taken
+                const int places = game::navigation::hubBerthPlaces(m);
+                int takenHere = 0;
+                const std::string prefix = m.address + "#";
+                for (const auto& b : object.occupiedBerths)
+                    if (b.compare(0, prefix.size(), prefix) == 0)
+                        ++takenHere;
+                const bool full = places > 0 && takenHere >= places;
+                const glm::vec3 tint = full ? glm::vec3(1.00f, 0.28f, 0.22f) : glm::vec3(0.92f, 0.96f, 1.00f);
+                // over the zone: automatic / manual, the price per hour, the free places (author 2026-11-22: «над белыми и
+                // красными зонами захвата писать стоимость в час»)
+                {
+                    const double sideUp = m.under ? -1.0 : 1.0;
+                    const glm::dvec3 labelAt = toWorld(m.padPosition + glm::dvec3(0.0, sideUp * (game::navigation::HubPadZoneHeight + 4.0), 0.0));
+                    glm::vec2 px;
+                    if (project(labelAt - playerMeters, viewMatrix, projectionMatrix, viewport, px))
+                    {
+                        char label[96];
+                        std::snprintf(label, sizeof(label), "%s \xC2\xB7 %d Cr/\xD1\x87 \xC2\xB7 %s %d/%d",
+                                      m.autoLanding ? "\xD0\x90" : "\xD0\x9C", game::navigation::hubBerthPricePerHour(*cityPlan, m),
+                                      full ? "\xD0\xB7\xD0\xB0\xD0\xBD\xD1\x8F\xD1\x82\xD0\xBE" : "\xD1\x81\xD0\xB2\xD0\xBE\xD0\xB1\xD0\xBE\xD0\xB4\xD0\xBD\xD0\xBE",
+                                      places - takenHere, places);
+                        auto& text = TextRenderer::instance();
+                        const float w = text.measureTextPx(label, 14);
+                        text.textDrawPx(label, px.x - 0.5f * w, px.y, 14, glm::vec4(tint, static_cast<float>(0.9 * fade)));
+                    }
+                }
                 const glm::vec4 edge(tint, static_cast<float>(0.22 * fade));   // translucent (author: «слишком яркая»)
                 const double s = game::navigation::HubPadZoneHalf, hgt = game::navigation::HubPadZoneHeight;
                 const double sy = m.under ? -1.0 : 1.0;

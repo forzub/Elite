@@ -918,7 +918,8 @@ ELITE_WIRE_SCHEMA(
     v.graph,
     v.buildingStates,
     v.materializedVisits,
-    v.promotedAirSlots
+    v.promotedAirSlots,
+    v.occupiedBerths
 );
 
 ELITE_WIRE_SCHEMA(

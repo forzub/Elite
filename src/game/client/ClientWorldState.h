@@ -142,7 +142,8 @@ struct ClientObjectState
     std::vector<game::simulation::CityBuildingState> buildingStates;
     // its scheduled visits that are real ships now (the renderer stops drawing them)
     std::vector<std::uint32_t> materializedVisits;
-    std::vector<std::uint32_t> promotedAirSlots;   // its air-traffic slots now real ships (HubAirTraffic): not drawn as presentation
+    std::vector<std::uint32_t> promotedAirSlots;
+    std::vector<std::string> occupiedBerths;   // the city's landing places reserved ("...!") / taken   // its air-traffic slots now real ships (HubAirTraffic): not drawn as presentation
 
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;

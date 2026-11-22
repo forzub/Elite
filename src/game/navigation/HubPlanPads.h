@@ -25,16 +25,26 @@ inline constexpr double HubPadRoofDeckTop = 2.2;        // the roof pad's deck t
 inline constexpr double HubPadStiltsDeckTop = 25.0;     // the stilts pad's deck top over the plane
 inline constexpr double HubPadClearMeters = 30.0;       // a pad on a free plot: no building nearer than this
 // the repair hangar (hubl_repair_hangar: 90 x 50 x 22 m, the door 80 x 18 m on its +Z): its free plot, the bay's touchdown
-inline constexpr double HubHangarClearMeters = 55.0;
-inline constexpr double HubHangarBayZ = 2.0;             // the middle bay's centre from the box centre (toward the door)
+// (the wide one, author 2026-11-22: «да, делай ангар пошире» - 2 places for ships up to ~40 m: 110 x 60 x 26 m, the
+// door 100 x 22 m)
+inline constexpr double HubHangarClearMeters = 62.0;
+inline constexpr double HubHangarBayZ = 2.0;             // a bay's centre from the box centre (toward the door)
+inline constexpr double HubHangarBayX = 26.5;            // the two bays left / right of the box centre
 inline constexpr double HubHangarFloorTop = 1.8;         // the scissor lift's top
-inline constexpr double HubHangarDoorHalfDepth = 25.0;   // the door plane from the box centre
-inline constexpr double HubHangarEntryHeight = 9.0;      // flown in at half the door's height
+inline constexpr double HubHangarDoorHalfDepth = 30.0;   // the door plane from the box centre
+inline constexpr double HubHangarEntryHeight = 11.0;     // flown in at half the door's height
+inline constexpr int HubHangarPlaces = 2;
 // the hangar's door direction in the plan (the module +Z), its entry point outside the door and inside at the bay
 inline glm::dvec3 hubHangarDoorForward(double yawDeg)
 {
     const double yaw = glm::radians(yawDeg);
     return glm::dvec3(std::sin(yaw), 0.0, std::cos(yaw));
+}
+// the module's right axis in the plan (the bays sit along it)
+inline glm::dvec3 hubHangarRight(double yawDeg)
+{
+    const double yaw = glm::radians(yawDeg);
+    return glm::dvec3(std::cos(yaw), 0.0, -std::sin(yaw));
 }
 // the pad's capture zone (author 2026-11-21: «прозрачный куб с белёсыми рёбрами, появляется когда до площадки метров
 // 100»): a box over the deck - half side, height; shown within HubPadZoneShowMeters of the pad
@@ -204,19 +214,66 @@ namespace game::navigation
 // «нет рамок, показывающих маршрут»): from `from` up / down to the transit height (includeClimb), across to over the
 // pad - round every building whose top comes within 40 m of the transit height (its footprint grown by 60 m, passed
 // by its nearest free corner) - ending over the pad at the transit height. The server flies it, the HUD draws it.
-// a hangar's entry point: outside its door, 35 m off, at the entry height (city frame)
-inline glm::dvec3 hubHangarDoorFront(const HubPlanModule& pad)
+// the landing places of a module (author 2026-11-22: «каждый док или площадка должны быть под диспетчером»)
+inline int hubBerthPlaces(const HubPlanModule& m)
+{
+    switch (m.padKind)
+    {
+        case HubPlanModule::PadKind::Hangar: return HubHangarPlaces;
+        case HubPlanModule::PadKind::Garage: return std::max(1, m.padPlaces);
+        case HubPlanModule::PadKind::None: return 0;
+        default: return 1;
+    }
+}
+// a landing place's price per hour (author 2026-11-22: «посадочные места - платные. чем ниже тем дешевле, чем выше -
+// тем приоритетнее. оплата - почасовая»): by its level (garage < stilts < hangar < roof; the lower side 25 % less) and
+// its district (downtown / hotel the dearest)
+inline int hubBerthPricePerHour(const HubPlan& plan, const HubPlanModule& m)
+{
+    double base = 0.0;
+    switch (m.padKind)
+    {
+        case HubPlanModule::PadKind::Garage: base = 40.0; break;
+        case HubPlanModule::PadKind::Stilts: base = 70.0; break;
+        case HubPlanModule::PadKind::Hangar: base = 120.0; break;
+        case HubPlanModule::PadKind::Roof: base = 160.0; break;
+        default: return 0;
+    }
+    if (m.under)
+        base *= 0.75;
+    std::string zone;
+    if (m.block >= 0 && static_cast<std::size_t>(m.block) < plan.blocks().size())
+        zone = plan.blocks()[static_cast<std::size_t>(m.block)].zone;
+    const double k = zone == "downtown" || zone == "hotel"    ? 1.8
+                   : zone == "services" || zone == "canopy"   ? 1.4
+                   : zone == "dock"                           ? 1.2
+                   : zone == "residential"                    ? 1.0
+                                                              : 0.8;
+    return static_cast<int>(std::round(base * k / 5.0) * 5.0);
+}
+
+// a place's touchdown point (city frame): a hangar's bay left / right of its centre line; the others: the pad itself
+inline glm::dvec3 hubBerthTouchdown(const HubPlanModule& pad, int bay)
+{
+    if (pad.padKind != HubPlanModule::PadKind::Hangar)
+        return pad.padPosition;
+    return pad.padPosition + hubHangarRight(pad.padYawDeg) * (bay == 0 ? -HubHangarBayX : HubHangarBayX);
+}
+// a hangar's entry point: outside its door, 35 m off in front of the bay, at the entry height (city frame)
+inline glm::dvec3 hubHangarDoorFront(const HubPlanModule& pad, int bay = 0)
 {
     const double side = pad.under ? -1.0 : 1.0;
     const glm::dvec3 fwd = hubHangarDoorForward(pad.padYawDeg);
-    const glm::dvec3 flat(pad.padPosition.x, 0.0, pad.padPosition.z);
-    return flat + fwd * (HubHangarDoorHalfDepth - HubHangarBayZ + 35.0) + glm::dvec3(0.0, side * HubHangarEntryHeight, 0.0);
+    const glm::dvec3 t = hubBerthTouchdown(pad, bay);
+    return glm::dvec3(t.x, 0.0, t.z) + fwd * (HubHangarDoorHalfDepth - HubHangarBayZ + 35.0) +
+           glm::dvec3(0.0, side * HubHangarEntryHeight, 0.0);
 }
 // inside, over the bay at the entry height
-inline glm::dvec3 hubHangarBayEntry(const HubPlanModule& pad)
+inline glm::dvec3 hubHangarBayEntry(const HubPlanModule& pad, int bay = 0)
 {
     const double side = pad.under ? -1.0 : 1.0;
-    return glm::dvec3(pad.padPosition.x, side * HubHangarEntryHeight, pad.padPosition.z);
+    const glm::dvec3 t = hubBerthTouchdown(pad, bay);
+    return glm::dvec3(t.x, side * HubHangarEntryHeight, t.z);
 }
 
 inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanModule& pad, const glm::dvec3& from, double transit,

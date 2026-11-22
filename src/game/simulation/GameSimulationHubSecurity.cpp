@@ -35,7 +35,7 @@ namespace tr = game::navigation::traffic;
 constexpr double PromoteMeters = 5000.0;
 constexpr double DemoteMeters = 6500.0;        // hysteresis: handed back only when this far from every player ...
 constexpr double LaneEndClearMeters = 3000.0;  // ... or at its lane's end with nobody within this
-constexpr std::size_t MaxPromotedPerHub = 16;
+constexpr std::size_t MaxPromotedPerHub = 32;   // 16: a lane ship behind the player was made real only 317 m off (no room to brake, live zl2)
 constexpr double CheckSeconds = 0.25;
 constexpr double RepeatWindowSeconds = 1800.0; // earlier incidents within 30 min escalate the fines
 constexpr double LockAfterSeconds = 30.0;      // still against the traffic 30 s after the warning: fire-control lock
@@ -412,8 +412,10 @@ void GameSimulation::updateHubSecurity(double dt)
                 const double gap = 60.0 + pa.lengthMeters + 2.0 * pa.curSpeedMps;
                 want = std::min(want, std::max(0.0, vp + 0.5 * (ahead - gap)));
             }
-            const double step = 6.0 * dt;
-            const double next = std::clamp(want, pa.curSpeedMps - step, pa.curSpeedMps + step);
+            // braking: 6 m/s2 normally, up to 15 m/s2 when the gap is closing fast (a lane ship made real 317 m behind a
+            // slow player at 105 m/s needed ~470 m at 6 - it rammed it, live zl2)
+            const double brakeMps2 = pa.curSpeedMps - want > 20.0 ? 15.0 : 6.0;
+            const double next = std::clamp(want, pa.curSpeedMps - brakeMps2 * dt, pa.curSpeedMps + 6.0 * dt);
             if (std::abs(next - pa.curSpeedMps) > 1.0e-9)
             {
                 pa.along0 = along;

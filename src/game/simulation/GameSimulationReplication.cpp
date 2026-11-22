@@ -556,6 +556,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             o.materializedVisits = cityMaterializedVisits(id);   // its scheduled visits that are real ships now
         if (obj.type == ObjectType::HubBeltCity)
             o.promotedAirSlots = cityPromotedAirSlots(id);       // its air-traffic slots that are real ships now
+        if (obj.type == ObjectType::HubBeltCity)
+            o.occupiedBerths = cityOccupiedBerths(id);           // its landing places reserved / taken
 
         if (obj.attachedToHub &&
             obj.systemId >= 0 &&

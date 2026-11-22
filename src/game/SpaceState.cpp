@@ -730,6 +730,10 @@ void SpaceState::updatePilotTakeover(bool touching)
                     line = "СЛУЖБА ПЛОЩАДОК: площадка " + status.substr(11) + " ручная - садитесь сами, опоры выпущены?";
                 else if (status.rfind("pad:landed_manual:", 0) == 0)
                     line = "ПОСАДКА: на площадке " + status.substr(18) + " - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)";
+                else if (status.rfind("pad:launched:", 0) == 0)
+                    line = "ЗАПУСК с " + status.substr(13) + ": только манёвровые до выхода из зоны площадки";
+                else if (status == "pad:engines_free")
+                    line = "ЗОНА ПЛОЩАДКИ пройдена: все двигатели доступны";
                 else if (status == "taken:flight")
                     line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
                 else if (status == "taken:frame")
@@ -822,6 +826,17 @@ void SpaceState::updatePilotTakeover(bool touching)
     // 3 сек с предупреждением»; the click on the card itself is not a touch: 1.5 s grace)
     if (!m_padLandingObjectId.empty() && glfwGetTime() - padRequestedAt > 1.5)
         owner = Owner::Pad;
+    // landed on a place: the engines are locked - touching the controls does not take the ship, Ctrl+L launches it
+    if (owner == Owner::Pad && m_client)
+        if (const auto it = m_client->world().ships().find(m_playerId.value);
+            it != m_client->world().ships().end() && it->second.padService.rfind("phase:3", 0) == 0)
+        {
+            m_takeoverSinceSeconds = -1.0;
+            m_takeoverSecondsLeft = -1.0;
+            if (touching)
+                m_pilotNotice = "СТОЯНКА: двигатели заблокированы - Ctrl+L запуск манёвровых";
+            return;
+        }
     const double now = glfwGetTime();
     const auto reset = [&] {
         m_takeoverSinceSeconds = -1.0;
@@ -1308,6 +1323,18 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
     if(Input::instance().isKeyPressedOnce(GLFW_KEY_L) && m_client)
     {
         const auto it=m_client->world().ships().find(m_playerId.value);
+        // ... landed on a city place: LAUNCH - off it on the manoeuvre thrusters (the main drive after its zone)
+        if (it != m_client->world().ships().end() && it->second.padService.rfind("phase:3", 0) == 0)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::LandOnPad;
+            command.index = 2;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+            m_pilotNotice = "ЗАПУСК: манёвровые включены - маршевые после выхода из зоны площадки";
+        }
+        else
         if(it!=m_client->world().ships().end() && it->second.dockDispatcher.active &&
            it->second.dockDispatcher.phase==static_cast<std::uint8_t>(
                game::docking::traffic::DockTrafficPhase::Docked))

@@ -734,3 +734,61 @@ std::vector<std::string> GameSimulation::cityOccupiedBerths(EntityId cityId) con
     std::sort(out.begin(), out.end());
     return out;
 }
+
+void GameSimulation::launchFromBerth(EntityId shipId)
+{
+    const auto it = m_padLandings.find(shipId);
+    if (it == m_padLandings.end() || it->second.phase < 3)
+        return;
+    const PadLanding p = it->second;
+    m_manoeuvreOnly[shipId] = {p.frameModuleId, p.padLocal, p.outLocal, serverTime()};
+    std::cerr << "[PadLanding] ship " << shipId.value << " LAUNCH from " << p.address
+              << ": manoeuvre thrusters only until out of the place's zone" << std::endl;
+    (void)requestPadLanding(shipId, p.frameModuleId, p.address, false);   // the service lets go (as the pilot's takeover)
+    m_padNotices[shipId] = {"pad:launched:" + p.address, serverTime()};
+}
+
+void GameSimulation::filterBerthControl(EntityId shipId, ShipControlState& c)
+{
+    const auto zeroThrust = [&](bool rotationToo) {
+        c.targetSpeedRate = 0.0f;
+        c.assistedMaxSpeedCommand = false;
+        c.forwardInput = 0.0f;
+        c.strafeInput = 0.0f;
+        c.liftInput = 0.0f;
+        if (rotationToo)
+            c.pitchInput = c.yawInput = c.rollInput = 0.0f;
+    };
+    // landed (the place holds the ship): no engine at all - Ctrl+L launches
+    if (const auto p = m_padLandings.find(shipId); p != m_padLandings.end() && p->second.phase >= 3)
+    {
+        zeroThrust(true);
+        return;
+    }
+    const auto m = m_manoeuvreOnly.find(shipId);
+    if (m == m_manoeuvreOnly.end())
+        return;
+    const Ship* ship = getShip(shipId);
+    const StaticObject* city = findCityFrame(m_staticObjects, m->second.frameModuleId);
+    if (!ship || !city || serverTime() - m->second.since > 600.0)
+    {
+        m_manoeuvreOnly.erase(m);
+        return;
+    }
+    const glm::dmat3 R(glm::mat3(city->orientation));
+    const glm::dvec3 q = glm::transpose(R) * (ship->core().transform().fullWorldMeters() - world::coordinates::fullMeters(city->worldPosition));
+    glm::dvec3 d = q - m->second.padLocal;
+    const double h = glm::dot(d, m->second.outLocal);
+    d -= m->second.outLocal * h;
+    // out of the zone (over its top / off its side): every engine again
+    if (h > game::navigation::HubPadZoneHeight + 10.0 || glm::length(d) > game::navigation::HubPadZoneHalf + 30.0)
+    {
+        m_manoeuvreOnly.erase(m);
+        m_padNotices[shipId] = {"pad:engines_free", serverTime()};
+        std::cerr << "[PadLanding] ship " << shipId.value << " out of the place's zone: all engines" << std::endl;
+        return;
+    }
+    // the manoeuvre thrusters only: the main drive's speed setpoint does not move; RCS translation stays
+    c.targetSpeedRate = 0.0f;
+    c.assistedMaxSpeedCommand = false;
+}

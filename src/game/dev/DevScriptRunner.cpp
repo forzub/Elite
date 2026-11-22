@@ -516,6 +516,15 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.m_systemMapRenderer.devFocusHub(arg("hub:"));
     else if (cmd.rfind("object:", 0) == 0)
         s.m_systemMapRenderer.devActivateObject(arg("object:"));
+    else if (cmd == "launch" && s.m_client)   // DEV: Ctrl+L on a city place (LandOnPad index 2: off it on the manoeuvre thrusters)
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::LandOnPad;
+        command.index = 2;
+        msg.payload = command;
+        s.m_client->sendMessage(msg);
+    }
     else if (cmd.rfind("camera:", 0) == 0)    // DEV: the main camera like F1-F4 (front / rear / drone / bottom) - see it as the player
     {
         const std::string c = arg("camera:");

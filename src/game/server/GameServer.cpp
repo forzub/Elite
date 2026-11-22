@@ -1273,6 +1273,7 @@ void GameServer::update(double dt)
                         cmd = ShipControlState {};
                         cmd.controlTick = tick;
                     }
+                    m_simulation.filterBerthControl(id, cmd);   // landed: no engines; launched: manoeuvre only
                     ship.setControlState(cmd);
                 }
             }
@@ -1540,8 +1541,11 @@ void GameServer::update(double dt)
                     m_simulation.toggleLandingGear(id);
                     break;
 
-                case ClientShipCommand::LandOnPad:   // a hub city pad: land (index 1) / the pilot takes over (0)
-                    (void)m_simulation.requestPadLanding(id, shipCmd.target, shipCmd.detail, shipCmd.index != 0);
+                case ClientShipCommand::LandOnPad:   // a hub city pad: land (index 1) / the pilot takes over (0) / launch (2)
+                    if (shipCmd.index == 2)
+                        m_simulation.launchFromBerth(id);   // Ctrl+L: off the place on the manoeuvre thrusters
+                    else
+                        (void)m_simulation.requestPadLanding(id, shipCmd.target, shipCmd.detail, shipCmd.index != 0);
                     break;
 
                 case ClientShipCommand::BuyShip:     // F6: spawns a ship - after the drain too

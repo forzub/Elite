@@ -513,6 +513,10 @@ public:
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
     const std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships() const;
     const std::unordered_map<EntityId, StaticObject>& staticObjects() const;
+    // the berth engine rule (GameSimulationPadLanding.cpp): landed - no engines; launched - manoeuvre thrusters only
+    void filterBerthControl(EntityId shipId, ShipControlState& control);
+    void launchFromBerth(EntityId shipId);
+
     // the hub cities' radar set (traffic not made real, stray bodies, the debris field) with velocity and kind - the player's radar (GameServer) reads this
     struct HubRadarContact
     {
@@ -816,6 +820,16 @@ private:
     // the city's landing places reserved / taken now ("<address>#<bay>", "!" after it = reserved, on the way in) -
     // ObjectSnapshot::occupiedBerths (the cards, the capture zones' colour)
     std::vector<std::string> cityOccupiedBerths(EntityId cityId) const;
+    // the BERTH ENGINE RULE (author 2026-11-22: «если игрок сел на площадку - управление маршевыми и манёвровыми не
+    // работает. Только по нажатию ctrl+L - Launch - включаются манёвровые. После выхода - включаются все»): the player's
+    // control filtered while landed (nothing) / launched but still in the place's zone (manoeuvre thrusters only)
+    struct ManoeuvreOnly
+    {
+        std::string frameModuleId;
+        glm::dvec3 padLocal {0.0}, outLocal {0.0, 1.0, 0.0};
+        double since = 0.0;
+    };
+    std::unordered_map<EntityId, ManoeuvreOnly> m_manoeuvreOnly;
     void updatePadLandings(double dt);
     // the pads near the players: an automatic pad's capture zone takes a ship with its legs out; a hand-flown pad counts a soft
     // touchdown on legs as landed; a hard one breaks the legs (GameSimulationPadLanding.cpp)

@@ -1,12 +1,16 @@
 #include "src/audio/AudioEngine.h"
 
+#include <cstdio>
 #include <cstdlib>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <new>
 #include <vector>
+
+#include "miniaudio.h"
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -212,6 +216,87 @@ const std::vector<unsigned char>& terminalTickWav()
 #endif
 }
 
+// THE MIXER (miniaudio): one engine, a small pool of voices per effect - a new tick / siren takes a free voice (or the
+// oldest one), the others keep playing. The PCM is the generated WAVs' data (no copy).
+struct AudioEngine::Backend
+{
+    ma_engine engine {};
+    struct Voice
+    {
+        ma_audio_buffer buffer {};
+        ma_sound sound {};
+        bool ready = false;
+    };
+    struct Effect
+    {
+        std::vector<Voice> voices;
+        std::size_t next = 0;
+    };
+    Effect tick, siren;
+    bool engineReady = false;
+};
+
+namespace
+{
+// a generated WAV (44-byte header, 16-bit PCM) -> its voices
+void initEffect(ma_engine& engine, AudioEngine::Backend::Effect& effect, const std::vector<unsigned char>& wav, int voices)
+{
+    if (wav.size() <= 44)
+        return;
+    const unsigned channels = static_cast<unsigned>(wav[22] | (wav[23] << 8));
+    const unsigned rate = static_cast<unsigned>(wav[24] | (wav[25] << 8) | (wav[26] << 16) | (wav[27] << 24));
+    const std::size_t frames = (wav.size() - 44) / (2u * std::max(1u, channels));
+    effect.voices.resize(static_cast<std::size_t>(voices));
+    for (auto& v : effect.voices)
+    {
+        ma_audio_buffer_config cfg = ma_audio_buffer_config_init(ma_format_s16, channels, frames, wav.data() + 44, nullptr);
+        cfg.sampleRate = rate;
+        if (ma_audio_buffer_init(&cfg, &v.buffer) != MA_SUCCESS)
+            continue;
+        if (ma_sound_init_from_data_source(&engine, &v.buffer, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, &v.sound) != MA_SUCCESS)
+        {
+            ma_audio_buffer_uninit(&v.buffer);
+            continue;
+        }
+        v.ready = true;
+    }
+}
+
+void playEffect(AudioEngine::Backend::Effect& effect)
+{
+    if (effect.voices.empty())
+        return;
+    // a voice that is not playing, else the next in turn (the oldest)
+    std::size_t pick = effect.next % effect.voices.size();
+    for (std::size_t k = 0; k < effect.voices.size(); ++k)
+    {
+        const std::size_t i = (effect.next + k) % effect.voices.size();
+        if (effect.voices[i].ready && !ma_sound_is_playing(&effect.voices[i].sound))
+        {
+            pick = i;
+            break;
+        }
+    }
+    effect.next = pick + 1;
+    auto& v = effect.voices[pick];
+    if (!v.ready)
+        return;
+    ma_sound_stop(&v.sound);
+    ma_sound_seek_to_pcm_frame(&v.sound, 0);
+    ma_sound_start(&v.sound);
+}
+
+bool effectsEnabled()
+{
+    // author 2026-11-08: "отключи пока все звуковые эфекты" - every sound effect is off until ELITE_SOUND_EFFECTS=1
+    static const bool on = [] {
+        const char* v = std::getenv("ELITE_SOUND_EFFECTS");
+        return v && *v == '1';
+    }();
+    return on;
+}
+} // namespace
+
 AudioEngine& AudioEngine::instance() noexcept
 {
     static AudioEngine engine;
@@ -222,79 +307,75 @@ bool AudioEngine::initialize() noexcept
 {
     if (m_initialized)
         return m_available;
-
     m_initialized = true;
-
+    m_backend = new (std::nothrow) Backend();
+    if (!m_backend)
+        return m_available = false;
+    if (ma_engine_init(nullptr, &m_backend->engine) != MA_SUCCESS)
+    {
+        delete m_backend;
+        m_backend = nullptr;
+        return m_available = false;
+    }
+    m_backend->engineReady = true;
+    {
+        ma_device* device = ma_engine_get_device(&m_backend->engine);
+        std::fprintf(stderr, "[Audio] miniaudio engine: %s, %u Hz, %u ch\n", device ? device->playback.name : "?",
+                     ma_engine_get_sample_rate(&m_backend->engine), ma_engine_get_channels(&m_backend->engine));
+    }
 #ifdef _WIN32
-    // The first actual playback remains lazy; WinMM is part of Windows.
-    m_available = true;
-#else
-    m_available = false;
+    initEffect(m_backend->engine, m_backend->tick, terminalTickWav(), 6);
+    initEffect(m_backend->engine, m_backend->siren, sirenWav(), 2);
 #endif
-
+    m_available = true;
     return m_available;
 }
 
 void AudioEngine::shutdown() noexcept
 {
-#ifdef _WIN32
-    PlaySoundW(
-        nullptr,
-        nullptr,
-        0
-    );
-#endif
-
+    if (m_backend)
+    {
+        for (auto* e : {&m_backend->tick, &m_backend->siren})
+            for (auto& v : e->voices)
+                if (v.ready)
+                {
+                    ma_sound_uninit(&v.sound);
+                    ma_audio_buffer_uninit(&v.buffer);
+                }
+        if (m_backend->engineReady)
+            ma_engine_uninit(&m_backend->engine);
+        delete m_backend;
+        m_backend = nullptr;
+    }
     m_available = false;
     m_initialized = false;
 }
 
+void* AudioEngine::nativeEngine() noexcept
+{
+    if (!m_initialized)
+        initialize();
+    return m_available && m_backend ? &m_backend->engine : nullptr;
+}
+
 void AudioEngine::playTerminalTick() noexcept
 {
-    // author 2026-11-08: "отключи пока все звуковые эфекты" - every sound effect is off until
-    // ELITE_SOUND_EFFECTS=1 turns them back on
-    static const bool effectsOn = [] {
-        const char* v = std::getenv("ELITE_SOUND_EFFECTS");
-        return v && *v == '1';
-    }();
-    if (!effectsOn)
+    if (!effectsEnabled())
         return;
     if (!m_initialized)
         initialize();
-    if (!m_available)
-        return;
-
-#ifdef _WIN32
-    const auto& wav = terminalTickWav();
-
-    // UI sound is intentionally fire-and-forget and non-blocking.
-    // The static WAV storage remains alive for the full process lifetime.
-    PlaySoundA(
-        reinterpret_cast<LPCSTR>(wav.data()),
-        nullptr,
-        SND_MEMORY |
-        SND_ASYNC |
-        SND_NODEFAULT
-    );
-#endif
+    if (m_available && m_backend)
+        playEffect(m_backend->tick);
 }
 
 void AudioEngine::playReactorSiren() noexcept
 {
-    static const bool effectsOn = [] {
-        const char* v = std::getenv("ELITE_SOUND_EFFECTS");
-        return v && *v == '1';
-    }();
-    if (!effectsOn)
+    if (!effectsEnabled())
         return;
     if (!m_initialized)
         initialize();
-    if (!m_available)
-        return;
-#ifdef _WIN32
-    const auto& wav = sirenWav();
-    PlaySoundA(reinterpret_cast<LPCSTR>(wav.data()), nullptr, SND_MEMORY | SND_ASYNC | SND_NODEFAULT);
-#endif
+    if (m_available && m_backend)
+        playEffect(m_backend->siren);
 }
 
 } // namespace audio

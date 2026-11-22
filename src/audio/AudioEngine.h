@@ -40,10 +40,15 @@ public:
         return m_available;
     }
 
+    // the mixer itself (a ma_engine*, miniaudio) for the music layer (CockpitRadio); nullptr when there is no audio
+    void* nativeEngine() noexcept;
+    struct Backend;
+
 private:
     AudioEngine() = default;
 
 private:
+    Backend* m_backend = nullptr;
     bool m_initialized = false;
     bool m_available = false;
     float m_jumpHum01 = 0.0f;

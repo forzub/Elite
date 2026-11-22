@@ -68,3 +68,9 @@ requirements.
 - **Upstream:** `https://github.com/libigl/libigl`, pinned tag `v2.6.0`; transitive dependency versions are resolved by that pinned libigl CMake graph.
 - **Scope:** authoring tools only. `EliteModelAsset`, the game client/server and runtime mesh normalizer do not link libigl or Embree.
 - **Licensing:** retain upstream libigl/Eigen/Embree notices and licenses when redistributing an editor build containing these dependencies.
+
+## miniaudio 0.11.21
+
+- Source: https://github.com/mackron/miniaudio (third_party/miniaudio/miniaudio.h)
+- License: public domain (Unlicense) or MIT No Attribution, at the user's choice
+- Use: the client audio mixer (src/audio)

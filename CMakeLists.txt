@@ -28,6 +28,7 @@ endif()
 include_directories(
     ${CMAKE_SOURCE_DIR}/third_party/websocketpp
     ${CMAKE_SOURCE_DIR}/third_party/asio/asio/include  # добавили /asio
+    ${CMAKE_SOURCE_DIR}/third_party/miniaudio          # the audio mixer (src/audio, single header)
 )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -567,6 +568,7 @@ add_executable(EliteGame
     src/core/StateContext.cpp
     src/game/localization/LocalizationService.cpp
     src/audio/AudioEngine.cpp
+    src/audio/MiniaudioImpl.cpp
 
 
     src/window/Window.cpp

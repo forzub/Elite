@@ -5,7 +5,14 @@
 // близкую зону видимости игрока становится настоящим»). A slot is one ship of one lane: it flies the lane's stations at
 // 70 % of the lane's speed limit and wraps from the lane's end (open sky beyond the rim) back to its start. Its pose is
 // a PURE function of the universe time, so the server spawns a promoted ship exactly where every client draws it.
+//
+// ROUTES (author 2026-11-22: «трафик никогда не поворачивает»; «тупиковые полосы - трафик только там, где планируется
+// застройка»): a slot flies a ROUTE, not one lane - in from open sky (a lane whose start has no building behind it),
+// along it, turning at the junctions on their connectors (a turn no faster than its connector's limit, 3 m/s2 ramps),
+// out to open sky or into the dock; a lane's dead end (its end faces buildings) is never flown into. A long hull (over
+// a connector's max length) gets only a route without turns. The plaza ring keeps its loop.
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -21,8 +28,8 @@ class HubLaneNetwork;
 
 struct HubAirSlot
 {
-    std::uint32_t id = 0;          // stable: (lane index << 8) | ship index
-    int lane = -1;
+    std::uint32_t id = 0;          // stable: (route index << 6) | ship index
+    int lane = -1;                 // the ROUTE (track) index
     int fleetIndex = 0;            // the plan's air_fleet entry (its hull)
     double phaseMeters = 0.0;      // the slot's place on the lane at t = 0
     double speedMps = 0.0;
@@ -30,10 +37,19 @@ struct HubAirSlot
 
 struct HubAirLaneTrack
 {
-    int lane = -1;
-    std::vector<double> cumulative;   // metres along the stations (the plaza ring: one lap)
+    int lane = -1;                    // its index (valid track: >= 0)
+    std::string name;                 // "laneA>laneB>..." (the radar / log destination)
+    std::vector<glm::dvec3> points;   // the route's polyline, city frame (<= 25 m apart)
+    std::vector<double> cumulative;   // metres along the points
+    std::vector<double> speed;        // the speed at each point (turn limits, 3 m/s2 ramps)
+    std::vector<double> seconds;      // the time to reach each point
     double lengthMeters = 0.0;
+    double totalSeconds = 0.0;
+    double cruiseMps = 0.0;
+    double maxShipLengthMeters = 1.0e9;
     double upSign = 1.0;              // lanes under the plane fly upside down
+    bool loop = false;                // the plaza ring
+    double speedAt(double alongMeters) const;
 };
 
 struct HubAirSlotPose

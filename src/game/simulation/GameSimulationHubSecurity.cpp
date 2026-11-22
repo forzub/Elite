@@ -401,7 +401,7 @@ void GameSimulation::updateHubSecurity(double dt)
         // ship re-entering at its lane's portal ran into the player from behind at 27 m/s, suite v3)
         {
             const glm::dmat3 Rt = glm::transpose(R);
-            double want = pa.speedMps;
+            double want = std::min(pa.speedMps, lt->speedAt(along));   // the route's turns (connector limits)
             for (const auto& pl : players)
             {
                 const glm::dvec3 rel = Rt * (pl.position - (cpos + R * pose.position));
@@ -740,6 +740,7 @@ void GameSimulation::updateHubSecurity(double dt)
                     pa.along0 = pose.alongMeters;
                     pa.time0 = universe;
                     pa.speedMps = slot.speedMps;
+                    pa.curSpeedMps = glm::length(pose.velocity);   // where it is on its route (a turn: slower)
                     pa.lengthMeters = hull.lengthMeters;
                     m_promotedAir[id] = pa;
                     m_airTrafficShells.insert(id);
@@ -747,7 +748,7 @@ void GameSimulation::updateHubSecurity(double dt)
                     info.active = true;
                     info.callsign = callsign;
                     info.phase = "lane";
-                    info.destination = c.lanes->lanes()[static_cast<std::size_t>(slot.lane)].id;
+                    info.destination = layout.track(slot.lane) ? layout.track(slot.lane)->name : std::string();
                     ++count;
                     std::cerr << "[TrafficPromote] " << c.hubId << " slot " << slot.id << " (" << hull.name << ", " << hull.passport
                               << ") -> real ship " << id.value << " at lane " << info.destination << " +"

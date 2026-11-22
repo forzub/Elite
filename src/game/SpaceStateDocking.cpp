@@ -2812,6 +2812,8 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         localPort.positionMeters +
         localPort.forward *
             request.terminalReferenceDistanceMeters;
+    // a city pad: the route ends on the lane nearest it; the pad service takes over there (author 2026-11-22)
+    request.endAtLaneExit = pending.target.semanticAnchorId.rfind("pad:", 0) == 0;
     request.terminalOutward = localPort.forward;
     request.agentRadiusMeters =
         envelope.conservativeSafetyRadiusMeters();
@@ -3965,7 +3967,12 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                               << ") city frame, " << d << " m from the approach point" << std::endl;
                 }
             }
-            if (d < 250.0)
+            // ... or at the end of the route (it ends on the lane nearest the pad: endAtLaneExit)
+            const double routeTotal =
+                m_dockAdvice.plan.routeCurves.empty() ? 0.0 : m_dockAdvice.plan.routeCurves.back().endProgressMeters;
+            const bool atRouteEnd = routeTotal > 0.0 && m_clientDockingRouteProgressMeters > 0.0 &&
+                                    routeTotal - m_clientDockingRouteProgressMeters < 40.0;
+            if (d < 250.0 || atRouteEnd)
             {
                 std::cerr << "[PadRoute] request=" << pending.serial << " " << d << " m from the approach point of "
                           << m_padAnchor.address << ": the pad service takes the ship" << std::endl;

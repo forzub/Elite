@@ -297,7 +297,11 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         const glm::dvec3 out0 = leaveEndAt(l, k);
         // the final leg has its own fixed straights (start + turn budget + the goal's axis): shorter -> it loops back
         // (live run 14: 1.1 km -> assisted reverse flight)
-        const double exitLeg = glm::length(goalWorld - out0) < freeLegs.exitMinimumMeters || !clear(P[l][k], out0)
+        // a goal reached by a service (a pad): the route stops at this station; the rest costs its straight distance
+        // (the service flies it over the roofs) - so the exit nearest the pad wins
+        const double exitLeg = freeLegs.goalByService
+                                   ? FreeInHubFactor * glm::length(goalWorld - P[l][k])
+                                   : glm::length(goalWorld - out0) < freeLegs.exitMinimumMeters || !clear(P[l][k], out0)
                                    ? Inf
                                    : freeLeg(out0, F[l][k], goalApproach, goalDirection);
         ++exitsTried;

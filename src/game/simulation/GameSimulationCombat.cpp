@@ -1125,8 +1125,10 @@ void GameSimulation::devCombatStep(double dt)
     //      contact is where boxes really overlap: an inelastic impulse with its lever arm (the ships separate and spin),
     //      the dissipated energy burns exactly the touching modules (MJ x health_per_mj). ELITE_DEV_SHIP_COLLISIONS=0
     //      turns it off.
-    if (collisions)
-        collideShips(dt);
+    // the collisions themselves run later in the tick (GameSimulation::update, after the hub-attached statics are moved
+    // to this epoch - here they still stand where they were last tick: hub velocity x dt, ~450 m at an orbital hub, and
+    // ships hit a ghost city where nothing was, live 2026-11-22)
+    (void)collisions;
 }
 
 
@@ -1599,6 +1601,8 @@ void GameSimulation::collideShips(double dt)
         // scripted traffic (dock traffic / promoted city air traffic, materialized near a player): kinematic bodies -
         // their script owns the pose, so they take the hit as a very heavy body and both ships are damaged (author
         // 2026-11-21: "ships fly through me ... no collision")
+        if (!game::simulation::sameRuntimeSystem(tr.motion.systemId, m_activeCelestialSystemId))
+            continue;   // another system's pass (its statics are moved to the epoch in that pass)
         const bool scripted = isScriptedTrafficShip(id);
         if (!scripted && (tr.motion.mode != game::navigation::MotionMode::HubTactical || !tr.motion.travelFrame.valid ||
                           isDockStationControlledShip(id)))
@@ -1640,6 +1644,8 @@ void GameSimulation::collideShips(double dt)
     std::vector<const StaticObject*> statics;
     for (const auto& [oid, o] : m_staticObjects)
     {
+        if (o.systemId != m_activeCelestialSystemId)
+            continue;
         if (o.type == ObjectType::HubHexDock || o.type == ObjectType::HubDockServiceBlock ||
             o.type == ObjectType::GuidanceDockCube || o.type == ObjectType::GuidanceDockCylinder || o.hitComponent.volumes.empty())
             continue;

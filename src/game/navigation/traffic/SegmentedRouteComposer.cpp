@@ -857,6 +857,16 @@ static planner::RoutePlan composeOnce(
         currentSpeed = handoffSpeed;
     }
 
+    // a pad route ends on its last lane: no final free leg (it threaded the city lattice and failed / crashed, live
+    // 2026-11-22) - the route stops at the exit; the pad service flies on at transit height
+    if (terminalRequest.endAtLaneExit)
+    {
+        freeLegDiagnostics += " final=lane_exit(pad service)";
+        recomputeGlobalSpeeds(out, terminalRequest);
+        out.diagnosticSummary += freeLegDiagnostics;
+        return out;
+    }
+
     planner::RoutePlanRequest finalRequest = terminalRequest;
     finalRequest.startMeters = currentStart;
     // in a city the final free leg is slow: it starts at its own limit - the lane brakes to it before the exit (the

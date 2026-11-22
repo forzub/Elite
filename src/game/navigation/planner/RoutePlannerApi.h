@@ -150,6 +150,10 @@ struct RoutePlanRequest
     // old callers and Newtonian planning remain bit-for-bit unchanged.
     bool assistedCompactStartLead = false;
 
+    // A city pad (author 2026-11-22): the route ends ON its last lane (at the exit station nearest the goal, braking
+    // to a stop there) - no free final leg through the city lattice; the pad service flies the rest at transit height.
+    bool endAtLaneExit = false;
+
     // Minimum straight that must remain untouched before the first curve.
     // Zero keeps the backend legacy heuristic. Segmented mandatory passages
     // set this explicitly so a craft can clear the tunnel and begin a broad

@@ -88,6 +88,8 @@ public:
         double joinApproachMeters = 700.0;     // the hard terminal approach before a lane's join straight
         double turnRadiusMeters = 1500.0;      // the free legs' turn radius at the route speed
         double exitMinimumMeters = 0.0;        // the shortest final leg (its start straight + turn budget + goal axis)
+        bool goalByService = false;            // the route ends at the exit station; the goal is reached by a service
+                                               // (a pad: straight at transit height) - costed as the straight distance
     };
 
     bool load(const std::string& path);

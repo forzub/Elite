@@ -157,8 +157,9 @@ void SystemMapRenderer::decorateHubPlanBlocks(
                 const bool full = places > 0 && taken >= places;
                 land.labelText = std::string("ПОСАДКА · ") + kindRu + (m.under ? " (низ)" : "") + " · " + (m.autoLanding ? "А" : "М") +
                                  " · " + std::to_string(game::navigation::hubBerthPricePerHour(*plan, m)) + " Cr/ч · " +
-                                 (full ? std::string("ЗАНЯТО") : "свободно " + std::to_string(places - taken) + "/" + std::to_string(places));
-                land.enabled = !full || land.active;
+                                 (full ? std::string(m.padKind == PK::Hangar ? "ОЧЕРЕДЬ" : "ЗАНЯТО")
+                                       : "свободно " + std::to_string(places - taken) + "/" + std::to_string(places));
+                land.enabled = !full || land.active || m.padKind == PK::Hangar;   // a hangar keeps a queue
             }
             item.panelActions.push_back(std::move(land));
             frame.items.push_back(std::move(item));

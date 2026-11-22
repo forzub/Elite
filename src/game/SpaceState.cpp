@@ -600,7 +600,8 @@ void SpaceState::updatePilotTakeover(bool touching)
         if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(padRequest->frameModuleId))
             for (const auto& m : plan->modules())
                 if (m.address == padRequest->address)
-                    places = game::navigation::hubBerthPlaces(m);
+                    places = m.padKind == game::navigation::HubPlanModule::PadKind::Hangar ? 0   // a hangar queues: never refused
+                                                                                            : game::navigation::hubBerthPlaces(m);
         for (const auto& [oid, object] : m_client->world().objects())
             if (object.hubAttachment.valid && object.hubAttachment.moduleId == padRequest->frameModuleId)
                 for (const auto& b : object.occupiedBerths)
@@ -738,6 +739,19 @@ void SpaceState::updatePilotTakeover(bool touching)
                     line = "ПОСАДКА: на площадке " + status.substr(18) + " - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)";
                 else if (status.rfind("pad:launched:", 0) == 0)
                     line = "ЗАПУСК с " + status.substr(13) + ": только манёвровые до выхода из зоны площадки";
+                else if (status.rfind("pad:queued:", 0) == 0)
+                {
+                    const std::string rest = status.substr(11);
+                    const auto c = rest.rfind(':');
+                    line = "АНГАР " + rest.substr(0, c) + ": оба места заняты - очередь " + rest.substr(c + 1) +
+                           ", ожидание перед воротами";
+                }
+                else if (status.rfind("pad:bay_free:", 0) == 0)
+                {
+                    const std::string rest = status.substr(13);
+                    const auto c = rest.rfind(':');
+                    line = "АНГАР " + rest.substr(0, c) + ": место " + rest.substr(c + 1) + " свободно - заход в ворота";
+                }
                 else if (status == "pad:engines_free")
                     line = "ЗОНА ПЛОЩАДКИ пройдена: все двигатели доступны";
                 else if (status == "taken:flight")

@@ -259,7 +259,10 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     for (int b = 0; b < places && bay < 0; ++b)
         if (!taken[static_cast<std::size_t>(b)] && !devBerthOccupied(address, serverTime(), b))
             bay = b;
-    if (bay < 0)
+    // a full HANGAR keeps a queue (author 2026-11-22: «очередь / точка ожидания / захват у ворот»): the ship is taken to
+    // the waiting point before its doors and goes in when a bay frees (first come, first in)
+    const bool queueHere = bay < 0 && building->padKind == game::navigation::HubPlanModule::PadKind::Hangar;
+    if (bay < 0 && !queueHere)
     {
         // the wait: a berth is held ~20 min on average; the one there longest frees first
         const int waitMin = std::max(1, static_cast<int>(std::ceil((1200.0 - std::min(longestStay, 1140.0)) / 60.0)));
@@ -271,16 +274,33 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     PadLanding p;
     p.frameModuleId = frameModuleId;
     p.address = address;
-    p.bay = bay;
-    p.padLocal = game::navigation::hubBerthTouchdown(*building, bay);
+    p.bay = bay;   // -1: queued for a hangar bay
+    p.padLocal = game::navigation::hubBerthTouchdown(*building, std::max(bay, 0));
     p.outLocal = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
     p.autoLanding = building->autoLanding;
     p.hangar = building->padKind == game::navigation::HubPlanModule::PadKind::Hangar;
     if (p.hangar)
     {
         p.autoLanding = true;   // the hangar's crew brings the ship in
-        p.doorFrontLocal = game::navigation::hubHangarDoorFront(*building, bay);
-        p.bayEntryLocal = game::navigation::hubHangarBayEntry(*building, bay);
+        p.doorFrontLocal = game::navigation::hubHangarDoorFront(*building, std::max(bay, 0));
+        p.bayEntryLocal = game::navigation::hubHangarBayEntry(*building, std::max(bay, 0));
+        if (bay < 0)
+        {
+            // the waiting point: 90 m out from the doors and 30 m up (clear of the ship coming out)
+            const glm::dvec3 centreDoor = 0.5 * (game::navigation::hubHangarDoorFront(*building, 0) +
+                                                 game::navigation::hubHangarDoorFront(*building, 1));
+            glm::dvec3 outward = centreDoor - building->padPosition;
+            outward -= p.outLocal * glm::dot(outward, p.outLocal);
+            outward = glm::length(outward) > 1.0e-6 ? glm::normalize(outward) : glm::dvec3(1.0, 0.0, 0.0);
+            p.doorFrontLocal = centreDoor + outward * 90.0 + p.outLocal * 30.0;
+            int ahead = 0;
+            for (const auto& [other, o] : m_padLandings)
+                if (other != shipId && o.frameModuleId == frameModuleId && o.address == address && o.bay < 0)
+                    ++ahead;
+            m_padNotices[shipId] = {"pad:queued:" + address + ":" + std::to_string(ahead + 1), serverTime()};
+            std::cerr << "[PadLanding] ship " << shipId.value << " hangar " << address << ": both bays taken - QUEUED ("
+                      << ahead + 1 << "), to the waiting point before the doors" << std::endl;
+        }
     }
     // the transit height: over the tallest building of its tier by 80 m (the city air lanes fly at 430 m)
     double tallest = 0.0;
@@ -382,6 +402,34 @@ void GameSimulation::updatePadLandings(double dt)
                                       << p.route.size() - 2 << " tall building(s)" << std::endl;
                         break;
                     }
+        if (p.hangar && p.bay < 0)
+        {
+            bool first = true;   // the first come is the first in
+            for (const auto& [other, o] : m_padLandings)
+                if (other != id && o.frameModuleId == p.frameModuleId && o.address == p.address && o.bay < 0 && o.sinceS < p.sinceS)
+                    first = false;
+            const game::navigation::HubPlanModule* hangar = nullptr;
+            if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(p.frameModuleId))
+                for (const auto& m : plan->modules())
+                    if (m.address == p.address)
+                        hangar = &m;
+            if (first && hangar)
+                for (int b = 0; b < game::navigation::hubBerthPlaces(*hangar) && p.bay < 0; ++b)
+                {
+                    bool busy = devBerthOccupied(p.address, serverTime(), b);
+                    for (const auto& [other, o] : m_padLandings)
+                        busy = busy || (other != id && o.frameModuleId == p.frameModuleId && o.address == p.address && o.bay == b);
+                    if (busy)
+                        continue;
+                    p.bay = b;
+                    p.padLocal = game::navigation::hubBerthTouchdown(*hangar, b);
+                    p.doorFrontLocal = game::navigation::hubHangarDoorFront(*hangar, b);
+                    p.bayEntryLocal = game::navigation::hubHangarBayEntry(*hangar, b);
+                    m_padNotices[id] = {"pad:bay_free:" + p.address + ":" + std::to_string(b + 1), serverTime()};
+                    std::cerr << "[PadLanding] ship " << id.value << " hangar " << p.address << ": bay " << b
+                              << " free - out of the queue, to the doors" << std::endl;
+                }
+        }
         switch (p.phase)
         {
             case 0:   // up / down to the transit height
@@ -448,6 +496,11 @@ void GameSimulation::updatePadLandings(double dt)
                 if (p.phase == 1 && p.leg + 1 < p.route.size())
                 {
                     ++p.leg;   // the next detour corner: keep the speed, turn the corner
+                    continue;
+                }
+                if (p.phase == 2 && p.hangar && p.bay < 0)
+                {
+                    p.speedMps = 0.0;   // at the waiting point: held until a bay frees
                     continue;
                 }
                 if (p.phase == 2 && p.hangar && p.hangarStep < 2)
@@ -734,7 +787,7 @@ std::vector<std::string> GameSimulation::cityOccupiedBerths(EntityId cityId) con
                     if (devBerthOccupied(m.address, serverTime(), b))
                         out.push_back(m.address + "#" + std::to_string(b) + "@0");
     for (const auto& [ship, p] : m_padLandings)
-        if (p.frameModuleId == it->second.hubModuleId)
+        if (p.frameModuleId == it->second.hubModuleId && p.bay >= 0)
             out.push_back(p.address + "#" + std::to_string(p.bay) + "@" + std::to_string(ship.value) + (p.phase < 3 ? "!" : ""));
     std::sort(out.begin(), out.end());
     return out;

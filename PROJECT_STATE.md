@@ -8024,3 +8024,11 @@ start-up hitches (render), trade step 16 part 3 live.
     left a turn by 194 m).
   * White noise on the front camera when the cockpit is gone (pilot-lost screen).
   OPEN: cross-track spikes ~40 m on some lane turns; target reversals 30-44 on long legs (gentle 5 m/s waves of the plan).
+  * Formation (step 2, first cut): autopilot/FormationGuidance.h (wedge / echelon / column / diamond / line; phases
+    Wide -> Behind ("за спину") -> Close -> Hold; closing <= 60 m/s rel., comfort braking 4 m/s2) flown by the ordinary
+    pilot (AutopilotLawController) from SpaceStateFormation.cpp; DEV "join:<id|nearest>:<kind>:<slot>", "join:off".
+    LIVE fm1: joined a lane ship 3.8 km out, closing 60 m/s rel. behind it; leader handed back at its lane end -> the
+    pilot has the ship. OPEN: the approach is a straight line (no obstacles) - far approaches must go through the
+    planner (route to the safe point), direct guidance only for the last stretch / the slot; not in the UI yet.
+  * Give way (reflex rule 1): slow for a ship crossing / coming with its CPA < 8 s nearer than the hulls + 15 m.
+  * Junction turns <= 30 m/s (lane data). Suite v5: all 4 scenarios clean.

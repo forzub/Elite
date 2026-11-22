@@ -2747,6 +2747,12 @@ void SpaceState::update(float dt)
         updateDockingAdvisory();
         updateClientRoute();
         updateClientBodyAutopilot();
+        {
+            static double lastT = glfwGetTime();
+            const double now = glfwGetTime();
+            updateFormationTask(std::clamp(now - lastT, 0.0, 0.1));
+            lastT = now;
+        }
     }
     updateZoneViolations(dt);
 

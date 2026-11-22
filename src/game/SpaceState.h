@@ -2,6 +2,7 @@
 #include "src/game/navigation/rules/RescueRules.h"
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
 #include "src/game/navigation/globalflight/RouteLegPilot.h"
+#include "src/game/navigation/autopilot/AutopilotLawController.h"
 #include <map>
 #include <set>
 #include "src/game/navigation/route/RoutePlanner.h"
@@ -238,6 +239,19 @@ public:
     std::string rescueWarningAt(const glm::dvec3& worldM, int systemId, const char* what) const;
     // the body autopilot flown by the client (SpaceStateBodyAutopilot.cpp, NAVIGATION_V2 §1)
     void updateClientBodyAutopilot();
+    // joining a ship / keeping a formation slot (SpaceStateFormation.cpp, autopilot/FormationGuidance.h)
+    void updateFormationTask(double dt);
+    void devJoinFormation(const std::string& spec);
+    struct FormationTask
+    {
+        bool active = false;
+        std::uint32_t leader = 0;
+        int kind = 0;
+        int slot = 0;
+        int phase = 0;
+        double logAt = 0.0;
+    } m_formationTask;
+    game::navigation::autopilot::AutopilotLawController m_formationPilot;
     // the planned route flown by the client (SpaceStateRouteRun.cpp)
     void startClientRoute(const std::vector<game::navigation::route::RoutePoint>& legs);
     void cancelClientRoute();

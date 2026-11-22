@@ -516,6 +516,8 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.m_systemMapRenderer.devFocusHub(arg("hub:"));
     else if (cmd.rfind("object:", 0) == 0)
         s.m_systemMapRenderer.devActivateObject(arg("object:"));
+    else if (cmd.rfind("join:", 0) == 0)      // DEV: join a ship's formation (join:<ship id>:<wedge|...>:<slot>, join:off)
+        s.devJoinFormation(arg("join:"));
     else if (cmd.rfind("padland:", 0) == 0)   // DEV: a hub city pad landing (padland:roof|garage|stilts[@frame])
         s.m_systemMapRenderer.devRequestPadLanding(arg("padland:"));
     else if (cmd.rfind("hover:", 0) == 0)

@@ -883,6 +883,9 @@ def plane_layout(hub_id):
     """-> dict(nodes, spinning, haze, module_of, districts, links, cells, ...): the planar city of one hub (its map)"""
     if hub_id in RUIN_OF:
         return _ruin(plane_layout(RUIN_OF[hub_id]), hub_id)
+    from units.hub_ring import RING_HUBS, ring_layout   # the ring hubs: the strip bent round the axis
+    if hub_id in RING_HUBS:
+        return ring_layout(hub_id)
     return layout_from_map(hub_map(hub_id))
 
 
@@ -901,6 +904,7 @@ PLANE_HUBS = ["plane_demo", "plane_ruin"] + sorted(f[:-5] for f in (os.listdir(M
 if os.path.exists(PROFILES_PATH):
     import json as _json
     PLANE_HUBS += sorted(h for h in _json.load(open(PROFILES_PATH, encoding="utf-8")).get("hubs", {}) if h not in PLANE_HUBS)
+PLANE_HUBS += ["earth_ring_hub"]   # units/hub_ring.py RING_HUBS (not imported here: it imports this unit)
 class _LazyHubSet:
     """a planar hub's set spec, computed on first access: importing this unit must not lay out every city (hundreds
     of hubs since the colony batch - an eager loop made each import take minutes); build_equipment_models skips a lazy

@@ -9,6 +9,8 @@ namespace game::navigation
 // invent its own obstacle-inflation policy.
 inline constexpr double DiagnosticHubInfrastructureClearanceMeters = 80.0;
 // the buildings of a generated city (live 2026-11-21: 80 m walled its 26-40 m streets)
+// 5 (20 tried 2026-11-22: planning 80 s again and still a crash under the city): free legs among the buildings are the
+// risk - the pad routes are to end on a lane near the pad (no free leg through the city), the pad service the rest.
 inline constexpr double CityBuildingClearanceMeters = 5.0;
 
 // Small geometric reserve used when an Automatic approach terminates outside

@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
 
@@ -406,6 +407,11 @@ planner::RoutePlan failedComposite(
 
 } // namespace
 
+// a free leg (to / from / between the lanes) among a city's buildings: tight turns, a small obstacle search
+// 40: the final leg to a pad's approach point was feasible only at <= 45 m/s - every faster attempt (150 / 82 / 60) cost
+// a whole 20 s composition before the slower retry (live 2026-11-22: 72-100 s a pad route)
+static constexpr double FreeLegInCityMaxSpeedMps = 40.0;
+
 // A free leg sees only the obstacles near it: those whose bounding sphere comes within a margin of the leg's
 // straight segment (the margin: half the leg length, at least 1.5 km - room for its turns). A generated settlement
 // has thousands of hit volumes; a short connector between two lanes must not search all of them.
@@ -415,7 +421,12 @@ static planner::RoutePlanRequest withLocalObstacles(const planner::RoutePlanRequ
     const glm::dvec3 a = leg.startMeters, b = leg.goalMeters;
     const glm::dvec3 ab = b - a;
     const double len2 = glm::dot(ab, ab);
-    const double margin = std::max(1500.0, 0.5 * std::sqrt(len2));
+    // the room the leg's turns need (3 turn radii at its top speed) + a share of its length; a free leg in a city is
+    // slow (FreeLegInCityMaxSpeedMps) - a 1.5 km margin took all ~3500 city volumes into every search: 30-55 s a leg,
+    // 80-100 s a pad route (author 2026-11-22: «он ужасно долго считает маршрут»). The accepted route is checked against
+    // ALL the obstacles afterwards ([RouteCheck]): an obstacle missed here fails the route, it is never flown into.
+    const double turnRadius = leg.maxSpeedMps * leg.maxSpeedMps / std::max(1.0, leg.lateralMps2);
+    const double margin = std::max(300.0, 3.0 * turnRadius) + std::min(0.25 * std::sqrt(len2), 800.0);
     out.obstacles.clear();
     for (const auto& o : leg.obstacles)
     {
@@ -478,6 +489,20 @@ static planner::RoutePlan composeOnce(
     planner::RoutePlanRequest legRequest = terminalRequest;
     legRequest.requiredViaPointsMeters.clear();
     legRequest.mandatoryTangentStraights.clear();
+    // off the lanes among a city's buildings (thousands of volumes) the free legs are flown slowly: tight turns, a
+    // small search (the lanes keep their own speeds)
+    // ... only a leg that starts among them: the approach from open space keeps its speed (capped from 10 km out it
+    // crawled at 40 m/s for minutes, live 2026-11-22)
+    const auto startsInCity = [](const planner::RoutePlanRequest& r) {
+        if (r.obstacles.size() <= 500)
+            return false;
+        for (const auto& o : r.obstacles)
+            if (glm::length(o.centerMeters - r.startMeters) < 1500.0 + o.conservativeRadiusMeters())
+                return true;
+        return false;
+    };
+    if (startsInCity(legRequest))
+        legRequest.maxSpeedMps = std::min(legRequest.maxSpeedMps, FreeLegInCityMaxSpeedMps);
 
     glm::dvec3 currentStart = terminalRequest.startMeters;
     bool currentHasForward = terminalRequest.hasInitialForward;
@@ -587,7 +612,7 @@ static planner::RoutePlan composeOnce(
         legRequest.startMeters = currentStart;
         legRequest.goalMeters = blockStart;
         legRequest.terminalOutward = -entryForward;
-        legRequest.initialSpeedMps = currentSpeed;
+        legRequest.initialSpeedMps = std::min(currentSpeed, legRequest.maxSpeedMps);
         legRequest.terminalSpeedMps = handoffSpeed;
         legRequest.hasInitialForward = currentHasForward;
         legRequest.initialForward = currentForward;
@@ -834,7 +859,9 @@ static planner::RoutePlan composeOnce(
 
     planner::RoutePlanRequest finalRequest = terminalRequest;
     finalRequest.startMeters = currentStart;
-    finalRequest.initialSpeedMps = currentSpeed;
+    // in a city the final free leg is slow: it starts at its own limit - the lane brakes to it before the exit (the
+    // route speed profile); started at the lane speed (100-150) it was infeasible at every retry (live 2026-11-22)
+    finalRequest.initialSpeedMps = finalRequest.obstacles.size() > 500 ? std::min(currentSpeed, FreeLegInCityMaxSpeedMps) : currentSpeed;
     finalRequest.terminalSpeedMps = 0.0;
     finalRequest.hasInitialForward = currentHasForward;
     finalRequest.initialForward = currentForward;
@@ -899,7 +926,12 @@ static planner::RoutePlan composeOnce(
 
     const double terminalLegStarted = diagnosticNowMs();
     const auto finalLeg =
-        planner::RoutePlanner::plan(withLocalObstacles(finalRequest));
+        planner::RoutePlanner::plan(withLocalObstacles([&] {
+            auto capped = finalRequest;
+            if (capped.obstacles.size() > 500)
+                capped.maxSpeedMps = std::min(capped.maxSpeedMps, FreeLegInCityMaxSpeedMps);
+            return capped;
+        }()));
     const double finalLegMs = diagnosticNowMs() - terminalLegStarted;
     freeLegTotalMs += finalLegMs;
     freeLegDiagnostics +=
@@ -1049,6 +1081,9 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         if (out.valid() ||
             out.disposition != planner::RoutePlanDisposition::NeedsRefinement)
             break;
+        // why the attempt failed (each attempt costs a whole composition - 20 s a pad route, live 2026-11-22)
+        std::fprintf(stderr, "[RouteRetry] attempt at speed x%.2f failed: %s\n", scale == SlowerSpeedScales[0] ? 1.0 : scale,
+                     out.failure.substr(0, 600).c_str());
         auto slower = terminalRequest;
         slower.maxSpeedMps = terminalRequest.maxSpeedMps * scale;
         auto retry = composeOnce(slower, trafficRoute);

@@ -126,6 +126,8 @@ void runDockAdviceWorker(
             std::memory_order_release
         );
 
+        if (std::getenv("ELITE_ROUTE_DUMP") || std::getenv("ELITE_ROUTE_SUMMARY"))   // DEV: where the planning time goes
+            std::fprintf(stderr, "[RouteSummary] %s\n", job->plan.diagnosticSummary.substr(0, 4000).c_str());
         // the accepted route against the obstacles it was planned with (the hull radius, no extra margin): a route that
         // runs through a building is never flown (live 2026-11-22: the free leg from a lane exit to a pad's approach
         // point curved through a power block). Logged with the obstacle and the place either way.

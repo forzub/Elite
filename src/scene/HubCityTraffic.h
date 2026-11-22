@@ -27,6 +27,10 @@ enum class HubTrafficModel : int
     CarC,
     Truck,
     Train,
+    PersonA,      // the pedestrians (comic figures near, a lit speck far)
+    PersonB,
+    PersonC,
+    PersonDot,
     Count
 };
 

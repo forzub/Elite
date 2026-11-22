@@ -8,7 +8,7 @@ the rail top). Lit windows / lamps make them read at night distances.
 """
 from eqlib import *  # noqa: F401,F403 - the unit kernel
 from units.hub_district import COOL, DARK, FLOOD, HAZ, HULL, LIGHT, STEEL, WARM  # noqa: F401
-from units.hub_belt import CONT
+from units.hub_belt import CONT, sphere
 
 register_materials({
     "eq_car_red": ((0.55, 0.10, 0.08), (0.45, 0.45, 0.45), 80),
@@ -16,7 +16,48 @@ register_materials({
     "eq_car_white": ((0.80, 0.81, 0.82), (0.45, 0.45, 0.45), 80),
     "eq_car_glass": ((0.06, 0.08, 0.10), (0.70, 0.70, 0.75), 120),
     "eq_car_tail": ((0.90, 0.10, 0.06), (0.10, 0.10, 0.10), 10),
+    "eq_ped_skin": ((0.86, 0.62, 0.48), (0.20, 0.20, 0.20), 20),
+    "eq_ped_orange": ((0.95, 0.42, 0.06), (0.25, 0.25, 0.25), 30),
+    "eq_ped_green": ((0.25, 0.72, 0.30), (0.25, 0.25, 0.25), 30),
+    "eq_ped_purple": ((0.52, 0.22, 0.70), (0.25, 0.25, 0.25), 30),
 })
+
+
+# THE PEDESTRIANS (author 2026-11-22: «пешеходы - комичные, гротескные; издали точки, вблизи фигурки»): +Z forward,
+# feet on y 0. A head as big as the torso, short legs, long arms, a silly hat / a helmet: they read as people (and
+# as a joke) from a passing ship. Far away the client draws hubt_person_dot - a bright 1.6 m speck.
+def person_parts(lod, name, suit, kind):
+    P = {name: Part(name)}
+    p = P[name]
+    seg = 10 if lod < 2 else 6
+    box(p, DARK, (-0.18, 0.35, 0.05), (0.22, 0.7, 0.34))                 # stubby legs + boots
+    box(p, DARK, (0.18, 0.35, 0.05), (0.22, 0.7, 0.34))
+    if kind == "fat":
+        sphere(p, suit, (0, 1.15, 0), 0.62, seg)                          # a round belly-body
+    else:
+        box(p, suit, (0, 1.1, 0), (0.7, 0.85, 0.42))                      # a box torso
+    for sx in (-1, 1):
+        box(p, suit, (sx * 0.48, 0.85, 0.05), (0.16, 0.95, 0.18))         # arms down to the knees
+        box(p, "eq_ped_skin", (sx * 0.48, 0.33, 0.07), (0.2, 0.18, 0.2))  # big hands
+    if kind == "astro":
+        sphere(p, LIGHT, (0, 2.05, 0), 0.62, seg)                         # the fishbowl helmet
+        box(p, COOL, (0, 2.08, 0.42), (0.6, 0.38, 0.22))                  # its visor
+        box(p, STEEL, (0, 1.2, -0.32), (0.55, 0.7, 0.25))                 # the backpack
+    else:
+        sphere(p, "eq_ped_skin", (0, 2.0, 0), 0.55, seg)                  # the huge head
+        box(p, DARK, (-0.18, 2.12, 0.5), (0.12, 0.16, 0.06))              # eyes
+        box(p, DARK, (0.18, 2.12, 0.5), (0.12, 0.16, 0.06))
+        if lod < 2:
+            box(p, "eq_car_tail", (0, 1.92, 0.55), (0.18, 0.14, 0.12))    # a clown nose
+        box(p, suit, (0, 2.6, 0), (0.95, 0.12, 0.95))                     # a flat hat brim
+        box(p, suit, (0, 2.85, 0), (0.55, 0.45, 0.55))                    # its crown
+    return P
+
+
+def person_dot_parts(lod):
+    P = {"hubt_person_dot": Part("hubt_person_dot")}
+    box(P["hubt_person_dot"], WARM, (0, 1.0, 0), (1.0, 1.6, 1.0))         # a lit speck: a person far away
+    return P
 
 
 def car_parts(lod, name, paint):
@@ -96,6 +137,10 @@ ASSETS = {
     "hubt_truck": truck_parts,
     "hubt_train": train_parts,
     "hubt_shuttle": shuttle_parts,
+    "hubt_person_a": lambda lod: person_parts(lod, "hubt_person_a", "eq_ped_orange", "box"),
+    "hubt_person_b": lambda lod: person_parts(lod, "hubt_person_b", "eq_ped_green", "fat"),
+    "hubt_person_c": lambda lod: person_parts(lod, "hubt_person_c", "eq_ped_purple", "astro"),
+    "hubt_person_dot": person_dot_parts,
 }
 HITS = {k: (lambda k=k: []) for k in ASSETS}
 ROOTS = {k: "hub" for k in ASSETS}
@@ -106,4 +151,8 @@ PASSPORTS = {
     "hubt_truck": ("Грузовик с 40-футовым кузовом", "hub_module", "Городской трафик (tools/models/units/hub_traffic.py)."),
     "hubt_train": ("Поезд монорельса, 3 вагона", "hub_module", "Городской трафик (tools/models/units/hub_traffic.py)."),
     "hubt_shuttle": ("Пассажирский челнок 30 м", "hub_module", "Воздушный трафик города (tools/models/units/hub_traffic.py)."),
+    "hubt_person_a": ("Пешеход (комичный, в шляпе)", "hub_module", "Пешеходы города (tools/models/units/hub_traffic.py)."),
+    "hubt_person_b": ("Пешеход (комичный, толстяк)", "hub_module", "Пешеходы города (tools/models/units/hub_traffic.py)."),
+    "hubt_person_c": ("Пешеход (комичный, астронавт)", "hub_module", "Пешеходы города (tools/models/units/hub_traffic.py)."),
+    "hubt_person_dot": ("Пешеход издали (точка)", "hub_module", "Пешеходы города (tools/models/units/hub_traffic.py)."),
 }

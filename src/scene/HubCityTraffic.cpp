@@ -71,6 +71,10 @@ const char* hubTrafficModelId(HubTrafficModel model)
         case HubTrafficModel::CarC: return "hubt_car_c";
         case HubTrafficModel::Truck: return "hubt_truck";
         case HubTrafficModel::Train: return "hubt_train";
+        case HubTrafficModel::PersonA: return "hubt_person_a";
+        case HubTrafficModel::PersonB: return "hubt_person_b";
+        case HubTrafficModel::PersonC: return "hubt_person_c";
+        case HubTrafficModel::PersonDot: return "hubt_person_dot";
         case HubTrafficModel::Count: break;
     }
     return "hubt_car_a";
@@ -78,6 +82,103 @@ const char* hubTrafficModelId(HubTrafficModel model)
 
 void hubCityMonorailLoop(const game::navigation::HubPlan& plan, double t, const glm::dvec3& camera, double r,
                          std::vector<HubTrafficInstance>& out);
+
+// THE PEDESTRIANS (author 2026-11-22: «пешеходы - комичные, гротескные; издали точки, вблизи фигурки»): on the
+// sidewalks of the road bridges (both sides of the plane; under it upside down) and waiting on the monorail platforms;
+// each walks to and fro along its street at its own pace with a bouncy gait. Within PedFigureMeters a figure, out to
+// PedRadiusMeters a lit speck, none beyond. A pure function of the time.
+constexpr double PedRadiusMeters = 450.0;
+constexpr double PedFigureMeters = 140.0;
+void hubCityPedestrians(const game::navigation::HubPlan& plan, double t, const glm::dvec3& camera, std::vector<HubTrafficInstance>& out)
+{
+    const auto& roads = plan.roads();
+    const auto emit = [&](const glm::dvec3& p, const glm::dvec3& forward, const glm::dvec3& up, std::uint32_t who) {
+        const double dist = glm::length(p - camera);
+        if (dist > PedRadiusMeters)
+            return;
+        HubTrafficInstance v;
+        v.model = dist > PedFigureMeters ? HubTrafficModel::PersonDot
+                                         : static_cast<HubTrafficModel>(static_cast<int>(HubTrafficModel::PersonA) + static_cast<int>(who % 3u));
+        v.local = frame(p, forward, up);
+        v.distance = static_cast<float>(dist);
+        out.push_back(v);
+    };
+    const auto& streets = plan.streets();
+    for (std::size_t si = 0; si < streets.size(); ++si)
+    {
+        const auto& st = streets[si];
+        const glm::dvec2 a2 = st.a, b2 = st.b;
+        const glm::dvec2 ab = b2 - a2;
+        const double length = glm::length(ab);
+        if (length < 50.0)
+            continue;
+        // the street far from the camera: nobody to draw
+        const double u = std::clamp(glm::dot(glm::dvec2(camera.x, camera.z) - a2, ab) / (length * length), 0.0, 1.0);
+        if (glm::length(a2 + ab * u - glm::dvec2(camera.x, camera.z)) > PedRadiusMeters + 50.0)
+            continue;
+        const glm::dvec3 along(ab.x / length, 0.0, ab.y / length);
+        const glm::dvec3 side(-along.z, 0.0, along.x);
+        for (int layer = 0; layer < 2; ++layer)
+        {
+            const double y = layer == 0 ? roads.topY : roads.underY;
+            if (std::abs(camera.y - y) > PedRadiusMeters)
+                continue;
+            const glm::dvec3 up(0.0, layer == 0 ? 1.0 : -1.0, 0.0);
+            for (int sd = -1; sd <= 1; sd += 2)
+            {
+                const std::uint32_t seed = static_cast<std::uint32_t>(si * 977u + static_cast<std::uint32_t>(layer) * 31u +
+                                                                      static_cast<std::uint32_t>(sd + 1) * 7u);
+                const int count = static_cast<int>(length / 24.0);
+                for (int i = 0; i < count; ++i)
+                {
+                    const double h = hash01(seed, static_cast<std::uint32_t>(i));
+                    const double pace = 0.9 + 0.9 * hash01(seed + 5u, static_cast<std::uint32_t>(i));   // 0.9..1.8 m/s
+                    const double run = length - 20.0;
+                    // to and fro: a triangle wave over 2 * run
+                    double s = std::fmod(h * 2.0 * run + pace * t, 2.0 * run);
+                    const bool back = s > run;
+                    if (back)
+                        s = 2.0 * run - s;
+                    const double bob = 0.15 * std::abs(std::sin(t * pace * 5.5 + h * 40.0));   // the bouncy gait
+                    const double lane = sd * (11.0 + 0.9 * hash01(seed + 9u, static_cast<std::uint32_t>(i)));
+                    const glm::dvec3 p = glm::dvec3(a2.x, y, a2.y) + along * (10.0 + s) + side * lane + up * bob;
+                    // a wobble of the heading (they meander)
+                    const double wob = 0.25 * std::sin(t * 1.3 + h * 17.0);
+                    const glm::dvec3 f = glm::normalize((back ? -along : along) + side * wob);
+                    emit(p, f, up, seed + static_cast<std::uint32_t>(i));
+                }
+            }
+        }
+    }
+    // the monorail platforms: a few waiting at each station, shuffling about
+    for (std::size_t k = 0; k < roads.monorailStations.size(); ++k)
+    {
+        const glm::dvec2 st = roads.monorailStations[k];
+        if (glm::length(glm::dvec2(camera.x, camera.z) - st) > PedRadiusMeters + 60.0)
+            continue;
+        // the station's line: along X if a loop side through it runs along X
+        bool alongX = false;
+        const auto& loop = roads.monorailLoop;
+        for (std::size_t c = 0; c < loop.size(); ++c)
+        {
+            const glm::dvec2 a = loop[c], b = loop[(c + 1) % loop.size()];
+            if (std::abs(a.y - b.y) < 1.0 && std::abs(st.y - a.y) < 1.0)
+                alongX = true;
+        }
+        const glm::dvec3 along = alongX ? glm::dvec3(1.0, 0.0, 0.0) : glm::dvec3(0.0, 0.0, 1.0);
+        const glm::dvec3 side = alongX ? glm::dvec3(0.0, 0.0, 1.0) : glm::dvec3(1.0, 0.0, 0.0);
+        for (int i = 0; i < 10; ++i)
+        {
+            const std::uint32_t seed = 70001u + static_cast<std::uint32_t>(k) * 53u;
+            const double h = hash01(seed, static_cast<std::uint32_t>(i));
+            const double x = (h - 0.5) * 70.0 + 3.0 * std::sin(t * 0.3 + h * 20.0);
+            const double sd = (i % 2) ? 1.0 : -1.0;
+            const glm::dvec3 p = glm::dvec3(st.x, roads.monorailLoopY, st.y) + along * x + side * (sd * 6.5);
+            const glm::dvec3 f = glm::normalize(-side * sd + along * (0.4 * std::sin(t * 0.7 + h * 9.0)));
+            emit(p, f, glm::dvec3(0.0, 1.0, 0.0), seed + static_cast<std::uint32_t>(i));
+        }
+    }
+}
 
 void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, const glm::vec3& cameraLocal, float radius,
                     std::vector<HubTrafficInstance>& out)
@@ -89,6 +190,7 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
     // the time folded to a day keeps the float maths of the stream phases exact (the streams repeat anyway)
     const double t = std::fmod(timeSeconds, 86400.0);
     hubCityMonorailLoop(plan, t, camera, r, out);
+    hubCityPedestrians(plan, t, camera, out);
     const auto& streets = plan.streets();
     for (std::size_t si = 0; si < streets.size(); ++si)
     {

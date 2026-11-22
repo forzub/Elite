@@ -580,6 +580,11 @@ void SpaceState::updatePilotTakeover(bool touching)
         m_client->sendMessage(msg);
     };
     static double padRequestedAt = -1.0e9;   // the click itself (the mouse) is not a takeover: 1.5 s grace
+    // the cards' landing-place buttons read the dispatcher's state of the cities in sight
+    if (m_client)
+        for (const auto& [oid, object] : m_client->world().objects())
+            if (object.hubAttachment.valid && game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
+                m_systemMapRenderer.setBerthOccupancy(object.hubAttachment.moduleId, object.occupiedBerths, m_playerId.value);
     auto padRequest = m_systemMapRenderer.takePadLandingRequest();
     if (padRequest && m_client)
     {

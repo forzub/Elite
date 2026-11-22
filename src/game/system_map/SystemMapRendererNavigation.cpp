@@ -1,3 +1,4 @@
+#include "src/game/navigation/HubPlanPads.h"
 // SystemMapRenderer: navigation overlays: hub docking cards / actions, active guidance trajectory, navigation tracking, galaxy / system waypoints and route focus.
 
 #include "src/game/system_map/SystemMapRendererInternal.h"
@@ -139,6 +140,26 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             land.labelKey = "land_pad";
             land.enabled = m.pad;
             land.active = m_padLandingActive == item.objectId;
+            // the landing place on the button (author 2026-11-22: «кнопки с указанием А / М и стоимость в час; игрок сам
+            // выберет куда стыковаться»): its kind, automatic / manual, price per hour, free places; all taken - closed
+            if (m.pad)
+            {
+                const int places = game::navigation::hubBerthPlaces(m);
+                int taken = 0;
+                if (const auto occ = m_berthOccupancy.find(module.stableId); occ != m_berthOccupancy.end())
+                    for (const auto& b : occ->second)
+                        if (b.compare(0, m.address.size() + 1, m.address + "#") == 0 &&
+                            b.find("@" + std::to_string(m_berthPlayerShipId)) == std::string::npos)
+                            ++taken;
+                using PK = game::navigation::HubPlanModule::PadKind;
+                const char* kindRu = m.padKind == PK::Roof ? "крыша" : m.padKind == PK::Stilts ? "опоры"
+                                   : m.padKind == PK::Hangar ? "ангар" : "гараж";
+                const bool full = places > 0 && taken >= places;
+                land.labelText = std::string("ПОСАДКА · ") + kindRu + (m.under ? " (низ)" : "") + " · " + (m.autoLanding ? "А" : "М") +
+                                 " · " + std::to_string(game::navigation::hubBerthPricePerHour(*plan, m)) + " Cr/ч · " +
+                                 (full ? std::string("ЗАНЯТО") : "свободно " + std::to_string(places - taken) + "/" + std::to_string(places));
+                land.enabled = !full || land.active;
+            }
             item.panelActions.push_back(std::move(land));
             frame.items.push_back(std::move(item));
         }

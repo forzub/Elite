@@ -572,6 +572,21 @@ public:
     }
     // the card whose pad the ship is landing on (its СТЫКОВКА lit); empty: none
     void setPadLandingActive(const std::string& objectId) { m_padLandingActive = objectId; m_hubFrameDirty = true; }
+    // the hub cities' landing places taken now (frame module -> "<address>#<bay>@<ship>[!]"), for the cards' buttons
+    void setBerthOccupancy(const std::string& frameModuleId, const std::vector<std::string>& taken, std::uint32_t playerShipId)
+    {
+        auto& slot = m_berthOccupancy[frameModuleId];
+        if (slot != taken)
+        {
+            slot = taken;
+            m_hubFrameDirty = true;
+        }
+        m_berthPlayerShipId = playerShipId;
+    }
+private:
+    std::unordered_map<std::string, std::vector<std::string>> m_berthOccupancy;
+    std::uint32_t m_berthPlayerShipId = 0;
+public:
     // the landing card closed: SpaceState tells the server the pilot takes the ship back
     bool consumePadLandingCancel() { const bool c = m_padLandingCancelRequested; m_padLandingCancelRequested = false; return c; }
     // DEV: padland:<roof|garage|stilts>[@<city frame module>] - the first building with that pad kind, as its card's button

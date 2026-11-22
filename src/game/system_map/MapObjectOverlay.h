@@ -107,6 +107,7 @@ struct MapObjectPanelAction
 {
     std::string key;
     std::string labelKey;
+    std::string labelText;   // a literal label (a landing place: kind, A / M, price per hour, free places) over labelKey
     bool visible = true;
     bool active = false;
     bool enabled = true;

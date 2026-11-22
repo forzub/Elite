@@ -1053,7 +1053,7 @@ void MapObjectOverlayRenderer::render(
             }
             drawRect(actionTopLeft, actionWidth, actionHeight, fill);
             drawRectOutline(actionTopLeft, actionWidth, actionHeight, border, it->active ? 1.4f : 1.0f);
-            const std::string actionText = text(textProfile, it->labelKey);
+            const std::string actionText = it->labelText.empty() ? text(textProfile, it->labelKey) : it->labelText;
             textRenderer.textDrawPx(
                 actionText,
                 static_cast<float>(actionTopLeft.x + 8.0),

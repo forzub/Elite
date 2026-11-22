@@ -711,6 +711,9 @@ void SpaceState::updateDockingAdvisory()
                 m_padAnchor.runtime.occupancy = DockingOccupancyState::Free;
                 m_padAnchor.runtime.access = DockingAccessState::Allowed;
                 m_padAnchor.address = address;
+                m_padAnchor.hoverCity = hover;
+                m_padAnchor.forwardCity = forward;
+                m_padAnchor.upCity = out;
                 m_padAnchor.valid = true;
                 std::cerr << "[PadRoute] request=" << pending.serial << " pad " << address << ": approach point (" << hover.x << ","
                           << hover.y << "," << hover.z << ") city frame, transit " << transit << " m" << std::endl;
@@ -2653,13 +2656,29 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         {
             const glm::dmat3 R(glm::mat3(city->renderOrientation));
             const glm::dvec3 shipWorld = world::coordinates::fullMeters(shipIt->second.renderTransform.worldPosition);
-            const glm::dvec3 hoverWorld = world::coordinates::fullMeters(city->renderWorldPosition) +
-                                          R * m_padAnchor.definition.localPositionMeters;
+            const glm::dvec3 hoverWorld = world::coordinates::fullMeters(city->renderWorldPosition) + R * m_padAnchor.hoverCity;
             localPort.positionMeters = snapshot.controlledShip.localPositionMeters +
                                        snapshot.planningFrame.worldToLocalVector(hoverWorld - shipWorld);
-            localPort.forward = glm::normalize(snapshot.planningFrame.worldToLocalVector(R * m_padAnchor.definition.localForward));
-            localPort.up = glm::normalize(snapshot.planningFrame.worldToLocalVector(R * m_padAnchor.definition.localUp));
+            localPort.forward = glm::normalize(snapshot.planningFrame.worldToLocalVector(R * m_padAnchor.forwardCity));
+            localPort.up = glm::normalize(snapshot.planningFrame.worldToLocalVector(R * m_padAnchor.upCity));
             localPort.valid = true;
+            // the same point in the module attachment's own terms (visual basis): the execution re-resolves the port live
+            // from the attachment + the definition (the terminal stage) - with the plan's coordinates there it dived the
+            // ship 190 m into a power block 1.1 km before the pad (live 2026-11-22)
+            {
+                const auto& a = snapshot.targetObject.hubAttachment;
+                const glm::dvec3 angles = a.localRotationDeg + a.localAngularVelocityDegPerSecond * snapshot.epoch.universeTimeSeconds;
+                const glm::dmat3 rot(glm::mat3(hubLocalEulerDegToMatrix(angles)));
+                const auto tacticalToVisual = [](const glm::dvec3& t) { return glm::dvec3(t.z, t.y, -t.x); };
+                auto& d = m_padAnchor.definition;
+                d.localPositionMeters = glm::transpose(rot) * (tacticalToVisual(localPort.positionMeters) - a.localOffsetMeters);
+                d.localForward = glm::normalize(glm::transpose(rot) * tacticalToVisual(localPort.forward));
+                d.localUp = glm::normalize(glm::transpose(rot) * tacticalToVisual(localPort.up));
+                const auto check = resolveDockingAdvisoryLocalPortAt(a, d, snapshot.epoch.universeTimeSeconds);
+                std::cerr << "[PadRoute] request=" << pending.serial << " attachment spin (" << a.localAngularVelocityDegPerSecond.x << ","
+                          << a.localAngularVelocityDegPerSecond.y << "," << a.localAngularVelocityDegPerSecond.z << ") deg/s, the live port "
+                          << (check.valid ? glm::length(check.positionMeters - localPort.positionMeters) : -1.0) << " m off" << std::endl;
+            }
             std::cerr << "[PadRoute] request=" << pending.serial << " approach point in the planning frame (" << localPort.positionMeters.x
                       << "," << localPort.positionMeters.y << "," << localPort.positionMeters.z << "), the ship at ("
                       << snapshot.controlledShip.localPositionMeters.x << "," << snapshot.controlledShip.localPositionMeters.y << ","
@@ -3901,7 +3920,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
         if (city && shipIt != m_client->world().ships().end())
         {
             const glm::dvec3 qShip = padRouteCityLocal(*city, shipIt->second);
-            const double d = glm::length(qShip - m_padAnchor.definition.localPositionMeters);
+            const double d = glm::length(qShip - m_padAnchor.hoverCity);
             {
                 static double lastTrace = -1.0e9;
                 if (glfwGetTime() - lastTrace >= 3.0)

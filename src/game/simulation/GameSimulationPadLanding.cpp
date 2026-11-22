@@ -580,7 +580,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
                     // the capture zone: the pad's service sets the ship down (its legs out first) - only a ship coming
                     // DOWN to it: one taking off / hovering is not grabbed again (live 2026-11-21: the docking lift-off
                     // from a pad was re-captured and set back down every 15 s)
-                    if (glm::dot(v, out) > -0.3)
+                    if (glm::dot(v, out) > -0.3 || glm::length(v) > 15.0)   // ... and slow: a route passing over it at speed is not landing (live 2026-11-22: B4-18 grabbed a ship on its way to B2-04)
                         break;
                     if (gear == 1)
                     {

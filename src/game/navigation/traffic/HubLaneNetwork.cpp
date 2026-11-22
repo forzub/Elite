@@ -249,7 +249,10 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             return Inf;
         if (!clear(from, target))
             return Inf;
-        return glm::length(d) + TurnPenaltyMeters * turn;
+        // in a hub (its obstacles given) a free metre costs FreeInHubFactor: the green lanes win (author 2026-11-22:
+        // «игнорирование зелёных зон» - a clear straight over the city was as cheap as any lane chain)
+        const double freeFactor = obstacles && !obstacles->empty() ? FreeInHubFactor : 1.0;
+        return freeFactor * glm::length(d) + TurnPenaltyMeters * turn;
     };
     // the goal is reached along goalArriveForward after a hard straight: a free leg into it ends that far out
     const bool goalHasDirection = glm::length(goalArriveForward) > 1.0e-9;

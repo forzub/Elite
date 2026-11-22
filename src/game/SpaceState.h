@@ -552,7 +552,10 @@ private:
         std::uint64_t serial = 0;
         bool valid = false;
         std::string address;
-        game::navigation::HubSemanticAnchorDefinition definition;
+        glm::dvec3 hoverCity {0.0};                 // the approach point over the pad, the city object's frame
+        glm::dvec3 forwardCity {0.0, 0.0, 1.0};
+        glm::dvec3 upCity {0.0, 1.0, 0.0};
+        game::navigation::HubSemanticAnchorDefinition definition;   // the same in the module attachment's terms
         game::navigation::DockingPortRuntimeState runtime;
     } m_padAnchor;
     const ClientObjectState* padRouteCityObject(const std::string& frameModuleId) const

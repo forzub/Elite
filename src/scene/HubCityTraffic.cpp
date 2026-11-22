@@ -1,6 +1,7 @@
 #include "src/scene/HubCityTraffic.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -190,7 +191,12 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
     // the time folded to a day keeps the float maths of the stream phases exact (the streams repeat anyway)
     const double t = std::fmod(timeSeconds, 86400.0);
     hubCityMonorailLoop(plan, t, camera, r, out);
-    hubCityPedestrians(plan, t, camera, out);
+    static const bool pedestrians = [] {   // DEV A/B of the frame cost: ELITE_DEV_HUB_PEDESTRIANS=0
+        const char* v = std::getenv("ELITE_DEV_HUB_PEDESTRIANS");
+        return !(v && std::string(v) == "0");
+    }();
+    if (pedestrians)
+        hubCityPedestrians(plan, t, camera, out);
     const auto& streets = plan.streets();
     for (std::size_t si = 0; si < streets.size(); ++si)
     {

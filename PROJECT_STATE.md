@@ -8066,3 +8066,11 @@ start-up hitches (render), trade step 16 part 3 live.
     QUEUE (waiting point 90 m before the doors, first come first in) and the HUD tunnel to the assigned bay.
     DEV: ELITE_DEV_OCCUPY_BERTHS=addr[#bay]@serverSeconds, DevScriptRunner launch / hub: / panel:hub.
     OPEN: a queued ship waits with its nose anywhere (should face the doors).
+  * 2026-11-22 (city life, autonomous): AIR TRAFFIC ROUTES through the junctions (in from open sky, turns on the
+    connectors at their limit with 3 m/s2 ramps, on into a dock's blue lane / out to open sky; lanes ending among
+    buildings never flown to their dead end; hulls > a connector's 55 m only on straight routes): Earth 35 routes,
+    96 ships. MONORAIL = one closed loop round the outermost avenues (17.8 km, 8 stations, hubb_mono_station; trains
+    one per ~3 km, 28 m/s, 25 s stops). COMIC PEDESTRIANS (hubt_person_a/b/c near 140 m, hubt_person_dot to 450 m) on
+    the sidewalks and platforms; frame A/B (ELITE_DEV_HUB_PEDESTRIANS=0, street view, no vsync, relwithdebinfo):
+    p50 21.6-22.0 vs 21.4-21.5 ms (+0.3-0.5 ms), p95 26-28 ms both (noise).
+    OPEN: the loop's z=-2468 side crosses the partial rim row (a stretch of beam without blocks under it).

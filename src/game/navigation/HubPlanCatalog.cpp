@@ -143,6 +143,17 @@ bool HubPlan::load(const std::string& path)
         if (r.contains("lanes_m") && r["lanes_m"].is_array() && !r["lanes_m"].empty())
             m_roads.lanesMeters = r["lanes_m"].get<std::vector<double>>();
     }
+    if (j.contains("monorail") && j["monorail"].is_object())
+    {
+        const auto& m = j["monorail"];
+        for (const auto& p : m.value("loop", nlohmann::json::array()))
+            if (p.is_array() && p.size() >= 2)
+                m_roads.monorailLoop.push_back({p[0].get<double>(), p[1].get<double>()});
+        for (const auto& p : m.value("stations", nlohmann::json::array()))
+            if (p.is_array() && p.size() >= 2)
+                m_roads.monorailStations.push_back({p[0].get<double>(), p[1].get<double>()});
+        m_roads.monorailLoopY = m.value("rail_y", m_roads.monorailLoopY);
+    }
     if (j.contains("air_fleet") && j["air_fleet"].is_object())
     {
         const auto& f = j["air_fleet"];

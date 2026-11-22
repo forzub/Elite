@@ -93,6 +93,11 @@ struct HubPlanRoads
     std::vector<double> lanesMeters {3.0, 9.0};   // lane centres off the street's centre line (each way)
     double monorailY = 16.8;           // the rail top
     double monorailSideMeters = 18.0;  // to the street's +X (Z streets) / -Z (X streets)
+    // the monorail LOOP (tools/models/units/hub_plane.py: one closed line round the outer avenues, author 2026-11-22):
+    // its corners in the plane (x, z), its stations, the rail top
+    std::vector<glm::dvec2> monorailLoop;
+    std::vector<glm::dvec2> monorailStations;
+    double monorailLoopY = 16.8;
 };
 
 // a ship of the city's air traffic (tools/models/hub_plan.py air_fleet: the hub's political bloc)

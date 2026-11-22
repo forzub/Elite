@@ -786,8 +786,6 @@ def layout_from_map(mp):
             if av:
                 for sg in (-1, 1):
                     add(f"{g}_t{sg}_{s_i}", "hubb_tube", _add((p[0], FRAME_Y + 4.0, p[2]), _mul(side, sg * 40.0)), rot, "tube", g)
-            if av and kinds & PASSENGER:
-                add(f"{g}_mr{s_i}", "hubb_monorail", _add((p[0], 14.0, p[2]), _mul(side, 18.0)), rot, "monorail", g)
         # access bridges from the road edge to the block edges beside it (1..2 per side), girders under them
         mid = _add(start, _mul(d, run_len / 2))
         reach = gw / 2 - 13.0
@@ -804,6 +802,36 @@ def layout_from_map(mp):
                         add(f"{g}_{tag}a{sg}_{ai}_{pi_}", "hubb_road", (q[0], dy if top else UNDER_Y - dy, q[2]),
                             _yaw(ad, not top), "access", g)
                         add(f"{g}_{tag}ag{sg}_{ai}_{pi_}", "hubb_girder", (q[0], FRAME_Y, q[2]), _yaw(ad), "girder", g)
+    # THE MONORAIL: one closed loop (author 2026-11-22: «монорельс - одна закольцованная петля или зигзаг»): the rectangle
+    # of the outermost avenues (the beam 18 m to the street's +X / -Z side, 14 m up as before), laid as one beam line,
+    # stations at the middles of its sides' avenue spans; the plan gets its polyline (the trains: src/scene/HubCityTraffic)
+    monorail = None
+    axs = sorted(line_x(i) for i in av_x if i0 <= i < i1)
+    azs = sorted(line_z(j) for j in av_z if j0 <= j < j1)
+    if len(axs) >= 2 and len(azs) >= 2:
+        xa, xb, za, zb = axs[0] + 18.0, axs[-1] + 18.0, azs[0] - 18.0, azs[-1] - 18.0
+        corners = [(xa, za), (xb, za), (xb, zb), (xa, zb)]
+        stations = []
+        for k in range(len(axs) - 1):                              # the X sides: one station per avenue span
+            xm = 0.5 * (axs[k] + axs[k + 1]) + 18.0
+            stations += [(xm, za), (xm, zb)]
+        for k in range(len(azs) - 1):                              # the Z sides
+            zm = 0.5 * (azs[k] + azs[k + 1]) - 18.0
+            stations += [(xa, zm), (xb, zm)]
+        for side_i, ((x0, z0), (x1, z1)) in enumerate(zip(corners, corners[1:] + corners[:1])):
+            along_x = abs(x1 - x0) > abs(z1 - z0)
+            lo = (min(x0, x1), 14.0, z0) if along_x else (x0, 14.0, min(z0, z1))
+            d = (1.0, 0.0, 0.0) if along_x else (0.0, 0.0, 1.0)
+            for s_i, (off, lift) in enumerate(pieces(0.0, abs(x1 - x0) + abs(z1 - z0))):
+                q = _add(lo, _mul(d, off))
+                add(f"mono_{side_i}_{s_i}", "hubb_monorail", (q[0], q[1] + (0.04 if lift else 0.0), q[2]),
+                    rot_x if along_x else ROT_Z, "monorail", "monorail")
+        for si, (x, z) in enumerate(stations):
+            along_x = abs(z - za) < 1.0 or abs(z - zb) < 1.0
+            q = (x - 45.0, 14.0, z) if along_x else (x, 14.0, z - 45.0)
+            add(f"mono_st{si}", "hubb_mono_station", q, rot_x if along_x else ROT_Z, "monorail_station", "monorail")
+        monorail = {"loop": [[round(x, 1), round(z, 1)] for x, z in corners], "stations": [[round(x, 1), round(z, 1)] for x, z in stations],
+                    "rail_y": 16.8}
     av_xf = lambda i: i in av_x
     av_zf = lambda j: j in av_z
     lanes, red_zones = _plane_lanes(runs, line_x, line_z, av_xf, av_zf), []
@@ -841,7 +869,7 @@ def layout_from_map(mp):
         add(f"x{ni}_u", "hubp_crossing", (x, UNDER_Y, z), _yaw((0.0, 0.0, 1.0), True), "crossing", f"xs{ni // 16}")
     return {"nodes": nodes, "spinning": spinning, "haze": haze, "module_of": module_of, "districts": districts,
             "links": len(runs), "cells": {k: zone[k] for k in cells}, "grid": (i1 - i0 + 1, j1 - j0 + 1, None, None),
-            "docks": docks, "lanes": lanes, "connectors": connectors, "red_zones": red_zones,
+            "docks": docks, "lanes": lanes, "connectors": connectors, "red_zones": red_zones, "monorail": monorail,
             "anchor": anc, "lines": {"x": {i: line_x(i) for i in range(i0 - 1, i1 + 1)}, "z": {j: line_z(j) for j in range(j0 - 1, j1 + 1)}},
             "centres": {"x": {i: cx_of(i) for i in range(i0, i1 + 1)}, "z": {j: cz_of(j) for j in range(j0, j1 + 1)}}}
 

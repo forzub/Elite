@@ -10071,7 +10071,7 @@
 650.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s12",
@@ -10175,7 +10175,7 @@
 -450.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s2",
@@ -10214,7 +10214,7 @@
 650.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s22",
@@ -10292,7 +10292,7 @@
 -450.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s28",
@@ -10305,7 +10305,7 @@
 630.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s29",
@@ -10318,7 +10318,7 @@
 650.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s3",
@@ -10344,7 +10344,7 @@
 1630.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s31",
@@ -10370,7 +10370,7 @@
 2530.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s33",
@@ -10461,7 +10461,7 @@
 650.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s4",
@@ -10474,7 +10474,7 @@
 630.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s40",
@@ -10604,7 +10604,7 @@
 650.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s5",
@@ -10721,7 +10721,7 @@
 -450.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s58",
@@ -10734,7 +10734,7 @@
 630.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s59",
@@ -10747,7 +10747,7 @@
 650.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 },
 {
 "id": "s6",
@@ -10838,7 +10838,7 @@
 -450.0
 ],
 "avenue": true,
-"monorail": true
+"monorail": false
 }
 ],
 "docks": [
@@ -10895,6 +10895,61 @@
 ],
 "monorail_y": 16.8,
 "monorail_side_m": 18.0
+},
+"monorail": {
+"loop": [
+[
+-2882.0,
+-2468.0
+],
+[
+2918.0,
+-2468.0
+],
+[
+2918.0,
+632.0
+],
+[
+-2882.0,
+632.0
+]
+],
+"stations": [
+[
+-1432.0,
+-2468.0
+],
+[
+-1432.0,
+632.0
+],
+[
+1468.0,
+-2468.0
+],
+[
+1468.0,
+632.0
+],
+[
+-2882.0,
+-1468.0
+],
+[
+2918.0,
+-1468.0
+],
+[
+-2882.0,
+82.0
+],
+[
+2918.0,
+82.0
+]
+],
+"rail_y": 16.8
 },
 "population_estimate": 1832450,
 "air_fleet": {

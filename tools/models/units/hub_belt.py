@@ -637,6 +637,43 @@ def monorail_hits():
     return [hbox("hubb_monorail", (0, 0.4, SEG_L / 2), (3.0, 4.8, SEG_L))]
 
 
+MONO_STATION_L = 90.0
+
+
+def mono_station_parts(lod):
+    """a monorail station along +Z (90 m), its origin on the beam's centre line (the beam itself is laid through it):
+    platforms both sides of the beam at the car floor (+3 m over the beam centre), a canopy on columns, a lift tower and
+    a stair down to the street deck 14 m below (author 2026-11-22: «монорельс - одна петля ... станции»)"""
+    P = {"hubb_mono_station": Part("hubb_mono_station")}
+    s = P["hubb_mono_station"]
+    L = MONO_STATION_L
+    for sx in (-1, 1):
+        box(s, HULL, (sx * 6.5, 2.4, L / 2), (7.0, 0.8, L))                         # the platform deck
+        box(s, HAZ, (sx * 3.3, 2.85, L / 2), (0.6, 0.1, L))                         # the edge strip
+        box(s, STEEL, (sx * 9.9, 3.4, L / 2), (0.2, 1.2, L))                        # the back rail
+        for z in (5.0, L / 2, L - 5.0):
+            box(s, STEEL, (sx * 9.0, 6.5, z), (0.5, 7.4, 0.5))                       # canopy columns
+        if lod < 3:
+            box(s, LIGHT, (sx * 6.0, 10.4, L / 2), (9.0, 0.4, L - 4.0))              # the canopy
+        if lod < 2:
+            for z in (15.0, 45.0, 75.0):
+                box(s, FLOOD, (sx * 6.0, 10.0, z), (2.0, 0.2, 0.6))                  # lights under it
+            box(s, WARM, (sx * 9.6, 4.8, L / 2), (0.15, 1.6, 6.0))                   # the station sign
+    # the lift tower (to the street deck) at the +Z end, on the +X side; a stair at the -Z end
+    box(s, HULL, (8.0, -5.6, L - 3.0), (4.0, 17.0, 4.0))
+    if lod < 2:
+        box(s, FACADE_L, (10.05, -5.6, L - 3.0), (0.1, 15.0, 3.2))
+        for k in range(8):
+            box(s, STEEL, (-8.0, 2.0 - k * 1.8, 2.0 + k * 1.6), (3.0, 0.3, 1.6))     # the stair flights
+    return P
+
+
+def mono_station_hits():
+    return [hbox("hubb_mono_station", (-6.5, 2.4, MONO_STATION_L / 2), (7.0, 0.8, MONO_STATION_L)),
+            hbox("hubb_mono_station", (6.5, 2.4, MONO_STATION_L / 2), (7.0, 0.8, MONO_STATION_L)),
+            hbox("hubb_mono_station", (8.0, -5.6, MONO_STATION_L - 3.0), (4.0, 17.0, 4.0))]
+
+
 def road_parts(lod):
     """an open road deck along +Z (100 m): two lanes each way, guard rails, lamp posts - the wheeled transport between
     platforms and halls"""
@@ -678,6 +715,7 @@ KIT = {"hubb_gas_battery": (gas_battery_parts, gas_battery_hits,
        "hubb_tube": (tube_parts, tube_hits, "Тоннель-труба 100 м"),
        "hubb_junction": (junction_parts, junction_hits, "Узел тоннелей (6 выходов)"),
        "hubb_monorail": (monorail_parts, monorail_hits, "Монорельс, балка 100 м"),
+       "hubb_mono_station": (mono_station_parts, mono_station_hits, "Станция монорельса 90 м: платформы, навес, лифт"),
        "hubb_road": (road_parts, road_hits, "Дорожная эстакада 100 м, 4 полосы"),
        "hubb_girder": (girder_parts, girder_hits, "Ферма-хребет 30x30, 100 м")}
 

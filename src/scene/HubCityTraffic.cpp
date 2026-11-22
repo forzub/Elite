@@ -76,6 +76,9 @@ const char* hubTrafficModelId(HubTrafficModel model)
     return "hubt_car_a";
 }
 
+void hubCityMonorailLoop(const game::navigation::HubPlan& plan, double t, const glm::dvec3& camera, double r,
+                         std::vector<HubTrafficInstance>& out);
+
 void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, const glm::vec3& cameraLocal, float radius,
                     std::vector<HubTrafficInstance>& out)
 {
@@ -85,6 +88,7 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
     const double r = radius;
     // the time folded to a day keeps the float maths of the stream phases exact (the streams repeat anyway)
     const double t = std::fmod(timeSeconds, 86400.0);
+    hubCityMonorailLoop(plan, t, camera, r, out);
     const auto& streets = plan.streets();
     for (std::size_t si = 0; si < streets.size(); ++si)
     {
@@ -179,6 +183,105 @@ void hubCityTraffic(const game::navigation::HubPlan& plan, double timeSeconds, c
                 out.push_back(v);
             }
         }
+    }
+}
+
+// THE MONORAIL LOOP: trains round the one closed line (author 2026-11-22: «монорельс - одна петля или зигзаг ...
+// станции, поезда»): one train per ~3 km of the loop, all the same timetable - TrainSpeed between the stations, a
+// TrainDwellSeconds stop at each, eased in / out over the last / first 60 m; a pure function of the time
+void hubCityMonorailLoop(const game::navigation::HubPlan& plan, double t, const glm::dvec3& camera, double r,
+                         std::vector<HubTrafficInstance>& out)
+{
+    const auto& roads = plan.roads();
+    const auto& loop = roads.monorailLoop;
+    if (loop.size() < 3)
+        return;
+    std::vector<double> cum(loop.size() + 1, 0.0);
+    for (std::size_t k = 0; k < loop.size(); ++k)
+        cum[k + 1] = cum[k] + glm::length(loop[(k + 1) % loop.size()] - loop[k]);
+    const double perimeter = cum.back();
+    if (perimeter < 100.0)
+        return;
+    const auto alongOf = [&](const glm::dvec2& p) {
+        double best = 1.0e30, at = 0.0;
+        for (std::size_t k = 0; k < loop.size(); ++k)
+        {
+            const glm::dvec2 a = loop[k], b = loop[(k + 1) % loop.size()];
+            const glm::dvec2 ab = b - a;
+            const double u = std::clamp(glm::dot(p - a, ab) / std::max(1.0e-9, glm::dot(ab, ab)), 0.0, 1.0);
+            const double d = glm::length(a + ab * u - p);
+            if (d < best)
+            {
+                best = d;
+                at = cum[k] + u * glm::length(ab);
+            }
+        }
+        return at;
+    };
+    std::vector<double> stops;
+    for (const auto& s : roads.monorailStations)
+        stops.push_back(alongOf(s));
+    std::sort(stops.begin(), stops.end());
+    if (stops.empty())
+        stops.push_back(0.0);
+    // the timetable of one lap: from each stop to the next (a run with 60 m ease in / out) + the dwell
+    constexpr double Ease = 60.0;
+    std::vector<double> legStart(stops.size() + 1, 0.0), legLength(stops.size(), 0.0);
+    for (std::size_t k = 0; k < stops.size(); ++k)
+    {
+        double len = (k + 1 < stops.size() ? stops[k + 1] : stops[0] + perimeter) - stops[k];
+        legLength[k] = len;
+        // the run time: cruise + the two eased ends (half speed on average over Ease each)
+        const double ease = std::min(Ease, 0.5 * len);
+        const double run = (len - 2.0 * ease) / TrainSpeed + 2.0 * ease / (0.5 * TrainSpeed);
+        legStart[k + 1] = legStart[k] + TrainDwellSeconds + run;
+    }
+    const double lapSeconds = legStart.back();
+    const int trains = std::max(2, static_cast<int>(perimeter / 3000.0));
+    for (int i = 0; i < trains; ++i)
+    {
+        const double c = std::fmod(t + lapSeconds * i / trains, lapSeconds);
+        std::size_t k = 0;
+        while (k + 1 < stops.size() && c >= legStart[k + 1])
+            ++k;
+        const double inLeg = c - legStart[k];
+        double s = stops[k];
+        if (inLeg > TrainDwellSeconds)
+        {
+            const double len = legLength[k];
+            const double ease = std::min(Ease, 0.5 * len);
+            double tau = inLeg - TrainDwellSeconds;
+            const double easeT = ease / (0.5 * TrainSpeed);
+            const double cruiseT = (len - 2.0 * ease) / TrainSpeed;
+            double d = 0.0;
+            if (tau < easeT)                                   // accelerating: d = a t^2 / 2, a = v / easeT
+                d = 0.5 * (TrainSpeed / easeT) * tau * tau;
+            else if (tau < easeT + cruiseT)
+                d = ease + (tau - easeT) * TrainSpeed;
+            else
+            {
+                const double rest = std::max(0.0, 2.0 * easeT + cruiseT - tau);
+                d = len - 0.5 * (TrainSpeed / easeT) * rest * rest;
+            }
+            s += std::min(d, len);
+        }
+        s = std::fmod(s, perimeter);
+        std::size_t seg = 0;
+        while (seg + 1 < loop.size() && cum[seg + 1] <= s)
+            ++seg;
+        const glm::dvec2 a = loop[seg], b = loop[(seg + 1) % loop.size()];
+        const double segLen = std::max(1.0e-6, cum[seg + 1] - cum[seg]);
+        const glm::dvec2 p2 = a + (b - a) * ((s - cum[seg]) / segLen);
+        const glm::dvec2 d2 = glm::normalize(b - a);
+        const glm::dvec3 p(p2.x, roads.monorailLoopY, p2.y);
+        const double dist = glm::length(p - camera);
+        if (dist > r)
+            continue;
+        HubTrafficInstance v;
+        v.model = HubTrafficModel::Train;
+        v.local = frame(p, glm::dvec3(d2.x, 0.0, d2.y), glm::dvec3(0.0, 1.0, 0.0));
+        v.distance = static_cast<float>(dist);
+        out.push_back(v);
     }
 }
 

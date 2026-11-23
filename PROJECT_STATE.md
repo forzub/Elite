@@ -8146,3 +8146,14 @@ start-up hitches (render), trade step 16 part 3 live.
     fast one that cannot be dodged - the glancing blow), each with the reflex on / off; metrics: the smallest hull gap,
     touch + normal impact speed, the swerve off the route and the return. Compare: no reflex, the current reflex, the
     control-program reflex on the real physics.
+  * 2026-11-23 CONTROL-PROGRAM EVASION on the REAL physics (author: «надо задавать сети на выход - ручное управление
+    кораблем ... проблема физического слоя»): tools/navigation_runtime/ControlEvasionLab.cpp (EliteControlEvasionLab,
+    the game's SharedShipPhysics -> DynamicMotionSystem chain compiled in): 41 pilot-control programs (27 RCS
+    translations, 4 turns x 3 speed commands, 2 speed commands) held 4 s, flown 12 s. COST: 0.38 us per physics step,
+    all 41 programs 3.7 ms (dt 0.05). The flights depend on the ship only - fly once per reflex tick, judge any threats.
+    COMPARE (3000 scenes, threats AIMED at the ship, 1-3, 10-150 m/s, 3-12 s out; the nominal test hull):
+    Assisted - hands off 0 % safe, the game's current reflex (point-mass teacher -> RCS inputs) 69.6 %, the best program
+    on the real physics 94.8 % (touches 517 vs 39); Newtonian - the current reflex 3.8 % (RCS 2.1 m/s2 only; the main
+    drive needs the nose), the best program 91.9 % (touches 2408 vs 75; unavoidable normal impact 13.9 -> 10.0 m/s).
+    => the reflex moves to the control programs judged on the real physics; the net's job becomes picking the few
+    programs worth flying (3.7 ms -> well under 1 ms).

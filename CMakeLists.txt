@@ -334,6 +334,14 @@ target_link_libraries(EliteNavigationScenarioRuntime
     PUBLIC EliteNavigationWorldRuntime
 )
 
+# evasion by the pilot's controls on the real ship physics (tools/navigation_runtime/ControlEvasionLab.cpp)
+add_executable(EliteControlEvasionLab tools/navigation_runtime/ControlEvasionLab.cpp
+    src/game/navigation/DynamicMotionSystem.cpp src/game/shared/SharedShipPhysics.cpp
+    src/game/ship/control/ShipControlExecutionGateway.cpp src/game/ship/plant/AssistedPhysicalControlModel.cpp
+    src/game/ship/plant/NewtonianPhysicalControlModel.cpp src/game/ship/plant/ShipPhysicalControlModels.cpp
+    src/game/ship/plant/ShipPhysicalActuatorPlant.cpp src/game/ship/ShipController.cpp)
+target_link_libraries(EliteControlEvasionLab PRIVATE EliteNavigationScenarioRuntime)
+
 add_library(EliteDockingInfrastructure STATIC
     src/game/docking/traffic/DockTrafficController.cpp
     src/game/docking/landing/DockLandingController.cpp

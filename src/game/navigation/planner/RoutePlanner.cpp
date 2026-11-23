@@ -5,12 +5,14 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <utility>
 
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
 #include "src/game/navigation/OrdinaryRoutePolicy.h"
 #include "src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h"
 #include "src/game/navigation/planner/RouteDraftIo.h"
+#include "src/game/navigation/planner/RouteDraftNet.h"
 
 namespace game::navigation::planner
 {
@@ -541,8 +543,40 @@ RoutePlan planContinuousAssisted(
     if (const char* dump = std::getenv("ELITE_ROUTE_DRAFT_DUMP"); dump && *dump)
         appendRouteDraftRequest(dump, request);
 
+    // THE ROUTE-DRAFT NET (RouteDraftNet.h): its shape is the first seed; feasible -> only it is refined (the fast
+    // path), else the generic search runs as before. ON by default (ELITE_ROUTE_DRAFT=0 off): live plans 0.55-0.78 s against 3.1-3.7;
+    // the game optimizer minimizes the TRAVEL TIME (the net teacher objective; ELITE_ROUTE_TIME_OBJECTIVE=0: the old mix)
+    static const bool timeObjective = [] {
+        const char* v = std::getenv("ELITE_ROUTE_TIME_OBJECTIVE");
+        return !(v && v[0] == '0');
+    }();
+    if (timeObjective)
+        request.weights = assisted::lab::timeOptimalWeights();
+    static const RouteDraftNet* draftNet = []() -> const RouteDraftNet* {
+        const char* v = std::getenv("ELITE_ROUTE_DRAFT");
+        if (v && v[0] == '0')
+            return static_cast<const RouteDraftNet*>(nullptr);
+        static RouteDraftNet net;
+        const bool ok = net.load("assets/data/navigation/route_draft_net.json");
+        std::cerr << "[RouteDraft] net " << (ok ? "loaded" : "absent") << std::endl;
+        return ok ? &net : nullptr;
+    }();
+    if (draftNet)
+    {
+        assisted::lab::ShapeVariables draft;
+        if (draftNet->draft(request, draft))
+        {
+            request.draftSeeds.push_back(draft);
+            request.draftRefineIterations = 40;
+        }
+    }
+
     const auto optimized =
         ContinuousAssistedPathOptimizer::optimize(request);
+    if (!request.draftSeeds.empty())
+        std::cerr << "[RouteDraft] " << (optimized.usedDraftFastPath ? "fast path" : "draft infeasible - full search")
+                  << ", evals " << optimized.diagnostics.objectiveEvaluations << ", valid " << optimized.valid
+                  << ", eta " << optimized.diagnostics.estimatedTravelTimeSeconds << " s" << std::endl;
 
     if (!optimized.valid)
     {

@@ -8291,3 +8291,21 @@ start-up hitches (render), trade step 16 part 3 live.
     + fast path (refine only the feasible draft), timeOptimalWeights (time + 0.05 length), RouteDraftIo.h + game dump
     ELITE_ROUTE_DRAFT_DUMP, EliteRouteDraftLab dataset|eval (real dumped scenes + generated mazes, sampled ship states),
     route_draft_train.py. Pipeline smoke-tested; training next.
+  * 2026-11-24 ROUTE-DRAFT NET v1 IN THE GAME (default ON; ELITE_ROUTE_DRAFT=0 / ELITE_ROUTE_TIME_OBJECTIVE=0 = old):
+    - OBSTACLE GRID (src/world/navigation/NavigationObstacleGrid.h, built per optimize() call): a candidate's ~200
+      segments were each tested against every obstacle (~3000 in a city: ~12 ms an evaluation); gridcheck: 116 000
+      random segments, 0 mismatches with the full scan, 0.0003 vs 0.015 ms a segment; dataset rate x22.
+    - DATA: 15 000 scenes from 9 dumped real optimizer requests (Earth hub, perturbed start / goal / ship state) +
+      10 000 generated MAZES (walls, floor, ceiling; pairs with <= 2 corridor turns - one free leg); teacher = the
+      optimizer with timeOptimalWeights, 480 iterations; 19 600 valid rows. Net 112-256-256-11 (route_draft_train.py,
+      60 epochs; val mse 0.65 standardized - shapes are not unique, judged by the outcome instead).
+    - FAST PATH: the draft refined 40 iterations (also an infeasible one - the pattern search pushes it clear first);
+      feasible -> no 13-seed / 4-branch search. LAB (unseen scenes): hub fast path 83 %, 415 vs 1042 ms, time / teacher
+      1.004 (game 1.013), valid 85.3 % (game 85.0); maze fast path 53 %, 518 vs 788 ms, time 1.095 (game 1.062 - the
+      maze is the net's weak spot), detour 1.36 (game 1.43).
+    - LIVE: B4-11 from 10 km plan 0.55 s (3.1 s before the grid, 1.12 s grid only), eta 132 s (137.8), landed 230 s;
+      remote in-flight replans: plans 0.55-0.78 s (3.5-3.7), all landed, 0 collisions; ahead 166 s (167), side 153 (141),
+      far 255 (139) - the far one is the LANE CHAIN choice (5.5 km of 30 m/s lanes; the chain cost is metres with lanes
+      cheaper, not time) - open, the author's balance rule («не лететь вниз в зелёную зону») to be weighed.
+    - the in-city free-leg 40 m/s cap only AMONG the buildings (an obstacle within 300 m of the start, was 1.5 km: a ship
+      over the roofs after a pad change crawled 9 km at 40 m/s, eta 225 s).

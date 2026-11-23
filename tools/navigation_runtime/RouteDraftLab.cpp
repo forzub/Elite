@@ -26,6 +26,7 @@
 
 #include "src/game/navigation/planner/RouteDraftIo.h"
 #include "src/game/navigation/planner/RouteDraftNet.h"
+#include "src/world/navigation/NavigationObstacleGrid.h"
 
 namespace lab = game::navigation::planner::assisted::lab;
 using game::navigation::planner::RouteDraftInputs;
@@ -414,8 +415,51 @@ int eval(int argc, char** argv)
 }
 } // namespace
 
+// gridcheck [dumps...]: random segments among every scene's obstacles - the grid against the full scan must agree
+int gridcheck(int argc, char** argv)
+{
+    std::vector<lab::Request> scenes = loadScenes(argc, argv, 2);
+    std::mt19937_64 g(42);
+    for (int k = 0; k < 20; ++k)
+        scenes.push_back([&] { lab::Request r; r.obstacles = makeMaze(g).obstacles; r.hullRadiusMeters = 25.0; return r; }());
+    long long tests = 0, mismatches = 0, blocked = 0;
+    double msGrid = 0.0, msScan = 0.0;
+    for (const auto& r : scenes)
+    {
+        if (r.obstacles.empty())
+            continue;
+        world::navigation::NavigationObstacleGrid grid;
+        grid.build(r.obstacles, r.hullRadiusMeters);
+        glm::dvec3 lo(1e30), hi(-1e30);
+        for (const auto& o : r.obstacles)
+        {
+            lo = glm::min(lo, o.centerMeters);
+            hi = glm::max(hi, o.centerMeters);
+        }
+        for (int i = 0; i < 4000; ++i)
+        {
+            const glm::dvec3 p(uni(g, lo.x, hi.x), uni(g, lo.y, hi.y), uni(g, lo.z, hi.z));
+            const glm::dvec3 q = p + randomUnit(g) * uni(g, 1.0, 400.0);
+            double t = nowMs();
+            const bool a = grid.segmentClear(p, q);
+            msGrid += nowMs() - t;
+            t = nowMs();
+            const bool b = world::navigation::segmentClearOfNavigationObstacles(p, q, r.obstacles, r.hullRadiusMeters);
+            msScan += nowMs() - t;
+            ++tests;
+            mismatches += a != b;
+            blocked += !b;
+        }
+    }
+    std::printf("gridcheck: %lld segments (%lld blocked), mismatches %lld; grid %.4f ms / scan %.4f ms a segment\n", tests,
+                blocked, mismatches, msGrid / std::max(1LL, tests), msScan / std::max(1LL, tests));
+    return mismatches == 0 ? 0 : 1;
+}
+
 int main(int argc, char** argv)
 {
+    if (argc >= 2 && std::string(argv[1]) == "gridcheck")
+        return gridcheck(argc, argv);
     if (argc < 6)
     {
         std::printf("usage: EliteRouteDraftLab dataset <out.bin> <samples> <threads> <maze share> [dumps...]\n"

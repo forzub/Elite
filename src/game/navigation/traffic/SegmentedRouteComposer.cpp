@@ -555,7 +555,10 @@ static planner::RoutePlan composeOnce(
         if (r.obstacles.size() <= 500)
             return false;
         for (const auto& o : r.obstacles)
-            if (glm::length(o.centerMeters - r.startMeters) < 1500.0 + o.conservativeRadiusMeters())
+            // ... and only AMONG them (300 m, not 1.5 km): a ship 1.5 km over the roofs after an in-flight pad change
+            // flew its whole 9 km leg at 40 m/s (eta 225 s instead of ~75, 2026-11-23); the search cost that made
+            // the cap worth it is gone with the obstacle grid (NavigationObstacleGrid.h)
+            if (glm::length(o.centerMeters - r.startMeters) < 300.0 + o.conservativeRadiusMeters())
                 return true;
         return false;
     };

@@ -6,10 +6,13 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <unordered_map>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
 #include "src/world/navigation/NavigationObstacleGeometry.h"
+#include "src/world/navigation/NavigationObstacleGrid.h"
 
 namespace game::navigation::planner::assisted::lab
 {
@@ -216,6 +219,9 @@ glm::dvec3 deterministicPerpendicular(
         {0.0, 0.0, 1.0}
     );
 }
+
+// the grid of the optimize() call running on this thread (evaluate() is only ever called inside it)
+thread_local const world::navigation::NavigationObstacleGrid* tlsObstacleGrid = nullptr;
 
 struct Variables
 {
@@ -483,13 +489,12 @@ Evaluation evaluate(
                 {
                     out.length += ds;
 
-                    if (!world::navigation::
-                        segmentClearOfNavigationObstacles(
-                            previous,
-                            position,
-                            request.obstacles,
-                            request.hullRadiusMeters
-                        ))
+                    const bool clear =
+                        tlsObstacleGrid && tlsObstacleGrid->source() == &request.obstacles
+                            ? tlsObstacleGrid->segmentClear(previous, position)
+                            : world::navigation::segmentClearOfNavigationObstacles(
+                                  previous, position, request.obstacles, request.hullRadiusMeters);
+                    if (!clear)
                     {
                         maxViolation =
                             std::max(maxViolation, 1.0);
@@ -1799,6 +1804,14 @@ Result ContinuousAssistedPathOptimizer::optimize(
 )
 {
     Result result;
+    world::navigation::NavigationObstacleGrid grid;
+    grid.build(request.obstacles, request.hullRadiusMeters);
+    struct GridScope
+    {
+        const world::navigation::NavigationObstacleGrid* previous;
+        explicit GridScope(const world::navigation::NavigationObstacleGrid* g) : previous(tlsObstacleGrid) { tlsObstacleGrid = g; }
+        ~GridScope() { tlsObstacleGrid = previous; }
+    } gridScope(&grid);
 
     if (!finite3(request.start.positionMeters) ||
         !finite3(request.start.tangent) ||
@@ -1855,7 +1868,9 @@ Result ContinuousAssistedPathOptimizer::optimize(
                 bestDraftEval = std::move(e);
             }
         }
-        if (bestDraftEval.feasible)
+        // an infeasible draft is refined too (the pattern search pushes the violation down first - a draft grazing
+        // a block is usually a few steps from clear); only a refined result that is feasible takes the fast path
+        if (bestDraftEval.finite)
         {
             SearchResult refined = patternOptimize(request, bestDraft, request.draftRefineIterations,
                                                    &objectiveEvaluations, &candidateAudit);
@@ -1864,7 +1879,8 @@ Result ContinuousAssistedPathOptimizer::optimize(
                 refined.variables = bestDraft;
                 refined.evaluation = std::move(bestDraftEval);
             }
-            draftSearch = std::move(refined);
+            if (refined.evaluation.feasible)
+                draftSearch = std::move(refined);
         }
     }
     if (!draftSearch)

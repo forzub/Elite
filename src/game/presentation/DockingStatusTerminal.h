@@ -90,10 +90,15 @@ public:
     {
         Output out;
 
-        // Do not retain or type out old-language messages when UI locale
-        // changes. The next snapshot rebuilds visible lines in the new locale.
+        // The UI locale changed (author 2026-11-23: «терминал HUD при переключении языка начинает выводить текст
+        // заново. можно его просто заменить на перевод ... перевод можно делать мгновенно»): every line that came from
+        // a slot of the snapshot (phase, planner, a diagnostic, the dispatcher ...) is REPLACED by that slot's text in
+        // the new language, at once - typed lines stay typed; old events no longer in the snapshot keep their text
         if (m_initialized && snapshot.localeId != m_last.localeId)
-            reset();
+        {
+            translateInPlace(m_last, snapshot);
+            m_last = snapshot;
+        }
 
         // Visibility is a renderer concern. Keep history/state while hidden so
         // model-family/layout changes and planner activity continue as one
@@ -277,6 +282,55 @@ public:
     }
 
 private:
+    // old text -> new text by slot (the same field / the same index of a list) between two snapshots
+    void translateInPlace(const DockingTerminalSnapshot& from, const DockingTerminalSnapshot& to)
+    {
+        std::vector<std::pair<std::string, std::string>> map;
+        const auto add = [&](const std::string& a, const std::string& b) {
+            if (!a.empty() && !b.empty() && a != b)
+                map.emplace_back(a, b);
+        };
+        add(from.title, to.title);
+        add(from.phase, to.phase);
+        add(from.planner, to.planner);
+        add(from.safety, to.safety);
+        add(from.handoff, to.handoff);
+        add(from.ship, to.ship);
+        add(from.physics, to.physics);
+        add(from.activity, to.activity);
+        add(from.dispatcher, to.dispatcher);
+        add(from.pilotNotice, to.pilotNotice);
+        add(from.error, to.error);
+        add(from.biteNominalText, to.biteNominalText);
+        for (std::size_t i = 0; i < std::min(from.plannerDetails.size(), to.plannerDetails.size()); ++i)
+            add(from.plannerDetails[i], to.plannerDetails[i]);
+        for (std::size_t i = 0; i < std::min(from.diagnostics.size(), to.diagnostics.size()); ++i)
+        {
+            add(from.diagnostics[i].first, to.diagnostics[i].first);
+            add(from.recoveredPrefix + from.diagnostics[i].first, to.recoveredPrefix + to.diagnostics[i].first);
+        }
+        for (std::size_t i = 0; i < std::min(from.jumpLines.size(), to.jumpLines.size()); ++i)
+            add(from.jumpLines[i].first, to.jumpLines[i].first);
+        const auto translate = [&](std::string& text) {
+            for (const auto& [a, b] : map)
+                if (text == a)
+                {
+                    text = b;
+                    return;
+                }
+        };
+        for (auto& line : m_history)
+            translate(line.text);
+        for (std::size_t i = 0; i < m_pending.size(); ++i)
+        {
+            const std::size_t before = m_pending[i].first.size();
+            translate(m_pending[i].first);
+            // the line being typed: keep its progress in proportion (never past its new end)
+            if (i == 0 && before > 0)
+                m_revealedCharacters = std::min(m_pending[i].first.size(), m_revealedCharacters * m_pending[i].first.size() / before);
+        }
+    }
+
     static constexpr std::size_t MaxHistoryLines = 64;
     double m_lastReminderSeconds = 0.0;
     static constexpr std::size_t MaxVisibleLines = 14;

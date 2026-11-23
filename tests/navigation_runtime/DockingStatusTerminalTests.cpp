@@ -203,10 +203,17 @@ int main()
         // No old-language history may survive a language switch.
         snapshot.localeId = "ru";
         snapshot.title = "СТЫКОВКА";
-        out = terminal.update(snapshot, 24.0);
+        out = terminal.update(snapshot, 23.0);   // the same instant: nothing may be typed, the translation is just there
+        bool sawTranslatedTitle = false;
         for (const auto& line : out.lines)
+        {
             require(line.text.find("DOCKING") == std::string::npos,
                     "language switch retained English terminal history");
+            sawTranslatedTitle = sawTranslatedTitle || line.text == "СТЫКОВКА";
+        }
+        // the translation replaces the typed line at once - nothing is typed out again (author 2026-11-23)
+        require(sawTranslatedTitle, "language switch did not replace the line with its translation in place");
+        require(out.typedCharacters == 0, "language switch retyped the terminal");
 
         std::cout << "DOCKING STATUS TERMINAL: PASS\n";
         std::cout << " - DTO-only presentation state\n";

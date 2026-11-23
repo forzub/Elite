@@ -271,11 +271,33 @@ void ModelAssetGpu::countUpload(std::size_t verts) const
     ++m_uploadedMeshes;
 }
 
+const std::vector<elite::model_asset::AssetLight>* ModelAssetGpu::lights() const
+{
+    if (m_lightsReady)
+        return &m_lights;
+    if (m_worker.joinable())
+        return nullptr;   // the prewarm thread extracts them
+    m_lights = elite::model_asset::extractAssetLights(asset, index);
+    m_lightsReady = true;
+    return &m_lights;
+}
+
 void ModelAssetGpu::startPrewarm() const
 {
     if (m_worker.joinable())
         return;
     m_worker = std::thread([this] {
+        // the far lights first (a light scan of the emissive triangles: cheap, and the far view needs them soonest)
+        try
+        {
+            m_lights = elite::model_asset::extractAssetLights(asset, index);
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "[ModelAssetGpu] far lights of " << path << " failed: " << e.what() << std::endl;
+            m_lights.clear();
+        }
+        m_lightsReady = true;
         // coarse LODs first: the far view is complete soonest; LOD0 (the largest) last
         for (std::int32_t lod = static_cast<std::int32_t>(asset.renderLods.size()) - 1; lod >= 0 && !m_stop; --lod)
         {

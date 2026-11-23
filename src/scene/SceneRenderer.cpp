@@ -197,12 +197,16 @@ namespace
             // блымают»). It travels to the fill shader in the model matrix's unused [0][3] slot (fillModel); the
             // large_object_fill vertex shaders read it and clear the slot. 0 = not a facade carrier.
             float seed = 0.0f;
+            // the LOD cross-fade coverage (presentation DrawItem::fade): rides in the [1][3] slot, the fill shaders
+            // dither by it (0 = whole)
+            float fade = 0.0f;
         };
 
         glm::mat4 fillModel(const QueuedMeshDraw& draw)
         {
             glm::mat4 m = draw.model;
             m[0][3] = draw.seed;
+            m[1][3] = draw.fade;
             return m;
         }
 
@@ -524,6 +528,8 @@ namespace
                 const float reach = params.edgeFadeEnd + gpu->getEdgeRadius();
                 for (const QueuedMeshDraw* draw : groups[gpu])
                 {
+                    if (draw->fade < 0.0f)
+                        continue;   // the outgoing LOD of a cross-fade: its edges would double the incoming one's
                     const float scale = glm::length(glm::vec3(draw->model[0]));
                     if (glm::length(glm::vec3(draw->model[3]) - cameraLocalPosition) - (scale - 1.0f) * gpu->getEdgeRadius() <= reach)
                         near.push_back(draw);
@@ -3680,6 +3686,16 @@ if (policy.drawObjects)
                 view.planes = mp::frustumPlanes(proj * renderView * assetModel);
                 view.cullFrustum = true;
                 view.assetToWorldScale = ma.assetToLogicalScale;
+                // the LOD cross-fade (ELITE_LOD_FADE=0: instant switches, A/B)
+                // ELITE_LOD_FADE=band: the distance band (like the edges) instead of the 0.4 s time fade
+                static const int lodFade = [] {
+                    const char* v = std::getenv("ELITE_LOD_FADE");
+                    if (v && v[0] == '0') return 0;
+                    if (v && v[0] == 'b') return 2;
+                    return 1;
+                }();
+                view.nowSeconds = lodFade == 1 ? renderProfileNowMs() * 0.001 : -1.0;
+                view.fadeBand = lodFade == 2;
                 const auto key = (static_cast<std::uint64_t>(object.objectId) << 8) ^
                                  static_cast<std::uint64_t>(std::hash<std::string>{}(cameraName) & 0xff);
                 auto& selection = m_modelAssetSelections[key];
@@ -3704,6 +3720,10 @@ if (policy.drawObjects)
                         state.nodeMotion.assign(object.nodeModel.size(), glm::mat4(1.0f));
                     state.nodeMotion[n] = assetFromWorld * devPlacement * object.nodeModel[n] * ma.assetToLogical;
                 }
+                // the far lights: every light source of the object as a point, whatever LOD draws its geometry
+                if (render::geometry::FarLightsRenderer::enabled())
+                    if (const auto* lights = ma.lights())
+                        m_farLights.queue(&ma, *lights, renderView * assetModel);
                 const double selectStartMs = renderProfileNowMs();
                 const mp::Frame frame = mp::select(ma.asset, ma.index, state, view, selection);
                 const double selectMs = renderProfileNowMs() - selectStartMs;
@@ -3719,6 +3739,7 @@ if (policy.drawObjects)
                     QueuedMeshDraw qd {gpu, proj * renderView * model, model};
                     const glm::vec3 at = glm::vec3(d.assetTransform[3]);   // stable: the node in its asset frame
                     qd.seed = glm::fract(glm::dot(at, glm::vec3(0.0131f, 0.0173f, 0.0197f)) + 0.371f);
+                    qd.fade = d.fade;
                     queuedModelAssetStationDraws.push_back(qd);
                     m_lastStats.partsDrawn++;
                 }
@@ -4267,6 +4288,14 @@ if (policy.drawObjects)
         }
 
         if (cameraName == "mainCam") core::hitch::mark("r_ma_draw");
+        {
+            // the far lights over the drawn scene (depth-tested, additive); the main pass projection's near plane
+            GLint vp[4] = {0, 0, 1, 1};
+            glGetIntegerv(GL_VIEWPORT, vp);
+            const float focal = 0.5f * proj[1][1] * static_cast<float>(std::max(1, vp[3]));
+            const float nearPlane = std::abs(proj[2][2] + 1.0f) > 1.0e-6f ? proj[3][2] / (proj[2][2] - 1.0f) : 1.0f;
+            m_farLights.flush(proj, focal, std::max(0.01f, nearPlane), static_cast<float>(std::fmod(renderProfileNowMs() * 0.001, 10000.0)));
+        }
         if (!queuedPreparedAsteroidDraws.empty())
         {
             drawQueuedMeshPasses(

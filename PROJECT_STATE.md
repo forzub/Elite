@@ -8169,3 +8169,27 @@ start-up hitches (render), trade step 16 part 3 live.
     42 m (centres), the OLD point-mass reflex COLLIDED (159 m/s), the program reflex passed 260 m; from the right - 76 /
     141 / 177 m. Programs cost 2.9-3.2 ms per reflex tick (only while a threat is real). Earlier runs v1-v3 invalid
     (a lock at 1500 m missed by the route's turns; a stale exe; a lead with the hub-orbit world velocity).
+  * 2026-11-23 HUB CITY LOD + FAR LIGHTS (author: the LOD pop «был куб, раз - дом с горящими окнами», mostly the lights;
+    «огни видны очень далеко ... на 30 км»; then «сначала исправляем LOD по всем моделям и огням, потом модели кораблей»):
+    - FAR LIGHTS (src/model_asset/ModelAssetLights, src/render/geometry/FarLightsRenderer, shaders mesh/far_lights.*):
+      every asset's light sources read from its own LOD0 geometry at load (emissive materials - windows, beacons,
+      floods, flares, nav - binned in 12 m cells; window facades in 24 m cells at their lit share), drawn as points with
+      a physical brightness power / d^2 (min 1.5 px), depth-tested and pulled towards the camera by the depth quantum,
+      beacons blink, a point steps aside once its own glowing geometry is 2-5 px. Any asset (cities, stations, ships).
+      Earth city: 204 972 lights. ELITE_FAR_LIGHTS=0 / _GAIN.
+    - PER-BUILDING PROXIES (HubCityAssembly): one box per module folder in its own frame, one proxy node per building -
+      the facade shader draws the same window grid / seed as on the building (the merged group box in asset space
+      changed every window at the switch). ELITE_CITY_PROXY_MERGED=1 the old.
+    - LOD CROSS-FADE (ModelAssetPresentation select + large_object_fill shaders): a component LOD switch and a group
+      collapse / refine draw both representations as complementary 4x4 ordered dithers - by TIME (0.4 s, default) or
+      by a screen-error BAND (ELITE_LOD_FADE=band, the edges' way); =0 instant. Outgoing LODs skip the edge pass.
+    - INTERMEDIATE LODs (tools/models/lod_prune.py in build_equipment_models.py, hub modules): LOD1 keeps at most 50 %
+      of LOD0's small pieces (< 12 % of the asset diagonal), LOD2 at most 25 %, glowing pieces never pruned; the city
+      takes all 4 module LODs (was 0/2/3). hubb_works 170 -> 131 -> 93 -> 56 KB. All 255 previously packaged hub
+      modules repackaged (36 Earth + 219).
+    MEASURED (no vsync, relwithdebinfo, autopilot into the Earth city to B4-11, 2 runs each): approach p50 8.9-11.8 ms
+    old vs 9.1-11.1 new; in the city at the pad 23.4-25.5 vs 23.9-26.8 ms (~+1 ms); loading 2.7-3.3 s both (one
+    183 s loading stall in a run during background packaging did not repeat). LIVE frames: the old city dark at
+    distance, the new one with street-lamp chains, roof lights and beacons. The time vs band fade could not be told
+    apart by frame bursts (camera motion dominates the frame difference; captures drop to ~half rate) - the author
+    to look live; time is the default.

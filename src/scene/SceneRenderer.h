@@ -1,4 +1,5 @@
 #pragma once
+#include "src/render/geometry/FarLightsRenderer.h"
 #include <glm/glm.hpp>
 #include "src/render/SceneStyle.h"
 #include <memory>
@@ -324,6 +325,8 @@ private:
     render::celestial_flight::CelestialFlightRenderer m_celestialFlight;
     // Per object (and camera) presentation hysteresis for ModelAsset objects.
     std::unordered_map<std::uint64_t, elite::model_asset::presentation::Selection> m_modelAssetSelections;
+    // far lights of the drawn model assets (render/geometry/FarLightsRenderer.h)
+    render::geometry::FarLightsRenderer m_farLights;
     double m_modelAssetLogTime = -1.0;
     GpuPassTimer m_modelAssetGpuTimer;
     render::celestial_flight::FlightFrameBuilder m_celestialFrameBuilder;

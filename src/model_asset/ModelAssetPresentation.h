@@ -129,6 +129,15 @@ struct View
     std::array<glm::vec4, 6> planes {};    // asset-space frustum planes (ax+by+cz+d >= 0 inside)
     bool cullFrustum = false;
     float assetToWorldScale = 1.0f;        // extra uniform scale applied by the object transform
+    // LOD CROSS-FADE (author 2026-11-23: the LOD pop of the hub city): a switch draws the old and the new LOD together
+    // for fadeSeconds, as complementary screen-door dithers (DrawItem::fade). nowSeconds < 0: no fade (instant).
+    double nowSeconds = -1.0;
+    float fadeSeconds = 0.4f;
+    // the other variant (author 2026-11-23, «как у нас сделаны рёбра»): a BAND in screen error instead of time - while
+    // the coarser LOD's error is within [coarsen, coarsen x bandFactor] both are drawn, its share growing as the error
+    // falls to the switch (the same for a group's proxy against its components)
+    bool fadeBand = false;
+    float bandFactor = 1.6f;
 };
 
 std::array<glm::vec4, 6> frustumPlanes(const glm::mat4& viewProjFromAsset);
@@ -139,6 +148,11 @@ struct Selection
     Representation representation = Representation::Culled;
     std::vector<std::int32_t> componentLod;  // chosen LOD index, NoIndex = culled
     std::vector<std::uint8_t> groupCollapsed;
+    // the cross-fade: the LOD drawn before the last switch, the switch time (per component / group)
+    std::vector<std::int32_t> fadeFromLod;
+    std::vector<double> fadeStart;
+    std::vector<std::int32_t> lastDrawnLod;   // survives a collapse (the components fade out under the proxy)
+    std::vector<double> groupFadeStart;
 };
 
 struct DrawItem
@@ -148,6 +162,9 @@ struct DrawItem
     std::int32_t component = NoIndex;
     bool interior = false;
     glm::mat4 assetTransform {1.0f};
+    // the cross-fade coverage: 0 = drawn whole; c in (0, 1] = the INCOMING LOD (pixels with dither < c); -c = the
+    // OUTGOING one (pixels with dither >= c) - together they cover every pixel once
+    float fade = 0.0f;
 };
 
 struct ComponentReport

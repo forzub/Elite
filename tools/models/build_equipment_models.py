@@ -24,6 +24,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import eqlib  # noqa: E402
+import lod_prune  # noqa: E402
 import pads  # noqa: E402
 import source_layout  # noqa: E402
 import units  # noqa: E402
@@ -98,6 +99,14 @@ def build(only=None):
                 parts = fn(max(0, lod - 1))
             finally:
                 eqlib._CLOSE[0] = False
+            # hub modules: the intermediate LODs drop small details - LOD1 keeps at most 50 % of LOD0's small pieces,
+            # LOD2 at most 25 % (author 2026-11-23; tools/models/lod_prune.py)
+            if ROOTS.get(asset) == "hub":
+                if lod == 0:
+                    diag0 = lod_prune.asset_diag(parts)
+                    small0 = lod_prune.small_count(parts, diag0)
+                elif lod in (1, 2) and small0 > 0:
+                    parts, dropped = lod_prune.prune(parts, small0 * (0.5 if lod == 1 else 0.25), diag0)
             if lod == 0:
                 pid, kind = pads.pad_part(parts)
                 if pid:

@@ -17,13 +17,16 @@ out vec3 vViewPos;
 out vec3 vObjectPos;
 out vec3 vObjectNormal;  // the mesh's own normal (facade windows run along the module's axes)
 flat out float vInstSeed;     // per instance (its position): which windows of this building are lit
+flat out float vFade;         // the LOD cross-fade coverage ([1][3] slot)
 
 void main()
 {
     // the facade seed rides in the unused [0][3] slot (SceneRenderer fillModel): read it, then a clean affine matrix
     vInstSeed = instanceModel[0].w;
+    vFade = instanceModel[1].w;
     mat4 M = instanceModel;
     M[0].w = 0.0;
+    M[1].w = 0.0;
     vec4 worldPos = M * vec4(position, 1.0);
     vWorldPos = worldPos.xyz;
     gl_Position = VP * worldPos;

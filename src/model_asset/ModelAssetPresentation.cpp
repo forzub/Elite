@@ -320,6 +320,10 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
     {
         selection.componentLod.assign(index.components.size(), NoIndex);
         selection.groupCollapsed.assign(index.groups.size(), 0);
+        selection.fadeFromLod.assign(index.components.size(), NoIndex);
+        selection.fadeStart.assign(index.components.size(), -1.0e30);
+        selection.lastDrawnLod.assign(index.components.size(), NoIndex);
+        selection.groupFadeStart.assign(index.groups.size(), -1.0e30);
     }
     // Bounds where moving parts (joints, spinning modules) are NOW: the LOD,
     // culling and HLOD follow the relative camera <-> part position, whichever
@@ -354,6 +358,33 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
     if (rep <= Representation::Point || index.componentLods.empty())
         return frame;
 
+    float emitFade = 0.0f;   // the cross-fade coverage of the next emits
+    const bool band = view.fadeBand && view.bandFactor > 1.0f;
+    // the band share of the coarser representation for its error e (px): 1 at the switch (coarsen), 0 at the band's end
+    const auto bandShare = [&](float e, float coarsen) {
+        const float lo = coarsen, hi = coarsen * view.bandFactor;
+        if (!(e < hi)) return 0.0f;
+        return std::clamp((hi - e) / (hi - lo), 0.0f, 1.0f);
+    };
+    const bool fading = !band && view.nowSeconds >= 0.0 && view.fadeSeconds > 0.0f &&
+                        selection.fadeStart.size() == index.components.size() &&
+                        selection.groupFadeStart.size() == index.groups.size();
+    // the incoming coverage of a fade started at `start` (1 = done)
+    const auto coverage = [&](double start) {
+        if (!fading) return 1.0f;
+        const double c = (view.nowSeconds - start) / static_cast<double>(view.fadeSeconds);
+        return c >= 1.0 ? 1.0f : static_cast<float>(std::max(0.02, c));
+    };
+    // the group of each component (its group refining out of the proxy fades it in)
+    std::vector<std::int32_t> groupOfComponent;
+    if (fading || band)
+    {
+        groupOfComponent.assign(index.components.size(), NoIndex);
+        for (std::size_t gi = 0; gi < index.groups.size(); ++gi)
+            for (const std::int32_t c : index.groups[gi].components)
+                if (c >= 0 && static_cast<std::size_t>(c) < groupOfComponent.size())
+                    groupOfComponent[static_cast<std::size_t>(c)] = static_cast<std::int32_t>(gi);
+    }
     const auto emit = [&](std::int32_t lod, std::int32_t renderNode, std::int32_t component, bool interior) {
         const RenderNode& rn = asset.renderLods[static_cast<std::size_t>(lod)].nodes[static_cast<std::size_t>(renderNode)];
         if (!renderNodeActive(asset, state, rn)) return;
@@ -364,6 +395,7 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
         item.component = component;
         item.interior = interior;
         item.assetTransform = motionFor(state, rn.semanticNodeIndex) * info.assetTransform;
+        item.fade = emitFade;
         frame.draws.push_back(item);
         frame.triangles += info.triangles;
         if (interior) ++frame.interiorDraws;
@@ -465,6 +497,11 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
 
     // ---- module HLOD collapse (Component representation only) ----
     std::vector<std::uint8_t> collapsedComponent(index.components.size(), 0);
+    std::vector<float> groupBandShare(index.groups.size(), 0.0f);   // the band: the proxy's share over the components
+    const auto groupOfBand = [&](std::size_t ci) {
+        if (!band || ci >= groupOfComponent.size() || groupOfComponent[ci] < 0) return 0.0f;
+        return groupBandShare[static_cast<std::size_t>(groupOfComponent[ci])];
+    };
     std::vector<std::uint8_t> offScreenComponent(index.components.size(), 0);
     for (std::size_t gi = 0; gi < index.groups.size(); ++gi)
     {
@@ -503,19 +540,67 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
             else
                 collapse = selection.groupCollapsed[gi] ? px < t.moduleCollapsePx * h : px < t.moduleCollapsePx / h;
         }
+        if (fading && !fresh && (selection.groupCollapsed[gi] != 0) != collapse)
+            selection.groupFadeStart[gi] = view.nowSeconds;
         selection.groupCollapsed[gi] = collapse ? 1 : 0;
+        const float gc = fading ? coverage(selection.groupFadeStart[gi]) : 1.0f;
         if (!collapse)
         {
+            // the band: not collapsed yet but close to it - the proxy comes in over the components
+            if (band && index.moduleProxyErrorM > 0.0f && !groupHasHidden && !g.proxyRenderNodes.empty() &&
+                aabbInFrustum(view, gMin, gMax))
+            {
+                const float px = projectedPx(view, gMin, gMax);
+                const float diag = std::max(glm::length(gMax - gMin), 1.0f);
+                const float share = bandShare(px * index.moduleProxyErrorM / diag, t.sseCoarsenPx);
+                if (share > 0.0f)
+                {
+                    groupBandShare[gi] = share;
+                    emitFade = std::max(0.02f, share);
+                    for (const std::int32_t rn : g.proxyRenderNodes)
+                        emit(index.moduleProxyLod, rn,
+                             asset.renderLods[static_cast<std::size_t>(index.moduleProxyLod)].nodes[static_cast<std::size_t>(rn)].semanticNodeIndex,
+                             false);
+                    emitFade = 0.0f;
+                }
+            }
             if (!aabbInFrustum(view, gMin, gMax))
                 for (const std::int32_t c : g.components) offScreenComponent[static_cast<std::size_t>(c)] = 1;
+            else if (gc < 1.0f)
+            {
+                // refining: the proxy fades out over the incoming components
+                emitFade = -gc;
+                for (const std::int32_t rn : g.proxyRenderNodes)
+                    emit(index.moduleProxyLod, rn,
+                         asset.renderLods[static_cast<std::size_t>(index.moduleProxyLod)].nodes[static_cast<std::size_t>(rn)].semanticNodeIndex,
+                         false);
+                emitFade = 0.0f;
+            }
             continue;
         }
         ++frame.collapsedGroups;
         if (aabbInFrustum(view, gMin, gMax))
+        {
+            emitFade = gc < 1.0f ? gc : 0.0f;
             for (const std::int32_t rn : g.proxyRenderNodes)
                 emit(index.moduleProxyLod, rn,
                      asset.renderLods[static_cast<std::size_t>(index.moduleProxyLod)].nodes[static_cast<std::size_t>(rn)].semanticNodeIndex,
                      false);
+            // collapsing: the components fade out under the incoming proxy (their last drawn LOD)
+            if (gc < 1.0f)
+            {
+                emitFade = -gc;
+                for (const std::int32_t c : g.components)
+                {
+                    const auto ci = static_cast<std::size_t>(c);
+                    const std::int32_t last = selection.lastDrawnLod[ci];
+                    if (last == NoIndex || nodeHidden(state, index.components[ci].node)) continue;
+                    for (const std::int32_t rn : index.components[ci].renderNodes[static_cast<std::size_t>(last)])
+                        emit(last, rn, c, index.components[ci].interior);
+                }
+            }
+            emitFade = 0.0f;
+        }
         for (const std::int32_t c : g.components) collapsedComponent[static_cast<std::size_t>(c)] = 1;
     }
 
@@ -582,7 +667,15 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
         while (k > 0 && errorPx(k) > refine) --k;
         while (k + 1 < chainLods.size() && errorPx(k + 1) <= t.sseCoarsenPx) ++k;
         const std::int32_t lod = chainLods[k];
+        // a LOD switch of a visible component starts its cross-fade
+        if (fading && !fresh && wasVisible && selection.componentLod[ci] != lod)
+        {
+            selection.fadeFromLod[ci] = selection.componentLod[ci];
+            selection.fadeStart[ci] = view.nowSeconds;
+        }
         selection.componentLod[ci] = lod;
+        if (fading)
+            selection.lastDrawnLod[ci] = lod;
         report.lod = lod;
         report.errorPx = errorPx(k);
         if (c.renderNodes[static_cast<std::size_t>(lod)].empty())
@@ -592,8 +685,41 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
             ++frame.culledComponents;
         }
         const std::uint64_t trisBefore = frame.triangles;
+        // the component's own cross-fade, and the one of its group refining out of the proxy
+        float cc = fading ? coverage(selection.fadeStart[ci]) : 1.0f;
+        if (fading && groupOfComponent[ci] >= 0)
+            cc = std::min(cc, coverage(selection.groupFadeStart[static_cast<std::size_t>(groupOfComponent[ci])]));
+        emitFade = cc < 1.0f ? cc : 0.0f;
+        if (band)
+        {
+            // the band: the coarser LOD (or the group's proxy) shares the pixels as its error nears the switch
+            const float proxyShare = groupOfBand(ci);
+            float coarseShare = 0.0f;
+            if (k + 1 < chainLods.size())
+                coarseShare = bandShare(errorPx(k + 1), t.sseCoarsenPx);
+            const float outShare = std::max(proxyShare, coarseShare);
+            emitFade = outShare > 0.0f ? -std::max(0.02f, outShare) : 0.0f;
+            if (coarseShare > 0.0f && coarseShare >= proxyShare)
+            {
+                const std::int32_t coarse = chainLods[k + 1];
+                const float keep = emitFade;
+                emitFade = std::max(0.02f, coarseShare);
+                for (const std::int32_t rn : c.renderNodes[static_cast<std::size_t>(coarse)])
+                    emit(coarse, rn, static_cast<std::int32_t>(ci), c.interior);
+                emitFade = keep;
+            }
+        }
         for (const std::int32_t rn : c.renderNodes[static_cast<std::size_t>(lod)])
             emit(lod, rn, static_cast<std::int32_t>(ci), c.interior);
+        const std::int32_t prev = fading ? selection.fadeFromLod[ci] : NoIndex;
+        const float pc = fading ? coverage(selection.fadeStart[ci]) : 1.0f;
+        if (pc < 1.0f && prev != NoIndex && prev != lod)
+        {
+            emitFade = -pc;
+            for (const std::int32_t rn : c.renderNodes[static_cast<std::size_t>(prev)])
+                emit(prev, rn, static_cast<std::int32_t>(ci), c.interior);
+        }
+        emitFade = 0.0f;
         report.triangles = static_cast<std::uint32_t>(frame.triangles - trisBefore);
         frame.components.push_back(report);
     }

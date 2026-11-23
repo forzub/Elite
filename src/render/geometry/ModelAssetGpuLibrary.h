@@ -13,6 +13,7 @@
 
 #include "src/game/geometry/MeshGPU.h"
 #include "src/model_asset/ModelAsset.h"
+#include "src/model_asset/ModelAssetLights.h"
 #include "src/model_asset/ModelAssetPresentation.h"
 #include "src/world/types/ObjectType.h"
 
@@ -49,6 +50,9 @@ struct ModelAssetGpu
     // before the presentation selects them. A mesh needed earlier is finished synchronously.
     void startPrewarm() const;
     void pumpPrewarm(double budgetMs) const;
+    // the far lights (ModelAssetLights.h), asset space: extracted by the prewarm thread first (or here, at once, for
+    // an asset without a prewarm); nullptr until ready
+    const std::vector<elite::model_asset::AssetLight>* lights() const;
     std::size_t uploadedTriangles() const { return m_uploadedTriangles; }
     std::size_t uploadedBytes() const { return m_uploadedBytes; }
     std::size_t uploadedMeshes() const { return m_uploadedMeshes; }
@@ -74,6 +78,8 @@ private:
     mutable std::size_t m_uploadedTriangles = 0;
     mutable std::size_t m_uploadedBytes = 0;
     mutable std::size_t m_uploadedMeshes = 0;
+    mutable std::vector<elite::model_asset::AssetLight> m_lights;
+    mutable std::atomic<bool> m_lightsReady {false};
 };
 
 class ModelAssetGpuLibrary

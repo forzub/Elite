@@ -109,6 +109,7 @@ add_library(EliteModelAsset STATIC
     src/model_asset/ModelAssetBuild.cpp
     src/model_asset/ModelAssetLodError.cpp
     src/model_asset/ModelAssetPresentation.cpp
+    src/model_asset/ModelAssetLights.cpp
     src/model_asset/RuntimeMeshNormalizer.cpp
     src/model_asset/HubCityAssembly.cpp
     src/model_asset/HubExpansion.cpp
@@ -809,6 +810,7 @@ add_executable(EliteGame
     src/render/ship/ShipMeshRenderer.cpp
     src/render/geometry/AssemblyGpuLibrary.cpp
     src/render/geometry/ModelAssetGpuLibrary.cpp
+    src/render/geometry/FarLightsRenderer.cpp
     
     # src/game/geometry/MeshLibrary.cpp
     

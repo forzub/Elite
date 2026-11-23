@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -32,7 +33,7 @@ namespace
 {
 using json = nlohmann::json;
 
-constexpr int CityLods = 3;   // component LODs 0..2 from the modules; LOD 3 = the module proxies (node groups)
+constexpr int CityLods = 4;   // component LODs 0..3 from the modules (1, 2: the pruned intermediates, author 2026-11-23); LOD 4 = the module proxies
 
 glm::mat3 rotationXYZ(const glm::vec3& deg)
 {
@@ -159,7 +160,7 @@ std::shared_ptr<const ModuleKit> loadModule(const std::string& moduleRoot, const
         if (asset.renderLods.empty()) break;
         // a module package: LOD0 = the source LOD0, LOD1 = its copy (role proxy), LOD2 / LOD3 = the source LOD1 / LOD2 -
         // the city LOD l takes the module LOD {0, 2, 3}[l] (what the per-hub packages had), the last one when missing
-        static const std::size_t moduleLodOf[CityLods] = {0, 2, 3};
+        static const std::size_t moduleLodOf[CityLods] = {0, 1, 2, 3};
         const std::size_t src = std::min<std::size_t>(moduleLodOf[l], asset.renderLods.size() - 1);
         const RenderLod& lod = asset.renderLods[src];
         bool allTwoSided = !lod.nodes.empty();
@@ -343,7 +344,25 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
     const auto& jn = doc.at("nodes");
     std::vector<MeshLod> proxies(groups.size());
     std::vector<std::int32_t> proxyRep(groups.size(), NoIndex);
-    bool firstLod[CityLods] = {true, true, true};
+    // PER-BUILDING proxies (author 2026-11-23, the LOD pop «был куб, раз - дом с горящими окнами»): one box mesh per
+    // module folder in the module's own frame, one proxy render node per building at its place - the facade shader
+    // then draws the SAME window grid (module-local coordinates, the node's seed) on the box as on the building;
+    // the merged per-group box (asset space, one seed) changed every window at the switch. ELITE_CITY_PROXY_MERGED=1:
+    // the old merged boxes (A/B).
+    static const bool mergedProxies = [] {
+        const char* v = std::getenv("ELITE_CITY_PROXY_MERGED");
+        return v && v[0] == '1';
+    }();
+    std::vector<std::int32_t> folderProxyGeo(kits.size(), NoIndex);
+    std::vector<MeshLod> folderProxyMesh(kits.size());
+    struct ProxyPlace
+    {
+        std::int32_t mi;
+        std::int32_t node;
+        glm::vec3 pos, rot;
+    };
+    std::vector<ProxyPlace> proxyPlaces;
+    bool firstLod[CityLods] = {true, true, true, true};
     bool first = true;
     for (std::size_t i = 0; i < jn.size(); ++i)
     {
@@ -422,8 +441,17 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
             }
             if (groups[gi].get<std::string>() != "core")
             {
-                appendBox(proxies[gi], lo, hi, T, proxyMat[mi]);
-                if (proxyRep[gi] == NoIndex) proxyRep[gi] = nodeIndex;
+                if (mergedProxies)
+                {
+                    appendBox(proxies[gi], lo, hi, T, proxyMat[mi]);
+                    if (proxyRep[gi] == NoIndex) proxyRep[gi] = nodeIndex;
+                }
+                else
+                {
+                    if (folderProxyMesh[mi].vertices.empty())
+                        appendBox(folderProxyMesh[mi], lo, hi, glm::mat4(1.0f), proxyMat[mi]);
+                    proxyPlaces.push_back({static_cast<std::int32_t>(mi), nodeIndex, pos, rot});
+                }
             }
         }
     }
@@ -457,6 +485,36 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
         rn.geometryIndex = static_cast<std::int32_t>(proxyLod.geometries.size());
         rn.semanticNodeIndex = proxyRep[g];
         proxyLod.geometries.push_back(std::move(geo));
+        proxyLod.nodes.push_back(std::move(rn));
+    }
+    for (const auto& pp : proxyPlaces)
+    {
+        const auto mi = static_cast<std::size_t>(pp.mi);
+        if (folderProxyGeo[mi] == NoIndex)
+        {
+            recomputeBounds(folderProxyMesh[mi]);
+            RenderGeometryDefinition geo;
+            geo.id = "proxy." + kits[mi]->folder;
+            geo.mesh = folderProxyMesh[mi];
+            folderProxyGeo[mi] = static_cast<std::int32_t>(proxyLod.geometries.size());
+            proxyLod.geometries.push_back(std::move(geo));
+        }
+        const MeshLod& gm = proxyLod.geometries[static_cast<std::size_t>(folderProxyGeo[mi])].mesh;
+        const glm::mat3 R = rotationXYZ(pp.rot);
+        for (int c = 0; c < 8; ++c)
+        {
+            const glm::vec3 p = R * glm::vec3((c & 1) ? gm.maxBounds.x : gm.minBounds.x, (c & 2) ? gm.maxBounds.y : gm.minBounds.y,
+                                              (c & 4) ? gm.maxBounds.z : gm.minBounds.z) + pp.pos;
+            if (proxyFirst) { proxyLod.minBounds = proxyLod.maxBounds = p; proxyFirst = false; }
+            proxyLod.minBounds = glm::min(proxyLod.minBounds, p);
+            proxyLod.maxBounds = glm::max(proxyLod.maxBounds, p);
+        }
+        RenderNode rn;
+        rn.id = "proxy." + out.nodes[static_cast<std::size_t>(pp.node)].id;
+        rn.geometryIndex = folderProxyGeo[mi];
+        rn.semanticNodeIndex = pp.node;
+        rn.localPosition = pp.pos;
+        rn.localRotationDeg = pp.rot;
         proxyLod.nodes.push_back(std::move(rn));
     }
     out.renderLods.push_back(std::move(proxyLod));

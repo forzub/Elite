@@ -16,13 +16,16 @@ out vec3 vViewPos;
 out vec3 vObjectPos;
 out vec3 vObjectNormal;
 flat out float vInstSeed;
+flat out float vFade;     // the LOD cross-fade coverage ([1][3] slot)
 
 void main()
 {
     // the facade seed rides in the unused [0][3] slot of M (SceneRenderer fillModel); MVP is built from the clean model
     vInstSeed = M[0].w;
+    vFade = M[1].w;
     mat4 Mc = M;
     Mc[0].w = 0.0;
+    Mc[1].w = 0.0;
     vec4 worldPos = Mc * vec4(position, 1.0);
     vWorldPos = worldPos.xyz;
     vViewPos = (MVP * vec4(position, 1.0)).xyz;

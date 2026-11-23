@@ -6,6 +6,7 @@ in vec3 vWorldPos;
 in vec3 vViewPos;
 in vec3 vObjectPos;
 in vec3 vObjectNormal;
+flat in float vFade;   // the LOD cross-fade: c > 0 incoming (dither < c), -c outgoing (dither >= c)
 flat in float vInstSeed;   // flat: an interpolated constant drifts in its last bits and the hashes amplify it (windows broke into flickering slivers)
 out vec4 FragColor;
 
@@ -107,6 +108,18 @@ vec3 eliteClassicHull(vec3 n, vec3 l)
 
 void main()
 {
+    // LOD CROSS-FADE (author 2026-11-23, the hub city's LOD pop): the old and the new LOD share the pixels by a 4x4
+    // ordered dither for the fade's 0.4 s - each pixel drawn by exactly one of them
+    if (vFade != 0.0)
+    {
+        ivec2 q = ivec2(gl_FragCoord.xy) & 3;
+        int bi = q.x + 4 * q.y;
+        float bayer[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
+        float d = (bayer[bi] + 0.5) / 16.0;
+        if (vFade > 0.0 ? d >= vFade : d < -vFade)
+            discard;
+    }
+
     // Emissive faces (window lights, beacons, floodlights): ModelAssetGpuLibrary passes their glow colour + 2 as the
     // face colour. Unlit and bright in every style (Classic: points of light on the black structure).
     float colourMax = max(vColor.r, max(vColor.g, vColor.b));

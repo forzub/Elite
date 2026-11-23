@@ -771,6 +771,34 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
     // the cockpit radio: its notices to the pilot, its display line (bottom left, over the panels)
     {
         auto& radio = audio::CockpitRadio::instance();
+        // the reception, twice a second: the best transmitter among the hubs / beacons of this system (radio_regions.json)
+        // - full signal within its reach, then fading (log of the distance) into noise at noiseFactor x the reach
+        // (author 2026-11-23: «чем дальше от маяка - тем сильнее шум. как в реальности»)
+        static double receptionAt = -1.0;
+        if (m_client && radio.on() && radio.source() == audio::CockpitRadio::Source::Radio && glfwGetTime() - receptionAt > 0.5)
+        {
+            receptionAt = glfwGetTime();
+            const glm::dvec3 me = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
+            std::string best;
+            double bestQ = 0.0;
+            for (const auto& [oid, object] : m_client->world().objects())
+            {
+                if (!object.hubAttachment.valid || object.systemId != playerShip.transform.motion.systemId)
+                    continue;
+                const auto* tx = radio.transmitter(object.hubAttachment.hubId);
+                if (!tx || tx->polity.empty())
+                    continue;
+                const double reach = radio.rangeMeters(tx->beacon);
+                const double d = glm::length(world::coordinates::fullMeters(object.renderWorldPosition) - me);
+                const double q = d <= reach ? 1.0 : std::max(0.0, 1.0 - std::log10(d / reach) / std::log10(radio.noiseFactor()));
+                if (q > bestQ + 1.0e-9)
+                {
+                    bestQ = q;
+                    best = tx->polity;
+                }
+            }
+            radio.setReception(bestQ > 0.0 ? best : std::string(), bestQ);
+        }
         radio.update();
         if (std::string n = radio.takeNotice(); !n.empty())
             m_pilotNotice = n;

@@ -11,6 +11,7 @@
 #include <mutex>
 #include <random>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -228,11 +229,28 @@ struct CockpitRadio::Impl
     ma_sound fileSound {};
     bool fileSoundReady = false;
 
-    // the radio
-    std::vector<Station> stations;
+    // the radio: the region (the polity whose transmitter is heard best) and its stations
+    struct PolityRadio
+    {
+        std::string name;
+        std::vector<std::string> countries;
+        std::string tag;
+    };
+    std::unordered_map<std::string, PolityRadio> polities;
+    std::unordered_map<std::string, CockpitRadio::Transmitter> transmitters;
+    double hubRange = 3.0e7, beaconRange = 3.0e8, noiseFactor = 1000.0;
+    std::string region;                     // the polity on air now ("" = nothing heard)
+    double quality = 0.0;                   // 0..1
+    std::unordered_map<std::string, std::vector<Station>> catalogues;   // per polity
+    std::unordered_map<std::string, std::size_t> stationOf;             // the station picked per polity
+    std::vector<Station> stations;          // the region's list (a copy, under the mutex)
     std::size_t station = 0;
-    std::atomic<int> catalogueState {0};   // 0 not asked, 1 fetching, 2 ready, 3 failed
+    std::atomic<int> catalogueState {0};   // 0 not asked, 1 fetching, 2 ready, 3 failed (for `fetching`)
+    std::string fetching;                   // the polity being fetched
     std::thread catalogueThread;
+    ma_noise noise {};
+    ma_sound noiseSound {};
+    bool noiseReady = false;
     std::thread streamThread;
     std::atomic<bool> streamStop {false};
     std::atomic<int> streamState {0};      // 0 off, 1 connecting, 2 playing, 3 no signal
@@ -245,6 +263,41 @@ struct CockpitRadio::Impl
     ma_engine* engine() const { return static_cast<ma_engine*>(AudioEngine::instance().nativeEngine()); }
 
     // ------------------------------------------------------------ settings
+    void loadRegions()
+    {
+        std::ifstream in("assets/data/audio/radio_regions.json");
+        if (!in)
+            return;
+        try
+        {
+            nlohmann::json j;
+            in >> j;
+            if (j.contains("ranges_m"))
+            {
+                hubRange = j["ranges_m"].value("hub", hubRange);
+                beaconRange = j["ranges_m"].value("beacon", beaconRange);
+            }
+            noiseFactor = j.value("noise_factor", noiseFactor);
+            const nlohmann::json politiesJson = j.value("polities", nlohmann::json::object());
+            for (const auto& [id, p] : politiesJson.items())
+            {
+                PolityRadio r;
+                r.name = p.value("name", id);
+                r.countries = p.value("countries", std::vector<std::string>());
+                r.tag = p.value("tag", std::string());
+                polities[id] = std::move(r);
+            }
+            const nlohmann::json transmittersJson = j.value("transmitters", nlohmann::json::object());
+            for (const auto& [id, t] : transmittersJson.items())
+                transmitters[id] = {t.value("polity", std::string()), t.value("kind", std::string()) == "beacon"};
+            std::cerr << "[Radio] regions: " << polities.size() << " polities, " << transmitters.size() << " transmitters" << std::endl;
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "[Radio] radio_regions.json: " << e.what() << std::endl;
+        }
+    }
+
     void loadSettings()
     {
         settingsPath = ui::platform::ClientPreferencesStore::defaultPath().parent_path() / "radio.json";
@@ -350,22 +403,33 @@ struct CockpitRadio::Impl
     }
 
     // ------------------------------------------------------------ the radio
-    void fetchCatalogue()
+    void fetchCatalogue(const std::string& polity)
     {
-        if (catalogueState.load() == 1 || catalogueState.load() == 2)
-            return;
-        catalogueState = 1;
+        if (catalogueState.load() == 1)
+            return;   // one fetch at a time; update() asks again when it is done
         if (catalogueThread.joinable())
             catalogueThread.join();
-        catalogueThread = std::thread([this] {
+        const auto pit = polities.find(polity);
+        if (pit == polities.end() || (pit->second.countries.empty() && pit->second.tag.empty()))
+        {
+            catalogues[polity] = {};   // a polity with no radio (the Philomorphosis zone): only noise
+            return;
+        }
+        catalogueState = 1;
+        fetching = polity;
+        const PolityRadio radio = pit->second;
+        const fs::path cache = settingsPath.parent_path() / ("radio_stations_" + polity + ".json");
+        catalogueThread = std::thread([this, polity, radio, cache] {
             std::vector<Station> list;
-            const fs::path cache = settingsPath.parent_path() / "radio_stations.json";
-            const auto parse = [&](const std::string& body) {
+            const auto parse = [&](const std::string& body, std::size_t limit) {
                 try
                 {
                     const auto j = nlohmann::json::parse(body);
+                    std::size_t added = 0;
                     for (const auto& s : j)
                     {
+                        if (added >= limit)
+                            break;
                         Station st;
                         st.uuid = s.value("stationuuid", std::string());
                         st.name = s.value("name", std::string());
@@ -374,9 +438,10 @@ struct CockpitRadio::Impl
                         st.bitrate = s.value("bitrate", 0);
                         if (st.url.empty() || st.name.empty())
                             continue;
-                        const bool dup = std::any_of(list.begin(), list.end(), [&](const Station& o) { return o.uuid == st.uuid; });
-                        if (!dup)
-                            list.push_back(std::move(st));
+                        if (std::any_of(list.begin(), list.end(), [&](const Station& o) { return o.uuid == st.uuid; }))
+                            continue;
+                        list.push_back(std::move(st));
+                        ++added;
                     }
                 }
                 catch (const std::exception&)
@@ -384,13 +449,26 @@ struct CockpitRadio::Impl
                 }
             };
 #ifdef _WIN32
-            // the open catalogue (radio-browser.info, a community service, no key): working MP3 streams by votes
-            std::string ru, top;
-            const std::string base = "https://all.api.radio-browser.info/json/stations/search?codec=MP3&hidebroken=true&order=votes&reverse=true";
-            if (httpGetText(base + "&countrycode=RU&limit=25", ru))
-                parse(ru);
-            if (httpGetText(base + "&limit=60", top))
-                parse(top);
+            // the open catalogue (radio-browser.info, no key): working MP3 streams by votes - about a dozen per region
+            // (author: «не надо миллионы станций. но десяток, что бы был»), one or a few per country
+            const std::string base =
+                "https://all.api.radio-browser.info/json/stations/search?codec=MP3&hidebroken=true&order=votes&reverse=true";
+            constexpr std::size_t Want = 14;
+            if (!radio.tag.empty())
+            {
+                std::string body;
+                if (httpGetText(base + "&tag=" + radio.tag + "&limit=" + std::to_string(Want + 6), body))
+                    parse(body, Want);
+            }
+            const std::size_t perCountry = radio.countries.empty() ? 0 : std::max<std::size_t>(1, (Want + radio.countries.size() - 1) / radio.countries.size());
+            for (const auto& c : radio.countries)
+            {
+                if (list.size() >= Want)
+                    break;
+                std::string body;
+                if (httpGetText(base + "&countrycode=" + c + "&limit=" + std::to_string(perCountry + 3), body))
+                    parse(body, perCountry);
+            }
 #endif
             if (!list.empty())
             {
@@ -400,22 +478,79 @@ struct CockpitRadio::Impl
                                  {"bitrate", s.bitrate}});
                 std::ofstream(cache) << j.dump(1) << "\n";
             }
-            else if (std::ifstream in(cache); in)   // offline: the last list
+            else if (std::ifstream in(cache); in)   // offline: the last list of this region
             {
                 const std::string body((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-                parse(body);
+                parse(body, 64);
             }
-            std::cerr << "[Radio] catalogue: " << list.size() << " station(s)" << std::endl;
+            std::cerr << "[Radio] catalogue " << polity << ": " << list.size() << " station(s)" << std::endl;
             {
                 std::lock_guard<std::mutex> lock(mutex);
-                stations = std::move(list);
-                station = 0;
-                for (std::size_t i = 0; i < stations.size(); ++i)
-                    if (stations[i].uuid == stationUuid)
-                        station = i;
+                catalogues[polity] = std::move(list);
             }
-            catalogueState = stations.empty() ? 3 : 2;
+            catalogueState = 2;
         });
+    }
+
+    // the region's list in place (under the mutex), the polity's last station picked
+    bool selectRegion()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        const auto it = catalogues.find(region);
+        if (it == catalogues.end())
+            return false;
+        stations = it->second;
+        station = stationOf.count(region) ? stationOf[region] : 0;
+        for (std::size_t i = 0; i < stations.size(); ++i)
+            if (stations[i].uuid == stationUuid)
+                station = i;
+        return true;
+    }
+
+    // the noise of the ether: pink noise, louder the worse the signal
+    void ensureNoise()
+    {
+        ma_engine* e = engine();
+        if (noiseReady || !e)
+            return;
+        ma_noise_config nc = ma_noise_config_init(ma_format_f32, 2, ma_noise_type_pink, 0, 0.35);
+        if (ma_noise_init(&nc, nullptr, &noise) != MA_SUCCESS)
+            return;
+        if (ma_sound_init_from_data_source(e, &noise, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, &noiseSound) != MA_SUCCESS)
+        {
+            ma_noise_uninit(&noise, nullptr);
+            return;
+        }
+        ma_sound_set_looping(&noiseSound, MA_TRUE);
+        noiseReady = true;
+    }
+    void stopNoise()
+    {
+        if (noiseReady)
+        {
+            ma_sound_uninit(&noiseSound);
+            ma_noise_uninit(&noise, nullptr);
+            noiseReady = false;
+        }
+    }
+    void applyMix()
+    {
+        const bool radioOn = on && source == Source::Radio;
+        const double q = radioOn ? quality : 0.0;
+        if (ringSoundReady)
+            ma_sound_set_volume(&ringSound, static_cast<float>(volume * q));
+        if (radioOn)
+        {
+            ensureNoise();
+            if (noiseReady)
+            {
+                ma_sound_set_volume(&noiseSound, static_cast<float>(volume * 0.55 * (1.0 - q)));
+                if (!ma_sound_is_playing(&noiseSound))
+                    ma_sound_start(&noiseSound);
+            }
+        }
+        else if (noiseReady && ma_sound_is_playing(&noiseSound))
+            ma_sound_stop(&noiseSound);
     }
 
     void stopStream()
@@ -447,6 +582,7 @@ struct CockpitRadio::Impl
             if (!e || stations.empty())
                 return;
             st = stations[station % stations.size()];
+            stationOf[region] = station % stations.size();
         }
         stationUuid = st.uuid;
         const ma_uint32 rate = ma_engine_get_sample_rate(e);
@@ -464,8 +600,8 @@ struct CockpitRadio::Impl
         if (ma_sound_init_from_data_source(e, &ring, MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, &ringSound) != MA_SUCCESS)
             return;
         ringSoundReady = true;
-        ma_sound_set_volume(&ringSound, volume);
         ma_sound_start(&ringSound);
+        applyMix();
         streamState = 1;
         notice = "РАДИО: " + st.name + " - подключение";
         std::cerr << "[Radio] station " << st.name << " (" << st.country << ", " << st.bitrate << " kbit/s) " << st.url << std::endl;
@@ -551,12 +687,15 @@ struct CockpitRadio::Impl
         }
         else
         {
-            if (catalogueState.load() != 2)
+            applyMix();   // the noise of the ether at once; the region's station follows (update)
+            if (region.empty())
+                notice = "РАДИО: нет передатчиков в зоне приёма - только шум";
+            else if (!catalogues.count(region))
             {
-                fetchCatalogue();
-                notice = "РАДИО: поиск станций...";
+                fetchCatalogue(region);
+                notice = "РАДИО: " + polities[region].name + " - поиск станций...";
             }
-            else
+            else if (selectRegion())
                 playStation();
         }
     }
@@ -564,6 +703,7 @@ struct CockpitRadio::Impl
     {
         stopFile();
         stopStream();
+        stopNoise();
     }
 };
 
@@ -576,6 +716,7 @@ CockpitRadio& CockpitRadio::instance()
 CockpitRadio::CockpitRadio() : m(std::make_unique<Impl>())
 {
     m->loadSettings();
+    m->loadRegions();
 }
 
 CockpitRadio::~CockpitRadio()
@@ -616,7 +757,7 @@ void CockpitRadio::next()
         m->track = (m->track + 1) % m->tracks.size();
         m->playTrack();
     }
-    else if (m->source == Source::Radio && m->catalogueState.load() == 2)
+    else if (m->source == Source::Radio && !m->stations.empty())
     {
         {
             std::lock_guard<std::mutex> lock(m->mutex);
@@ -636,7 +777,7 @@ void CockpitRadio::previous()
         m->track = (m->track + m->tracks.size() - 1) % m->tracks.size();
         m->playTrack();
     }
-    else if (m->source == Source::Radio && m->catalogueState.load() == 2)
+    else if (m->source == Source::Radio && !m->stations.empty())
     {
         {
             std::lock_guard<std::mutex> lock(m->mutex);
@@ -668,18 +809,66 @@ void CockpitRadio::update()
         m->track = (m->track + 1) % std::max<std::size_t>(1, m->tracks.size());
         m->playTrack();
     }
-    // the catalogue arrived while the radio waits: the saved / first station
-    if (m->source == Source::Radio && !m->ringSoundReady)
+    if (m->source != Source::Radio)
+        return;
+    // a fetched catalogue: free the worker for the next one
+    if (m->catalogueState.load() == 2)
     {
-        if (m->catalogueState.load() == 2)
-            m->playStation();
-        else if (m->catalogueState.load() == 3)
-        {
-            m->notice = "РАДИО: каталог станций недоступен (нет сети?)";
-            m->catalogueState = 0;
-            m->on = false;
-        }
+        m->catalogueState = 0;
+        if (m->catalogueThread.joinable())
+            m->catalogueThread.join();
     }
+    // the region's station: on as soon as its list is there and the signal is above the floor
+    if (!m->region.empty() && !m->ringSoundReady && m->quality > 0.08)
+    {
+        if (!m->catalogues.count(m->region))
+            m->fetchCatalogue(m->region);
+        else if (m->selectRegion() && !m->stations.empty())
+            m->playStation();
+    }
+    // no signal at all: the stream stops (the noise stays)
+    if (m->ringSoundReady && m->quality < 0.03)
+        m->stopStream();
+    m->applyMix();
+}
+
+void CockpitRadio::setReception(const std::string& polity, double quality01)
+{
+    m->quality = std::clamp(quality01, 0.0, 1.0);
+    if (polity == m->region)
+        return;
+    // another polity's transmitter is the best now: its radio (the old station off; the new one in update())
+    const std::string was = m->region;
+    m->region = polity;
+    if (m->on && m->source == Source::Radio)
+    {
+        m->stopStream();
+        {
+            std::lock_guard<std::mutex> lock(m->mutex);
+            m->stations.clear();
+        }
+        const auto it = m->polities.find(polity);
+        m->notice = polity.empty() ? "РАДИО: вне зоны передатчиков - шум"
+                                   : "РАДИО: в эфире - " + (it != m->polities.end() ? it->second.name : polity);
+    }
+    std::cerr << "[Radio] reception: " << (was.empty() ? "-" : was) << " -> " << (polity.empty() ? "-" : polity) << " ("
+              << static_cast<int>(m->quality * 100.0) << " %)" << std::endl;
+}
+
+const CockpitRadio::Transmitter* CockpitRadio::transmitter(const std::string& hubId) const
+{
+    const auto it = m->transmitters.find(hubId);
+    return it == m->transmitters.end() ? nullptr : &it->second;
+}
+
+double CockpitRadio::rangeMeters(bool beacon) const
+{
+    return beacon ? m->beaconRange : m->hubRange;
+}
+
+double CockpitRadio::noiseFactor() const
+{
+    return m->noiseFactor;
 }
 
 bool CockpitRadio::on() const
@@ -704,13 +893,17 @@ std::string CockpitRadio::displayLine() const
                toUtf8(m->tracks[m->track % m->tracks.size()].stem().wstring());
     }
     std::lock_guard<std::mutex> lock(m->mutex);
+    const int signal = static_cast<int>(m->quality * 100.0 + 0.5);
+    if (m->region.empty())
+        return "РАДИО · шум · нет передатчиков";
+    const auto pit = m->polities.find(m->region);
+    const std::string zone = pit != m->polities.end() ? pit->second.name : m->region;
     if (m->stations.empty())
-        return "РАДИО · поиск станций";
+        return "РАДИО · " + zone + (m->catalogues.count(m->region) ? " · станций нет · шум" : " · поиск станций") + " · сигнал " +
+               std::to_string(signal) + " %";
     const Station& st = m->stations[m->station % m->stations.size()];
     const int s = m->streamState.load();
-    std::string line = "РАДИО · " + st.name;
-    if (st.bitrate > 0)
-        line += " · " + std::to_string(st.bitrate) + " кбит/с";
+    std::string line = "РАДИО · " + zone + " · " + st.name + " · сигнал " + std::to_string(signal) + " %";
     if (s == 1)
         line += " · подключение";
     else if (s == 3)

@@ -35,6 +35,21 @@ public:
     // once a frame: a finished track -> the next one, the station's state
     void update();
 
+    // THE RECEPTION (author 2026-11-23: «распределим радиостанции по зонам колоний и там где есть маяки. нет маяков -
+    // шум ... чем дальше от маяка - тем сильнее шум»): the best transmitter the ship hears now - its polity (whose
+    // stations play) and the signal quality 0..1 (the rest is noise). SpaceState feeds it from the hubs / beacons around
+    // (radio_regions.json); no transmitter in the system = quality 0 = only noise.
+    void setReception(const std::string& polity, double quality01);
+    // the transmitters' table (radio_regions.json): a hub id -> its polity, beacon or not; and the reach by kind
+    struct Transmitter
+    {
+        std::string polity;
+        bool beacon = false;
+    };
+    const Transmitter* transmitter(const std::string& hubId) const;
+    double rangeMeters(bool beacon) const;
+    double noiseFactor() const;
+
     bool on() const;
     Source source() const;
     // the magnitola's display: "РАДИО · <station> · 128 кбит/с" / "ПЛЕЙЛИСТ 3/12 · <track>" / a state ("поиск станций")

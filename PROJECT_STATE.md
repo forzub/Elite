@@ -8141,3 +8141,8 @@ start-up hitches (render), trade step 16 part 3 live.
     34.1 m/s, depth-only 25.0, glancing 20.0 (-20 %, energy -36 %); no extra cost (0.199 ms). The reflex gets it through
     the teacher (the net gate only keeps safe answers). The side of the hull presented / the turn to present it - in the
     control-program version (real physics, a box hull).
+    PLANNED TEST (author 2026-11-23: «попробовать на движущихся препятствиях - самые вероятные кандидаты»): a DEV
+    scenario that aims traffic ships AT the player (head-on, crossing, from behind, from above / below, 2-3 at once, a
+    fast one that cannot be dodged - the glancing blow), each with the reflex on / off; metrics: the smallest hull gap,
+    touch + normal impact speed, the swerve off the route and the return. Compare: no reflex, the current reflex, the
+    control-program reflex on the real physics.

@@ -59,6 +59,37 @@ struct OptimizationWeights
     double curvatureVariation = 0.02;
 };
 
+// THE TIME OPTIMUM (author 2026-11-23: «оптимум по времени»): the travel time alone; tiny tie-breakers keep it from
+// wriggling. The physics stays hard: lateral / angular limits and the clearance are constraints (violations), not costs.
+inline OptimizationWeights timeOptimalWeights() noexcept
+{
+    OptimizationWeights w;
+    w.travelTime = 1.0;
+    w.pathLength = 0.05;   // no wide detour for the same time (author: «штрафы за ... слишком размашистые обходы»)
+    w.lateralAccelerationEnergy = 0.0;
+    w.peakLateralUtilization = 0.0;
+    w.brakingDemand = 0.0;
+    w.totalCurvature = 0.01;
+    w.curvatureConcentration = 0.0;
+    w.curvatureUniformity = 0.0;
+    w.angularVelocityDemand = 0.0;
+    w.angularAccelerationDemand = 0.0;
+    w.curvatureVariation = 0.01;
+    return w;
+}
+
+// The optimizer's shape variables (cubic -> straight -> cubic): the route-draft net predicts them (RouteDraftNet.h)
+struct ShapeVariables
+{
+    glm::dvec3 midpoint {0.0};
+    glm::dvec3 cruiseDirection {1.0, 0.0, 0.0};
+    double halfStraightMeters = 0.0;
+    double startBoundaryHandleMeters = 1.0;
+    double startCruiseHandleMeters = 1.0;
+    double goalCruiseHandleMeters = 1.0;
+    double goalBoundaryHandleMeters = 1.0;
+};
+
 struct Request
 {
     BoundaryState start;
@@ -88,6 +119,12 @@ struct Request
 
     std::size_t samplesPerBezier = 96;
     std::size_t maxPatternIterations = 500;
+
+    // DRAFT SEEDS (the route-draft net): evaluated first; when the best one is feasible and draftRefineIterations > 0
+    // only it is refined (that many pattern iterations) - the 13 generic seeds and their 4 branches are skipped.
+    // Otherwise the drafts just join the generic seeds.
+    std::vector<ShapeVariables> draftSeeds;
+    std::size_t draftRefineIterations = 0;
 };
 
 enum class OptimizedSegmentKind : unsigned char
@@ -198,6 +235,9 @@ struct Result
 
     std::vector<glm::dvec3> sampledCenterlineMeters;
     Diagnostics diagnostics;
+
+    ShapeVariables shape;            // the chosen candidate's variables
+    bool usedDraftFastPath = false;  // the draft seed was feasible and only it was refined
 };
 
 class ContinuousAssistedPathOptimizer final

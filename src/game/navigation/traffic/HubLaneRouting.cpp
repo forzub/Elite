@@ -30,18 +30,19 @@ HubLaneNetwork::FreeLegModel freeLegModelFor(const planner::RoutePlanRequest& re
     using Policy = game::navigation::OrdinaryRoutePolicy;
     HubLaneNetwork::FreeLegModel model;
     // the inbound leg's hard terminal approach (SegmentedRouteComposer: reference distance capped at 200 m)
+    const double geometrySpeed = request.geometrySpeed();
     model.joinApproachMeters = Policy::requiredTerminalApproachMeters(
-        request.maxSpeedMps, laneHandoffSpeedMps, request.brakingMps2,
+        geometrySpeed, laneHandoffSpeedMps, request.brakingMps2,
         std::min(request.terminalReferenceDistanceMeters, 200.0), request.vehicleLengthMeters);
     // the free legs' turn radius at the route speed
-    model.turnRadiusMeters = request.maxSpeedMps * request.maxSpeedMps / std::max(request.lateralMps2, 1.0e-3);
+    model.turnRadiusMeters = geometrySpeed * geometrySpeed / std::max(request.lateralMps2, 1.0e-3);
     // the final leg after a lane: the release straight + the start lead kept as turn budget + the docking axis
     const double lead =
         request.assistedCompactStartLead
-            ? Policy::requiredAssistedStartLeadMeters(laneHandoffSpeedMps, request.maxSpeedMps, request.brakingMps2,
+            ? Policy::requiredAssistedStartLeadMeters(laneHandoffSpeedMps, geometrySpeed, request.brakingMps2,
                                                       request.lateralMps2, request.maxAngularVelocityRadPerSecond,
                                                       request.vehicleLengthMeters)
-            : Policy::requiredStartLeadMeters(laneHandoffSpeedMps, request.maxSpeedMps, request.brakingMps2,
+            : Policy::requiredStartLeadMeters(laneHandoffSpeedMps, geometrySpeed, request.brakingMps2,
                                               request.lateralMps2, request.maxAngularVelocityRadPerSecond,
                                               request.vehicleLengthMeters);
     model.exitMinimumMeters =
@@ -70,14 +71,28 @@ CompiledTrafficRoute applyHubLanes(
         const char* v = std::getenv("ELITE_HUB_ZONE_SPEED_CAP");
         return !(v && v[0] == '0');
     }();
+    // ELITE_HUB_FREE_SPEED=1 (experiment): the zone limit sizes only the GEOMETRY (geometrySpeedMps), the speed itself
+    // stays the ship's - the profile brakes for the turns and the lanes keep their own limits
+    static const bool freeSpeed = [] {
+        const char* v = std::getenv("ELITE_HUB_FREE_SPEED");
+        return v && v[0] == '1';
+    }();
     if (zoneCap && network.speedLimitMps() > 0.0 &&
         glm::length(request.goalMeters - frame.originWorldMeters) <= network.speedLimitZoneMeters() &&
         request.maxSpeedMps > network.speedLimitMps())
     {
-        text << "hub_speed_limit=" << network.speedLimitMps() << " (was " << request.maxSpeedMps << ") ";
-        request.maxSpeedMps = network.speedLimitMps();
+        if (freeSpeed)
+        {
+            text << "hub_geometry_speed=" << network.speedLimitMps() << " (speed " << request.maxSpeedMps << ") ";
+            request.geometrySpeedMps = network.speedLimitMps();
+        }
+        else
+        {
+            text << "hub_speed_limit=" << network.speedLimitMps() << " (was " << request.maxSpeedMps << ") ";
+            request.maxSpeedMps = network.speedLimitMps();
+        }
     }
-    double handoff = request.maxSpeedMps;
+    double handoff = request.geometrySpeed();
     for (const auto& lane : network.lanes())
         handoff = std::min(handoff, lane.maxSpeedMps);
     for (const auto& connector : network.connectors())

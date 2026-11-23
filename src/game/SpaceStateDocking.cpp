@@ -51,6 +51,7 @@ void runDockAdviceWorker(
 
         std::cerr << "[DockWorker] request=" << compileRequestSerial << " finished ms=" << job->workerDurationMs
                   << std::endl;
+        game::navigation::OrdinaryRoutePolicy::notePlanSeconds(job->workerDurationMs / 1000.0);
         job->ready.store(
             true,
             std::memory_order_release

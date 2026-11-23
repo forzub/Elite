@@ -4,11 +4,13 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <utility>
 
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
 #include "src/game/navigation/OrdinaryRoutePolicy.h"
 #include "src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h"
+#include "src/game/navigation/planner/RouteDraftIo.h"
 
 namespace game::navigation::planner
 {
@@ -458,8 +460,13 @@ RoutePlan planContinuousAssisted(
 
     request.hullRadiusMeters =
         std::max(0.0, input.agentRadiusMeters);
+    // the SHAPE is optimized at the geometry speed (at 500 m/s it drew 10 km arcs: a 37 km route for a 21 km one);
+    // the curves still carry maxSpeedMps, so the profile runs faster on the straights and brakes for the turns
+    // ... but never below the ship's speed now: a start faster than the design speed is a violation to the optimizer
+    // (an in-flight request at 159 m/s against 150: no feasible path / 17-21 s solves, planmove_remote_free far)
     request.designSpeedMps =
-        std::max(0.0, input.maxSpeedMps);
+        std::min(std::max(0.0, input.maxSpeedMps),
+                 std::max({0.0, input.geometrySpeed(), input.initialSpeedMps}));
     request.acceleratingMps2 =
         std::max(0.0, input.acceleratingMps2);
     request.brakingMps2 =
@@ -529,6 +536,10 @@ RoutePlan planContinuousAssisted(
     // collision-sampled densely enough for the current obstacle representation.
     request.samplesPerBezier = 96;
     request.maxPatternIterations = 160;
+
+    // the route-draft net's scenes: every real optimizer request (ELITE_ROUTE_DRAFT_DUMP=<file>, appended)
+    if (const char* dump = std::getenv("ELITE_ROUTE_DRAFT_DUMP"); dump && *dump)
+        appendRouteDraftRequest(dump, request);
 
     const auto optimized =
         ContinuousAssistedPathOptimizer::optimize(request);

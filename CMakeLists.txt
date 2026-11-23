@@ -233,6 +233,13 @@ target_include_directories(EliteEvasionLab PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAK
 target_compile_features(EliteEvasionLab PRIVATE cxx_std_17)
 target_link_libraries(EliteEvasionLab PRIVATE nlohmann_json::nlohmann_json)
 
+# the route-draft net's dataset and its check (src/game/navigation/planner/RouteDraftNet.h): EliteRouteDraftLab dataset|eval
+add_executable(EliteRouteDraftLab tools/navigation_runtime/RouteDraftLab.cpp
+    src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.cpp)
+target_include_directories(EliteRouteDraftLab PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+target_compile_features(EliteRouteDraftLab PRIVATE cxx_std_17)
+target_link_libraries(EliteRouteDraftLab PRIVATE EliteNavigationGeometry nlohmann_json::nlohmann_json)
+
 add_executable(EliteSystemMapInfoCheck tools/navigation_runtime/SystemMapInfoCheck.cpp)
 target_include_directories(EliteSystemMapInfoCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
 target_compile_features(EliteSystemMapInfoCheck PRIVATE cxx_std_17)

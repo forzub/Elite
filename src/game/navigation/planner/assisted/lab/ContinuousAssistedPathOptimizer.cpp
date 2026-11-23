@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -1821,7 +1822,54 @@ Result ContinuousAssistedPathOptimizer::optimize(
         return result;
     }
 
-    const auto seeds = buildSeeds(request);
+    const auto toVariables = [](const ShapeVariables& s) {
+        Variables v;
+        v.midpoint = s.midpoint;
+        v.cruiseDirectionRaw = s.cruiseDirection;
+        v.halfStraightMeters = s.halfStraightMeters;
+        v.startBoundaryHandleMeters = s.startBoundaryHandleMeters;
+        v.startCruiseHandleMeters = s.startCruiseHandleMeters;
+        v.goalCruiseHandleMeters = s.goalCruiseHandleMeters;
+        v.goalBoundaryHandleMeters = s.goalBoundaryHandleMeters;
+        return v;
+    };
+    std::vector<Variables> seeds;
+    for (const auto& d : request.draftSeeds)
+        seeds.push_back(toVariables(d));
+    const std::size_t draftCount = seeds.size();
+    std::size_t objectiveEvaluations = 0;
+    CandidateAudit candidateAudit;
+    // the draft fast path: the best feasible draft refined alone
+    std::optional<SearchResult> draftSearch;
+    if (draftCount > 0 && request.draftRefineIterations > 0)
+    {
+        Variables bestDraft;
+        Evaluation bestDraftEval;
+        for (const auto& d : seeds)
+        {
+            Evaluation e = evaluate(request, d, &objectiveEvaluations);
+            candidateAudit.observe(e, objectiveEvaluations);
+            if (better(e, bestDraftEval))
+            {
+                bestDraft = d;
+                bestDraftEval = std::move(e);
+            }
+        }
+        if (bestDraftEval.feasible)
+        {
+            SearchResult refined = patternOptimize(request, bestDraft, request.draftRefineIterations,
+                                                   &objectiveEvaluations, &candidateAudit);
+            if (!better(refined.evaluation, bestDraftEval))
+            {
+                refined.variables = bestDraft;
+                refined.evaluation = std::move(bestDraftEval);
+            }
+            draftSearch = std::move(refined);
+        }
+    }
+    if (!draftSearch)
+        for (auto& s : buildSeeds(request))
+            seeds.push_back(std::move(s));
     result.diagnostics.seedCount = seeds.size();
 
     struct RankedSeed
@@ -1830,13 +1878,13 @@ Result ContinuousAssistedPathOptimizer::optimize(
         Evaluation evaluation;
     };
 
-    std::size_t objectiveEvaluations = 0;
-    CandidateAudit candidateAudit;
     std::vector<RankedSeed> ranked;
     ranked.reserve(seeds.size());
 
     for (const auto& seed : seeds)
     {
+        if (draftSearch)
+            break;
         Evaluation evaluation =
             evaluate(request, seed, &objectiveEvaluations);
         candidateAudit.observe(evaluation, objectiveEvaluations);
@@ -1877,9 +1925,15 @@ Result ContinuousAssistedPathOptimizer::optimize(
 
     SearchResult bestSearch;
     bool haveBest = false;
+    if (draftSearch)
+    {
+        bestSearch = std::move(*draftSearch);
+        haveBest = true;
+        result.usedDraftFastPath = true;
+    }
 
     for (std::size_t i = 0;
-         i < selectedCount;
+         i < selectedCount && !result.usedDraftFastPath;
          ++i)
     {
         SearchResult candidate =
@@ -1926,7 +1980,9 @@ Result ContinuousAssistedPathOptimizer::optimize(
     // bounded by the authored iteration budget order-of-magnitude rather than
     // multiplying the full old budget by every seed.
     SearchResult refined =
-        patternOptimize(
+        result.usedDraftFastPath
+            ? bestSearch
+            : patternOptimize(
             request,
             bestSearch.variables,
             std::max<std::size_t>(
@@ -1937,7 +1993,7 @@ Result ContinuousAssistedPathOptimizer::optimize(
             &candidateAudit
         );
 
-    if (better(
+    if (!result.usedDraftFastPath && better(
             refined.evaluation,
             bestSearch.evaluation
         ))
@@ -1961,6 +2017,13 @@ Result ContinuousAssistedPathOptimizer::optimize(
             ? "continuous time/reserve optimized Assisted path ready"
             : "continuous optimizer did not reach a feasible path";
 
+    result.shape.midpoint = variables.midpoint;
+    result.shape.cruiseDirection = variables.cruiseDirectionRaw;
+    result.shape.halfStraightMeters = variables.halfStraightMeters;
+    result.shape.startBoundaryHandleMeters = variables.startBoundaryHandleMeters;
+    result.shape.startCruiseHandleMeters = variables.startCruiseHandleMeters;
+    result.shape.goalCruiseHandleMeters = variables.goalCruiseHandleMeters;
+    result.shape.goalBoundaryHandleMeters = variables.goalBoundaryHandleMeters;
     result.joinMeters = variables.midpoint;
     result.joinTangent = current.cruiseDirection;
 

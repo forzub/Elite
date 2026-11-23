@@ -483,7 +483,7 @@ static planner::RoutePlanRequest withLocalObstacles(const planner::RoutePlanRequ
     // slow (FreeLegInCityMaxSpeedMps) - a 1.5 km margin took all ~3500 city volumes into every search: 30-55 s a leg,
     // 80-100 s a pad route (author 2026-11-22: «он ужасно долго считает маршрут»). The accepted route is checked against
     // ALL the obstacles afterwards ([RouteCheck]): an obstacle missed here fails the route, it is never flown into.
-    const double turnRadius = leg.maxSpeedMps * leg.maxSpeedMps / std::max(1.0, leg.lateralMps2);
+    const double turnRadius = leg.geometrySpeed() * leg.geometrySpeed() / std::max(1.0, leg.lateralMps2);
     const double margin = std::max(300.0, 3.0 * turnRadius) + std::min(0.25 * std::sqrt(len2), 800.0);
     out.obstacles.clear();
     for (const auto& o : leg.obstacles)
@@ -712,7 +712,7 @@ static planner::RoutePlan composeOnce(
         legRequest.terminalApproachLengthMeters =
             game::navigation::OrdinaryRoutePolicy::
                 requiredTerminalApproachMeters(
-                    terminalRequest.maxSpeedMps,
+                    terminalRequest.geometrySpeed(),
                     handoffSpeed,
                     terminalRequest.brakingMps2,
                     legRequest.terminalReferenceDistanceMeters,

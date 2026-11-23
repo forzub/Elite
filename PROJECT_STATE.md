@@ -8274,3 +8274,20 @@ start-up hitches (render), trade step 16 part 3 live.
     a new pad request at ~125 m/s on the B4-11 route - ahead A2-03 / far H2-03 / side H4-01: plans 3.5-3.7 s from the live
     state, a 1 km straight along the velocity first, all adopted, all three taken by the pad service; cross-track mean
     4.9-5.7 m, max 10.5-16.2 m; 0 collisions, 0 dodges.
+  * 2026-11-23 FREE-SPACE SPEED (author: no cap in free space, 30 m/s in the built-up part) - EXPERIMENT
+    ELITE_HUB_FREE_SPEED=1 (off by default): RoutePlanRequest::geometrySpeedMps - the hub zone limit (150) sizes only the
+    GEOMETRY (free legs' turn radius, lane join approach, obstacle search margin, the optimizer's design speed - never
+    below the ship's speed now), the curves keep the ship's max so the profile runs fast on straights and brakes for turns.
+    LIVE B4-11 from 10 km: 177 s (capped 234-239), vmax 324 m/s, same 19.9 km route, entered the lanes at 30, cross 7/16 m.
+    In-flight replans (remote): all landed, 0 collisions, but from the run start ahead 398 s / far 328 / side 220 against
+    capped 277 / 249 / 251 - at 340 m/s the ship is far past when the pad changes; stays off until that is answered.
+    START LEAD now covers the planning time (OrdinaryRoutePolicy::planningFlightSeconds = 1.5 x the last measured plan
+    time, 8..30 s): a 1000 m prefix at 149 m/s with a 6.7 s plan was behind the ship -> late-entry connector failures,
+    17-21 s re-solves; now no replans. FPS (no vsync, hidden window): unchanged by speed; the city at 30 m/s ~37 fps in
+    both - render 8-12 ms + the embedded server 10-12 ms a frame (snapshot build ~3 ms a tick): a local-mode target.
+  * 2026-11-23 ROUTE-DRAFT NET started (author: «сделать нейронку ... оптимум по времени ... штрафы за столкновения и
+    размашистые обходы ... лабиринт ... физическое состояние корабля»): RouteDraftNet.h (canonical chord frame, 112
+    inputs incl. the ship's authority and an obstacle grid -> the optimizer's 11 shape variables), optimizer draft seeds
+    + fast path (refine only the feasible draft), timeOptimalWeights (time + 0.05 length), RouteDraftIo.h + game dump
+    ELITE_ROUTE_DRAFT_DUMP, EliteRouteDraftLab dataset|eval (real dumped scenes + generated mazes, sampled ship states),
+    route_draft_train.py. Pipeline smoke-tested; training next.

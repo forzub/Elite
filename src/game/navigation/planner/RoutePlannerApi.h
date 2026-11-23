@@ -101,6 +101,14 @@ struct RoutePlanRequest
     double narrowZoneAttitudeToleranceRad = 0.0872664626; // 5 deg
 
     double maxSpeedMps = 100.0;
+    // the speed the route's GEOMETRY is sized for (free legs' turn radii, lane join approaches, the obstacle search
+    // margin); 0 = maxSpeedMps. Lower than maxSpeedMps: fast on the straights, braking for the turns (the speed
+    // profile does that from the curvature) - author 2026-11-23: no speed cap in free space
+    double geometrySpeedMps = 0.0;
+    [[nodiscard]] double geometrySpeed() const noexcept
+    {
+        return geometrySpeedMps > 0.0 && geometrySpeedMps < maxSpeedMps ? geometrySpeedMps : maxSpeedMps;
+    }
     double acceleratingMps2 = 5.0;
     double brakingMps2 = 5.0;
     double lateralMps2 = 3.0;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
+#include <cmath>
 #include <cmath>
 #include <limits>
 
@@ -36,6 +38,23 @@ public:
         if (authored <= 1.0e-9)
             return routeMax;
         return std::min(routeMax, authored);
+    }
+
+    // the route is planned from the state at the request and flown when ready: the ship covers speed x the planning
+    // time meanwhile (3-7 s live) - a start straight shorter than that is behind the ship when the plan arrives, the
+    // late-entry connector then fails at speed (planmove_remote_free3: 1000 m at 149 m/s, a 6.7 s plan -> 17-21 s
+    // re-solves, 2026-11-23)
+    // ADAPTIVE (author: «а если расчет будет дольше 8 сек?»): 1.5 x the last measured plan time, never under 8 s,
+    // capped at 30 s - a slower machine / a heavier scene lengthens the next start straight by itself
+    static inline std::atomic<double> lastPlanSeconds {0.0};
+    static void notePlanSeconds(double seconds) noexcept
+    {
+        if (std::isfinite(seconds) && seconds > 0.0)
+            lastPlanSeconds.store(seconds, std::memory_order_relaxed);
+    }
+    [[nodiscard]] static double planningFlightSeconds() noexcept
+    {
+        return std::clamp(1.5 * lastPlanSeconds.load(std::memory_order_relaxed), 8.0, 30.0);
     }
 
     [[nodiscard]] static double requiredStartLeadMeters(
@@ -86,10 +105,11 @@ public:
         const double designTurnRadius =
             std::max(lateralRadius, angularRadius);
 
-        return std::max(
+        return std::max({
             baseLead,
-            2.0 * (brakingDistance + designTurnRadius)
-        );
+            2.0 * (brakingDistance + designTurnRadius),
+            speed * planningFlightSeconds()
+        });
     }
 
     // Assisted initial straight: one *braking distance* plus one complete
@@ -123,8 +143,8 @@ public:
         // 2026-11-22: «запросил стыковку из хаба и планировщик - завис»)
         if (initialSpeedMps < 8.0)
             return std::max(30.0, 3.0 * std::max(0.0, vehicleLengthMeters));
-        // Legacy = max(minimum, 2*(D_brake+R_turn)).
-        return std::max(minimum, 0.5 * legacy);
+        // Legacy = max(minimum, 2*(D_brake+R_turn)); never shorter than the flight while the plan is computed
+        return std::max({minimum, 0.5 * legacy, std::max(0.0, finiteOrZero(initialSpeedMps)) * planningFlightSeconds()});
     }
 
     // The required ballistic/turn lead is a flight envelope, not always a

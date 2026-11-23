@@ -8,7 +8,10 @@
 // manually translated axis); when the course is clear again it lets go and the autopilot takes the ship back to its
 // route. RCS only (the main drive would need the nose, which the route tracker owns): plausible - thrusters dodge,
 // the engines keep the course. Structures are the planner's (they do not move), not the reflex's.
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
 #include <cstdint>
 #include <vector>
 
@@ -28,6 +31,7 @@ struct EvasionReflexCommand
     int program = -1;                                    // the control program held (-1: the point-mass reflex)
     double marginMeters = 0.0;                          // the margin of the chosen manoeuvre
     double courseMarginMeters = 0.0;                    // the margin when holding the course
+    double urgencySeconds = 0.0;                        // the window the reflex acts in (the threat must be that close)
     int threats = 0;
     bool fromNet = false;
 };
@@ -80,8 +84,29 @@ public:
     double programDtSeconds = 0.1;
     double programHoldSeconds = 2.0;   // re-chosen 4 times a second anyway; a 4 s full push moved ~1 km
     double lastProgramMs = 0.0;
+    // URGENCY (remote B4-11, 2026-11-23): a threat matters to the reflex only once it is about as close in time as the
+    // dodge itself takes - sqrt(2 x the miss distance / the lateral accel) + a second. Judged straight over the whole
+    // 12 s horizon, the city's lane traffic (which turns at the connectors) set off five dodges in a row at 120 m/s and
+    // pushed the ship 162 m off its route into the built-up zone. Farther threats are the route planner's business.
+    // ELITE_EVASION_URGENCY=0: the old whole-horizon trigger.
+    double reactionSeconds = 1.0;
+    double gentleShare = 0.4;
+    double urgencyFor(double lateralAccelMps2, double hullRadiusMeters) const
+    {
+        static const bool off = [] {
+            const char* v = std::getenv("ELITE_EVASION_URGENCY");
+            return v && v[0] == '0';
+        }();
+        if (off)
+            return horizonSeconds;
+        const double miss = 30.0 + std::max(5.0, hullRadiusMeters) + marginMeters;
+        // the dodge is flown by the gentle programs first (0.4 of the stick): the time is theirs
+        const double a = gentleShare * lateralAccelMps2;
+        const double tNeed = a > 0.1 ? std::sqrt(2.0 * miss / a) : 4.0;
+        return std::clamp(tNeed + reactionSeconds, 3.0, 8.0);
+    }
     const EvasionReflexCommand& updatePrograms(const radar::RadarScanReport& scan, double now, const ControlShipState& ship,
-                                               double hullRadiusMeters)
+                                               double hullRadiusMeters, double lateralAccelMps2 = 0.0)
     {
         if (now < m_nextAt)
             return m_cmd;
@@ -95,7 +120,12 @@ public:
                                                          horizonSeconds, programDtSeconds);
         const EvasionChoice course = judgeControlFlight(handsOff, sc, ship.velocityBody);
         m_cmd.courseMarginMeters = course.contact ? -1.0e3 : course.minMarginMeters;
-        if (!course.contact && course.minMarginMeters >= 0.0)
+        // the window (wider while dodging: no drop in the middle of a manoeuvre)
+        const double window = urgencyFor(lateralAccelMps2, hullRadiusMeters) * (m_cmd.active ? 1.5 : 1.0);
+        m_cmd.urgencySeconds = window;
+        const bool urgent = (course.contact && course.contactTimeSeconds <= window) ||
+                            (course.minMarginMeters < 0.0 && course.timeOfMinSeconds <= window);
+        if (!urgent)
             return release(now);
         const auto t0 = std::chrono::steady_clock::now();
         int best = static_cast<int>(ControlProgramHandsOff);

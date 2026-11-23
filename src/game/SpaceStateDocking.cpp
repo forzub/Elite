@@ -5058,7 +5058,8 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
     // the control programs on the real physics (ELITE_DEV_EVASION_REFLEX=pm: the old point-mass reflex)
     const bool programs = ship && !(env && env[0] == 'p');
     const auto& cmd = programs
-                          ? m_evasionReflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, *ship, hullRadiusMeters)
+                          ? m_evasionReflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, *ship, hullRadiusMeters,
+                                                           lateralAccelMps2)
                           : m_evasionReflex.update(sensors.latestRadarScan, universeTimeSeconds, lateralAccelMps2, hullRadiusMeters);
     if (!cmd.active)
         return control;
@@ -5078,7 +5079,7 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
     {
         m_evasionLogAt = universeTimeSeconds;
         std::cerr << "[Evasion] dodge: " << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
-                  << " m -> " << cmd.marginMeters << " m; RCS (" << cmd.strafe << ", " << cmd.lift << ", " << cmd.forward
+                  << " m (window " << cmd.urgencySeconds << " s) -> " << cmd.marginMeters << " m; RCS (" << cmd.strafe << ", " << cmd.lift << ", " << cmd.forward
                   << ")" << (cmd.program >= 0 ? " program " + std::to_string(cmd.program) + " turn (" +
                                                     std::to_string(cmd.pitch) + ", " + std::to_string(cmd.yaw) + ") speed " +
                                                     std::to_string(cmd.speedRate) + ", " +

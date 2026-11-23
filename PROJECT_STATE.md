@@ -8258,3 +8258,15 @@ start-up hitches (render), trade step 16 part 3 live.
     LIVE (run_remote.sh, a dedicated EliteServer + a TCP client, hidden window): self-test PASS; pad B4-11 from 10 km -
     plan 3.5 s, the pad service after 240.5 s (local 232 s), 0 collisions, cross-track mean 16 m / max 162 (local 7 /
     116).
+  * 2026-11-23 "REMOTE DESYNC" WAS THE REFLEX (author: «найти рассинхрон - думаю очень важно»): same exe, same B4-11
+    route, local vs dedicated server: the tracks match to a metre until the city entry; the whole gap was one spike there,
+    and every run with the spike (remote 162 m, local lawab 116 m, planstart rest 170 m) had 4-11 [Evasion] dodges of the
+    city's lane traffic at 120 m/s; the runs without dodges stayed at ~12 m. The program reflex judged straight
+    extrapolations over its whole 12 s horizon (1.4 km at 120 m/s; lane traffic turns at the connectors).
+    FIX EvasionReflex::urgencyFor: the reflex acts only when the touch / the margin's minimum is within the time the dodge
+    takes - sqrt(2 x miss / (0.4 x lateral accel)) + 1 s, clamped 3..8 s (x1.5 while dodging); farther threats are the
+    planner's. ELITE_EVASION_URGENCY=0 = the old trigger. Network measured ([NetQueue] logs every 250 ticks, server +
+    client): the server's control queue holds 2-3 inputs (40-60 ms), client unacked 2-5, no resyncs, no clock drift.
+    LIVE: remote B4-11 0 dodges, cross 4.5 / 9.8 m, landed; local 0 dodges, 5.3 / 11.6 m; ramtest (programs, 120 m/s)
+    head-on 60 m centres, right 110 m, 0 collisions (was 260 / 177: the old trigger dodged from 5 s out; the margin now
+    is the reflex's own 30 m clear cap). Open: client prediction is constant-velocity dead reckoning (no acceleration).

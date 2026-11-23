@@ -1011,6 +1011,9 @@ void GameClient::sendAndPredictFixedStep(
         control.assistedMaxSpeedCommand = true;
 
     control.controlTick = ++m_clientTick;
+    if (m_clientTick % 250 == 0)
+        std::cerr << "[NetQueue] client tick " << m_clientTick << " unacked " << m_pendingInputs.size()
+                  << " resyncs " << m_predictionResyncCount << " dropped " << m_droppedPendingInputCount << std::endl;
 
     bool predictThisStep =
         !m_predictionSuspended &&

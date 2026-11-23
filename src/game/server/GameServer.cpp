@@ -1264,6 +1264,19 @@ void GameServer::update(double dt)
             if (!time.universeTimeSimulation)
             {
                 ShipControlState cmd;
+                // [NetQueue] the control delay the queue adds: one queued input = one server tick of latency
+                // (a client fixed clock running faster than this one grows it without bound)
+                if (stream.lastProcessedTick() > 0 && stream.lastProcessedTick() % 250 == 0)
+                {
+                    static std::uint64_t lastLogged = 0;
+                    if (stream.lastProcessedTick() != lastLogged)
+                    {
+                        lastLogged = stream.lastProcessedTick();
+                        std::cerr << "[NetQueue] ship " << id.value << " processed " << stream.lastProcessedTick()
+                                  << " received " << stream.lastReceivedTick() << " queued " << stream.pendingCount()
+                                  << std::endl;
+                    }
+                }
                 if (stream.consumeNext(cmd))
                 {
                     // a destroyed ship takes no control (the tick is still acknowledged)

@@ -57,6 +57,7 @@ struct EvasionChoice
     double score = 0.0;
     double timeOfMinSeconds = 0.0;
     bool contact = false;              // the hulls touch within the horizon
+    double contactTimeSeconds = -1.0;  // when they first touch (contact only)
     double impactNormalSpeedMps = 0.0; // the closing speed along the contact normal at the first touch
     double impactSpeedMps = 0.0;       // the whole relative speed there
 };

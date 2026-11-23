@@ -169,6 +169,7 @@ inline EvasionChoice judgeControlFlight(const ControlFlight& f, const EvasionSce
             if (!out.contact && dist < th.radiusMeters + sc.caps.radiusMeters)
             {
                 out.contact = true;
+                out.contactTimeSeconds = t;
                 const glm::dvec3 n = dist > 1.0e-6 ? (f.pos[k] - q) / dist : glm::dvec3(0.0, 0.0, 1.0);
                 const glm::dvec3 rel = f.vel[k] - vAbs;
                 out.impactNormalSpeedMps = std::max(0.0, -glm::dot(rel, n));

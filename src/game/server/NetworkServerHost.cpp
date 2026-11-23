@@ -180,6 +180,13 @@ void NetworkServerHost::reapDisconnectedConnections()
             continue;
         }
 
+        // why a connection ends (2026-11-23: a dedicated-server session died right after its bootstrap with no reason
+        // in the log - the client only saw "TCP peer closed connection")
+        std::cerr << "[M8E-CONNECT][server] connection " << it->traceId << " closed session="
+                  << (it->sessionId ? std::to_string(it->sessionId.value) : std::string("-")) << " reason="
+                  << (it->transport && !it->transport->lastError().empty() ? it->transport->lastError()
+                                                                          : std::string("peer closed / disconnected"))
+                  << std::endl;
         if (it->sessionId)
             (void)m_runtime->detachPlayerSessionTransport(it->sessionId);
 

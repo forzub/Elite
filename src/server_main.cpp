@@ -1,3 +1,4 @@
+#include "src/core/AsyncStderr.h"
 #include <algorithm>
 #include "src/game/server/GameServer.h"
 #include <atomic>
@@ -2260,6 +2261,8 @@ int runHeadlessServer(bool resetAuthState)
 
 int main(int argc, char** argv)
 {
+    // the session log (%LOCALAPPDATA%/EliteGame/logs/server_*.log) and non-blocking stderr, as the client
+    core::installAsyncStderr("server");
     {
         // DEV commands only when the operator asks for them
         bool dev = false;

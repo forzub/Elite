@@ -1,6 +1,8 @@
 #include "src/game/network/TcpTransport.h"
 
 #include <queue>
+#include <iostream>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -31,13 +33,22 @@ bool sendTyped(
 {
     wire::WireMessageKind kind = wire::WireMessageKind::ClientMessage;
     std::vector<std::uint8_t> payload;
-    return wire::encodeMessagePayload(
-               value,
-               kind,
-               payload,
-               compressor
-           ) &&
-        stream.send(kind, std::move(payload));
+    if (!wire::encodeMessagePayload(value, kind, payload, compressor))
+    {
+        // which message could not be encoded (2026-11-23: the dedicated server dropped every client right after the
+        // bootstrap with only "failed to encode/send TCP protocol message")
+        std::cerr << "[Wire] ENCODE FAILED: " << typeid(T).name() << " kind=" << static_cast<int>(kind)
+                  << " payload_bytes=" << payload.size() << std::endl;
+        return false;
+    }
+    const std::size_t bytes = payload.size();
+    if (!stream.send(kind, std::move(payload)))
+    {
+        std::cerr << "[Wire] SEND FAILED: " << typeid(T).name() << " kind=" << static_cast<int>(kind) << " bytes=" << bytes
+                  << " stream=" << stream.lastError() << std::endl;
+        return false;
+    }
+    return true;
 }
 
 } // namespace

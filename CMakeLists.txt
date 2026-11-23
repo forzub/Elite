@@ -873,6 +873,7 @@ add_executable(EliteGame
     src/game/promo/PromoSceneScenario.cpp
 
     src/game/scene/GameSceneSetup.cpp
+    src/game/scene/LayoutCityHitVolumes.cpp
 
     src/render/planet/PlanetWireRenderer.cpp
     src/ui/browser/GameWebView.cpp
@@ -1124,6 +1125,7 @@ if(ELITE_BUILD_SERVER)
 
         src/game/promo/PromoFlybyScenario.cpp
         src/game/scene/GameSceneSetup.cpp
+        src/game/scene/LayoutCityHitVolumes.cpp
 
         src/world/celestial/StarAtlasDatabase.cpp
         src/world/celestial/CelestialSystemRuntime.cpp

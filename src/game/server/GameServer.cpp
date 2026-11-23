@@ -3531,6 +3531,19 @@ bool GameServer::copyHydratedSnapshotForSession(
     outSnapshot.replication.removedShipIds.clear();
     outSnapshot.replication.removedObjectIds.clear();
     outSnapshot.replication.removedHubIds.clear();
+    {
+        // what a late joiner gets of the static objects' obstacle geometry (2026-11-23: a remote client planned with
+        // no hit volumes for the hub dock)
+        std::size_t withVolumes = 0, flagged = 0;
+        for (const auto& o : outSnapshot.objects)
+        {
+            withVolumes += o.graph.debugHitVolumes.empty() ? 0 : 1;
+            flagged += o.graph.hasDebugHitVolumes ? 1 : 0;
+        }
+        std::cerr << "[Bootstrap] session " << sessionId.value << ": " << outSnapshot.objects.size() << " objects, "
+                  << withVolumes << " with hit volumes, " << flagged << " flagged" << std::endl;
+
+    }
     return true;
 }
 

@@ -1,5 +1,7 @@
+#include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
 
+#include <iostream>
 #include <algorithm>
 #include <cmath>
 
@@ -358,8 +360,22 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
             return out;
         }
 
+        // a layout city: its hit volumes are assembled on the client (not replicated) - wait for them
+        const std::vector<game::simulation::DebugHitVolumeSnapshot>* ownVolumes = nullptr;
+        if (cachedIt->second.debugHitVolumes.empty() &&
+            game::scene::layoutCityHitVolumesOnClient(object.type, object.hubAttachment.hubId))
+        {
+            ownVolumes = game::scene::clientLayoutCityHitVolumes(object.type, object.hubAttachment.hubId);
+            if (!ownVolumes)
+            {
+                out.status =
+                    ClientNavigationPlanningSnapshotStatus::
+                        ObstacleGeometryUnavailable;
+                return out;
+            }
+        }
         const auto& exactVolumes =
-            cachedIt->second.debugHitVolumes;
+            ownVolumes ? *ownVolumes : cachedIt->second.debugHitVolumes;
         // A generated settlement (thousands of volumes): far from the ship-target segment each module group (a
         // block, a street run) becomes ONE box - its bounds in the object frame - and only the volumes near the route
         // stay exact. The planner searched ~6800 exact boxes for ~2 min (2026-11-17).
@@ -416,6 +432,14 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
             // Static graph payload is sparse on the wire, but ClientWorldState
             // retains the last authoritative local hit-volume set. Empty here
             // means we genuinely cannot prove collision geometry yet.
+            static std::uint64_t loggedId = 0;
+            if (loggedId != object.id.value)
+            {
+                loggedId = object.id.value;
+                std::cerr << "[PlanningSnapshot] no obstacle geometry for object " << object.id.value << " type "
+                          << static_cast<int>(object.type) << " '" << object.displayName << "' hub '"
+                          << object.hubAttachment.hubId << "' (attached " << object.hubAttachment.valid << ")" << std::endl;
+            }
             out.status =
                 ClientNavigationPlanningSnapshotStatus::
                     ObstacleGeometryUnavailable;

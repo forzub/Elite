@@ -8225,3 +8225,36 @@ start-up hitches (render), trade step 16 part 3 live.
     on the main drive; decouple turn geometry from the max speed and drop the free-space cap; the failures test set;
     then route tracking by control programs on the damaged physics with a net proposing them (author: the autopilot on
     a net with the engine groups' state as input).
+  * 2026-11-23 EXPERIMENT "the route in the Newtonian law" (ELITE_AUTOPILOT_NEWTONIAN_ROUTES=1, off by default): an
+    Assisted ship switched to Newtonian (Ctrl+F10 path) for its automatic route, back to Assisted after. lawab v1:
+    Assisted 232 / 169 / 139 s to the pad service (rest / in-flight A2-03 / in-flight H2-03); Newtonian - the FIRST
+    request right after entering the hub frame never moved (target accel 58 m/s2, speed 0; the watchdog after 93 s,
+    cause NOT found), the in-flight H2-03 one took 252 s (1.8 x Assisted: flip-and-burn braking, conservative).
+    => no gain from reusing the Newtonian autopilot; Assisted thrust-vector turns need their own law.
+  * 2026-11-23 REAL CONDITIONS (author: «в песочнице у тебя все работает, а у меня - все ломается»; the author plays a
+    dedicated server + client: preferences last_server_endpoint 127.0.0.1:27351, account pilot-a). SESSION LOG: the
+    client and EliteServer now always write their whole log (cerr + cout through the async buffer) to
+    %LOCALAPPDATA%/EliteGame/logs/<client|server>_<date>_<time>.log, the last 10 per kind (ELITE_SESSION_LOG=0 off; the
+    automated runs set it off so they never evict the author's sessions). ELITE_DEV_REMOTE_REGISTER=1: a --connect
+    client registers its --profile on a (test) server without the form. scratchpad run_remote.sh: EliteServer on a test
+    port (--reset-auth-state, ELITE_DEV_COMMANDS=1, ELITE_DEV_START) + a visible, vsync client over TCP.
+  * 2026-11-23 THE DEDICATED SERVER + REMOTE CLIENT WAS BROKEN (found by running in the author's conditions; the local
+    game never encodes snapshots, so every local check passed). Three faults, all fixed:
+    1. the late-join BOOTSTRAP snapshot was 68.8 MB > the 16 MB wire limit -> "failed to encode/send TCP protocol
+       message", every remote client dropped right after its welcome ("TCP peer closed connection"; the built-in
+       --self-test-remote-client FAILED). 66 MB = ~300 hub cities' hit volumes (12-17 thousand boxes, up to 2 MB per
+       city). Now a layout city's hit volumes are NOT replicated: the client assembles them itself from the frozen
+       layout + its own stage clock (game/scene/LayoutCityHitVolumes: background thread, re-assembled when the
+       construction stage key changes; the shared collisionToHitVolumes is the server's conversion too).
+       ELITE_REPLICATE_CITY_HIT_VOLUMES=1 the old way. Known gap: players' construction-contract overrides are not
+       replicated (the renderer already shares it).
+    2. a pad request failed while the city's geometry was still assembling (ObstacleGeometryUnavailable treated as
+       final) - now the request waits up to 60 s.
+    3. while the client preloads station assemblies it COLLAPSED queued snapshots to the newest - a sparse one replaced
+       the bootstrap, the only one with the heavy payload: the hub dock had no hit volumes for good. Now merged
+       (materializeCanonicalReplicationSnapshot), not replaced.
+    Diagnostics kept: the server logs why each connection ends, the wire encoder names a message that fails and the
+    biggest parts of an oversized snapshot, [Bootstrap] counts per late join.
+    LIVE (run_remote.sh, a dedicated EliteServer + a TCP client, hidden window): self-test PASS; pad B4-11 from 10 km -
+    plan 3.5 s, the pad service after 240.5 s (local 232 s), 0 collisions, cross-track mean 16 m / max 162 (local 7 /
+    116).

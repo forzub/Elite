@@ -864,6 +864,11 @@ void Application::init()
     // exists and this client only authenticates and attaches to it.
     else if (hasConfiguredRemoteServer())
     {
+        // DEV: ELITE_DEV_REMOTE_REGISTER=1 always registers on the (fresh test) server - a token saved by an earlier
+        // test run is unknown to a server started with --reset-auth-state (UNKNOWN_ACCOUNT, run_remote v2)
+        const char* devRegisterAlways = std::getenv("ELITE_DEV_REMOTE_REGISTER");
+        if (devRegisterAlways && devRegisterAlways[0] == '1')
+            m_clientIdentityHello = {};
         if (m_clientIdentityHello.authToken.valid())
         {
             std::cout << "[App] --connect shortcut: entering multiplayer endpoint="
@@ -872,10 +877,24 @@ void Application::init()
         }
         else
         {
-            // Endpoint-only launch is not authorization. Keep the configured
-            // endpoint as a UI default and require an explicit SIGN IN or
-            // REGISTER before creating a remote game session.
-            showMultiplayerConnectionForm();
+            // DEV (automated runs in the author's real conditions - a dedicated server + a connected client, 2026-11-23):
+            // ELITE_DEV_REMOTE_REGISTER=1 registers the --profile handle on the (test) server without the form
+            std::string devError;
+            const char* devRegister = std::getenv("ELITE_DEV_REMOTE_REGISTER");
+            if (devRegister && devRegister[0] == '1' && !m_clientIdentityProfileName.empty() &&
+                prepareRemoteIdentity(m_clientIdentityProfileName, game::network::AuthenticationIntent::Register, devError))
+            {
+                std::cout << "[App] DEV remote register: " << m_clientIdentityProfileName << " at " << m_remoteServerHost
+                          << ':' << m_remoteServerPort << "\n";
+                requestSessionStart(GameSessionLaunchKind::RemoteMultiplayer);
+            }
+            else
+            {
+                // Endpoint-only launch is not authorization. Keep the configured
+                // endpoint as a UI default and require an explicit SIGN IN or
+                // REGISTER before creating a remote game session.
+                showMultiplayerConnectionForm();
+            }
         }
     }
 

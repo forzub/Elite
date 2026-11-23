@@ -31,6 +31,7 @@
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/damage/HitVolume.h"
 #include "src/model_asset/HubCityAssembly.h"
+#include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/model_asset/HubExpansion.h"
 #include "src/model_asset/ModelAssetBinary.h"
 
@@ -75,54 +76,7 @@ bool packageHitVolumes(ObjectType type, const std::string& path, std::vector<gam
         if (ok)
         {
             const ma::ModelAsset& asset = prebuilt ? *prebuilt : loaded;
-            const glm::mat4 basis = ObjectDescriptorRegistry::get(type).meshToLogicalBasis4();
-            for (const auto& c : asset.collisionVolumes)
-            {
-                if (!c.enabled ||
-                    (!c.activeStates.empty() &&
-                     std::find(c.activeStates.begin(), c.activeStates.end(), "intact") == c.activeStates.end()))
-                    continue;
-                glm::vec3 half;
-                switch (c.shape)
-                {
-                    case ma::CollisionShape::Box: half = c.halfSize; break;
-                    case ma::CollisionShape::Sphere: half = glm::vec3(c.radius); break;
-                    case ma::CollisionShape::Capsule: half = glm::vec3(c.radius, c.halfHeight + c.radius, c.radius); break;
-                    case ma::CollisionShape::Cylinder:
-                    {
-                        const float r = std::max(c.radius, c.radiusTop);
-                        half = glm::vec3(r, c.halfHeight, r);
-                        break;
-                    }
-                    default: continue;
-                }
-                glm::mat4 m = glm::translate(glm::mat4(1.0f), c.localPosition);
-                m = glm::rotate(m, glm::radians(c.localRotationDeg.x), glm::vec3(1, 0, 0));
-                m = glm::rotate(m, glm::radians(c.localRotationDeg.y), glm::vec3(0, 1, 0));
-                m = glm::rotate(m, glm::radians(c.localRotationDeg.z), glm::vec3(0, 0, 1));
-                m = basis * m;
-                game::damage::HitVolume v;
-                v.zone = game::damage::HitZoneType::Hull;
-                v.center = glm::vec3(m[3]);
-                glm::mat3 r(m);
-                for (int k = 0; k < 3; ++k)
-                {
-                    const float len = glm::length(r[k]);
-                    half[k] *= len;
-                    if (len > 1.0e-6f)
-                        r[k] /= len;
-                }
-                v.orientation = r;
-                v.halfSize = half;
-                v.m_label = c.id;
-                v.moduleId = c.moduleId;
-                v.assemblyNode = c.parentNodeIndex;   // the building (city damage: game::simulation::CityDamage.h)
-                // the node's module group (a block, a street run: the assembly's "modules" map) - the route planner merges
-                // a group far from the route into one box
-                if (c.parentNodeIndex >= 0 && static_cast<std::size_t>(c.parentNodeIndex) < asset.nodes.size())
-                    v.subsystemId = asset.nodes[static_cast<std::size_t>(c.parentNodeIndex)].moduleId;
-                it->second.push_back(std::move(v));
-            }
+            collisionToHitVolumes(type, asset, it->second);
             std::unordered_map<std::string, int> groupsSeen;
             for (const auto& v : it->second)
                 ++groupsSeen[v.subsystemId];

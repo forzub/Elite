@@ -549,6 +549,45 @@ void SpaceState::updateDockingAdvisory()
             << std::endl;
     }
 
+    // DEV experiment (author 2026-11-23: «если разрешить маршевый [в свободном вращении], то по сути получим почти
+    // обычного ньютона»): ELITE_AUTOPILOT_NEWTONIAN_ROUTES=1 - an Assisted ship flies its automatic route in the
+    // NEWTONIAN law (that law's planner capability - turns on the main drive - and autopilot), and is handed back to
+    // Assisted when the request is over. The same input path as Ctrl+F10.
+    {
+        static const bool newtonianRoutes = [] {
+            const char* v = std::getenv("ELITE_AUTOPILOT_NEWTONIAN_ROUTES");
+            return v && v[0] == '1';
+        }();
+        if (newtonianRoutes)
+        {
+            const auto it = m_client->world().ships().find(m_playerId.value);
+            if (it != m_client->world().ships().end())
+            {
+                const auto law = it->second.transform.motion.localControlLaw;
+                const bool routeActive = pending.valid() && pending.mode == DockingRouteRequest::Mode::Automatic;
+                const auto sendLaw = [&](game::navigation::LocalFlightControlLaw want) {
+                    ShipControlState c = m_clientAutopilotControlActive ? m_clientAutopilotControl : ShipControlState {};
+                    c.localControlLawCommandValid = true;
+                    c.requestedLocalControlLaw = want;
+                    m_client->submitInput(c);
+                };
+                if (routeActive && !m_routeLawSwitched && law == game::navigation::LocalFlightControlLaw::Assisted)
+                {
+                    sendLaw(game::navigation::LocalFlightControlLaw::Newtonian);
+                    m_routeLawSwitched = true;
+                    std::cerr << "[RouteLaw] request " << pending.serial << ": Assisted -> Newtonian for the route" << std::endl;
+                }
+                else if (!routeActive && m_routeLawSwitched)
+                {
+                    if (law == game::navigation::LocalFlightControlLaw::Newtonian)
+                        sendLaw(game::navigation::LocalFlightControlLaw::Assisted);
+                    m_routeLawSwitched = false;
+                    std::cerr << "[RouteLaw] route over: back to Assisted" << std::endl;
+                }
+            }
+        }
+    }
+
 
     const auto eraseVisibleRoute = [&]()
     {
@@ -2740,6 +2779,20 @@ void SpaceState::updateDockingStabilizing(Frame& f)
             );
     if (!snapshot.ready())
     {
+        // a city's obstacle geometry still being assembled on the client (game/scene/LayoutCityHitVolumes.h, not
+        // replicated since 2026-11-23): wait for it - up to 60 s - instead of failing the request
+        if (snapshot.status == game::client::ClientNavigationPlanningSnapshotStatus::ObstacleGeometryUnavailable)
+        {
+            if (m_geometryWaitSerial != pending.serial)
+            {
+                m_geometryWaitSerial = pending.serial;
+                m_geometryWaitSince = glfwGetTime();
+                std::cerr << "[DockClient] request=" << pending.serial
+                          << " waiting for the city's obstacle geometry (assembled on the client)" << std::endl;
+            }
+            if (glfwGetTime() - m_geometryWaitSince < 60.0)
+                return;
+        }
         std::cerr << "[DockClient] request=" << pending.serial << " planning snapshot not ready: status="
                   << static_cast<int>(snapshot.status) << " source_epoch=" << snapshot.sourceEpoch.valid()
                   << " epoch=" << snapshot.epoch.valid() << " frame=" << snapshot.planningFrame.valid

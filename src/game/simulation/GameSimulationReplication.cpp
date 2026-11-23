@@ -1,5 +1,6 @@
 // GameSimulation: replication snapshot published to clients.
 
+#include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/game/simulation/GameSimulationInternal.h"
 
 
@@ -647,11 +648,16 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         {
             graph.hasModules = true;
             graph.hasStructuralLinks = true;
-            graph.hasDebugHitVolumes = true;
 
             graph.modules = obj.cachedModuleSnapshots;
             graph.structuralLinks = obj.cachedStructuralLinkSnapshots;
-            graph.debugHitVolumes = obj.cachedDebugHitVolumeSnapshots;
+            // a layout city's hit volumes are the client's own (game/scene/LayoutCityHitVolumes.h): 12-17 thousand
+            // boxes per city made the bootstrap 68.8 MB, over the 16 MB wire limit
+            if (!game::scene::layoutCityHitVolumesOnClient(obj.type, obj.hubId))
+            {
+                graph.hasDebugHitVolumes = true;
+                graph.debugHitVolumes = obj.cachedDebugHitVolumeSnapshots;
+            }
         }
 
         // Это единственная часть станции, которая реально меняется при вращении.

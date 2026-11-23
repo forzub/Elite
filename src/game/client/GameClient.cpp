@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "src/core/RuntimeTrace.h"
+#include "src/game/network/ReplicationSnapshotMerge.h"
 #include <cmath>
 #include <chrono>
 #include <iostream>
@@ -751,7 +752,14 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
                 if (newerSnapshot.metadata.serverTick >
                     m_deferredAssemblySnapshot->metadata.serverTick)
                 {
-                    *m_deferredAssemblySnapshot = std::move(newerSnapshot);
+                    // MERGE, not replace (2026-11-23): the bootstrap is the only snapshot carrying the heavy sparse
+                    // payload (static objects' hit volumes, modules, links); a newer sparse snapshot replacing it lost
+                    // that payload for good - a remote client had no obstacle geometry for the hub dock
+                    *m_deferredAssemblySnapshot =
+                        game::network::materializeCanonicalReplicationSnapshot(
+                            &*m_deferredAssemblySnapshot,
+                            newerSnapshot
+                        );
                 }
             }
 

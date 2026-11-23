@@ -656,6 +656,9 @@ private:
     double m_bodyAutopilotLastServerTime = 0.0;
     double m_bodyAutopilotRestoreUntil = 0.0;
     ShipControlState m_clientAutopilotControl {};
+    bool m_routeLawSwitched = false;
+    std::uint64_t m_geometryWaitSerial = 0;   // the request waiting for a city's client-assembled geometry
+    double m_geometryWaitSince = 0.0;   // DEV ELITE_AUTOPILOT_NEWTONIAN_ROUTES: Assisted -> Newtonian for a route
     // navigator step 3: the radar-fed evasion reflex over the route autopilot's controls (EvasionReflex.h)
     game::navigation::avoidance::EvasionReflex m_evasionReflex;
     game::navigation::avoidance::EvasionNet m_evasionNet;

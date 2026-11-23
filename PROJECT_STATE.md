@@ -8270,3 +8270,7 @@ start-up hitches (render), trade step 16 part 3 live.
     LIVE: remote B4-11 0 dodges, cross 4.5 / 9.8 m, landed; local 0 dodges, 5.3 / 11.6 m; ramtest (programs, 120 m/s)
     head-on 60 m centres, right 110 m, 0 collisions (was 260 / 177: the old trigger dodged from 5 s out; the margin now
     is the reflex's own 30 m clear cap). Open: client prediction is constant-velocity dead reckoning (no acceleration).
+  * 2026-11-23 IN-FLIGHT REPLANS OVER THE DEDICATED SERVER (scratchpad planmove_remote.sh = planmove.sh on run_remote.sh):
+    a new pad request at ~125 m/s on the B4-11 route - ahead A2-03 / far H2-03 / side H4-01: plans 3.5-3.7 s from the live
+    state, a 1 km straight along the velocity first, all adopted, all three taken by the pad service; cross-track mean
+    4.9-5.7 m, max 10.5-16.2 m; 0 collisions, 0 dodges.

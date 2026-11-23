@@ -37,6 +37,7 @@
 #include "src/scene/SceneRenderer.h"
 #include "src/render/cockpit/FlightVectorIndicatorRenderer.h"
 #include "src/render/cockpit/EngineThrustIndicatorRenderer.h"
+#include "src/render/cockpit/CockpitRadioWidget.h"
 #include "src/render/cockpit/GuidanceCorridorRenderer.h"
 #include "src/render/cockpit/HubCorridorHudRenderer.h"
 #include "src/render/cockpit/GalacticCompassRenderer.h"
@@ -516,6 +517,7 @@ private:
     HudRenderer                                 m_hudRenderer;
     render::cockpit::FlightVectorIndicatorRenderer m_flightVectorIndicatorRenderer;
     render::cockpit::EngineThrustIndicatorRenderer m_engineThrustIndicatorRenderer;
+    render::cockpit::CockpitRadioWidget m_cockpitRadioWidget;   // the magnitola over the engine group
     render::cockpit::GuidanceCorridorRenderer m_guidanceCorridorRenderer;
     render::cockpit::HubCorridorHudRenderer m_hubCorridorHudRenderer;   // the hub's green / red corridors, faint
     render::cockpit::GalacticCompassRenderer m_galacticCompassRenderer;

@@ -911,6 +911,49 @@ std::string CockpitRadio::displayLine() const
     return line;
 }
 
+CockpitRadio::Display CockpitRadio::display() const
+{
+    Display d;
+    d.on = m->on;
+    d.source = m->source;
+    d.volume = static_cast<int>(m->volume * 100.0f + 0.5f);
+    if (!m->on)
+    {
+        d.title = "выкл";
+        return d;
+    }
+    if (m->source == Source::Playlist)
+    {
+        if (m->tracks.empty())
+        {
+            d.header = "свой плейлист";
+            d.title = "нет музыки в папке";
+            return d;
+        }
+        d.header = std::to_string(m->track % m->tracks.size() + 1) + " / " + std::to_string(m->tracks.size());
+        d.title = toUtf8(m->tracks[m->track % m->tracks.size()].stem().wstring());
+        return d;
+    }
+    std::lock_guard<std::mutex> lock(m->mutex);
+    d.signal = static_cast<int>(m->quality * 100.0 + 0.5);
+    if (m->region.empty())
+    {
+        d.header = "нет передатчиков";
+        d.title = "шум";
+        return d;
+    }
+    const auto pit = m->polities.find(m->region);
+    d.header = pit != m->polities.end() ? pit->second.name : m->region;
+    if (m->stations.empty())
+        d.title = m->catalogues.count(m->region) ? "станций нет - шум" : "поиск станций...";
+    else
+    {
+        d.title = m->stations[m->station % m->stations.size()].name;
+        d.connecting = m->streamState.load() == 1 || m->streamState.load() == 3;
+    }
+    return d;
+}
+
 std::string CockpitRadio::takeNotice()
 {
     std::string n;

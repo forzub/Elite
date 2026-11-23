@@ -57,6 +57,19 @@ public:
     // a short notice of the last change (the HUD shows it for a few seconds), taken once
     std::string takeNotice();
 
+    // what the magnitola widget shows: the source, the zone / the track counter, the title, the signal and the volume
+    struct Display
+    {
+        bool on = false;
+        Source source = Source::Playlist;
+        std::string header;   // "Земля (Сол)" / "3 / 12" / "нет передатчиков"
+        std::string title;    // the station / the track / a state ("поиск станций", "шум")
+        int signal = -1;      // 0..100 for the radio, -1 = none
+        int volume = 0;       // 0..100
+        bool connecting = false;
+    };
+    Display display() const;
+
     struct Impl;
 
 private:

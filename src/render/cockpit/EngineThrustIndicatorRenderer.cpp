@@ -804,9 +804,13 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
         roundedOutlinePx(text,px,y,w,displayH,7.0f*scale,1.0f*scale,
             style.panelBorder,style.panelBackground);
     };
+    m_groupFrame = {true, x, coolantX + w, y, scale};
     // When this resolution is too narrow, do not obscure the boresight.
     if(coolantX+w > viewport.width*0.44f)
+    {
+        m_groupFrame.right = reactorX - gap;
         return;
+    }
     const glm::vec4 amber=style.label;
     const glm::vec4 cyan(0.2f,0.72f,0.94f,1.0f);
     const glm::vec4 warn(1.0f,0.35f,0.12f,1.0f);

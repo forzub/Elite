@@ -802,9 +802,6 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
         radio.update();
         if (std::string n = radio.takeNotice(); !n.empty())
             m_pilotNotice = n;
-        if (const std::string line = radio.displayLine(); !line.empty())
-            TextRenderer::instance().textDrawPx(line, 40.0f, static_cast<float>(vp.height) - 160.0f, 14,
-                                                glm::vec4(0.55f, 0.95f, 0.85f, 0.85f));
     }
     // the hub's corridors (green lanes / red zones), faint, under the guidance corridor
     if (m_client)
@@ -1018,6 +1015,9 @@ void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShi
         m_engineThrustIndicatorRenderer.renderThermalSystems(
             cockpit.systems, engineThrustInstrument, vp
         );
+    // the magnitola right above the engine group (src/render/cockpit/CockpitRadioWidget.h)
+    if (cockpit.valid)
+        m_cockpitRadioWidget.render(m_engineThrustIndicatorRenderer.groupFrame(), vp);
 
     // The hull boresight is a fundamental attitude cue, not a velocity
     // cue and not a navigation-module product. Keep it present whenever

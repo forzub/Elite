@@ -226,6 +226,12 @@ add_subdirectory(src/world/navigation/trajectory)
 # that converts those products into PilotSkillExecutor intent. It is shared by
 # client and headless server so Stage 12 cannot drift into two planners.
 
+# the evasion teacher's dataset and the net's check (src/game/navigation/avoidance/): EliteEvasionLab dataset|eval ...
+add_executable(EliteEvasionLab tools/navigation_runtime/EvasionLab.cpp)
+target_include_directories(EliteEvasionLab PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+target_compile_features(EliteEvasionLab PRIVATE cxx_std_17)
+target_link_libraries(EliteEvasionLab PRIVATE nlohmann_json::nlohmann_json)
+
 add_executable(EliteSystemMapInfoCheck tools/navigation_runtime/SystemMapInfoCheck.cpp)
 target_include_directories(EliteSystemMapInfoCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
 target_compile_features(EliteSystemMapInfoCheck PRIVATE cxx_std_17)

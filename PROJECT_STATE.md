@@ -8099,3 +8099,16 @@ start-up hitches (render), trade step 16 part 3 live.
     streams decoding at 48 kHz, station switch; playlist with a Cyrillic file name.
     Measured (street view in «Высокий», Quadro RTX 3000): client+server process 2.6 GB working set / 3.7 GB private,
     GPU memory in use ~0.8 GB; frame p50 21-22 ms.
+  * 2026-11-23 EVASION NET (agreed order: the evasion first, teacher = a sampling optimizer):
+    src/game/navigation/avoidance/MultiThreatEvasion.h (the TEACHER: several straight-moving threats at once, one
+    constant acceleration held 6 s from 96 directions x 3 thrusts + nothing, main drive after its turn or RCS, scored by
+    the smallest separation margin over 30 s, then the least thrust), EvasionNet.h (MLP 36-64-64-3 tanh on a canonical
+    frame: nose +Z, the most dangerous threat on +X; GATE: the net's answer kept only when safe on its own and at least
+    as good as a 16-direction quick check, else the full teacher), tools/navigation_runtime/EvasionLab.cpp
+    (EliteEvasionLab dataset|eval), evasion_train.py (numpy, Adam), weights assets/data/navigation/evasion_net.json.
+    RESULT (5000 fresh crowded scenes x 2 seeds): teacher 0.16 ms per scene, safe 62.9 / 63.8 % (the rest unavoidable
+    by design); the net alone safe 49.6 / 50.2 % (val MSE 0.063 vs variance 0.162 - the best direction is often
+    ambiguous); the gate = the teacher's safety (0 scenes worse; a first gate was worse in 2 - fixed) but NO speed gain
+    (0.160 ms). CONCLUSION: for evasion the teacher itself is the runtime answer (cheap enough); the net pipeline
+    (dataset -> train -> JSON -> C++ inference -> safety gate) is ready for the draft-route seed, where the teacher
+    (the continuous optimizer) costs seconds. NOT yet wired into the autopilot (navigator step 3: dodging radar contacts).

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdlib>
 #include <cmath>
 
 #include "DynamicMotionSystem.h"
@@ -969,6 +970,22 @@ void DynamicMotionSystem::applyLocalFrameInput(
             r*(static_cast<double>(strafeInput)*assistedLateralStabilizationAccel)+
             u*(static_cast<double>(liftInput)*assistedLateralStabilizationAccel),
             assistedLateralStabilizationAccel);
+        // THE MAIN DRIVE IN FREE ROTATION (author 2026-11-23: «режим, который включается кнопкой "забой" ... если
+        // разрешить маршевый, то по сути получим почти обычного ньютона»): the speed keys (W / S, the autopilot's
+        // speed command) fire the main bank along the nose / the reverse bank against it with their real authority -
+        // point the nose anywhere and push. Not in the return-to-velocity alignment. ELITE_FREE_ROTATION_MAIN=0: off.
+        static const bool freeRotationMain = [] {
+            const char* v = std::getenv("ELITE_FREE_ROTATION_MAIN");
+            return !(v && v[0] == '0');
+        }();
+        if (freeRotationMain && motion.assistedFreeRotation)
+        {
+            const double cmd = std::clamp(static_cast<double>(targetSpeedRate), -1.0, 1.0);
+            if (cmd > 1.0e-6)
+                motion.mainEngineAccelerationMps2 += f * (cmd * forwardMainAccel);
+            else if (cmd < -1.0e-6)
+                motion.mainEngineAccelerationMps2 += f * (cmd * reverseMainAccel);
+        }
         motion.manoeuvreAccelerationMps2=glm::dvec3(0.0);
         motion.assistedStabilizationAccelerationMps2=glm::dvec3(0.0);
         motion.engineAccelerationMps2=motion.mainEngineAccelerationMps2;

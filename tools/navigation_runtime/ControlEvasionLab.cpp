@@ -242,6 +242,40 @@ int main(int argc, char** argv)
         }
         return 0;
     }
+    if (mode == "freerot")
+    {
+        // the main drive in Assisted free rotation (Backspace): the speed key held 4 s, nose fixed -> the push along it
+        for (const bool free : {false, true})
+        {
+            ShipTransform tr {};
+            tr.motion.mode = game::navigation::MotionMode::HubTactical;
+            tr.motion.systemId = 1;
+            tr.motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+            tr.motion.assistedFreeRotation = free;
+            tr.orientation = glm::mat4(1.0f);
+            game::navigation::KinematicFrame frame;
+            frame.systemId = 1;
+            frame.frameId = "freerot";
+            frame.localToWorldBasis = glm::dmat3(1.0);
+            frame.valid = true;
+            tr.motion.travelFrame = frame;
+            WorldParams world {};
+            for (int i = 0; i < 80; ++i)
+            {
+                ShipControlState c {};
+                c.targetSpeedRate = 1.0f;
+                SharedShipPhysics::integrate(tr, ship, c, world, 0.05f);
+                game::navigation::DynamicMotionSystem::applyLocalFrameInput(tr.motion, frame, ship, 0.05f, c.targetSpeedRate,
+                                                                             false, 0.0f, 0.0f, 0.0f, tr.forward(), tr.right(),
+                                                                             tr.up());
+                game::navigation::DynamicMotionSystem::updateLocalFrameMotion(tr.motion, tr.worldPosition, frame, ship, 0.05);
+            }
+            const glm::dvec3 v = tr.motion.localVelocityMps;
+            std::printf("[ControlLab] Assisted%s, speed key 4 s: velocity (%.1f %.1f %.1f) m/s, free rotation still %d\n",
+                        free ? " FREE ROTATION" : "", v.x, v.y, v.z, tr.motion.assistedFreeRotation ? 1 : 0);
+        }
+        return 0;
+    }
     if (mode == "compare")
     {
         const int scenes = argc > 3 ? std::atoi(argv[3]) : 2000;

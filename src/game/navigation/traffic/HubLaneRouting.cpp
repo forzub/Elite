@@ -1,6 +1,7 @@
 #include "src/game/navigation/traffic/HubLaneRouting.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <sstream>
 
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
@@ -59,8 +60,17 @@ CompiledTrafficRoute applyHubLanes(
     std::ostringstream text;
     for (auto& red : network.redZoneObstacles(frame))
         request.obstacles.push_back(std::move(red));
-    // the hub speed limit for a route INTO the hub (its goal within the zone; the lanes carry their own limits)
-    if (network.speedLimitMps() > 0.0 &&
+    // the hub speed limit for a route INTO the hub (its goal within the zone; the lanes carry their own limits).
+    // The author (2026-11-23) wants no cap in free space (30 m/s in the built-up part only) - but the free legs' turn
+    // geometry is still sized for the route's max speed: without the cap (500 m/s) the lane joins grew to an 8.8 km
+    // approach with a 14 km turn radius, no lane entry fitted and the optimizer found no path (planmove v2). So the
+    // cap stays ON until the turn geometry is decoupled from the max speed (fast on straights, braking for turns).
+    // ELITE_HUB_ZONE_SPEED_CAP=0 turns it off (for that work).
+    static const bool zoneCap = [] {
+        const char* v = std::getenv("ELITE_HUB_ZONE_SPEED_CAP");
+        return !(v && v[0] == '0');
+    }();
+    if (zoneCap && network.speedLimitMps() > 0.0 &&
         glm::length(request.goalMeters - frame.originWorldMeters) <= network.speedLimitZoneMeters() &&
         request.maxSpeedMps > network.speedLimitMps())
     {

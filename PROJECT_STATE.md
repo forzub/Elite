@@ -8205,3 +8205,23 @@ start-up hitches (render), trade step 16 part 3 live.
     collision-proven), gentle 0.4 pushes per axis in the set, 2 s holds. planstart v2: 0 collisions in all four runs
     (rest / after HOME toward / sideways / away), cross-track mean 6-21 m. NOTE: a ship entering the hub frame from
     free flight starts at rest relative to the hub - the "with a velocity" case is a request in flight (planmove.sh).
+  * 2026-11-23 PLANNER FROM REST vs WITH A VELOCITY (author: «проверь работу планировщика когда корабль в покое
+    относительно хаба и когда у него есть вектор скорости»). From rest (pad B4-11 from 10 km, four starts): 2.6-3.3 s,
+    1 plan, 0 failures. NOTE: a ship entering the hub frame from free flight is at rest relative to the hub - a
+    "velocity" case is a request in flight: planmove.sh (cruising the B4-11 route through the city at ~120 m/s, a new
+    request at 110 s): A2-03 ahead 3.0 s / 14.9 km, H2-03 across (a turn back) 3.3 s / 10.2 km, H4-01 aside 3.1 s /
+    9.3 km - the plan starts at the live speed (120-125 m/s) from the live place, the ship coasting while it is computed
+    (zero command, the start projected only by the late-entry rebind); the route opens with a 1 km straight along the
+    velocity then turns smoothly (no reversal); cross-track mean 5-7 m, 0 replans / failures / collisions, all landed.
+    SPEED CAP: removing the 150 m/s hub-zone cap (author: no cap in free space, 30 in built-up) BROKE planning - the
+    free legs' turn geometry is sized for the max speed (500 m/s -> 8.8 km lane-join approach, 14 km turn radius, no
+    lane entry fits, 13 plans of 21 s, none feasible). The cap stays ON (ELITE_HUB_ZONE_SPEED_CAP=0 off) until the turn
+    geometry is decoupled from the max speed (fast on straights, braking for turns).
+    TURNS: Assisted turns are planned on the RCS lateral authority (the law keeps the nose on the velocity); Newtonian
+    on the main drive. FREE ROTATION (Backspace) now fires the main drive from the speed keys (W / S, the autopilot's
+    speed command) along / against the nose with its real authority (DynamicMotionSystem; ELITE_FREE_ROTATION_MAIN=0
+    off) - "almost Newtonian" (author); EliteControlEvasionLab freerot: 0 -> 294 m/s in 4 s (73.5 m/s2).
+    NEXT (navigator): Assisted thrust-vector turns (free rotation, nose into the arc, main drive) -> plan Assisted turns
+    on the main drive; decouple turn geometry from the max speed and drop the free-space cap; the failures test set;
+    then route tracking by control programs on the damaged physics with a net proposing them (author: the autopilot on
+    a net with the engine groups' state as input).

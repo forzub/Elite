@@ -4253,7 +4253,11 @@ bool SpaceState::updateDockingExecuting(Frame& f)
         }
         else
         {
-            submitAutopilotControl(output.control);
+            // the REFLEX over the route: a radar contact coming inside the safe sphere -> an RCS dodge, then back
+            const double reflexLateral = std::min({liveAssistedAuthority.positive[0], liveAssistedAuthority.negative[0],
+                                                   liveAssistedAuthority.positive[1], liveAssistedAuthority.negative[1]});
+            submitAutopilotControl(applyEvasionReflex(output.control, reflexLateral, std::max(10.0, 0.5 * f.hull.lengthMeters),
+                                                      universeTimeSeconds));
 
             if (m_clientDockingTraceTick == 0 ||
                 m_client->lastSimulationMetadata().serverTick -
@@ -4958,4 +4962,44 @@ void SpaceState::publishDockingAdvisoryPresentation(Frame& f)
             true
         )
     );
+}
+
+// Navigator step 3: the evasion reflex (src/game/navigation/avoidance/EvasionReflex.h) over the route autopilot. The
+// radar is the only source (the author: «радар должен кормить автопилот»); no radar / radar down = no reflex.
+ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double lateralAccelMps2, double hullRadiusMeters,
+                                                double universeTimeSeconds)
+{
+    const char* env = std::getenv("ELITE_DEV_EVASION_REFLEX");
+    if (env && env[0] == '0')
+        return control;
+    const auto& sensors = m_client->navigationSensors();
+    if (!sensors.radarInstalled || !sensors.radarOperational || !sensors.hasRadarScan)
+    {
+        m_evasionReflex.reset();
+        return control;
+    }
+    if (!m_evasionNetTried)
+    {
+        m_evasionNetTried = true;
+        const bool ok = m_evasionNet.load("assets/data/navigation/evasion_net.json");
+        std::cerr << "[Evasion] net " << (ok ? "loaded" : "absent - the teacher alone") << " (" << m_evasionNet.outputs()
+                  << " outputs)" << std::endl;
+        if (ok)
+            m_evasionReflex.net = &m_evasionNet;
+    }
+    const auto& cmd = m_evasionReflex.update(sensors.latestRadarScan, universeTimeSeconds, lateralAccelMps2, hullRadiusMeters);
+    if (!cmd.active)
+        return control;
+    control.strafeInput = cmd.strafe;
+    control.liftInput = cmd.lift;
+    control.forwardInput = cmd.forward;
+    control.rcsTranslationPerAxisAuthority = true;
+    if (universeTimeSeconds - m_evasionLogAt > 1.0)
+    {
+        m_evasionLogAt = universeTimeSeconds;
+        std::cerr << "[Evasion] dodge: " << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
+                  << " m -> " << cmd.marginMeters << " m; RCS (" << cmd.strafe << ", " << cmd.lift << ", " << cmd.forward
+                  << ")" << (cmd.fromNet ? " [net]" : " [teacher]") << std::endl;
+    }
+    return control;
 }

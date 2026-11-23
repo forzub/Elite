@@ -73,14 +73,42 @@ int main(int argc, char** argv)
         {
             const EvasionScene sc = randomScene(rng);
             const EvasionCanonical c = evasionFeatures(sc);
-            const EvasionChoice best = teachEvasion(sc);
+            int bd = -1, bl = -1;
+            const EvasionChoice best = teachEvasion(sc, &bd, &bl);
             const glm::dvec3 target = c.toCanonical * best.accel / sc.caps.mainAccelMps2;
             for (const float f : c.features)
                 out << f << ",";
-            out << target.x << "," << target.y << "," << target.z << "," << best.minMarginMeters << "\n";
+            out << target.x << "," << target.y << "," << target.z << "," << best.minMarginMeters << ","
+                << evasionClassOf(c, bd, bl) << "\n";
         }
         const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
         std::cerr << "[EvasionLab] " << scenes << " scenes, teacher " << ms / scenes << " ms per scene\n";
+        return 0;
+    }
+    if (mode == "costs")
+    {
+        // per scene: 36 features + the margin and the score of EVERY canonical manoeuvre (289 + 289), float32 binary -
+        // for training on the collision outcome itself (author 2026-11-23: «я бы штрафовал за столкновение»)
+        const int scenes = std::atoi(argv[2]);
+        std::mt19937 rng(argc > 4 ? static_cast<unsigned>(std::atoi(argv[4])) : 1u);
+        std::ofstream out(argv[3], std::ios::binary);
+        std::vector<float> row;
+        for (int s = 0; s < scenes; ++s)
+        {
+            const EvasionScene sc = randomScene(rng);
+            const EvasionCanonical c = evasionFeatures(sc);
+            row.assign(c.features.begin(), c.features.end());
+            std::vector<float> scores;
+            for (int k = 0; k < EvasionClassCount; ++k)
+            {
+                const EvasionChoice ch = scoreEvasionClass(sc, c, k);
+                row.push_back(static_cast<float>(std::max(-1000.0, std::min(ch.minMarginMeters, 1000.0))));
+                scores.push_back(static_cast<float>(std::max(-1000.0, ch.score)));
+            }
+            row.insert(row.end(), scores.begin(), scores.end());
+            out.write(reinterpret_cast<const char*>(row.data()), static_cast<std::streamsize>(row.size() * sizeof(float)));
+        }
+        std::cerr << "[EvasionLab] " << scenes << " scenes x " << EvasionClassCount << " manoeuvres written\n";
         return 0;
     }
     if (mode == "eval")
@@ -93,6 +121,8 @@ int main(int argc, char** argv)
         }
         const int scenes = std::atoi(argv[3]);
         std::mt19937 rng(argc > 4 ? static_cast<unsigned>(std::atoi(argv[4])) : 99u);
+        const bool classifier = static_cast<int>(net.outputs()) == EvasionClassCount;
+        const int topK = argc > 5 ? std::atoi(argv[5]) : 12;
         int usedNet = 0, teacherSafe = 0, gateSafe = 0, netOnlySafe = 0, worse = 0;
         double teacherMs = 0.0, gateMs = 0.0, netMs = 0.0, marginLoss = 0.0;
         for (int s = 0; s < scenes; ++s)
@@ -102,9 +132,18 @@ int main(int argc, char** argv)
             const EvasionChoice teacher = teachEvasion(sc);
             auto t1 = std::chrono::steady_clock::now();
             bool fromNet = false;
-            const EvasionChoice gate = proposeEvasion(sc, &net, &fromNet);
+            const EvasionChoice gate = classifier ? proposeEvasionTopK(sc, net, topK, &fromNet) : proposeEvasion(sc, &net, &fromNet);
             auto t2 = std::chrono::steady_clock::now();
-            const EvasionChoice raw = scoreWanted(sc, net.infer(sc));
+            EvasionChoice raw;
+            if (classifier)
+            {
+                // the net alone: its top class only
+                const EvasionCanonical c = evasionFeatures(sc);
+                const std::vector<float> lg = net.forward(c.features);
+                raw = scoreEvasionClass(sc, c, static_cast<int>(std::max_element(lg.begin(), lg.end()) - lg.begin()));
+            }
+            else
+                raw = scoreWanted(sc, net.infer(sc));
             auto t3 = std::chrono::steady_clock::now();
             teacherMs += std::chrono::duration<double, std::milli>(t1 - t0).count();
             gateMs += std::chrono::duration<double, std::milli>(t2 - t1).count();

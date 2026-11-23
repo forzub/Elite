@@ -11,6 +11,7 @@
 // 100 m/s, radius / 100 m, present) -> 4 + 8 K. Output: the acceleration / mainAccel (3).
 #include <cmath>
 #include <fstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -103,12 +104,22 @@ public:
             for (const auto& l : j.at("layers"))
             {
                 Layer layer;
-                layer.w = l.at("w").get<std::vector<std::vector<float>>>();
+                const auto w = l.at("w").get<std::vector<std::vector<float>>>();
                 layer.b = l.at("b").get<std::vector<float>>();
+                layer.in = w.empty() ? 0 : w.front().size();
+                for (const auto& row : w)
+                {
+                    if (row.size() != layer.in)
+                        throw std::runtime_error("ragged layer");
+                    layer.w.insert(layer.w.end(), row.begin(), row.end());
+                }
+                if (w.size() != layer.b.size())
+                    throw std::runtime_error("bias size");
                 m_layers.push_back(std::move(layer));
             }
-            m_ready = !m_layers.empty() && !m_layers.front().w.empty() &&
-                      static_cast<int>(m_layers.front().w.front().size()) == EvasionNetInputs;
+            m_ready = !m_layers.empty() && static_cast<int>(m_layers.front().in) == EvasionNetInputs;
+            for (std::size_t i = 1; i < m_layers.size(); ++i)
+                m_ready = m_ready && m_layers[i].in == m_layers[i - 1].b.size();
         }
         catch (const std::exception&)
         {
@@ -117,26 +128,35 @@ public:
         return m_ready;
     }
     bool ready() const { return m_ready; }
+    std::size_t outputs() const { return m_layers.empty() ? 0 : m_layers.back().b.size(); }
 
-    // the net's acceleration in the scene frame
-    glm::dvec3 infer(const EvasionScene& sc) const
+    // the raw outputs for the canonical features
+    std::vector<float> forward(const std::vector<float>& features) const
     {
-        const EvasionCanonical c = evasionFeatures(sc);
-        std::vector<float> a = c.features, b;
+        std::vector<float> a = features, b;
         for (std::size_t li = 0; li < m_layers.size(); ++li)
         {
             const auto& L = m_layers[li];
             b.assign(L.b.begin(), L.b.end());
-            for (std::size_t o = 0; o < L.w.size(); ++o)
+            const std::size_t n = std::min(L.in, a.size());
+            const float* row = L.w.data();
+            for (std::size_t o = 0; o < b.size(); ++o, row += L.in)
             {
                 float s = b[o];
-                const auto& row = L.w[o];
-                for (std::size_t i = 0; i < row.size() && i < a.size(); ++i)
+                for (std::size_t i = 0; i < n; ++i)
                     s += row[i] * a[i];
                 b[o] = li + 1 < m_layers.size() ? std::tanh(s) : s;
             }
             a.swap(b);
         }
+        return a;
+    }
+
+    // the net's acceleration in the scene frame
+    glm::dvec3 infer(const EvasionScene& sc) const
+    {
+        const EvasionCanonical c = evasionFeatures(sc);
+        const std::vector<float> a = forward(c.features);
         if (a.size() < 3)
             return glm::dvec3(0.0);
         const glm::dvec3 canon(a[0], a[1], a[2]);
@@ -150,8 +170,9 @@ public:
 private:
     struct Layer
     {
-        std::vector<std::vector<float>> w;   // [out][in]
+        std::vector<float> w;   // [out][in], row-major
         std::vector<float> b;
+        std::size_t in = 0;
     };
     std::vector<Layer> m_layers;
     bool m_ready = false;
@@ -166,6 +187,76 @@ inline EvasionChoice scoreWanted(const EvasionScene& sc, const glm::dvec3& wante
     double delay = 0.0;
     const glm::dvec3 a = evasionAccelFor(sc, wanted / m, std::min(1.0, m / std::max(1.0e-6, sc.caps.mainAccelMps2)), &delay);
     return scoreEvasion(sc, a, delay);
+}
+
+// THE CLASSIFIER variant (author 2026-11-23: «может пересмотреть количество узлов и связей?»): the net scores the
+// teacher's own manoeuvre set, expressed in the CANONICAL frame (96 directions x 3 thrusts + nothing = 289 classes);
+// the K best are scored by the teacher's score and the best kept. A regression net averages the equally good dodges
+// (left / right) into the bad middle; choosing among the manoeuvres cannot.
+constexpr int EvasionClassCount = 96 * 3 + 1;
+constexpr int EvasionClassNothing = 96 * 3;
+
+// the class of a teacher's choice: its direction taken to the canonical frame, the nearest canonical direction
+inline int evasionClassOf(const EvasionCanonical& c, int dirIndex, int level)
+{
+    if (dirIndex < 0)
+        return EvasionClassNothing;
+    const auto& dirs = evasionDirections();
+    const glm::dvec3 d = c.toCanonical * dirs[static_cast<std::size_t>(dirIndex)];
+    int best = 0;
+    double bestDot = -2.0;
+    for (std::size_t i = 0; i < dirs.size(); ++i)
+    {
+        const double k = glm::dot(dirs[i], d);
+        if (k > bestDot)
+        {
+            bestDot = k;
+            best = static_cast<int>(i);
+        }
+    }
+    return best * 3 + level;
+}
+
+inline EvasionChoice scoreEvasionClass(const EvasionScene& sc, const EvasionCanonical& c, int cls)
+{
+    if (cls == EvasionClassNothing)
+        return scoreEvasion(sc, glm::dvec3(0.0), 0.0);
+    const glm::dvec3 dir = glm::transpose(c.toCanonical) * evasionDirections()[static_cast<std::size_t>(cls / 3)];
+    double delay = 0.0;
+    const glm::dvec3 a = evasionAccelFor(sc, dir, EvasionThrustLevels[cls % 3], &delay);
+    return scoreEvasion(sc, a, delay);
+}
+
+// the classifier's gate: the K best classes (+ nothing) by the teacher's score; when none of them is safe, the full
+// teacher (it may still find a way the net did not rank)
+inline EvasionChoice proposeEvasionTopK(const EvasionScene& sc, const EvasionNet& net, int k, bool* usedNet = nullptr)
+{
+    if (usedNet)
+        *usedNet = false;
+    const EvasionCanonical c = evasionFeatures(sc);
+    const std::vector<float> logits = net.forward(c.features);
+    if (static_cast<int>(logits.size()) != EvasionClassCount)
+        return teachEvasion(sc);
+    std::vector<int> order(EvasionClassCount);
+    for (int i = 0; i < EvasionClassCount; ++i)
+        order[static_cast<std::size_t>(i)] = i;
+    k = std::clamp(k, 1, EvasionClassCount);
+    std::partial_sort(order.begin(), order.begin() + k, order.end(),
+                      [&](int a, int b) { return logits[static_cast<std::size_t>(a)] > logits[static_cast<std::size_t>(b)]; });
+    EvasionChoice best = scoreEvasion(sc, glm::dvec3(0.0), 0.0);
+    for (int i = 0; i < k; ++i)
+    {
+        const EvasionChoice ch = scoreEvasionClass(sc, c, order[static_cast<std::size_t>(i)]);
+        if (ch.score > best.score)
+            best = ch;
+    }
+    if (best.minMarginMeters >= 0.0)
+    {
+        if (usedNet)
+            *usedNet = true;
+        return best;
+    }
+    return teachEvasion(sc);
 }
 
 // THE GATE: the net's answer when it is at least as safe as a quick check (16 directions at full thrust + nothing);

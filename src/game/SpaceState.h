@@ -74,6 +74,8 @@
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
 #include "src/game/navigation/autopilot/NewtonianOptimalController.h"
 #include "src/game/navigation/autopilot/DedicatedClientRouteAutopilotLaws.h"
+#include "src/game/navigation/avoidance/EvasionNet.h"
+#include "src/game/navigation/avoidance/EvasionReflex.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"
@@ -654,6 +656,13 @@ private:
     double m_bodyAutopilotLastServerTime = 0.0;
     double m_bodyAutopilotRestoreUntil = 0.0;
     ShipControlState m_clientAutopilotControl {};
+    // navigator step 3: the radar-fed evasion reflex over the route autopilot's controls (EvasionReflex.h)
+    game::navigation::avoidance::EvasionReflex m_evasionReflex;
+    game::navigation::avoidance::EvasionNet m_evasionNet;
+    bool m_evasionNetTried = false;
+    double m_evasionLogAt = -1.0e9;
+    ShipControlState applyEvasionReflex(ShipControlState control, double lateralAccelMps2, double hullRadiusMeters,
+                                        double universeTimeSeconds);
     double m_clientDockingSettledSinceServerSeconds = -1.0;
     std::uint64_t m_clientDockingTraceTick = 0;
     double m_clientDockingRouteProgressMeters = 0.0;

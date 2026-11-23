@@ -8112,3 +8112,24 @@ start-up hitches (render), trade step 16 part 3 live.
     (0.160 ms). CONCLUSION: for evasion the teacher itself is the runtime answer (cheap enough); the net pipeline
     (dataset -> train -> JSON -> C++ inference -> safety gate) is ready for the draft-route seed, where the teacher
     (the continuous optimizer) costs seconds. NOT yet wired into the autopilot (navigator step 3: dodging radar contacts).
+  * 2026-11-23 EVASION NET v2 + THE REFLEX (navigator step 3). Author: «может пересмотреть количество узлов и связей?»,
+    «я бы штрафовал за столкновение». Measured (EliteEvasionLab eval, 5000 scenes, gate top 12):
+    - regression 128x128 on 200k scenes: the net alone 51.5 % safe (64x64: 49.6 %) - size is not the problem; a
+      regression net averages the equally good dodges (left / right) into the bad middle;
+    - CLASSIFIER (the teacher's 289 manoeuvres in the canonical frame, cross-entropy on the teacher's class), 128x128:
+      alone 58.8 %, gate 63.3 % vs the teacher 62.9 % (0 scenes worse), 0.12-0.14 ms vs 0.16-0.19 ms; 256x256 the same
+      accuracy, slower. SHIPPED (assets/data/navigation/evasion_net.json, proposeEvasionTopK);
+    - RISK training (evasion_train.py mode risk on EliteEvasionLab costs: every manoeuvre's outcome, loss = the expected
+      cost of the net's choice, 1 per collision + its depth): alone 58.1 %, gate 63.4 %; a safe manoeuvre exists in
+      62.7 % of scenes, the risk net's top 1 is safe in 90 % of those, its top 12 in 97 %. Same ceiling as the
+      classifier; kept for the draft-route net (no teacher to imitate there).
+    THE REFLEX (src/game/navigation/avoidance/EvasionReflex.h, SpaceState::applyEvasionReflex over the route
+    autopilot's controls): 4 Hz from the RADAR scan only (ships / debris, not structures), "hold the course" judged over
+    12 s; inside the safe sphere -> the manoeuvre (net gate, else the teacher), RCS only (strafe / lift / forward, per-axis
+    authority; the Assisted law yields a manually translated axis), released 1 s after the course is clear; clear cap
+    30 m (with the 200 m cap a dodge swerved 196 m off the route; now 72 m). ELITE_DEV_EVASION_REFLEX=0 off.
+    LIVE (navsuite reflex / reflex2): 0 collisions in all 4 scenarios, dodges logged [net] and [teacher]; the 122 s
+    first plan to H2-03 in pad_series is the old planner issue (v8: 125 s), not the reflex.
+    NEXT (author): the net's output = the PILOT'S CONTROLS (control programs), the outcome judged by the real ship
+    physics, trained with the collision penalty and the ship's response as input - engine layout is the physics
+    layer's business.

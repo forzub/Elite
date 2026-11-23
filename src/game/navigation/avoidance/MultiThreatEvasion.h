@@ -42,6 +42,8 @@ struct EvasionScene
     double horizonSeconds = 30.0;
     double holdSeconds = 6.0;
     double marginMeters = 40.0;
+    double clearCapMeters = 200.0;   // beyond this margin clear is clear (the least thrust wins); the reflex uses a small
+                                     // cap - a dodge just enough, not a 170 m swerve off the route (suite 2026-11-23)
 };
 
 struct EvasionChoice
@@ -99,7 +101,7 @@ inline EvasionChoice scoreEvasion(const EvasionScene& sc, const glm::dvec3& acce
     if (sc.threats.empty())
         out.minMarginMeters = 1.0e6;
     // safety first (the margin, capped: beyond 200 m clear is clear), then the least thrust
-    out.score = std::min(out.minMarginMeters, 200.0) - 2.0 * aMag;
+    out.score = std::min(out.minMarginMeters, sc.clearCapMeters) - 2.0 * aMag;
     return out;
 }
 
@@ -121,19 +123,31 @@ inline const std::vector<glm::dvec3>& evasionDirections()
     return dirs;
 }
 
-// THE TEACHER: the best of the sampled manoeuvres
-inline EvasionChoice teachEvasion(const EvasionScene& sc)
+constexpr double EvasionThrustLevels[3] = {0.35, 0.7, 1.0};
+
+// THE TEACHER: the best of the sampled manoeuvres (bestDir / bestLevel: its direction and thrust indices, -1 = nothing)
+inline EvasionChoice teachEvasion(const EvasionScene& sc, int* bestDir = nullptr, int* bestLevel = nullptr)
 {
     EvasionChoice best = scoreEvasion(sc, glm::dvec3(0.0), 0.0);   // doing nothing is a candidate
-    for (const auto& dir : evasionDirections())
-        for (const double t01 : {0.35, 0.7, 1.0})
+    int bd = -1, bl = -1;
+    const auto& dirs = evasionDirections();
+    for (std::size_t di = 0; di < dirs.size(); ++di)
+        for (int li = 0; li < 3; ++li)
         {
             double delay = 0.0;
-            const glm::dvec3 a = evasionAccelFor(sc, dir, t01, &delay);
+            const glm::dvec3 a = evasionAccelFor(sc, dirs[di], EvasionThrustLevels[li], &delay);
             const EvasionChoice c = scoreEvasion(sc, a, delay);
             if (c.score > best.score)
+            {
                 best = c;
+                bd = static_cast<int>(di);
+                bl = li;
+            }
         }
+    if (bestDir)
+        *bestDir = bd;
+    if (bestLevel)
+        *bestLevel = bl;
     return best;
 }
 } // namespace game::navigation::avoidance

@@ -1,3 +1,4 @@
+#include "src/audio/CockpitRadio.h"
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
@@ -767,6 +768,16 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
         vp.width,
         vp.height
     );
+    // the cockpit radio: its notices to the pilot, its display line (bottom left, over the panels)
+    {
+        auto& radio = audio::CockpitRadio::instance();
+        radio.update();
+        if (std::string n = radio.takeNotice(); !n.empty())
+            m_pilotNotice = n;
+        if (const std::string line = radio.displayLine(); !line.empty())
+            TextRenderer::instance().textDrawPx(line, 40.0f, static_cast<float>(vp.height) - 160.0f, 14,
+                                                glm::vec4(0.55f, 0.95f, 0.85f, 0.85f));
+    }
     // the hub's corridors (green lanes / red zones), faint, under the guidance corridor
     if (m_client)
         m_hubCorridorHudRenderer.render(

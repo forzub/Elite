@@ -569,6 +569,7 @@ add_executable(EliteGame
     src/game/localization/LocalizationService.cpp
     src/audio/AudioEngine.cpp
     src/audio/MiniaudioImpl.cpp
+    src/audio/CockpitRadio.cpp
 
 
     src/window/Window.cpp
@@ -971,7 +972,7 @@ if(TARGET EliteGame)
 endif()
 
 if(TARGET EliteGame AND WIN32)
-    target_link_libraries(EliteGame PRIVATE winmm)
+    target_link_libraries(EliteGame PRIVATE winmm winhttp)
 endif()
 
 if(ELITE_BUILD_SERVER)

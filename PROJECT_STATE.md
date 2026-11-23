@@ -8087,3 +8087,15 @@ start-up hitches (render), trade step 16 part 3 live.
     OPEN (ring): the planner fails at random from the axis (1 of 2 runs, "continuous optimizer did not reach a feasible
     path") - the rotating frame; only 3 air ships (2 loop lanes); no dock (an axis dock to add); no monorail on the ring;
     launch / Ctrl+L on the ring not checked; the 3D hub map boxes are flat.
+  * 2026-11-23 AUDIO: the WinMM PlaySound backend had ONE channel (every new sound cut the one playing - the author's
+    "the sound breaks off" on the terminal text; not the CPU) -> miniaudio 0.11.21 mixer (third_party/miniaudio,
+    public domain / MIT-0), voice pools per effect; effects still off unless ELITE_SOUND_EFFECTS=1 (author 2026-11-08).
+    COCKPIT RADIO (src/audio/CockpitRadio): the player's playlist (mp3 / flac / wav under radio.json "music_dir",
+    default the user's Music; shuffled, streamed) and free internet radio (radio-browser.info catalogue, no key: 25 RU +
+    60 top-voted working MP3 streams, cached radio_stations.json; WinHTTP -> MP3 decoder thread -> 4 s PCM ring buffer
+    -> the mixer, a network gap = silence, reconnect after 5 s). Keys: Ctrl+B power, Ctrl+Shift+B playlist <-> radio,
+    Ctrl+[ / ] previous / next, Ctrl+Shift+[ / ] volume; display line bottom left; settings
+    %LOCALAPPDATA%/EliteGame/client/radio.json; DEV verb radio:<power|source|next|prev|vol+|vol->. LIVE: 74 stations,
+    streams decoding at 48 kHz, station switch; playlist with a Cyrillic file name.
+    Measured (street view in «Высокий», Quadro RTX 3000): client+server process 2.6 GB working set / 3.7 GB private,
+    GPU memory in use ~0.8 GB; frame p50 21-22 ms.

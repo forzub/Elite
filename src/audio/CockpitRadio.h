@@ -1,0 +1,51 @@
+#pragma once
+
+// THE COCKPIT RADIO («магнитола», author 2026-11-23: «можно ли сделать что бы был бесплатный доступ к интернет радио?
+// поставим магнитолу. может дать игроку возможность грузить свой плей-лист?»):
+//   PLAYLIST - the player's own music: every .mp3 / .flac / .wav under a folder (default: the user's Music folder;
+//              radio.json "music_dir"), shuffled, streamed from disk;
+//   RADIO    - free internet radio: the open radio-browser.info catalogue (no key) - the most voted working MP3
+//              stations + Russian ones, cached; the stream is read by WinHTTP and decoded on its own thread into a PCM
+//              ring buffer the mixer plays from (the network never stalls the audio thread: a gap is silence).
+// The mixer is AudioEngine's (miniaudio). Keys (SpaceState): Ctrl+B power, Ctrl+Shift+B playlist <-> radio,
+// Ctrl+[ / Ctrl+] previous / next, Ctrl+Shift+[ / ] volume. Settings: <client preferences dir>/radio.json.
+#include <memory>
+#include <string>
+
+namespace audio
+{
+class CockpitRadio
+{
+public:
+    enum class Source
+    {
+        Playlist,
+        Radio
+    };
+
+    static CockpitRadio& instance();
+    ~CockpitRadio();
+
+    void togglePower();
+    void switchSource();
+    void next();
+    void previous();
+    void volumeStep(int steps);   // +-1 = +-10 %
+
+    // once a frame: a finished track -> the next one, the station's state
+    void update();
+
+    bool on() const;
+    Source source() const;
+    // the magnitola's display: "РАДИО · <station> · 128 кбит/с" / "ПЛЕЙЛИСТ 3/12 · <track>" / a state ("поиск станций")
+    std::string displayLine() const;
+    // a short notice of the last change (the HUD shows it for a few seconds), taken once
+    std::string takeNotice();
+
+    struct Impl;
+
+private:
+    CockpitRadio();
+    std::unique_ptr<Impl> m;
+};
+} // namespace audio

@@ -1,3 +1,4 @@
+#include "src/audio/CockpitRadio.h"
 #include "src/game/navigation/HubBerthOccupancy.h"
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/navigation/HubPlanCatalog.h"
@@ -1371,6 +1372,15 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
     // charge; pressed again while it runs - stop. The server decides (GameSimulationRefuel.cpp, docs/FUEL_STATIONS.md).
     if(ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_U) && m_client)
         requestClientRefuel(-1);
+
+    // the cockpit RADIO («магнитола», src/audio/CockpitRadio.h): Ctrl+B power, Ctrl+Shift+B playlist <-> radio,
+    // Ctrl+[ / Ctrl+] previous / next, Ctrl+Shift+[ / ] volume
+    if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_B))
+        shiftDown ? audio::CockpitRadio::instance().switchSource() : audio::CockpitRadio::instance().togglePower();
+    if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_LEFT_BRACKET))
+        shiftDown ? audio::CockpitRadio::instance().volumeStep(-1) : audio::CockpitRadio::instance().previous();
+    if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_RIGHT_BRACKET))
+        shiftDown ? audio::CockpitRadio::instance().volumeStep(1) : audio::CockpitRadio::instance().next();
 
     // Ctrl+J: the J engine on / off (the server refuses it near objects / below the J floor).
     // Ctrl+K: stabilization on / off (off = normal flight, no speed envelope; on = the hub /

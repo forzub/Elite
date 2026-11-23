@@ -1,3 +1,4 @@
+#include "src/audio/CockpitRadio.h"
 // DEV scripted acceptance driver of the client (see DevScriptRunner.h).
 // Moved verbatim out of SpaceState::update (audit 2026-11-06 rec. 8 / 10):
 // the verbs, their order and every log line are unchanged.
@@ -516,6 +517,18 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.m_systemMapRenderer.devFocusHub(arg("hub:"));
     else if (cmd.rfind("object:", 0) == 0)
         s.m_systemMapRenderer.devActivateObject(arg("object:"));
+    else if (cmd.rfind("radio:", 0) == 0)   // DEV: the cockpit radio - radio:power | source | next | prev | vol+ | vol-
+    {
+        auto& radio = audio::CockpitRadio::instance();
+        const std::string a = arg("radio:");
+        if (a == "power") radio.togglePower();
+        else if (a == "source") radio.switchSource();
+        else if (a == "next") radio.next();
+        else if (a == "prev") radio.previous();
+        else if (a == "vol+") radio.volumeStep(1);
+        else if (a == "vol-") radio.volumeStep(-1);
+        std::cerr << "[Radio] DEV " << a << " -> " << radio.displayLine() << std::endl;
+    }
     else if (cmd == "launch" && s.m_client)   // DEV: Ctrl+L on a city place (LandOnPad index 2: off it on the manoeuvre thrusters)
     {
         game::network::ClientMessage msg;

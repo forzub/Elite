@@ -8193,3 +8193,8 @@ start-up hitches (render), trade step 16 part 3 live.
     distance, the new one with street-lamp chains, roof lights and beacons. The time vs band fade could not be told
     apart by frame bursts (camera motion dominates the frame difference; captures drop to ~half rate) - the author
     to look live; time is the default.
+    PLANNED (author 2026-11-23: «попробовать систему уклонения и расчета маршрута при отказах»): navigator step 7 test
+    set - failures (no main drive, half the RCS, one side's thrusters = asymmetric push, slow attitude) x when (before the
+    request, in flight on the route, during an aimed ram) x the reflex and the planner; DEV ELITE_DEV_DESTROY_MODULES_AT
+    + the straight ram + the pad scenarios. The control-program reflex flies the damaged physics as the mother computer
+    reports it, so it should adapt without special cases - to be shown.

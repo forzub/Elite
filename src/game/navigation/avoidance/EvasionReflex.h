@@ -78,6 +78,7 @@ public:
     // state now, judged against the radar's tracks; hands off when "hands off" is clear. The program held keeps the
     // lead unless another one is clearly better (no flicker between equals).
     double programDtSeconds = 0.1;
+    double programHoldSeconds = 2.0;   // re-chosen 4 times a second anyway; a 4 s full push moved ~1 km
     double lastProgramMs = 0.0;
     const EvasionReflexCommand& updatePrograms(const radar::RadarScanReport& scan, double now, const ControlShipState& ship,
                                                double hullRadiusMeters)
@@ -90,8 +91,8 @@ public:
         if (sc.threats.empty())
             return release(now);
         const auto& progs = controlPrograms();
-        const ControlFlight handsOff = flyControlProgram(ship, progs[ControlProgramHandsOff], holdSeconds, horizonSeconds,
-                                                         programDtSeconds);
+        const ControlFlight handsOff = flyControlProgram(ship, progs[ControlProgramHandsOff], programHoldSeconds,
+                                                         horizonSeconds, programDtSeconds);
         const EvasionChoice course = judgeControlFlight(handsOff, sc, ship.velocityBody);
         m_cmd.courseMarginMeters = course.contact ? -1.0e3 : course.minMarginMeters;
         if (!course.contact && course.minMarginMeters >= 0.0)
@@ -104,9 +105,9 @@ public:
         {
             if (i == ControlProgramHandsOff)
                 continue;
-            const EvasionChoice c = judgeControlFlight(flyControlProgram(ship, progs[i], holdSeconds, horizonSeconds,
+            const EvasionChoice c = judgeControlFlight(flyControlProgram(ship, progs[i], programHoldSeconds, horizonSeconds,
                                                                          programDtSeconds),
-                                                       sc, ship.velocityBody);
+                                                       sc, ship.velocityBody, 30.0, &handsOff, &progs[i]);
             if (static_cast<int>(i) == m_cmd.program)
                 heldScore = c.score;
             if (c.score > bestChoice.score)

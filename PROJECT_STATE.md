@@ -8198,3 +8198,10 @@ start-up hitches (render), trade step 16 part 3 live.
     request, in flight on the route, during an aimed ram) x the reflex and the planner; DEV ELITE_DEV_DESTROY_MODULES_AT
     + the straight ram + the pad scenarios. The control-program reflex flies the damaged physics as the mother computer
     reports it, so it should adapt without special cases - to be shown.
+  * 2026-11-23 REFLEX FIX (found by the planner start checks): in the city the program reflex dodged lane traffic with
+    the FIRST equally safe program - full RCS back + left + down for 4 s (no effort cost; the test hull's RCS ~20 m/s2)
+    - ~1 km off the route into a residential block, 118 touches (the reflex sees no structures). Now: an effort cost
+    (the gentlest of the equally safe), a departure cost beyond 40 m from the hands-off flight (the route's corridor is
+    collision-proven), gentle 0.4 pushes per axis in the set, 2 s holds. planstart v2: 0 collisions in all four runs
+    (rest / after HOME toward / sideways / away), cross-track mean 6-21 m. NOTE: a ship entering the hub frame from
+    free flight starts at rest relative to the hub - the "with a velocity" case is a request in flight (planmove.sh).

@@ -32,6 +32,12 @@ struct ControlProgram
 {
     float strafe = 0, lift = 0, forward = 0, pitch = 0, yaw = 0, speed = 0;
     bool handsOff() const { return strafe == 0 && lift == 0 && forward == 0 && pitch == 0 && yaw == 0 && speed == 0; }
+    // how much of the stick it uses (the least of the equally safe wins)
+    float effort() const
+    {
+        return std::abs(strafe) + std::abs(lift) + std::abs(forward) + 0.5f * (std::abs(pitch) + std::abs(yaw)) +
+               0.5f * std::abs(speed);
+    }
 };
 
 // 27 RCS translations (index 13 = hands off) + 4 turns x 3 speed commands + the 2 speed commands alone = 41
@@ -49,6 +55,14 @@ inline const std::vector<ControlProgram>& controlPrograms()
                 p.push_back({0, 0, 0, t[0], t[1], float(v)});
         p.push_back({0, 0, 0, 0, 0, 1});
         p.push_back({0, 0, 0, 0, 0, -1});
+        // gentle pushes along each axis (a small dodge is often enough - and stays inside the route's safe corridor)
+        for (int ax = 0; ax < 3; ++ax)
+            for (const float sgn : {-0.4f, 0.4f})
+            {
+                ControlProgram g;
+                (ax == 0 ? g.strafe : ax == 1 ? g.lift : g.forward) = sgn;
+                p.push_back(g);
+            }
         return p;
     }();
     return out;
@@ -129,8 +143,12 @@ inline ControlFlight flyControlProgram(const ControlShipState& st, const Control
 // a flight against straight-moving threats (tracks relative to us at the start; their own motion = relative + ours).
 // Any miss beats any touch; misses by the margin (capped at clearCap - just enough), touches by the softest impact
 // along the contact normal (the glancing blow).
+// reference / program: the cost of leaving the planned (collision-proven) corridor - the flight's largest departure from
+// the hands-off flight beyond corridorMeters, and the stick effort (in-game 2026-11-23: a full-stick dodge with no such
+// cost threw the ship ~1 km off its route into the city's buildings - the reflex does not see structures)
 inline EvasionChoice judgeControlFlight(const ControlFlight& f, const EvasionScene& sc, const glm::dvec3& ourVelocity,
-                                        double clearCapMeters = 30.0)
+                                        double clearCapMeters = 30.0, const ControlFlight* reference = nullptr,
+                                        const ControlProgram* program = nullptr, double corridorMeters = 40.0)
 {
     EvasionChoice out;
     out.minMarginMeters = 1.0e30;
@@ -161,6 +179,15 @@ inline EvasionChoice judgeControlFlight(const ControlFlight& f, const EvasionSce
     if (sc.threats.empty())
         out.minMarginMeters = 1.0e6;
     out.score = out.contact ? -1000.0 - 5.0 * out.impactNormalSpeedMps : std::min(out.minMarginMeters, clearCapMeters);
+    if (reference)
+    {
+        double departure = 0.0;
+        for (std::size_t k = 0; k < f.pos.size() && k < reference->pos.size(); ++k)
+            departure = std::max(departure, glm::length(f.pos[k] - reference->pos[k]));
+        out.score -= 0.5 * std::max(0.0, departure - corridorMeters);
+    }
+    if (program)
+        out.score -= 2.0 * static_cast<double>(program->effort());
     return out;
 }
 } // namespace game::navigation::avoidance

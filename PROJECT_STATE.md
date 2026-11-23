@@ -8157,3 +8157,15 @@ start-up hitches (render), trade step 16 part 3 live.
     drive needs the nose), the best program 91.9 % (touches 2408 vs 75; unavoidable normal impact 13.9 -> 10.0 m/s).
     => the reflex moves to the control programs judged on the real physics; the net's job becomes picking the few
     programs worth flying (3.7 ms -> well under 1 ms).
+  * 2026-11-23 THE CONTROL-PROGRAM REFLEX IN THE GAME + THE AIMED-RAM TEST. EvasionReflex::updatePrograms
+    (src/game/navigation/avoidance/ControlProgramEvasion.h: 41 pilot-control programs flown on the player's own physics
+    - effective params, law, body velocity, target speed, rates - from now, judged against the radar tracks; hands off
+    first, all programs only when that is unsafe; the program holds the whole stick incl. turn and speed; hysteresis
+    5 points). ELITE_DEV_EVASION_REFLEX=0 off / =pm the old point-mass reflex. DEV straight ram
+    (GameSimulationCombat.cpp): ELITE_DEV_TARGET_FIGHTS=ram + ELITE_DEV_RAM_STRAIGHT=1 - the target leads the player and
+    LOCKS a collision course ELITE_DEV_RAM_LOCK_S (5) s out, then flies straight; ELITE_DEV_TARGET_BEARING / _ELEVATION
+    place it; "[RamStraight] closest approach". Scratchpad ramtest.sh / ramgap.py.
+    LIVE (ramtest v4: autopilot to pad B4-11, a rammer at 120 m/s closing locked 600 m out): head-on - no reflex passed
+    42 m (centres), the OLD point-mass reflex COLLIDED (159 m/s), the program reflex passed 260 m; from the right - 76 /
+    141 / 177 m. Programs cost 2.9-3.2 ms per reflex tick (only while a threat is real). Earlier runs v1-v3 invalid
+    (a lock at 1500 m missed by the route's turns; a stale exe; a lead with the hub-orbit world velocity).

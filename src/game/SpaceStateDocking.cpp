@@ -4190,6 +4190,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
         recoverOrFail("motors degraded; committed route needs new planning");
         return false;
     }
+    FollowerAgent reflexAgent {};   // the agent the autopilot flew this frame (the evasion reflex's ship state)
     const auto handleOutput = [&](const auto& output) -> bool
     {
         if (output.valid)
@@ -4256,8 +4257,19 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             // the REFLEX over the route: a radar contact coming inside the safe sphere -> an RCS dodge, then back
             const double reflexLateral = std::min({liveAssistedAuthority.positive[0], liveAssistedAuthority.negative[0],
                                                    liveAssistedAuthority.positive[1], liveAssistedAuthority.negative[1]});
+            // the ship's state for the control programs (body axes: +X right, +Y up, -Z nose - the radar's frame)
+            game::navigation::avoidance::ControlShipState reflexShip;
+            reflexShip.params = effectivePhysics;
+            reflexShip.law = controlLaw;
+            const glm::dvec3 vMap = reflexAgent.velocityMapMetersPerSecond;
+            reflexShip.velocityBody = glm::dvec3(glm::dot(vMap, reflexAgent.rightMap), glm::dot(vMap, reflexAgent.upMap),
+                                                 -glm::dot(vMap, reflexAgent.forwardMap));
+            reflexShip.targetForwardSpeedMps = reflexAgent.assistedTargetSpeedMps;
+            reflexShip.ratesPitchYawRoll = glm::vec3(static_cast<float>(reflexAgent.pitchRateRadPerSec),
+                                                     static_cast<float>(reflexAgent.yawRateRadPerSec),
+                                                     static_cast<float>(reflexAgent.rollRateRadPerSec));
             submitAutopilotControl(applyEvasionReflex(output.control, reflexLateral, std::max(10.0, 0.5 * f.hull.lengthMeters),
-                                                      universeTimeSeconds));
+                                                      universeTimeSeconds, &reflexShip));
 
             if (m_clientDockingTraceTick == 0 ||
                 m_client->lastSimulationMetadata().serverTick -
@@ -4445,10 +4457,11 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             pilotDt
         );
         core::hitch::mark("dock_assisted_pre_autopilot");
+        reflexAgent = makeAgent();
         const auto output =
             AssistedClientAutopilot::update(
                 m_clientAssistedRouteAutopilot,
-                makeAgent(),
+                reflexAgent,
                 effectivePhysics,
                 universeTimeSeconds,
                 pilotDt
@@ -4466,10 +4479,11 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             pilotDt
         );
         core::hitch::mark("dock_pre_autopilot");
+        reflexAgent = makeAgent();
         const auto output =
             NewtonianClientAutopilot::update(
                 m_clientNewtonianRouteAutopilot,
-                makeAgent(),
+                reflexAgent,
                 effectivePhysics,
                 universeTimeSeconds,
                 pilotDt
@@ -4967,7 +4981,8 @@ void SpaceState::publishDockingAdvisoryPresentation(Frame& f)
 // Navigator step 3: the evasion reflex (src/game/navigation/avoidance/EvasionReflex.h) over the route autopilot. The
 // radar is the only source (the author: «радар должен кормить автопилот»); no radar / radar down = no reflex.
 ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double lateralAccelMps2, double hullRadiusMeters,
-                                                double universeTimeSeconds)
+                                                double universeTimeSeconds,
+                                                const game::navigation::avoidance::ControlShipState* ship)
 {
     const char* env = std::getenv("ELITE_DEV_EVASION_REFLEX");
     if (env && env[0] == '0')
@@ -4987,19 +5002,36 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
         if (ok)
             m_evasionReflex.net = &m_evasionNet;
     }
-    const auto& cmd = m_evasionReflex.update(sensors.latestRadarScan, universeTimeSeconds, lateralAccelMps2, hullRadiusMeters);
+    // the control programs on the real physics (ELITE_DEV_EVASION_REFLEX=pm: the old point-mass reflex)
+    const bool programs = ship && !(env && env[0] == 'p');
+    const auto& cmd = programs
+                          ? m_evasionReflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, *ship, hullRadiusMeters)
+                          : m_evasionReflex.update(sensors.latestRadarScan, universeTimeSeconds, lateralAccelMps2, hullRadiusMeters);
     if (!cmd.active)
         return control;
     control.strafeInput = cmd.strafe;
     control.liftInput = cmd.lift;
     control.forwardInput = cmd.forward;
     control.rcsTranslationPerAxisAuthority = true;
+    if (cmd.program >= 0)
+    {
+        // the program owns the whole stick while it flies (an emergency: the route waits)
+        control.pitchInput = cmd.pitch;
+        control.yawInput = cmd.yaw;
+        control.rollInput = 0.0f;
+        control.targetSpeedRate = cmd.speedRate;
+    }
     if (universeTimeSeconds - m_evasionLogAt > 1.0)
     {
         m_evasionLogAt = universeTimeSeconds;
         std::cerr << "[Evasion] dodge: " << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
                   << " m -> " << cmd.marginMeters << " m; RCS (" << cmd.strafe << ", " << cmd.lift << ", " << cmd.forward
-                  << ")" << (cmd.fromNet ? " [net]" : " [teacher]") << std::endl;
+                  << ")" << (cmd.program >= 0 ? " program " + std::to_string(cmd.program) + " turn (" +
+                                                    std::to_string(cmd.pitch) + ", " + std::to_string(cmd.yaw) + ") speed " +
+                                                    std::to_string(cmd.speedRate) + ", " +
+                                                    std::to_string(m_evasionReflex.lastProgramMs) + " ms"
+                                              : std::string(cmd.fromNet ? " [net]" : " [teacher]"))
+                  << std::endl;
     }
     return control;
 }

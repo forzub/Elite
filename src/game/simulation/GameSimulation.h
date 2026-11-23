@@ -1244,6 +1244,7 @@ private:
     std::unordered_set<EntityId> m_devTargetLaserOn;
     std::unordered_map<std::uint64_t, double> m_devContactClockS;      // DEV ram: last contact per pair
     std::unordered_map<EntityId, double> m_devRamRetreatUntilS;        // DEV ram: back off after a contact
+    std::unordered_map<EntityId, glm::dvec3> m_devRamLockedW;          // DEV straight ram: the velocity locked at the aim
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

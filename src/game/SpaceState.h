@@ -662,7 +662,8 @@ private:
     bool m_evasionNetTried = false;
     double m_evasionLogAt = -1.0e9;
     ShipControlState applyEvasionReflex(ShipControlState control, double lateralAccelMps2, double hullRadiusMeters,
-                                        double universeTimeSeconds);
+                                        double universeTimeSeconds,
+                                        const game::navigation::avoidance::ControlShipState* ship = nullptr);
     double m_clientDockingSettledSinceServerSeconds = -1.0;
     std::uint64_t m_clientDockingTraceTick = 0;
     double m_clientDockingRouteProgressMeters = 0.0;

@@ -3396,6 +3396,7 @@ void GameSimulation::forgetShipDetail(EntityId id)
     m_devTargetLaserOn.erase(id);
     m_devTargetMissileClockS.erase(id);
     m_devRamRetreatUntilS.erase(id);
+    m_devRamLockedW.erase(id);
     m_npcNavigationControlBridges.erase(id);
     m_npcNavigationExecutionSnapshots.erase(id);
     m_npcNavigationLastExecutionTimeSeconds.erase(id);

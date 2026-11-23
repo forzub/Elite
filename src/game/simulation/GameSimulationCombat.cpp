@@ -214,7 +214,18 @@ EntityId GameSimulation::spawnCombatTarget(EntityId nearShipId, double distanceM
         return {};
     const auto& ptr = near->core().transform();
     const glm::dvec3 origin = world::coordinates::fullMeters(ptr.worldPosition);
-    const glm::dvec3 forward(ptr.forward());
+    glm::dvec3 forward(ptr.forward());
+    // DEV (the evasion test, author 2026-11-23: moving obstacles aimed at the player): ELITE_DEV_TARGET_BEARING /
+    // ELITE_DEV_TARGET_ELEVATION (degrees) put the target off the nose - 90 = from the right, 180 = from behind
+    {
+        const char* b = std::getenv("ELITE_DEV_TARGET_BEARING");
+        const char* e = std::getenv("ELITE_DEV_TARGET_ELEVATION");
+        const double bearing = b && *b ? glm::radians(std::atof(b)) : 0.0;
+        const double elevation = e && *e ? glm::radians(std::atof(e)) : 0.0;
+        const glm::dvec3 up(ptr.up()), right(ptr.right());
+        forward = glm::normalize(std::cos(elevation) * (std::cos(bearing) * forward + std::sin(bearing) * right) +
+                                 std::sin(elevation) * up);
+    }
     const glm::dvec3 position = origin + forward * distanceM;
     ShipInitData init;
     init.visual.shipName = "Мишень";
@@ -1066,6 +1077,60 @@ void GameSimulation::devCombatStep(double dt)
             return v && *v ? std::atof(v) : 90.0;
         }();
         // after a contact the rammer backs off for 6 s, then comes round again (no grinding against the hull)
+        // ELITE_DEV_RAM_STRAIGHT=1: the rammer leads the player until ELITE_DEV_RAM_LOCK_S (default 5) seconds before the
+        // impact, then LOCKS its velocity and flies straight on - for the last seconds a ballistic threat on a collision
+        // course, as the evasion reflex models them (a homing ram to the end is a pursuit, not an obstacle; a lock at
+        // 1500 m missed by 270-630 m - the player's route turned in the 19 s, ramtest v1)
+        static const bool ramStraight = [] {
+            const char* v = std::getenv("ELITE_DEV_RAM_STRAIGHT");
+            return v && v[0] == '1';
+        }();
+        static const double ramLockS = [] {
+            const char* v = std::getenv("ELITE_DEV_RAM_LOCK_S");
+            return v && *v ? std::atof(v) : 5.0;
+        }();
+        if (ram && ramStraight)
+        {
+            auto locked = m_devRamLockedW.find(id);
+            auto& mo = tr.motion;
+            if (locked == m_devRamLockedW.end())
+            {
+                // lead: at the player's place after the time to go (its velocity held)
+                const double tGo = dist / std::max(1.0, ramSpeed);
+                const glm::dvec3 aim = to;   // relative: vp + dir x speed intercepts a player holding its velocity (a lead with the WORLD vp - the hub orbit, 30 km/s - sent it away, ramtest v3)
+                const glm::dvec3 desired = vp + glm::normalize(aim) * ramSpeed;
+                const glm::dvec3 f = glm::normalize(aim);
+                glm::dvec3 r = glm::cross(f, glm::dvec3(0.0, 1.0, 0.0));
+                r = glm::length(r) < 1.0e-6 ? glm::dvec3(1.0, 0.0, 0.0) : glm::normalize(r);
+                tr.orientation = glm::mat4(glm::mat3(glm::dmat3(r, glm::cross(r, f), -f)));
+                mo.localVelocityMps = mo.travelFrame.worldToLocalVelocity(pd, desired);
+                if (tGo <= ramLockS)
+                {
+                    m_devRamLockedW.emplace(id, desired);
+                    std::cerr << "[RamStraight] ship " << id.value << " LOCKED on a collision course " << dist << " m out, "
+                              << tGo << " s to go at " << ramSpeed << " m/s closing" << std::endl;
+                }
+                continue;
+            }
+            mo.localVelocityMps = mo.travelFrame.worldToLocalVelocity(pd, locked->second);
+            // the closest approach of the pass (centres), logged once when the gap opens again
+            static std::unordered_map<std::uint64_t, double> closest;
+            auto c = closest.find(id.value);
+            if (c == closest.end())
+                c = closest.emplace(id.value, 1.0e30).first;
+            if (c->second >= 0.0)
+            {
+                if (dist < c->second)
+                    c->second = dist;
+                else if (dist > c->second + 50.0)
+                {
+                    std::cerr << "[RamStraight] ship " << id.value << " closest approach " << c->second << " m (centres)"
+                              << std::endl;
+                    c->second = -1.0;
+                }
+            }
+            continue;
+        }
         const bool retreat = ram && m_combatClockS < m_devRamRetreatUntilS[id];
         const double closing = ram ? (retreat ? -40.0 : ramSpeed) : std::clamp((dist - 1500.0) * 0.15, -60.0, 60.0);
         // the aim point: the enemy's centre swept over its hull (a fixed point only cuts one line through a ship)

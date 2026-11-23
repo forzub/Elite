@@ -8133,3 +8133,11 @@ start-up hitches (render), trade step 16 part 3 live.
     NEXT (author): the net's output = the PILOT'S CONTROLS (control programs), the outcome judged by the real ship
     physics, trained with the collision penalty and the ship's response as input - engine layout is the physics
     layer's business.
+  * 2026-11-23 GLANCING BLOW when contact is unavoidable (author: «если столкновение неизбежно - минимизировать ущерб ...
+    максимальный рикошет»): scoreEvasion finds the first touch (hulls, no safety margin), its contact normal and the
+    closing speed along it; any miss beats any touch, among touches the softest along the normal wins
+    (EvasionScene::glancingWhenUnavoidable, default on). EliteEvasionLab impact (5000 scenes): contact unavoidable in
+    1212 (the depth-only teacher touched in 1246 - it traded a touch for less thrust); normal impact speed: doing nothing
+    34.1 m/s, depth-only 25.0, glancing 20.0 (-20 %, energy -36 %); no extra cost (0.199 ms). The reflex gets it through
+    the teacher (the net gate only keeps safe answers). The side of the hull presented / the turn to present it - in the
+    control-program version (real physics, a box hull).

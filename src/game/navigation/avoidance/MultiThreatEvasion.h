@@ -42,6 +42,10 @@ struct EvasionScene
     double horizonSeconds = 30.0;
     double holdSeconds = 6.0;
     double marginMeters = 40.0;
+    // when contact cannot be avoided: judge by the IMPACT, not the depth (author 2026-11-23: «если столкновение
+    // неизбежно - минимизировать ущерб ... максимальный рикошет»): the closing speed along the contact normal at the
+    // first touch; the tangential part slides off. false = the old depth-only judgement (for the A/B in EvasionLab)
+    bool glancingWhenUnavoidable = true;
     double clearCapMeters = 200.0;   // beyond this margin clear is clear (the least thrust wins); the reflex uses a small
                                      // cap - a dodge just enough, not a 170 m swerve off the route (suite 2026-11-23)
 };
@@ -52,6 +56,9 @@ struct EvasionChoice
     double minMarginMeters = 0.0;  // the smallest margin over the horizon with it (< 0: hulls inside the safe sphere)
     double score = 0.0;
     double timeOfMinSeconds = 0.0;
+    bool contact = false;              // the hulls touch within the horizon
+    double impactNormalSpeedMps = 0.0; // the closing speed along the contact normal at the first touch
+    double impactSpeedMps = 0.0;       // the whole relative speed there
 };
 
 // the acceleration a ship can really give in direction `dir` with throttle t01: the main drive when the nose can be
@@ -85,11 +92,21 @@ inline EvasionChoice scoreEvasion(const EvasionScene& sc, const glm::dvec3& acce
         for (const auto& th : sc.threats)
         {
             const glm::dvec3 q = th.position + th.velocity * t;
-            const double margin = glm::length(q - p) - th.radiusMeters - sc.caps.radiusMeters - sc.marginMeters;
+            const double dist = glm::length(q - p);
+            const double margin = dist - th.radiusMeters - sc.caps.radiusMeters - sc.marginMeters;
             if (margin < out.minMarginMeters)
             {
                 out.minMarginMeters = margin;
                 out.timeOfMinSeconds = t;
+            }
+            if (!out.contact && dist < th.radiusMeters + sc.caps.radiusMeters)
+            {
+                // the first touch (sampled at dt: the normal is the centre line there, close enough for spheres)
+                out.contact = true;
+                const glm::dvec3 n = dist > 1.0e-6 ? (p - q) / dist : glm::dvec3(0.0, 0.0, 1.0);
+                const glm::dvec3 rel = v - th.velocity;   // ours relative to the threat
+                out.impactNormalSpeedMps = std::max(0.0, -glm::dot(rel, n));
+                out.impactSpeedMps = glm::length(rel);
             }
         }
         glm::dvec3 a(0.0);
@@ -102,6 +119,9 @@ inline EvasionChoice scoreEvasion(const EvasionScene& sc, const glm::dvec3& acce
         out.minMarginMeters = 1.0e6;
     // safety first (the margin, capped: beyond 200 m clear is clear), then the least thrust
     out.score = std::min(out.minMarginMeters, sc.clearCapMeters) - 2.0 * aMag;
+    // an unavoidable contact: any miss beats any touch; among touches the softest along the normal (a glancing blow)
+    if (sc.glancingWhenUnavoidable && out.contact)
+        out.score = -1000.0 - 5.0 * out.impactNormalSpeedMps - 0.1 * aMag;
     return out;
 }
 

@@ -85,6 +85,46 @@ int main(int argc, char** argv)
         std::cerr << "[EvasionLab] " << scenes << " scenes, teacher " << ms / scenes << " ms per scene\n";
         return 0;
     }
+    if (mode == "impact")
+    {
+        // A/B of the unavoidable case: the depth-only teacher vs the glancing-blow teacher, over the scenes where the
+        // glancing teacher cannot avoid contact; the impact speeds of what each one chose
+        const int scenes = std::atoi(argv[2]);
+        std::mt19937 rng(argc > 3 ? static_cast<unsigned>(std::atoi(argv[3])) : 5u);
+        int contacts = 0, depthContacts = 0;
+        double nNew = 0.0, nOld = 0.0, nNone = 0.0, sNew = 0.0, sOld = 0.0;
+        double msNew = 0.0, msOld = 0.0;
+        for (int s = 0; s < scenes; ++s)
+        {
+            EvasionScene sc = randomScene(rng);
+            auto t0 = std::chrono::steady_clock::now();
+            const EvasionChoice glancing = teachEvasion(sc);
+            auto t1 = std::chrono::steady_clock::now();
+            sc.glancingWhenUnavoidable = false;
+            const EvasionChoice depth = teachEvasion(sc);
+            auto t2 = std::chrono::steady_clock::now();
+            msNew += std::chrono::duration<double, std::milli>(t1 - t0).count();
+            msOld += std::chrono::duration<double, std::milli>(t2 - t1).count();
+            depthContacts += depth.contact ? 1 : 0;
+            if (!glancing.contact)
+                continue;
+            ++contacts;
+            const EvasionChoice none = scoreEvasion(sc, glm::dvec3(0.0), 0.0);
+            nNew += glancing.impactNormalSpeedMps;
+            nOld += depth.contact ? depth.impactNormalSpeedMps : 0.0;
+            nNone += none.contact ? none.impactNormalSpeedMps : 0.0;
+            sNew += glancing.impactSpeedMps;
+            sOld += depth.contact ? depth.impactSpeedMps : 0.0;
+        }
+        const double c = std::max(1, contacts);
+        std::printf("[EvasionLab] %d scenes: contact unavoidable in %d (the depth-only teacher touches in %d)\n", scenes,
+                    contacts, depthContacts);
+        std::printf("  impact along the normal, mean m/s: doing nothing %.1f, depth-only teacher %.1f, glancing teacher %.1f\n",
+                    nNone / c, nOld / c, nNew / c);
+        std::printf("  whole relative speed at the touch: depth-only %.1f, glancing %.1f; time per scene %.3f vs %.3f ms\n",
+                    sOld / c, sNew / c, msOld / scenes, msNew / scenes);
+        return 0;
+    }
     if (mode == "costs")
     {
         // per scene: 36 features + the margin and the score of EVERY canonical manoeuvre (289 + 289), float32 binary -

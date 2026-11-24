@@ -1540,6 +1540,9 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         if (m_devRollUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devRollUntilMs)
             sampled.rollInput = 1.0f;            // DEV "roll:<s>": roll key held
         const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
+        m_manualSampledThisFrame = true;
+        m_lastPilotSample = sampled;
+        m_unsampledAssistSubmitted = false;
         if (!virtualPilot)
         {
             // the collision assist (by the difficulty setting): a warning, or the reflex takes the stick only when a
@@ -1548,7 +1551,10 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
             m_client->submitInput(m_playerControl);
         }
         else
+        {
             m_manualReflex.reset();
+            m_manualAssistActive = false;   // NAV-10: a virtual pilot took over - no stale "assist active"
+        }
         const bool touching = sampled.pitchInput != 0.0f || sampled.yawInput != 0.0f || sampled.rollInput != 0.0f ||
                               sampled.strafeInput != 0.0f || sampled.liftInput != 0.0f || sampled.forwardInput != 0.0f ||
                               sampled.targetSpeedRate != 0.0f || sampled.assistedMaxSpeedCommand ||
@@ -1873,6 +1879,7 @@ void SpaceState::update(float dt)
     // service script): src/game/dev/DevScriptRunner.
     game::dev::DevScriptRunner::instance().update(*this);
     followControlledShip();
+    updateUnsampledCollisionAssist();
 
 
 

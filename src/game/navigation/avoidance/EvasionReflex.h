@@ -126,7 +126,11 @@ public:
         double largestThreat = 0.0;
         for (const auto& th : sc.threats)
             largestThreat = std::max(largestThreat, th.radiusMeters);
-        const double window = urgencyFor(lateralAccelMps2, hullRadiusMeters, largestThreat) * (m_cmd.active ? 1.5 : 1.0);
+        // NAV-5: the lateral authority the window is computed from - the caller's live figure (Assisted telemetry), else
+        // the RCS lateral acceleration of the SAME physics the programs are flown on (a Newtonian route / the manual and
+        // phase assist passed none: a fixed 5 s window, 8 s needed at 2 m/s2)
+        const double lateral = lateralAccelMps2 > 0.0 ? lateralAccelMps2 : static_cast<double>(ship.params.strafeAccel);
+        const double window = urgencyFor(lateral, hullRadiusMeters, largestThreat) * (m_cmd.active ? 1.5 : 1.0);
         m_cmd.urgencySeconds = window;
         const bool urgent = (course.contact && course.contactTimeSeconds <= window) ||
                             (course.minMarginMeters < 0.0 && course.timeOfMinSeconds <= window);
@@ -181,7 +185,22 @@ public:
         m_cmd = {};
         m_nextAt = 0.0;
         m_clearSince = -1.0;
+        m_lastNow = -1.0;
     }
+    // THE EPISODE the reflex serves (audit 8e3c49007 NAV-7 "phantom dodge"): one route run, one virtual-pilot phase of
+    // one request, the pilot's own flight. A different episode, or the clock going back, starts it clean - never the
+    // last episode's dodge (up to 1 s of a full stick by the pad after a route ended mid-dodge), its hysteresis or its
+    // widened window. Call before update / updatePrograms.
+    void bindEpisode(std::uint64_t key, double now)
+    {
+        if (key != m_episode || (m_lastNow >= 0.0 && now + 1.0e-6 < m_lastNow))
+        {
+            reset();
+            m_episode = key;
+        }
+        m_lastNow = now;
+    }
+    std::uint64_t episode() const { return m_episode; }
 
 private:
     // the scan -> the scene in OUR CURRENT body frame at now (the prediction's t = 0):
@@ -256,5 +275,7 @@ private:
     EvasionReflexCommand m_cmd;
     double m_nextAt = 0.0;
     double m_clearSince = -1.0;
+    double m_lastNow = -1.0;
+    std::uint64_t m_episode = 0;
 };
 } // namespace game::navigation::avoidance

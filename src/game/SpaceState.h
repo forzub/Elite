@@ -666,13 +666,38 @@ private:
     double m_manualAssistSuppressedUntil = -1.0e9;   // a sharp pilot input took the stick back
     double m_manualAssistWarnedAt = -1.0e9;
     double m_manualAssistLogAt = -1.0e9;
+    // the manual / phase reflex's physics (NAV-4): keyed by the ship instance, control model and law, refreshed every
+    // 5 server ticks
+    struct ReflexPhysicsCache
+    {
+        std::uint64_t instance = 0;
+        int model = -1;
+        int law = -1;
+        std::uint64_t tick = 0;
+        bool valid = false;
+        ShipParams params {};
+    } m_reflexPhysicsCache;
     bool m_manualAssistActive = false;
     // autopilotPhase: the virtual pilot's phases WITHOUT the route reflex (stabilizing, planning, the recovery after a
     // failure - a rammer met the ship braking after an engine loss and passed 39 m off, failsuite v1): always "assist",
     // no pilot cancel, its own reflex state
     ShipControlState applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds,
-                                                bool autopilotPhase = false);
+                                                bool autopilotPhase = false, std::uint64_t pilotTag = 0);
     game::navigation::avoidance::EvasionReflex m_phaseReflex;
+    // the reflex episode of the current docking / route request (EvasionReflex::bindEpisode): the request serial + a tag
+    std::uint64_t reflexEpisodeKey(std::uint64_t tag) const;
+    // THE ONE submission of a virtual pilot's control (audit NAV-8: formation, the body autopilot, the route-run legs and
+    // the docking coasts submitted without the reflex): the phase reflex over it in hub-local flight (a global / J
+    // command is not what the control programs model - left as is), then the ordinary input path. pilotTag names the
+    // pilot (the reflex episode).
+    void submitVirtualPilotControl(const ShipControlState& control, std::uint64_t pilotTag);
+    // NAV-8: a frame whose input returned before the controls were sampled (a map / panel / service page open) - the
+    // server keeps the pilot's last control, so the manual collision assist still watches it: a dodge is submitted over
+    // the pilot's last sample, and that sample is restored once the dodge ends
+    void updateUnsampledCollisionAssist();
+    bool m_manualSampledThisFrame = false;
+    bool m_unsampledAssistSubmitted = false;
+    ShipControlState m_lastPilotSample {};
     // our hull's conservative bounding radius from its REAL geometry (HitVolumeBounds.h): the replicated live hit
     // volumes, else the descriptor's dimensions (audit NAV-2: max(10, length / 2) under-sized a Cobra, wider than long)
     double ownBoundingRadiusMeters() const;

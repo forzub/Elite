@@ -159,10 +159,8 @@ void SpaceState::updateClientRoute()
         return;
     }
     const auto submit = [&](const ShipControlState& control) {
-        m_clientAutopilotControl = control;
-        m_clientAutopilotControlActive = true;
         m_clientRouteOwnsControl = true;
-        m_client->submitInput(m_clientAutopilotControl);
+        submitVirtualPilotControl(control, 0x52u);   // the route-run legs: the reflex over them (NAV-8)
     };
     const auto finishPoint = [&] {
         // after a stop / a landing: its action, then the next leg

@@ -1005,6 +1005,15 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 );
                 objectGraphMs += elapsedMs(phaseBegin);
             }
+            // a new object with no static payload (audit SRV-3: objects coming back after a jump had none - no
+            // obstacle geometry for the planner); counted, logged in summary
+            if (!o.graph.hasModules && !o.graph.hasDebugHitVolumes)
+            {
+                static int bare = 0;
+                if (++bare <= 3 || bare % 50 == 0)
+                    std::cerr << "[Replication] object " << o.id.value << " '" << o.displayName
+                              << "' arrived WITHOUT its static payload (" << bare << " so far)" << std::endl;
+            }
 
              state.renderAssemblyModules = state.assemblyModules; 
             

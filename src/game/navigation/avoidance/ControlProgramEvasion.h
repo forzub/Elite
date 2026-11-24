@@ -21,6 +21,7 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/KinematicFrame.h"
 #include "src/game/navigation/avoidance/MultiThreatEvasion.h"
+#include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -77,6 +78,9 @@ struct ControlShipState
     glm::dvec3 velocityBody {0.0};   // our velocity (the frame the threats move straight in), body axes
     double targetForwardSpeedMps = 0.0;
     glm::vec3 ratesPitchYawRoll {0.0f};
+    // the consumer's RCS delta-v ownership (ShipControlState::rcsKeepsTranslationDeltaV): the Newtonian route keeps a
+    // trim, the keypad releases it - the dodge is predicted with the flag it will be flown with (NAV-9)
+    bool rcsKeepsTranslationDeltaV = false;
 };
 
 struct ControlFlight
@@ -143,13 +147,16 @@ inline ControlFlight flyControlProgram(const ControlShipState& st, const Control
             c.pitchInput = pr.pitch;
             c.yawInput = pr.yaw;
             c.targetSpeedRate = pr.speed;
-            c.rcsTranslationPerAxisAuthority = true;
         }
-        SharedShipPhysics::integrate(tr, st.params, c, world, static_cast<float>(dt));
-        game::navigation::DynamicMotionSystem::applyLocalFrameInput(tr.motion, frame, st.params, static_cast<float>(dt),
-                                                                     c.targetSpeedRate, c.cruiseActive, c.forwardInput,
-                                                                     c.liftInput, c.strafeInput, tr.forward(), tr.right(),
-                                                                     tr.up());
+        // as the reflex's command is flown (NAV-9: the simulation went around the execution gateway - the per-axis RCS
+        // and delta-v flags never reached the motion state, the main command was the raw rate): the same flags, the
+        // same gateway (attitude via SharedShipPhysics, translation via the gateway's path)
+        c.rcsTranslationPerAxisAuthority = true;
+        c.rcsKeepsTranslationDeltaV = st.rcsKeepsTranslationDeltaV;
+        c.cancelVelocityAlignment = true;
+        game::ship::control::ShipControlExecutionGateway::integrateAttitude(tr, st.params, c, world, static_cast<float>(dt));
+        (void)game::ship::control::ShipControlExecutionGateway::evaluateTranslationControl(tr, st.params, c,
+                                                                                          static_cast<float>(dt));
         game::navigation::DynamicMotionSystem::updateLocalFrameMotion(tr.motion, tr.worldPosition, frame, st.params, dt);
         intervalMaxAccel = std::max(intervalMaxAccel, glm::length(tr.motion.localVelocityMps - previousVelocity) / dt);
         previousVelocity = tr.motion.localVelocityMps;

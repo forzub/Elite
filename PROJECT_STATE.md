@@ -8436,3 +8436,32 @@ start-up hitches (render), trade step 16 part 3 live.
   not a regression; dock pilots 3.1 ms. (c) replication ~20 ms per tick for 153 in-process sessions (selection 5.5,
   snapshot build 6.3, copies 2.8, encode 3.6). (d) the tick is single-threaded; system passes are independent.
 - Bisect against 5b7d83f21 could not run: the old code loads ship meshes under names no longer on disk (ignored assets).
+
+### Audit 8e3c49007 follow-up 2026-11-24: NAV-4..NAV-9 + SRV-3 - BUILT, CTEST, LIVE
+- NAV-7 phantom dodge: EvasionReflex::bindEpisode(key, now) - the reflex serves one episode (the route run of a docking
+  request: serial + tag; a virtual-pilot phase: serial + ClientDockingPhase + pilot tag; the pilot's own flight); a new
+  episode or the clock going back resets it (no stale dodge / hysteresis / widened window by the pad).
+- NAV-6: ShipControlState::cancelVelocityAlignment (wire protocol 50): while the reflex flies, the persistent alignment
+  (the recovery stop's BrakeToStop, ForwardToVelocity) is cancelled in SharedShipPhysics - the dodge predicted with
+  alignment None is the one flown. Set by the route reflex and the manual / phase assist.
+- NAV-4: the manual / phase reflex physics is a member cache keyed by ship instance + control model + law, refreshed
+  every 5 server ticks (was a function static shared by everything, 1 s, a failed read cached zero capabilities).
+- NAV-5: the urgency window takes the caller's lateral figure, else the programs' own physics' strafeAccel (a
+  Newtonian route / the manual and phase assist got a fixed 5 s; 2 m/s2 now gives 8 s).
+- NAV-8: SpaceState::submitVirtualPilotControl - the one submission of a virtual pilot's control with the phase reflex
+  over it in hub-local flight (formation, body autopilot, route-run legs, the docking recovery / authority-lost coasts;
+  a global / J command is left alone - not what the programs model); updateUnsampledCollisionAssist - a frame whose
+  input returned before the controls were sampled still runs the manual assist over the pilot's last control (and
+  restores it after a dodge). NOT exercised live: the DEV "detail" map does not skip the sampling.
+- NAV-9: flyControlProgram goes through ShipControlExecutionGateway (integrateAttitude + evaluateTranslationControl)
+  with the flags the command is flown with (per-axis RCS, cancel alignment, the consumer's rcsKeepsTranslationDeltaV via
+  ControlShipState): a Newtonian route's dodge keeps 40 m/s lateral after a 2 s hold - predicted 0 before.
+- NAV-10 (part): m_manualAssistActive cleared when a virtual pilot takes over.
+- SRV-3: GameServer::copySparseSnapshotForSession - a session ENTERING a system gets its objects from the canonical
+  replication snapshot (complete static payload); A/B over a dedicated server, Sol -> Tau Ceti -> Sol: old entry
+  (ELITE_DEV_OLD_SYSTEM_ENTRY=1) 200+ objects arrived with no modules / hit volumes (already on the FIRST entry into
+  Tau Ceti, not only on the return), new 0. Client diagnostic "[Replication] object ... arrived WITHOUT its static
+  payload".
+- Tests: evasion_trajectory_conflict 5102 checks (+ episode, urgency from physics, alignment cancel, gateway flags).
+- Live: route ramtest head-on 51-57 m / right 103 m (no dodge), 0 collisions; engine lost + recovery stop + ram: phase
+  dodges, miss 83 m (was 72), landed 197-204 s; city B4-11 185 s, 0 dodges.

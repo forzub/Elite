@@ -3611,7 +3611,16 @@ bool GameServer::copySparseSnapshotForSession(
         if (signal.systemId == systemId)
             outSnapshot.signals.push_back(signal);
     outSnapshot.objects.clear();
-    for (const auto& object : m_lastSnapshot.objects)
+    // ENTERING a system (a jump; audit SRV-3): the client dropped this system's objects when it left, and the ordinary
+    // per-tick rows carry the static payload (modules, links, hit volumes) only on the tick it changed - a hub's docks
+    // came back with no obstacle geometry (the planner waited 60 s and refused). The entry takes the objects from the
+    // canonical replication snapshot, which holds them complete.
+    static const bool oldEntry = [] {   // DEV A/B: ELITE_DEV_OLD_SYSTEM_ENTRY=1 the old (bare) entry
+        const char* v = std::getenv("ELITE_DEV_OLD_SYSTEM_ENTRY");
+        return v && v[0] == '1';
+    }();
+    const bool enteringSystem = inOutPublishedSystemId != systemId && !oldEntry;
+    for (const auto& object : enteringSystem ? m_canonicalReplicationSnapshot.objects : m_lastSnapshot.objects)
         if (object.systemId == systemId)
             outSnapshot.objects.push_back(object);
     outSnapshot.hubs.clear();

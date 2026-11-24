@@ -137,9 +137,7 @@ void SpaceState::updateFormationTask(double dt)
     rq.deltaSeconds = dt;
     const auto law = me.transform.motion.localControlLaw;
     const ShipControlState control = m_formationPilot.update(law, rq, capability.effectivePhysics);
-    m_clientAutopilotControl = control;
-    m_clientAutopilotControlActive = true;
-    m_client->submitInput(m_clientAutopilotControl);
+    submitVirtualPilotControl(control, 0x46u);   // formation flight: the reflex over it (NAV-8)
 
     if (glfwGetTime() - m_formationTask.logAt > 2.0)
     {

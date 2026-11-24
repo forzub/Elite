@@ -66,6 +66,11 @@ struct ShipControlState
     game::navigation::VelocityAlignmentMode velocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
 
+    // THE EVASION REFLEX owns the stick this sample (audit 8e3c49007 NAV-6): a persistent alignment mode (BrakeToStop
+    // from the recovery stop, ForwardToVelocity) is cancelled, so the dodge the reflex predicted on its own physics
+    // (alignment None) is the manoeuvre flown - not a 1/dt longitudinal brake or a hull flip over it.
+    bool cancelVelocityAlignment = false;
+
     // Legacy navigation-v2 diagnostic/lab seam.
     //
     // Production autopilot MUST NOT use this path. It is a virtual pilot and

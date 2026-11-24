@@ -76,6 +76,13 @@ void evaluateControl(
                 control.velocityAlignmentCommand
             );
     }
+    // the evasion reflex flies this sample: no persistent alignment over its dodge (NAV-6)
+    if (control.cancelVelocityAlignment &&
+        motion.velocityAlignmentMode != game::navigation::VelocityAlignmentMode::None)
+    {
+        (void)game::navigation::LocalFlightControlStateMachine::
+            cancelVelocityAlignment(motion);
+    }
 
     if (control.assistedMaxSpeedCommand)
     {

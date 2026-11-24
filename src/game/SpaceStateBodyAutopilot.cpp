@@ -371,8 +371,6 @@ void SpaceState::updateClientBodyAutopilot()
         control.globalFlightCommandValid = true;
         control.globalFrameRequest = out.control.globalFrameRequest;
     }
-    m_clientAutopilotControl = control;
-    m_clientAutopilotControlActive = true;
     m_bodyAutopilotOwnsControl = true;
-    m_client->submitInput(m_clientAutopilotControl);
+    submitVirtualPilotControl(control, 0x42u);   // the body autopilot: the reflex over its local flight (NAV-8)
 }

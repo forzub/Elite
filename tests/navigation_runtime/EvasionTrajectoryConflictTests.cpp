@@ -13,6 +13,7 @@
 #include "src/game/navigation/avoidance/ControlProgramEvasion.h"
 #include "src/game/navigation/avoidance/EvasionReflex.h"
 #include "src/game/navigation/avoidance/TrajectoryConflict.h"
+#include "src/world/WorldParams.h"
 
 namespace av = game::navigation::avoidance;
 
@@ -295,6 +296,128 @@ void testUncertainty()
 }
 } // namespace
 
+av::ControlShipState episodeShip()
+{
+    av::ControlShipState ship;
+    ship.params = ShipParams {};
+    ship.params.maxPitchRate = ship.params.maxYawRate = ship.params.maxRollRate = 1.0f;
+    ship.params.angularAccel = 2.0f;
+    ship.params.angularDamping = 2.0f;
+    ship.params.maxCombatSpeed = ship.params.maxCruiseSpeed = 300.0f;
+    ship.params.throttleAccel = 30.0f;
+    ship.params.forwardMainEngineAccelerationMps2 = 30.0f;
+    ship.params.strafeAccel = 20.0f;
+    ship.params.maxStrafeSpeed = 80.0f;
+    ship.law = game::navigation::LocalFlightControlLaw::Assisted;
+    ship.velocityBody = glm::dvec3(0.0, 0.0, -60.0);
+    ship.targetForwardSpeedMps = 60.0;
+    return ship;
+}
+
+// NAV-7: a dodge never outlives its episode (a route that ended mid-dodge, a new phase / request) or a clock going back
+void testEpisode()
+{
+    game::radar::RadarScanReport scan;
+    game::radar::RadarTrackReport head;
+    head.relativePositionMeters = glm::dvec3(0.0, 0.0, -220.0);   // dead ahead, closing 120 m/s: touch in ~1.4 s
+    head.relativeVelocityMps = glm::dvec3(0.0, 0.0, 60.0);
+    head.kind = game::radar::RadarTrackKindShip;
+    head.boundingRadiusMeters = 15.0;
+    scan.tracks.push_back(head);
+    const av::ControlShipState ship = episodeShip();
+
+    av::EvasionReflex reflex;
+    scan.measuredAtUniverseTimeSeconds = 10.0;
+    reflex.bindEpisode(100, 10.0);
+    const bool dodging = reflex.updatePrograms(scan, 10.0, ship, 15.0).active;
+    check(dodging, "episode: a head-on contact 1.4 s out makes a dodge");
+    // the route ends: the next consumer (another phase of the same request) binds its own episode at once
+    reflex.bindEpisode(101, 10.05);
+    check(!reflex.command().active, "episode: a new episode starts without the old dodge (NAV-7 phantom dodge)");
+    // the same episode keeps it (no flicker inside one run)
+    reflex.bindEpisode(100, 10.1);
+    scan.measuredAtUniverseTimeSeconds = 10.1;
+    reflex.updatePrograms(scan, 10.1, ship, 15.0);
+    reflex.bindEpisode(100, 10.12);
+    check(reflex.command().active, "episode: the same episode keeps its dodge");
+    // the clock goes back (a rebind / a reset universe time): clean
+    reflex.bindEpisode(100, 5.0);
+    check(!reflex.command().active, "episode: the clock going back resets the reflex");
+    std::printf("episode: dodge %d, cleared on a new episode and on a clock rollback\n", dodging ? 1 : 0);
+}
+
+// NAV-5: the urgency window from the physics' own lateral authority when the caller gives none
+void testUrgencyFromPhysics()
+{
+    av::EvasionReflex reflex;
+    const double weak = reflex.urgencyFor(2.0, 17.3, 30.0);
+    const double strong = reflex.urgencyFor(73.5, 17.3, 30.0);
+    check(weak > strong + 2.0, "urgency: a weak RCS needs a wider window than a strong one");
+    game::radar::RadarScanReport scan;
+    game::radar::RadarTrackReport t;
+    t.relativePositionMeters = glm::dvec3(0.0, 0.0, -900.0);   // touch in ~7.5 s
+    t.relativeVelocityMps = glm::dvec3(0.0, 0.0, 60.0);
+    t.kind = game::radar::RadarTrackKindShip;
+    t.boundingRadiusMeters = 30.0;
+    scan.tracks.push_back(t);
+    scan.measuredAtUniverseTimeSeconds = 1.0;
+    av::ControlShipState ship = episodeShip();
+    ship.params.strafeAccel = 2.0f;   // a weak RCS: the window must reach ~8 s with no lateral figure passed
+    reflex.bindEpisode(7, 1.0);
+    const auto& cmd = reflex.updatePrograms(scan, 1.0, ship, 17.3);
+    check(cmd.urgencySeconds > 7.0, "urgency: the window from the programs' own physics (2 m/s2 -> ~8 s, not a fixed 5 s)");
+    std::printf("urgency: 2 m/s2 %.2f s, 73.5 m/s2 %.2f s; physics-derived window %.2f s\n", weak, strong, cmd.urgencySeconds);
+}
+
+// NAV-6: the reflex's flag cancels a persistent alignment mode (BrakeToStop) in the shared physics
+void testAlignmentCancel()
+{
+    for (const bool cancel : {false, true})
+    {
+        ShipTransform tr {};
+        tr.motion.mode = game::navigation::MotionMode::HubTactical;
+        tr.motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+        tr.motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::BrakeToStop;
+        ShipParams p {};
+        p.strafeAccel = 20.0f;
+        ShipControlState c {};
+        c.strafeInput = 0.4f;
+        c.cancelVelocityAlignment = cancel;
+        WorldParams world {};
+        SharedShipPhysics::integrate(tr, p, c, world, 0.02f);
+        const bool still = tr.motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BrakeToStop;
+        check(cancel ? !still : still, cancel ? "alignment: the reflex's flag cancels BrakeToStop"
+                                              : "alignment: a plain strafe leaves BrakeToStop (the scenario matters)");
+    }
+    std::printf("alignment: BrakeToStop cancelled by the reflex flag\n");
+}
+
+// NAV-9: the dodge is predicted through the execution gateway with the consumer's RCS delta-v flag - a Newtonian route
+// keeps the dodge's lateral velocity after the hold, the keypad's release cancels it
+void testGatewayFlags()
+{
+    av::ControlShipState ship = episodeShip();
+    ship.law = game::navigation::LocalFlightControlLaw::Newtonian;
+    ship.params.reverseMainEngineAvailable = true;
+    ship.params.forwardMainEngineAvailable = true;
+    const auto& programs = av::controlPrograms();
+    int strafe = -1;
+    for (std::size_t i = 0; i < programs.size(); ++i)
+        if (programs[i].strafe > 0.5f && programs[i].lift == 0.0f && programs[i].forward == 0.0f && programs[i].pitch == 0.0f &&
+            programs[i].yaw == 0.0f && programs[i].speed == 0.0f)
+            strafe = static_cast<int>(i);
+    check(strafe >= 0, "gateway: a pure strafe program exists");
+    if (strafe < 0)
+        return;
+    ship.rcsKeepsTranslationDeltaV = false;
+    const auto released = av::flyControlProgram(ship, programs[strafe], 2.0, 8.0, 0.02);
+    ship.rcsKeepsTranslationDeltaV = true;
+    const auto kept = av::flyControlProgram(ship, programs[strafe], 2.0, 8.0, 0.02);
+    const double vReleased = std::abs(released.vel.back().x), vKept = std::abs(kept.vel.back().x);
+    check(vKept > vReleased + 1.0, "gateway: the kept delta-v flag reaches the predicted flight (Newtonian route)");
+    std::printf("gateway: lateral speed after the hold - released %.2f m/s, kept %.2f m/s\n", vReleased, vKept);
+}
+
 int main()
 {
     testContinuousCrossings();
@@ -303,6 +426,10 @@ int main()
     testGeometry();
     testScanRotation();
     testUncertainty();
+    testEpisode();
+    testUrgencyFromPhysics();
+    testAlignmentCancel();
+    testGatewayFlags();
     std::printf("evasion_trajectory_conflict: %d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }

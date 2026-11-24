@@ -923,9 +923,7 @@ void SpaceState::updateDockingAdvisory()
                 << " reason=" << reason << std::endl;
         }
         releaseClientAutopilot();
-        m_clientAutopilotControl = ShipControlState {};
-        m_clientAutopilotControlActive = true;
-        m_client->submitInput(m_clientAutopilotControl);
+        submitVirtualPilotControl(ShipControlState {}, 0x43u);   // the recovery coast: the reflex over it (NAV-8)
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
         m_dockSafeCourse = {};
@@ -1531,9 +1529,7 @@ bool SpaceState::checkDockingNewtonianAuthority(Gate& g)
                 << " detail=\"authoritative RCS telemetry lost; coasting\""
                 << std::endl;
             releaseClientAutopilot();
-            m_clientAutopilotControl = ShipControlState {};
-            m_clientAutopilotControlActive = true;
-            m_client->submitInput(m_clientAutopilotControl);
+            submitVirtualPilotControl(ShipControlState {}, 0x44u);   // the authority-lost coast (NAV-8)
             m_clientDockingPhase = ClientDockingPhase::Stabilizing;
             m_clientDockingSettledSinceServerSeconds = -1.0;
             return false;
@@ -4336,6 +4332,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             reflexShip.velocityBody = glm::dvec3(glm::dot(vMap, reflexAgent.rightMap), glm::dot(vMap, reflexAgent.upMap),
                                                  -glm::dot(vMap, reflexAgent.forwardMap));
             reflexShip.targetForwardSpeedMps = reflexAgent.assistedTargetSpeedMps;
+            reflexShip.rcsKeepsTranslationDeltaV = output.control.rcsKeepsTranslationDeltaV;
             reflexShip.ratesPitchYawRoll = glm::vec3(static_cast<float>(reflexAgent.pitchRateRadPerSec),
                                                      static_cast<float>(reflexAgent.yawRateRadPerSec),
                                                      static_cast<float>(reflexAgent.rollRateRadPerSec));
@@ -5059,6 +5056,8 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
     const char* env = std::getenv("ELITE_DEV_EVASION_REFLEX");
     if (env && env[0] == '0')
         return control;
+    // the episode: this request's route run (a new request / a re-request starts the reflex clean - NAV-7)
+    m_evasionReflex.bindEpisode(reflexEpisodeKey(0x5254u), universeTimeSeconds);
     const auto& sensors = m_client->navigationSensors();
     if (!sensors.radarInstalled || !sensors.radarOperational || !sensors.hasRadarScan)
     {
@@ -5086,6 +5085,8 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
     control.liftInput = cmd.lift;
     control.forwardInput = cmd.forward;
     control.rcsTranslationPerAxisAuthority = true;
+    control.velocityAlignmentCommand = game::navigation::VelocityAlignmentMode::None;
+    control.cancelVelocityAlignment = true;   // NAV-6: the dodge flown is the one predicted
     if (cmd.program >= 0)
     {
         // the program owns the whole stick while it flies (an emergency: the route waits)
@@ -5107,6 +5108,59 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
                   << std::endl;
     }
     return control;
+}
+
+void SpaceState::submitVirtualPilotControl(const ShipControlState& control, std::uint64_t pilotTag)
+{
+    if (!m_client)
+        return;
+    m_clientAutopilotControl =
+        control.globalFlightCommandValid
+            ? control
+            : applyManualCollisionAssist(control, m_client->lastSimulationMetadata().universeTimeSeconds, true, pilotTag);
+    m_clientAutopilotControlActive = true;
+    m_client->submitInput(m_clientAutopilotControl);
+}
+
+void SpaceState::updateUnsampledCollisionAssist()
+{
+    const bool sampled = m_manualSampledThisFrame;
+    m_manualSampledThisFrame = false;
+    if (sampled || !m_client)
+        return;
+    const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
+    if (virtualPilot)
+        return;
+    static double loggedAt = -1.0e9;
+    const double now = m_client->lastSimulationMetadata().universeTimeSeconds;
+    if (now - loggedAt > 10.0)
+    {
+        loggedAt = now;
+        std::cerr << "[CollisionAssist] controls not sampled this frame (a map / panel open): the assist watches the "
+                     "pilot's last control" << std::endl;
+    }
+    const ShipControlState control = applyManualCollisionAssist(m_lastPilotSample, now);
+    if (m_manualAssistActive)
+    {
+        m_playerControl = control;
+        m_client->submitInput(m_playerControl);
+        m_unsampledAssistSubmitted = true;
+    }
+    else if (m_unsampledAssistSubmitted)
+    {
+        m_playerControl = m_lastPilotSample;   // the dodge ended: the pilot's own last control again
+        m_client->submitInput(m_playerControl);
+        m_unsampledAssistSubmitted = false;
+    }
+}
+
+std::uint64_t SpaceState::reflexEpisodeKey(std::uint64_t tag) const
+{
+    const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
+    const std::uint64_t serial = pending.valid() ? static_cast<std::uint64_t>(pending.serial) : 0u;
+    std::uint64_t h = (serial + 1u) * 0x9E3779B97F4A7C15ULL ^ (tag * 0xC2B2AE3D27D4EB4FULL);
+    h ^= h >> 31;
+    return h | 2u;   // never 0 (a fresh reflex) or 1 (the pilot's own flight)
 }
 
 double SpaceState::ownBoundingRadiusMeters() const
@@ -5132,9 +5186,15 @@ double SpaceState::ownBoundingRadiusMeters() const
 // "assist": the program holds the stick for the manoeuvre (shown on the HUD); a SHARP pilot input (a full deflection /
 // any translation key) hands it back for 3 s - the pilot is always the last word. "off": nothing.
 ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds,
-                                                        bool autopilotPhase)
+                                                        bool autopilotPhase, std::uint64_t pilotTag)
 {
     auto& reflex = autopilotPhase ? m_phaseReflex : m_manualReflex;
+    // the episode (NAV-7): a virtual-pilot phase of a request, or the pilot's own flight - a new phase / request starts
+    // the phase reflex clean; the clock going back resets either
+    reflex.bindEpisode(autopilotPhase ? reflexEpisodeKey(0x5048u + static_cast<std::uint64_t>(m_clientDockingPhase) +
+                                                         (pilotTag << 8))
+                                      : 1u,
+                       universeTimeSeconds);
     std::string mode = context().app ? context().app->clientModeState().collisionAssistMode : std::string("assist");
     if (const char* dev = std::getenv("ELITE_DEV_COLLISION_ASSIST"); dev && *dev)
         mode = dev;   // DEV: off / warn / assist for the checks
@@ -5178,11 +5238,21 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     if (!autopilotPhase && universeTimeSeconds < m_manualAssistSuppressedUntil)
         return quiet();
     // the ship's physical state for the control programs (body axes: +X right, +Y up, -Z nose - the radar's frame)
-    static double physicsAt = -1.0e9;
-    static ShipParams physics {};
-    if (universeTimeSeconds - physicsAt > 1.0 || universeTimeSeconds < physicsAt)
+    // NAV-4: the physics is THIS ship's under THIS control model and law, refreshed with the server's ticks (a static
+    // shared by every ship / SpaceState, kept 1 s - the reflex flew a lost engine for up to 1 s, a boarded ship's
+    // params; a failed read cached zero capabilities)
+    auto& cache = m_reflexPhysicsCache;
+    const std::uint64_t serverTick = m_client->lastSimulationMetadata().serverTick;
+    const bool keyChanged = cache.instance != static_cast<std::uint64_t>(player.instanceId) ||
+                            cache.model != static_cast<int>(player.physicalControlModel) ||
+                            cache.law != static_cast<int>(motion.localControlLaw);
+    if (!cache.valid || keyChanged || serverTick < cache.tick || serverTick >= cache.tick + 5)
     {
-        physicsAt = universeTimeSeconds;
+        cache.instance = static_cast<std::uint64_t>(player.instanceId);
+        cache.model = static_cast<int>(player.physicalControlModel);
+        cache.law = static_cast<int>(motion.localControlLaw);
+        cache.tick = serverTick;
+        ShipParams physics {};
         const auto slots = player.physicalControlModel != player.descriptor->physicalControlModel
                                ? game::ship::plant::healthySlotState(
                                      game::ship::plant::physicalControlSlots(player.physicalControlModel))
@@ -5197,9 +5267,18 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
         if (m_motherComputer.physicalFlightEnvelope(static_cast<std::uint64_t>(player.instanceId),
                                                     m_client->lastSimulationMetadata().serverTick, mother))
             physics = mother;
+        if (capability.valid || physics.strafeAccel > 0.0f)
+        {
+            cache.params = physics;
+            cache.valid = true;
+        }
+        else if (keyChanged)
+            cache.valid = false;   // no physics for this ship yet: no programs (below), never the zero ship
     }
+    if (!cache.valid)
+        return quiet();
     game::navigation::avoidance::ControlShipState ship;
-    ship.params = physics;
+    ship.params = cache.params;
     ship.law = motion.localControlLaw;
     const bool local = player.referenceFrame.valid && motion.mode == game::navigation::MotionMode::HubTactical;
     const auto frame = player.referenceFrame.kinematicFrame();
@@ -5211,6 +5290,7 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     const glm::dvec3 right = axis(transform.right()), up = axis(transform.up()), forward = axis(transform.forward());
     ship.velocityBody = glm::dvec3(glm::dot(v, right), glm::dot(v, up), -glm::dot(v, forward));
     ship.targetForwardSpeedMps = std::max(0.0, static_cast<double>(motion.targetForwardSpeedMps));
+    ship.rcsKeepsTranslationDeltaV = sampled.rcsKeepsTranslationDeltaV;
     ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
     const double hullRadius = ownBoundingRadiusMeters();
     const auto& cmd = reflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius);
@@ -5241,6 +5321,11 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     control.liftInput = cmd.lift;
     control.forwardInput = cmd.forward;
     control.rcsTranslationPerAxisAuthority = true;
+    // NAV-6: the real competitor of the dodge is the PERSISTENT alignment (the recovery stop's BrakeToStop: a 1/dt
+    // longitudinal brake in Assisted, a hull flip with the aft block lost) - the targets cleared above are not set on
+    // the client and the gateway already prefers the stick; cancel the alignment while the dodge flies
+    control.velocityAlignmentCommand = game::navigation::VelocityAlignmentMode::None;
+    control.cancelVelocityAlignment = true;
     if (cmd.program >= 0)
     {
         control.pitchInput = cmd.pitch;

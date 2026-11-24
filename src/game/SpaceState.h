@@ -3,6 +3,7 @@
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
 #include "src/game/navigation/globalflight/RouteLegPilot.h"
 #include "src/game/navigation/autopilot/AutopilotLawController.h"
+#include <future>
 #include <map>
 #include <set>
 #include "src/game/navigation/route/RoutePlanner.h"
@@ -953,6 +954,18 @@ private:
     int m_governmentSection = 0;     // F5 state app: 0 taxes, 1 licences, 2 navigation data
     std::uint32_t m_economyRequestId = 0;
     std::string m_lastEconomySendKey;   // ECO-4: the double-click guard
+    // PLAN-6: the hub lane-chain search of a docking request, off the frame thread (SpaceStateDocking)
+    struct LaneSearchResult
+    {
+        game::navigation::traffic::CompiledTrafficRoute route;
+        game::navigation::planner::RoutePlanRequest request;
+        std::string log;
+    };
+    struct LaneSearchJob
+    {
+        std::uint64_t serial = 0;
+        std::future<LaneSearchResult> result;
+    } m_laneSearch;
     double m_lastEconomySendAt = -1.0e9;
     game::presentation::TradeDealRequest m_tradeDeal;   // the MARKET deal window's own state (never authoritative)
     std::map<int, bool> m_tradeKeyWasDown;

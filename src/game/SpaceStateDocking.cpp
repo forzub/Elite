@@ -3171,7 +3171,39 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                         constexpr bool ServiceDirectEnabled = false;
                         request.serviceDirectAllowed = ServiceDirectEnabled && std::abs(dh) < 400.0 && glm::length(flat) < 8000.0;
                     }
-            auto laneRoute = game::navigation::traffic::applyHubLanes(*network, framePose, request, &log);
+            // THE LANE-CHAIN SEARCH OFF THE FRAME THREAD (audit PLAN-6: applyHubLanes ran here synchronously - 351-559 ms,
+            // a frame gap of 1.3-1.5 s on every request): it runs on a background task with a COPY of the request; the
+            // planner's launch waits for it (the ship keeps its pre-planning state, the frame does not stall); its result
+            // - RED zones in the obstacles, the hub speed limit, the chain's via points and straights - is carried into
+            // this frame's request.
+            game::navigation::traffic::CompiledTrafficRoute laneRoute;
+            {
+                auto& job = m_laneSearch;
+                if (!job.result.valid() || job.serial != pending.serial)
+                {
+                    job.serial = pending.serial;
+                    job.result = std::async(std::launch::async,
+                                            [network, framePose, copy = request]() mutable {
+                                                LaneSearchResult r;
+                                                r.route = game::navigation::traffic::applyHubLanes(*network, framePose, copy, &r.log);
+                                                r.request = std::move(copy);
+                                                return r;
+                                            });
+                    std::cerr << "[HubLanes] request=" << pending.serial << " the lane-chain search runs in the background"
+                              << std::endl;
+                    return;
+                }
+                if (job.result.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+                    return;
+                LaneSearchResult r = job.result.get();
+                log = std::move(r.log);
+                laneRoute = std::move(r.route);
+                request.obstacles = std::move(r.request.obstacles);
+                request.maxSpeedMps = r.request.maxSpeedMps;
+                request.geometrySpeedMps = r.request.geometrySpeedMps;
+                request.requiredViaPointsMeters = std::move(r.request.requiredViaPointsMeters);
+                request.mandatoryTangentStraights = std::move(r.request.mandatoryTangentStraights);
+            }
             std::cerr << "[HubLanes] request=" << pending.serial << " " << log << std::endl;
             // a city pad whose straight way beats every lane chain (a free metre costs FreeInHubFactor x a lane metre,
             // author 2026-11-22: «надо иметь баланс ... это не значит, что я должен лететь вниз в зелёную зону») from a

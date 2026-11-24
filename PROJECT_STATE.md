@@ -8589,3 +8589,9 @@ start-up hitches (render), trade step 16 part 3 live.
   Live: ramtest 53 / 107 m, 0 collisions; B4-11 184 s, 0 dodges. NOT changed (the author's rule "if the count is
   limited - the nearest", 2026-11-22): the hub radar contacts are the nearest 128 by distance. Still open: EvasionNet
   unused in programs mode; the manual-assist key hand-back cycle.
+- PLAN-6 (rest): the hub lane-chain search (applyHubLanes / chooseRoute, 351-559 ms) runs on a background task with a
+  copy of the request (SpaceState::m_laneSearch, per request serial); the planner's launch waits for it; its result
+  (RED zones, the hub speed limit, via points, mandatory straights) is carried into that frame's request. Live B4-11:
+  183 s, 0 collisions; the 656 ms frame gap at the request is gone (worst gap after the request 471 ms vs 656).
+  FOUND, OPEN: ~10 recurring 420-470 ms frame gaps during that flight in both runs (offscreen dev run; cause not
+  traced - not the lane search, not the planner).

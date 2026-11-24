@@ -8542,3 +8542,10 @@ start-up hitches (render), trade step 16 part 3 live.
   the CPU). ordinary_route_policy fixed: the stale 1 km resting-start expectation -> 3 hull lengths (author change
   3ef6c6d00) + the 30 m floor + the moving 1 km minimum. Navigation ctest 66: 57 pass, 9 baseline reds (was 10).
   Live: B4-11 through the city 180 s, net loaded, fast path, 0 collisions.
+- PLAN-6 (part): [RouteCheck] on a NavigationObstacleGrid (one build, a segment tests its cells' obstacles; the
+  obstacle named only for a failing segment) instead of a one-obstacle vector copy per gate pair x every obstacle; a
+  failing check now REFUSES the plan (NeedsRefinement / NoCollisionFreeCandidate - it stayed Ready and was flown).
+  Open: chooseRoute still on the frame thread (351-443 ms a request).
+- PLAN-5: the grid footprint covers the inflated box corner (|h| + inflation x sqrt 3; was |h| + inflation - 1688 of
+  200k segments missed a corner case). RouteDraftLab gridcheck 80 000 segments, 0 mismatches. Docking hub_hex_dock_a
+  after both: route clear of 3477 obstacles, captured by the station at P2, 0 contacts.

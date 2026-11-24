@@ -7,6 +7,7 @@
 #include "src/game/navigation/traffic/HubLaneRouting.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
+#include "src/world/navigation/NavigationObstacleGrid.h"
 #include <memory>
 
 
@@ -146,23 +147,32 @@ void runDockAdviceWorker(
         // point curved through a power block). Logged with the obstacle and the place either way.
         if (job->plan.valid())
         {
+            // audit PLAN-6: a grid of the obstacles (the same per-obstacle test, only the obstacles of a segment's cells)
+            // instead of a one-obstacle vector COPY per gate pair x every obstacle (~7 million tests a 20 km route); the
+            // obstacle named only for the failing segment
             const auto& gates = job->plan.executionGates.empty() ? job->plan.gates : job->plan.executionGates;
+            world::navigation::NavigationObstacleGrid grid;
+            grid.build(request.obstacles, request.agentRadiusMeters);
             for (std::size_t g = 0; g + 1 < gates.size(); ++g)
             {
                 const glm::dvec3 a = gates[g].positionMeters, b = gates[g + 1].positionMeters;
+                if (grid.segmentClear(a, b))
+                    continue;
+                std::string hit = "an obstacle";
                 for (const auto& o : request.obstacles)
-                {
-                    const std::vector<world::navigation::NavigationObstacle> one {o};
-                    if (!world::navigation::segmentClearOfNavigationObstacles(a, b, one, request.agentRadiusMeters, 0.0))
+                    if (world::navigation::segmentIntersectsNavigationObstacle(a, b, o, request.agentRadiusMeters))
                     {
-                        std::fprintf(stderr, "[RouteCheck] request=%llu the route runs through %s at gate %zu/%zu (%.0f,%.0f,%.0f)\n",
-                                     static_cast<unsigned long long>(job->context.serial), o.id.c_str(), g, gates.size(),
-                                     a.x, a.y, a.z);
-                        job->plan.failure = "the route runs through " + o.id;
-                        g = gates.size();
+                        hit = o.id;
                         break;
                     }
-                }
+                std::fprintf(stderr, "[RouteCheck] request=%llu the route runs through %s at gate %zu/%zu (%.0f,%.0f,%.0f)\n",
+                             static_cast<unsigned long long>(job->context.serial), hit.c_str(), g, gates.size(), a.x, a.y, a.z);
+                job->plan.failure = "the route runs through " + hit;
+                // ... and it is NOT flown (PLAN-6: the plan stayed Ready / None - adopted anyway): a refusal the request
+                // replans from
+                job->plan.disposition = game::navigation::planner::RoutePlanDisposition::NeedsRefinement;
+                job->plan.failureCode = game::navigation::planner::RoutePlanFailureCode::NoCollisionFreeCandidate;
+                break;
             }
             if (job->plan.failure.empty())
                 std::fprintf(stderr, "[RouteCheck] request=%llu the route is clear of %zu obstacles (%zu gates)\n",

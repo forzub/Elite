@@ -16,7 +16,7 @@ namespace world::navigation
 // THE OBSTACLE GRID (2026-11-23, the route-draft net's dataset ran at 0.3 scenes/s): a candidate is ~200 sampled
 // segments and each was tested against EVERY obstacle (a city leg: ~3000 -> 600 000 tests, ~12 ms an evaluation).
 // Built once per optimize() call: every obstacle's inflated bounding box goes into the cells it covers; a segment
-// tests only the obstacles of its cells (exactly the same per-obstacle test - the answer does not change).
+// tests only the obstacles of its cells (the same per-obstacle test; the footprint a superset of the inflated shape).
 class NavigationObstacleGrid
 {
 public:
@@ -31,8 +31,11 @@ public:
         for (std::size_t i = 0; i < obstacles.size(); ++i)
         {
             const auto& o = obstacles[i];
+            // the footprint covers the INFLATED shape's farthest point: a box inflated by i reaches |h| + i*sqrt(3) at a
+            // corner (audit PLAN-5: |h| + i missed corner cases - 1688 of 200k segments; harmless while the optimizer
+            // alone used it, the final RouteCheck uses it now)
             const double r = o.conservativeRadiusMeters() +
-                             navigationObstacleInflationMeters(o, hullRadius) + 1.0;
+                             navigationObstacleInflationMeters(o, hullRadius) * 1.7320508075688772 + 1.0;
             const glm::dvec3 lo = o.centerMeters - glm::dvec3(r), hi = o.centerMeters + glm::dvec3(r);
             const glm::ivec3 a = cellOf(lo), b = cellOf(hi);
             const glm::ivec3 span = b - a + glm::ivec3(1);

@@ -29,7 +29,7 @@ namespace catalog_assembly_detail
         {"rcs", {0.67f, 0.43f, 0.05f}},           {"computer", {0.05f, 0.52f, 0.33f}},
         {"radar", {0.03f, 0.38f, 0.25f}},         {"comm", {0.09f, 0.57f, 0.43f}},
         {"transponder", {0.09f, 0.57f, 0.43f}},   {"life_support", {0.10f, 0.36f, 0.06f}},
-        {"escape_capsule", {0.26f, 0.56f, 0.16f}}, {"lifeboat", {0.26f, 0.56f, 0.16f}},
+        {"escape_capsule", {0.26f, 0.56f, 0.16f}}, {"cockpit_capsule", {0.26f, 0.56f, 0.16f}}, {"lifeboat", {0.26f, 0.56f, 0.16f}},
         {"container_rack", {0.26f, 0.26f, 0.26f}}, {"train_module", {0.26f, 0.26f, 0.26f}},
         {"passenger_module", {0.36f, 0.35f, 0.19f}}, {"weapon", {0.52f, 0.04f, 0.03f}},
         {"armour", {0.11f, 0.15f, 0.20f}},        {"docking_port", {0.63f, 0.63f, 0.63f}},

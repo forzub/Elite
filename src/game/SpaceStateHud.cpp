@@ -588,6 +588,21 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             playerShip,
             playerShip.renderReferenceFrame.universeTimeSeconds
         );
+    // the corridor's state on a change (author 2026-11-24: no corridor on the HUD on the ring hub approach - nothing in
+    // the log said why): module on/off, a guidance corridor present, visible frames
+    {
+        const bool moduleOn = m_navigationWorkspace.modules().enabled(game::navigation::NavigationModuleId::HudGuidanceCorridor);
+        const bool hasRoute = m_navigationWorkspace.routePlan().hasStart();
+        const int key = (moduleOn ? 1 : 0) + (hasRoute ? 2 : 0) + (guidance.visible ? 4 : 0);
+        static int lastKey = -1;
+        if (key != lastKey)
+        {
+            lastKey = key;
+            std::cerr << "[HudCorridor] module " << (moduleOn ? "on" : "off") << ", route " << (hasRoute ? "yes" : "no")
+                      << ", visible " << (guidance.visible ? "yes" : "no") << " (corridor '" << guidance.corridorId << "')"
+                      << std::endl;
+        }
+    }
     // DEV: ELITE_DEV_RENDER_EPOCH_CHECK=1 - the client's one-epoch invariant: the city is fixed in its hub frame, so its
     // place in the player's RENDER reference frame must not move; whatever it does is how far the drawn world and the drawn
     // ship disagree (the tunnel / frames shake by that much). Once a second: the worst frame-to-frame step and the drift.

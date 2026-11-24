@@ -1905,6 +1905,16 @@ void SpaceState::update(float dt)
                     nearestBody = &hub.parentBodyId;
                 }
             }
+            // hysteresis: the followed hub stays while the new one is not clearly nearer (2 km and 25 %) - the author's map
+            // flipped Высокий <-> the ring hub back and forth on the way between them (40 km apart)
+            if (nearestId && *nearestId != m_systemMapRenderer.followedPlayerHubId())
+                if (const auto cur = m_client->world().hubs().find(m_systemMapRenderer.followedPlayerHubId());
+                    cur != m_client->world().hubs().end() && cur->second.systemId == system)
+                {
+                    const double dCur = glm::length(world::coordinates::fullMeters(cur->second.worldPosition) - me);
+                    if (dCur < 25000.0 && !(best < dCur - 2000.0 && best < 0.75 * dCur))
+                        nearestId = nullptr;
+                }
             if (nearestId)
                 m_systemMapRenderer.followPlayerHub(*nearestId, *nearestBody);
         }

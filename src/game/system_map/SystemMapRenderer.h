@@ -186,6 +186,7 @@ public:
     // the hub the player's ship is in now (its motion.hubId; empty: none): when it CHANGES, the hub / detail map follow
     // it (the author: the hub map did not switch when the ship flew to another hub); a pick inside the same hub stays
     void followPlayerHub(const std::string& hubId, const std::string& parentBodyId);
+    const std::string& followedPlayerHubId() const noexcept { return m_followedPlayerHubId; }
     // The object the map currently presents as selected (site, hub, ship) - right panel source.
     const std::string& activeObjectId() const noexcept { return m_objectOverlayState.activeObjectId(); }
     // The active tactical object of the current System / Detail map (hub,

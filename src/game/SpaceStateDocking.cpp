@@ -1,3 +1,4 @@
+#include <iostream>
 // SpaceState: Docking / route-autopilot orchestration: route request, planning jobs, safe course, autopilot phases and the docking corridor publication.
 
 #include "src/game/scene/LayoutCityHitVolumes.h"
@@ -145,7 +146,7 @@ void runDockAdviceWorker(
         );
 
         if (std::getenv("ELITE_ROUTE_DUMP") || std::getenv("ELITE_ROUTE_SUMMARY"))   // DEV: where the planning time goes
-            std::fprintf(stderr, "[RouteSummary] %s\n", job->plan.diagnosticSummary.substr(0, 4000).c_str());
+            { char diagLine[512]; std::snprintf(diagLine, sizeof diagLine, "[RouteSummary] %s\n", job->plan.diagnosticSummary.substr(0, 4000).c_str()); std::cerr << diagLine << std::flush; }
         // the accepted route against the obstacles it was planned with (the hull radius, no extra margin): a route that
         // runs through a building is never flown (live 2026-11-22: the free leg from a lane exit to a pad's approach
         // point curved through a power block). Logged with the obstacle and the place either way.
@@ -169,8 +170,8 @@ void runDockAdviceWorker(
                         hit = o.id;
                         break;
                     }
-                std::fprintf(stderr, "[RouteCheck] request=%llu the route runs through %s at gate %zu/%zu (%.0f,%.0f,%.0f)\n",
-                             static_cast<unsigned long long>(job->context.serial), hit.c_str(), g, gates.size(), a.x, a.y, a.z);
+                { char diagLine[512]; std::snprintf(diagLine, sizeof diagLine, "[RouteCheck] request=%llu the route runs through %s at gate %zu/%zu (%.0f,%.0f,%.0f)\n",
+                             static_cast<unsigned long long>(job->context.serial), hit.c_str(), g, gates.size(), a.x, a.y, a.z); std::cerr << diagLine << std::flush; }
                 job->plan.failure = "the route runs through " + hit;
                 // ... and it is NOT flown (PLAN-6: the plan stayed Ready / None - adopted anyway): a refusal the request
                 // replans from
@@ -179,8 +180,8 @@ void runDockAdviceWorker(
                 break;
             }
             if (job->plan.failure.empty())
-                std::fprintf(stderr, "[RouteCheck] request=%llu the route is clear of %zu obstacles (%zu gates)\n",
-                             static_cast<unsigned long long>(job->context.serial), request.obstacles.size(), gates.size());
+                { char diagLine[512]; std::snprintf(diagLine, sizeof diagLine, "[RouteCheck] request=%llu the route is clear of %zu obstacles (%zu gates)\n",
+                             static_cast<unsigned long long>(job->context.serial), request.obstacles.size(), gates.size()); std::cerr << diagLine << std::flush; }
         }
 
         if (job->cancelled.load(std::memory_order_acquire))
@@ -5372,8 +5373,13 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     // the STRUCTURES near the course (the pilot's own flight only - a planned route is proven clear of them): every hit
     // volume of an object of this system within the reach of the horizon, as its bounding sphere, when we close on it
     // faster than 15 m/s (slower is a landing / a docking, not a crash - the assist must not fight it)
+    // ... and under the AUTOPILOT too (author 2026-11-24: «почему не сработала система уклонения? корабль шёл на
+    // автопилоте»): the reflex there trusted the planner for every structure ("they do not move") - the ring hub's rim
+    // DOES move (108 m/s), a route planned on a frozen ring ran into a sector at 100 m/s and the reflex never looked.
+    // EVERY obstacle, not only the small ones (author 2026-11-24: «давай системе уклонения все препятствия, не только
+    // мелкие. как раз на такой случай»): the 96 with the earliest straight-line contact
     std::vector<game::navigation::avoidance::EvasionThreatTrack> structures;
-    if (!autopilotPhase)
+    std::vector<std::pair<double, game::navigation::avoidance::EvasionThreatTrack>> structureCandidates;
     {
         const glm::dvec3 me = world::coordinates::fullMeters(transform.worldPosition);
         const glm::dvec3 myV = motion.worldVelocityMps;
@@ -5397,26 +5403,49 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
             {
                 if (v.destroyed)
                     continue;
-                const glm::dvec3 c = origin + R * glm::dvec3(v.center);
-                const glm::dvec3 rel = c - me;
-                const double r = glm::length(glm::dvec3(v.halfSize));
-                if (glm::length(rel) - r > reach)
+                const glm::dvec3 cBox = origin + R * glm::dvec3(v.center);
+                const glm::dvec3 half(v.halfSize);
+                if (glm::length(cBox - me) - glm::length(half) > reach)
                     continue;
-                const glm::dvec3 relV = object.linearVelocityMps - myV;
-                const double closing = glm::length(rel) > 1.0e-6 ? -glm::dot(relV, glm::normalize(rel)) : 0.0;
-                if (closing < 15.0)
-                    continue;
-                game::navigation::avoidance::EvasionThreatTrack t;
-                t.position = toBody(rel);
-                t.velocity = toBody(relV);
-                t.radiusMeters = r;
-                structures.push_back(t);
-                if (structures.size() >= 96)
-                    break;
+                // a LONG box (a truss, a ring sector) as a chain of spheres along its long axis, each as thick as the box
+                // (author 2026-11-24: «компромисс, чтобы он не шарахался от каждого крупного объекта»): one sphere round
+                // a 600 m truss was a 600 m ball - a pass 50 m off it was a "collision"
+                int axis = 0;
+                for (int k = 1; k < 3; ++k)
+                    if (half[k] > half[axis])
+                        axis = k;
+                const double thick = std::sqrt(half[(axis + 1) % 3] * half[(axis + 1) % 3] + half[(axis + 2) % 3] * half[(axis + 2) % 3]);
+                const int pieces = std::clamp(static_cast<int>(std::ceil(half[axis] / std::max(10.0, thick))), 1, 16);
+                const double pieceHalf = half[axis] / pieces;
+                const double pieceR = std::sqrt(thick * thick + pieceHalf * pieceHalf);
+                glm::dvec3 boxAxis(0.0);
+                boxAxis[axis] = 1.0;
+                const glm::dvec3 worldAxis = R * (glm::dmat3(v.orientation) * boxAxis);
+                for (int p = 0; p < pieces; ++p)
+                {
+                    const glm::dvec3 c = cBox + worldAxis * (-half[axis] + pieceHalf * (2.0 * p + 1.0));
+                    const glm::dvec3 rel = c - me;
+                    if (glm::length(rel) - pieceR > reach)
+                        continue;
+                    // the volume's own velocity: the object's + its spin (a rotating hub's rim moves ~108 m/s)
+                    const glm::dvec3 relV = object.linearVelocityMps + glm::cross(object.angularVelocityWorldRadPerSecond, c - origin) - myV;
+                    const double closing = glm::length(rel) > 1.0e-6 ? -glm::dot(relV, glm::normalize(rel)) : 0.0;
+                    if (closing < 15.0)
+                        continue;
+                    game::navigation::avoidance::EvasionThreatTrack t;
+                    t.position = toBody(rel);
+                    t.velocity = toBody(relV);
+                    t.radiusMeters = pieceR;
+                    structureCandidates.emplace_back(std::max(0.0, glm::length(rel) - pieceR) / closing, t);
+                }
             }
-            if (structures.size() >= 96)
-                break;
         }
+        constexpr std::size_t MaxStructureThreats = 128;
+        if (structureCandidates.size() > MaxStructureThreats)
+            std::nth_element(structureCandidates.begin(), structureCandidates.begin() + MaxStructureThreats,
+                             structureCandidates.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+        for (std::size_t i = 0; i < structureCandidates.size() && i < MaxStructureThreats; ++i)
+            structures.push_back(structureCandidates[i].second);
     }
     const auto& cmd = reflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius, 0.0,
                                             structures.empty() ? nullptr : &structures);

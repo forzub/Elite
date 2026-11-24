@@ -265,11 +265,20 @@ inline bool rebuildHubMapFromClientState(
 
     // Hub components are ordinary replicated static objects joined to the
     // requested hub through HubAttachmentSnapshot.
+    // the NEIGHBOUR hubs within 100 km join the map too (author 2026-11-24: from the ring hub's map Высокий, 40 km off,
+    // was not there - each hub map showed its own modules only); their modules are drawn at their own world pose
+    std::vector<std::string> neighbourHubs;
+    for (const auto& other : runtime.hubs)
+        if (other.systemId == systemId && other.id != hubId &&
+            glm::length(world::coordinates::fullMeters(other.worldPosition) - frame.originMeters) < 100000.0)
+            neighbourHubs.push_back(other.id);
     for (const auto& source : runtime.objects)
     {
-        if (source.systemId != systemId ||
-            !source.hubAttachment.valid ||
-            source.hubAttachment.hubId != hubId)
+        if (source.systemId != systemId || !source.hubAttachment.valid)
+            continue;
+        const bool neighbour = source.hubAttachment.hubId != hubId;
+        if (neighbour &&
+            std::find(neighbourHubs.begin(), neighbourHubs.end(), source.hubAttachment.hubId) == neighbourHubs.end())
         {
             continue;
         }
@@ -290,11 +299,11 @@ inline bool rebuildHubMapFromClientState(
             : "module";
         module.objectClass = DetailObjectClass::Hub;
         module.origin = DetailObjectOrigin::Runtime;
-        module.role = LocalSceneObjectRole::Component;
+        module.role = neighbour ? LocalSceneObjectRole::Context : LocalSceneObjectRole::Component;   // a neighbour: seen, not fitted
         module.coordinateSpace = LocalSceneCoordinateSpace::AnchorLocalMeters;
         module.parentStableId = hubId;
 
-        if (source.hubAttachment.inheritHubOrientation)
+        if (source.hubAttachment.inheritHubOrientation && !neighbour)
         {
             // Attachment offsets are stable hub-model facts. Reconstruct the
             // module from the same sampled hub frame instead of interpolating

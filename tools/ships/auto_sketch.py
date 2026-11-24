@@ -36,7 +36,7 @@ ZONE = {"drive": 0, "reactor": 0, "coolant_loop": 0,
         "container_rack": 2, "bulk_hold": 2, "train_module": 2, "passenger_module": 2, "hangar": 2, "boat_bay": 2, "drone_bay": 2,
         "workshop": 2, "mining_rig": 2, "tow_rig": 2, "lifeboat": 2,
         "life_support": 3, "medbay": 3, "computer": 3, "comm": 3, "transponder": 3, "ecm": 3,
-        "escape_capsule": 4}
+        "escape_capsule": 4, "cockpit_capsule": 4}
 SKIN = {"radar", "sensor_mast", "weapon", "docking_port", "landing_gear", "heat_shield", "armour", "rcs"}
 C20 = (2.44, 2.59, 6.06)
 

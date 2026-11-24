@@ -832,7 +832,9 @@ struct MassSum
     d.storage.cargoVolume = static_cast<int>(std::lround(s.containerSlots * 38.3 + s.cargoTonnes * 1.4));
     d.storage.containerSlots = s.containerSlots;
     d.storage.containerPayloadTonnes = ::catalog::ships::C20PayloadTonnes;
-    d.survival.hasEscapePod = s.countOf("escape_capsule") + s.countOf("lifeboat") > 0;
+    // two kinds of survival (author 2026-11-24): an escape capsule / a lifeboat you board, and a COCKPIT-CAPSULE (the
+    // cockpit itself is a small ship with its own motor and fuel - the Cobrett EC-2)
+    d.survival.hasEscapePod = s.countOf("escape_capsule") + s.countOf("lifeboat") + s.countOf("cockpit_capsule") > 0;
     d.survival.hasNanokitBay = s.countOf("medbay") > 0;
     for (const auto& item : s.installed)
     {

@@ -7,7 +7,7 @@
 // manoeuvre and the reflex holds it as RCS translation (the pilot's own keypad controls - the Assisted law yields a
 // manually translated axis); when the course is clear again it lets go and the autopilot takes the ship back to its
 // route. RCS only (the main drive would need the nose, which the route tracker owns): plausible - thrusters dodge,
-// the engines keep the course. Structures are the planner's (they do not move), not the reflex's.
+// the engines keep the course. Structures come as extra threats from the caller (near contacts only on a route).
 #include <algorithm>
 #include <chrono>
 #include <cmath>

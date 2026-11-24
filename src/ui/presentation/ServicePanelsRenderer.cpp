@@ -60,7 +60,7 @@ glm::vec4 categoryColour(const std::string& c)
     if (c == "rcs") return {0.86f, 0.70f, 0.24f, 0.95f};
     if (c == "radar" || c == "comm" || c == "transponder") return {0.20f, 0.72f, 0.60f, 0.95f};
     if (c == "computer") return {0.24f, 0.78f, 0.62f, 0.95f};
-    if (c == "life_support" || c == "escape_capsule" || c == "lifeboat" || c == "medbay") return {0.40f, 0.70f, 0.30f, 0.95f};
+    if (c == "life_support" || c == "escape_capsule" || c == "cockpit_capsule" || c == "lifeboat" || c == "medbay") return {0.40f, 0.70f, 0.30f, 0.95f};
     if (c == "container_rack" || c == "train_module" || c == "bulk_hold") return {0.55f, 0.55f, 0.55f, 0.90f};
     if (c == "passenger_module") return {0.70f, 0.68f, 0.48f, 0.90f};
     if (c == "weapon") return {0.80f, 0.20f, 0.16f, 0.95f};

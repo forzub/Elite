@@ -62,7 +62,7 @@ std::string refitGroupOf(const std::string& category, const std::string& subsyst
         return "sensors";
     if (c == "computer")
         return "computer";
-    if (c == "life_support" || c == "escape_capsule" || c == "lifeboat" || c == "medbay" || c.find("cockpit") != std::string::npos)
+    if (c == "life_support" || c == "escape_capsule" || c == "cockpit_capsule" || c == "lifeboat" || c == "medbay" || c.find("cockpit") != std::string::npos)
         return "life";
     if (c == "jump_core")
         return "jump";

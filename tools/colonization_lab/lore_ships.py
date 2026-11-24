@@ -11,7 +11,7 @@ CAT_RU = {
     "drive": "главный двигатель", "reactor": "двигательный реактор", "service_reactor": "служебный реактор", "radiator": "радиаторы",
     "coolant_loop": "контур охлаждения", "jump_core": "ядро прыжка", "tank": "баки", "rcs": "маневровая система", "computer": "MotherComputer",
     "radar": "радар", "comm": "связь", "transponder": "транспондер", "ecm": "РЭБ", "sensor_mast": "сенсорная мачта",
-    "life_support": "жизнеобеспечение", "escape_capsule": "спасательная капсула", "lifeboat": "спасательная шлюпка", "medbay": "медотсек",
+    "life_support": "жизнеобеспечение", "escape_capsule": "спасательная капсула", "cockpit_capsule": "кабина-капсула", "lifeboat": "спасательная шлюпка", "medbay": "медотсек",
     "container_rack": "места C20", "passenger_module": "пассажирские модули", "train_module": "модули поезда", "cryo_tank": "криоцистерны",
     "bulk_hold": "грузовой отсек", "docking_port": "стыковочный узел", "boat_bay": "ангар катера", "drone_bay": "отсек дронов",
     "hangar": "ангар перехватчиков", "tow_rig": "буксирная рама", "workshop": "мастерская", "heat_shield": "теплозащита",

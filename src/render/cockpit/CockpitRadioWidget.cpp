@@ -1,3 +1,4 @@
+#include <iostream>
 #include "src/render/cockpit/CockpitRadioWidget.h"
 
 #include <algorithm>
@@ -190,8 +191,8 @@ void CockpitRadioWidget::render(const EngineThrustIndicatorRenderer::GroupFrame&
         }
         else if (playlistMode && removeBox.contains(mx, my))
             radio.removeCurrentTrack(), hit = "remove";
-        std::fprintf(stderr, "[RadioUI] press at (%.0f, %.0f) of %.0fx%.0f (window %dx%d), panel (%.0f, %.0f %.0fx%.0f) -> %s\n",
-                     mx, my, sw, sh, ww, wh, x, y, w, h, hit);
+        { char diagLine[512]; std::snprintf(diagLine, sizeof diagLine, "[RadioUI] press at (%.0f, %.0f) of %.0fx%.0f (window %dx%d), panel (%.0f, %.0f %.0fx%.0f) -> %s\n",
+                     mx, my, sw, sh, ww, wh, x, y, w, h, hit); std::cerr << diagLine << std::flush; }
     }
     else if (down && m_draggingVolume)
     {

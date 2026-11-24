@@ -720,7 +720,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
     {
         glm::dvec3 lo(1.0e30), hi(-1.0e30);
         for (const auto& object : snapshot.scene.objects)
-            if (object.valid && object.objectClass == world::celestial::DetailObjectClass::Hub &&
+            if (object.valid && object.role != world::celestial::LocalSceneObjectRole::Context &&
+                object.objectClass == world::celestial::DetailObjectClass::Hub &&
                 isHubCityModule(object.stableId))
             {
                 const glm::dvec3 half = object.sizeMeters * 0.5;
@@ -739,7 +740,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
     if (view.planView())
         for (const auto& object : snapshot.scene.objects)
         {
-            if (!object.valid || object.objectClass != world::celestial::DetailObjectClass::Hub)
+            if (!object.valid || object.role == world::celestial::LocalSceneObjectRole::Context ||
+                object.objectClass != world::celestial::DetailObjectClass::Hub)
                 continue;
             const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.stableId);
             if (!plan || !plan->ring().valid || plan->blocks().empty())
@@ -768,6 +770,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         if (planCity)
             break;
         if (!object.valid ||
+            object.role == world::celestial::LocalSceneObjectRole::Context ||   // a neighbour hub's module: not fitted
             object.objectClass !=
                 world::celestial::DetailObjectClass::Hub)
         {

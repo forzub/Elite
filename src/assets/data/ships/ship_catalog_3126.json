@@ -693,9 +693,9 @@
   },
   {
    "id": "kb.surv.capsule2",
-   "cat": "escape_capsule",
+   "cat": "cockpit_capsule",
    "mfr": "mfr.cobretty",
-   "name": "EC-2 · (спасательная кабина: нос корабля с двигателем)",
+   "name": "EC-2 · кабина-капсула (кабина корабля = малый корабль с двигателем)",
    "model": "EC-2",
    "mass_t": 6.5,
    "price_cr": 180000,
@@ -706,7 +706,9 @@
    "model_asset": "equipment/cobretty_ec2_cockpit",
    "official_name": "Cobretty EC-2 Escape Cockpit",
    "escape_motor": "2 field-thruster rings facing aft",
-   "endurance_days": 4
+   "endurance_days": 4,
+   "escape_thrust_mn": 0.13,
+   "escape_dv_mps": 3000
   },
   {
    "id": "kb.wpn.pd1",
@@ -2654,7 +2656,7 @@
     {
      "code": "Cobrett-I N1-A7A2",
      "product": "kb.surv.capsule2",
-     "cat": "escape_capsule",
+     "cat": "cockpit_capsule",
      "qty": 1,
      "positions": [
       [
@@ -3056,7 +3058,7 @@
       "code": "Cobrett-I N1-A7A2",
       "product": "kb.surv.capsule2",
       "name": "EC-2 · (спасательная кабина: нос корабля с двигателем)",
-      "cat": "escape_capsule",
+      "cat": "cockpit_capsule",
       "qty": 1,
       "assembly": "A7",
       "repair_level": "station",
@@ -3933,7 +3935,7 @@
     {
      "code": "Cobrett-I A3-A7A2",
      "product": "kb.surv.capsule2",
-     "cat": "escape_capsule",
+     "cat": "cockpit_capsule",
      "qty": 1,
      "positions": [
       [
@@ -4321,7 +4323,7 @@
       "code": "Cobrett-I A3-A7A2",
       "product": "kb.surv.capsule2",
       "name": "EC-2 · (спасательная кабина: нос корабля с двигателем)",
-      "cat": "escape_capsule",
+      "cat": "cockpit_capsule",
       "qty": 1,
       "assembly": "A7",
       "repair_level": "station",
@@ -20486,7 +20488,7 @@
     {
      "code": "B-4-A7A2",
      "product": "kb.surv.capsule2",
-     "cat": "escape_capsule",
+     "cat": "cockpit_capsule",
      "qty": 1,
      "positions": [
       [
@@ -20835,7 +20837,7 @@
       "code": "B-4-A7A2",
       "product": "kb.surv.capsule2",
       "name": "EC-2 · (спасательная кабина: нос корабля с двигателем)",
-      "cat": "escape_capsule",
+      "cat": "cockpit_capsule",
       "qty": 1,
       "assembly": "A7",
       "repair_level": "station",

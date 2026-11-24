@@ -35,7 +35,7 @@ CAT_CLASS = {
     "drive": ("ME", "M"), "reactor": ("GR", "G"), "service_reactor": ("GS", "G"), "radiator": ("RD", "E"), "coolant_loop": ("PU", "G"),
     "jump_core": ("JC", "G"), "tank": ("TK", "C"), "cryo_tank": ("TK", "C"), "rcs": ("RC", "M"), "computer": ("CP", "K"), "radar": ("RA", "B"),
     "sensor_mast": ("RA", "B"), "ecm": ("CM", "K"), "comm": ("CM", "K"), "transponder": ("TX", "K"), "life_support": ("LS", "H"),
-    "medbay": ("A", "A"), "escape_capsule": ("EC", "A"), "lifeboat": ("EC", "A"), "container_rack": ("CR", "U"), "bulk_hold": ("CR", "U"),
+    "medbay": ("A", "A"), "escape_capsule": ("EC", "A"), "cockpit_capsule": ("EC", "A"), "lifeboat": ("EC", "A"), "container_rack": ("CR", "U"), "bulk_hold": ("CR", "U"),
     "passenger_module": ("A", "A"), "train_module": ("A", "A"), "docking_port": ("DK", "X"), "landing_gear": ("MP", "U"),
     "heat_shield": ("MP", "F"), "armour": ("MP", "F"), "weapon": ("WE", "A"), "hangar": ("A", "U"), "boat_bay": ("A", "U"),
     "drone_bay": ("A", "U"), "workshop": ("A", "A"), "mining_rig": ("A", "M"), "tow_rig": ("A", "M"),
@@ -45,11 +45,11 @@ SRU_IEC = {"PT": "E", "HX": "E", "RD": "E", "PU": "G", "VL": "Q", "TK": "C", "IJ
            "PS": "T", "A": "K", "BT": "C", "FL": "V", "G": "H", "E": "F", "CM": "K", "WE": "A"}
 # units with their own place in the tree (A / separate tag); the rest are numbered pieces in their compartment
 ASSEMBLY = {"drive", "reactor", "service_reactor", "coolant_loop", "computer", "radar", "sensor_mast", "ecm", "comm", "life_support",
-            "escape_capsule", "docking_port", "weapon", "passenger_module", "train_module", "hangar", "boat_bay", "drone_bay", "workshop",
+            "escape_capsule", "cockpit_capsule", "docking_port", "weapon", "passenger_module", "train_module", "hangar", "boat_bay", "drone_bay", "workshop",
             "medbay", "mining_rig", "tow_rig", "bulk_hold", "cryo_tank", "landing_gear", "heat_shield"}
 # compartments in layout order (propulsion bays first, one per reactor-drive group)
 COMPARTMENTS = [
-    ("cockpit", "кабина-капсула", {"escape_capsule", "life_support"}),
+    ("cockpit", "кабина-капсула", {"escape_capsule", "cockpit_capsule", "life_support"}),
     ("systems", "отсек бортовых систем", {"service_reactor", "computer", "radar", "comm", "transponder", "ecm", "sensor_mast"}),
     ("thermal", "контур охлаждения и радиаторы", {"coolant_loop", "radiator"}),
     ("jump", "прыжковый отсек", {"jump_core", "tank:jump_charge"}),

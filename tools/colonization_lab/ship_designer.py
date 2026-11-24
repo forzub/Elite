@@ -42,7 +42,7 @@ ASSEMBLIES = [
     ("A4", "Прыжок и топливо", ("jump_core", "tank")),
     ("A5", "Маневровая система", ("rcs",)),
     ("A6", "Авионика, сенсоры, связь", ("computer", "radar", "comm", "transponder", "ecm", "sensor_mast")),
-    ("A7", "Жизнеобеспечение и спасение", ("life_support", "escape_capsule", "lifeboat", "medbay")),
+    ("A7", "Жизнеобеспечение и спасение", ("life_support", "escape_capsule", "cockpit_capsule", "lifeboat", "medbay")),
     ("A8", "Груз и пассажиры", ("container_rack", "passenger_module", "train_module", "cryo_tank", "bulk_hold")),
     ("A9", "Стыковка и ангары", ("docking_port", "boat_bay", "drone_bay", "hangar")),
     ("A10", "Специальное оборудование", ("tow_rig", "workshop", "heat_shield", "landing_gear")),
@@ -57,7 +57,7 @@ REPAIR = {
     "coolant_loop": ("station", True, 8), "radiator": ("crew", True, 1.5), "jump_core": ("factory", False, 0),
     "tank": ("station", True, 6), "rcs": ("crew", True, 2), "computer": ("station", True, 4), "radar": ("station", True, 6),
     "comm": ("crew", True, 2), "transponder": ("crew", True, 0.5), "ecm": ("station", True, 8), "sensor_mast": ("station", True, 10),
-    "life_support": ("station", True, 10), "escape_capsule": ("station", True, 6), "lifeboat": ("station", True, 8), "medbay": ("station", True, 6),
+    "life_support": ("station", True, 10), "escape_capsule": ("station", True, 6), "cockpit_capsule": ("station", True, 6), "lifeboat": ("station", True, 8), "medbay": ("station", True, 6),
     "container_rack": ("crew", True, 3), "passenger_module": ("yard", True, 24), "train_module": ("station", True, 6),
     "cryo_tank": ("yard", True, 30), "bulk_hold": ("yard", False, 0), "docking_port": ("station", True, 8), "boat_bay": ("yard", False, 0),
     "drone_bay": ("station", True, 8), "hangar": ("yard", False, 0), "tow_rig": ("station", True, 16), "workshop": ("station", True, 12),
@@ -68,7 +68,7 @@ PRICE_GROUP = {
     "drive": "main_drive", "reactor": "reactor", "service_reactor": "reactor", "coolant_loop": "rcs_thermal", "radiator": "rcs_thermal",
     "rcs": "rcs_thermal", "jump_core": "jump_drive", "tank": "jump_drive", "computer": "electronics", "radar": "electronics",
     "comm": "electronics", "transponder": "electronics", "ecm": "electronics", "sensor_mast": "electronics",
-    "life_support": "life_support", "escape_capsule": "life_support", "lifeboat": "life_support", "medbay": "life_support",
+    "life_support": "life_support", "escape_capsule": "life_support", "cockpit_capsule": "life_support", "lifeboat": "life_support", "medbay": "life_support",
     "weapon": "weapons", "armour": "weapons",
 }
 SLOT_POS = {   # normalized body positions of the six runtime layouts (src/game/ship/presets/cobra/CobraPropulsionPresets.h)
@@ -82,7 +82,7 @@ SLOT_POS = {   # normalized body positions of the six runtime layouts (src/game/
 CAT_COLOR = {
     "drive": "#e8762b", "reactor": "#d64545", "service_reactor": "#c76b6b", "coolant_loop": "#3d8fd6", "radiator": "#7fb8e6",
     "jump_core": "#9b59d0", "tank": "#b08ad6", "rcs": "#d6b13d", "computer": "#3dbf9a", "radar": "#2fa58a", "comm": "#57c7b0",
-    "transponder": "#57c7b0", "ecm": "#2a8f78", "sensor_mast": "#2a8f78", "life_support": "#5aa04a", "escape_capsule": "#8cc56f",
+    "transponder": "#57c7b0", "ecm": "#2a8f78", "sensor_mast": "#2a8f78", "life_support": "#5aa04a", "escape_capsule": "#8cc56f", "cockpit_capsule": "#8cc56f",
     "lifeboat": "#8cc56f", "medbay": "#8cc56f", "container_rack": "#8a8a8a", "passenger_module": "#a3a07a", "train_module": "#8a8a8a",
     "cryo_tank": "#6fa6b5", "bulk_hold": "#8a8a8a", "docking_port": "#d0d0d0", "boat_bay": "#bdbdbd", "drone_bay": "#bdbdbd",
     "hangar": "#bdbdbd", "tow_rig": "#a8783d", "workshop": "#a8783d", "heat_shield": "#7a5a3d", "landing_gear": "#7a5a3d",
@@ -254,7 +254,7 @@ def compute():
         ls_persons = total("life_support", "persons") + total("passenger_module", "ls_persons")
         add("life_support_capacity", ls_persons >= awake, f"{ls_persons} places for {awake} awake persons ({cold} in cold sleep)")
         add("life_support_endurance", ls_days >= s["endurance_days"], f"{ls_days} days vs endurance {s['endurance_days']} days")
-        seats = (sum(prods[i["product"]].get("seats", 0) * i["qty"] for i in items if i["cat"] in ("escape_capsule", "lifeboat"))
+        seats = (sum(prods[i["product"]].get("seats", 0) * i["qty"] for i in items if i["cat"] in ("escape_capsule", "cockpit_capsule", "lifeboat"))
                  + total("passenger_module", "survival_seats"))
         add("survival_seats_for_everyone_awake", seats >= awake * R["survival_seat_share"],
             f"{seats} survival seats for {awake} awake persons (cold-sleep blocks are their own survival cells)")
@@ -557,7 +557,7 @@ BLOCK = {
     "drive": (1.6, (1, 1, 2.2)), "reactor": (2.2, (1, 1, 1.2)), "service_reactor": (2.2, (1, 1, 1)), "coolant_loop": (0.8, (2, 1, 1)),
     "jump_core": (2.5, (1, 1, 1)), "tank": (0.9, (1, 1, 1.6)), "rcs": (1.0, (1, 1, 1)), "computer": (0.6, (1, 0.6, 1)),
     "radar": (0.35, (1, 0.4, 1)), "comm": (0.4, (1, 0.5, 1)), "transponder": (0.5, (1, 1, 1)), "ecm": (0.4, (1, 0.5, 1.2)),
-    "sensor_mast": (0.3, (0.6, 2, 0.6)), "life_support": (0.45, (1.4, 0.8, 1)), "escape_capsule": (0.25, (1, 1, 1.4)),
+    "sensor_mast": (0.3, (0.6, 2, 0.6)), "life_support": (0.45, (1.4, 0.8, 1)), "escape_capsule": (0.25, (1, 1, 1.4)), "cockpit_capsule": (0.25, (1, 1, 1.4)),
     "lifeboat": (0.15, (1, 0.7, 2.2)), "medbay": (0.2, (1.4, 0.7, 1)), "docking_port": (0.6, (1, 1, 0.5)),
     "tow_rig": (1.2, (1.6, 1.6, 0.6)), "workshop": (0.25, (1.4, 0.8, 1)), "landing_gear": (1.5, (1, 1.4, 1)),
     "weapon": (0.8, (1, 0.6, 1.6)), "armour": (7.8, (3, 2, 0.15)), "heat_shield": (2.0, (2, 0.1, 2)),
@@ -613,7 +613,7 @@ def place(s, prods, envelopes):
             pts = [(-1.0, 0, 0.3), (1.0, 0, 0.3)]
         else:
             z = {"service_reactor": 0.3, "coolant_loop": 0.4, "jump_core": 0.1, "tank": 0.3, "computer": -0.75, "radar": -0.85, "comm": -0.8,
-                 "transponder": -0.8, "ecm": -0.6, "sensor_mast": -0.5, "life_support": -0.6, "escape_capsule": -0.55, "lifeboat": -0.2,
+                 "transponder": -0.8, "ecm": -0.6, "sensor_mast": -0.5, "life_support": -0.6, "escape_capsule": -0.55, "cockpit_capsule": -0.55, "lifeboat": -0.2,
                  "medbay": -0.5, "container_rack": 0.0, "passenger_module": -0.1, "train_module": 0.5, "cryo_tank": 0.0, "bulk_hold": 0.1,
                  "docking_port": -1.0, "boat_bay": 0.2, "drone_bay": 0.25, "hangar": 0.1, "tow_rig": -1.0, "workshop": -0.2, "heat_shield": 0.0,
                  "landing_gear": 0.6, "weapon": -0.3, "armour": -0.95}.get(c, 0.0)

@@ -8713,3 +8713,15 @@ start-up hitches (render), trade step 16 part 3 live.
   the execution's 0.8 x cruise cap and the speed changes at junctions ((v_hi - v_lo)^2 / (2 a v_hi), a = 8 m/s2).
   B4-11 186 s. (e) MEDIUM/future a repeated economy request id gets its ORIGINAL result again
   (EconomyServer::replayResult, the last 64 per player). EliteEconomyCheck 258 / 0; evasion ctest 5109 / 0.
+- 2026-11-24 author session follow-ups: (a) the evasion reflex sees STRUCTURES under the autopilot too (author: «почему не
+  сработала система уклонения?» - the reflex trusted the planner for structures "that do not move"; the ring hub's rim
+  moves 108 m/s): every hit volume closing faster than 15 m/s, its velocity with the object's spin; long boxes as a chain
+  of spheres as thick as the box (author: «компромисс, чтобы он не шарахался от каждого крупного объекта»); the 128 with
+  the earliest contact. B4-11 181 s, 0 dodges; ring H1-02 from 13 km 115 s, 0 collisions (4 dodges near the rim - to look
+  at). (b) The hub map shows the NEIGHBOUR hubs within 100 km (Высокий from the ring hub; Context role, not fitted) and
+  follows a new hub only when it is clearly nearer (2 km and 25 %; it flipped back and forth). (c) [HudCorridor] log on a
+  change; [RouteCheck]/[RouteSummary]/[RadioUI] through std::cerr (fprintf never reached the session log). (d) Ship data:
+  a COCKPIT-CAPSULE category (the cockpit is a small ship) next to escape_capsule (a capsule you board); the Cobrett EC-2
+  is the cockpit-capsule (escape_thrust_mn 0.13, escape_dv_mps 3000); code + generators know it. The ring crash in the
+  author's session predates the swept-ring planning (79fae762f). Next: the capsule (memory cockpit-capsule-rescue) and the
+  onboard computer journal (memory onboard-computer-journal), then the UI component pass (author's brief).

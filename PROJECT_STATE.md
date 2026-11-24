@@ -8568,3 +8568,18 @@ start-up hitches (render), trade step 16 part 3 live.
 - Correction (same day): configureRoutePlannerFromEnvironment() is called by the CLIENT only (SpaceState) - calling it
   from GameServer broke check_automatic_docking ("GameServer regained client-navigation ownership: RoutePlanner"); the
   server keeps the planner's defaults. check_automatic_docking green again.
+
+## Baseline reds - architecture contracts, re-measured 2026-11-24 (TST-2)
+- tests/architecture_contracts/check_*.py, HEAD vs a1e28cad2 (worktree, python only): HEAD 183 pass / 15 fail, base
+  182 / 16; NO new red; fixed since the base: check_navigation_route_boundaries (TST-2 above), check_entity_lifetime
+  (m_landingGear / m_padNotices / m_manoeuvreOnly were never erased in forgetShip - fixed here).
+- The remaining 14 reds, ALL red at a1e28cad2 too: check_client_galaxy_map_catalog (source.description),
+  check_flight_law_hard_isolation, check_function_key_presentation_route (F4 reserved), check_model_asset_*
+  (dependency_ownership, extraction_proof, function_purity, localization_complete [a cp1251 encode of the console],
+  module_ownership, physical_modules, wizard_decomposition), check_navigation_foundation_lock
+  (updateDockingGuidance 'renderTransform'), check_server_runtime_ownership, check_ui_platform_fonts (mesh_editor page),
+  check_wire_data_schema (top-level codec knows value.ships).
+- Navigation ctest (tests/navigation_runtime, 66): 9 baseline reds (traffic_route_graph, client_route_autopilot,
+  navigation_v2_tunnel_proving_ground, assisted_authority_contract, newtonian_execution_authority,
+  assisted_layout_flight_matrix, ship_physical_corridor_matrix, assisted_safe_course_recovery, ship_state), all red at
+  a1e28cad2; ordinary_route_policy fixed (stale expectation).

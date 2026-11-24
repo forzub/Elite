@@ -176,6 +176,8 @@ struct TcpClientTransport::Impl
 
 struct TcpServerTransport::Impl
 {
+    // audit SRV-5: an inbound queue's bound (the server drains every tick; a sane client sends tens a tick)
+    static constexpr std::size_t MaxInboundQueued = 4096;
     explicit Impl(std::unique_ptr<wire::TcpWireStream> acceptedStream)
         : stream(std::move(acceptedStream))
     {
@@ -211,6 +213,11 @@ struct TcpServerTransport::Impl
                         fail("invalid SessionHello wire payload");
                         return;
                     }
+                    if (sessionHellos.size() >= MaxInboundQueued)
+                    {
+                        fail("a client flooded the sessionHellos queue (over " + std::to_string(MaxInboundQueued) + ") - connection closed");
+                        return;
+                    }
                     sessionHellos.push(std::move(value));
                     break;
                 }
@@ -221,6 +228,11 @@ struct TcpServerTransport::Impl
                     if (!wire::decodeMessagePayload(frame, value, compressor))
                     {
                         fail("invalid ClientMessage wire payload");
+                        return;
+                    }
+                    if (clientMessages.size() >= MaxInboundQueued)
+                    {
+                        fail("a client flooded the clientMessages queue (over " + std::to_string(MaxInboundQueued) + ") - connection closed");
                         return;
                     }
                     clientMessages.push(std::move(value));
@@ -235,6 +247,11 @@ struct TcpServerTransport::Impl
                         fail("invalid MapRequest wire payload");
                         return;
                     }
+                    if (mapRequests.size() >= MaxInboundQueued)
+                    {
+                        fail("a client flooded the mapRequests queue (over " + std::to_string(MaxInboundQueued) + ") - connection closed");
+                        return;
+                    }
                     mapRequests.push(std::move(value));
                     break;
                 }
@@ -245,6 +262,11 @@ struct TcpServerTransport::Impl
                     if (!wire::decodeMessagePayload(frame, value, compressor))
                     {
                         fail("invalid TimeSyncRequest wire payload");
+                        return;
+                    }
+                    if (timeSyncRequests.size() >= MaxInboundQueued)
+                    {
+                        fail("a client flooded the timeSyncRequests queue (over " + std::to_string(MaxInboundQueued) + ") - connection closed");
                         return;
                     }
                     timeSyncRequests.push(std::move(value));

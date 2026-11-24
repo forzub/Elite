@@ -181,6 +181,11 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
                 if (!kit.empty() ? ma::ModelAssetBinary::load(kit, city, &error)
                                  : ma::assembleHubCityCollision(id, "assets/compiled/hub_modules", city))
                     collisionToHitVolumes(type, city, hit.volumes);
+                else
+                    // audit SRV-5: a failed assembly was "ready" with 0 volumes and no word - said now; the planner
+                    // treats an object without volumes as no proven geometry (it does not fly through it)
+                    std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": assembly FAILED"
+                              << (error.empty() ? std::string() : " (" + error + ")") << " - no obstacle geometry" << std::endl;
                 job->volumes = world::modules::HitVolumeSnapshotBuilder::build(hit);
                 std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": " << job->volumes.size()
                           << " hit volumes assembled on the client" << std::endl;

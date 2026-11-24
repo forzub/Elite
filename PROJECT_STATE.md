@@ -8595,3 +8595,8 @@ start-up hitches (render), trade step 16 part 3 live.
   183 s, 0 collisions; the 656 ms frame gap at the request is gone (worst gap after the request 471 ms vs 656).
   FOUND, OPEN: ~10 recurring 420-470 ms frame gaps during that flight in both runs (offscreen dev run; cause not
   traced - not the lane search, not the planner).
+- SRV-5 (part): the TCP server's inbound queues (hellos, client messages, map / time-sync requests) are bounded at 4096
+  - a flooding client is disconnected with the reason (they grew without limit); a failed client-side geometry assembly
+  (layout city / kit package) is logged with its reason (it was "ready" with 0 volumes in silence; the planner treats no
+  volumes as no proven geometry). Remote B4-11 after: 179 s, 0 collisions. Still open: FixedStepControlQueue unbounded,
+  the detached assembly thread at process exit, the sparse-base merge marked FullAuthoritativeSet (needs runtime).

@@ -128,6 +128,7 @@ void TestIdealRadarUnit::captureMeasurement(
         RadarTrackReport measured;
         measured.trackId = track.publicId;
         measured.kind = truth.kind;
+        measured.boundingRadiusMeters = std::max(0.0, truth.boundingRadiusMeters);
         measured.relativePositionMeters =
             sensorFromWorld * relativeWorld + track.positionBiasMeters;
         measured.relativeVelocityMps =

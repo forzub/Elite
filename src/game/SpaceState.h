@@ -566,7 +566,7 @@ private:
     RadarWidgetBase* m_radarWidget = nullptr;
     // Cockpit radar scope scale (metres): R-selected range, 2 000 km forward in J.
     double m_radarDisplayRangeMeters = 0.0;
-    int m_radarRangeIndex = 0;   // 20 / 50 / 150 km (R)
+    int m_radarRangeIndex = 1;   // 5 / 20 / 50 / 150 km (R), from 20 km
     float m_radarSweepDegPerSec = 0.0f;
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
@@ -673,6 +673,9 @@ private:
     ShipControlState applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds,
                                                 bool autopilotPhase = false);
     game::navigation::avoidance::EvasionReflex m_phaseReflex;
+    // our hull's conservative bounding radius from its REAL geometry (HitVolumeBounds.h): the replicated live hit
+    // volumes, else the descriptor's dimensions (audit NAV-2: max(10, length / 2) under-sized a Cobra, wider than long)
+    double ownBoundingRadiusMeters() const;
     bool m_routeReflexApplied = false;   // the route's own reflex ran for the control being submitted
     game::navigation::avoidance::EvasionNet m_evasionNet;
     bool m_evasionNetTried = false;

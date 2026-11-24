@@ -3008,17 +3008,17 @@ m_playerView->updateCockpitStateFromSnapshot(
             // the scope expects). A destroyed / unpowered radar shows nothing.
             const auto& sensors = m_client->navigationSensors();
             const bool radarOn = sensors.radarInstalled && sensors.radarOperational;
-            // Scope modes: around the ship at 20 / 50 / 150 km (R cycles);
+            // Scope modes: around the ship at 5 / 20 / 50 / 150 km (R cycles);
             // in J (free / global flight) a forward sector along the hull axis
             // out to 2 000 km - early warning of what lies on the course.
-            static constexpr double ScopeRangesMeters[] = {20000.0, 50000.0, 150000.0};
+            static constexpr double ScopeRangesMeters[] = {5000.0, 20000.0, 50000.0, 150000.0};   // 5 km: the close hub traffic (author 2026-11-24)
             constexpr double ForwardRangeMeters = 2.0e6;
             constexpr double ForwardHalfAngleCos = 0.866;   // 30 deg half-angle
             const bool ctrlHeld =
                 Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
                 Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
             if (!ctrlHeld && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
-                m_radarRangeIndex = (m_radarRangeIndex + 1) % 3;
+                m_radarRangeIndex = (m_radarRangeIndex + 1) % 4;
             const bool forwardScope = ship.transform.motion.freeFlight && ship.transform.motion.jEngine;   // the J sector only with the J engine on
             m_radarDisplayRangeMeters = forwardScope ? ForwardRangeMeters : ScopeRangesMeters[m_radarRangeIndex];
 

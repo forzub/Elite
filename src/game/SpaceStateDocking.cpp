@@ -1,5 +1,6 @@
 // SpaceState: Docking / route-autopilot orchestration: route request, planning jobs, safe course, autopilot phases and the docking corridor publication.
 
+#include "src/game/damage/HitVolumeBounds.h"
 #include "src/core/ThreadPriority.h"
 #include "src/game/SpaceStateInternal.h"
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
@@ -4339,7 +4340,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                                                      static_cast<float>(reflexAgent.yawRateRadPerSec),
                                                      static_cast<float>(reflexAgent.rollRateRadPerSec));
             m_routeReflexApplied = true;
-            submitAutopilotControl(applyEvasionReflex(output.control, reflexLateral, std::max(10.0, 0.5 * f.hull.lengthMeters),
+            submitAutopilotControl(applyEvasionReflex(output.control, reflexLateral, ownBoundingRadiusMeters(),
                                                       universeTimeSeconds, &reflexShip));
 
             if (m_clientDockingTraceTick == 0 ||
@@ -5108,6 +5109,22 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
     return control;
 }
 
+double SpaceState::ownBoundingRadiusMeters() const
+{
+    if (!m_client)
+        return 10.0;
+    const auto it = m_client->world().ships().find(m_playerId.value);
+    if (it == m_client->world().ships().end())
+        return 10.0;
+    double fallback = 10.0;
+    if (it->second.descriptor)
+    {
+        const auto dim = it->second.descriptor->logicalDimensions();
+        fallback = game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height);
+    }
+    return std::max(1.0, game::damage::hitVolumesBoundingRadius(it->second.debugHitVolumes, fallback));
+}
+
 // THE COLLISION ASSIST while the pilot flies by hand (author 2026-11-24: «как сейчас работает система уклонения - в
 // любом режиме? ... при ручном управлении внезапно возникнет помеха»; «уклонение - третий вариант» = by the difficulty):
 // the same radar reflex as over the route (control programs flown on the ship's own physics), with the urgency window -
@@ -5195,7 +5212,7 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     ship.velocityBody = glm::dvec3(glm::dot(v, right), glm::dot(v, up), -glm::dot(v, forward));
     ship.targetForwardSpeedMps = std::max(0.0, static_cast<double>(motion.targetForwardSpeedMps));
     ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
-    const double hullRadius = std::max(10.0, 0.5 * player.descriptor->logicalDimensions().length);
+    const double hullRadius = ownBoundingRadiusMeters();
     const auto& cmd = reflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius);
     if (!cmd.active)
         return quiet();

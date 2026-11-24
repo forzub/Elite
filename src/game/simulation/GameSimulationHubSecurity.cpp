@@ -1,3 +1,4 @@
+#include "src/game/damage/HitVolumeBounds.h"
 #include "src/game/equipment/radar/RadarSensorTypes.h"
 // GameSimulation: hub security / traffic control (docs/HUB_SECURITY.md). One component per hub that the lanes, the
 // promoted air traffic, the dock traffic, the defence ring and the fines report to:
@@ -226,9 +227,11 @@ std::vector<GameSimulation::HubRadarContact> GameSimulation::hubRadarContacts(co
         const glm::dvec3 cvel(city.linearVelocity);
         if (glm::length(cpos - observerWorld) > 60000.0)
             continue;   // beyond any hull radar
-        const auto push = [&](std::uint32_t key, const glm::dvec3& local, const glm::dvec3& localVel, double rcs, std::uint8_t kind) {
+        const auto push = [&](std::uint32_t key, const glm::dvec3& local, const glm::dvec3& localVel, double rcs, std::uint8_t kind,
+                              double radius) {
             HubRadarContact k;
             k.key = key;
+            k.boundingRadiusMeters = radius;
             k.worldPosition = cpos + R * local;
             k.worldVelocity = cvel + R * localVel;
             k.radarCrossSection = rcs;
@@ -247,8 +250,24 @@ std::vector<GameSimulation::HubRadarContact> GameSimulation::hubRadarContacts(co
                     if (pa.city == c.city && pa.slot == slot.id)
                         promoted = true;   // a real ship now: on the radar as itself
                 if (!promoted && layout.pose(slot, universe, pose))
+                {
+                    // the hull's size: its catalog passport's dimensions, else the presentation hull's length with the
+                    // catalog's widest proportions (a Cobra: 26 m wide on 22 m long - 0.75 x the length as the radius)
+                    double radius = 15.0;
+                    if (slot.fleetIndex >= 0 && static_cast<std::size_t>(slot.fleetIndex) < c.plan->airFleet().size())
+                    {
+                        const auto& hull = c.plan->airFleet()[static_cast<std::size_t>(slot.fleetIndex)];
+                        radius = 0.75 * hull.lengthMeters;
+                        if (!hull.passport.empty())
+                        {
+                            const ShipDescriptor& d = ShipDescriptorRegistry::resolve(ObjectType::CobraMk1, hull.passport);
+                            const auto dim = d.logicalDimensions();
+                            radius = game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height);
+                        }
+                    }
                     push(0xC0000000u | cityBits | (slot.id & 0xFFFFu), pose.position, pose.velocity, 1.0,
-                         game::radar::RadarTrackKindShip);
+                         game::radar::RadarTrackKindShip, radius);
+                }
             }
         }
         if (c.plan && !c.defence.sites.empty())
@@ -257,7 +276,8 @@ std::vector<GameSimulation::HubRadarContact> GameSimulation::hubRadarContacts(co
             game::traffic::security::strayBodiesAt(c.defence, universe, 0.0, bodies);
             for (const auto& b : bodies)
                 push(0xE0000000u | cityBits | (b.index & 0x3FFFFu), game::traffic::security::strayPosition(b, universe),
-                     b.velocity, std::max(0.01, b.sizeMeters * b.sizeMeters / 400.0), game::radar::RadarTrackKindDebris);
+                     b.velocity, std::max(0.01, b.sizeMeters * b.sizeMeters / 400.0), game::radar::RadarTrackKindDebris,
+                     0.5 * b.sizeMeters * 1.7320508);   // a piece of size s: inside the sphere round its s-cube
         }
         if (c.plan)
         {
@@ -265,7 +285,8 @@ std::vector<GameSimulation::HubRadarContact> GameSimulation::hubRadarContacts(co
             game::traffic::security::debrisFieldAt(c.defence, universe, pieces);
             for (const auto& p : pieces)
                 push(0xA0000000u | cityBits | (p.index & 0x3FFFFu), p.position, p.velocity,
-                     std::max(0.01, p.sizeMeters * p.sizeMeters / 400.0), game::radar::RadarTrackKindDebris);
+                     std::max(0.01, p.sizeMeters * p.sizeMeters / 400.0), game::radar::RadarTrackKindDebris,
+                     0.5 * p.sizeMeters * 1.7320508);
         }
     }
     if (found.size() > maxCount)

@@ -8367,3 +8367,47 @@ start-up hitches (render), trade step 16 part 3 live.
     tracks, radio.json "playlist", drop files / folders onto the window, x removes the current one); city far proxies:
     a SILHOUETTE proxy (octagonal slices from the coarsest LOD) for towers / masts / flared tops instead of the box;
     DEV verb "hubplan".
+  * 2026-11-24 COLLISION / EVASION: CONTINUOUS TRAJECTORY CONFLICT (audit 8e3c49007 NAV-1 / NAV-2 / NAV-3; the reviewer's
+    pass «avoidance должен оценивать continuous trajectories реальных физических объектов»). STATUS: SOURCE + BUILD +
+    AUTOMATED (new ctest) + LAB + LIVE.
+    - TrajectoryConflict.h (new): every interval between two stored states of our predicted flight is CONTINUOUS
+      motion - the other body linear, ours on the chord within chordBound = a_max dt^2 / 8 (a_max the largest
+      acceleration the integration saw inside the interval), closest approach and the first touch analytically
+      (no sampling of the touch: correct at m/s and at fractions of c). ConflictResult: closest approach + time +
+      relative speed, physical and safety clearance, first contact + normal impact speed. SafetyEnvelopePolicy: the one
+      place of the "too close" numbers - base hull-to-hull gap 15 m + the sensor's position uncertainty + velocity
+      uncertainty x (scan age + t). judgeControlFlight uses it (ControlFlight::chordBound, sampleSeconds).
+    - REAL SIZES: RadarTrackReport::boundingRadiusMeters (wire schema 71) from the target's real geometry
+      (damage/HitVolumeBounds.h: max |centre| + |half size| over the live hit volumes - a torn-off part shrinks it;
+      descriptor half-diagonal for traffic shells / passport hulls; debris / strays from their size); our own hull
+      from our replicated hit volumes (SpaceState::ownBoundingRadiusMeters) instead of max(10, length / 2).
+    - SCAN AGE + ROTATION: EvasionReflex::sceneFrom turns the scan from the body frame at the measurement into the body
+      frame now by our rotation over the age (SharedShipPhysics::propagateOrientation - the physics' own integrator, no
+      second radar-axes definition); uncertainties and age go into the safety envelope.
+    - TEST evasion_trajectory_conflict (tests/navigation_runtime, ctest) against an INDEPENDENT fine-stepping oracle:
+      216 touches placed between the old 0.5 s samples at 100 .. 1000 m/s and 0.1 c (head-on / perpendicular /
+      oblique, exact / glancing / near miss, debris 1.7 m .. transport 114.6 m): the old judge missed 180, the new 0;
+      4000 random encounters 10 m/s .. 100 km/s: 1515 touches, 0 missed; dodge programs on the real physics vs a 1 ms
+      oracle: 0 missed; geometry (wide hull 16.4 m vs length/2 11 m, transport 115.8 m, the track's size used); scan
+      rotation 0.3 rad/s x 0.58 s at 310 m: error 0.003 m (54 m without); uncertainty: the same nominal pass exact =
+      safe, uncertain = safety conflict. 5092 checks, 0 failures.
+    - LAB EliteControlEvasionLab oracle (41 programs x 300 scenes, threats to 500 / 2000 m/s, both laws): against the
+      SAMPLING oracle (the predicted flight's own steps, 1 ms inside): old judge missed 320 / 774 (Assisted),
+      1605 / 5145 (Newtonian) touches, the new 0 everywhere, 8-31 extra cautious touches; against a 2 ms PHYSICS oracle
+      the new one still misses 0.1-1.3 % - the prediction's 0.1 s integration step vs finer physics (a model error, OPEN:
+      integrate at the server step or bound it). Judge cost 0.6 vs 0.4 us a flight.
+    - LIVE: ramtest head-on 59 m (was 60), right 98 m with no dodge (the real radii need ~50 m, the pass is 98 - the
+      old 30 m spheres dodged it needlessly), 0 collisions; B4-11 through the city 181 s, 1 dodge, cross 11 m.
+    - NOT DONE (explicit): the narrow phase (target hit volumes - the client has none for other ships; the sphere is
+      conservative: no misses, extra caution for long hulls); known intent (lane / connector paths of traffic instead
+      of the straight extrapolation - the boundary: radar = observed motion, a known path can feed its own states
+      through accumulateConflictInterval); NAV-4/5/6/7/9 untouched. J-SPEED CONTRACT (found): the J keep-out (20 km
+      hubs, 5 km ships, GameSimulationFreeFlight jKeepOut) drops the J ACCELERATION, not the speed - a ship entering at
+      0.5 c crosses it ballistically; debris / other statics are not in the keep-out. The predictor is speed-agnostic
+      now; a speed guarantee near objects is OPEN as a J-flight contract task.
+    - radar scope: 5 km step added (5 / 20 / 50 / 150 km, R cycles; author 2026-11-24).
+    - SUITE tests/navigation_runtime: 65 tests, 55 pass incl. the new one; the 10 reds (traffic_route_graph,
+      client_route_autopilot, navigation_v2_tunnel_proving_ground, assisted_authority_contract,
+      newtonian_execution_authority, assisted_layout_flight_matrix, ship_physical_corridor_matrix, ordinary_route_policy,
+      assisted_safe_course_recovery, ship_state) fail IDENTICALLY at a1e28cad2 (built in a worktree) - pre-existing
+      baseline reds, not from this work; add them to the baseline list.

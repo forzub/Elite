@@ -19,6 +19,7 @@
 
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/KinematicFrame.h"
+#include "src/game/navigation/avoidance/ControlProgramEvasion.h"
 #include "src/game/navigation/avoidance/MultiThreatEvasion.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -336,6 +337,114 @@ int main(int argc, char** argv)
                     touchReflex, touchBest, nImpReflex ? impReflex / nImpReflex : 0.0, nImpBest ? impBest / nImpBest : 0.0);
         return 0;
     }
-    std::fprintf(stderr, "usage: EliteControlEvasionLab bench [assisted|newtonian] | compare [assisted|newtonian] <scenes> [seed]\n");
+    if (mode == "oracle")
+    {
+        // THE OLD vs THE NEW JUDGE against an INDEPENDENT ORACLE (audit 8e3c49007 NAV-1: this lab used the same sampled
+        // judge as the game, so it could not see a touch falling between samples): every program flown once on the real
+        // physics; the oracle = the same physics stored every 2 ms against the straight threats; each judge's touch /
+        // no-touch per (scene, program) against the oracle's - false negatives (a real touch called clear) and false
+        // positives (a clear pass called a touch), and the CPU cost of judging. Threat speeds 10 .. <max> m/s.
+        const int scenes = argc > 3 ? std::atoi(argv[3]) : 400;
+        const double maxSpeed = argc > 4 ? std::atof(argv[4]) : 500.0;
+        std::mt19937 rng(11u);
+        std::uniform_real_distribution<double> u01(0.0, 1.0);
+        game::navigation::avoidance::ControlShipState st;
+        st.params = ship;
+        st.law = law;
+        st.velocityBody = glm::dvec3(0.0, 0.0, -speed0);
+        st.targetForwardSpeedMps = speed0;
+        // two oracles: SAMPLING (the predicted flight itself - dt steps, every step stored, each step's straight motion
+        // checked every 1 ms: the judge's own question, exactly) and PHYSICS (the flight integrated at 2 ms: how far the
+        // dt-step prediction is from finer physics - a model error the judge cannot remove)
+        std::vector<game::navigation::avoidance::ControlFlight> coarse, fine, steps;
+        std::vector<Flight> oldFlights;
+        for (const auto& p : progs)
+        {
+            game::navigation::avoidance::ControlProgram cp;
+            cp.strafe = p.strafe;
+            cp.lift = p.lift;
+            cp.forward = p.forward;
+            cp.pitch = p.pitch;
+            cp.yaw = p.yaw;
+            cp.speed = p.speed;
+            coarse.push_back(game::navigation::avoidance::flyControlProgram(st, cp, hold, horizon, dt));
+            fine.push_back(game::navigation::avoidance::flyControlProgram(st, cp, hold, horizon, 0.002, 0.002));
+            steps.push_back(game::navigation::avoidance::flyControlProgram(st, cp, hold, horizon, dt, dt));
+            oldFlights.push_back(fly(ship, law, speed0, p, hold, horizon, dt));
+        }
+        const glm::dvec3 v0(0.0, 0.0, -speed0);
+        long long pairs = 0, oracleTouches = 0, oldFn = 0, oldFp = 0, newFn = 0, newFp = 0;
+        long long sampTouches = 0, sampOldFn = 0, sampNewFn = 0, sampNewFp = 0;
+        double oldMs = 0.0, newMs = 0.0;
+        for (int s = 0; s < scenes; ++s)
+        {
+            EvasionScene sc = aimedScene(rng);
+            for (auto& t : sc.threats)
+            {
+                // re-speed the threats over the requested range (the aimed geometry kept: same closest-approach time)
+                const double sp = 10.0 + (maxSpeed - 10.0) * u01(rng);
+                const double old = glm::length(t.velocity);
+                const double tc = old > 1.0e-6 ? -glm::dot(t.position, t.velocity) / (old * old) : 6.0;
+                const glm::dvec3 miss = t.position + t.velocity * tc;
+                t.velocity = t.velocity / std::max(1.0e-6, old) * sp;
+                t.position = miss - t.velocity * tc;
+                t.radiusMeters = 1.0 + 60.0 * u01(rng);   // debris .. large hulls
+            }
+            sc.marginMeters = 0.0;   // physical touches only: the judges against the oracle on the same question
+            for (std::size_t p = 0; p < progs.size(); ++p)
+            {
+                // the oracle
+                bool touch = false;
+                for (std::size_t k = 0; k < fine[p].pos.size() && !touch; ++k)
+                {
+                    const double t = static_cast<double>(k) * fine[p].sampleSeconds;
+                    for (const auto& th : sc.threats)
+                        if (glm::length(th.position + (th.velocity + v0) * t - fine[p].pos[k]) <
+                            th.radiusMeters + sc.caps.radiusMeters)
+                            touch = true;
+                }
+                // the sampling oracle: the predicted flight's own steps, straight within each, every 1 ms
+                bool stepTouch = false;
+                const auto& sf = steps[p];
+                for (std::size_t k = 0; k + 1 < sf.pos.size() && !stepTouch; ++k)
+                    for (int m = 0; m <= 100 && !stepTouch; ++m)
+                    {
+                        const double a = m / 100.0;
+                        const double t = (static_cast<double>(k) + a) * sf.sampleSeconds;
+                        const glm::dvec3 ours = sf.pos[k] + (sf.pos[k + 1] - sf.pos[k]) * a;
+                        for (const auto& th : sc.threats)
+                            if (glm::length(th.position + (th.velocity + v0) * t - ours) < th.radiusMeters + sc.caps.radiusMeters)
+                                stepTouch = true;
+                    }
+                const auto t0 = std::chrono::steady_clock::now();
+                const EvasionChoice oldC = judge(oldFlights[p], sc, v0);
+                const auto t1 = std::chrono::steady_clock::now();
+                const EvasionChoice newC = game::navigation::avoidance::judgeControlFlight(coarse[p], sc, v0, 30.0);
+                const auto t2 = std::chrono::steady_clock::now();
+                oldMs += std::chrono::duration<double, std::milli>(t1 - t0).count();
+                newMs += std::chrono::duration<double, std::milli>(t2 - t1).count();
+                ++pairs;
+                oracleTouches += touch;
+                oldFn += touch && !oldC.contact;
+                oldFp += !touch && oldC.contact;
+                newFn += touch && !newC.contact;
+                newFp += !touch && newC.contact;
+                sampTouches += stepTouch;
+                sampOldFn += stepTouch && !oldC.contact;
+                sampNewFn += stepTouch && !newC.contact;
+                sampNewFp += !stepTouch && newC.contact;
+            }
+        }
+        std::printf("[ControlLab] oracle: %d scenes x %zu programs = %lld flights, threats 10..%.0f m/s, %lld real touches\n",
+                    scenes, progs.size(), pairs, maxSpeed, oracleTouches);
+        std::printf("  OLD sampled judge:     missed touches %lld (%.1f %%), false touches %lld; %.2f us a flight\n", oldFn,
+                    oracleTouches ? 100.0 * oldFn / oracleTouches : 0.0, oldFp, 1000.0 * oldMs / std::max(1LL, pairs));
+        std::printf("  NEW continuous judge:  missed touches %lld (%.1f %%), false touches %lld; %.2f us a flight\n", newFn,
+                    oracleTouches ? 100.0 * newFn / oracleTouches : 0.0, newFp, 1000.0 * newMs / std::max(1LL, pairs));
+        std::printf("  SAMPLING oracle (the predicted flight, 1 ms inside its steps): %lld touches; old judge missed %lld, NEW missed %lld, new false %lld\n",
+                    sampTouches, sampOldFn, sampNewFn, sampNewFp);
+        return sampNewFn == 0 ? 0 : 1;
+    }
+    std::fprintf(stderr, "usage: EliteControlEvasionLab bench [assisted|newtonian] | compare [assisted|newtonian] <scenes> [seed] | oracle [assisted|newtonian] <scenes> <max threat m/s>\n");
     return 2;
 }

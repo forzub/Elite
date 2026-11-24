@@ -17,6 +17,7 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/navigation/avoidance/TrajectoryConflict.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/KinematicFrame.h"
 #include "src/game/navigation/avoidance/MultiThreatEvasion.h"
@@ -80,12 +81,19 @@ struct ControlShipState
 
 struct ControlFlight
 {
-    std::vector<glm::dvec3> pos, vel;   // every SampleSeconds, the initial body frame
+    // our flight's states every SampleSeconds, the initial body frame. The samples only REPRESENT the non-linear path:
+    // every interval between two of them is judged as continuous motion (TrajectoryConflict.h), the true path within
+    // chordBound[k] of the chord of interval k (k -> k+1): a_max dt^2 / 8 with a_max the largest acceleration the
+    // integration saw inside the interval
+    std::vector<glm::dvec3> pos, vel;
+    std::vector<double> chordBound;
     static constexpr double SampleSeconds = 0.5;
+    double sampleSeconds = SampleSeconds;   // this flight's spacing (a test oracle stores every step)
 };
 
 inline ControlFlight flyControlProgram(const ControlShipState& st, const ControlProgram& pr, double holdSeconds,
-                                       double horizonSeconds, double dt)
+                                       double horizonSeconds, double dt,
+                                       double sampleSeconds = ControlFlight::SampleSeconds)
 {
     ShipTransform tr {};
     tr.motion.mode = game::navigation::MotionMode::HubTactical;
@@ -108,12 +116,19 @@ inline ControlFlight flyControlProgram(const ControlShipState& st, const Control
     tr.motion.travelFrame = frame;
     WorldParams world {};
     ControlFlight out;
-    const int perSample = std::max(1, static_cast<int>(std::lround(ControlFlight::SampleSeconds / dt)));
+    const int perSample = std::max(1, static_cast<int>(std::lround(sampleSeconds / dt)));
+    out.sampleSeconds = perSample * dt;
     const int steps = static_cast<int>(std::ceil(horizonSeconds / dt));
+    const double sampleDt = perSample * dt;
+    double intervalMaxAccel = 0.0;
+    glm::dvec3 previousVelocity = tr.motion.localVelocityMps;
     for (int i = 0; i <= steps; ++i)
     {
         if (i % perSample == 0)
         {
+            if (!out.pos.empty())
+                out.chordBound.push_back(intervalMaxAccel * sampleDt * sampleDt / 8.0);
+            intervalMaxAccel = 0.0;
             out.pos.push_back(tr.motion.localPositionMeters);
             out.vel.push_back(tr.motion.localVelocityMps);
         }
@@ -136,6 +151,8 @@ inline ControlFlight flyControlProgram(const ControlShipState& st, const Control
                                                                      c.liftInput, c.strafeInput, tr.forward(), tr.right(),
                                                                      tr.up());
         game::navigation::DynamicMotionSystem::updateLocalFrameMotion(tr.motion, tr.worldPosition, frame, st.params, dt);
+        intervalMaxAccel = std::max(intervalMaxAccel, glm::length(tr.motion.localVelocityMps - previousVelocity) / dt);
+        previousVelocity = tr.motion.localVelocityMps;
     }
     return out;
 }
@@ -150,31 +167,40 @@ inline EvasionChoice judgeControlFlight(const ControlFlight& f, const EvasionSce
                                         double clearCapMeters = 30.0, const ControlFlight* reference = nullptr,
                                         const ControlProgram* program = nullptr, double corridorMeters = 40.0)
 {
+    // THE CONTINUOUS JUDGEMENT (TrajectoryConflict.h): every interval of our flight against every threat moving
+    // straight; the safety clearance is the margin, a physical touch the contact (the EARLIEST one over all threats)
     EvasionChoice out;
     out.minMarginMeters = 1.0e30;
-    for (std::size_t k = 0; k < f.pos.size(); ++k)
+    SafetyEnvelopePolicy policy;
+    policy.baseClearanceMeters = sc.marginMeters;
+    const double dt = f.sampleSeconds;
+    for (const auto& th : sc.threats)
     {
-        const double t = static_cast<double>(k) * ControlFlight::SampleSeconds;
-        for (const auto& th : sc.threats)
+        const glm::dvec3 vAbs = th.velocity + ourVelocity;
+        ConflictBody body;
+        body.physicalRadiusMeters = th.radiusMeters;
+        body.positionUncertaintyMeters = th.positionUncertaintyMeters;
+        body.velocityUncertaintyMps = th.velocityUncertaintyMps;
+        body.ageSeconds = th.ageSeconds;
+        ConflictResult c;
+        for (std::size_t k = 0; k + 1 < f.pos.size(); ++k)
         {
-            const glm::dvec3 vAbs = th.velocity + ourVelocity;
-            const glm::dvec3 q = th.position + vAbs * t;
-            const double dist = glm::length(q - f.pos[k]);
-            const double margin = dist - th.radiusMeters - sc.caps.radiusMeters - sc.marginMeters;
-            if (margin < out.minMarginMeters)
-            {
-                out.minMarginMeters = margin;
-                out.timeOfMinSeconds = t;
-            }
-            if (!out.contact && dist < th.radiusMeters + sc.caps.radiusMeters)
-            {
-                out.contact = true;
-                out.contactTimeSeconds = t;
-                const glm::dvec3 n = dist > 1.0e-6 ? (f.pos[k] - q) / dist : glm::dvec3(0.0, 0.0, 1.0);
-                const glm::dvec3 rel = f.vel[k] - vAbs;
-                out.impactNormalSpeedMps = std::max(0.0, -glm::dot(rel, n));
-                out.impactSpeedMps = glm::length(rel);
-            }
+            const double t0 = static_cast<double>(k) * dt;
+            const double e = k < f.chordBound.size() ? f.chordBound[k] : chordDeviationBound(f.vel[k], f.vel[k + 1], dt);
+            accumulateConflictInterval(c, t0, dt, f.pos[k], f.pos[k + 1], e, th.position + vAbs * t0, vAbs,
+                                       sc.caps.radiusMeters, body, policy);
+        }
+        if (c.safetyClearanceMeters < out.minMarginMeters)
+        {
+            out.minMarginMeters = c.safetyClearanceMeters;
+            out.timeOfMinSeconds = c.timeOfSafetyMinimumSeconds;
+        }
+        if (c.physicalCollisionPredicted && (!out.contact || c.firstContactSeconds < out.contactTimeSeconds))
+        {
+            out.contact = true;
+            out.contactTimeSeconds = c.firstContactSeconds;
+            out.impactNormalSpeedMps = c.impactNormalSpeedMps;
+            out.impactSpeedMps = c.impactSpeedMps;
         }
     }
     if (sc.threats.empty())

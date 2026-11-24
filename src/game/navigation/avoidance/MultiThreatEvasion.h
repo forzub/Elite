@@ -23,7 +23,11 @@ struct EvasionThreatTrack
 {
     glm::dvec3 position {0.0};   // relative to the ship
     glm::dvec3 velocity {0.0};   // relative to the ship
-    double radiusMeters = 30.0;
+    double radiusMeters = 30.0;  // its PHYSICAL bounding radius (the radar track's boundingRadiusMeters)
+    // the sensor's view of it (TrajectoryConflict's safety envelope): uncertainties and the scan's age at t = 0
+    double positionUncertaintyMeters = 0.0;
+    double velocityUncertaintyMps = 0.0;
+    double ageSeconds = 0.0;
 };
 
 struct EvasionShipCaps

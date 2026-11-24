@@ -26,6 +26,7 @@ struct TestIdealRadarTruthContact
     glm::dvec3 worldVelocityMps {0.0};
     double radarCrossSection = 1.0;
     std::uint8_t kind = RadarTrackKindUnknown;
+    double boundingRadiusMeters = 0.0;   // the target's real size (RadarTrackReport::boundingRadiusMeters)
 };
 
 class TestIdealRadarUnit

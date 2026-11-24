@@ -1,3 +1,4 @@
+#include "src/game/damage/HitVolumeBounds.h"
 #include <atomic>
 #include "src/model_asset/HubExpansion.h"
 #include <cstdio>
@@ -2900,6 +2901,13 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
                 row.radarCrossSection =
                     targetPtr->core().desc().radarCrossSection;
                 row.kind = game::radar::RadarTrackKindShip;
+                // its real size: the live hit volumes (a torn-off part shrinks it), the descriptor if it has none
+                {
+                    const auto dim = targetPtr->core().desc().logicalDimensions();
+                    row.boundingRadiusMeters = game::damage::hitVolumesBoundingRadius(
+                        targetPtr->core().hitComponent().volumes,
+                        game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height));
+                }
                 truth.push_back(row);
             }
 
@@ -2921,6 +2929,10 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
                 row.worldVelocityMps = shell.transform.motion.worldVelocityMps;
                 row.radarCrossSection = shell.definition->radarCrossSection;
                 row.kind = game::radar::RadarTrackKindShip;
+                {
+                    const auto dim = shell.definition->logicalDimensions();
+                    row.boundingRadiusMeters = game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height);
+                }
                 truth.push_back(row);
             }
 
@@ -2937,6 +2949,7 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
                 row.worldVelocityMps = glm::dvec3(object.linearVelocity);
                 row.radarCrossSection = 1.0;
                 row.kind = game::radar::RadarTrackKindStructure;
+                row.boundingRadiusMeters = game::damage::hitVolumesBoundingRadius(object.hitComponent.volumes);
                 truth.push_back(row);
             }
 
@@ -2972,6 +2985,7 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
                 row.worldVelocityMps = k.worldVelocity;
                 row.radarCrossSection = k.radarCrossSection;
                 row.kind = k.kind;
+                row.boundingRadiusMeters = k.boundingRadiusMeters;
                 truth.push_back(row);
             }
 

@@ -525,6 +525,7 @@ public:
         glm::dvec3 worldVelocity {0.0};
         double radarCrossSection = 1.0;
         std::uint8_t kind = 0;   // game::radar::RadarTrackKind*
+        double boundingRadiusMeters = 0.0;   // the body's real size (a hull's half diagonal, a piece's half size)
     };
     std::vector<HubRadarContact> hubRadarContacts(const glm::dvec3& observerWorld, int systemId, std::size_t maxCount) const;
     bool setStaticObjectMapInfo(

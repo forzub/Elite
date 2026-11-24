@@ -40,6 +40,10 @@ struct RadarTrackReport
 
     // What the echo is, for the scope symbol: RadarTrackKind* values.
     std::uint8_t kind = 0;
+
+    // The target's PHYSICAL size: the conservative bounding radius of ITS real collision geometry (HitVolumeBounds.h),
+    // not a number for its kind - the avoidance's broad phase (TrajectoryConflict.h). 0 = unknown.
+    double boundingRadiusMeters = 0.0;
 };
 
 inline constexpr std::uint8_t RadarTrackKindUnknown = 0;

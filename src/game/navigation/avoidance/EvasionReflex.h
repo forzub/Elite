@@ -42,7 +42,9 @@ public:
     double periodSeconds = 0.25;
     double horizonSeconds = 12.0;
     double holdSeconds = 4.0;
-    double marginMeters = 25.0;
+    // the safety envelope's base hull-to-hull gap (TrajectoryConflict.h SafetyEnvelopePolicy; the sensor's uncertainty
+    // adds to it per track)
+    double marginMeters = SafetyEnvelopePolicy {}.baseClearanceMeters;
     double lingerSeconds = 1.0;   // keep the dodge this long after the course is clear again (no flicker)
     const EvasionNet* net = nullptr;   // the classifier (289 outputs): its top 12 judged by the teacher's score, else the teacher
 
@@ -91,7 +93,7 @@ public:
     // ELITE_EVASION_URGENCY=0: the old whole-horizon trigger.
     double reactionSeconds = 1.0;
     double gentleShare = 0.4;
-    double urgencyFor(double lateralAccelMps2, double hullRadiusMeters) const
+    double urgencyFor(double lateralAccelMps2, double hullRadiusMeters, double threatRadiusMeters = 30.0) const
     {
         static const bool off = [] {
             const char* v = std::getenv("ELITE_EVASION_URGENCY");
@@ -99,7 +101,7 @@ public:
         }();
         if (off)
             return horizonSeconds;
-        const double miss = 30.0 + std::max(5.0, hullRadiusMeters) + marginMeters;
+        const double miss = threatRadiusMeters + std::max(5.0, hullRadiusMeters) + marginMeters;
         // the dodge is flown by the gentle programs first (0.4 of the stick): the time is theirs
         const double a = gentleShare * lateralAccelMps2;
         const double tNeed = a > 0.1 ? std::sqrt(2.0 * miss / a) : 4.0;
@@ -111,7 +113,7 @@ public:
         if (now < m_nextAt)
             return m_cmd;
         m_nextAt = now + periodSeconds;
-        EvasionScene sc = sceneFrom(scan, now, hullRadiusMeters);
+        EvasionScene sc = sceneFrom(scan, now, hullRadiusMeters, &ship.ratesPitchYawRoll);
         m_cmd.threats = static_cast<int>(sc.threats.size());
         if (sc.threats.empty())
             return release(now);
@@ -121,7 +123,10 @@ public:
         const EvasionChoice course = judgeControlFlight(handsOff, sc, ship.velocityBody);
         m_cmd.courseMarginMeters = course.contact ? -1.0e3 : course.minMarginMeters;
         // the window (wider while dodging: no drop in the middle of a manoeuvre)
-        const double window = urgencyFor(lateralAccelMps2, hullRadiusMeters) * (m_cmd.active ? 1.5 : 1.0);
+        double largestThreat = 0.0;
+        for (const auto& th : sc.threats)
+            largestThreat = std::max(largestThreat, th.radiusMeters);
+        const double window = urgencyFor(lateralAccelMps2, hullRadiusMeters, largestThreat) * (m_cmd.active ? 1.5 : 1.0);
         m_cmd.urgencySeconds = window;
         const bool urgent = (course.contact && course.contactTimeSeconds <= window) ||
                             (course.minMarginMeters < 0.0 && course.timeOfMinSeconds <= window);
@@ -165,6 +170,12 @@ public:
     }
 
     const EvasionReflexCommand& command() const { return m_cmd; }
+    // the scene the reflex judges (tests: the scan's age / rotation / size / uncertainty handling)
+    EvasionScene buildScene(const radar::RadarScanReport& scan, double now, double hullRadiusMeters,
+                            const glm::vec3* ratesPitchYawRoll) const
+    {
+        return sceneFrom(scan, now, hullRadiusMeters, ratesPitchYawRoll);
+    }
     void reset()
     {
         m_cmd = {};
@@ -173,7 +184,14 @@ public:
     }
 
 private:
-    EvasionScene sceneFrom(const radar::RadarScanReport& scan, double now, double hullRadiusMeters) const
+    // the scan -> the scene in OUR CURRENT body frame at now (the prediction's t = 0):
+    //  - moved by the relative velocity over the scan's age (in the frame of the measurement, inertial over the age);
+    //  - turned from the body frame AT THE MEASUREMENT into the body frame NOW by our own rotation over the age (NAV-3:
+    //    0.3 rad/s x 0.58 s = 52 m sideways at 300 m) - the rotation by the same integrator the physics uses
+    //    (SharedShipPhysics::propagateOrientation), no second definition of the radar's axes;
+    //  - the target's real size (boundingRadiusMeters), its uncertainties and the age for the safety envelope.
+    EvasionScene sceneFrom(const radar::RadarScanReport& scan, double now, double hullRadiusMeters,
+                           const glm::vec3* ratesPitchYawRoll = nullptr) const
     {
         EvasionScene sc;
         sc.forward = glm::dvec3(0.0, 0.0, -1.0);
@@ -183,16 +201,38 @@ private:
         sc.marginMeters = marginMeters;
         sc.clearCapMeters = 30.0;
         const double age = std::max(0.0, now - scan.measuredAtUniverseTimeSeconds);
+        glm::dmat3 nowFromMeasured(1.0);
+        if (ratesPitchYawRoll && age > 0.0)
+        {
+            ShipTransform turn {};
+            turn.orientation = glm::mat4(1.0f);
+            turn.pitchRate = ratesPitchYawRoll->x;
+            turn.yawRate = ratesPitchYawRoll->y;
+            turn.rollRate = ratesPitchYawRoll->z;
+            constexpr int Steps = 4;
+            for (int i = 0; i < Steps; ++i)
+                SharedShipPhysics::propagateOrientation(turn, static_cast<float>(age / Steps));
+            // the orientation maps the body NOW into the body AT THE MEASUREMENT: its transpose the other way
+            nowFromMeasured = glm::transpose(glm::dmat3(glm::mat3(turn.orientation)));
+        }
         for (const auto& t : scan.tracks)
         {
             if (t.kind == radar::RadarTrackKindStructure)
                 continue;
             EvasionThreatTrack th;
-            th.position = t.relativePositionMeters + t.relativeVelocityMps * age;
-            th.velocity = t.relativeVelocityMps;
-            th.radiusMeters = t.kind == radar::RadarTrackKindDebris ? 10.0 : 30.0;
-            // only what can reach us within the horizon
-            if (glm::length(th.position) - glm::length(th.velocity) * horizonSeconds > 400.0)
+            th.position = nowFromMeasured * (t.relativePositionMeters + t.relativeVelocityMps * age);
+            th.velocity = nowFromMeasured * t.relativeVelocityMps;
+            // the target's real size; a track without one (an older server): the old per-kind guess, kept explicit
+            th.radiusMeters = t.boundingRadiusMeters > 0.0 ? t.boundingRadiusMeters
+                                                            : (t.kind == radar::RadarTrackKindDebris ? 10.0 : 30.0);
+            th.positionUncertaintyMeters = t.positionUncertaintyMeters;
+            th.velocityUncertaintyMps = t.velocityUncertaintyMps;
+            th.ageSeconds = age;
+            // only what can reach us within the horizon (its size and ours, the safety gap and the sensor included)
+            const double reach = th.radiusMeters + sc.caps.radiusMeters + marginMeters +
+                                 SafetyEnvelopePolicy::sensorGrowth(th.positionUncertaintyMeters, th.velocityUncertaintyMps,
+                                                                    age, horizonSeconds);
+            if (glm::length(th.position) - glm::length(th.velocity) * horizonSeconds > 400.0 + reach)
                 continue;
             sc.threats.push_back(th);
         }

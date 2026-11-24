@@ -954,7 +954,8 @@ ELITE_WIRE_SCHEMA(
     v.positionUncertaintyMeters,
     v.velocityUncertaintyMps,
     v.confidence,
-    v.kind
+    v.kind,
+    v.boundingRadiusMeters
 );
 
 ELITE_WIRE_SCHEMA(

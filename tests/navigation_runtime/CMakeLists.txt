@@ -2788,3 +2788,26 @@ add_test(
     NAME narrow_rotation_fit
     COMMAND narrow_rotation_fit_tests
 )
+
+# the avoidance's continuous trajectory conflict against an independent oracle (audit 8e3c49007 NAV-1 / NAV-2 / NAV-3)
+add_executable(
+    evasion_trajectory_conflict_tests
+    EvasionTrajectoryConflictTests.cpp
+)
+target_include_directories(evasion_trajectory_conflict_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(evasion_trajectory_conflict_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    evasion_trajectory_conflict_tests
+    PRIVATE EliteNavigationRuntimeControl nlohmann_json::nlohmann_json
+)
+add_test(
+    NAME evasion_trajectory_conflict
+    COMMAND evasion_trajectory_conflict_tests
+)
+set_tests_properties(
+    evasion_trajectory_conflict
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

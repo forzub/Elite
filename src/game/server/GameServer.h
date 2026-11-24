@@ -88,6 +88,16 @@ public:
     // Compose one sparse per-session packet from runner-owned cadence/lifecycle
     // selection. Hydration ids are sourced from canonical retained server state.
     std::vector<game::simulation::HubConstructionOverrideSnapshot> constructionOverridesSnapshot() const;
+    // the radar signal map of a system (ships, shells, structures), built once per server tick for every radar in it
+    struct RadarSignalMap
+    {
+        bool built = false;
+        std::uint64_t builtTick = 0;
+        std::vector<game::radar::TestIdealRadarTruthContact> rows;
+    };
+    std::unordered_map<int, RadarSignalMap> m_radarSignalMaps;
+    std::unordered_map<std::uint32_t, std::pair<std::uint64_t, double>> m_radarStaticRadius;   // per static: generation, radius
+    const std::vector<game::radar::TestIdealRadarTruthContact>& radarSignalMap(int systemId);
     bool copySparseSnapshotForSession(
         game::network::ServerSessionId sessionId,
         const game::server::ReplicationPublicationSelection& selection,

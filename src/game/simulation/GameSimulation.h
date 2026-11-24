@@ -512,6 +512,8 @@ public:
     double serverTime() const { return m_serverTimelineClock.timeSeconds(); }
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
     const std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships() const;
+    // bumped by every structural change of the static objects (their hit volumes included): a cache key
+    std::uint64_t staticObjectsGeneration() const noexcept { return m_staticObjectsGeneration; }
     const std::unordered_map<EntityId, StaticObject>& staticObjects() const;
     // the berth engine rule (GameSimulationPadLanding.cpp): landed - no engines; launched - manoeuvre thrusters only
     void filterBerthControl(EntityId shipId, ShipControlState& control);

@@ -2852,6 +2852,74 @@ void GameServer::debugRefreshSnapshot()
 }
 
 
+const std::vector<game::radar::TestIdealRadarTruthContact>& GameServer::radarSignalMap(int systemId)
+{
+    constexpr std::uint64_t ShipTruthKeyPrefix = 0x1000000000000000ULL;
+    constexpr std::uint64_t StaticTruthKeyPrefix = 0x2000000000000000ULL;
+    constexpr std::uint64_t TruthKeyPayloadMask = 0x0FFFFFFFFFFFFFFFULL;
+    auto& map = m_radarSignalMaps[systemId];
+    if (map.builtTick == m_serverTick && map.built)
+        return map.rows;
+    map.built = true;
+    map.builtTick = m_serverTick;
+    map.rows.clear();
+    for (const auto& [targetId, targetPtr] : m_simulation.ships())
+    {
+        if (!targetPtr)
+            continue;
+        const auto& targetTransform = targetPtr->core().transform();
+        if (targetTransform.motion.systemId != systemId)
+            continue;
+        const ShipInstanceId targetInstanceId = m_shipInstances.instanceForEntity(targetId);
+        const std::uint64_t stableTargetKey =
+            targetInstanceId != 0 ? static_cast<std::uint64_t>(targetInstanceId) : static_cast<std::uint64_t>(targetId.value);
+        game::radar::TestIdealRadarTruthContact row;
+        row.sourceKey = ShipTruthKeyPrefix | (stableTargetKey & TruthKeyPayloadMask);
+        row.worldPosition = targetTransform.worldPosition;
+        row.worldVelocityMps = targetTransform.motion.worldVelocityMps;
+        row.radarCrossSection = targetPtr->core().desc().radarCrossSection;
+        row.kind = game::radar::RadarTrackKindShip;
+        // its real size: the live hit volumes (a torn-off part shrinks it), the descriptor if it has none
+        const auto dim = targetPtr->core().desc().logicalDimensions();
+        row.boundingRadiusMeters = game::damage::hitVolumesBoundingRadius(
+            targetPtr->core().hitComponent().volumes, game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height));
+        map.rows.push_back(row);
+    }
+    // compact traffic shells (hub dock traffic, route traffic) are ships too: without them the hub traffic is invisible
+    for (const auto& [shellId, shell] : m_simulation.shipShells())
+    {
+        if (!shell.valid() || shell.transform.motion.systemId != systemId)
+            continue;
+        game::radar::TestIdealRadarTruthContact row;
+        row.sourceKey = ShipTruthKeyPrefix | (static_cast<std::uint64_t>(shellId.value) & TruthKeyPayloadMask);
+        row.worldPosition = shell.transform.worldPosition;
+        row.worldVelocityMps = shell.transform.motion.worldVelocityMps;
+        row.radarCrossSection = shell.definition->radarCrossSection;
+        row.kind = game::radar::RadarTrackKindShip;
+        const auto dim = shell.definition->logicalDimensions();
+        row.boundingRadiusMeters = game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height);
+        map.rows.push_back(row);
+    }
+    for (const auto& [targetId, object] : m_simulation.staticObjects())
+    {
+        if (object.systemId != systemId)
+            continue;
+        game::radar::TestIdealRadarTruthContact row;
+        row.sourceKey = StaticTruthKeyPrefix | (static_cast<std::uint64_t>(targetId.value) & TruthKeyPayloadMask);
+        row.worldPosition = object.worldPosition;
+        row.worldVelocityMps = glm::dvec3(object.linearVelocity);
+        row.radarCrossSection = 1.0;
+        row.kind = game::radar::RadarTrackKindStructure;
+        // a structure's size changes only with its volumes (a construction stage, a rebuild): cached per generation
+        auto& cached = m_radarStaticRadius[targetId.value];
+        if (cached.first != m_simulation.staticObjectsGeneration() || cached.second <= 0.0)
+            cached = {m_simulation.staticObjectsGeneration(), game::damage::hitVolumesBoundingRadius(object.hitComponent.volumes)};
+        row.boundingRadiusMeters = cached.second;
+        map.rows.push_back(row);
+    }
+    return map.rows;
+}
+
 void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
 {
     constexpr std::uint64_t ShipTruthKeyPrefix = 0x1000000000000000ULL;
@@ -2897,90 +2965,21 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
 
         if (powered && runtime.unit.measurementDue(universeTimeSeconds))
         {
-            std::vector<game::radar::TestIdealRadarTruthContact> truth;
-            truth.reserve(
-                m_simulation.ships().size() +
-                m_simulation.staticObjects().size()
-            );
-
             const int observerSystemId = observerTransform.motion.systemId;
-
-            for (const auto& [targetId, targetPtr] : m_simulation.ships())
-            {
-                if (!targetPtr || targetId == observerId)
-                    continue;
-
-                const auto& targetTransform = targetPtr->core().transform();
-                if (targetTransform.motion.systemId != observerSystemId)
-                    continue;
-
-                const ShipInstanceId targetInstanceId =
-                    m_shipInstances.instanceForEntity(targetId);
-                const std::uint64_t stableTargetKey =
-                    targetInstanceId != 0
-                        ? static_cast<std::uint64_t>(targetInstanceId)
-                        : static_cast<std::uint64_t>(targetId.value);
-
-                game::radar::TestIdealRadarTruthContact row;
-                row.sourceKey = ShipTruthKeyPrefix |
-                    (stableTargetKey & TruthKeyPayloadMask);
-                row.worldPosition = targetTransform.worldPosition;
-                row.worldVelocityMps =
-                    targetTransform.motion.worldVelocityMps;
-                row.radarCrossSection =
-                    targetPtr->core().desc().radarCrossSection;
-                row.kind = game::radar::RadarTrackKindShip;
-                // its real size: the live hit volumes (a torn-off part shrinks it), the descriptor if it has none
-                {
-                    const auto dim = targetPtr->core().desc().logicalDimensions();
-                    row.boundingRadiusMeters = game::damage::hitVolumesBoundingRadius(
-                        targetPtr->core().hitComponent().volumes,
-                        game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height));
-                }
-                truth.push_back(row);
-            }
-
-            // Compact traffic shells (hub dock traffic, route traffic) are
-            // ships too: without them the hub traffic is invisible.
-            for (const auto& [shellId, shell] : m_simulation.shipShells())
-            {
-                if (!shell.valid() ||
-                    shell.transform.motion.systemId != observerSystemId)
-                {
-                    continue;
-                }
-
-                game::radar::TestIdealRadarTruthContact row;
-                row.sourceKey = ShipTruthKeyPrefix |
-                    (static_cast<std::uint64_t>(shellId.value) &
-                     TruthKeyPayloadMask);
-                row.worldPosition = shell.transform.worldPosition;
-                row.worldVelocityMps = shell.transform.motion.worldVelocityMps;
-                row.radarCrossSection = shell.definition->radarCrossSection;
-                row.kind = game::radar::RadarTrackKindShip;
-                {
-                    const auto dim = shell.definition->logicalDimensions();
-                    row.boundingRadiusMeters = game::damage::dimensionsBoundingRadius(dim.length, dim.width, dim.height);
-                }
-                truth.push_back(row);
-            }
-
-            for (const auto& [targetId, object] : m_simulation.staticObjects())
-            {
-                if (object.systemId != observerSystemId)
-                    continue;
-
-                game::radar::TestIdealRadarTruthContact row;
-                row.sourceKey = StaticTruthKeyPrefix |
-                    (static_cast<std::uint64_t>(targetId.value) &
-                     TruthKeyPayloadMask);
-                row.worldPosition = object.worldPosition;
-                row.worldVelocityMps = glm::dvec3(object.linearVelocity);
-                row.radarCrossSection = 1.0;
-                row.kind = game::radar::RadarTrackKindStructure;
-                row.boundingRadiusMeters = game::damage::hitVolumesBoundingRadius(object.hitComponent.volumes);
-                truth.push_back(row);
-            }
+            // THE SIGNAL MAP of the observer's system (the author: «радар ... на более дешёвую карту сигналов»): the
+            // ships, traffic shells and structures of a system are gathered ONCE per server tick for every radar in it
+            // (each scan walked every ship / shell / static of the server and re-measured every city's thousands of hit
+            // volumes); a structure's size is cached per static-object generation. The radar then drops only itself.
+            const auto& signals = radarSignalMap(observerSystemId);
+            const ShipInstanceId ownInstance = m_shipInstances.instanceForEntity(observerId);
+            const std::uint64_t ownKey =
+                ShipTruthKeyPrefix | ((ownInstance != 0 ? static_cast<std::uint64_t>(ownInstance)
+                                                        : static_cast<std::uint64_t>(observerId.value)) & TruthKeyPayloadMask);
+            std::vector<game::radar::TestIdealRadarTruthContact> truth;
+            truth.reserve(signals.size() + 128);
+            for (const auto& row : signals)
+                if (row.sourceKey != ownKey)
+                    truth.push_back(row);
 
             // the hub cities' traffic not made real, the stray bodies, the debris field - the nearest 128 (author
             // 2026-11-22: «радар должен показывать всё, даже обломки»; «если есть ограничение по количеству - то ближайшие»)

@@ -8658,3 +8658,9 @@ start-up hitches (render), trade step 16 part 3 live.
   only, PLAN-2 author); ClientModeState collision assist (acts on a safety violation, not only an unavoidable touch).
   Still stale: NAVIGATION_V2_EXECUTION_ARCHITECTURE.md (no reflex / lanes / net / time objective), the economy journal
   comments, the HUD collision-assist strings (Russian only), CARGO_SALVAGE_DESIGN.md.
+- RADAR SIGNAL MAP (the author: «радар ... на более дешёвую карту сигналов»): GameServer::radarSignalMap(system) - the
+  ships, traffic shells and structures of a system gathered once per server tick for every radar in it (each scan
+  walked every ship / shell / static of the server and re-measured every city's thousands of hit volumes); a
+  structure's size cached per static-object generation; a radar drops only its own row; the hub contacts stay per
+  observer (the nearest 128 - the author's rule). Load test 153 players: sensors 1.05 -> 0.18 ms a tick; live radar
+  the same 379 ships / structures + 128 hub contacts; ramtest 59 / 116 m, 0 collisions.

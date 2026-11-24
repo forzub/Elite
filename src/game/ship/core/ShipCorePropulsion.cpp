@@ -41,6 +41,13 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
     auto& motion = m_transform.motion;
     m_newtonianRcsAngularDemandRadPerSec2 = {};
     m_newtonianRcsPhysical = false;
+    // the cockpit-capsule: the attitude law's rates are the jets' own (capsuleParams.angularAccel) - not reverted to an
+    // installed-engine demand (the hull's engines are gone)
+    if (capsuleFlying())
+    {
+        motion.requestedMainAngularAccelerationBodyRadPerSec2 = {};
+        return;
+    }
     // Only the native installed Newtonian construction uses the new nozzle
     // executor. Diagnostic override and Assisted retain existing behavior.
     if (dt > 0.0f &&
@@ -108,6 +115,32 @@ void ShipCore::updateTranslationControl(float dt)
     // provenance on that fail-closed path.
     m_transform.motion.installedMainPlantExecuted = false;
     const ShipParams physics = effectivePhysics();
+    // the cockpit-capsule (CapsuleRules.h): the accepted translation law with the capsule's limits (the legacy
+    // integration branch takes the request); the reaction mass pays for the velocity change its thrust made since the
+    // last step (bounded by what the thrust can do in that step: a frame re-base or an impact is not thrust)
+    if (capsuleFlying())
+    {
+        auto& motion = m_transform.motion;
+        if (m_capsulePrevValid && dt > 0.0f)
+        {
+            // the acceleration the engines EXECUTED last step (the local velocity itself is folded into the travel frame
+            // every tick in normal flight - it cannot be differenced), bounded by what the capsule can do
+            const double maxAccel = (physics.forwardMainEngineAccelerationMps2 + physics.manoeuvreThrusterAccel) * 1.5;
+            glm::dvec3 a = motion.engineAccelerationMps2;
+            if (glm::length(a) > maxAccel)
+                a *= maxAccel / glm::length(a);
+            const double spent = glm::length(a) * dt;
+            motion.capsuleDeltaVLeftMps = std::max(0.0, motion.capsuleDeltaVLeftMps - spent);
+            // the velocity the capsule's OWN thrust gave (world): the wreck's fragments do not get it (gravity they share)
+            m_capsuleThrustDvWorld += motion.travelFrame.localToWorldVector(a * static_cast<double>(dt));
+        }
+        (void)game::ship::control::ShipControlExecutionGateway::evaluateTranslationControl(m_transform, physics,
+                                                                                           m_state.control, dt);
+        m_capsulePrevVelocity = motion.localVelocityMps;
+        m_capsulePrevValid = true;
+        return;
+    }
+    m_capsulePrevValid = false;
     using game::equipment::engine::MountedEngine;
     std::vector<MountedEngine> installedEngines;
     const std::vector<MountedEngine>* physicalEngines = nullptr;

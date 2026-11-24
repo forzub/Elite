@@ -92,6 +92,10 @@ public:
     ) const;
 
     bool removeFragment(const std::string& moduleId);
+    // the owner moved by dPos / changed its velocity by dVel on its own (a cockpit-capsule flying off): the fragments stay
+    // where physics puts them (their owner-relative offsets / velocities shift back); those beyond dropBeyondM are left
+    // behind (removed); returns how many were dropped
+    int compensateOwnerMotion(const glm::vec3& dPos, const glm::vec3& dVel, float dropBeyondM);
 
     const std::vector<ObjectDetachedFragmentRuntimeState>& fragments() const
     {

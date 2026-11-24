@@ -53,6 +53,10 @@ struct ObjectModuleState
     std::vector<std::string> meshPartIds;
     std::vector<int> children;
 
+    // the module IS the body now (a cockpit-capsule flying on after its hull was lost): it holds itself, no support or
+    // structural link can detach it (ObjectModuleRuntime::adoptAsFreeRoot)
+    bool freeRoot = false;
+
     ModuleDestroyPolicy destroyPolicy = ModuleDestroyPolicy::DisableOnly;
     ModuleDetachPolicy detachPolicy = ModuleDetachPolicy::Never;
     ModuleAttachmentType attachmentType = ModuleAttachmentType::Fixed;

@@ -424,6 +424,12 @@ public:
     bool debugHangModuleById(const std::string& moduleId);
     bool debugReevaluateStructure();
     bool ejectCockpitCapsule();
+    // the hull is lost, the pilot alive: the ship BECOMES its cockpit-capsule - moved onto the cockpit fragment's pose
+    // and velocity, the cockpit its free root, the other fragments left where they fly (GameSimulationCapsule.cpp)
+    bool becomeCockpitCapsule();
+    // the velocity the capsule's own thrust gave since the last call is taken out of the wreck's fragments (they share
+    // the gravity, not the thrust): they stay behind; dropped beyond 20 km; returns how many were dropped
+    int leaveFragmentsBehind(double dt);
 
     world::modules::ObjectStructuralLinkRuntime& structuralLinkRuntime()
     {
@@ -477,6 +483,14 @@ private:
     double m_newtonianRcsNetFlow01PerSecond = 0.0;
     // Server-only trace: angular rates before the nonphysical demand calculation.
     glm::dvec3 m_attitudeRatesAtTickStart {0.0};
+    // the cockpit-capsule (CapsuleRules.h): the velocity at the last translation step (the reaction mass is spent by the
+    // velocity change the capsule's own thrust made)
+    glm::dvec3 m_capsulePrevVelocity {0.0};
+    glm::dvec3 m_capsuleThrustDvWorld {0.0};   // own-thrust velocity change not yet taken out of the wreck fragments
+    bool m_capsulePrevValid = false;
+public:
+    bool capsuleFlying() const;
+private:
     bool m_newtonianRcsPhysical = false;
     bool m_propulsionReactorsOn = true;
     // DEV drive thermal acceptance (ShipCorePowerThermal.cpp): ship clock, one-shot pad damage, trace period

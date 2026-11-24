@@ -1,5 +1,6 @@
 #include "ObjectDetachedFragmentRuntime.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -164,6 +165,22 @@ void ObjectDetachedFragmentRuntime::update(float dt)
 
         f.orientation = f.orientation * r;
     }
+}
+
+int ObjectDetachedFragmentRuntime::compensateOwnerMotion(const glm::vec3& dPos, const glm::vec3& dVel, float dropBeyondM)
+{
+    for (auto& f : m_fragments)
+    {
+        f.position -= dPos;
+        f.linearVelocity -= dVel;
+    }
+    const auto before = m_fragments.size();
+    m_fragments.erase(std::remove_if(m_fragments.begin(), m_fragments.end(),
+                                     [&](const ObjectDetachedFragmentRuntimeState& f) { return glm::length(f.position) > dropBeyondM; }),
+                      m_fragments.end());
+    if (m_fragments.size() != before)
+        rebuildIndex();
+    return static_cast<int>(before - m_fragments.size());
 }
 
 bool ObjectDetachedFragmentRuntime::setFragmentMass(

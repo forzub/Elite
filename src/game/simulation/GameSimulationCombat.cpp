@@ -434,6 +434,8 @@ void GameSimulation::disableShipIfCombatLost(EntityId shipId, Ship& ship)
         if (!cockpitOff)
             (void)ship.core().ejectCockpitCapsule();
         motion.capsuleState = static_cast<std::uint8_t>(cap::State::PilotAlive);
+        motion.capsuleDeltaVLeftMps = cap::CapsuleDeltaVMps;   // the cockpit-capsule's full reaction mass
+        m_capsuleTakeoverPending.insert(shipId);               // the ship becomes the capsule (GameSimulationCapsule.cpp)
         crewEscapes = true;
         markShipGraphDirty(shipId);
     }

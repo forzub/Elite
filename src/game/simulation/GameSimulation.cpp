@@ -1769,6 +1769,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         updateHubSecurity(dt);   // traffic control, promoted air traffic, collision avoidance, defence (docs/HUB_SECURITY.md)
         updateLiveTraffic(dt);   // traffic at the crosshair / in a fight -> real NPCs (GameSimulationCombat.cpp)
         updatePadLandings(dt);   // the hub city pad service (GameSimulationPadLanding.cpp)
+        updateCapsules(dt);   // the cockpit-capsule: take-over, the wreck left behind (GameSimulationCapsule.cpp)
         updatePadTouchdowns(dt);   // the pads' capture zones, hand-flown touchdowns, the landing legs
         // ship collisions: everything at the SAME epoch - the free ships (moved at stage 1), the hub-attached statics
         // (stage 2) and the scripted ones posed just above (dock traffic, promoted air traffic, the pad service). Run

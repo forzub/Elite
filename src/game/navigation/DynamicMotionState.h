@@ -199,6 +199,8 @@ struct DynamicMotionState
     std::uint8_t navComputerState = 0;
     // the data carriers aboard (NavDataBanks.h parseDataCarriers)
     std::string dataCarriers;
+    // the cockpit-capsule's reaction mass left, as delta-v (CapsuleRules.h CapsuleDeltaVMps when it separates)
+    double capsuleDeltaVLeftMps = 0.0;
     // refuelling at a station (GameSimulationRefuel.cpp, src/game/fuel/RefuelRules.h): the job's phase
     // (game::fuel::RefuelPhase: 0 none, 1 hookup, 2 pumping, 3 disconnect, 4 done, 5 refused, 6 cancelled), the
     // refusal (game::fuel::RefuelRefusal), the tonnes delivered by the job, the station's pump rate (t/min);

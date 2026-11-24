@@ -2,6 +2,7 @@
 
 #include "src/game/ship/core/ShipCoreInternal.h"
 #include "src/game/geometry/CatalogShipAssembly.h"
+#include <unordered_set>
 
 using namespace game::ship::geometry;
 
@@ -897,6 +898,79 @@ bool ShipCore::debugDetachModuleById(const std::string& moduleId)
 
 
 
+
+bool ShipCore::becomeCockpitCapsule()
+{
+    // author 2026-11-24 (memory cockpit-capsule-rescue): «кабина - она же маленький корабль». The cockpit fragment's
+    // pose (an owner-relative, world-axis offset of the module origin + a world orientation) and velocity (relative to
+    // the owner) become the ship's own; the cockpit its free root; the other fragments keep flying where they are.
+    if (!m_desc)
+        return false;
+    constexpr const char* Cockpit = "ship_cockpit";
+    if (!m_detachedFragmentRuntime.findFragment(Cockpit))
+        return false;
+    // a hull still in one piece (the reactors lost, the cockpit ejected) is left behind WHOLE: every other module leaves
+    // the body as a fragment holding its place (no velocity / spin relative to the hull) - the wreck drifts as it was
+    {
+        std::unordered_set<std::string> before;
+        for (const auto& fr : m_detachedFragmentRuntime.fragments())
+            before.insert(fr.moduleId);
+        if (m_moduleRuntime.detachAllExcept(Cockpit) > 0)
+        {
+            syncDetachedFragmentsFromModuleRuntime();
+            for (const auto& fr : std::vector<world::modules::ObjectDetachedFragmentRuntimeState>(m_detachedFragmentRuntime.fragments()))
+                if (!before.count(fr.moduleId))
+                    m_detachedFragmentRuntime.setFragmentMotion(fr.moduleId, glm::vec3(0.0f), glm::vec3(0.0f));
+        }
+    }
+    const auto* f = m_detachedFragmentRuntime.findFragment(Cockpit);
+    if (!f)
+        return false;
+    const glm::dmat3 frag(glm::mat3(f->orientation));
+    const glm::dmat3 home(glm::mat3(f->homeLocalModel));
+    const glm::dvec3 homeOrigin(glm::vec3(f->homeLocalModel[3]));
+    const glm::dmat3 shipR = frag * glm::transpose(home);
+    // the ship origin such that its cockpit sits exactly where the fragment is
+    const glm::dvec3 dPos = glm::dvec3(f->position) - shipR * homeOrigin;
+    const glm::dvec3 dVel(f->linearVelocity);
+    const glm::vec3 spin = f->angularVelocity;
+
+    if (!m_moduleRuntime.adoptAsFreeRoot(Cockpit))
+        return false;
+    m_detachedFragmentRuntime.removeFragment(Cockpit);
+    // the rest of the wreck stays where it is (its offsets were relative to the old origin)
+    m_detachedFragmentRuntime.compensateOwnerMotion(glm::vec3(dPos), glm::vec3(dVel), 1.0e9f);
+
+    auto& motion = m_transform.motion;
+    m_transform.addWorldMeters(dPos);
+    motion.localPositionMeters += motion.travelFrame.worldToLocalVector(dPos);
+    motion.localVelocityMps += motion.travelFrame.worldToLocalVector(dVel);
+    motion.worldVelocityMps += dVel;
+    glm::mat4 R(1.0f);
+    for (int c = 0; c < 3; ++c)
+        R[c] = glm::vec4(glm::vec3(shipR[c]), 0.0f);
+    m_transform.orientation = R;
+    // the fragment's tumble about its own axes = the capsule's body rates (the cockpit is not turned in the hull)
+    m_transform.pitchRate = spin.x;
+    m_transform.yawRate = spin.y;
+    m_transform.rollRate = spin.z;
+
+    m_moduleRuntime.reevaluateStructuralStates(&m_structuralLinkRuntime);
+    world::modules::ObjectRuntimeHitBuilder::rebuild(m_hitComponent, m_desc->typeId, *m_desc, m_moduleRuntime,
+                                                     m_structuralLinkRuntime, m_assemblyRuntime);
+    m_hitVolumesDirty = false;
+    std::cerr << "[Capsule] the ship became its cockpit-capsule: moved " << glm::length(dPos) << " m, velocity change "
+              << glm::length(dVel) << " m/s, tumble " << glm::length(spin) << " rad/s" << std::endl;
+    return true;
+}
+
+int ShipCore::leaveFragmentsBehind(double dt)
+{
+    const glm::dvec3 dVel = m_capsuleThrustDvWorld;
+    m_capsuleThrustDvWorld = glm::dvec3(0.0);
+    // the thrust acted over the step: on average half of its velocity change moved the capsule
+    return m_detachedFragmentRuntime.compensateOwnerMotion(glm::vec3(dVel * (0.5 * dt)), glm::vec3(dVel), 20000.0f);
+}
 
 bool ShipCore::ejectCockpitCapsule()
 {

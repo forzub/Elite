@@ -16,6 +16,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include "src/game/ship/core/ShipParams.h"
+
 namespace game::navigation::capsule
 {
 
@@ -79,6 +81,56 @@ inline const char* stateText(State s)
     case State::NoCapsule: return "спасательной капсулы нет";
     default: return "";
     }
+}
+
+// ---- the COCKPIT-CAPSULE flying (author 2026-11-24, memory cockpit-capsule-rescue): the Cobrett EC-2 cockpit is a small
+// ship - 6.5 t, two field-thruster rings aft (catalog kb.surv.capsule2: escape_thrust_mn 0.13 -> 20 m/s2, ~2 g), cold-gas
+// attitude jets, a LIMITED reaction mass (escape_dv_mps 3000: spent on the acceleration and the braking, the coast between
+// is free). The same figures on the server (the physics) and the client (the autopilot's envelope).
+inline constexpr double CapsuleMassKg = 6500.0;
+inline constexpr double CapsuleThrustN = 0.13e6;
+inline constexpr double CapsuleDeltaVMps = 3000.0;
+inline constexpr double CapsuleAngularAccelRadPerSec2 = 0.6;   // the jets stop a 4 rad/s tumble in ~7 s
+inline constexpr double CapsuleLateralAccelMps2 = 2.0;         // the jets' translation (all six directions)
+
+// the capsule mode of a ship: its hull lost, the pilot alive in the cockpit (DynamicMotionState destroyedCause +
+// capsuleState) - the one test for both sides
+inline bool capsuleFlying(std::uint8_t destroyedCause, std::uint8_t capsuleState)
+{
+    return destroyedCause != 0 && capsuleState == static_cast<std::uint8_t>(State::PilotAlive);
+}
+
+// the flight parameters of the capsule (the reaction mass spent -> no main thrust; the jets keep the attitude)
+inline ShipParams capsuleParams(double deltaVLeftMps)
+{
+    ShipParams p {};
+    p.maxPitchRate = 1.2f;
+    p.maxYawRate = 1.2f;
+    p.maxRollRate = 1.5f;
+    p.angularAccel = static_cast<float>(CapsuleAngularAccelRadPerSec2);
+    p.angularDamping = 2.0f;
+    p.maxCombatSpeed = 300.0f;
+    p.maxCruiseSpeed = 3000.0f;
+    p.throttleAccel = 1.0f;
+    p.autoLevelStrength = 0.0f;
+    const bool fuel = deltaVLeftMps > 0.0;
+    p.forwardMainEngineAvailable = fuel;
+    p.forwardMainEngineAccelerationMps2 = fuel ? static_cast<float>(CapsuleThrustN / CapsuleMassKg) : 0.0f;
+    p.reverseMainEngineAvailable = false;
+    p.strafeAccel = fuel ? static_cast<float>(CapsuleLateralAccelMps2) : 0.0f;
+    p.strafeDamping = 1.0f;
+    p.maxStrafeSpeed = 50.0f;
+    p.manoeuvreThrusterAuthorityExplicit = true;
+    p.manoeuvreThrusterAccel = fuel ? static_cast<float>(CapsuleLateralAccelMps2) : 0.0f;
+    p.maxGs = 3.0f;
+    p.maxLinearGs = 3.0f;
+    p.massKg = CapsuleMassKg;
+    // a 2.2 x 1.3 x 1.6 m half-size box of 6.5 t
+    p.pitchInertiaKgM2 = CapsuleMassKg * (1.3 * 1.3 + 1.6 * 1.6) * 4.0 / 12.0;
+    p.yawInertiaKgM2 = CapsuleMassKg * (2.2 * 2.2 + 1.6 * 1.6) * 4.0 / 12.0;
+    p.rollInertiaKgM2 = CapsuleMassKg * (2.2 * 2.2 + 1.3 * 1.3) * 4.0 / 12.0;
+    p.physicalActuatorHalfExtentsMeters = glm::dvec3(2.2, 1.3, 1.6);
+    return p;
 }
 
 } // namespace game::navigation::capsule

@@ -322,6 +322,7 @@ ELITE_WIRE_SCHEMA(
     v.laneRecords,
     v.navComputerState,
     v.dataCarriers,
+    v.capsuleDeltaVLeftMps,
     v.refuelState,
     v.refuelRefusal,
     v.refuelSerial,

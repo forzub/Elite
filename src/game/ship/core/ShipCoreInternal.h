@@ -41,6 +41,7 @@
 #include "src/game/ship/ShipAttachmentUtils.h"
 
 #include "src/world/navigation/NavigationBodyAdapter.h"
+#include "src/game/navigation/rules/CapsuleRules.h"
 
 namespace ship_core_detail
 {

@@ -127,6 +127,10 @@ public:
 
     bool debugForceDetach(const std::string& moduleId);
     bool reattachModule(const std::string& moduleId);
+    // a detached module becomes the body's free root (attached, its health kept, held by nothing): the cockpit-capsule
+    bool adoptAsFreeRoot(const std::string& moduleId);
+    // every other module (not destroyed) leaves the body - the hull left behind by its cockpit-capsule; returns how many
+    int detachAllExcept(const std::string& keepModuleId);
     bool debugForceHang(const std::string& moduleId);
     bool debugForceDestroy(const std::string& moduleId);
 

@@ -327,6 +327,27 @@ ShipCore::controlAuthorityTelemetry() const
 
     if (!m_state.construction.valid())
         return {};
+    // the cockpit-capsule: its motor (forward) + jets (every direction, the attitude) - what the client's autopilot plans
+    // with (MotherComputer applyAuthorityToControlParams)
+    if (capsuleFlying())
+    {
+        namespace cap = game::navigation::capsule;
+        const auto p = cap::capsuleParams(m_transform.motion.capsuleDeltaVLeftMps);
+        game::ship::telemetry::ShipControlAuthorityTelemetry t;
+        t.valid = true;
+        t.model = m_state.construction.physicalControlModel;
+        t.sourceActuatorRevision = m_state.actuators.revision;
+        for (std::size_t axis = 0; axis < 3; ++axis)
+        {
+            t.positive[axis] = p.manoeuvreThrusterAccel;
+            t.negative[axis] = p.manoeuvreThrusterAccel;
+            t.positive[axis + 3] = p.angularAccel;
+            t.negative[axis + 3] = p.angularAccel;
+        }
+        t.negative[2] = p.forwardMainEngineAccelerationMps2;   // forward = -Z
+        t.workingForwardAccelerationMps2 = p.forwardMainEngineAccelerationMps2;
+        return t;
+    }
 
     // Newtonian publishes the signed installed RCS authority already
     // sampled by capabilities(), so planner/autopilot use the same
@@ -477,8 +498,17 @@ ShipCore::controlAuthorityTelemetry() const
     return out;
 }
 
+bool ShipCore::capsuleFlying() const
+{
+    const auto& m = m_transform.motion;
+    return game::navigation::capsule::capsuleFlying(m.destroyedCause, m.capsuleState);
+}
+
 ShipParams ShipCore::effectivePhysics() const
 {
+    // the hull is lost, the pilot flies on in the cockpit-capsule: its own motor, jets and reaction mass
+    if (capsuleFlying())
+        return game::navigation::capsule::capsuleParams(m_transform.motion.capsuleDeltaVLeftMps);
     const auto capability=capabilities();
     if(capability.valid)
         return capability.effectivePhysics;

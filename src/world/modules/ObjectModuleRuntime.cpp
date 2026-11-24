@@ -1038,7 +1038,7 @@ void ObjectModuleRuntime::applyStructuralStateFromSupports(int index,
     auto& module = m_modules[index];
 
     if (module.state == ObjectModuleRuntimeState::Destroyed ||
-        module.state == ObjectModuleRuntimeState::Detached)
+        module.state == ObjectModuleRuntimeState::Detached || module.freeRoot)
         return;
 
 
@@ -1249,6 +1249,35 @@ void ObjectModuleRuntime::reevaluateStructuralStates(
         applyStructuralStateFromSupports(i, structuralLinks);
     }
     ++m_revision;
+}
+
+int ObjectModuleRuntime::detachAllExcept(const std::string& keepModuleId)
+{
+    int n = 0;
+    for (auto& m : m_modules)
+        if (m.moduleId != keepModuleId && m.state != ObjectModuleRuntimeState::Detached &&
+            m.state != ObjectModuleRuntimeState::Destroyed)
+        {
+            m.state = ObjectModuleRuntimeState::Detached;
+            ++n;
+        }
+    if (n > 0)
+        ++m_revision;
+    return n;
+}
+
+bool ObjectModuleRuntime::adoptAsFreeRoot(const std::string& moduleId)
+{
+    const int index = findModuleIndex(moduleId);
+    if (index < 0)
+        return false;
+    auto& module = m_modules[index];
+    if (module.state == ObjectModuleRuntimeState::Destroyed || module.health <= 0.0f)
+        return false;
+    module.state = ObjectModuleRuntimeState::Attached;
+    module.freeRoot = true;
+    ++m_revision;
+    return true;
 }
 
 bool ObjectModuleRuntime::reattachModule(const std::string& moduleId)

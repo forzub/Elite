@@ -1280,8 +1280,9 @@ void GameServer::update(double dt)
                 }
                 if (stream.consumeNext(cmd))
                 {
-                    // a destroyed ship takes no control (the tick is still acknowledged)
-                    if (ship.core().transform().motion.destroyedCause != 0)
+                    // a destroyed ship takes no control (the tick is still acknowledged) - except the cockpit-capsule
+                    // flying on with the pilot alive (CapsuleRules.h capsuleFlying)
+                    if (ship.core().transform().motion.destroyedCause != 0 && !ship.core().capsuleFlying())
                     {
                         const auto tick = cmd.controlTick;
                         cmd = ShipControlState {};
@@ -1328,7 +1329,7 @@ void GameServer::update(double dt)
 
         auto& cmdQueue = cmdIt->second;
 
-        if (time.universeTimeSimulation || ship.core().transform().motion.destroyedCause != 0)
+        if (time.universeTimeSimulation || (ship.core().transform().motion.destroyedCause != 0 && !ship.core().capsuleFlying()))
         {
             // accelerated diagnostics / a destroyed ship: no commands - except the DEV full restore (Ctrl+Alt+R), which is
             // exactly for a wreck (author 2026-11-24: «ctrl+alt+R как читерский ремонт - не работает»: it was dropped here)

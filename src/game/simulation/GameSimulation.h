@@ -837,6 +837,11 @@ private:
     };
     std::unordered_map<EntityId, ManoeuvreOnly> m_manoeuvreOnly;
     void updatePadLandings(double dt);
+    // the cockpit-capsule (GameSimulationCapsule.cpp): the take-over of a lost hull, the wreck left behind
+    void updateCapsules(double dt);
+    std::unordered_set<EntityId> m_capsuleTakeoverPending;
+    struct CapsuleWake { glm::dvec3 position {0.0}; glm::dvec3 velocity {0.0}; double logClockS = 0.0; };
+    std::unordered_map<EntityId, CapsuleWake> m_capsuleWake;
     // the pads near the players: an automatic pad's capture zone takes a ship with its legs out; a hand-flown pad counts a soft
     // touchdown on legs as landed; a hard one breaks the legs (GameSimulationPadLanding.cpp)
     void updatePadTouchdowns(double dt);

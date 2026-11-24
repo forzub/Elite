@@ -8741,3 +8741,14 @@ start-up hitches (render), trade step 16 part 3 live.
 - Author's question on hub objects: their poses follow from the hub orbit + spin + the module offset - to move to the
   client (bootstrap once, the client computes the pose; the server sends only damage / construction / berth changes by
   version); ~13 KB of the 33.7 KB a snapshot. Planned right after the capsule.
+- Capsule step 3 (the cockpit-capsule flies, memory cockpit-capsule-rescue): CapsuleRules.h capsuleFlying /
+  capsuleParams (6.5 t, 0.13 MN -> 20 m/s2, jets 2 m/s2 + 0.6 rad/s2, 3000 m/s reaction mass); ShipCore applies them in
+  effectivePhysics / controlAuthorityTelemetry / updateMotionControl / updateTranslationControl (the reaction mass pays the
+  EXECUTED engine acceleration x dt - the local velocity is folded into the travel frame in normal flight);
+  motion.capsuleDeltaVLeftMps (wire 74). Server: the pilot alive -> the ship BECOMES the capsule
+  (ShipCore::becomeCockpitCapsule: the cockpit fragment's pose / velocity / tumble, the cockpit a free root
+  (ObjectModuleState::freeRoot), a whole hull left behind as fragments holding formation); the wreck's fragments get the
+  capsule's own thrust taken out (gravity shared), dropped beyond 20 km (GameSimulationCapsule.cpp); a capsule's controls
+  and ship commands are accepted. Live (63 m/s ram): take-over, tumble 0.39 -> 0 rad/s in < 5 s, 30 wreck fragments,
+  yaw 0.15 rad/s and damped, thrust 20 m/s2 (speed +13 m/s per s at 48 deg), reaction mass -100 m/s per 5 s. NOT yet:
+  the capsule's own target choice + automatic docking (client), the J-law cost (asked the author), beacons, the map layer.

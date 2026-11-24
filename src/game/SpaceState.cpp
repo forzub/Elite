@@ -1882,6 +1882,7 @@ void SpaceState::update(float dt)
     game::dev::DevScriptRunner::instance().update(*this);
     followControlledShip();
     updateUnsampledCollisionAssist();
+    updateOnboardJournal(dt);
     // the hub map follows the hub the ship is in (a new hub entered -> its map; author: the hub map did not switch)
     if (m_client)
         if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end())

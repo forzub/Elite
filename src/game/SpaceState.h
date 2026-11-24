@@ -1,4 +1,5 @@
 #pragma once
+#include "src/game/navigation/rules/OnboardJournal.h"
 #include "src/game/navigation/rules/RescueRules.h"
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
 #include "src/game/navigation/globalflight/RouteLegPilot.h"
@@ -698,6 +699,11 @@ private:
     // server keeps the pilot's last control, so the manual collision assist still watches it: a dodge is submitted over
     // the pilot's last sample, and that sample is restored once the dodge ends
     void updateUnsampledCollisionAssist();
+    // the onboard computer's journal, kept on the client (SpaceStateJournal.cpp, OnboardJournal.h)
+    void updateOnboardJournal(double dt);
+    std::vector<game::navigation::journal::Entry> m_onboardJournal;
+    std::uint64_t m_journalShipInstance = ~0ull;
+    double m_journalClockS = 0.0;
     bool m_manualSampledThisFrame = false;
     bool m_unsampledAssistSubmitted = false;
     ShipControlState m_lastPilotSample {};

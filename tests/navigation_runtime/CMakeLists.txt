@@ -2834,3 +2834,22 @@ set_tests_properties(
     route_draft_net_contract
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+# the onboard computer's journal (author 2026-11-24): store / merge, radiation degradation, the wire text
+add_executable(
+    onboard_journal_tests
+    OnboardJournalTests.cpp
+)
+target_include_directories(onboard_journal_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(onboard_journal_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    onboard_journal_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+add_test(
+    NAME onboard_journal
+    COMMAND onboard_journal_tests
+)

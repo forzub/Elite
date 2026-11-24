@@ -8730,3 +8730,14 @@ start-up hitches (render), trade step 16 part 3 live.
   pilot ALIVE in it (a cockpit still on a lost hull is ejected); a crushed hull does not kill a capsule already off it.
   The pilot's deceleration in a collision (CapsuleRules: dv^2 / (2 x 6 m) against 50 g) kills him whatever is left of
   the ship: 495 m/s ram 2125 g -> pilot-lost screen; 63 m/s ram: reactors lost, the crew escapes in the EC-2.
+- Onboard computer journal, step 1 (author 2026-11-24, memory onboard-computer-journal): navigation/rules/OnboardJournal.h
+  (records: hub / zone / safe / danger / signal / anomaly / sump exit / wreck / beacon; store-merge by key + time;
+  radiation degradation above a hardening dose rate: reliability, blurred position, description lost < 0.25, record
+  lost < 0.05; '|'-text). Kept and written on the CLIENT (author: «всё, что можно хранить на клиенте - хранить и делать
+  на клиенте»): SpaceStateJournal.cpp records every 2 s the hubs of the system within comms reach (30 ls) relative to
+  their parent body, with a МЧС dock / pads from the city plan; %LOCALAPPDATA%/EliteGame/journal/ship_<instance>.txt;
+  no records with a failed computer. Live: 77 hubs at Earth in 40 s. ctest onboard_journal 14/0. Next: the map layer,
+  the other record kinds, radiation dose from the environment.
+- Author's question on hub objects: their poses follow from the hub orbit + spin + the module offset - to move to the
+  client (bootstrap once, the client computes the pose; the server sends only damage / construction / berth changes by
+  version); ~13 KB of the 33.7 KB a snapshot. Planned right after the capsule.

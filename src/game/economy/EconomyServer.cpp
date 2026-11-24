@@ -3886,7 +3886,7 @@ EconomyServer::StateParts EconomyServer::saveStateParts() const
                                    {"lot", CargoRegistry::lotToJson(r.lot)}, {"state", r.state}, {"legal", r.legal},
                                    {"rights", r.rightsHolder}, {"claim", r.claim}, {"system", r.systemId},
                                    {"pos", {r.worldM[0], r.worldM[1], r.worldM[2]}}, {"t", r.universeS}, {"day", r.day},
-                                   {"cause", r.cause}});
+                                   {"cause", r.cause}, {"insurer", r.insurer}, {"payout", r.payoutCr}});
     j["build"] = json::array();
     for (const auto& p : m_buildProjects)
     {
@@ -4019,7 +4019,9 @@ bool EconomyServer::recordShipLoss(const ShipLoss& loss)
     m_openPortCalls.erase(loss.shipKey);   // a ship lost at the berth: no berth fee (as before: no release event)
     std::uint64_t player = 0;
     const std::vector<CargoLot> lots = m_cargo.takeAll(loss.shipKey, player);
-    // cargo insurance (step 13): the insured lots that were lost pay (1 - deductible) of their insured value
+    // cargo insurance (step 13): the insured lots that were lost pay (1 - deductible) of their insured value; each paid
+    // lot is the insurer's from now on (ECO-1)
+    std::map<std::string, std::pair<std::string, double>> paidLots;   // lot id -> (insurer bank, payout)
     for (auto it = m_cargoPolicies.begin(); it != m_cargoPolicies.end();)
     {
         if (it->shipKey != loss.shipKey)
@@ -4033,7 +4035,9 @@ bool EconomyServer::recordShipLoss(const ShipLoss& loss)
                 if (const auto v = it->lotValueCr.find(lot.lotId); v != it->lotValueCr.end())
                 {
                     const double insuredT = it->lotTonnes.count(lot.lotId) ? it->lotTonnes.at(lot.lotId) : lot.tonnes;
-                    payout += v->second * std::min(1.0, insuredT > 0.0 ? lot.tonnes / insuredT : 0.0);
+                    const double lotPay = v->second * std::min(1.0, insuredT > 0.0 ? lot.tonnes / insuredT : 0.0);
+                    payout += lotPay;
+                    paidLots[lot.lotId] = {it->bankId, std::round(lotPay * (1.0 - m_deductibleShare) * 100.0) / 100.0};
                 }
         payout = std::round(payout * (1.0 - m_deductibleShare) * 100.0) / 100.0;
         if (ClientLedger* pl = ledger(it->playerId); pl && payout > 0.0)
@@ -4047,12 +4051,19 @@ bool EconomyServer::recordShipLoss(const ShipLoss& loss)
     for (const auto& lot : lots)
     {
         LostCargo r;
-        r.recordId = "L" + std::to_string(m_nextLostCargo++);
+        r.recordId = "W" + std::to_string(m_nextLostCargo++);   // W: a wreck record (the lots are L<n> per manifest - ECO-6 id clash)
         r.eventId = loss.eventId;
         r.shipKey = loss.shipKey;
         r.playerId = player;
         r.lot = lot;
         r.rightsHolder = lot.owner;
+        if (const auto paid = paidLots.find(lot.lotId); paid != paidLots.end() && paid->second.second > 0.0)
+        {
+            r.insurer = paid->second.first;
+            r.payoutCr = paid->second.second;
+            r.claim = "paid";
+            r.rightsHolder = "insurer:" + r.insurer;   // subrogated
+        }
         r.systemId = loss.systemId;
         for (int k = 0; k < 3; ++k)
             r.worldM[k] = loss.worldM[k];
@@ -4160,6 +4171,8 @@ bool EconomyServer::restoreState(const std::string& text)
                 r.worldM[k] = pos[k].get<double>();
             r.universeS = x.value("t", 0.0);
             r.day = x.value("day", 0);
+            r.insurer = x.value("insurer", std::string());
+            r.payoutCr = x.value("payout", 0.0);
             r.cause = x.value("cause", std::string());
             lostCargo.push_back(std::move(r));
         }

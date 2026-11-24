@@ -175,6 +175,10 @@ public:
         double universeS = 0.0;
         int day = 0;
         std::string cause;
+        // the claim settled at the loss (audit ECO-1): the insurer that paid, the amount - the goods are the insurer's
+        // from then on (subrogation, CARGO_SALVAGE_DESIGN §8): a recovery must not give the owner the goods AND the payout
+        std::string insurer;
+        double payoutCr = 0.0;
     };
     bool recordShipLoss(const ShipLoss& loss);
     [[nodiscard]] const std::vector<LostCargo>& lostCargo() const { return m_lostCargo; }

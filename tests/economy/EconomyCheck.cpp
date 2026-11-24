@@ -2007,6 +2007,24 @@ void testInsurance()
     loss.cause = "disabled in combat";
     check(s.recordShipLoss(loss), "ship 901 lost in combat");
     check(near(netWorthCr(*s.ledger(1), s.banks()) - w1, 0.9 * q.valueCr, 0.05), "the payout: 90 % of the insured grain (10 % deductible), nothing for the narcotics");
+    {
+        // audit ECO-1: the paid lot is the insurer's now (subrogation), the payout recorded; the unpaid one stays the owner's
+        int paid = 0, owned = 0;
+        double recorded = 0.0;
+        for (const auto& r : s.lostCargo())
+            if (r.eventId == "loss:901:1")
+            {
+                if (r.claim == "paid" && r.rightsHolder.rfind("insurer:", 0) == 0 && r.payoutCr > 0.0 && !r.insurer.empty())
+                {
+                    ++paid;
+                    recorded += r.payoutCr;
+                }
+                else if (r.claim == "none" && r.rightsHolder.rfind("insurer:", 0) != 0)
+                    ++owned;
+            }
+        check(paid >= 1 && owned >= 1 && near(recorded, 0.9 * q.valueCr, 0.05),
+              "the paid lot subrogated to the insurer with its payout recorded, the uninsured lot still the owner's");
+    }
     const double w2 = netWorthCr(*s.ledger(1), s.banks());
     loss.eventId = "loss:902:1";
     loss.shipKey = 902;

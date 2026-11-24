@@ -8519,3 +8519,10 @@ start-up hitches (render), trade step 16 part 3 live.
   dropped on a full queue answers "busy" (was silent - the client waited for ever); the client does not send the same
   economy command twice within 0.6 s (the F8 cargo insurance / government buttons had no double-click guard). Built,
   EliteEconomyCheck 257 / 0; not exercised live (no retransmission path exists yet; the double click not scripted).
+- ECO-1: a lost lot that the cargo insurance paid is recorded subrogated - claim "paid", rightsHolder "insurer:<bank>",
+  LostCargo::insurer / payoutCr (saved as "insurer" / "payout") - a future recovery cannot give the owner the goods AND the
+  payout; an unpaid lot stays the owner's. EconomyCheck +1 (258 / 0).
+- ECO-6 (part): wreck records are "W<n>" (the lots of a manifest are "L<n>" and restart after a loss - the record L1
+  clashed with a live lot L1). Still open (design, author): container identity, holder modules per lot, the manifest
+  ignoring a torn-off holder (cargo sold that drifted away), the salvage state machine; CARGO_SALVAGE_DESIGN.md is
+  stale (says no code exists).

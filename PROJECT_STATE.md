@@ -8526,3 +8526,8 @@ start-up hitches (render), trade step 16 part 3 live.
   clashed with a live lot L1). Still open (design, author): container identity, holder modules per lot, the manifest
   ignoring a torn-off holder (cargo sold that drifted away), the salvage state machine; CARGO_SALVAGE_DESIGN.md is
   stale (says no code exists).
+- NET-1: RouteDraftNet::load enforces the model contract - schema elite.route_draft_net.v1, feature_version ==
+  RouteDraftFeatureVersion (2, new; written into the model and by route_draft_train.py), inputs / outputs, every layer's
+  rows == bias, uniform rows, widths chained 112 -> .. -> 11, stats' sizes, finite values, positive stds; refused =
+  no model (the generic search) with the reason logged ("[RouteDraft] net REFUSED / absent: ..."); forward() / draft()
+  refuse a wrong-size vector. ctest route_draft_net_contract: 11 corruptions refused, the shipped model loads, 15 / 0.

@@ -31,6 +31,9 @@ namespace game::navigation::planner
 constexpr int RouteDraftGridX = 6, RouteDraftGridYZ = 4;
 constexpr int RouteDraftInputs = 1 + 6 + 2 + 7 + RouteDraftGridX * RouteDraftGridYZ * RouteDraftGridYZ;
 constexpr int RouteDraftOutputs = 11;
+// the meaning and order of the inputs (routeDraftFeatures): a model trained on another layout is refused (NET-1);
+// bump with any change of the features, and write it into the model (tools/navigation_runtime/route_draft_train.py)
+constexpr int RouteDraftFeatureVersion = 2;
 
 struct RouteDraftFrame
 {
@@ -164,32 +167,78 @@ public:
             nlohmann::json j;
             in >> j;
             m_layers.clear();
+            // THE MODEL CONTRACT (audit NET-1: only the stats' sizes were checked - ragged rows, a long bias, a wide
+            // layer or a short std read past the heap in forward(); a model of another feature layout with the same
+            // sizes loaded silently): the schema, the feature layout version, every layer's shape chained from 112 to
+            // 11, finite values and positive stds - anything else = no model (the generic search, as without the net)
+            const auto reject = [&](const char* why) {
+                m_layers.clear();
+                m_rejectReason = why;
+                return false;
+            };
+            if (j.value("schema", std::string()) != "elite.route_draft_net.v1")
+                return reject("schema is not elite.route_draft_net.v1");
+            if (j.value("inputs", 0) != static_cast<int>(RouteDraftInputs) || j.value("outputs", 0) != static_cast<int>(RouteDraftOutputs))
+                return reject("inputs / outputs differ from the code's feature layout");
+            if (j.value("feature_version", RouteDraftFeatureVersion) != RouteDraftFeatureVersion)
+                return reject("feature_version differs from the code's (the inputs mean something else)");
+            std::size_t width = static_cast<std::size_t>(RouteDraftInputs);
             for (const auto& l : j.at("layers"))
             {
                 Layer layer;
                 const auto w = l.at("w").get<std::vector<std::vector<float>>>();
                 layer.b = l.at("b").get<std::vector<float>>();
-                layer.in = w.empty() ? 0 : w.front().size();
+                if (w.empty() || w.size() != layer.b.size())
+                    return reject("a layer's rows and bias differ");
+                layer.in = w.front().size();
+                if (layer.in != width)
+                    return reject("a layer's input width does not chain");
                 for (const auto& row : w)
+                {
+                    if (row.size() != layer.in)
+                        return reject("a layer has ragged rows");
                     layer.w.insert(layer.w.end(), row.begin(), row.end());
+                }
+                width = layer.b.size();
                 m_layers.push_back(std::move(layer));
             }
+            if (m_layers.empty() || width != static_cast<std::size_t>(RouteDraftOutputs))
+                return reject("the last layer is not the code's output width");
             m_inMean = j.at("in_mean").get<std::vector<float>>();
             m_inStd = j.at("in_std").get<std::vector<float>>();
             m_outMean = j.at("out_mean").get<std::vector<float>>();
             m_outStd = j.at("out_std").get<std::vector<float>>();
+            const auto nIn = static_cast<std::size_t>(RouteDraftInputs), nOut = static_cast<std::size_t>(RouteDraftOutputs);
+            if (m_inMean.size() != nIn || m_inStd.size() != nIn || m_outMean.size() != nOut || m_outStd.size() != nOut)
+                return reject("the standardization stats have the wrong sizes");
+            const auto finite = [](const std::vector<float>& v, bool positive) {
+                for (const float x : v)
+                    if (!std::isfinite(x) || (positive && !(x > 0.0f)))
+                        return false;
+                return true;
+            };
+            if (!finite(m_inMean, false) || !finite(m_outMean, false) || !finite(m_inStd, true) || !finite(m_outStd, true))
+                return reject("a standardization stat is not finite / a std is not positive");
+            for (const auto& l : m_layers)
+                if (!finite(l.w, false) || !finite(l.b, false))
+                    return reject("a weight is not finite");
         }
         catch (...)
         {
             m_layers.clear();
+            m_rejectReason = "unreadable JSON";
             return false;
         }
-        return !m_layers.empty() && m_inMean.size() == RouteDraftInputs && m_outMean.size() == RouteDraftOutputs;
+        m_rejectReason.clear();
+        return true;
     }
     bool loaded() const { return !m_layers.empty(); }
+    const std::string& rejectReason() const { return m_rejectReason; }
 
     std::vector<float> forward(const std::vector<float>& features) const
     {
+        if (features.size() != static_cast<std::size_t>(RouteDraftInputs) || m_layers.empty())
+            return {};
         std::vector<float> a(features.size());
         for (std::size_t i = 0; i < a.size(); ++i)
             a[i] = (features[i] - m_inMean[i]) / m_inStd[i];
@@ -220,7 +269,10 @@ public:
         const RouteDraftFrame f = routeDraftFrame(r);
         if (!f.valid)
             return false;
-        out = routeDraftShape(forward(routeDraftFeatures(r, f)), f);
+        const std::vector<float> y = forward(routeDraftFeatures(r, f));
+        if (y.size() != static_cast<std::size_t>(RouteDraftOutputs))
+            return false;
+        out = routeDraftShape(y, f);
         return true;
     }
 
@@ -230,6 +282,7 @@ private:
         std::vector<float> w, b;
         std::size_t in = 0;
     };
+    std::string m_rejectReason;
     std::vector<Layer> m_layers;
     std::vector<float> m_inMean, m_inStd, m_outMean, m_outStd;
 };

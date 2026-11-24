@@ -2811,3 +2811,26 @@ set_tests_properties(
     evasion_trajectory_conflict
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+# the route-draft net's model contract (audit 8e3c49007 NET-1): corrupted models are refused at load
+add_executable(
+    route_draft_net_contract_tests
+    RouteDraftNetContractTests.cpp
+)
+target_include_directories(route_draft_net_contract_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(route_draft_net_contract_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    route_draft_net_contract_tests
+    PRIVATE EliteNavigationRuntimeControl nlohmann_json::nlohmann_json
+)
+add_test(
+    NAME route_draft_net_contract
+    COMMAND route_draft_net_contract_tests
+)
+set_tests_properties(
+    route_draft_net_contract
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

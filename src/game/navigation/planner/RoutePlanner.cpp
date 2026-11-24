@@ -560,7 +560,7 @@ RoutePlan planContinuousAssisted(
             return static_cast<const RouteDraftNet*>(nullptr);
         static RouteDraftNet net;
         const bool ok = net.load("assets/data/navigation/route_draft_net.json");
-        std::cerr << "[RouteDraft] net " << (ok ? "loaded" : "absent") << std::endl;
+        std::cerr << "[RouteDraft] net " << (ok ? "loaded" : "REFUSED / absent: " + net.rejectReason()) << std::endl;
         return ok ? &net : nullptr;
     }();
     if (draftNet)

@@ -77,7 +77,7 @@ def main():
             report(ep)
         if ep == int(epochs * 0.7):
             lr *= 0.3
-    json.dump({"schema": "elite.route_draft_net.v1", "inputs": INPUTS, "outputs": OUTPUTS, "hidden": hidden,
+    json.dump({"schema": "elite.route_draft_net.v1", "feature_version": 2, "inputs": INPUTS, "outputs": OUTPUTS, "hidden": hidden,
                "note": "tools/navigation_runtime/route_draft_train.py on EliteRouteDraftLab's time-optimal teacher",
                "in_mean": in_mean.tolist(), "in_std": in_std.tolist(),
                "out_mean": out_mean.tolist(), "out_std": out_std.tolist(),

@@ -8565,3 +8565,6 @@ start-up hitches (render), trade step 16 part 3 live.
   had them NOT REACHED too.
 - PLAN-2: NOT CHANGED - the author's decision (does "everything by time" of 2026-11-24 replace the 2026-11-22 rule that
   green lanes win over free space in a hub for safety? In seconds mode FreeInHubFactor applies nowhere).
+- Correction (same day): configureRoutePlannerFromEnvironment() is called by the CLIENT only (SpaceState) - calling it
+  from GameServer broke check_automatic_docking ("GameServer regained client-navigation ownership: RoutePlanner"); the
+  server keeps the planner's defaults. check_automatic_docking green again.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -125,6 +126,13 @@ struct Request
     // Otherwise the drafts just join the generic seeds.
     std::vector<ShapeVariables> draftSeeds;
     std::size_t draftRefineIterations = 0;
+
+    // THE SEARCH BUDGET'S CLOCK (audit TST-2 / PLAN-4: the optimizer read std::chrono itself - a pure calculation whose
+    // result depended on the CPU): seconds from any origin, given by the orchestration (RoutePlannerOptions); without
+    // one the budget counts evaluations (deterministic - the labs, the tests, the net's teacher)
+    std::function<double()> budgetClockSeconds;
+    std::size_t feasiblePolishBudgetEvaluations = 1500;
+    std::size_t infeasibleSearchBudgetEvaluations = 12000;
 };
 
 enum class OptimizedSegmentKind : unsigned char

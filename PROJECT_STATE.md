@@ -8531,3 +8531,14 @@ start-up hitches (render), trade step 16 part 3 live.
   rows == bias, uniform rows, widths chained 112 -> .. -> 11, stats' sizes, finite values, positive stds; refused =
   no model (the generic search) with the reason logged ("[RouteDraft] net REFUSED / absent: ..."); forward() / draft()
   refuse a wrong-size vector. ctest route_draft_net_contract: 11 corruptions refused, the shipped model loads, 15 / 0.
+- TST-2: tests/architecture_contracts/check_navigation_route_boundaries.py GREEN (was red before the audited range, so
+  new violations were invisible): (a) RouteDraftNet.h / RouteDraftIo.h declared planner internals in the check (only
+  RoutePlanner.cpp, the orchestration's RoutePlannerSetup.h and the lab may include them - checked); (b) the pure
+  RoutePlanner no longer reads env / files / std::cerr: RoutePlannerOptions (time objective, draft net, log sink, dump
+  path, budget clock) set by game::navigation::configureRoutePlannerFromEnvironment() (RoutePlannerSetup.h) in the
+  SpaceState and GameServer constructors; tests / labs get the defaults (time objective, no net, silent); (c) the
+  optimizer has no std::chrono: Request::budgetClockSeconds (given by the orchestration) else an evaluation-count
+  budget (1500 polish / 12000 infeasible) - deterministic in the labs and the net's teacher (PLAN-4: labels depended on
+  the CPU). ordinary_route_policy fixed: the stale 1 km resting-start expectation -> 3 hull lengths (author change
+  3ef6c6d00) + the 30 m floor + the moving 1 km minimum. Navigation ctest 66: 57 pass, 9 baseline reds (was 10).
+  Live: B4-11 through the city 180 s, net loaded, fast path, 0 collisions.

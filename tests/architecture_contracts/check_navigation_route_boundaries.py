@@ -108,6 +108,10 @@ try:
             "src/game/navigation/planner/RoutePlanner.cpp",
             "src/game/navigation/planner/assisted/lab/"
             "ContinuousAssistedPathOptimizer.cpp",
+            # the route-draft net (its first seed) and its dataset I/O work on the optimizer's request / shape
+            # types: planner internals, included by RoutePlanner.cpp and the offline lab only (checked below)
+            "src/game/navigation/planner/RouteDraftNet.h",
+            "src/game/navigation/planner/RouteDraftIo.h",
         ):
             continue
         body = path.read_text(encoding="utf-8", errors="replace")
@@ -115,6 +119,26 @@ try:
             raise AssertionError(
                 f"{rel}: bypasses RoutePlanner and includes internal optimizer"
             )
+
+    # the planner-internal draft net stays internal: only RoutePlanner.cpp (and the net's own I/O header) in src/
+    for header in ("RouteDraftNet.h", "RouteDraftIo.h"):
+        include = '#include "src/game/navigation/planner/' + header + '"'
+        for path in (ROOT / "src").rglob("*"):
+            if path.suffix not in (".h", ".cpp"):
+                continue
+            rel = str(path.relative_to(ROOT)).replace("\\", "/")
+            if rel in (
+                "src/game/navigation/planner/RoutePlanner.cpp",
+                "src/game/navigation/planner/RouteDraftNet.h",
+                "src/game/navigation/planner/RouteDraftIo.h",
+                # the orchestration loads the model into RoutePlannerOptions (the planner never reads files)
+                "src/game/navigation/RoutePlannerSetup.h",
+            ):
+                continue
+            if include in path.read_text(encoding="utf-8", errors="replace"):
+                raise AssertionError(
+                    f"{rel}: includes the planner-internal {header} (use RoutePlanner)"
+                )
 
     space_for_internal = read("src/game/SpaceState.cpp")
     if internal_optimizer_include in space_for_internal:

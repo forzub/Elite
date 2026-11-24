@@ -5,7 +5,6 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
 #include <utility>
 
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
@@ -539,31 +538,20 @@ RoutePlan planContinuousAssisted(
     request.samplesPerBezier = 96;
     request.maxPatternIterations = 160;
 
-    // the route-draft net's scenes: every real optimizer request (ELITE_ROUTE_DRAFT_DUMP=<file>, appended)
-    if (const char* dump = std::getenv("ELITE_ROUTE_DRAFT_DUMP"); dump && *dump)
-        appendRouteDraftRequest(dump, request);
+    const RoutePlannerOptions& options = RoutePlanner::options();
+    // the route-draft net's scenes: every real optimizer request (RoutePlannerOptions::draftDumpPath, appended)
+    if (!options.draftDumpPath.empty())
+        appendRouteDraftRequest(options.draftDumpPath.c_str(), request);
 
     // THE ROUTE-DRAFT NET (RouteDraftNet.h): its shape is the first seed; feasible -> only it is refined (the fast
     // path), else the generic search runs as before. ON by default (ELITE_ROUTE_DRAFT=0 off): live plans 0.55-0.78 s
     // against 3.1-3.7. (2026-11-24: briefly off while a docking flew into Высокий's ring - the cause was the ring's
     // rotating hit volumes, not the net: ObjectRuntimeHitBuilder sectors + the planner's swept rings; draft on docks clean);
     // the game optimizer minimizes the TRAVEL TIME (the net teacher objective; ELITE_ROUTE_TIME_OBJECTIVE=0: the old mix)
-    static const bool timeObjective = [] {
-        const char* v = std::getenv("ELITE_ROUTE_TIME_OBJECTIVE");
-        return !(v && v[0] == '0');
-    }();
-    if (timeObjective)
+    if (options.timeObjective)
         request.weights = assisted::lab::timeOptimalWeights();
-    static const RouteDraftNet* draftNet = []() -> const RouteDraftNet* {
-        const char* v = std::getenv("ELITE_ROUTE_DRAFT");
-        if (v && v[0] == '0')
-            return static_cast<const RouteDraftNet*>(nullptr);
-        static RouteDraftNet net;
-        const bool ok = net.load("assets/data/navigation/route_draft_net.json");
-        std::cerr << "[RouteDraft] net " << (ok ? "loaded" : "REFUSED / absent: " + net.rejectReason()) << std::endl;
-        return ok ? &net : nullptr;
-    }();
-    if (draftNet)
+    request.budgetClockSeconds = options.budgetClockSeconds;
+    if (const RouteDraftNet* draftNet = options.draftNet)
     {
         assisted::lab::ShapeVariables draft;
         if (draftNet->draft(request, draft))
@@ -575,10 +563,11 @@ RoutePlan planContinuousAssisted(
 
     const auto optimized =
         ContinuousAssistedPathOptimizer::optimize(request);
-    if (!request.draftSeeds.empty())
-        std::cerr << "[RouteDraft] " << (optimized.usedDraftFastPath ? "fast path" : "draft infeasible - full search")
-                  << ", evals " << optimized.diagnostics.objectiveEvaluations << ", valid " << optimized.valid
-                  << ", eta " << optimized.diagnostics.estimatedTravelTimeSeconds << " s" << std::endl;
+    if (!request.draftSeeds.empty() && options.log)
+        options.log(std::string("[RouteDraft] ") + (optimized.usedDraftFastPath ? "fast path" : "draft infeasible - full search") +
+                    ", evals " + std::to_string(optimized.diagnostics.objectiveEvaluations) + ", valid " +
+                    std::to_string(optimized.valid ? 1 : 0) + ", eta " +
+                    std::to_string(optimized.diagnostics.estimatedTravelTimeSeconds) + " s");
 
     if (!optimized.valid)
     {
@@ -867,6 +856,25 @@ RoutePlan planContinuousAssisted(
 }
 
 } // namespace
+
+namespace
+{
+RoutePlannerOptions& plannerOptionsSlot()
+{
+    static RoutePlannerOptions options;
+    return options;
+}
+} // namespace
+
+void RoutePlanner::setOptions(RoutePlannerOptions options)
+{
+    plannerOptionsSlot() = std::move(options);
+}
+
+const RoutePlannerOptions& RoutePlanner::options()
+{
+    return plannerOptionsSlot();
+}
 
 RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
 {

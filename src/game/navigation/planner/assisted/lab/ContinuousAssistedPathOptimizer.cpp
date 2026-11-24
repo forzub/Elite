@@ -1,6 +1,5 @@
 #include "src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h"
 
-#include <chrono>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -1687,7 +1686,8 @@ SearchResult patternOptimize(
     // city's ~2800 volumes found its feasible path at evaluation 71 and then polished it for 5000 more - 59 s; the polish
     // after that moved the length by 3 %. The accepted route is checked against all obstacles afterwards ([RouteCheck])
     constexpr double FeasiblePolishBudgetSeconds = 0.35;
-    const auto polishStarted = std::chrono::steady_clock::now();
+    const double polishStarted = request.budgetClockSeconds ? request.budgetClockSeconds() : 0.0;
+    const std::size_t evaluationsAtStart = objectiveEvaluations ? *objectiveEvaluations : 0;
     for (std::size_t iteration = 0;
          iteration < iterations;
          ++iteration)
@@ -1695,9 +1695,16 @@ SearchResult patternOptimize(
         // ... and a branch that finds nothing feasible gives up as well: 500 iterations among a city's ~4000 volumes
         // took minutes per attempt x 5 slower retries - the game "hung" (author 2026-11-22: «после 5 перелёта завис»)
         constexpr double InfeasibleSearchBudgetSeconds = 4.0;   // 1.5 s: a 20 km leg among 2800 volumes found nothing at all
-        const double searchedSeconds =
-            std::chrono::duration<double>(std::chrono::steady_clock::now() - polishStarted).count();
-        if (searchedSeconds > (out.evaluation.feasible ? FeasiblePolishBudgetSeconds : InfeasibleSearchBudgetSeconds))
+        if (request.budgetClockSeconds)
+        {
+            const double searchedSeconds = request.budgetClockSeconds() - polishStarted;
+            if (searchedSeconds > (out.evaluation.feasible ? FeasiblePolishBudgetSeconds : InfeasibleSearchBudgetSeconds))
+                break;
+        }
+        else if (objectiveEvaluations &&
+                 *objectiveEvaluations - evaluationsAtStart >
+                     (out.evaluation.feasible ? request.feasiblePolishBudgetEvaluations
+                                              : request.infeasibleSearchBudgetEvaluations))
             break;
         bool improved = false;
 

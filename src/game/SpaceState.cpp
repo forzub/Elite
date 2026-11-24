@@ -1,3 +1,4 @@
+#include "src/game/navigation/RoutePlannerSetup.h"
 #include "src/audio/CockpitRadio.h"
 #include "src/game/navigation/HubBerthOccupancy.h"
 #include "src/game/navigation/HubPlanPads.h"
@@ -41,6 +42,7 @@ SpaceState::SpaceState(
     : GameState(states),
       m_systemMapRenderer(m_navigationWorkspace)
 {
+    game::navigation::configureRoutePlannerFromEnvironment();   // the route planner's options (RoutePlannerSetup.h)
     m_runtimeScenarioSelection =
         game::debug::RuntimeScenarioSelection::fromProcessEnvironment();
     m_navigationStressHarness.configure(m_runtimeScenarioSelection);

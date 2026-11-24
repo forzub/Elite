@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -651,10 +652,27 @@ struct RoutePlan
     }
 };
 
+class RouteDraftNet;
+
+// THE PLANNER'S OPTIONS (audit TST-2: the pure planner read ELITE_ROUTE_* env flags, loaded the model file and wrote to
+// std::cerr itself): set by the orchestration once at start (RoutePlannerSetup.h: the game client, the server), by a
+// lab / test explicitly; the planner only reads them. Defaults = a test's: the time objective, no draft net, no sinks.
+struct RoutePlannerOptions
+{
+    bool timeObjective = true;                     // minimize the travel time (false: the old weighted mix)
+    const RouteDraftNet* draftNet = nullptr;       // the route-draft net (its first seed + the fast path); null = none
+    std::function<void(const std::string&)> log;   // diagnostics lines (the orchestration's logger); empty = silent
+    std::string draftDumpPath;                     // every optimizer request appended here (the net's dataset); empty = none
+    std::function<double()> budgetClockSeconds;    // the search budget's clock (seconds); empty = an evaluation-count budget
+};
+
 class RoutePlanner final
 {
 public:
     [[nodiscard]] static RoutePlan plan(const RoutePlanRequest& request);
+    // set before planning starts (not concurrently with a plan)
+    static void setOptions(RoutePlannerOptions options);
+    [[nodiscard]] static const RoutePlannerOptions& options();
 };
 
 } // namespace game::navigation::planner

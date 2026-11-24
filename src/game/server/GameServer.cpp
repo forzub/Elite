@@ -1,3 +1,4 @@
+#include "src/game/navigation/RoutePlannerSetup.h"
 #include "src/game/damage/HitVolumeBounds.h"
 #include <atomic>
 #include "src/model_asset/HubExpansion.h"
@@ -82,6 +83,7 @@ GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
     : m_diagnostics{}
     , m_simulation(m_diagnostics)
 {
+    game::navigation::configureRoutePlannerFromEnvironment();   // the route planner's options (RoutePlannerSetup.h)
         m_simulation.setTerrainHeightProvider(
             [this](const std::string& bodyId, const glm::dvec3& worldDirection, GameSimulation::TerrainSample& ground) {
                 return terrainHeight(bodyId, worldDirection, ground);

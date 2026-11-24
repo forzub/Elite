@@ -75,12 +75,22 @@ int main()
     if (!near(fullLegacyLead, 2.0 * assistedLead, 1.0e-5))
         return fail("Newtonian/legacy start lead changed");
 
-    // Assisted retains a real measured geometry minimum even at rest.
+    // An Assisted craft (nearly) at rest turns where it hangs: 3 hull lengths (>= 30 m), not 1 km along its nose - the
+    // author's change of 2026-11-22 (3ef6c6d00: the 1 km straight from a pad ran into the buildings); this test was
+    // left expecting the old 1 km (audit 8e3c49007 TST-2: a stale red). Moving (>= 8 m/s): the 1 km minimum still holds.
     if (!near(
             OrdinaryRoutePolicy::requiredAssistedStartLeadMeters(
                 0.0, 500.0, 15.0, 24.5166333333, 0.5, 30.0
-            ), 1000.0))
-        return fail("stationary Assisted start lost the 1 km minimum");
+            ), 90.0))
+        return fail("a resting Assisted start is not 3 hull lengths");
+    if (!near(
+            OrdinaryRoutePolicy::requiredAssistedStartLeadMeters(
+                0.0, 500.0, 15.0, 24.5166333333, 0.5, 5.0
+            ), 30.0))
+        return fail("a resting Assisted start of a short hull lost its 30 m floor");
+    if (OrdinaryRoutePolicy::requiredAssistedStartLeadMeters(
+            10.0, 500.0, 15.0, 24.5166333333, 0.5, 30.0) < 1000.0)
+        return fail("a moving Assisted start lost the 1 km minimum");
 
     // A high-speed ship's first free leg still needs its authored ballistic
     // corridor. After the mandatory BLUE release, however, the exact hard

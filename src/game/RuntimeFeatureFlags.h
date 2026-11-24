@@ -16,8 +16,9 @@ inline constexpr bool RadarHudEnabled = true;
 // navigation HUD markers remain active through their separate paths.
 inline constexpr bool WorldSignalLabelsEnabled = false;
 
-// Activation diagnostics remain enabled while the staged runtime execution
-// policy is being validated against real scenes.
+// Activation diagnostics (simulation_activation_shadow.csv) are compiled in but OFF unless ELITE_DEV_ACTIVATION_CSV=1:
+// always on they re-opened the CSV from every system pass (10.7 of 13 ms of the server's physics stage at 153 players
+// in 61 systems) and grew the file without bound (273 MB in a dev build directory).
 inline constexpr bool ActivationShadowDiagnosticsEnabled = true;
 
 // Stage 4A/4B: planned activation mode controls materialized runtime work.

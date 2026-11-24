@@ -28,3 +28,12 @@ Already removed (author-authorized): root `headless_server/` (6.1 GB, stale buil
 Not junk (kept on purpose): `assets/source/celestial/` (curated maps, OBJ shapes - read by flight and map),
 `src/assets/compiled/models/station.elmodel` (the game's station), `Notes/` and `tools/colonization_lab/` (lore and
 world data sources), legacy state files `CURRENT_STATE.md` / `CURRENT_TASK.md` (history; may move to docs/history).
+
+## 2026-11-24 (server load investigation)
+- `build-relwithdebinfo/simulation_activation_shadow.csv` (273 MB): the activation diagnostics CSV that was always on;
+  now written only with ELITE_DEV_ACTIVATION_CSV=1 - the file is junk.
+- `D:/tmp/wt_bis` (git worktree of 5b7d83f21 for a bisect that could not run: the old code needs ship meshes under names
+  no longer on disk) + its build dirs `D:/tmp/wt_bis_build`, `D:/tmp/wt_bis_b2`. CAUTION: `wt_bis/third_party/*`,
+  `wt_bis/assets/{baked,compiled,generated,materials,source}`, `wt_bis/assets/models/{ships,stations}` and
+  `wt_bis_b2/assets/models/stations` are JUNCTIONS to the real work tree - remove the junctions first (rmdir / Remove-Item
+  on the link itself, never recursive), then `git worktree remove --force D:/tmp/wt_bis`.

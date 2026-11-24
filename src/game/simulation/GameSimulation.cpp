@@ -2136,8 +2136,16 @@ m_hubVelocityMetersPerSecond[hubId] =
     }
     else
     {
+        auto subStart = std::chrono::steady_clock::now();
+        const auto subMark = [&subStart](int k) {
+            const auto now = std::chrono::steady_clock::now();
+            game::server::serverTickProfile().physicsSub[k] += std::chrono::duration<double>(now - subStart).count();
+            subStart = now;
+        };
         rebuildNavigationGravityContext();
+        subMark(0);
         updateDynamicNavigationContext(dt);
+        subMark(1);
 
         for (auto& [id, shipPtr] : m_ships)
         {
@@ -2283,14 +2291,17 @@ m_hubVelocityMetersPerSecond[hubId] =
         // The interplanetary diagnostic actor owns an analytic Sun-centered
         // transfer trajectory. Place it before the final navigation-context
         // sample so gravity/primary-body metadata belongs to this exact pose.
+        subMark(2);
         updateInterplanetaryTransferLabActor();
         updateDynamicNavigationContext(dt);
+        subMark(3);
 
         // Controlled server-time samples for the Hub Motion Lab. They are
         // excluded from production AI/physics above, then published through
         // the ordinary authoritative ShipSnapshot path below.
         updateHubMotionLabActors();
         updateDockPilotShips();
+        subMark(4);
 
         // Stage 4B keeps the 5 Hz physical planner. NPC tactical AI, motion
         // control, internal systems and structural/repair maintenance consume
@@ -2309,6 +2320,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
         if constexpr (game::runtime::ActivationShadowDiagnosticsEnabled)
             debugLogActivationShadow(dt);
+        subMark(5);
     }
 
 

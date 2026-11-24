@@ -1,5 +1,7 @@
 #include "src/game/scene/LayoutCityHitVolumes.h"
 
+#include "src/model_asset/ModelAssetBinary.h"
+
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
@@ -8,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -72,6 +75,29 @@ void collisionToHitVolumes(ObjectType type, const elite::model_asset::ModelAsset
     }
 }
 
+std::string hubKitPackagePath(ObjectType type)
+{
+    static const std::unordered_map<ObjectType, std::string> folders {
+        {ObjectType::HubKitTruss, "hubk_truss"},
+        {ObjectType::HubKitHabA, "hubk_hab_a"},
+        {ObjectType::HubKitHabB, "hubk_hab_b"},
+        {ObjectType::HubKitHabC, "hubk_hab_c"},
+        {ObjectType::HubKitTower, "hubk_tower"},
+        {ObjectType::HubKitMushroom, "hubk_mushroom"},
+        {ObjectType::HubKitFactory, "hubk_factory"},
+        {ObjectType::HubKitTanks, "hubk_tanks"},
+        {ObjectType::HubKitRock, "hubk_rock"},
+        {ObjectType::HubDistrictProto, "hub_proto_district"},
+        {ObjectType::HubMegaProto, "hub_proto_mega"},
+        {ObjectType::HubBeltRing, "hubb_ring_core"},
+        {ObjectType::HubBeltDrum, "hubb_hab_drum"},
+        {ObjectType::HubBeltHotel, "hubb_hotel_hex"},
+    };
+    const auto it = folders.find(type);
+    return it == folders.end() ? std::string()
+                               : "assets/compiled/hub_modules/" + it->second + "/" + it->second + ".elmodel";
+}
+
 bool layoutCityHitVolumesOnClient(ObjectType type, const std::string& hubId)
 {
     // ELITE_REPLICATE_CITY_HIT_VOLUMES=1: the old way (the server sends them)
@@ -79,9 +105,21 @@ bool layoutCityHitVolumesOnClient(ObjectType type, const std::string& hubId)
         const char* v = std::getenv("ELITE_REPLICATE_CITY_HIT_VOLUMES");
         return v && v[0] == '1';
     }();
-    if (replicate || type != ObjectType::HubBeltCity || hubId.empty())
+    if (replicate)
         return false;
     namespace ma = elite::model_asset;
+    if (const std::string kit = hubKitPackagePath(type); !kit.empty())
+    {
+        static std::mutex kitMutex;
+        static std::map<std::string, bool> kitKnown;
+        std::lock_guard<std::mutex> lock(kitMutex);
+        const auto [it, inserted] = kitKnown.try_emplace(kit, false);
+        if (inserted)
+            it->second = std::filesystem::exists(kit);
+        return it->second;
+    }
+    if (type != ObjectType::HubBeltCity || hubId.empty())
+        return false;
     // cities with construction stages too: the client assembles the stages by its own clock, as its renderer already
     // does (271 of the 294 layout cities have an expansion plan - excluding them left the bootstrap at 63 MB)
     static std::mutex mutex;
@@ -110,12 +148,14 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
     // per hub: the current entry and the one being built for a new construction stage (the old one stays in use
     // until the new one is ready)
     static std::map<std::string, std::shared_ptr<CityEntry>> cache, building;
-    const std::uint64_t key = elite::model_asset::hubExpansionStageKey(hubId);
+    const std::string kit = hubKitPackagePath(type);
+    const std::string cacheKey = kit.empty() ? hubId : kit;
+    const std::uint64_t key = kit.empty() ? elite::model_asset::hubExpansionStageKey(hubId) : 0;
     std::shared_ptr<CityEntry> entry;
     {
         std::lock_guard<std::mutex> lock(mutex);
-        auto& e = cache[hubId];
-        auto& b = building[hubId];
+        auto& e = cache[cacheKey];
+        auto& b = building[cacheKey];
         if (b && b->ready)
         {
             e = b;
@@ -132,15 +172,17 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
                 b = fresh;
             std::shared_ptr<CityEntry> job = fresh;
             const std::string id = hubId;
-            std::cerr << "[CityHitVolumes] " << hubId << ": assembling on the client (stage key " << key << ")" << std::endl;
-            std::thread([job, id, type] {
+            std::cerr << "[CityHitVolumes] " << cacheKey << ": assembling on the client (stage key " << key << ")" << std::endl;
+            std::thread([job, id, type, kit] {
                 namespace ma = elite::model_asset;
                 ma::ModelAsset city;
                 game::damage::HitComponent hit;
-                if (ma::assembleHubCityCollision(id, "assets/compiled/hub_modules", city))
+                std::string error;
+                if (!kit.empty() ? ma::ModelAssetBinary::load(kit, city, &error)
+                                 : ma::assembleHubCityCollision(id, "assets/compiled/hub_modules", city))
                     collisionToHitVolumes(type, city, hit.volumes);
                 job->volumes = world::modules::HitVolumeSnapshotBuilder::build(hit);
-                std::cerr << "[CityHitVolumes] " << id << ": " << job->volumes.size()
+                std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": " << job->volumes.size()
                           << " hit volumes assembled on the client" << std::endl;
                 job->ready = true;
             }).detach();

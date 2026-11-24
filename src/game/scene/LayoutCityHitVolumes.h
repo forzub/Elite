@@ -7,6 +7,9 @@
 // The client's route planner reads them as the city's obstacles: it gets them from clientLayoutCityHitVolumes(), built
 // on a background thread the first time a city is asked for (nullptr until ready - the planner waits).
 // A city with construction stages (a hub expansion plan) changes its volumes with the stages: those stay replicated.
+// 2026-11-24 (audit SRV-2, made general): the same holds for every HUB KIT MODULE (district / mega prototypes, kit
+// blocks, belt ring / drum / hotel) - its volumes come from its compiled package, which the client has: the district
+// prototype alone was 17 226 boxes = 1.96 MB, the mega 1.07 MB, sent to every player joining Sol (3 MB a join).
 #include <string>
 #include <vector>
 
@@ -22,7 +25,11 @@ namespace game::scene
 void collisionToHitVolumes(ObjectType type, const elite::model_asset::ModelAsset& asset,
                            std::vector<game::damage::HitVolume>& out);
 
-// true: this city's hit volumes are the client's own (a layout city without construction stages)
+// the compiled package of a hub kit module type ("assets/compiled/hub_modules/<folder>/<folder>.elmodel"), empty for
+// other types - the one type -> package table of the server's spawn (GameSceneSetup) and the client
+std::string hubKitPackagePath(ObjectType type);
+
+// true: this object's hit volumes are the client's own (a layout city, or a hub kit module with its package)
 bool layoutCityHitVolumesOnClient(ObjectType type, const std::string& hubId);
 
 // the client's copy (debug-hit-volume form, as the planner reads replicated ones); nullptr while it is being built

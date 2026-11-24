@@ -8411,3 +8411,28 @@ start-up hitches (render), trade step 16 part 3 live.
       newtonian_execution_authority, assisted_layout_flight_matrix, ship_physical_corridor_matrix, ordinary_route_policy,
       assisted_safe_course_recovery, ship_state) fail IDENTICALLY at a1e28cad2 (built in a worktree) - pre-existing
       baseline reds, not from this work; add them to the baseline list.
+
+### Server capacity 2026-11-24 - LOAD TEST REGRESSION FOUND AND PARTLY FIXED
+- Author's question "сколько игроков сервер реально может обрабатывать?". EliteServer --load-test 2-3 (153 player bots,
+  61 systems, every bot a real session with its own wire encoding), build-relwithdebinfo:
+  HEAD before the fix: tick avg 62 ms / p95 82 (budget 20 ms; 2026-11-08: 14.8 / 22.8), physics 16.4 ms, AI / controls
+  11.7, snapshot build 7.4, wire 539 KiB/s per player (11-08: 165), 1253 MB. About 50 players fit one core at 50 Hz.
+- CAUSE 1 (fixed): the activation diagnostics CSV (RuntimeFeatureFlags ActivationShadowDiagnosticsEnabled, on since
+  e35c804bd) re-opened simulation_activation_shadow.csv from every system pass: 10.7 of the physics stage's 13 ms (the
+  activation shadow itself 0.04 ms a call); the file had grown to 273 MB. Now written only with
+  ELITE_DEV_ACTIVATION_CSV=1. After: physics 5.6 ms, tick 48 ms avg / p95 67.
+- CAUSE 2 (fixed, audit SRV-2 made general): every player joining Sol got ~3 MB of debug hit volumes of the hub
+  prototypes (district 17 226 boxes = 1.96 MB, mega 1.07 MB) - the layout-city rule did not cover kit modules. Now every
+  hub kit module (hubKitPackagePath: kit blocks, district / mega prototypes, belt ring / drum / hotel) derives its
+  volumes on the client from the same package with the same collisionToHitVolumes as the server spawn (one type ->
+  package table for both); the load test's "[Wire] snapshot over the limit" lines (153 per run) are gone; a remote
+  bootstrap connects. NOT flown: a route planned next to a prototype (no pads at the prototype hubs).
+- Load test now prints the physics stage split and a sampled wire breakdown (every 40th snapshot of every bot).
+- REMAINING (open): (a) wire 530 KiB/s per player = 33.7 KB a snapshot x 16.7/s: ships 14.4 KB (3.1 ships, ~4.7 KB
+  each - own ship 5.3 KB, known since 11-08), OBJECTS 13.1 KB (21 objects ~620 B each, sent in EVERY snapshot - objects /
+  hubs are full-cadence by design, Stage M7 decimates ships only), hubs 2.4, session 2.3. Objects at a lower cadence
+  needs the client's history interpolation checked for rotating / orbiting hubs first. (b) AI / controls 10.6 ms for
+  1919 simulated ships (153 players + hub dock traffic: with ELITE_DOCK_TRAFFIC=0 there are 155 ships) - content growth,
+  not a regression; dock pilots 3.1 ms. (c) replication ~20 ms per tick for 153 in-process sessions (selection 5.5,
+  snapshot build 6.3, copies 2.8, encode 3.6). (d) the tick is single-threaded; system passes are independent.
+- Bisect against 5b7d83f21 could not run: the old code loads ship meshes under names no longer on disk (ignored assets).

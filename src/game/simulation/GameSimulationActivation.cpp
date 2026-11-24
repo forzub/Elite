@@ -2,6 +2,8 @@
 
 #include "src/game/simulation/GameSimulationInternal.h"
 
+#include <cstdlib>
+
 
 
 void GameSimulation::registerActivationCadenceLabShip(EntityId shipId)
@@ -101,6 +103,12 @@ void GameSimulation::debugLogActivationShadow(double dt)
 {
     using namespace game::simulation::activation;
 
+    static const bool csvOn = [] {
+        const char* v = std::getenv("ELITE_DEV_ACTIVATION_CSV");
+        return v && v[0] == '1';
+    }();
+    if (!csvOn)
+        return;
     m_activationShadowCsvAccumulatorSeconds += std::max(0.0, dt);
     if (m_activationShadowCsvAccumulatorSeconds < 0.25)
         return;

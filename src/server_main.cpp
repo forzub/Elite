@@ -1820,9 +1820,12 @@ private:
         ++m_snapshots;
         m_snapshotShips += s.ships.size();
         encodeAny(s);
-        if (m_breakdownWanted)
+        // every 40th snapshot of every bot: the same breakdown, summed (RESULT wire breakdown)
+        const bool sample = m_snapshots % 40 == 0;
+        if (m_breakdownWanted || sample)
         {
             // what the bytes are: the snapshot encoded with one part removed at a time
+            const bool print = m_breakdownWanted;
             m_breakdownWanted = false;
             const auto size = [this](const SimulationSnapshot& v) {
                 game::network::wire::WireMessageKind kind {};
@@ -1846,6 +1849,17 @@ private:
             c = s;
             c.session = {};
             const std::size_t noSession = size(c);
+            auto& w = wireSample();
+            ++w.count;
+            w.all += all;
+            w.ships += all - noShips;
+            w.shipCount += s.ships.size();
+            w.signals += all - noSignals;
+            w.objects += all - noObjects;
+            w.objectCount += s.objects.size();
+            w.hubs += all - noHubs;
+            w.session += all - noSession;
+            if (print)
             std::cerr << "[LoadTest] snapshot " << all << " B: ships " << s.ships.size() << " = " << all - noShips << " B, signals "
                       << s.signals.size() << " = " << all - noSignals << " B, objects " << s.objects.size() << " = " << all - noObjects
                       << " B, hubs " << s.hubs.size() << " = " << all - noHubs << " B, session = " << all - noSession << " B\n";
@@ -1854,6 +1868,15 @@ private:
 
 public:
     bool m_breakdownWanted = false;
+    struct WireSample
+    {
+        double count = 0, all = 0, ships = 0, shipCount = 0, signals = 0, objects = 0, objectCount = 0, hubs = 0, session = 0;
+    };
+    static WireSample& wireSample()
+    {
+        static WireSample w;
+        return w;
+    }
 
 private:
     template <typename T>
@@ -2191,6 +2214,23 @@ int runLoadTest(int perSystem, double measureSeconds, bool move)
                       1000 * p.simStage[0] / n, 1000 * p.simStage[1] / n, 1000 * p.simStage[2] / n, 1000 * p.simStage[3] / n,
                       1000 * p.simStage[4] / n, 1000 * p.simStage[5] / n, 1000 * p.simStage[6] / n);
         std::cerr << b;
+        std::snprintf(b, sizeof b, "[LoadTest] RESULT physics stage split per tick (ms): gravity context %.3f, nav context 1 %.3f, ship loop %.3f, "
+                    "transfer lab + nav context 2 %.3f, hub lab + dock pilots %.3f, activation shadow %.3f\n",
+                    1000 * p.physicsSub[0] / n, 1000 * p.physicsSub[1] / n, 1000 * p.physicsSub[2] / n,
+                    1000 * p.physicsSub[3] / n, 1000 * p.physicsSub[4] / n, 1000 * p.physicsSub[5] / n);
+        std::cerr << b;
+        {
+            const auto& w = LoadTestTransport::wireSample();
+            if (w.count > 0)
+            {
+                std::snprintf(b, sizeof b,
+                              "[LoadTest] RESULT wire breakdown (%.0f sampled snapshots, mean B): all %.0f = ships %.0f (%.1f ships), "
+                              "signals %.0f, objects %.0f (%.1f objects), hubs %.0f, session %.0f\n",
+                              w.count, w.all / w.count, w.ships / w.count, w.shipCount / w.count, w.signals / w.count,
+                              w.objects / w.count, w.objectCount / w.count, w.hubs / w.count, w.session / w.count);
+                std::cerr << b;
+            }
+        }
         std::snprintf(b, sizeof b, "[LoadTest] RESULT snapshot build per tick (ms): ship/object DTOs %.3f, session data %.3f, canonical merge %.3f\n",
                       1000 * p.snapshotParts[0] / n, 1000 * p.snapshotParts[1] / n, 1000 * p.snapshotParts[2] / n);
         std::cerr << b;

@@ -21,6 +21,9 @@ struct ServerTickProfile
     // GameSimulation::update stages, summed over the system passes: 0 ship maintenance, 1 hubs,
     // 2 hub frames + free flight, 3 static objects, 4 AI / controls, 5 physics, 6 signals / radar
     double simStage[7] {};
+    // the physics stage split (DEV load test): 0 gravity context rebuild, 1 navigation context #1, 2 ship loop,
+    // 3 transfer lab + navigation context #2, 4 hub lab + dock pilots, 5 activation shadow, 6 the rest of the stage
+    double physicsSub[7] {};
     long long systemPasses = 0;       // summed system passes (the DEV [SimPerf] average per tick)
     long long simulatedShips = 0;     // summed ships of all passes
     // snapshot build: 0 simulation DTOs, 1 session data, 2 canonical merge

@@ -274,7 +274,11 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
                         elite::model_asset::assembleHubCityCollision(hub.id, "assets/compiled/hub_modules", cityCollision)
                     ? &cityCollision
                     : nullptr;
-            if (packageHitVolumes(type, city ? "layout:" + hub.id : "assets/compiled/hub_modules/" + folder + "/" + folder + ".elmodel",
+            // a kit module's package: the one type -> package table the client also derives its volumes from
+            const std::string package = game::scene::hubKitPackagePath(type);
+            if (packageHitVolumes(type, city ? "layout:" + hub.id
+                                             : !package.empty() ? package
+                                                                : "assets/compiled/hub_modules/" + folder + "/" + folder + ".elmodel",
                                   volumes, city))
                 sim.setStaticObjectPackageHitVolumes(id, std::move(volumes));
         }

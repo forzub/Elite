@@ -8549,3 +8549,19 @@ start-up hitches (render), trade step 16 part 3 live.
 - PLAN-5: the grid footprint covers the inflated box corner (|h| + inflation x sqrt 3; was |h| + inflation - 1688 of
   200k segments missed a corner case). RouteDraftLab gridcheck 80 000 segments, 0 mismatches. Docking hub_hex_dock_a
   after both: route clear of 3477 obstacles, captured by the station at P2, 0 contacts.
+- PLAN-1 (execution side): a lane chain piece no longer flies at its slowest part - every volume section carries its
+  own limit (CompiledNavigationVolumeSection::maxSpeedMps: its lane's / its junction's), the composer gives each curve
+  piece the limit of the sections at its ends, the gates follow, the handoff into a stage takes its FIRST section's
+  limit; the stage limit = its fastest part. So the chain cost (lane / junction metres at their own speeds) and the flight
+  agree on the speeds (accel / decel and the 0.8 x max cruise cap still not in the cost). DEV A/B
+  ELITE_DEV_LANE_PIECE_MIN=1 (the old rule). navsuite A/B: the first legs 179-181 vs 184-190 s (within this scenario's
+  175-185 s spread - its chains have no 30 m/s junction; no gain shown here), 0 collisions either way.
+- PLAN-3: (a) the planning-time history takes FULL adopted plans only (not a rebind, a failure, a cancel); (b) the start
+  lead's "flight while planning" term applies to the ship's own start leg only (coversPlanningFlight: false for the legs
+  after a lane exit, the final leg, chooseRoute's exitMinimumMeters). Navigation ctest 66: 57 / 9 baseline reds;
+  check_navigation_route_boundaries + check_automatic_docking green; B4-11 184 s, 0 collisions.
+- FOUND, OPEN (pre-existing): pad-to-pad flights in the hub (navsuite pad_series req 2-4) fail - old rule: emergency stop
+  "no proven safe course"; new: "continuous optimizer did not reach a feasible path" x5; navsuite_reflex2 (before today)
+  had them NOT REACHED too.
+- PLAN-2: NOT CHANGED - the author's decision (does "everything by time" of 2026-11-24 replace the 2026-11-22 rule that
+  green lanes win over free space in a hub for safety? In seconds mode FreeInHubFactor applies nowhere).

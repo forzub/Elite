@@ -45,6 +45,10 @@ struct CompiledNavigationVolumeSection
     double radiusMeters = 0.0;
     double halfWidthMeters = 0.0;
     double halfHeightMeters = 0.0;
+    // this section's own speed limit (0: the stage's) - a lane chain of corridors and junctions is ONE stage, and each
+    // part keeps its own limit (audit PLAN-1: the whole piece flew at its slowest junction's 30 m/s - 3.7x the time
+    // the chain choice estimated)
+    double maxSpeedMps = 0.0;
 };
 
 struct CompiledMandatoryTangentStraight

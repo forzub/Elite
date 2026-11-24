@@ -438,6 +438,7 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     {
         std::vector<glm::dvec3> points;
         std::vector<double> radii;
+        std::vector<double> speeds;   // each point's own limit (its lane's / its junction's)
         double speed = Inf;
         std::string from, to, ids;
     };
@@ -447,27 +448,30 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         const std::size_t g = s / 2;
         const std::size_t l = laneOf(g);
         const std::size_t k = g - sbase[l];
-        const auto addPoint = [&](Piece& piece, const glm::dvec3& p, double radius) {
+        const auto addPoint = [&](Piece& piece, const glm::dvec3& p, double radius, double speed) {
             if (piece.points.empty() || glm::length(piece.points.back() - p) > 1.0e-6)
             {
                 piece.points.push_back(p);
                 piece.radii.push_back(radius);
+                piece.speeds.push_back(speed);
             }
+            else
+                piece.speeds.back() = std::min(piece.speeds.back(), speed);   // a shared point: the slower of the two
         };
         if (edge == EdgeFromShip || edge == EdgeTransfer)
         {
             pieces.emplace_back();
             pieces.back().from = m_lanes[l].id + "@" + std::to_string(k);
             pieces.back().ids = m_lanes[l].id;
-            addPoint(pieces.back(), P[l][k], m_lanes[l].radiusMeters);
+            addPoint(pieces.back(), P[l][k], m_lanes[l].radiusMeters, m_lanes[l].maxSpeedMps);
         }
         else if (edge == EdgeLane)
-            addPoint(pieces.back(), P[l][k], m_lanes[l].radiusMeters);
+            addPoint(pieces.back(), P[l][k], m_lanes[l].radiusMeters, m_lanes[l].maxSpeedMps);
         else if (edge >= 0)
         {
             const auto& cn = m_connectors[static_cast<std::size_t>(edge)];
             for (const auto& p : C[static_cast<std::size_t>(edge)])
-                addPoint(pieces.back(), p, cn.radiusMeters);
+                addPoint(pieces.back(), p, cn.radiusMeters, cn.maxSpeedMps);
             pieces.back().speed = std::min(pieces.back().speed, cn.maxSpeedMps);
             pieces.back().ids += " > " + cn.id + " > " + m_lanes[l].id;
         }
@@ -496,7 +500,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         stage.toWorldMeters = piece.points.back();
         stage.volumeConstraint.volumeId = piece.from + ">" + piece.to;
         stage.volumeConstraint.policy = world::navigation::NavigationVolumePolicy::PreferInside;
-        stage.volumeConstraint.maxSpeedMps = piece.speed;
+        // the stage's limit = its fastest part (each section keeps its own below; PLAN-1)
+        stage.volumeConstraint.maxSpeedMps = *std::max_element(piece.speeds.begin(), piece.speeds.end());
         for (std::size_t i = 0; i < n; ++i)
         {
             CompiledNavigationVolumeSection section;
@@ -506,6 +511,12 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             section.upWorld = glm::length(u) > 1.0e-6 ? glm::normalize(u) : glm::dvec3(0.0, 1.0, 0.0);
             section.crossSection = world::navigation::NavigationCrossSectionKind::Circle;
             section.radiusMeters = piece.radii[i];
+            // DEV A/B ELITE_DEV_LANE_PIECE_MIN=1: the old rule (every section at the piece's slowest)
+            static const bool pieceMin = [] {
+                const char* v = std::getenv("ELITE_DEV_LANE_PIECE_MIN");
+                return v && v[0] == '1';
+            }();
+            section.maxSpeedMps = pieceMin ? piece.speed : piece.speeds[i];
             stage.volumeSections.push_back(section);
             if (i > 0 && i + 1 < n)
                 stage.requiredCenterlineMeters.push_back(piece.points[i]);

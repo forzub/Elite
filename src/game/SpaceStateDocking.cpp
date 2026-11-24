@@ -64,7 +64,10 @@ void runDockAdviceWorker(
 
         std::cerr << "[DockWorker] request=" << compileRequestSerial << " finished ms=" << job->workerDurationMs
                   << std::endl;
-        game::navigation::OrdinaryRoutePolicy::notePlanSeconds(job->workerDurationMs / 1000.0);
+        // the planning-time history (the start lead's flight while planning): a FULL plan that was adopted-ready only -
+        // not a rebind (0.1-0.6 s), a failure, a cancel (audit PLAN-3: [12, 0.3, 12, 0.3, 12] made the lead jump 8..18 s)
+        if (!job->entryRebind && job->plan.valid() && !job->cancelled.load(std::memory_order_acquire))
+            game::navigation::OrdinaryRoutePolicy::notePlanSeconds(job->workerDurationMs / 1000.0);
         job->ready.store(
             true,
             std::memory_order_release

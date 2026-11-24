@@ -41,10 +41,10 @@ HubLaneNetwork::FreeLegModel freeLegModelFor(const planner::RoutePlanRequest& re
         request.assistedCompactStartLead
             ? Policy::requiredAssistedStartLeadMeters(laneHandoffSpeedMps, geometrySpeed, request.brakingMps2,
                                                       request.lateralMps2, request.maxAngularVelocityRadPerSecond,
-                                                      request.vehicleLengthMeters)
+                                                      request.vehicleLengthMeters, false)
             : Policy::requiredStartLeadMeters(laneHandoffSpeedMps, geometrySpeed, request.brakingMps2,
                                               request.lateralMps2, request.maxAngularVelocityRadPerSecond,
-                                              request.vehicleLengthMeters);
+                                              request.vehicleLengthMeters, false);
     model.exitMinimumMeters =
         SegmentedRouteComposer::ReleaseProtectedStraightMeters + lead +
         Policy::requiredDockingAxisMinimumMeters(request.terminalReferenceDistanceMeters, request.vehicleLengthMeters);

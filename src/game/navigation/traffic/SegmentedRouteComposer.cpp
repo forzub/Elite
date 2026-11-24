@@ -272,6 +272,21 @@ double appendMandatoryBlock(
         }
     }
 
+    // each piece of the curve at the limit of the sections it runs between (PLAN-1): a lane's corridor at its own speed,
+    // a junction at its own - not the whole chain at the slowest; the speed profile brakes ahead of a slower part
+    const auto sectionSpeedNear = [&](const glm::dvec3& p) {
+        double best = 1.0e30, speed = 0.0;
+        for (const auto& section : stage.volumeSections)
+        {
+            const double d = glm::length(section.centerWorldMeters - p);
+            if (d < best)
+            {
+                best = d;
+                speed = section.maxSpeedMps;
+            }
+        }
+        return speed;
+    };
     double composedMeters = 0.0;
     for (const auto& prim : prims)
     {
@@ -280,6 +295,12 @@ double appendMandatoryBlock(
         curve.startMeters = prim.a;
         curve.endMeters = prim.b;
         curve.maxSpeedMps = stageSpeed;
+        {
+            const double a = sectionSpeedNear(prim.a), b = sectionSpeedNear(prim.b);
+            const double part = a > 0.0 && b > 0.0 ? std::min(a, b) : std::max(a, b);
+            if (part > 0.0)
+                curve.maxSpeedMps = game::navigation::OrdinaryRoutePolicy::stageSpeedLimitMps(base.maxSpeedMps, part);
+        }
         double length = glm::length(prim.b - prim.a);
         if (prim.arc)
         {
@@ -312,14 +333,14 @@ double appendMandatoryBlock(
             gate.positionMeters = j == subdivisions ? prim.b : curve.positionAtParameter(t);
             const glm::dvec3 tangent = curve.derivativeAtParameter(t);
             gate.forward = glm::length(tangent) > 1.0e-12 ? glm::normalize(tangent) : curve.endForward;
-            gate.speedMps = stageSpeed;
+            gate.speedMps = curve.maxSpeedMps;   // this part's own limit (PLAN-1)
             appendUniqueGate(out.executionGates, gate);
         }
 
         planner::RouteGate sparse;
         sparse.positionMeters = prim.b;
         sparse.forward = curve.endForward;
-        sparse.speedMps = stageSpeed;
+        sparse.speedMps = curve.maxSpeedMps;
         appendUniqueGate(out.gates, sparse);
     }
     return std::max(0.0, polylineLength(points) - composedMeters);
@@ -663,11 +684,16 @@ static planner::RoutePlan composeOnce(
                 ? outboundBoundary->endWorldMeters
                 : stage.toWorldMeters;
 
+        // the handoff into the stage at its FIRST section's limit (a stage's limit is its fastest part now - PLAN-1)
+        const double entrySectionSpeed =
+            !stage.volumeSections.empty() && stage.volumeSections.front().maxSpeedMps > 0.0
+                ? stage.volumeSections.front().maxSpeedMps
+                : stage.volumeConstraint.maxSpeedMps;
         const double handoffSpeed =
             game::navigation::OrdinaryRoutePolicy::
                 stageSpeedLimitMps(
                     terminalRequest.maxSpeedMps,
-                    stage.volumeConstraint.maxSpeedMps
+                    entrySectionSpeed
                 );
 
         legRequest.startMeters = currentStart;
@@ -679,6 +705,8 @@ static planner::RoutePlan composeOnce(
         legRequest.terminalSpeedMps = std::min(handoffSpeed, legRequest.maxSpeedMps);
         legRequest.hasInitialForward = currentHasForward;
         legRequest.initialForward = currentForward;
+        // the first leg starts at the ship: it is flown while the plan is computed; a leg after a lane exit is not (PLAN-3)
+        const bool shipStartLeg = glm::length(currentStart - terminalRequest.startMeters) < 1.0e-6;
         legRequest.initialForwardLeadMeters =
             currentHasForward
                 ? (legRequest.assistedCompactStartLead
@@ -690,7 +718,7 @@ static planner::RoutePlan composeOnce(
                           legRequest.lateralMps2,
                           legRequest.maxAngularVelocityRadPerSecond,
                           legRequest.vehicleLengthMeters
-                      )
+                      , shipStartLeg)
                   : game::navigation::OrdinaryRoutePolicy::
                       requiredStartLeadMeters(
                           currentSpeed,
@@ -699,7 +727,7 @@ static planner::RoutePlan composeOnce(
                           legRequest.lateralMps2,
                           legRequest.maxAngularVelocityRadPerSecond,
                           legRequest.vehicleLengthMeters
-                      ))
+                      , shipStartLeg))
                 : 0.0;
         legRequest.requiredViaPointsMeters.clear();
         legRequest.mandatoryTangentStraights.clear();
@@ -953,7 +981,7 @@ static planner::RoutePlan composeOnce(
                       finalRequest.lateralMps2,
                       finalRequest.maxAngularVelocityRadPerSecond,
                       finalRequest.vehicleLengthMeters
-                  )
+                  , false)
               : game::navigation::OrdinaryRoutePolicy::
                   requiredStartLeadMeters(
                       currentSpeed,
@@ -962,7 +990,7 @@ static planner::RoutePlan composeOnce(
                       finalRequest.lateralMps2,
                       finalRequest.maxAngularVelocityRadPerSecond,
                       finalRequest.vehicleLengthMeters
-                  ))
+                  , false))
             : 0.0;
 
     // The authored mandatory release already guarantees that the whole craft

@@ -75,7 +75,8 @@ public:
         double lateralAccelerationMps2,
         double maxAngularVelocityRadPerSec,
         double vehicleLengthMeters
-    ) noexcept
+    ,
+        bool coversPlanningFlight = true) noexcept
     {
         const double speed =
             std::max(0.0, finiteOrZero(initialSpeedMps));
@@ -119,7 +120,9 @@ public:
         return std::max({
             baseLead,
             2.0 * (brakingDistance + designTurnRadius),
-            speed * planningFlightSeconds()
+            // the flight while the plan is computed - the SHIP'S OWN start only (PLAN-3: the legs after a lane exit and the
+            // final leg are not flown while planning; their lead followed the machine's last plan times)
+            coversPlanningFlight ? speed * planningFlightSeconds() : 0.0
         });
     }
 
@@ -136,7 +139,8 @@ public:
         double lateralAccelerationMps2,
         double maxAngularVelocityRadPerSec,
         double vehicleLengthMeters
-    ) noexcept
+    ,
+        bool coversPlanningFlight = true) noexcept
     {
         const double legacy =
             requiredStartLeadMeters(
@@ -145,7 +149,8 @@ public:
                 brakingAccelerationMps2,
                 lateralAccelerationMps2,
                 maxAngularVelocityRadPerSec,
-                vehicleLengthMeters
+                vehicleLengthMeters,
+                coversPlanningFlight
             );
         const double minimum =
             std::max(1000.0, std::max(0.0, vehicleLengthMeters) * 10.0);
@@ -155,7 +160,8 @@ public:
         if (initialSpeedMps < 8.0)
             return std::max(30.0, 3.0 * std::max(0.0, vehicleLengthMeters));
         // Legacy = max(minimum, 2*(D_brake+R_turn)); never shorter than the flight while the plan is computed
-        return std::max({minimum, 0.5 * legacy, std::max(0.0, finiteOrZero(initialSpeedMps)) * planningFlightSeconds()});
+        return std::max({minimum, 0.5 * legacy,
+                         coversPlanningFlight ? std::max(0.0, finiteOrZero(initialSpeedMps)) * planningFlightSeconds() : 0.0});
     }
 
     // The required ballistic/turn lead is a flight envelope, not always a

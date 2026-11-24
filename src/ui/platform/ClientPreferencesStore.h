@@ -21,6 +21,7 @@ struct ClientPreferences
     std::string coordinateDisplayFormatId = "hierarchical";
     std::string celestialRenderStyleId = "modern";
     bool capsuleSurvivalEnabled = false;   // difficulty layer (ClientModeState)
+    std::string collisionAssistMode = "assist";   // difficulty layer (ClientModeState): off | warn | assist
 
     // Temporary developer selection of the six fixed ordinary-flight
     // constructions. Empty means "use the descriptor default".

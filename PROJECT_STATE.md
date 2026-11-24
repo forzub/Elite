@@ -8309,3 +8309,17 @@ start-up hitches (render), trade step 16 part 3 live.
       cheaper, not time) - open, the author's balance rule («не лететь вниз в зелёную зону») to be weighed.
     - the in-city free-leg 40 m/s cap only AMONG the buildings (an obstacle within 300 m of the start, was 1.5 km: a ship
       over the roofs after a pad change crawled 9 km at 40 m/s, eta 225 s).
+  * 2026-11-24 LANE CHAIN BY TIME (author: «все выбираем по времени - минимальное время»): HubLaneNetwork::chooseRoute
+    costs seconds - free legs at the route cruise, lanes / connectors at their own limits, the join approach at the mean,
+    the pad service by its 150 m/s / 8 m/s2 law (ELITE_LANE_CHAIN_COST=metres = the old weighted metres); hard rules kept
+    (joins from open sky, no cut through a tube); the lane search's segment checks on NavigationObstacleGrid.
+    LIVE remote in-flight replans: ahead 167 s (167), far 106 (139 / 255 with metres), side 88 (141); plans 0.28-0.84 s,
+    0 collisions, cross 5 / 12-16 m. OPEN: search_ms 0.5-1.0 s (was 0.35) - to profile.
+  * 2026-11-24 COLLISION ASSIST IN MANUAL FLIGHT (author: «уклонение - третий вариант» = by the difficulty): settings
+    DIFFICULTY: COLLISION ASSIST = assist (default) / warn / off (ClientModeState::collisionAssistMode, prefs key
+    difficulty_collision_assist, main menu select, 5 locales); SpaceState::applyManualCollisionAssist over the pilot's
+    own controls: the same radar control-program reflex with the urgency window; warn = HUD warning only; assist = the
+    program holds the stick for the manoeuvre (HUD notice), a sharp pilot input (full deflection / translation) hands
+    it back for 3 s. DEV ELITE_DEV_COLLISION_ASSIST. LIVE (pilot took over, head-on rammer 120 m/s): off 32 m centres,
+    warn 2 warnings 32 m, assist 72 m. DEV rammer: no radar track -> the enemy's world velocity (free flight).
+    FORMATION re-checked (fm2): joined a lane ship 1.9 km out, round behind it, held the wedge slot at 3 m, 0 collisions.

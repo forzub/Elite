@@ -2,8 +2,11 @@
 
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
+#include "src/world/navigation/NavigationObstacleGrid.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <string>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
@@ -153,10 +156,15 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     const auto searchStart = std::chrono::steady_clock::now();
     // a straight free piece clear of the buildings and the red zones (the hull + 10 m); no obstacle list = not checked
     int blockedLegs = 0;
+    // the obstacle grid (NavigationObstacleGrid.h): the same test, only the obstacles of the segment's cells; the
+    // inflation hull + 10 m is the grid's agent radius (both are added the same way)
+    world::navigation::NavigationObstacleGrid grid;
+    if (obstacles && !obstacles->empty())
+        grid.build(*obstacles, agentRadiusMeters + 10.0);
     const auto clear = [&](const glm::dvec3& a, const glm::dvec3& b) {
         if (!obstacles || obstacles->empty())
             return true;
-        const bool ok = world::navigation::segmentClearOfNavigationObstacles(a, b, *obstacles, agentRadiusMeters, 10.0);
+        const bool ok = grid.segmentClear(a, b);
         blockedLegs += ok ? 0 : 1;
         return ok;
     };
@@ -244,6 +252,25 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         const double la = glm::length(a), lb = glm::length(b);
         return la < 1.0e-9 || lb < 1.0e-9 ? 0.0 : std::acos(std::clamp(glm::dot(a, b) / (la * lb), -1.0, 1.0));
     };
+    // THE COST UNIT (HubLaneNetwork.h): seconds, or the old weighted metres
+    static const bool metres = [] {
+        const char* v = std::getenv("ELITE_LANE_CHAIN_COST");
+        return v && std::string(v) == "metres";
+    }();
+    const double vFree = std::max(5.0, freeLegs.freeSpeedMps);
+    const auto freeTime = [&](double m) { return metres ? m : m / vFree; };
+    const auto laneTime = [&](double m, double v) { return metres ? LaneCostFactor * m : m / std::max(1.0, v); };
+    // the join approach: braking from the cruise to the lane's speed
+    const auto approachTime = [&](double m, double vLane) {
+        return metres ? m : m / std::max(1.0, 0.5 * (vFree + std::min(vFree, vLane)));
+    };
+    const auto serviceTime = [&](double m) {
+        if (metres)
+            return (obstacles && !obstacles->empty() ? FreeInHubFactor : 1.0) * m;
+        const double accelRun = PadServiceCruiseMps * PadServiceCruiseMps / PadServiceAccelMps2;   // up + down
+        return m > accelRun ? m / PadServiceCruiseMps + PadServiceCruiseMps / PadServiceAccelMps2
+                            : 2.0 * std::sqrt(m / PadServiceAccelMps2);
+    };
     // the ship's own start: its committed heading flown for the start lead first
     const bool hasHeading = glm::length(initialForward) > 1.0e-9;
     const glm::dvec3 heading = hasHeading ? glm::normalize(initialForward) : glm::dvec3(0.0);
@@ -263,6 +290,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             return Inf;
         // in a hub (its obstacles given) a free metre costs FreeInHubFactor: the green lanes win (author 2026-11-22:
         // «игнорирование зелёных зон» - a clear straight over the city was as cheap as any lane chain)
+        if (!metres)
+            return freeTime(glm::length(d) + TurnPenaltyMeters * turn);
         const double freeFactor = obstacles && !obstacles->empty() ? FreeInHubFactor : 1.0;
         return freeFactor * glm::length(d) + TurnPenaltyMeters * turn;
     };
@@ -271,7 +300,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     const glm::dvec3 goalDirection = goalHasDirection ? glm::normalize(goalArriveForward) : glm::dvec3(0.0);
     const glm::dvec3 goalApproach = goalWorld - goalDirection * (goalHasDirection ? freeLegs.joinApproachMeters : 0.0);
     const double goalApproachLength = goalHasDirection ? freeLegs.joinApproachMeters : 0.0;
-    const double direct = leadLength + freeLeg(leadEnd, heading, goalApproach, goalDirection) + goalApproachLength;
+    const double direct = freeTime(leadLength) + freeLeg(leadEnd, heading, goalApproach, goalDirection) +
+                          approachTime(goalApproachLength, 30.0);
     // a goal reached by a service (a city pad): the lanes only - in the hub the green lanes come before open space
     // (author 2026-11-22: «на территории хаба зелёная зона приоритетнее пустого пространства из соображений
     // безопасности»; the clear straight over the roofs beat every lane chain and was never feasible)
@@ -279,8 +309,7 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     // leg fits it (the service flies it, not the planner) - balanced against the lane chains (author 2026-11-22: «надо
     // иметь баланс»)
     if (freeLegs.goalByService && freeLegs.serviceDirect)
-        relax(goal, (obstacles && !obstacles->empty() ? FreeInHubFactor : 1.0) * glm::length(goalWorld - shipWorld), count,
-              EdgeFromShip);
+        relax(goal, serviceTime(glm::length(goalWorld - shipWorld)), count, EdgeFromShip);
     else   // the planner flies the straight way itself: its own free-leg cost (Inf when it has no room)
     {
         // ... and in a city it never cuts through a lane's tube (author 2026-11-22: «пролетает сквозь тоннели. Это не
@@ -310,7 +339,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
             }
         }
         if (!cutsTube)
-            relax(goal, std::isfinite(direct) ? direct : glm::length(goalWorld - shipWorld) + 1.0e6, count, EdgeFromShip);
+            relax(goal, std::isfinite(direct) ? direct : freeTime(glm::length(goalWorld - shipWorld)) + 1.0e6, count,
+                  EdgeFromShip);
     }
     int entriesOk = 0, exitsTried = 0, exitsOk = 0;
     for (std::size_t l = 0; l < laneCount; ++l)
@@ -320,8 +350,10 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
                 const double c = joinClear[l][k] ? freeLeg(leadEnd, heading, joinApproachAt(l, k), F[l][k]) : Inf;
                 entriesOk += std::isfinite(c) ? 1 : 0;
                 if (std::isfinite(c))
-                    relax(state(l, k, 0), leadLength + c + freeLegs.joinApproachMeters + JoinStraightMeters, count,
-                          EdgeFromShip);
+                    relax(state(l, k, 0),
+                          freeTime(leadLength) + c + approachTime(freeLegs.joinApproachMeters, m_lanes[l].maxSpeedMps) +
+                              laneTime(JoinStraightMeters, m_lanes[l].maxSpeedMps),
+                          count, EdgeFromShip);
             }
     while (!open.empty())
     {
@@ -335,13 +367,15 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         const std::size_t k = g - sbase[l];
         const std::size_t n = P[l].size();
         if (k + 1 < n)
-            relax(state(l, k + 1, 1), d + LaneCostFactor * glm::length(P[l][k + 1] - P[l][k]), s, EdgeLane);
+            relax(state(l, k + 1, 1), d + laneTime(glm::length(P[l][k + 1] - P[l][k]), m_lanes[l].maxSpeedMps), s,
+                  EdgeLane);
         if (!ridden)
             continue;
         for (const std::size_t c : outgoing[g])
         {
             const auto& cn = m_connectors[c];
-            relax(state(cn.toLane, cn.toStation, 1), d + LaneCostFactor * cn.lengthMeters, s, static_cast<int>(c));
+            relax(state(cn.toLane, cn.toStation, 1), d + laneTime(cn.lengthMeters, cn.maxSpeedMps), s,
+                  static_cast<int>(c));
         }
         // leave at this station (any station it rode to; the lane's end beyond the rim included): for the goal, or a
         // transfer (open sky) into another lane at any of its stations
@@ -351,14 +385,16 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         // a goal reached by a service (a pad): the route stops at this station; the rest costs its straight distance
         // (the service flies it over the roofs) - so the exit nearest the pad wins
         const double exitLeg = freeLegs.goalByService
-                                   ? FreeInHubFactor * glm::length(goalWorld - P[l][k])
+                                   ? serviceTime(glm::length(goalWorld - P[l][k]))
                                    : glm::length(goalWorld - out0) < freeLegs.exitMinimumMeters || !clear(P[l][k], out0)
                                    ? Inf
                                    : freeLeg(out0, F[l][k], goalApproach, goalDirection);
         ++exitsTried;
         exitsOk += std::isfinite(exitLeg) ? 1 : 0;
         if (std::isfinite(exitLeg))
-            relax(goal, d + LeaveStraightMeters + exitLeg + goalApproachLength, s, EdgeExit);
+            relax(goal, d + laneTime(LeaveStraightMeters, m_lanes[l].maxSpeedMps) + exitLeg +
+                            approachTime(goalApproachLength, 30.0),
+                  s, EdgeExit);
         if (k + 1 != n)
             continue;   // a transfer to another lane: from this lane's end only (from every station it froze the game)
         for (std::size_t m = 0; m < laneCount; ++m)
@@ -371,7 +407,10 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
                     continue;
                 const double hop = freeLeg(out0, F[l][k], joinApproachAt(m, j), F[m][j]);
                 if (std::isfinite(hop))
-                    relax(state(m, j, 0), d + LeaveStraightMeters + hop + freeLegs.joinApproachMeters + JoinStraightMeters,
+                    relax(state(m, j, 0),
+                          d + laneTime(LeaveStraightMeters, m_lanes[l].maxSpeedMps) + hop +
+                              approachTime(freeLegs.joinApproachMeters, m_lanes[m].maxSpeedMps) +
+                              laneTime(JoinStraightMeters, m_lanes[m].maxSpeedMps),
                           s, EdgeTransfer);
             }
         }

@@ -282,6 +282,34 @@
       "es": "Tras perder la nave mantienes viva la cápsula hasta el rescate: aire, CO2, energía, reparaciones. Desactivado: solo se espera.",
       "ja": "艦を失った後、救助が来るまで脱出カプセルを維持する：空気・CO2・電力・修理。オフでは待つだけ。"
     },
+    "main.settings.collision_assist": {
+      "en": "DIFFICULTY: COLLISION ASSIST",
+      "ru": "СЛОЖНОСТЬ: ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ",
+      "zh-Hans": "难度：防撞辅助",
+      "es": "DIFICULTAD: ASISTENCIA ANTICOLISIÓN",
+      "ja": "難易度：衝突回避アシスト"
+    },
+    "main.settings.collision_assist_assist": {
+      "en": "TAKES THE STICK WHEN A HIT IS UNAVOIDABLE",
+      "ru": "БЕРЁТ УПРАВЛЕНИЕ, КОГДА УДАРА НЕ ИЗБЕЖАТЬ",
+      "zh-Hans": "无法避免碰撞时接管",
+      "es": "TOMA EL MANDO SI EL CHOQUE ES INEVITABLE",
+      "ja": "衝突が避けられない時に操縦を代行"
+    },
+    "main.settings.collision_assist_warn": {
+      "en": "WARNING ONLY",
+      "ru": "ТОЛЬКО ПРЕДУПРЕЖДЕНИЕ",
+      "zh-Hans": "仅警告",
+      "es": "SOLO AVISO",
+      "ja": "警告のみ"
+    },
+    "main.settings.collision_assist_help": {
+      "en": "While you fly by hand the radar watches for ships and debris on a collision course. Assist: the reflex dodges for you only when the hit cannot otherwise be avoided, and a sharp stick input hands control back. Warning: it only warns (hard realism).",
+      "ru": "Пока вы летите вручную, радар следит за кораблями и обломками на встречном курсе. Помощь: рефлекс уклоняется за вас, только когда иначе удара не избежать; резкое движение ручкой возвращает управление. Предупреждение: только сигнал (жёсткий реализм).",
+      "zh-Hans": "手动飞行时雷达监视碰撞航线上的舰船和碎片。辅助：仅在无法避免碰撞时代为规避，猛推操纵杆即可收回控制。警告：只发出警报（硬核写实）。",
+      "es": "Mientras pilotas a mano, el radar vigila naves y restos en rumbo de colisión. Asistencia: el reflejo esquiva por ti solo cuando el choque no puede evitarse de otro modo; un movimiento brusco del mando te devuelve el control. Aviso: solo avisa (realismo duro).",
+      "ja": "手動飛行中、レーダーが衝突コースの艦や破片を監視する。アシスト：他に衝突を避けられない時だけ反射が回避し、操縦桿を強く動かすと操縦が戻る。警告：警告のみ（ハードリアリズム）。"
+    },
     "main.settings.on": {"en": "ON", "ru": "ВКЛ", "zh-Hans": "开", "es": "SÍ", "ja": "オン"},
     "main.settings.off": {"en": "OFF", "ru": "ВЫКЛ", "zh-Hans": "关", "es": "NO", "ja": "オフ"}
   }

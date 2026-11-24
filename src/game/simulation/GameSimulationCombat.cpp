@@ -1066,7 +1066,11 @@ void GameSimulation::devCombatStep(double dt)
         const glm::dvec3 pd = world::coordinates::fullMeters(tr.worldPosition);
         const glm::dvec3 pp = world::coordinates::fullMeters(enemy->core().transform().worldPosition);
         const auto trackP = m_combatTracks.find(m_combatHostility.count(id) ? m_combatHostility[id] : EntityId {});
-        const glm::dvec3 vp = trackP != m_combatTracks.end() && trackP->second.valid ? trackP->second.velocityW : glm::dvec3(0.0);
+        // no radar track yet (free flight): the enemy's own world velocity - 0 against a 7.9 km/s orbit left the DEV rammer
+        // behind for good (manual-flight assist test, 2026-11-24)
+        const glm::dvec3 vp = trackP != m_combatTracks.end() && trackP->second.valid
+                                  ? trackP->second.velocityW
+                                  : enemy->core().transform().motion.worldVelocityMps;
         const glm::dvec3 to = pp - pd;
         const double dist = glm::length(to);
         if (dist < 1.0)

@@ -1542,9 +1542,13 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
         if (!virtualPilot)
         {
-            m_playerControl = sampled;
+            // the collision assist (by the difficulty setting): a warning, or the reflex takes the stick only when a
+            // touch is otherwise unavoidable
+            m_playerControl = applyManualCollisionAssist(sampled, m_client->lastSimulationMetadata().universeTimeSeconds);
             m_client->submitInput(m_playerControl);
         }
+        else
+            m_manualReflex.reset();
         const bool touching = sampled.pitchInput != 0.0f || sampled.yawInput != 0.0f || sampled.rollInput != 0.0f ||
                               sampled.strafeInput != 0.0f || sampled.liftInput != 0.0f || sampled.forwardInput != 0.0f ||
                               sampled.targetSpeedRate != 0.0f || sampled.assistedMaxSpeedCommand ||

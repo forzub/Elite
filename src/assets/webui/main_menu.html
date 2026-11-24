@@ -239,6 +239,15 @@
             </select>
             <div class="elite-field-help" data-i18n="main.settings.capsule_survival_help">After the ship is lost you keep the escape capsule alive until rescue arrives: air, CO2, power, repairs. Off: the wait is just waited out.</div>
           </div>
+          <div class="elite-field">
+            <label class="elite-field-label" for="collision-assist" data-i18n="main.settings.collision_assist">DIFFICULTY: COLLISION ASSIST</label>
+            <select class="elite-select" id="collision-assist" onchange="selectCollisionAssist(this.value)">
+              <option value="assist" data-i18n="main.settings.collision_assist_assist">TAKES THE STICK WHEN A HIT IS UNAVOIDABLE</option>
+              <option value="warn" data-i18n="main.settings.collision_assist_warn">WARNING ONLY</option>
+              <option value="off" data-i18n="main.settings.off">OFF</option>
+            </select>
+            <div class="elite-field-help" data-i18n="main.settings.collision_assist_help">While you fly by hand the radar watches for ships and debris on a collision course. Assist: the reflex dodges for you only when the hit cannot otherwise be avoided, and a sharp stick input hands control back. Warning: it only warns (hard realism).</div>
+          </div>
           <div class="elite-button-row">
             <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="window.EliteUiKit.closeDialog('#settings-dialog')">BACK</button>
           </div>
@@ -348,6 +357,8 @@
         document.getElementById('celestial-style').value = next.celestialStyle;
       if (typeof next.capsuleSurvival === 'boolean')
         document.getElementById('capsule-survival').value = next.capsuleSurvival ? 'on' : 'off';
+      if (typeof next.collisionAssist === 'string')
+        document.getElementById('collision-assist').value = next.collisionAssist;
       populateLocaleSelect('registration-locale', next.locales, next.locale);
       populateLocaleSelect('account-locale', next.locales, next.locale);
 
@@ -394,7 +405,13 @@
         document.getElementById('celestial-style').value = currentState.celestialStyle;
       if (typeof currentState.capsuleSurvival === 'boolean')
         document.getElementById('capsule-survival').value = currentState.capsuleSurvival ? 'on' : 'off';
+      if (typeof currentState.collisionAssist === 'string')
+        document.getElementById('collision-assist').value = currentState.collisionAssist;
       window.EliteUiKit.showDialog(dialog);
+    }
+
+    function selectCollisionAssist(value) {
+      if (value === 'off' || value === 'warn' || value === 'assist') sendCommand('set_collision_assist|' + value);
     }
 
     function selectCapsuleSurvival(value) {

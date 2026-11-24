@@ -575,6 +575,9 @@ void Application::init()
         (void)m_clientModeState.setCapsuleSurvivalEnabled(
             m_clientPreferences.capsuleSurvivalEnabled
         );
+        (void)m_clientModeState.setCollisionAssistMode(
+            m_clientPreferences.collisionAssistMode
+        );
         if (!m_clientPreferences.skyCultureId.empty())
         {
             (void)m_clientModeState.setSkyCultureId(
@@ -2228,6 +2231,21 @@ void Application::processDocumentWebViewCommands(int surfaceIndex)
             continue;
         }
 
+        // difficulty layer: the evasion reflex while the pilot flies (ClientModeState::collisionAssistMode)
+        constexpr const char* SetCollisionAssistPrefix = "set_collision_assist|";
+        if (webCommand.rfind(SetCollisionAssistPrefix, 0) == 0)
+        {
+            const std::string mode = webCommand.substr(std::char_traits<char>::length(SetCollisionAssistPrefix));
+            if (m_clientModeState.setCollisionAssistMode(mode))
+            {
+                persistClientModeState();
+                std::cout << "[Difficulty] collision assist " << mode << std::endl;
+            }
+            if (m_gameUi.committedTarget().mode == GameUiMode::MainMenu)
+                applyMainMenuView();
+            continue;
+        }
+
         // difficulty layer: survival in the escape capsule (ClientModeState::capsuleSurvivalEnabled)
         constexpr const char* SetCapsuleSurvivalPrefix = "set_capsule_survival|";
         if (webCommand.rfind(SetCapsuleSurvivalPrefix, 0) == 0)
@@ -2526,6 +2544,7 @@ void Application::applyMainMenuView()
     state["locale"] = m_localization.locale();
     state["celestialStyle"] = m_clientModeState.celestialRenderStyleId;
     state["capsuleSurvival"] = m_clientModeState.capsuleSurvivalEnabled;
+    state["collisionAssist"] = m_clientModeState.collisionAssistMode;
     state["localPlayerName"] = m_localPlayerDisplayName;
     state["accountAvailable"] = !m_authenticatedRemoteAccountHandle.empty();
     state["passwordRecoveryAvailable"] = false;
@@ -2729,6 +2748,8 @@ void Application::persistClientModeState()
         m_clientModeState.celestialRenderStyleId;
     m_clientPreferences.capsuleSurvivalEnabled =
         m_clientModeState.capsuleSurvivalEnabled;
+    m_clientPreferences.collisionAssistMode =
+        m_clientModeState.collisionAssistMode;
 
     std::string preferencesError;
     if (!ui::platform::ClientPreferencesStore::save(

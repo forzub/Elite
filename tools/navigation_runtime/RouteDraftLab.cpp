@@ -285,7 +285,7 @@ int dataset(int argc, char** argv)
     std::vector<std::thread> pool;
     for (int t = 0; t < threads; ++t)
         pool.emplace_back([&, t] {
-            std::mt19937_64 g(0x5eed0000ull + static_cast<unsigned>(t) * 7919ull);
+            std::mt19937_64 g(0x5eed0000ull + static_cast<unsigned>(t) * 7919ull + (std::getenv("RD_SEED") ? std::strtoull(std::getenv("RD_SEED"), nullptr, 10) * 1000003ull : 0ull));
             for (int k = next++; k < samples; k = next++)
             {
                 lab::Request r;

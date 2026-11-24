@@ -179,6 +179,7 @@ nlohmann::json toJson(const ClientPreferences& preferences)
         preferences.coordinateDisplayFormatId;
     root["celestial_render_style"] = preferences.celestialRenderStyleId;
     root["difficulty_capsule_survival"] = preferences.capsuleSurvivalEnabled;
+    root["difficulty_collision_assist"] = preferences.collisionAssistMode;
     root["preferred_physical_control_model"] =
         preferences.preferredPhysicalControlModel;
     root["last_successful_account_by_server"] = nlohmann::json::object();
@@ -279,6 +280,13 @@ bool fromJson(
         if (!root["difficulty_capsule_survival"].is_boolean())
             return fail(outError, "difficulty_capsule_survival must be a boolean");
         parsed.capsuleSurvivalEnabled = root["difficulty_capsule_survival"].get<bool>();
+    }
+
+    if (root.contains("difficulty_collision_assist"))
+    {
+        if (!root["difficulty_collision_assist"].is_string())
+            return fail(outError, "difficulty_collision_assist must be a string");
+        parsed.collisionAssistMode = root["difficulty_collision_assist"].get<std::string>();
     }
 
     if (root.contains("preferred_physical_control_model"))

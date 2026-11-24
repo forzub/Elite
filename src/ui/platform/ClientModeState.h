@@ -24,7 +24,22 @@ struct ClientModeState
     // arrives and keeps it alive (air, CO2, power, repairs - "как в Tin Can"); off = the wait is simply
     // waited out. The layer is laid in; its gameplay is a later slice.
     bool capsuleSurvivalEnabled = false;
+    // collisionAssist (author 2026-11-24, «уклонение - третий вариант»: by the difficulty): what the evasion reflex does
+    // while the PILOT flies - "off"; "warn" (a warning only - the hard-realism choice); "assist" (takes the stick only
+    // when a touch is otherwise unavoidable, for the manoeuvre, shown on the HUD; a sharp pilot input cancels it)
+    std::string collisionAssistMode = "assist";
     std::uint64_t revision = 1;
+
+    bool setCollisionAssistMode(std::string mode)
+    {
+        if (mode != "off" && mode != "warn" && mode != "assist")
+            return false;
+        if (collisionAssistMode == mode)
+            return false;
+        collisionAssistMode = std::move(mode);
+        ++revision;
+        return true;
+    }
 
     bool setCapsuleSurvivalEnabled(bool enabled) noexcept
     {

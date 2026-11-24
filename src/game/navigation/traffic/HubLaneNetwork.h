@@ -91,7 +91,13 @@ public:
         bool serviceDirect = false;            // the service can fly the straight way from the ship (over the city)
         bool goalByService = false;            // the route ends at the exit station; the goal is reached by a service
                                                // (a pad: straight at transit height) - costed as the straight distance
+        double freeSpeedMps = 150.0;           // the free legs' cruise (the chain cost in TIME)
     };
+    // THE CHAIN COST IS TIME (author 2026-11-24: «все выбираем по времени - минимальное время»): seconds - a free leg at
+    // the cruise, a lane / connector at ITS limit, the join approach at the mean of the two, the pad service's flight by
+    // its 150 m/s / 8 m/s2 law. The hard rules stay (joins from open sky, no cut through a tube, clearances).
+    // ELITE_LANE_CHAIN_COST=metres: the old weighted metres (FreeInHubFactor / LaneCostFactor).
+    static constexpr double PadServiceCruiseMps = 150.0, PadServiceAccelMps2 = 8.0;
 
     bool load(const std::string& path);
     bool loaded() const noexcept { return !m_lanes.empty(); }

@@ -661,6 +661,13 @@ private:
     double m_geometryWaitSince = 0.0;   // DEV ELITE_AUTOPILOT_NEWTONIAN_ROUTES: Assisted -> Newtonian for a route
     // navigator step 3: the radar-fed evasion reflex over the route autopilot's controls (EvasionReflex.h)
     game::navigation::avoidance::EvasionReflex m_evasionReflex;
+    // THE COLLISION ASSIST while the PILOT flies (ClientModeState::collisionAssistMode, author 2026-11-24)
+    game::navigation::avoidance::EvasionReflex m_manualReflex;
+    double m_manualAssistSuppressedUntil = -1.0e9;   // a sharp pilot input took the stick back
+    double m_manualAssistWarnedAt = -1.0e9;
+    double m_manualAssistLogAt = -1.0e9;
+    bool m_manualAssistActive = false;
+    ShipControlState applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds);
     game::navigation::avoidance::EvasionNet m_evasionNet;
     bool m_evasionNetTried = false;
     double m_evasionLogAt = -1.0e9;

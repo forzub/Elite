@@ -5090,3 +5090,121 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
     }
     return control;
 }
+
+// THE COLLISION ASSIST while the pilot flies by hand (author 2026-11-24: «как сейчас работает система уклонения - в
+// любом режиме? ... при ручном управлении внезапно возникнет помеха»; «уклонение - третий вариант» = by the difficulty):
+// the same radar reflex as over the route (control programs flown on the ship's own physics), with the urgency window -
+// it acts only when the touch is about as near in time as the dodge takes. "warn": a HUD warning only (hard realism);
+// "assist": the program holds the stick for the manoeuvre (shown on the HUD); a SHARP pilot input (a full deflection /
+// any translation key) hands it back for 3 s - the pilot is always the last word. "off": nothing.
+ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds)
+{
+    std::string mode = context().app ? context().app->clientModeState().collisionAssistMode : std::string("assist");
+    if (const char* dev = std::getenv("ELITE_DEV_COLLISION_ASSIST"); dev && *dev)
+        mode = dev;   // DEV: off / warn / assist for the checks
+    const auto quiet = [&]() {
+        if (m_manualAssistActive)
+        {
+            m_manualAssistActive = false;
+            m_pilotNotice = "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: управление у пилота";
+        }
+        return sampled;
+    };
+    const char* env = std::getenv("ELITE_DEV_EVASION_REFLEX");
+    if (mode == "off" || !m_client || (env && env[0] == '0'))
+    {
+        m_manualReflex.reset();
+        return quiet();
+    }
+    const auto& sensors = m_client->navigationSensors();
+    if (!sensors.radarInstalled || !sensors.radarOperational || !sensors.hasRadarScan)
+    {
+        m_manualReflex.reset();
+        return quiet();
+    }
+    const auto shipIt = m_client->world().ships().find(m_playerId.value);
+    if (shipIt == m_client->world().ships().end() || !shipIt->second.descriptor)
+        return quiet();
+    const auto& player = shipIt->second;
+    const auto& transform = player.transform;
+    const auto& motion = transform.motion;
+    // the pilot's sharp input takes the stick back
+    const bool sharp = std::abs(sampled.pitchInput) > 0.8f || std::abs(sampled.yawInput) > 0.8f ||
+                       sampled.strafeInput != 0.0f || sampled.liftInput != 0.0f || sampled.forwardInput != 0.0f;
+    if (m_manualAssistActive && sharp)
+    {
+        m_manualAssistSuppressedUntil = universeTimeSeconds + 3.0;
+        m_manualReflex.reset();
+        return quiet();
+    }
+    if (universeTimeSeconds < m_manualAssistSuppressedUntil)
+        return quiet();
+    // the ship's physical state for the control programs (body axes: +X right, +Y up, -Z nose - the radar's frame)
+    static double physicsAt = -1.0e9;
+    static ShipParams physics {};
+    if (universeTimeSeconds - physicsAt > 1.0 || universeTimeSeconds < physicsAt)
+    {
+        physicsAt = universeTimeSeconds;
+        const auto slots = player.physicalControlModel != player.descriptor->physicalControlModel
+                               ? game::ship::plant::healthySlotState(
+                                     game::ship::plant::physicalControlSlots(player.physicalControlModel))
+                               : game::ship::capability::buildPhysicalControlSlotState(
+                                     *player.descriptor, player.physicalControlModel, player.modules);
+        const auto capability =
+            game::ship::capability::buildShipCapability(*player.descriptor, player.physicalControlModel, slots);
+        physics = capability.valid ? capability.effectivePhysics : ShipParams {};
+    }
+    game::navigation::avoidance::ControlShipState ship;
+    ship.params = physics;
+    ship.law = motion.localControlLaw;
+    const bool local = player.referenceFrame.valid && motion.mode == game::navigation::MotionMode::HubTactical;
+    const auto frame = player.referenceFrame.kinematicFrame();
+    const auto axis = [&](const glm::vec3& w) {
+        const glm::dvec3 a = local ? frame.worldToLocalVector(glm::dvec3(w)) : glm::dvec3(w);
+        return glm::length(a) > 1.0e-9 ? glm::normalize(a) : glm::dvec3(0.0, 0.0, -1.0);
+    };
+    const glm::dvec3 v = local ? motion.localVelocityMps : motion.worldVelocityMps - motion.referenceVelocityMps;
+    const glm::dvec3 right = axis(transform.right()), up = axis(transform.up()), forward = axis(transform.forward());
+    ship.velocityBody = glm::dvec3(glm::dot(v, right), glm::dot(v, up), -glm::dot(v, forward));
+    ship.targetForwardSpeedMps = std::max(0.0, static_cast<double>(motion.targetForwardSpeedMps));
+    ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
+    const double hullRadius = std::max(10.0, 0.5 * player.descriptor->logicalDimensions().length);
+    const auto& cmd = m_manualReflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius);
+    if (!cmd.active)
+        return quiet();
+    if (mode == "warn")
+    {
+        if (universeTimeSeconds - m_manualAssistWarnedAt > 3.0)
+        {
+            m_manualAssistWarnedAt = universeTimeSeconds;
+            m_pilotNotice = "ВНИМАНИЕ: КУРС СТОЛКНОВЕНИЯ - " + std::to_string(cmd.threats) + " контакт(ов), уклоняйтесь";
+            std::cerr << "[CollisionAssist] warn: " << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
+                      << " m (window " << cmd.urgencySeconds << " s)" << std::endl;
+        }
+        return sampled;
+    }
+    // assist: the program holds the stick for the manoeuvre
+    ShipControlState control = sampled;
+    control.strafeInput = cmd.strafe;
+    control.liftInput = cmd.lift;
+    control.forwardInput = cmd.forward;
+    control.rcsTranslationPerAxisAuthority = true;
+    if (cmd.program >= 0)
+    {
+        control.pitchInput = cmd.pitch;
+        control.yawInput = cmd.yaw;
+        control.rollInput = 0.0f;
+        control.targetSpeedRate = cmd.speedRate;
+    }
+    if (!m_manualAssistActive)
+        m_pilotNotice = "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: манёвр уклонения (резкое движение ручкой - управление вам)";
+    m_manualAssistActive = true;
+    if (universeTimeSeconds - m_manualAssistLogAt > 1.0)
+    {
+        m_manualAssistLogAt = universeTimeSeconds;
+        std::cerr << "[CollisionAssist] dodge: " << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
+                  << " m (window " << cmd.urgencySeconds << " s) -> " << cmd.marginMeters << " m; program " << cmd.program
+                  << std::endl;
+    }
+    return control;
+}

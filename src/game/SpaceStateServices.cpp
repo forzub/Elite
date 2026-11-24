@@ -311,6 +311,19 @@ std::uint32_t SpaceState::sendEconomyCommand(int op, const std::string& goodId, 
 {
     if (!m_client)
         return 0;
+    // audit ECO-4: the same command twice within 0.6 s is a double click (the cargo insurance F8 and the government
+    // buttons had no guard: INSURE charged the premium twice) - not sent again
+    {
+        const std::string key = std::to_string(op) + "|" + goodId + "|" + std::to_string(tonnes) + "|" + std::to_string(limitUnitCr);
+        const double now = glfwGetTime();
+        if (key == m_lastEconomySendKey && now - m_lastEconomySendAt < 0.6)
+        {
+            std::cerr << "[Trade] the same request again within 0.6 s (a double click) - not sent" << std::endl;
+            return 0;
+        }
+        m_lastEconomySendKey = key;
+        m_lastEconomySendAt = now;
+    }
     game::network::ClientEconomyCommand command;
     command.op = static_cast<game::network::ClientEconomyCommand::Op>(
         std::clamp(op, 0, static_cast<int>(game::network::ClientEconomyCommand::Last)));

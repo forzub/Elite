@@ -8515,3 +8515,7 @@ start-up hitches (render), trade step 16 part 3 live.
   (applyCargoLoad on restore - they flew empty after a restart). Still open: one transaction for economy +
   ships.json (next_instance lives only in ships.json), durable-before-reply (the JSONL journal of TRADE_DESIGN §7.6).
   EliteEconomyCheck 257 / 0.
+- ECO-4: the server runs a request id once per player session (the last 64 ids; a reconnect starts clean); a request
+  dropped on a full queue answers "busy" (was silent - the client waited for ever); the client does not send the same
+  economy command twice within 0.6 s (the F8 cargo insurance / government buttons had no double-click guard). Built,
+  EliteEconomyCheck 257 / 0; not exercised live (no retransmission path exists yet; the double click not scripted).

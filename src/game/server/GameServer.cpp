@@ -2229,6 +2229,8 @@ void GameServer::resetSessionControlState(
         m_pendingClientShipCommands.erase(commandIt);
     }
     m_pendingEconomyCommands.erase(controlledEntityId.value);
+    if (const Ship* gone = m_simulation.getShip(controlledEntityId))
+        m_recentEconomyRequests.erase(m_players.playerForShip(gone->core().registry().instanceId).value);
 
     // Continuous control belongs to the live session too. Do not leave the
     // ship accelerating or rotating from the final sample of a disconnected
@@ -2822,6 +2824,11 @@ void GameServer::receiveClientMessage(
                 if (queue.size() >= MaxShipCommandsPerShip)
                 {
                     ++m_queueDiagnostics.droppedShipCommands;
+                    // audit ECO-4: a dropped request answers (the client waited for ever on a silent drop)
+                    if (const Ship* ship = m_simulation.getShip(controlledEntityId); ship && m_economy.loaded())
+                        if (const std::uint64_t player = m_players.playerForShip(ship->core().registry().instanceId).value)
+                            m_economy.recordTradeRefusal(player, payload.requestId, "busy",
+                                                         "сервер перегружен запросами - повторите через секунду");
                     return;
                 }
                 queue.push_back(payload);
@@ -3145,6 +3152,22 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
     if (player == 0)
         return;
     const auto& motion = ship->core().transform().motion;
+    // audit ECO-4: a request id seen in this session is not run again (BUY / SELL / INSURE ... are not idempotent: a
+    // re-delivered request would charge twice). Per player, the last 64 ids; a new session starts clean (its counter
+    // restarts).
+    if (command.requestId != 0)
+    {
+        auto& recent = m_recentEconomyRequests[player];
+        if (std::find(recent.begin(), recent.end(), command.requestId) != recent.end())
+        {
+            std::cerr << "[Trade] request " << command.requestId << " of player " << player
+                      << " already handled in this session - not run twice" << std::endl;
+            return;
+        }
+        recent.push_back(command.requestId);
+        if (recent.size() > 64)
+            recent.pop_front();
+    }
     std::cerr << "[Trade] command op " << static_cast<int>(command.op) << " request " << command.requestId << " ship " << id.value << " "
               << command.goodId << " " << command.quantity << " t at '" << command.hubId << "'" << std::endl;
     if (command.op == Op::DevCargoAdd || command.op == Op::DevCargoClear)

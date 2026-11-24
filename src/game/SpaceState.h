@@ -952,6 +952,8 @@ private:
     int m_governmentTab = 0;         // F5: 0 the state services app, 1 Галера+
     int m_governmentSection = 0;     // F5 state app: 0 taxes, 1 licences, 2 navigation data
     std::uint32_t m_economyRequestId = 0;
+    std::string m_lastEconomySendKey;   // ECO-4: the double-click guard
+    double m_lastEconomySendAt = -1.0e9;
     game::presentation::TradeDealRequest m_tradeDeal;   // the MARKET deal window's own state (never authoritative)
     std::map<int, bool> m_tradeKeyWasDown;
     std::uint32_t m_tradeDealAnswerLogged = 0;          // the request whose server answer was logged

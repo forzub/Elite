@@ -324,6 +324,8 @@ private:
 
 
     static constexpr std::size_t MaxShipCommandsPerShip = 32;
+    // ECO-4: the economy request ids each player's session already ran (the last 64)
+    std::unordered_map<std::uint64_t, std::deque<std::uint32_t>> m_recentEconomyRequests;
     static constexpr std::size_t MaxPendingMapRequests = 64;
     static constexpr std::size_t MaxCompletedMapResponses = 64;
 

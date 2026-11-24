@@ -1,3 +1,4 @@
+#include "src/model_asset/HubExpansion.h"
 #include "src/game/server/ServerRuntime.h"
 #include "src/core/RuntimeTrace.h"
 
@@ -174,6 +175,7 @@ bool ServerRuntime::publishSessionBootstrap(
         world::celestial::StarAtlasDatabase::CatalogSchemaVersion;
     welcome.starAtlasCatalog.contentFingerprint =
         m_server->starAtlas().contentFingerprint();
+    welcome.hubContentFingerprint = elite::model_asset::hubContentFingerprint();
     using Clock = std::chrono::steady_clock;
 
     const auto welcomeBegin = Clock::now();

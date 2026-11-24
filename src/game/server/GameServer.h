@@ -87,6 +87,7 @@ public:
 
     // Compose one sparse per-session packet from runner-owned cadence/lifecycle
     // selection. Hydration ids are sourced from canonical retained server state.
+    std::vector<game::simulation::HubConstructionOverrideSnapshot> constructionOverridesSnapshot() const;
     bool copySparseSnapshotForSession(
         game::network::ServerSessionId sessionId,
         const game::server::ReplicationPublicationSelection& selection,

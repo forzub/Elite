@@ -72,6 +72,25 @@ const HubExpansionPlan* hubExpansionPlan(const std::string& hubId);
 bool setHubExpansionProjectOverride(const std::string& hubId, const std::string& projectId, int startDay, int workDays,
                                     const std::vector<ExpansionProject::Halt>& halts);
 
+// the runtime overrides in force (the server replicates them; a client applies them with the setter above) - audit
+// SRV-1: a contract changed the plan in the server's process only, a remote client drew the original plan
+struct HubExpansionOverride
+{
+    std::string hubId;
+    std::string projectId;
+    int startDay = 0;
+    int workDays = 1;
+    std::vector<ExpansionProject::Halt> halts;
+};
+std::vector<HubExpansionOverride> hubExpansionOverrides();
+std::uint64_t hubExpansionOverrideGeneration();
+
+// THE HUB CONTENT FINGERPRINT (audit SRV-1): the hub city layouts and construction plans (their bytes) and the hub
+// module packages (their paths and sizes) the geometry is assembled from on each side - a client whose geometry would
+// differ from the server's is refused at the welcome instead of meeting walls it does not see. Computed once (~35 MB
+// read), 0 when nothing is found.
+std::uint64_t hubContentFingerprint();
+
 // the game day of a universe time (day 0 = 3126-01-01)
 int hubExpansionDay(const HubExpansionPlan& plan, double universeSeconds);
 

@@ -15,6 +15,22 @@
 namespace game::simulation
 {
 
+// a construction contract's project override in force (elite::model_asset::HubExpansionOverride; audit SRV-1): the
+// client applies it so its city geometry is the server's
+struct HubConstructionHaltSnapshot
+{
+    int from = 0;
+    int to = -1;
+};
+struct HubConstructionOverrideSnapshot
+{
+    std::string hubId;
+    std::string projectId;
+    int startDay = 0;
+    int workDays = 1;
+    std::vector<HubConstructionHaltSnapshot> halts;
+};
+
 struct ClientSessionSnapshot
 {
     world::celestial::PlayerNavigationState playerNavigation;
@@ -33,6 +49,8 @@ struct ClientSessionSnapshot
     // the ship this session flies and its control epoch (base 2: a ship change mid-session; 0 = the bootstrap ship)
     std::uint32_t controlledEntityId = 0;
     std::uint32_t controlEpoch = 0;
+    // every construction override in force on the server (usually none; a few with players' contracts)
+    std::vector<HubConstructionOverrideSnapshot> constructionOverrides;
 };
 
 } // namespace game::simulation

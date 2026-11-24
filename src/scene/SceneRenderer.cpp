@@ -3895,7 +3895,8 @@ if (policy.drawObjects)
                         // a function of the universe time and the hub's construction plan; the same day drives the city's
                         // construction stages (HubExpansion.h). DEV A/B: ELITE_DEV_HUB_CONSTRUCTION=0 (no craft)
                         {
-                            elite::model_asset::setHubExpansionUniverseTime(trafficTime);
+                            // the construction clock is the client's (GameClient: the server's universe time, SRV-1) -
+                            // not written here (it fell back to the process uptime without a celestial snapshot)
                             static const bool constructionOn = [] {
                                 const char* v = std::getenv("ELITE_DEV_HUB_CONSTRUCTION");
                                 return !(v && std::string(v) == "0");

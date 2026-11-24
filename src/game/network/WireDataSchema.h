@@ -1346,6 +1346,21 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::HubConstructionHaltSnapshot,
+    v.from,
+    v.to
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::HubConstructionOverrideSnapshot,
+    v.hubId,
+    v.projectId,
+    v.startDay,
+    v.workDays,
+    v.halts
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ClientSessionSnapshot,
     v.playerNavigation,
     v.ownedNavigationAssets,
@@ -1360,7 +1375,8 @@ ELITE_WIRE_SCHEMA(
     v.universeTimeSimulation,
     v.universeDate,
     v.controlledEntityId,
-    v.controlEpoch
+    v.controlEpoch,
+    v.constructionOverrides
 );
 
 ELITE_WIRE_SCHEMA(

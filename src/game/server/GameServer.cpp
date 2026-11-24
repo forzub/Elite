@@ -3518,6 +3518,7 @@ bool GameServer::copySnapshotForSession(
     outSnapshot.session.controlledEntityId = controlledEntityForSession(sessionId).value;
     outSnapshot.session.controlEpoch = m_controlEpochs.count(playerForSession(sessionId).value) ? m_controlEpochs.at(playerForSession(sessionId).value) : 0;
     outSnapshot.session.trade = tradeForSession(sessionId);
+    outSnapshot.session.constructionOverrides = constructionOverridesSnapshot();
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -3553,6 +3554,7 @@ bool GameServer::copyHydratedSnapshotForSession(
     outSnapshot.session.controlledEntityId = controlledEntityForSession(sessionId).value;
     outSnapshot.session.controlEpoch = m_controlEpochs.count(playerForSession(sessionId).value) ? m_controlEpochs.at(playerForSession(sessionId).value) : 0;
     outSnapshot.session.trade = tradeForSession(sessionId);
+    outSnapshot.session.constructionOverrides = constructionOverridesSnapshot();
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -3572,6 +3574,31 @@ bool GameServer::copyHydratedSnapshotForSession(
 
     }
     return true;
+}
+
+std::vector<game::simulation::HubConstructionOverrideSnapshot> GameServer::constructionOverridesSnapshot() const
+{
+    // the construction overrides in force (SRV-1), rebuilt only when one changes
+    static std::uint64_t builtFor = ~0ull;
+    static std::vector<game::simulation::HubConstructionOverrideSnapshot> cached;
+    const std::uint64_t generation = elite::model_asset::hubExpansionOverrideGeneration();
+    if (generation != builtFor)
+    {
+        builtFor = generation;
+        cached.clear();
+        for (const auto& o : elite::model_asset::hubExpansionOverrides())
+        {
+            game::simulation::HubConstructionOverrideSnapshot d;
+            d.hubId = o.hubId;
+            d.projectId = o.projectId;
+            d.startDay = o.startDay;
+            d.workDays = o.workDays;
+            for (const auto& h : o.halts)
+                d.halts.push_back({h.from, h.to});
+            cached.push_back(std::move(d));
+        }
+    }
+    return cached;
 }
 
 bool GameServer::copySparseSnapshotForSession(
@@ -3638,6 +3665,7 @@ bool GameServer::copySparseSnapshotForSession(
     outSnapshot.session.controlledEntityId = controlledEntityForSession(sessionId).value;
     outSnapshot.session.controlEpoch = m_controlEpochs.count(playerForSession(sessionId).value) ? m_controlEpochs.at(playerForSession(sessionId).value) : 0;
     outSnapshot.session.trade = tradeForSession(sessionId);
+    outSnapshot.session.constructionOverrides = constructionOverridesSnapshot();
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

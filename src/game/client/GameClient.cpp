@@ -1,4 +1,6 @@
+#include <sstream>
 #include <algorithm>
+#include "src/model_asset/HubExpansion.h"
 #include "src/core/RuntimeTrace.h"
 #include "src/game/network/ReplicationSnapshotMerge.h"
 #include <cmath>
@@ -568,6 +570,20 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             failSynchronization(catalogError);
             return false;
         }
+        // the hub geometry both sides assemble (SRV-1): a different layout / plan / module set = walls the client does
+        // not see (the server is authoritative for collisions)
+        if (welcome.hubContentFingerprint != 0)
+        {
+            const std::uint64_t local = elite::model_asset::hubContentFingerprint();
+            if (local != welcome.hubContentFingerprint)
+            {
+                std::ostringstream out;
+                out << "HUB_CONTENT_MISMATCH: server=0x" << std::hex << welcome.hubContentFingerprint << " client=0x" << local
+                    << " (hub city layouts / construction plans / hub module packages differ - update the game data)";
+                failSynchronization(out.str());
+                return false;
+            }
+        }
 
         if (m_serverSessionId &&
             welcome.sessionId != m_serverSessionId)
@@ -659,6 +675,17 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         m_hasAcceptedSnapshot = true;
         m_sessionSnapshot = snapshot.session;
         m_hasSessionSnapshot = true;
+        // THE CONSTRUCTION CLOCK and OVERRIDES of the server (audit SRV-1): the city stages follow the server's universe
+        // time (the renderer wrote its own - the process uptime without a celestial snapshot), and the contracts'
+        // project overrides are the server's (a no-op when they are already in force: the local game's shared process)
+        elite::model_asset::setHubExpansionUniverseTime(snapshot.metadata.universeTimeSeconds);
+        for (const auto& o : snapshot.session.constructionOverrides)
+        {
+            std::vector<elite::model_asset::ExpansionProject::Halt> halts;
+            for (const auto& h : o.halts)
+                halts.push_back({h.from, h.to});
+            (void)elite::model_asset::setHubExpansionProjectOverride(o.hubId, o.projectId, o.startDay, o.workDays, halts);
+        }
 
         m_maps.setUniverseTimelineRevision(
             snapshot.session.universeTimelineRevision

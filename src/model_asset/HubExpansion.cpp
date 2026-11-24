@@ -3,6 +3,7 @@
 #include "src/world/time/ConstructionClock.h"
 #include "src/game/navigation/HubPlanPads.h"
 
+#include <iterator>
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
@@ -163,6 +164,20 @@ const HubExpansionPlan* hubExpansionPlan(const std::string& hubId)
     return it->second.get();
 }
 
+namespace
+{
+std::vector<std::unique_ptr<HubExpansionPlan>>& retiredPlans()
+{
+    static std::vector<std::unique_ptr<HubExpansionPlan>> retired;
+    return retired;
+}
+std::map<std::pair<std::string, std::string>, HubExpansionOverride>& overridesInForce()
+{
+    static std::map<std::pair<std::string, std::string>, HubExpansionOverride> overrides;
+    return overrides;
+}
+} // namespace
+
 bool setHubExpansionProjectOverride(const std::string& hubId, const std::string& projectId, int startDay, int workDays,
                                     const std::vector<ExpansionProject::Halt>& halts)
 {
@@ -172,16 +187,109 @@ bool setHubExpansionProjectOverride(const std::string& hubId, const std::string&
     const auto it = cache.find(hubId);
     if (it == cache.end() || !it->second)
         return false;
-    for (auto& p : it->second->projects)
+    const auto& current = *it->second;
+    const auto found = std::find_if(current.projects.begin(), current.projects.end(),
+                                    [&](const ExpansionProject& p) { return p.id == projectId; });
+    if (found == current.projects.end())
+        return false;
+    const int work = std::max(1, workDays);
+    const auto sameHalts = [&](const std::vector<ExpansionProject::Halt>& a) {
+        if (a.size() != halts.size())
+            return false;
+        for (std::size_t i = 0; i < a.size(); ++i)
+            if (a[i].from != halts[i].from || a[i].to != halts[i].to)
+                return false;
+        return true;
+    };
+    if (found->startDay == startDay && found->workDays == work && sameHalts(found->halts))
+        return true;   // already in force (a client re-applying the replicated list)
+    // COPY-ON-WRITE (audit SRV-1: the halts were rewritten in place under the mutex while the assembly / traffic read
+    // the plan without it): a new plan replaces the old one, the old stays alive for the readers holding it (a few per
+    // contract - never freed)
+    auto next = std::make_unique<HubExpansionPlan>(current);
+    for (auto& p : next->projects)
         if (p.id == projectId)
         {
             p.startDay = startDay;
-            p.workDays = std::max(1, workDays);
+            p.workDays = work;
             p.halts = halts;
-            ++g_overrideGeneration;
-            return true;
         }
-    return false;
+    retiredPlans().push_back(std::move(it->second));
+    it->second = std::move(next);
+    overridesInForce()[{hubId, projectId}] = HubExpansionOverride {hubId, projectId, startDay, work, halts};
+    ++g_overrideGeneration;
+    return true;
+}
+
+std::vector<HubExpansionOverride> hubExpansionOverrides()
+{
+    std::lock_guard<std::mutex> lock(planMutex());
+    std::vector<HubExpansionOverride> out;
+    for (const auto& [key, o] : overridesInForce())
+        out.push_back(o);
+    return out;
+}
+
+std::uint64_t hubExpansionOverrideGeneration()
+{
+    return g_overrideGeneration.load();
+}
+
+std::uint64_t hubContentFingerprint()
+{
+    static const std::uint64_t fingerprint = [] {
+        namespace fs = std::filesystem;
+        std::uint64_t h = 1469598103934665603ull;
+        const auto mix = [&](const void* data, std::size_t n) {
+            const auto* b = static_cast<const unsigned char*>(data);
+            for (std::size_t i = 0; i < n; ++i)
+                h = (h ^ b[i]) * 1099511628211ull;
+        };
+        const auto mixString = [&](const std::string& s) { mix(s.data(), s.size()); };
+        std::error_code ec;
+        const auto sortedFiles = [&](const std::string& root, bool recursive) {
+            std::vector<fs::path> files;
+            if (!fs::exists(root, ec))
+                return files;
+            if (recursive)
+            {
+                for (fs::recursive_directory_iterator it(root, ec), end; !ec && it != end; it.increment(ec))
+                    if (it->is_regular_file(ec))
+                        files.push_back(it->path());
+            }
+            else
+            {
+                for (fs::directory_iterator it(root, ec), end; !ec && it != end; it.increment(ec))
+                    if (it->is_regular_file(ec))
+                        files.push_back(it->path());
+            }
+            std::sort(files.begin(), files.end());
+            return files;
+        };
+        int counted = 0;
+        // the layouts and plans: their bytes
+        for (const char* root : {"assets/data/navigation/hub_cities", "assets/data/navigation/hub_expansion"})
+            for (const auto& f : sortedFiles(root, false))
+            {
+                mixString(f.generic_string());
+                std::ifstream in(f, std::ios::binary);
+                std::vector<char> buf((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+                mix(buf.data(), buf.size());
+                ++counted;
+            }
+        // the module packages: path + size (1.6 GB - not read)
+        for (const auto& f : sortedFiles("assets/compiled/hub_modules", true))
+        {
+            if (f.extension() != ".elmodel")
+                continue;
+            mixString(f.generic_string());
+            const std::uint64_t size = static_cast<std::uint64_t>(fs::file_size(f, ec));
+            mix(&size, sizeof size);
+            ++counted;
+        }
+        return counted > 0 ? (h | 1u) : 0u;
+    }();
+    return fingerprint;
 }
 
 int hubExpansionDay(const HubExpansionPlan& plan, double universeSeconds)

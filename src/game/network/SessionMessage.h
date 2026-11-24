@@ -137,5 +137,7 @@ struct SessionWelcome
     // Static physical catalog is loaded independently at each endpoint. The
     // server sends only a compatibility fence, never the catalog payload.
     CatalogMetadata starAtlasCatalog;
+    // the hub geometry content (elite::model_asset::hubContentFingerprint, audit SRV-1): 0 = not checked
+    std::uint64_t hubContentFingerprint = 0;
 };
 }

@@ -8474,3 +8474,21 @@ start-up hitches (render), trade step 16 part 3 live.
   9, wire protocol 51) before closing; checked with ELITE_REPLICATE_CITY_HIT_VOLUMES=1 over a dedicated server: the
   client reports "Session synchronization failed: SNAPSHOT_TOO_LARGE" (was a bare "peer closed"). Still no chunking /
   compression / budget - the limit is now explicit, not silent.
+- SRV-1: (a) SessionWelcome::hubContentFingerprint (wire protocol 52; elite::model_asset::hubContentFingerprint: the
+  bytes of every hub city layout + construction plan, path + size of every hub module package) - the client refuses
+  "HUB_CONTENT_MISMATCH: server=.. client=.." instead of flying into walls it does not see; (b) construction overrides
+  copy-on-write (a new plan replaces the old, the old kept alive for readers - the halts were rewritten in place under
+  the mutex while the assembly / traffic read without it); (c) session.constructionOverrides (snapshot wire schema 72;
+  GameServer::constructionOverridesSnapshot, rebuilt on the override generation) applied by GameClient (a no-op when
+  already in force); (d) the construction clock on the client = the server's universe time from each snapshot (the
+  renderer wrote its own, the process uptime without a celestial snapshot). Remote run: fingerprints equal, Высокий
+  assembled on the client; the contract sign itself not reached (the docking below failed first).
+- FOUND, OPEN (regression, important): automatic docking hub_hex_dock_a from earth_orbital_hub@40 after the official
+  route flies INTO station object 11's habitat box ('station_habitat_s1/s2', ~10 m above its top face, 33 m/s; the
+  planner keeps 80 m clearance from that box - the obstacle is in the dump). A/B: local draft net on 2/2 collide,
+  draft off 2/2 dock (one with the old objective too); remote draft off still collides (128 contacts). The route-draft
+  fast path is now OPT-IN (ELITE_ROUTE_DRAFT=1; plans slower again: 1.8 s a leg remote) until PLAN-4 has a guarantee.
+  Not the reflex (off: same), not SRV-3 (old entry: same). Hypotheses to check next: a mandatory lane / transit stage
+  that is not obstacle-checked passing over the ring; the station's habitat boxes are crude (one box per third of the
+  ring, half 1678 x 952 x 199 m, template cached per type at the first build angle - the ring's rotation never reaches
+  the hit volumes).

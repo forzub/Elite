@@ -8323,3 +8323,11 @@ start-up hitches (render), trade step 16 part 3 live.
     it back for 3 s. DEV ELITE_DEV_COLLISION_ASSIST. LIVE (pilot took over, head-on rammer 120 m/s): off 32 m centres,
     warn 2 warnings 32 m, assist 72 m. DEV rammer: no radar track -> the enemy's world velocity (free flight).
     FORMATION re-checked (fm2): joined a lane ship 1.9 km out, round behind it, held the wedge slot at 3 m, 0 collisions.
+  * 2026-11-24 START SCHEME CHECKED (author: «делай свою схему старта»): DEV ELITE_DEV_PLAN_DELAY_S (+ _REQUEST, the first
+    plan of that request only) makes an in-flight plan slower than its start straight. Live at ~125 m/s, pad H2-03:
+    15 s late -> the start piece re-solved in 79 ms (backbone kept), landed 110 s; 30 s late (2.8 km past the straight)
+    -> a fresh plan from the live state in 0.5 s, landed 139 s; 60 s late (6.3 km past) -> 0.56 s, landed 194 s;
+    0 collisions, cross <= 12-17 m. Note: one slow plan makes the NEXT start straight long (lead = 1.5 x the last plan
+    time, up to 3.7 km once) - a median over recent plans would smooth it.
+    ROUTE-DRAFT NET v2 installed (all data: hub 15k + ring 5k + mazes 30k): unseen hub time/teacher 1.001 (v1 1.004),
+    fast path 82 %, 431 ms; maze 1.079 (v1 1.096, game 1.063), detour 1.35 (game 1.44), 495 ms (game 758).

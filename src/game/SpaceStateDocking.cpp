@@ -40,6 +40,17 @@ void runDockAdviceWorker(
     core::lowerCurrentThreadPriority();   // planning never steals the frame's CPU
     const auto workerStarted =
         std::chrono::steady_clock::now();
+    // DEV ELITE_DEV_PLAN_DELAY_S=<s> (+ ELITE_DEV_PLAN_DELAY_REQUEST=<serial>, default 2): a plan slower than the start
+    // straight's planning budget - the ship runs past the prefix and the late-entry rebind (the start piece re-solved
+    // from the forecast point, the backbone kept) must carry it (author 2026-11-24: «а если расчет будет дольше 8 сек?»)
+    if (const char* delay = std::getenv("ELITE_DEV_PLAN_DELAY_S"); delay && *delay)
+    {
+        const char* which = std::getenv("ELITE_DEV_PLAN_DELAY_REQUEST");
+        const auto serial = which && *which ? std::strtoull(which, nullptr, 10) : 2ull;
+        static std::atomic<bool> delayed {false};   // the FIRST plan of that request only (the rebind is not delayed)
+        if (static_cast<unsigned long long>(compileRequestSerial) == serial && !delayed.exchange(true))
+            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<long long>(std::atof(delay) * 1000.0)));
+    }
 
     const auto finishWorker = [&]()
     {

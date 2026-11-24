@@ -8725,3 +8725,8 @@ start-up hitches (render), trade step 16 part 3 live.
   is the cockpit-capsule (escape_thrust_mn 0.13, escape_dv_mps 3000); code + generators know it. The ring crash in the
   author's session predates the swept-ring planning (79fae762f). Next: the capsule (memory cockpit-capsule-rescue) and the
   onboard computer journal (memory onboard-computer-journal), then the UI component pass (author's brief).
+- Capsule step 2 (the loss outcome, author 2026-11-24): the cockpit DESTROYED (no health / Destroyed) -> capsule
+  Destroyed / PilotKilled -> the pilot-lost screen; the cockpit whole (even torn off) on a cockpit-capsule ship -> the
+  pilot ALIVE in it (a cockpit still on a lost hull is ejected); a crushed hull does not kill a capsule already off it.
+  The pilot's deceleration in a collision (CapsuleRules: dv^2 / (2 x 6 m) against 50 g) kills him whatever is left of
+  the ship: 495 m/s ram 2125 g -> pilot-lost screen; 63 m/s ram: reactors lost, the crew escapes in the EC-2.

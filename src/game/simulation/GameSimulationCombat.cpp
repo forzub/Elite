@@ -401,12 +401,16 @@ void GameSimulation::disableShipIfCombatLost(EntityId shipId, Ship& ship)
     const auto alive = [](const world::modules::ObjectModuleState& m) {
         return m.state == world::modules::ObjectModuleRuntimeState::Attached && m.health > 0.0f;
     };
-    bool cockpitLost = false;
+    // the cockpit's fate (author 2026-11-24: «если капсула уничтожена - конец игры, если цела - ... стыковка с
+    // ближайшим спасательным доком»): DESTROYED = no health left; a cockpit torn off but whole is the cockpit-capsule
+    // flying on its own (it was "lost" - the pilot spun on in it with no word of what happened)
+    const auto* cockpit = runtime.findModule("ship_cockpit");
+    const bool cockpitDestroyed = !cockpit || cockpit->health <= 0.0f ||
+                                  cockpit->state == world::modules::ObjectModuleRuntimeState::Destroyed;
+    const bool cockpitOff = cockpit && cockpit->state != world::modules::ObjectModuleRuntimeState::Attached;
     int reactors = 0, reactorsAlive = 0;
     for (const auto& m : runtime.modules())
     {
-        if (m.moduleId == "ship_cockpit")
-            cockpitLost = !alive(m);
         const bool propulsionReactor = isPropulsionReactorModule(m.moduleId);
         if (propulsionReactor)
         {
@@ -415,16 +419,24 @@ void GameSimulation::disableShipIfCombatLost(EntityId shipId, Ship& ship)
         }
     }
     const bool reactorsLost = reactors > 0 && reactorsAlive == 0;
-    if (!cockpitLost && !reactorsLost)
+    if (!cockpitDestroyed && !cockpitOff && !reactorsLost)
         return;
     motion.destroyedCause = 3;
-    const auto* cockpit = runtime.findModule("ship_cockpit");
-    const bool crewEscapes = !cockpitLost && cockpit && cockpit->detachable;
-    // the crew's fate as a REPLICATED fact (the client guessed it from the cockpit module's health - a cockpit torn
-    // off with health left was "alive": no "pilot lost" screen after a ram, author 2026-11-24 «никакого сообщения,
-    // что игра окончена - нет»)
-    if (cockpitLost)
-        motion.capsuleState = static_cast<std::uint8_t>(game::navigation::capsule::State::PilotKilled);
+    namespace cap = game::navigation::capsule;
+    const bool cockpitCapsule = cockpit && cockpit->detachable;   // the cockpit IS the capsule (Cobrett EC-2)
+    const bool cockpitLost = cockpitDestroyed;
+    bool crewEscapes = false;
+    if (cockpitDestroyed)
+        motion.capsuleState = static_cast<std::uint8_t>(cockpitCapsule ? cap::State::Destroyed : cap::State::PilotKilled);
+    else if (cockpitCapsule)
+    {
+        // the crew is alive in the cockpit-capsule: a cockpit still on the hull separates now (the hull is lost)
+        if (!cockpitOff)
+            (void)ship.core().ejectCockpitCapsule();
+        motion.capsuleState = static_cast<std::uint8_t>(cap::State::PilotAlive);
+        crewEscapes = true;
+        markShipGraphDirty(shipId);
+    }
     std::cerr << "[Combat] ship " << shipId.value << ": OUT OF THE FIGHT - " << (cockpitLost ? "cockpit lost" : "all propulsion reactors lost")
               << "; crew " << (crewEscapes ? "escapes in the EC-2 cockpit" : cockpitLost ? "lost with the cockpit" : "stays aboard (no escape module)")
               << " (combat clock " << m_combatClockS << " s)" << std::endl;
@@ -1900,6 +1912,32 @@ void GameSimulation::collideShips(double dt)
             for (int side = 0; side < (B.ship ? 2 : 1); ++side)
             {
                 Body& X = side == 0 ? A : B;
+                // the PILOT's deceleration (CapsuleRules.h: the body takes up to BodyLimitG over the hull's crumple + the
+                // capsule's absorber, CrushStrokeM): the ship's velocity change in this impact. Beyond it the pilot is
+                // killed whatever is left of the ship (a 100 m/s stop against a station is ~85 g; 60 m/s ~31 g)
+                if (!X.scripted)
+                {
+                    namespace cap = game::navigation::capsule;
+                    auto& xm = X.ship->core().transform().motion;
+                    const double dv = J / std::max(1.0, X.m);
+                    const double bodyG = dv * dv / (2.0 * cap::CrushStrokeM) / 9.81;
+                    if (xm.capsuleState != static_cast<std::uint8_t>(cap::State::PilotKilled) &&
+                        xm.capsuleState != static_cast<std::uint8_t>(cap::State::Destroyed))
+                        xm.capsuleBodyG = static_cast<float>(std::max<double>(xm.capsuleBodyG, bodyG));
+                    if (bodyG > cap::BodyLimitG && xm.capsuleState != static_cast<std::uint8_t>(cap::State::PilotKilled) &&
+                        xm.capsuleState != static_cast<std::uint8_t>(cap::State::Destroyed))
+                    {
+                        xm.capsuleState = static_cast<std::uint8_t>(cap::State::PilotKilled);
+                        if (xm.destroyedCause == 0)
+                            xm.destroyedCause = 3;
+                        X.ship->setControlState(ShipControlState {});
+                        if (!isPlayerControlled(X.id))
+                            (void)markShipDerelict(X.id);
+                        std::cerr << "[Collision] ship " << X.id.value << ": the pilot is killed by the deceleration - "
+                                  << bodyG << " g (dv " << dv << " m/s over " << cap::CrushStrokeM << " m; limit "
+                                  << cap::BodyLimitG << " g)" << std::endl;
+                    }
+                }
                 std::unordered_map<std::string, int> keys;
                 std::unordered_map<std::string, int> modules;
                 for (const auto& [ia, ib] : touching)
@@ -1957,6 +1995,16 @@ void GameSimulation::collideShips(double dt)
                 {
                     auto& mo = X.ship->core().transform().motion;
                     mo.destroyedCause = 4;
+                    // the crew: a cockpit-capsule already off the hull flies on (the hull is crushed, not the capsule);
+                    // otherwise it goes with the hull
+                    {
+                        namespace cap = game::navigation::capsule;
+                        const auto* ck = X.ship->core().moduleRuntime().findModule("ship_cockpit");
+                        const bool escaped = mo.capsuleState == static_cast<std::uint8_t>(cap::State::PilotAlive) && ck &&
+                                             ck->state != world::modules::ObjectModuleRuntimeState::Attached;
+                        if (!escaped)
+                            mo.capsuleState = static_cast<std::uint8_t>(ck && ck->detachable ? cap::State::Destroyed : cap::State::PilotKilled);
+                    }
                     X.ship->setControlState(ShipControlState {});
                     X.ship->core().destroyWholeShip();
                     markShipGraphDirty(X.id);

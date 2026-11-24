@@ -544,14 +544,17 @@ bool SpaceState::playerPilotLost(std::string* cause) const
             cockpitLost = m.health <= 0.0f;
     namespace cap = game::navigation::capsule;
     const auto capsule = static_cast<cap::State>(motion.capsuleState);
-    const bool killed = cockpitLost || capsule == cap::State::PilotKilled ||
-                        motion.destroyedCause == 4;   // crushed against a structure
+    // the pilot alive in the cockpit-capsule is NOT lost (the capsule flies on); the capsule itself destroyed is
+    const bool killed = capsule != cap::State::PilotAlive &&
+                        (cockpitLost || capsule == cap::State::PilotKilled || capsule == cap::State::Destroyed ||
+                         motion.destroyedCause == 4);   // crushed against a structure
     if (!killed)
         return false;
     if (cause)
         *cause = motion.destroyedCause == 1 ? "удар о поверхность"
                : motion.destroyedCause == 4 ? "столкновение с постройкой"
-               : motion.destroyedCause == 3 ? "кабина разрушена"
+               : capsule == cap::State::PilotKilled ? "перегрузка при ударе"
+               : capsule == cap::State::Destroyed || motion.destroyedCause == 3 ? "кабина разрушена"
                                             : "перегрузка";
     return true;
 }

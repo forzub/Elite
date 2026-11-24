@@ -667,7 +667,13 @@ private:
     double m_manualAssistWarnedAt = -1.0e9;
     double m_manualAssistLogAt = -1.0e9;
     bool m_manualAssistActive = false;
-    ShipControlState applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds);
+    // autopilotPhase: the virtual pilot's phases WITHOUT the route reflex (stabilizing, planning, the recovery after a
+    // failure - a rammer met the ship braking after an engine loss and passed 39 m off, failsuite v1): always "assist",
+    // no pilot cancel, its own reflex state
+    ShipControlState applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds,
+                                                bool autopilotPhase = false);
+    game::navigation::avoidance::EvasionReflex m_phaseReflex;
+    bool m_routeReflexApplied = false;   // the route's own reflex ran for the control being submitted
     game::navigation::avoidance::EvasionNet m_evasionNet;
     bool m_evasionNetTried = false;
     double m_evasionLogAt = -1.0e9;

@@ -8335,3 +8335,15 @@ start-up hitches (render), trade step 16 part 3 live.
     after a 30 s plan the next start straight stays 1000 m (was 3.7 km); delay-30 test landed in 108 s (139).
   * 2026-11-24 the lane chain search back on the full obstacle scan: with the grid it was slower (351 -> 443 ms - its
     km-long segments cross hundreds of cells, the per-call build costs more); time cost vs metres: 472 vs 443 ms (noise).
+  * 2026-11-24 FAILURES TEST SET (navigator step 7, scratchpad failsuite.sh; Cobra Assisted-I, 4 gimballed engines):
+    aft R lost in flight -> "motors degraded" recovery, replanned on the damaged physics, landed 190 s, cross max 26 m;
+    fore L lost -> landed 200 s (12 m); aft R lost before the request -> 189 s (25 m); BOTH aft lost -> the planner
+    refuses honestly ("motor basis insufficient: working_forward=0", reverse 73.5 m/s2 left) - flying on the fore
+    engines turned round is the job of the planned engine-state autopilot (net); 0 collisions everywhere.
+    GAP FOUND + FIXED: the reflex ran only while the route executed - in the recovery stop after a loss a head-on
+    rammer passed 39 m off (centres) with no dodge. Now every virtual-pilot phase gets the reflex
+    (applyManualCollisionAssist(..., autopilotPhase) from submitAutopilotControl unless the route's own reflex ran);
+    a dodge drops the pilot's velocity / acceleration targets (they outranked the stick: 5 dodges, miss unchanged);
+    its physics = the mother computer's damaged envelope (the module list predicted a healthy 120 m dodge). LIVE: 5
+    phase dodges, 43 m, 0 collisions - the damaged ship's authority limit (the last programs judged a full miss
+    impossible -> the glancing choice). Plain B4-11 with the phase reflex: 0 dodges, 177 s, cross 14 m.

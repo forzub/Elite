@@ -1091,7 +1091,12 @@ void SpaceState::updateDockingAdvisory()
     const auto submitAutopilotControl =
         [&](const ShipControlState& control)
         {
-            m_clientAutopilotControl = control;
+            // the reflex in EVERY phase of the virtual pilot: the route's own (executing) or the world one
+            m_clientAutopilotControl =
+                m_routeReflexApplied
+                    ? control
+                    : applyManualCollisionAssist(control, m_client->lastSimulationMetadata().universeTimeSeconds, true);
+            m_routeReflexApplied = false;
             m_clientAutopilotControlActive = true;
 
             // This is deliberately the same input path used by the keyboard.
@@ -4333,6 +4338,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             reflexShip.ratesPitchYawRoll = glm::vec3(static_cast<float>(reflexAgent.pitchRateRadPerSec),
                                                      static_cast<float>(reflexAgent.yawRateRadPerSec),
                                                      static_cast<float>(reflexAgent.rollRateRadPerSec));
+            m_routeReflexApplied = true;
             submitAutopilotControl(applyEvasionReflex(output.control, reflexLateral, std::max(10.0, 0.5 * f.hull.lengthMeters),
                                                       universeTimeSeconds, &reflexShip));
 
@@ -5108,13 +5114,17 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
 // it acts only when the touch is about as near in time as the dodge takes. "warn": a HUD warning only (hard realism);
 // "assist": the program holds the stick for the manoeuvre (shown on the HUD); a SHARP pilot input (a full deflection /
 // any translation key) hands it back for 3 s - the pilot is always the last word. "off": nothing.
-ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds)
+ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& sampled, double universeTimeSeconds,
+                                                        bool autopilotPhase)
 {
+    auto& reflex = autopilotPhase ? m_phaseReflex : m_manualReflex;
     std::string mode = context().app ? context().app->clientModeState().collisionAssistMode : std::string("assist");
     if (const char* dev = std::getenv("ELITE_DEV_COLLISION_ASSIST"); dev && *dev)
         mode = dev;   // DEV: off / warn / assist for the checks
+    if (autopilotPhase)
+        mode = "assist";   // the virtual pilot always dodges (as over the route)
     const auto quiet = [&]() {
-        if (m_manualAssistActive)
+        if (!autopilotPhase && m_manualAssistActive)
         {
             m_manualAssistActive = false;
             m_pilotNotice = "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: управление у пилота";
@@ -5124,13 +5134,13 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     const char* env = std::getenv("ELITE_DEV_EVASION_REFLEX");
     if (mode == "off" || !m_client || (env && env[0] == '0'))
     {
-        m_manualReflex.reset();
+        reflex.reset();
         return quiet();
     }
     const auto& sensors = m_client->navigationSensors();
     if (!sensors.radarInstalled || !sensors.radarOperational || !sensors.hasRadarScan)
     {
-        m_manualReflex.reset();
+        reflex.reset();
         return quiet();
     }
     const auto shipIt = m_client->world().ships().find(m_playerId.value);
@@ -5142,13 +5152,13 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     // the pilot's sharp input takes the stick back
     const bool sharp = std::abs(sampled.pitchInput) > 0.8f || std::abs(sampled.yawInput) > 0.8f ||
                        sampled.strafeInput != 0.0f || sampled.liftInput != 0.0f || sampled.forwardInput != 0.0f;
-    if (m_manualAssistActive && sharp)
+    if (!autopilotPhase && m_manualAssistActive && sharp)
     {
         m_manualAssistSuppressedUntil = universeTimeSeconds + 3.0;
-        m_manualReflex.reset();
+        reflex.reset();
         return quiet();
     }
-    if (universeTimeSeconds < m_manualAssistSuppressedUntil)
+    if (!autopilotPhase && universeTimeSeconds < m_manualAssistSuppressedUntil)
         return quiet();
     // the ship's physical state for the control programs (body axes: +X right, +Y up, -Z nose - the radar's frame)
     static double physicsAt = -1.0e9;
@@ -5164,6 +5174,12 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
         const auto capability =
             game::ship::capability::buildShipCapability(*player.descriptor, player.physicalControlModel, slots);
         physics = capability.valid ? capability.effectivePhysics : ShipParams {};
+        // the mother computer's envelope is the DAMAGED truth (the route reflex flies it too): the module list alone
+        // predicted a healthy dodge - 120 m predicted, 37 m flown with an aft engine lost (phase_ram2)
+        ShipParams mother {};
+        if (m_motherComputer.physicalFlightEnvelope(static_cast<std::uint64_t>(player.instanceId),
+                                                    m_client->lastSimulationMetadata().serverTick, mother))
+            physics = mother;
     }
     game::navigation::avoidance::ControlShipState ship;
     ship.params = physics;
@@ -5180,7 +5196,7 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     ship.targetForwardSpeedMps = std::max(0.0, static_cast<double>(motion.targetForwardSpeedMps));
     ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
     const double hullRadius = std::max(10.0, 0.5 * player.descriptor->logicalDimensions().length);
-    const auto& cmd = m_manualReflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius);
+    const auto& cmd = reflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius);
     if (!cmd.active)
         return quiet();
     if (mode == "warn")
@@ -5194,8 +5210,16 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
         }
         return sampled;
     }
-    // assist: the program holds the stick for the manoeuvre
+    // assist: the program holds the stick for the manoeuvre - and only the stick: a velocity / acceleration target of the
+    // virtual pilot (the recovery stop after an engine loss) outranks the stick in the flight law, the dodge was
+    // ignored there (5 dodges logged, the miss unchanged at 39 m, failsuite phase_ram)
     ShipControlState control = sampled;
+    control.navigationAccelerationDemandValid = false;
+    control.navigationVelocityTargetValid = false;
+    control.navigationPrecisionTranslationOnly = false;
+    control.globalFlightCommandValid = false;
+    control.globalJVelocityTargetValid = false;
+    control.globalAttitudeTargetValid = false;
     control.strafeInput = cmd.strafe;
     control.liftInput = cmd.lift;
     control.forwardInput = cmd.forward;
@@ -5207,13 +5231,14 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
         control.rollInput = 0.0f;
         control.targetSpeedRate = cmd.speedRate;
     }
-    if (!m_manualAssistActive)
+    if (!autopilotPhase && !m_manualAssistActive)
         m_pilotNotice = "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: манёвр уклонения (резкое движение ручкой - управление вам)";
-    m_manualAssistActive = true;
+    if (!autopilotPhase)
+        m_manualAssistActive = true;
     if (universeTimeSeconds - m_manualAssistLogAt > 1.0)
     {
         m_manualAssistLogAt = universeTimeSeconds;
-        std::cerr << "[CollisionAssist] dodge: " << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
+        std::cerr << (autopilotPhase ? "[Evasion] phase dodge: " : "[CollisionAssist] dodge: ") << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
                   << " m (window " << cmd.urgencySeconds << " s) -> " << cmd.marginMeters << " m; program " << cmd.program
                   << std::endl;
     }

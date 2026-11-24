@@ -8333,3 +8333,5 @@ start-up hitches (render), trade step 16 part 3 live.
     fast path 82 %, 431 ms; maze 1.079 (v1 1.096, game 1.063), detour 1.35 (game 1.44), 495 ms (game 758).
   * 2026-11-24 the planning-time lead now takes the LOWER MEDIAN of the last 5 plan times (OrdinaryRoutePolicy):
     after a 30 s plan the next start straight stays 1000 m (was 3.7 km); delay-30 test landed in 108 s (139).
+  * 2026-11-24 the lane chain search back on the full obstacle scan: with the grid it was slower (351 -> 443 ms - its
+    km-long segments cross hundreds of cells, the per-call build costs more); time cost vs metres: 472 vs 443 ms (noise).

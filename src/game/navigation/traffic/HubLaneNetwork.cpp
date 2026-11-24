@@ -2,7 +2,6 @@
 
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
-#include "src/world/navigation/NavigationObstacleGrid.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -156,15 +155,12 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     const auto searchStart = std::chrono::steady_clock::now();
     // a straight free piece clear of the buildings and the red zones (the hull + 10 m); no obstacle list = not checked
     int blockedLegs = 0;
-    // the obstacle grid (NavigationObstacleGrid.h): the same test, only the obstacles of the segment's cells; the
-    // inflation hull + 10 m is the grid's agent radius (both are added the same way)
-    world::navigation::NavigationObstacleGrid grid;
-    if (obstacles && !obstacles->empty())
-        grid.build(*obstacles, agentRadiusMeters + 10.0);
+    // (the obstacle grid made this search SLOWER - 351 -> 443 ms: its segments are kilometres long and cross hundreds
+    // of cells, the build per call costs more than the scan; the grid stays in the optimizer's short segments)
     const auto clear = [&](const glm::dvec3& a, const glm::dvec3& b) {
         if (!obstacles || obstacles->empty())
             return true;
-        const bool ok = grid.segmentClear(a, b);
+        const bool ok = world::navigation::segmentClearOfNavigationObstacles(a, b, *obstacles, agentRadiusMeters, 10.0);
         blockedLegs += ok ? 0 : 1;
         return ok;
     };

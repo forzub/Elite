@@ -51,7 +51,10 @@ enum class SessionRejectReason : std::uint8_t
     SessionUnavailable = 5,
     BootstrapFailed = 6,
     InvalidAccountHandle = 7,
-    AccountHandleTaken = 8
+    AccountHandleTaken = 8,
+    // the server could not encode a snapshot for this session (over the wire size limit, audit SRV-2): the client is
+    // told WHY instead of a bare "peer closed connection"
+    SnapshotTooLarge = 9
 };
 
 struct SessionReject
@@ -78,6 +81,8 @@ inline const char* sessionRejectCode(SessionRejectReason reason) noexcept
             return "INVALID_ACCOUNT_HANDLE";
         case SessionRejectReason::AccountHandleTaken:
             return "ACCOUNT_HANDLE_TAKEN";
+        case SessionRejectReason::SnapshotTooLarge:
+            return "SNAPSHOT_TOO_LARGE";
         case SessionRejectReason::SessionUnavailable:
         default:
             return "SESSION_UNAVAILABLE";

@@ -59,6 +59,11 @@ bool packageHitVolumes(ObjectType type, const std::string& path, std::vector<gam
 {
     namespace ma = elite::model_asset;
     static std::unordered_map<std::string, std::vector<game::damage::HitVolume>> cache;
+    if (path.rfind("drop:", 0) == 0)
+    {
+        cache.erase(path.substr(5));   // a city stage's volumes replaced (SRV-4: the cache only grew)
+        return false;
+    }
     const auto [it, inserted] = cache.try_emplace(path);
     if (inserted)
     {
@@ -1291,7 +1296,10 @@ bool refreshHubCityConstructionCollision(GameSimulation& sim)
         const auto [it, inserted] = keys.try_emplace(obj.hubId, key);
         if (inserted || it->second == key)
             continue;
+        const std::uint64_t oldKey = it->second;
         it->second = key;
+        std::vector<game::damage::HitVolume> dropped;
+        packageHitVolumes(obj.type, "drop:layout:" + obj.hubId + "#" + std::to_string(oldKey), dropped);
         ma::ModelAsset cityCollision;
         std::vector<game::damage::HitVolume> volumes;
         if (ma::assembleHubCityCollision(obj.hubId, "assets/compiled/hub_modules", cityCollision) &&

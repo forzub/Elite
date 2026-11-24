@@ -3654,6 +3654,19 @@ bool GameSimulation::setStaticObjectPackageHitVolumes(EntityId objectId, std::ve
     auto it = m_staticObjects.find(objectId);
     if (it == m_staticObjects.end() || volumes.empty())
         return false;
+    // a REPLACEMENT (a construction stage of a city, audit SRV-4): what was destroyed stays destroyed - the volumes are
+    // matched by their collision id (stable across the stages; node indices are not), a destroyed building is not solid
+    // again because a new stage was assembled
+    {
+        std::unordered_map<std::string, bool> destroyedByLabel;
+        for (const auto& v : it->second.hitComponent.volumes)
+            if (v.destroyed && !v.m_label.empty())
+                destroyedByLabel[v.m_label] = true;
+        if (!destroyedByLabel.empty())
+            for (auto& v : volumes)
+                if (destroyedByLabel.count(v.m_label))
+                    v.destroyed = true;
+    }
     it->second.hitComponent.volumes = std::move(volumes);
     it->second.packageHitVolumes = true;
     it->second.hitVolumesDirty = false;

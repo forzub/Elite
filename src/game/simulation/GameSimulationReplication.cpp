@@ -636,8 +636,13 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 obj.cachedStructuralLinkSnapshots.push_back(std::move(ls));
             }
 
-            obj.cachedDebugHitVolumeSnapshots =
-                world::modules::HitVolumeSnapshotBuilder::build(obj.hitComponent);
+            // not built for an object whose volumes the client derives itself (never sent - SRV-4: 12-17 thousand
+            // boxes per city rebuilt on every stage for nothing)
+            if (game::scene::layoutCityHitVolumesOnClient(obj.type, obj.hubId))
+                obj.cachedDebugHitVolumeSnapshots.clear();
+            else
+                obj.cachedDebugHitVolumeSnapshots =
+                    world::modules::HitVolumeSnapshotBuilder::build(obj.hitComponent);
 
             obj.staticSnapshotPayloadDirty = false;
         }

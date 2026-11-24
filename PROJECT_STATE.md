@@ -8465,3 +8465,12 @@ start-up hitches (render), trade step 16 part 3 live.
 - Tests: evasion_trajectory_conflict 5102 checks (+ episode, urgency from physics, alignment cancel, gateway flags).
 - Live: route ramtest head-on 51-57 m / right 103 m (no dodge), 0 collisions; engine lost + recovery stop + ram: phase
   dodges, miss 83 m (was 72), landed 197-204 s; city B4-11 185 s, 0 dodges.
+- SRV-4: a city's construction-stage volume replacement (GameSimulation::setStaticObjectPackageHitVolumes) keeps
+  `destroyed` by collision id (a destroyed building no longer turns solid again); the weapon ray's city bounding sphere
+  is cached per m_staticObjectsGeneration (the first stage's sphere missed new buildings); the previous stage's package
+  volumes are dropped from the packageHitVolumes cache ("drop:" key); the server no longer builds debug hit-volume
+  snapshots of objects the client derives itself (never sent). Remote landing B4-11 after: 175 s, 0 collisions.
+- SRV-2: a snapshot the TCP server cannot encode (over the wire limit) sends SessionReject SNAPSHOT_TOO_LARGE (new reason
+  9, wire protocol 51) before closing; checked with ELITE_REPLICATE_CITY_HIT_VOLUMES=1 over a dedicated server: the
+  client reports "Session synchronization failed: SNAPSHOT_TOO_LARGE" (was a bare "peer closed"). Still no chunking /
+  compression / budget - the limit is now explicit, not silent.

@@ -64,14 +64,24 @@ bool GameSimulation::castCitySegment(const glm::dvec3& startW, const glm::dvec3&
         const double len = glm::length(seg);
         if (len < 1.0e-6)
             continue;
-        // the bounding sphere (cached per object; volumes never move inside the city)
-        static std::unordered_map<std::uint64_t, double> radius;
-        auto [rit, fresh] = radius.try_emplace(oid.value, 0.0);
-        if (fresh)
+        // the bounding sphere (cached per object and per static-object generation: a construction stage replaces the
+        // volumes - SRV-4, the beams missed the new buildings with the first stage's sphere)
+        struct CachedRadius
+        {
+            std::uint64_t generation = 0;
+            double radius = 0.0;
+        };
+        static std::unordered_map<std::uint64_t, CachedRadius> radius;
+        auto& rit = radius[oid.value];
+        if (rit.generation != m_staticObjectsGeneration)
+        {
+            rit.generation = m_staticObjectsGeneration;
+            rit.radius = 0.0;
             for (const auto& v : obj.hitComponent.volumes)
-                rit->second = std::max(rit->second, static_cast<double>(glm::length(v.center) + glm::length(v.halfSize)));
+                rit.radius = std::max(rit.radius, static_cast<double>(glm::length(v.center) + glm::length(v.halfSize)));
+        }
         const glm::dvec3 closest = a + seg * std::clamp(glm::dot(-a, seg) / (len * len), 0.0, 1.0);
-        if (glm::length(closest) > rit->second)
+        if (glm::length(closest) > rit.radius)
             continue;
         const glm::dmat3 R(glm::mat3(obj.orientation));
         const glm::vec3 aL(glm::transpose(R) * a);

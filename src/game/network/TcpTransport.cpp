@@ -1,5 +1,6 @@
 #include "src/game/network/TcpTransport.h"
 
+#include <type_traits>
 #include <queue>
 #include <iostream>
 #include <typeinfo>
@@ -265,6 +266,20 @@ struct TcpServerTransport::Impl
     {
         if (!stream || !sendTyped(*stream, value, compressor))
         {
+            // a snapshot that could not be ENCODED (the stream itself is fine: over the wire size limit, SRV-2): tell
+            // the client why before closing - it showed only "TCP peer closed connection"
+            if constexpr (std::is_same_v<T, SimulationSnapshot>)
+            {
+                if (stream && stream->lastError().empty())
+                {
+                    SessionReject reject;
+                    reject.reason = SessionRejectReason::SnapshotTooLarge;
+                    reject.retryable = false;
+                    (void)sendTyped(*stream, reject, compressor);
+                    fail("snapshot over the wire size limit - SNAPSHOT_TOO_LARGE sent to the client");
+                    return;
+                }
+            }
             fail(
                 stream && !stream->lastError().empty()
                     ? stream->lastError()

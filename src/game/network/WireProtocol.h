@@ -36,7 +36,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 50u;   // 50: ShipControlState::cancelVelocityAlignment (the evasion reflex, NAV-6); 49: EnterHubFrame; 48: ToggleLandingGear; 47: ClientShipCommand::LandOnPad (hub city pads); 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4); 33: its contractId + TakeContract / AbandonContract / DevEconomyDays (trade step 5); 34: DevSpendAll; 35: SellBlack + DevCustoms (trade step 9); 36: BuyLicence (step 11); 37: InsureCargo (step 13); 38: ClientShipCommand::BoardShip (ship change); 39: BuyShip (F6); 40: ClientEconomyCommand::DevGrant; 41: HireJob / QuitJob (the employment service); 42: TakeSos (rescue); 43: HireBot / OrderBotLoop / FireBot (step 15); 44: SignConstruction (step 16); 45: LeaseSite (step 16 part 2); 46: SetMineSale / LoadFromMine (part 3)
+inline constexpr std::uint16_t WireProtocolVersion = 51u;   // 51: SessionRejectReason::SnapshotTooLarge (SRV-2); 50: ShipControlState::cancelVelocityAlignment (the evasion reflex, NAV-6); 49: EnterHubFrame; 48: ToggleLandingGear; 47: ClientShipCommand::LandOnPad (hub city pads); 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4); 33: its contractId + TakeContract / AbandonContract / DevEconomyDays (trade step 5); 34: DevSpendAll; 35: SellBlack + DevCustoms (trade step 9); 36: BuyLicence (step 11); 37: InsureCargo (step 13); 38: ClientShipCommand::BoardShip (ship change); 39: BuyShip (F6); 40: ClientEconomyCommand::DevGrant; 41: HireJob / QuitJob (the employment service); 42: TakeSos (rescue); 43: HireBot / OrderBotLoop / FireBot (step 15); 44: SignConstruction (step 16); 45: LeaseSite (step 16 part 2); 46: SetMineSale / LoadFromMine (part 3)
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -527,7 +527,7 @@ inline bool decodeSessionReject(
     std::uint8_t reason = 0;
     if (!reader.u8(reason) ||
         reason < static_cast<std::uint8_t>(SessionRejectReason::InvalidCredential) ||
-        reason > static_cast<std::uint8_t>(SessionRejectReason::AccountHandleTaken) ||
+        reason > static_cast<std::uint8_t>(SessionRejectReason::SnapshotTooLarge) ||
         !reader.boolean(outValue.retryable) ||
         !finishDecode(reader))
     {

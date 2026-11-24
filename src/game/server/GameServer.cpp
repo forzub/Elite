@@ -3176,8 +3176,10 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
         auto& recent = m_recentEconomyRequests[player];
         if (std::find(recent.begin(), recent.end(), command.requestId) != recent.end())
         {
+            const bool replayed = m_economy.replayResult(player, command.requestId);
             std::cerr << "[Trade] request " << command.requestId << " of player " << player
-                      << " already handled in this session - not run twice" << std::endl;
+                      << " already handled in this session - not run twice" << (replayed ? ", its result sent again" : "")
+                      << std::endl;
             return;
         }
         recent.push_back(command.requestId);

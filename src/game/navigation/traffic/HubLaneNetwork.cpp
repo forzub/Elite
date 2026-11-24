@@ -255,7 +255,22 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     }();
     const double vFree = std::max(5.0, freeLegs.freeSpeedMps);
     const auto freeTime = [&](double m) { return metres ? m : m / vFree; };
-    const auto laneTime = [&](double m, double v) { return metres ? LaneCostFactor * m : m / std::max(1.0, v); };
+    // the execution's cruise cap (SegmentedRouteComposer::recomputeGlobalSpeeds: 0.8 x the route maximum) applies to every
+    // lane / junction too (audit 2 / PLAN-1: a 150 m/s corridor flew at 120 - 25 % longer than costed)
+    const double cruiseCap = std::max(1.0, 0.8 * vFree);
+    const auto laneTime = [&](double m, double v) {
+        return metres ? LaneCostFactor * m : m / std::max(1.0, std::min(v, cruiseCap));
+    };
+    // a speed change between a lane and a junction costs the braking / the speed-up: (v_hi - v_lo)^2 / (2 a v_hi) seconds
+    // more than flying it at v_hi (a = the profile's 8 m/s2; audit 2 / PLAN-1: accel / brake were not in the cost)
+    constexpr double ProfileAccelMps2 = 8.0;
+    const auto speedChange = [&](double v1, double v2) {
+        if (metres)
+            return 0.0;
+        const double a = std::min(std::max(1.0, v1), cruiseCap), b = std::min(std::max(1.0, v2), cruiseCap);
+        const double hi = std::max(a, b), lo = std::min(a, b);
+        return (hi - lo) * (hi - lo) / (2.0 * ProfileAccelMps2 * hi);
+    };
     // the join approach: braking from the cruise to the lane's speed
     const auto approachTime = [&](double m, double vLane) {
         return metres ? m : m / std::max(1.0, 0.5 * (vFree + std::min(vFree, vLane)));
@@ -370,8 +385,10 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
         for (const std::size_t c : outgoing[g])
         {
             const auto& cn = m_connectors[c];
-            relax(state(cn.toLane, cn.toStation, 1), d + laneTime(cn.lengthMeters, cn.maxSpeedMps), s,
-                  static_cast<int>(c));
+            relax(state(cn.toLane, cn.toStation, 1),
+                  d + laneTime(cn.lengthMeters, cn.maxSpeedMps) + speedChange(m_lanes[l].maxSpeedMps, cn.maxSpeedMps) +
+                      speedChange(cn.maxSpeedMps, m_lanes[cn.toLane].maxSpeedMps),
+                  s, static_cast<int>(c));
         }
         // leave at this station (any station it rode to; the lane's end beyond the rim included): for the goal, or a
         // transfer (open sky) into another lane at any of its stations

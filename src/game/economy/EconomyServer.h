@@ -634,6 +634,15 @@ private:
         int dueDay = 0;
     };
     void pushResult(std::uint64_t playerId, game::simulation::ClientTradeResult r);
+    // the last 64 results of a player by request id (audit 2: a re-delivered request is not run again AND gets its
+    // original answer - it was dropped silently, the client waited)
+    std::unordered_map<std::uint64_t, std::deque<game::simulation::ClientTradeResult>> m_replyCache;
+
+public:
+    // a request id already answered: its result published again; false = not known (run it)
+    bool replayResult(std::uint64_t playerId, std::uint32_t requestId);
+
+private:
     void stepContracts(int day);
     // failure (deadline passed / abandoned away from the origin): advance back + penalty (never refused), deposit forfeited
     void failContract(Contract& c, const std::string& status, const std::string& why);

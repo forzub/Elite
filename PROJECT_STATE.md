@@ -8700,3 +8700,16 @@ start-up hitches (render), trade step 16 part 3 live.
   commandedForwardSpeedMps() derived from motion; the repair-dock owner velocity = motion.worldVelocityMps; a mine load
   updates the ship's cargo mass at once; dead classes deleted on the author's go (IPowerConsumer-.h, IEquipmentModule.h,
   EquipmentSlot.h, ShipModuleState.h, ShipModuleSnapshot.h). Navigation ctest 57 / 9 baseline reds.
+- Audit 2 (rest): (a) HIGH the predicted trajectory's own error: EliteControlEvasionLab "deviation" (ELITE_LAB_DT) - the
+  dt-step flight drifts from 2 ms physics by ~73 dt metres a second (dt 0.1: 11-16 m at 2 s, 38-42 m at 12 s); the
+  reflex integrates at 0.05 s now and the judge widens each interval by 80 dt t (ControlFlight::chordBound,
+  PredictionDriftPerSecondPerStep): vs the physics oracle 0 missed touches (was 0.1-2.3 %), extra cautious touches ~8 %
+  of the lab flights; live: ramtest 60 / 104 m, 0 collisions; B4-11 185 s, 0 dodges; program cost 5.5-7 ms an update.
+  (b) MEDIUM the manual assist sees STRUCTURES: every hit volume of a nearby object (its bounding sphere) closing faster
+  than 15 m/s (slower = a landing / docking) joins the scene (EvasionReflex::updatePrograms extraThreats). Live, '+' held
+  40 s into Высокий: 21 dodges, the hit at 31 m/s instead of 63 (energy 82 vs 340 MJ) - the DEV script keeps pushing.
+  (c) MEDIUM a sparse deferred snapshot (an assembly preload mid-session) stays sparse with its removals accumulated (the
+  merge marked it a full set - every entity the sparse packets lacked was erased). (d) MEDIUM the lane chain cost takes
+  the execution's 0.8 x cruise cap and the speed changes at junctions ((v_hi - v_lo)^2 / (2 a v_hi), a = 8 m/s2).
+  B4-11 186 s. (e) MEDIUM/future a repeated economy request id gets its ORIGINAL result again
+  (EconomyServer::replayResult, the last 64 per player). EliteEconomyCheck 258 / 0; evasion ctest 5109 / 0.

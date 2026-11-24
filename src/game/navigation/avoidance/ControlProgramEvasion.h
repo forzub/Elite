@@ -86,6 +86,10 @@ struct ControlShipState
     glm::dvec3 deltaVSinceScanBody {0.0};
 };
 
+// the prediction's drift slope (metres per second of horizon per second of integration step), measured against 2 ms
+// physics: drift(t) ~ 73 dt t over the 41 programs (both laws); 80 with a margin
+inline constexpr double PredictionDriftPerSecondPerStep = 80.0;
+
 struct ControlFlight
 {
     // our flight's states every SampleSeconds, the initial body frame. The samples only REPRESENT the non-linear path:
@@ -134,7 +138,14 @@ inline ControlFlight flyControlProgram(const ControlShipState& st, const Control
         if (i % perSample == 0)
         {
             if (!out.pos.empty())
-                out.chordBound.push_back(intervalMaxAccel * sampleDt * sampleDt / 8.0);
+            {
+                // the chord's own bound + the PREDICTION'S DRIFT from fine physics up to this sample (audit 2 HIGH: the
+                // dt-step flight drifts from the 2 ms physics by ~73 dt metres a second - measured in
+                // EliteControlEvasionLab "deviation", all 41 programs, both laws; 80 dt t used: 0.05 s -> 4 m/s,
+                // 12 s -> 48 m at 0.1 s). The judge widens every interval by it (the ship is somewhere in that tube)
+                const double tEnd = static_cast<double>(i) * dt;
+                out.chordBound.push_back(intervalMaxAccel * sampleDt * sampleDt / 8.0 + PredictionDriftPerSecondPerStep * dt * tEnd);
+            }
             intervalMaxAccel = 0.0;
             out.pos.push_back(tr.motion.localPositionMeters);
             out.vel.push_back(tr.motion.localVelocityMps);

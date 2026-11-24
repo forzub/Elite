@@ -782,11 +782,32 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
                     // MERGE, not replace (2026-11-23): the bootstrap is the only snapshot carrying the heavy sparse
                     // payload (static objects' hit volumes, modules, links); a newer sparse snapshot replacing it lost
                     // that payload for good - a remote client had no obstacle geometry for the hub dock
+                    // ... and a SPARSE deferred snapshot (a new object type mid-session) stays sparse (audit 2: the merge
+                    // marked it FullAuthoritativeSet - the client then erased every entity the sparse packets lacked and
+                    // they came back without their graph); its removals accumulate
+                    const auto baseMode = m_deferredAssemblySnapshot->replication.entitySetMode;
+                    auto removedShips = m_deferredAssemblySnapshot->replication.removedShipIds;
+                    auto removedObjects = m_deferredAssemblySnapshot->replication.removedObjectIds;
+                    auto removedHubs = m_deferredAssemblySnapshot->replication.removedHubIds;
+                    for (const auto& id : newerSnapshot.replication.removedShipIds)
+                        removedShips.push_back(id);
+                    for (const auto& id : newerSnapshot.replication.removedObjectIds)
+                        removedObjects.push_back(id);
+                    for (const auto& id : newerSnapshot.replication.removedHubIds)
+                        removedHubs.push_back(id);
                     *m_deferredAssemblySnapshot =
                         game::network::materializeCanonicalReplicationSnapshot(
                             &*m_deferredAssemblySnapshot,
                             newerSnapshot
                         );
+                    if (baseMode != game::network::ReplicatedEntitySetMode::FullAuthoritativeSet)
+                    {
+                        auto& rep = m_deferredAssemblySnapshot->replication;
+                        rep.entitySetMode = baseMode;
+                        rep.removedShipIds = std::move(removedShips);
+                        rep.removedObjectIds = std::move(removedObjects);
+                        rep.removedHubIds = std::move(removedHubs);
+                    }
                 }
             }
 

@@ -3048,9 +3048,36 @@ bool EconomyServer::marketSide(const std::string& hubId, const std::string& good
     return true;
 }
 
+bool EconomyServer::replayResult(std::uint64_t playerId, std::uint32_t requestId)
+{
+    if (requestId == 0)
+        return false;
+    const auto it = m_replyCache.find(playerId);
+    if (it == m_replyCache.end())
+        return false;
+    for (const auto& r : it->second)
+        if (r.requestId == requestId)
+        {
+            auto& v = m_results[playerId];
+            v.push_back(r);
+            if (v.size() > 4)
+                v.erase(v.begin(), v.end() - 4);
+            ++m_tradeSerial;
+            return true;
+        }
+    return false;
+}
+
 void EconomyServer::pushResult(std::uint64_t playerId, game::simulation::ClientTradeResult r)
 {
     r.day = m_day;
+    if (r.requestId != 0)
+    {
+        auto& cache = m_replyCache[playerId];
+        cache.push_back(r);
+        if (cache.size() > 64)
+            cache.pop_front();
+    }
     auto& v = m_results[playerId];
     v.push_back(std::move(r));
     if (v.size() > 4)

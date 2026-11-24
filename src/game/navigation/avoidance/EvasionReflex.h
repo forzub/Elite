@@ -83,7 +83,9 @@ public:
     // THE CONTROL-PROGRAM REFLEX (ControlProgramEvasion.h): every program flown on the ship's real physics from its
     // state now, judged against the radar's tracks; hands off when "hands off" is clear. The program held keeps the
     // lead unless another one is clearly better (no flicker between equals).
-    double programDtSeconds = 0.1;
+    // the programs' integration step: 0.05 s (audit 2 HIGH: at 0.1 s the prediction drifted 11-16 m from the physics in
+    // 2 s - the size of the safety gap; 0.05 halves it at ~2x the cost, the rest is the drift bound in the judge)
+    double programDtSeconds = 0.05;
     double programHoldSeconds = 2.0;   // re-chosen 4 times a second anyway; a 4 s full push moved ~1 km
     double lastProgramMs = 0.0;
     // URGENCY (remote B4-11, 2026-11-23): a threat matters to the reflex only once it is about as close in time as the
@@ -107,13 +109,18 @@ public:
         const double tNeed = a > 0.1 ? std::sqrt(2.0 * miss / a) : 4.0;
         return std::clamp(tNeed + reactionSeconds, 3.0, 8.0);
     }
+    // extraThreats: threats in the body frame NOW, age 0 (the structures near the course - the manual assist; audit 2:
+    // the scene skipped every Structure track, the assist never protected from a station / a city)
     const EvasionReflexCommand& updatePrograms(const radar::RadarScanReport& scan, double now, const ControlShipState& ship,
-                                               double hullRadiusMeters, double lateralAccelMps2 = 0.0)
+                                               double hullRadiusMeters, double lateralAccelMps2 = 0.0,
+                                               const std::vector<EvasionThreatTrack>* extraThreats = nullptr)
     {
         if (now < m_nextAt)
             return m_cmd;
         m_nextAt = now + periodSeconds;
         EvasionScene sc = sceneFrom(scan, now, hullRadiusMeters, &ship.ratesPitchYawRoll, &ship);
+        if (extraThreats)
+            sc.threats.insert(sc.threats.end(), extraThreats->begin(), extraThreats->end());
         m_cmd.threats = static_cast<int>(sc.threats.size());
         if (sc.threats.empty())
             return release(now);

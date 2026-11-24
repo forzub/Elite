@@ -221,7 +221,8 @@ int main(int argc, char** argv)
     const auto law = (argc > 2 && std::string(argv[2]) == "newtonian") ? game::navigation::LocalFlightControlLaw::Newtonian
                                                                         : game::navigation::LocalFlightControlLaw::Assisted;
     const auto progs = programs();
-    const double dt = 0.05, hold = 4.0, horizon = 12.0, speed0 = 60.0;
+    // ELITE_LAB_DT: the prediction's integration step (the game reflex uses 0.1 s; audit 2: the prediction error vs fine physics)
+    const double dt = std::getenv("ELITE_LAB_DT") ? std::atof(std::getenv("ELITE_LAB_DT")) : 0.05, hold = 4.0, horizon = 12.0, speed0 = 60.0;
     if (mode == "bench")
     {
         const auto t0 = std::chrono::steady_clock::now();
@@ -335,6 +336,32 @@ int main(int argc, char** argv)
                     100.0 * safeNone / scenes, 100.0 * safeReflex / scenes, 100.0 * safeBest / scenes);
         std::printf("  touches: the reflex %d, the best program %d; normal impact where a touch is unavoidable: reflex %.1f m/s, best %.1f m/s\n",
                     touchReflex, touchBest, nImpReflex ? impReflex / nImpReflex : 0.0, nImpBest ? impBest / nImpBest : 0.0);
+        return 0;
+    }
+    if (mode == "deviation")
+    {
+        // the prediction's drift from fine physics (audit 2): every program flown at the lab dt and at 2 ms; the largest
+        // position difference over all programs at each sample time
+        game::navigation::avoidance::ControlShipState st;
+        st.params = ship;
+        st.law = law;
+        st.velocityBody = glm::dvec3(0.0, 0.0, -speed0);
+        st.targetForwardSpeedMps = speed0;
+        std::vector<double> worst;
+        for (const auto& p : progs)
+        {
+            game::navigation::avoidance::ControlProgram cp;
+            cp.strafe = p.strafe; cp.lift = p.lift; cp.forward = p.forward; cp.pitch = p.pitch; cp.yaw = p.yaw; cp.speed = p.speed;
+            const auto coarse = game::navigation::avoidance::flyControlProgram(st, cp, hold, horizon, dt);
+            const auto fine = game::navigation::avoidance::flyControlProgram(st, cp, hold, horizon, 0.002, coarse.sampleSeconds);
+            worst.resize(std::max(worst.size(), coarse.pos.size()), 0.0);
+            for (std::size_t k = 0; k < coarse.pos.size() && k < fine.pos.size(); ++k)
+                worst[k] = std::max(worst[k], glm::length(coarse.pos[k] - fine.pos[k]));
+        }
+        std::printf("[ControlLab] prediction drift at dt %.3f vs 2 ms (worst of %zu programs):", dt, progs.size());
+        for (std::size_t k = 0; k < worst.size(); k += 4)
+            std::printf(" t=%.1f:%.2fm", k * 0.5, worst[k]);
+        std::printf("\n");
         return 0;
     }
     if (mode == "oracle")

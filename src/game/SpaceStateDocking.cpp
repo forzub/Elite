@@ -1,5 +1,6 @@
 // SpaceState: Docking / route-autopilot orchestration: route request, planning jobs, safe course, autopilot phases and the docking corridor publication.
 
+#include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/game/damage/HitVolumeBounds.h"
 #include "src/core/ThreadPriority.h"
 #include "src/game/SpaceStateInternal.h"
@@ -5368,7 +5369,57 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
     ship.deltaVSinceScanBody = deltaVSinceRadarScanBody();
     const double hullRadius = ownBoundingRadiusMeters();
-    const auto& cmd = reflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius);
+    // the STRUCTURES near the course (the pilot's own flight only - a planned route is proven clear of them): every hit
+    // volume of an object of this system within the reach of the horizon, as its bounding sphere, when we close on it
+    // faster than 15 m/s (slower is a landing / a docking, not a crash - the assist must not fight it)
+    std::vector<game::navigation::avoidance::EvasionThreatTrack> structures;
+    if (!autopilotPhase)
+    {
+        const glm::dvec3 me = world::coordinates::fullMeters(transform.worldPosition);
+        const glm::dvec3 myV = motion.worldVelocityMps;
+        const double reach = glm::length(motion.worldVelocityMps - motion.referenceVelocityMps) * reflex.horizonSeconds + 300.0;
+        const glm::dvec3 wr(transform.right()), wu(transform.up()), wf(transform.forward());
+        const auto toBody = [&](const glm::dvec3& w) { return glm::dvec3(glm::dot(w, wr), glm::dot(w, wu), -glm::dot(w, wf)); };
+        for (const auto& [oid, object] : m_client->world().objects())
+        {
+            if (object.systemId != motion.systemId)
+                continue;
+            const glm::dvec3 origin = world::coordinates::fullMeters(object.worldPosition);
+            if (glm::length(origin - me) > reach + 20000.0)
+                continue;
+            const std::vector<game::simulation::DebugHitVolumeSnapshot>* volumes = &object.debugHitVolumes;
+            if (volumes->empty() && game::scene::layoutCityHitVolumesOnClient(object.type, object.hubAttachment.hubId))
+                volumes = game::scene::clientLayoutCityHitVolumes(object.type, object.hubAttachment.hubId);
+            if (!volumes)
+                continue;
+            const glm::dmat3 R(glm::mat3(object.orientation));
+            for (const auto& v : *volumes)
+            {
+                if (v.destroyed)
+                    continue;
+                const glm::dvec3 c = origin + R * glm::dvec3(v.center);
+                const glm::dvec3 rel = c - me;
+                const double r = glm::length(glm::dvec3(v.halfSize));
+                if (glm::length(rel) - r > reach)
+                    continue;
+                const glm::dvec3 relV = object.linearVelocityMps - myV;
+                const double closing = glm::length(rel) > 1.0e-6 ? -glm::dot(relV, glm::normalize(rel)) : 0.0;
+                if (closing < 15.0)
+                    continue;
+                game::navigation::avoidance::EvasionThreatTrack t;
+                t.position = toBody(rel);
+                t.velocity = toBody(relV);
+                t.radiusMeters = r;
+                structures.push_back(t);
+                if (structures.size() >= 96)
+                    break;
+            }
+            if (structures.size() >= 96)
+                break;
+        }
+    }
+    const auto& cmd = reflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius, 0.0,
+                                            structures.empty() ? nullptr : &structures);
     if (!cmd.active)
         return quiet();
     if (mode == "warn")

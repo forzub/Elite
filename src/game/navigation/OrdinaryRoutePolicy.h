@@ -46,15 +46,26 @@ public:
     // re-solves, 2026-11-23)
     // ADAPTIVE (author: «а если расчет будет дольше 8 сек?»): 1.5 x the last measured plan time, never under 8 s,
     // capped at 30 s - a slower machine / a heavier scene lengthens the next start straight by itself
-    static inline std::atomic<double> lastPlanSeconds {0.0};
+    // ... the MEDIAN of the last 5 plan times (one 30 s plan made the next straight 3.7 km, delay test 2026-11-24)
+    static inline std::atomic<double> recentPlanSeconds[5] {};
+    static inline std::atomic<unsigned> recentPlanNext {0};
     static void notePlanSeconds(double seconds) noexcept
     {
         if (std::isfinite(seconds) && seconds > 0.0)
-            lastPlanSeconds.store(seconds, std::memory_order_relaxed);
+            recentPlanSeconds[recentPlanNext.fetch_add(1, std::memory_order_relaxed) % 5].store(
+                seconds, std::memory_order_relaxed);
     }
     [[nodiscard]] static double planningFlightSeconds() noexcept
     {
-        return std::clamp(1.5 * lastPlanSeconds.load(std::memory_order_relaxed), 8.0, 30.0);
+        double v[5];
+        int n = 0;
+        for (auto& s : recentPlanSeconds)
+            if (const double x = s.load(std::memory_order_relaxed); x > 0.0)
+                v[n++] = x;
+        if (n == 0)
+            return 8.0;
+        std::sort(v, v + n);
+        return std::clamp(1.5 * v[(n - 1) / 2], 8.0, 30.0);   // the lower median: one slow plan never rules
     }
 
     [[nodiscard]] static double requiredStartLeadMeters(

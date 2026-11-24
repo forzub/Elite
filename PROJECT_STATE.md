@@ -8331,3 +8331,5 @@ start-up hitches (render), trade step 16 part 3 live.
     time, up to 3.7 km once) - a median over recent plans would smooth it.
     ROUTE-DRAFT NET v2 installed (all data: hub 15k + ring 5k + mazes 30k): unseen hub time/teacher 1.001 (v1 1.004),
     fast path 82 %, 431 ms; maze 1.079 (v1 1.096, game 1.063), detour 1.35 (game 1.44), 495 ms (game 758).
+  * 2026-11-24 the planning-time lead now takes the LOWER MEDIAN of the last 5 plan times (OrdinaryRoutePolicy):
+    after a 30 s plan the next start straight stays 1000 m (was 3.7 km); delay-30 test landed in 108 s (139).

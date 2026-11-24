@@ -1,6 +1,7 @@
 #include "src/render/cockpit/CockpitRadioWidget.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <string>
 
 #include <GLFW/glfw3.h>
@@ -121,8 +122,17 @@ void CockpitRadioWidget::render(const EngineThrustIndicatorRenderer::GroupFrame&
         }
         infoRight = bx - gap;
     }
+    // the playlist: "x" takes the current track out of the container
+    const bool playlistMode = d.on && d.source == audio::CockpitRadio::Source::Playlist && radio.playlistSize() > 0;
+    const Box removeBox {x + pad, r3, btn, btn};
+    float infoLeft = x + pad;
+    if (playlistMode)
+    {
+        button(removeBox, "x", true);
+        infoLeft = removeBox.x + removeBox.w + 6.0f * s;
+    }
     if (d.on)
-        text.textDrawPx(fitText(text, d.header, small, infoRight - (x + pad)), x + pad, mid(r3, btn, small), small, amber);
+        text.textDrawPx(fitText(text, d.header, small, infoRight - infoLeft), infoLeft, mid(r3, btn, small), small, amber);
 
     // the mouse: a left press inside a button
     GLFWwindow* window = glfwGetCurrentContext();
@@ -132,29 +142,54 @@ void CockpitRadioWidget::render(const EngineThrustIndicatorRenderer::GroupFrame&
     glfwGetCursorPos(window, &mx, &my);
     int ww = 0, wh = 0;
     glfwGetWindowSize(window, &ww, &wh);
-    if (ww > 0 && wh > 0)   // window -> viewport pixels
+    // window -> the pixel space the widget is DRAWN in (TextRenderer's screen; the viewport may differ from it - the
+    // buttons missed their clicks, author 2026-11-24: «кнопка уменьшения звука - не работает ... станции не переключаются»)
+    const double sw = text.screenWidthPx() > 1.0f ? text.screenWidthPx() : static_cast<double>(viewport.width);
+    const double sh = text.screenHeightPx() > 1.0f ? text.screenHeightPx() : static_cast<double>(viewport.height);
+    if (ww > 0 && wh > 0)
     {
-        mx = mx * viewport.width / ww;
-        my = my * viewport.height / wh;
+        mx = mx * sw / ww;
+        my = my * sh / wh;
     }
     const Box panel {x, y, w, h};
-    m_hovered = panel.contains(mx, my);
+    const Box volBar {vbx, r3, vbw, btn};
+    m_hovered = panel.contains(mx, my) || m_draggingVolume;
     const bool down = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-    if (down && !m_wasDown && m_hovered)
+    const auto barVolume = [&]() { return static_cast<float>((mx - vbx) / std::max(1.0f, vbw)); };
+    if (down && !m_wasDown && panel.contains(mx, my))
     {
+        const char* hit = "panel";
         if (power.contains(mx, my))
-            radio.togglePower();
+            radio.togglePower(), hit = "power";
         else if (sourceBox.contains(mx, my))
-            radio.switchSource();
+            radio.switchSource(), hit = "source";
         else if (prev.contains(mx, my))
-            radio.previous();
+            radio.previous(), hit = "prev";
         else if (next.contains(mx, my))
-            radio.next();
+            radio.next(), hit = "next";
         else if (volDown.contains(mx, my))
-            radio.volumeStep(-1);
+            radio.volumeStep(-1), hit = "vol-";
         else if (volUp.contains(mx, my))
-            radio.volumeStep(1);
+            radio.volumeStep(1), hit = "vol+";
+        else if (volBar.contains(mx, my))
+        {
+            radio.setVolume01(barVolume());
+            m_draggingVolume = true;
+            hit = "volume bar";
+        }
+        else if (playlistMode && removeBox.contains(mx, my))
+            radio.removeCurrentTrack(), hit = "remove";
+        std::fprintf(stderr, "[RadioUI] press at (%.0f, %.0f) of %.0fx%.0f (window %dx%d), panel (%.0f, %.0f %.0fx%.0f) -> %s\n",
+                     mx, my, sw, sh, ww, wh, x, y, w, h, hit);
     }
+    else if (down && m_draggingVolume)
+    {
+        const int now = static_cast<int>(std::clamp(barVolume(), 0.0f, 1.0f) * 100.0f + 0.5f);
+        if (now != d.volume)
+            radio.setVolume01(barVolume());
+    }
+    if (!down)
+        m_draggingVolume = false;
     m_wasDown = down;
 }
 } // namespace render::cockpit

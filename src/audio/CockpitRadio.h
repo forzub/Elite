@@ -11,6 +11,7 @@
 // Ctrl+[ / Ctrl+] previous / next, Ctrl+Shift+[ / ] volume. Settings: <client preferences dir>/radio.json.
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace audio
 {
@@ -31,6 +32,15 @@ public:
     void next();
     void previous();
     void volumeStep(int steps);   // +-1 = +-10 %
+    void setVolume01(float volume01);   // the widget's volume bar (a click / a drag on it)
+
+    // THE PLAYLIST CONTAINER (author 2026-11-24: «контейнер на 12 - 24 композиции, только надо подумать как ее туда
+    // добавлять»): up to PlaylistCapacity tracks of the player's own (radio.json "playlist"), added by DROPPING files /
+    // folders onto the game window; the "x" button takes the current one out. Empty -> the music_dir folder as before.
+    static constexpr std::size_t PlaylistCapacity = 24;
+    int addFiles(const std::vector<std::string>& utf8Paths);   // returns the tracks added
+    void removeCurrentTrack();
+    std::size_t playlistSize() const;
 
     // once a frame: a finished track -> the next one, the station's state
     void update();

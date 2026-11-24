@@ -86,6 +86,8 @@ public:
     // the mesh editor's hub mode); no orbiting - a left drag pans. Off: the 3D view comes back as it was.
     bool planView() const noexcept { return m_planView; }
     void setPlanCentre(const glm::dvec3& centre) const noexcept { m_planCentre = centre; }
+    void setPlanWarp(const LocalMapPlanWarp& warp) const noexcept { m_planWarp = warp; }
+    const LocalMapPlanWarp& planWarp() const noexcept { return m_planWarp; }
     void setPlanView(bool on) noexcept
     {
         if (on == m_planView)
@@ -124,6 +126,8 @@ public:
         snapshot.scale = scale;
         snapshot.centerPx = centerPx;
         snapshot.originMeters = m_planView ? m_planCentre : glm::dvec3(0.0);   // the plan centres on the city
+        if (m_planView)
+            snapshot.planWarp = m_planWarp;
         snapshot.perspectiveEnabled = false;
         snapshot.perspectiveCameraDistanceMeters = 1.0;
         return snapshot;
@@ -270,7 +274,8 @@ private:
     HubMapViewState m_state;
     LocalMapControlSettings m_controls;
     bool m_planView = false;
-    mutable glm::dvec3 m_planCentre {0.0};   // per frame from the presentation builder (the city centre)
+    mutable glm::dvec3 m_planCentre {0.0};
+    mutable LocalMapPlanWarp m_planWarp;   // per frame from the presentation builder (a bent city's plan)   // per frame from the presentation builder (the city centre)
     double m_savedYaw = 0.60;
     double m_savedPitch = 0.18;
     double m_savedZoom = 1.0;

@@ -26,8 +26,11 @@ void SystemMapRenderer::decorateHubPlanBlocks(
         const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(module.stableId);
         if (!plan)
             continue;
+        // a real point of the plan: bent round the ring for the ring hub (the 3D map shows it there, the 2D plan's warp
+        // lays it back flat), the identity for a flat city
         const auto local = [&](double x, double z) {
-            return module.positionMeters + module.axes.x * x + module.axes.z * z;
+            const glm::dvec3 f = plan->ring().toFrame(glm::dvec3(x, 0.0, z));
+            return module.positionMeters + module.axes.x * f.x + module.axes.y * f.y + module.axes.z * f.z;
         };
         for (const auto& b : plan->blocks())
         {

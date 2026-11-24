@@ -471,12 +471,18 @@ void HubMapBackend::renderHubMapPasses(
     elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
     elite::render::core_legacy::loadIdentity();
 
-    elite::render::core_legacy::color4f(
-        m_resources.hubVisuals().backgroundColor.r,
-        m_resources.hubVisuals().backgroundColor.g,
-        m_resources.hubVisuals().backgroundColor.b,
-        m_resources.hubVisuals().backgroundColor.a
-    );
+    // the 2D plan is a flat schematic on an even sheet (author 2026-11-24: «реально плоский план. на монотонном фоне»):
+    // no stars, no planet - a dark slate; the 3D view keeps the space background
+    const bool planSheet = activeCamera().state.pitch > 1.5;
+    if (planSheet)
+        elite::render::core_legacy::color4f(0.045f, 0.060f, 0.080f, 1.0f);
+    else
+        elite::render::core_legacy::color4f(
+            m_resources.hubVisuals().backgroundColor.r,
+            m_resources.hubVisuals().backgroundColor.g,
+            m_resources.hubVisuals().backgroundColor.b,
+            m_resources.hubVisuals().backgroundColor.a
+        );
 
     elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
     elite::render::core_legacy::vertex2f(0.0f, 0.0f);
@@ -503,7 +509,7 @@ void HubMapBackend::renderHubMapPasses(
         return;
     }
 
-    if (m_resources.hubVisuals().drawStarfield)
+    if (m_resources.hubVisuals().drawStarfield && !planSheet)
     {
         const auto& visuals =
             m_resources.hubVisuals();
@@ -619,6 +625,28 @@ void HubMapBackend::renderHubMapPasses(
         );
     }
 
+    // THE RING HUB on the 3D map (author 2026-11-24: «на 3Д карте хаб должен отображаться как кольцо»): the plan is the
+    // flat strip; a block's centre and axes go through the plan's bend (HubRingBend) into the city frame - a flat city's
+    // bend is the identity
+    struct BentPlace
+    {
+        glm::dvec3 position {0.0};
+        world::celestial::LocalSceneAxes axes;
+    };
+    const auto bentPlace = [](const world::celestial::LocalSceneObject& mod, const game::navigation::HubPlan& plan,
+                              double x, double y, double z) {
+        const auto& ring = plan.ring();
+        const glm::dvec3 f = ring.toFrame(glm::dvec3(x, y, z));
+        const glm::dmat3 B = ring.basisAt(x);
+        BentPlace out;
+        out.position = mod.positionMeters + mod.axes.x * f.x + mod.axes.y * f.y + mod.axes.z * f.z;
+        const auto toWorld = [&](const glm::dvec3& v) { return mod.axes.x * v.x + mod.axes.y * v.y + mod.axes.z * v.z; };
+        out.axes.x = toWorld(B[0]);
+        out.axes.y = toWorld(B[1]);
+        out.axes.z = toWorld(B[2]);
+        return out;
+    };
+
     // the planar cities of this frame, for the 2D plan's fills and labels (the label stage below)
     struct PlanCity
     {
@@ -656,17 +684,19 @@ void HubMapBackend::renderHubMapPasses(
                 const double top = std::max(15.0, b.topHeightMeters);
                 const bool picked = b.id == m_highlightBlock;
                 const bool lit = picked || std::find(m_highlightZones.begin(), m_highlightZones.end(), b.zone) != m_highlightZones.end();
-                m_geometryPass.drawHubMapSolidBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes, glm::dvec3(side, top, side),
-                                                  solid);
+                const BentPlace over = bentPlace(mod, *plan, b.centre.x, top * 0.5, b.centre.y);
+                m_geometryPass.drawHubMapSolidBox(over.position, over.axes, glm::dvec3(side, top, side), solid);
                 if (lit)
-                    m_geometryPass.drawHubMapBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes,
+                    m_geometryPass.drawHubMapBox(over.position, over.axes,
                                                  glm::dvec3(side + 24.0, top + 24.0, side + 24.0),
                                                  picked ? glm::vec4(0.55f, 1.00f, 0.95f, 1.0f) : glm::vec4(1.0f, 0.78f, 0.30f, 1.0f),
                                                  scale, centerPx);
                 if (b.underDepthMeters > 1.0)
-                    m_geometryPass.drawHubMapSolidBox(local(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y), mod.axes,
-                                                      glm::dvec3(side, b.underDepthMeters, side),
+                {
+                    const BentPlace under = bentPlace(mod, *plan, b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y);
+                    m_geometryPass.drawHubMapSolidBox(under.position, under.axes, glm::dvec3(side, b.underDepthMeters, side),
                                                       solid * glm::vec4(0.75f, 0.75f, 0.75f, 1.0f));
+                }
             }
         }
 
@@ -711,10 +741,18 @@ void HubMapBackend::renderHubMapPasses(
             };
             // the 2D plan: the blocks' outlines and the streets flat in the plane (the fills, buildings and names
             // follow in the label stage)
+            // the GPU draws the sheet itself: a bent city's plan flat at its origin in the hub's axes (the CPU items go
+            // through the camera's plan warp to the same sheet)
+            const bool flatSheet = planView && cityPlan->ring().valid;
+            world::celestial::LocalSceneAxes sheetAxes;
+            const auto sheet = [&](double x, double y, double z) {
+                return flatSheet ? mod.positionMeters + glm::dvec3(x, y, z) : local(x, y, z);
+            };
+            const world::celestial::LocalSceneAxes& planAxes = flatSheet ? sheetAxes : mod.axes;
             if (planView)
             {
                 for (const auto& b : cityPlan->blocks())
-                    m_geometryPass.drawHubMapBox(local(b.centre.x, 0.0, b.centre.y), mod.axes,
+                    m_geometryPass.drawHubMapBox(sheet(b.centre.x, 0.0, b.centre.y), planAxes,
                                                  glm::dvec3(2.0 * b.halfMeters, 0.0, 2.0 * b.halfMeters), moduleWireColor, scale,
                                                  centerPx);
                 glm::vec4 roadColor(0.55f, 0.60f, 0.66f, 0.55f);
@@ -723,7 +761,7 @@ void HubMapBackend::renderHubMapPasses(
                     const glm::dvec2 c = (st.a + st.b) * 0.5;
                     const glm::dvec2 d = st.b - st.a;
                     const double w = st.avenue ? 40.0 : 26.0;
-                    m_geometryPass.drawHubMapBox(local(c.x, 0.0, c.y), mod.axes,
+                    m_geometryPass.drawHubMapBox(sheet(c.x, 0.0, c.y), planAxes,
                                                  glm::dvec3(std::max(std::abs(d.x), w), 0.0, std::max(std::abs(d.y), w)), roadColor,
                                                  scale, centerPx);
                 }
@@ -733,14 +771,16 @@ void HubMapBackend::renderHubMapPasses(
             {
                 const double side = 2.0 * b.halfMeters;
                 const double top = std::max(15.0, b.topHeightMeters);
-                m_geometryPass.drawHubMapBox(local(b.centre.x, top * 0.5, b.centre.y), mod.axes, glm::dvec3(side, top, side),
-                                             moduleWireColor, scale, centerPx);
+                const BentPlace over = bentPlace(mod, *cityPlan, b.centre.x, top * 0.5, b.centre.y);
+                m_geometryPass.drawHubMapBox(over.position, over.axes, glm::dvec3(side, top, side), moduleWireColor, scale,
+                                             centerPx);
                 if (b.underDepthMeters > 1.0)
                 {
                     glm::vec4 underColor = moduleWireColor;
                     underColor.a *= 0.45f;
-                    m_geometryPass.drawHubMapBox(local(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y), mod.axes,
-                                                 glm::dvec3(side, b.underDepthMeters, side), underColor, scale, centerPx);
+                    const BentPlace under = bentPlace(mod, *cityPlan, b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y);
+                    m_geometryPass.drawHubMapBox(under.position, under.axes, glm::dvec3(side, b.underDepthMeters, side),
+                                                 underColor, scale, centerPx);
                 }
             }
         }
@@ -826,7 +866,9 @@ void HubMapBackend::renderHubMapPasses(
         for (const auto& city : planCities)
         {
             const auto screen = [&](double x, double z) {
-                return activeCamera().project(city.position + city.axes.x * x + city.axes.z * z);
+                // a real (bent, for the ring) point: the camera's plan warp lays it on the flat sheet
+                const glm::dvec3 f = city.plan->ring().toFrame(glm::dvec3(x, 0.0, z));
+                return activeCamera().project(city.position + city.axes.x * f.x + city.axes.y * f.y + city.axes.z * f.z);
             };
             const auto rectPx = [&](double x0, double z0, double x1, double z1) {
                 const glm::dvec2 a = screen(x0, z0), b = screen(x1, z1);

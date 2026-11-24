@@ -164,6 +164,12 @@ private:
     unsigned int m_solidTexture = 0;
 
     bool  m_batchActive = false;
+public:
+    // the pixel space the *Px calls draw in (a hit test must use the same one)
+    float screenWidthPx() const { return m_screenW; }
+    float screenHeightPx() const { return m_screenH; }
+
+private:
     float m_screenW = 1.0f;
     float m_screenH = 1.0f;
 

@@ -36007,7 +36007,7 @@
       "traffic_profile": {
         "profile": "residential",
         "arrivals_day": 0,
-        "dock_sectors": 0
+        "dock_sectors": 1
       },
       "motion": {
         "type": "parent_orbit",
@@ -36036,6 +36036,48 @@
           },
           "rotation_deg": {
             "x": -90.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_ring_hub.cty_dock",
+          "type": "hub_hex_dock",
+          "name": "Док",
+          "offset_m": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": -90.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "generated": "hub_city",
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "earth_ring_hub.cty_dock_base",
+          "type": "dock_service_block",
+          "name": "Док: служебный блок",
+          "offset_m": {
+            "x": 0.0,
+            "y": 510.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": -90.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "generated": "hub_city",
+          "angular_velocity_deg_s": {
+            "x": 0.0,
             "y": 0.0,
             "z": 0.0
           }

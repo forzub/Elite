@@ -8347,3 +8347,23 @@ start-up hitches (render), trade step 16 part 3 live.
     its physics = the mother computer's damaged envelope (the module list predicted a healthy 120 m dodge). LIVE: 5
     phase dodges, 43 m, 0 collisions - the damaged ship's authority limit (the last programs judged a full miss
     impossible -> the glancing choice). Plain B4-11 with the phase reflex: 0 dodges, 177 s, cross 14 m.
+  * 2026-11-24 RING HUB TO THE HUB STANDARD + MAPS (author: «кольцо ... картонной дурилкой», «3Д - кольцо, 2Д - развёрнутое
+    кольцо ... реально плоский план на монотонном фоне»):
+    - 3D map: the plan's blocks / boxes go through HubRingBend (centre toFrame, axes basisAt) - the ring shows as a ring.
+    - 2D plan: LocalMapPlanWarp in the hub camera snapshot (MapCameraSnapshot.h) for a bent city: every projected
+      point -> city frame -> HubRingBend::toStrip -> one flat sheet at the city origin; the plan's own items are given as
+      REAL (bent) points (block / building hit polygons, labels), the GPU sheet is drawn flat - lanes, ships, the player
+      land on the same unrolled strip. Fitted on the strip's bounds. Flat cities: warp off (no change).
+    - the 2D plan background: an even dark slate, no stars / planet (all hubs).
+    - the ring's DOCK: a HexDock on the spin axis in the ring's centre + its service block (hub_ring_world.py
+      add_axial_dock, applied to initial_world_state.json without re-running the generators); DockTraffic starts there.
+    - hub card for a hub with no world-site record: owner, operator, role (world record), population and landing places
+      (plan), docks (attached modules); composition from the plan's zones when no economy record.
+    LIVE (captures D:/tmp/ringmap2..5): ring on 3D, unrolled strip on 2D with lanes / ships on it, card complete.
+    NOT YET: docking to the axial dock flown live; the auto map switch hub-to-hub; all objects on the 3D map (neighbour
+    hubs); the landing-legs tunnel-frames glitch (reproduced: frames scattered at legs-out, D:/tmp/legcam).
+  * 2026-11-24 also (SOURCE + BUILD, not live-verified by the author yet): radio widget hit test in the TextRenderer pixel
+    space (clicks missed the drawn buttons) + [RadioUI] press log, volume bar click / drag, the playlist CONTAINER (24
+    tracks, radio.json "playlist", drop files / folders onto the window, x removes the current one); city far proxies:
+    a SILHOUETTE proxy (octagonal slices from the coarsest LOD) for towers / masts / flared tops instead of the box;
+    DEV verb "hubplan".

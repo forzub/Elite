@@ -1,5 +1,7 @@
 // SpaceState: Galaxy / System Map glue: map snapshots, map modes and transitions, the native map panel and the map UI state.
 
+#include <nlohmann/json.hpp>
+#include <fstream>
 #include <map>
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/economy/EconomyModel.h"
@@ -983,13 +985,96 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                 info.selectedHubModules.push_back(
                     {m.block, m.blockRu, m.type, m.ru, m.count,
                      present.count(m.type) ? 0 : (m.type == "refuel_dock" || m.type == "service_dock") ? 1 : 2});
+        // no economy record but a city plan (a hub added by its own generator - the ring, author 2026-11-24: «нет его
+        // описания и списка объектов на которые можно сделать посадку»): the composition from the plan itself - its
+        // modules by their blocks' zones, the landing places, the docks really attached
+        if (info.selectedHubModules.empty())
+            if (const auto* plan = game::navigation::HubPlanCatalog::forHub(hubId))
+            {
+                struct Row
+                {
+                    const char* type;
+                    const char* block;
+                    const char* blockRu;
+                    const char* name;
+                };
+                static const Row rows[] = {
+                    {"market_exchange", "admin", "Администрация и жильё", "биржа"},
+                    {"habitat", "admin", "Администрация и жильё", "жилой модуль"},
+                    {"shuttle_dock", "passenger", "Пассажирский блок", "челночный док (HexDock)"},
+                    {"hotel", "passenger", "Пассажирский блок", "гостиница"},
+                    {"liner_platform", "passenger", "Пассажирский блок", "платформы лайнеров"},
+                    {"landing_pad", "passenger", "Пассажирский блок", "посадочные места (крыши, гаражи, ангары)"},
+                    {"cargo_terminal", "cargo", "Грузовой блок", "грузовой терминал"},
+                    {"warehouse", "cargo", "Грузовой блок", "склад"},
+                    {"refuel_dock", "service", "Заправка, ремонт, отстойник", "заправочный док"},
+                    {"service_dock", "service", "Заправка, ремонт, отстойник", "сервисный док"},
+                };
+                std::map<std::string, int> count;
+                for (const auto& m : plan->modules())
+                {
+                    if (m.pad)
+                        ++count["landing_pad"];
+                    if (m.block < 0 || static_cast<std::size_t>(m.block) >= plan->blocks().size())
+                        continue;
+                    const std::string type =
+                        game::navigation::hubCompositionTypeForZone(plan->blocks()[static_cast<std::size_t>(m.block)].zone);
+                    if (!type.empty())
+                        ++count[type];
+                }
+                for (const auto& [type, n] : present)
+                    if (type == "shuttle_dock" || type == "service_dock")
+                        count[type] = std::max(count[type], n);
+                for (const auto& r : rows)
+                    if (const auto it = count.find(r.type); it != count.end() && it->second > 0)
+                        info.selectedHubModules.push_back({r.block, r.blockRu, r.type, r.name, it->second, 0});
+            }
         if (hubIt != m_client->world().hubs().end())
         {
             // no economy record: the modules attached to it in the replicated world
             if (info.selectedHubModules.empty())
                 info.selectedHubModules = runtimeRows;
             if (!info.catalog->findSite(info.systemId, hubId))
+            {
                 info.selectedHubName = hubIt->second.name.empty() ? hubId : hubIt->second.name;
+                info.selectedHubOwner = hubIt->second.owner;
+                // the operator / role of the world record (the client's own copy of initial_world_state.json, read once)
+                static const std::map<std::string, std::pair<std::string, std::string>> roles = [] {
+                    std::map<std::string, std::pair<std::string, std::string>> out;
+                    for (const char* path : {"assets/data/initial_world_state.json", "../assets/data/initial_world_state.json"})
+                    {
+                        std::ifstream in(path);
+                        if (!in)
+                            continue;
+                        try
+                        {
+                            nlohmann::json j;
+                            in >> j;
+                            for (const auto& h : j.at("orbital_hubs"))
+                                out[h.value("id", std::string())] = {h.value("operator", std::string()),
+                                                                     h.value("role", std::string())};
+                        }
+                        catch (...)
+                        {
+                        }
+                        break;
+                    }
+                    return out;
+                }();
+                if (const auto r = roles.find(hubId); r != roles.end())
+                {
+                    info.selectedHubOperator = r->second.first;
+                    info.selectedHubRole = r->second.second;
+                }
+                if (const auto* plan = game::navigation::HubPlanCatalog::forHub(hubId))
+                {
+                    info.selectedHubPopulation = plan->populationEstimate();
+                    for (const auto& m : plan->modules())
+                        info.selectedHubPads += m.pad ? 1 : 0;
+                }
+                if (const auto it = present.find("shuttle_dock"); it != present.end())
+                    info.selectedHubDocks = it->second;
+            }
         }
         game::presentation::buildSystemMapInfo(info, panel.infoTitle, panel.info);
         // the expanded composition row: its city blocks by address under it (author 2026-11-21: «пункты раскрывающимися,

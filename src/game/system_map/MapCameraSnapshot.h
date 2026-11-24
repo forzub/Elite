@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/navigation/HubRingBend.h"
 #include <algorithm>
 #include <cmath>
 
@@ -100,6 +101,28 @@ struct GalaxyMapCameraSnapshot
     glm::mat4 mvp {1.0f};
 };
 
+// THE PLAN WARP (author 2026-11-24: «на 2Д карте - развёрнутое кольцо ... реально плоский план»): the 2D plan of a
+// city that is not flat in the hub's frame (the RING: its plan is a strip bent round the ring) - a point of the hub's
+// scene goes into the city frame, through the bend back to the strip (HubRingBend::toStrip), and the strip lies flat
+// at the city's origin in the hub's axes. Everything the plan projects (blocks, buildings, lanes, ships, the player)
+// takes this one road, so it all lands on one flat sheet. Invalid = the identity (a flat city).
+struct LocalMapPlanWarp
+{
+    bool valid = false;
+    glm::dvec3 origin {0.0};
+    glm::dvec3 ax {1.0, 0.0, 0.0}, ay {0.0, 1.0, 0.0}, az {0.0, 0.0, 1.0};
+    game::navigation::HubRingBend ring;
+
+    glm::dvec3 apply(const glm::dvec3& p) const
+    {
+        if (!valid)
+            return p;
+        const glm::dvec3 d = p - origin;
+        const glm::dvec3 strip = ring.toStrip(glm::dvec3(glm::dot(d, ax), glm::dot(d, ay), glm::dot(d, az)));
+        return origin + strip;
+    }
+};
+
 struct LocalMapCameraSnapshot
 {
     DetailCameraState state;
@@ -151,12 +174,14 @@ struct LocalMapCameraSnapshot
         );
     }
 
+    LocalMapPlanWarp planWarp;   // the 2D plan of a bent city (the ring): see LocalMapPlanWarp
+
     glm::dvec3 pointToCamera(
         const glm::dvec3& worldPoint
     ) const
     {
         return vectorToCamera(
-            worldPoint - originMeters
+            planWarp.apply(worldPoint) - originMeters
         );
     }
 

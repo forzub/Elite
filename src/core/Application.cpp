@@ -1,3 +1,4 @@
+#include "src/audio/CockpitRadio.h"
 #include "src/core/ShutdownRequest.h"
 #include <cstdio>
 #include <vector>
@@ -737,6 +738,14 @@ void Application::init()
     glfwSetWindowUserPointer(m_window->nativeHandle(), this);
     glfwSetFramebufferSizeCallback(m_window->nativeHandle(), framebuffer_size_callback);
     glfwSetWindowSizeCallback(m_window->nativeHandle(), window_size_callback);
+    // files / folders dropped onto the window go into the magnitola's playlist container (24 tracks, radio.json)
+    glfwSetDropCallback(m_window->nativeHandle(), [](GLFWwindow*, int count, const char** paths) {
+        std::vector<std::string> list;
+        for (int i = 0; i < count; ++i)
+            if (paths[i])
+                list.emplace_back(paths[i]);
+        audio::CockpitRadio::instance().addFiles(list);
+    });
 
     m_running = true;
 

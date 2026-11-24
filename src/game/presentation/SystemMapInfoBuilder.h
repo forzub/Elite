@@ -33,6 +33,12 @@ struct SystemMapInfoInput
     std::string selectedBodyId;
     // a selected replicated hub: its name, empty otherwise
     std::string selectedHubName;
+    // ... and its facts when it has no world-site record (a hub added by its own generator - the ring): the owner (the
+    // replicated hub), the operator and the role (its world record), the population / landing places (its city plan),
+    // the docks attached to it in the replicated world
+    std::string selectedHubOwner, selectedHubOperator, selectedHubRole;
+    long long selectedHubPopulation = 0;
+    int selectedHubDocks = 0, selectedHubPads = 0;
     // the selected hub's composition, one row per module type (block order):
     // the economy TARGET composition with the build status the runtime gives
     struct HubModule
@@ -264,6 +270,18 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
     {
         add(out, K::Heading, in.selectedHubName);
         add(out, K::Field, "Тип", "орбитальный хаб");
+        if (!in.selectedHubOwner.empty())
+            add(out, K::Field, "Владелец", in.selectedHubOwner);
+        if (!in.selectedHubOperator.empty())
+            add(out, K::Field, "Оператор", in.selectedHubOperator);
+        if (!in.selectedHubRole.empty())
+            add(out, K::Field, "Назначение", in.selectedHubRole);
+        if (in.selectedHubPopulation > 0)
+            add(out, K::Field, "Население", groupDigits(static_cast<double>(in.selectedHubPopulation)));
+        if (in.selectedHubDocks > 0)
+            add(out, K::Field, "Доки", std::to_string(in.selectedHubDocks) + " (HexDock)");
+        if (in.selectedHubPads > 0)
+            add(out, K::Field, "Места посадки", std::to_string(in.selectedHubPads) + " (крыши, гаражи, ангары - клик по кварталу на плане)");
         addComposition(in, out);
         add(out, K::Field, "Отношение к вам", in.playerRelation);
         return;

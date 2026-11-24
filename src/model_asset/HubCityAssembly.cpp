@@ -224,6 +224,86 @@ void appendBox(MeshLod& m, const glm::vec3& lo, const glm::vec3& hi, const glm::
     }
 }
 
+// THE SILHOUETTE PROXY (author 2026-11-24: «центральная башня с зонтиком ... её лод - куб? должно быть что-то похожее»):
+// the module's coarsest mesh cut into slices along Y, each slice an octagonal prism round the box axis with the slice's
+// x / z extents - a tower with a flared collar keeps its flare far away. Used only when it is clearly smaller than the
+// bounding box (towers, masts, flared tops); a plain block stays a box (its facade window pattern). false = use a box.
+bool appendSilhouette(MeshLod& m, const MeshLod& src, const glm::vec3& lo, const glm::vec3& hi, std::int32_t material)
+{
+    constexpr int Slices = 12, Sides = 8;
+    const float height = hi.y - lo.y;
+    if (src.vertices.empty() || height <= 1.0f)
+        return false;
+    const float cx = 0.5f * (lo.x + hi.x), cz = 0.5f * (lo.z + hi.z);
+    float rx[Slices] = {}, rz[Slices] = {};
+    for (const auto& v : src.vertices)
+    {
+        const int i = std::clamp(static_cast<int>((v.position.y - lo.y) / height * Slices), 0, Slices - 1);
+        rx[i] = std::max(rx[i], std::abs(v.position.x - cx));
+        rz[i] = std::max(rz[i], std::abs(v.position.z - cz));
+    }
+    // a slice crossed only by long faces (no vertex inside) takes the larger neighbour: no false waist
+    for (int i = 0; i < Slices; ++i)
+        if (rx[i] <= 0.0f && rz[i] <= 0.0f)
+        {
+            const int a = std::max(0, i - 1), b = std::min(Slices - 1, i + 1);
+            rx[i] = std::max(rx[a], rx[b]);
+            rz[i] = std::max(rz[a], rz[b]);
+        }
+    // the octagon round an ellipse of rx / rz (circumscribed: r / cos(pi / 8)) - its area vs the box's
+    const float k = 1.0f / std::cos(3.14159265f / Sides);
+    float area = 0.0f;
+    for (int i = 0; i < Slices; ++i)
+        area += 2.0f * Sides * std::sin(2.0f * 3.14159265f / Sides) * 0.5f * (rx[i] * k) * (rz[i] * k) / 2.0f;
+    const float boxArea = (hi.x - lo.x) * (hi.z - lo.z) * Slices;
+    if (boxArea <= 0.0f || area > 0.6f * boxArea)
+        return false;
+    const auto ring = [&](int i, float y, glm::vec3* out) {
+        for (int s = 0; s < Sides; ++s)
+        {
+            const float a = (static_cast<float>(s) + 0.5f) * 2.0f * 3.14159265f / Sides;
+            out[s] = glm::vec3(cx + std::cos(a) * rx[i] * k, y, cz + std::sin(a) * rz[i] * k);
+        }
+    };
+    const auto tri = [&](const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& wantNormal) {
+        glm::vec3 n = glm::cross(b - a, c - a);
+        const float len = glm::length(n);
+        if (len < 1.0e-6f)
+            return;
+        n /= len;
+        const bool flip = glm::dot(n, wantNormal) < 0.0f;
+        const std::uint32_t base = static_cast<std::uint32_t>(m.vertices.size());
+        for (const glm::vec3& p : {a, b, c})
+        {
+            Vertex v;
+            v.position = p;
+            v.normal = flip ? -n : n;
+            m.vertices.push_back(v);
+        }
+        m.triangles.push_back({base, flip ? base + 2 : base + 1, flip ? base + 1 : base + 2, -1, material, 0});
+    };
+    for (int i = 0; i < Slices; ++i)
+    {
+        if (rx[i] <= 0.0f || rz[i] <= 0.0f)
+            continue;
+        const float y0 = lo.y + height * static_cast<float>(i) / Slices, y1 = lo.y + height * static_cast<float>(i + 1) / Slices;
+        glm::vec3 b[Sides], t[Sides];
+        ring(i, y0, b);
+        ring(i, y1, t);
+        const glm::vec3 axis0(cx, y0, cz), axis1(cx, y1, cz);
+        for (int s = 0; s < Sides; ++s)
+        {
+            const int n = (s + 1) % Sides;
+            const glm::vec3 out = glm::normalize(0.5f * (b[s] + b[n]) - axis0);
+            tri(b[s], b[n], t[n], out);
+            tri(b[s], t[n], t[s], out);
+            tri(axis1, t[s], t[n], glm::vec3(0.0f, 1.0f, 0.0f));    // the caps: a step out / in shows from above / below
+            tri(axis0, b[n], b[s], glm::vec3(0.0f, -1.0f, 0.0f));
+        }
+    }
+    return !m.vertices.empty();
+}
+
 } // namespace
 
 std::string hubCityLayoutPath(const std::string& hubId)
@@ -448,7 +528,8 @@ bool assemble(const std::string& hubId, const std::string& moduleRoot, ModelAsse
                 }
                 else
                 {
-                    if (folderProxyMesh[mi].vertices.empty())
+                    if (folderProxyMesh[mi].vertices.empty() &&
+                        !appendSilhouette(folderProxyMesh[mi], kit.lods[CityLods - 1], lo, hi, proxyMat[mi]))
                         appendBox(folderProxyMesh[mi], lo, hi, glm::mat4(1.0f), proxyMat[mi]);
                     proxyPlaces.push_back({static_cast<std::int32_t>(mi), nodeIndex, pos, rot});
                 }

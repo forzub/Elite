@@ -734,6 +734,34 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             maxDistance = std::max(1000.0, 0.5 * std::max(hi.x - lo.x, hi.z - lo.z));
         }
     }
+    // a bent city (the ring): the plan is its strip, flat at the city's origin - centred and fitted on the strip
+    LocalMapPlanWarp warp;
+    if (view.planView())
+        for (const auto& object : snapshot.scene.objects)
+        {
+            if (!object.valid || object.objectClass != world::celestial::DetailObjectClass::Hub)
+                continue;
+            const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.stableId);
+            if (!plan || !plan->ring().valid || plan->blocks().empty())
+                continue;
+            warp.valid = true;
+            warp.origin = object.positionMeters;
+            warp.ax = object.axes.x;
+            warp.ay = object.axes.y;
+            warp.az = object.axes.z;
+            warp.ring = plan->ring();
+            glm::dvec2 lo(1.0e30), hi(-1.0e30);
+            for (const auto& b : plan->blocks())
+            {
+                lo = glm::min(lo, b.centre - glm::dvec2(b.halfMeters));
+                hi = glm::max(hi, b.centre + glm::dvec2(b.halfMeters));
+            }
+            planCentre = warp.origin + glm::dvec3(0.5 * (lo.x + hi.x), 0.0, 0.5 * (lo.y + hi.y));
+            maxDistance = std::max(1000.0, 0.5 * std::max(hi.x - lo.x, hi.y - lo.y));
+            planCity = true;
+            break;
+        }
+    view.setPlanWarp(warp);
     view.setPlanCentre(planCentre);
     for (const auto& object : snapshot.scene.objects)
     {

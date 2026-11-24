@@ -334,6 +334,8 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         s.context().app->requestNavigationView(NavigationPresentationView::Local);
     else if (cmd == "grid")
         s.m_systemMapRenderer.toggleSystemGridOverlay();
+    else if (cmd == "hubplan")   // DEV: V in the Hub map (the 2D plan <-> 3D)
+        s.m_systemMapRenderer.toggleHubPlanView();
     else if (cmd.rfind("body:", 0) == 0)
     {
         // ASCII aliases: the environment of a Windows process is not UTF-8

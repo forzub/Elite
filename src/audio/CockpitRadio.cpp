@@ -222,7 +222,8 @@ struct CockpitRadio::Impl
     std::string notice;
     mutable std::mutex mutex;   // the station list / status shared with the worker threads
 
-    // the playlist
+    // the playlist: the container (radio.json "playlist", <= PlaylistCapacity) or, empty, the music_dir folder
+    std::vector<fs::path> playlist;
     std::vector<fs::path> tracks;
     std::size_t track = 0;
     bool scanned = false;
@@ -317,6 +318,10 @@ struct CockpitRadio::Impl
             volume = std::clamp(j.value("volume", volume), 0.0f, 1.0f);
             source = j.value("source", std::string("playlist")) == "radio" ? Source::Radio : Source::Playlist;
             stationUuid = j.value("station", std::string());
+            if (j.contains("playlist") && j["playlist"].is_array())
+                for (const auto& p : j["playlist"])
+                    if (p.is_string() && playlist.size() < CockpitRadio::PlaylistCapacity)
+                        playlist.push_back(fs::path(toWide(p.get<std::string>())));
         }
         catch (const std::exception&)
         {
@@ -329,6 +334,9 @@ struct CockpitRadio::Impl
         j["volume"] = volume;
         j["source"] = source == Source::Radio ? "radio" : "playlist";
         j["station"] = stationUuid;
+        j["playlist"] = nlohmann::json::array();
+        for (const auto& p : playlist)
+            j["playlist"].push_back(toUtf8(p.wstring()));
         std::error_code ec;
         fs::create_directories(settingsPath.parent_path(), ec);
         std::ofstream out(settingsPath);
@@ -342,6 +350,15 @@ struct CockpitRadio::Impl
         scanned = true;
         tracks.clear();
         std::error_code ec;
+        if (!playlist.empty())   // the player's own container, in its order
+        {
+            for (const auto& p : playlist)
+                if (fs::is_regular_file(p, ec))
+                    tracks.push_back(p);
+            std::cerr << "[Radio] playlist container: " << tracks.size() << " / " << playlist.size() << " track(s)"
+                      << std::endl;
+            return;
+        }
         if (musicDir.empty() || !fs::is_directory(musicDir, ec))
             return;
         for (fs::recursive_directory_iterator it(musicDir, fs::directory_options::skip_permission_denied, ec), end; it != end;
@@ -681,7 +698,7 @@ struct CockpitRadio::Impl
             if (!scanned)
                 scanMusic();
             if (tracks.empty())
-                notice = "МАГНИТОЛА: нет музыки в " + toUtf8(musicDir.wstring()) + " (mp3 / flac / wav; папка - radio.json)";
+                notice = "МАГНИТОЛА: лист пуст - перетащите музыку (mp3 / flac / wav, до 24) в окно игры";
             else
                 playTrack();
         }
@@ -787,6 +804,111 @@ void CockpitRadio::previous()
         m->playStation();
         m->saveSettings();
     }
+}
+
+void CockpitRadio::setVolume01(float volume01)
+{
+    m->volume = std::clamp(volume01, 0.0f, 1.0f);
+    if (m->fileSoundReady)
+        ma_sound_set_volume(&m->fileSound, m->volume);
+    if (m->ringSoundReady)
+        ma_sound_set_volume(&m->ringSound, m->volume);
+    m->notice = "МАГНИТОЛА: громкость " + std::to_string(static_cast<int>(m->volume * 100.0f + 0.5f)) + " %";
+    m->saveSettings();
+}
+
+int CockpitRadio::addFiles(const std::vector<std::string>& utf8Paths)
+{
+    const auto isAudio = [](const fs::path& p) {
+        std::wstring ext = p.extension().wstring();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::towlower);
+        for (const char* e : kAudioExtensions)
+            if (ext == toWide(e))
+                return true;
+        return false;
+    };
+    int added = 0;
+    bool full = false;
+    const auto add = [&](const fs::path& p) {
+        if (m->playlist.size() >= PlaylistCapacity)
+        {
+            full = true;
+            return;
+        }
+        if (std::find(m->playlist.begin(), m->playlist.end(), p) != m->playlist.end())
+            return;
+        m->playlist.push_back(p);
+        ++added;
+    };
+    std::error_code ec;
+    for (const auto& u : utf8Paths)
+    {
+        const fs::path p(toWide(u));
+        if (fs::is_directory(p, ec))
+        {
+            std::vector<fs::path> inside;
+            for (fs::recursive_directory_iterator it(p, fs::directory_options::skip_permission_denied, ec), end;
+                 it != end && inside.size() < 1000; it.increment(ec))
+            {
+                if (ec)
+                    break;
+                if (it->is_regular_file(ec) && isAudio(it->path()))
+                    inside.push_back(it->path());
+            }
+            std::sort(inside.begin(), inside.end());
+            for (const auto& f : inside)
+                add(f);
+        }
+        else if (fs::is_regular_file(p, ec) && isAudio(p))
+            add(p);
+    }
+    if (added == 0)
+    {
+        m->notice = full ? "МАГНИТОЛА: лист полон (24) - уберите трек кнопкой x" : "МАГНИТОЛА: нет музыки среди файлов (mp3 / flac / wav)";
+        return 0;
+    }
+    m->saveSettings();
+    const bool wasEmpty = m->tracks.empty() || m->playlist.size() == static_cast<std::size_t>(added);
+    m->scanMusic();
+    m->notice = "МАГНИТОЛА: в листе " + std::to_string(m->playlist.size()) + " / " + std::to_string(PlaylistCapacity) +
+                " (+" + std::to_string(added) + ")" + (full ? ", лист полон" : "");
+    std::cerr << "[Radio] added " << added << " track(s) to the container (" << m->playlist.size() << ")" << std::endl;
+    if (m->source != Source::Playlist)
+        m->source = Source::Playlist, m->stop();
+    if (!m->on)
+        m->on = true;
+    if (wasEmpty || !m->fileSoundReady)
+    {
+        m->track = m->tracks.size() - static_cast<std::size_t>(std::min<int>(added, static_cast<int>(m->tracks.size())));
+        m->playTrack();
+    }
+    m->saveSettings();
+    return added;
+}
+
+void CockpitRadio::removeCurrentTrack()
+{
+    if (m->source != Source::Playlist || m->playlist.empty() || m->tracks.empty())
+        return;
+    const fs::path current = m->tracks[m->track % m->tracks.size()];
+    const auto it = std::find(m->playlist.begin(), m->playlist.end(), current);
+    if (it == m->playlist.end())
+        return;
+    m->playlist.erase(it);
+    m->saveSettings();
+    m->stopFile();
+    m->scanMusic();
+    m->notice = "МАГНИТОЛА: убран " + toUtf8(current.stem().wstring()) + ", в листе " + std::to_string(m->playlist.size());
+    if (m->on && !m->tracks.empty())
+    {
+        m->track %= m->tracks.size();
+        m->playTrack();
+    }
+}
+
+std::size_t CockpitRadio::playlistSize() const
+{
+    return m->playlist.size();
 }
 
 void CockpitRadio::volumeStep(int steps)
@@ -926,11 +1048,12 @@ CockpitRadio::Display CockpitRadio::display() const
     {
         if (m->tracks.empty())
         {
-            d.header = "свой плейлист";
-            d.title = "нет музыки в папке";
+            d.header = "свой лист 0 / " + std::to_string(PlaylistCapacity);
+            d.title = "перетащите музыку в окно игры";
             return d;
         }
-        d.header = std::to_string(m->track % m->tracks.size() + 1) + " / " + std::to_string(m->tracks.size());
+        d.header = (m->playlist.empty() ? std::string("папка ") : std::string("лист ")) +
+                   std::to_string(m->track % m->tracks.size() + 1) + " / " + std::to_string(m->tracks.size());
         d.title = toUtf8(m->tracks[m->track % m->tracks.size()].stem().wstring());
         return d;
     }

@@ -25,5 +25,6 @@ private:
     };
     bool m_wasDown = false;
     bool m_hovered = false;
+    bool m_draggingVolume = false;   // a press on the volume bar: the volume follows the cursor while held
 };
 } // namespace render::cockpit

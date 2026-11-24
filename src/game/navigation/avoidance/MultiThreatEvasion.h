@@ -64,6 +64,9 @@ struct EvasionChoice
     double contactTimeSeconds = -1.0;  // when they first touch (contact only)
     double impactNormalSpeedMps = 0.0; // the closing speed along the contact normal at the first touch
     double impactSpeedMps = 0.0;       // the whole relative speed there
+    // the EARLIEST time any one threat's safety clearance is below zero (its own minimum's time; -1: none) - audit NAV-10:
+    // the global minimum's time let one threat's deep late miss hide another's shallow early one from the urgency window
+    double earliestViolationSeconds = -1.0;
 };
 
 // the acceleration a ship can really give in direction `dir` with throttle t01: the main drive when the nose can be

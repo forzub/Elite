@@ -202,6 +202,9 @@ inline EvasionChoice judgeControlFlight(const ControlFlight& f, const EvasionSce
             out.minMarginMeters = c.safetyClearanceMeters;
             out.timeOfMinSeconds = c.timeOfSafetyMinimumSeconds;
         }
+        if (c.safetyClearanceMeters < 0.0 &&
+            (out.earliestViolationSeconds < 0.0 || c.timeOfSafetyMinimumSeconds < out.earliestViolationSeconds))
+            out.earliestViolationSeconds = c.timeOfSafetyMinimumSeconds;
         if (c.physicalCollisionPredicted && (!out.contact || c.firstContactSeconds < out.contactTimeSeconds))
         {
             out.contact = true;

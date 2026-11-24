@@ -418,6 +418,42 @@ void testGatewayFlags()
     std::printf("gateway: lateral speed after the hold - released %.2f m/s, kept %.2f m/s\n", vReleased, vKept);
 }
 
+// NAV-10: the earliest violating threat, not the global minimum's time, decides the urgency
+void testEarliestViolation()
+{
+    // our hands-off flight: straight at 60 m/s along -Z
+    av::ControlFlight f;
+    f.sampleSeconds = 0.5;
+    for (int k = 0; k <= 24; ++k)
+    {
+        f.pos.push_back(glm::dvec3(0.0, 0.0, -60.0 * 0.5 * k));
+        f.vel.push_back(glm::dvec3(0.0, 0.0, -60.0));
+        if (k > 0)
+            f.chordBound.push_back(0.0);
+    }
+    av::EvasionScene sc;
+    sc.caps.radiusMeters = 10.0;
+    sc.marginMeters = 15.0;
+    const glm::dvec3 ours(0.0, 0.0, -60.0);
+    // A: shallow early - sits 34 m beside our point at t = 2 s (radii 10 + 10, gap 15: clearance -1 m)
+    av::EvasionThreatTrack a;
+    a.radiusMeters = 10.0;
+    a.position = glm::dvec3(34.0, 0.0, -120.0) - ours * 0.0;
+    a.velocity = -ours;   // relative: it is at rest in the world
+    // B: deep late - dead ahead on our line at t = 10 s (clearance -35 m)
+    av::EvasionThreatTrack b;
+    b.radiusMeters = 10.0;
+    b.position = glm::dvec3(0.0, 0.0, -600.0);
+    b.velocity = -ours;
+    sc.threats = {a, b};
+    const auto c = av::judgeControlFlight(f, sc, ours);
+    check(c.timeOfMinSeconds > 8.0, "the global minimum is the late deep one (the scenario)");
+    check(c.earliestViolationSeconds >= 0.0 && c.earliestViolationSeconds < 3.0,
+          "the earliest violation is the shallow early threat (NAV-10)");
+    std::printf("earliest violation: global minimum at %.2f s (%.1f m), earliest violation at %.2f s\n", c.timeOfMinSeconds,
+                c.minMarginMeters, c.earliestViolationSeconds);
+}
+
 int main()
 {
     testContinuousCrossings();
@@ -430,6 +466,7 @@ int main()
     testUrgencyFromPhysics();
     testAlignmentCancel();
     testGatewayFlags();
+    testEarliestViolation();
     std::printf("evasion_trajectory_conflict: %d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }

@@ -8583,3 +8583,9 @@ start-up hitches (render), trade step 16 part 3 live.
   navigation_v2_tunnel_proving_ground, assisted_authority_contract, newtonian_execution_authority,
   assisted_layout_flight_matrix, ship_physical_corridor_matrix, assisted_safe_course_recovery, ship_state), all red at
   a1e28cad2; ordinary_route_policy fixed (stale expectation).
+- NAV-10 (part): the urgency window uses the EARLIEST violating threat (EvasionChoice::earliestViolationSeconds: the
+  first time any one threat's safety clearance is < 0), not the global minimum's time (a deep late miss of one threat
+  hid another's shallow early one). Test: two threats, global min at 10 s / -35 m, earliest violation 2 s - 5104 / 0.
+  Live: ramtest 53 / 107 m, 0 collisions; B4-11 184 s, 0 dodges. NOT changed (the author's rule "if the count is
+  limited - the nearest", 2026-11-22): the hub radar contacts are the nearest 128 by distance. Still open: EvasionNet
+  unused in programs mode; the manual-assist key hand-back cycle.

@@ -133,7 +133,7 @@ public:
         const double window = urgencyFor(lateral, hullRadiusMeters, largestThreat) * (m_cmd.active ? 1.5 : 1.0);
         m_cmd.urgencySeconds = window;
         const bool urgent = (course.contact && course.contactTimeSeconds <= window) ||
-                            (course.minMarginMeters < 0.0 && course.timeOfMinSeconds <= window);
+                            (course.earliestViolationSeconds >= 0.0 && course.earliestViolationSeconds <= window);
         if (!urgent)
             return release(now);
         const auto t0 = std::chrono::steady_clock::now();

@@ -3,7 +3,8 @@
 // The universe time the construction stages of the hubs follow (docs/HUB_CONSTRUCTION.md): the city assembly
 // (src/model_asset/HubExpansion.h), the surface settlements' construction sites (SurfaceSettlementLayout.h) and the
 // construction traffic read it. The server sets it every step from its UniverseClock (DEV time scale and the daily
-// world tick included), the client from its simulation metadata; until the first set: the real clock's universe time
+// world tick included), the client from every accepted snapshot's universe time (GameClient - the renderer no longer
+// writes it, SRV-1); until the first set: the real clock's universe time
 // (UniverseClock::reset - the universe epoch 3098-12-21 = the real 1998-12-21, unix 914198400).
 
 #include <atomic>

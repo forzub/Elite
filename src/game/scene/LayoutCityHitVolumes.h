@@ -6,7 +6,9 @@
 // dropped right after its welcome, "TCP peer closed connection"; the local game never encodes snapshots, so it worked).
 // The client's route planner reads them as the city's obstacles: it gets them from clientLayoutCityHitVolumes(), built
 // on a background thread the first time a city is asked for (nullptr until ready - the planner waits).
-// A city with construction stages (a hub expansion plan) changes its volumes with the stages: those stay replicated.
+// A city with construction stages (a hub expansion plan) is assembled on the client too, by the client's construction
+// clock (= the server's universe time) and the replicated construction overrides (audit DOC-1: this line said those
+// stayed replicated - they do not since 2026-11-23).
 // 2026-11-24 (audit SRV-2, made general): the same holds for every HUB KIT MODULE (district / mega prototypes, kit
 // blocks, belt ring / drum / hotel) - its volumes come from its compiled package, which the client has: the district
 // prototype alone was 17 226 boxes = 1.96 MB, the mega 1.07 MB, sent to every player joining Sol (3 MB a join).

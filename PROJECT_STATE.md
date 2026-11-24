@@ -1,5 +1,55 @@
 # ELITE — PROJECT STATE (single canonical continuation document)
-Updated: 2026-11-02, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
+Updated: 2026-11-24, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
+Layout: the rules and the CURRENT INVARIANTS first (what holds now, with its status); then the dated chronology (newest
+at the end - the evidence of each change). A chronology entry never overrides the invariants; a changed invariant is
+edited HERE and its evidence appended below.
+
+## Current invariants (2026-11-24; status: CONTRACT = in force and covered, EXPERIMENT = behind a flag, REVOKED =
+## no longer true, AUTHOR = waits for the author's decision)
+Navigation - route planning
+- CONTRACT: the optimizer minimizes the TRAVEL TIME (timeOptimalWeights; ELITE_ROUTE_TIME_OBJECTIVE=0 = the old mix).
+  The pure planner (RoutePlanner.cpp, the optimizer, SegmentedRouteComposer, RouteEntryBinder) reads no env / files /
+  clocks / logs: RoutePlannerOptions set by configureRoutePlannerFromEnvironment() in the CLIENT (SpaceState); the
+  optimizer's budget clock is injected, else an evaluation count (check_navigation_route_boundaries green).
+- CONTRACT: the route-draft net is on (ELITE_ROUTE_DRAFT=0 off); its model is refused unless it meets the contract
+  (schema, feature_version 2, shapes 112 -> 11, finite stats; ctest route_draft_net_contract).
+- CONTRACT: the hub lane chain is costed in SECONDS (ELITE_LANE_CHAIN_COST=metres = the old metres); every lane /
+  junction section is flown at its own limit (no piece at its slowest part); the search runs off the frame thread.
+- AUTHOR (PLAN-2): in seconds mode FreeInHubFactor (2026-11-22: green lanes beat free space in a hub for SAFETY) applies
+  nowhere - does "everything by time" (2026-11-24) replace it?
+- CONTRACT: the planning-time lead (lower median of the last 5 FULL adopted plans x 1.5, 8..30 s) covers the ship's
+  own start leg only. A resting Assisted start: 3 hull lengths (>= 30 m); moving: >= 1 km.
+- CONTRACT: a route is accepted only if [RouteCheck] (the obstacle grid, hull radius + each obstacle's clearance)
+  passes - a failure refuses the plan. Rotating parts (a station's habitat ring) are planned as their swept rings; the
+  server's ring volumes are angular sectors (ObjectRuntimeHitBuilder) turned with the module at collision time.
+- REVOKED: the obstacle grid inside the lane-chain search (reverted eba3e5a31); "the planning lead = 1.5 x the last
+  plan" (now the lower median of 5); the route-draft net's lab "game" numbers (old weights, no net).
+- EXPERIMENT: ELITE_HUB_FREE_SPEED=1 (the zone limit sizes the geometry only), ELITE_HUB_ZONE_SPEED_CAP=0.
+Navigation - evasion
+- CONTRACT: the reflex judges every interval of the predicted flight as continuous motion (TrajectoryConflict.h:
+  analytic closest approach / first touch, chord bound); targets' real sizes from the radar track; own size from own
+  hit volumes; old scans turned into the current body frame; uncertainty in the safety envelope (base 15 m).
+  ctest evasion_trajectory_conflict (independent oracle).
+- CONTRACT: one reflex episode per route run / virtual-pilot phase / own flight (no stale dodge); the dodge cancels a
+  persistent alignment (wire 50); every virtual pilot submits through submitVirtualPilotControl (reflex in hub-local
+  flight; NOT in global / J flight); the predicted dodge goes through the execution gateway with the real RCS flags.
+- CONTRACT: the manual collision assist by the difficulty (off / warn / assist) acts when a safety-clearance violation
+  (< 0: hulls + 15 m + uncertainty) is due within the urgency window - not only an "unavoidable touch".
+- AUTHOR: the J keep-out drops J acceleration, not speed (a ship entering at 0.5 c crosses it); debris is not in it.
+Server / replication
+- CONTRACT: hub kit modules and layout cities derive their hit volumes on the client (not replicated); the welcome
+  carries the hub content fingerprint (HUB_CONTENT_MISMATCH refuses); construction overrides are replicated in the
+  session (schema 72) and the construction clock is the server's universe time; entering a system takes complete
+  objects from the canonical snapshot; an unencodable snapshot answers SNAPSHOT_TOO_LARGE (wire 51); inbound TCP queues
+  bounded (4096). Wire protocol 52, snapshot schema 72.
+- CONTRACT: the activation diagnostics CSV only with ELITE_DEV_ACTIVATION_CSV=1.
+Economy
+- CONTRACT: a ship loss is keyed by ship + universe time, recorded for every ship with cargo or a player; an insured
+  lost lot is subrogated to the insurer (claim paid, payout recorded); a failed state write is retried until saved;
+  request ids run once per session; a dropped request answers "busy".
+- OPEN: one transaction for economy + ships.json; durable-before-reply; container identity / holder modules (ECO-6).
+Gates (the green base, re-measured 2026-11-24): architecture contracts 184 / 14 baseline reds (none new); navigation
+ctest 66: 57 / 9 baseline reds; EliteEconomyCheck 258 / 0. Lists: "Baseline reds - architecture contracts".
 
 ## Hard rules
 - This file is the ONLY active continuation state. No alternative state /
@@ -8600,3 +8650,11 @@ start-up hitches (render), trade step 16 part 3 live.
   (layout city / kit package) is logged with its reason (it was "ready" with 0 volumes in silence; the planner treats no
   volumes as no proven geometry). Remote B4-11 after: 179 s, 0 collisions. Still open: FixedStepControlQueue unbounded,
   the detached assembly thread at process exit, the sparse-base merge marked FullAuthoritativeSet (needs runtime).
+- DOC-2: a "Current invariants" section at the top of this file (status CONTRACT / EXPERIMENT / REVOKED / AUTHOR, the
+  green base of the gates); the header updated (2026-11-24, the layout: invariants first, chronology below).
+- DOC-1 (part): stale comments fixed - OrdinaryRoutePolicy priority (time now, preferCandidate is the old order) and the
+  planning-lead rule (lower median of 5 full plans, the ship's start leg only); LayoutCityHitVolumes (staged cities are
+  client-assembled too); ConstructionClock (the client from every snapshot); HubLaneNetwork FreeInHubFactor (metres mode
+  only, PLAN-2 author); ClientModeState collision assist (acts on a safety violation, not only an unavoidable touch).
+  Still stale: NAVIGATION_V2_EXECUTION_ARCHITECTURE.md (no reflex / lanes / net / time objective), the economy journal
+  comments, the HUD collision-assist strings (Russian only), CARGO_SALVAGE_DESIGN.md.

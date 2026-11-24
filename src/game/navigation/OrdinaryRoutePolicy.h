@@ -16,11 +16,13 @@ namespace game::navigation
 // vehicle state into ordinary lead distances, braking approaches and
 // candidate preference. Safety/topology remain hard constraints.
 //
-// Priority:
-//   1. valid/clear/semantic route (enforced by planners/validators)
-//   2. preserve comfortable turn geometry
-//   3. among valid geometry, prefer shorter distance
-//   4. speed yields to geometry; traversal time is only a tie-breaker
+// Priority (CURRENT, author 2026-11-24 «всё выбираем по времени»; audit DOC-1 / PLAN-2: the list below said
+// "shorter distance first, time only a tie-breaker" - no longer true):
+//   1. valid/clear/semantic route (enforced by planners/validators; [RouteCheck] refuses a route through an obstacle)
+//   2. the turn geometry the ship can fly (a hard minimum radius)
+//   3. the least TRAVEL TIME (the optimizer's time objective, the lane chain in seconds)
+//   preferCandidate() below (length first) is the old order, still used by DockingAdvisoryPlanner's candidate pick.
+//   OPEN for the author: the 2026-11-22 safety rule (green lanes over free space in a hub) is not applied in seconds.
 class OrdinaryRoutePolicy final
 {
 public:
@@ -44,9 +46,9 @@ public:
     // time meanwhile (3-7 s live) - a start straight shorter than that is behind the ship when the plan arrives, the
     // late-entry connector then fails at speed (planmove_remote_free3: 1000 m at 149 m/s, a 6.7 s plan -> 17-21 s
     // re-solves, 2026-11-23)
-    // ADAPTIVE (author: «а если расчет будет дольше 8 сек?»): 1.5 x the last measured plan time, never under 8 s,
-    // capped at 30 s - a slower machine / a heavier scene lengthens the next start straight by itself
-    // ... the MEDIAN of the last 5 plan times (one 30 s plan made the next straight 3.7 km, delay test 2026-11-24)
+    // ADAPTIVE (author: «а если расчет будет дольше 8 сек?»): 1.5 x the LOWER MEDIAN of the last 5 FULL adopted plan
+    // times (not rebinds / failures / cancels - PLAN-3), never under 8 s, capped at 30 s; applied to the ship's own
+    // start leg only (coversPlanningFlight). (Superseded: "1.5 x the last plan" - one 30 s plan made a 3.7 km straight.)
     static inline std::atomic<double> recentPlanSeconds[5] {};
     static inline std::atomic<unsigned> recentPlanNext {0};
     static void notePlanSeconds(double seconds) noexcept

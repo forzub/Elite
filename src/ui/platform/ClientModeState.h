@@ -26,7 +26,8 @@ struct ClientModeState
     bool capsuleSurvivalEnabled = false;
     // collisionAssist (author 2026-11-24, «уклонение - третий вариант»: by the difficulty): what the evasion reflex does
     // while the PILOT flies - "off"; "warn" (a warning only - the hard-realism choice); "assist" (takes the stick only
-    // when a touch is otherwise unavoidable, for the manoeuvre, shown on the HUD; a sharp pilot input cancels it)
+    // when the safety clearance (hulls + 15 m + the sensor uncertainty) goes below zero within the urgency window -
+    // not only an unavoidable touch (audit DOC-1) - for the manoeuvre, shown on the HUD; a sharp pilot input cancels it)
     std::string collisionAssistMode = "assist";
     std::uint64_t revision = 1;
 

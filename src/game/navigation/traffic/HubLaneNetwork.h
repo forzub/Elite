@@ -71,7 +71,9 @@ public:
     };
 
     static constexpr double LaneCostFactor = 0.35;          // a lane metre vs a free metre
-    static constexpr double FreeInHubFactor = 2.5;          // a free metre in a hub (obstacles known): lanes preferred
+    // a free metre in a hub (obstacles known): lanes preferred - APPLIED ONLY in the metres mode (ELITE_LANE_CHAIN_COST=
+    // metres); the default seconds mode does not use it (audit DOC-1 / PLAN-2: the author decides whether it returns)
+    static constexpr double FreeInHubFactor = 2.5;
     static constexpr double JoinStraightMeters = 300.0;     // mandatory straight before joining a lane
     static constexpr double LeaveStraightMeters = 200.0;    // ... and after leaving it
     static constexpr double MaxTransferMeters = 1600.0;     // lane end -> lane start free transfer limit (open sky)

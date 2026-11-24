@@ -1882,6 +1882,32 @@ void SpaceState::update(float dt)
     game::dev::DevScriptRunner::instance().update(*this);
     followControlledShip();
     updateUnsampledCollisionAssist();
+    // the hub map follows the hub the ship is in (a new hub entered -> its map; author: the hub map did not switch)
+    if (m_client)
+        if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end())
+        {
+            // the hub the ship is AT: the nearest of its system within 25 km (motion.hubId is the frame's / dock owner's
+            // hub, not where the ship is - 5 km off the ring hub it still named Высокий)
+            const glm::dvec3 me = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
+            const int system = shipIt->second.transform.motion.systemId;
+            const std::string* nearestId = nullptr;
+            const std::string* nearestBody = nullptr;
+            double best = 25000.0;
+            for (const auto& [id, hub] : m_client->world().hubs())
+            {
+                if (hub.systemId != system)
+                    continue;
+                const double d = glm::length(world::coordinates::fullMeters(hub.worldPosition) - me);
+                if (d < best)
+                {
+                    best = d;
+                    nearestId = &id;
+                    nearestBody = &hub.parentBodyId;
+                }
+            }
+            if (nearestId)
+                m_systemMapRenderer.followPlayerHub(*nearestId, *nearestBody);
+        }
 
 
 

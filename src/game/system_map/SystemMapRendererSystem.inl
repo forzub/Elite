@@ -1545,6 +1545,15 @@ const std::string& SystemMapRenderer::selectedBodyId() const
 }
 
 
+void SystemMapRenderer::followPlayerHub(const std::string& hubId, const std::string& parentBodyId)
+{
+    if (hubId.empty() || hubId == m_followedPlayerHubId)
+        return;
+    m_followedPlayerHubId = hubId;
+    std::cerr << "[HubMap] following the ship into hub " << hubId << std::endl;
+    m_detailView.selectHub(hubId, parentBodyId);
+}
+
 const std::string& SystemMapRenderer::selectedHubId() const
 {
     if (m_modeState.current() == Mode::Detail ||

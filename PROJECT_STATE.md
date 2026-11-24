@@ -8664,3 +8664,8 @@ start-up hitches (render), trade step 16 part 3 live.
   structure's size cached per static-object generation; a radar drops only its own row; the hub contacts stay per
   observer (the nearest 128 - the author's rule). Load test 153 players: sensors 1.05 -> 0.18 ms a tick; live radar
   the same 379 ships / structures + 128 hub contacts; ramtest 59 / 116 m, 0 collisions.
+- HUB MAP FOLLOWS THE SHIP (pre-audit leftover, author: the hub map did not switch): SystemMapRenderer::followPlayerHub -
+  when the hub the ship is AT changes (the nearest hub of its system within 25 km; motion.hubId is the frame's / dock
+  owner's hub - 5 km off the ring it still said Высокий), the hub / detail map select it; a pick inside the same hub
+  stays. Live: start at earth_ring_hub@5 -> "[HubMap] following the ship into hub earth_ring_hub"; at earth_orbital_hub
+  -> earth_orbital_hub.

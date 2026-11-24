@@ -1,6 +1,13 @@
 #include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
 
+#include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/world/modules/ObjectAssemblyTransformUtils.h"
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
 #include <iostream>
 #include <algorithm>
 #include <cmath>
@@ -426,7 +433,99 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
                 coarseVolumes.push_back(box);
             }
         }
-        const auto& volumes = coarseVolumes.empty() ? exactVolumes : coarseVolumes;
+        const auto& unsweptVolumes = coarseVolumes.empty() ? exactVolumes : coarseVolumes;
+        // ROTATING PARTS (a station's habitat ring): the replicated volumes show them at the angle of their last static
+        // payload, the server collides with them where they are NOW and as they turn - a route threading the gaps of
+        // a frozen ring was proven clear and flown into it (hub_hex_dock_a 2026-11-24: the route-draft fast path, 33 m/s
+        // into station_habitat_s2). Each volume of a rotating module (or under one) becomes the ring it sweeps over
+        // a turn: copies every 360/N deg about the module's axis through its pivot, grown by the gap between copies.
+        std::vector<game::simulation::DebugHitVolumeSnapshot> sweptVolumes;
+        if (game::ship::geometry::AssemblyMeshLibrary::has(object.type))
+        {
+            const auto& assembly = game::ship::geometry::AssemblyMeshLibrary::get(object.type);
+            struct Spin
+            {
+                glm::vec3 axis;
+                glm::vec3 pivot;
+            };
+            std::unordered_map<std::string, std::optional<Spin>> spinOf;
+            const auto spinFor = [&](const game::simulation::DebugHitVolumeSnapshot& v) -> std::optional<Spin> {
+                const std::string cacheKey = v.moduleId + "|" + v.subsystemId;
+                const auto [it, inserted] = spinOf.try_emplace(cacheKey);
+                if (!inserted)
+                    return it->second;
+                // the volume's assembly module: by module id, else the mesh part it was cut from, else the module of its
+                // subsystem (a station's volumes carry 'station_habitat_s2' / 'habitat_ring', not the module id)
+                std::string id;
+                if (world::modules::findAssemblyModuleById(assembly, v.moduleId))
+                    id = v.moduleId;
+                else if (const game::ship::geometry::AssemblyModule* owner = nullptr;
+                         world::modules::findAssemblyMeshPartById(assembly, v.moduleId, &owner) && owner)
+                    id = owner->id;
+                else if (!v.subsystemId.empty())
+                    for (const auto& m : assembly.modules)
+                        if (m.subsystemId == v.subsystemId)
+                        {
+                            id = m.id;
+                            break;
+                        }
+                // the nearest rotating module at or above this one
+                for (int guard = 0; guard < 32 && !id.empty(); ++guard)
+                {
+                    const auto* m = world::modules::findAssemblyModuleById(assembly, id);
+                    if (!m)
+                        break;
+                    if (m->rotates && glm::length(m->rotationAxis) > 1.0e-6f)
+                    {
+                        const glm::mat4 h = world::modules::buildAssemblyModuleStaticHierarchicalLocalModel(assembly, m->id);
+                        Spin sp;
+                        sp.axis = glm::normalize(glm::mat3(h) * glm::normalize(m->rotationAxis));
+                        sp.pivot = glm::vec3(h * glm::vec4(m->pivot, 1.0f));
+                        it->second = sp;
+                        break;
+                    }
+                    id = m->parentModuleId;
+                }
+                return it->second;
+            };
+            int spun = 0;
+            for (const auto& v : unsweptVolumes)
+            {
+                const auto sp = spinFor(v);
+                if (!sp)
+                {
+                    sweptVolumes.push_back(v);
+                    continue;
+                }
+                ++spun;
+                const glm::vec3 rel = v.center - sp->pivot;
+                const float radius = glm::length(rel - sp->axis * glm::dot(rel, sp->axis));
+                // enough copies that the gap between two (grown into the box) stays small: ~10-20 m at any radius (36
+                // copies of a 1.5 km ring grew every box by 130 m and closed the way to the dock)
+                const float wantGrow = std::max(10.0f, 0.5f * std::min({v.halfSize.x, v.halfSize.y, v.halfSize.z}));
+                const int Copies = std::clamp(static_cast<int>(std::ceil(glm::pi<float>() * radius / wantGrow)), 36, 720);
+                const float grow = radius * std::sin(glm::pi<float>() / static_cast<float>(Copies));
+                for (int k = 0; k < Copies; ++k)
+                {
+                    const glm::mat3 r = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::two_pi<float>() * static_cast<float>(k) / static_cast<float>(Copies), sp->axis));
+                    auto c = v;
+                    c.center = sp->pivot + r * rel;
+                    c.orientation = r * v.orientation;
+                    c.halfSize = v.halfSize + glm::vec3(grow);
+                    sweptVolumes.push_back(c);
+                }
+            }
+            if (spun == 0)
+                sweptVolumes.clear();
+            else
+            {
+                static std::unordered_set<std::uint32_t> logged;
+                if (logged.insert(object.id.value).second)
+                    std::cerr << "[PlanningSnapshot] object " << object.id.value << " '" << object.displayName << "': " << spun
+                              << " volumes of rotating parts planned as their swept rings" << std::endl;
+            }
+        }
+        const auto& volumes = sweptVolumes.empty() ? unsweptVolumes : sweptVolumes;
         if (volumes.empty())
         {
             // Static graph payload is sparse on the wire, but ClientWorldState

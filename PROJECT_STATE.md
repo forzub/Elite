@@ -8492,3 +8492,16 @@ start-up hitches (render), trade step 16 part 3 live.
   that is not obstacle-checked passing over the ring; the station's habitat boxes are crude (one box per third of the
   ring, half 1678 x 952 x 199 m, template cached per type at the first build angle - the ring's rotation never reaches
   the hit volumes).
+- RESOLVED (same day): the hub_hex_dock_a docking into Высокий. CAUSE: the station's habitat ring rotates (0.05 rad/s);
+  the server turns its hit volumes with the module at collision time (GameSimulation: "rotation needs no rebuild, only
+  the transform"), the client planner saw them frozen at the replicated angle - and the ring was ONE box per third of
+  the ring (half 1678 x 952 x 199 m): turning, their corners swept a 3 km disc (the dock sits at 3.01 km). The planned
+  route was clear (RouteCheck) and tracked to 1-4 m; the ring had moved. FIX: (1) ObjectRuntimeHitBuilder
+  appendRotatingPartSectorVolumes - a part > 400 m of a rotating assembly module becomes up to 24 angular sectors of its
+  vertices about the rotation axis, each box in (radial, tangent, axis) (Высокий's ring: 54 boxes) - the ring sweeps a
+  torus as thick as the real one, on the server's collisions too; (2) ClientNavigationPlanningSnapshotFactory plans
+  every volume of a rotating module as its swept ring (copies about the module's axis through its pivot, enough copies
+  for a 10-20 m gap, grown by it). Docking local: draft off and ON both docked, 0 station contacts; remote (dedicated
+  server): docked, 0 contacts, the construction contract signed and the client re-assembled the city with the new stage
+  (SRV-1 replication verified). The route-draft fast path is ON by default again. Obstacle dump (ELITE_ROUTE_DUMP)
+  now carries the boxes' bases ("B" lines) for offline route-vs-box checks.

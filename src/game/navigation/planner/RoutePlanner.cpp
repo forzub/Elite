@@ -544,10 +544,9 @@ RoutePlan planContinuousAssisted(
         appendRouteDraftRequest(dump, request);
 
     // THE ROUTE-DRAFT NET (RouteDraftNet.h): its shape is the first seed; feasible -> only it is refined (the fast
-    // path), else the generic search runs as before. OFF by default since 2026-11-24 (ELITE_ROUTE_DRAFT=1 on): its
-    // fast-path route to hub_hex_dock_a was judged feasible and flown into the station's habitat box (33 m/s, local and
-    // remote; the full search docks cleanly) - audit PLAN-4, the fast path has no guarantee yet. Was: live plans
-    // 0.55-0.78 s against 3.1-3.7;
+    // path), else the generic search runs as before. ON by default (ELITE_ROUTE_DRAFT=0 off): live plans 0.55-0.78 s
+    // against 3.1-3.7. (2026-11-24: briefly off while a docking flew into Высокий's ring - the cause was the ring's
+    // rotating hit volumes, not the net: ObjectRuntimeHitBuilder sectors + the planner's swept rings; draft on docks clean);
     // the game optimizer minimizes the TRAVEL TIME (the net teacher objective; ELITE_ROUTE_TIME_OBJECTIVE=0: the old mix)
     static const bool timeObjective = [] {
         const char* v = std::getenv("ELITE_ROUTE_TIME_OBJECTIVE");
@@ -557,7 +556,7 @@ RoutePlan planContinuousAssisted(
         request.weights = assisted::lab::timeOptimalWeights();
     static const RouteDraftNet* draftNet = []() -> const RouteDraftNet* {
         const char* v = std::getenv("ELITE_ROUTE_DRAFT");
-        if (!(v && v[0] == '1'))
+        if (v && v[0] == '0')
             return static_cast<const RouteDraftNet*>(nullptr);
         static RouteDraftNet net;
         const bool ok = net.load("assets/data/navigation/route_draft_net.json");

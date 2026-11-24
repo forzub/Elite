@@ -3439,6 +3439,11 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                     std::fprintf(f2, "O %s shape=%d c=%.1f %.1f %.1f h=%.1f %.1f %.1f r=%.1f clear=%.1f\n", o.id.c_str(), static_cast<int>(o.shape),
                                  o.centerMeters.x, o.centerMeters.y, o.centerMeters.z, o.halfExtentsMeters.x, o.halfExtentsMeters.y,
                                  o.halfExtentsMeters.z, o.radiusMeters, o.requiredClearanceMeters);
+            // the boxes' bases (columns), for checking a route against them offline
+            for (const auto& o : request.obstacles)
+                std::fprintf(f2, "B %s %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n", o.id.c_str(), o.localToWorldBasis[0].x,
+                             o.localToWorldBasis[0].y, o.localToWorldBasis[0].z, o.localToWorldBasis[1].x, o.localToWorldBasis[1].y,
+                             o.localToWorldBasis[1].z, o.localToWorldBasis[2].x, o.localToWorldBasis[2].y, o.localToWorldBasis[2].z);
             std::fclose(f2);
         }
     }

@@ -2082,6 +2082,123 @@ static void appendLinkHitVolumesFromRuntime(
 
 
 
+// A LARGE part of a ROTATING assembly module (a station's habitat ring: one mesh part per third of the ring, ~3.3 x 1.9 km)
+// as one box was a slab whose corners swept a 3 km disc as the ring turned (the collision turns the volumes with the
+// module - the corners hit ships by a dock 3 km out, the route planner could not plan around them). Split into angular
+// sectors about the module's rotation axis: each sector a box of its vertices in (radial, tangent, axis) - the ring
+// sweeps a torus as thick as the real ring. Returns false when the part is not such a part.
+static bool appendRotatingPartSectorVolumes(
+    const ObjectAssembly& assembly,
+    const ModuleDescriptor& modDesc,
+    const ObjectAssemblyRuntime& assemblyRuntime,
+    std::vector<HitVolume>& out
+)
+{
+    if (modDesc.meshPartIds.size() != 1)
+        return false;
+    const std::string& wantedId = modDesc.meshPartIds[0];
+    for (const auto& module : assembly.modules)
+        for (const auto& part : module.meshes)
+        {
+            if (part.id != wantedId)
+                continue;
+            // the nearest rotating module at or above the part's module
+            const AssemblyModule* spinning = nullptr;
+            for (const AssemblyModule* m = &module; m;)
+            {
+                if (m->rotates && glm::length(m->rotationAxis) > 1.0e-6f)
+                {
+                    spinning = m;
+                    break;
+                }
+                m = m->parentModuleId.empty() ? nullptr : world::modules::findAssemblyModuleById(assembly, m->parentModuleId);
+            }
+            const glm::vec3 extent = part.lod0Mesh.maxBounds - part.lod0Mesh.minBounds;
+            if (!spinning || spinning != &module || std::max({extent.x, extent.y, extent.z}) < 400.0f ||
+                part.lod0Mesh.vertices.size() < 8)
+                return false;
+            const glm::mat4 moduleLocalModel =
+                world::modules::buildAssemblyModuleHierarchicalLocalModel(assembly, assemblyRuntime, module.id);
+            const glm::vec3 axis = glm::normalize(module.rotationAxis);
+            const glm::vec3 seed = std::abs(axis.x) < 0.9f ? glm::vec3(1, 0, 0) : glm::vec3(0, 1, 0);
+            const glm::vec3 u = glm::normalize(glm::cross(axis, seed));
+            const glm::vec3 w = glm::cross(axis, u);
+            constexpr int Sectors = 24;
+            constexpr float TwoPi = 6.28318530718f;
+            struct Bucket
+            {
+                bool any = false;
+                glm::vec3 lo {0.0f}, hi {0.0f};   // in (radial, tangent, axis) of the sector's mid angle
+            };
+            std::array<Bucket, Sectors> buckets {};
+            const auto frameOf = [&](int k) {
+                const float a = (static_cast<float>(k) + 0.5f) * TwoPi / Sectors;
+                const glm::vec3 radial = u * std::cos(a) + w * std::sin(a);
+                return glm::mat3(radial, glm::cross(axis, radial), axis);
+            };
+            for (const auto& vert : part.lod0Mesh.vertices)
+            {
+                const glm::vec3 rel = vert.position + part.localOffset - module.pivot;
+                float a = std::atan2(glm::dot(rel, w), glm::dot(rel, u));
+                if (a < 0.0f)
+                    a += TwoPi;
+                const int k = std::clamp(static_cast<int>(a / TwoPi * Sectors), 0, Sectors - 1);
+                const glm::vec3 q = glm::transpose(frameOf(k)) * rel;
+                auto& b = buckets[static_cast<std::size_t>(k)];
+                if (!b.any)
+                {
+                    b.any = true;
+                    b.lo = b.hi = q;
+                }
+                else
+                {
+                    b.lo = glm::min(b.lo, q);
+                    b.hi = glm::max(b.hi, q);
+                }
+            }
+            int made = 0;
+            for (int k = 0; k < Sectors; ++k)
+            {
+                const auto& b = buckets[static_cast<std::size_t>(k)];
+                if (!b.any)
+                    continue;
+                const glm::mat3 f = frameOf(k);
+                // the sector's vertices only bound its corners: grow the tangent by the arc's sagitta-free margin of a
+                // vertex spacing (a coarse mesh leaves gaps between two sectors' boxes otherwise)
+                glm::vec3 half = 0.5f * (b.hi - b.lo);
+                const float radius = std::max(std::abs(b.lo.x), std::abs(b.hi.x));
+                half.y = std::max(half.y, radius * std::sin(0.5f * TwoPi / Sectors)) + 5.0f;
+                const glm::vec3 centreModule = module.pivot + f * (0.5f * (b.lo + b.hi));
+                HitVolume v;
+                v.zone = modDesc.zone;
+                v.priority = modDesc.hitPriority;
+                v.layerIndex = modDesc.layerIndex;
+                v.center = glm::vec3(moduleLocalModel * glm::vec4(centreModule, 1.0f));
+                v.halfSize = half;
+                glm::mat3 o = glm::mat3(moduleLocalModel) * f;
+                for (int c = 0; c < 3; ++c)
+                    o[c] = safeNormalize(o[c], c == 0 ? glm::vec3(1, 0, 0) : c == 1 ? glm::vec3(0, 1, 0) : glm::vec3(0, 0, 1));
+                v.orientation = o;
+                v.m_label = modDesc.moduleId;
+                v.moduleId = modDesc.moduleId;
+                v.subsystemId = modDesc.subsystemId;
+                v.destructible = modDesc.destructible;
+                v.health = 100.0f;
+                v.maxHealth = 100.0f;
+                v.armor = modDesc.armor;
+                v.penetrationResistance = modDesc.penetrationResistance;
+                v.destroyed = false;
+                v.supportLinkVolume = false;
+                out.push_back(v);
+                ++made;
+            }
+            std::cout << "[HitTemplate] " << modDesc.moduleId << ": rotating part " << extent.x << " x " << extent.y << " x "
+                      << extent.z << " m -> " << made << " sector volumes" << std::endl;
+            return made > 0;
+        }
+    return false;
+}
+
 static CachedHitTemplate buildHitTemplateForType(
     ObjectType typeId,
     const IObjectDescriptor& descriptor,
@@ -2101,6 +2218,9 @@ static CachedHitTemplate buildHitTemplateForType(
     for (const auto& modDesc : descriptor.moduleDescriptors())
     {
         if (!modDesc.enabled)
+            continue;
+
+        if (appendRotatingPartSectorVolumes(assembly, modDesc, assemblyRuntime, result.moduleVolumes))
             continue;
 
         RuntimeVolumeBuildResult built =

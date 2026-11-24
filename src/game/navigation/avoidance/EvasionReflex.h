@@ -113,7 +113,7 @@ public:
         if (now < m_nextAt)
             return m_cmd;
         m_nextAt = now + periodSeconds;
-        EvasionScene sc = sceneFrom(scan, now, hullRadiusMeters, &ship.ratesPitchYawRoll);
+        EvasionScene sc = sceneFrom(scan, now, hullRadiusMeters, &ship.ratesPitchYawRoll, &ship);
         m_cmd.threats = static_cast<int>(sc.threats.size());
         if (sc.threats.empty())
             return release(now);
@@ -180,6 +180,11 @@ public:
     {
         return sceneFrom(scan, now, hullRadiusMeters, ratesPitchYawRoll);
     }
+    EvasionScene buildSceneFor(const radar::RadarScanReport& scan, double now, double hullRadiusMeters,
+                               const ControlShipState& own) const
+    {
+        return sceneFrom(scan, now, hullRadiusMeters, &own.ratesPitchYawRoll, &own);
+    }
     void reset()
     {
         m_cmd = {};
@@ -210,7 +215,7 @@ private:
     //    (SharedShipPhysics::propagateOrientation), no second definition of the radar's axes;
     //  - the target's real size (boundingRadiusMeters), its uncertainties and the age for the safety envelope.
     EvasionScene sceneFrom(const radar::RadarScanReport& scan, double now, double hullRadiusMeters,
-                           const glm::vec3* ratesPitchYawRoll = nullptr) const
+                           const glm::vec3* ratesPitchYawRoll = nullptr, const ControlShipState* own = nullptr) const
     {
         EvasionScene sc;
         sc.forward = glm::dvec3(0.0, 0.0, -1.0);
@@ -241,6 +246,14 @@ private:
             EvasionThreatTrack th;
             th.position = nowFromMeasured * (t.relativePositionMeters + t.relativeVelocityMps * age);
             th.velocity = nowFromMeasured * t.relativeVelocityMps;
+            // OUR acceleration over the age (a target not accelerating): the relative velocity is down by our delta-v,
+            // the relative position by its mean over the age (audit 2: 0.58 s at 8 m/s2 is 1.3 m and 4.6 m/s - comparable
+            // with the safety gap at high closing speeds)
+            if (own && age > 0.0)
+            {
+                th.velocity -= own->deltaVSinceScanBody;
+                th.position -= 0.5 * own->deltaVSinceScanBody * age;
+            }
             // the target's real size; a track without one (an older server): the old per-kind guess, kept explicit
             th.radiusMeters = t.boundingRadiusMeters > 0.0 ? t.boundingRadiusMeters
                                                             : (t.kind == radar::RadarTrackKindDebris ? 10.0 : 30.0);
@@ -248,9 +261,15 @@ private:
             th.velocityUncertaintyMps = t.velocityUncertaintyMps;
             th.ageSeconds = age;
             // only what can reach us within the horizon (its size and ours, the safety gap and the sensor included)
+            // ... and how far our own acceleration can carry us toward it over the horizon (audit 2: the prefilter took
+            // our straight motion only - an accelerating ship could close on a threat it had already dropped)
+            const double ownAccel = own ? std::max({static_cast<double>(own->params.forwardMainEngineAccelerationMps2),
+                                                    static_cast<double>(own->params.strafeAccel), 0.0})
+                                        : 0.0;
             const double reach = th.radiusMeters + sc.caps.radiusMeters + marginMeters +
                                  SafetyEnvelopePolicy::sensorGrowth(th.positionUncertaintyMeters, th.velocityUncertaintyMps,
-                                                                    age, horizonSeconds);
+                                                                    age, horizonSeconds) +
+                                 0.5 * ownAccel * horizonSeconds * horizonSeconds;
             if (glm::length(th.position) - glm::length(th.velocity) * horizonSeconds > 400.0 + reach)
                 continue;
             sc.threats.push_back(th);

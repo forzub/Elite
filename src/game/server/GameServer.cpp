@@ -1330,7 +1330,15 @@ void GameServer::update(double dt)
 
         if (time.universeTimeSimulation || ship.core().transform().motion.destroyedCause != 0)
         {
-            cmdQueue.clear();   // accelerated diagnostics / a destroyed ship: no commands
+            // accelerated diagnostics / a destroyed ship: no commands - except the DEV full restore (Ctrl+Alt+R), which is
+            // exactly for a wreck (author 2026-11-24: «ctrl+alt+R как читерский ремонт - не работает»: it was dropped here)
+            for (const auto& queued : cmdQueue)
+                if (queued.type == ClientShipCommand::DevFullRestore && !time.universeTimeSimulation)
+                {
+                    m_simulation.debugFullRestoreShip(id);
+                    break;
+                }
+            cmdQueue.clear();
             continue;
         }
 
@@ -2194,6 +2202,15 @@ void GameServer::submitCommand(EntityId id, const ShipControlState& control)
     if (result == EnqueueResult::Stale)
     {
         ++m_queueDiagnostics.staleControlCommands;
+        return;
+    }
+    if (result == EnqueueResult::Overflow)
+    {
+        ++m_queueDiagnostics.droppedShipCommands;
+        static std::uint64_t logged = 0;
+        if (logged++ % 500 == 0)
+            std::cerr << "[ControlQueue] entity " << id.value << ": over " << game::server::FixedStepControlQueue::MaxPending
+                      << " pending control samples - the newest refused" << std::endl;
         return;
     }
 
@@ -3203,8 +3220,15 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
     }
     if (command.op == Op::LoadFromMine)   // part 3: at the mine's hub
     {
-        (void)m_economy.loadFromMine(player, command.goodId, shipKey, cargoCapacityOf(*ship), motion.hubId, std::max(0.0, command.quantity),
-                                     command.requestId);
+        const auto loaded = m_economy.loadFromMine(player, command.goodId, shipKey, cargoCapacityOf(*ship), motion.hubId,
+                                                   std::max(0.0, command.quantity), command.requestId);
+        // the manifest is the one owner of the cargo: the ship's mass follows it (duplicated-truth pass 2026-11-24: a
+        // mine load changed the manifest and left the ship's mass at the old value until some other cargo event)
+        if (loaded.ok)
+        {
+            (void)m_economy.takeCargoChange(shipKey);
+            applyCargoLoad(id);
+        }
         return;
     }
     if (command.op == Op::LeaseSite || command.op == Op::SignConstruction)   // step 16: at the hub (docked or in its frame)

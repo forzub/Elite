@@ -31,16 +31,51 @@ void check(bool ok, const char* what)
     }
 }
 
-// the oracle: two linear motions, the least centre distance found by fine stepping
+// the oracle: two linear motions, the least centre distance found by a NUMERICAL search independent of the predictor's
+// closed form - a coarse scan brackets the minimum (the distance of two linear motions is convex in t), a golden-section
+// search refines it to 1e-12 of the bracket. Bounded work at any speed (audit 2: the old fine stepping needed
+// 0.1 x radius / relative speed steps - at 0.1 c and a 2 m body ~1e9 steps a case, tens of billions a run).
 double oracleMinDistance(const glm::dvec3& p0, const glm::dvec3& u, const glm::dvec3& q0, const glm::dvec3& v, double T,
-                         double smallestRadius)
+                         double /*smallestRadius*/)
 {
-    const double rel = std::max(1.0e-9, glm::length(v - u));
-    const double step = std::min(T / 10.0, 0.1 * smallestRadius / rel);
-    double best = 1.0e300;
-    for (double t = 0.0; t <= T + 1.0e-12; t += step)
-        best = std::min(best, glm::length((q0 + v * t) - (p0 + u * t)));
-    return best;
+    const auto dist = [&](double t) { return glm::length((q0 + v * t) - (p0 + u * t)); };
+    constexpr int Scan = 4000;
+    const double step = T / Scan;
+    int bestK = 0;
+    double best = dist(0.0);
+    for (int k = 1; k <= Scan; ++k)
+    {
+        const double d = dist(k * step);
+        if (d < best)
+        {
+            best = d;
+            bestK = k;
+        }
+    }
+    double a = std::max(0.0, (bestK - 1) * step), b = std::min(T, (bestK + 1) * step);
+    const double g = 0.5 * (std::sqrt(5.0) - 1.0);
+    double c = b - g * (b - a), d = a + g * (b - a);
+    double fc = dist(c), fd = dist(d);
+    for (int i = 0; i < 200 && (b - a) > 1.0e-15 * std::max(1.0, T); ++i)
+    {
+        if (fc < fd)
+        {
+            b = d;
+            d = c;
+            fd = fc;
+            c = b - g * (b - a);
+            fc = dist(c);
+        }
+        else
+        {
+            a = c;
+            c = d;
+            fc = fd;
+            d = a + g * (b - a);
+            fd = dist(d);
+        }
+    }
+    return std::min({best, fc, fd, dist(0.0), dist(T)});
 }
 
 // the old judge: distances only at the 0.5 s samples
@@ -454,6 +489,45 @@ void testEarliestViolation()
                 c.minMarginMeters, c.earliestViolationSeconds);
 }
 
+// audit 2: an old scan corrected for OUR acceleration since it (not the rotation only), and the prefilter keeps a threat
+// our acceleration can close on
+void testOwnAcceleration()
+{
+    game::radar::RadarScanReport scan;
+    scan.measuredAtUniverseTimeSeconds = 10.0;
+    game::radar::RadarTrackReport t;
+    t.relativePositionMeters = glm::dvec3(0.0, 0.0, -1000.0);
+    t.relativeVelocityMps = glm::dvec3(0.0, 0.0, 0.0);
+    t.kind = game::radar::RadarTrackKindShip;
+    t.boundingRadiusMeters = 10.0;
+    scan.tracks.push_back(t);
+    av::ControlShipState own = episodeShip();
+    own.deltaVSinceScanBody = glm::dvec3(0.0, 0.0, -8.0);   // we sped up 8 m/s toward it over the 1 s since the scan
+    av::EvasionReflex reflex;
+    const auto sc = reflex.buildSceneFor(scan, 11.0, 17.3, own);
+    check(sc.threats.size() == 1, "own acceleration: the threat kept");
+    if (!sc.threats.empty())
+    {
+        check(std::abs(sc.threats[0].velocity.z - 8.0) < 1.0e-9, "own acceleration: the relative velocity is down by our delta-v");
+        check(std::abs(sc.threats[0].position.z - (-1000.0 + 4.0)) < 1.0e-9, "own acceleration: the position by its mean over the age");
+    }
+    // the prefilter: a threat 2500 m off our straight line, at rest - outside the straight reach, inside the reach of
+    // our main drive over the horizon (0.5 x 30 m/s2 x 12 s^2 = 2160 m + the margins)
+    game::radar::RadarScanReport far;
+    far.measuredAtUniverseTimeSeconds = 10.0;
+    game::radar::RadarTrackReport side = t;
+    side.relativePositionMeters = glm::dvec3(2500.0, 0.0, 0.0);
+    far.tracks.push_back(side);
+    av::ControlShipState still = episodeShip();
+    still.velocityBody = glm::dvec3(0.0);
+    const auto kept = reflex.buildSceneFor(far, 10.0, 17.3, still);
+    const auto dropped = reflex.buildScene(far, 10.0, 17.3, nullptr);
+    check(kept.threats.size() == 1, "prefilter: a threat our acceleration can reach is kept");
+    check(dropped.threats.empty(), "prefilter: without the ship's drive the same threat is out of reach (the scenario matters)");
+    std::printf("own acceleration: scan corrected by our delta-v; prefilter keeps %zu (drive) vs %zu (straight)\n",
+                kept.threats.size(), dropped.threats.size());
+}
+
 int main()
 {
     testContinuousCrossings();
@@ -467,6 +541,7 @@ int main()
     testAlignmentCancel();
     testGatewayFlags();
     testEarliestViolation();
+    testOwnAcceleration();
     std::printf("evasion_trajectory_conflict: %d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }

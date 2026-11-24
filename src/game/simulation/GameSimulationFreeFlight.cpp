@@ -147,7 +147,22 @@ game::navigation::jdrive::JFieldIntegrity jFieldOf(const Ship& ship)
 }
 } // namespace
 
-bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const
+namespace
+{
+// the least distance between a point moving straight (relative velocity w) over [0, T] and the origin of r0 (r0: the
+// object relative to the ship at t = 0) - the continuous form of "is it inside the sphere" for one tick
+double sweptMinDistance(const glm::dvec3& r0, const glm::dvec3& w, double T)
+{
+    if (!(T > 0.0))
+        return glm::length(r0);
+    const double ww = glm::dot(w, w);
+    const double t = ww > 1.0e-18 ? std::clamp(glm::dot(r0, w) / ww, 0.0, T) : 0.0;   // r(t) = r0 - w t
+    return glm::length(r0 - w * t);
+}
+} // namespace
+
+bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit,
+                              const glm::dvec3& shipVelocityMps, double sweepSeconds) const
 {
     namespace jd = game::navigation::jdrive;
     bool found = false;
@@ -156,7 +171,8 @@ bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& w
     {
         if (!frame.valid || frame.systemId != systemId)
             continue;
-        const double d = glm::length(frame.originMeters - worldMeters);
+        const double d = sweptMinDistance(frame.originMeters - worldMeters, shipVelocityMps - frame.velocityMetersPerSecond,
+                                          sweepSeconds);
         if (d < jd::KeepOutObjectM && d < best)
         {
             best = d;
@@ -172,7 +188,8 @@ bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& w
         if (m.systemId != systemId || !m.travelFrame.valid)
             continue;
         const glm::dvec3 p = m.travelFrame.localToWorldPosition(m.localPositionMeters);
-        const double d = glm::length(p - worldMeters);
+        const glm::dvec3 pv = m.travelFrame.localToWorldVelocity(m.localPositionMeters, m.localVelocityMps);
+        const double d = sweptMinDistance(p - worldMeters, shipVelocityMps - pv, sweepSeconds);
         if (d < jd::KeepOutShipM && d < best)
         {
             best = d;
@@ -558,11 +575,12 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
     return true;
 }
 
-int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const
+int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why,
+                                   const glm::dvec3& shipVelocityMps, double sweepSeconds) const
 {
     namespace jd = game::navigation::jdrive;
     JKeepOutHit hit;
-    if (jKeepOut(shipId, systemId, shipWorld, hit))
+    if (jKeepOut(shipId, systemId, shipWorld, hit, shipVelocityMps, sweepSeconds))
     {
         why = hit.objectId + " at " + std::to_string(static_cast<int>(hit.distanceMeters / 1000.0)) + " km (J needs " +
               std::to_string(static_cast<int>((hit.ship ? jd::KeepOutShipM : jd::KeepOutObjectM) / 1000.0)) + " km)";
@@ -572,7 +590,8 @@ int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dve
     {
         if (b.radiusMeters <= 0.0)
             continue;
-        const double altitude = glm::length(shipWorld - b.centerMeters) - b.radiusMeters;
+        // the least altitude over the swept tick (a body's own motion over one tick is far below its J floor)
+        const double altitude = sweptMinDistance(b.centerMeters - shipWorld, shipVelocityMps, sweepSeconds) - b.radiusMeters;
         const double floor = jd::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters);
         if (altitude < floor)
         {
@@ -827,7 +846,9 @@ void GameSimulation::updateFreeFlights(double dt)
         {
             namespace jd = game::navigation::jdrive;
             std::string why;
-            if (const int blocked = jEngineBlocked(it->first, motion.systemId, frame.originMeters, why))
+            // the tick AHEAD swept (audit 2 HIGH: the danger tested at the current position only)
+            if (const int blocked = jEngineBlocked(it->first, motion.systemId, frame.originMeters, why,
+                                                   frame.linearVelocityMps, dt))
             {
                 motion.jEngine = false;
                 motion.jStopping = false;

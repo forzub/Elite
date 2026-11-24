@@ -81,6 +81,9 @@ struct ControlShipState
     // the consumer's RCS delta-v ownership (ShipControlState::rcsKeepsTranslationDeltaV): the Newtonian route keeps a
     // trim, the keypad releases it - the dodge is predicted with the flag it will be flown with (NAV-9)
     bool rcsKeepsTranslationDeltaV = false;
+    // our velocity change since the radar scan, in the body frame NOW (v_now - v_at_the_scan): the scan's relative tracks
+    // are corrected by it (audit 2: an old scan compensated our rotation but not our acceleration)
+    glm::dvec3 deltaVSinceScanBody {0.0};
 };
 
 struct ControlFlight

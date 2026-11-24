@@ -37,3 +37,11 @@ world data sources), legacy state files `CURRENT_STATE.md` / `CURRENT_TASK.md` (
   `wt_bis/assets/{baked,compiled,generated,materials,source}`, `wt_bis/assets/models/{ships,stations}` and
   `wt_bis_b2/assets/models/stations` are JUNCTIONS to the real work tree - remove the junctions first (rmdir / Remove-Item
   on the link itself, never recursive), then `git worktree remove --force D:/tmp/wt_bis`.
+
+## 2026-11-24 (the duplicated-truth pass - dead parallel classes) - DELETED on the author's go 2026-11-24
+- `src/game/equipment/IPowerConsumer-.h` (an old IPowerConsumer with the SAME name / namespace as the live
+  `equipment/capabilities/IPowerConsumer.h` - an ODR clash if both were ever included; included nowhere).
+- `src/game/equipment/IEquipmentModule.h` + `src/game/equipment/EquipmentSlot.h` (only EquipmentSlot.h includes
+  IEquipmentModule.h; EquipmentSlot.h is included nowhere).
+- `src/game/ship/core/ShipModuleState.h` (a dead parallel of world::modules::ObjectModuleRuntime; included nowhere).
+- `src/game/simulation/ShipModuleSnapshot.h` (included nowhere).

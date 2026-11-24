@@ -1,3 +1,4 @@
+#include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/audio/CockpitRadio.h"
 #include "src/core/ShutdownRequest.h"
 #include <cstdio>
@@ -1470,6 +1471,7 @@ if ((systemMapMode || serviceMode))
 #endif
     }
 
+    game::scene::joinClientGeometryWorkers();   // the hit-volume assembly threads end before the statics do
     std::cerr << "[App] main loop exit pid=" << GetCurrentProcessId()
               << " running=" << (m_running ? "yes" : "no")
               << " window_should_close=" << (m_window->shouldClose() ? "yes" : "no")

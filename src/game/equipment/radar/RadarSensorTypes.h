@@ -60,6 +60,9 @@ struct RadarScanReport
     // latency and is the earliest universe epoch at which consumers may use it.
     double measuredAtUniverseTimeSeconds = 0.0;
     double availableAtUniverseTimeSeconds = 0.0;
+    // the observer's own world velocity AT the measurement (audit 2: a consumer of an old scan corrects its relative
+    // tracks for its OWN acceleration since - the rotation alone was compensated)
+    glm::dvec3 observerWorldVelocityMps {0.0};
 
     std::vector<RadarTrackReport> tracks;
 };

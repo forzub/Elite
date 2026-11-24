@@ -107,7 +107,7 @@ void PlayerShipView::updateCockpitState(ShipRole role,
     // ===== SPEED BAR =====
 
     float maxSpeed = desc->physics.maxCombatSpeed ;
-    float currentSpeed = transform.forwardVelocity;
+    float currentSpeed = static_cast<float>(transform.forwardSpeedMps());
     float speed01 = glm::clamp(currentSpeed / maxSpeed, 0.0f, 1.0f);
 
     auto& barOv  = m_cockpitState.overrides["speed_bar_fill"];
@@ -118,7 +118,7 @@ void PlayerShipView::updateCockpitState(ShipRole role,
 
 
     // ========= вращение как спидометр ============
-    float speedneedle01 = transform.forwardVelocity /
+    float speedneedle01 = static_cast<float>(transform.forwardSpeedMps()) /
                 desc->physics.maxCombatSpeed;
 
     speedneedle01 = glm::clamp(speedneedle01, 0.0f, 1.0f);

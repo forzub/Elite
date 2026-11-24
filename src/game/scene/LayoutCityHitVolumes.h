@@ -34,6 +34,9 @@ std::string hubKitPackagePath(ObjectType type);
 // true: this object's hit volumes are the client's own (a layout city, or a hub kit module with its package)
 bool layoutCityHitVolumesOnClient(ObjectType type, const std::string& hubId);
 
+// the background assembly workers finished before the process exits (the application's shutdown calls it)
+void joinClientGeometryWorkers();
+
 // the client's copy (debug-hit-volume form, as the planner reads replicated ones); nullptr while it is being built
 const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHitVolumes(ObjectType type,
                                                                                        const std::string& hubId);

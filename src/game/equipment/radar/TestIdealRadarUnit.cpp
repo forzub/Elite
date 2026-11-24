@@ -82,6 +82,7 @@ void TestIdealRadarUnit::captureMeasurement(
     RadarScanReport report;
     report.scanSequence = m_nextScanSequence++;
     report.measuredAtUniverseTimeSeconds = universeTimeSeconds;
+    report.observerWorldVelocityMps = observerWorldVelocityMps;
     report.availableAtUniverseTimeSeconds =
         universeTimeSeconds + std::max(0.0, m_desc.processingLatencySeconds);
 

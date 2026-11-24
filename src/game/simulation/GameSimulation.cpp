@@ -4136,6 +4136,7 @@ bool GameSimulation::debugFullRestoreShip(EntityId id)
     tr.yawRate = 0.0f;
     tr.rollRate = 0.0f;
     tr.motion.destroyedCause = 0;
+    tr.motion.capsuleState = 0;   // the pilot is back too (the 'pilot lost' screen ends)
     core.refreshRuntimeState();
     markShipGraphDirty(id);
     std::cerr << "[DevRestore] ship " << id.value << ": fully restored (structure, reactors, containment, heat, spin)" << std::endl;

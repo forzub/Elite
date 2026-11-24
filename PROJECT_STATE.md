@@ -8669,3 +8669,34 @@ start-up hitches (render), trade step 16 part 3 live.
   owner's hub - 5 km off the ring it still said Высокий), the hub / detail map select it; a pick inside the same hub
   stays. Live: start at earth_ring_hub@5 -> "[HubMap] following the ship into hub earth_ring_hub"; at earth_orbital_hub
   -> earth_orbital_hub.
+
+### Audit 2 (author's paste 2026-11-24) + the author's live session + the duplicated-truth pass - BUILT, TESTS, LIVE where noted
+- MEDIUM async lane search: a running search of an older request is moved to LaneSearchJob::retired (a std::async future
+  blocks in its destructor - replacing it would have brought the frame hitch back) and dropped when done.
+- MEDIUM FixedStepControlQueue bounded at 256 (5 s at 50 Hz): the NEWEST sample refused (EnqueueResult::Overflow) - dropping
+  the oldest would acknowledge steps the server never ran.
+- LOW-MEDIUM the client geometry workers are joinable: joinClientGeometryWorkers() at the application's shutdown.
+- MEDIUM the evasion scene corrects an old scan for OUR acceleration since it (RadarScanReport::observerWorldVelocityMps,
+  snapshot schema 73; ControlShipState::deltaVSinceScanBody) and the prefilter adds our drive's reach 0.5 a h^2. Tests +5.
+- HIGH/tests the conflict oracle is a numerical search (coarse scan + golden section, bounded at any speed): the test ran
+  111 s -> 0.22 s; 5109 checks / 0.
+- HIGH J / free flight: the J danger checks SWEEP the next tick (jKeepOut / jEngineBlocked: the least distance of the
+  straight relative motion over dt to every keep-out sphere and body J floor) instead of the current point. Built; not
+  exercised live at 0.5 c yet. The J speed governor (braking before a keep-out) stays the author's decision.
+- Author's session: (a) the cockpit radio clicks missed on a non-16:9 monitor - the game renders letterboxed and the
+  widget never removed the viewport offset; now window -> framebuffer -> minus the viewport offset (as the system map).
+  NOT verified on a non-16:9 window here (my window is 16:9). (b) Ctrl+Alt+R did nothing on a wreck - the server dropped
+  every command of a destroyed ship, the restore included; it passes now, and the restore resets capsuleState too; DEV
+  script verb "restore". (c) no "pilot lost" screen after a ram - the crew lost with the cockpit is now a replicated
+  fact (capsuleState PilotKilled); log line "[PilotLost] ...". Live: destroy at 40 s -> the screen up -> "restore" ->
+  fully restored.
+- Author's session, the ring hub crash: the ring spins (period 69.8 s, 1 g at r 1210 m, the rim at 108 m/s); a pad on
+  the rim was planned against the frozen boxes - the ship skimmed what had moved on and broke up at 101 m/s (object 201
+  's15'); from 10 km out the optimizer found no path at all (41 replans). AUTHOR DECISION 2026-11-24: landing on the rim
+  WITH matching the rotation (next task: plan / fly in the rotating frame, tangential approach, 108 m/s + 1 g held).
+- Duplicated truth (D:/tmp/DUPLICATE_TRUTH_INVENTORY_2026-11-24.md): the cockpit speed bar / needle read
+  ShipTransform::forwardVelocity (never written: always 0), the wrong-way lane colour and the descent ray read
+  relativeVelocityMetersPerSecond (never written) - now ShipTransform::relativeVelocityMps() / forwardSpeedMps() /
+  commandedForwardSpeedMps() derived from motion; the repair-dock owner velocity = motion.worldVelocityMps; a mine load
+  updates the ship's cargo mass at once; dead classes deleted on the author's go (IPowerConsumer-.h, IEquipmentModule.h,
+  EquipmentSlot.h, ShipModuleState.h, ShipModuleSnapshot.h). Navigation ctest 57 / 9 baseline reds.

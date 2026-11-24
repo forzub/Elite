@@ -559,8 +559,17 @@ bool SpaceState::playerPilotLost(std::string* cause) const
 void SpaceState::renderPilotLostOverlay(const Viewport& viewport)
 {
     std::string cause;
+    static bool shown = false;
     if (viewport.width <= 0 || !playerPilotLost(&cause))
+    {
+        shown = false;
         return;
+    }
+    if (!shown)
+    {
+        shown = true;
+        std::cerr << "[PilotLost] the pilot-lost screen is up: " << cause << std::endl;
+    }
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);
     const float W = static_cast<float>(viewport.width), H = static_cast<float>(viewport.height);

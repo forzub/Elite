@@ -40,6 +40,13 @@ struct ShipTransform : public game::math::MathTransform
     glm::vec3 relativeVelocityMetersPerSecond {0.0f};
     game::navigation::DynamicMotionState motion;
 
+    // DERIVED from motion - the one owner of the ship's kinematics (2026-11-24 duplicated-truth pass: the fields
+    // targetSpeed / forwardVelocity / localVelocity / relativeVelocityMetersPerSecond above are written by no physics -
+    // the cockpit speed bar and needle, the wrong-way lane colour and the descent ray read zeros from them)
+    glm::dvec3 relativeVelocityMps() const { return motion.worldVelocityMps - motion.referenceVelocityMps; }
+    double forwardSpeedMps() const { return glm::dot(relativeVelocityMps(), glm::dvec3(forward())); }
+    double commandedForwardSpeedMps() const { return motion.targetForwardSpeedMps; }
+
     float strafeInput  = 0.0f;
     float liftInput    = 0.0f;
     float forwardInput = 0.0f;

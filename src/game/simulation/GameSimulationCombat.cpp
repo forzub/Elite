@@ -13,6 +13,7 @@
 // a burn-through. Missiles: guided at launch by the seeker cone, gravity of
 // the system, burning-through warheads on contact (shaped jet / slug).
 #include "src/game/simulation/GameSimulationInternal.h"
+#include "src/game/navigation/rules/CapsuleRules.h"
 #include "src/game/simulation/RuntimeSystemPolicy.h"
 
 #include "src/game/combat/Penetration.h"
@@ -419,6 +420,11 @@ void GameSimulation::disableShipIfCombatLost(EntityId shipId, Ship& ship)
     motion.destroyedCause = 3;
     const auto* cockpit = runtime.findModule("ship_cockpit");
     const bool crewEscapes = !cockpitLost && cockpit && cockpit->detachable;
+    // the crew's fate as a REPLICATED fact (the client guessed it from the cockpit module's health - a cockpit torn
+    // off with health left was "alive": no "pilot lost" screen after a ram, author 2026-11-24 «никакого сообщения,
+    // что игра окончена - нет»)
+    if (cockpitLost)
+        motion.capsuleState = static_cast<std::uint8_t>(game::navigation::capsule::State::PilotKilled);
     std::cerr << "[Combat] ship " << shipId.value << ": OUT OF THE FIGHT - " << (cockpitLost ? "cockpit lost" : "all propulsion reactors lost")
               << "; crew " << (crewEscapes ? "escapes in the EC-2 cockpit" : cockpitLost ? "lost with the cockpit" : "stays aboard (no escape module)")
               << " (combat clock " << m_combatClockS << " s)" << std::endl;

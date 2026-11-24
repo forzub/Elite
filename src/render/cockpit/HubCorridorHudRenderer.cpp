@@ -55,7 +55,7 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
     // the player's direction of travel (velocity relative to the frame; the nose when nearly at rest): a lane running
     // against it is drawn RED (author 2026-11-17: «тунели для встречного движения делать красными зонами в
     // зависимости от направления движения игрока»)
-    glm::dvec3 travel(player.renderTransform.relativeVelocityMetersPerSecond);
+    glm::dvec3 travel(player.renderTransform.relativeVelocityMps());
     travel = glm::length(travel) > 5.0 ? glm::normalize(travel) : glm::dvec3(player.renderTransform.forward());
     bool begun = false;
     static const bool depthTested = [] {

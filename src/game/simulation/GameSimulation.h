@@ -324,7 +324,10 @@ public:
     // the jump sumps of a system (asteroid / debris swarms, JumpSumps.h), given by the server from the atlas
     void setJumpSumps(int systemId, const std::vector<game::navigation::jump::JumpSump>& sumps) { m_jumpSumps[systemId] = sumps; }
     // 0 = J may engage here; else the refusal code (7 an object too close, 8 below the J floor)
-    int jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const;
+    // sweepSeconds > 0: the ship's straight motion over the next sweepSeconds is tested too (a keep-out / a J floor
+    // ENTERED within it counts - audit 2: at 0.5 c a tick is 3000 km, a 20 km keep-out was crossed between two samples)
+    int jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why,
+                       const glm::dvec3& shipVelocityMps = glm::dvec3(0.0), double sweepSeconds = 0.0) const;
     // J terrain contact: ground (terrain or sea surface) height above the body
     // radius in a world direction from the body centre; false = unknown (the
     // field is still loading) -> the reference sphere is used.
@@ -962,7 +965,8 @@ private:
         double distanceMeters = 0.0;
         bool ship = false;
     };
-    bool jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const;
+    bool jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit,
+                  const glm::dvec3& shipVelocityMps = glm::dvec3(0.0), double sweepSeconds = 0.0) const;
     std::vector<EntityId> m_pendingStabilize;
     struct ActiveJump
     {

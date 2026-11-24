@@ -963,7 +963,8 @@ ELITE_WIRE_SCHEMA(
     v.scanSequence,
     v.measuredAtUniverseTimeSeconds,
     v.availableAtUniverseTimeSeconds,
-    v.tracks
+    v.tracks,
+    v.observerWorldVelocityMps
 );
 
 ELITE_WIRE_SCHEMA(

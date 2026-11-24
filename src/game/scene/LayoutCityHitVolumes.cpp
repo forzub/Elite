@@ -133,6 +133,19 @@ bool layoutCityHitVolumesOnClient(ObjectType type, const std::string& hubId)
 
 namespace
 {
+// the background assembly workers (audit 2 LOW-MEDIUM: they were detached - one still running at the process exit read
+// statics being destroyed): joinable, joined by joinClientGeometryWorkers() at the application's shutdown
+std::mutex& workerMutex()
+{
+    static std::mutex m;
+    return m;
+}
+std::vector<std::thread>& workers()
+{
+    static std::vector<std::thread> w;
+    return w;
+}
+
 struct CityEntry
 {
     std::atomic<bool> ready {false};
@@ -173,7 +186,7 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
             std::shared_ptr<CityEntry> job = fresh;
             const std::string id = hubId;
             std::cerr << "[CityHitVolumes] " << cacheKey << ": assembling on the client (stage key " << key << ")" << std::endl;
-            std::thread([job, id, type, kit] {
+            std::thread worker([job, id, type, kit] {
                 namespace ma = elite::model_asset;
                 ma::ModelAsset city;
                 game::damage::HitComponent hit;
@@ -190,10 +203,25 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
                 std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": " << job->volumes.size()
                           << " hit volumes assembled on the client" << std::endl;
                 job->ready = true;
-            }).detach();
+            });
+            {
+                std::lock_guard<std::mutex> workerLock(workerMutex());
+                workers().push_back(std::move(worker));
+            }
         }
         entry = e;
     }
     return entry->ready ? &entry->volumes : nullptr;
+}
+void joinClientGeometryWorkers()
+{
+    std::vector<std::thread> running;
+    {
+        std::lock_guard<std::mutex> lock(workerMutex());
+        running.swap(workers());
+    }
+    for (auto& t : running)
+        if (t.joinable())
+            t.join();
 }
 } // namespace game::scene

@@ -595,10 +595,8 @@ bool ShipCore::startRepairJobForModule(const std::string& moduleId)
         m_transform.orientation;
 
         
-    glm::vec3 ownerLinearVelocity =
-        m_transform.forward() * m_transform.forwardVelocity +
-        m_transform.right()   * m_transform.localVelocity.x +
-        m_transform.up()      * m_transform.localVelocity.y;
+    // the owner's real velocity (motion - the one owner; the old forwardVelocity / localVelocity were never written)
+    glm::vec3 ownerLinearVelocity = glm::vec3(m_transform.motion.worldVelocityMps);
 
     glm::vec3 dockWorldPosition =
         glm::vec3(ownerModel * glm::vec4(0, 0, 0, 1));

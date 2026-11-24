@@ -687,6 +687,8 @@ private:
     game::navigation::avoidance::EvasionReflex m_phaseReflex;
     // the reflex episode of the current docking / route request (EvasionReflex::bindEpisode): the request serial + a tag
     std::uint64_t reflexEpisodeKey(std::uint64_t tag) const;
+    // our velocity change since the latest radar scan, body frame now (the reflex corrects the scan's tracks by it)
+    glm::dvec3 deltaVSinceRadarScanBody() const;
     // THE ONE submission of a virtual pilot's control (audit NAV-8: formation, the body autopilot, the route-run legs and
     // the docking coasts submitted without the reflex): the phase reflex over it in hub-local flight (a global / J
     // command is not what the control programs model - left as is), then the ordinary input path. pilotTag names the
@@ -965,6 +967,9 @@ private:
     {
         std::uint64_t serial = 0;
         std::future<LaneSearchResult> result;
+        // searches of earlier requests still running: a std::async future BLOCKS in its destructor until its task
+        // ends (audit 2 MEDIUM: replacing an unfinished one brought the frame hitch back) - kept here, dropped when done
+        std::vector<std::future<LaneSearchResult>> retired;
     } m_laneSearch;
     double m_lastEconomySendAt = -1.0e9;
     game::presentation::TradeDealRequest m_tradeDeal;   // the MARKET deal window's own state (never authoritative)

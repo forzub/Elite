@@ -1202,6 +1202,16 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
     }
     // the emergency keys (author 2026-11-10 containment trials): Ctrl+Alt+Shift+I propulsion reactors on / off,
     // Ctrl+R the repair drone, L-Ctrl+Q eject the cockpit
+    // DEV: the full restore Ctrl+Alt+R sends (the same command)
+    else if (cmd == "restore")
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::DevFullRestore;
+        msg.payload = command;
+        s.m_client->sendMessage(msg);
+        std::cerr << "[DevRestore] script restore sent" << std::endl;
+    }
     else if (cmd == "reactors" || cmd == "repair" || cmd == "eject")
     {
         game::network::ClientMessage msg;

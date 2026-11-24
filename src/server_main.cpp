@@ -387,8 +387,8 @@ int runHeadlessSelfTest()
                 std::cerr << " navLocalErr_m="
                           << glm::length(snapshot.session.playerNavigation.systemLocalMeters -
                                          world::coordinates::fullMeters(ship->transform.worldPosition))
-                          << " refVel_mps=" << glm::length(ship->transform.referenceVelocityMetersPerSecond)
-                          << " relVel_mps=" << glm::length(ship->transform.relativeVelocityMetersPerSecond)
+                          << " refVel_mps=" << glm::length(ship->transform.motion.referenceVelocityMps)
+                          << " relVel_mps=" << glm::length(ship->transform.relativeVelocityMps())
                           << " mode=" << static_cast<int>(ship->transform.motion.mode);
             std::cerr << "\n";
         };

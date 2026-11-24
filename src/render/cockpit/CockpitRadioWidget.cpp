@@ -140,16 +140,27 @@ void CockpitRadioWidget::render(const EngineThrustIndicatorRenderer::GroupFrame&
         return;
     double mx = 0.0, my = 0.0;
     glfwGetCursorPos(window, &mx, &my);
-    int ww = 0, wh = 0;
+    int ww = 0, wh = 0, fbw = 0, fbh = 0;
     glfwGetWindowSize(window, &ww, &wh);
-    // window -> the pixel space the widget is DRAWN in (TextRenderer's screen; the viewport may differ from it - the
-    // buttons missed their clicks, author 2026-11-24: «кнопка уменьшения звука - не работает ... станции не переключаются»)
+    glfwGetFramebufferSize(window, &fbw, &fbh);
+    // window -> framebuffer pixels -> the GAME VIEWPORT the widget is drawn in. The game renders letterboxed (16:9 inside
+    // the window, Application: glViewport(lb.x, lb.y, ...)): on a non-16:9 monitor the viewport is OFFSET and every click
+    // missed its button (author 2026-11-24: «клики по кнопкам радио все еще не попадают») - the offset was never removed.
+    // The same mapping the system map uses (SystemMapRendererInput: mx - vp.x).
+    if (ww > 0 && wh > 0 && fbw > 0 && fbh > 0)
+    {
+        mx = mx * static_cast<double>(fbw) / ww;
+        my = my * static_cast<double>(fbh) / wh;
+    }
+    mx -= static_cast<double>(viewport.x);
+    my -= static_cast<double>(fbh - viewport.y - viewport.height);   // GL's bottom offset -> the top offset
+    // the viewport's pixels -> the pixel space the text is drawn in (equal unless the HUD is drawn at another size)
     const double sw = text.screenWidthPx() > 1.0f ? text.screenWidthPx() : static_cast<double>(viewport.width);
     const double sh = text.screenHeightPx() > 1.0f ? text.screenHeightPx() : static_cast<double>(viewport.height);
-    if (ww > 0 && wh > 0)
+    if (viewport.width > 0 && viewport.height > 0)
     {
-        mx = mx * sw / ww;
-        my = my * sh / wh;
+        mx = mx * sw / viewport.width;
+        my = my * sh / viewport.height;
     }
     const Box panel {x, y, w, h};
     const Box volBar {vbx, r3, vbw, btn};

@@ -211,7 +211,7 @@ m_systemMapRenderer.render(
             if (m_client)
             {
                 const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
-                const glm::dvec3 relV(playerShip.renderTransform.relativeVelocityMetersPerSecond);
+                const glm::dvec3 relV(playerShip.renderTransform.relativeVelocityMps());
                 const glm::dvec3 down = -glm::normalize(glm::dvec3(glm::mat3(playerShip.renderTransform.orientation)[1]));
                 double half = 3.0;
                 if (playerShip.descriptor)

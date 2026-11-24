@@ -3179,8 +3179,17 @@ void SpaceState::updateDockingStabilizing(Frame& f)
             game::navigation::traffic::CompiledTrafficRoute laneRoute;
             {
                 auto& job = m_laneSearch;
+                // finished searches of old requests: released without waiting
+                job.retired.erase(std::remove_if(job.retired.begin(), job.retired.end(),
+                                                 [](std::future<LaneSearchResult>& f) {
+                                                     return !f.valid() ||
+                                                            f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+                                                 }),
+                                  job.retired.end());
                 if (!job.result.valid() || job.serial != pending.serial)
                 {
+                    if (job.result.valid())
+                        job.retired.push_back(std::move(job.result));   // still running: never destroyed on this thread
                     job.serial = pending.serial;
                     job.result = std::async(std::launch::async,
                                             [network, framePose, copy = request]() mutable {
@@ -4383,6 +4392,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                                                  -glm::dot(vMap, reflexAgent.forwardMap));
             reflexShip.targetForwardSpeedMps = reflexAgent.assistedTargetSpeedMps;
             reflexShip.rcsKeepsTranslationDeltaV = output.control.rcsKeepsTranslationDeltaV;
+            reflexShip.deltaVSinceScanBody = deltaVSinceRadarScanBody();
             reflexShip.ratesPitchYawRoll = glm::vec3(static_cast<float>(reflexAgent.pitchRateRadPerSec),
                                                      static_cast<float>(reflexAgent.yawRateRadPerSec),
                                                      static_cast<float>(reflexAgent.rollRateRadPerSec));
@@ -5213,6 +5223,20 @@ std::uint64_t SpaceState::reflexEpisodeKey(std::uint64_t tag) const
     return h | 2u;   // never 0 (a fresh reflex) or 1 (the pilot's own flight)
 }
 
+glm::dvec3 SpaceState::deltaVSinceRadarScanBody() const
+{
+    if (!m_client)
+        return glm::dvec3(0.0);
+    const auto& sensors = m_client->navigationSensors();
+    const auto it = m_client->world().ships().find(m_playerId.value);
+    if (!sensors.hasRadarScan || it == m_client->world().ships().end())
+        return glm::dvec3(0.0);
+    const auto& tr = it->second.transform;
+    const glm::dvec3 dv = tr.motion.worldVelocityMps - sensors.latestRadarScan.observerWorldVelocityMps;
+    // the body frame now: +X right, +Y up, -Z nose (the radar's)
+    return glm::dvec3(glm::dot(dv, glm::dvec3(tr.right())), glm::dot(dv, glm::dvec3(tr.up())), -glm::dot(dv, glm::dvec3(tr.forward())));
+}
+
 double SpaceState::ownBoundingRadiusMeters() const
 {
     if (!m_client)
@@ -5342,6 +5366,7 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     ship.targetForwardSpeedMps = std::max(0.0, static_cast<double>(motion.targetForwardSpeedMps));
     ship.rcsKeepsTranslationDeltaV = sampled.rcsKeepsTranslationDeltaV;
     ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
+    ship.deltaVSinceScanBody = deltaVSinceRadarScanBody();
     const double hullRadius = ownBoundingRadiusMeters();
     const auto& cmd = reflex.updatePrograms(sensors.latestRadarScan, universeTimeSeconds, ship, hullRadius);
     if (!cmd.active)

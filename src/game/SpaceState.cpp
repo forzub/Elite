@@ -2964,8 +2964,8 @@ updateShipObservationInterest(viewDt);
 
 
 m_playerView->updateCockpitStateFromSnapshot(
-    ship.transform.forwardVelocity,
-    ship.transform.targetSpeed,
+    static_cast<float>(ship.transform.forwardSpeedMps()),
+    static_cast<float>(ship.transform.commandedForwardSpeedMps()),
     static_cast<float>(ship.transform.motion.manoeuvreGasPressure01),
     ship.transform.cruiseActive,
     game::runtime::WorldSignalLabelsEnabled

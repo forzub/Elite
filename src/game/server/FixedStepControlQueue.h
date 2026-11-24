@@ -28,8 +28,13 @@ public:
     enum class EnqueueResult
     {
         Accepted,
-        Stale
+        Stale,
+        Overflow   // the bound reached: the NEW sample refused (audit 2: a buggy / malicious client grew it without limit)
     };
+
+    // 5 s of samples at 50 Hz: a client that far ahead of the server is broken - its newest samples are refused (dropping
+    // the OLDEST would acknowledge steps the server never ran and saw the prediction back and forth)
+    static constexpr std::size_t MaxPending = 256;
 
     EnqueueResult enqueue(const ShipControlState& control)
     {
@@ -38,6 +43,8 @@ public:
         {
             return EnqueueResult::Stale;
         }
+        if (m_queue.size() >= MaxPending)
+            return EnqueueResult::Overflow;
 
         m_lastReceivedTick = control.controlTick;
 

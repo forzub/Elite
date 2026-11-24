@@ -262,22 +262,37 @@ struct EconomyServer::StateWriter
         }
         wake.notify_one();
     }
+    // a finished state whose write failed (audit ECO-5: it was dropped after ~3 s of retries - the confirmed deal lost
+    // with the next crash, nothing re-queued it): retried every 2 s until written or superseded by a newer state
+    std::string unsaved;
     void run()
     {
         for (;;)
         {
             StateParts parts;
+            std::string retryText;
             {
                 std::unique_lock<std::mutex> lock(mutex);
-                wake.wait(lock, [this] { return hasPending || stop; });
-                if (!hasPending)
+                if (unsaved.empty())
+                    wake.wait(lock, [this] { return hasPending || stop; });
+                else
+                    wake.wait_for(lock, std::chrono::seconds(2), [this] { return hasPending || stop; });
+                if (hasPending)
+                {
+                    parts = std::move(pending);
+                    pending = StateParts{};
+                    hasPending = false;
+                    unsaved.clear();   // superseded
+                }
+                else if (!unsaved.empty())
+                    retryText = unsaved;   // the failed one again (also on stop: one last attempt)
+                else if (stop)
                     return;   // stop with nothing left to write
-                parts = std::move(pending);
-                pending = StateParts{};
-                hasPending = false;
+                else
+                    continue;
             }
             const double t0 = steadyS();
-            const std::string text = finishState(std::move(parts));
+            const std::string text = retryText.empty() ? finishState(std::move(parts)) : std::move(retryText);
             const double t1 = steadyS();
             // the rename over the old file fails while another process holds it open (a reader, an antivirus, a backup
             // on Windows): retry briefly; still failing - keep this state queued unless a newer one arrived meanwhile
@@ -296,8 +311,16 @@ struct EconomyServer::StateWriter
                     std::this_thread::sleep_for(std::chrono::milliseconds(attempt < 10 ? 20 : 100));
                 }
             }
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (!ok && !hasPending && !stop)
+                    unsaved = text;   // kept: retried every 2 s
+                else if (ok)
+                    unsaved.clear();
+            }
             if (!ok)
-                std::cerr << "[EconomyServer] state NOT saved to " << path << " (the previous file is kept; Win32 error " << g_lastWriteError << ")" << '\n';
+                std::cerr << "[EconomyServer] state NOT saved to " << path << " (the previous file is kept; Win32 error " << g_lastWriteError
+                          << ") - " << (stop ? "giving up at shutdown" : "kept, retried every 2 s") << '\n';
             if (saveTiming())
                 std::cerr << "[EconomySave] writer: " << text.size() << " B, markets + board + dump " << 1000.0 * (t1 - t0) << " ms, write "
                           << 1000.0 * (steadyS() - t1) << " ms (background)" << '\n';

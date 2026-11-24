@@ -1900,16 +1900,34 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     // A player ship lost (destroyed / disabled in combat / crushed): its cargo leaves the manifest ONCE, into lost-cargo
     // records (EconomyServer::recordShipLoss, idempotent by event id) - it must not come back with the ship after a
     // restart, nor stay both aboard and lost (re-audit 2026-11-19; docs/CARGO_SALVAGE_DESIGN.md minimal part)
+    // audit ECO-3: EVERY ship whose loss matters to the economy (a manifest aboard, or flown by a player) - a parked
+    // ship, the one left after a ship change, a bot's: their loss was never recorded (cargo / policy orphaned).
+    // ECO-2: the event id is the ship + the UNIVERSE time of the loss (the server tick restarts at 0 every run - the
+    // same ship lost on the same tick number of another run was taken for the old event and ignored); a ship that is
+    // whole again (a DEV restore / respawn) leaves the in-process set, so its next loss is recorded.
     if (m_economy.loaded())
-        for (const EntityId id : m_simulation.playerControlledShipIds())
+        for (const auto& [shipId, shipPtr] : m_simulation.ships())
         {
-            const Ship* lost = m_simulation.getShip(id);
-            if (!lost || lost->core().transform().motion.destroyedCause == 0 || !m_reportedShipLosses.insert(id.value).second)
+            if (!shipPtr)
+                continue;
+            const EntityId id = shipId;
+            const Ship* lost = shipPtr.get();
+            if (lost->core().transform().motion.destroyedCause == 0)
+            {
+                if (!m_reportedShipLosses.empty())
+                    m_reportedShipLosses.erase(id.value);
+                continue;
+            }
+            const std::uint64_t key = lost->core().registry().instanceId;
+            const auto* manifest = m_economy.cargo().find(key);
+            const bool matters = (manifest && !manifest->lots.empty()) || m_simulation.isPlayerControlled(id);
+            if (!matters || !m_reportedShipLosses.insert(id.value).second)
                 continue;
             const auto& tr = lost->core().transform();
             game::economy::EconomyServer::ShipLoss loss;
-            loss.shipKey = lost->core().registry().instanceId;
-            loss.eventId = "loss:" + std::to_string(loss.shipKey) + ":" + std::to_string(m_serverTick);
+            loss.shipKey = key;
+            loss.eventId = "loss:" + std::to_string(loss.shipKey) + ":u" +
+                           std::to_string(static_cast<long long>(std::llround(m_universeClock.timeSeconds() * 1000.0)));
             loss.systemId = tr.motion.systemId;
             const glm::dvec3 at = tr.fullWorldMeters();
             loss.worldM[0] = at.x;
@@ -2626,6 +2644,10 @@ void GameServer::restoreRuntimeShipsIfDue()
                     ship->core().recordProductOverride(o.substr(0, eq), o.substr(eq + 1));
         m_runtimeShips.insert(init.registry.instanceId);
         byInstance[init.registry.instanceId] = id;
+        // its restored manifest's mass (audit ECO-5: the restored runtime ships flew empty after a restart - the cargo
+        // load was applied only to the ships present when the economy loaded)
+        if (m_economy.loaded())
+            applyCargoLoad(id);
         if (const std::uint64_t p = s.value("flown_by", std::uint64_t{0}); p != 0)
             flown.push_back({p, id});
         std::cerr << "[ShipSave] restored " << passport << " (" << init.registry.instanceId << ") at " << s.value("hub", std::string()) << " -> entity "

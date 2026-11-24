@@ -8505,3 +8505,13 @@ start-up hitches (render), trade step 16 part 3 live.
   server): docked, 0 contacts, the construction contract signed and the client re-assembled the city with the new stage
   (SRV-1 replication verified). The route-draft fast path is ON by default again. Obstacle dump (ELITE_ROUTE_DUMP)
   now carries the boxes' bases ("B" lines) for offline route-vs-box checks.
+- ECO-2: the ship-loss event id = ship + UNIVERSE time in ms ("loss:<key>:u<ms>"; was the server tick, restarting at 0
+  each run); a ship whole again leaves the in-process reported set. Live: two runs on one state file, the same DEV
+  destroy timer: two losses recorded (loss:1:u881330604002, loss:1:u881330695628) - the old id would have collided.
+- ECO-3: the loss scan covers EVERY ship with a manifest aboard or flown by a player (parked ships, the one left after
+  a ship change, bots' ships were never recorded). Not exercised live (same condition path).
+- ECO-5: (a) the state writer keeps a failed write and retries it every 2 s until written or superseded (it dropped it
+  after ~3 s: a confirmed deal lost with the next crash); (b) restored runtime ships get their manifest's mass
+  (applyCargoLoad on restore - they flew empty after a restart). Still open: one transaction for economy +
+  ships.json (next_instance lives only in ships.json), durable-before-reply (the JSONL journal of TRADE_DESIGN §7.6).
+  EliteEconomyCheck 257 / 0.

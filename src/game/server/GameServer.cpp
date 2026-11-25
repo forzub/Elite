@@ -3814,7 +3814,20 @@ bool GameServer::copySparseSnapshotForSession(
     outSnapshot.session.controlledEntityId = controlledEntityForSession(sessionId).value;
     outSnapshot.session.controlEpoch = m_controlEpochs.count(playerForSession(sessionId).value) ? m_controlEpochs.at(playerForSession(sessionId).value) : 0;
     outSnapshot.session.trade = tradeForSession(sessionId);
-    outSnapshot.session.constructionOverrides = constructionOverridesSnapshot();
+    // the construction overrides only when they changed (their generation) or every 10 s: the client keeps what it was
+    // given in its expansion store - they were serialized into every snapshot
+    {
+        auto& sent = m_overridesSentBySession[sessionId.value];
+        const std::uint64_t generation = elite::model_asset::hubExpansionOverrideGeneration();
+        const double nowS = m_lastSnapshot.metadata.serverTimeSeconds;
+        if (enteringSystem || sent.first != generation || nowS - sent.second >= 10.0 || nowS < sent.second)
+        {
+            outSnapshot.session.constructionOverrides = constructionOverridesSnapshot();
+            sent = {generation, nowS};
+        }
+        else
+            outSnapshot.session.constructionOverrides.clear();
+    }
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

@@ -8834,3 +8834,12 @@ start-up hitches (render), trade step 16 part 3 live.
   the old connection (closing its handles ends the blocking call) and retires its thread - joined once done, all of
   them at the radio's end (~CockpitRadio waits); only the current station's thread writes the radio's state (a
   generation). Live: 7 switches, 0 frame gaps after them.
+- Pad-to-pad (a pre-existing failure) - LIVE OK: B4-11 landed, then A2-03 asked from the pad: the route, the pad service,
+  the descent (21 s). The construction overrides go to a session only on a generation change / system entry / 10 s
+  (the client keeps them in its expansion store). Remaining frame gaps in the author's log: the first map open (the
+  procedural bodies, 360 ms) and one unexplained 300 ms; the big ones were the radio (fixed).
+- Ring hub finding (for the author): the ring city's plan has a spin (period 69.8 s, r 1210 m) but at runtime the city
+  module is attached WITHOUT a spin - only the hubv_ring_wheel turns; its pads do not move, landings work. Should the
+  city turn with the ring (1 g at the rim)? Then the co-rotating landing (memory ring-rim-landing) applies. ASK.
+- Ring approach from 10 km above: the optimizer finds no path (violation ~0.63, a curvature / dynamic limit, not an
+  obstacle); 5 / 13 / 20 km work - a geometric corner case, open.

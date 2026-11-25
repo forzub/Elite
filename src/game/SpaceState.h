@@ -701,13 +701,18 @@ private:
     void updateUnsampledCollisionAssist();
     // the onboard computer's journal, kept on the client (SpaceStateJournal.cpp, OnboardJournal.h)
     void updateOnboardJournal(double dt);
+    void devCheckHubAttachedPoses(double dt);
+    double m_hubPoseCheckClockS = 0.0;
     // the cockpit-capsule's rescue autopilot (SpaceStateCapsule.cpp)
     void updateCapsuleRescue(double dt);
     struct CapsuleRescue
     {
         enum class Phase { None, Cruise, Landing };
         Phase phase = Phase::None;
-        std::string hubId, hubName, frameModuleId, pad;
+        std::string hubId, hubName, frameModuleId, pad, beaconId;
+        bool reportedAtBeacon = false;
+        bool rescued = false;
+        double notAliveSince = -1.0;
         bool rescueDock = false;
         bool ownsControl = false;
         bool reportedNoTarget = false;

@@ -8769,3 +8769,30 @@ start-up hitches (render), trade step 16 part 3 live.
   the universe's constants (see invariants). Live so far: cruise Высокий -> Кольцо 60 km OK (the old profile wasted 1500
   m/s); the clearance OK; the pad landing at Высокий: the planner found no path with the capsule envelope (violation 1.0
   everywhere) - braking by the jets added (reverse 2 m/s2), re-testing.
+- PLAN (next after the capsule): static hub objects off the wire (author: «зачем пересылать объекты хабов, если можно
+  хранить те же данные на клиенте»). Audit (read-only): an attached object's pose / velocity / orientation are pure
+  functions of the hub row + the fixed attachment + universe time (GameSimulation.cpp:1503-1633 duplicated in
+  GameSimulationReferenceFrames.cpp:455-551); assemblyModules are sent every tick for every module and their angle
+  accumulates from server start (ObjectAssemblyRuntime.cpp:54-71 - not reproducible on the client); hasDetachedFragments
+  is true every tick; session.constructionOverrides serialized every snapshot. Design: (1) per-object staticPayload /
+  state revisions on the server; a "derivable" row = attached + inheritHubOrientation, no lab gap offset, no fragments,
+  no rotating assembly (or the angle made time-derived: angle = speed x universeTime); (2) ReplicationPublicationState
+  keeps per-session sent revisions; copySparseSnapshotForSession sends a derivable row only on a revision change / system
+  entry; (3) ONE shared pose law src/game/navigation/HubAttachedPose.h used by the server AND by the client's sparse merge
+  (materializeCanonicalReplicationSnapshot re-poses retained derivable rows from that snapshot's hub row) and the live
+  ClientWorldState (needs hub angularVelocity in ClientHubState); hubs keep flowing every snapshot; full-set packets must
+  keep carrying every object (else the client erases them). Also: missing braces GameSimulationReplication.cpp:555-557
+  (harmless). Expected: ~13 of 33.7 KB a snapshot. Risks: pose drift vs the server (float hub orientation ~1 mm at
+  10 km; universe time must match), ELITE_DEV_HUB_POSE_TRACE re-check.
+- Capsule step 4/5 (live, 2026-11-25): the rescue autopilot reaches the staging point over Высокий and the ordinary pad
+  landing flies it to A2-03 (the МЧС rescue dock's roof): the lane search got a craft speed cap (HubLaneRouting: no faster
+  than the craft turns / stops within 1.5 km - the capsule's 2 m/s2 jets made a 11.7 km turn radius at 150 m/s, no lane
+  entry fitted), the staging point's own velocity (it turns with the orbit), the landing-alive check reads the pad
+  service (ShipSnapshot::padService; "phase:3" = on the pad -> КАПСУЛА СПАСЕНА) and a hand-over gap is not a failure (15 s
+  of nothing); the pad service does not wait for the legs of a capsule (they stayed on the hull). Capsule beacons
+  (assets/data/navigation/capsule_beacons.json, CapsuleBeacons.h; 3 on the Earth-Moon lane): heard -> the journal, its
+  rescue service becomes known; no hub in reach -> fly to the beacon and wait. Journal: a moving place (orbit, Lagrange)
+  is the same record within 2 % of its distance.
+- Hub objects off the wire, step 1: ONE pose law src/game/navigation/HubAttachedPose.h (server formulas, the frame from the
+  replicated hub row); ClientHubState carries the hub's spin. ELITE_DEV_HUB_POSE_CHECK=1 proves it live: 203 attached
+  objects of Sol, worst 1 mm / 0.04 deg against the server's poses.

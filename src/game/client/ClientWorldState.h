@@ -184,6 +184,7 @@ struct ClientHubState
     std::string parentBodyId;
     world::coordinates::WorldPosition worldPosition;
     glm::dvec3 worldVelocityMps {0.0};
+    glm::dvec3 angularVelocityWorldRadPerSecond {0.0};   // its spin (the attached objects' poses: HubAttachedPose.h)
     glm::mat4 orientation {1.0f};
     world::orbits::OrbitalMotion motion;
 };

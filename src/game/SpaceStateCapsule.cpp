@@ -14,6 +14,7 @@
 
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/rules/CapsuleRules.h"
+#include "src/game/navigation/rules/CapsuleBeacons.h"
 #include "src/game/navigation/rules/RescueRules.h"
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
 #include "src/game/scene/LayoutCityHitVolumes.h"
@@ -79,8 +80,21 @@ void SpaceState::updateCapsuleRescue(double dt)
     const glm::dvec3 me = world::coordinates::fullMeters(ship.transform.worldPosition);
     const glm::dvec3 myV = motion.worldVelocityMps;
 
+    // the capsule beacons it HEARS now (CapsuleBeacons.h): each tells its position and its rescue service (a hub)
+    struct Heard { const game::navigation::beacons::CapsuleBeacon* beacon; glm::dvec3 worldM; };
+    std::vector<Heard> heard;
+    {
+        const auto resolve = routeAnchorResolver();
+        for (const auto& b : game::navigation::beacons::capsuleBeacons())
+        {
+            glm::dvec3 p(0.0);
+            if (b.systemId == motion.systemId && resolve(b.anchor, p) && glm::length(p - me) <= b.hearRadiusM)
+                heard.push_back({&b, p});
+        }
+    }
+
     // ---- 1. the target (re-chosen when none, or when its landing ended without the capsule landed)
-    if (r.hubId.empty() && now >= r.nextChoiceAt)
+    if (r.hubId.empty() && r.beaconId.empty() && now >= r.nextChoiceAt)
     {
         r.nextChoiceAt = now + 5.0;
         const double reach = 0.5 * motion.capsuleDeltaVLeftMps * CapsuleEnduranceS;
@@ -95,6 +109,8 @@ void SpaceState::updateCapsuleRescue(double dt)
             bool known = d <= game::navigation::rescue::ZoneRadiusM;
             for (const auto& e : m_onboardJournal)
                 known = known || (e.kind == game::navigation::journal::Kind::Hub && e.key == hubId);
+            for (const auto& h : heard)   // a beacon heard names its rescue service
+                known = known || h.beacon->rescueHubId == hubId;
             if (!known || d > reach)
                 continue;
             const auto pad = padOf(hubId);
@@ -121,35 +137,76 @@ void SpaceState::updateCapsuleRescue(double dt)
                       << ", " << glm::length(world::coordinates::fullMeters(hub.worldPosition) - me) / 1000.0
                       << " km, reaction mass " << motion.capsuleDeltaVLeftMps << " m/s" << std::endl;
         }
-        else if (!r.reportedNoTarget)
+        else
+        {
+            // no hub within reach: the nearest beacon heard - fly to it and wait there for the pick-up
+            double bestBeacon = std::numeric_limits<double>::infinity();
+            for (const auto& h : heard)
+            {
+                const double d = glm::length(h.worldM - me);
+                if (d <= reach && d < bestBeacon)
+                {
+                    bestBeacon = d;
+                    r.beaconId = h.beacon->id;
+                    r.hubName = h.beacon->name;
+                }
+            }
+            if (!r.beaconId.empty())
+            {
+                r.phase = CapsuleRescue::Phase::Cruise;
+                std::cerr << "[CapsuleRescue] no hub within reach - to the beacon " << r.hubName << ", " << bestBeacon / 1000.0
+                          << " km, to wait for the rescue" << std::endl;
+            }
+        }
+        if (r.hubId.empty() && r.beaconId.empty() && !r.reportedNoTarget)
         {
             r.reportedNoTarget = true;
             std::cerr << "[CapsuleRescue] no known hub within reach (reaction mass " << motion.capsuleDeltaVLeftMps
                       << " m/s): drifting, SOS" << std::endl;
         }
     }
-    if (r.hubId.empty())
+    if (r.hubId.empty() && r.beaconId.empty())
     {
-        m_pilotNotice = "КАПСУЛА: известных хабов в досягаемости нет - дрейф, сигнал SOS";
+        m_pilotNotice = "КАПСУЛА: ни хабов, ни маяков в досягаемости - дрейф, сигнал SOS";
         return;
     }
-    const auto hubIt = m_client->world().hubs().find(r.hubId);
-    if (hubIt == m_client->world().hubs().end())
+    glm::dvec3 staging(0.0), hubV(0.0), hubPos(0.0);
+    if (!r.beaconId.empty())
     {
-        r.hubId.clear();
-        return;
+        // a beacon: its own point (it moves with its anchor; the velocity comes from its motion below)
+        bool found = false;
+        const auto resolve = routeAnchorResolver();
+        for (const auto& b : game::navigation::beacons::capsuleBeacons())
+            if (b.id == r.beaconId && resolve(b.anchor, staging))
+                found = true;
+        if (!found)
+        {
+            r.beaconId.clear();
+            return;
+        }
+        hubPos = staging;
+        hubV = r.stagingValid ? r.stagingVelocity : myV;
     }
-    const glm::dvec3 hubPos = world::coordinates::fullMeters(hubIt->second.worldPosition);
-    const glm::dvec3 hubV = hubIt->second.worldVelocityMps;
-    // the STAGING point: 8 km above the hub (away from its planet) - where every approach to a city pad starts; from a
-    // point in the hub's shadow (2.5 km off the station, the arrays between) the planner found no path at all (live:
-    // every candidate through an obstacle, violation 1.0)
-    glm::dvec3 up(0.0, 1.0, 0.0);
-    if (const auto* celestial = m_client->celestialSnapshot(); celestial && celestial->systemId == hubIt->second.systemId)
-        for (const auto& body : celestial->bodies)
-            if (body.id == hubIt->second.parentBodyId && glm::length(hubPos - body.worldMeters) > 1.0)
-                up = glm::normalize(hubPos - body.worldMeters);
-    const glm::dvec3 staging = hubPos + up * StagingAboveHubM;
+    else
+    {
+        const auto hubIt = m_client->world().hubs().find(r.hubId);
+        if (hubIt == m_client->world().hubs().end())
+        {
+            r.hubId.clear();
+            return;
+        }
+        hubPos = world::coordinates::fullMeters(hubIt->second.worldPosition);
+        hubV = hubIt->second.worldVelocityMps;
+        // the STAGING point: 8 km above the hub (away from its planet) - where every approach to a city pad starts; from
+        // a point in the hub's shadow (2.5 km off the station, the arrays between) the planner found no path at all
+        // (live: every candidate through an obstacle, violation 1.0)
+        glm::dvec3 up(0.0, 1.0, 0.0);
+        if (const auto* celestial = m_client->celestialSnapshot(); celestial && celestial->systemId == hubIt->second.systemId)
+            for (const auto& body : celestial->bodies)
+                if (body.id == hubIt->second.parentBodyId && glm::length(hubPos - body.worldMeters) > 1.0)
+                    up = glm::normalize(hubPos - body.worldMeters);
+        staging = hubPos + up * StagingAboveHubM;
+    }
     // the staging point turns with the orbit (8 km x the orbit's rate ~ 9 m/s against the hub): its own velocity, from
     // its motion between the samples (the hub's until there is one)
     const double simNow = m_client->lastSimulationMetadata().universeTimeSeconds;
@@ -173,10 +230,28 @@ void SpaceState::updateCapsuleRescue(double dt)
     if (r.phase == CapsuleRescue::Phase::Landing)
     {
         const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
-        const bool landingAlive = pending.valid() || !m_padLandingObjectId.empty();
+        // the pad service flying / holding the capsule (ShipSnapshot::padService "phase:<n>:<address>"; 3 = on the pad)
+        if (ship.padService.rfind("phase:3:", 0) == 0)
+        {
+            if (!r.rescued)
+            {
+                r.rescued = true;
+                std::cerr << "[CapsuleRescue] RESCUED: the capsule is on pad " << r.pad << " of " << r.hubName
+                          << (r.rescueDock ? " (МЧС rescue dock)" : "") << ", reaction mass left "
+                          << motion.capsuleDeltaVLeftMps << " m/s" << std::endl;
+            }
+            m_pilotNotice = "КАПСУЛА СПАСЕНА: площадка " + r.pad + " - " + r.hubName + (r.rescueDock ? " (док МЧС)" : "");
+            return;
+        }
+        const bool landingAlive = pending.valid() || !m_padLandingObjectId.empty() || !ship.padService.empty();
         // the planner needs its time (the city's geometry, the route): the landing counts as ended only when nothing
         // is pending any more AND a minute and a half passed
-        if (!landingAlive && now - r.landingAskedAt > 90.0)
+        // a hand-over between the route and the pad service leaves a moment with neither: only 15 s of NOTHING is an end
+        if (landingAlive)
+            r.notAliveSince = -1.0;
+        else if (r.notAliveSince < 0.0)
+            r.notAliveSince = now;
+        if (!landingAlive && now - r.landingAskedAt > 90.0 && now - r.notAliveSince > 15.0)
         {
             std::cerr << "[CapsuleRescue] the landing at " << r.hubName << " ended without the capsule down - next hub" << std::endl;
             r.refused.insert(r.hubId);
@@ -223,7 +298,17 @@ void SpaceState::updateCapsuleRescue(double dt)
     }
 
     // ---- 3. near: stopped against the hub, clear of its structures -> the ordinary pad landing (once)
-    if (d < StagingReachedM && glm::length(relV) < 5.0 && nearest > 500.0)
+    if (!r.beaconId.empty() && d < StagingReachedM && glm::length(relV) < 5.0)
+    {
+        // at the beacon: keep station there and wait for the rescuers (the SOS is heard here)
+        m_pilotNotice = "КАПСУЛА: у маяка «" + r.hubName + "» - ожидание спасателей, сигнал SOS";
+        if (!r.reportedAtBeacon)
+        {
+            r.reportedAtBeacon = true;
+            std::cerr << "[CapsuleRescue] at the beacon " << r.hubName << ": holding, waiting for the rescue" << std::endl;
+        }
+    }
+    else if (r.beaconId.empty() && d < StagingReachedM && glm::length(relV) < 5.0 && nearest > 500.0)
     {
         if (r.ownsControl)
         {
@@ -294,5 +379,6 @@ void SpaceState::updateCapsuleRescue(double dt)
     char b[256];
     std::snprintf(b, sizeof b, "КАПСУЛА: курс на «%s»%s - %.0f км, сближение %.0f м/с, запас %.0f м/с", r.hubName.c_str(),
                   r.rescueDock ? " (док МЧС)" : "", d / 1000.0, glm::dot(relV, dir), motion.capsuleDeltaVLeftMps);
-    m_pilotNotice = b;
+    if (!r.reportedAtBeacon)   // waiting at a beacon keeps its own line
+        m_pilotNotice = b;
 }

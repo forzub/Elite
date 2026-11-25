@@ -1,0 +1,40 @@
+{
+  "schema": "elite.capsule_beacons.v1",
+  "notes": [
+    "Capsule beacons (author 2026-11-24, memory cockpit-capsule-rescue): automatic radio buoys a crew in an escape capsule can",
+    "hear and home on. A beacon broadcasts its position and the rescue service it belongs to; a capsule that hears it learns",
+    "that service (its hub) even if it never met it, and when the hub is out of its reach it flies to the beacon itself and",
+    "waits there for the pick-up. hear_radius_km: the reach of its broadcast for a capsule's receiver.",
+    "anchor: as route_zones.json - hub (runtime hub id) | body | lagrange (primary, secondary, fraction from the primary).",
+    "Placed on the surveyed lanes between the inhabited places (memory space-knowledge-and-map: beacons on the routes)."
+  ],
+  "beacons": [
+    {
+      "id": "beacon.sol.earth_moon_gate",
+      "name": "Маяк створа Земля–Луна",
+      "system_id": 0,
+      "anchor": { "kind": "lagrange", "primary": "system_0.Sol.Земля", "secondary": "system_0.Sol.Земля.Луна", "fraction": 0.5 },
+      "hear_radius_km": 250000,
+      "rescue_hub": "earth_orbital_hub",
+      "operator": "Спасательная служба Высокого"
+    },
+    {
+      "id": "beacon.sol.moon_near",
+      "name": "Маяк окололунный",
+      "system_id": 0,
+      "anchor": { "kind": "lagrange", "primary": "system_0.Sol.Земля", "secondary": "system_0.Sol.Земля.Луна", "fraction": 0.85 },
+      "hear_radius_km": 150000,
+      "rescue_hub": "earth_orbital_hub",
+      "operator": "Спасательная служба Высокого"
+    },
+    {
+      "id": "beacon.sol.earth_l1_outbound",
+      "name": "Маяк выхода с орбиты Земли",
+      "system_id": 0,
+      "anchor": { "kind": "lagrange", "primary": "system_0.Sol.Земля", "secondary": "system_0.Sol.Земля.Луна", "fraction": 0.15 },
+      "hear_radius_km": 150000,
+      "rescue_hub": "earth_orbital_hub",
+      "operator": "Спасательная служба Высокого"
+    }
+  ]
+}

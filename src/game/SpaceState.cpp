@@ -1884,6 +1884,7 @@ void SpaceState::update(float dt)
     followControlledShip();
     updateUnsampledCollisionAssist();
     updateOnboardJournal(dt);
+    devCheckHubAttachedPoses(dt);
     updateCapsuleRescue(dt);
     // the hub map follows the hub the ship is in (a new hub entered -> its map; author: the hub map did not switch)
     if (m_client)

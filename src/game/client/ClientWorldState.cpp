@@ -1136,6 +1136,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         state.parentBodyId = hub.parentBodyId;
         state.worldPosition = hub.worldPosition;
         state.worldVelocityMps = hub.worldVelocityMps;
+        state.angularVelocityWorldRadPerSecond = hub.angularVelocityWorldRadPerSecond;
         state.orientation = hub.orientation;
         state.motion = hub.motion;
     }

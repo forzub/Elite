@@ -12,6 +12,10 @@
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/rules/OnboardJournal.h"
 #include "src/game/navigation/rules/RescueRules.h"
+#include "src/game/navigation/rules/CapsuleBeacons.h"
+#include "src/game/navigation/HubAttachedPose.h"
+
+#include <algorithm>
 
 #include <filesystem>
 #include <fstream>
@@ -30,6 +34,66 @@ std::filesystem::path journalDir()
     return fs::path("journal");
 }
 } // namespace
+
+// DEV: ELITE_DEV_HUB_POSE_CHECK=1 - every 5 s the client computes every hub-attached object's pose from its hub row
+// (HubAttachedPose.h, the server's law) and logs the worst difference from the pose the server sent: the proof the
+// objects can leave the wire (the client poses them itself)
+void SpaceState::devCheckHubAttachedPoses(double dt)
+{
+    static const bool on = [] { const char* v = std::getenv("ELITE_DEV_HUB_POSE_CHECK"); return v && *v == '1'; }();
+    if (!on || !m_client)
+        return;
+    m_hubPoseCheckClockS += dt;
+    if (m_hubPoseCheckClockS < 5.0)
+        return;
+    m_hubPoseCheckClockS = 0.0;
+    const double t = m_client->lastSimulationMetadata().universeTimeSeconds;
+    int ownSystem = -1;
+    if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+        ownSystem = it->second.transform.motion.systemId;
+    double worstM = 0.0, worstDeg = 0.0;
+    int n = 0;
+    std::string worstId;
+    std::vector<std::pair<double, std::string>> offenders;
+    for (const auto& [oid, object] : m_client->world().objects())
+    {
+        if (!object.hubAttachment.valid || object.systemId != ownSystem)
+            continue;
+        const auto hubIt = m_client->world().hubs().find(object.hubAttachment.hubId);
+        if (hubIt == m_client->world().hubs().end())
+            continue;
+        const auto& hub = hubIt->second;
+        const auto frame = game::navigation::makeReplicatedHubKinematicFrame(
+            hub.systemId, hub.id, world::coordinates::fullMeters(hub.worldPosition), hub.worldVelocityMps,
+            hub.angularVelocityWorldRadPerSecond, hub.orientation);
+        if (!frame.valid)
+            continue;
+        const auto pose = game::navigation::poseHubAttached(frame.originMeters, frame.linearVelocityMps, frame.localToWorldBasis[0],
+                                                            frame.localToWorldBasis[1], frame.localToWorldBasis[2],
+                                                            frame.angularVelocityWorldRadPerSecond, object.hubAttachment, t);
+        if (!pose.valid)
+            continue;
+        ++n;
+        const double dm = glm::length(pose.worldMeters - world::coordinates::fullMeters(object.worldPosition));
+        const glm::dmat3 a(glm::mat3(pose.orientation)), b(glm::mat3(object.orientation));
+        const double c = std::clamp((glm::dot(a[0], b[0]) + glm::dot(a[1], b[1]) + glm::dot(a[2], b[2]) - 1.0) * 0.5, -1.0, 1.0);
+        const double deg = glm::degrees(std::acos(c));
+        offenders.emplace_back(dm, object.hubAttachment.moduleId + (object.hubAttachment.inheritHubOrientation ? "" : " (own orientation)") +
+                                       " " + std::to_string(static_cast<int>(deg)) + " deg");
+        if (dm > worstM)
+        {
+            worstM = dm;
+            worstId = object.hubAttachment.moduleId;
+        }
+        worstDeg = std::max(worstDeg, deg);
+    }
+    std::sort(offenders.begin(), offenders.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+    std::cerr << "[HubPoseCheck] " << n << " attached objects of the system: worst position " << worstM << " m (" << worstId
+              << "), worst orientation " << worstDeg << " deg; top:";
+    for (std::size_t i = 0; i < offenders.size() && i < 3; ++i)
+        std::cerr << " " << offenders[i].second << " " << offenders[i].first << " m;";
+    std::cerr << std::endl;
+}
 
 void SpaceState::updateOnboardJournal(double dt)
 {
@@ -105,6 +169,42 @@ void SpaceState::updateOnboardJournal(double dt)
         {
             changed = true;
             std::cerr << "[Journal] recorded hub " << e.label << " (" << e.detail << ")" << std::endl;
+        }
+    }
+    // the capsule beacons heard (CapsuleBeacons.h): their position (relative to their anchor's primary body) and the
+    // rescue service they name
+    {
+        const auto resolve = routeAnchorResolver();
+        for (const auto& b : game::navigation::beacons::capsuleBeacons())
+        {
+            glm::dvec3 p(0.0);
+            if (b.systemId != motion.systemId || !resolve(b.anchor, p) || glm::length(p - me) > b.hearRadiusM)
+                continue;
+            glm::dvec3 anchor(0.0);
+            std::string anchorId;
+            if (celestial && celestial->systemId == b.systemId)
+                for (const auto& body : celestial->bodies)
+                    if (body.id == (b.anchor.kind == "lagrange" ? b.anchor.primary : b.anchor.id))
+                    {
+                        anchor = body.worldMeters;
+                        anchorId = body.id;
+                        break;
+                    }
+            journal::Entry e;
+            e.kind = journal::Kind::Beacon;
+            e.key = b.id;
+            e.systemId = b.systemId;
+            e.anchorBodyId = anchorId;
+            e.positionM = p - anchor;
+            e.radiusM = b.hearRadiusM;
+            e.label = b.name;
+            e.detail = "спасательная служба: " + (b.operatorName.empty() ? b.rescueHubId : b.operatorName);
+            e.recordedAtS = m_client->lastSimulationMetadata().universeTimeSeconds;
+            if (journal::store(m_onboardJournal, e))
+            {
+                changed = true;
+                std::cerr << "[Journal] recorded beacon " << e.label << std::endl;
+            }
         }
     }
     if (changed)

@@ -96,8 +96,11 @@ inline bool store(std::vector<Entry>& journal, const Entry& e)
         {
             if (e.recordedAtS < j.recordedAtS)
                 return false;
+            // a place that moves about its anchor (an orbiting hub, a Lagrange beacon) is the same place: only a move
+            // beyond 2 % of its distance (or a changed description) is a new record
+            const double moveTolerance = std::max(1.0, 0.02 * glm::length(e.positionM));
             const bool changed = j.label != e.label || j.detail != e.detail || j.anchorBodyId != e.anchorBodyId ||
-                                 glm::length(j.positionM - e.positionM) > 1.0 || j.reliability01 != e.reliability01 ||
+                                 glm::length(j.positionM - e.positionM) > moveTolerance || j.reliability01 != e.reliability01 ||
                                  j.hasRescueDock != e.hasRescueDock || std::abs(j.radiusM - e.radiusM) > 1.0;
             // a re-sighting refreshes the time; only a change in content counts as a change of the journal
             j = e;

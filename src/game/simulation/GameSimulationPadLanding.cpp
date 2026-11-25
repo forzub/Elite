@@ -516,7 +516,10 @@ void GameSimulation::updatePadLandings(double dt)
         // it holds it over the pad until they are out
         const auto gearIt = m_landingGear.find(id);
         const bool legsOut = gearIt != m_landingGear.end() && gearIt->second == 1;
-        const bool waitLegs = p.phase == 2 && p.autoLanding && !legsOut && (!p.hangar || p.hangarStep >= 2);
+        // ... except a cockpit-capsule: its legs stayed on the lost hull, it sets down on its own belly (CapsuleRules.h)
+        const Ship* padShip = getShip(id);
+        const bool capsule = padShip && padShip->core().capsuleFlying();
+        const bool waitLegs = p.phase == 2 && p.autoLanding && !legsOut && !capsule && (!p.hangar || p.hangarStep >= 2);
         if (waitLegs)
         {
             want = 0.0;

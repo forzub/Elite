@@ -8865,3 +8865,6 @@ start-up hitches (render), trade step 16 part 3 live.
   RadarModule stays the DEVICE (descriptor, power consumer, operational). NOTE: the NPC awareness update
   (m_npcAwareness.update) lived only in that never-run path - NPCs have no awareness feed today (unchanged behaviour).
   Economy 258 / 0, catalog PASS, ramtest 60 / 143 m 0 collisions, the radar sees 379 + 128 contacts.
+- Duplicated truth, step 6: MathTransform's legacy float `position` mirror removed (worldPosition the one owner; the
+  two legacy owner-local hit helpers read worldPosition.localMeters - exactly what the mirror held); wire schema 77. No
+  other reader existed (the compiler found none). Economy 258 / 0, the collision + capsule path live OK.

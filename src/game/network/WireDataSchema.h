@@ -392,7 +392,6 @@ ELITE_WIRE_SCHEMA(
 ELITE_WIRE_SCHEMA(
     ShipTransform,
     v.worldPosition,
-    v.position,
     v.orientation,
     v.pitchRate,
     v.yawRate,

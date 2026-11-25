@@ -12,9 +12,8 @@ struct MathTransform
 {
     world::coordinates::WorldPosition worldPosition;
 
-    // Legacy mirror of worldPosition.
-    // Do not use as source of truth.
-    glm::vec3 position {0.0f, 0.0f, 0.0f};
+    // (the legacy float mirror `position` was removed 2026-11-25 - the duplicated-truth pass: worldPosition is the one
+    // owner of the position; wire schema 77)
 
     glm::mat4 orientation {1.0f};
 
@@ -24,7 +23,7 @@ struct MathTransform
         // position больше НЕ полные глобальные метры.
         // Это только legacy mirror внутри текущей WorldPosition cell.
         // Нельзя использовать для рендера, дистанций, камеры, LOD.
-        position = glm::vec3(worldPosition.localMeters);
+        // nothing to mirror any more (kept so the callers stay unchanged)
     }
 
     void setWorldPosition(const world::coordinates::WorldPosition& p)
@@ -138,7 +137,7 @@ world::coordinates::WorldPosition localCellToWorldPosition(
 
     glm::vec3 worldToLocal(const glm::vec3& world) const
     {
-        const glm::vec3 relative = world - position;
+        const glm::vec3 relative = world - glm::vec3(worldPosition.localMeters);   // the cell-local float frame
         const glm::mat4 invOrientation = glm::inverse(orientation);
         return glm::vec3(invOrientation * glm::vec4(relative, 1.0f));
     }
@@ -152,7 +151,7 @@ world::coordinates::WorldPosition localCellToWorldPosition(
 
     glm::vec3 localToWorld(const glm::vec3& local) const
     {
-        return glm::vec3(orientation * glm::vec4(local, 1.0f)) + position;
+        return glm::vec3(orientation * glm::vec4(local, 1.0f)) + glm::vec3(worldPosition.localMeters);
     }
 
     glm::vec3 directionToLocal(const glm::vec3& dir) const

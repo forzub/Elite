@@ -26,7 +26,6 @@
 #include "src/game/ship/sensors/ShipSignalPresentation.h"
 
 #include "src/world/types/SignalReceptionResult.h"
-#include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/simulation/ShipCoreStatus.h"
 #include "src/game/simulation/ShipSimulationTier.h"
 #include "src/game/damage/DamageEvent.h"
@@ -83,7 +82,6 @@ struct ClientShipState
 
     ShipSignalPresentation                          signalPresentation;
     std::vector<SignalReceptionResult>              receptions;
-    std::vector<game::RadarContact>                 radarContacts;
 
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
 

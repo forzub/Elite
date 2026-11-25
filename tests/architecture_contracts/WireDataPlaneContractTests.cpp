@@ -236,11 +236,6 @@ SimulationSnapshot makeSnapshot()
     reception.semanticState = SignalSemanticState::Decoded;
     ship.receptions.push_back(reception);
 
-    game::RadarContact contact;
-    contact.id = EntityId{100u};
-    contact.distance = 1234.5;
-    contact.localPosition = glm::vec3(1.0f, 2.0f, 3.0f);
-    ship.radarContacts.push_back(contact);
 
     game::damage::DamageEvent damage;
     damage.type = game::damage::DamageType::Explosion;

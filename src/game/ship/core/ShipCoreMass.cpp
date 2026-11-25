@@ -88,7 +88,6 @@ void ShipCore::setLoad(const ShipLoadState& load)
     m_load.consumables01 = std::clamp(load.consumables01, 0.0, 1.0);
     m_load.persons = std::max(0, load.persons);
     // the hold API and the load are ONE cargo quantity
-    m_cargo.mass.value = static_cast<int>(std::lround(m_load.cargoTonnes));
     recomputeMassProperties();
 }
 
@@ -275,7 +274,6 @@ void ShipCore::adoptInstanceState(const ShipCore& source)
     m_moduleRuntime = source.m_moduleRuntime;
     m_structuralLinkRuntime = source.m_structuralLinkRuntime;
     m_load = source.m_load;
-    m_cargo = source.m_cargo;
     m_propulsionReactorsOn = source.m_propulsionReactorsOn;
     m_propulsionReactorsStartupRemainingSeconds = source.m_propulsionReactorsStartupRemainingSeconds;
     m_reactor = source.m_reactor;

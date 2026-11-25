@@ -1869,7 +1869,7 @@ private:
             };
             w.shipMotion += without([](ShipSnapshot& x) { x.transform = ShipTransform {}; });
             w.shipGraph += without([](ShipSnapshot& x) { x.graph = {}; });
-            w.shipSensors += without([](ShipSnapshot& x) { x.receptions.clear(); x.radarContacts.clear(); x.damageEvents.clear(); });
+            w.shipSensors += without([](ShipSnapshot& x) { x.receptions.clear(); x.damageEvents.clear(); });
             w.shipServices += without([](ShipSnapshot& x) {
                 x.dockDispatcher = {};
                 x.traffic = {};

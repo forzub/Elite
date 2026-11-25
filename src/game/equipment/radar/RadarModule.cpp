@@ -26,63 +26,6 @@ void RadarModule::init(const RadarDesc& desc)
 
 // ================================
 
-void RadarModule::update(
-    double dt,
-    const std::vector<world::RadarContactInput>& worldObjects,
-    const world::coordinates::WorldPosition& myWorldPosition,
-    const glm::mat4& myOrientation
-)
-{
-    m_detected.clear();
-
-    if (!isOperational())
-        return;
-
-    if (m_availablePower < m_desc.powerConsumption)
-        return;
-
-    m_scanTimer += dt;
-
-    // if (m_desc.scanInterval > 0.0 &&
-    //     m_scanTimer < m_desc.scanInterval)
-    //     return;
-
-    m_scanTimer = 0.0;
-
-    for (const auto& obj : worldObjects)
-    {
-        const glm::dvec3 deltaD =
-            world::coordinates::relativeMeters(
-                obj.worldPosition,
-                myWorldPosition
-            );
-
-        const double distance =
-            glm::length(deltaD);
-
-        const glm::vec3 delta =
-            glm::vec3(deltaD);
-
-        if (distance > m_desc.maxRange)
-            continue;
-
-        double effectiveRange =
-            m_desc.maxRange * std::sqrt(obj.radarCrossSection);
-
-        if (distance > effectiveRange)
-            continue;
-
-        // перевод в локальные координаты
-        glm::vec3 local =
-            glm::vec3(glm::inverse(myOrientation) * glm::vec4(delta, 1.0f));
-
-        m_detected.push_back({
-            obj.id,
-            distance,
-            local
-        });
-    }
-}
 
 
 
@@ -166,9 +109,5 @@ bool RadarModule::detectTarget(
 
 
 // ================================
-const std::vector<RadarContact>& RadarModule::getContacts() const
-{
-    return m_detected;
-}
 
 }

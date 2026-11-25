@@ -171,15 +171,13 @@ namespace
         SimulationSnapshot garbage;
         for (auto& ship : sample.ships)
         {
-            if (!hasHeavyGraph(ship) && ship.receptions.empty() && ship.radarContacts.empty() && ship.damageEvents.empty())
+            if (!hasHeavyGraph(ship) && ship.receptions.empty() && ship.damageEvents.empty())
                 continue;
             ShipSnapshot& g = garbage.ships.emplace_back();
             stripHistoryOnlyGraph(ship.graph, g.graph);
             g.receptions = std::move(ship.receptions);
-            g.radarContacts = std::move(ship.radarContacts);
             g.damageEvents = std::move(ship.damageEvents);
             ship.receptions.clear();
-            ship.radarContacts.clear();
             ship.damageEvents.clear();
         }
         for (auto& object : sample.objects)
@@ -772,7 +770,6 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.renderTransform = state.transform;
             state.renderReferenceFrame = state.referenceFrame;
             state.receptions = s.receptions;
-            state.radarContacts = s.radarContacts;
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
@@ -880,7 +877,6 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             }
             applyReferenceFrameState(state.transform, state.referenceFrame);
             state.receptions = s.receptions;
-            state.radarContacts = s.radarContacts;
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;

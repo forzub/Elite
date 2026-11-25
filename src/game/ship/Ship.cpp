@@ -104,13 +104,6 @@ void Ship::updateSignals(
 }
 
 
-void Ship::updatePerception(
-    float dt,
-    const std::vector<world::RadarContactInput>& radarInputs
-)
-{
-    m_core.updatePerception(dt, radarInputs);
-}
 
 
 

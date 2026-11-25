@@ -15,7 +15,6 @@
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/world/types/SignalReceptionResult.h"
-#include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/damage/DamageEvent.h"
 #include "src/game/simulation/ShipCoreStatus.h"
 #include "src/game/simulation/ShipSimulationTier.h"
@@ -98,7 +97,6 @@ struct ShipSnapshot
         game::simulation::NavigationExecutionSnapshot
     >                                                    navigationExecution;
     std::vector<SignalReceptionResult>                  receptions;
-    std::vector<game::RadarContact>                     radarContacts;
     std::vector<game::damage::DamageEvent>              damageEvents;
     
     // std::shared_ptr<game::ship::geometry::MeshData>     mesh;

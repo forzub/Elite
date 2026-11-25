@@ -6,10 +6,8 @@
 #include "src/game/equipment/EquipmentModule.h"
 #include "src/game/equipment/capabilities/IPowerConsumer.h"
 #include "src/game/equipment/capabilities/IHeatSource.h"
-#include "src/world/types/RadarContactInput.h"
 
 #include "RadarDesc.h"
-#include "RadarContact.h"
 
 #include "src/world/coordinates/WorldPosition.h"
 
@@ -23,13 +21,6 @@ class RadarModule :
 public:
     void init(const RadarDesc& desc);
 
-    void update(
-        double dt,
-        const std::vector<world::RadarContactInput>& worldObjects,
-        const world::coordinates::WorldPosition& myWorldPosition,
-        const glm::mat4& myOrientation
-    );
-
     double getRequestedPower() const override;
     void   setAvailablePower(double power) override;
 
@@ -39,7 +30,6 @@ public:
 
     bool detectTarget(double distance, double targetRCS) const;
     const RadarDesc& getDesc() const { return m_desc; }
-    const std::vector<RadarContact>& getContacts() const;
 
     double getAvailablePower() const override;
 
@@ -54,7 +44,6 @@ private:
     double                      m_availablePower = 0.0;
     double                      m_lockProgress = 0.0;
     bool                        m_hasLock = false;
-    std::vector<RadarContact>   m_detected;
     double                      m_scanTimer = 0.0;
 
     std::string                 m_label = "radar";

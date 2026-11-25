@@ -476,13 +476,6 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
-    game::RadarContact,
-    v.id,
-    v.distance,
-    v.localPosition
-);
-
-ELITE_WIRE_SCHEMA(
     game::damage::DamageEvent,
     v.type,
     v.energy,
@@ -849,7 +842,6 @@ ELITE_WIRE_SCHEMA(
     v.referenceFrame,
     v.navigationExecution,
     v.receptions,
-    v.radarContacts,
     v.damageEvents,
     v.shipCoreStatus,
     v.controlAuthorityTelemetry,

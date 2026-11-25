@@ -1175,8 +1175,6 @@ private:
     // the radar sees EVERYTHING (author 2026-11-22: «радар просто обязан ловить и корабли трафика ... если есть
     // ограничение по количеству - то ближайшие»; «даже обломки»): the hub cities' air traffic not made real and the stray
     // bodies of their defence ring, nearest first, at most maxCount
-    void appendHubRadarContacts(const glm::dvec3& observerWorld, int systemId, std::size_t maxCount,
-                                std::vector<world::RadarContactInput>& out) const;
     std::vector<std::uint32_t> cityPromotedAirSlots(EntityId objectId) const;
     struct HubSecurityCity
     {

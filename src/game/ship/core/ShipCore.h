@@ -24,7 +24,6 @@
 #include "src/game/ship/capability/ShipCapabilitySnapshot.h"
 
 #include "src/game/ship/core/ShipInventory.h"
-#include "src/game/ship/core/CargoBay.h"
 
 #include "src/game/ship/core/ShipSignalController.h"
 #include "src/game/ship/core/ShipSlotsState.h"
@@ -51,7 +50,6 @@
 #include "PowerBus.h"
 #include "CoolingSystem.h"
 
-#include "src/world/types/RadarContactInput.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 
 #include "src/game/simulation/ShipCoreStatus.h"
@@ -122,10 +120,6 @@ public:
     // // Фазы апдейта
     // // ───────────────
  
-    void updatePerception(
-        float dt,
-        const std::vector<world::RadarContactInput>& radarInputs
-    );
 
     void updateSignals(
         float dt,
@@ -138,8 +132,6 @@ public:
     // // ───────────────
     // // Cargo API
     // // ───────────────
-    int  freeCargoMass() const;
-    int  freeCargoVolume() const;
     // (addCargo / removeCargo removed 2026-11-19: the cargo mass has ONE writer - setLoad from the manifest)
 
     // // ───────────────
@@ -292,7 +284,6 @@ public:
     const game::ShipEquipment&                  equipment() const           { return m_equipment; }
 
     ShipInventory&                              inventory()                 { return m_inventory; }
-    CargoBay&                                   cargo()                     { return m_cargo; }
 
     ShipRole                                    role() const                { return m_role; }
     const ShipVisualIdentity&                    visualIdentity() const      { return m_visual; }
@@ -553,7 +544,6 @@ private:
     ShipLoadState                               m_load;
     ShipDeviceState                             m_devices;
     std::uint64_t                               m_massModuleRevision = ~std::uint64_t{0};
-    CargoBay                                    m_cargo;
     ShipInventory                               m_inventory;
     game::ShipEquipment                         m_equipment;
     ShipSystemState                             m_systems;

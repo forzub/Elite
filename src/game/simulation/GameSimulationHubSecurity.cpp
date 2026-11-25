@@ -300,18 +300,6 @@ std::vector<GameSimulation::HubRadarContact> GameSimulation::hubRadarContacts(co
     return out;
 }
 
-void GameSimulation::appendHubRadarContacts(const glm::dvec3& observerWorld, int systemId, std::size_t maxCount,
-                                            std::vector<world::RadarContactInput>& out) const
-{
-    for (const auto& k : hubRadarContacts(observerWorld, systemId, maxCount))
-    {
-        world::RadarContactInput in;
-        in.id = EntityId {k.key};
-        in.worldPosition = world::coordinates::makeWorldPositionFromMeters(k.worldPosition);
-        in.radarCrossSection = k.radarCrossSection;
-        out.push_back(in);
-    }
-}
 
 void GameSimulation::despawnPromotedAirShip(EntityId id)
 {

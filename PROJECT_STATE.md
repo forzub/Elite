@@ -8858,3 +8858,10 @@ start-up hitches (render), trade step 16 part 3 live.
   linked to every target of the root and the architecture-contract projects (link_libraries). Economy 258 / 0, ship
   catalog PASS, live B4-11 approach OK. wire_data_plane_contract_tests / tcp_wire_transport_contract_tests do not link
   in this tree (.refptr std::cerr, vtables) - never built here, pre-existing.
+- Duplicated truth, steps 4-5 (the inventory's order): CargoBay removed (an unread mirror of the cargo mass / volume;
+  freeCargoMass / Volume called by nothing). The old radar pipeline removed: the disabled RadarSimulationEnabled block,
+  Ship / ShipCore::updatePerception, RadarModule::update / getContacts / m_detected, RadarContact.h,
+  RadarContactInput.h, appendHubRadarContacts, ShipSnapshot::radarContacts + its client copy - wire schema 76.
+  RadarModule stays the DEVICE (descriptor, power consumer, operational). NOTE: the NPC awareness update
+  (m_npcAwareness.update) lived only in that never-run path - NPCs have no awareness feed today (unchanged behaviour).
+  Economy 258 / 0, catalog PASS, ramtest 60 / 143 m 0 collisions, the radar sees 379 + 128 contacts.

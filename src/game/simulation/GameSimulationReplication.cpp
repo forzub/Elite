@@ -184,7 +184,6 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         if (detailedReplication)
         {
             s.receptions = ship.core().signalResults();
-            s.radarContacts = ship.core().radar().getContacts();
         }
 
         s.shipCoreStatus = ship.core().getCoreStatus();

@@ -129,7 +129,6 @@ m_systemMapRenderer.render(
         static_cast<std::uint64_t>(playerShip.instanceId),
         mother.input.serverTick
     );
-    const auto& radarContacts = playerShip.radarContacts;
 
 
 

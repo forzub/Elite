@@ -9,7 +9,6 @@ using game::ship::core::ShipCore;
 #include "src/world/types/ObjectType.h"
 #include "src/game/items/cryptocard/CryptoCard.h"
 #include "src/world/ITransmitterSource.h"
-#include "src/world/types/RadarContactInput.h"
 #include "src/game/network/ClientShipCommand.h"
 
 #include "src/game/ship/damage/ShipDamageHandler.h"
@@ -67,7 +66,6 @@ public:
         const std::vector<Planet>& planets,
         const std::vector<InterferenceSource>& interferenceSources
     );
-    void updatePerception(float dt, const std::vector<world::RadarContactInput>& radarInputs);
     void setTypeId(ObjectType id) { m_typeId = id; }
     ObjectType typeId() const { return m_typeId; }
 

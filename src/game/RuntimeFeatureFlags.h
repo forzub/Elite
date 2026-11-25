@@ -5,7 +5,7 @@ namespace game::runtime
 // Legacy all-ships perception radar remains disabled. The player radar slot is
 // temporarily backed by TEST_IDEAL_RADAR, whose server-side device publishes
 // discrete session-private RadarScanReport data without using this old path.
-inline constexpr bool RadarSimulationEnabled = false;
+// (RadarSimulationEnabled - the old RadarModule contact pipeline - was removed 2026-11-25 with its code)
 
 // Cockpit radar scope: draws the player's session-private RadarScanReport
 // (server sensor unit of the installed radar), never legacy radarContacts.

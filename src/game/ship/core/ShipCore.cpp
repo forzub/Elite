@@ -295,36 +295,6 @@ void ShipCore::clearPhysicalConstructionDiagnosticOverride()
 
 
 
-void ShipCore::updatePerception(
-    float dt,
-    const std::vector<world::RadarContactInput>& radarInputs
-)
-{
-    if (m_equipment.radar.isOperational())
-    {
-        m_equipment.radar.update(
-            dt,
-            radarInputs,
-            m_transform.worldPosition,
-            m_transform.orientation
-        );
-
-        const auto& contacts = m_equipment.radar.getContacts();
-
-        m_radarDebugTimer += dt;
-    }
-
-    if (m_role == ShipRole::Player)
-    {
-        // HUD / визуальная семантика
-        // m_signalPresentation.update(dt, m_signalResults);
-    }
-    else
-    {
-        // AI-восприятие
-        m_npcAwareness.update(m_signalResults);
-    }
-}
 
 
 
@@ -371,15 +341,6 @@ void ShipCore::updateSignals(
 //                             #####
 
 
-int ShipCore::freeCargoMass() const
-{
-    return m_cargo.mass.free();
-}
-
-int ShipCore::freeCargoVolume() const
-{
-    return m_cargo.volume.free();
-}
 
 // //            ###                ##                         ##                ##       ##
 // //             ##                ##                                                    ##
@@ -395,10 +356,6 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
     m_desc = &descriptor;
 
     // Cargo
-    m_cargo.mass.capacity   = m_desc->storage.cargoMass;
-    m_cargo.mass.value      = 0;
-    m_cargo.volume.capacity = m_desc->storage.cargoVolume;
-    m_cargo.volume.value    = 0;
 
     // System slots
     m_systems.reactor.capacity            = m_desc->systems.reactorSlots;

@@ -11,6 +11,7 @@
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/ReplicatedHubFrame.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"
+#include "src/game/simulation/ObjectSnapshot.h"
 #include "src/game/simulation/OrbitalHubSnapshot.h"
 #include "src/world/coordinates/WorldPosition.h"
 
@@ -60,6 +61,34 @@ inline HubAttachedPose poseHubAttached(const game::simulation::OrbitalHubSnapsho
         return {};
     return poseHubAttached(frame.originMeters, frame.linearVelocityMps, frame.localToWorldBasis[0], frame.localToWorldBasis[1],
                            frame.localToWorldBasis[2], frame.angularVelocityWorldRadPerSecond, a, universeTimeSeconds);
+}
+
+// a hub-attached object whose WHOLE pose follows from its hub (the server need not re-send it): attached with the hub's
+// orientation, no part turning on its own (an assembly angle accumulates on the server - not derivable yet), no loose
+// fragments flying about it
+inline bool hubAttachedObjectDerivable(const ::ObjectSnapshot& o)
+{
+    if (!o.hubAttachment.valid || !o.hubAttachment.inheritHubOrientation)
+        return false;
+    for (const auto& m : o.graph.assemblyModules)
+        if (m.rotationAngleRad != 0.0f)
+            return false;
+    return o.graph.detachedFragments.empty();
+}
+
+// the object re-posed from its hub's row at `universeTimeSeconds`
+inline bool reposeHubAttachedObject(::ObjectSnapshot& o, const game::simulation::OrbitalHubSnapshot& hub,
+                                    double universeTimeSeconds)
+{
+    const auto pose = poseHubAttached(hub, o.hubAttachment, universeTimeSeconds);
+    if (!pose.valid)
+        return false;
+    o.worldPosition = world::coordinates::makeWorldPositionFromMeters(pose.worldMeters);
+    o.position = world::coordinates::legacyFloatMeters(o.worldPosition);
+    o.orientation = pose.orientation;
+    o.linearVelocityMps = pose.linearVelocityMps;
+    o.angularVelocityWorldRadPerSecond = pose.angularVelocityWorldRadPerSecond;
+    return true;
 }
 
 } // namespace game::navigation

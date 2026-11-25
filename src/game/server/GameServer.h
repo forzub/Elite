@@ -98,6 +98,10 @@ public:
     std::unordered_map<int, RadarSignalMap> m_radarSignalMaps;
     std::unordered_map<std::uint32_t, std::pair<std::uint64_t, double>> m_radarStaticRadius;   // per static: generation, radius
     const std::vector<game::radar::TestIdealRadarTruthContact>& radarSignalMap(int systemId);
+    // what each session last got of every derivable hub-attached object (its non-pose content, when) - such an object
+    // is re-sent only on a change / every 10 s (copySparseSnapshotForSession)
+    struct SentObject { std::uint64_t content = 0; double sentAtS = 0.0; };
+    mutable std::unordered_map<std::uint64_t, std::unordered_map<std::uint32_t, SentObject>> m_objectsSentBySession;
     bool copySparseSnapshotForSession(
         game::network::ServerSessionId sessionId,
         const game::server::ReplicationPublicationSelection& selection,

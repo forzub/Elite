@@ -19,6 +19,8 @@
 #include <stdexcept>
 
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/game/navigation/HubAttachedPose.h"
+#include "src/game/diagnostics/NavigationRuntimeLab.h"
 #include <cmath>
 #include <functional>
 #include <unordered_map>
@@ -65,6 +67,56 @@
 
 namespace
 {
+// everything of an object row EXCEPT its pose (position, orientation, velocities - those the client derives from the hub):
+// a change here re-sends a derivable hub-attached object
+std::uint64_t objectContentFingerprint(const ::ObjectSnapshot& o)
+{
+    std::uint64_t h = 1469598103934665603ull;
+    const auto mix = [&](const void* data, std::size_t n) {
+        const auto* p = static_cast<const unsigned char*>(data);
+        for (std::size_t i = 0; i < n; ++i)
+            h = (h ^ p[i]) * 1099511628211ull;
+    };
+    const auto mixStr = [&](const std::string& s) { mix(s.data(), s.size()); mix("|", 1); };
+    const auto& g = o.graph;
+    mix(&o.type, sizeof o.type);
+    mixStr(o.displayName);
+    mixStr(o.ownerName);
+    mix(&o.navigationVisible, sizeof o.navigationVisible);
+    mixStr(o.navigationParentBodyId);
+    mixStr(o.hubAttachment.hubId);
+    mixStr(o.hubAttachment.moduleId);
+    mix(&o.hubAttachment.localOffsetMeters, sizeof o.hubAttachment.localOffsetMeters);
+    mix(&o.hubAttachment.localRotationDeg, sizeof o.hubAttachment.localRotationDeg);
+    mix(&o.hubAttachment.localAngularVelocityDegPerSecond, sizeof o.hubAttachment.localAngularVelocityDegPerSecond);
+    for (const auto& b : o.buildingStates)
+    {
+        mix(&b.node, sizeof b.node);
+        mix(&b.variant, sizeof b.variant);
+    }
+    for (const auto v : o.materializedVisits)
+        mix(&v, sizeof v);
+    mix("#", 1);
+    for (const auto v : o.promotedAirSlots)
+        mix(&v, sizeof v);
+    mix("#", 1);
+    for (const auto& s : o.occupiedBerths)
+        mixStr(s);
+    for (const auto& m : g.assemblyModules)
+    {
+        mixStr(m.moduleId);
+        mix(&m.rotationAngleRad, sizeof m.rotationAngleRad);
+    }
+    return h;
+}
+
+// a row carrying a dirty static payload (modules, links, hit volumes ride the tick they changed only) must go out
+bool objectRowCarriesPayload(const ::ObjectSnapshot& o)
+{
+    const auto& g = o.graph;
+    return g.hasModules || g.hasStructuralLinks || g.hasDebugHitVolumes || !g.detachedFragments.empty();
+}
+
 std::atomic<bool> g_devCommandsAllowed {false};
 bool devCommandAccepted(const char* what, EntityId ship)
 {
@@ -3719,9 +3771,34 @@ bool GameServer::copySparseSnapshotForSession(
         return v && v[0] == '1';
     }();
     const bool enteringSystem = inOutPublishedSystemId != systemId && !oldEntry;
+    // a DERIVABLE hub-attached object (its pose follows from its hub: HubAttachedPose.h, the client re-poses it - 1 mm
+    // against this server's poses) goes to a session only when something else in it changed, on the system entry, or
+    // every 10 s as a refresh (author 2026-11-24: «зачем нам пересылать объекты хабов»; 13 of 33.7 KB a snapshot).
+    // ELITE_DEV_SEND_ALL_OBJECTS=1: every object every snapshot (the old way, A/B)
+    static const bool sendAllObjects = [] {
+        const char* v = std::getenv("ELITE_DEV_SEND_ALL_OBJECTS");
+        return v && v[0] == '1';
+    }();
+    auto& sentObjects = m_objectsSentBySession[sessionId.value];
+    if (enteringSystem)
+        sentObjects.clear();
+    const double nowS = m_lastSnapshot.metadata.serverTimeSeconds;
     for (const auto& object : enteringSystem ? m_canonicalReplicationSnapshot.objects : m_lastSnapshot.objects)
-        if (object.systemId == systemId)
-            outSnapshot.objects.push_back(object);
+    {
+        if (object.systemId != systemId)
+            continue;
+        if (!sendAllObjects && !objectRowCarriesPayload(object) && game::navigation::hubAttachedObjectDerivable(object) &&
+            !game::diagnostics::isNavigationRuntimeLabMovingGapBoundary(object.displayName))
+        {
+            const std::uint64_t content = objectContentFingerprint(object);
+            auto& sent = sentObjects[object.id.value];
+            if (sent.sentAtS > 0.0 && sent.content == content && nowS - sent.sentAtS < 10.0 && nowS >= sent.sentAtS)
+                continue;   // the client poses it itself
+            sent.content = content;
+            sent.sentAtS = std::max(1.0e-6, nowS);
+        }
+        outSnapshot.objects.push_back(object);
+    }
     outSnapshot.hubs.clear();
     for (const auto& hub : m_lastSnapshot.hubs)
         if (hub.systemId == systemId)

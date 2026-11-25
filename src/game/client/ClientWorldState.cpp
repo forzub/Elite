@@ -32,6 +32,8 @@
 #include <mutex>
 #include <thread>
 #include <unordered_map>
+#include "src/game/navigation/HubAttachedPose.h"
+#include <unordered_set>
 
 namespace
 {
@@ -1139,6 +1141,44 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         state.angularVelocityWorldRadPerSecond = hub.angularVelocityWorldRadPerSecond;
         state.orientation = hub.orientation;
         state.motion = hub.motion;
+    }
+
+    // the hub-attached objects this packet did not carry (the server sends a derivable one only on a change): their pose
+    // follows from their hub's row (HubAttachedPose.h - the server's law), at this snapshot's universe time
+    {
+        std::unordered_set<std::uint32_t> carried;
+        for (const auto& object : snapshot.objects)
+            carried.insert(object.id.value);
+        for (auto& [oid, object] : m_objects)
+        {
+            if (carried.count(oid) || !object.hubAttachment.valid || !object.hubAttachment.inheritHubOrientation)
+                continue;
+            bool turning = false;
+            for (const auto& m : object.assemblyModules)
+                turning = turning || m.rotationAngleRad != 0.0f;
+            if (turning)
+                continue;
+            const auto hubIt = m_hubs.find(object.hubAttachment.hubId);
+            if (hubIt == m_hubs.end())
+                continue;
+            const auto& hub = hubIt->second;
+            const auto frame = game::navigation::makeReplicatedHubKinematicFrame(
+                hub.systemId, hub.id, world::coordinates::fullMeters(hub.worldPosition), hub.worldVelocityMps,
+                hub.angularVelocityWorldRadPerSecond, hub.orientation);
+            if (!frame.valid)
+                continue;
+            const auto pose = game::navigation::poseHubAttached(
+                frame.originMeters, frame.linearVelocityMps, frame.localToWorldBasis[0], frame.localToWorldBasis[1],
+                frame.localToWorldBasis[2], frame.angularVelocityWorldRadPerSecond, object.hubAttachment,
+                snapshot.metadata.universeTimeSeconds);
+            if (!pose.valid)
+                continue;
+            object.worldPosition = world::coordinates::makeWorldPositionFromMeters(pose.worldMeters);
+            object.position = world::coordinates::legacyFloatMeters(object.worldPosition);
+            object.orientation = pose.orientation;
+            object.linearVelocityMps = pose.linearVelocityMps;
+            object.angularVelocityWorldRadPerSecond = pose.angularVelocityWorldRadPerSecond;
+        }
     }
 
     hubMs += elapsedMs(hubBegin);

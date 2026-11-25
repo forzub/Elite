@@ -8796,3 +8796,16 @@ start-up hitches (render), trade step 16 part 3 live.
 - Hub objects off the wire, step 1: ONE pose law src/game/navigation/HubAttachedPose.h (server formulas, the frame from the
   replicated hub row); ClientHubState carries the hub's spin. ELITE_DEV_HUB_POSE_CHECK=1 proves it live: 203 attached
   objects of Sol, worst 1 mm / 0.04 deg against the server's poses.
+- Capsule rescue - LIVE, END TO END (2026-11-25): 63 m/s ram at Высокий -> the pilot alive in the EC-2 -> backs away
+  from the station -> the staging point 8 km over the hub -> the planner + autopilot along the hub lanes (craft speed cap
+  21 m/s, cross-track 3-6 m) -> the pad service (no legs wait) -> LANDED on A2-03 (the МЧС rescue dock's roof) in 76 s,
+  "КАПСУЛА СПАСЕНА", 1892 m/s of reaction mass left. Open: soft touches (0.3-5 m/s, < 0.07 MJ) on a city storage block
+  on the lane approach - the weak jets track the corners loosely; the cruise burns more than needed (clearance).
+- Hub objects off the wire, step 2 - BUILT, LOAD TEST, LIVE: the server sends a DERIVABLE hub-attached object (attached
+  with the hub's orientation, no turning assembly part, no fragments, no dirty static payload, not a lab gap) only when its
+  non-pose content changes (GameServer objectContentFingerprint), on the system entry, or every 10 s; the client re-poses
+  the rest from the snapshot's hub rows - in the canonical sparse merge (history / render interpolation / maps / planner)
+  and in the live ClientWorldState. ELITE_DEV_SEND_ALL_OBJECTS=1 = the old way. Load test (153 bots): objects 13 142 ->
+  3 489 B a snapshot (21 -> 5 rows), wire 534 -> 379 KiB/s per player (-29 %), tick unchanged. Live: B4-11 landing, 0
+  collisions. Next on the wire: hubs every snapshot (2.4 KB), session (2.3 KB: constructionOverrides by generation),
+  ships (14.6 KB, own ship 5.3 KB).

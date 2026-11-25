@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "src/game/simulation/SimulationSnapshot.h"
+#include "src/game/navigation/HubAttachedPose.h"
 
 namespace game::network
 {
@@ -376,6 +377,25 @@ inline SimulationSnapshot materializeCanonicalReplicationSnapshot(
                 return value.id;
             }
         );
+    }
+
+    // the hub-attached objects the server did NOT re-send (their pose follows from the hub: HubAttachedPose.h, the
+    // server's own law, 1 mm live): re-posed from THIS snapshot's hub rows at its universe time - history, the render
+    // interpolation, the maps and the planner read them as if sent (author 2026-11-24: «зачем пересылать объекты хабов»)
+    {
+        std::unordered_map<std::uint32_t, bool> sent;
+        for (const auto& object : incoming.objects)
+            sent[object.id.value] = true;
+        for (auto& object : canonical.objects)
+        {
+            if (sent.count(object.id.value) || !game::navigation::hubAttachedObjectDerivable(object))
+                continue;
+            const auto hubIt = std::find_if(canonical.hubs.begin(), canonical.hubs.end(),
+                                            [&](const game::simulation::OrbitalHubSnapshot& h) { return h.id == object.hubAttachment.hubId; });
+            if (hubIt == canonical.hubs.end())
+                continue;   // its hub not here: kept as it was
+            game::navigation::reposeHubAttachedObject(object, *hubIt, incoming.metadata.universeTimeSeconds);
+        }
     }
 
     for (const auto id : incoming.replication.removedShipIds)

@@ -18,6 +18,8 @@
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
+#include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/navigation/rules/RingDeckRules.h"
 #include <glm/gtc/quaternion.hpp>
 
 namespace
@@ -211,6 +213,32 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
                      caps.forwardMainEngineAvailable ? 0.5 * caps.forwardMainEngineAccelerationMps2 : 0.0) < 0.2)
             refusal = "no working thrust";
     }
+    // THE RING'S DISPATCHER (author 2026-11-25: «эта информация должна выдаваться игроку через диспетчера»): a pad on a
+    // TURNING city's rim - the deck's weight there (omega^2 r) and its speed (omega r); the ship must hold the weight on
+    // its vertical (lift) thrust with a margin (x1.2, as for a planet), nose along the spin. Not enough lift: refused,
+    // sent to the axial dock (on the axis the deck does not move). The briefing goes to the pilot either way.
+    std::string rimBriefing;
+    if (!refusal)
+    {
+        const auto liftCaps = game::ship::telemetry::applyAuthorityToControlParams(ship->core().effectivePhysics(),
+                                                                                     ship->core().controlAuthorityTelemetry());
+        const auto brief = game::navigation::rules::rimPadBriefing(
+            plan->ring(), building->padPosition, game::ship::assistedLateralStabilizationAccelerationLimitMps2(liftCaps));
+        if (brief.rim)
+        {
+            std::cerr << "[RingDispatcher] ship " << shipId.value << " pad " << address << ": deck " << brief.weightG
+                      << " g, " << brief.deckMps << " m/s; the ship's lift " << brief.liftG << " g (needs " << brief.needG
+                      << ")" << std::endl;
+            if (!brief.cleared())
+            {
+                std::cerr << "[PadLanding] ship " << shipId.value << " pad " << frameModuleId << "/" << address
+                          << " refused: too little lift for the rim - the axial dock" << std::endl;
+                m_padNotices[shipId] = {game::navigation::rules::rimPadNotice(brief, address), serverTime()};
+                return false;
+            }
+            rimBriefing = game::navigation::rules::rimPadNotice(brief, address);
+        }
+    }
     // a ship near the city but not in its hub's frame (normal flight): the pad service takes it into the frame where
     // it is (the kinematic hold starts from its place; the frame velocity is the hub's)
     const bool freeFlight = m_freeFlights.count(shipId) != 0;
@@ -231,6 +259,8 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         m_padNotices[shipId] = {std::string("refused:") + key, serverTime()};
         return false;
     }
+    if (!rimBriefing.empty())
+        m_padNotices[shipId] = {rimBriefing, serverTime()};   // the ring dispatcher's clearance with its briefing
     // brought over the pad by the planner and the autopilot (the route to its approach point, author 2026-11-21): the
     // service only flies the last metres across and sets the ship down on its legs; from elsewhere it climbs first
     int phase = 0;

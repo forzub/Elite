@@ -8913,3 +8913,12 @@ start-up hitches (render), trade step 16 part 3 live.
   at 510; the dock's approach is from the other side); the rim keeps the people and what needs weight. Regenerated
   (hub_ring_world.py): 2246 nodes; live: assembled (31 modules), the pad landing route unchanged, 0 collisions.
   Not yet: the economy's module catalog has no gravity tag - the axis zone list is per hub in the generator.
+- THE RING'S DISPATCHER (2026-11-25, author: «эта информация должна выдаваться игроку через диспетчера»):
+  RingDeckRules.h (one rule, client + server, from the hub plan: radius, period): a rim pad's weight omega^2 r, the
+  deck's speed omega r, the ship's lift (the stabilization authority with damage, as SurfaceLandingPilot) against x1.2.
+  The client's dispatcher answers AT THE REQUEST, before the route (HUD: «ДИСПЕТЧЕР КОЛЬЦА: H1-02 - посадка разрешена.
+  Кольцо вращается 5.2 град/с: у площадки тяжесть 1.00 g к ободу, палуба идёт 109 м/с. Заход носом по вращению...»), too
+  little lift -> refused there, the axial dock; the server decides the same at the hand-over (refused:rim / pad:rim).
+  Live: the clearance line at the request (Cobra lift 7.5 g vs 1.2). The refusal path is not live-tested (no weak ship
+  in the DEV start). The deck exists only over a RING plan's city (a belt hub's spinning bodies are not decks).
+  Regression (navsuite_deck, Высокий): pad_outside / pad_series / tower_pad / dock_hub as before, 0 collisions.

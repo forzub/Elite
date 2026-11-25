@@ -1,3 +1,8 @@
+#include "src/game/navigation/rules/RingDeckRules.h"
+#include "src/game/ship/capability/ShipCapabilityBuilder.h"
+#include "src/game/ship/plant/ShipPhysicalControlModel.h"
+#include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
+#include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/RoutePlannerSetup.h"
 #include "src/audio/CockpitRadio.h"
 #include "src/game/navigation/HubBerthOccupancy.h"
@@ -35,6 +40,36 @@
 // =====================================================================================
 // Constructor
 // =====================================================================================
+
+namespace
+{
+// the ring dispatcher's line from its notice "pad:rim:<addr>:<g>:<m/s>:<lift g>:<need g>:<deg/s>" / "refused:rim:..."
+// (RingDeckRules.h) - the same words at the request and at the hand-over
+std::string ringDispatcherLine(const std::string& status)
+{
+    const bool refused = status.rfind("refused:", 0) == 0;
+    std::vector<std::string> f;
+    const std::string rest = status.substr(refused ? 12 : 8);
+    for (std::size_t a = 0;;)
+    {
+        const auto b = rest.find(':', a);
+        f.push_back(rest.substr(a, b == std::string::npos ? std::string::npos : b - a));
+        if (b == std::string::npos)
+            break;
+        a = b + 1;
+    }
+    if (f.size() < 6)
+        return {};
+    if (refused)
+        return "ДИСПЕТЧЕР КОЛЬЦА: посадка на " + f[0] + " отклонена - у площадки тяжесть " + f[1] + " g, палуба идёт " +
+               f[2] + " м/с; вертикальная тяга корабля " + f[3] + " g, нужно " + f[4] +
+               " g. Стыкуйтесь в осевой док (Док) - на оси палуба стоит";
+    return "ДИСПЕТЧЕР КОЛЬЦА: " + f[0] + " - посадка разрешена. Кольцо вращается " + f[5] + " град/с: у площадки тяжесть " +
+           f[1] + " g к ободу, палуба идёт " + f[2] + " м/с. Заход носом по вращению, держите вертикальную тягу (у вас " +
+           f[3] + " g)";
+}
+} // namespace
+
 SpaceState::SpaceState(
     StateStack& states,
     StartupMode startupMode
@@ -624,6 +659,38 @@ void SpaceState::updatePilotTakeover(bool touching)
             padRequest.reset();
         }
     }
+    // THE RING'S DISPATCHER answers at the request, before any route (author 2026-11-25: «эта информация должна выдаваться
+    // игроку через диспетчера»): a rim pad of a turning ring - its weight, the deck's speed, the approach; too little lift
+    // - refused here, the axial dock (RingDeckRules.h; the server decides the same at the hand-over)
+    std::string rimNotice;
+    if (padRequest && m_client)
+        if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end() &&
+                                                                                  shipIt->second.descriptor)
+            if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(padRequest->frameModuleId))
+                for (const auto& m : plan->modules())
+                    if (m.address == padRequest->address && m.pad)
+                    {
+                        const auto& player = shipIt->second;
+                        const auto slots = player.physicalControlModel != player.descriptor->physicalControlModel
+                            ? game::ship::plant::healthySlotState(game::ship::plant::physicalControlSlots(player.physicalControlModel))
+                            : game::ship::capability::buildPhysicalControlSlotState(*player.descriptor, player.physicalControlModel, player.modules);
+                        const auto capability = game::ship::capability::buildShipCapability(*player.descriptor, player.physicalControlModel, slots);
+                        if (!capability.valid)
+                            break;
+                        const auto caps = game::ship::telemetry::applyAuthorityToControlParams(capability.effectivePhysics,
+                                                                                                 player.controlAuthorityTelemetry);
+                        const auto brief = game::navigation::rules::rimPadBriefing(
+                            plan->ring(), m.padPosition, game::ship::assistedLateralStabilizationAccelerationLimitMps2(caps));
+                        if (brief.rim)
+                            rimNotice = game::navigation::rules::rimPadNotice(brief, padRequest->address);
+                        break;
+                    }
+    if (rimNotice.rfind("refused:", 0) == 0)
+    {
+        m_pilotNotice = ringDispatcherLine(rimNotice);
+        std::cerr << "[PadLanding] HUD: " << m_pilotNotice << std::endl;
+        padRequest.reset();
+    }
     if (auto request = std::move(padRequest))
     {
         padRequestedAt = glfwGetTime();
@@ -681,7 +748,10 @@ void SpaceState::updatePilotTakeover(bool touching)
         }
         m_padLandingObjectId = request->objectId;
         m_systemMapRenderer.setPadLandingActive(request->objectId);
-        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address + " - расчёт маршрута";
+        m_pilotNotice = rimNotice.empty() ? "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address + " - расчёт маршрута"
+                                          : ringDispatcherLine(rimNotice);
+        if (!rimNotice.empty())
+            std::cerr << "[PadLanding] HUD: " << m_pilotNotice << std::endl;
         std::cerr << "[PadLanding] request sent: " << request->frameModuleId << "/" << request->address << std::endl;
         // the answer you can see (author 2026-11-21: «после нажатия на кнопку посадка визуально ничего не меняется»): back to
         // the front view - the service's line in the terminal, its route tunnel ahead
@@ -777,6 +847,15 @@ void SpaceState::updatePilotTakeover(bool touching)
                     }
                     m_padLandingObjectId.clear();
                     m_systemMapRenderer.setPadLandingActive(std::string());
+                }
+                else if (status.rfind("pad:rim:", 0) == 0 || status.rfind("refused:rim:", 0) == 0)
+                {
+                    line = ringDispatcherLine(status);
+                    if (status[0] == 'r')
+                    {
+                        m_padLandingObjectId.clear();
+                        m_systemMapRenderer.setPadLandingActive(std::string());
+                    }
                 }
                 else if (status.rfind("refused:", 0) == 0)
                 {

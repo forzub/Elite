@@ -95,7 +95,9 @@ void GameSimulation::updateDeckFrame(EntityId shipId, Ship& ship)
         if (rate < 0.01)
             continue;   // not a turning deck (the hub's own slow turn only)
         const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(obj.hubModuleId);
-        const double radius = plan && plan->ring().valid ? plan->ring().radius : 1500.0;
+        if (!plan || !plan->ring().valid)
+            continue;   // a deck is a RING city only (a belt hub's spinning bodies are not decks)
+        const double radius = plan->ring().radius;
         const glm::dvec3 centre = world::coordinates::fullMeters(obj.worldPosition);
         const glm::dvec3 axis = spin / rate;
         const glm::dvec3 rel = me - centre;

@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include "src/game/navigation/HubPlanCatalog.h"
 #include "game/scene/GameSceneSetup.h"
 
 #include <cmath>
@@ -261,8 +262,23 @@ void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWo
         if (id.value == 0)
             continue;
         sim.setStaticObjectIdentity(id, dock.name, hub.name);
+        // A RING hub's city turns with its wheel (author 2026-11-25: «весь смысл в том, чтобы вращающееся колесо создавало
+        // силу тяжести в городе» - memory ring-rim-landing): the city and the dock on its axis get the ring's spin about
+        // the ring axis (the city's local Z, the plan's ring axis; the Euler rate composes innermost - HubFrameBasis.h),
+        // the period from the city plan (69.8 s -> 1 g at 1210 m). ELITE_DEV_RING_SPIN=0 keeps the city still (A/B); the pads, the lanes
+        // and the planner work in the turning frame - verified live 2026-11-25, on by default.
+        glm::dvec3 spinDegPerSecond = dock.angularVelocityDegPerSecond;
+        static const bool ringSpin = [] { const char* v = std::getenv("ELITE_DEV_RING_SPIN"); return !(v && *v == '0'); }();   // ON (ELITE_DEV_RING_SPIN=0: still)
+        if (ringSpin)
+            if (const auto* plan = game::navigation::HubPlanCatalog::forHub(hub.id);
+                plan && plan->ring().valid && plan->ring().periodSeconds > 1.0 &&
+                (type == ObjectType::HubBeltCity || dock.id == hub.id + ".cty_dock" || dock.id == hub.id + ".cty_dock_base"))
+            {
+                spinDegPerSecond = glm::dvec3(0.0, 0.0, 360.0 / plan->ring().periodSeconds);
+                std::cerr << "[HubDocks] " << dock.id << " turns with the ring: " << spinDegPerSecond.z << " deg/s" << std::endl;
+            }
         if (!sim.attachStaticObjectToHub(id, hub.id, dock.id, dock.offsetMeters, dock.localRotationDeg, true,
-                                         dock.angularVelocityDegPerSecond))
+                                         spinDegPerSecond))
             std::cerr << "[HubDocks] failed to attach " << dock.id << " to " << hub.id << "\n";
         else
             std::cerr << "[HubDocks] " << hub.id << ": " << dock.type << " " << dock.id << "\n";

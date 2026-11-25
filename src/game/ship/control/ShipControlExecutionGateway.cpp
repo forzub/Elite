@@ -1,3 +1,4 @@
+#include "src/game/navigation/DeckFrame.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 
 #include <algorithm>
@@ -118,6 +119,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
 )
 {
     auto& motion = transform.motion;
+    // over a turning deck the law sees the velocity relative to the deck (DeckFrame.h)
+    const game::navigation::DeckRelativeVelocityScope deckScope(motion);
     motion.mainPropulsionTorqueBodyNm = glm::dvec3(0.0);
     motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
         glm::dvec3(0.0);
@@ -599,6 +602,12 @@ bool ShipControlExecutionGateway::propagateHubTacticalTranslation(
     {
         return false;
     }
+
+    // over a turning deck: the acceleration it takes to follow the deck, through the stabilization (its authority
+    // limits it inside updateLocalFrameMotion) - the honest 1 g of hovering over a ring's rim
+    if (motion.deckActive)
+        motion.assistedStabilizationAccelerationMps2 +=
+            motion.travelFrame.localToWorldVector(game::navigation::deckFollowAccelerationLocal(motion));
 
     game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
         motion,

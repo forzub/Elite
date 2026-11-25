@@ -201,6 +201,12 @@ struct DynamicMotionState
     std::string dataCarriers;
     // the cockpit-capsule's reaction mass left, as delta-v (CapsuleRules.h CapsuleDeltaVMps when it separates)
     double capsuleDeltaVLeftMps = 0.0;
+    // a TURNING DECK under the ship (DeckFrame.h; a ring city): its axis point and spin in the travel frame's local
+    // axes - the control law holds the velocity relative to it (set by the server each tick, GameSimulation::
+    // updateDeckFrame)
+    bool deckActive = false;
+    glm::dvec3 deckAxisPointLocal {0.0};
+    glm::dvec3 deckOmegaLocal {0.0};
     // refuelling at a station (GameSimulationRefuel.cpp, src/game/fuel/RefuelRules.h): the job's phase
     // (game::fuel::RefuelPhase: 0 none, 1 hookup, 2 pumping, 3 disconnect, 4 done, 5 refused, 6 cancelled), the
     // refusal (game::fuel::RefuelRefusal), the tonnes delivered by the job, the station's pump rate (t/min);

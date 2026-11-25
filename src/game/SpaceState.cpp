@@ -1558,6 +1558,9 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
             // the collision assist (by the difficulty setting): a warning, or the reflex takes the stick only when a
             // touch is otherwise unavoidable
             m_playerControl = applyManualCollisionAssist(sampled, m_client->lastSimulationMetadata().universeTimeSeconds);
+            // the pilot's own flight: over a turning ring deck the law holds the deck's velocity (DeckFrame.h) - unless
+            // the reflex took the stick this sample
+            m_playerControl.deckRelative = !m_playerControl.cancelVelocityAlignment;
             m_client->submitInput(m_playerControl);
         }
         else

@@ -2001,6 +2001,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
             if (motionControlCadence.execute)
             {
+                updateDeckFrame(id, ship);   // a turning ring city under the ship (DeckFrame.h)
                 ship.updateMotionControl(
                     static_cast<float>(
                         motionControlCadence.executionDeltaSeconds

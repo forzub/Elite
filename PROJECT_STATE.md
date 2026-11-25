@@ -8871,3 +8871,38 @@ start-up hitches (render), trade step 16 part 3 live.
 - Duplicated truth, step 7: ShipTransform::referenceVelocityMetersPerSecond removed - motion.referenceVelocityMps is the
   one owner (22 sites rewritten in place: the copies became self-assignments, the writes of their own value now write the
   owner); wire schema 78. Live B4-11: the route held 3-10 m, the pad service, the descent.
+- AUTHOR DECISION 2026-11-25 (memory ring-rim-landing): the ring hub's CITY TURNS WITH THE WHEEL - the spin is the 1 g
+  of the city; gravity needing modules on the rim, zero-g industry (a smelter) on the axis. MEASURED: the ring hub turns
+  only with its orbit (0.00113 rad/s, as Высокий) - its self_rotation_period 69.769 s is applied nowhere; the city and
+  its pads are still. PLAN (the next big task):
+  1. the spin: the ring city + the axial dock / service block get the attachment spin 360 / 69.769 deg/s about the ring
+     axis (behind ELITE_DEV_RING_SPIN=1 until the steps below work; then on). The pose law (HubAttachedPose.h), the
+     render, the hit volumes, the client re-pose already take an attachment spin.
+  2. the pad service and the lanes are city-frame: check they co-rotate (the ship held in the city frame gets the
+     frame's velocity ω x r - 108 m/s at the rim).
+  3. the planner: a route to a rim pad planned in the CITY'S ROTATING frame (its obstacles static there; the start's
+     velocity minus ω x r), executed with the frame's Coriolis / centrifugal terms (the guidance converts the rotating
+     targets each tick) - the co-rotating landing; the swept rings stay only for the approach outside the city.
+  4. the NPC traffic on the ring lanes; the dock dispatcher of the axial dock (on the axis: only a roll to match).
+  5. the hub generator: zero-g modules on the axis, gravity modules on the rim.
+- Ring city spin, step 1 (behind ELITE_DEV_RING_SPIN=1): the ring city + its axial dock / service block get 360 /
+  period deg/s about the ring axis (the period from the city plan's ring.period_s, HubRingBend::periodSeconds; NOT the
+  hub's self_rotation_period - every hub has one, Высокий would turn too). Live @13 km: the route to H1-02 plans (the
+  live port with the spin), the pad service takes the ship at 910 m and flies it across and down in the city frame -
+  it co-rotates by construction; 0 collisions. FOUND: the pad service carries the ship by POSE - its velocity stays the
+  hub frame's (1 - 30 m/s while the pad moves ~108 m/s) -> (a) the carried ship must get the city frame's velocity
+  (hub v + omega x r) so a hand-over / a hand-flown pad keeps it with the pad; (b) hand flight over a turning deck:
+  the ship's own frame must be the turning one with its fictitious terms (hovering over the rim = thrusting 1 g toward
+  the axis, as over a planet) - next.
+- RING CITY TURNS (2026-11-25, author decision) - ON by default (ELITE_DEV_RING_SPIN=0 keeps it still):
+  (1) the ring city + its axial dock / service block turn 5.16 deg/s (period 69.8 s from the plan) about the ring axis;
+  (2) the pad service carries a ship with the city's OWN spin (CityStrip omega = the object's angular velocity, not the
+  hub frame's orbital turn) - the carried ship moves with the deck (103 m/s at its radius), its touchdown judged in the
+  city frame; (3) THE DECK (DeckFrame.h): a ship flown by its PILOT (ShipControlState::deckRelative, wire protocol
+  53; the client sets it on its own samples only - an autopilot route / the pad service / the reflex fly the hub frame)
+  over a turning deck: the law holds the velocity relative to the deck, the physics adds the following acceleration
+  (omega x v, through the stabilization's authority - the honest ~1 g of hovering over the rim). Live: H1-02 from 13 km
+  - route, the pad service, the hand-over at the hand-flown pad, then held over the deck 0.12 m/s relative, 1130 m from
+  the axis, 9.2 m/s2 to follow; A1-03 from 20 km - landed by the service; 0 collisions (ship and traffic).
+  Next: the hub generator (zero-g modules on the axis, gravity ones on the rim); the client's prediction of a deck
+  follower (cm-level, not needed yet); the Newtonian law over a deck (only Assisted uses the stabilization channel).

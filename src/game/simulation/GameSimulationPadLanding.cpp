@@ -54,8 +54,13 @@ CityStrip cityStripOf(const GameSimulation& sim, const StaticObject& city)
     c.R = glm::dmat3(glm::mat3(city.orientation));
     if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(city.hubModuleId))
         c.bend = plan->ring();
-    if (const auto* frame = sim.hubNavigationFrame(city.hubId); frame && frame->valid)
-        c.omega = frame->angularVelocityWorldRadPerSecond;
+    // the city's OWN turn (the hub's + its attachment spin: a ring city turns with its wheel, memory ring-rim-landing) -
+    // the ship the pad service carries gets the deck's velocity (hub v + omega x r, ~108 m/s at a ring's rim), not the
+    // hub frame's (the hub frame turns only with its orbit)
+    c.omega = glm::dvec3(city.angularVelocity);
+    if (glm::length(c.omega) < 1.0e-12)
+        if (const auto* frame = sim.hubNavigationFrame(city.hubId); frame && frame->valid)
+            c.omega = frame->angularVelocityWorldRadPerSecond;
     return c;
 }
 

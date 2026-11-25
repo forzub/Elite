@@ -70,6 +70,9 @@ struct ShipControlState
     // from the recovery stop, ForwardToVelocity) is cancelled, so the dodge the reflex predicted on its own physics
     // (alignment None) is the manoeuvre flown - not a 1/dt longitudinal brake or a hull flip over it.
     bool cancelVelocityAlignment = false;
+    // the PILOT's own sample (not an autopilot / a route / the reflex): over a turning deck (a ring city, DeckFrame.h)
+    // the law holds the velocity relative to the deck - an autopilot flies its hub-frame route instead
+    bool deckRelative = false;
 
     // Legacy navigation-v2 diagnostic/lab seam.
     //

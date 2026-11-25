@@ -850,6 +850,9 @@ private:
     void updatePadLandings(double dt);
     // the cockpit-capsule (GameSimulationCapsule.cpp): the take-over of a lost hull, the wreck left behind
     void updateCapsules(double dt);
+    // a turning deck under the ship (a ring city turning with its wheel, memory ring-rim-landing; DeckFrame.h): its
+    // axis and spin in the ship's travel frame, or none
+    void updateDeckFrame(EntityId shipId, Ship& ship);
     std::unordered_set<EntityId> m_capsuleTakeoverPending;
     struct CapsuleWake { glm::dvec3 position {0.0}; glm::dvec3 velocity {0.0}; double logClockS = 0.0; };
     std::unordered_map<EntityId, CapsuleWake> m_capsuleWake;

@@ -18,6 +18,7 @@ struct HubRingBend
     double radius = 0.0;   // R: the deck's radius
     double length = 0.0;   // L: the strip's length = the circumference at the deck
     double x0 = 0.0;       // the strip x at theta 0 (the seam)
+    double periodSeconds = 0.0;   // the spin of the ring (and its city) - 0: not turning
 
     double thetaOf(double x) const { return 2.0 * 3.14159265358979323846 * (x - x0) / length; }
 

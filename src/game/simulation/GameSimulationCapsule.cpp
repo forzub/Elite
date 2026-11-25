@@ -7,6 +7,9 @@
 #include "src/game/simulation/GameSimulation.h"
 
 #include "src/game/navigation/rules/CapsuleRules.h"
+#include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/DeckFrame.h"
+#include <unordered_map>
 
 #include <iostream>
 
@@ -62,5 +65,58 @@ void GameSimulation::updateCapsules(double dt)
                           << ship->core().detachedFragmentRuntime().fragments().size() << std::endl;
             }
         }
+    }
+}
+
+// The turning deck under a ship (author 2026-11-25, memory ring-rim-landing; DeckFrame.h): a hub-attached object of the
+// ship's hub turning on its own (its spin well above the hub frame's orbital turn - a ring city with its wheel) and the
+// ship within its reach (the ring's radius + 600 m from the axis, 2 km along it): the deck's axis point and spin in the
+// ship's travel frame. The control law then holds the velocity relative to the deck; the physics pays the following.
+void GameSimulation::updateDeckFrame(EntityId shipId, Ship& ship)
+{
+    auto& motion = ship.core().transform().motion;
+    motion.deckActive = false;
+    if (motion.mode != game::navigation::MotionMode::HubTactical || !motion.travelFrame.valid || motion.hubId.empty())
+        return;
+    // the deck is the PILOT's (hand flight, a hand-flown pad after the service's hand-over); an autopilot route is planned
+    // and flown in the hub frame - the deck shift made it chase the deck instead of its route (live: stuck at 771 m)
+    const auto& control = ship.core().control();
+    if (!control.deckRelative || control.navigationAccelerationDemandValid || control.navigationVelocityTargetValid ||
+        control.globalFlightCommandValid || m_padLandings.count(shipId))
+        return;
+    const auto& frame = motion.travelFrame;
+    const glm::dvec3 me = world::coordinates::fullMeters(ship.core().transform().worldPosition);
+    for (const auto& [oid, obj] : m_staticObjects)
+    {
+        if (!obj.attachedToHub || obj.hubId != motion.hubId || obj.systemId != motion.systemId)
+            continue;
+        const glm::dvec3 spin = glm::dvec3(obj.angularVelocity) - frame.angularVelocityWorldRadPerSecond;
+        const double rate = glm::length(spin);
+        if (rate < 0.01)
+            continue;   // not a turning deck (the hub's own slow turn only)
+        const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(obj.hubModuleId);
+        const double radius = plan && plan->ring().valid ? plan->ring().radius : 1500.0;
+        const glm::dvec3 centre = world::coordinates::fullMeters(obj.worldPosition);
+        const glm::dvec3 axis = spin / rate;
+        const glm::dvec3 rel = me - centre;
+        const double along = glm::dot(rel, axis);
+        const double fromAxis = glm::length(rel - axis * along);
+        if (fromAxis > radius + 600.0 || std::abs(along) > 2000.0)
+            continue;
+        motion.deckActive = true;
+        motion.deckAxisPointLocal = frame.worldToLocalPosition(centre);
+        motion.deckOmegaLocal = frame.worldToLocalVector(spin);
+        static std::unordered_map<std::uint64_t, double> loggedAt;
+        auto& at = loggedAt[ship.core().registry().instanceId];
+        if (serverTime() - at >= 5.0)
+        {
+            at = serverTime();
+            const glm::dvec3 rel = motion.localVelocityMps - game::navigation::deckVelocityLocal(motion);
+            std::cerr << "[Deck] ship instance " << ship.core().registry().instanceId << " over the turning deck of "
+                      << obj.hubModuleId << ": " << fromAxis << " m from the axis, " << glm::length(rel)
+                      << " m/s relative to the deck, following it takes "
+                      << glm::length(game::navigation::deckFollowAccelerationLocal(motion)) << " m/s2" << std::endl;
+        }
+        return;
     }
 }

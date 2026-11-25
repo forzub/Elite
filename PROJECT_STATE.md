@@ -8903,6 +8903,7 @@ start-up hitches (render), trade step 16 part 3 live.
   over a turning deck: the law holds the velocity relative to the deck, the physics adds the following acceleration
   (omega x v, through the stabilization's authority - the honest ~1 g of hovering over the rim). Live: H1-02 from 13 km
   - route, the pad service, the hand-over at the hand-flown pad, then held over the deck 0.12 m/s relative, 1130 m from
-  the axis, 9.2 m/s2 to follow; A1-03 from 20 km - landed by the service; 0 collisions (ship and traffic).
+  the axis, 9.2 m/s2 to follow; A1-03 from 20 km - the service flew it over the pad and holds it 522 m up waiting for
+  the legs (G - the author's rule; the DEV run does not put them out); 0 collisions (ship and traffic).
   Next: the hub generator (zero-g modules on the axis, gravity ones on the rim); the client's prediction of a deck
   follower (cm-level, not needed yet); the Newtonian law over a deck (only Assisted uses the stabilization channel).

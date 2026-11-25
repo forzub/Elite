@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/navigation/rules/OnboardJournal.h"
 #include <map>
 #include <glad/gl.h>
 
@@ -445,6 +446,9 @@ private:
     );
     bool m_showTrafficLanes = false;
     bool m_showNetworkRoutes = true;
+    bool m_showJournalMarks = false;
+    int m_devLastJournalMarks = -1;
+    const std::vector<game::navigation::journal::Entry>* m_onboardJournal = nullptr;
     const world::celestial::WorldSitesCatalog* m_worldSites = nullptr;
     std::string m_transferTunnelBodyId;
     std::string m_pendingOrbitalTransferHubId;
@@ -627,6 +631,16 @@ public:
                 }
         std::cerr << "[PadLanding] DEV request " << spec << ": no such pad" << std::endl;
     }
+    // the onboard computer's own marks (author 2026-11-24: «на всех картах отдельный слой, где будут отметки, сделанные
+    // самим компьютером»; OnboardJournal.h, kept by the client): B on the map
+    void setOnboardJournal(const std::vector<game::navigation::journal::Entry>* journal) noexcept { m_onboardJournal = journal; }
+    void toggleJournalMarks() noexcept
+    {
+        m_showJournalMarks = !m_showJournalMarks;
+        m_systemSceneFrameDirty = true;
+        std::cerr << "[Map] onboard journal marks " << (m_showJournalMarks ? "ON" : "OFF") << std::endl;
+    }
+    bool journalMarksShown() const noexcept { return m_showJournalMarks; }
     void toggleSystemBeacons() noexcept
     {
         m_systemView.state().showBeacons = !m_systemView.state().showBeacons;

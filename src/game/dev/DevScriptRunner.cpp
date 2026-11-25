@@ -515,6 +515,11 @@ bool DevScriptRunner::runMapVerb(SpaceState& s, const std::string& cmd)
         if (s.buildSelectedMapDetailTarget(target) && s.composeDetailMapSnapshot(target))
             s.m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
     }
+    else if (cmd == "journalmarks")   // DEV: the onboard computer's marks layer on the map (B)
+    {
+        s.m_systemMapRenderer.setOnboardJournal(&s.m_onboardJournal);
+        s.m_systemMapRenderer.toggleJournalMarks();
+    }
     else if (cmd.rfind("hub:", 0) == 0)
         s.m_systemMapRenderer.devFocusHub(arg("hub:"));
     else if (cmd.rfind("object:", 0) == 0)

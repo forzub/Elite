@@ -29,6 +29,9 @@ namespace
 std::filesystem::path journalDir()
 {
     namespace fs = std::filesystem;
+    // ELITE_JOURNAL_DIR: the test runs keep their journals apart from the player's
+    if (const char* dir = std::getenv("ELITE_JOURNAL_DIR"); dir && *dir)
+        return fs::path(dir);
     if (const char* base = std::getenv("LOCALAPPDATA"); base && *base)
         return fs::path(base) / "EliteGame" / "journal";
     return fs::path("journal");

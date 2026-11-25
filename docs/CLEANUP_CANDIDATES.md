@@ -45,3 +45,5 @@ world data sources), legacy state files `CURRENT_STATE.md` / `CURRENT_TASK.md` (
   IEquipmentModule.h; EquipmentSlot.h is included nowhere).
 - `src/game/ship/core/ShipModuleState.h` (a dead parallel of world::modules::ObjectModuleRuntime; included nowhere).
 - `src/game/simulation/ShipModuleSnapshot.h` (included nowhere).
+
+- 2026-11-25: %LOCALAPPDATA%/EliteGame/journal/ship_1.txt - written by DEV test runs before ELITE_JOURNAL_DIR existed (real hub sightings only); can be deleted, the game re-records.

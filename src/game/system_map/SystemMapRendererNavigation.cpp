@@ -2245,6 +2245,72 @@ void SystemMapRenderer::decorateSystemNetworkRoutes(
         }
     }
 
+    // the onboard computer's own marks (B): each journal record where the computer put it, relative to its body; a
+    // degraded record (radiation) shows its reliability and blurred error on its card
+    overlay.items.erase(std::remove_if(overlay.items.begin(), overlay.items.end(),
+                                       [](const game::system_map::MapObjectOverlayItem& i) { return i.objectId.rfind("journal:", 0) == 0; }),
+                        overlay.items.end());
+    int drawnMarks = 0;
+    if (m_showJournalMarks && m_onboardJournal)
+    {
+        namespace jr = game::navigation::journal;
+        for (const auto& e : *m_onboardJournal)
+        {
+            if (e.systemId != system.systemId)
+                continue;
+            glm::dvec3 bodyAu(0.0);
+            if (!e.anchorBodyId.empty())
+            {
+                bool found = false;
+                for (const auto& body : system.bodies)
+                    if (body.id == e.anchorBodyId)
+                    {
+                        bodyAu = body.positionAu;
+                        found = true;
+                    }
+                if (!found)
+                    continue;
+            }
+            const glm::dvec3 absolute =
+                (bodyAu + e.positionM / world::celestial::MetersPerAu) * static_cast<double>(m_systemSceneFrame.systemScale);
+            game::system_map::MapObjectOverlayItem item;
+            if (!projectAbsolute(absolute, item.screenPx))
+                continue;
+            item.objectId = "journal:" + e.key;
+            item.name = e.label;
+            item.typeName = std::string("бортовой журнал: ") + jr::kindRu(e.kind);
+            item.kind = e.kind == jr::Kind::Danger || e.kind == jr::Kind::Anomaly ? game::system_map::MapObjectGlyphKind::Anchor
+                                                                                     : game::system_map::MapObjectGlyphKind::Relay;
+            item.infoKind = game::system_map::MapObjectInfoKind::Infrastructure;
+            item.factionColor = e.kind == jr::Kind::Danger ? glm::vec4(0.95f, 0.35f, 0.25f, 0.95f)
+                              : e.kind == jr::Kind::Beacon ? glm::vec4(0.35f, 0.85f, 0.45f, 0.95f)
+                              : e.kind == jr::Kind::Hub    ? glm::vec4(0.55f, 0.80f, 0.98f, 0.95f)
+                                                           : glm::vec4(0.95f, 0.85f, 0.40f, 0.95f);
+            if (e.reliability01 < 0.99f)
+                item.factionColor.a *= std::max(0.35f, e.reliability01);
+            if (!e.detail.empty())
+                item.extraFields.push_back({"запись", e.detail});
+            char buf[64];
+            std::snprintf(buf, sizeof buf, "%.0f %%", e.reliability01 * 100.0);
+            item.extraFields.push_back({"достоверность", buf});
+            if (e.errorM > 1.0)
+            {
+                std::snprintf(buf, sizeof buf, "± %.0f км", e.errorM / 1000.0);
+                item.extraFields.push_back({"погрешность", buf});
+            }
+            item.visible = true;
+            item.glyphScale = 0.8;
+            item.hitRadiusPx = 10.0;
+            overlay.items.push_back(std::move(item));
+            ++drawnMarks;
+        }
+    }
+    if (drawnMarks != m_devLastJournalMarks)
+    {
+        m_devLastJournalMarks = drawnMarks;
+        std::cerr << "[Map] onboard journal layer: " << drawnMarks << " marks on screen" << std::endl;
+    }
+
     // the player's Orbital Transfer tunnel (body-relative samples, moved with the body)
     if (!m_transferTunnel.empty())
     {

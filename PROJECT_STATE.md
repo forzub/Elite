@@ -8809,3 +8809,9 @@ start-up hitches (render), trade step 16 part 3 live.
   3 489 B a snapshot (21 -> 5 rows), wire 534 -> 379 KiB/s per player (-29 %), tick unchanged. Live: B4-11 landing, 0
   collisions. Next on the wire: hubs every snapshot (2.4 KB), session (2.3 KB: constructionOverrides by generation),
   ships (14.6 KB, own ship 5.3 KB).
+- Onboard journal step 2: the map layer of the computer's own marks (B on the System map; DEV verb journalmarks): every
+  record at its place relative to its body, coloured by kind (hub blue, beacon green, danger red), faded by reliability,
+  its card with the record / reliability / error. Live: 13 of 13 records drawn. ELITE_JOURNAL_DIR keeps test journals
+  apart from the player's (run_dev sets it). The tests before it wrote into %LOCALAPPDATA%/EliteGame/journal/ship_1.txt
+  (only real sightings; listed in docs/CLEANUP_CANDIDATES.md). Next for the journal: the Detail / Hub maps, the other
+  record kinds (danger at an impact, signals, sump exits), the radiation dose from the environment.

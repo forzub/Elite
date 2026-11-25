@@ -1219,6 +1219,13 @@ void SpaceState::handleInput()
         }
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_N))
             m_systemMapRenderer.toggleSystemBeacons();
+        // B: the onboard computer's own marks (the journal layer); Ctrl+B is the radio
+        if (!Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) && !Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL) &&
+            Input::instance().isKeyPressedOnce(GLFW_KEY_B))
+        {
+            m_systemMapRenderer.setOnboardJournal(&m_onboardJournal);
+            m_systemMapRenderer.toggleJournalMarks();
+        }
         {
             const int dx = (Input::instance().isKeyPressedOnce(GLFW_KEY_RIGHT) ? 1 : 0) - (Input::instance().isKeyPressedOnce(GLFW_KEY_LEFT) ? 1 : 0);
             const int dy = (Input::instance().isKeyPressedOnce(GLFW_KEY_UP) ? 1 : 0) - (Input::instance().isKeyPressedOnce(GLFW_KEY_DOWN) ? 1 : 0);

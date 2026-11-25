@@ -68,7 +68,7 @@ void GameSimulation::initializeShipStateFlightTest()
     tr.motion.localVelocityMps = glm::dvec3(0.0);
     tr.motion.worldVelocityMps = glm::dvec3(0.0);
     tr.motion.referenceVelocityMps = glm::dvec3(0.0);
-    tr.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+    tr.motion.referenceVelocityMps = glm::dvec3(0.0);
 
     m_shipStateFlightTestShipId = id;
     m_shipStateFlightTestStartSeconds =
@@ -121,7 +121,7 @@ EntityId GameSimulation::spawnShipBeside(EntityId near, ShipRole role, const Shi
         tr.motion.localVelocityMps = glm::dvec3(0.0);
         tr.motion.worldVelocityMps = ptr.motion.worldVelocityMps;
         tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
-        tr.referenceVelocityMetersPerSecond = ptr.referenceVelocityMetersPerSecond;
+        tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
     }
     return id;
 }
@@ -217,7 +217,7 @@ void GameSimulation::updateCatalogShipLineup()
             tr.motion.localVelocityMps = glm::dvec3(0.0);
             tr.motion.worldVelocityMps = ptr.motion.worldVelocityMps;
             tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
-            tr.referenceVelocityMetersPerSecond = ptr.referenceVelocityMetersPerSecond;
+            tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
         }
         // DEV ELITE_CATALOG_DAMAGE=1: real ObjectModuleRuntime damage for F7 -
         // radar destroyed, first propulsion generator at 57 %, first drive destroyed
@@ -591,7 +591,7 @@ void GameSimulation::initializeFiveHundredShipHerd()
                     frame.worldToLocalVector(sample.velocityMps);
                 tr.motion.worldVelocityMps = sample.velocityMps;
                 tr.motion.referenceVelocityMps = glm::dvec3(0.0);
-                tr.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+                tr.motion.referenceVelocityMps = glm::dvec3(0.0);
             }
         }
         else
@@ -1470,13 +1470,13 @@ bool GameSimulation::applyDiagnosticTrajectoryTransform(
                 glm::dvec3(0.0)
             );
 
-        transform.referenceVelocityMetersPerSecond =
+        transform.motion.referenceVelocityMps =
             motion.referenceVelocityMps;
     }
     else
     {
         motion.referenceVelocityMps = parentVelocityMps;
-        transform.referenceVelocityMetersPerSecond = parentVelocityMps;
+        transform.motion.referenceVelocityMps = parentVelocityMps;
     }
 
     return true;
@@ -1582,7 +1582,7 @@ void GameSimulation::updateHubMotionLabActors()
                 localState.velocityMetersPerSecond
             );
 
-        tr.referenceVelocityMetersPerSecond =
+        tr.motion.referenceVelocityMps =
             tr.motion.referenceVelocityMps;
 
         tr.setWorldPositionMeters(
@@ -1710,7 +1710,7 @@ void GameSimulation::updateInterplanetaryTransferLabActor()
     tr.motion.engineAccelerationMps2 = glm::dvec3(0.0);
     tr.motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
     tr.motion.desiredRelativeVelocityMps = glm::dvec3(0.0);
-    tr.referenceVelocityMetersPerSecond = sunVelocityIt->second;
+    tr.motion.referenceVelocityMps = sunVelocityIt->second;
 
     if (state.heliocentricSpeedMetersPerSecond > 0.001)
     {
@@ -2165,7 +2165,7 @@ void GameSimulation::debugLogServerNavState(double dt)
             tr.motion.localVelocityMps;
 
         refV =
-            tr.referenceVelocityMetersPerSecond;
+            tr.motion.referenceVelocityMps;
 
         forwardInput = c.forwardInput;
         liftInput = c.liftInput;

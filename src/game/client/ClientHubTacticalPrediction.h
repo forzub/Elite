@@ -66,7 +66,7 @@ inline bool advanceReplicatedHubKinematics(
         motion.localPositionMeters,motion.localVelocityMps);
     motion.referenceVelocityMps=frame.localToWorldVelocity(
         motion.localPositionMeters,glm::dvec3(0.0));
-    transform.referenceVelocityMetersPerSecond=
+    transform.motion.referenceVelocityMps=
         motion.referenceVelocityMps;
     return true;
 }

@@ -254,7 +254,7 @@ EntityId GameSimulation::spawnCombatTarget(EntityId nearShipId, double distanceM
         tr.motion.localVelocityMps = glm::dvec3(0.0);
         tr.motion.worldVelocityMps = ptr.motion.worldVelocityMps;
         tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
-        tr.referenceVelocityMetersPerSecond = ptr.referenceVelocityMetersPerSecond;
+        tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
     }
     // broadside to the shooter
     tr.orientation = ptr.orientation * glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));

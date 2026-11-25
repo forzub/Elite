@@ -153,7 +153,7 @@ int main(int argc, char** argv)
     tr.motion.localVelocityMps = replayCase.agent.velocityMapMetersPerSecond;
     tr.motion.worldVelocityMps = replayCase.agent.velocityMapMetersPerSecond;
     tr.motion.referenceVelocityMps = glm::dvec3(0.0);
-    tr.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+    tr.motion.referenceVelocityMps = glm::dvec3(0.0);
     tr.setWorldPositionMeters(replayCase.agent.positionMapMeters);
     tr.pitchRate = static_cast<float>(replayCase.agent.pitchRateRadPerSec);
     tr.yawRate = static_cast<float>(replayCase.agent.yawRateRadPerSec);

@@ -318,7 +318,7 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
                 tr.motion.localPositionMeters = local;
                 tr.motion.localVelocityMps = frame->worldToLocalVelocity(eye, dockVelocity);
                 tr.motion.referenceVelocityMps = tr.motion.travelFrame.localToWorldVelocity(local, glm::dvec3(0.0));
-                tr.referenceVelocityMetersPerSecond = tr.motion.referenceVelocityMps;
+                tr.motion.referenceVelocityMps = tr.motion.referenceVelocityMps;
             }
             tr.motion.worldVelocityMps = dockVelocity;
             tr.setWorldPositionMeters(eye);
@@ -922,7 +922,7 @@ void GameSimulation::updateDockSitePilots(DockSite& site, const StaticObject* do
             tr.motion.localPositionMeters = local;
             tr.motion.localVelocityMps = frame->worldToLocalVelocity(position, velocity);
             tr.motion.referenceVelocityMps = tr.motion.travelFrame.localToWorldVelocity(local, glm::dvec3(0.0));
-            tr.referenceVelocityMetersPerSecond = tr.motion.referenceVelocityMps;
+            tr.motion.referenceVelocityMps = tr.motion.referenceVelocityMps;
         }
         tr.motion.worldVelocityMps = velocity;
         tr.setWorldPositionMeters(position);

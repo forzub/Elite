@@ -27,10 +27,7 @@ struct ShipTransform : public game::math::MathTransform
 
     float targetSpeedRate = 0.0f;
 
-    // Скорость системы отсчёта, в которой находится корабль.
-    // Например: орбитальная скорость станции/хаба/планеты.
-    // Управление кораблём НЕ должно её демпфировать.
-    glm::dvec3 referenceVelocityMetersPerSecond {0.0};
+    // (referenceVelocityMetersPerSecond - a copy of motion.referenceVelocityMps - removed 2026-11-25, wire schema 78)
 
     game::navigation::DynamicMotionState motion;
 

@@ -756,7 +756,7 @@ bool GameSimulation::placeShipInReferenceFrame(
 
 
 
-    tr.referenceVelocityMetersPerSecond =
+    tr.motion.referenceVelocityMps =
         resolved.velocityMetersPerSecond;
 
     tr.motion.mode =
@@ -926,7 +926,7 @@ void GameSimulation::updateShipReferenceFrames(double dt)
             }
         }
 
-        tr.referenceVelocityMetersPerSecond =
+        tr.motion.referenceVelocityMps =
             referenceVelocityMetersPerSecond;
 
         tr.motion.referenceVelocityMps =

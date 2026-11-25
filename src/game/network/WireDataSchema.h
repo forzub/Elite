@@ -402,7 +402,6 @@ ELITE_WIRE_SCHEMA(
     v.cruiseActive,
     v.jumpActive,
     v.targetSpeedRate,
-    v.referenceVelocityMetersPerSecond,
     v.motion,
     v.strafeInput,
     v.liftInput,

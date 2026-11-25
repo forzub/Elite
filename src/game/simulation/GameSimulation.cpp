@@ -316,7 +316,7 @@ void GameSimulation::applyPhysicalCorridorHotStart()
     motion.worldVelocityMps =
         motion.referenceVelocityMps +
         relativeWorldVelocity;
-    tr.referenceVelocityMetersPerSecond =
+    tr.motion.referenceVelocityMps =
         motion.referenceVelocityMps;
     motion.forwardSpeedMps =
         glm::dot(relativeWorldVelocity, newForward);
@@ -2285,7 +2285,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 }
             }
 
-            tr.referenceVelocityMetersPerSecond =
+            tr.motion.referenceVelocityMps =
                 tr.motion.referenceVelocityMps;
         }
 
@@ -2755,7 +2755,7 @@ EntityId GameSimulation::spawnTrafficShell(
     shell.transform.motion.systemId = systemId;
     shell.transform.motion.worldVelocityMps = velocityMetersPerSecond;
     shell.transform.motion.localVelocityMps = velocityMetersPerSecond;
-    shell.transform.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+    shell.transform.motion.referenceVelocityMps = glm::dvec3(0.0);
 
     shell.lifecycle.tier =
         game::simulation::ShipSimulationTier::TrafficShell;

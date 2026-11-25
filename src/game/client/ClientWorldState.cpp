@@ -327,7 +327,7 @@ namespace
             );
 
         transform.motion.referenceVelocityMps = referenceVelocity;
-        transform.referenceVelocityMetersPerSecond = referenceVelocity;
+        transform.motion.referenceVelocityMps = referenceVelocity;
         transform.setWorldPositionMeters(
             frame.localToWorldPosition(frame.localPositionMeters)
         );

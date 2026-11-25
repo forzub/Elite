@@ -8868,3 +8868,6 @@ start-up hitches (render), trade step 16 part 3 live.
 - Duplicated truth, step 6: MathTransform's legacy float `position` mirror removed (worldPosition the one owner; the
   two legacy owner-local hit helpers read worldPosition.localMeters - exactly what the mirror held); wire schema 77. No
   other reader existed (the compiler found none). Economy 258 / 0, the collision + capsule path live OK.
+- Duplicated truth, step 7: ShipTransform::referenceVelocityMetersPerSecond removed - motion.referenceVelocityMps is the
+  one owner (22 sites rewritten in place: the copies became self-assignments, the writes of their own value now write the
+  owner); wire schema 78. Live B4-11: the route held 3-10 m, the pad service, the descent.

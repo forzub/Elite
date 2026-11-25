@@ -1021,7 +1021,7 @@ EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
         tr.motion.referenceVelocityMps = sunVelocityMetersPerSecond;
         tr.motion.localPositionMeters = state.relativePositionMeters;
         tr.motion.localVelocityMps = state.relativeVelocityMetersPerSecond;
-        tr.referenceVelocityMetersPerSecond = sunVelocityMetersPerSecond;
+        tr.motion.referenceVelocityMps = sunVelocityMetersPerSecond;
     }
 
     sim.registerInterplanetaryTransferLabShip(id);

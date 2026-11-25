@@ -595,6 +595,11 @@ private:
 public:
     // the landing card closed: SpaceState tells the server the pilot takes the ship back
     bool consumePadLandingCancel() { const bool c = m_padLandingCancelRequested; m_padLandingCancelRequested = false; return c; }
+    // a pad landing asked by a pilot other than the map card (the cockpit-capsule's rescue autopilot): the same request
+    void requestPadLanding(const std::string& frameModuleId, const std::string& address)
+    {
+        m_padLandingRequest = PadLandingRequest {frameModuleId, address, "hub-building:" + frameModuleId + "/" + address};
+    }
     // DEV: padland:<roof|garage|stilts>[@<city frame module>] - the first building with that pad kind, as its card's button
     void devRequestPadLanding(const std::string& spec)
     {

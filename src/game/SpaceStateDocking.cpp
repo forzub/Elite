@@ -693,7 +693,7 @@ void SpaceState::updateDockingAdvisory()
             m_dockArrivalSentSerial = 0;
         }
         // the body autopilot / the route own the control stream themselves
-        const bool otherPilot = m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
+        const bool otherPilot = m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl || m_capsuleRescue.ownsControl;
         if (m_clientDockingPhase != ClientDockingPhase::Idle ||
             (m_clientAutopilotControlActive && !otherPilot))
         {
@@ -5190,7 +5190,8 @@ void SpaceState::updateUnsampledCollisionAssist()
     m_manualSampledThisFrame = false;
     if (sampled || !m_client)
         return;
-    const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
+    const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl ||
+                              m_capsuleRescue.ownsControl;
     if (virtualPilot)
         return;
     static double loggedAt = -1.0e9;

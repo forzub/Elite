@@ -1541,7 +1541,8 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
             sampled.pitchInput = 1.0f;           // DEV "pitch:<s>": pitch key held
         if (m_devRollUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devRollUntilMs)
             sampled.rollInput = 1.0f;            // DEV "roll:<s>": roll key held
-        const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
+        const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl ||
+                                  m_capsuleRescue.ownsControl;
         m_manualSampledThisFrame = true;
         m_lastPilotSample = sampled;
         m_unsampledAssistSubmitted = false;
@@ -1883,6 +1884,7 @@ void SpaceState::update(float dt)
     followControlledShip();
     updateUnsampledCollisionAssist();
     updateOnboardJournal(dt);
+    updateCapsuleRescue(dt);
     // the hub map follows the hub the ship is in (a new hub entered -> its map; author: the hub map did not switch)
     if (m_client)
         if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end())

@@ -92,6 +92,23 @@ CompiledTrafficRoute applyHubLanes(
             request.maxSpeedMps = network.speedLimitMps();
         }
     }
+    // a craft flies the hub no faster than it can still TURN and STOP within ~1.5 km (a weak one - the cockpit-capsule's
+    // 2 m/s2 jets - got a 11.7 km turn radius and a 7 km join approach at the hub's 150 m/s: no lane entry fitted, no
+    // path; live 2026-11-25). A full ship (Cobrett ~17 m/s2 lateral) is not touched: its figure is above the hub limit.
+    {
+        constexpr double ManoeuvreRoomMeters = 1500.0;
+        const double byTurn = std::sqrt(std::max(0.0, request.lateralMps2) * ManoeuvreRoomMeters);
+        const double byStop = std::sqrt(2.0 * std::max(0.0, request.brakingMps2) * ManoeuvreRoomMeters);
+        const double craftCap = std::max(20.0, std::min(byTurn, byStop));
+        if (craftCap < request.maxSpeedMps)
+        {
+            text << "craft_speed_cap=" << craftCap << " (lateral " << request.lateralMps2 << ", braking "
+                 << request.brakingMps2 << ") ";
+            request.maxSpeedMps = craftCap;
+            if (request.geometrySpeedMps > craftCap)
+                request.geometrySpeedMps = craftCap;
+        }
+    }
     double handoff = request.geometrySpeed();
     for (const auto& lane : network.lanes())
         handoff = std::min(handoff, lane.maxSpeedMps);

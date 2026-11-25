@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/world/WorldLaws.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -9,7 +10,7 @@
 namespace game::ship
 {
 
-inline constexpr double StandardGravityMps2 = 9.80665;
+inline constexpr double StandardGravityMps2 = world::laws::StandardGravityMps2;   // src/world/WorldLaws.h
 
 [[nodiscard]] inline bool validShipDynamics(
     const ShipParams& params

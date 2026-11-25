@@ -33,45 +33,22 @@
 #include <algorithm>
 
 #include "src/game/navigation/rules/BodyFlightRules.h"
+#include "src/world/WorldLaws.h"
 #include <cmath>
 
 namespace game::navigation::jdrive
 {
-constexpr double StandardGravityMps2 = 9.80665;
-constexpr double LightSpeedMps = 299792458.0;
-constexpr double MaxAccelMps2 = 1.0e5 * StandardGravityMps2;   // ~980 km/s2
-// The top speed is not a fixed cap but the medium (author 2026-11-12): space is not a perfect vacuum. Up to
-// MediumOnsetMps (0.6 c) the ship coasts freely; above it the particles it sweeps up resist, on a steep exponential,
-// against the medium's rest frame (the dominant body / the star). The ship flies where the J thrust equals that
-// resistance; near 0.9 c no thrust adds much. With the throttle off the medium brakes the ship along the same curve
-// down to 0.6 c, and from there it coasts. The thrust that only holds the speed still burns the J charge.
-//   resistance(v) = MediumDragA0 * (exp((v - onset) / scale) - 1),  v > onset
-//   terminal(a)   = onset + scale * ln(1 + a / MediumDragA0)
-// Calibrated so that the full 1e5 g holds 0.9 c (SpeedCapMps, the terminal speed at a_max):
-// 1 g -> 0.67 c, 100 g -> 0.76 c, 1e3 g -> 0.81 c, 1e4 g -> 0.85 c, 1e5 g -> 0.9 c;
-// resistance 0.7 c 4.5 g, 0.75 c 55 g, 0.8 c 670 g, 0.85 c 8 200 g.
-constexpr double SpeedCapMps = 0.9 * LightSpeedMps;              // ~269 800 km/s: the terminal speed at MaxAccelMps2
-constexpr double MediumOnsetMps = 0.6 * LightSpeedMps;           // ~180 000 km/s: below it the ship coasts freely
-constexpr double MediumScaleMps = 0.02 * LightSpeedMps;
-// a_max / (e^((cap - onset) / scale) - 1) = 1e5 g / (e^15 - 1) ~ 0.03 g
-inline double mediumDragA0Mps2()
-{
-    return MaxAccelMps2 / (std::exp((SpeedCapMps - MediumOnsetMps) / MediumScaleMps) - 1.0);
-}
-// the medium's resistance (m/s2, against the motion) at `speedMps` relative to the medium; `speedScale` < 1 for an
-// asymmetric field (one emitter lost: every speed of the law halves)
-inline double mediumResistanceMps2(double speedMps, double speedScale = 1.0)
-{
-    const double onset = MediumOnsetMps * speedScale;
-    if (speedMps <= onset)
-        return 0.0;
-    return mediumDragA0Mps2() * (std::exp((speedMps - onset) / (MediumScaleMps * speedScale)) - 1.0);
-}
-// the speed the J thrust `accelMps2` holds against the medium
-inline double mediumTerminalSpeedMps(double accelMps2, double speedScale = 1.0)
-{
-    return speedScale * (MediumOnsetMps + MediumScaleMps * std::log1p(std::max(0.0, accelMps2) / mediumDragA0Mps2()));
-}
+// the universe's constants and the medium law (src/world/WorldLaws.h - every moving body obeys them, not only J)
+constexpr double StandardGravityMps2 = world::laws::StandardGravityMps2;
+constexpr double LightSpeedMps = world::laws::LightSpeedMps;
+// the J field's technology limit (~980 km/s2); the medium holds it at 0.9 c (the law's calibration point)
+constexpr double MaxAccelMps2 = 1.0e5 * StandardGravityMps2;
+constexpr double SpeedCapMps = world::laws::MediumCalibrationSpeedMps;   // the terminal speed at MaxAccelMps2
+constexpr double MediumOnsetMps = world::laws::MediumOnsetMps;
+constexpr double MediumScaleMps = world::laws::MediumScaleMps;
+using world::laws::mediumDragA0Mps2;
+using world::laws::mediumResistanceMps2;
+using world::laws::mediumTerminalSpeedMps;
 constexpr double KeepOutObjectM = 20000.0;                       // hubs, stations, beacons
 constexpr double KeepOutShipM = 5000.0;                          // other ships
 constexpr double GentleAccelMps2 = 9.81;

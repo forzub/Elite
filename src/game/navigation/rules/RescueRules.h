@@ -12,12 +12,14 @@
 // inhabited hub has no rescue service at all.
 
 #include <algorithm>
+
+#include "src/world/WorldLaws.h"
 #include <cstdint>
 
 namespace game::navigation::rescue
 {
 
-inline constexpr double LightSecondM = 299792458.0;
+inline constexpr double LightSecondM = world::laws::LightSpeedMps;   // src/world/WorldLaws.h
 inline constexpr double ZoneRadiusLs = 30.0;
 inline constexpr double ZoneRadiusM = ZoneRadiusLs * LightSecondM;
 inline constexpr double PickupMinutesMin = 10.0;

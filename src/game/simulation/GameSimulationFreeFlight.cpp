@@ -301,6 +301,26 @@ void GameSimulation::applyGlobalFlightCommand(EntityId shipId, Ship& ship, Activ
             glm::dvec3 a = cmd.globalMainAccelWorldMps2;
             if (glm::length(a) > main)
                 a *= main / glm::length(a);
+            // the cockpit-capsule (CapsuleRules.h): its motor pushes only along the nose (the autopilot turns it first),
+            // the jets add at most their own figure sideways; every m/s is paid from the reaction mass
+            if (ship.core().capsuleFlying())
+            {
+                namespace cap = game::navigation::capsule;
+                const auto p = cap::capsuleParams(motion.capsuleDeltaVLeftMps);
+                const glm::dvec3 nose = glm::normalize(glm::dvec3(tr.forward()));
+                const double along = std::clamp(glm::dot(cmd.globalMainAccelWorldMps2, nose), 0.0,
+                                                static_cast<double>(p.forwardMainEngineAccelerationMps2));
+                // what the motor does not give (sideways, backwards) the jets give, in any direction, up to their figure
+                glm::dvec3 side = cmd.globalMainAccelWorldMps2 - nose * along;
+                if (glm::length(side) > p.manoeuvreThrusterAccel)
+                    side *= p.manoeuvreThrusterAccel / glm::length(side);
+                a = nose * along + side;
+                const double spent = glm::length(a) * dt;
+                if (spent > motion.capsuleDeltaVLeftMps)
+                    a *= motion.capsuleDeltaVLeftMps / std::max(1.0e-9, spent);
+                motion.capsuleDeltaVLeftMps = std::max(0.0, motion.capsuleDeltaVLeftMps - glm::length(a) * dt);
+                ship.core().addCapsuleThrust(a * dt);
+            }
             // on the ground: the engines lift the ship off once they push up harder than the weight
             if (motion.freeFlightSurfaceState == 1)
                 for (const auto& b : m_gravityBodies)

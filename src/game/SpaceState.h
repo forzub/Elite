@@ -701,6 +701,22 @@ private:
     void updateUnsampledCollisionAssist();
     // the onboard computer's journal, kept on the client (SpaceStateJournal.cpp, OnboardJournal.h)
     void updateOnboardJournal(double dt);
+    // the cockpit-capsule's rescue autopilot (SpaceStateCapsule.cpp)
+    void updateCapsuleRescue(double dt);
+    struct CapsuleRescue
+    {
+        enum class Phase { None, Cruise, Landing };
+        Phase phase = Phase::None;
+        std::string hubId, hubName, frameModuleId, pad;
+        bool rescueDock = false;
+        bool ownsControl = false;
+        bool reportedNoTarget = false;
+        double nextChoiceAt = 0.0, landingAskedAt = 0.0, lastLogAt = -100.0;
+        std::set<std::string> refused;
+        glm::dvec3 stagingPrev {0.0}, stagingVelocity {0.0};
+        double stagingAt = 0.0;
+        bool stagingValid = false;
+    } m_capsuleRescue;
     std::vector<game::navigation::journal::Entry> m_onboardJournal;
     std::uint64_t m_journalShipInstance = ~0ull;
     double m_journalClockS = 0.0;

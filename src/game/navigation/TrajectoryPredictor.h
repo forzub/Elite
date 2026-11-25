@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/world/WorldLaws.h"
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -13,7 +14,7 @@
 namespace game::navigation
 {
 
-inline constexpr double StandardGravityMps2 = 9.80665;
+inline constexpr double StandardGravityMps2 = world::laws::StandardGravityMps2;   // src/world/WorldLaws.h
 
 enum class TrajectoryPredictionStatus : std::uint8_t
 {

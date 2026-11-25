@@ -123,7 +123,10 @@ bool GameSimulation::takeShipIntoHubFrame(EntityId shipId, const std::string& hu
     frame.localOffsetMeters = hubFrame->worldToLocalPosition(tr.fullWorldMeters());
     const glm::mat4 orientation = tr.orientation;
     if (!placeShipInReferenceFrame(shipId, frame))
+    {
+        std::cerr << "[HubFrame] ship " << shipId.value << ": placing it in hub " << hubId << "'s frame failed" << std::endl;
         return false;
+    }
     tr.orientation = orientation;
     std::cerr << "[HubFrame] ship " << shipId.value << " taken into hub " << hubId << "'s frame" << std::endl;
     return true;
@@ -138,7 +141,10 @@ bool GameSimulation::enterHubFrameForModule(EntityId shipId, const std::string& 
             const Ship* ship = getShip(shipId);
             const auto* hubFrame = hubNavigationFrame(o.hubId);
             if (!ship || !hubFrame || !hubFrame->valid)
+            {
+                std::cerr << "[HubFrame] ship " << shipId.value << ": hub " << o.hubId << " has no valid frame" << std::endl;
                 return false;
+            }
             const double d = glm::length(hubFrame->worldToLocalPosition(ship->core().transform().fullWorldMeters()));
             if (d > 30000.0)
             {

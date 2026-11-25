@@ -19,6 +19,7 @@
 #include "src/game/ship/ShipLoadoutTopology.h"
 #include "src/game/ship/ShipLoadoutTopology.h"
 #include "src/game/equipment/EquipmentDamage.h"
+#include "src/game/navigation/rules/CapsuleRules.h"
 
 namespace game::ship::computer
 {
@@ -97,6 +98,15 @@ namespace game::ship::computer
         out.physicalEnvelopeValid = capability.valid;
         if (capability.valid)
             out.physicalEnvelope = capability.effectivePhysics;
+        // the cockpit-capsule (CapsuleRules.h): the hull's modules are gone, the capsule's own motor / jets / reaction
+        // mass are the envelope - the same figures ShipCore::effectivePhysics gives the server
+        if (game::navigation::capsule::capsuleFlying(ship.transform.motion.destroyedCause,
+                                                     ship.transform.motion.capsuleState))
+        {
+            out.physicalEnvelopeValid = true;
+            out.physicalEnvelope =
+                game::navigation::capsule::capsuleParams(ship.transform.motion.capsuleDeltaVLeftMps);
+        }
         // ONE factual working thrust axis: the server's, computed from the
         // live surviving plant and published in the same ship/tick snapshot.
         // The client reconstruction above (replicated module health only)

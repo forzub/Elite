@@ -1557,6 +1557,7 @@ void GameServer::update(double dt)
                     break;
 
                 case ClientShipCommand::EnterHubFrame:   // a docking request near a hub in normal flight
+                    std::cerr << "[HubFrame] ship " << id.value << " asks the frame of " << shipCmd.target << std::endl;
                     (void)m_simulation.enterHubFrameForModule(id, shipCmd.target);
                     break;
 

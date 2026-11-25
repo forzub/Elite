@@ -6,6 +6,12 @@ edited HERE and its evidence appended below.
 
 ## Current invariants (2026-11-24; status: CONTRACT = in force and covered, EXPERIMENT = behind a flag, REVOKED =
 ## no longer true, AUTHOR = waits for the author's decision)
+World physics
+- CONTRACT: the universe's constants and laws live in ONE place, src/world/WorldLaws.h (light speed, standard g, the
+  medium: free coasting to 0.6 c, exponential resistance above against the dominant body, 1e5 g holds 0.9 c). Every
+  moving body obeys them whatever drives it (ships, the cockpit-capsule, drones, wrecks); technology only uses them
+  (author 2026-11-24: «всё подчиняется местной физике»). The J field's half-speed rule without a whole field is the
+  field's, in JDrive.h.
 Navigation - route planning
 - CONTRACT: the optimizer minimizes the TRAVEL TIME (timeOptimalWeights; ELITE_ROUTE_TIME_OBJECTIVE=0 = the old mix).
   The pure planner (RoutePlanner.cpp, the optimizer, SegmentedRouteComposer, RouteEntryBinder) reads no env / files /
@@ -8752,3 +8758,14 @@ start-up hitches (render), trade step 16 part 3 live.
   and ship commands are accepted. Live (63 m/s ram): take-over, tumble 0.39 -> 0 rad/s in < 5 s, 30 wreck fragments,
   yaw 0.15 rad/s and damped, thrust 20 m/s2 (speed +13 m/s per s at 48 deg), reaction mass -100 m/s per 5 s. NOT yet:
   the capsule's own target choice + automatic docking (client), the J-law cost (asked the author), beacons, the map layer.
+- Capsule step 4 (IN PROGRESS, live): the client's rescue autopilot SpaceStateCapsule.cpp - the target by the capsule's own
+  knowledge (hubs heard within comms reach or in the onboard journal, within reach = half the reaction mass x 4 days; a
+  hub with a МЧС rescue dock first -> the pad on its roof; a failed landing -> the next hub); far: a rendezvous on the
+  global main-engine command in normal flight (frame request), economy profile (closing <= distance / 10 min), the motor
+  along the nose only + the jets (any direction, 2 m/s2) for corrections < 20 m/s (server: GameSimulationFreeFlight capsule
+  branch, paid from the reaction mass, the wreck keeps its own motion); near: clear of structures (> 500 m, backs away at
+  15 m/s from the nearest), stopped against the hub (< 5 m/s) -> the ordinary pad landing (SystemMapRenderer::
+  requestPadLanding). MotherComputerClientAdapter gives the capsule's envelope to the client planner. WorldLaws.h holds
+  the universe's constants (see invariants). Live so far: cruise Высокий -> Кольцо 60 km OK (the old profile wasted 1500
+  m/s); the clearance OK; the pad landing at Высокий: the planner found no path with the capsule envelope (violation 1.0
+  everywhere) - braking by the jets added (reverse 2 m/s2), re-testing.

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 
 #include "src/game/ship/core/ShipParams.h"
 
@@ -116,7 +117,9 @@ inline ShipParams capsuleParams(double deltaVLeftMps)
     const bool fuel = deltaVLeftMps > 0.0;
     p.forwardMainEngineAvailable = fuel;
     p.forwardMainEngineAccelerationMps2 = fuel ? static_cast<float>(CapsuleThrustN / CapsuleMassKg) : 0.0f;
-    p.reverseMainEngineAvailable = false;
+    // backwards: the jets (no reverse motor) - the planner and the Assisted law brake with them
+    p.reverseMainEngineAvailable = fuel;
+    p.reverseMainEngineAccelerationMps2 = fuel ? static_cast<float>(CapsuleLateralAccelMps2) : 0.0f;
     p.strafeAccel = fuel ? static_cast<float>(CapsuleLateralAccelMps2) : 0.0f;
     p.strafeDamping = 1.0f;
     p.maxStrafeSpeed = 50.0f;
@@ -130,6 +133,13 @@ inline ShipParams capsuleParams(double deltaVLeftMps)
     p.yawInertiaKgM2 = CapsuleMassKg * (2.2 * 2.2 + 1.6 * 1.6) * 4.0 / 12.0;
     p.rollInertiaKgM2 = CapsuleMassKg * (2.2 * 2.2 + 1.3 * 1.3) * 4.0 / 12.0;
     p.physicalActuatorHalfExtentsMeters = glm::dvec3(2.2, 1.3, 1.6);
+    // DEV bisection (ELITE_DEV_CAPSULE_SCALE=k): the jets / turn rates x k - which figure the planner cannot plan with
+    if (const char* k = std::getenv("ELITE_DEV_CAPSULE_SCALE"); k && std::atof(k) > 0.0)
+    {
+        const float s = static_cast<float>(std::atof(k));
+        p.strafeAccel *= s; p.manoeuvreThrusterAccel *= s; p.reverseMainEngineAccelerationMps2 *= s; p.angularAccel *= s;
+        p.maxPitchRate *= s; p.maxYawRate *= s; p.maxRollRate *= s;
+    }
     return p;
 }
 

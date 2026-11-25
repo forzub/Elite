@@ -430,6 +430,8 @@ public:
     // the velocity the capsule's own thrust gave since the last call is taken out of the wreck's fragments (they share
     // the gravity, not the thrust): they stay behind; dropped beyond 20 km; returns how many were dropped
     int leaveFragmentsBehind(double dt);
+    // a velocity change (world) the capsule's own engines gave outside the core's executor (the global main-engine command)
+    void addCapsuleThrust(const glm::dvec3& dvWorld) { m_capsuleThrustDvWorld += dvWorld; }
 
     world::modules::ObjectStructuralLinkRuntime& structuralLinkRuntime()
     {

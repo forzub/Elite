@@ -503,6 +503,13 @@
                 <div id="consumers-list" class="consumers-grid"></div>
             </div>
             
+            <!-- ========== ОБОРУДОВАНИЕ (повреждение в %) ========== -->
+            <div class="card" style="grid-column: span 2;">
+                <h2>EQUIPMENT - ОБОРУДОВАНИЕ</h2>
+                <div id="equipment-summary" style="margin-bottom:4px;"></div>
+                <div id="equipment-list" style="max-height: 260px; overflow-y: auto;"></div>
+            </div>
+
             <!-- ========== АЛЕРТЫ ========== -->
             <div class="card" style="grid-column: span 2;">
                 <h2>ALERTS</h2>
@@ -685,7 +692,37 @@ function selectShipEntity() {
             return value.toFixed(decimals);
         }
         
+        function renderEquipment(list) {
+            const box = document.getElementById('equipment-list');
+            const sum = document.getElementById('equipment-summary');
+            if (!box || !Array.isArray(list)) return;
+            const causeRu = {laser: 'лазер', impact: 'удар', thermal: 'нагрев', radiation: 'радиация', wear: 'износ',
+                             internal_failure: 'внутр. отказ', internalFailure: 'внутр. отказ'};
+            let damaged = 0, failed = 0;
+            const rows = list.slice().sort((a, b) => (b.damage - a.damage) || a.group.localeCompare(b.group));
+            let html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+                '<tr style="color:#888;"><td>группа</td><td>оборудование</td><td>состояние</td>' +
+                '<td style="text-align:right;">повреждение</td><td>причины</td></tr>';
+            for (const e of rows) {
+                const pct = e.damage * 100;
+                if (e.failed) failed++; else if (pct >= 0.5) damaged++;
+                const col = e.failed ? '#f44' : pct >= 50 ? '#f80' : pct >= 10 ? '#ff0' : pct >= 0.5 ? '#cf8' : '#0f0';
+                const causes = (e.causes || []).filter(c => c.value >= 0.005)
+                    .map(c => (causeRu[c.cause] || c.cause) + ' ' + (c.value * 100).toFixed(0) + '%').join(', ');
+                html += '<tr style="border-top:1px solid #222;">' +
+                    '<td style="color:#888;">' + e.group + '</td>' +
+                    '<td>' + (e.critical ? '⚠ ' : '') + e.label + '</td>' +
+                    '<td style="color:' + col + ';">' + e.state + '</td>' +
+                    '<td style="text-align:right;color:' + col + ';">' + pct.toFixed(pct < 10 ? 1 : 0) + ' %</td>' +
+                    '<td style="color:#aaa;">' + causes + '</td></tr>';
+            }
+            html += '</table>';
+            box.innerHTML = html;
+            if (sum) sum.textContent = 'модулей ' + list.length + ', повреждено ' + damaged + ', вышло из строя ' + failed;
+        }
+
         function updateUI(data) {
+            if (data.equipment) renderEquipment(data.equipment);
             // Timestamp
             if (data.timestamp) {
                 document.getElementById('timestamp').textContent = new Date(data.timestamp * 1000).toLocaleTimeString();

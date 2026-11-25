@@ -8922,3 +8922,11 @@ start-up hitches (render), trade step 16 part 3 live.
   Live: the clearance line at the request (Cobra lift 7.5 g vs 1.2). The refusal path is not live-tested (no weak ship
   in the DEV start). The deck exists only over a RING plan's city (a belt hub's spinning bodies are not decks).
   Regression (navsuite_deck, Высокий): pad_outside / pad_series / tower_pad / dock_hub as before, 0 collisions.
+- EQUIPMENT DAMAGE % (2026-11-25, author: «повреждение пишем там где у нас собраны данные корабля игрока»): the ship
+  data panel (webui ship_core.html, HTML UI on :8090) got the EQUIPMENT block - every installed module: group, name,
+  state (на месте / отключено / разрушено / оторвано / висит на креплении), damage % = max(structure lost, function
+  lost), the causes (лазер / удар / перегрев / радиация / износ / внутренний отказ); sorted worst first, a summary line.
+  The numbers are the F7 repair page's (buildRepairRefitPresentation) - one source. Live (ws probe): intact Cobra 104
+  modules 0 %; both laser mounts broken via structure_debug set_link_health -> the two lasers «оторвано» (failed, red).
+  Not yet: a module damaged but attached (> 0 %) not seen live; names are module ids and 73 of 104 fall into «Прочее»
+  (the catalog has no product names for them) - the same as in F7.

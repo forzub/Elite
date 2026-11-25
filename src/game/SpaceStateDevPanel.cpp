@@ -1,5 +1,8 @@
 // SpaceState: DEV HTML panels: attachment editor, structure / ship-core / frustum / debug-control state, debug HTML commands, volume viewer.
 
+#include "src/game/presentation/RepairRefitPresentation.h"
+#include <algorithm>
+#include <iostream>
 #include "src/game/SpaceStateInternal.h"
 
 
@@ -780,7 +783,10 @@ void SpaceState::pushShipCoreState()
     );
     const bool ownShip = it->first == m_playerId.value;
     if (ownShip && !computerSystems.valid)
+    {
+        std::cerr << "[ShipCorePanel] no push: the ship computer snapshot is not valid yet" << std::endl;
         return; // do not silently invent a healthy status
+    }
     json payload = shipCoreStatusToJson(
         ownShip ? computerSystems.systems : ship.shipCoreStatus
     );
@@ -799,6 +805,44 @@ void SpaceState::pushShipCoreState()
 
     payload["selectedShipEntityId"] = m_shipCoreSelectedShipEntityId;
 
+    // THE EQUIPMENT (author 2026-11-25: «повреждение пишем там где у нас собраны данные корабля игрока»): every installed
+    // module with its damage %, not only "torn off or not" - the same views as the F7 repair page
+    // (RepairRefitPresentation: health, functional damage of all causes, the causes, the state)
+    payload["equipment"] = json::array();
+    if (ship.descriptor)
+    {
+        const std::vector<game::presentation::RefitShipInput> one {{EntityId {it->first},
+                                                                    ship.descriptor, &ship.modules, &ship.refit}};
+        const auto page = game::presentation::buildRepairRefitPresentation(one, one.front().id, std::string(),
+                                                                          std::string(), 0);
+        static const char* const stateRu[][2] = {{"attached", "на месте"}, {"disabled", "отключено"},
+                                                 {"destroyed", "разрушено"}, {"detached", "оторвано"},
+                                                 {"hanging", "висит на креплении"}};
+        for (const auto& m : page.modules)
+        {
+            json e;
+            e["id"] = m.moduleId;
+            e["label"] = m.label;
+            e["group"] = game::presentation::refitGroupLabelRu(m.group);
+            std::string st = "нет данных";
+            for (const auto& p : stateRu)
+                if (m.state == p[0])
+                    st = p[1];
+            e["state"] = st;
+            e["health"] = m.health01;
+            // the damage %: the worse of the structure lost and the function lost
+            e["damage"] = std::clamp(std::max(1.0 - m.health01, m.damage01), 0.0, 1.0);
+            e["failed"] = m.failed();
+            e["critical"] = m.critical;
+            json causes = json::array();
+            for (const auto& [cause, v] : m.causes)
+                causes.push_back({{"cause", cause}, {"value", v}});
+            e["causes"] = causes;
+            payload["equipment"].push_back(e);
+        }
+    }
+
+    std::cerr << "[ShipCorePanel] push: ship " << it->first << ", equipment " << payload["equipment"].size() << std::endl;
     context().htmlUi().broadcastState(HtmlUiPanelId::ShipCore, payload);
 }
 

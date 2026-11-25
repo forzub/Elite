@@ -2768,11 +2768,9 @@ EntityId GameSimulation::spawnShip(
         // needs them in a hub too, not only once free flight runs)
         auto& m = ship->core().transform().motion;
         const auto physics = ship->core().effectivePhysics();
-        m.shipMassT = physics.massKg / 1000.0;
-        m.jumpCoreRatingT = physics.jumpCoreRatingT;
+        syncReplicatedShipFacts(m, *ship);
         m.jChargeCapacityT = physics.jumpChargeCapacityT;
         m.jChargeT = m.jChargeCapacityT;
-        m.navComputerState = navComputerWorks(*ship) ? 1 : 2;
     }
 
     m_ships[id] = std::move(ship);

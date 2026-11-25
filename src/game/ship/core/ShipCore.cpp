@@ -131,9 +131,6 @@ void ShipCore::init(
     m_transform.yawRate   = 0.0f;
     m_transform.rollRate  = 0.0f;
 
-    m_transform.forwardVelocity = 0.0f;
-    m_transform.localVelocity   = glm::vec3(0.0f);
-    m_transform.targetSpeed     = 0.0f;
 
 
     // 2. базовое состояние

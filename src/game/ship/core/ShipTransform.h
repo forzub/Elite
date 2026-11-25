@@ -25,24 +25,18 @@ struct ShipTransform : public game::math::MathTransform
     bool cruiseActive = false;
     bool jumpActive   = false;
 
-    float targetSpeed = 0.0f;
-    float forwardVelocity = 0.0f;
     float targetSpeedRate = 0.0f;
 
-    glm::vec3 localVelocity {0.0f, 0.0f, 0.0f};
     // Скорость системы отсчёта, в которой находится корабль.
     // Например: орбитальная скорость станции/хаба/планеты.
     // Управление кораблём НЕ должно её демпфировать.
     glm::dvec3 referenceVelocityMetersPerSecond {0.0};
 
-
-    // Скорость корабля относительно системы отсчёта.
-    glm::vec3 relativeVelocityMetersPerSecond {0.0f};
     game::navigation::DynamicMotionState motion;
 
-    // DERIVED from motion - the one owner of the ship's kinematics (2026-11-24 duplicated-truth pass: the fields
-    // targetSpeed / forwardVelocity / localVelocity / relativeVelocityMetersPerSecond above are written by no physics -
-    // the cockpit speed bar and needle, the wrong-way lane colour and the descent ray read zeros from them)
+    // DERIVED from motion - the one owner of the ship's kinematics (2026-11-24 duplicated-truth pass; the dead mirrors
+    // targetSpeed / forwardVelocity / localVelocity / relativeVelocityMetersPerSecond, written by no physics, were
+    // removed 2026-11-25 with wire schema 75)
     glm::dvec3 relativeVelocityMps() const { return motion.worldVelocityMps - motion.referenceVelocityMps; }
     double forwardSpeedMps() const { return glm::dot(relativeVelocityMps(), glm::dvec3(forward())); }
     double commandedForwardSpeedMps() const { return motion.targetForwardSpeedMps; }

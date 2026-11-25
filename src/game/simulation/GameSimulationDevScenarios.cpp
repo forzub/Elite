@@ -1839,9 +1839,6 @@ void GameSimulation::updatePromoPlayerTracking(float dt)
     const glm::vec3 playerPos {0.0f, 50.0f, 0.0f};
 
     tr.setWorldPositionMeters(glm::dvec3(playerPos));
-    tr.forwardVelocity = 0.0f;
-    tr.targetSpeed = 0.0f;
-    tr.localVelocity = glm::vec3(0.0f);
 
     tr.pitchRate = 0.0f;
     tr.yawRate = 0.0f;

@@ -38,6 +38,7 @@ find_package(nlohmann_json REQUIRED)
 find_package(Threads REQUIRED)
 # LZ4 for the wire's data plane (static: no DLL to ship) - WireCompressionLz4.cpp
 find_library(ELITE_LZ4_LIBRARY NAMES liblz4.a lz4 REQUIRED)
+link_libraries(${ELITE_LZ4_LIBRARY})   # every target whose sources include the TCP transport
 
 if(ELITE_BUILD_CLIENT)
     find_package(glfw3 CONFIG REQUIRED)

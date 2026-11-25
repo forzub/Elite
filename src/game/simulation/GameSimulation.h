@@ -284,6 +284,17 @@ public:
     // a ship into a deep-space place (StarAtlasDatabase::DeepSpaceIdBase.., no bodies): normal flight at rest in the
     // place's frame at positionM from its centre (a sump catch between the systems; DEV start deep:<n>)
     // the onboard computer holds the lane records (JUMP_MECHANICS 10k): alive, or DEV ELITE_DEV_NAV_COMPUTER_DEAD
+    // THE ONE writer of the motion's mirrors of the ship's own facts (the duplicated-truth pass, «у mutable факта должен
+    // быть один хозяин»: the owner is ShipCore's effective physics / devices; the motion carries a COPY for the wire and
+    // the rules). Called at the spawn, in free flight and at every publication (in a hub frame the copy went stale - a
+    // cargo load changed the mass and the motion kept the old one).
+    static void syncReplicatedShipFacts(game::navigation::DynamicMotionState& m, const Ship& ship)
+    {
+        const auto physics = ship.core().effectivePhysics();
+        m.shipMassT = physics.massKg / 1000.0;
+        m.jumpCoreRatingT = physics.jumpCoreRatingT;
+        m.navComputerState = navComputerWorks(ship) ? 1 : 2;
+    }
     static bool navComputerWorks(const Ship& ship)
     {
         static const bool devDead = std::getenv("ELITE_DEV_NAV_COMPUTER_DEAD") != nullptr;

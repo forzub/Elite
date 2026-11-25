@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(ArchitectureContractTests LANGUAGES CXX)
+# LZ4 (the wire's data plane, src/game/network/WireCompressionLz4.cpp) for every target here
+find_library(ELITE_LZ4_LIBRARY NAMES liblz4.a lz4 REQUIRED)
+link_libraries(${ELITE_LZ4_LIBRARY})
 
 include(CTest)
 
@@ -1574,7 +1577,6 @@ target_include_directories(
 )
 
 find_package(Threads REQUIRED)
-find_library(ELITE_LZ4_LIBRARY NAMES liblz4.a lz4 REQUIRED)
 target_link_libraries(
     tcp_wire_transport_contract_tests
     PRIVATE

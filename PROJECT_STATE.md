@@ -8850,3 +8850,11 @@ start-up hitches (render), trade step 16 part 3 live.
   unchanged (244 % of one core); an empty ship row 201 B. Live: B4-11 approach over the compressed wire OK.
   tcp_wire_transport_contract_tests does not link ("vtable for TcpClientTransport") - it was never built in this tree
   (no exe): pre-existing, open.
+- Duplicated truth, step: (a) ShipTransform's dead mirrors removed - targetSpeed, forwardVelocity, localVelocity,
+  relativeVelocityMetersPerSecond (written by no physics; readers moved to motion in c9e5b8e5b) - wire schema 75;
+  referenceVelocityMetersPerSecond stays (it is still read: GameSimulationDevScenarios). (b) ONE writer of the motion's
+  copies of the ship's facts: GameSimulation::syncReplicatedShipFacts (mass, jump core rating, the computer's state)
+  at the spawn, in free flight and at EVERY publication (in a hub frame the copy went stale after a cargo load). LZ4 is
+  linked to every target of the root and the architecture-contract projects (link_libraries). Economy 258 / 0, ship
+  catalog PASS, live B4-11 approach OK. wire_data_plane_contract_tests / tcp_wire_transport_contract_tests do not link
+  in this tree (.refptr std::cerr, vtables) - never built here, pre-existing.

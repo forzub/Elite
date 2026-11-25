@@ -308,9 +308,6 @@ void PromoFlybyScenario::applyShipPose(
     tr.setWorldPositionMeters(glm::dvec3(position));
     tr.orientation = makeOrientation(f, up);
 
-    tr.forwardVelocity = speed;
-    tr.targetSpeed = speed;
-    tr.localVelocity = glm::vec3(0.0f, 0.0f, -speed);
 
     tr.pitchRate = 0.0f;
     tr.yawRate = 0.0f;

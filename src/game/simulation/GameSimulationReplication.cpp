@@ -188,6 +188,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         }
 
         s.shipCoreStatus = ship.core().getCoreStatus();
+        syncReplicatedShipFacts(s.transform.motion, ship);   // the mass / core / computer copies fresh in every frame
         // Publish physical actuator capability on every ship snapshot even
         // when its large ObjectGraphSnapshot is sparse or suppressed.
         s.controlAuthorityTelemetry =

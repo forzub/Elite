@@ -847,9 +847,6 @@ bool GameSimulation::placeShipInReferenceFrame(
 
     tr.motion.lockedToFramePosition = false;
 
-    tr.forwardVelocity = 0.0f;
-    tr.targetSpeed = 0.0f;
-    tr.localVelocity = glm::vec3(0.0f);
 
 
 

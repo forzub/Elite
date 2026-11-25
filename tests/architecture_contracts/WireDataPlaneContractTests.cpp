@@ -136,12 +136,8 @@ SimulationSnapshot makeSnapshot()
     ship.transform.rollInput = 0.6f;
     ship.transform.cruiseActive = true;
     ship.transform.jumpActive = false;
-    ship.transform.targetSpeed = 125.0f;
-    ship.transform.forwardVelocity = 121.0f;
     ship.transform.targetSpeedRate = 3.0f;
-    ship.transform.localVelocity = glm::vec3(1.0f, 2.0f, 3.0f);
     ship.transform.referenceVelocityMetersPerSecond = glm::dvec3(4.0, 5.0, 6.0);
-    ship.transform.relativeVelocityMetersPerSecond = glm::vec3(7.0f, 8.0f, 9.0f);
     ship.transform.strafeInput = 0.11f;
     ship.transform.liftInput = -0.12f;
     ship.transform.forwardInput = 0.91f;

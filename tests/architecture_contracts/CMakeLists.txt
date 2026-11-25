@@ -1562,6 +1562,7 @@ add_executable(
     TcpWireTransportContractTests.cpp
     "${ELITE_SOURCE_ROOT}/src/game/network/TcpWireStream.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/network/TcpTransport.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/network/WireCompressionLz4.cpp"
 )
 
 target_include_directories(
@@ -1573,10 +1574,12 @@ target_include_directories(
 )
 
 find_package(Threads REQUIRED)
+find_library(ELITE_LZ4_LIBRARY NAMES liblz4.a lz4 REQUIRED)
 target_link_libraries(
     tcp_wire_transport_contract_tests
     PRIVATE
         Threads::Threads
+        ${ELITE_LZ4_LIBRARY}
 )
 
 if(WIN32)

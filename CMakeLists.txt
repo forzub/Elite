@@ -36,6 +36,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(nlohmann_json REQUIRED)
 find_package(Threads REQUIRED)
+# LZ4 for the wire's data plane (static: no DLL to ship) - WireCompressionLz4.cpp
+find_library(ELITE_LZ4_LIBRARY NAMES liblz4.a lz4 REQUIRED)
 
 if(ELITE_BUILD_CLIENT)
     find_package(glfw3 CONFIG REQUIRED)
@@ -779,6 +781,7 @@ add_executable(EliteGame
     src/game/network/LocalLoopbackTransport.cpp
     src/game/network/TcpWireStream.cpp
     src/game/network/TcpTransport.cpp
+    src/game/network/WireCompressionLz4.cpp
     src/game/shared/SharedShipPhysics.cpp
 
     src/game/equipment/DamageModel.cpp
@@ -1004,7 +1007,7 @@ if(TARGET EliteGame)
 endif()
 
 if(TARGET EliteGame AND WIN32)
-    target_link_libraries(EliteGame PRIVATE winmm winhttp)
+    target_link_libraries(EliteGame PRIVATE winmm winhttp ${ELITE_LZ4_LIBRARY})
 endif()
 
 if(ELITE_BUILD_SERVER)
@@ -1108,6 +1111,7 @@ if(ELITE_BUILD_SERVER)
         src/game/identity/Sha256.cpp
         src/game/network/TcpWireStream.cpp
         src/game/network/TcpTransport.cpp
+        src/game/network/WireCompressionLz4.cpp
         src/game/shared/SharedShipPhysics.cpp
 
         src/game/equipment/DamageModel.cpp
@@ -1172,6 +1176,7 @@ if(ELITE_BUILD_SERVER)
     )
 
     target_link_libraries(EliteServer PRIVATE
+        ${ELITE_LZ4_LIBRARY}
         EliteNavigationGeometry
         EliteNavigationWorldRuntime
         EliteDockingInfrastructure

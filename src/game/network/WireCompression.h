@@ -18,7 +18,8 @@ namespace game::network::wire
 */
 enum class WireCompressionMethod : std::uint8_t
 {
-    None = 0
+    None = 0,
+    Lz4 = 1   // WireCompressionLz4.h - the data plane (snapshots)
 };
 
 inline constexpr std::size_t WireCompressionEnvelopeBytes = 5u;
@@ -86,7 +87,7 @@ inline bool encodeCompressedWirePayloadEnvelope(
     const CompressedWirePayload& payload,
     std::vector<std::uint8_t>& outBytes)
 {
-    if (payload.method != WireCompressionMethod::None ||
+    if (static_cast<std::uint8_t>(payload.method) > static_cast<std::uint8_t>(WireCompressionMethod::Lz4) ||
         payload.uncompressedBytes > MaxWirePayloadBytes ||
         payload.bytes.size() > MaxWirePayloadBytes ||
         payload.bytes.size() + WireCompressionEnvelopeBytes > MaxWirePayloadBytes)
@@ -118,7 +119,7 @@ inline bool decodeCompressedWirePayloadEnvelope(
     if (!reader.u8(method) ||
         !reader.u32(uncompressedBytes) ||
         !reader.empty() ||
-        method > static_cast<std::uint8_t>(WireCompressionMethod::None) ||
+        method > static_cast<std::uint8_t>(WireCompressionMethod::Lz4) ||
         uncompressedBytes > MaxWirePayloadBytes)
     {
         return false;

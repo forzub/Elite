@@ -8843,3 +8843,10 @@ start-up hitches (render), trade step 16 part 3 live.
   city turn with the ring (1 g at the rim)? Then the co-rotating landing (memory ring-rim-landing) applies. ASK.
 - Ring approach from 10 km above: the optimizer finds no path (violation ~0.63, a curvature / dynamic limit, not an
   obstacle); 5 / 13 / 20 km work - a geometric corner case, open.
+- WIRE COMPRESSION (2026-11-25): the wire had NO compression (WireCompressionMethod::None was the only method - an EMPTY
+  ship row cost 4185 B). LZ4 for the data plane (WireCompressionLz4.h/.cpp, static liblz4 - no DLL; method byte 1 in the
+  envelope, the decoder takes 0 or 1), used by the TCP transport both ways and the load test. Load test (153 bots):
+  24.2 -> 5.5 KB a snapshot, 379 -> 88.7 KiB/s per player (with the objects off the wire: 534 -> 89, x6), the tick
+  unchanged (244 % of one core); an empty ship row 201 B. Live: B4-11 approach over the compressed wire OK.
+  tcp_wire_transport_contract_tests does not link ("vtable for TcpClientTransport") - it was never built in this tree
+  (no exe): pre-existing, open.

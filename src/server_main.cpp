@@ -1,3 +1,4 @@
+#include "src/game/network/WireCompressionLz4.h"
 #include "src/core/AsyncStderr.h"
 #include <algorithm>
 #include "src/game/server/GameServer.h"
@@ -1859,6 +1860,43 @@ private:
             w.objectCount += s.objects.size();
             w.hubs += all - noHubs;
             w.session += all - noSession;
+            // inside the ships: the same, one part of every ship removed at a time
+            const auto without = [&](auto clearPart) {
+                SimulationSnapshot d = s;
+                for (auto& ship : d.ships)
+                    clearPart(ship);
+                return all - size(d);
+            };
+            w.shipMotion += without([](ShipSnapshot& x) { x.transform = ShipTransform {}; });
+            w.shipGraph += without([](ShipSnapshot& x) { x.graph = {}; });
+            w.shipSensors += without([](ShipSnapshot& x) { x.receptions.clear(); x.radarContacts.clear(); x.damageEvents.clear(); });
+            w.shipServices += without([](ShipSnapshot& x) {
+                x.dockDispatcher = {};
+                x.traffic = {};
+                x.refit = {};
+                x.combat = {};
+                x.padService.clear();
+            });
+            w.shipCore += without([](ShipSnapshot& x) { x.shipCoreStatus = {}; });
+            {
+                // the fixed cost of a ship row: a snapshot with ONE default (empty) ship minus one with none
+                SimulationSnapshot e = s;
+                e.ships.clear();
+                const std::size_t none = size(e);
+                e.ships.push_back(ShipSnapshot {});
+                w.shipEmptyRow += static_cast<double>(size(e) - none);
+                // and uncompressed: the raw encoder's bytes of one real ship
+                if (!s.ships.empty())
+                {
+                    SimulationSnapshot one = s;
+                    one.ships.resize(1);
+                    SimulationSnapshot zero = s;
+                    zero.ships.clear();
+                    w.shipOneReal += static_cast<double>(size(one) - size(zero));
+                }
+            }
+            w.shipNavExec += without([](ShipSnapshot& x) { x.navigationExecution = {}; });
+            w.shipFrame += without([](ShipSnapshot& x) { x.referenceFrame = {}; x.controlAuthorityTelemetry = {}; });
             if (print)
             std::cerr << "[LoadTest] snapshot " << all << " B: ships " << s.ships.size() << " = " << all - noShips << " B, signals "
                       << s.signals.size() << " = " << all - noSignals << " B, objects " << s.objects.size() << " = " << all - noObjects
@@ -1871,6 +1909,7 @@ public:
     struct WireSample
     {
         double count = 0, all = 0, ships = 0, shipCount = 0, signals = 0, objects = 0, objectCount = 0, hubs = 0, session = 0;
+        double shipMotion = 0, shipGraph = 0, shipSensors = 0, shipServices = 0, shipCore = 0, shipNavExec = 0, shipFrame = 0, shipEmptyRow = 0, shipOneReal = 0;
     };
     static WireSample& wireSample()
     {
@@ -1890,7 +1929,7 @@ private:
     std::deque<game::network::ClientMessage> m_messages;
     std::deque<game::network::MapRequest> m_maps;
     std::deque<game::network::TimeSyncRequest> m_times;
-    game::network::wire::NoWireCompression m_compressor;
+    game::network::wire::Lz4WireCompression m_compressor;   // as the TCP transport
 };
 
 std::size_t processWorkingSetMb()
@@ -2228,6 +2267,16 @@ int runLoadTest(int perSystem, double measureSeconds, bool move)
                               "signals %.0f, objects %.0f (%.1f objects), hubs %.0f, session %.0f\n",
                               w.count, w.all / w.count, w.ships / w.count, w.shipCount / w.count, w.signals / w.count,
                               w.objects / w.count, w.objectCount / w.count, w.hubs / w.count, w.session / w.count);
+                std::cerr << b;
+                std::snprintf(b, sizeof b,
+                              "[LoadTest] RESULT ship bytes (mean B a snapshot): motion / transform %.0f, module graph %.0f, "
+                              "sensors (receptions, radar, damage) %.0f, services (dock, traffic, refit, combat, pad) %.0f, "
+                              "core status %.0f, navigation execution %.0f, reference frame + authority %.0f\n",
+                              w.shipMotion / w.count, w.shipGraph / w.count, w.shipSensors / w.count, w.shipServices / w.count,
+                              w.shipCore / w.count, w.shipNavExec / w.count, w.shipFrame / w.count);
+                std::cerr << b;
+                std::snprintf(b, sizeof b, "[LoadTest] RESULT ship row: an EMPTY ship row %.0f B, the first real ship %.0f B\n",
+                              w.shipEmptyRow / w.count, w.shipOneReal / w.count);
                 std::cerr << b;
             }
         }

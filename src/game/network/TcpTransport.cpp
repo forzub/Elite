@@ -1,3 +1,4 @@
+#include "src/game/network/WireCompressionLz4.h"
 #include "src/game/network/TcpTransport.h"
 
 #include <type_traits>
@@ -165,7 +166,7 @@ struct TcpClientTransport::Impl
     }
 
     wire::TcpWireStream stream;
-    wire::NoWireCompression compressor;
+    wire::Lz4WireCompression compressor;   // the data plane compressed (was none at all)
     std::queue<SessionReject> rejects;
     std::queue<SessionWelcome> welcomes;
     std::queue<SimulationSnapshot> snapshots;
@@ -311,7 +312,7 @@ struct TcpServerTransport::Impl
     }
 
     std::unique_ptr<wire::TcpWireStream> stream;
-    wire::NoWireCompression compressor;
+    wire::Lz4WireCompression compressor;   // the data plane compressed (was none at all)
     std::queue<SessionHello> sessionHellos;
     std::queue<ClientMessage> clientMessages;
     std::queue<MapRequest> mapRequests;

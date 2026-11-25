@@ -8907,3 +8907,9 @@ start-up hitches (render), trade step 16 part 3 live.
   the legs (G - the author's rule; the DEV run does not put them out); 0 collisions (ship and traffic).
   Next: the hub generator (zero-g modules on the axis, gravity ones on the rim); the client's prediction of a deck
   follower (cm-level, not needed yet); the Newtonian law over a deck (only Assisted uses the stabilization channel).
+- RING AXIS INDUSTRY (2026-11-25, author: «плавильню ставим в центр кольца, а всё, что требует гравитации - на ободе»):
+  units/hub_ring.py AXIS_ZONES - the zero-g zones (earth_ring_hub: industry - works x3, gas batteries, fuel spheres,
+  refinery, warehouse, mast) are built as a spine ON THE SPIN AXIS, city +Z 900..3240 m (past the dock's service block
+  at 510; the dock's approach is from the other side); the rim keeps the people and what needs weight. Regenerated
+  (hub_ring_world.py): 2246 nodes; live: assembled (31 modules), the pad landing route unchanged, 0 collisions.
+  Not yet: the economy's module catalog has no gravity tag - the axis zone list is per hub in the generator.

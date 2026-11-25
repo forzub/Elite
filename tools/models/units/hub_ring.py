@@ -13,7 +13,8 @@ The bend (city frame, the ring's axis = city +Z, the axis through the city origi
 At theta 0 the strip point (x0, y, z) sits at (0, y - R, z): the flat city moved down by R.
 L = the strip's span + one local street (the seam street between the last and the first column), R = L / 2 pi.
 
-The hub itself spins about its local Y (OrbitalMotion self rotation): the city module is turned -90 deg about X (its
+The CITY spins (author 2026-11-25) by its attachment spin about its +Z (GameSceneSetup: the ring's period from the plan; the hub's
+self rotation is not applied to attached modules): the city module is turned -90 deg about X (its
 +Z = the hub's +Y) and the hub's self_rotation_period_seconds is the 1 g period 2 pi sqrt(R / g).
 """
 import hashlib
@@ -30,6 +31,16 @@ RING_HUBS = {
                               "rig", "residential", "storage", "residential"]),
 }
 G = 9.81
+
+# THE AXIS (author 2026-11-25: «если там есть плавильня в невесомости - мы плавильню ставим в центр кольца, а всё, что
+# требует гравитации - на ободе»): the zones whose work wants weightlessness are built along the spin axis, not on the
+# rim - the rim (1 g) is for the people and everything that needs weight. Per hub: the zones on its axis.
+AXIS_ZONES = {
+    "earth_ring_hub": ["industry"],
+}
+AXIS_START_M = 900.0     # along the axis (city +Z = the hub's +Y), past the dock's service block (510 m): the dock's
+                         # entry faces the other way, its approach stays clear
+AXIS_STEP_M = 260.0
 
 
 def ring_map(hub_id):
@@ -146,6 +157,15 @@ def ring_layout(hub_id):
         c = rz["center"]
         red.append(dict(rz, center=tuple(round(v, 1) for v in bend_point(c, x0, L, R)),
                         rotation_deg=bend_rot(th(c[0]), rz["rotation_deg"])))
+    # the zero-g zones on the AXIS: their modules one after another along it (a spine - in weightlessness at the axis)
+    z = AXIS_START_M
+    k = 0
+    for zone in AXIS_ZONES.get(hub_id, []):
+        for folder, count in ZONE_MODULES.get(zone, []):
+            for _ in range(count):
+                nodes.append((f"axis_{zone}_{k}", folder, (0.0, 0.0, round(z, 3)), (0.0, 0.0, 0.0), "module", None))
+                z += AXIS_STEP_M
+                k += 1
     out = dict(flat)
     out.update({"nodes": nodes, "lanes": lanes, "connectors": connectors, "red_zones": red, "docks": [], "spinning": [],
                 "monorail": None, "flat": flat, "haze": [],

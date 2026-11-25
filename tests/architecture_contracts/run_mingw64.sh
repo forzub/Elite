@@ -77,6 +77,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_session_menu_shell.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_service_ui_polish.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_service_panel_shell.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_ui_input_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_presentation_transition_atomicity.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_render_surface_ownership.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_native_compositor_handoff.py"

@@ -2853,3 +2853,24 @@ add_test(
     NAME onboard_journal
     COMMAND onboard_journal_tests
 )
+
+# the UI component pass (author's brief 2026-11-24): the magnitola's layout / hit-test / pointer capture / the window ->
+# UI mapping, without GL or GLFW
+add_executable(
+    ui_radio_widget_tests
+    UiRadioWidgetTests.cpp
+    UiDrawStubs.cpp
+    "${ELITE_SOURCE_ROOT}/src/ui/components/UIComponent.cpp"
+    "${ELITE_SOURCE_ROOT}/src/ui/components/UIInputRouter.cpp"
+    "${ELITE_SOURCE_ROOT}/src/render/cockpit/CockpitRadioWidget.cpp"
+)
+target_include_directories(ui_radio_widget_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(ui_radio_widget_tests PRIVATE cxx_std_17)
+target_link_libraries(ui_radio_widget_tests PRIVATE EliteNavigationRuntimeControl)
+add_test(
+    NAME ui_radio_widget
+    COMMAND ui_radio_widget_tests
+)

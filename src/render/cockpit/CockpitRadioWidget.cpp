@@ -1,207 +1,128 @@
-#include <iostream>
+// The magnitola as a composite UI component (CockpitRadioWidget.h): the children, their layout from the panel rect, the
+// actions. No drawing (CockpitRadioWidgetDraw.cpp), no input reading (ui::UIInputRouter), no audio calls (onAction).
 #include "src/render/cockpit/CockpitRadioWidget.h"
 
 #include <algorithm>
-#include <cstdio>
-#include <string>
+#include <memory>
 
-#include <GLFW/glfw3.h>
-
-#include "src/audio/CockpitRadio.h"
-#include "src/render/HUD/TextRenderer.h"
-#include "src/render/cockpit/EngineStatusWidgetStyle.h"
+#include "src/render/cockpit/CockpitRadioWidgetParts.h"
 
 namespace render::cockpit
 {
-namespace
-{
-// a UTF-8 string cut to fit maxPx (whole code points), "..." when cut
-std::string fitText(TextRenderer& text, const std::string& s, int px, float maxPx)
-{
-    if (text.measureTextPx(s, px) <= maxPx)
-        return s;
-    std::string cut = s;
-    while (!cut.empty())
-    {
-        do
-            cut.pop_back();
-        while (!cut.empty() && (static_cast<unsigned char>(cut.back()) & 0xC0u) == 0x80u);
-        if (!cut.empty())
-            cut.pop_back();   // the lead byte of the code point
-        if (text.measureTextPx(cut + "...", px) <= maxPx)
-            return cut + "...";
-    }
-    return "...";
-}
 
-void frameRect(TextRenderer& text, float x, float y, float w, float h, float t, const glm::vec4& c)
+CockpitRadioWidget::CockpitRadioWidget()
 {
-    text.solidRectPx(x, y, w, t, c);
-    text.solidRectPx(x, y + h - t, w, t, c);
-    text.solidRectPx(x, y, t, h, c);
-    text.solidRectPx(x + w - t, y, t, h, c);
-}
-} // namespace
-
-void CockpitRadioWidget::render(const EngineThrustIndicatorRenderer::GroupFrame& frame, const Viewport& viewport)
-{
-    if (!frame.valid || viewport.width <= 0 || viewport.height <= 0)
-        return;
-    auto& radio = audio::CockpitRadio::instance();
-    const auto d = radio.display();
-    auto& text = TextRenderer::instance();
-    const auto& style = resolveEngineStatusWidgetStyle("human_amber");
-    const float s = frame.scale;
-    const float gap = 9.0f * s;
-    const float w = std::max(260.0f * s, frame.right - frame.left);
-    const float rowH = 30.0f * s;
-    const float h = 3.0f * rowH + 16.0f * s;
-    const float x = frame.left;
-    const float y = frame.top - gap - h;
-    const glm::vec4 amber = style.label;
-    const glm::vec4 dim(amber.r, amber.g, amber.b, 0.45f);
-    const glm::vec4 lcd(0.35f, 0.95f, 0.80f, 1.0f);
-    const int small = std::max(9, static_cast<int>(15.0f * s));
-    const int big = static_cast<int>(19.0f * s);
-
-    // the panel
-    text.solidRectPx(x, y, w, h, style.panelBackground);
-    frameRect(text, x, y, w, h, std::max(1.0f, 1.0f * s), style.panelBorder);
-
-    const float pad = 8.0f * s;
-    const float btn = rowH - 6.0f * s;
-    // row 1: МАГНИТОЛА · the source switch · the power
-    const float r1 = y + pad;
-    // textDrawPx takes the BASELINE: a line centred in a row of height hh sits at top + hh / 2 + 0.36 px
-    const auto mid = [](float top, float hh, int px) { return top + 0.5f * hh + 0.36f * static_cast<float>(px); };
-    text.textDrawPx("МАГНИТОЛА", x + pad, mid(r1, rowH - 6.0f * s, small), small, amber);
-    const Box power {x + w - pad - 58.0f * s, r1, 58.0f * s, btn};
-    const Box sourceBox {power.x - gap - 96.0f * s, r1, 96.0f * s, btn};
-    const auto button = [&](const Box& b, const std::string& label, bool lit) {
-        text.solidRectPx(b.x, b.y, b.w, b.h, lit ? glm::vec4(amber.r, amber.g, amber.b, 0.22f) : glm::vec4(0.0f, 0.0f, 0.0f, 0.35f));
-        frameRect(text, b.x, b.y, b.w, b.h, std::max(1.0f, 1.0f * s), lit ? amber : dim);
-        const float tw = text.measureTextPx(label, small);
-        text.textDrawPx(label, b.x + 0.5f * (b.w - tw), mid(b.y, b.h, small), small, lit ? amber : dim);
+    id = "radio";
+    const auto button = [&](const char* name, RadioAction action) {
+        auto b = std::make_unique<ui::UIButton>();
+        b->id = name;
+        b->style = &m_buttonStyle;
+        b->onClick = [this, action] { emit(action); };
+        return add(std::move(b));
     };
-    button(power, d.on ? "ВКЛ" : "ВЫКЛ", d.on);
-    button(sourceBox, d.source == audio::CockpitRadio::Source::Radio ? "РАДИО" : "ЛИСТ", d.on);
+    auto caption = std::make_unique<ui::UILabel>();
+    caption->id = "radio.caption";
+    caption->text = "МАГНИТОЛА";
+    m_caption = add(std::move(caption));
+    m_power = button("radio.power", RadioAction::Power);
+    m_source = button("radio.source", RadioAction::Source);
+    m_prev = button("radio.previous", RadioAction::Previous);
+    m_prev->label = "<";
+    auto display = std::make_unique<RadioStationDisplay>();
+    display->id = "radio.display";
+    display->style = &m_style;
+    m_display = add(std::move(display));
+    m_next = button("radio.next", RadioAction::Next);
+    m_next->label = ">";
+    m_remove = button("radio.remove", RadioAction::RemoveTrack);
+    m_remove->label = "x";
+    auto header = std::make_unique<ui::UILabel>();
+    header->id = "radio.header";
+    m_header = add(std::move(header));
+    auto signal = std::make_unique<RadioSignalIndicator>();
+    signal->id = "radio.signal";
+    signal->style = &m_style;
+    m_signal = add(std::move(signal));
+    m_volDown = button("radio.volume_down", RadioAction::VolumeDown);
+    m_volDown->label = "-";
+    auto slider = std::make_unique<ui::UISlider>();
+    slider->id = "radio.volume";
+    slider->style = &m_buttonStyle;
+    slider->onChange = [this](float v) { emit(RadioAction::SetVolume, v); };
+    m_volume = add(std::move(slider));
+    m_volUp = button("radio.volume_up", RadioAction::VolumeUp);
+    m_volUp->label = "+";
+}
 
+void CockpitRadioWidget::setPresentation(const RadioPresentation& p)
+{
+    m_presentation = p;
+    m_power->label = p.on ? "ВКЛ" : "ВЫКЛ";
+    m_power->lit = p.on;
+    m_source->label = p.radioSource ? "РАДИО" : "ЛИСТ";
+    for (auto* b : {m_source, m_prev, m_next, m_volDown, m_volUp})
+        b->lit = p.on;
+    m_remove->lit = true;
+    m_remove->visible = p.playlistMode;
+    auto* display = static_cast<RadioStationDisplay*>(m_display);
+    display->text = p.on ? p.title + (p.connecting ? " ..." : "") : "---";
+    display->lit = p.on;
+    auto* signal = static_cast<RadioSignalIndicator*>(m_signal);
+    signal->signal = p.signal;
+    m_signal->visible = p.on && p.signal >= 0;
+    m_header->text = p.header;
+    m_header->visible = p.on;
+    m_volume->value01 = static_cast<float>(p.volume) / 100.0f;
+    m_volume->lit = p.on;
+}
+
+ui::UIRect CockpitRadioWidget::panelAboveEngineGroup(const EngineGroupAnchor& frame, const RadioWidgetStyle& st)
+{
+    if (!frame.valid)
+        return {};
+    const float s = frame.scale;
+    const float w = std::max(st.minWidth * s, frame.right - frame.left);
+    const float h = 3.0f * st.rowHeight * s + 2.0f * st.pad * s;
+    return ui::UIRect {frame.left, frame.top - st.gapAbove * s - h, w, h};
+}
+
+void CockpitRadioWidget::layoutPanel(const ui::UIRect& panel, float scale)
+{
+    m_rect = panel;
+    m_scale = scale;
+    const auto& st = m_style;
+    const float s = scale;
+    const float x = panel.x, w = panel.width;
+    const float pad = st.pad * s, gap = st.gap * s, rowH = st.rowHeight * s;
+    const float btn = rowH - st.buttonInset * s;
+    m_buttonStyle.textPx = static_cast<int>(st.smallText);
+    m_buttonStyle.accent = m_caption->colour;
+    // row 1: the caption · the source · the power
+    const float r1 = panel.y + pad;
+    m_power->setResolvedRect({x + w - pad - st.powerWidth * s, r1, st.powerWidth * s, btn});
+    m_source->setResolvedRect({m_power->resolvedRect().x - gap - st.sourceWidth * s, r1, st.sourceWidth * s, btn});
+    m_caption->setResolvedRect({x + pad, r1, m_source->resolvedRect().x - gap - (x + pad), btn});
+    m_caption->textPx = static_cast<int>(st.smallText);
     // row 2: < the display >
     const float r2 = r1 + rowH;
-    const Box prev {x + pad, r2, btn, btn};
-    const Box next {x + w - pad - btn, r2, btn, btn};
-    button(prev, "<", d.on);
-    button(next, ">", d.on);
-    const Box lcdBox {prev.x + prev.w + 6.0f * s, r2, next.x - 6.0f * s - (prev.x + prev.w + 6.0f * s), btn};
-    text.solidRectPx(lcdBox.x, lcdBox.y, lcdBox.w, lcdBox.h, glm::vec4(0.01f, 0.06f, 0.05f, 0.95f));
-    frameRect(text, lcdBox.x, lcdBox.y, lcdBox.w, lcdBox.h, std::max(1.0f, 1.0f * s), glm::vec4(lcd.r, lcd.g, lcd.b, 0.35f));
-    const std::string title = d.on ? d.title + (d.connecting ? " ..." : "") : "---";
-    text.textDrawPx(fitText(text, title, big, lcdBox.w - 12.0f * s), lcdBox.x + 6.0f * s,
-                    mid(lcdBox.y, lcdBox.h, big), big, d.on ? lcd : dim);
-
-    // row 3: the zone / counter + the signal bar, the volume - bar +
+    m_prev->setResolvedRect({x + pad, r2, btn, btn});
+    m_next->setResolvedRect({x + w - pad - btn, r2, btn, btn});
+    const float dx = x + pad + btn + 6.0f * s;
+    m_display->setResolvedRect({dx, r2, m_next->resolvedRect().x - 6.0f * s - dx, btn});
+    // row 3: [x] the header · the signal | - [volume] +
     const float r3 = r2 + rowH;
-    const Box volDown {x + w - pad - 2.0f * btn - 70.0f * s - 8.0f * s, r3, btn, btn};
-    const Box volUp {x + w - pad - btn, r3, btn, btn};
-    button(volDown, "-", d.on);
-    button(volUp, "+", d.on);
-    const float vbx = volDown.x + btn + 4.0f * s, vbw = volUp.x - 4.0f * s - vbx;
-    text.solidRectPx(vbx, r3 + 0.5f * btn - 3.0f * s, vbw, 6.0f * s, glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
-    text.solidRectPx(vbx, r3 + 0.5f * btn - 3.0f * s, vbw * static_cast<float>(d.volume) / 100.0f, 6.0f * s, d.on ? amber : dim);
-    float infoRight = volDown.x - gap;
-    if (d.on && d.signal >= 0)
-    {
-        // the signal: 5 bars, the noise is the rest
-        const int bars = (d.signal + 10) / 20;
-        const float bw = 6.0f * s, bg = 3.0f * s;
-        const float bx = infoRight - 5.0f * (bw + bg);
-        for (int i = 0; i < 5; ++i)
-        {
-            const float bh = (6.0f + 4.0f * static_cast<float>(i)) * s;
-            text.solidRectPx(bx + static_cast<float>(i) * (bw + bg), r3 + btn - bh - 2.0f * s, bw, bh,
-                             i < bars ? lcd : glm::vec4(lcd.r, lcd.g, lcd.b, 0.18f));
-        }
-        infoRight = bx - gap;
-    }
-    // the playlist: "x" takes the current track out of the container
-    const bool playlistMode = d.on && d.source == audio::CockpitRadio::Source::Playlist && radio.playlistSize() > 0;
-    const Box removeBox {x + pad, r3, btn, btn};
-    float infoLeft = x + pad;
-    if (playlistMode)
-    {
-        button(removeBox, "x", true);
-        infoLeft = removeBox.x + removeBox.w + 6.0f * s;
-    }
-    if (d.on)
-        text.textDrawPx(fitText(text, d.header, small, infoRight - infoLeft), infoLeft, mid(r3, btn, small), small, amber);
-
-    // the mouse: a left press inside a button
-    GLFWwindow* window = glfwGetCurrentContext();
-    if (!window)
-        return;
-    double mx = 0.0, my = 0.0;
-    glfwGetCursorPos(window, &mx, &my);
-    int ww = 0, wh = 0, fbw = 0, fbh = 0;
-    glfwGetWindowSize(window, &ww, &wh);
-    glfwGetFramebufferSize(window, &fbw, &fbh);
-    // window -> framebuffer pixels -> the GAME VIEWPORT the widget is drawn in. The game renders letterboxed (16:9 inside
-    // the window, Application: glViewport(lb.x, lb.y, ...)): on a non-16:9 monitor the viewport is OFFSET and every click
-    // missed its button (author 2026-11-24: «клики по кнопкам радио все еще не попадают») - the offset was never removed.
-    // The same mapping the system map uses (SystemMapRendererInput: mx - vp.x).
-    if (ww > 0 && wh > 0 && fbw > 0 && fbh > 0)
-    {
-        mx = mx * static_cast<double>(fbw) / ww;
-        my = my * static_cast<double>(fbh) / wh;
-    }
-    mx -= static_cast<double>(viewport.x);
-    my -= static_cast<double>(fbh - viewport.y - viewport.height);   // GL's bottom offset -> the top offset
-    // the viewport's pixels -> the pixel space the text is drawn in (equal unless the HUD is drawn at another size)
-    const double sw = text.screenWidthPx() > 1.0f ? text.screenWidthPx() : static_cast<double>(viewport.width);
-    const double sh = text.screenHeightPx() > 1.0f ? text.screenHeightPx() : static_cast<double>(viewport.height);
-    if (viewport.width > 0 && viewport.height > 0)
-    {
-        mx = mx * sw / viewport.width;
-        my = my * sh / viewport.height;
-    }
-    const Box panel {x, y, w, h};
-    const Box volBar {vbx, r3, vbw, btn};
-    m_hovered = panel.contains(mx, my) || m_draggingVolume;
-    const bool down = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-    const auto barVolume = [&]() { return static_cast<float>((mx - vbx) / std::max(1.0f, vbw)); };
-    if (down && !m_wasDown && panel.contains(mx, my))
-    {
-        const char* hit = "panel";
-        if (power.contains(mx, my))
-            radio.togglePower(), hit = "power";
-        else if (sourceBox.contains(mx, my))
-            radio.switchSource(), hit = "source";
-        else if (prev.contains(mx, my))
-            radio.previous(), hit = "prev";
-        else if (next.contains(mx, my))
-            radio.next(), hit = "next";
-        else if (volDown.contains(mx, my))
-            radio.volumeStep(-1), hit = "vol-";
-        else if (volUp.contains(mx, my))
-            radio.volumeStep(1), hit = "vol+";
-        else if (volBar.contains(mx, my))
-        {
-            radio.setVolume01(barVolume());
-            m_draggingVolume = true;
-            hit = "volume bar";
-        }
-        else if (playlistMode && removeBox.contains(mx, my))
-            radio.removeCurrentTrack(), hit = "remove";
-        { char diagLine[512]; std::snprintf(diagLine, sizeof diagLine, "[RadioUI] press at (%.0f, %.0f) of %.0fx%.0f (window %dx%d), panel (%.0f, %.0f %.0fx%.0f) -> %s\n",
-                     mx, my, sw, sh, ww, wh, x, y, w, h, hit); std::cerr << diagLine << std::flush; }
-    }
-    else if (down && m_draggingVolume)
-    {
-        const int now = static_cast<int>(std::clamp(barVolume(), 0.0f, 1.0f) * 100.0f + 0.5f);
-        if (now != d.volume)
-            radio.setVolume01(barVolume());
-    }
-    if (!down)
-        m_draggingVolume = false;
-    m_wasDown = down;
+    m_volUp->setResolvedRect({x + w - pad - btn, r3, btn, btn});
+    m_volDown->setResolvedRect({x + w - pad - 2.0f * btn - st.volumeBarWidth * s - 8.0f * s, r3, btn, btn});
+    const float vx = m_volDown->resolvedRect().right() + 4.0f * s;
+    m_volume->setResolvedRect({vx, r3, m_volUp->resolvedRect().x - 4.0f * s - vx, btn});   // the whole row band: grab area
+    const float bw = 6.0f * s, bg = 3.0f * s;
+    const float sigW = 5.0f * (bw + bg);
+    m_signal->setResolvedRect({m_volDown->resolvedRect().x - gap - sigW, r3, sigW, btn});
+    m_remove->setResolvedRect({x + pad, r3, btn, btn});
+    const float headerLeft = m_remove->visible ? m_remove->resolvedRect().right() + 6.0f * s : x + pad;
+    const float headerRight = (m_signal->visible ? m_signal->resolvedRect().x : m_volDown->resolvedRect().x) - gap;
+    m_header->setResolvedRect({headerLeft, r3, std::max(0.0f, headerRight - headerLeft), btn});
+    m_header->textPx = static_cast<int>(st.smallText);
 }
+
 } // namespace render::cockpit

@@ -40,6 +40,7 @@
 #include "src/render/cockpit/FlightVectorIndicatorRenderer.h"
 #include "src/render/cockpit/EngineThrustIndicatorRenderer.h"
 #include "src/render/cockpit/CockpitRadioWidget.h"
+#include "src/ui/components/UIInputRouter.h"
 #include "src/render/cockpit/GuidanceCorridorRenderer.h"
 #include "src/render/cockpit/HubCorridorHudRenderer.h"
 #include "src/render/cockpit/GalacticCompassRenderer.h"
@@ -522,6 +523,9 @@ private:
     render::cockpit::FlightVectorIndicatorRenderer m_flightVectorIndicatorRenderer;
     render::cockpit::EngineThrustIndicatorRenderer m_engineThrustIndicatorRenderer;
     render::cockpit::CockpitRadioWidget m_cockpitRadioWidget;   // the magnitola over the engine group
+    ui::UIInputRouter m_cockpitUiRouter;                         // the cockpit UI's pointer (the radio for now)
+    bool m_cockpitUiPointerOver = false;                         // the pointer is the UI's (not the flight's)
+    void updateCockpitRadioUi(const Viewport& vp);
     render::cockpit::GuidanceCorridorRenderer m_guidanceCorridorRenderer;
     render::cockpit::HubCorridorHudRenderer m_hubCorridorHudRenderer;   // the hub's green / red corridors, faint
     render::cockpit::GalacticCompassRenderer m_galacticCompassRenderer;

@@ -696,6 +696,7 @@ add_executable(EliteGame
     src/render/cockpit/HubCorridorHudRenderer.cpp
     src/render/cockpit/DepthLineBatch.cpp
     src/render/cockpit/CockpitRadioWidget.cpp
+    src/render/cockpit/CockpitRadioWidgetDraw.cpp
     src/render/cockpit/GalacticCompassRenderer.cpp
     src/render/HUD/HudPrimitiveBatch.cpp
     src/render/JumpScreenEffect.cpp
@@ -703,6 +704,9 @@ add_executable(EliteGame
     src/render/camera/RenderCameraViewport.cpp
 
     src/ui/components/UIComponent.cpp
+    src/ui/components/UIInputRouter.cpp
+    src/ui/components/UIWidgetsDraw.cpp
+    src/ui/input/GlfwPointerSource.cpp
     src/ui/components/UIContainer.cpp
     src/ui/components/UIText.cpp
 

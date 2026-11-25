@@ -8815,3 +8815,16 @@ start-up hitches (render), trade step 16 part 3 live.
   apart from the player's (run_dev sets it). The tests before it wrote into %LOCALAPPDATA%/EliteGame/journal/ship_1.txt
   (only real sightings; listed in docs/CLEANUP_CANDIDATES.md). Next for the journal: the Detail / Hub maps, the other
   record kinds (danger at an impact, signals, sump exits), the radiation dose from the environment.
+- UI component pass, the vertical slice (author's brief 2026-11-24; docs/UI_COMPONENT_ARCHITECTURE.md) - BUILT, TESTED:
+  UIComponent with ONE resolved ui::UIRect (draw / hit / child layout / debug), hit-testing + pointer events; ui::
+  UIInputRouter (deepest interactive child front-to-back, pointer capture owned by the router, windowToUi = the one
+  window -> framebuffer -> letterboxed viewport -> UI conversion); src/ui/input/GlfwPointerSource.cpp = the only UI GLFW
+  read; UILabel / UIButton / UISlider; UIText on the shared layout; the dead game::UIAnchor removed. CockpitRadioWidget is
+  a composite UIComponent (caption, power, source, prev, display, next, remove, header, signal, vol-, slider, vol+) fed a
+  RadioPresentation, emitting RadioActions applied by SpaceState::updateCockpitRadioUi (layout + routed input + actions,
+  then the pure draw); EngineGroupAnchor = the explicit transitional adapter to the engine group's frame.
+  ELITE_DEV_UI_BOUNDS=1 shows the rects. ctest ui_radio_widget 83 / 0 (4 resolutions / scales, the playlist mode, the
+  slider capture outside its rect, a 21:9 letterbox and a HiDPI + bottom letterbox mapping); check_ui_input_boundary.py
+  PASS (in run_mingw64.sh). Live: the radio draws as before, every frame on its button. NOT verified: a real mouse click
+  in the author's window (offscreen runs cannot click). Next: the service panels and the map panel (class B) onto the
+  router (their cursor conversion skips the framebuffer scale and the GL flip).

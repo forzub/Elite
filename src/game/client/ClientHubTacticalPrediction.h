@@ -55,6 +55,26 @@ inline bool advanceReplicatedHubKinematics(
         propagateOrientation(transform,dt);
 
     auto& motion=transform.motion;
+    const double omegaRate=glm::length(motion.deckOmegaLocal);
+    if(motion.deckActive && omegaRate>1.0e-9)
+    {
+        // over / on a TURNING deck (a ring city; DeckFrame.h): the ship goes round with the deck - its place relative
+        // to the deck's axis turned by omega dt, plus its own velocity relative to the deck (also turned). A straight
+        // line here left the deck's arc by omega^2 r t^2 / 2 (~5 cm at a ring's rim in 0.1 s) and every snapshot
+        // pulled it back: the jitter of a ship standing on a rim pad
+        const double h=static_cast<double>(dt);
+        const glm::dvec3 axis=motion.deckOmegaLocal/omegaRate;
+        const glm::dvec3 r=motion.localPositionMeters-motion.deckAxisPointLocal;
+        const glm::dvec3 u=motion.localVelocityMps-glm::cross(motion.deckOmegaLocal,r);
+        const auto turn=[&](const glm::dvec3& x){
+            const double a=omegaRate*h, c=std::cos(a), s=std::sin(a);
+            return x*c+glm::cross(axis,x)*s+axis*glm::dot(axis,x)*(1.0-c);
+        };
+        const glm::dvec3 r1=turn(r)+turn(u)*h;
+        motion.localPositionMeters=motion.deckAxisPointLocal+r1;
+        motion.localVelocityMps=glm::cross(motion.deckOmegaLocal,r1)+turn(u);
+    }
+    else
     motion.localPositionMeters+=
         motion.localVelocityMps*static_cast<double>(dt);
 

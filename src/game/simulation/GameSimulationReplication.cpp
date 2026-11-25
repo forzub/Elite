@@ -109,6 +109,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         }
 
         s.transform = tr;
+        if (m_padLandings.count(id) == 0)
+            s.transform.motion.attachedObjectId = 0;   // coupled only while the pad service holds it
         // The working propulsion axis is a CURRENT equipment/CoM capability,
         // not a stale actuator sample carried through presentation transforms.
         // The engine executor itself uses ShipCore::effectivePhysics().

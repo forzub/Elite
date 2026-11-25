@@ -777,6 +777,57 @@ void SpaceState::updatePilotTakeover(bool touching)
         if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
         {
             const std::string& status = it->second.padService;
+            // [PadHold] probe (author 2026-11-25: «стоял ровно без дрожи»): a landed ship as DRAWN against its city as
+            // drawn - the frame-to-frame step of its place and attitude in the city's frame (0 = it stands still on the pad)
+            if (status.rfind("phase:3", 0) == 0)
+            {
+                static glm::dvec3 lastQ(0.0);
+                static glm::dmat3 lastA(1.0);
+                static bool have = false;
+                static double windowAt = glfwGetTime(), maxStepMm = 0.0, maxTurnDeg = 0.0;
+                static int frames = 0;
+                const glm::dvec3 shipW = world::coordinates::fullMeters(it->second.renderTransform.worldPosition);
+                for (const auto& [oid, object] : m_client->world().objects())
+                {
+                    if (!object.hubAttachment.valid || !game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
+                        continue;
+                    const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
+                    if (glm::length(shipW - origin) > 9000.0)
+                        continue;
+                    const glm::dmat3 Rc(glm::mat3(object.renderOrientation));
+                    const glm::dvec3 q = glm::transpose(Rc) * (shipW - origin);
+                    const glm::dmat3 A = glm::transpose(Rc) * glm::dmat3(glm::mat3(it->second.renderTransform.orientation));
+                    if (have)
+                    {
+                        maxStepMm = std::max(maxStepMm, 1000.0 * glm::length(q - lastQ));
+                        // the turn between the frames from the skew part (acos near 1 read float noise as 0.03 deg)
+                        const glm::dmat3 D = A * glm::transpose(lastA);
+                        const glm::dvec3 w(D[1][2] - D[2][1], D[2][0] - D[0][2], D[0][1] - D[1][0]);
+                        maxTurnDeg = std::max(maxTurnDeg, glm::degrees(std::asin(std::min(1.0, 0.5 * glm::length(w)))));
+                        if (1000.0 * glm::length(q - lastQ) > 50.0)
+                            std::cerr << "[PadHold] a step of " << 1000.0 * glm::length(q - lastQ) << " mm: city frame ("
+                                      << lastQ.x << "," << lastQ.y << "," << lastQ.z << ") -> (" << q.x << "," << q.y << ","
+                                      << q.z << ")" << std::endl;
+                    }
+                    lastQ = q;
+                    lastA = A;
+                    have = true;
+                    ++frames;
+                    break;
+                }
+                if (glfwGetTime() - windowAt >= 5.0)
+                {
+                    std::cerr << "[PadHold] landed, drawn against the city: max step " << maxStepMm << " mm, max turn "
+                              << maxTurnDeg << " deg per frame over " << frames << " frames; city frame (" << lastQ.x << ","
+                              << lastQ.y << "," << lastQ.z << "); client deck " << it->second.transform.motion.deckActive << " omega "
+                              << glm::length(it->second.transform.motion.deckOmegaLocal) << " render deck "
+                              << it->second.renderTransform.motion.deckActive << " rates " << it->second.transform.pitchRate << ","
+                              << it->second.transform.yawRate << "," << it->second.transform.rollRate << std::endl;
+                    windowAt = glfwGetTime();
+                    maxStepMm = maxTurnDeg = 0.0;
+                    frames = 0;
+                }
+            }
             // the service holds the ship though this client did not ask (a capture zone, a hand-flown touchdown): the same
             // 3 s takeover gives it back; nothing at all (no notice, no service): no takeover owner
             if (status.rfind("phase:", 0) == 0 && m_padLandingObjectId.empty())

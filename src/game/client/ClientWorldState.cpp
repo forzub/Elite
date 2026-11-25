@@ -2058,6 +2058,48 @@ void ClientWorldState::update(
 
     }
 
+    // A ship COUPLED to an object (standing on / carried by a hub city's pad service - author 2026-11-25: «он имеет
+    // сцепку с площадкой ... стоял ровно без дрожи»): drawn from the object's pose AS DRAWN (the same interpolation epoch)
+    // times its pose in the object's frame, interpolated between the same two snapshots. The predicted own ship ran
+    // ~0.2 s ahead of the drawn city: on a turning ring ~20 m off its pad, jittering ~0.2 m a frame.
+    for (auto& [id, ship] : m_ships)
+    {
+        const ShipSnapshot* sn = lookup(newerShipById, static_cast<std::uint32_t>(id));
+        if (!sn)
+            continue;
+        const auto& mn = sn->transform.motion;
+        if (mn.attachedObjectId == 0)
+            continue;
+        const auto objIt = m_objects.find(mn.attachedObjectId);
+        if (objIt == m_objects.end())
+            continue;
+        glm::dvec3 local = mn.attachedLocalPosition, up = mn.attachedLocalUp, back = mn.attachedLocalBack;
+        if (const ShipSnapshot* so = lookup(olderShipById, static_cast<std::uint32_t>(id));
+            so && so->transform.motion.attachedObjectId == mn.attachedObjectId)
+        {
+            const double t = std::clamp(presentationWindow.interpolationAlpha, 0.0, 1.0);
+            local = glm::mix(so->transform.motion.attachedLocalPosition, local, t);
+            up = glm::mix(so->transform.motion.attachedLocalUp, up, t);
+            back = glm::mix(so->transform.motion.attachedLocalBack, back, t);
+        }
+        if (glm::length(up) < 1.0e-6 || glm::length(back) < 1.0e-6)
+            continue;
+        up = glm::normalize(up);
+        back = glm::normalize(back - up * glm::dot(back, up));
+        const glm::dmat3 L(glm::cross(up, back), up, back);
+        const glm::dmat3 Ro(glm::mat3(objIt->second.renderOrientation));
+        const glm::dvec3 world = world::coordinates::fullMeters(objIt->second.renderWorldPosition) + Ro * local;
+        ship.renderTransform.setWorldPositionMeters(world);
+        ship.renderTransform.orientation = glm::mat4(glm::mat3(Ro * L));
+        // the renderer resolves a hub ship from its local place in the frame it is drawn in
+        const auto& rf = ship.renderReferenceFrame;
+        if (rf.valid)
+        {
+            const glm::dmat3 B(rf.progradeAxis, rf.radialAxis, rf.normalAxis);
+            ship.renderTransform.motion.localPositionMeters = glm::transpose(B) * (world - rf.originMeters);
+        }
+    }
+
 
 
    

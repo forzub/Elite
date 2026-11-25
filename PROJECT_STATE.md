@@ -8943,3 +8943,23 @@ start-up hitches (render), trade step 16 part 3 live.
   Also: every 9.81 literal in src (35 in 13 files: HUD g readouts, J drive, capsule, autopilots, planet relief) ->
   world::laws::StandardGravityMps2. Live: the three modules turn by the flag (5.159 deg/s), the dispatcher 1.00 g /
   108.9 m/s, the deck holds 0.12 m/s relative after the hand-over.
+- LANDED = COUPLED TO THE PAD (2026-11-25, author: «когда корабль садится на площадку он не движется ... имеет сцепку с
+  площадкой ... двигатели - не нужны ... получал дальнейшее вращение с кольцом от самого кольца и стоял ровно без
+  дрожи»). Server: a landed ship (pad service phase 3) gets its attitude from the pad - the pad's axes x the level
+  attitude taken at the touchdown (was: turned toward it by a rate-limited slerp - "thrusters", lagging a turning ring);
+  its body rates = the city's spin (were 0); before the landing the frame's turn carries the attitude too (the service's
+  turn is only relative to the city). No engines while landed (filterBerthControl, the pad ships skip the physics).
+  The JITTER was the client's: the own ship is predicted ~0.2 s AHEAD of the drawn (interpolated) city - on a still
+  city the offset is 0, on a turning ring ~20 m off the pad and ~0.2 m steps a frame. Fix: DynamicMotionState
+  attachedObjectId + attachedLocalPosition/Up/Back (the pose in the city's frame, schema 79) while the pad service holds
+  the ship; the client draws it from the city's pose AS DRAWN x that pose interpolated between the same two snapshots
+  (ClientWorldState::update, after the objects). Also replicated: deckActive / deckAxisPointLocal / deckOmegaLocal - the
+  client's prediction of a ship over a turning deck goes round the axis (ClientHubTacticalPrediction.h), not straight.
+  Live, [PadHold] probe (SpaceState: the landed ship as drawn against the city as drawn, per frame), A1-03 on the
+  turning ring: before 120-190 mm and 0.05 deg a frame, 20 m off the pad; after 0.6-1.8 mm and 6e-6 deg a frame, on the
+  pad's spot (= the still-ring run). The first 4 frames of the touchdown move 0.15-0.19 m a frame: the designed sag of
+  the legs at 2 m/s (the same on a still ring).
+  Regression (navsuite_couple vs navsuite_deck, Высокий): pad_outside / pad_series / tower_pad / dock_hub - plans,
+  failures 0, collisions 0, cross / speed errors as before. dock_hub render_epoch_max 1.84 (was 0.21): the free-flight
+  start before the hub frame (not touched), under 30 frame hitches of 400+ ms (5 before); the rerun 0.94 (one hitch),
+  the rest of the steps 0.16-0.26 m as before - not this change.

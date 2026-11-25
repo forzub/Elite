@@ -826,6 +826,10 @@ private:
         double touchdownS = 0.0;         // the legs took the ship (phase 3): the damped sag runs from here
         double touchdownMps = 0.0;       // its touchdown speed
         double touchdownPitch = 0.0;     // the rock of the sag applied so far
+        // LANDED = coupled to the pad (author 2026-11-25: «он имеет сцепку с площадкой ... двигатели - не нужны»): its
+        // attitude relative to the pad's axes, taken level at the touchdown; then the pad carries it (a ring's spin too)
+        bool landedAttitudeKnown = false;
+        glm::dmat3 landedAttitude {1.0};
         int bay = 0;                     // the landing place of the module (the dispatcher: hubBerthPlaces)
         bool hangar = false;             // a repair hangar: phase 2 = down to its door, in, down onto the bay
         int hangarStep = 0;

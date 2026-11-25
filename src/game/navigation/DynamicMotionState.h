@@ -207,6 +207,13 @@ struct DynamicMotionState
     bool deckActive = false;
     glm::dvec3 deckAxisPointLocal {0.0};
     glm::dvec3 deckOmegaLocal {0.0};
+    // COUPLED to an object (a ship standing on / carried by a hub city's pad service): the object (entity id, 0 = none)
+    // and the ship's pose in that object's frame (place; up and back axes). The client draws it from the object's pose
+    // as drawn - one epoch, no prediction (a predicted ship on a turning ring stood ~20 m off its pad, jittering)
+    std::uint32_t attachedObjectId = 0;
+    glm::dvec3 attachedLocalPosition {0.0};
+    glm::dvec3 attachedLocalUp {0.0, 1.0, 0.0};
+    glm::dvec3 attachedLocalBack {0.0, 0.0, 1.0};
     // refuelling at a station (GameSimulationRefuel.cpp, src/game/fuel/RefuelRules.h): the job's phase
     // (game::fuel::RefuelPhase: 0 none, 1 hookup, 2 pumping, 3 disconnect, 4 done, 5 refused, 6 cancelled), the
     // refusal (game::fuel::RefuelRefusal), the tonnes delivered by the job, the station's pump rate (t/min);

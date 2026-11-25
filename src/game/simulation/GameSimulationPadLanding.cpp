@@ -632,10 +632,34 @@ void GameSimulation::updatePadLandings(double dt)
         orientation[0] = glm::vec4(glm::vec3(Rb * right), 0.0f);
         orientation[1] = glm::vec4(glm::vec3(Rb * out), 0.0f);
         orientation[2] = glm::vec4(glm::vec3(Rb * -forward), 0.0f);
+        // the frame's own turn over this tick (a ring city: its spin) carries the ship's attitude as it carries its
+        // place - the thrusters below only turn it RELATIVE to the city (without this it lagged the turning ring)
+        const glm::dvec3 frameTurn = strip.omega * dt;
+        const glm::quat carried =
+            glm::length(frameTurn) > 1.0e-12
+                ? glm::quat(glm::angleAxis(static_cast<float>(glm::length(frameTurn)), glm::vec3(glm::normalize(frameTurn))))
+                : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+        if (p.phase >= 3)
+        {
+            // LANDED: coupled to the pad - no thrusters, no turning of its own: the pad's axes times the attitude it
+            // landed with (level, its nose where it came down)
+            if (!p.landedAttitudeKnown)
+            {
+                const glm::dmat3 Rp = strip.axes(touchdown);
+                const glm::dvec3 nose = glm::transpose(Rp) * glm::dvec3(-glm::dvec3(glm::mat3(tr.orientation)[2]));
+                glm::dvec3 f = nose - out * glm::dot(nose, out);
+                f = glm::length(f) > 1.0e-6 ? glm::normalize(f) : glm::dvec3(0.0, 0.0, -1.0);
+                p.landedAttitude = glm::dmat3(glm::normalize(glm::cross(f, out)), out, -f);
+                p.landedAttitudeKnown = true;
+            }
+            tr.orientation = glm::mat4(glm::mat3(strip.axes(touchdown) * p.landedAttitude));
+            p.touchdownPitch = 0.0;   // the rock below is applied whole on this fresh attitude
+        }
+        else
         // turned there by its thrusters, not snapped (author 2026-11-21: «очень резкий разворот ... не через управление
         // кораблём, а тупой подачей нового угла»): at most 20 deg/s, easing in the last 10 deg
         {
-            const glm::quat from = glm::quat_cast(glm::mat3(tr.orientation));
+            const glm::quat from = carried * glm::quat_cast(glm::mat3(tr.orientation));
             glm::quat to = glm::quat_cast(glm::mat3(orientation));
             if (glm::dot(from, to) < 0.0f)
                 to = -to;
@@ -691,7 +715,31 @@ void GameSimulation::updatePadLandings(double dt)
         }
         tr.motion.worldVelocityMps = velocity;
         tr.setWorldPositionMeters(position);
-        tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
+        // COUPLED to the city: its pose in the city's frame, for the client to draw it from the city as drawn
+        {
+            const glm::dmat3 Rc(glm::mat3(city->orientation));
+            const glm::dmat3 L = glm::transpose(Rc) * glm::dmat3(glm::mat3(tr.orientation));
+            tr.motion.attachedObjectId = 0;
+            for (const auto& [oid, obj] : m_staticObjects)
+                if (&obj == city)
+                    tr.motion.attachedObjectId = static_cast<std::uint32_t>(oid.value);
+            tr.motion.attachedLocalPosition = glm::transpose(Rc) * (position - cpos);
+            tr.motion.attachedLocalUp = L[1];
+            tr.motion.attachedLocalBack = L[2];
+        }
+        // the turning city it is carried by, for the client's prediction (it goes round the axis, not straight on)
+        {
+            const auto& tf = tr.motion.travelFrame;
+            const glm::dvec3 spinLocal = tf.worldToLocalVector(strip.omega - tf.angularVelocityWorldRadPerSecond);
+            tr.motion.deckActive = tf.valid && glm::length(spinLocal) > 1.0e-9;
+            tr.motion.deckAxisPointLocal = tr.motion.deckActive ? tf.worldToLocalPosition(strip.cpos) : glm::dvec3(0.0);
+            tr.motion.deckOmegaLocal = tr.motion.deckActive ? spinLocal : glm::dvec3(0.0);
+        }
+        // its body rates = the city's turn (zero for a still city): the client's prediction turns it with the pad
+        // between the snapshots instead of holding it still and snapping it on (the jitter on a turning ring)
+        tr.pitchRate = static_cast<float>(glm::dot(strip.omega, glm::dvec3(tr.right())));
+        tr.yawRate = static_cast<float>(glm::dot(strip.omega, glm::dvec3(tr.up())));
+        tr.rollRate = static_cast<float>(glm::dot(strip.omega, glm::dvec3(tr.forward())));
     }
     for (const EntityId id : drop)
         m_padLandings.erase(id);
@@ -758,7 +806,9 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 else
                 {
                     tr.orientation = glm::mat4(glm::mat3(cs.axes(t->second.pad) * t->second.attitude));
-                    tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
+                    tr.pitchRate = static_cast<float>(glm::dot(cs.omega, glm::dvec3(tr.right())));   // turning with the pad
+                    tr.yawRate = static_cast<float>(glm::dot(cs.omega, glm::dvec3(tr.up())));
+                    tr.rollRate = static_cast<float>(glm::dot(cs.omega, glm::dvec3(tr.forward())));
                 }
             }
         }

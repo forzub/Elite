@@ -75,6 +75,8 @@ void GameSimulation::updateCapsules(double dt)
 void GameSimulation::updateDeckFrame(EntityId shipId, Ship& ship)
 {
     auto& motion = ship.core().transform().motion;
+    if (m_padLandings.count(shipId))
+        return;   // the pad service carries it and sets its deck itself (GameSimulationPadLanding.cpp)
     motion.deckActive = false;
     if (motion.mode != game::navigation::MotionMode::HubTactical || !motion.travelFrame.valid || motion.hubId.empty())
         return;

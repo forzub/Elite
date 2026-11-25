@@ -90,20 +90,26 @@ void GameSimulation::updateDeckFrame(EntityId shipId, Ship& ship)
     {
         if (!obj.attachedToHub || obj.hubId != motion.hubId || obj.systemId != motion.systemId)
             continue;
+        const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(obj.hubModuleId);
+        if (!plan || !plan->ring().valid || plan->ring().periodSeconds <= 0.0)
+            continue;   // a deck is a TURNING RING city only (a belt hub's spinning bodies are not decks)
         const glm::dvec3 spin = glm::dvec3(obj.angularVelocity) - frame.angularVelocityWorldRadPerSecond;
         const double rate = glm::length(spin);
-        if (rate < 0.01)
-            continue;   // not a turning deck (the hub's own slow turn only)
-        const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(obj.hubModuleId);
-        if (!plan || !plan->ring().valid)
-            continue;   // a deck is a RING city only (a belt hub's spinning bodies are not decks)
+        // no fixed rate threshold: a big ring turns slowly (1 g at R 100 km is 0.0099 rad/s) - the plan says it turns
+        if (rate <= 1.0e-9)
+            continue;   // the ring is still (ELITE_DEV_RING_SPIN=0)
+        // the deck's space is the ring's own, from its plan (hubs differ in size): inside the rim (r <= R) and across
+        // the strip's width (the plan's bounds, strip z = the city frame's z = along the axis)
         const double radius = plan->ring().radius;
+        const glm::dvec4 bounds = plan->bounds();   // x0, z0, x1, z1
         const glm::dvec3 centre = world::coordinates::fullMeters(obj.worldPosition);
         const glm::dvec3 axis = spin / rate;
         const glm::dvec3 rel = me - centre;
-        const double along = glm::dot(rel, axis);
-        const double fromAxis = glm::length(rel - axis * along);
-        if (fromAxis > radius + 600.0 || std::abs(along) > 2000.0)
+        const glm::dvec3 cityZ = glm::dvec3(glm::mat3(obj.orientation) * glm::vec3(0.0f, 0.0f, 1.0f));
+        const double along = glm::dot(rel, cityZ);   // the strip's z (signed by the city's +Z, not the spin's sense)
+        const double fromAxis = glm::length(rel - axis * glm::dot(rel, axis));
+        const bool hasWidth = bounds.w != bounds.y;
+        if (fromAxis > radius || (hasWidth && (along < std::min(bounds.y, bounds.w) || along > std::max(bounds.y, bounds.w))))
             continue;
         motion.deckActive = true;
         motion.deckAxisPointLocal = frame.worldToLocalPosition(centre);

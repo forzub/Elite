@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/world/WorldLaws.h"
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -52,7 +53,7 @@ struct BodySurfaceDescriptor
     std::string origin;          // authored | generated | observed_anchor
 
     double radiusM = 1.0e6;
-    double surfaceGravityMs2 = 9.81;
+    double surfaceGravityMs2 = ::world::laws::StandardGravityMps2;
     double meanTemperatureK = 288.0;
     double minTemperatureK = 288.0;
     double maxTemperatureK = 288.0;

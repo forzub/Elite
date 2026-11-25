@@ -1,3 +1,4 @@
+#include "src/world/WorldLaws.h"
 #include "src/world/celestial/surface/PlanetSurfaceField.h"
 
 #include <algorithm>
@@ -397,7 +398,7 @@ void PlanetSurfaceField::volcanoCandidates(const glm::dvec3& dir, std::vector<La
                 l.center = glm::normalize(q);
                 l.radiusM = cellM * (0.06 + 0.16 * unitFromHash(h, 4));
                 // Low gravity builds taller edifices (Olympus Mons).
-                const double gravityScale = std::clamp(9.81 / std::max(0.5, m_body.surfaceGravityMs2), 0.6, 2.5);
+                const double gravityScale = std::clamp(::world::laws::StandardGravityMps2 / std::max(0.5, m_body.surfaceGravityMs2), 0.6, 2.5);
                 l.depthM = m_reliefM * (0.12 + 0.30 * unitFromHash(h, 5)) * gravityScale;
                 out.push_back(l);
             }

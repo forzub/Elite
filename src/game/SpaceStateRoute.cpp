@@ -2,6 +2,7 @@
 // zone-violation watch. The planner is game::navigation::route (zones from
 // assets/data/navigation/route_zones.json); the server's route autopilot flies
 // the legs (GameSimulationRoute.cpp).
+#include "src/world/WorldLaws.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/fuel/FuelStationCatalog.h"
 #include "src/game/SpaceStateInternal.h"
@@ -789,7 +790,7 @@ void SpaceState::applySensorSpeedInputs(game::navigation::globalflight::BodyAuto
         double distance = 0.0;
         const int k = sn::nearestHazard(zones, p, distance);
         // the margin: the stopping run at the speed now - the reaction plus the field's ramp to full, then the planned braking
-        const double rampLeftS = jd::DriveRampDoublingS * std::log2(std::max(1.0, jd::MaxAccelMps2 / std::max(9.81, sample.jFieldLevelMps2)));
+        const double rampLeftS = jd::DriveRampDoublingS * std::log2(std::max(1.0, jd::MaxAccelMps2 / std::max(::world::laws::StandardGravityMps2, sample.jFieldLevelMps2)));
         const double delayS = sn::reactionSeconds(navDown) + rampLeftS;
         const double brake = sn::HazardBrakeFraction * jd::MaxAccelMps2;
         const double speed = glm::length(sample.velocityMps);

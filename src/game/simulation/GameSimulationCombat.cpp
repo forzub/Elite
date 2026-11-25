@@ -1,5 +1,6 @@
 #include <cstring>
 #include <random>
+#include "src/world/WorldLaws.h"
 #include "src/game/navigation/rules/JumpRules.h"
 #include <fstream>
 // GameSimulation: combat - lasers and missiles on the runtime hit volumes
@@ -1922,7 +1923,7 @@ void GameSimulation::collideShips(double dt)
                     namespace cap = game::navigation::capsule;
                     auto& xm = X.ship->core().transform().motion;
                     const double dv = J / std::max(1.0, X.m);
-                    const double bodyG = dv * dv / (2.0 * cap::CrushStrokeM) / 9.81;
+                    const double bodyG = dv * dv / (2.0 * cap::CrushStrokeM) / ::world::laws::StandardGravityMps2;
                     if (xm.capsuleState != static_cast<std::uint8_t>(cap::State::PilotKilled) &&
                         xm.capsuleState != static_cast<std::uint8_t>(cap::State::Destroyed))
                         xm.capsuleBodyG = static_cast<float>(std::max<double>(xm.capsuleBodyG, bodyG));

@@ -35999,7 +35999,7 @@
       "name": "Кольцо",
       "owner": "Sol Authority",
       "operator": "Служба кольца «Кольцо» (Sol Authority)",
-      "role": "вращающееся кольцо (1 g), один этаж на внутренней стороне; испытательный хаб у Высокого",
+      "role": "вращающееся кольцо (1 g, R 1210 м), один этаж на внутренней стороне; испытательный хаб у Высокого",
       "system_id": 0,
       "parent_body_id": "system_0.Sol.Земля",
       "map_object_module_id": "",
@@ -36013,7 +36013,7 @@
         "type": "parent_orbit",
         "altitude_km": 420,
         "orbital_period_seconds": 0,
-        "self_rotation_period_seconds": 69.769,
+        "self_rotation_period_seconds": 69.781,
         "inclination_deg": 51.64,
         "longitude_of_ascending_node_deg": 0,
         "argument_of_periapsis_deg": 0,
@@ -36038,7 +36038,8 @@
             "x": -90.0,
             "y": 0.0,
             "z": 0.0
-          }
+          },
+          "turns_with_ring": true
         },
         {
           "id": "earth_ring_hub.cty_dock",
@@ -36059,7 +36060,8 @@
             "x": 0.0,
             "y": 0.0,
             "z": 0.0
-          }
+          },
+          "turns_with_ring": true
         },
         {
           "id": "earth_ring_hub.cty_dock_base",
@@ -36080,7 +36082,8 @@
             "x": 0.0,
             "y": 0.0,
             "z": 0.0
-          }
+          },
+          "turns_with_ring": true
         }
       ],
       "world_state_owner": "hub_belt_world"

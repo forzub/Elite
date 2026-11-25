@@ -3,6 +3,7 @@
 // 2026-11-06) behaviour-preserving: the same laws, the same logs; the velocity changes the server
 // applied directly are now a command its plant executes (a J velocity target with its limit, a
 // main-engine thrust along the nose, an attitude target).
+#include "src/world/WorldLaws.h"
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
 
 #include <algorithm>
@@ -128,8 +129,8 @@ bool BodyAutopilot::engage(const BodyAutopilotEnvironment& env, const BodyAutopi
         if (main < jd::LandingThrustToWeightMin * gSurface)
         {
             refusal = code(FlightRefusal::LandingThrustTooLow);
-            std::cerr << "[Autopilot] ship " << shipId << ": REFUSED " << target << " - main engines " << main / 9.81
-                      << " g vs surface gravity " << gSurface / 9.81 << " g (need x" << jd::LandingThrustToWeightMin << ")" << std::endl;
+            std::cerr << "[Autopilot] ship " << shipId << ": REFUSED " << target << " - main engines " << main / ::world::laws::StandardGravityMps2
+                      << " g vs surface gravity " << gSurface / ::world::laws::StandardGravityMps2 << " g (need x" << jd::LandingThrustToWeightMin << ")" << std::endl;
             return false;
         }
         // belly down when the ventral RCS the Newtonian law really commands holds the weight
@@ -137,9 +138,9 @@ bool BodyAutopilot::engage(const BodyAutopilotEnvironment& env, const BodyAutopi
         const double ventral = assistedPlant ? game::ship::assistedLateralStabilizationAccelerationLimitMps2(ship.physics)
                                              : landing::surfaceRcsMps2(ship.physics, 1, 1.0);
         belly = ventral >= jd::LandingThrustToWeightMin * gSurface;
-        std::cerr << "[Autopilot] ship " << shipId << ": landing check " << target << " - main engines " << main / 9.81 << " g, "
-                  << (assistedPlant ? "Assisted vectoring lift " : "ventral RCS ") << ventral / 9.81 << " g vs surface "
-                  << gSurface / 9.81 << " g -> "
+        std::cerr << "[Autopilot] ship " << shipId << ": landing check " << target << " - main engines " << main / ::world::laws::StandardGravityMps2 << " g, "
+                  << (assistedPlant ? "Assisted vectoring lift " : "ventral RCS ") << ventral / ::world::laws::StandardGravityMps2 << " g vs surface "
+                  << gSurface / ::world::laws::StandardGravityMps2 << " g -> "
                   << (belly ? "BELLY-DOWN landing" : "tail-down landing (the ventral thrusters cannot hold the weight)") << ", J floor "
                   << jd::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters) / 1000.0 << " km" << std::endl;
     }
@@ -253,7 +254,7 @@ void BodyAutopilot::stepTransfer(const BodyAutopilotEnvironment& env, const Body
     const double ground = ship.groundBodyId == target->id ? ship.groundHeightM : 0.0;
     const double height = rLen - target->radiusMeters - ground;
     // the drive: 1 g doubling every 2 s up to the cap
-    const double ramp = std::min(maxAccel, 9.81 * std::exp2(m_rampSeconds / jd::DriveRampDoublingS));
+    const double ramp = std::min(maxAccel, ::world::laws::StandardGravityMps2 * std::exp2(m_rampSeconds / jd::DriveRampDoublingS));
 
     glm::dvec3 wanted(0.0);
     double limit = ramp;

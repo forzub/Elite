@@ -64,6 +64,7 @@ struct InitialWorldStateDockModule
     glm::dvec3 offsetMeters {0.0};
     glm::dvec3 localRotationDeg {0.0};
     glm::dvec3 angularVelocityDegPerSecond {0.0};
+    bool turnsWithRing = false;   // a ring hub's module that turns with its wheel (the city, the axial dock)
 };
 
 struct InitialWorldStateOrbitalHub
@@ -294,6 +295,7 @@ inline InitialWorldStateOrbitalHub readOrbitalHub(
             dock.offsetMeters = vec(d, "offset_m");
             dock.localRotationDeg = vec(d, "rotation_deg");
             dock.angularVelocityDegPerSecond = vec(d, "angular_velocity_deg_s");
+            dock.turnsWithRing = d.value("turns_with_ring", false);
             if (!dock.id.empty() && !dock.type.empty())
                 out.dockModules.push_back(std::move(dock));
         }

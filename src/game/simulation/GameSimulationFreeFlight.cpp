@@ -66,6 +66,7 @@
 //                    flight, never near objects (JDrive.h keep-out) or below a body's J floor -
 //                    refused there, and it drops out when the ship enters such a zone. The Assisted
 //                    velocity bending by the J field works only with the J engine on.
+#include "src/world/WorldLaws.h"
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
@@ -667,7 +668,7 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
         motion.jAccelCommandMps2 = 0.0;
         motion.jStopping = true;
         std::cerr << "[Flight] ship " << shipId.value << ": J engine switching OFF - the field winds down from "
-                  << std::abs(motion.jAccelMps2) / 9.81 << " g" << std::endl;
+                  << std::abs(motion.jAccelMps2) / ::world::laws::StandardGravityMps2 << " g" << std::endl;
         return true;
     }
     if (game::navigation::jdrive::jFieldFactor(jFieldOf(*ship)) <= 0.0)
@@ -1183,7 +1184,7 @@ void GameSimulation::updateFreeFlights(double dt)
                                                                     (2.0 * BallisticCoefficient * accel)));
                 };
                 const double safeAlt = atmosphereTop > 0.0 ? dragThresholdAltitude(0.1) : std::max(1000.0, primary->radiusMeters * 0.001);
-                const double denseAlt = atmosphereTop > 0.0 ? dragThresholdAltitude(9.81) : 0.0;
+                const double denseAlt = atmosphereTop > 0.0 ? dragThresholdAltitude(::world::laws::StandardGravityMps2) : 0.0;
                 const double alt = motion.freeFlightOrbitAltitudeM;
                 motion.freeFlightOrbitSafeAltM = safeAlt;
                 motion.freeFlightOrbitDenseAltM = denseAlt;
@@ -1215,12 +1216,12 @@ void GameSimulation::updateFreeFlights(double dt)
                     motion.freeFlightDragMps2 = drag;
                     // dense layers at speed: an impact on entry, then heating damage
                     // dense layers: deceleration above 1 g - an impact on entry, then heating
-                    const bool dense = drag > 9.81;
+                    const bool dense = drag > ::world::laws::StandardGravityMps2;
                     // beyond 30 g (the survivable crush of a surface contact) the hull breaks up
-                    if (drag > 30.0 * 9.81 && motion.destroyedCause == 0)
+                    if (drag > 30.0 * ::world::laws::StandardGravityMps2 && motion.destroyedCause == 0)
                     {
                         const glm::dvec3 up = glm::normalize(frame.originMeters - primary->centerMeters);
-                        destroyShipOnImpact(it->first, *ship, 2, speed, drag / 9.81,
+                        destroyShipOnImpact(it->first, *ship, 2, speed, drag / ::world::laws::StandardGravityMps2,
                                             game::navigation::capsule::atmosphereBreakup(drag, speed, -glm::dot(v, up) / speed, scaleHeight,
                                                                                          primary->surfacePressurePa));
                     }
@@ -1316,7 +1317,7 @@ void GameSimulation::updateFreeFlights(double dt)
                     double crushM = 1.5;
                     if (material == TerrainWater) crushM = 4.0;
                     else if (material == 2 || material == 3 || material == 4 || material == 7) crushM = 3.0;   // regolith, sand, soil, snow
-                    const double crushG = vVert * vVert / (2.0 * crushM) / 9.81;
+                    const double crushG = vVert * vVert / (2.0 * crushM) / ::world::laws::StandardGravityMps2;
                     const double slope = terrainKnown ? terrain.slopeDeg : 0.0;
                     const bool lava = material == 9;
                     const bool soft = !lava && vVert < 8.0 && vHor < 40.0 && slope < 25.0 && material != TerrainWater;

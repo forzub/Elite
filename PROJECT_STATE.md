@@ -12,6 +12,8 @@ World physics
   moving body obeys them whatever drives it (ships, the cockpit-capsule, drones, wrecks); technology only uses them
   (author 2026-11-24: «всё подчиняется местной физике»). The J field's half-speed rule without a whole field is the
   field's, in JDrive.h.
+- CONTRACT: a ring hub is DATA: radius, width (plan bounds), rim g and period come from its hub plan ("ring"); the
+  modules that turn with it are marked in the world data (turns_with_ring). No ring size / speed in code.
 Navigation - route planning
 - CONTRACT: the optimizer minimizes the TRAVEL TIME (timeOptimalWeights; ELITE_ROUTE_TIME_OBJECTIVE=0 = the old mix).
   The pure planner (RoutePlanner.cpp, the optimizer, SegmentedRouteComposer, RouteEntryBinder) reads no env / files /
@@ -8930,3 +8932,14 @@ start-up hitches (render), trade step 16 part 3 live.
   modules 0 %; both laser mounts broken via structure_debug set_link_health -> the two lasers «оторвано» (failed, red).
   Not yet: a module damaged but attached (> 0 %) not seen live; names are module ids and 73 of 104 fall into «Прочее»
   (the catalog has no product names for them) - the same as in F7.
+- RING DATA IS THE PLAN'S, NOT THE CODE'S (2026-11-25, author: «проверь, что бы данные кольца не были захардкоджены ...
+  хабы могут быть разного размера»): audit of every ring use. Already from the plan: radius, length, period (scene spin,
+  the dispatcher, the deck, the pad service, the maps). Fixed: (1) the deck's space was radius + 600 m / |z| <= 2000 m ->
+  now inside the rim (r <= R) and across the plan's strip bounds (z0..z1); (2) the deck's rate threshold 0.01 rad/s
+  (would miss a big ring: 1 g at R 100 km is 0.0099 rad/s) -> the plan says whether it turns (period > 0); (3) the scene
+  picked the turning modules by id (".cty_dock") -> the world data's dock_modules[].turns_with_ring; (4) the generator's
+  1 g -> per hub RING_RIM_G (plan ring.rim_g), its g = world::laws (9.80665, was 9.81: period 69.769 -> 69.781 s); the
+  axis spine start = the shared DOCK_SERVICE_BLOCK_AXIAL_M + clearance (hub_ring_world.py uses the same constant).
+  Also: every 9.81 literal in src (35 in 13 files: HUD g readouts, J drive, capsule, autopilots, planet relief) ->
+  world::laws::StandardGravityMps2. Live: the three modules turn by the flag (5.159 deg/s), the dispatcher 1.00 g /
+  108.9 m/s, the deck holds 0.12 m/s relative after the hand-over.

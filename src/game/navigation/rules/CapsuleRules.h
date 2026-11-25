@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <cstdlib>
 
+#include "src/world/WorldLaws.h"
 #include "src/game/ship/core/ShipParams.h"
 
 namespace game::navigation::capsule
@@ -48,7 +49,7 @@ struct Outcome
 inline Outcome surfaceImpact(double verticalMps, double totalMps)
 {
     Outcome o;
-    o.bodyG = std::max(0.0, verticalMps) * std::max(0.0, verticalMps) / (2.0 * CrushStrokeM) / 9.81;
+    o.bodyG = std::max(0.0, verticalMps) * std::max(0.0, verticalMps) / (2.0 * CrushStrokeM) / ::world::laws::StandardGravityMps2;
     if (totalMps > StructureLimitMps)
         o.state = State::Destroyed;
     else if (o.bodyG > BodyLimitG)
@@ -64,7 +65,7 @@ inline Outcome atmosphereBreakup(double dragMps2, double speedMps, double sinDes
     // the peak of a ballistic entry (Allen-Eggers): a = v^2 sin(gamma) / (2 e H); still ahead while descending
     const double peak = sinDescent > 0.0 && scaleHeightM > 0.0
         ? speedMps * speedMps * sinDescent / (2.0 * std::exp(1.0) * scaleHeightM) : 0.0;
-    o.bodyG = std::max(dragMps2, peak) / 9.81;
+    o.bodyG = std::max(dragMps2, peak) / ::world::laws::StandardGravityMps2;
     if (surfacePressurePa > BurnPressureLimitPa)
         o.state = State::Destroyed;
     else if (o.bodyG > BodyLimitG)

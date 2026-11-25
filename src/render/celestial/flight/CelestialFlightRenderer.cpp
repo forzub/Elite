@@ -1,3 +1,4 @@
+#include "src/world/WorldLaws.h"
 #include "src/core/DevMemoryLedger.h"
 #include "src/world/celestial/settlements/SettlementMesh.h"
 #include "src/core/ThreadPriority.h"
@@ -833,7 +834,7 @@ struct CelestialFlightRenderer::Impl
         a.scaleHeightM = d.atmosphereScaleHeightM > 0.0 ? d.atmosphereScaleHeightM : (gas ? 27000.0 : 8000.0);
         a.scaleHeightM = std::clamp(a.scaleHeightM, radiusM * 2.0e-4, radiusM * 0.02);
         a.shellM = a.scaleHeightM * 8.0;
-        const double column = (p / 101325.0) * (9.81 / std::max(0.1, d.surfaceGravityMs2));
+        const double column = (p / 101325.0) * (::world::laws::StandardGravityMps2 / std::max(0.1, d.surfaceGravityMs2));
         const double co2 = fraction(d, "CO2"), ch4 = fraction(d, "CH4"), n2 = fraction(d, "N2");
         if (gas)
         {

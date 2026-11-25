@@ -1,6 +1,7 @@
 // The route-leg pilot (see RouteLegPilot.h). Moved from the server's GameSimulation::updateFreeFlightLeg
 // and its take-off (2026-11-06): the same laws and logs; the velocity changes are a command for the
 // plant (a J velocity target with its limit, a main-engine acceleration, an attitude target).
+#include "src/world/WorldLaws.h"
 #include "src/game/navigation/globalflight/RouteLegPilot.h"
 
 #include <algorithm>
@@ -94,7 +95,7 @@ BodyAutopilotOutput RouteLegPilot::stepTakeOff(const BodyAutopilotEnvironment& e
     out.control.globalMainAccelWorldMps2 = a;
     if (std::fmod(m_seconds, 2.0) < dt)
         std::cerr << "[Route] ship " << m_shipId << " take-off: " << aboveGround << " m above the ground, climb "
-                  << glm::dot(ship.velocityMps - bodyVel, up) << " m/s (wanted " << climb << "), " << glm::length(a) / 9.81 << " g"
+                  << glm::dot(ship.velocityMps - bodyVel, up) << " m/s (wanted " << climb << "), " << glm::length(a) / ::world::laws::StandardGravityMps2 << " g"
                   << std::endl;
     return out;
 }
@@ -260,7 +261,7 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     if (!nearDeparture && m_driveStartSeconds == -1.0)
         m_driveStartSeconds = m_seconds;
     double driveSeconds = m_driveStartSeconds == -1.0 ? 0.0 : m_seconds - m_driveStartSeconds;
-    double limit = nearDeparture ? jd::GentleAccelMps2 : std::min(jd::MaxAccelMps2, 9.81 * std::exp2(driveSeconds / jd::DriveRampDoublingS));
+    double limit = nearDeparture ? jd::GentleAccelMps2 : std::min(jd::MaxAccelMps2, ::world::laws::StandardGravityMps2 * std::exp2(driveSeconds / jd::DriveRampDoublingS));
     // the plant's field restarts its ramp under a J floor / in a keep-out: the pilot follows its real
     // level (live 2026-11-08: the client braked on 1e5 g while the plant had 2e2 g - 8000 km overshoot)
     // (held 0.5 s: the replicated level lags a jump of the wanted velocity by a tick or two)
@@ -272,8 +273,8 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
         m_plantBehindSeconds = 0.0;
         // the field's own level, never the net of the medium (2026-11-19: at 0.87 c the net went negative and the
         // pilot restarted its ramp at 1 g again and again - no braking, the hub overshot)
-        const double level = std::max(9.81, ship.jFieldLevelMps2);
-        m_driveStartSeconds = m_seconds - jd::DriveRampDoublingS * std::log2(level / 9.81);
+        const double level = std::max(::world::laws::StandardGravityMps2, ship.jFieldLevelMps2);
+        m_driveStartSeconds = m_seconds - jd::DriveRampDoublingS * std::log2(level / ::world::laws::StandardGravityMps2);
         driveSeconds = m_seconds - m_driveStartSeconds;
         limit = std::min(jd::MaxAccelMps2, level);
         if (!m_rampSyncLogged)
@@ -319,7 +320,7 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     const double dEff = d + (passThrough ? m_remainingAfterM : 0.0);
     // the braking speed: the field still has to ramp up to full strength (rampLeft s, ~coasting),
     // then brakes at 0.4 of it: k v^2 + rampLeft v = dEff
-    const double rampLeft = nearDeparture ? 0.0 : jd::DriveRampDoublingS * std::log2(std::max(1.0, jd::MaxAccelMps2 / std::max(9.81, limit)));
+    const double rampLeft = nearDeparture ? 0.0 : jd::DriveRampDoublingS * std::log2(std::max(1.0, jd::MaxAccelMps2 / std::max(::world::laws::StandardGravityMps2, limit)));
     const double kBrake = 1.0 / (2.0 * 0.4 * jd::MaxAccelMps2);
     const double braking = (-rampLeft + std::sqrt(rampLeft * rampLeft + 4.0 * kBrake * dEff)) / (2.0 * kBrake);
     const double tail = dEff / jd::ApproachTauS;

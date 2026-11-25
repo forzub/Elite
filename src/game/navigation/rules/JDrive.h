@@ -51,7 +51,7 @@ using world::laws::mediumResistanceMps2;
 using world::laws::mediumTerminalSpeedMps;
 constexpr double KeepOutObjectM = 20000.0;                       // hubs, stations, beacons
 constexpr double KeepOutShipM = 5000.0;                          // other ships
-constexpr double GentleAccelMps2 = 9.81;
+constexpr double GentleAccelMps2 = ::world::laws::StandardGravityMps2;
 constexpr double GentleSpeedMps = 300.0;
 constexpr double LandingThrustToWeightMin = 1.3;
 constexpr double FloorClimbSpeedMps = 400.0;    // main-engine climb out to the J floor

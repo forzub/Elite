@@ -1,3 +1,4 @@
+#include "src/world/WorldLaws.h"
 #include "src/world/generation/BodyPhysics.h"
 
 #include <algorithm>
@@ -499,10 +500,10 @@ void deriveBodyPhysics(
                                             (tSurf > 320.0 ? 0.9 : 0.0), 0.0, 1.0);
         const double tectonic = b.tectonicRegime == "mobile_lid" ? 1.0 : b.tectonicRegime == "episodic" ? 0.7
             : b.tectonicRegime == "cryotectonic" ? 0.5 : 0.3;
-        sf.reliefAmplitudeKm = clampd(10.0 * (9.81 / std::max(g, 0.05)) * tectonic * surf.logNormal10(1.0, 0.15), 0.2, 30.0);
+        sf.reliefAmplitudeKm = clampd(10.0 * (::world::laws::StandardGravityMps2 / std::max(g, 0.05)) * tectonic * surf.logNormal10(1.0, 0.15), 0.2, 30.0);
         sf.roughness = clampd(0.3 + 0.5 * sf.craterDensity + 0.2 * tectonic - 0.3 * sf.erosionPotential, 0.0, 1.0);
         sf.caveTectonicPropensity = clampd(0.6 * tectonic + 0.2 * sf.craterDensity, 0.0, 1.0);
-        sf.lavaTubePropensity = clampd((b.volcanism == "none" ? 0.1 : 0.6) * (9.81 / std::max(g, 0.5)) / 3.0, 0.0, 1.0);
+        sf.lavaTubePropensity = clampd((b.volcanism == "none" ? 0.1 : 0.6) * (::world::laws::StandardGravityMps2 / std::max(g, 0.5)) / 3.0, 0.0, 1.0);
         sf.karstPropensity = liquidSurface ? clampd(0.5 + 0.5 * fraction(comp, "CO2") * 100.0, 0.0, 1.0) : 0.0;
         // Ocean coverage from the surface water inventory against the
         // relief. An observed water fraction is the hydrosphere itself; a

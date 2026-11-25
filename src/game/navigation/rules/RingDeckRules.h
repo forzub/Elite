@@ -37,7 +37,7 @@ struct RimPadBriefing
 inline RimPadBriefing rimPadBriefing(const HubRingBend& ring, const glm::dvec3& padStrip, double liftMps2)
 {
     RimPadBriefing b;
-    if (!ring.valid || ring.periodSeconds <= 1.0)
+    if (!ring.valid || ring.periodSeconds <= 0.0)
         return b;
     const double g = world::laws::StandardGravityMps2;
     const double rate = 2.0 * 3.14159265358979323846 / ring.periodSeconds;

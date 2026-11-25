@@ -149,7 +149,7 @@ bool HubPlan::load(const std::string& path)
         m_ring.radius = r.value("radius_m", 0.0);
         m_ring.length = r.value("length_m", 0.0);
         m_ring.x0 = r.value("x0_m", 0.0);
-        m_ring.periodSeconds = r.value("period_s", 0.0);   // the ring city's spin (its 1 g at the deck)
+        m_ring.periodSeconds = r.value("period_s", 0.0);   // the ring city's spin (the plan's rim_g at the deck)
         m_ring.valid = m_ring.radius > 1.0 && m_ring.length > 1.0;
     }
     if (j.contains("monorail") && j["monorail"].is_object())

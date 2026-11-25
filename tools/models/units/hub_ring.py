@@ -15,7 +15,8 @@ L = the strip's span + one local street (the seam street between the last and th
 
 The CITY spins (author 2026-11-25) by its attachment spin about its +Z (GameSceneSetup: the ring's period from the plan; the hub's
 self rotation is not applied to attached modules): the city module is turned -90 deg about X (its
-+Z = the hub's +Y) and the hub's self_rotation_period_seconds is the 1 g period 2 pi sqrt(R / g).
++Z = the hub's +Y) and the hub's self_rotation_period_seconds is the spin period 2 pi sqrt(R / (rim_g g)) - rim_g per hub
+(RING_RIM_G), R from the layout: no ring size or speed is fixed in the game, all of it comes from the plan's "ring".
 """
 import hashlib
 import math
@@ -25,12 +26,17 @@ from units.hub_plane import (CELL, MAP_SCHEMA, STREET_AVENUE, STREET_LOCAL, ZONE
                              layout_from_map)
 
 RING_HUBS = {
-    # hub id: (columns along the ring, rows across, the zones round the ring - repeated to fill)
+    # hub id: (columns along the ring, rows across, the zones round the ring - repeated to fill). The SIZE comes from
+    # these (R = the strip's length / 2 pi) - every number the game uses (radius, period, width) goes into the plan
     "earth_ring_hub": (8, 2, ["residential", "downtown", "residential", "repair", "residential", "storage",
                               "residential", "industry", "downtown", "residential", "logistics", "residential",
                               "rig", "residential", "storage", "residential"]),
 }
-G = 9.81
+# the gravity the wheel gives at its rim, per hub (in g; default 1) - the spin period follows from it and R
+RING_RIM_G = {
+    "earth_ring_hub": 1.0,
+}
+G = 9.80665   # = world::laws::StandardGravityMps2 (src/world/WorldLaws.h) - keep the two equal
 
 # THE AXIS (author 2026-11-25: «если там есть плавильня в невесомости - мы плавильню ставим в центр кольца, а всё, что
 # требует гравитации - на ободе»): the zones whose work wants weightlessness are built along the spin axis, not on the
@@ -38,8 +44,10 @@ G = 9.81
 AXIS_ZONES = {
     "earth_ring_hub": ["industry"],
 }
-AXIS_START_M = 900.0     # along the axis (city +Z = the hub's +Y), past the dock's service block (510 m): the dock's
-                         # entry faces the other way, its approach stays clear
+DOCK_SERVICE_BLOCK_AXIAL_M = 510.0   # the axial dock's service block on the axis (hub_ring_world.py places it here)
+AXIS_CLEARANCE_M = 390.0             # past the service block before the first axis module
+AXIS_START_M = DOCK_SERVICE_BLOCK_AXIAL_M + AXIS_CLEARANCE_M   # along the axis (city +Z = the hub's +Y): the dock's
+                                     # entry faces the other way, its approach stays clear
 AXIS_STEP_M = 260.0
 
 
@@ -166,9 +174,10 @@ def ring_layout(hub_id):
                 nodes.append((f"axis_{zone}_{k}", folder, (0.0, 0.0, round(z, 3)), (0.0, 0.0, 0.0), "module", None))
                 z += AXIS_STEP_M
                 k += 1
+    rim_g = float(RING_RIM_G.get(hub_id, 1.0))
     out = dict(flat)
     out.update({"nodes": nodes, "lanes": lanes, "connectors": connectors, "red_zones": red, "docks": [], "spinning": [],
                 "monorail": None, "flat": flat, "haze": [],
                 "ring": {"radius_m": round(R, 3), "length_m": round(L, 3), "x0_m": round(x0, 3), "axis": "z",
-                         "period_s": round(2.0 * math.pi * math.sqrt(R / G), 3)}})
+                         "rim_g": rim_g, "period_s": round(2.0 * math.pi * math.sqrt(R / (rim_g * G)), 3)}})
     return out

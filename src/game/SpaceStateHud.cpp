@@ -1,3 +1,4 @@
+#include "src/world/WorldLaws.h"
 #include "src/ui/input/GlfwPointerSource.h"
 #include "src/ui/components/UIWidgets.h"
 #include "src/audio/CockpitRadio.h"
@@ -2547,7 +2548,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         // signed along the velocity: "-" is braking (the speed falls), "+" the speed grows
         // phase 11 (the de-orbit) flies on the main engines, the rest of the autopilot on its J drive
         thrust = tr(motion.freeFlightAutopilotPhase == 11 ? "cockpit.flight.autopilot_main_drive" : "cockpit.flight.autopilot_j_drive",
-                    {hudNumber("%+.1f", motion.freeFlightAutopilotAccelMps2 / 9.81)}) +
+                    {hudNumber("%+.1f", motion.freeFlightAutopilotAccelMps2 / ::world::laws::StandardGravityMps2)}) +
                  " " + tr(motion.freeFlightAutopilotAccelMps2 < -0.05f ? "cockpit.flight.braking_paren" : "cockpit.flight.accelerating_paren");
     }
     if (motion.jEngine && !(motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5))
@@ -2555,13 +2556,13 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         using game::presentation::hudSignificant;
         using game::presentation::hudSteady;
         thrust = tr(motion.jStopping ? "cockpit.flight.j_stopping" : "cockpit.flight.j_accel",
-                    {hudNumber("%+.0f", hudSignificant(hudSteady("hud.j.accel", motion.jAccelMps2 / 9.81, 0.01, 5.0), 3)),
-                     hudNumber("%+.0f", hudSignificant(hudSteady("hud.j.command", motion.jAccelCommandMps2 / 9.81, 0.01, 1.0), 3))});
+                    {hudNumber("%+.0f", hudSignificant(hudSteady("hud.j.accel", motion.jAccelMps2 / ::world::laws::StandardGravityMps2, 0.01, 5.0), 3)),
+                     hudNumber("%+.0f", hudSignificant(hudSteady("hud.j.command", motion.jAccelCommandMps2 / ::world::laws::StandardGravityMps2, 0.01, 1.0), 3))});
         // the medium (author 2026-11-12): above ~0.1 c the swept-up particles resist - say how much of the thrust
         // goes into holding the speed
-        if (const double medium = game::navigation::jdrive::mediumResistanceMps2(glm::length(relative)); medium >= 0.5 * 9.81)
+        if (const double medium = game::navigation::jdrive::mediumResistanceMps2(glm::length(relative)); medium >= 0.5 * ::world::laws::StandardGravityMps2)
             thrust += "  ·  " + tr("cockpit.flight.medium_drag",
-                                   {hudNumber("%.0f", hudSignificant(hudSteady("hud.j.medium", medium / 9.81, 0.01, 5.0), 3))});
+                                   {hudNumber("%.0f", hudSignificant(hudSteady("hud.j.medium", medium / ::world::laws::StandardGravityMps2, 0.01, 5.0), 3))});
     }
     std::string routeHint;
     if (motion.routeState == 2)
@@ -2636,7 +2637,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             ap = tr("cockpit.autopilot.line",
                     {target, phaseText, tr(phase == 6 || phase == 11 ? "cockpit.autopilot.to_pad" : "cockpit.autopilot.to_surface"),
                      jDistance(lookup, motion.freeFlightAutopilotRangeM), jSpeed(lookup, motion.freeFlightAutopilotRelSpeedMps),
-                     hudNumber("%+.1f", motion.freeFlightAutopilotAccelMps2 / 9.81)});
+                     hudNumber("%+.1f", motion.freeFlightAutopilotAccelMps2 / ::world::laws::StandardGravityMps2)});
         const float aw = text.measureTextPx(ap, 16) + 40.0f;
         const float ax = std::max(8.0f, (static_cast<float>(viewport.width) - aw) * 0.5f);
         const float ay = y + 104.0f;
@@ -2762,7 +2763,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             warning = tr("cockpit.warning.crash_impact");
         else if (motion.freeFlightSurfaceState == 1)
             warning = tr("cockpit.warning.on_surface");
-        else if (motion.freeFlightDragMps2 > 9.81)
+        else if (motion.freeFlightDragMps2 > ::world::laws::StandardGravityMps2)
             warning = tr("cockpit.warning.dense_atmosphere");
         else if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5)
             ;   // the autopilot flies the descent: its own panel tells the state

@@ -1,3 +1,4 @@
+#include "src/world/WorldLaws.h"
 #include "src/game/presentation/HudSteadyNumber.h"
 #include "src/game/navigation/rules/JDrive.h"
 #include "src/game/presentation/ClientHudPresentation.h"
@@ -138,7 +139,7 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
             const double level = std::abs(a) < 9.80665 ? std::abs(a) / 9.80665 * 0.02 : std::log10(std::abs(a) / 9.80665) / 5.0;
             out.thrustFraction01 = static_cast<float>((a < 0.0 ? -1.0 : 1.0) * std::clamp(level, 0.0, 1.0));
             // the medium resists above 0.6 c: the net acceleration falls while the thrust (in brackets) holds
-            const bool medium = game::navigation::jdrive::mediumResistanceMps2(out.speedMps) >= 0.5 * 9.81;
+            const bool medium = game::navigation::jdrive::mediumResistanceMps2(out.speedMps) >= 0.5 * ::world::laws::StandardGravityMps2;
             out.accelText = "J " + gText(a, true, "cockpit.j.accel") + "  (" + gText(motion.jAccelCommandMps2, true, "cockpit.j.command") + ")" +
                             (medium ? "  среда" : "") + (motion.jStopping ? "  выкл." : "");
         }

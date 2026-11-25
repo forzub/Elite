@@ -71,6 +71,25 @@ struct HttpGet
 {
     HINTERNET session = nullptr, connect = nullptr, request = nullptr;
     int status = 0;
+    std::atomic<bool> aborted {false};
+    std::mutex closeMutex;
+    // from ANOTHER thread (a station switch): the handles closed - a blocking WinHTTP call returns at once (the switch
+    // used to wait for the old stream's thread to time out: 1.5 - 7.7 s render stalls, live 2026-11-24)
+    void abort()
+    {
+        std::lock_guard<std::mutex> lock(closeMutex);
+        aborted = true;
+        closeAll();
+    }
+    void closeAll()
+    {
+        if (request)
+            WinHttpCloseHandle(request), request = nullptr;
+        if (connect)
+            WinHttpCloseHandle(connect), connect = nullptr;
+        if (session)
+            WinHttpCloseHandle(session), session = nullptr;
+    }
 
     bool open(const std::string& url, int timeoutMs)
     {
@@ -107,22 +126,18 @@ struct HttpGet
         status = static_cast<int>(code);
         return status >= 200 && status < 300;
     }
-    // blocking read of up to n bytes; 0 = the end / an error
+    // blocking read of up to n bytes; 0 = the end / an error / aborted
     std::size_t read(void* buffer, std::size_t n)
     {
         DWORD got = 0;
-        if (!request || !WinHttpReadData(request, buffer, static_cast<DWORD>(n), &got))
+        if (aborted || !request || !WinHttpReadData(request, buffer, static_cast<DWORD>(n), &got))
             return 0;
         return got;
     }
     ~HttpGet()
     {
-        if (request)
-            WinHttpCloseHandle(request);
-        if (connect)
-            WinHttpCloseHandle(connect);
-        if (session)
-            WinHttpCloseHandle(session);
+        std::lock_guard<std::mutex> lock(closeMutex);
+        closeAll();
     }
 };
 
@@ -252,11 +267,39 @@ struct CockpitRadio::Impl
     ma_noise noise {};
     ma_sound noiseSound {};
     bool noiseReady = false;
+    // one station's stream: its own stop flag, ring buffer and the connection to abort - a switch hands the old one to
+    // its thread (it ends by itself, the connection aborted) and never waits for it on the render thread
+    struct StreamSession
+    {
+        std::atomic<bool> stop {false};
+        std::atomic<bool> done {false};   // its thread has ended (it may be joined without a wait)
+        ma_pcm_rb rb {};
+        bool rbReady = false;
+        std::mutex httpMutex;
+#ifdef _WIN32
+        HttpGet* http = nullptr;
+#endif
+        void abort()
+        {
+            stop = true;
+#ifdef _WIN32
+            std::lock_guard<std::mutex> lock(httpMutex);
+            if (http)
+                http->abort();
+#endif
+        }
+        ~StreamSession()
+        {
+            if (rbReady)
+                ma_pcm_rb_uninit(&rb);
+        }
+    };
+    std::shared_ptr<StreamSession> stream;
+    // old stations' threads ending by themselves: joined once done (never waited for on the frame), all at the end
+    std::vector<std::pair<std::thread, std::shared_ptr<StreamSession>>> retiredStreams;
     std::thread streamThread;
-    std::atomic<bool> streamStop {false};
+    std::atomic<int> streamGeneration {0};
     std::atomic<int> streamState {0};      // 0 off, 1 connecting, 2 playing, 3 no signal
-    ma_pcm_rb rb {};
-    bool rbReady = false;
     RingSource ring;
     ma_sound ringSound {};
     bool ringSoundReady = false;
@@ -570,21 +613,32 @@ struct CockpitRadio::Impl
             ma_sound_stop(&noiseSound);
     }
 
-    void stopStream()
+    // the station's stream stops WITHOUT waiting: the sound off, the session aborted (its connection closed), its thread
+    // retired - it ends by itself; `waitForThreads` (the game's end) joins the retired ones. Finished retired threads are
+    // joined here too (cheap: they are done)
+    void stopStream(bool waitForThreads = false)
     {
-        streamStop = true;
-        if (streamThread.joinable())
-            streamThread.join();
-        streamStop = false;
+        ++streamGeneration;
         if (ringSoundReady)
         {
             ma_sound_uninit(&ringSound);
             ringSoundReady = false;
         }
-        if (rbReady)
+        if (stream)
+            stream->abort();
+        if (streamThread.joinable())
+            retiredStreams.emplace_back(std::move(streamThread), stream);
+        stream.reset();
+        for (auto it = retiredStreams.begin(); it != retiredStreams.end();)
         {
-            ma_pcm_rb_uninit(&rb);
-            rbReady = false;
+            if (waitForThreads || !it->second || it->second->done)
+            {
+                if (it->first.joinable())
+                    it->first.join();
+                it = retiredStreams.erase(it);
+            }
+            else
+                ++it;
         }
         streamState = 0;
     }
@@ -603,11 +657,13 @@ struct CockpitRadio::Impl
         }
         stationUuid = st.uuid;
         const ma_uint32 rate = ma_engine_get_sample_rate(e);
+        auto session = std::make_shared<StreamSession>();
         // 4 s of buffer: the network's hiccups ride it out
-        if (ma_pcm_rb_init(ma_format_f32, 2, rate * 4, nullptr, nullptr, &rb) != MA_SUCCESS)
+        if (ma_pcm_rb_init(ma_format_f32, 2, rate * 4, nullptr, nullptr, &session->rb) != MA_SUCCESS)
             return;
-        rbReady = true;
-        ring.rb = &rb;
+        session->rbReady = true;
+        stream = session;
+        ring.rb = &session->rb;
         ring.channels = 2;
         ring.rate = rate;
         ma_data_source_config dsc = ma_data_source_config_init();
@@ -623,11 +679,25 @@ struct CockpitRadio::Impl
         notice = "РАДИО: " + st.name + " - подключение";
         std::cerr << "[Radio] station " << st.name << " (" << st.country << ", " << st.bitrate << " kbit/s) " << st.url << std::endl;
 #ifdef _WIN32
-        streamThread = std::thread([this, url = st.url, rate] {
-            // the stream: WinHTTP -> the MP3 decoder (pulls the bytes itself) -> the ring buffer; reconnects after 5 s
+        const int generation = streamGeneration.load();
+        streamThread = std::thread([this, session, generation, url = st.url, rate] {
+            // the stream: WinHTTP -> the MP3 decoder (pulls the bytes itself) -> the ring buffer; reconnects after 5 s.
+            // Only the CURRENT station's thread writes the radio's state (an aborted one may still be ending)
+            auto& streamStop = session->stop;
+            auto& rb = session->rb;
+            const auto setState = [&](int v) {
+                if (streamGeneration.load() == generation)
+                    streamState = v;
+            };
             while (!streamStop)
             {
                 HttpGet get;
+                {
+                    std::lock_guard<std::mutex> lock(session->httpMutex);
+                    if (streamStop)
+                        break;
+                    session->http = &get;
+                }
                 if (get.open(url, 10000))
                 {
                     struct Pull
@@ -653,7 +723,7 @@ struct CockpitRadio::Impl
                     ma_decoder decoder;
                     if (ma_decoder_init(onRead, onSeek, &pull, &dc, &decoder) == MA_SUCCESS)
                     {
-                        streamState = 2;
+                        setState(2);
                         std::cerr << "[Radio] stream decoding: " << decoder.outputSampleRate << " Hz" << std::endl;
                         float pcm[4096 * 2];
                         while (!streamStop)
@@ -679,13 +749,18 @@ struct CockpitRadio::Impl
                         ma_decoder_uninit(&decoder);
                     }
                 }
+                {
+                    std::lock_guard<std::mutex> lock(session->httpMutex);
+                    session->http = nullptr;   // `get` ends with this pass
+                }
                 if (streamStop)
                     break;
-                streamState = 3;   // no signal: try again
+                setState(3);   // no signal: try again
                 for (int i = 0; i < 50 && !streamStop; ++i)
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                streamState = 1;
+                setState(1);
             }
+            session->done = true;
         });
 #endif
     }
@@ -739,6 +814,7 @@ CockpitRadio::CockpitRadio() : m(std::make_unique<Impl>())
 CockpitRadio::~CockpitRadio()
 {
     m->stop();
+    m->stopStream(true);   // the retired stations' threads end before the radio does (their connections are aborted)
     if (m->catalogueThread.joinable())
         m->catalogueThread.join();
 }

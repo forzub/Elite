@@ -8828,3 +8828,9 @@ start-up hitches (render), trade step 16 part 3 live.
   PASS (in run_mingw64.sh). Live: the radio draws as before, every frame on its button. NOT verified: a real mouse click
   in the author's window (offscreen runs cannot click). Next: the service panels and the map panel (class B) onto the
   router (their cursor conversion skips the framebuffer scale and the GL flip).
+- FIXED the render stalls of the author's session (1.5 - 7.7 s, every one right after "[Radio] station ..."): a station
+  switch joined the old stream's thread on the render thread while it sat in a blocking WinHTTP connect / read (10 s
+  timeout). Now each station has its own StreamSession (stop flag, ring buffer, the abortable HttpGet); a switch aborts
+  the old connection (closing its handles ends the blocking call) and retires its thread - joined once done, all of
+  them at the radio's end (~CockpitRadio waits); only the current station's thread writes the radio's state (a
+  generation). Live: 7 switches, 0 frame gaps after them.

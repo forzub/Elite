@@ -1501,6 +1501,7 @@ if(MINGW)
     set_source_files_properties(
         src/game/SpaceState.cpp
         src/game/network/TcpTransport.cpp   # the wire schema of DynamicMotionState (49: + hub security fields)
+        src/game/server/GameServer.cpp      # 2026-11-26: the -O0 tools (EliteNewtonianReplay / Scenarios) stopped linking
         PROPERTIES COMPILE_OPTIONS "-Wa,-mbig-obj"
     )
 endif()

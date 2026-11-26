@@ -9140,3 +9140,7 @@ start-up hitches (render), trade step 16 part 3 live.
   pointer through the last drawn layout, the actions applied there); the render only draws. Smoke run + HUD capture
   (D:/tmp/smoke_radio/hud.png): the panel drawn, no errors. Still open from the audit: DynamicMotionState ownership
   split, the legacy positions in ObjectSnapshot / WorldObject / Planet.
+- build/headless_server (-O0) link failure of the Newtonian tools: GameServer.cpp outgrew the regular COFF section
+  limit (undefined std::deque / nlohmann COMDAT templates at link) - added to the MinGW -Wa,-mbig-obj list beside
+  SpaceState.cpp / TcpTransport.cpp; EliteNewtonianReplay / EliteNewtonianScenarios link again in build/headless_server
+  (the scripts' default; ELITE_NEWTONIAN_BUILD still overrides).

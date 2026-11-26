@@ -151,6 +151,12 @@ bool HubPlan::load(const std::string& path)
         m_ring.x0 = r.value("x0_m", 0.0);
         m_ring.periodSeconds = r.value("period_s", 0.0);   // the ring city's spin (the plan's rim_g at the deck)
         m_ring.valid = m_ring.radius > 1.0 && m_ring.length > 1.0;
+        if (r.contains("sync_gate_m") && r["sync_gate_m"].is_array() && r["sync_gate_m"].size() == 3)
+        {
+            const auto& g = r["sync_gate_m"];
+            m_ring.syncGate = glm::dvec3(g[0].get<double>(), g[1].get<double>(), g[2].get<double>());
+            m_ring.hasSyncGate = true;
+        }
     }
     if (j.contains("monorail") && j["monorail"].is_object())
     {

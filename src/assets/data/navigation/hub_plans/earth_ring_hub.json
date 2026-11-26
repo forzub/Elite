@@ -3024,7 +3024,12 @@
 "x0_m": -3800.0,
 "axis": "z",
 "rim_g": 1.0,
-"period_s": 69.781
+"period_s": 69.781,
+"sync_gate_m": [
+0.0,
+0.0,
+-1450.0
+]
 },
 "population_estimate": 228150,
 "air_fleet": {

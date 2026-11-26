@@ -49,6 +49,11 @@ AXIS_CLEARANCE_M = 390.0             # past the service block before the first a
 AXIS_START_M = DOCK_SERVICE_BLOCK_AXIAL_M + AXIS_CLEARANCE_M   # along the axis (city +Z = the hub's +Y): the dock's
                                      # entry faces the other way, its approach stays clear
 AXIS_STEP_M = 260.0
+# THE SYNC GATE (author 2026-11-25: «доводит корабль до какой-то точки уже внутри кольца, выравнивает ... вращение вместе
+# с кольцом»): a point ON THE SPIN AXIS past the strip's open end (the end the axis spine does not take: the spine runs
+# to +Z) - the one kind of point that stands still both in space and in the turning city. A rim pad's autopilot route
+# ends here with the hull rolling with the ring; from here the way to the pad is the city's own (turning) frame.
+SYNC_GATE_CLEARANCE_M = 600.0        # past the strip's edge along the axis
 
 
 def ring_map(hub_id):
@@ -175,9 +180,12 @@ def ring_layout(hub_id):
                 z += AXIS_STEP_M
                 k += 1
     rim_g = float(RING_RIM_G.get(hub_id, 1.0))
+    zs = flat["centres"]["z"]
+    gate_z = min(zs.values()) - CELL / 2 - SYNC_GATE_CLEARANCE_M   # past the strip's -Z edge: the open end
     out = dict(flat)
     out.update({"nodes": nodes, "lanes": lanes, "connectors": connectors, "red_zones": red, "docks": [], "spinning": [],
                 "monorail": None, "flat": flat, "haze": [],
                 "ring": {"radius_m": round(R, 3), "length_m": round(L, 3), "x0_m": round(x0, 3), "axis": "z",
-                         "rim_g": rim_g, "period_s": round(2.0 * math.pi * math.sqrt(R / (rim_g * G)), 3)}})
+                         "rim_g": rim_g, "period_s": round(2.0 * math.pi * math.sqrt(R / (rim_g * G)), 3),
+                         "sync_gate_m": [0.0, 0.0, round(gate_z, 3)]}})
     return out

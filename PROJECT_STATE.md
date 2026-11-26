@@ -8963,3 +8963,22 @@ start-up hitches (render), trade step 16 part 3 live.
   failures 0, collisions 0, cross / speed errors as before. dock_hub render_epoch_max 1.84 (was 0.21): the free-flight
   start before the hub frame (not touched), under 30 frame hitches of 400+ ms (5 before); the rerun 0.94 (one hitch),
   the rest of the steps 0.16-0.26 m as before - not this change.
+- RING PAD AUTOPILOT, STEP 1 - THE SYNC GATE (2026-11-26, the author's split: «доводит корабль до какой-то точки уже
+  внутри кольца, выравнивает ... вращение вместе с кольцом, а потом ... строит маршрут относительно неподвижной
+  платформы»). DATA: the ring plan's ring.sync_gate_m (units/hub_ring.py SYNC_GATE_CLEARANCE_M 600 past the strip's -Z
+  edge - the open end, the axis spine takes +Z): earth_ring_hub (0,0,-1450) city frame; HubRingBend hasSyncGate /
+  syncGate. CLIENT: a pad on a TURNING ring (period > 0, a gate in the plan) - the route's goal is the gate (axis
+  forward, arrival into the ring, entry 2 m/s); the existing spinning-dock machinery (the live port re-resolved with
+  the city's attachment spin -> the tunnel / terminal roll rate) rolls the hull with the ring - no new control law.
+  "At the gate" = within 15 m of the AXIS and 150 m of the gate (every axis point is still; the docking-style final
+  ends ~80 m short of its point); synchronized = at rest and the hull's roll IN THE CITY FRAME drifting < 3 deg over
+  3 s (the instant rate wobbles +-0.6-1.5 deg/s round 5.16 with the roll loop). Then (interim, until step 2) the pad
+  service flies on from the gate. LIVE (A1-03 from 13 km, the spine side): route 37.4 km (out past the gate, a 950 m
+  turn, an 8.85 km final along the axis), 0 collisions; at the gate 1.6 m off the axis, at rest, roll drift 0.13 deg
+  in 3 s -> "synchronized"; the service: climb to 525 m, across 2.3 km, over the pad, descending (run ended 49 m up).
+  Outbound (nose away from the ring) the hull rolls AGAINST the ring - the tunnel roll is about the nose; on the final
+  (nose into the ring) it matches. Not yet: the 10 km overshoot of the docking-style final (a shorter final for a gate).
+  STEP 2 DESIGN (next): the route gate -> over the pad planned in the CITY frame (static, un-swept obstacles); executed
+  with a server CO-ROTATION mode for the autopilot ship: the physics adds the full rotating-frame cost omega x (omega x
+  r) + 2 omega x u (paid by the ship's thrust, within its authority) and the hull keeps the ring's turn - the autopilot
+  sees the city as a still world (the pilot's deck mode adds only omega x v: the hub-axes deck velocity).

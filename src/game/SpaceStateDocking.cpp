@@ -821,6 +821,25 @@ void SpaceState::updateDockingAdvisory()
                 m_padAnchor.forwardCity = forward;
                 m_padAnchor.upCity = axes * out;
                 m_padAnchor.valid = true;
+                // a TURNING ring (author 2026-11-25: «доводит корабль до какой-то точки уже внутри кольца, выравнивает ...
+                // вращение вместе с кольцом»): the route's goal is the ring's SYNC GATE on the spin axis - still in space
+                // and in the turning city; arriving along the axis into the ring, the hull rolling with it (the live port
+                // re-resolved with the city's spin: the terminal roll rate = the ring's). The way on is the city's frame.
+                if (ring.valid && ring.periodSeconds > 0.0 && ring.hasSyncGate)
+                {
+                    const glm::dvec3 into = glm::dvec3(0.0, 0.0, ring.syncGate.z < 0.0 ? 1.0 : -1.0);   // toward the ring
+                    d.localPositionMeters = ring.syncGate;
+                    d.localForward = -into;   // the route arrives along -forward
+                    d.localUp = glm::dvec3(0.0, 1.0, 0.0);
+                    d.maxEntrySpeedMps = 2.0;
+                    m_padAnchor.hoverCity = ring.syncGate;
+                    m_padAnchor.forwardCity = -into;
+                    m_padAnchor.upCity = d.localUp;
+                    m_padAnchor.ringGate = true;
+                    std::cerr << "[RingSync] request=" << pending.serial << " pad " << address << " on a turning ring (period "
+                              << ring.periodSeconds << " s): the route goes to the sync gate on the axis (" << ring.syncGate.x
+                              << "," << ring.syncGate.y << "," << ring.syncGate.z << ") city frame" << std::endl;
+                }
                 std::cerr << "[PadRoute] request=" << pending.serial << " pad " << address << ": approach point (" << hover.x << ","
                           << hover.y << "," << hover.z << ") city frame, transit " << transit << " m" << std::endl;
             }
@@ -4251,7 +4270,69 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                 m_dockAdvice.plan.routeCurves.empty() ? 0.0 : m_dockAdvice.plan.routeCurves.back().endProgressMeters;
             const bool atRouteEnd = routeTotal > 0.0 && m_clientDockingRouteProgressMeters > 0.0 &&
                                     routeTotal - m_clientDockingRouteProgressMeters < 40.0;
-            if (d < 250.0 || atRouteEnd)
+            // a turning ring: the route ends at the SYNC GATE on the axis; the autopilot holds it, its hull rolling with
+            // the ring (the terminal roll rate of the live port). Every point of the axis is still in both frames, so "at
+            // the gate" = ON THE AXIS (within 15 m of it) near the gate (the docking-style final ends ~80 m short of its
+            // point, live 2026-11-26). Synchronized = at rest there and the hull's roll RELATIVE TO THE CITY steady: drifting
+            // under 3 deg over 3 s (the instant rate wobbles +-0.6 deg/s round the ring's 5.16 with the roll loop)
+            bool gateSynced = false;
+            if (m_padAnchor.ringGate)
+            {
+                const auto& st = shipIt->second.transform;
+                const glm::dvec3 wShip = glm::dvec3(st.right()) * static_cast<double>(st.pitchRate) +
+                                         glm::dvec3(st.up()) * static_cast<double>(st.yawRate) +
+                                         glm::dvec3(st.forward()) * static_cast<double>(st.rollRate);
+                const glm::dvec3 wCity = city->angularVelocityWorldRadPerSecond;
+                const double rateErr = glm::length(wShip - wCity);
+                const double speed = glm::length(st.relativeVelocityMps());
+                const glm::dmat3 Rc(glm::mat3(city->renderOrientation));
+                const glm::dvec3 axisWorld = glm::normalize(Rc * glm::dvec3(0.0, 0.0, 1.0));
+                const double alongAxisDeg = glm::degrees(std::acos(std::clamp(std::abs(glm::dot(glm::dvec3(st.forward()), axisWorld)), 0.0, 1.0)));
+                const double fromAxis = std::hypot(qShip.x, qShip.y);
+                const double alongFromGate = std::abs(qShip.z - m_padAnchor.hoverCity.z);
+                // the hull's roll in the city's own frame (its up projected across the axis)
+                const glm::dvec3 upCity = glm::transpose(Rc) * glm::dvec3(shipIt->second.renderTransform.up());
+                const double rollInCity = std::atan2(upCity.y, upCity.x);
+                const bool holding = fromAxis < 15.0 && alongFromGate < 150.0 && speed < 1.5 && rateErr < glm::radians(2.0);
+                const double now = glfwGetTime();
+                if (!holding)
+                    m_padAnchor.gateSyncedSinceS = -1.0;
+                else if (m_padAnchor.gateSyncedSinceS < 0.0)
+                {
+                    m_padAnchor.gateSyncedSinceS = now;
+                    m_padAnchor.gateRollStartRad = rollInCity;
+                }
+                double rollDrift = 0.0;
+                if (m_padAnchor.gateSyncedSinceS >= 0.0)
+                {
+                    rollDrift = std::remainder(rollInCity - m_padAnchor.gateRollStartRad, 2.0 * 3.14159265358979323846);
+                    if (std::abs(rollDrift) > glm::radians(3.0))   // the hull turns against the city: restart the window
+                    {
+                        m_padAnchor.gateSyncedSinceS = now;
+                        m_padAnchor.gateRollStartRad = rollInCity;
+                    }
+                }
+                if (now - m_padAnchor.gateLogS >= 3.0)
+                {
+                    m_padAnchor.gateLogS = now;
+                    std::cerr << "[RingSync] request=" << pending.serial << " " << d << " m from the gate (" << fromAxis
+                              << " m off the axis), " << speed << " m/s, the ship's turn " << glm::degrees(glm::length(wShip))
+                              << " deg/s vs the ring's " << glm::degrees(glm::length(wCity)) << " (off " << glm::degrees(rateErr)
+                              << " deg/s), roll in the city " << glm::degrees(rollInCity) << " deg (drift "
+                              << glm::degrees(rollDrift) << "), nose " << alongAxisDeg << " deg off the axis"
+                              << (holding ? " - holding" : "") << std::endl;
+                }
+                gateSynced = m_padAnchor.gateSyncedSinceS >= 0.0 && now - m_padAnchor.gateSyncedSinceS >= 3.0;
+                if (gateSynced)
+                {
+                    std::cerr << "[RingSync] request=" << pending.serial << " synchronized with the ring at the gate (" << d
+                              << " m, " << fromAxis << " m off the axis, " << speed << " m/s, roll drift "
+                              << glm::degrees(rollDrift) << " deg in 3 s)" << std::endl;
+                    m_pilotNotice = "ДИСПЕТЧЕР КОЛЬЦА: синхронизация с вращением выполнена у ворот на оси";
+                }
+            }
+            // (until the city-frame route from the gate exists, the pad service flies on from the synchronized gate)
+            if (m_padAnchor.ringGate ? gateSynced : (d < 250.0 || atRouteEnd))
             {
                 std::cerr << "[PadRoute] request=" << pending.serial << " " << d << " m from the approach point of "
                           << m_padAnchor.address << ": the pad service takes the ship" << std::endl;

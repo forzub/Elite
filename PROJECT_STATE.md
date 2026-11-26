@@ -9233,3 +9233,18 @@ start-up hitches (render), trade step 16 part 3 live.
   - Still duplicated (small): motion.systemId / hubId / parentBodyId / matchedToReferenceFrame beside the referenceFrame.
     Biggest remaining levers: engineTelemetry 1162 B in every row (observers need thrust01 per slot), shipCoreStatus
     1468 B (owner only), refit 504 B, and ~24 ships at full cadence.
+* 2026-11-26 A SHIP KEEPS ITS STATE AS A SHELL (author: "attacked, became real, took damage, withdrew as a shell,
+  came back new and whole" must not happen). ROOT CAUSE: dematerializeShip destroyed the full Ship and kept 4 coarse
+  aggregates (mean module integrity, main thrust / vectoring / manoeuvre authority); materializeShipShell built a NEW
+  ship from the descriptor and applied only the engine authorities to engine modules - the integrity aggregate was
+  computed but never applied; hull / cockpit / other modules, torn-off fragments, repair jobs, cargo, fuel, gas, heat,
+  reactors came back new.
+  FIX (GameSimulation.cpp/.h): m_parkedShellShips - dematerialize PARKS the whole Ship (one owner of its state, no
+  translation); materialize takes it back (transform = where the shell moved, controls cleared, runtime refreshed);
+  forgetShip erases it (the id leaves the simulation). Shells never materialized still allocate nothing (the rule in
+  GameSimulation.h). The coarse aggregates stay - only the shell's own coarse motion reads them.
+  CHECK (ELITE_SHIP_TIER_TRANSITION_TEST + ELITE_DEV_STDOUT=1, D:/tmp/shellkeep): the probe's module damaged to 37 %
+  (ship_cockpit 96.2) -> derelict -> wreck shell -> rematerialized: health 96.2, "STATE_KEPT PASS" (stage 4, new).
+  OPEN: (1) the parked state is frozen while a shell (heat / reactor / repair clocks do not advance) - a coarse
+  continuation if it matters; (2) memory only: not persisted across a server restart (with the versioned ship DTO);
+  (3) shells take no damage of their own (no writer of shell.damage) - fights only happen materialized.

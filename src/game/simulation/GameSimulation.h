@@ -908,6 +908,11 @@ private:
     // Lightweight authoritative ships live outside m_ships by design: merely
     // existing in the universe must not allocate ShipCore/module/damage state.
     std::unordered_map<EntityId, game::simulation::ShipShellState> m_shipShells;
+    // The FULL state of a shell that once was a full ship (damage, torn-off fragments, repair jobs, cargo, fuel, gas,
+    // heat, reactors): parked whole on dematerialize, taken back on materialize - a ship that fought, withdrew as a shell
+    // and returned must come back as it left, not new (author 2026-11-26). The shell's coarse damage aggregates are only
+    // what the shell's own coarse motion reads. Erased when the id leaves the simulation (forgetShip).
+    std::unordered_map<EntityId, std::unique_ptr<Ship>> m_parkedShellShips;
 
     // Dock service traffic: dispatcher + shuttles + busy traffic, realised as
     // TrafficShell ships whose pose the traffic model owns.
@@ -1319,6 +1324,8 @@ private:
     EntityId m_shipTierTransitionProbeId {0};
     double m_shipTierTransitionStartSeconds = 0.0;
     int m_shipTierTransitionStage = 0;
+    std::string m_shipTierProbeDamagedModule;   // the state-kept-as-a-shell check (stage 4)
+    float m_shipTierProbeDamagedHealth = 0.0f;
     double m_fiveHundredShipHerdStartSeconds = 0.0;
     double m_fiveHundredShipHerdLastLogSeconds = -1.0;
     glm::dvec3 m_fiveHundredShipHerdCenterMeters {0.0};

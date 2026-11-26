@@ -2952,7 +2952,19 @@ bool GameSimulation::materializeShipShell(EntityId id)
     if (!shell.valid())
         return false;
 
-    auto ship = std::make_unique<Ship>();
+    std::unique_ptr<Ship> ship;
+    if (auto parked = m_parkedShellShips.find(id); parked != m_parkedShellShips.end() && parked->second)
+    {
+        // the ship as it left: its own state, where the shell has moved it to
+        ship = std::move(parked->second);
+        m_parkedShellShips.erase(parked);
+        ship->core().transform() = shell.transform;
+        ship->setControlState(ShipControlState {});
+        ship->core().refreshRuntimeState();
+    }
+    else
+    {
+    ship = std::make_unique<Ship>();
     ship->setId(id);
     ship->setTypeId(shell.definition->typeId);
 
@@ -3016,6 +3028,7 @@ bool GameSimulation::materializeShipShell(EntityId id)
     }
 
     ship->core().refreshRuntimeState();
+    }
 
     auto lifecycle = shell.lifecycle;
     if (lifecycle.tier ==
@@ -3182,6 +3195,7 @@ bool GameSimulation::dematerializeShip(
 
     forgetShipDetail(id);   // the full ship's transient state; the id lives on as a shell
 
+    m_parkedShellShips[id] = std::move(shipIt->second);   // its persistent state lives on, whole
     m_ships.erase(shipIt);
     m_shipSimulationLifecycle.erase(id);
     m_shipShells[id] = std::move(shell);
@@ -3345,6 +3359,7 @@ void GameSimulation::forgetShipDetail(EntityId id)
 void GameSimulation::forgetShip(EntityId id)
 {
     forgetShipDetail(id);
+    m_parkedShellShips.erase(id);
     m_combatHostility.erase(id);
     m_pilotDockSite.erase(id);
     m_portCalls.erase(id);   // a ship gone at the berth: no berth fee (no release event)

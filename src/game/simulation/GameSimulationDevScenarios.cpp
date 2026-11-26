@@ -1,6 +1,7 @@
 // GameSimulation: DEV scenarios and diagnostics: ship-state flight test, 500-ship herd, tier transition test, universe trajectory diagnostic, hub-motion / interplanetary-transfer labs, promo tracking, debug logs.
 
 #include "src/game/simulation/GameSimulationInternal.h"
+#include <utility>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
 #include "src/game/ship/descriptors/CatalogShipRegistry.h"
@@ -758,6 +759,19 @@ void GameSimulation::updateShipTierTransitionTest()
                 << "[ShipTierTest] stage=materialized id="
                 << m_shipTierTransitionProbeId.value
                 << " preserved_entity_id=1\n";
+            // damage one module: it must survive the shell round trip (stage 4)
+            if (Ship* probe = getShip(m_shipTierTransitionProbeId))
+                for (const auto& module : std::as_const(probe->core().moduleRuntime()).modules())
+                    if (module.maxHealth > 0.0f && !module.moduleId.empty())
+                    {
+                        m_shipTierProbeDamagedModule = module.moduleId;
+                        m_shipTierProbeDamagedHealth = module.maxHealth * 0.37f;
+                        probe->core().moduleRuntime().setModuleHealth(module.moduleId, m_shipTierProbeDamagedHealth);
+                        probe->core().refreshRuntimeState();
+                        std::cout << "[ShipTierTest] damaged module " << module.moduleId << " to "
+                                  << m_shipTierProbeDamagedHealth << "\n";
+                        break;
+                    }
         }
     }
 
@@ -785,6 +799,19 @@ void GameSimulation::updateShipTierTransitionTest()
                 << m_shipTierTransitionProbeId.value
                 << " preserved_entity_id=1\n";
         }
+    }
+
+    // a ship comes back from a shell as it left (author 2026-11-26), not new
+    if (m_shipTierTransitionStage == 3 && elapsed >= 10.0 && materializeShipShell(m_shipTierTransitionProbeId))
+    {
+        m_shipTierTransitionStage = 4;
+        const Ship* probe = getShip(m_shipTierTransitionProbeId);
+        const auto* module = probe && !m_shipTierProbeDamagedModule.empty()
+            ? probe->core().moduleRuntime().findModule(m_shipTierProbeDamagedModule) : nullptr;
+        const bool kept = module && std::abs(module->health - m_shipTierProbeDamagedHealth) < 1.0e-3f;
+        std::cout << "[ShipTierTest] stage=rematerialized id=" << m_shipTierTransitionProbeId.value << " module "
+                  << m_shipTierProbeDamagedModule << " health " << (module ? module->health : -1.0f) << " (left at "
+                  << m_shipTierProbeDamagedHealth << ") " << (kept ? "STATE_KEPT PASS" : "STATE_LOST FAIL") << "\n";
     }
 }
 

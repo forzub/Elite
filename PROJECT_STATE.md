@@ -9116,3 +9116,12 @@ start-up hitches (render), trade step 16 part 3 live.
   never asked the next pads; this run asked all four - the 4th (H4-01) had 13 infeasible inbound-leg plans
   ("continuous Assisted optimizer did not reach a feasible path", speed x0.2-0.55) before one executed. Planner
   observation, not caused by today's changes (none touch the inbound-leg optimizer); open.
+- RING NPC TRAFFIC (plan item: NPC ring traffic through the gate): the ring's scheduled visits (hub_schedules/
+  earth_ring_hub.json, 25 pads, presentation poses in the CITY frame - they turn with the ring by construction) came
+  down from 900 m over a pad and LEFT "away from the centre" along the city's x / z: 3 km straight through the rim.
+  HubTrafficSchedule::pose for a ring pad (plan ring valid + sync gate, data only): in along the spin axis from the open
+  end (3 km out), the sync gate, over the pad at min(900 m, R / 2) - inside the ring -, down; the departure the same way
+  back (accelerating). The nose along each leg, the parked heading on the descent / climb; the server's attack check
+  (castScheduledVisits) uses the same pose. Source + build; not yet seen on screen (no DEV screenshot verb).
+  The dock traffic of the axial dock (EAR, 4 cobretts) is the hex-dock dispatcher's own (on the axis - no co-rotation
+  issue). Real (promoted) NPC ships on the ring's lanes: 0 lanes on the ring today.

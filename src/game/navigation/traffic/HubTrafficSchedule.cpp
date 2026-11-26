@@ -1,4 +1,5 @@
 #include "src/game/navigation/traffic/HubTrafficSchedule.h"
+#include "src/game/navigation/HubPlanCatalog.h"
 
 #include <algorithm>
 #include <cmath>
@@ -38,6 +39,30 @@ glm::dvec3 rotateAbout(const glm::dvec3& v, const glm::dvec3& axis, double angle
 {
     const glm::dvec3 k = glm::normalize(axis);
     return v * std::cos(angle) + glm::cross(k, v) * std::sin(angle) + k * glm::dot(k, v) * (1.0 - std::cos(angle));
+}
+// a point at arc length s along a polyline, and the index of its segment
+glm::dvec3 alongPolyline(const std::vector<glm::dvec3>& p, double s, std::size_t& segment)
+{
+    for (std::size_t i = 0; i + 1 < p.size(); ++i)
+    {
+        const double len = glm::length(p[i + 1] - p[i]);
+        if (s <= len || i + 2 == p.size())
+        {
+            segment = i;
+            return len > 1.0e-9 ? p[i] + (p[i + 1] - p[i]) * std::clamp(s / len, 0.0, 1.0) : p[i + 1];
+        }
+        s -= len;
+    }
+    segment = 0;
+    return p.empty() ? glm::dvec3(0.0) : p.back();
+}
+
+double polylineLength(const std::vector<glm::dvec3>& p)
+{
+    double l = 0.0;
+    for (std::size_t i = 0; i + 1 < p.size(); ++i)
+        l += glm::length(p[i + 1] - p[i]);
+    return l;
 }
 } // namespace
 
@@ -127,6 +152,50 @@ bool HubTrafficSchedule::pose(const HubScheduleVisit& visit, double timeSeconds,
                 const double run = q < 0.3 ? 0.0 : std::pow((q - 0.3) / 0.7, 2.0) * ApproachEntryMeters;
                 out.position = d.position + d.up * lift + d.axis * run;
                 out.basis = noseBasis(rotateAbout(-d.axis, d.up, turn), d.up);
+                out.phase = 3;
+            }
+        }
+        else if (const auto* plan = HubPlanCatalog::forFrameModule(m_frameModuleId);
+                 plan && plan->ring().valid && plan->ring().periodSeconds > 0.0 && plan->ring().hasSyncGate)
+        {
+            // a pad of a TURNING RING (2026-11-26): the way the player's autopilot flies - in along the spin axis from
+            // the open end, through the sync gate on the axis, out over the pad, down; back the same way. The poses are
+            // the city's frame, so the visit turns with the ring from the gate on (the gate is on the axis: the turn is
+            // a roll there). The old pad path left "away from the centre" in the city's x / z - 3 km through the rim.
+            const glm::dvec3 gate = plan->ring().syncGate;
+            const glm::dvec3 into(0.0, 0.0, gate.z < 0.0 ? 1.0 : -1.0);
+            const double over = std::min(PadEntryMeters, 0.5 * plan->ring().radius);   // over the pad, inside the ring
+            const std::vector<glm::dvec3> path {gate - into * ApproachEntryMeters, gate, d.position + d.up * over,
+                                                d.position};
+            const double length = polylineLength(path);
+            const auto basisOn = [&](std::size_t segment, bool arriving) {
+                const bool atPad = segment + 2 == path.size();   // the descent / the climb: the parked heading
+                if (atPad)
+                    return noseBasis(d.heading, d.up);
+                glm::dvec3 dir = path[segment + 1] - path[segment];
+                if (!arriving)
+                    dir = -dir;
+                return noseBasis(glm::length(dir) > 1.0e-9 ? dir : into, d.up);
+            };
+            std::size_t segment = 0;
+            if (rel < 0.0)
+            {
+                const double f = 1.0 - std::pow(1.0 - (rel + m_approach) / m_approach, 2.0);   // decelerating
+                out.position = alongPolyline(path, f * length, segment);
+                out.basis = basisOn(segment, true);
+                out.phase = 1;
+            }
+            else if (rel <= visit.dwellSeconds)
+            {
+                out.position = d.position;
+                out.basis = noseBasis(d.heading, d.up);
+                out.phase = 2;
+            }
+            else
+            {
+                const double q = std::clamp((rel - visit.dwellSeconds) / m_depart, 0.0, 1.0);   // accelerating
+                out.position = alongPolyline(path, (1.0 - q * q) * length, segment);
+                out.basis = basisOn(segment, false);
                 out.phase = 3;
             }
         }

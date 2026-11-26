@@ -73,6 +73,11 @@ struct ShipControlState
     // the PILOT's own sample (not an autopilot / a route / the reflex): over a turning deck (a ring city, DeckFrame.h)
     // the law holds the velocity relative to the deck - an autopilot flies its hub-frame route instead
     bool deckRelative = false;
+    // CO-ROTATION (author 2026-11-25, the ring pad's split: after the sync gate the way to the pad is flown in the
+    // city's turning frame): the AUTOPILOT flies a route planned in a ring city's own frame. The deck works for it too
+    // and the physics charges the FULL cost of the turning frame (omega x (omega x r) + 2 omega x u, through the
+    // stabilization's authority) and the neutral attitude damps to the city's turn - so the route sees a still city
+    bool deckCoRotating = false;
 
     // Legacy navigation-v2 diagnostic/lab seam.
     //

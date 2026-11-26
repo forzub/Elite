@@ -36,7 +36,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 53u;   // 53: ShipControlState::deckRelative (the pilot over a turning ring deck); 52: SessionWelcome::hubContentFingerprint (SRV-1); 51: SessionRejectReason::SnapshotTooLarge (SRV-2); 50: ShipControlState::cancelVelocityAlignment (the evasion reflex, NAV-6); 49: EnterHubFrame; 48: ToggleLandingGear; 47: ClientShipCommand::LandOnPad (hub city pads); 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4); 33: its contractId + TakeContract / AbandonContract / DevEconomyDays (trade step 5); 34: DevSpendAll; 35: SellBlack + DevCustoms (trade step 9); 36: BuyLicence (step 11); 37: InsureCargo (step 13); 38: ClientShipCommand::BoardShip (ship change); 39: BuyShip (F6); 40: ClientEconomyCommand::DevGrant; 41: HireJob / QuitJob (the employment service); 42: TakeSos (rescue); 43: HireBot / OrderBotLoop / FireBot (step 15); 44: SignConstruction (step 16); 45: LeaseSite (step 16 part 2); 46: SetMineSale / LoadFromMine (part 3)
+inline constexpr std::uint16_t WireProtocolVersion = 54u;   // 54: ShipControlState::deckCoRotating (the autopilot in a ring city's turning frame); 53: ShipControlState::deckRelative (the pilot over a turning ring deck); 52: SessionWelcome::hubContentFingerprint (SRV-1); 51: SessionRejectReason::SnapshotTooLarge (SRV-2); 50: ShipControlState::cancelVelocityAlignment (the evasion reflex, NAV-6); 49: EnterHubFrame; 48: ToggleLandingGear; 47: ClientShipCommand::LandOnPad (hub city pads); 32: ClientEconomyCommand (client message tag 3, TRADE_DESIGN §7.4); 33: its contractId + TakeContract / AbandonContract / DevEconomyDays (trade step 5); 34: DevSpendAll; 35: SellBlack + DevCustoms (trade step 9); 36: BuyLicence (step 11); 37: InsureCargo (step 13); 38: ClientShipCommand::BoardShip (ship change); 39: BuyShip (F6); 40: ClientEconomyCommand::DevGrant; 41: HireJob / QuitJob (the employment service); 42: TakeSos (rescue); 43: HireBot / OrderBotLoop / FireBot (step 15); 44: SignConstruction (step 16); 45: LeaseSite (step 16 part 2); 46: SetMineSale / LoadFromMine (part 3)
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -604,6 +604,7 @@ inline bool encodeShipControlState(
     writer.u8(static_cast<std::uint8_t>(value.velocityAlignmentCommand));
     writer.boolean(value.cancelVelocityAlignment);
     writer.boolean(value.deckRelative);
+    writer.boolean(value.deckCoRotating);
     writer.boolean(value.globalFlightCommandValid);
     writer.boolean(value.globalJVelocityTargetValid);
     writer.boolean(value.globalAttitudeTargetValid);
@@ -649,6 +650,7 @@ inline bool decodeShipControlState(
         !reader.u8(alignmentMode) ||
         !reader.boolean(outValue.cancelVelocityAlignment) ||
         !reader.boolean(outValue.deckRelative) ||
+        !reader.boolean(outValue.deckCoRotating) ||
         !reader.boolean(outValue.globalFlightCommandValid) ||
         !reader.boolean(outValue.globalJVelocityTargetValid) ||
         !reader.boolean(outValue.globalAttitudeTargetValid) ||

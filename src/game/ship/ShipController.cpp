@@ -602,13 +602,23 @@ void ShipController::updateControlRates(
 
     if (neutralAngularDamping)
     {
+        // in a ring city's co-rotating frame (DeckFrame.h, ShipControlState::deckCoRotating) "no turn" is the CITY'S
+        // turn: the released axes damp to the deck's spin in body axes, so the hull keeps turning with the ring
+        glm::vec3 restRates(0.0f);
+        if (ship.motion.deckActive && ship.motion.deckCoRotating && ship.motion.travelFrame.valid)
+        {
+            const glm::dvec3 w = ship.motion.travelFrame.localToWorldVector(ship.motion.deckOmegaLocal);
+            restRates = glm::vec3(static_cast<float>(glm::dot(w, glm::dvec3(ship.right()))),
+                                  static_cast<float>(glm::dot(w, glm::dvec3(ship.up()))),
+                                  static_cast<float>(glm::dot(w, glm::dvec3(ship.forward()))));
+        }
         const float dampingGain = std::max(0.0f, params.angularDamping);
         if (std::abs(ship.pitchInput) < 0.001f)
-            requestedAngularAcceleration.x += -ship.pitchRate * dampingGain;
+            requestedAngularAcceleration.x += -(ship.pitchRate - restRates.x) * dampingGain;
         if (std::abs(ship.yawInput) < 0.001f)
-            requestedAngularAcceleration.y += -ship.yawRate * dampingGain;
+            requestedAngularAcceleration.y += -(ship.yawRate - restRates.y) * dampingGain;
         if (std::abs(ship.rollInput) < 0.001f)
-            requestedAngularAcceleration.z += -ship.rollRate * dampingGain;
+            requestedAngularAcceleration.z += -(ship.rollRate - restRates.z) * dampingGain;
     }
 
     applyRequestedAngularAcceleration(

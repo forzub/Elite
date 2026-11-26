@@ -78,13 +78,16 @@ void GameSimulation::updateDeckFrame(EntityId shipId, Ship& ship)
     if (m_padLandings.count(shipId))
         return;   // the pad service carries it and sets its deck itself (GameSimulationPadLanding.cpp)
     motion.deckActive = false;
+    motion.deckCoRotating = false;
     if (motion.mode != game::navigation::MotionMode::HubTactical || !motion.travelFrame.valid || motion.hubId.empty())
         return;
     // the deck is the PILOT's (hand flight, a hand-flown pad after the service's hand-over); an autopilot route is planned
-    // and flown in the hub frame - the deck shift made it chase the deck instead of its route (live: stuck at 771 m)
+    // and flown in the hub frame - the deck shift made it chase the deck instead of its route (live: stuck at 771 m) -
+    // UNLESS the route is the city's own (the co-rotating leg from a ring's sync gate, ShipControlState::deckCoRotating)
     const auto& control = ship.core().control();
-    if (!control.deckRelative || control.navigationAccelerationDemandValid || control.navigationVelocityTargetValid ||
-        control.globalFlightCommandValid || m_padLandings.count(shipId))
+    const bool coRotating = control.deckCoRotating && !control.globalFlightCommandValid;
+    if (!coRotating && (!control.deckRelative || control.navigationAccelerationDemandValid ||
+                        control.navigationVelocityTargetValid || control.globalFlightCommandValid))
         return;
     const auto& frame = motion.travelFrame;
     const glm::dvec3 me = world::coordinates::fullMeters(ship.core().transform().worldPosition);
@@ -111,9 +114,12 @@ void GameSimulation::updateDeckFrame(EntityId shipId, Ship& ship)
         const double along = glm::dot(rel, cityZ);   // the strip's z (signed by the city's +Z, not the spin's sense)
         const double fromAxis = glm::length(rel - axis * glm::dot(rel, axis));
         const bool hasWidth = bounds.w != bounds.y;
-        if (fromAxis > radius || (hasWidth && (along < std::min(bounds.y, bounds.w) || along > std::max(bounds.y, bounds.w))))
+        // (the co-rotating leg starts at the sync gate on the axis past the strip's end: its reach is the ring's cylinder)
+        if (fromAxis > radius ||
+            (!coRotating && hasWidth && (along < std::min(bounds.y, bounds.w) || along > std::max(bounds.y, bounds.w))))
             continue;
         motion.deckActive = true;
+        motion.deckCoRotating = coRotating;
         motion.deckAxisPointLocal = frame.worldToLocalPosition(centre);
         motion.deckOmegaLocal = frame.worldToLocalVector(spin);
         static std::unordered_map<std::uint64_t, double> loggedAt;

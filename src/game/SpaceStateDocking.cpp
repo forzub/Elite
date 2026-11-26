@@ -8,6 +8,7 @@
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/navigation/traffic/HubLaneRouting.h"
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/CityCoRotationMap.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/NavigationObstacleGrid.h"
 #include <memory>
@@ -722,7 +723,53 @@ void SpaceState::updateDockingAdvisory()
     }
 
     const auto& player = playerIt->second;
-    const auto& transform = player.transform;
+    // the CO-ROTATING leg of a ring pad (CityCoRotationMap.h): everything below - settling, planning, the route's pilot,
+    // its checks - sees the ship in the city's frozen map (the city's turn since the planning epoch undone, the velocity
+    // and the body rates relative to the turning city); before the plan the map's epoch is "now" (only the relative
+    // rates and velocity matter while it settles)
+    const bool coRotating = pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid &&
+                            m_padAnchor.serial == pending.serial && m_padAnchor.coRotate;
+    if (coRotating)
+    {
+        const double tNow = m_client->lastSimulationMetadata().universeTimeSeconds;
+        const auto* city = padRouteCityObject(pending.target.stableObjectId);
+        const auto& a = m_padAnchor.coPlanned ? m_padAnchor.coAttachment
+                                              : (city ? city->hubAttachment : m_padAnchor.coAttachment);
+        const auto map = game::navigation::cityCoRotationAt(a, m_padAnchor.coPlanned ? m_padAnchor.coT0 : tNow, tNow);
+        const auto fr = player.referenceFrame.kinematicFrame();
+        m_coRotatedTransform = player.transform;
+        auto& m = m_coRotatedTransform.motion;
+        const glm::dvec3 r = m.localPositionMeters - map.pivot;
+        const glm::dvec3 u = m.localVelocityMps - glm::cross(map.omega, r);
+        m.localPositionMeters = map.pivot + map.toMap * r;
+        m.localVelocityMps = map.toMap * u;
+        // the hull: its axes carried into the map (world <- local <- map <- local <- world)
+        glm::dmat3 W;
+        for (int i = 0; i < 3; ++i)
+            W[i] = fr.localToWorldVector(glm::dvec3(i == 0, i == 1, i == 2));
+        const glm::dmat3 carry = W * map.toMap * glm::transpose(W);
+        const glm::dvec3 wWorld = fr.localToWorldVector(map.omega);
+        const auto& st = player.transform;
+        m_coRotatedTransform.pitchRate = static_cast<float>(st.pitchRate - glm::dot(wWorld, glm::dvec3(st.right())));
+        m_coRotatedTransform.yawRate = static_cast<float>(st.yawRate - glm::dot(wWorld, glm::dvec3(st.up())));
+        m_coRotatedTransform.rollRate = static_cast<float>(st.rollRate - glm::dot(wWorld, glm::dvec3(st.forward())));
+        const glm::dmat3 o(glm::mat3(st.orientation));
+        m_coRotatedTransform.orientation = glm::mat4(glm::mat3(carry * o));
+        static double logged = -1.0e9;
+        if (tNow - logged >= 3.0)
+        {
+            logged = tNow;
+            std::cerr << "[RingCoRotation] request=" << pending.serial << " map epoch "
+                      << (m_padAnchor.coPlanned ? m_padAnchor.coT0 : tNow) << " (+" << (tNow - m_padAnchor.coT0)
+                      << " s): ship at (" << m.localPositionMeters.x << "," << m.localPositionMeters.y << ","
+                      << m.localPositionMeters.z << ") in the city's map, " << glm::length(m.localVelocityMps)
+                      << " m/s relative to the city, turn relative "
+                      << glm::degrees(glm::length(glm::vec3(m_coRotatedTransform.pitchRate, m_coRotatedTransform.yawRate,
+                                                            m_coRotatedTransform.rollRate)))
+                      << " deg/s (the city's " << glm::degrees(glm::length(map.omega)) << ")" << std::endl;
+        }
+    }
+    const auto& transform = coRotating ? m_coRotatedTransform : player.transform;
     const auto& motion = transform.motion;
 
     if (motion.systemId != pending.target.systemId ||
@@ -820,6 +867,9 @@ void SpaceState::updateDockingAdvisory()
                 m_padAnchor.hoverCity = hover;
                 m_padAnchor.forwardCity = forward;
                 m_padAnchor.upCity = axes * out;
+                m_padAnchor.padHoverCity = hover;
+                m_padAnchor.padForwardCity = forward;
+                m_padAnchor.padUpCity = axes * out;
                 m_padAnchor.valid = true;
                 // a TURNING ring (author 2026-11-25: «доводит корабль до какой-то точки уже внутри кольца, выравнивает ...
                 // вращение вместе с кольцом»): the route's goal is the ring's SYNC GATE on the spin axis - still in space
@@ -1131,6 +1181,8 @@ void SpaceState::updateDockingAdvisory()
                     : applyManualCollisionAssist(control, m_client->lastSimulationMetadata().universeTimeSeconds, true);
             m_routeReflexApplied = false;
             m_clientAutopilotControlActive = true;
+            // the co-rotating leg of a ring pad: the server charges the turning frame (DeckFrame.h)
+            m_clientAutopilotControl.deckCoRotating = m_padAnchor.valid && m_padAnchor.coRotate;
 
             // This is deliberately the same input path used by the keyboard.
             // Server physics does not know whether the sample came from a
@@ -2865,9 +2917,20 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         const auto shipIt = m_client->world().ships().find(m_playerId.value);
         if (city && shipIt != m_client->world().ships().end())
         {
-            const glm::dmat3 R(glm::mat3(city->renderOrientation));
-            const glm::dvec3 shipWorld = world::coordinates::fullMeters(shipIt->second.renderTransform.worldPosition);
-            const glm::dvec3 hoverWorld = world::coordinates::fullMeters(city->renderWorldPosition) + R * m_padAnchor.hoverCity;
+            // the co-rotating leg (step 2): the city's SIMULATION pose - the one its obstacles are posed by in this
+            // snapshot (the attachment law at the snapshot's epoch) - and the ship's; the map is frozen at that epoch
+            const bool co = m_padAnchor.coRotate;
+            const glm::dmat3 R(glm::mat3(co ? city->orientation : city->renderOrientation));
+            const glm::dvec3 shipWorld =
+                world::coordinates::fullMeters(co ? shipIt->second.transform.worldPosition : shipIt->second.renderTransform.worldPosition);
+            const glm::dvec3 hoverWorld =
+                world::coordinates::fullMeters(co ? city->worldPosition : city->renderWorldPosition) + R * m_padAnchor.hoverCity;
+            if (co)
+            {
+                m_padAnchor.coT0 = snapshot.epoch.universeTimeSeconds;
+                m_padAnchor.coAttachment = snapshot.targetObject.hubAttachment;
+                m_padAnchor.coPlanned = true;
+            }
             localPort.positionMeters = snapshot.controlledShip.localPositionMeters +
                                        snapshot.planningFrame.worldToLocalVector(hoverWorld - shipWorld);
             localPort.forward = glm::normalize(snapshot.planningFrame.worldToLocalVector(R * m_padAnchor.forwardCity));
@@ -3023,6 +3086,33 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         recoverOrFail("PhysicallyImpossible: " + requestCapability.reason);
         return;
     }
+    // the CO-ROTATING leg inside a ring (step 2): the route's speed is the ring's, not the open sky's - (a) its turns fit
+    // the ring (radius v^2 / a_lat within a quarter of the ring's radius), (b) the turning frame's Coriolis 2 omega u
+    // stays within 30 % of the ship's stabilization authority over the rim's weight. Live 2026-11-26: planned at 150
+    // m/s the final straight (sized from the speed) ran 8.8 km along the rim's tangent and through 'c5_0_logistics'
+    if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid && m_padAnchor.coRotate)
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(pending.target.stableObjectId);
+            plan && plan->ring().valid && plan->ring().periodSeconds > 0.0)
+        {
+            const double R = plan->ring().radius;
+            const double w = 2.0 * 3.14159265358979323846 / plan->ring().periodSeconds;
+            const double authority = game::ship::assistedLateralStabilizationAccelerationLimitMps2(effectivePhysics);
+            const double vTurn = std::sqrt(std::max(0.0, request.lateralMps2) * 0.125 * R);
+            const double vCoriolis = 0.3 * std::max(0.0, authority - w * w * R) / (2.0 * w);
+            // (c) inside the city no faster than the pad's own entry speed: at 51 m/s the S-turn from the axis out to
+            // over the pad plus the speed-sized final straight did not fit the 900 m along the axis (5 plans infeasible)
+            const double vEntry = definition->maxEntrySpeedMps > 0.0 ? definition->maxEntrySpeedMps : vTurn;
+            const double cap =
+                std::clamp(std::min({vTurn, vCoriolis, vEntry}), 8.0, std::max(8.0, request.maxSpeedMps));
+            std::cerr << "[RingCoRotation] request=" << pending.serial << " the leg's speed " << cap << " m/s (turns fit "
+                      << vTurn << ", Coriolis " << vCoriolis << ", the pad's entry " << vEntry << ", the open sky's "
+                      << request.maxSpeedMps << ")" << std::endl;
+            request.maxSpeedMps = cap;
+            request.geometrySpeedMps = 0.0;
+            // the ring's air lanes run along its rim (exits 1.8 km long): the way from the gate is the open inside of
+            // the ring, straight to over the pad (live: 380 lane legs blocked, no entry - 5 failed plans)
+            request.endAtLaneExit = false;
+        }
     const double executionCurveLateralMps2 =
         requestCapability.executionCurveLateralMps2;
     request.initialSpeedMps = glm::length(startVelocityMps);
@@ -3069,6 +3159,20 @@ void SpaceState::updateDockingStabilizing(Frame& f)
     // USER CONTRACT: visual tunnel cadence.
     request.gateSpacingMeters = 500.0;
     request.terminalGateSpacingMeters = 250.0;
+    // the co-rotating leg inside a ring: the tunnel's frames as dense as the ring needs - the guidance tunnel's radius
+    // floor is spacing / 30 deg (500 m -> 955 m: no route inside a 1.2 km ring, 10 plans infeasible live); frames every
+    // R pi / 48 keep the floor at R / 8
+    if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid && m_padAnchor.coRotate)
+        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(pending.target.stableObjectId);
+            plan && plan->ring().valid)
+        {
+            request.gateSpacingMeters =
+                std::clamp(plan->ring().radius * 3.14159265358979323846 / 48.0, hull.lengthMeters, 500.0);
+            request.terminalGateSpacingMeters = std::min(request.terminalGateSpacingMeters, request.gateSpacingMeters);
+            std::cerr << "[RingCoRotation] request=" << pending.serial << " tunnel frames every "
+                      << request.gateSpacingMeters << " m (turn radius floor ~" << request.gateSpacingMeters / 0.5235987756
+                      << " m)" << std::endl;
+        }
 
     if (assisted)
     {
@@ -3371,6 +3475,12 @@ void SpaceState::updateDockingStabilizing(Frame& f)
     job->context.portDefinition = *definition;
     job->context.portAttachment =
         snapshot.targetObject.hubAttachment;
+    // the co-rotating leg of a ring pad: the route lives in the city frozen at the planning epoch - its port does not
+    // turn there (no live re-resolution with the spin, no tunnel roll)
+    if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid && m_padAnchor.coRotate &&
+        m_padAnchor.coPlanned)
+        job->context.portAttachment =
+            game::navigation::frozenAttachment(job->context.portAttachment, m_padAnchor.coT0);
     job->context.routeUpReference = localPort.up;
     job->context.dockCenterReference =
         localPort.positionMeters;
@@ -4331,8 +4441,38 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                     m_pilotNotice = "ДИСПЕТЧЕР КОЛЬЦА: синхронизация с вращением выполнена у ворот на оси";
                 }
             }
-            // (until the city-frame route from the gate exists, the pad service flies on from the synchronized gate)
-            if (m_padAnchor.ringGate ? gateSynced : (d < 250.0 || atRouteEnd))
+            // STEP 2: synchronized at the gate - the way on to the pad is a NEW route planned in the city's own frame (the
+            // city frozen at the planning epoch, CityCoRotationMap.h), flown co-rotating (the server charges the turning
+            // frame: ShipControlState::deckCoRotating); over the pad the pad service only sets the ship down
+            if (m_padAnchor.ringGate && gateSynced)
+            {
+                const glm::dvec3 up = m_padAnchor.padUpCity;
+                glm::dvec3 from = m_padAnchor.hoverCity - m_padAnchor.padHoverCity;   // the gate seen from over the pad
+                from -= up * glm::dot(from, up);
+                const glm::dvec3 forward = glm::length(from) > 1.0 ? glm::normalize(from) : m_padAnchor.padForwardCity;
+                auto& def = m_padAnchor.definition;
+                def.localPositionMeters = m_padAnchor.padHoverCity;
+                def.localForward = forward;
+                def.localUp = up;
+                def.maxEntrySpeedMps = 30.0;
+                m_padAnchor.hoverCity = m_padAnchor.padHoverCity;
+                m_padAnchor.forwardCity = forward;
+                m_padAnchor.upCity = up;
+                m_padAnchor.ringGate = false;
+                m_padAnchor.coRotate = true;
+                m_padAnchor.coPlanned = false;
+                releaseClientAutopilot();
+                m_dockAdviceJob.reset();
+                m_clientDockingPhase = ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                std::cerr << "[RingSync] request=" << pending.serial << " the co-rotating leg: a route to over "
+                          << m_padAnchor.address << " (" << m_padAnchor.padHoverCity.x << "," << m_padAnchor.padHoverCity.y
+                          << "," << m_padAnchor.padHoverCity.z << ") in the city's own frame" << std::endl;
+                m_pilotNotice = "ДИСПЕТЧЕР КОЛЬЦА: вращение синхронизировано - маршрут к площадке " + m_padAnchor.address +
+                                " в системе кольца";
+                return false;
+            }
+            if (!m_padAnchor.ringGate && (d < 250.0 || atRouteEnd))
             {
                 std::cerr << "[PadRoute] request=" << pending.serial << " " << d << " m from the approach point of "
                           << m_padAnchor.address << ": the pad service takes the ship" << std::endl;
@@ -5261,6 +5401,7 @@ void SpaceState::submitVirtualPilotControl(const ShipControlState& control, std:
         control.globalFlightCommandValid
             ? control
             : applyManualCollisionAssist(control, m_client->lastSimulationMetadata().universeTimeSeconds, true, pilotTag);
+    m_clientAutopilotControl.deckCoRotating = m_padAnchor.valid && m_padAnchor.coRotate;
     m_clientAutopilotControlActive = true;
     m_client->submitInput(m_clientAutopilotControl);
 }

@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include "src/game/navigation/route/RoutePlanner.h"
+#include "src/game/simulation/HubAttachmentSnapshot.h"
 #include "src/ui/presentation/ServicePanelsRenderer.h"
 
 #include <cstdint>
@@ -604,9 +605,21 @@ private:
         double gateSyncedSinceS = -1.0;   // glfw time the ship has held the gate synchronized (-1: not yet)
         double gateLogS = -1.0e9;
         double gateRollStartRad = 0.0;    // the hull's roll in the city frame when the window started
+        // the pad's own approach point (over the pad at the transit height), kept while the route goes to the gate
+        glm::dvec3 padHoverCity {0.0};
+        glm::dvec3 padForwardCity {0.0, 0.0, 1.0};
+        glm::dvec3 padUpCity {0.0, 1.0, 0.0};
+        // STEP 2 - the CO-ROTATING leg (gate -> over the pad, CityCoRotationMap.h): planned against the city frozen at
+        // coT0 (the planning epoch), flown with the ship's state carried into that map; the server charges the turning
+        // frame (ShipControlState::deckCoRotating)
+        bool coRotate = false;
+        bool coPlanned = false;
+        double coT0 = 0.0;
+        game::simulation::HubAttachmentSnapshot coAttachment;
         game::navigation::HubSemanticAnchorDefinition definition;   // the same in the module attachment's terms
         game::navigation::DockingPortRuntimeState runtime;
     } m_padAnchor;
+    ShipTransform m_coRotatedTransform;   // the ship carried into the city's frozen map (the co-rotating leg)
     const ClientObjectState* padRouteCityObject(const std::string& frameModuleId) const
     {
         if (m_client)

@@ -207,6 +207,9 @@ struct DynamicMotionState
     bool deckActive = false;
     glm::dvec3 deckAxisPointLocal {0.0};
     glm::dvec3 deckOmegaLocal {0.0};
+    // the deck is the ship's CO-ROTATING frame (ShipControlState::deckCoRotating): the full turning-frame cost, the
+    // attitude damped to the deck's turn (server-side only; not replicated)
+    bool deckCoRotating = false;
     // COUPLED to an object (a ship standing on / carried by a hub city's pad service): the object (entity id, 0 = none)
     // and the ship's pose in that object's frame (place; up and back axes). The client draws it from the object's pose
     // as drawn - one epoch, no prediction (a predicted ship on a turning ring stood ~20 m off its pad, jittering)

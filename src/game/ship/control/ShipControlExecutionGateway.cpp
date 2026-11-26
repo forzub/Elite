@@ -608,6 +608,13 @@ bool ShipControlExecutionGateway::propagateHubTacticalTranslation(
     if (motion.deckActive)
         motion.assistedStabilizationAccelerationMps2 +=
             motion.travelFrame.localToWorldVector(game::navigation::deckFollowAccelerationLocal(motion));
+    // ... the CO-ROTATING frame (an autopilot's route in the ring city's own frame): its velocity relative to the deck
+    // also turns with the deck (omega x u) - with the above the full cost of the turning frame, omega x (omega x r) +
+    // 2 omega x u (centripetal + Coriolis), so the route's law sees a still city
+    if (motion.deckActive && motion.deckCoRotating)
+        motion.assistedStabilizationAccelerationMps2 +=
+            motion.travelFrame.localToWorldVector(glm::cross(motion.deckOmegaLocal,
+                                                             motion.localVelocityMps - game::navigation::deckVelocityLocal(motion)));
 
     game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
         motion,

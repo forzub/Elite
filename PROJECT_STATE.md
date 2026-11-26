@@ -8982,3 +8982,24 @@ start-up hitches (render), trade step 16 part 3 live.
   with a server CO-ROTATION mode for the autopilot ship: the physics adds the full rotating-frame cost omega x (omega x
   r) + 2 omega x u (paid by the ship's thrust, within its authority) and the hull keeps the ring's turn - the autopilot
   sees the city as a still world (the pilot's deck mode adds only omega x v: the hub-axes deck velocity).
+- RING PAD AUTOPILOT, STEP 2 - THE CO-ROTATING LEG (2026-11-26): from the synchronized gate the way to over the pad is
+  a NEW route planned against the city FROZEN at the planning epoch t0 and flown with the ship's state carried into that
+  map (CityCoRotationMap.h: the city's turn since t0 undone about its attachment pivot - position, velocity relative to
+  the turning city, hull axes, body rates minus the city's turn; SpaceStateDocking binds `transform` to that copy for
+  settling, planning, the route pilot and its checks). The route's port uses the attachment frozen at t0 (no live
+  re-resolution, no tunnel roll). SERVER (ShipControlState::deckCoRotating, wire protocol 54): the deck works for the
+  autopilot, the physics charges the FULL turning-frame cost (the pilot's deck omega x v + omega x u = centripetal +
+  Coriolis, through the stabilization authority) and the neutral attitude damps to the city's turn in body axes (the
+  hull keeps turning with the ring; at the gate the relative turn holds 0.003 deg/s). THE LEG'S ROUTE (each found live):
+  (a) speed = min(turns within R/8, Coriolis 2 omega u <= 30 % of the authority over the rim weight, the pad's entry
+  speed 30) - at 150 m/s the speed-sized final straight ran 8.8 km along the rim's tangent through 'c5_0_logistics'
+  (crash); at 51-73 m/s no feasible path; (b) no air lanes (they run along the rim, 380 legs blocked); (c) the
+  guidance tunnel's frames every R pi / 48 (79 m) - the radius floor is spacing / 30 deg (500 m -> 955 m: nothing fits
+  inside a 1.2 km ring; THE reason of the infeasible plans). LIVE A1-03 from 13 km: gate synchronized (1.2 m off the
+  axis, roll drift 0.14 deg / 3 s) -> leg planned 1.67 km (lower bound 1.45, final 700 m) -> flown at 30 m/s relative
+  to the city, cross-track mean 2.9 m / max 5.6 m, held 686 m from the axis (goal 684), the turning frame costing 5.6
+  m/s2 -> the pad service 250 m before the approach point: across, down, LANDED (phase 3); 0 collisions.
+  Open: the service still flies the last 250 m across (rule: script = the descent only) - hand over at the route's
+  end; the HUD tunnel of the leg is drawn in the frozen map (turns away with the city); the gate route is 37 km (the
+  docking-style 8.85 km final; once it ran through the ring's inside and met lane traffic - ship 1586, 87 m/s);
+  regression on Высокий not yet run.

@@ -9018,3 +9018,9 @@ start-up hitches (render), trade step 16 part 3 live.
   at rest): the speed-sized final along the axis 8.85 km -> 0.76 km, the route from 13 km (the spine side) 37.4 km ->
   20.9 km (lower bound 16.1: round the ring). Live: gate synchronized (0.4 m off the axis, roll drift 0.03 deg / 3 s),
   leg 1.7 km, LANDED on A1-03, 0 collisions.
+- Co-rotation and the Newtonian law - SOURCE-AUDITED ONLY (no Newtonian ship in the DEV start): the deck charge goes
+  through motion.assistedStabilizationAccelerationMps2, clamped by assistedLateralStabilizationAccelerationLimitMps2 =
+  min(max(manoeuvre, strafe), main) - law-independent, and updateLocalFrameMotion adds it whenever the installed main
+  plant executed (real plants: both laws); the neutral attitude damping (now to the city's turn) runs for both laws.
+  So a Newtonian ship pays the turning frame within its thrusters' authority too (no gas accounting for that share).
+  A live Newtonian ring landing is still to be flown.

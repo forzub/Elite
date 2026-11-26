@@ -1170,7 +1170,6 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             if (!pose.valid)
                 continue;
             object.worldPosition = world::coordinates::makeWorldPositionFromMeters(pose.worldMeters);
-            object.position = world::coordinates::legacyFloatMeters(object.worldPosition);
             object.orientation = pose.orientation;
             object.linearVelocityMps = pose.linearVelocityMps;
             object.angularVelocityWorldRadPerSecond = pose.angularVelocityWorldRadPerSecond;

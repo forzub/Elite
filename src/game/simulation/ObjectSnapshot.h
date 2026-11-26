@@ -17,8 +17,7 @@ struct ObjectSnapshot
     ObjectType type;
     int systemId = -1;
 
-    world::coordinates::WorldPosition worldPosition;
-    glm::vec3 position; // legacy mirror
+    world::coordinates::WorldPosition worldPosition;   // the only position (the float legacy mirror removed 2026-11-26)
     
     glm::mat4 orientation {1.0f};
     glm::dvec3 linearVelocityMps {0.0};
@@ -50,6 +49,5 @@ struct ObjectSnapshot
     )
     {
         worldPosition = p;
-        position = world::coordinates::legacyFloatMeters(worldPosition);
     }
 };

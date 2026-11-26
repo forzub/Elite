@@ -80,7 +80,6 @@ SimulationSnapshot makeSnapshot()
     ship.role = ShipRole::Player;
     ship.typeId = ObjectType::CobraMk1;
     ship.acknowledgedControlTick = 77u;
-    ship.transform.position = glm::vec3(1.0f, 2.0f, 3.0f);
     ship.transform.worldPosition.localMeters =
         glm::dvec3(100.0, 200.0, 300.0);
     ship.transform.motion.systemId = 3;

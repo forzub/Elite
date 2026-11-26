@@ -126,7 +126,6 @@ SimulationSnapshot makeSnapshot()
     navigationExecution.pendingCommandCount = 3u;
     ship.navigationExecution = navigationExecution;
     ship.transform.worldPosition = position(2, -3, 4, 10.0, 20.0, -30.0);
-    ship.transform.position = glm::vec3(10.0f, 20.0f, -30.0f);
     ship.transform.orientation[0][1] = 0.25f;
     ship.transform.pitchRate = 0.1f;
     ship.transform.yawRate = 0.2f;
@@ -137,7 +136,6 @@ SimulationSnapshot makeSnapshot()
     ship.transform.cruiseActive = true;
     ship.transform.jumpActive = false;
     ship.transform.targetSpeedRate = 3.0f;
-    ship.transform.referenceVelocityMetersPerSecond = glm::dvec3(4.0, 5.0, 6.0);
     ship.transform.strafeInput = 0.11f;
     ship.transform.liftInput = -0.12f;
     ship.transform.forwardInput = 0.91f;
@@ -403,7 +401,6 @@ SimulationSnapshot makeSnapshot()
     object.type = ObjectType::Station;
     object.systemId = 3;
     object.worldPosition = position(3, 3, 3, 100.0, 200.0, 300.0);
-    object.position = glm::vec3(100.0f, 200.0f, 300.0f);
     object.orientation[1][0] = 0.2f;
     object.linearVelocityMps = glm::dvec3(1.0, 1.5, 2.0);
     object.hubAttachment.systemId = 3;

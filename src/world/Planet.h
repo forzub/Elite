@@ -10,9 +10,6 @@ struct Planet
 
     world::coordinates::WorldPosition worldPosition;
 
-    // Legacy mirror. Не источник истины.
-    glm::vec3 position {0.0f};
-
     float radius = 0.0f;
 
     void setWorldPosition(
@@ -20,7 +17,6 @@ struct Planet
     )
     {
         worldPosition = p;
-        position = world::coordinates::legacyFloatMeters(worldPosition);
     }
 
     void setWorldPositionMeters(

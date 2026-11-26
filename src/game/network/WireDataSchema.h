@@ -899,7 +899,6 @@ ELITE_WIRE_SCHEMA(
     v.type,
     v.systemId,
     v.worldPosition,
-    v.position,
     v.orientation,
     v.linearVelocityMps,
     v.angularVelocityWorldRadPerSecond,

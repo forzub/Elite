@@ -9157,3 +9157,11 @@ start-up hitches (render), trade step 16 part 3 live.
   Pre-existing failure (not touched): ctest assisted_safe_course_recovery "wall-clock latency invented Assisted
   maneuver progress" (its sources were not changed).
 - DEV runs are on screen (author 2026-11-26, «пока не попрошу спрятать»): run_dev.sh ELITE_DEV_OFFSCREEN_WINDOW=0.
+- AUDIT LOW-MEDIUM "WorldPosition + a legacy float position": the float mirrors are GONE from Planet, ObjectSnapshot
+  and ClientObjectState (all were written only, read nowhere - the build found no reader); ObjectSnapshot's left the
+  wire schema - WIRE PROTOCOL 55. WorldObject (src/world/WorldObject.h) is included nowhere -> docs/CLEANUP_CANDIDATES.md.
+  Other float mirrors (DamageEvent, ObjectDetachedFragmentSnapshot, SignalTransmitter, InterferenceSource,
+  StaticObject) were not in the audit's list and stay. The wire contract tests had rotted (ShipTransform::position /
+  referenceVelocityMetersPerSecond long gone; the data-plane unit lost COMDATs without big-obj): fixed, MinGW big-obj for
+  wire_data_plane / tcp_wire_transport; wire_data_plane, wire_protocol, tcp_wire_transport PASS. Live legacypos1:
+  B4-11 landed, 0 collisions, epoch checks clean.

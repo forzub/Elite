@@ -84,7 +84,6 @@ inline bool reposeHubAttachedObject(::ObjectSnapshot& o, const game::simulation:
     if (!pose.valid)
         return false;
     o.worldPosition = world::coordinates::makeWorldPositionFromMeters(pose.worldMeters);
-    o.position = world::coordinates::legacyFloatMeters(o.worldPosition);
     o.orientation = pose.orientation;
     o.linearVelocityMps = pose.linearVelocityMps;
     o.angularVelocityWorldRadPerSecond = pose.angularVelocityWorldRadPerSecond;

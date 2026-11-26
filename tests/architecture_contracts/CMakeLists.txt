@@ -1782,3 +1782,10 @@ add_executable(j_field_emitter_tests JFieldEmitterTests.cpp)
 target_include_directories(j_field_emitter_tests PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
 target_compile_features(j_field_emitter_tests PRIVATE cxx_std_17)
 add_test(NAME j_field_emitter COMMAND j_field_emitter_tests)
+
+# the whole wire schema instantiated in one unit outgrows the regular COFF section limit on MinGW (the link lost
+# std::cerr / codec template COMDATs, as GameServer.cpp did): big-obj, like the game's large units
+if(MINGW)
+    target_compile_options(wire_data_plane_contract_tests PRIVATE -Wa,-mbig-obj)
+    target_compile_options(tcp_wire_transport_contract_tests PRIVATE -Wa,-mbig-obj)
+endif()

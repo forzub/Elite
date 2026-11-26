@@ -116,10 +116,7 @@ struct ClientObjectState
     EntityId                                        id;
     ObjectType                                      type;
     int                                             systemId = -1;
-    world::coordinates::WorldPosition worldPosition;
-    // Legacy mirror of worldPosition.
-    // Do not use as source of truth.
-    glm::vec3 position {0.0f};
+    world::coordinates::WorldPosition worldPosition;   // the only position (the float legacy mirror removed 2026-11-26)
 
     // glm::vec3                                       rotation;
     // glm::vec3                                       renderRotation;
@@ -168,7 +165,6 @@ struct ClientObjectState
     )
     {
         worldPosition = p;
-        position = world::coordinates::legacyFloatMeters(worldPosition);
     }
 };
 

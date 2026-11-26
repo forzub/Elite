@@ -796,6 +796,9 @@ private:
         glm::dvec3 direction {0.0, 0.0, -1.0};
         double targetSpeedMps = 0.0;
         double sceneRayMeters = 0.0;
+        // no safe course and no stop corridor: the next full check (the planning snapshot + the scene ray, ~90 ms on
+        // the main thread) not before this server time - it ran EVERY FRAME and froze the picture (live 2026-11-26)
+        double retryAtServerSeconds = -1.0e9;
     };
     DockAssistedSafeRecoveryState m_dockAssistedSafeRecovery {};
 

@@ -530,10 +530,15 @@ PreplanningSafetyCourse::evaluate(
         for (const auto& obstacle : originalRequest.obstacles)
         {
             const std::vector<world::navigation::NavigationObstacle> one {obstacle};
+            // the contact zone includes the course's safety spot (clearSegment proves a tube of that radius around
+            // every course): a ship standing 1..15 m outside the plain inflation of a wall had every tube clipping it,
+            // no course and no stop proven, an emergency stop forever - and the ~90 ms check every frame (live 2026-11-26)
             if (obstacle.finite() &&
                 !world::navigation::segmentClearOfNavigationObstacles(
                     originalRequest.positionMeters, originalRequest.positionMeters, one,
-                    originalRequest.hullRadiusMeters, originalRequest.additionalClearanceMeters))
+                    originalRequest.hullRadiusMeters,
+                    originalRequest.additionalClearanceMeters +
+                        std::max(0.0, originalRequest.courseSafetySpotRadiusMeters)))
             {
                 // away from its SURFACE (from the centre a tall wall beside the deck pulled the course sideways into the
                 // next building, live): the box's nearest point; inside the box itself - its nearest face's normal

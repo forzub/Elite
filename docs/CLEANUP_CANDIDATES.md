@@ -47,3 +47,7 @@ world data sources), legacy state files `CURRENT_STATE.md` / `CURRENT_TASK.md` (
 - `src/game/simulation/ShipModuleSnapshot.h` (included nowhere).
 
 - 2026-11-25: %LOCALAPPDATA%/EliteGame/journal/ship_1.txt - written by DEV test runs before ELITE_JOURNAL_DIR existed (real hub sightings only); can be deleted, the game re-records.
+
+## 2026-11-26 (audit: legacy positions)
+- `src/world/WorldObject.h` - a struct included nowhere (its `position` legacy mirror was one of the audit's
+  "WorldPosition + legacy position" findings); delete on the author's go.

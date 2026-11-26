@@ -2348,6 +2348,7 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
 
             if (m_dockAssistedSafeRecovery.stopFallback)
             {
+                m_dockAssistedSafeRecovery.retryAtServerSeconds = authoritativeServerSeconds + 1.0;
                 std::cerr
                     << "[AssistedSafeCourse]"
                     << " request=" << pending.serial
@@ -2878,6 +2879,15 @@ void SpaceState::updateDockingStabilizing(Frame& f)
     } l {relativeSpeedMps, angularSpeedRadPerSec};
     if (!settleDockingCraftBeforePlanning(f, l))
         return;
+
+    // stuck without a safe course (the emergency stop): hold the stop, re-check once a second, not every frame
+    if (m_dockAssistedSafeRecovery.active && m_dockAssistedSafeRecovery.stopFallback &&
+        m_dockAssistedSafeRecovery.serial == pending.serial &&
+        f.authoritativeServerSeconds < m_dockAssistedSafeRecovery.retryAtServerSeconds)
+    {
+        f.submitAutopilotControl(f.manualStopControl());
+        return;
+    }
 
     std::cout
         << "[DockClient] request=" << pending.serial

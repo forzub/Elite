@@ -345,6 +345,30 @@ int main()
             );
         }
 
+        // NEAR A WALL, outside its plain inflation but inside the delta-spot tube (live 2026-11-26: a ship stopped at
+        // street level by a building had every course's tube clip that wall - no course, no stop corridor, an
+        // emergency stop forever): the wall is a contact, the course leads away from it
+        {
+            PreplanningSafetyCourseRequest request;
+            request.positionMeters = {0.0, 0.0, 0.0};
+            request.velocityMps = {0.0, 0.0, 0.0};
+            request.hullForward = {1.0, 0.0, 0.0};
+            request.preferredDirection = {1.0, 0.0, 0.0};
+            request.hullRadiusMeters = 17.0;
+            request.additionalClearanceMeters = 25.0;
+            request.courseSafetySpotRadiusMeters = 15.0;
+            request.courseAccelerationMps2 = 20.0;
+            request.brakingAccelerationMps2 = 20.0;
+            request.maxAngularVelocityRadPerSecond = 1.0;
+            // a sphere wall whose inflated surface (r 100 + 17 + 25 = 142 m) is 8 m from the ship: inside the 15 m tube
+            request.obstacles.push_back(sphere("wall-beside", {150.0, 0.0, 0.0}, 100.0));
+            const auto result = PreplanningSafetyCourse::evaluate(request);
+            require(result.valid && result.safeCourseFound,
+                    "a ship standing inside the delta-spot of a wall found no course");
+            require(glm::dot(result.safeCourse, glm::dvec3(-1.0, 0.0, 0.0)) > 0.9,
+                    "the course from a wall in the delta-spot does not lead away from it");
+        }
+
         std::cout
             << "PREPLANNING SAFETY COURSE TESTS: PASS\n";
         return EXIT_SUCCESS;

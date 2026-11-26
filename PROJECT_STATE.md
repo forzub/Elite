@@ -9144,3 +9144,16 @@ start-up hitches (render), trade step 16 part 3 live.
   limit (undefined std::deque / nlohmann COMDAT templates at link) - added to the MinGW -Wa,-mbig-obj list beside
   SpaceState.cpp / TcpTransport.cpp; EliteNewtonianReplay / EliteNewtonianScenarios link again in build/headless_server
   (the scripts' default; ELITE_NEWTONIAN_BUILD still overrides).
+- PRE-PLANNING SAFETY: a ship stopped 1..15 m outside a wall's plain inflation (the DEV pad series interrupts the A2-03
+  descent at street level) had EVERY course's delta-spot tube (15 m) clip that wall: no course, no stop corridor, an
+  emergency stop forever, and the full check (snapshot + scene ray, ~90 ms on the main thread) EVERY FRAME - the visible
+  freezes the author saw (250 ms gaps twice a second). PreplanningSafetyCourse: the contact zone now includes the spot
+  radius (such a wall is a contact: the course leads away from it - DockLiftClear rose 62 m off two walls, then planned);
+  SpaceStateDocking: in the emergency stop the check repeats once a second, not every frame. Test
+  preplanning_safety_course PASS (new case: a wall inside the tube). Live padser4 (on screen): 4/4 pads, 0 collisions,
+  0 emergency stops, H4-01 planned at the first attempt, 6 gaps > 300 ms in 13 min (47 in the freezing run).
+  Tried and REVERTED: turning an Assisted ship at rest in place to face a goal behind it (for the H4-01 13 failures) -
+  in a city the nose then looks across the buildings and no launch course is clear.
+  Pre-existing failure (not touched): ctest assisted_safe_course_recovery "wall-clock latency invented Assisted
+  maneuver progress" (its sources were not changed).
+- DEV runs are on screen (author 2026-11-26, «пока не попрошу спрятать»): run_dev.sh ELITE_DEV_OFFSCREEN_WINDOW=0.

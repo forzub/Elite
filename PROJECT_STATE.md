@@ -9125,3 +9125,9 @@ start-up hitches (render), trade step 16 part 3 live.
   (castScheduledVisits) uses the same pose. Source + build; not yet seen on screen (no DEV screenshot verb).
   The dock traffic of the axial dock (EAR, 4 cobretts) is the hex-dock dispatcher's own (on the axis - no co-rotation
   issue). Real (promoted) NPC ships on the ring's lanes: 0 lanes on the ring today.
+- AUDIT HIGH "the evasion predictor does not model the real control during the autopilot" - PARTLY: the course the
+  reflex judges is now the command flown NOW held for the program's hold (ControlShipState::courseProgram: the route's
+  command of the frame / the pilot's sampled stick), not a hands-off coast; with a course of its own, hands off is one
+  of the dodges and "keep the course" is the no-dodge answer. Still not modelled: the route's FUTURE commands (its turns
+  beyond the hold) - open. Tests: evasion_trajectory_conflict 5112 PASS. Live ramcheck1 (failsuite aftR_ram: a 120 m/s
+  straight ram locked at 600 m): closest approach 78.8 m (failsuite_v1 39.3 m), 0 collisions.

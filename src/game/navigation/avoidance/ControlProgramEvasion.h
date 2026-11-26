@@ -89,6 +89,11 @@ struct ControlShipState
     // Coriolis part - the prediction flies the same charges through the same gateway (audit 2026-11-26 HIGH: the reflex
     // predicted the co-rotating leg as free flight, ~400 m off over a 12 s horizon). velocityBody stays INERTIAL (the
     // frame the radar tracks move straight in), never the velocity relative to the city.
+    // THE COURSE the ship is flown on NOW (audit 2026-11-26 HIGH: the reflex judged its course as the hands-off flight
+    // while the autopilot / the pilot kept steering): the current command held for the program's hold, then hands off -
+    // the near-term course the urgency window looks at. Not a model of the route's future commands (open).
+    bool courseProgramValid = false;
+    ControlProgram courseProgram;
     bool deckActive = false;
     bool deckCoRotating = false;
     glm::dvec3 deckAxisPointBody {0.0};   // a point on the deck's spin axis, relative to us, body axes

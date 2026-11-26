@@ -4654,6 +4654,10 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             reflexShip.velocityBody = glm::dvec3(glm::dot(vMap, reflexAgent.rightMap), glm::dot(vMap, reflexAgent.upMap),
                                                  -glm::dot(vMap, reflexAgent.forwardMap));
             reflexShip.targetForwardSpeedMps = reflexAgent.assistedTargetSpeedMps;
+            // the course = the route's command of this frame held (not a hands-off coast)
+            reflexShip.courseProgramValid = true;
+            reflexShip.courseProgram = {output.control.strafeInput, output.control.liftInput, output.control.forwardInput,
+                                        output.control.pitchInput, output.control.yawInput, output.control.targetSpeedRate};
             reflexShip.rcsKeepsTranslationDeltaV = output.control.rcsKeepsTranslationDeltaV;
             reflexShip.deltaVSinceScanBody = deltaVSinceRadarScanBody();
             reflexShip.ratesPitchYawRoll = glm::vec3(static_cast<float>(reflexAgent.pitchRateRadPerSec),
@@ -5679,6 +5683,10 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     ship.targetForwardSpeedMps = std::max(0.0, static_cast<double>(motion.targetForwardSpeedMps));
     ship.rcsKeepsTranslationDeltaV = sampled.rcsKeepsTranslationDeltaV;
     ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
+    // the course = the control being flown now (the pilot's stick / the virtual pilot's command) held
+    ship.courseProgramValid = true;
+    ship.courseProgram = {sampled.strafeInput, sampled.liftInput, sampled.forwardInput, sampled.pitchInput, sampled.yawInput,
+                          sampled.targetSpeedRate};
     ship.deltaVSinceScanBody = deltaVSinceRadarScanBody();
     const double hullRadius = ownBoundingRadiusMeters();
     // the STRUCTURES near the course (the pilot's own flight only - a planned route is proven clear of them): every hit

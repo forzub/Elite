@@ -126,7 +126,9 @@ public:
         if (sc.threats.empty())
             return release(now);
         const auto& progs = controlPrograms();
-        const ControlFlight handsOff = flyControlProgram(ship, progs[ControlProgramHandsOff], programHoldSeconds,
+        // the course: the command flown now (autopilot / pilot) held, else hands off; a dodge is judged against it
+        const ControlProgram& coursePr = ship.courseProgramValid ? ship.courseProgram : progs[ControlProgramHandsOff];
+        const ControlFlight handsOff = flyControlProgram(ship, coursePr, programHoldSeconds,
                                                          horizonSeconds, programDtSeconds);
         const EvasionChoice course = judgeControlFlight(handsOff, sc, ship.velocityBody);
         m_cmd.courseMarginMeters = course.contact ? -1.0e3 : course.minMarginMeters;
@@ -170,12 +172,13 @@ public:
                              ship.deckCoRotating ? 1 : 0);
             }
         const auto t0 = std::chrono::steady_clock::now();
-        int best = static_cast<int>(ControlProgramHandsOff);
+        // -1: keep the course (no dodge); with a course of its own, hands off is one of the dodges
+        int best = ship.courseProgramValid ? -1 : static_cast<int>(ControlProgramHandsOff);
         EvasionChoice bestChoice = course;
         double heldScore = -1.0e30;
         for (std::size_t i = 0; i < progs.size(); ++i)
         {
-            if (i == ControlProgramHandsOff)
+            if (i == ControlProgramHandsOff && !ship.courseProgramValid)
                 continue;
             const EvasionChoice c = judgeControlFlight(flyControlProgram(ship, progs[i], programHoldSeconds, horizonSeconds,
                                                                          programDtSeconds),
@@ -192,8 +195,9 @@ public:
         if (m_cmd.program >= 0 && heldScore >= bestChoice.score - 5.0)
             best = m_cmd.program;   // hysteresis: keep the one we fly unless another is 5 points better
         m_clearSince = -1.0;
-        const ControlProgram& p = progs[static_cast<std::size_t>(best)];
-        m_cmd.active = !p.handsOff();
+        static const ControlProgram keepCourse {};
+        const ControlProgram& p = best >= 0 ? progs[static_cast<std::size_t>(best)] : keepCourse;
+        m_cmd.active = best >= 0 && (ship.courseProgramValid || !p.handsOff());
         m_cmd.program = m_cmd.active ? best : -1;
         m_cmd.strafe = p.strafe;
         m_cmd.lift = p.lift;

@@ -9110,3 +9110,9 @@ start-up hitches (render), trade step 16 part 3 live.
   ShipCore): 97/126 PASS vs stepI baseline 96/126; both: every failure is micro-brake only (30 / 29, the set shuffles
   between runs), no corridor / keep-inside / collision / no-DONE. The new nozzle passport causes no regression.
   (build/headless_server's -O0 link failure of GameServer.cpp stays open - the scripts take ELITE_NEWTONIAN_BUILD.)
+- REGRESSION navsuite_day26 (Высокий, after today's audit / nozzle / pad-rule / ShipParams changes): pad_outside,
+  pad_series, tower_pad, dock_hub - 0 failed, 0 collisions (cross_max 13.0 / 78.0 / 31.1 / 18.8). pad_series differs
+  from the older suites only because those stalled over A2-03 on "выпустите опоры" (the script has no gear verb) and
+  never asked the next pads; this run asked all four - the 4th (H4-01) had 13 infeasible inbound-leg plans
+  ("continuous Assisted optimizer did not reach a feasible path", speed x0.2-0.55) before one executed. Planner
+  observation, not caused by today's changes (none touch the inbound-leg optimizer); open.

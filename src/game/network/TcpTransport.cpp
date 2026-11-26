@@ -5,6 +5,7 @@
 #include <queue>
 #include <iostream>
 #include <typeinfo>
+#include <chrono>
 #include <utility>
 #include <vector>
 
@@ -27,11 +28,71 @@ bool popQueue(std::queue<T>& queue, T& outValue)
     return true;
 }
 
+// what one TCP session's snapshots cost (the replication audit 2026-11-26: measure before reshaping the ship row):
+// every 10 s the snapshots sent, ships carried, raw (encoded) and wire (LZ4) bytes per second, and the row parts of
+// the controlled ship and of an average other ship
+struct SnapshotTrafficMeter
+{
+    using Clock = std::chrono::steady_clock;
+    Clock::time_point windowStart = Clock::now();
+    std::uint64_t snapshots = 0, ships = 0, rawBytes = 0, wireBytes = 0;
+
+    template <class V>
+    static std::size_t sizeOf(const V& v)
+    {
+        wire::WireWriter w;
+        (void)wire::binary::encodeValue(w, v);
+        return w.take().size();
+    }
+
+    void record(const SimulationSnapshot& snapshot, const std::vector<std::uint8_t>& payload)
+    {
+        wire::CompressedWirePayload envelope;
+        const bool parsed = wire::decodeCompressedWirePayloadEnvelope(payload, envelope);
+        ++snapshots;
+        ships += snapshot.ships.size();
+        rawBytes += parsed ? envelope.uncompressedBytes : payload.size();
+        wireBytes += payload.size();
+        const double seconds = std::chrono::duration<double>(Clock::now() - windowStart).count();
+        if (seconds < 10.0)
+            return;
+        std::cerr << "[NetBytes] session snapshots " << snapshots / seconds << "/s, ships/snapshot "
+                  << (snapshots ? static_cast<double>(ships) / snapshots : 0.0) << ", raw "
+                  << rawBytes / seconds / 1024.0 << " KiB/s, wire " << wireBytes / seconds / 1024.0 << " KiB/s (x"
+                  << (wireBytes ? static_cast<double>(rawBytes) / wireBytes : 0.0) << ")";
+        // the row parts, from this snapshot
+        const ShipSnapshot* own = nullptr;
+        std::size_t others = 0, otherRow = 0, otherMotion = 0, otherTelemetry = 0;
+        for (const auto& ship : snapshot.ships)
+        {
+            if (ship.id.value == snapshot.session.controlledEntityId)
+                own = &ship;
+            else
+            {
+                ++others;
+                otherRow += sizeOf(ship);
+                otherMotion += sizeOf(ship.transform.motion);
+                otherTelemetry += sizeOf(ship.transform.motion.engineTelemetry);
+            }
+        }
+        if (own)
+            std::cerr << "; own row " << sizeOf(*own) << " B (motion " << sizeOf(own->transform.motion) << ", engine telemetry "
+                      << sizeOf(own->transform.motion.engineTelemetry) << ", referenceFrame " << sizeOf(own->referenceFrame)
+                      << ", refit " << sizeOf(own->refit) << ", core " << sizeOf(own->shipCoreStatus) << ")";
+        if (others)
+            std::cerr << "; other rows avg " << otherRow / others << " B (motion " << otherMotion / others
+                      << ", engine telemetry " << otherTelemetry / others << ")";
+        std::cerr << std::endl;
+        *this = {};
+    }
+};
+
 template<typename T>
 bool sendTyped(
     wire::TcpWireStream& stream,
     const T& value,
-    const wire::IWireCompressor& compressor)
+    const wire::IWireCompressor& compressor,
+    SnapshotTrafficMeter* meter = nullptr)
 {
     wire::WireMessageKind kind = wire::WireMessageKind::ClientMessage;
     std::vector<std::uint8_t> payload;
@@ -44,6 +105,9 @@ bool sendTyped(
         return false;
     }
     const std::size_t bytes = payload.size();
+    if constexpr (std::is_same_v<T, SimulationSnapshot>)
+        if (meter)
+            meter->record(value, payload);
     if (!stream.send(kind, std::move(payload)))
     {
         std::cerr << "[Wire] SEND FAILED: " << typeid(T).name() << " kind=" << static_cast<int>(kind) << " bytes=" << bytes
@@ -284,10 +348,12 @@ struct TcpServerTransport::Impl
             error = stream->lastError();
     }
 
+    SnapshotTrafficMeter snapshotMeter;
+
     template<typename T>
     void send(const T& value)
     {
-        if (!stream || !sendTyped(*stream, value, compressor))
+        if (!stream || !sendTyped(*stream, value, compressor, &snapshotMeter))
         {
             // a snapshot that could not be ENCODED (the stream itself is fine: over the wire size limit, SRV-2): tell
             // the client why before closing - it showed only "TCP peer closed connection"

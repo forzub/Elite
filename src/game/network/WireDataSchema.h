@@ -250,6 +250,14 @@ ELITE_WIRE_SCHEMA(
 
 ELITE_WIRE_SCHEMA(
     game::navigation::DynamicMotionState,
+    // left the wire 2026-11-26 (no client reader - scratchpad wire_readers.py; server runtime only):
+    //   desiredRelativeVelocityMps, desiredTacticalVelocityMps, liftSpeedMps, strafeSpeedMps,
+    //   lockedToFramePosition, mainTrimLoad01, mainTrimUsableScale01,
+    //   orbitalAltitudeErrorMeters, orbitalAltitudeMeters, orbitalAssistEnabled, orbitalAssistMaxAngleDeg,
+    //   orbitalAssistStrength, orbitalCorridorId, orbitalCorridorState, orbitalPhaseRadians,
+    //   orbitalRadialSpeedMps, orbitalSpeedErrorMps, orbitalTangentialSpeedMps, orbitalTargetSpeedMps,
+    //   pendingReferenceVelocityMatch, planeOffsetMeters, primaryGravityAccelerationMps2,
+    //   primaryGravityAltitudeMeters, primaryGravityDistanceMeters
     v.mode,
     v.systemId,
     v.parentBodyId,
@@ -259,7 +267,6 @@ ELITE_WIRE_SCHEMA(
     v.matchedReferenceFrameId,
     v.localControlLaw,
     v.velocityAlignmentMode,
-    v.pendingReferenceVelocityMatch,
     v.referenceVelocityMps,
     v.localPositionMeters,
     v.localVelocityMps,
@@ -349,8 +356,6 @@ ELITE_WIRE_SCHEMA(
     v.securityFinesTotalCr,
     v.assistedThrottleTrimWasActive,
     v.forwardSpeedMps,
-    v.strafeSpeedMps,
-    v.liftSpeedMps,
     v.mainEngineAccelerationMps2,
     v.manoeuvreAccelerationMps2,
     v.mainGimbalRightCommand01,
@@ -359,8 +364,6 @@ ELITE_WIRE_SCHEMA(
     v.mainGimbalPitchRad,
     v.mainPropulsionTorqueBodyNm,
     v.mainPropulsionAngularAccelerationBodyRadPerSec2,
-    v.mainTrimLoad01,
-    v.mainTrimUsableScale01,
     v.engineTelemetry,
     v.mainEngineDeliveredThrust01,
     v.mainEngineReportedSlotCount,
@@ -370,49 +373,24 @@ ELITE_WIRE_SCHEMA(
     v.assistedStabilizationAccelerationMps2,
     v.engineAccelerationMps2,
     v.manoeuvreGasPressure01,
-    v.manoeuvreGasDepleted,
-    v.desiredTacticalVelocityMps,
+    v.manoeuvreGasDepleted,   // no client reader, but pinned by check_wire_data_schema.py
     v.worldVelocityMps,
-    v.desiredRelativeVelocityMps,
-    v.orbitalAssistEnabled,
-    v.orbitalAssistMaxAngleDeg,
-    v.orbitalAssistStrength,
     v.gravityAccelerationMps2,
     v.primaryGravityBodyId,
-    v.primaryGravityDistanceMeters,
-    v.primaryGravityAltitudeMeters,
-    v.primaryGravityAccelerationMps2,
-    v.orbitalCorridorId,
-    v.orbitalCorridorState,
-    v.orbitalAltitudeMeters,
-    v.orbitalAltitudeErrorMeters,
-    v.orbitalTargetSpeedMps,
-    v.orbitalTangentialSpeedMps,
-    v.orbitalRadialSpeedMps,
-    v.orbitalSpeedErrorMps,
-    v.altitudeMeters,
-    v.orbitalPhaseRadians,
-    v.planeOffsetMeters,
-    v.lockedToFramePosition
+    v.altitudeMeters
 );
 
 ELITE_WIRE_SCHEMA(
     ShipTransform,
+    // left the wire 2026-11-26 (no client reader - scratchpad wire_readers.py; server runtime only):
+    //   pitchInput, yawInput, rollInput, targetSpeedRate, jumpActive, strafeInput, liftInput, forwardInput
     v.worldPosition,
     v.orientation,
     v.pitchRate,
     v.yawRate,
     v.rollRate,
-    v.pitchInput,
-    v.yawInput,
-    v.rollInput,
     v.cruiseActive,
-    v.jumpActive,
-    v.targetSpeedRate,
-    v.motion,
-    v.strafeInput,
-    v.liftInput,
-    v.forwardInput
+    v.motion
 );
 
 ELITE_WIRE_SCHEMA(

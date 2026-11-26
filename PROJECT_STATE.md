@@ -9191,3 +9191,24 @@ start-up hitches (render), trade step 16 part 3 live.
   ShipTransform input axes are read by no client code (cruiseActive: own cockpit only). Pre-existing failure:
   check_wire_data_schema.py "top-level codec manually knows nested world fields: value.ships" (the oversize
   diagnostics in WireDataCodec.h).
+- REPLICATION STEPS 1-2 (author 2026-11-26: «отделяем replication contract от runtime state», steps 1-2 first):
+  (1) TCP snapshot meter (TcpTransport.cpp SnapshotTrafficMeter, server side, remote sessions only - the local
+  loopback encodes nothing): every 10 s [NetBytes] snapshots/s, ships/snapshot, raw + LZ4 bytes/s, the own row and the
+  average other row split into motion / engine telemetry / referenceFrame / refit / core. BASELINE (run_remote.sh,
+  EliteServer + TCP client, earth hub, B4-11 approach, 26 steady windows): 16.7 snapshots/s, 23.6 ships/snapshot,
+  raw 2833 KiB/s, wire 593 KiB/s (LZ4 x4.8); own row 5692 B (motion 2700, engine telemetry 1162, referenceFrame 343,
+  refit 504, shipCoreStatus 1468); other rows 4487 B (motion 2630, telemetry 1162 = 26 %).
+  (2) 32 fields with NO client reader left the snapshot (proof: scratchpad wire_readers.py - every read site, server
+  vs client-reachable code; the client evasion builds its own ShipTransform from explicit fields; the client sparse
+  dead-reckoning reads only worldVelocity / engine + gravity acceleration): ShipTransform pitch/yaw/roll/strafe/lift/
+  forwardInput, targetSpeedRate, jumpActive; motion desiredRelative/TacticalVelocityMps, lift/strafeSpeedMps,
+  lockedToFramePosition, mainTrimLoad01 / UsableScale01, orbitalAssist* (3), orbitalCorridorId / State, orbital
+  Altitude / AltitudeError / TargetSpeed / Tangential / Radial / SpeedError / PhaseRadians, planeOffsetMeters,
+  pendingReferenceVelocityMatch, primaryGravityAcceleration / Altitude / Distance. Kept although unread:
+  manoeuvreGasDepleted (pinned by check_wire_data_schema.py). Wire protocol 56, snapshot schema 81; the data-plane
+  test now asserts they decode as defaults. AFTER (same scenario, 23.6 ships/snapshot): raw 2740 KiB/s (-3.3 %), wire
+  585 KiB/s (-1.3 %); own row 5443 B (motion 2480), other rows 4279 B (motion 2433). NOT removed (by design, the
+  author's order): motion.travelFrame / local* / worldPosition / worldVelocity - the client takes them from
+  referenceFrame ONLY in HubTactical (full ships: referenceFrame.valid only there; shells: whenever travelFrame valid);
+  in free flight / J the client lives on the motion copy -> a single Kinematic contract first.
+  Pad runs (local and remote) stop OVER the pad at phase 2 waiting for the legs (G): the DEV scripts never sent "gear".

@@ -637,17 +637,17 @@ void testSnapshotRoundTrip()
         ),
         "main propulsion angular acceleration did not round-trip"
     );
-    require(
-        near(decoded.ships[0].transform.motion.mainTrimLoad01, 0.375),
-        "main trim load did not round-trip"
-    );
-    require(
-        near(
-            decoded.ships[0].transform.motion.mainTrimUsableScale01,
-            0.925
-        ),
-        "main trim usable scale did not round-trip"
-    );
+    // fields with no client reader left the wire (2026-11-26): they decode as their defaults, whatever the server held
+    require(decoded.ships[0].transform.motion.mainTrimLoad01 == 0.0 &&
+                decoded.ships[0].transform.motion.mainTrimUsableScale01 == 1.0,
+        "main trim (no client reader) still rides the wire");
+    require(decoded.ships[0].transform.pitchInput == 0.0f && decoded.ships[0].transform.forwardInput == 0.0f &&
+                decoded.ships[0].transform.targetSpeedRate == 0.0f,
+        "ship input axes (no client reader) still ride the wire");
+    require(decoded.ships[0].transform.motion.orbitalCorridorId.empty() &&
+                decoded.ships[0].transform.motion.primaryGravityAltitudeMeters == 0.0 &&
+                !decoded.ships[0].transform.motion.pendingReferenceVelocityMatch,
+        "orbital / gravity diagnostics (no client reader) still ride the wire");
     const auto& telemetry=decoded.ships[0].transform.motion.engineTelemetry;
     require(telemetry.valid && telemetry.count==4 &&
             telemetry.controlTick==77 &&

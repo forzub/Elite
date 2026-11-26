@@ -881,7 +881,9 @@ void SpaceState::updateDockingAdvisory()
                     d.localPositionMeters = ring.syncGate;
                     d.localForward = -into;   // the route arrives along -forward
                     d.localUp = glm::dvec3(0.0, 1.0, 0.0);
-                    d.maxEntrySpeedMps = 2.0;
+                    // the pad's entry speed (the route still ends at rest): at 2 m/s the speed-sized final along the
+                    // axis was 8.85 km - the route ran 10 km past the gate and back (37 km from 13 km away)
+                    d.maxEntrySpeedMps = 30.0;
                     m_padAnchor.hoverCity = ring.syncGate;
                     m_padAnchor.forwardCity = -into;
                     m_padAnchor.upCity = d.localUp;
@@ -3086,6 +3088,17 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         recoverOrFail("PhysicallyImpossible: " + requestCapability.reason);
         return;
     }
+    // the route to a ring's SYNC GATE: at the hub's own speed limit (its lanes' data; the speed it is flown at anyway) -
+    // the final along the axis is sized from the route's top speed: from the open sky's 500 m/s it was 8.8 km, the
+    // route ran 10 km past the gate and back (37 km from 13 km away)
+    if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid && m_padAnchor.ringGate)
+        if (const auto* lanes = game::navigation::traffic::HubLaneCatalog::forFrameModule(pending.target.stableObjectId);
+            lanes && lanes->speedLimitMps() > 1.0 && lanes->speedLimitMps() < request.maxSpeedMps)
+        {
+            std::cerr << "[RingSync] request=" << pending.serial << " the gate route at the hub's limit "
+                      << lanes->speedLimitMps() << " m/s (the open sky's " << request.maxSpeedMps << ")" << std::endl;
+            request.maxSpeedMps = lanes->speedLimitMps();
+        }
     // the CO-ROTATING leg inside a ring (step 2): the route's speed is the ring's, not the open sky's - (a) its turns fit
     // the ring (radius v^2 / a_lat within a quarter of the ring's radius), (b) the turning frame's Coriolis 2 omega u
     // stays within 30 % of the ship's stabilization authority over the rim's weight. Live 2026-11-26: planned at 150

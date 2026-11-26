@@ -9013,3 +9013,8 @@ start-up hitches (render), trade step 16 part 3 live.
   Open (ring): the gate route's 37 km docking-style final; a gate route through the ring's inside can meet the lane
   traffic; NPC ring traffic does not use the gate / co-rotation yet; the axial dock dispatcher; Newtonian ships (the
   deck charge is the Assisted stabilization channel).
+- RING GATE ROUTE SHORTENED (2026-11-26): the route to the sync gate is planned at the hub's own speed limit (its lanes'
+  data speed_limit_mps, 150 - the speed it was flown at anyway) and enters the gate at the pad's 30 m/s (still ending
+  at rest): the speed-sized final along the axis 8.85 km -> 0.76 km, the route from 13 km (the spine side) 37.4 km ->
+  20.9 km (lower bound 16.1: round the ring). Live: gate synchronized (0.4 m off the axis, roll drift 0.03 deg / 3 s),
+  leg 1.7 km, LANDED on A1-03, 0 collisions.

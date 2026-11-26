@@ -614,8 +614,19 @@ void testSnapshotRoundTrip()
         "navigation execution diagnostics did not round-trip");
     require(decodedNavigationExecution->pendingCommandCount == 3u,
         "navigation execution pending-command count did not round-trip");
-    require(near(decoded.ships[0].transform.motion.travelFrame.localToWorldBasis[1][2], 0.125),
-        "double matrix state mismatch");
+    // one spatial representation (step 3): the motion travel frame / local state do not ride the wire; the client
+    // restores them from the referenceFrame right after decoding
+    require(!decoded.ships[0].transform.motion.travelFrame.valid &&
+                decoded.ships[0].transform.motion.localPositionMeters == glm::dvec3(0.0),
+        "motion travel frame / local state still ride the wire beside the referenceFrame");
+    {
+        auto restored = decoded.ships[0].transform.motion;
+        game::simulation::restoreMotionFromReferenceFrame(restored, decoded.ships[0].referenceFrame);
+        require(restored.travelFrame.valid && restored.travelFrame.frameId == "hub-frame" &&
+                    near(restored.travelFrame.originMeters.y, 2000.0) &&
+                    near(restored.localPositionMeters.z, 7.0) && near(restored.localVelocityMps.x, 8.0),
+            "motion travel frame / local state not restored from the referenceFrame");
+    }
     require(near(decoded.ships[0].transform.motion.manoeuvreGasPressure01, 0.42),
         "ship manoeuvre-gas pressure did not round-trip");
     require(decoded.ships[0].transform.motion.manoeuvreGasDepleted,

@@ -127,40 +127,10 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 flight.assistedWorkingThrustAxisBody;
         }
 
-        s.referenceFrame.systemId = tr.motion.systemId;
-        s.referenceFrame.frameId = tr.motion.travelFrame.frameId;
-        s.referenceFrame.matchedToReferenceFrame =
-            tr.motion.matchedToReferenceFrame;
-        s.referenceFrame.type = tr.motion.mode;
-        s.referenceFrame.bodyId = tr.motion.parentBodyId;
-        s.referenceFrame.hubId = tr.motion.hubId;
-        s.referenceFrame.localPositionMeters =
-            tr.motion.localPositionMeters;
-        s.referenceFrame.localVelocityMetersPerSecond =
-            tr.motion.localVelocityMps;
-        s.referenceFrame.universeTimeSeconds =
-            m_orbitalUniverseTimeSeconds;
-
-        if (tr.motion.mode == game::navigation::MotionMode::HubTactical &&
-            tr.motion.travelFrame.valid)
+        // one spatial representation on the wire, in every mode (replication step 3)
+        s.referenceFrame = game::simulation::projectShipReferenceFrame(tr.motion, m_orbitalUniverseTimeSeconds);
+        if (s.referenceFrame.valid)
         {
-            const auto& frame = tr.motion.travelFrame;
-            s.referenceFrame.systemId = frame.systemId;
-            s.referenceFrame.frameId = frame.frameId;
-            s.referenceFrame.originMeters = frame.originMeters;
-            s.referenceFrame.velocityMetersPerSecond =
-                frame.linearVelocityMps;
-            s.referenceFrame.accelerationMetersPerSecond2 =
-                frame.linearAccelerationMps2;
-            s.referenceFrame.angularVelocityWorldRadPerSecond =
-                frame.angularVelocityWorldRadPerSecond;
-            s.referenceFrame.angularAccelerationWorldRadPerSecond2 =
-                frame.angularAccelerationWorldRadPerSecond2;
-            s.referenceFrame.progradeAxis = frame.localToWorldBasis[0];
-            s.referenceFrame.radialAxis = frame.localToWorldBasis[1];
-            s.referenceFrame.normalAxis = frame.localToWorldBasis[2];
-            s.referenceFrame.valid = true;
-
             // Hub identity remains target/reference metadata. Kinematics above
             // come from the ship-owned travel frame even while the two frames
             // are currently matched.
@@ -498,33 +468,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         if (const auto info = m_dockTrafficInfo.find(id); info != m_dockTrafficInfo.end())
             s.traffic = info->second;
 
-        s.referenceFrame.systemId = shell.transform.motion.systemId;
-        s.referenceFrame.frameId = shell.transform.motion.travelFrame.frameId;
-        s.referenceFrame.type = shell.transform.motion.mode;
-        s.referenceFrame.localPositionMeters =
-            shell.transform.motion.localPositionMeters;
-        s.referenceFrame.localVelocityMetersPerSecond =
-            shell.transform.motion.localVelocityMps;
-        s.referenceFrame.universeTimeSeconds =
-            m_orbitalUniverseTimeSeconds;
-
-        if (shell.transform.motion.travelFrame.valid)
-        {
-            const auto& frame = shell.transform.motion.travelFrame;
-            s.referenceFrame.originMeters = frame.originMeters;
-            s.referenceFrame.velocityMetersPerSecond =
-                frame.linearVelocityMps;
-            s.referenceFrame.accelerationMetersPerSecond2 =
-                frame.linearAccelerationMps2;
-            s.referenceFrame.angularVelocityWorldRadPerSecond =
-                frame.angularVelocityWorldRadPerSecond;
-            s.referenceFrame.angularAccelerationWorldRadPerSecond2 =
-                frame.angularAccelerationWorldRadPerSecond2;
-            s.referenceFrame.progradeAxis = frame.localToWorldBasis[0];
-            s.referenceFrame.radialAxis = frame.localToWorldBasis[1];
-            s.referenceFrame.normalAxis = frame.localToWorldBasis[2];
-            s.referenceFrame.valid = true;
-        }
+        s.referenceFrame = game::simulation::projectShipReferenceFrame(shell.transform.motion, m_orbitalUniverseTimeSeconds);
 
         snapshot.ships.push_back(std::move(s));
     }

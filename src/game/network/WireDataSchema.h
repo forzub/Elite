@@ -258,18 +258,17 @@ ELITE_WIRE_SCHEMA(
     //   orbitalRadialSpeedMps, orbitalSpeedErrorMps, orbitalTangentialSpeedMps, orbitalTargetSpeedMps,
     //   pendingReferenceVelocityMatch, planeOffsetMeters, primaryGravityAccelerationMps2,
     //   primaryGravityAltitudeMeters, primaryGravityDistanceMeters
+    // one spatial representation (step 3, 2026-11-26): travelFrame, referenceVelocityMps, localPositionMeters,
+    //   localVelocityMps ride as ShipSnapshot::referenceFrame (projectShipReferenceFrame) and are restored on the
+    //   client right after decoding (restoreMotionFromReferenceFrame, TcpTransport)
     v.mode,
     v.systemId,
     v.parentBodyId,
     v.hubId,
-    v.travelFrame,
     v.matchedToReferenceFrame,
     v.matchedReferenceFrameId,
     v.localControlLaw,
     v.velocityAlignmentMode,
-    v.referenceVelocityMps,
-    v.localPositionMeters,
-    v.localVelocityMps,
     v.targetForwardSpeedMps,
     v.assistedTargetSpeedHold,
     v.assistedFreeRotation,

@@ -9212,3 +9212,24 @@ start-up hitches (render), trade step 16 part 3 live.
   referenceFrame ONLY in HubTactical (full ships: referenceFrame.valid only there; shells: whenever travelFrame valid);
   in free flight / J the client lives on the motion copy -> a single Kinematic contract first.
   Pad runs (local and remote) stop OVER the pad at phase 2 waiting for the legs (G): the DEV scripts never sent "gear".
+  CORRECTION (step 3): free flight and J are HubTactical with a DETACHED frame (GameSimulationFreeFlight.cpp:572), so
+  full ships already had referenceFrame.valid in free flight / J - the "motion copy only" statement above was wrong.
+* 2026-11-26 REPLICATION STEP 3 - ONE SPATIAL REPRESENTATION ON THE WIRE:
+  - Server: projectShipReferenceFrame(motion, time) (ShipReferenceFrameSnapshot.h) is THE projection for full ships and
+    shells alike, every mode, valid <=> travelFrame.valid (shells now also carry hubId / bodyId / matched).
+  - Wire: motion.travelFrame, referenceVelocityMps, localPositionMeters, localVelocityMps removed (protocol 57, snapshot
+    schema 82); the referenceFrame is their one representation. TCP client: restoreMotionFromReferenceFrame on every
+    decoded row (TcpTransport.cpp), before any reader (same referenceVelocity formula as applyReferenceFrameState).
+    LocalLoopback encodes nothing - unchanged. Data-plane test: the fields do not ride + the restore reproduces them.
+  - Bytes (run_remote.sh, same B4-11 scenario, 27 windows): raw 2716 -> 2609 KiB/s (-3.9 %), wire 582 -> 569 KiB/s
+    (-2.2 %); own row 5448 -> 5047 B (motion 2480 -> 2192), other rows 4279 -> 3941 B (motion 2433 -> 2156). Since the
+    baseline (netbase1): raw -7.9 %, wire -4.0 %, other row -12 %.
+  - LIVE over TCP: the pad approach identical to the metre (holds at (-2240,317,80) waiting for gear); free flight
+    (frame ship_free_204, local speed 1.47 m/s under HOME) and J (30 km: field up to 21920 g, the client's restored
+    frame speed 8368 km/s) read correctly by the client's jstate from the restored motion.travelFrame.
+  - Contract tree: LocalPredictedPresentationContractTests lacked require() (did not compile) - added. Still failing,
+    unrelated to replication: presentation_coordinator (directTargetForFunctionKey(4)), local_flight_control ("surviving
+    fore main was not promoted"), localization (Chinese hub catalog / English fallback).
+  - Still duplicated (small): motion.systemId / hubId / parentBodyId / matchedToReferenceFrame beside the referenceFrame.
+    Biggest remaining levers: engineTelemetry 1162 B in every row (observers need thrust01 per slot), shipCoreStatus
+    1468 B (owner only), refit 504 B, and ~24 ships at full cadence.

@@ -169,6 +169,9 @@ struct TcpClientTransport::Impl
                         fail("invalid SimulationSnapshot wire payload");
                         return;
                     }
+                    // the motion travel frame / local state ride the wire once, as the referenceFrame (step 3)
+                    for (auto& ship : value.ships)
+                        game::simulation::restoreMotionFromReferenceFrame(ship.transform.motion, ship.referenceFrame);
                     snapshots.push(std::move(value));
                     break;
                 }

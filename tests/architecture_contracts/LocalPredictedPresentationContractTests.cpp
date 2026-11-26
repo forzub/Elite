@@ -15,6 +15,12 @@ namespace
     std::exit(1);
 }
 
+void require(bool condition, const std::string& message)
+{
+    if (!condition)
+        fail(message);
+}
+
 void requireNear(
     double actual,
     double expected,

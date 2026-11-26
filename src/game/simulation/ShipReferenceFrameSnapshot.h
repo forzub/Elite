@@ -100,4 +100,52 @@ struct ShipReferenceFrameSnapshot
     }
 };
 
+// THE projection of a ship's spatial truth (DynamicMotionState: travel frame + local state) into its replicated
+// representation - the same for full ships and lightweight shells, in every motion mode (FreeFlight and J are
+// HubTactical with a detached frame). valid <=> the travel frame is valid.
+inline ShipReferenceFrameSnapshot projectShipReferenceFrame(
+    const game::navigation::DynamicMotionState& motion,
+    double universeTimeSeconds)
+{
+    ShipReferenceFrameSnapshot out;
+    out.systemId = motion.systemId;
+    out.frameId = motion.travelFrame.frameId;
+    out.matchedToReferenceFrame = motion.matchedToReferenceFrame;
+    out.type = motion.mode;
+    out.bodyId = motion.parentBodyId;
+    out.hubId = motion.hubId;
+    out.localPositionMeters = motion.localPositionMeters;
+    out.localVelocityMetersPerSecond = motion.localVelocityMps;
+    out.universeTimeSeconds = universeTimeSeconds;
+    if (!motion.travelFrame.valid)
+        return out;
+    const auto& frame = motion.travelFrame;
+    out.systemId = frame.systemId;
+    out.frameId = frame.frameId;
+    out.originMeters = frame.originMeters;
+    out.velocityMetersPerSecond = frame.linearVelocityMps;
+    out.accelerationMetersPerSecond2 = frame.linearAccelerationMps2;
+    out.angularVelocityWorldRadPerSecond = frame.angularVelocityWorldRadPerSecond;
+    out.angularAccelerationWorldRadPerSecond2 = frame.angularAccelerationWorldRadPerSecond2;
+    out.progradeAxis = frame.localToWorldBasis[0];
+    out.radialAxis = frame.localToWorldBasis[1];
+    out.normalAxis = frame.localToWorldBasis[2];
+    out.valid = true;
+    return out;
+}
+
+// The inverse, on the client replica: the motion fields that do NOT ride the wire (the referenceFrame is their one
+// representation) are rebuilt from it. Called once per decoded row, before any client reader sees the snapshot.
+inline void restoreMotionFromReferenceFrame(
+    game::navigation::DynamicMotionState& motion,
+    const ShipReferenceFrameSnapshot& frame)
+{
+    if (!frame.valid)
+        return;
+    motion.travelFrame = frame.kinematicFrame();
+    motion.localPositionMeters = frame.localPositionMeters;
+    motion.localVelocityMps = frame.localVelocityMetersPerSecond;
+    motion.referenceVelocityMps = frame.localToWorldVelocity(frame.localPositionMeters, glm::dvec3(0.0));
+}
+
 } // namespace game::simulation

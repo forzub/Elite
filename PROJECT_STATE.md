@@ -49,8 +49,17 @@ Server / replication
   carries the hub content fingerprint (HUB_CONTENT_MISMATCH refuses); construction overrides are replicated in the
   session (schema 72) and the construction clock is the server's universe time; entering a system takes complete
   objects from the canonical snapshot; an unencodable snapshot answers SNAPSHOT_TOO_LARGE (wire 51); inbound TCP queues
-  bounded (4096). Wire protocol 52, snapshot schema 72.
+  bounded (4096). Wire protocol 55, snapshot schema 80.
 - CONTRACT: the activation diagnostics CSV only with ELITE_DEV_ACTIVATION_CSV=1.
+- CONTRACT (audit 2026-11-26, the ownership rule): every mutable fact has exactly ONE authoritative runtime owner;
+  derived structures are views / projections and never a second owner; network snapshots are explicit projections of
+  the authoritative state, not serialized copies of runtime structures; client state is a replica / prediction /
+  presentation and never server truth; persistence and replay use versioned schemas / DTOs, never the memory layout of
+  a runtime C++ struct. NOT YET MET (open, in this order): ShipSnapshot carries DynamicMotionState almost whole (144 of
+  161 fields, the same row for every audience) - the replication projection; ShipParams stored raw in replay cases.
+- CONTRACT: m_canonicalReplicationSnapshot (GameServer) is canonical for REPLICATION only (hydration of late joiners,
+  sparse nested fields kept between publications) - it is a projection of the server runtime, never gameplay truth;
+  nothing reads it back into the simulation.
 Economy
 - CONTRACT: a ship loss is keyed by ship + universe time, recorded for every ship with cargo or a player; an insured
   lost lot is subrogated to the insurer (claim paid, payout recorded); a failed state write is retried until saved;

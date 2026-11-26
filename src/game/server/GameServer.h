@@ -389,6 +389,9 @@ private:
 
     // Field-retained canonical source for late-join/re-entry hydration. Ordinary
     // published snapshots intentionally omit heavy graph fields when unchanged.
+    // Canonical for REPLICATION only: a projection of the server runtime, never
+    // gameplay truth - nothing reads it back into the simulation (PROJECT_STATE
+    // invariants, the ownership rule).
     SimulationSnapshot m_canonicalReplicationSnapshot;
 
     bool m_forceSnapshotPublication = false;

@@ -2,6 +2,7 @@
 // at the CENTRE of every drawn child gives exactly that child's action; a slider drag keeps the pointer (capture) even
 // outside its rect; the window -> UI mapping of a letterboxed viewport lands on the same child. No GL, no GLFW.
 #include <cstdio>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -107,8 +108,72 @@ static void runAt(float uiW, float uiH, float scale, bool playlist)
     check(rec.actions.empty(), tag + ": hovering is not a click");
 }
 
+// BUBBLING (audit 2026-11-26): a press the deepest child ignores goes up to its parent; the parent that answers with a
+// capture owns the pointer (its moves come to it, the release frees it); a child that handles it stops the bubble
+namespace
+{
+struct Probe : UIComponent
+{
+    bool takes = false;
+    bool capture = false;
+    int downs = 0, moves = 0, ups = 0;
+    bool interactive() const override { return true; }
+    ui::UIEventResult onPointerDown(const ui::UIPointerEvent&) override
+    {
+        ++downs;
+        return !takes ? ui::UIEventResult::Ignored : capture ? ui::UIEventResult::HandledCapture : ui::UIEventResult::Handled;
+    }
+    ui::UIEventResult onPointerMove(const ui::UIPointerEvent&) override
+    {
+        ++moves;
+        return ui::UIEventResult::Handled;
+    }
+    ui::UIEventResult onPointerUp(const ui::UIPointerEvent&) override
+    {
+        ++ups;
+        return takes ? ui::UIEventResult::Handled : ui::UIEventResult::Ignored;
+    }
+};
+
+void testBubbling()
+{
+    auto root = std::make_unique<UIComponent>();
+    auto* parent = root->add(std::make_unique<Probe>());
+    auto* child = parent->add(std::make_unique<Probe>());
+    root->setResolvedRect({0.0f, 0.0f, 100.0f, 100.0f});
+    parent->setResolvedRect({10.0f, 10.0f, 80.0f, 80.0f});
+    child->setResolvedRect({20.0f, 20.0f, 20.0f, 20.0f});
+    parent->takes = true;
+    parent->capture = true;
+    ui::UIInputRouter router;
+    const auto at = [](float x, float y, bool down) {
+        ui::PointerSample s;
+        s.valid = true;
+        s.position = {x, y};
+        s.leftDown = down;
+        return s;
+    };
+    router.route(*root, at(30.0f, 30.0f, false));
+    check(router.hovered() == child, "bubbling: the child is hovered");
+    router.route(*root, at(30.0f, 30.0f, true));
+    check(child->downs == 1 && parent->downs == 1, "bubbling: the child's ignored press reached the parent");
+    check(router.captured() == parent, "bubbling: the parent that took it with a capture owns the pointer");
+    router.route(*root, at(95.0f, 95.0f, true));
+    check(parent->moves == 1 && child->moves == 0, "bubbling: the captor's move only");
+    router.route(*root, at(95.0f, 95.0f, false));
+    check(parent->ups == 1 && router.captured() == nullptr, "bubbling: the release goes to the captor and frees it");
+    child->takes = true;
+    child->capture = false;
+    router.route(*root, at(30.0f, 30.0f, true));
+    check(child->downs == 2 && parent->downs == 1, "bubbling: a handled press stops at the child");
+    check(router.captured() == nullptr, "bubbling: a plain Handled takes no capture");
+    router.route(*root, at(30.0f, 30.0f, false));
+}
+} // namespace
+
 int main()
 {
+    testBubbling();
     runAt(1920.0f, 1080.0f, 1.0f, false);
     runAt(1920.0f, 1080.0f, 1.0f, true);
     runAt(1280.0f, 720.0f, 0.75f, true);

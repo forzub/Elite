@@ -2039,6 +2039,8 @@ void SpaceState::update(float dt)
     const double htmlStartMs = nowMs();
     processHtmlCommands();
     m_perfProcessHtmlMs = nowMs() - htmlStartMs;
+    // the cockpit UI's pointer and actions (the render only lays it out and draws)
+    routeCockpitRadioUi();
 
     // DEV scripted acceptance steps (ELITE_DEV_SOL_MAP_SCRIPT, *_AT timers,
     // service script): src/game/dev/DevScriptRunner.

@@ -9131,3 +9131,12 @@ start-up hitches (render), trade step 16 part 3 live.
   of the dodges and "keep the course" is the no-dodge answer. Still not modelled: the route's FUTURE commands (its turns
   beyond the hold) - open. Tests: evasion_trajectory_conflict 5112 PASS. Live ramcheck1 (failsuite aftR_ram: a 120 m/s
   straight ram locked at 600 m): closest approach 78.8 m (failsuite_v1 39.3 m), 0 collisions.
+- AUDIT UI items: (LOW) the event contract promised bubbling ("Ignored: the router may offer it to a parent"), the
+  router never did - UIInputRouter now bubbles press / release / scroll from the target up its ancestors until one
+  answers; the one that answers HandledCapture owns the pointer; a capture's moves stay the captor's alone. Test
+  ui_radio_widget 90 checks PASS (9 new: a child's ignored press reaches the parent, its capture, a handled press stops
+  at the child). (MEDIUM) the magnitola's input ran inside the render pass: now layoutCockpitRadioUi (render: the panel
+  hangs on the engine group's frame, known there; keeps the viewport) + routeCockpitRadioUi (SpaceState::update: the
+  pointer through the last drawn layout, the actions applied there); the render only draws. Smoke run + HUD capture
+  (D:/tmp/smoke_radio/hud.png): the panel drawn, no errors. Still open from the audit: DynamicMotionState ownership
+  split, the legacy positions in ObjectSnapshot / WorldObject / Planet.

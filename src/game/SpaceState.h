@@ -526,7 +526,13 @@ private:
     render::cockpit::CockpitRadioWidget m_cockpitRadioWidget;   // the magnitola over the engine group
     ui::UIInputRouter m_cockpitUiRouter;                         // the cockpit UI's pointer (the radio for now)
     bool m_cockpitUiPointerOver = false;                         // the pointer is the UI's (not the flight's)
-    void updateCockpitRadioUi(const Viewport& vp);
+    // the magnitola in two phases (audit 2026-11-26 MEDIUM: its input ran inside the render pass): the render lays it
+    // out (it hangs on the engine group's frame, known there) and keeps the viewport; the UPDATE routes the pointer
+    // through that layout and applies the actions; the render then only draws
+    void layoutCockpitRadioUi(const Viewport& vp);
+    void routeCockpitRadioUi();
+    Viewport m_cockpitUiViewport {};
+    bool m_cockpitUiLaidOut = false;
     render::cockpit::GuidanceCorridorRenderer m_guidanceCorridorRenderer;
     render::cockpit::HubCorridorHudRenderer m_hubCorridorHudRenderer;   // the hub's green / red corridors, faint
     render::cockpit::GalacticCompassRenderer m_galacticCompassRenderer;

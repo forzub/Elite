@@ -1033,11 +1033,12 @@ void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShi
         m_engineThrustIndicatorRenderer.renderThermalSystems(
             cockpit.systems, engineThrustInstrument, vp
         );
-    // the magnitola right above the engine group (src/render/cockpit/CockpitRadioWidget.h): its layout + the routed
-    // pointer + the actions (updateCockpitRadioUi), then the pure drawing of that laid-out state
+    // the magnitola right above the engine group (src/render/cockpit/CockpitRadioWidget.h): its layout here (the
+    // pointer and the actions are the update's - routeCockpitRadioUi), then the pure drawing of that laid-out state
+    m_cockpitUiLaidOut = false;
     if (cockpit.valid)
     {
-        updateCockpitRadioUi(vp);
+        layoutCockpitRadioUi(vp);
         auto& text = TextRenderer::instance();
         ui::UIDrawContext ctx {text, m_engineThrustIndicatorRenderer.groupFrame().scale};
         m_cockpitRadioWidget.draw(ctx);
@@ -2927,7 +2928,7 @@ void SpaceState::renderContainmentBeacon(const Viewport& viewport)
 // The magnitola's UI step (the UI component pass): the widget shows the radio's read-only state, its panel sits on the
 // engine group's published frame (the transitional adapter), the pointer is read at the UI boundary and routed to the
 // child under it, and the actions the children emit are applied to audio::CockpitRadio HERE - never by the widget.
-void SpaceState::updateCockpitRadioUi(const Viewport& vp)
+void SpaceState::layoutCockpitRadioUi(const Viewport& vp)
 {
     auto& radio = audio::CockpitRadio::instance();
     if (!m_cockpitRadioWidget.onAction)
@@ -2969,6 +2970,21 @@ void SpaceState::updateCockpitRadioUi(const Viewport& vp)
         return;
     }
     m_cockpitRadioWidget.layoutPanel(panel, frame.scale);
+    m_cockpitUiViewport = vp;
+    m_cockpitUiLaidOut = true;
+}
+
+// the update phase: the pointer through the layout the last frame drew (one frame old - what the pilot saw), the
+// actions applied here, never from the render
+void SpaceState::routeCockpitRadioUi()
+{
+    if (!m_cockpitUiLaidOut || !m_cockpitRadioWidget.visible)
+    {
+        m_cockpitUiRouter.reset();
+        m_cockpitUiPointerOver = false;
+        return;
+    }
     auto& text = TextRenderer::instance();
-    m_cockpitUiPointerOver = m_cockpitUiRouter.route(m_cockpitRadioWidget, ui::readGlfwPointer(vp, text.screenWidthPx(), text.screenHeightPx()));
+    m_cockpitUiPointerOver = m_cockpitUiRouter.route(
+        m_cockpitRadioWidget, ui::readGlfwPointer(m_cockpitUiViewport, text.screenWidthPx(), text.screenHeightPx()));
 }

@@ -629,8 +629,9 @@ void testSnapshotRoundTrip()
     }
     require(near(decoded.ships[0].transform.motion.manoeuvreGasPressure01, 0.42),
         "ship manoeuvre-gas pressure did not round-trip");
-    require(decoded.ships[0].transform.motion.manoeuvreGasDepleted,
-        "ship manoeuvre-gas depletion latch did not round-trip");
+    // the server's lockout latch has no client reader: it does not ride the wire (decodes as the default)
+    require(!decoded.ships[0].transform.motion.manoeuvreGasDepleted,
+        "ship manoeuvre-gas depletion latch (no client reader) still rides the wire");
     require(near(decoded.ships[0].transform.motion.manoeuvreAccelerationMps2.y, 0.22),
         "ship manoeuvre-thruster acceleration did not round-trip");
     require(

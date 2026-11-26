@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <functional>
 #include "src/game/simulation/ShipRefitSnapshot.h"
+#include "src/game/simulation/ShipConditionTable.h"
 #include <cstdint>
 
 #include <vector>
@@ -878,6 +879,10 @@ private:
     bool removeTrafficShell(EntityId id);
     void updateShipSimulationDetail(double dt);
     void updateShipTierTransitionTest();
+    // DEV ELITE_SHELL_ROUNDTRIP_TEST: the shell transition matrix + materialize/dematerialize memory (once)
+    void runShellRoundTripTest();
+    bool m_shellRoundTripTestRequested = false;
+    bool m_shellRoundTripTestDone = false;
     void updateFiveHundredShipHerdDiagnostics();
     bool buildFiveHundredShipHerdGoal(
         EntityId id,
@@ -908,11 +913,22 @@ private:
     // Lightweight authoritative ships live outside m_ships by design: merely
     // existing in the universe must not allocate ShipCore/module/damage state.
     std::unordered_map<EntityId, game::simulation::ShipShellState> m_shipShells;
-    // The FULL state of a shell that once was a full ship (damage, torn-off fragments, repair jobs, cargo, fuel, gas,
-    // heat, reactors): parked whole on dematerialize, taken back on materialize - a ship that fought, withdrew as a shell
-    // and returned must come back as it left, not new (author 2026-11-26). The shell's coarse damage aggregates are only
-    // what the shell's own coarse motion reads. Erased when the id leaves the simulation (forgetShip).
-    std::unordered_map<EntityId, std::unique_ptr<Ship>> m_parkedShellShips;
+    // The CONDITION of every NPC ship (ShipConditionTable.h): one fixed-size cell per ship, indexed directly by
+    // lifecycle.conditionSlot. A ship that fought, withdrew as a shell and returned comes back as it left, not new;
+    // ships enter the universe worn / damaged by who keeps them (corporate, state, private, syndicate, pirate) and
+    // shells are repaired only as far as their spare parts allow (author 2026-11-26).
+    game::simulation::ShipConditionTable m_shipConditions;
+    double m_shipUpkeepAccumulatorSeconds = 0.0;
+    double m_shipUpkeepLogAccumulatorSeconds = 0.0;
+    // spare-parts supply factor (1 = peace; a war lowers it for everyone) - one knob until wars exist per system
+    double m_sparePartsSupplyFactor = 1.0;
+    game::simulation::ShipConditionCell* shipConditionCell(EntityId id);
+    void releaseShipCondition(EntityId id);
+    // the first ACTIVE domain that keeps a ship materialized (nullptr = none): a ship is never collapsed to a shell
+    // while a fight, a jump, free flight, a pad landing, a service or a broken-gear / manoeuvre-only constraint is
+    // live on it - those sidecars are erased or left stale by a shell, nobody continues them (shell audit 2026-11-26)
+    const char* shellBlockingDomain(EntityId id) const;
+    void updateShipUpkeep(double dt);
 
     // Dock service traffic: dispatcher + shuttles + busy traffic, realised as
     // TrafficShell ships whose pose the traffic model owns.

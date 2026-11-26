@@ -305,10 +305,12 @@ void GameSimulation::despawnPromotedAirShip(EntityId id)
 {
     m_promotedAir.erase(id);
     m_airTrafficShells.erase(id);
-    forgetShip(id);
+    // collapse, then remove, then forget (forgetShip first released the condition cell and dematerializeShip
+    // allocated a fresh one only for removeTrafficShell to release it again)
     if (getShip(id))
         dematerializeShip(id, game::simulation::ShipSimulationTier::TrafficShell);
     removeTrafficShell(id);
+    forgetShip(id);
 }
 
 void GameSimulation::updateHubSecurity(double dt)

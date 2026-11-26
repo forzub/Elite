@@ -9248,3 +9248,84 @@ start-up hitches (render), trade step 16 part 3 live.
   OPEN: (1) the parked state is frozen while a shell (heat / reactor / repair clocks do not advance) - a coarse
   continuation if it matters; (2) memory only: not persisted across a server restart (with the versioned ship DTO);
   (3) shells take no damage of their own (no writer of shell.damage) - fights only happen materialized.
+* 2026-11-26 SHIP CONDITION TABLE (author: store compressed condition of EVERY ship on the server, per section, direct
+  access by id - a cell table read at base + slot*size; otherwise every NPC ship has perfect health; simulate repair
+  ability, lack of resources / spare parts: corporate = steady understood wear (garages, scheduled maintenance),
+  private = the owner and his wealth, war = everyone short of parts, pirates always short except large mafia-like
+  organisations). Memory: ship-condition-doctrine.
+  - src/game/simulation/ShipConditionTable.h (header-only): ShipConditionCell (~530 B: header + 64 sections x 8 B =
+    integrity + laser / impact / thermal / radiation / wear / internalFailure + module state), one contiguous vector,
+    free list; slot = ShipSimulationLifecycleState::conditionSlot (rides shell <-> full ship). sectionCount 0 = uniform
+    (never materialized): spread per module deterministically (splitmix hash) on materialize.
+  - REPLACES the parked full ship of 82f05fe9b (two owners avoided): ShipCore is the truth while materialized
+    (liveInShipCore), the cell while a shell; dematerialize = captureCondition, materialize = applyCondition (legacy
+    engine-authority expansion only without a cell); forgetShip / removeTrafficShell release the cell.
+  - Every NPC ship enters the universe with a lived condition (generateStartingCondition by regime: corporate / state /
+    private (wealth) / syndicate / pirate - ONE table upkeepProfile); full NPC spawns (spawnShip, not the player) too.
+  - Upkeep pass every 10 s (updateShipUpkeep): wear grows, parts restock x m_sparePartsSupplyFactor (the war knob),
+    damage repaired within the parts; lost / destroyed modules need a yard; wrecks (abandoned) get nothing; dithered
+    byte rounding so slow rates accumulate. Shell coarse damage follows the cell. [ShipCondition] log every 60 s.
+  - Regime from ShipRoleType (no NPC owner actors exist): almost every NPC was Civilian -> all "private" in the first
+    live log (206 ships, 134 KiB). Set: dock traffic OFU shuttles Transport (corporate), hub traffic Trader (mixed),
+    scheduled lines Passenger (corporate); city air traffic stays Civilian (private). No pirate NPCs exist yet.
+  - CHECK (ELITE_SHIP_TIER_TRANSITION_TEST, D:/tmp/shellcell): cockpit damaged to 96.2 -> wreck shell -> back 95.84
+    (1/255 of max), STATE_KEPT PASS; 0 modules destroyed by the generated conditions. The role edits: compiled pending
+    (the author's game instance was open - no link while it runs).
+  - OPEN: NPC owner actors (regime from ActorKind), per-system war supply, persistence across restart, cargo / fuel in
+    the cell, shells taking damage.
+* 2026-11-26 AUTHOR'S LIVE REPORT (BACKLOG - after the architecture work, by the author's order):
+  (1) ring hub docking: the ship just hangs, does nothing; the pad marker is detached from the real hub (screenshot
+  D:/tmp/"Знімок екрана 2026-11-26 231906.png": "В ПУТИ", hubp_container_yard label beside the hub); (2) the ring's 2D
+  unrolled plan is full of artifacts, coordinates inconsistent - AGREED: the 2D plan does NOT imitate the 3D situation,
+  just a convenient visualisation of the ring's layout; (3) in the ring hub the map still opens the FLAT hub;
+  (4) astronauts on roads are simplified figures (not our astronauts) and GIANT vs the cars (screenshot "1 Знімок
+  екрана 2026-11-26 230906.png"); (5) round towers' LOD: a visible hexagonal prism, then a smooth torus - unacceptable;
+  (6) many city modules' simplified models look nothing like the main model; (7) hub-to-hub autopilot feels scripted:
+  never above 150 m/s (elite_docking_planner.log: max_speed_mps=150 even for a 40.6 km route) and keeps pulsing the
+  engines instead of accelerate - coast straight - brake; no route frames; (8) hub movement feels scripted; (9) could
+  not land on a pad in the flat hub - the ship did not even get over the pad vertically; autopilot does not try to
+  finish the landing; a noticeable regression in everything autopilot / landing.
+  (10) mojibake in HUD and radio texts - bring all texts to one encoding (UTF-8).
+* 2026-11-26 NIGHT AUDIT (author's list: ownership / shell / audience / replication boundaries) - batch 1:
+  - P0 shell eligibility, VERIFIED in source: the automatic tier planner (GameSimulation.cpp ~735-800) never collapsed
+    a damaged ship (module health / structural links / fragments / repair jobs pin it). So 82f05fe9b's parked full Ship
+    won only for PRISTINE ships' fluid state (gas, heat, cargo) and the DEV test - the damaged case was blocked anyway.
+    The parked Ship is GONE (replaced by the ShipConditionTable, the author's "compressed per-section data"): MEASURED
+    a full Ship = 185-248 KiB private memory (100 Cobras, ELITE_SHELL_ROUNDTRIP_TEST) vs a cell 552 B -> 500 parked
+    ships would have been ~90-120 MiB, 500 cells 0.27 MiB. Process private memory does not drop after dematerialize
+    (allocator) and grew ~3 MiB over 5 x 100 cycles - allocator vs leak not separated yet.
+  - With the cell, module health / equipment damage no longer pin a ship that HAS a cell (the cell keeps them, the
+    comment there waited for "a future compressed damage signature"); links / fragments / repair jobs still pin.
+    Without this every NPC with a generated condition would have stayed materialized forever.
+  - NEW explicit rule shellBlockingDomain(id): no collapse while combat (either side), jump / pending jump, free flight,
+    pad landing, refuel / hub service, manoeuvre-only or gear != in is live. The audit found an ex-traffic NPC could be
+    collapsed mid-fight (m_combatHostility silently dropped by the combat loop) once cells unpinned module damage.
+  - The cell now also keeps the LOAD (cargo t, containers, persons, fluids, consumables): cargo was lost on a round trip.
+  - Shell round-trip matrix (forced dematerialize -> materialize, D:/tmp/shellrt2): SURVIVES rcs gas, J charge, cargo,
+    module health, equipment damage (1/255), module detached state; RESET by decision: service coolant temperature
+    (the shell has no thermal model; it comes back at the descriptor's initial state); repair job: could not be started
+    on a fresh Cobra in the test (startRepairJobForModule false) - repair jobs, fragments and structural-link damage
+    block the automatic collapse (source) and are not in the cell. Lost and NOT yet decided: reactor / containment
+    state, refit productOverrides, inventory, equipment operating state (only shellEligible traffic is affected today).
+  - Lifetime: check_entity_lifetime.py was RED at HEAD (m_capsuleTakeoverPending, m_capsuleWake added after the test,
+    nobody ran it). forgetShip now erases them + m_lastPublishedShipModuleRevision (exception dropped) + the nested
+    m_hubSecurity[].violators; the check fails on stale NOT_PER_SHIP exceptions and on nested per-ship tables;
+    m_playerControlledShipIds' exception reason re-verified (setPlayerControlled(false) on ship switch / last-session
+    disconnect, markShipDerelict). despawnPromotedAirShip: collapse -> remove -> forget (was forget first: a wasted cell).
+  - 205 python architecture checks have NO runner / ctest registration: scratchpad run_checks.py ran all on a HEAD
+    export and the working tree - HEAD 19 red, now 17 red, no new red (fixed: entity_lifetime, wire_data_schema; new:
+    ship_params_record). ctest: the same 3 baseline reds (presentation_coordinator, local_flight_control, localization).
+  - check_wire_data_schema red FIXED properly: the oversize size report was instrumentation inside the top-level codec;
+    moved to src/game/network/WireSnapshotDiagnostics.h (also snapshotPartSizes for [NetBytes]).
+  - manoeuvreGasDepleted LEFT the wire (no client reader; the check pinned dead data - token removed; data-plane test
+    asserts it does not ride): wire protocol 58, snapshot schema 83.
+  - restore contract: ClientWorldState::applyReferenceFrameState uses restoreMotionFromReferenceFrame (one inverse);
+    it no longer DERIVES matchedReferenceFrameId = hubId (the server writes it in TravelFrameSystem::matchToReference -
+    the reference hub, not necessarily motion.hubId - and the row carries it); the double referenceVelocity store gone.
+  - [NetBytes] is opt-in (ELITE_DEV_NET_BYTES=1): without it no envelope parse / stats / log; adds the top-level parts
+    (ships / objects / hubs / signals / session raw bytes).
+  - ShipParams replay: AutopilotCaseFile wrote sizeof(ShipParams) raw bytes. NOW physics_v2 = ShipParams by field NAME
+    (src/game/ship/core/ShipParamsRecord.h, 50 fields, hex floats exact; unknown names skipped, missing keep defaults;
+    legacy "physics <n> <hex>" still read as a prefix). The 5 Newtonian cases converted (scratchpad case_convert.cpp:
+    legacy read 304 B of the current 384 B layout, values plausible: 260 t, I/X/Y main 36.8/147.1/110.3 m/s2; v2 round
+    trip 50/50 fields identical). check_ship_params_record.py: every ShipParams field listed, no raw dump.

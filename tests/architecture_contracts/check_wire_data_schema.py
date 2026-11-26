@@ -60,7 +60,6 @@ for token in (
     "v.manoeuvreAccelerationMps2",
     "v.assistedStabilizationAccelerationMps2",
     "v.manoeuvreGasPressure01",
-    "v.manoeuvreGasDepleted",
 ):
     if token not in schema:
         fail(f"canonical ordered schema is incomplete: {token}")

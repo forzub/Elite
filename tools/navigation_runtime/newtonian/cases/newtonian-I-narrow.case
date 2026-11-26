@@ -3397,5 +3397,55 @@ narrow 1
  0x1.141e518360589p+14 0x1.26de518360589p+14 -0x1p+0 0x0p+0 0x0p+0 0x0p+0 0x1p+0 0x0p+0 0x1.842b4b372db2p+1 0x1.6215a59b96d9p+2 0x1.b8p+7
 agent -0x1.388p+13 0x1.388p+11 0x0p+0 0x0p+0 0x0p+0 0x0p+0 0x1.f0f1d42a4cd6p-1 -0x1.ecfdc04d562abp-3 -0x1.2b26cf173518ep-27 -0x1.498fc55684325p-31 0x1.9bb3d3ec4619ap-28 0x1p+0 0x1.ecfdbeb880a4cp-3 0x1.f0f1d44366a65p-1 -0x1.46619d950ba96p-26 0x0p+0 0x0p+0 0x0p+0
 start 0x1.a3223973a4dc2p+29 1 0x1p+6 -0x1.e01b12a67fc4fp-3 -0x1.b675a02de3d33p-1 -0x1.d7215c13b16cbp-2 1
-physics 304 000020400000204000004040479ef33f000020400000fa4336b9e44b0000a040cdcc4c3d52b87e3f000048429a99193f0000803f010000008919134200000000dd35fa3ddd35fa3d35fa0e3e00000000891993420000c0400000a04200000040bc74933cb81e853dcdcc4c3e0000a0400000f0400000a0410000000000bd0f410000000000000000000000000000000000000000000000006755555573666541b4aaaa2ad426784199aaaaaa2df86c4101000000000000000000000000002a4000000000000004400000004033332640000000000000000000000000000000000000000000000000000000000000f0bf0000000000000000ffffffff000000004fecc44eecc41e404fecc44eecc41e404fecc44eecc41e404fecc44eecc41e404fecc44eecc41e404fecc44eecc41e40
+physics_v2 50
+maxPitchRate 0x1.4p+1
+maxYawRate 0x1.4p+1
+maxRollRate 0x1.8p+1
+angularAccel 0x1.e73c8ep+0
+angularDamping 0x1.4p+1
+maxCombatSpeed 0x1.f4p+8
+maxCruiseSpeed 0x1.c9726cp+24
+throttleAccel 0x1.4p+2
+stopSpeedEpsilonMps 0x1.99999ap-5
+brakeAlignmentCosine 0x1.fd70a4p-1
+assistedMinimumTargetSpeedChangeRateMps2 0x1.9p+5
+assistedTargetSpeedChangeRateFractionPerSecond 0x1.333334p-1
+fallbackThrottleResponsePerSecond 0x1p+0
+forwardMainEngineAvailable 1
+reverseMainEngineAvailable 0
+forwardMainEngineAccelerationMps2 0x1.263312p+5
+reverseMainEngineAccelerationMps2 0x0p+0
+mainGimbalPitchLimitRad 0x1.f46bbap-4
+mainGimbalYawLimitRad 0x1.f46bbap-4
+mainGimbalRateRadPerSec 0x1.1df46ap-3
+autoLevelStrength 0x0p+0
+strafeAccel 0x1.263312p+6
+strafeDamping 0x1.8p+2
+maxStrafeSpeed 0x1.4p+6
+manoeuvreThrusterAccel 0x1p+1
+manoeuvreGasUsePerSecond 0x1.26e978p-6
+manoeuvreGasRechargePerSecond 0x1.0a3d7p-4
+manoeuvreGasRestartFraction 0x1.99999ap-3
+maxGs 0x1.4p+2
+maxLinearGs 0x1.ep+2
+turnRadius 0x1.4p+4
+massKg 0x1.fbdp+17
+centerOfMassLocalMeters 0x0p+0 0x0p+0 0x0p+0
+pitchInertiaKgM2 0x1.5667355555567p+23
+yawInertiaKgM2 0x1.826d42aaaaab4p+24
+rollInertiaKgM2 0x1.cf82daaaaaa99p+23
+manoeuvreThrusterAuthorityExplicit 1
+physicalActuatorHalfExtentsMeters 0x1.ap+3 0x1.4p+1 0x1.633334p+3
+assistedWorkingThrustAxisEmergency 0
+assistedWorkingThrustAxisBody 0x0p+0 0x0p+0 -0x1p+0
+assistedWorkingThrustAxisAngleRad 0x0p+0
+assistedWorkingThrustMotorIndex -1
+newtonianRcsPositiveMps2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2
+newtonianRcsNegativeMps2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2
+newtonianAngularPositiveRadPerSec2 0x0p+0 0x0p+0 0x0p+0
+newtonianAngularNegativeRadPerSec2 0x0p+0 0x0p+0 0x0p+0
+newtonianRcsCombinedShare01 0x1p+0
+actuatorTopologyKey 0
+jumpCoreRatingT 0x0p+0
+jumpChargeCapacityT 0x0p+0
 end

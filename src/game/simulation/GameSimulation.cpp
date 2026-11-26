@@ -43,6 +43,8 @@ GameSimulation::GameSimulation(
         environmentFlagEnabled("ELITE_DISABLE_AUTO_SHIP_DETAIL");
     m_shipTierTransitionTestRequested =
         environmentFlagEnabled("ELITE_SHIP_TIER_TRANSITION_TEST");
+    m_shellRoundTripTestRequested =
+        environmentFlagEnabled("ELITE_SHELL_ROUNDTRIP_TEST");
 
 
 
@@ -750,7 +752,12 @@ void GameSimulation::updateShipSimulationDetail(double dt)
             shipPtr->core().activeRepairJobCount() > 0 ||
             !shipPtr->core().detachedFragmentRuntime().fragments().empty();
 
-        if (!persistentDetailedHistory)
+        // Module health + equipment damage causes + module runtime state ARE the compressed damage signature the
+        // ShipConditionTable cell holds (1/255 resolution): a ship with a cell keeps them across the shell, so they no
+        // longer pin it. Structural links, detached fragments and repair jobs are NOT in the cell - they still pin.
+        const bool conditionCellKeepsModules =
+            m_shipConditions.at(lifecycle.conditionSlot, id.value) != nullptr;
+        if (!persistentDetailedHistory && !conditionCellKeepsModules)
         {
             for (const auto& module :
                  static_cast<const world::modules::ObjectModuleRuntime&>(
@@ -783,6 +790,8 @@ void GameSimulation::updateShipSimulationDetail(double dt)
 
         if (persistentDetailedHistory || !lifecycle.shellEligible)
             continue;
+        if (shellBlockingDomain(id) != nullptr)
+            continue;   // a live domain: stay materialized at the coarse budget until it ends
 
         toDematerialize.push_back({
             id,
@@ -1835,7 +1844,11 @@ m_hubVelocityMetersPerSecond[hubId] =
         {
             updateShipSimulationDetail(dt);
             updateShipTierTransitionTest();
+            if (m_shellRoundTripTestRequested && !m_shellRoundTripTestDone &&
+                m_serverTimelineClock.timeSeconds() > 3.0)
+                runShellRoundTripTest();
             updateFiveHundredShipHerdDiagnostics();
+            updateShipUpkeep(dt);
         }
         // Stage 4B uses one cadence decision for both attitude/control-force
         // evaluation and HubTactical engine-command refresh. Reusing the same
@@ -2696,9 +2709,25 @@ EntityId GameSimulation::spawnShip(
         m.jChargeT = m.jChargeCapacityT;
     }
 
+    // an NPC ship enters the universe with a lived condition (the player's ship is the player's)
+    std::uint32_t conditionSlot = game::simulation::ShipConditionTable::kNoSlot;
+    if (role != ShipRole::Player)
+    {
+        conditionSlot = m_shipConditions.allocate(id.value);
+        if (auto* cell = m_shipConditions.at(conditionSlot, id.value))
+        {
+            game::simulation::generateStartingCondition(*cell, initData.registry.shipRole);
+            game::simulation::applyCondition(*cell, ship->core().moduleRuntime().modules());
+            cell->liveInShipCore = 1;
+            ship->core().moduleRuntime().reevaluateStructuralStates();
+            ship->core().refreshRuntimeState();
+        }
+    }
+
     m_ships[id] = std::move(ship);
 
     game::simulation::ShipSimulationLifecycleState lifecycle;
+    lifecycle.conditionSlot = conditionSlot;
     lifecycle.tier =
         game::simulation::ShipSimulationTier::MaterializedShip;
     lifecycle.actorKind =
@@ -2768,6 +2797,14 @@ EntityId GameSimulation::spawnTrafficShell(
     shell.lifecycle.shellEligible = true;
     shell.lifecycle.formationId = formationId;
     shell.lifecycle.formationSlot = formationSlot;
+
+    // a ship enters the universe with a lived condition, not new
+    shell.lifecycle.conditionSlot = m_shipConditions.allocate(id.value);
+    if (auto* cell = m_shipConditions.at(shell.lifecycle.conditionSlot, id.value))
+    {
+        game::simulation::generateStartingCondition(*cell, shell.registry.shipRole);
+        game::simulation::coarseDamageFromCell(*cell, shell.damage);
+    }
 
     m_shipShells.emplace(id, std::move(shell));
 
@@ -2952,19 +2989,7 @@ bool GameSimulation::materializeShipShell(EntityId id)
     if (!shell.valid())
         return false;
 
-    std::unique_ptr<Ship> ship;
-    if (auto parked = m_parkedShellShips.find(id); parked != m_parkedShellShips.end() && parked->second)
-    {
-        // the ship as it left: its own state, where the shell has moved it to
-        ship = std::move(parked->second);
-        m_parkedShellShips.erase(parked);
-        ship->core().transform() = shell.transform;
-        ship->setControlState(ShipControlState {});
-        ship->core().refreshRuntimeState();
-    }
-    else
-    {
-    ship = std::make_unique<Ship>();
+    auto ship = std::make_unique<Ship>();
     ship->setId(id);
     ship->setTypeId(shell.definition->typeId);
 
@@ -2981,6 +3006,19 @@ bool GameSimulation::materializeShipShell(EntityId id)
     );
     ship->core().transform() = shell.transform;
 
+    // The ship's condition cell is the truth while it was a shell: every module back as it left (or, never
+    // materialized, the lived condition it entered the universe with). Without a cell (legacy): the coarse engine
+    // aggregates below.
+    auto* conditionCell =
+        m_shipConditions.at(shell.lifecycle.conditionSlot, id.value);
+    if (conditionCell &&
+        game::simulation::applyCondition(*conditionCell, ship->core().moduleRuntime().modules()) > 0)
+    {
+        ship->core().moduleRuntime().reevaluateStructuralStates();
+        ship->core().refreshRuntimeState();
+    }
+    else
+    {
     // Expand cheap aggregate engine damage into the real module graph. This is
     // deliberately approximate: exact hit history begins only after materialization.
     const auto& definitions =
@@ -3028,6 +3066,20 @@ bool GameSimulation::materializeShipShell(EntityId id)
     }
 
     ship->core().refreshRuntimeState();
+    }
+    if (conditionCell)
+    {
+        if (conditionCell->hasLoad)
+        {
+            game::ship::core::ShipLoadState load = ship->core().load();
+            load.cargoTonnes = conditionCell->cargoTonnes;
+            load.containers = conditionCell->containers;
+            load.persons = conditionCell->persons;
+            load.fluids01 = game::simulation::fromByte01(conditionCell->fluids);
+            load.consumables01 = game::simulation::fromByte01(conditionCell->consumables);
+            ship->core().setLoad(load);
+        }
+        conditionCell->liveInShipCore = 1;
     }
 
     auto lifecycle = shell.lifecycle;
@@ -3193,9 +3245,30 @@ bool GameSimulation::dematerializeShip(
             ? manoeuvre / static_cast<double>(manoeuvreCount)
             : 1.0;
 
+    // the cell becomes the truth of the ship's condition
+    if (!m_shipConditions.at(shell.lifecycle.conditionSlot, id.value))
+    {
+        shell.lifecycle.conditionSlot = m_shipConditions.allocate(id.value);
+        if (auto* fresh = m_shipConditions.at(shell.lifecycle.conditionSlot, id.value))
+            fresh->regime = game::simulation::upkeepRegimeForRole(ship.core().registry().shipRole, id.value);
+    }
+    if (auto* cell = m_shipConditions.at(shell.lifecycle.conditionSlot, id.value))
+    {
+        game::simulation::captureCondition(
+            *cell,
+            static_cast<const world::modules::ObjectModuleRuntime&>(ship.core().moduleRuntime()).modules());
+        const auto& load = ship.core().load();
+        cell->cargoTonnes = static_cast<float>(load.cargoTonnes);
+        cell->containers = static_cast<std::int16_t>(std::clamp(load.containers, -1, 32767));
+        cell->persons = static_cast<std::uint16_t>(std::clamp(load.persons, 0, 65535));
+        cell->fluids = game::simulation::toByte01(load.fluids01);
+        cell->consumables = game::simulation::toByte01(load.consumables01);
+        cell->hasLoad = 1;
+        cell->abandoned = targetTier == game::simulation::ShipSimulationTier::WreckShell ? 1 : 0;
+    }
+
     forgetShipDetail(id);   // the full ship's transient state; the id lives on as a shell
 
-    m_parkedShellShips[id] = std::move(shipIt->second);   // its persistent state lives on, whole
     m_ships.erase(shipIt);
     m_shipSimulationLifecycle.erase(id);
     m_shipShells[id] = std::move(shell);
@@ -3356,10 +3429,96 @@ void GameSimulation::forgetShipDetail(EntityId id)
     m_shipMotionControlStepDecisions.erase(id);
 }
 
+game::simulation::ShipConditionCell* GameSimulation::shipConditionCell(EntityId id)
+{
+    if (const auto shell = m_shipShells.find(id); shell != m_shipShells.end())
+        return m_shipConditions.at(shell->second.lifecycle.conditionSlot, id.value);
+    if (const auto life = m_shipSimulationLifecycle.find(id); life != m_shipSimulationLifecycle.end())
+        return m_shipConditions.at(life->second.conditionSlot, id.value);
+    return nullptr;
+}
+
+const char* GameSimulation::shellBlockingDomain(EntityId id) const
+{
+    if (m_combatHostility.count(id))
+        return "combat";
+    for (const auto& [attacker, target] : m_combatHostility)
+        if (target == id)
+            return "combat-target";
+    if (m_jumps.count(id) || m_pendingJumpRequests.count(id))
+        return "jump";
+    if (m_freeFlights.count(id))
+        return "free-flight";
+    if (m_padLandings.count(id))
+        return "pad-landing";
+    if (m_refuels.count(id) || m_hubServices.count(id))
+        return "service";
+    if (m_manoeuvreOnly.count(id))
+        return "manoeuvre-only";
+    if (const auto gear = m_landingGear.find(id); gear != m_landingGear.end() && gear->second != 0)
+        return "landing-gear";
+    return nullptr;
+}
+
+void GameSimulation::releaseShipCondition(EntityId id)
+{
+    if (const auto shell = m_shipShells.find(id); shell != m_shipShells.end())
+        m_shipConditions.release(shell->second.lifecycle.conditionSlot, id.value);
+    if (const auto life = m_shipSimulationLifecycle.find(id); life != m_shipSimulationLifecycle.end())
+        m_shipConditions.release(life->second.conditionSlot, id.value);
+}
+
+// The upkeep of every ship whose condition the cell holds (shells): every 10 s of server time, one pass over the
+// contiguous table; the shells' coarse damage (what their coarse motion reads) follows the cells.
+void GameSimulation::updateShipUpkeep(double dt)
+{
+    constexpr double kStepSeconds = 10.0;
+    m_shipUpkeepAccumulatorSeconds += dt;
+    m_shipUpkeepLogAccumulatorSeconds += dt;
+    if (m_shipUpkeepAccumulatorSeconds < kStepSeconds)
+        return;
+    const double hours = m_shipUpkeepAccumulatorSeconds / 3600.0;
+    m_shipUpkeepAccumulatorSeconds = 0.0;
+    for (auto& cell : m_shipConditions.cells())
+        game::simulation::advanceShipUpkeep(cell, hours, m_sparePartsSupplyFactor);
+    for (auto& [id, shell] : m_shipShells)
+        if (const auto* cell = m_shipConditions.at(shell.lifecycle.conditionSlot, id.value))
+            game::simulation::coarseDamageFromCell(*cell, shell.damage);
+    if (m_shipUpkeepLogAccumulatorSeconds >= 60.0)
+    {
+        m_shipUpkeepLogAccumulatorSeconds = 0.0;
+        double sum[5] {}, parts[5] {};
+        std::size_t count[5] {};
+        for (const auto& cell : m_shipConditions.cells())
+        {
+            if (cell.entityId == 0)
+                continue;
+            const auto r = static_cast<std::size_t>(cell.regime) % 5;
+            sum[r] += game::simulation::cellIntegrity01(cell);
+            parts[r] += game::simulation::fromByte01(cell.parts);
+            ++count[r];
+        }
+        std::cerr << "[ShipCondition] " << m_shipConditions.liveCount() << " ships, "
+                  << m_shipConditions.bytes() / 1024 << " KiB;";
+        for (std::size_t r = 0; r < 5; ++r)
+            if (count[r])
+                std::cerr << ' ' << game::simulation::upkeepRegimeName(static_cast<game::simulation::ShipUpkeepRegime>(r))
+                          << ' ' << count[r] << " (integrity " << sum[r] / count[r] << ", parts "
+                          << parts[r] / count[r] << ')';
+        std::cerr << std::endl;
+    }
+}
+
 void GameSimulation::forgetShip(EntityId id)
 {
     forgetShipDetail(id);
-    m_parkedShellShips.erase(id);
+    releaseShipCondition(id);
+    // leaked before (shell / lifetime audit 2026-11-26)
+    m_capsuleTakeoverPending.erase(id);
+    m_capsuleWake.erase(id);
+    m_lastPublishedShipModuleRevision.erase(id);
+    for (auto& [hubId, security] : m_hubSecurity)
+        security.violators.erase(id.value);
     m_combatHostility.erase(id);
     m_pilotDockSite.erase(id);
     m_portCalls.erase(id);   // a ship gone at the berth: no berth fee (no release event)

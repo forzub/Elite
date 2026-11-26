@@ -12,6 +12,7 @@
 #include "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipParamsRecord.h"
 
 namespace game::navigation::diagnostics
 {
@@ -77,6 +78,44 @@ inline bool getGates(
             return false;
     return true;
 }
+// ShipParams values by name (physics_v2): exact (hex floats), one line per field
+inline void putParamsValue(std::FILE* f, double v) { std::fprintf(f, " %a", v); }
+inline void putParamsValue(std::FILE* f, float v) { std::fprintf(f, " %a", static_cast<double>(v)); }
+inline void putParamsValue(std::FILE* f, bool v) { std::fprintf(f, " %d", v ? 1 : 0); }
+inline void putParamsValue(std::FILE* f, int v) { std::fprintf(f, " %d", v); }
+inline void putParamsValue(std::FILE* f, std::uint64_t v) { std::fprintf(f, " %llu", static_cast<unsigned long long>(v)); }
+inline void putParamsValue(std::FILE* f, const glm::dvec3& v) { std::fprintf(f, " %a %a %a", v.x, v.y, v.z); }
+inline bool getParamsValue(std::FILE* f, double& v) { return std::fscanf(f, " %la", &v) == 1; }
+inline bool getParamsValue(std::FILE* f, float& v)
+{
+    double d = 0.0;
+    if (std::fscanf(f, " %la", &d) != 1)
+        return false;
+    v = static_cast<float>(d);
+    return true;
+}
+inline bool getParamsValue(std::FILE* f, bool& v)
+{
+    int i = 0;
+    if (std::fscanf(f, " %d", &i) != 1)
+        return false;
+    v = i != 0;
+    return true;
+}
+inline bool getParamsValue(std::FILE* f, int& v) { return std::fscanf(f, " %d", &v) == 1; }
+inline bool getParamsValue(std::FILE* f, std::uint64_t& v)
+{
+    unsigned long long u = 0;
+    if (std::fscanf(f, " %llu", &u) != 1)
+        return false;
+    v = static_cast<std::uint64_t>(u);
+    return true;
+}
+inline bool getParamsValue(std::FILE* f, glm::dvec3& v)
+{
+    return std::fscanf(f, " %la %la %la", &v.x, &v.y, &v.z) == 3;
+}
+
 } // namespace autopilot_case_detail
 
 inline bool writeAutopilotCase(const char* path, const AutopilotCase& c)
@@ -132,11 +171,14 @@ inline bool writeAutopilotCase(const char* path, const AutopilotCase& c)
     put(f, c.acceptedAtUniverseTimeSeconds);
     std::fprintf(f, " %llu", static_cast<unsigned long long>(c.requestSerial));
     put(f, c.trackingToleranceMeters); put(f, c.routeUpReference);
-    std::fprintf(f, " %d\nphysics %zu ", c.holdAtTerminal ? 1 : 0,
-        sizeof(ShipParams));
-    const auto* bytes = reinterpret_cast<const unsigned char*>(&c.physics);
-    for (std::size_t i = 0; i < sizeof(ShipParams); ++i)
-        std::fprintf(f, "%02x", bytes[i]);
+    // physics_v2: ShipParams by field NAME (ShipParamsRecord.h), never the struct's bytes
+    std::size_t fieldCount = 0;
+    forEachShipParamsField(c.physics, [&](const char*, const auto&) { ++fieldCount; });
+    std::fprintf(f, " %d\nphysics_v2 %zu", c.holdAtTerminal ? 1 : 0, fieldCount);
+    forEachShipParamsField(c.physics, [&](const char* name, const auto& value) {
+        std::fprintf(f, "\n%s", name);
+        putParamsValue(f, value);
+    });
     std::fprintf(f, "\nend\n");
     std::fclose(f);
     return true;
@@ -238,9 +280,43 @@ inline bool readAutopilotCase(const char* path, AutopilotCase& c)
         c.requestSerial = serial;
         c.holdAtTerminal = hold != 0;
         std::size_t size = 0;
-        // A case dumped before fields were appended to ShipParams: the
-        // prefix is read, the new fields keep their defaults.
-        if (!getCount(f, "physics", size) || size > sizeof(ShipParams))
+        if (std::fscanf(f, " %31s", word) != 1)
+            break;
+        if (std::strcmp(word, "physics_v2") == 0)
+        {
+            // by name: unknown names (a removed field) are skipped, missing ones keep their defaults
+            if (std::fscanf(f, " %zu", &size) != 1)
+                break;
+            bool fieldsOk = true;
+            for (std::size_t i = 0; i < size && fieldsOk; ++i)
+            {
+                char name[96] = {};
+                if (std::fscanf(f, " %95s", name) != 1)
+                {
+                    fieldsOk = false;
+                    break;
+                }
+                bool known = false;
+                forEachShipParamsField(c.physics, [&](const char* field, auto& value) {
+                    if (!known && std::strcmp(field, name) == 0)
+                    {
+                        known = true;
+                        fieldsOk = getParamsValue(f, value);
+                    }
+                });
+                if (!known)
+                {
+                    // an unknown field: skip the rest of its line
+                    int ch = 0;
+                    while ((ch = std::fgetc(f)) != EOF && ch != '\n') {}
+                }
+            }
+            ok = fieldsOk;
+            break;
+        }
+        // LEGACY raw-byte cases ("physics <n> <hex>"): read only as a prefix of the CURRENT layout - valid only while
+        // no field was inserted before the dumped size. Re-dump such cases as physics_v2.
+        if (std::strcmp(word, "physics") != 0 || std::fscanf(f, " %zu", &size) != 1 || size > sizeof(ShipParams))
             break;
         auto* bytes = reinterpret_cast<unsigned char*>(&c.physics);
         bool bytesOk = true;

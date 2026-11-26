@@ -2810,7 +2810,58 @@ anchors 10
  0x1.0379c48d7e1dep+14 -0x0p+0 0x1p+0 0x0p+0 0x0p+0
  0x1.0379c48d7e1dep+14 -0x0p+0 0x1p+0 0x0p+0 0x0p+0
  0x1.a81af0566a73cp+14 -0x1.cf7cdb9cf3f69p-2 -0x1.3d79f2d18a401p-4 -0x1.c6d2ad10ebb36p-1 0x1p+0
+narrow 0
 agent -0x1.388p+13 0x1.388p+11 0x0p+0 0x0p+0 0x0p+0 0x0p+0 0x1.f0f1d3e1ad911p-1 -0x1.ecfdc4e09bdc1p-3 -0x1.5117d3008bbb5p-27 0x1.34b17381ac5abp-25 0x1.25d358da8bca1p-26 0x1.ffffffffffff8p-1 0x1.ecfdc42790ebp-3 0x1.f0f1d3ed26b26p-1 -0x1.a4f222448200bp-26 0x0p+0 0x0p+0 0x0p+0
 start 0x1.a321b739c8146p+29 1 0x1p+6 -0x1.cf7cdb9cf3f69p-2 -0x1.3d79f2d18a401p-4 -0x1.c6d2ad10ebb36p-1 1
-physics 304 000020400000204000004040479ef33f000020400000fa4336b9e44b0000a040cdcc4c3d52b87e3f000048429a99193f0000803f010000004ea6dc4200000000dd35fa3ddd35fa3d35fa0e3e00000000891993420000c0400000a04200000040bc74933cb81e853dcdcc4c3e0000a0400000f0400000a0410000000000bd0f410000000000000000000000000000000000000000000000006755555573666541b4aaaa2ad426784199aaaaaa2df86c4101000000000000000000000000002a4000000000000004400000004033332640000000000000000000000000000000000000000000000000000000000000f0bf0000000000000000ffffffff000000004fecc44eecc41e404fecc44eecc41e404fecc44eecc41e404fecc44eecc41e404fecc44eecc41e404fecc44eecc41e40
+physics_v2 50
+maxPitchRate 0x1.4p+1
+maxYawRate 0x1.4p+1
+maxRollRate 0x1.8p+1
+angularAccel 0x1.e73c8ep+0
+angularDamping 0x1.4p+1
+maxCombatSpeed 0x1.f4p+8
+maxCruiseSpeed 0x1.c9726cp+24
+throttleAccel 0x1.4p+2
+stopSpeedEpsilonMps 0x1.99999ap-5
+brakeAlignmentCosine 0x1.fd70a4p-1
+assistedMinimumTargetSpeedChangeRateMps2 0x1.9p+5
+assistedTargetSpeedChangeRateFractionPerSecond 0x1.333334p-1
+fallbackThrottleResponsePerSecond 0x1p+0
+forwardMainEngineAvailable 1
+reverseMainEngineAvailable 0
+forwardMainEngineAccelerationMps2 0x1.b94c9cp+6
+reverseMainEngineAccelerationMps2 0x0p+0
+mainGimbalPitchLimitRad 0x1.f46bbap-4
+mainGimbalYawLimitRad 0x1.f46bbap-4
+mainGimbalRateRadPerSec 0x1.1df46ap-3
+autoLevelStrength 0x0p+0
+strafeAccel 0x1.263312p+6
+strafeDamping 0x1.8p+2
+maxStrafeSpeed 0x1.4p+6
+manoeuvreThrusterAccel 0x1p+1
+manoeuvreGasUsePerSecond 0x1.26e978p-6
+manoeuvreGasRechargePerSecond 0x1.0a3d7p-4
+manoeuvreGasRestartFraction 0x1.99999ap-3
+maxGs 0x1.4p+2
+maxLinearGs 0x1.ep+2
+turnRadius 0x1.4p+4
+massKg 0x1.fbdp+17
+centerOfMassLocalMeters 0x0p+0 0x0p+0 0x0p+0
+pitchInertiaKgM2 0x1.5667355555567p+23
+yawInertiaKgM2 0x1.826d42aaaaab4p+24
+rollInertiaKgM2 0x1.cf82daaaaaa99p+23
+manoeuvreThrusterAuthorityExplicit 1
+physicalActuatorHalfExtentsMeters 0x1.ap+3 0x1.4p+1 0x1.633334p+3
+assistedWorkingThrustAxisEmergency 0
+assistedWorkingThrustAxisBody 0x0p+0 0x0p+0 -0x1p+0
+assistedWorkingThrustAxisAngleRad 0x0p+0
+assistedWorkingThrustMotorIndex -1
+newtonianRcsPositiveMps2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2
+newtonianRcsNegativeMps2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2 0x1.ec4ec4ec4ec4fp+2
+newtonianAngularPositiveRadPerSec2 0x0p+0 0x0p+0 0x0p+0
+newtonianAngularNegativeRadPerSec2 0x0p+0 0x0p+0 0x0p+0
+newtonianRcsCombinedShare01 0x1p+0
+actuatorTopologyKey 0
+jumpCoreRatingT 0x0p+0
+jumpChargeCapacityT 0x0p+0
 end

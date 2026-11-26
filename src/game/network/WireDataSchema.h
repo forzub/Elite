@@ -372,7 +372,7 @@ ELITE_WIRE_SCHEMA(
     v.assistedStabilizationAccelerationMps2,
     v.engineAccelerationMps2,
     v.manoeuvreGasPressure01,
-    v.manoeuvreGasDepleted,   // no client reader, but pinned by check_wire_data_schema.py
+    // manoeuvreGasDepleted left the wire 2026-11-26: no client reader (the server's lockout latch)
     v.worldVelocityMps,
     v.gravityAccelerationMps2,
     v.primaryGravityBodyId,

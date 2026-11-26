@@ -310,24 +310,17 @@ namespace
         if (!frame.valid)
             return;
 
+        // ONE inverse of the server projection (projectShipReferenceFrame): travel frame, local state, reference
+        // velocity - the same helper the TCP decode uses
+        game::simulation::restoreMotionFromReferenceFrame(transform.motion, frame);
+        // frame identity (the projection's metadata). matchedReferenceFrameId is NOT derived here: the server writes
+        // it (TravelFrameSystem::matchToReference: the reference hub's id, not necessarily motion.hubId) and the row
+        // carries it
         transform.motion.systemId = frame.systemId;
         transform.motion.hubId = frame.hubId;
         transform.motion.parentBodyId = frame.bodyId;
-        transform.motion.travelFrame = frame.kinematicFrame();
         transform.motion.matchedToReferenceFrame =
             frame.matchedToReferenceFrame;
-        transform.motion.matchedReferenceFrameId =
-            frame.matchedToReferenceFrame ? frame.hubId : std::string{};
-        transform.motion.localPositionMeters = frame.localPositionMeters;
-        transform.motion.localVelocityMps = frame.localVelocityMetersPerSecond;
-        const glm::dvec3 referenceVelocity =
-            frame.localToWorldVelocity(
-                frame.localPositionMeters,
-                glm::dvec3(0.0)
-            );
-
-        transform.motion.referenceVelocityMps = referenceVelocity;
-        transform.motion.referenceVelocityMps = referenceVelocity;
         transform.setWorldPositionMeters(
             frame.localToWorldPosition(frame.localPositionMeters)
         );

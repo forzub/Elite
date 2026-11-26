@@ -19,11 +19,18 @@ NOT_PER_SHIP = {
     "m_shipShells": "the owner table itself (erased by removeTrafficShell)",
     "m_staticObjects": "static objects, not ships",
     "m_staticTracks": "static objects, not ships",
-    "m_playerControlledShipIds": "player ships are never removed by the simulation (session lifetime)",
+    # re-verified 2026-11-26: erased by setPlayerControlled(false) (ship switch GameServer.cpp ~2596, last session
+    # disconnect ~2768) and markShipDerelict; a player ship never leaves m_ships (only dematerializeShip erases it and
+    # player ships are pinned full)
+    "m_playerControlledShipIds": "control pin with its own lifecycle (setPlayerControlled / markShipDerelict)",
     "m_hubMotionLabShips": "DEV lab registry with its own teardown",
     "m_dockObserverPlaced": "DEV observer bookkeeping",
     "m_dockPilotTraceSeconds": "DEV trace throttle",
-    "m_lastPublishedShipModuleRevision": "replication bookkeeping, keyed by the published id",
+}
+
+# Per-ship tables NESTED in other state (keyed by the raw id): forgetShip must erase them too
+NESTED_PER_SHIP = {
+    "violators": "m_hubSecurity[hub].violators (ship id -> security level)",
 }
 
 errors = []
@@ -56,6 +63,14 @@ for m in sorted(members):
     if not re.search(rf"\b{m}\b", forgotten):
         errors.append(f"{m}: an EntityId-keyed table neither forgetShip nor forgetShipDetail erases "
                       f"(add it there, or to NOT_PER_SHIP with the reason)")
+
+# a stale exception (the table is gone) must be removed, not carried
+for m in sorted(NOT_PER_SHIP):
+    if not re.search(rf"\b{m}\b", header):
+        errors.append(f"NOT_PER_SHIP lists {m}, which GameSimulation.h no longer declares - drop the exception")
+for nested, what in NESTED_PER_SHIP.items():
+    if re.search(rf"\b{nested}\b", header) and not re.search(rf"\b{nested}\.erase\(", forgotten):
+        errors.append(f"{what}: a nested per-ship table forgetShip does not erase")
 
 # 2. no size-validated static caches
 for p in sorted(SIM.glob("*.cpp")):

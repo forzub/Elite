@@ -66,6 +66,7 @@ bool GameSimulation::removeTrafficShell(EntityId id)
     const auto it = m_shipShells.find(id);
     if (it == m_shipShells.end())
         return false;
+    releaseShipCondition(id);   // while the shell (and its slot) still exists
     m_shipShells.erase(it);
     forgetShip(id);   // the id leaves the simulation: every side table
     return true;
@@ -361,7 +362,7 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
             init.registry.instanceId = actor.id;
             init.registry.ownerName = shuttle ? "Orbital Freight Union" : "Hub traffic";
             init.registry.registrationId = actor.callsign;
-            init.registry.shipRole = ShipRoleType::Civilian;
+            init.registry.shipRole = shuttle ? ShipRoleType::Transport : ShipRoleType::Trader;   // OFU: corporate upkeep
             const EntityId id = spawnTrafficShell(dock->systemId, descriptor, position, velocity, init, orientation, 0, 0);
             if (id.value == 0)
                 continue;

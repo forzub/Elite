@@ -808,7 +808,8 @@ void GameSimulation::updateShipTierTransitionTest()
         const Ship* probe = getShip(m_shipTierTransitionProbeId);
         const auto* module = probe && !m_shipTierProbeDamagedModule.empty()
             ? probe->core().moduleRuntime().findModule(m_shipTierProbeDamagedModule) : nullptr;
-        const bool kept = module && std::abs(module->health - m_shipTierProbeDamagedHealth) < 1.0e-3f;
+        // the cell keeps a module to 1/255 of its max health
+        const bool kept = module && std::abs(module->health - m_shipTierProbeDamagedHealth) <= module->maxHealth / 255.0f;
         std::cout << "[ShipTierTest] stage=rematerialized id=" << m_shipTierTransitionProbeId.value << " module "
                   << m_shipTierProbeDamagedModule << " health " << (module ? module->health : -1.0f) << " (left at "
                   << m_shipTierProbeDamagedHealth << ") " << (kept ? "STATE_KEPT PASS" : "STATE_LOST FAIL") << "\n";
@@ -2874,4 +2875,160 @@ void GameSimulation::debugLogHubPlayerChain(double dt)
 
     havePrev = true;
     ++row;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// DEV ELITE_SHELL_ROUNDTRIP_TEST (shell audit 2026-11-26): a FORCED dematerialize -> materialize per state variant -
+// what survives, what is lost, and whether the automatic tier planner would have allowed the collapse at all; then the
+// process memory of N materialized ships, of the same N as shells, and of repeated cycles.
+#ifdef _WIN32
+// two kernel32 entry points declared by hand: windows.h macros break names in this translation unit
+struct DevProcessMemoryCountersEx
+{
+    unsigned long cb, pageFaultCount;
+    std::size_t peakWorkingSetSize, workingSetSize, quotaPeakPagedPoolUsage, quotaPagedPoolUsage,
+        quotaPeakNonPagedPoolUsage, quotaNonPagedPoolUsage, pagefileUsage, peakPagefileUsage, privateUsage;
+};
+extern "C" __declspec(dllimport) void* __stdcall GetCurrentProcess();
+extern "C" __declspec(dllimport) int __stdcall K32GetProcessMemoryInfo(void*, void*, unsigned long);
+#endif
+static double processPrivateMiB()
+{
+#ifdef _WIN32
+    DevProcessMemoryCountersEx pmc {};
+    pmc.cb = sizeof(pmc);
+    if (K32GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+        return static_cast<double>(pmc.privateUsage) / (1024.0 * 1024.0);
+#endif
+    return -1.0;
+}
+
+void GameSimulation::runShellRoundTripTest()
+{
+    m_shellRoundTripTestDone = true;
+    const Ship* player = playerShip();
+    if (!player)
+        return;
+    const glm::dvec3 anchor = world::coordinates::fullMeters(player->core().transform().worldPosition);
+    const glm::dvec3 forward = glm::normalize(glm::dvec3(player->core().transform().forward()));
+    const auto& descriptor = EliteCobraMk1::EliteCobraMk1Descriptor();
+    std::uint64_t serial = 0;
+    const auto spawn = [&](double offset) {
+        ShipInitData init;
+        init.visual.shipType = "Cobra MK1";
+        init.visual.shipName = "Shell Round Trip";
+        init.registry.instanceId = 991000 + (++serial);
+        init.registry.ownerName = "diagnostics";
+        init.registry.shipRole = ShipRoleType::Transport;
+        return spawnTrafficShell(m_activeCelestialSystemId, descriptor, anchor + forward * (2000.0 + offset),
+                                 glm::dvec3(0.0), init, glm::mat4(1.0f));
+    };
+    const auto firstModule = [](Ship& ship) -> world::modules::ObjectModuleState* {
+        for (auto& m : ship.core().moduleRuntime().modules())
+            if (m.maxHealth > 0.0f && m.detachable)
+                return &m;
+        return nullptr;
+    };
+    const auto plannerWouldCollapse = [&](EntityId id) {
+        Ship* ship = getShip(id);
+        if (!ship)
+            return false;
+        if (ship->core().activeRepairJobCount() > 0 || !ship->core().detachedFragmentRuntime().fragments().empty())
+            return false;
+        for (const auto& link : ship->core().structuralLinkRuntime().links())
+            if (link.destroyed || link.health + 1.0e-4f < link.maxHealth)
+                return false;
+        return shellBlockingDomain(id) == nullptr;
+    };
+
+    struct Variant { const char* name; };
+    const char* variants[] = {"pristine", "rcs-gas", "j-charge", "coolant-heat", "cargo", "module-health",
+                              "equipment-damage", "module-detached", "repair-job"};
+    for (const char* v : variants)
+    {
+        const EntityId id = spawn(static_cast<double>(serial) * 150.0);
+        if (id.value == 0 || !materializeShipShell(id))
+            continue;
+        Ship* ship = getShip(id);
+        auto& motion = ship->core().transform().motion;
+        std::string moduleId;
+        double before = 0.0;
+        const std::string name = v;
+        if (name == "rcs-gas") { motion.manoeuvreGasPressure01 = 0.31; before = 0.31; }
+        else if (name == "j-charge") { motion.jChargeT = 0.5 * std::max(0.1, motion.jChargeCapacityT); before = motion.jChargeT; }
+        else if (name == "coolant-heat") { ship->core().debugSetServiceCoolantTemperatureK(401.0); before = 401.0; }
+        else if (name == "cargo") { auto load = ship->core().load(); load.cargoTonnes = 12.5; ship->core().setLoad(load); before = 12.5; }
+        else if (auto* m = firstModule(*ship))
+        {
+            moduleId = m->moduleId;
+            if (name == "module-health") { ship->core().moduleRuntime().setModuleHealth(moduleId, m->maxHealth * 0.4f); before = 0.4; }
+            else if (name == "equipment-damage") { m->equipmentDamage.accumulated.laser01 = 0.3; before = 0.3; }
+            else if (name == "module-detached") { ship->core().moduleRuntime().debugForceDetach(moduleId); before = 1.0; }
+            else if (name == "repair-job")
+            {
+                ship->core().moduleRuntime().setModuleHealth(moduleId, m->maxHealth * 0.2f);
+                ship->core().refreshRuntimeState();
+                before = ship->core().startRepairJobForModule(moduleId) ? 1.0 : 0.0;
+            }
+        }
+        ship->core().refreshRuntimeState();
+        const bool collapses = plannerWouldCollapse(id);
+
+        if (!dematerializeShip(id, game::simulation::ShipSimulationTier::TrafficShell) || !materializeShipShell(id))
+        {
+            std::cout << "[ShellRoundTrip] " << v << ": transition FAILED\n";
+            continue;
+        }
+        ship = getShip(id);
+        auto& after = ship->core().transform().motion;
+        double now = 0.0;
+        if (name == "rcs-gas") now = after.manoeuvreGasPressure01;
+        else if (name == "j-charge") now = after.jChargeT;
+        else if (name == "coolant-heat") now = ship->core().serviceCoolantTemperatureK();
+        else if (name == "cargo") now = ship->core().load().cargoTonnes;
+        else if (const auto* m = moduleId.empty() ? nullptr : ship->core().moduleRuntime().findModule(moduleId))
+        {
+            if (name == "module-health") now = m->health / m->maxHealth;
+            else if (name == "equipment-damage") now = m->equipmentDamage.accumulated.laser01;
+            else if (name == "module-detached") now = m->state == world::modules::ObjectModuleRuntimeState::Detached ? 1.0 : 0.0;
+            else if (name == "repair-job") now = ship->core().activeRepairJobCount() > 0 ? 1.0 : 0.0;
+        }
+        const bool kept = name == "pristine" || std::abs(now - before) <= 0.01 * std::max(1.0, std::abs(before));
+        std::cout << "[ShellRoundTrip] " << v << ": before " << before << " after " << now << " -> "
+                  << (kept ? "SURVIVES" : "LOST") << "; automatic planner "
+                  << (collapses ? "WOULD collapse it" : "BLOCKS the collapse") << "\n";
+        dematerializeShip(id, game::simulation::ShipSimulationTier::TrafficShell);
+        removeTrafficShell(id);
+    }
+
+    // memory: N full ships vs N shells, then repeated cycles
+    constexpr int N = 100;
+    std::vector<EntityId> ids;
+    const double base = processPrivateMiB();
+    for (int i = 0; i < N; ++i)
+        ids.push_back(spawn(5000.0 + i * 60.0));
+    const double shells = processPrivateMiB();
+    for (const EntityId id : ids)
+        materializeShipShell(id);
+    const double full = processPrivateMiB();
+    for (const EntityId id : ids)
+        dematerializeShip(id, game::simulation::ShipSimulationTier::TrafficShell);
+    const double back = processPrivateMiB();
+    for (int cycle = 0; cycle < 5; ++cycle)
+    {
+        for (const EntityId id : ids)
+            materializeShipShell(id);
+        for (const EntityId id : ids)
+            dematerializeShip(id, game::simulation::ShipSimulationTier::TrafficShell);
+    }
+    const double cycled = processPrivateMiB();
+    for (const EntityId id : ids)
+        removeTrafficShell(id);
+    const double freed = processPrivateMiB();
+    std::cout << "[ShellRoundTrip] memory (private MiB): base " << base << ", +" << N << " shells " << shells
+              << ", materialized " << full << " (" << (full - shells) * 1024.0 / N << " KiB per full ship), back to shells "
+              << back << ", after 5 more cycles " << cycled << ", removed " << freed << "; condition table "
+              << m_shipConditions.bytes() / 1024 << " KiB for " << m_shipConditions.liveCount() << " live cells ("
+              << sizeof(game::simulation::ShipConditionCell) << " B per cell)\n";
 }

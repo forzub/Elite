@@ -100,7 +100,7 @@ EntityId GameSimulation::materializeScheduledVisit(const ScheduledVisitHit& hit)
     init.visual.shipName = visit.name;
     init.registry.instanceId = 980000 + m_nextCombatSerial++;
     init.registry.ownerName = "scheduled traffic " + visit.id;
-    init.registry.shipRole = ShipRoleType::Civilian;
+    init.registry.shipRole = ShipRoleType::Passenger;   // a scheduled line: corporate upkeep
     const ShipDescriptor& descriptor = ShipDescriptorRegistry::resolve(ObjectType::CobraMk1, visit.passport);
     const glm::mat4 orientation(glm::mat3(R * pose.basis));
     const EntityId id = spawnShip(ShipRole::NPC, city.systemId, descriptor, position, init, orientation);

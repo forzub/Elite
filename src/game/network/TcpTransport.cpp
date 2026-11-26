@@ -11,6 +11,8 @@
 
 #include "src/game/network/TcpWireStream.h"
 #include "src/game/network/WireMessageCodec.h"
+#include "src/game/network/WireSnapshotDiagnostics.h"
+#include <cstdlib>
 
 namespace game::network
 {
@@ -31,6 +33,16 @@ bool popQueue(std::queue<T>& queue, T& outValue)
 // what one TCP session's snapshots cost (the replication audit 2026-11-26: measure before reshaping the ship row):
 // every 10 s the snapshots sent, ships carried, raw (encoded) and wire (LZ4) bytes per second, and the row parts of
 // the controlled ship and of an average other ship
+// DEV, opt-in (ELITE_DEV_NET_BYTES=1): without it the production transport neither collects nor parses nor logs
+inline bool netBytesMeterEnabled()
+{
+    static const bool enabled = [] {
+        const char* v = std::getenv("ELITE_DEV_NET_BYTES");
+        return v && v[0] == '1';
+    }();
+    return enabled;
+}
+
 struct SnapshotTrafficMeter
 {
     using Clock = std::chrono::steady_clock;
@@ -82,6 +94,10 @@ struct SnapshotTrafficMeter
         if (others)
             std::cerr << "; other rows avg " << otherRow / others << " B (motion " << otherMotion / others
                       << ", engine telemetry " << otherTelemetry / others << ")";
+        // where the bytes are, top level (this snapshot, raw): ships / objects / hubs / signals / session
+        const auto parts = wire::snapshotPartSizes(snapshot);
+        std::cerr << "; parts ships " << parts.ships << " B, objects " << parts.objects << " B, hubs " << parts.hubs
+                  << " B, signals " << parts.signals << " B, session " << parts.session << " B";
         std::cerr << std::endl;
         *this = {};
     }
@@ -356,7 +372,7 @@ struct TcpServerTransport::Impl
     template<typename T>
     void send(const T& value)
     {
-        if (!stream || !sendTyped(*stream, value, compressor, &snapshotMeter))
+        if (!stream || !sendTyped(*stream, value, compressor, netBytesMeterEnabled() ? &snapshotMeter : nullptr))
         {
             // a snapshot that could not be ENCODED (the stream itself is fine: over the wire size limit, SRV-2): tell
             // the client why before closing - it showed only "TCP peer closed connection"

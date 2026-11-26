@@ -110,6 +110,9 @@ struct ShipSimulationLifecycleState
     std::uint32_t formationId = 0;
     std::uint16_t formationSlot = 0;
 
+    // the ship's cell in GameSimulation's ShipConditionTable (direct index; rides shell <-> full ship)
+    std::uint32_t conditionSlot = 0xFFFFFFFFu;
+
     std::uint64_t revision = 0;
 
     [[nodiscard]] bool acceptsAiControl() const noexcept

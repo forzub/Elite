@@ -5,7 +5,8 @@
 // storage / logistics blocks on the rim; 2026-11-26: «у нас есть специальные порты для ньютона ... потому, что ньютону
 // тяжеловато маневрировать в городе» -> the dispatcher REFUSES a city pad to a Newtonian ship and sends it to the
 // outskirts: a ring hub's axial dock (on the axis the deck stands still), a planar city's rim piers (the plan's
-// role "dock" modules - not taking ships yet: until then the refusal says so).
+// role "dock" modules - not taking ships yet) and, today, the city's own dock: moved to a rim block 2026-11-17, its slot
+// facing open space - live 2026-11-26 a Newtonian Cobra docked at Tikhiy's and at the ring's axial dock).
 // One source for the client's dispatcher (at the click, before any route) and the server's (at the request).
 
 #include <string>
@@ -38,7 +39,7 @@ inline std::string newtonianPadLine(const std::string& status)
     return "ДИСПЕТЧЕР: посадка на " + address +
            " отклонена - городские площадки закрыты для ньютоновских кораблей (в городе им не развернуться). " +
            (ring ? std::string("Стыкуйтесь в осевой док (Док) - на оси палуба стоит")
-                 : std::string("Доки фронтиров - на окраине, у складов (пока не принимают)"));
+                 : std::string("Стыкуйтесь в док города (Док) - он на окраине"));
 }
 
 } // namespace game::navigation::rules

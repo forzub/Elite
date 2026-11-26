@@ -9098,3 +9098,7 @@ start-up hitches (render), trade step 16 part 3 live.
   0 dodges, 0 collisions. Services of the ring are thus all reachable from the axial dock.
   Open: the planar cities' rim piers (role "dock") as TrackTerminal service docks; services are per hub, not per dock
   (a dock's purposes / DockKind are read by nobody).
+  LIVE tikdock1 (Newtonian-I, Tikhiy from 13 km): the planar city's own dock (moved to a rim block 2026-11-17, its slot
+  facing open space) - accepted, cleared to P4, station hand-off through the chamber, DOCKED after 267 s, fee 384 Cr;
+  0 dodges, 0 collisions. So both hub kinds already have an outskirts dock a Newtonian ship can use: the planar city's
+  refusal line now sends it to the city's dock (was "frontier docks - not taking ships yet").

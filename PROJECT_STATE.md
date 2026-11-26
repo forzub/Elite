@@ -9003,3 +9003,13 @@ start-up hitches (render), trade step 16 part 3 live.
   end; the HUD tunnel of the leg is drawn in the frozen map (turns away with the city); the gate route is 37 km (the
   docking-style 8.85 km final; once it ran through the ring's inside and met lane traffic - ship 1586, 87 m/s);
   regression on Высокий not yet run.
+- RING PAD AUTOPILOT, STEP 3-4 (2026-11-26): (a) the co-rotating leg hands the ship to the pad service at its ROUTE'S
+  END (or < 100 m; was 250 m) - live 120 m before the approach point (the route ends 2 hull lengths short, as on the
+  flat hubs), across + down, LANDED (104 s); (b) the leg's HUD tunnel turns with the city (the presentation frame
+  carries the frozen map's turn back: world = origin + B (p + M^T (x - p))) - live: its nearest frame 0-22 m from the
+  ship over the whole leg (unfixed it would turn 155 deg off in 30 s). Regression navsuite_ring2 (Высокий): pad_outside
+  / pad_series / tower_pad / dock_hub - plans, 0 failed, 0 collisions, cross / speed errors as before (cross_max 13 /
+  17.7 / 13.2 / 21.2). Two full ring landings (runs ringco7, ringco8): 0 collisions.
+  Open (ring): the gate route's 37 km docking-style final; a gate route through the ring's inside can meet the lane
+  traffic; NPC ring traffic does not use the gate / co-rotation yet; the axial dock dispatcher; Newtonian ships (the
+  deck charge is the Assisted stabilization channel).

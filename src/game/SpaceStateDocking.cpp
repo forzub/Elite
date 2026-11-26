@@ -4472,7 +4472,9 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                                 " в системе кольца";
                 return false;
             }
-            if (!m_padAnchor.ringGate && (d < 250.0 || atRouteEnd))
+            // (the co-rotating leg: the planner and the autopilot bring the ship to its route's end over the pad - the
+            // service only sets it down, the author's rule; live it took the ship 250 m out and flew it across)
+            if (!m_padAnchor.ringGate && (atRouteEnd || d < (m_padAnchor.coRotate ? 100.0 : 250.0)))
             {
                 std::cerr << "[PadRoute] request=" << pending.serial << " " << d << " m from the approach point of "
                           << m_padAnchor.address << ": the pad service takes the ship" << std::endl;
@@ -5257,6 +5259,27 @@ void SpaceState::publishDockingAdvisoryPresentation(Frame& f)
         playerRenderFrame.kinematicFrame();
     renderFrame.frameId =
         playerRenderFrame.hubId;
+    // the co-rotating leg of a ring pad: its route lives in the city's frozen map - drawn, it turns with the city (the
+    // map's turn since t0 put back: world = origin + B (p + M^T (x - p)))
+    if (m_padAnchor.valid && m_padAnchor.coRotate && m_padAnchor.coPlanned && m_padAnchor.serial == active.serial)
+    {
+        const auto map = game::navigation::cityCoRotationAt(m_padAnchor.coAttachment, m_padAnchor.coT0, renderTime);
+        const glm::dmat3 back = glm::transpose(map.toMap);
+        renderFrame.originMeters += renderFrame.localToWorldBasis * (map.pivot - back * map.pivot);
+        renderFrame.localToWorldBasis = renderFrame.localToWorldBasis * back;
+        // the check: the drawn tunnel stays by the ship (its nearest frame), turning with the city
+        static double logged = -1.0e9;
+        if (renderTime - logged >= 5.0 && !active.plan.executionGates.empty())
+        {
+            logged = renderTime;
+            const glm::dvec3 ship = world::coordinates::fullMeters(player.renderTransform.worldPosition);
+            double nearest = 1.0e30;
+            for (const auto& g : active.plan.executionGates)
+                nearest = std::min(nearest, glm::length(renderFrame.localToWorldPosition(g.positionMeters) - ship));
+            std::cerr << "[RingCoRotation] request=" << active.serial << " the drawn tunnel: nearest frame " << nearest
+                      << " m from the ship (+" << renderTime - m_padAnchor.coT0 << " s)" << std::endl;
+        }
+    }
 
     // WORKING CONTRACT: HUD and hull sample the same pure two-point dock
     // phase function. Only sample time differs (render time vs fixed-sim time).

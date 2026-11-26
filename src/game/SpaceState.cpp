@@ -1,3 +1,4 @@
+#include "src/game/navigation/rules/PadLawRules.h"
 #include "src/game/navigation/rules/RingDeckRules.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
@@ -663,6 +664,18 @@ void SpaceState::updatePilotTakeover(bool touching)
     // игроку через диспетчера»): a rim pad of a turning ring - its weight, the deck's speed, the approach; too little lift
     // - refused here, the axial dock (RingDeckRules.h; the server decides the same at the hand-over)
     std::string rimNotice;
+    // CITY PADS ARE CLOSED TO THE NEWTONIAN LAW (rules/PadLawRules.h): answered at the click, before any route
+    if (padRequest && m_client)
+        if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end())
+            if (!game::navigation::rules::cityPadOpenTo(game::ship::plant::familyOf(shipIt->second.physicalControlModel) ==
+                                                        game::ship::plant::PhysicalControlFamily::Newtonian))
+            {
+                const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(padRequest->frameModuleId);
+                m_pilotNotice = game::navigation::rules::newtonianPadLine(game::navigation::rules::newtonianPadNotice(
+                    padRequest->address, plan && plan->ring().valid && plan->ring().periodSeconds > 0.0));
+                std::cerr << "[PadLanding] HUD: " << m_pilotNotice << std::endl;
+                padRequest.reset();
+            }
     if (padRequest && m_client)
         if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end() &&
                                                                                   shipIt->second.descriptor)
@@ -899,6 +912,12 @@ void SpaceState::updatePilotTakeover(bool touching)
                         m_berthWatch.waitMin = std::atoi(rest.c_str() + colon + 1);
                         m_berthWatch.since = glfwGetTime();
                     }
+                    m_padLandingObjectId.clear();
+                    m_systemMapRenderer.setPadLandingActive(std::string());
+                }
+                else if (status.rfind("refused:newtonian:", 0) == 0)
+                {
+                    line = game::navigation::rules::newtonianPadLine(status);
                     m_padLandingObjectId.clear();
                     m_systemMapRenderer.setPadLandingActive(std::string());
                 }

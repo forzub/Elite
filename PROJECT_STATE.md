@@ -9064,3 +9064,27 @@ start-up hitches (render), trade step 16 part 3 live.
   ELITE_SHIP_PHYSICAL_TEST_MODEL, the new nozzles): dispatcher cleared (lift 1.56 g, needs 1.2), gate synchronized
   (2.6 m off the axis, roll drift 1.0 deg / 3 s), the co-rotating leg flown ~90 s (HUD tunnel 2-8 m from the ship), the
   pad service descending at 6 m/s - the 900 s run budget ended 90 m above the pad (rerun ringnewt2 with 1200 s).
+  Matrix breakage lead (replay of cases/newtonian-I.case, I d3, build-relwithdebinfo): the route reaches its end, the
+  terminal enters POSITION_HOLD at 8.4 m / 1.96 m/s and then drifts AWAY at a steady 1.55 m/s (20 -> 71 m) with the
+  hold's own demand 0 (decision demand_acc 0.000, monitor 0, attitude error 180 deg, roll 74 deg) - the hold law returns
+  no trim (not the nozzles, not the safety monitor). To bisect from 93d969b6e (step I, 96/126).
+  ringnewt2 (Newtonian-I, 1200 s): gate synchronized (5 m off the axis), the leg planned at 30 m/s; at +117 s a
+  capability change (angular 1.88 -> 1.66 rad/s2: the nozzles share their work with the deck's charge) -> replan ->
+  the Newtonian SAFETY COURSE picked an escape ray 45 km long in the city's frozen map and burned to 70 -> 100 m/s
+  among the buildings (the reflex dodged real contacts, 39 traced: turning structures 300-500 m ahead), then the ship
+  left the ring (160 km off, 14 km/s relative to the turning map at the 1200 s end). FIX: inside the co-rotating leg a
+  replan has no escape course - the ship stops relative to the city first (manualStopControl; the law holds the
+  velocity relative to the deck), then plans from rest. Source + build only (the Newtonian rim landing is now refused,
+  below).
+- NEWTONIAN SHIPS AND CITY PADS (author 2026-11-26: «у нас есть специальные порты для ньютона ... ньютону тяжеловато
+  маневрировать в городе»; picked: refusal + outskirts docks; «только тогда наружные площадки должны быть заправочные,
+  ремонтные, складские, заводские и т.д.»). The 2026-11-17/18 rule (Newtonian / larger ships never enter the city, the
+  frontiers' docks on the rim by the stores) had no code: the lanes' "law": "assisted" (5922) is read by nobody, the
+  rim piers (role "dock", 26 in Tikhiy / plane_demo) take no ships, DockKind::TrackTerminal ("railway station" for
+  Newtonian ships) exists only in DockFacilityDescriptor.h. NOW: rules/PadLawRules.h - every city pad is closed to the
+  Newtonian control family; the client's dispatcher refuses at the click (before any route), the server at the
+  request ("refused:newtonian:<addr>:<ring>"); the line sends a ring's Newtonian ship to the axial dock, a planar
+  city's to the frontier docks "on the outskirts (not taking ships yet)". LIVE newtpad1 (Newtonian-I, A1-03): refused
+  at the click with that line; asspad1 (Assisted): cleared as before, the gate route started.
+  NEXT (agreed): outskirts SERVICE docks - the ring's axial dock dispatcher with refuel / repair / storage-market /
+  factory services; the planar cities' rim piers as TrackTerminal docks with the services of their blocks.

@@ -2223,6 +2223,23 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
               )
             : request.initialForward;
 
+    // the CO-ROTATING leg inside a ring: no escape course - its ray (45 km in the city's frozen map) and its burn led a
+    // Newtonian ship out of the ring at 100 m/s and away (live ringnewt2, a replan on "capability-changed"). Inside the
+    // turning city the safe state is REST RELATIVE TO THE CITY (the law holds the velocity relative to the deck): stop
+    // there, then the planner starts from rest
+    if (m_padAnchor.valid && m_padAnchor.coRotate && request.initialSpeedMps > 0.5)
+    {
+        static double loggedAt = -1.0e9;
+        if (authoritativeServerSeconds - loggedAt > 2.0)
+        {
+            loggedAt = authoritativeServerSeconds;
+            std::cerr << "[RingCoRotation] request=" << pending.serial << " replanning inside the ring: stopping relative to "
+                      << "the city first (" << request.initialSpeedMps << " m/s), no escape course" << std::endl;
+        }
+        submitAutopilotControl(manualStopControl());
+        return false;
+    }
+
     if (assisted)
     {
         // ============================================================

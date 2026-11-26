@@ -19,6 +19,7 @@
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/navigation/rules/PadLawRules.h"
 #include "src/game/navigation/rules/RingDeckRules.h"
 #include <glm/gtc/quaternion.hpp>
 
@@ -212,6 +213,19 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         if (std::max(static_cast<double>(caps.strafeAccel),
                      caps.forwardMainEngineAvailable ? 0.5 * caps.forwardMainEngineAccelerationMps2 : 0.0) < 0.2)
             refusal = "no working thrust";
+    }
+    // CITY PADS ARE CLOSED TO THE NEWTONIAN LAW (rules/PadLawRules.h, author 2026-11-17 / 2026-11-26): the outskirts'
+    // docks are theirs - the ring's axial dock, a planar city's rim piers
+    if (!refusal &&
+        !game::navigation::rules::cityPadOpenTo(game::ship::plant::familyOf(ship->core().state().construction.physicalControlModel) ==
+                                                game::ship::plant::PhysicalControlFamily::Newtonian))
+    {
+        std::cerr << "[PadLanding] ship " << shipId.value << " pad " << frameModuleId << "/" << address
+                  << " refused: a Newtonian ship - city pads are closed to it (the outskirts' docks)" << std::endl;
+        m_padNotices[shipId] = {game::navigation::rules::newtonianPadNotice(
+                                    address, plan->ring().valid && plan->ring().periodSeconds > 0.0),
+                                serverTime()};
+        return false;
     }
     // THE RING'S DISPATCHER (author 2026-11-25: «эта информация должна выдаваться игроку через диспетчера»): a pad on a
     // TURNING city's rim - the deck's weight there (omega^2 r) and its speed (omega r); the ship must hold the weight on

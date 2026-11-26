@@ -11,12 +11,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 T=$1; shift
 if [ "$1" = build ]; then
   shift
-  cmake --build "$ELITE_ROOT/build/headless_server" \
+  cmake --build "$NEWTONIAN_BUILD" \
     --target EliteNewtonianScenarios EliteNewtonianReplay -j 8 \
     > "$ELITE_DIAG_DIR/elite_${T}_build.log" 2>&1 || {
     echo BUILD FAILED; grep -m15 -E "error" "$ELITE_DIAG_DIR/elite_${T}_build.log"; exit 1; }
 fi
-SCEN_EXE="$ELITE_ROOT/build/headless_server/EliteNewtonianScenarios.exe"
+SCEN_EXE="$NEWTONIAN_BUILD/EliteNewtonianScenarios.exe"
 CD="$ELITE_DIAG_DIR/elite_${T}_cases"
 rm -rf "$CD"; mkdir -p "$CD"
 "$SCEN_EXE" "$CD" "$CASES_DIR/newtonian-I.case" "$CASES_DIR/newtonian-Y.case" \

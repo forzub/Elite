@@ -210,6 +210,9 @@ struct DynamicMotionState
     // the deck is the ship's CO-ROTATING frame (ShipControlState::deckCoRotating): the full turning-frame cost, the
     // attitude damped to the deck's turn (server-side only; not replicated)
     bool deckCoRotating = false;
+    // the share of this tick's EXECUTED Newtonian nozzle acceleration (world axes) that paid the deck's charge
+    // (ShipCorePropulsion): not the pilot's manoeuvre - the RCS release doctrine must not cancel it (server-side only)
+    glm::dvec3 deckChargeByNozzlesMps2 {0.0};
     // COUPLED to an object (a ship standing on / carried by a hub city's pad service): the object (entity id, 0 = none)
     // and the ship's pose in that object's frame (place; up and back axes). The client draws it from the object's pose
     // as drawn - one epoch, no prediction (a predicted ship on a turning ring stood ~20 m off its pad, jittering)

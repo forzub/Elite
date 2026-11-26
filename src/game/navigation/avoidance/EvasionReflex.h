@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <cstdio>
 #include <cstdint>
 #include <vector>
 
@@ -143,6 +144,31 @@ public:
                             (course.earliestViolationSeconds >= 0.0 && course.earliestViolationSeconds <= window);
         if (!urgent)
             return release(now);
+        // DEV: which threat made the course urgent (ELITE_DEV_EVASION_TRACE=1) - each one judged alone on the hands-off
+        // flight, those touching or inside the margin within the window
+        static const bool trace = [] {
+            const char* v = std::getenv("ELITE_DEV_EVASION_TRACE");
+            return v && v[0] == '1';
+        }();
+        if (trace)
+            for (std::size_t i = 0; i < sc.threats.size(); ++i)
+            {
+                EvasionScene one = sc;
+                one.threats.assign(1, sc.threats[i]);
+                const EvasionChoice c = judgeControlFlight(handsOff, one, ship.velocityBody);
+                const bool bad = (c.contact && c.contactTimeSeconds <= window) ||
+                                 (c.earliestViolationSeconds >= 0.0 && c.earliestViolationSeconds <= window);
+                if (!bad)
+                    continue;
+                const auto& th = sc.threats[i];
+                std::fprintf(stderr,
+                             "[EvasionTrace] threat %zu: pos (%.1f %.1f %.1f) vel (%.1f %.1f %.1f) r %.1f turning %d | contact %d at %.2f s,"
+                             " margin %.1f; own v (%.1f %.1f %.1f) deck %d corot %d\n",
+                             i, th.position.x, th.position.y, th.position.z, th.velocity.x, th.velocity.y, th.velocity.z,
+                             th.radiusMeters, th.turning ? 1 : 0, c.contact ? 1 : 0, c.contactTimeSeconds, c.minMarginMeters,
+                             ship.velocityBody.x, ship.velocityBody.y, ship.velocityBody.z, ship.deckActive ? 1 : 0,
+                             ship.deckCoRotating ? 1 : 0);
+            }
         const auto t0 = std::chrono::steady_clock::now();
         int best = static_cast<int>(ControlProgramHandsOff);
         EvasionChoice bestChoice = course;

@@ -575,8 +575,15 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     }
     else if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
     {
+        // the deck's charge fired by the nozzles is not the pilot's
+        // manoeuvre: the release doctrine cancels only the pilot's delta-v
+        // (a ring rim's ~1 g was cancelled the next tick, 2 m/s2 short)
+        const glm::dvec3 deckChargeLocal =
+            motion.installedRcsPlantExecuted
+                ? frame.worldToLocalVector(motion.deckChargeByNozzlesMps2)
+                : glm::dvec3(0.0);
         motion.newtonianManualManoeuvreDeltaVelocityMps +=
-            actualManoeuvreLocalAcceleration * dt;
+            (actualManoeuvreLocalAcceleration - deckChargeLocal) * dt;
 
         const double ledgerMagnitude =
             glm::length(

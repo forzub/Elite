@@ -3326,6 +3326,10 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                                   job.retired.end());
                 if (!job.result.valid() || job.serial != pending.serial)
                 {
+                    // BOUNDED (audit 2026-11-26 MEDIUM: a burst of re-requests started a thread each, all running at
+                    // once): while a retired search still runs, the new one waits for it - at most two searches alive
+                    if (!job.retired.empty())
+                        return;
                     if (job.result.valid())
                         job.retired.push_back(std::move(job.result));   // still running: never destroyed on this thread
                     job.serial = pending.serial;
@@ -4417,7 +4421,11 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                 const glm::dvec3 upCity = glm::transpose(Rc) * glm::dvec3(shipIt->second.renderTransform.up());
                 const double rollInCity = std::atan2(upCity.y, upCity.x);
                 const bool holding = fromAxis < 15.0 && alongFromGate < 150.0 && speed < 1.5 && rateErr < glm::radians(2.0);
-                const double now = glfwGetTime();
+                // simulation time (the server's universe clock), not the client's wall clock: a stalled or paused client must not
+                // count the hold window while the authoritative state is not advancing
+                const double now = f.universeTimeSeconds;
+                if (m_padAnchor.gateSyncedSinceS > now)   // the universe timeline was rewound: restart the window
+                    m_padAnchor.gateSyncedSinceS = -1.0;
                 if (!holding)
                     m_padAnchor.gateSyncedSinceS = -1.0;
                 else if (m_padAnchor.gateSyncedSinceS < 0.0)
@@ -4435,7 +4443,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                         m_padAnchor.gateRollStartRad = rollInCity;
                     }
                 }
-                if (now - m_padAnchor.gateLogS >= 3.0)
+                if (now - m_padAnchor.gateLogS >= 3.0 || now < m_padAnchor.gateLogS)
                 {
                     m_padAnchor.gateLogS = now;
                     std::cerr << "[RingSync] request=" << pending.serial << " " << d << " m from the gate (" << fromAxis
@@ -4634,6 +4642,28 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             reflexShip.ratesPitchYawRoll = glm::vec3(static_cast<float>(reflexAgent.pitchRateRadPerSec),
                                                      static_cast<float>(reflexAgent.yawRateRadPerSec),
                                                      static_cast<float>(reflexAgent.rollRateRadPerSec));
+            // the CO-ROTATING leg (audit 2026-11-26 HIGH): the agent flew the city's frozen map - its velocity relative to
+            // the turning city, its rates minus the city's turn. The reflex judges against radar tracks that move straight
+            // in the hub's own (non-turning) frame: the ship's TRUE state there, and the deck charges the server applies
+            // (ControlProgramEvasion.h setControlShipDeck)
+            {
+                const auto& real = f.player.transform;
+                const auto& rm = real.motion;
+                if (f.player.referenceFrame.valid && rm.mode == game::navigation::MotionMode::HubTactical)
+                {
+                    const auto fr = f.player.referenceFrame.kinematicFrame();
+                    const auto axis = [&](const glm::vec3& w) { return glm::normalize(fr.worldToLocalVector(glm::dvec3(w))); };
+                    const glm::dvec3 r = axis(real.right()), u = axis(real.up()), fw = axis(real.forward());
+                    const bool coRotatingLeg = m_padAnchor.valid && m_padAnchor.coRotate;
+                    if (coRotatingLeg)
+                    {
+                        reflexShip.velocityBody = glm::dvec3(glm::dot(rm.localVelocityMps, r), glm::dot(rm.localVelocityMps, u),
+                                                             -glm::dot(rm.localVelocityMps, fw));
+                        reflexShip.ratesPitchYawRoll = glm::vec3(real.pitchRate, real.yawRate, real.rollRate);
+                    }
+                    game::navigation::avoidance::setControlShipDeck(reflexShip, rm, r, u, fw, coRotatingLeg);
+                }
+            }
             m_routeReflexApplied = true;
             submitAutopilotControl(applyEvasionReflex(output.control, reflexLateral, ownBoundingRadiusMeters(),
                                                       universeTimeSeconds, &reflexShip));
@@ -5624,6 +5654,11 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     const glm::dvec3 v = local ? motion.localVelocityMps : motion.worldVelocityMps - motion.referenceVelocityMps;
     const glm::dvec3 right = axis(transform.right()), up = axis(transform.up()), forward = axis(transform.forward());
     ship.velocityBody = glm::dvec3(glm::dot(v, right), glm::dot(v, up), -glm::dot(v, forward));
+    // over a turning deck the server makes the ship follow it (and on the co-rotating leg - the virtual pilot's control
+    // carries deckCoRotating - also the Coriolis part): the prediction flies the same charges
+    if (local)
+        game::navigation::avoidance::setControlShipDeck(ship, motion, right, up, forward,
+                                                        autopilotPhase && m_padAnchor.valid && m_padAnchor.coRotate);
     ship.targetForwardSpeedMps = std::max(0.0, static_cast<double>(motion.targetForwardSpeedMps));
     ship.rcsKeepsTranslationDeltaV = sampled.rcsKeepsTranslationDeltaV;
     ship.ratesPitchYawRoll = glm::vec3(transform.pitchRate, transform.yawRate, transform.rollRate);
@@ -5695,6 +5730,13 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
                     t.position = toBody(rel);
                     t.velocity = toBody(relV);
                     t.radiusMeters = pieceR;
+                    // a turning object (a ring city): the piece goes round its axis, not on a straight line
+                    if (glm::length(object.angularVelocityWorldRadPerSecond) > 1.0e-6)
+                    {
+                        t.turning = true;
+                        t.turnAxisPoint = toBody(origin - me);
+                        t.turnOmega = toBody(object.angularVelocityWorldRadPerSecond);
+                    }
                     structureCandidates.emplace_back(std::max(0.0, glm::length(rel) - pieceR) / closing, t);
                 }
             }

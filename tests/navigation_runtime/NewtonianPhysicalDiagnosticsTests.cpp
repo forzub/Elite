@@ -379,8 +379,9 @@ void runModel(Recorders& logs,Model model,std::size_t expectedMain)
     affected.availableElectricalMW=5.0;
     affected.centerOfMassLocalMeters={1.1,-0.7,0.8};
     recordRcs(logs,model,"cargo_com_shift",f,affected,main.mainCount);
-    // The 24 physical nozzles have finite thrust: 24*500kN = 12MN.
-    // Ask for 20MN, impossible even with infinite electrical power.
+    // The 24 physical nozzles have finite thrust: 24*1MN = 24MN, at most
+    // 8 of them along one axis. Ask for 20MN, impossible even with
+    // infinite electrical power.
     NewtonianRcsDemand impossible {};
     impossible.forceBodyN={20000000.0,0.0,0.0};
     impossible.mountHalfExtentsM=HalfExtents;

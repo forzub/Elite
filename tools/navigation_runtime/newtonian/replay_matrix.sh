@@ -4,7 +4,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 T=$1
 if [ "$2" = build ]; then
-  cmake --build "$ELITE_ROOT/build/headless_server" --target EliteNewtonianReplay -j 8 \
+  cmake --build "$NEWTONIAN_BUILD" --target EliteNewtonianReplay -j 8 \
     > "$ELITE_DIAG_DIR/elite_${T}_replay_build.log" 2>&1 || {
     echo BUILD FAILED; grep -m15 -E "error|Error" "$ELITE_DIAG_DIR/elite_${T}_replay_build.log"; exit 1; }
   echo replay build ok

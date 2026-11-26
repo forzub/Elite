@@ -84,7 +84,30 @@ struct ControlShipState
     // our velocity change since the radar scan, in the body frame NOW (v_now - v_at_the_scan): the scan's relative tracks
     // are corrected by it (audit 2: an old scan compensated our rotation but not our acceleration)
     glm::dvec3 deltaVSinceScanBody {0.0};
+    // a TURNING DECK under us (DeckFrame.h - a ring city's rim, the replicated motion.deck*): the server makes the ship
+    // follow it (omega x v, ~1 g over the rim) and, CO-ROTATING (an autopilot's leg in the city's own frame), also the
+    // Coriolis part - the prediction flies the same charges through the same gateway (audit 2026-11-26 HIGH: the reflex
+    // predicted the co-rotating leg as free flight, ~400 m off over a 12 s horizon). velocityBody stays INERTIAL (the
+    // frame the radar tracks move straight in), never the velocity relative to the city.
+    bool deckActive = false;
+    bool deckCoRotating = false;
+    glm::dvec3 deckAxisPointBody {0.0};   // a point on the deck's spin axis, relative to us, body axes
+    glm::dvec3 deckOmegaBody {0.0};       // the deck's turn, body axes, rad/s
 };
+
+// the deck fields from the ship's own motion (travel-frame local axes) - right / up / forward: the hull's axes in the
+// same local axes
+inline void setControlShipDeck(ControlShipState& s, const game::navigation::DynamicMotionState& motion, const glm::dvec3& right,
+                               const glm::dvec3& up, const glm::dvec3& forward, bool coRotating)
+{
+    s.deckActive = motion.deckActive;
+    s.deckCoRotating = motion.deckActive && coRotating;
+    if (!motion.deckActive)
+        return;
+    const auto body = [&](const glm::dvec3& v) { return glm::dvec3(glm::dot(v, right), glm::dot(v, up), -glm::dot(v, forward)); };
+    s.deckAxisPointBody = body(motion.deckAxisPointLocal - motion.localPositionMeters);
+    s.deckOmegaBody = body(motion.deckOmegaLocal);
+}
 
 // the prediction's drift slope (metres per second of horizon per second of integration step), measured against 2 ms
 // physics: drift(t) ~ 73 dt t over the 41 programs (both laws); 80 with a margin
@@ -112,6 +135,10 @@ inline ControlFlight flyControlProgram(const ControlShipState& st, const Control
     tr.motion.localControlLaw = st.law;
     tr.motion.localPositionMeters = glm::dvec3(0.0);
     tr.motion.localVelocityMps = st.velocityBody;
+    tr.motion.deckActive = st.deckActive;
+    tr.motion.deckCoRotating = st.deckActive && st.deckCoRotating;
+    tr.motion.deckAxisPointLocal = st.deckAxisPointBody;
+    tr.motion.deckOmegaLocal = st.deckOmegaBody;
     tr.motion.targetForwardSpeedMps = st.targetForwardSpeedMps;
     tr.pitchRate = st.ratesPitchYawRoll.x;
     tr.yawRate = st.ratesPitchYawRoll.y;
@@ -171,7 +198,8 @@ inline ControlFlight flyControlProgram(const ControlShipState& st, const Control
         game::ship::control::ShipControlExecutionGateway::integrateAttitude(tr, st.params, c, world, static_cast<float>(dt));
         (void)game::ship::control::ShipControlExecutionGateway::evaluateTranslationControl(tr, st.params, c,
                                                                                           static_cast<float>(dt));
-        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(tr.motion, tr.worldPosition, frame, st.params, dt);
+        // the server's own propagation (the deck charges, then DynamicMotionSystem::updateLocalFrameMotion)
+        (void)game::ship::control::ShipControlExecutionGateway::propagateHubTacticalTranslation(tr, st.params, dt);
         intervalMaxAccel = std::max(intervalMaxAccel, glm::length(tr.motion.localVelocityMps - previousVelocity) / dt);
         previousVelocity = tr.motion.localVelocityMps;
     }
@@ -204,12 +232,31 @@ inline EvasionChoice judgeControlFlight(const ControlFlight& f, const EvasionSce
         body.velocityUncertaintyMps = th.velocityUncertaintyMps;
         body.ageSeconds = th.ageSeconds;
         ConflictResult c;
-        for (std::size_t k = 0; k + 1 < f.pos.size(); ++k)
+        // a turning object's piece: its translation (the absolute velocity less the spin's part) + the turn about its
+        // axis; each interval judged on the piece's chord, widened by the arc's sagitta
+        const double w = glm::length(th.turnOmega);
+        const bool turning = th.turning && w > 1.0e-9;
+        const glm::dvec3 k = turning ? th.turnOmega / w : glm::dvec3(0.0);
+        const glm::dvec3 arm = th.position - th.turnAxisPoint;
+        const glm::dvec3 vLin = vAbs - (turning ? glm::cross(th.turnOmega, arm) : glm::dvec3(0.0));
+        const double armPerp = turning ? glm::length(arm - k * glm::dot(k, arm)) : 0.0;
+        const double sagitta = turning ? armPerp * (1.0 - std::cos(0.5 * w * dt)) : 0.0;
+        const auto at = [&](double t) {
+            return th.turnAxisPoint + vLin * t + turnedAbout(arm, k, w * t);
+        };
+        for (std::size_t k2 = 0; k2 + 1 < f.pos.size(); ++k2)
         {
-            const double t0 = static_cast<double>(k) * dt;
-            const double e = k < f.chordBound.size() ? f.chordBound[k] : chordDeviationBound(f.vel[k], f.vel[k + 1], dt);
-            accumulateConflictInterval(c, t0, dt, f.pos[k], f.pos[k + 1], e, th.position + vAbs * t0, vAbs,
-                                       sc.caps.radiusMeters, body, policy);
+            const double t0 = static_cast<double>(k2) * dt;
+            double e = k2 < f.chordBound.size() ? f.chordBound[k2] : chordDeviationBound(f.vel[k2], f.vel[k2 + 1], dt);
+            if (turning)
+            {
+                const glm::dvec3 q0 = at(t0);
+                accumulateConflictInterval(c, t0, dt, f.pos[k2], f.pos[k2 + 1], e + sagitta, q0, (at(t0 + dt) - q0) / dt,
+                                           sc.caps.radiusMeters, body, policy);
+            }
+            else
+                accumulateConflictInterval(c, t0, dt, f.pos[k2], f.pos[k2 + 1], e, th.position + vAbs * t0, vAbs,
+                                           sc.caps.radiusMeters, body, policy);
         }
         if (c.safetyClearanceMeters < out.minMarginMeters)
         {

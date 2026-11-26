@@ -223,7 +223,10 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
         const auto liftCaps = game::ship::telemetry::applyAuthorityToControlParams(ship->core().effectivePhysics(),
                                                                                      ship->core().controlAuthorityTelemetry());
         const auto brief = game::navigation::rules::rimPadBriefing(
-            plan->ring(), building->padPosition, game::ship::assistedLateralStabilizationAccelerationLimitMps2(liftCaps));
+            plan->ring(), building->padPosition,
+            game::navigation::rules::rimLiftMps2(
+                liftCaps, game::ship::plant::familyOf(ship->core().state().construction.physicalControlModel) ==
+                              game::ship::plant::PhysicalControlFamily::Newtonian));
         if (brief.rim)
         {
             std::cerr << "[RingDispatcher] ship " << shipId.value << " pad " << address << ": deck " << brief.weightG

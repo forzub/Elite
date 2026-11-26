@@ -28,7 +28,22 @@ struct EvasionThreatTrack
     double positionUncertaintyMeters = 0.0;
     double velocityUncertaintyMps = 0.0;
     double ageSeconds = 0.0;
+    // a piece of a TURNING object (a ring city's structure - audit 2026-11-26: a straight track left its circle by
+    // w^2 r t^2 / 2, ~120 m in 5 s at the rim): it turns about the object's spin axis through turnAxisPoint (relative to
+    // the ship at t = 0, the scene's axes) at turnOmega (rad/s); velocity stays its velocity relative to the ship at
+    // t = 0, the spin's part included. Judged by the control programs (judgeControlFlight); the point-mass judge keeps
+    // the straight line.
+    bool turning = false;
+    glm::dvec3 turnAxisPoint {0.0};
+    glm::dvec3 turnOmega {0.0};
 };
+
+// v turned about the unit axis k by the angle a (Rodrigues)
+inline glm::dvec3 turnedAbout(const glm::dvec3& v, const glm::dvec3& k, double a)
+{
+    const double c = std::cos(a), s = std::sin(a);
+    return v * c + glm::cross(k, v) * s + k * glm::dot(k, v) * (1.0 - c);
+}
 
 struct EvasionShipCaps
 {

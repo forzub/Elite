@@ -602,7 +602,7 @@ private:
         // a TURNING ring's rim pad (author 2026-11-25): the route goes to the ring's SYNC GATE on the spin axis (the plan's
         // ring.sync_gate_m), the hull rolls with the ring there; hoverCity is then the gate
         bool ringGate = false;
-        double gateSyncedSinceS = -1.0;   // glfw time the ship has held the gate synchronized (-1: not yet)
+        double gateSyncedSinceS = -1.0;   // universe time the ship has held the gate synchronized (-1: not yet)
         double gateLogS = -1.0e9;
         double gateRollStartRad = 0.0;    // the hull's roll in the city frame when the window started
         // the pad's own approach point (over the pad at the transit height), kept while the route goes to the gate

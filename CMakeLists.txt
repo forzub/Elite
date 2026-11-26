@@ -1221,6 +1221,29 @@ if(ELITE_BUILD_SERVER)
         target_link_libraries(EliteNewtonianReplay PRIVATE ws2_32 mswsock)
     endif()
 
+    # DEV offline check: a Newtonian ship over a turning deck (a ring city's
+    # rim) - the deck's charge is nozzle work, paid in gas and watts.
+    add_executable(EliteDeckNewtonianCheck
+        tools/navigation_runtime/DeckNewtonianCheck.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteDeckNewtonianCheck PRIVATE src)
+    target_link_libraries(EliteDeckNewtonianCheck PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteDeckNewtonianCheck PRIVATE ws2_32 mswsock)
+    endif()
+
     # DEV offline regression scenarios: plans synthetic routes with the
     # production Newtonian planning pipeline and writes replay cases.
     add_executable(EliteNewtonianScenarios

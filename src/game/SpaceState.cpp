@@ -680,7 +680,10 @@ void SpaceState::updatePilotTakeover(bool touching)
                         const auto caps = game::ship::telemetry::applyAuthorityToControlParams(capability.effectivePhysics,
                                                                                                  player.controlAuthorityTelemetry);
                         const auto brief = game::navigation::rules::rimPadBriefing(
-                            plan->ring(), m.padPosition, game::ship::assistedLateralStabilizationAccelerationLimitMps2(caps));
+                            plan->ring(), m.padPosition,
+                            game::navigation::rules::rimLiftMps2(
+                                caps, game::ship::plant::familyOf(player.physicalControlModel) ==
+                                          game::ship::plant::PhysicalControlFamily::Newtonian));
                         if (brief.rim)
                             rimNotice = game::navigation::rules::rimPadNotice(brief, padRequest->address);
                         break;

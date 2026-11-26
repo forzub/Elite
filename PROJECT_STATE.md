@@ -9024,3 +9024,43 @@ start-up hitches (render), trade step 16 part 3 live.
   plant executed (real plants: both laws); the neutral attitude damping (now to the city's turn) runs for both laws.
   So a Newtonian ship pays the turning frame within its thrusters' authority too (no gas accounting for that share).
   A live Newtonian ring landing is still to be flown.
+- AUDIT 2026-11-26 (author's pasted list) - the ring / co-rotation findings, CODE + TESTS (live checks below):
+  (1) HIGH reflex vs co-rotation: the route reflex fed the evasion predictor the agent's FROZEN-MAP state (velocity
+  relative to the turning city, rates minus its turn) against radar tracks that move straight in the hub frame (~60 m/s
+  off at the rim), and the predictor flew no deck charge (~1 g over the rim). Now: ControlShipState carries the deck
+  (axis point, omega, co-rotating; setControlShipDeck), flyControlProgram propagates through
+  ShipControlExecutionGateway::propagateHubTacticalTranslation (the server's own deck charges); the co-rotating leg gives
+  the reflex the TRUE inertial velocity / rates; the manual + phase assist pass the replicated deck too. Structures of a
+  turning object (the ring city) are judged turning about its axis (EvasionThreatTrack::turning, chord + sagitta) - a
+  straight track left its circle by w^2 r t^2 / 2. Test evasion_trajectory_conflict testTurningDeck: own drift 0.06 m on
+  the deck, a co-turning piece 40 m away keeps 15 m margin; the straight model predicts a false contact. 5112 checks PASS.
+  (2) MEDIUM gate sync on glfwGetTime: the 3 s hold window now counts universe time (a rewound timeline restarts it).
+  (3) MEDIUM-HIGH Newtonian deck charge without gas: the charge (omega x v, co-rotating + omega x u) is now NOZZLE WORK
+  in ShipCorePropulsion (joins the 24-nozzle demand: gas, watts, geometry); the gateway skips it when the installed RCS
+  plant executed. Found on the way: the manual RCS release doctrine (newtonianManualManoeuvreDeltaVelocityMps) cancelled
+  the deck share the next tick (2 m/s2 short) - the executed deck share (motion.deckChargeByNozzlesMps2, server-only) is
+  kept out of that ledger. DEV check EliteDeckNewtonianCheck (production ShipCore, stick released, at rest on a deck):
+  1.0 / 6.3 m/s2 decks held to 0.2 / 0.6 m with gas paid. The ring dispatcher's lift for a Newtonian ship is its real
+  body-up nozzle authority (rules::rimLiftMps2), not the Assisted stabilization budget.
+  (4) MEDIUM async lane search: at most two searches alive (a new one waits while a retired one runs).
+  DOC: the J keep-out today (JDrive.h): inside a hub / station / beacon (20 km) or ship (5 km) keep-out the J field is
+  limited to the gentle push (GentleAccelMps2 = 1 g, GentleSpeedMps) - the slice cc-1 text "drops out on entering a
+  keep-out" is history.
+  Not done from that list: the evasion predictor vs the autopilot's real control (HIGH, architectural), the radio UI
+  input from the render phase, DynamicMotionState split, legacy positions, the UI event bubbling contract.
+- NEWTONIAN RCS NOZZLE 0.5 MN / 20 MW -> 1.0 MN / 40 MW (author: «мощность ньютоновских RCS можно подкорректировать,
+  учтя новую мощность в реакторе»): the bank's 480 MW was a tenth of the ER-5's 5 GW; the Newtonian Cobra's four lift
+  nozzles gave 7.7 m/s2 - under a ring rim's 1 g (with the deck as nozzle work it slid off the rim, 440 m in 20 s). Same
+  25 kN/MW; emitter 0.39 -> 0.60 m (sustained share 60 -> 70 %), thermal capacity 2 -> 3 MJ/K (the same ~15-20 s to the
+  band); gas tank passport unchanged (150 s of full draw). EliteDeckNewtonianCheck on the Earth ring (9.81 m/s2): held
+  to 1.96 m over 20 s, nozzles 9.83 m/s2. newtonian_rcs_physical_tests PASS (two test pins sized to the passport).
+  Newtonian matrix (scenario_matrix.sh, build-relwithdebinfo via ELITE_NEWTONIAN_BUILD - build/headless_server's -O0
+  GameServer.cpp no longer links, unresolved std::deque / nlohmann templates): 2/126 PASS new nozzles, 0/126 with the
+  OLD passport - the matrix is broken independently of this change (stepI baseline 96/126): the accepted case
+  newtonian-I replays to remaining 0 m but never settles (creeps ~1.5 m/s at zero RCS command). OPEN, not diagnosed.
+  LIVE (ring A1-03 from 13 km): ringco11 (Assisted, the reflex fix) LANDED, 0 collisions, 3 reflex dodges at the
+  co-rotating leg's start (ringco8 before the fix had 4 on the gate route); ringco12 (Assisted, ELITE_DEV_EVASION_TRACE
+  =1 - names the threat that made a course urgent) LANDED, 0 dodges, 0 collisions. ringnewt1 (Newtonian-I via
+  ELITE_SHIP_PHYSICAL_TEST_MODEL, the new nozzles): dispatcher cleared (lift 1.56 g, needs 1.2), gate synchronized
+  (2.6 m off the axis, roll drift 1.0 deg / 3 s), the co-rotating leg flown ~90 s (HUD tunnel 2-8 m from the ship), the
+  pad service descending at 6 m/s - the 900 s run budget ended 90 m above the pad (rerun ringnewt2 with 1200 s).

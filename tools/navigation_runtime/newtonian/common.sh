@@ -5,5 +5,8 @@
 NEWTONIAN_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ELITE_ROOT="$(cd "$NEWTONIAN_TOOLS/../../.." && pwd)"
 export ELITE_DIAG_DIR="${ELITE_DIAG_DIR:-/d/tmp}"
-REPLAY_EXE="$ELITE_ROOT/build/headless_server/EliteNewtonianReplay.exe"
+# ELITE_NEWTONIAN_BUILD: the build dir of the replay tools (default build/headless_server; 2026-11-26 its -O0
+# GameServer.cpp stopped linking - build-relwithdebinfo works)
+NEWTONIAN_BUILD="${ELITE_NEWTONIAN_BUILD:-$ELITE_ROOT/build/headless_server}"
+REPLAY_EXE="$NEWTONIAN_BUILD/EliteNewtonianReplay.exe"
 CASES_DIR="$NEWTONIAN_TOOLS/cases"

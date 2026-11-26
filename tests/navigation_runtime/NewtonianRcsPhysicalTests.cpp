@@ -35,8 +35,10 @@ void checkInstalledNozzleLoss()
         };
     }
     game::ship::plant::NewtonianRcsDemand command;
-    command.forceBodyN={12000.0,5000.0,8000.0};
-    command.momentBodyNm={40000.0,-25000.0,20000.0};
+    // sized to the passport (written for 0.5 MN nozzles: the same throttles at any rating)
+    const double scale=passports[0].nominalThrustNewtons/500000.0;
+    command.forceBodyN=glm::dvec3{12000.0,5000.0,8000.0}*scale;
+    command.momentBodyNm=glm::dvec3{40000.0,-25000.0,20000.0}*scale;
     command.mountHalfExtentsM={12.0,2.0,10.0};
     command.tick=1;
     const auto healthy=
@@ -162,9 +164,9 @@ void checkCombatNozzlePowerAndThermalPlateau()
     };
     const auto output=Engine(mounted).execute(
         EngineCommand {1.0,{1.0,0.0,0.0},1});
-    require(std::abs(output.deliveredThrustNewtons-500000.0)<1.0 &&
-            std::abs(output.consumedElectricalMW-20.0)<1.e-5,
-        "healthy new 500kN RCS did not execute its real 20MW passport");
+    require(std::abs(output.deliveredThrustNewtons-passport.nominalThrustNewtons)<1.0 &&
+            std::abs(output.consumedElectricalMW-passport.nominalElectricalPowerMW)<1.e-5,
+        "healthy new RCS nozzle did not execute its real passport");
     for(int tick=0;tick<300;++tick)
     {
         const auto effective=evaluateEngineUnit(passport,damage,operating);
@@ -288,8 +290,9 @@ void checkSignedPhysicalAuthorityProjection()
         require(healthy.positiveMomentNm[axis]>0.0 &&
                 healthy.negativeMomentNm[axis]>0.0,
             "healthy Newtonian has no physical bidirectional RCS torque");
-        require(healthy.positiveForceN[axis]<=12000000.0+1.e-3 &&
-                healthy.negativeForceN[axis]<=12000000.0+1.e-3,
+        const double allNozzlesN=24.0*passports[0].nominalThrustNewtons;
+        require(healthy.positiveForceN[axis]<=allNozzlesN+1.e-3 &&
+                healthy.negativeForceN[axis]<=allNozzlesN+1.e-3,
             "RCS authority advertises more than all installed nozzle force");
     }
     // Test real simultaneous 2-axis manual turns, not just isolated
@@ -305,7 +308,9 @@ void checkSignedPhysicalAuthorityProjection()
     {
         game::ship::plant::NewtonianRcsDemand combined;
         combined.mountHalfExtentsM=halfExtents;
-        combined.availableElectricalMW=10.0;
+        // the budget sized to the passport (10 MW written for 20-MW nozzles)
+        combined.availableElectricalMW=
+            10.0*passports[0].nominalElectricalPowerMW/20.0;
         combined.tick=4;
         for(const int axis:pair)
             combined.momentBodyNm[axis]=

@@ -14,6 +14,8 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/HubRingBend.h"
+#include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/ship/core/ShipParams.h"
 #include "src/world/WorldLaws.h"
 
 namespace game::navigation::rules
@@ -49,6 +51,16 @@ inline RimPadBriefing rimPadBriefing(const HubRingBend& ring, const glm::dvec3& 
     b.needG = RimLiftMargin * b.weightG;
     b.spinDegPerS = rate * 180.0 / 3.14159265358979323846;
     return b;
+}
+
+// the ship's LIFT over a rim (nose along the spin, the deck's weight on its vertical axis): an Assisted ship holds it by
+// its stabilization (the deck's charge goes there - ShipControlExecutionGateway); a NEWTONIAN ship's installed nozzles
+// fire it (ShipCorePropulsion, audit 2026-11-26) - their real body-up authority, with damage and lost clusters. One
+// source for the client's dispatcher and the server's.
+inline double rimLiftMps2(const ShipParams& caps, bool newtonianNozzles)
+{
+    return newtonianNozzles ? game::ship::newtonianRcsDirectionAccelerationMps2(caps, 1, 1.0)
+                            : game::ship::assistedLateralStabilizationAccelerationLimitMps2(caps);
 }
 
 // the dispatcher's notice: "pad:rim:<addr>:<g>:<m/s>:<lift g>:<need g>:<deg/s>" (cleared) or "refused:rim:..."

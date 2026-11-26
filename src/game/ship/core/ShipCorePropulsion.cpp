@@ -1,6 +1,7 @@
 // ShipCore: motion control and the installed propulsion executor (main drive, gimbal, Newtonian RCS, ER-5 draw), reactor / free-rotation toggles.
 
 #include "src/game/ship/core/ShipCoreInternal.h"
+#include "src/game/navigation/DeckFrame.h"
 
 using namespace game::ship::geometry;
 
@@ -408,6 +409,23 @@ void ShipCore::updateTranslationControl(float dt)
                 m_moduleRuntime);
 
         const glm::dvec3 oldRcsWorld=rcsMotion.manoeuvreAccelerationMps2;
+        // A TURNING DECK's charge (DeckFrame.h: following a ring city's rim,
+        // omega x v; co-rotating also omega x u) is NEWTONIAN NOZZLE WORK
+        // (audit 2026-11-26: it was added after the nozzles fired - a free
+        // force, no gas, no watts, no nozzle geometry). It joins the nozzle
+        // demand here; the gateway's propagation skips it for this tick.
+        glm::dvec3 deckChargeWorld(0.0);
+        if(rcsMotion.deckActive && rcsMotion.travelFrame.valid)
+        {
+            glm::dvec3 local=game::navigation::deckFollowAccelerationLocal(
+                rcsMotion);
+            if(rcsMotion.deckCoRotating)
+                local+=glm::cross(rcsMotion.deckOmegaLocal,
+                    rcsMotion.localVelocityMps-
+                        game::navigation::deckVelocityLocal(rcsMotion));
+            deckChargeWorld=rcsMotion.travelFrame.localToWorldVector(local);
+        }
+        const glm::dvec3 rcsDemandWorld=oldRcsWorld+deckChargeWorld;
         const glm::dvec3 right(m_transform.right());
         const glm::dvec3 up(m_transform.up());
         const glm::dvec3 forward(m_transform.forward());
@@ -419,9 +437,9 @@ void ShipCore::updateTranslationControl(float dt)
         };
         game::ship::plant::NewtonianRcsDemand demand {
             glm::dvec3 {
-                glm::dot(oldRcsWorld,right),
-                glm::dot(oldRcsWorld,up),
-                -glm::dot(oldRcsWorld,forward)
+                glm::dot(rcsDemandWorld,right),
+                glm::dot(rcsDemandWorld,up),
+                -glm::dot(rcsDemandWorld,forward)
             }*mass,
             // ShipTransform rolls around hull FORWARD (-Z), so the physical
             // torque about BODY +Z must have the OPPOSITE sign.
@@ -439,7 +457,7 @@ void ShipCore::updateTranslationControl(float dt)
         // Installed ER-5 already powers the main engine. Its unused output
         // can ALSO supply RCS. Main engine has first claim, so each MW is
         // used at most once. Newtonian I has ONE 5-GW ER-5, enough for
-        // 24 * 20 MW = 480 MW RCS with idle main; Y/X retain their already
+        // 24 * 40 MW = 960 MW RCS with idle main; Y/X retain their already
         // installed groups. No new reactor, no raid on 70-MW service bus.
         std::vector<double> er5SpareMW(powerGroups.size(),0.0);
         const auto& mainMotors=rcsMotion.engineTelemetry;
@@ -501,7 +519,7 @@ void ShipCore::updateTranslationControl(float dt)
                 }
         const double intensity=nozzleCanActuallyFire
             ? std::clamp(std::max(
-                glm::length(oldRcsWorld)/lateralAuthority,
+                glm::length(rcsDemandWorld)/lateralAuthority,
                 glm::length(m_newtonianRcsAngularDemandRadPerSec2)/
                     angularAuthority),0.0,1.0)
             : 0.0;
@@ -545,12 +563,19 @@ void ShipCore::updateTranslationControl(float dt)
         // Replace ONLY its old RCS request, retaining the real main impulse.
         rcsMotion.manoeuvreAccelerationMps2={};
         rcsMotion.engineAccelerationMps2-=oldRcsWorld;
+        rcsMotion.deckChargeByNozzlesMps2={};
         if(executed.valid)
         {
             const glm::dvec3 a=executed.deliveredForceN/mass;
             const glm::dvec3 actualWorld=
                 right*a.x+up*a.y-forward*a.z;
             rcsMotion.manoeuvreAccelerationMps2=actualWorld;
+            // the deck's share of what fired: the delivered force along the
+            // demand, shared by the demand's parts
+            const double demand2=glm::dot(rcsDemandWorld,rcsDemandWorld);
+            if(demand2>1.0e-12 && glm::dot(deckChargeWorld,deckChargeWorld)>0.0)
+                rcsMotion.deckChargeByNozzlesMps2=deckChargeWorld*std::clamp(
+                    glm::dot(actualWorld,rcsDemandWorld)/demand2,0.0,1.0);
             rcsMotion.engineAccelerationMps2+=actualWorld;
             const auto angular=executed.deliveredMomentNm/inertia;
             m_transform.pitchRate+=static_cast<float>(angular.x*dt);

@@ -605,13 +605,15 @@ bool ShipControlExecutionGateway::propagateHubTacticalTranslation(
 
     // over a turning deck: the acceleration it takes to follow the deck, through the stabilization (its authority
     // limits it inside updateLocalFrameMotion) - the honest 1 g of hovering over a ring's rim
-    if (motion.deckActive)
+    // (a Newtonian installed RCS plant fired it with its nozzles this tick - ShipCore's executor: gas and watts paid)
+    const bool deckChargeByNozzles = motion.installedRcsPlantExecuted;
+    if (motion.deckActive && !deckChargeByNozzles)
         motion.assistedStabilizationAccelerationMps2 +=
             motion.travelFrame.localToWorldVector(game::navigation::deckFollowAccelerationLocal(motion));
     // ... the CO-ROTATING frame (an autopilot's route in the ring city's own frame): its velocity relative to the deck
     // also turns with the deck (omega x u) - with the above the full cost of the turning frame, omega x (omega x r) +
     // 2 omega x u (centripetal + Coriolis), so the route's law sees a still city
-    if (motion.deckActive && motion.deckCoRotating)
+    if (motion.deckActive && motion.deckCoRotating && !deckChargeByNozzles)
         motion.assistedStabilizationAccelerationMps2 +=
             motion.travelFrame.localToWorldVector(glm::cross(motion.deckOmegaLocal,
                                                              motion.localVelocityMps - game::navigation::deckVelocityLocal(motion)));

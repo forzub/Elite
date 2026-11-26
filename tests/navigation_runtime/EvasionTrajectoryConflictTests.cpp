@@ -528,6 +528,46 @@ void testOwnAcceleration()
                 kept.threats.size(), dropped.threats.size());
 }
 
+// audit 2026-11-26 HIGH: over a TURNING deck (a ring city) the reflex flies the server's deck charges and the city's
+// pieces go round its axis. A ship co-rotating 400 m from the axis, a piece of the city 40 m nearer the axis: they keep
+// their 40 m. The old mix (our flight following the deck, the piece on a straight line) drifts the piece into us.
+void testTurningDeck()
+{
+    av::ControlShipState ship = episodeShip();
+    const glm::dvec3 axisPoint(0.0, 400.0, 0.0);
+    const glm::dvec3 omega(0.0, 0.0, 0.05);   // 1 m/s2 toward the axis at 400 m
+    ship.deckActive = true;
+    ship.deckCoRotating = true;
+    ship.deckAxisPointBody = axisPoint;
+    ship.deckOmegaBody = omega;
+    ship.velocityBody = glm::cross(omega, -axisPoint);   // at rest on the deck: inertial (20, 0, 0)
+    ship.targetForwardSpeedMps = 0.0;
+    const av::ControlFlight f = av::flyControlProgram(ship, av::controlPrograms()[av::ControlProgramHandsOff], 2.0, 12.0, 0.01);
+    // our own flight stays on the deck: 400 m from the axis
+    double worstR = 0.0;
+    for (const auto& q : f.pos)
+        worstR = std::max(worstR, std::abs(glm::length(glm::dvec3(q.x, q.y, 0.0) - axisPoint) - 400.0));
+    check(worstR < 3.0, "a co-rotating ship's predicted flight follows the deck");
+    av::EvasionScene sc;
+    sc.caps.radiusMeters = 5.0;
+    sc.marginMeters = 0.0;
+    av::EvasionThreatTrack piece;
+    piece.radiusMeters = 10.0;
+    piece.position = glm::dvec3(0.0, 40.0, 0.0);
+    piece.velocity = glm::cross(omega, piece.position - axisPoint) - ship.velocityBody;   // (-2, 0, 0) relative to us
+    piece.turning = true;
+    piece.turnAxisPoint = axisPoint;
+    piece.turnOmega = omega;
+    sc.threats.push_back(piece);
+    const auto turning = av::judgeControlFlight(f, sc, ship.velocityBody, 30.0);
+    check(!turning.contact && turning.minMarginMeters > 10.0, "a co-turning piece keeps its distance (no false dodge)");
+    sc.threats[0].turning = false;
+    const auto straight = av::judgeControlFlight(f, sc, ship.velocityBody, 30.0);
+    check(straight.contact, "the straight-line piece drifts into a ship following the deck (the defect the turn fixes)");
+    std::printf("turning deck: own drift %.2f m, margin %.1f m (turning) / contact %d (straight)\n", worstR,
+                turning.minMarginMeters, straight.contact ? 1 : 0);
+}
+
 int main()
 {
     testContinuousCrossings();
@@ -542,6 +582,7 @@ int main()
     testGatewayFlags();
     testEarliestViolation();
     testOwnAcceleration();
+    testTurningDeck();
     std::printf("evasion_trajectory_conflict: %d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }

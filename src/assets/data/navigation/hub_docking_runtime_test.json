@@ -2073,6 +2073,13 @@
       "operational": "online",
       "occupancy": "free",
       "access": "allowed"
+    },
+    {
+      "module_id": "earth_ring_hub.cty_dock",
+      "anchor_id": "dock_gate_front",
+      "operational": "online",
+      "occupancy": "free",
+      "access": "allowed"
     }
   ]
 }

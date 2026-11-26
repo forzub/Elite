@@ -45,6 +45,32 @@ def add_axial_dock(hub, hub_id):
     tp["dock_sectors"] = max(1, int(tp.get("dock_sectors", 0)))
 
 
+def register_axial_dock_anchors(hub_id):
+    """The axial dock's NAVIGATION ANCHORS and port state (2026-11-26: the ring's dock had none - a docking request
+    failed "dock state unavailable"; it is the Newtonian ships' dock of the ring, city pads are closed to them): copied
+    from the reference hex dock entry (hub_hex_dock_a), as hub_belt_world.py does for a planar city's dock - the docking
+    target is (module id, anchor id). Idempotent: the module's old entries are replaced in place."""
+    nav = os.path.join(ROOT, "src", "assets", "data", "navigation")
+    a_path = os.path.join(nav, "hub_semantic_anchors.json")
+    p_path = os.path.join(nav, "hub_docking_runtime_test.json")
+    anchors = json.loads(open(a_path, encoding="utf-8").read())
+    ports = json.loads(open(p_path, encoding="utf-8").read())
+    mid = f"{hub_id}.cty_dock"
+    at_a = next((k for k, m in enumerate(anchors["modules"]) if m["module_id"] == mid), len(anchors["modules"]))
+    at_p = next((k for k, q in enumerate(ports["ports"]) if q["module_id"] == mid), len(ports["ports"]))
+    anchors["modules"] = [m for m in anchors["modules"] if m["module_id"] != mid]
+    ports["ports"] = [q for q in ports["ports"] if q["module_id"] != mid]
+    m = copy.deepcopy(next(m for m in anchors["modules"] if m["module_id"] == "hub_hex_dock_a"))
+    m["module_id"] = mid
+    new_ports = [{"module_id": mid, "anchor_id": an["id"], "operational": "online", "occupancy": "free", "access": "allowed"}
+                 for an in m["anchors"] if an["kind"] == "docking_port"]
+    anchors["modules"][at_a:at_a] = [m]
+    ports["ports"][at_p:at_p] = new_ports
+    open(a_path, "w", encoding="utf-8", newline="\n").write(json.dumps(anchors, ensure_ascii=False, indent=2) + "\n")
+    open(p_path, "w", encoding="utf-8", newline="\n").write(json.dumps(ports, ensure_ascii=False, indent=2) + "\n")
+    print(f"{mid}: {len(m['anchors'])} anchors, {len(new_ports)} port(s)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hub", default="earth_ring_hub")
@@ -83,6 +109,7 @@ def main():
         return doc
 
     world_state_io.update(fix, WORLD)
+    register_axial_dock_anchors(a.hub)
     print(f"{a.hub}: on the Earth hub's orbit {a.ahead_km} km ahead, R {ring['radius_m']} m, spin {ring['period_s']} s")
 
 

@@ -9088,3 +9088,13 @@ start-up hitches (render), trade step 16 part 3 live.
   at the click with that line; asspad1 (Assisted): cleared as before, the gate route started.
   NEXT (agreed): outskirts SERVICE docks - the ring's axial dock dispatcher with refuel / repair / storage-market /
   factory services; the planar cities' rim piers as TrackTerminal docks with the services of their blocks.
+- RING AXIAL DOCK = THE RING'S NEWTONIAN (OUTSKIRTS) DOCK: earth_ring_hub.cty_dock (hex drum on the spin axis, turns
+  with the ring) had no navigation anchors / port state - a docking request failed "dock state unavailable" (live
+  ringdock1). tools/models/hub_ring_world.py register_axial_dock_anchors: the anchors + port copied from hub_hex_dock_a
+  (as hub_belt_world.py does for a planar city's dock); regenerated - only hub_semantic_anchors.json (+63 lines) and
+  hub_docking_runtime_test.json (+7) changed. LIVE ringdock2 (Newtonian-I, from 13 km): request accepted, direct entry
+  cleared to pad P4, DOCKED after 240 s, turning with the drum (10.3 m/s at 114 m = 5.16 deg/s), docking fee 384 Cr
+  charged (the docked event - refuel / trade / contracts / refit key on the hub id, GameSimulation::serviceStationOf);
+  0 dodges, 0 collisions. Services of the ring are thus all reachable from the axial dock.
+  Open: the planar cities' rim piers (role "dock") as TrackTerminal service docks; services are per hub, not per dock
+  (a dock's purposes / DockKind are read by nobody).

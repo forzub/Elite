@@ -1260,6 +1260,27 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
 // Report verbs: jstate, report
 bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
 {
+    // DEV (replication audience audit 2026-11-26): what THIS client holds about ships it does not control - the
+    // private fields another session's ship brings along today
+    if (cmd == "peers")
+    {
+        for (const auto& [id, ship] : s.m_client->world().ships())
+        {
+            if (id == s.m_playerId.value)
+                continue;
+            const bool privateData = ship.refit.owned || !ship.refit.registrationId.empty() ||
+                                     !ship.shipCoreStatus.engineReactors.empty();
+            if (!privateData)
+                continue;
+            std::cerr << "[DevPeers] ship " << id << ": refit owned " << ship.refit.owned << " ownerActor "
+                      << ship.refit.ownerActor << " registration '" << ship.refit.registrationId << "' name '"
+                      << ship.refit.shipName << "' overrides " << ship.refit.productOverrides.size()
+                      << ", core status reactors " << ship.shipCoreStatus.engineReactors.size()
+                      << ", engine telemetry slots " << static_cast<int>(ship.transform.motion.engineTelemetry.count)
+                      << ", jump target '" << ship.transform.motion.jumpTargetName << "'\n";
+        }
+        return true;
+    }
     if (cmd == "jstate")
     {
         // DEV: global (frame) and local speed of the player ship

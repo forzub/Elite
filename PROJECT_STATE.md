@@ -9329,3 +9329,33 @@ start-up hitches (render), trade step 16 part 3 live.
     legacy "physics <n> <hex>" still read as a prefix). The 5 Newtonian cases converted (scratchpad case_convert.cpp:
     legacy read 304 B of the current 384 B layout, values plausible: 260 t, I/X/Y main 36.8/147.1/110.3 m/s2; v2 round
     trip 50/50 fields identical). check_ship_params_record.py: every ShipParams field listed, no raw dump.
+* 2026-11-27 NIGHT AUDIT batch 2 (findings; code only where marked):
+  - AUDIENCE (source, subagent audit + LIVE two-session run, scratchpad run_remote2.sh, D:/tmp/twosess, new DEV verb
+    "peers"): every ship of the system reaches every session (Coarse has no outer radius; ReplicationInterestPolicy.h
+    197-202 / ReplicationPublicationPolicy.h 195-249), rows copied WHOLE (GameServer.cpp ~3880); nothing zeroed per
+    audience - per-SHIP gates only (refit for owned ships, graph for detailed/owned, padService/dockDispatcher for any
+    player-controlled ship). LIVE: client B holds A's ship 204: refit owned 1, ownerActor 1, registration PL-0001, name,
+    full ShipCoreStatus, full engine telemetry.
+  - AUTHORITY (P0, NOT fixed - needs the per-player ownership model): every player ship has ownerActor =
+    ActorIds::Player() (GameSceneSetup.cpp 501/1208); the F7 fleet filter (SpaceStateServices.cpp 22-35) and the
+    SERVER refit authority sameOwner() (GameSimulationRefit.cpp 9-13) compare ownerActor -> two players with
+    Player-actor ships share a "fleet": player A may preview/apply refit on B's ship (charged to A). The second session's
+    ship in the run had ownerActor 0 (not owned at all). Fix direction: an owner identity per player (account / player
+    actor), the server compares it with the commanding session's player; the wire carries an "owned by this session's
+    player" bit instead of ownerActor.
+  - SPATIAL TRUTH: referenceFrame is NOT valid for every row: dock / air traffic shells write only worldPosition
+    (GameSimulationDockTraffic.cpp ~400, GameSimulationHubSecurity.cpp ~449; spawnTrafficShell sets no travel frame) ->
+    worldPosition is the truth for them. Rule today: frame valid -> frame + local; invalid -> worldPosition (+
+    worldVelocity for sparse dead reckoning). worldPosition stays on the wire until traffic carries its city frame.
+  - REPLICATION BOOKKEEPING (m_initializedShipGraphIds, ...PayloadPublicationsRemaining, m_lastPublished...,
+    m_shipsWith*Payload): outside GameSimulationReplication.cpp only markShipGraphDirty and forgetShip touch them - no
+    gameplay reader; owner should become a server ReplicationProjectionState (not moved tonight).
+  - NETWORK (run_remote.sh, B4-11 + gear, 27 windows, D:/tmp/netnight1): raw 2787 KiB/s, wire 624 KiB/s at 33.1
+    ships/snapshot (the earlier 2609 / 569 were at 28.6 ships: traffic composition differs - tonight's only wire change,
+    manoeuvreGasDepleted, 1 B/row, is below that noise). TOP-LEVEL PARTS (new): a steady snapshot = ships ~27 KB,
+    SESSION ~35-39 KB (wallet / trade / board / ... every snapshot = ~600 KiB/s raw alone), objects 16.5 KB, hubs 13.4 KB,
+    signals <1 KB; hydration snapshots carry ships 174-565 KB (full graphs). The next bandwidth lever is the session
+    block's cadence / deltas, then engineTelemetry (1162 B/row) for observers.
+  - LIVE: with "gear" the pad landing proceeds (B4-11 phase 2 descending at 6 m/s, 137 m to go at the 300 s cut) - the
+    earlier "hang" was the missing legs; J over TCP: client restored frame speed 8388 km/s. Condition table live: 237
+    ships (153 corporate integrity 0.999 parts 0.91, 84 private integrity 0.977 parts 0.35), 138 KiB.

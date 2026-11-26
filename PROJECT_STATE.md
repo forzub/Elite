@@ -9165,3 +9165,20 @@ start-up hitches (render), trade step 16 part 3 live.
   referenceVelocityMetersPerSecond long gone; the data-plane unit lost COMDATs without big-obj): fixed, MinGW big-obj for
   wire_data_plane / tcp_wire_transport; wire_data_plane, wire_protocol, tcp_wire_transport PASS. Live legacypos1:
   B4-11 landed, 0 collisions, epoch checks clean.
+- REPLICATION AUDIT of DynamicMotionState (2026-11-26, author's request: "check the premise before a mechanical split";
+  NO code changed yet, proposal waits for the author). Measured with the real codec (scratchpad wire_sizes.cpp): one
+  ShipSnapshot row 4333 B raw (graph empty), of it motion 2659 B (144 of 161 fields on the wire), EngineLiveTelemetry
+  1162 B (16 fixed slots of 9 arrays), referenceFrame 313 B, refit 491 B, shipCoreStatus 340 B; a minimal observer
+  kinematic set ~150 B. Cadence: fixed 0.02 s, snapshot every 3 ticks (16.7 Hz); per session the SAME full row for every
+  audience (ServerRunner -> copySparseSnapshotForSession: ships selected by ReplicationInterestPolicy, Controlled /
+  Tactical every snapshot, Nearby 0.2 s, Coarse 1 s, motion-fidelity floors 0.1 / 0.2 / 0.5 s); LZ4 on the whole buffer.
+  Single player (LocalGameHost -> LocalLoopbackTransport) passes structs in memory - no encoding: bytes matter for TCP
+  (RemoteGameSession / EliteServer) only. DUPLICATE TRUTH: ShipReferenceFrameSnapshot is a projection of
+  motion.travelFrame + motion.localPosition / localVelocity (GameSimulationReplication.cpp:130-175), and the client
+  OVERWRITES motion.travelFrame / local* / referenceVelocityMps / worldPosition / systemId / hubId from it
+  (ClientWorldState.cpp applyReferenceFrameState) - those motion copies ride the wire unused. Client prediction is
+  kinematic only (ClientHubTacticalPrediction advanceReplicatedHubKinematics: pose, rates, local velocity, frame, deck);
+  remote observers read motion.mode, deck*, attached*, engineTelemetry.thrust01 per slot (SceneRenderer nozzle glow);
+  ShipTransform input axes are read by no client code (cruiseActive: own cockpit only). Pre-existing failure:
+  check_wire_data_schema.py "top-level codec manually knows nested world fields: value.ships" (the oversize
+  diagnostics in WireDataCodec.h).

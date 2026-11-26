@@ -9102,3 +9102,11 @@ start-up hitches (render), trade step 16 part 3 live.
   facing open space) - accepted, cleared to P4, station hand-off through the chamber, DOCKED after 267 s, fee 384 Cr;
   0 dodges, 0 collisions. So both hub kinds already have an outskirts dock a Newtonian ship can use: the planar city's
   refusal line now sends it to the city's dock (was "frontier docks - not taking ships yet").
+- NEWTONIAN MATRIX 0/126 - ROOT CAUSE: not the autopilot. 6b386f6c1 (audit items 2-3) INSERTED ShipParams
+  jumpCoreRatingT / jumpChargeCapacityT after massKg; the replay cases store ShipParams as raw bytes (prefix read,
+  "accept only appended fields") - every case read its physics 16 bytes off since then (the hold's RCS authority
+  garbage: POSITION_HOLD with zero trim, the ship creeping away). FIX: the two fields moved to the end of ShipParams.
+  cases/newtonian-I replays to settled 224.4 s, 0.02 m/s. Matrix (build-relwithdebinfo, new 1.0 MN nozzles in the
+  ShipCore): 97/126 PASS vs stepI baseline 96/126; both: every failure is micro-brake only (30 / 29, the set shuffles
+  between runs), no corridor / keep-inside / collision / no-DONE. The new nozzle passport causes no regression.
+  (build/headless_server's -O0 link failure of GameServer.cpp stays open - the scripts take ELITE_NEWTONIAN_BUILD.)

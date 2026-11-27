@@ -9458,3 +9458,30 @@ start-up hitches (render), trade step 16 part 3 live.
     module row shows ofu.drive.u33 (graph republished), B's preview / apply REFUSED, overrides unchanged.
   - Python checks: the same 17 reds (check_ship_ownership_authority.py extended: registration before the owner, hire
     registers, organization / absent owner restore, dirty cleared after the write, pilot blanking independent of owns).
+* 2026-11-27 NAVIGATION DIVERGENCES (author's 4 questions; PAUSED by the author: "stop fixing flights, there are
+  coordinate discrepancies" - the coordinate path goes first). Commit 9dcb8ba0c. Default settings assumed ("Загнанный"
+  is in no code / locale / preference - ask which save or profile it is).
+  - (3) straight-line hunting, Assisted, SOURCE + LIVE: the first divergence is the plan's NOMINAL profile - a route
+    curve's speed limit (40 m/s dock lane) was carried only at samples ~250 m apart; between them +-8 m/s^2 ramps to
+    55-58 m/s; the follower clamped the target to 40 ("curve-max") but kept feeding the reference acceleration -> 36-52
+    m/s hunting with a STABLE target. Fix: every sample capped to its curve's limit, runtime profile rebuilt. Hex-dock
+    approach (54 km), 40 m/s section: rms speed error 4.35 -> 0.27 m/s (nav3c -> nav3d). New trace fields limiter= /
+    profile_mps= / turn_*. Newtonian (nav3n, ELITE_SHIP_PHYSICAL_TEST_MODEL=Newtonian-I): docked, but cruise rms 8.68 m/s,
+    overshoot to +99.8 m/s - NOT fixed, not analysed (paused).
+  - (4) dock stall 65 m off the axis (D:/tmp/ownlive_try1), SOURCE + LOG: the pilot, still "queued" (2 ahead), flew its
+    client route to the gate ON the axis (z ~ -500, 3-5 m off) and waited there - the client route ignores the queue
+    state, the off-axis holds (H1-H6, r 450 m, z -2600) are not used for a pilot. Arrivals with clearance come down that
+    axis: the route evasion reflex dodged them for real (10 contacts, a main-engine program, 25 m/s) -> 65 m off; the
+    route had ended (remaining 0, terminal hold) and nothing re-plans to the axis; the station captures only within 60 m
+    of the axis -> stall. NOT fixed (paused): route a queued pilot to its hold; re-plan to the axis after a dodge.
+  - Collision assist fought the STATION: from the station handoff to "docked" it "dodged" the dock's own walls every
+    1-2 s (56 times) - FIXED (quiet while dockDispatcher.stationControlled), nav3d 0. This was the author's "freezes
+    every 2-3 s" on the final approach.
+  - Freezes (author, live): focused window (nav3d) 0 frames > 80 ms after loading; unfocused with another app in front
+    (nav3b / nav3c) bursts of 10-20 frames of 80-130 ms every ~2 s, hud 35-70 ms + prepare 20-55 ms, sim per tick x2.
+    core::optOutOfPowerThrottling (client + server) did not remove the unfocused bursts; hitch marks now split the HUD
+    and prepareFrame (D:/tmp/elite_hitches.log) for the next unfocused case. Unresolved.
+  - (2) corridors, SOURCE (subagent audit, one claim verified): the server sends no corridor; only a docking / pad
+    request (client plan) and the pad service draw a tunnel; system routes, jumps, transfers, manual targets have none.
+    Verified: the execution corridor (executionGates) can never draw - every frame stamped with the render time, the HUD
+    drops frames < 0.75 s ahead (DockingCorridorPresentation.cpp:115). Not fixed. (1) HUD vs geometry: not started.

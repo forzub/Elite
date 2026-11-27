@@ -1390,6 +1390,29 @@ void GameServer::update(double dt)
                                   << std::endl;
                     }
                 }
+                // DEV (the flight wobble, 2026-11-27): ELITE_DEV_ATTITUDE_TRACE - a tick that finds the client's queue EMPTY
+                // runs on the previous input without acknowledging one: the snapshot then sits a tick past its
+                // acknowledgement and the client's replay over-predicts by that tick
+                {
+                    static const bool trace = std::getenv("ELITE_DEV_ATTITUDE_TRACE") != nullptr;
+                    static std::uint64_t empty = 0, ticks = 0, maxQueued = 0;
+                    if (trace && stream.lastReceivedTick() > 0)
+                    {
+                        ++ticks;
+                        if (stream.pendingCount() == 0)
+                            ++empty;
+                        maxQueued = std::max<std::uint64_t>(maxQueued, stream.pendingCount());
+                        if (ticks % 250 == 0)
+                        {
+                            std::cerr << "[InputQueue] ship " << id.value << ": " << empty << " of " << ticks
+                                      << " ticks found NO input (ran on the old one, not acknowledged), max queued "
+                                      << maxQueued << std::endl;
+                            empty = 0;
+                            ticks = 0;
+                            maxQueued = 0;
+                        }
+                    }
+                }
                 if (stream.consumeNext(cmd))
                 {
                     // a destroyed ship takes no control (the tick is still acknowledged) - except the cockpit-capsule

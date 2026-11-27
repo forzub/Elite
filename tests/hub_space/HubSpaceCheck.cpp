@@ -14,6 +14,7 @@
 
 #include "src/game/navigation/HubCitySpace.h"
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/HubPlanPads.h"
 
 namespace
 {
@@ -172,6 +173,39 @@ int main()
               "the world chord across the seam is the short one (~25 m)");
         game::navigation::HubCitySpace flatSpace;
         check(std::abs(flatSpace.alongDelta(a, b) - (b - a)) < 1.0e-9, "a flat city has no seam");
+    }
+
+    // ---- A5: every multi-place berth lands its places apart, on its own model's marked places
+    for (const auto* plan : {&ring, &flat})
+    {
+        int garages2 = 0, hangars = 0, under = 0;
+        for (const auto& m : plan->modules())
+        {
+            if (!m.pad || game::navigation::hubBerthPlaces(m) < 2)
+                continue;
+            const bool garage = m.padKind == game::navigation::HubPlanModule::PadKind::Garage;
+            garages2 += garage;
+            hangars += !garage;
+            under += m.under;
+            const glm::dvec3 t0 = game::navigation::hubBerthTouchdown(m, 0), t1 = game::navigation::hubBerthTouchdown(m, 1);
+            const double expect = 2.0 * (garage ? game::navigation::HubGarage2PlaceX : game::navigation::HubHangarBayX);
+            check(std::abs(glm::length(t1 - t0) - expect) < 1.0e-9,
+                  plan->hubId() + " " + m.address + ": the two places " + std::to_string(glm::length(t1 - t0)) + " m apart");
+            // both on the model's +-X line through its centre (HubExpansion: R = Rx(under 180) * Ry(yaw)), at its deck
+            const glm::dvec3 rightModel = game::navigation::hubRotationXYZ(glm::dvec3(m.under ? 180.0 : 0.0, m.padYawDeg, 0.0)) *
+                                          glm::dvec3(1.0, 0.0, 0.0);
+            check(std::abs(std::abs(glm::dot(glm::normalize(t1 - t0), rightModel)) - 1.0) < 1.0e-9,
+                  plan->hubId() + " " + m.address + ": the places lie along the model's own X axis");
+            check(std::abs(t0.y - m.padPosition.y) < 1.0e-9 && std::abs(t1.y - m.padPosition.y) < 1.0e-9,
+                  plan->hubId() + " " + m.address + ": the places at the deck height");
+            // the door / apron front is the model's +Z
+            const glm::dvec3 fwdModel = game::navigation::hubRotationXYZ(glm::dvec3(m.under ? 180.0 : 0.0, m.padYawDeg, 0.0)) *
+                                        glm::dvec3(0.0, 0.0, 1.0);
+            check(glm::length(game::navigation::hubPadAxisForward(m) - fwdModel) < 1.0e-9,
+                  plan->hubId() + " " + m.address + ": the door axis is the model's +Z");
+        }
+        std::printf("A5 %s: %d two-place garages, %d hangars (%d under the deck) - places apart on the model's axes\n",
+                    plan->hubId().c_str(), garages2, hangars, under);
     }
 
     if (g_failures)

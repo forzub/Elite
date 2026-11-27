@@ -34,17 +34,12 @@ inline constexpr double HubHangarFloorTop = 1.8;         // the scissor lift's t
 inline constexpr double HubHangarDoorHalfDepth = 30.0;   // the door plane from the box centre
 inline constexpr double HubHangarEntryHeight = 11.0;     // flown in at half the door's height
 inline constexpr int HubHangarPlaces = 2;
-// the hangar's door direction in the plan (the module +Z), its entry point outside the door and inside at the bay
-inline glm::dvec3 hubHangarDoorForward(double yawDeg)
+// (hubHangarDoorForward / hubHangarRight(yaw) removed 2026-11-27: they ignored the under tier - hubPadAxisForward /
+// hubPadAxisRight below are the model's true axes)
+// the yaw that turns a pad model's +Z (its door / apron front) to the plan direction (dx, dz) on its tier
+inline double hubPadYawFacing(bool under, double dx, double dz)
 {
-    const double yaw = glm::radians(yawDeg);
-    return glm::dvec3(std::sin(yaw), 0.0, std::cos(yaw));
-}
-// the module's right axis in the plan (the bays sit along it)
-inline glm::dvec3 hubHangarRight(double yawDeg)
-{
-    const double yaw = glm::radians(yawDeg);
-    return glm::dvec3(std::cos(yaw), 0.0, -std::sin(yaw));
+    return glm::degrees(std::atan2(dx, under ? -dz : dz));
 }
 // the pad's capture zone (author 2026-11-21: «прозрачный куб с белёсыми рёбрами, появляется когда до площадки метров
 // 100»): a box over the deck - half side, height; shown within HubPadZoneShowMeters of the pad
@@ -68,6 +63,19 @@ void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std::vecto
 
 namespace game::navigation
 {
+// a pad model's own axes in the PLAN, exactly as HubExpansion turns the model: R = Rx(under ? 180 : 0) * Ry(padYawDeg).
+// An under-tier pad hangs upside down: its +X / +Z come out mirrored in z (audit A5 2026-11-27 - the bays and doors of
+// under-tier hangars / garages were computed with the upper-tier axes)
+inline glm::dvec3 hubPadAxisRight(const HubPlanModule& pad)
+{
+    const double yaw = glm::radians(pad.padYawDeg);
+    return glm::dvec3(std::cos(yaw), 0.0, pad.under ? std::sin(yaw) : -std::sin(yaw));
+}
+inline glm::dvec3 hubPadAxisForward(const HubPlanModule& pad)
+{
+    const double yaw = glm::radians(pad.padYawDeg);
+    return glm::dvec3(std::sin(yaw), 0.0, pad.under ? -std::cos(yaw) : std::cos(yaw));
+}
 inline std::string hubPadModuleFolder(const HubPlanModule& m)
 {
     switch (m.padKind)
@@ -232,19 +240,20 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
         if (garage)
         {
             const glm::dvec2 to = centre - at;
-            module.padYawDeg = glm::degrees(std::atan2(-to.x, -to.y));
+            module.padYawDeg = hubPadYawFacing(module.under, -to.x, -to.y);   // +Z away from the building, on its tier
         }
         if (hangar)
         {
-            module.padYawDeg = hangarYaw;
+            // hangarYaw was chosen as the upper-tier door direction (sin, cos): the same direction on this tier
+            const double door = glm::radians(hangarYaw);
+            module.padYawDeg = hubPadYawFacing(module.under, std::sin(door), std::cos(door));
             module.autoLanding = true;   // the hangar's crew brings every ship in (the zone label "A")
         }
         if (hangar)
         {
             // the touchdown: the middle bay, inside (the module's door is its +Z, away from the building)
-            const double yaw = glm::radians(module.padYawDeg);
-            const glm::dvec2 fwd(std::sin(yaw), std::cos(yaw));   // the module +Z in the plan
-            module.padPosition = glm::dvec3(at.x + fwd.x * HubHangarBayZ, side * HubHangarFloorTop, at.y + fwd.y * HubHangarBayZ);
+            const glm::dvec3 fwd = hubPadAxisForward(module);   // the module +Z in the plan (its true axes)
+            module.padPosition = glm::dvec3(at.x + fwd.x * HubHangarBayZ, side * HubHangarFloorTop, at.y + fwd.z * HubHangarBayZ);
             module.padRadiusMeters = 13.0;
         }
     }
@@ -303,18 +312,25 @@ inline int hubDockPricePerHour(const HubPlan& plan)
     return 250;
 }
 
-// a place's touchdown point (city frame): a hangar's bay left / right of its centre line; the others: the pad itself
+// the 2-place garage (hubl_garage2, tools/models/units/hub_pads.py: G2_W 40 m apron, its two marked places at x = +-w/4,
+// the module origin at the apron's centre): a place's centre from the apron centre along the module +X
+inline constexpr double HubGarage2PlaceX = 10.0;
+// a place's touchdown point (PLAN strip metres): a hangar's bay / a 2-place garage's place left / right of the centre
+// line; the others: the pad itself. (Audit A5 2026-11-27: the garage's two places were reserved apart by the dispatcher
+// but landed on ONE point - only the hangar used `bay`.)
 inline glm::dvec3 hubBerthTouchdown(const HubPlanModule& pad, int bay)
 {
-    if (pad.padKind != HubPlanModule::PadKind::Hangar)
-        return pad.padPosition;
-    return pad.padPosition + hubHangarRight(pad.padYawDeg) * (bay == 0 ? -HubHangarBayX : HubHangarBayX);
+    if (pad.padKind == HubPlanModule::PadKind::Hangar)
+        return pad.padPosition + hubPadAxisRight(pad) * (bay == 0 ? -HubHangarBayX : HubHangarBayX);
+    if (pad.padKind == HubPlanModule::PadKind::Garage && pad.padPlaces >= 2)
+        return pad.padPosition + hubPadAxisRight(pad) * (bay == 0 ? -HubGarage2PlaceX : HubGarage2PlaceX);
+    return pad.padPosition;
 }
 // a hangar's entry point: outside its door, 35 m off in front of the bay, at the entry height (city frame)
 inline glm::dvec3 hubHangarDoorFront(const HubPlanModule& pad, int bay = 0)
 {
     const double side = pad.under ? -1.0 : 1.0;
-    const glm::dvec3 fwd = hubHangarDoorForward(pad.padYawDeg);
+    const glm::dvec3 fwd = hubPadAxisForward(pad);
     const glm::dvec3 t = hubBerthTouchdown(pad, bay);
     return glm::dvec3(t.x, 0.0, t.z) + fwd * (HubHangarDoorHalfDepth - HubHangarBayZ + 35.0) +
            glm::dvec3(0.0, side * HubHangarEntryHeight, 0.0);

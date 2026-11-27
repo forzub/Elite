@@ -9524,6 +9524,27 @@ start-up hitches (render), trade step 16 part 3 live.
   - A9 (60523cc9b): HubCitySpace::planPoseToModule = the one rigid-piece placement; the 3D map's block boxes and its
     lane occluders both use it; the HUD label occlusion = physical ray vs rigid building boxes in the module frame.
   - DEV start on a ring hub moved off the spin axis (separate commit).
-  - OPEN: A3 (map inverse / explicit map mode), A6 (pad existence), A7 (GPU/CPU), A2 rest (HubMapBackend /
+  - A3 DONE (78532be22): LocalMapPlanWarp::unapply, unprojectSheet / unprojectPlane (screen -> sheet -> scene); the
+    plan mode explicit (LocalMapCameraSnapshot::planMode); ring plan map cursor round trip 1e-13 px (old up to 628 px).
+  - OPEN (superseded by the audit #4 list below): A6 (pad existence), A7 (GPU/CPU), A2 rest (HubMapBackend /
     LocalMapPlanWarp / SpaceStateDocking direct bends; worldToPlan near the axis - axial docks must not be read as deck
     points), map seam polylines, B (one epoch per kinematic pose: the client builders still share velocities), C.
+* 2026-11-27 BERTH PLACES + PAD TUNNEL (d466acacf) - SOURCE + ASSETS + LIVE:
+  - author's rule: a landing place = the Cobra class's largest ship (Cobrett-I / Cobra Mk1, 26 m) + 30 % -> 34 m
+    square. Garage models regenerated (hub_pads.py PLACE_SIDE; 14 modules packaged via the mesh editor; garage2
+    68 x 68 m, garage1 34 x 68 m); places +-17 m; plot search by the whole footprint (two-place garages: ring 46 -> 31,
+    orbital 256 -> 120). The dispatcher refuses a ship larger than its place ("refused:too_big"). Roof / stilts 36 m,
+    hangar bays 40 m unchanged. LIVE gar1: Cobra LANDED on garage A2-03 (45 s).
+  - FOUND LIVE (author's screenshots "баг с рамками"): the pad service tunnel picked the first city with the ADDRESS
+    (addresses repeat) - a city in another star system, frames 1e12 m off. padService now "phase:<n>:<frame>/<address>",
+    the HUD takes the city by frame + system; the descent ends on the ship's own place. Collision assist quiet while the
+    pad service flies (7 dodges on the descent -> 0). LIVE gar6: the tunnel ahead to A2-03.
+* 2026-11-27 SPATIAL AUDIT #4 at 78532be22 (A3 / A8 / A9 / A4 / A5 accepted) - OPEN, in order: A2 rest (+ worldToPlan
+  domain near the ring axis: axial structures are not deck points); A3 / A4 live checks (real picking, beyond the sheet,
+  seam polylines split, 2D <-> 3D keeps the target); A5 rest (door front / bay entry on the structure, landed attitude =
+  the structure's floor normal, the garage HUD zone on the place, the spatial verb on OnStructure, height over the
+  contact surface / legs; one berth geometry description); A6 (actual existence); A7 (CPU path warp twice; forced
+  GPU / CPU compare); A8 / A9 (ring extents by rigid volumes / assets; occlusion by existing structures; corridor
+  disappearance; cost); then B (one epoch: positions, orientations AND velocities per epoch - ClientHubCitySpace still
+  shares velocities), then C (independent data: asset node, contact surface, server target, autopilot target, 2D / 3D
+  picks, HUD, epochs).

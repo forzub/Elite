@@ -173,6 +173,35 @@ int main()
               "the world chord across the seam is the short one (~25 m)");
         game::navigation::HubCitySpace flatSpace;
         check(std::abs(flatSpace.alongDelta(a, b) - (b - a)) < 1.0e-9, "a flat city has no seam");
+        // the pad service across the seam: a ship 150 m past the seam from the pad nearest to it
+        const game::navigation::HubPlanModule* nearSeam = nullptr;
+        double best = 1e300;
+        for (const auto& m : ring.modules())
+            if (m.pad && !m.under && std::abs(space.alongDelta(x0, m.padPosition.x)) < best)
+            {
+                best = std::abs(space.alongDelta(x0, m.padPosition.x));
+                nearSeam = &m;
+            }
+        check(nearSeam != nullptr, "a ring pad exists");
+        if (nearSeam)
+        {
+            const double side = space.alongDelta(x0, nearSeam->padPosition.x) >= 0.0 ? -1.0 : 1.0;   // the other side
+            const glm::dvec3 rawShip(x0 + (side < 0.0 ? L - 150.0 : 150.0), 300.0, nearSeam->padPosition.z);   // as toStrip gives
+            const glm::dvec3 ship = space.unwrapNear(rawShip, nearSeam->padPosition);
+            const auto route = game::navigation::hubPadRoute(ring, *nearSeam, ship, 300.0, true);
+            double length = 0.0;
+            for (std::size_t k = 1; k < route.size(); ++k)
+                length += glm::length(route[k] - route[k - 1]);
+            const double chord = glm::length(space.planToWorld(rawShip) - space.planToWorld(nearSeam->padPosition));
+            const auto rawRoute = game::navigation::hubPadRoute(ring, *nearSeam, rawShip, 300.0, true);
+            double rawLength = 0.0;
+            for (std::size_t k = 1; k < rawRoute.size(); ++k)
+                rawLength += glm::length(rawRoute[k] - rawRoute[k - 1]);
+            std::printf("A4 pad %s %.0f m from the seam: service route %.0f m (straight %.0f m); without the unwrap %.0f m\n",
+                        nearSeam->address.c_str(), best, length, chord, rawLength);
+            check(length < chord + 1500.0, "the service route across the seam is the short one");
+            check(rawLength > 0.5 * L, "the old (non-periodic) start goes the long way (the defect)");
+        }
     }
 
     // ---- A5: every multi-place berth lands its places apart, on its own model's marked places

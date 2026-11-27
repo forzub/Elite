@@ -1,3 +1,4 @@
+#include "src/game/client/ClientHubCitySpace.h"
 #include "src/core/HitchProfiler.h"
 #include "src/world/WorldLaws.h"
 #include "src/ui/input/GlfwPointerSource.h"
@@ -239,10 +240,12 @@ m_systemMapRenderer.render(
                     const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
                     if (glm::length(shipW - origin) > 9000.0)
                         continue;
-                    const glm::dmat3 R(glm::mat3(object.renderOrientation));
-                    const glm::dvec3 q = glm::transpose(R) * (shipW - origin);
-                    const glm::dvec3 d = glm::transpose(R) * down;
-                    surfaceUp = R * glm::dvec3(0.0, 1.0, 0.0);
+                    // the ship and its belly ray in the PLAN (HubCitySpace: a ring city bent - the surfaces below are plan
+                    // heights / rects; the module frame read them as flat, audit A1 class); the ray linearised at the ship
+                    const auto citySpace = game::client::presentationCitySpace(object);
+                    const glm::dvec3 q = citySpace.toStrip(shipW);
+                    const glm::dvec3 d = glm::transpose(citySpace.axes(q)) * down;
+                    surfaceUp = citySpace.surfaceUpWorld(q);
                     // a horizontal surface at height y spanning [x0,x1] x [z0,z1] (the plane: unbounded)
                     const auto surface = [&](double y, double x0, double x1, double z0, double z1, bool bounded) {
                         if (std::abs(d.y) < 1.0e-6)
@@ -250,7 +253,9 @@ m_systemMapRenderer.render(
                         const double t = (y - q.y) / d.y;
                         if (t <= 0.0 || t >= hit)
                             return;
-                        const glm::dvec3 p = q + d * t;
+                        glm::dvec3 p = q + d * t;
+                        const double cx = 0.5 * (x0 + x1);
+                        p.x = cx + citySpace.alongDelta(cx, p.x);   // periodic along a ring (the seam)
                         if (!bounded || (p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1))
                             hit = t;
                     };
@@ -416,9 +421,10 @@ m_systemMapRenderer.render(
                     const glm::dvec3 origin = world::coordinates::fullMeters(object.renderWorldPosition);
                     if (!plan || glm::length(shipW - origin) > 9000.0)
                         continue;
-                    const glm::dvec3 q = glm::transpose(glm::dmat3(glm::mat3(object.renderOrientation))) * (shipW - origin);
+                    const auto citySpace = game::client::presentationCitySpace(object);   // the plan, not the module frame
+                    const glm::dvec3 q = citySpace.toStrip(shipW);
                     for (const auto& m : plan->modules())
-                        if (m.pad && glm::length(m.padPosition - q) < game::navigation::HubPadZoneShowMeters)
+                        if (m.pad && glm::length(citySpace.planDelta(m.padPosition, q)) < game::navigation::HubPadZoneShowMeters)
                         {
                             legsWanted = true;
                             break;
@@ -686,7 +692,10 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             static std::chrono::steady_clock::time_point qAt {};
             // ... in the plan's STRIP metres (a ring hub: unbent, HubRingBend.h) - the service's route is there
             const auto& ring = plan->ring();
-            const glm::dvec3 qRaw = ring.toStrip(glm::transpose(R) * (shipW - origin));
+            // through the one city space, unwrapped next to the pad (A4: across the ring's seam the route, the leg advance
+            // and the frames went the long way round - the server's service unwraps the same way)
+            const auto citySpace = game::client::presentationCitySpace(object);
+            const glm::dvec3 qRaw = citySpace.unwrapNear(citySpace.toStrip(shipW), pad->padPosition);
             const auto qNow = std::chrono::steady_clock::now();
             const double qDt = std::chrono::duration<double>(qNow - qAt).count();
             qAt = qNow;

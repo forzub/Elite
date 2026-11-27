@@ -369,6 +369,15 @@ inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanMod
         tall.push_back({std::min(m.rect.x, m.rect.z) - 60.0, std::min(m.rect.y, m.rect.w) - 60.0, std::max(m.rect.x, m.rect.z) + 60.0,
                         std::max(m.rect.y, m.rect.w) + 60.0});
     }
+    // a ring: the route may run past the seam (`from` unwrapped next to the pad, A4) - the towers one turn either way are
+    // obstacles there too
+    if (plan.ring().valid && plan.ring().length > 0.0)
+    {
+        const std::size_t n = tall.size();
+        for (std::size_t k = 0; k < n; ++k)
+            for (const double shift : {-plan.ring().length, plan.ring().length})
+                tall.push_back({tall[k].x0 + shift, tall[k].z0, tall[k].x1 + shift, tall[k].z1});
+    }
     const auto inside = [&](double x, double z, const Rect* skip) {
         for (const auto& r : tall)
             if (&r != skip && x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1)

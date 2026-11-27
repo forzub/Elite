@@ -263,7 +263,9 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
     // service only flies the last metres across and sets the ship down on its legs; from elsewhere it climbs first
     int phase = 0;
     {
-        const glm::dvec3 q = cityStripOf(*this, *city).toStrip(tr.fullWorldMeters());
+        const CityStrip cityHere = cityStripOf(*this, *city);
+        // unwrapped next to the pad (A4: across the ring's seam the strip difference went the long way round)
+        const glm::dvec3 q = cityHere.unwrapNear(cityHere.toStrip(tr.fullWorldMeters()), building->padPosition);
         const glm::dvec3 out = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
         glm::dvec3 flat = q - building->padPosition;
         const double height = glm::dot(flat, out);
@@ -439,7 +441,7 @@ void GameSimulation::updatePadLandings(double dt)
         if (heldIt == held.end() || p.sinceS > heldSince[id.value])
         {
             heldSince[id.value] = p.sinceS;
-            heldIt = held.insert_or_assign(id.value, strip.toStrip(tr.fullWorldMeters())).first;
+            heldIt = held.insert_or_assign(id.value, strip.unwrapNear(strip.toStrip(tr.fullWorldMeters()), p.padLocal)).first;
         }
         glm::dvec3& q = heldIt->second;
         const glm::dvec3& out = p.outLocal;
@@ -839,7 +841,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 if (!m.pad)
                     continue;
                 const glm::dvec3 out = m.under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
-                const glm::dvec3 d = q - m.padPosition;
+                const glm::dvec3 d = cs.planDelta(m.padPosition, q);   // periodic along a ring (A4: the seam)
                 const double flat = std::max(std::abs(d.x), std::abs(d.z));
                 const double h = glm::dot(d, out);
                 if (flat > game::navigation::HubPadZoneHalf || h < -2.0 || h > game::navigation::HubPadZoneHeight)
@@ -963,8 +965,9 @@ void GameSimulation::filterBerthControl(EntityId shipId, ShipControlState& c)
         m_manoeuvreOnly.erase(m);
         return;
     }
-    const glm::dvec3 q = cityStripOf(*this, *city).toStrip(ship->core().transform().fullWorldMeters());
-    glm::dvec3 d = q - m->second.padLocal;
+    const CityStrip cityHere = cityStripOf(*this, *city);
+    const glm::dvec3 q = cityHere.toStrip(ship->core().transform().fullWorldMeters());
+    glm::dvec3 d = cityHere.planDelta(m->second.padLocal, q);   // periodic along a ring (A4: the seam)
     const double h = glm::dot(d, m->second.outLocal);
     d -= m->second.outLocal * h;
     // out of the zone (over its top / off its side): every engine again

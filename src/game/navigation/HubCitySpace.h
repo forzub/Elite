@@ -75,6 +75,12 @@ struct HubCitySpace
         }
         return d;
     }
+    // a plan point with its along coordinate moved by whole turns to lie nearest `reference` (a ring: the ship just past
+    // the seam from its pad is 25 m away, not L - 25); positions beyond [x0, x0 + L) are valid - the bend is periodic
+    glm::dvec3 unwrapNear(const glm::dvec3& plan, const glm::dvec3& reference) const
+    {
+        return {reference.x + alongDelta(reference.x, plan.x), plan.y, plan.z};
+    }
     // the plan difference b - a with the along part periodic
     glm::dvec3 planDelta(const glm::dvec3& a, const glm::dvec3& b) const
     {

@@ -9638,5 +9638,32 @@ start-up hitches (render), trade step 16 part 3 live.
     rows, sat outside the flattened scope ellipse (now placed in the ellipse height). Live D:/tmp/radarglitch/montage.png:
     cable / tearing / retention / interference / noise visible; freeze not visible on a still. CRT shader ported, not live-run
     (no ship uses the CRT scope). DEV: ELITE_DEV_RADAR_GLITCH_LOG / _EVERY_S / _HOLD_S / _KIND.
+  - AUDIT #8 (bfaea7fc3 reviewed): accepted A1 9, A3 8, A4 8, A5 8.5, A7 8, A8 8, A9 8, A10 8 (do not rework without new
+    evidence); A2 7.5, A6 7.5, B1 6.5, B2 5.5, B3 5, C 7; D1/D2 measurements accepted; D4 radar GLSL 430 port accepted.
+  - A2 (4eb28bb8c) AUDIT WAS RIGHT: the 9df67fde9 axial branch jumped the ship (the held point IS its position; along :=
+    pad's at r > 0 moved it r * angle, up to ~R/2 * pi). HubCitySpace::takePlanPoint keeps the ship's own point; only on
+    the axis (r < 1 um) the pad's along. Velocity kept (PadLanding::entryResidualLocal, braked at the service's accel);
+    attitude was already continuous (rate-limited turn from the current one). HubSpaceCheck 96 points (r 0 .. 1.7 R x 12
+    angles): position step 5.6e-9 m, velocity 2.8e-14 m/s. Live ring A1-03 LANDED; the axial branch itself still not live.
+  - B1 (aa85da7ee): retained rows apply the ship's own engine acceleration in its frame; motion.local* rebuilt by
+    restoreMotionFromReferenceFrame (the decode rule, no second integration); the frame's universe time = the incoming
+    epoch's on the same timeline (was += the SERVER delta; universe time branches on a debug rewind). HubSpaceCheck moving /
+    thrusting / turning row: all residuals 0. OPEN: live sparse TCP remote-ship run, attached ships.
+  - D8 ANALYSIS (no code yet): NetworkServerHost (game/server) already owns one ServerRuntime and accepts / admits / reaps
+    TCP sessions (the dedicated EliteServer runs on it; EliteServer imports no GL - KERNEL32/WS2_32/libstdc++ only).
+    ServerRuntime admits any number of sessions (attachPlayerSessionTransport). Minimal Host Game: (1) D2 own clock in
+    ServerWorker first (else a frozen host GUI stalls remote players); (2) NetworkServerHost gains a constructor with the
+    local loopback transport (ServerRuntime(worldParams, transport, debug)) and ServerWorker owns it when a host port is
+    set; (3) the client already joins by TCP (TcpClientTransport, ClientPreferences last_server_endpoint). One exe for the
+    four modes: EliteGame.exe --dedicated would call the server_main loop moved into a library function before any
+    GLFW / GL init. Same server code in every mode - no second implementation.
+  - HANTEDPREVIEW (in progress): core/BuildFlavor (ELITE_PREVIEW_BUILD on one object file, in EliteNavigationGeometry so
+    both runtimes link it): own %LOCALAPPDATA%/HantedPreview (preferences, logs, journal, WebView2), the working directory
+    anchored to the exe when it has no assets/, the console window hidden on a double click, the developer shortcut strip
+    hidden. tools/preview/package_preview.sh (Release build, staging, recursive objdump DLL check, BUILD_INFO),
+    README.txt, localization_report.py, find_cyrillic_literals.py, syntax_check.py. D7 BASELINE: 1489 Cyrillic literals in
+    62 files (~1440 possibly player-visible; EconomyServer.cpp 375 = the server sends finished Russian text - D7.5
+    violated). D7 infrastructure (a40cbda59): LocalizedMessage (key + named params in the existing string fields),
+    LocalizationService::format / render, client-only tr / renderMessage. Translation pass running in five file groups.
   - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
     HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.

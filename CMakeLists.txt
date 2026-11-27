@@ -157,6 +157,7 @@ target_link_libraries(EliteShipAssetCheck PRIVATE EliteModelAsset)
 # intentionally presentation/server/client agnostic and is linked by both
 # runtime executables instead of compiling the same implementation twice.
 add_library(EliteNavigationGeometry STATIC
+    src/core/BuildFlavor.cpp   # linked by both runtimes (the client and the dedicated server)
     src/world/navigation/NavigationObstacleGeometry.cpp
     src/world/navigation/GeometricPathPlanner.cpp
 )
@@ -169,7 +170,6 @@ target_include_directories(EliteNavigationGeometry PUBLIC
 # clouds): deterministic fields, cube-sphere patches, streaming. No GL.
 add_library(EliteCelestialSurface STATIC
     src/core/ThreadPriority.cpp
-    src/core/BuildFlavor.cpp
     src/world/celestial/surface/BodySurfaceFieldLoader.cpp
     src/world/celestial/surface/AppearancePassport.cpp
     src/core/DevMemoryLedger.cpp

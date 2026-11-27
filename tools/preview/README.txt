@@ -97,8 +97,11 @@ Pressing the same key again or F1 returns to the cockpit.
 --------------------
 - Preview quality: physics, navigation, economy and the world simulation are
   the current development versions and are still being tuned.
-- Some messages may still appear in Russian in places that have not been
-  translated yet (see BUILD_INFO.txt / the release notes).
+- A few rare messages or names may still appear in Russian.
+- Trading needs a station with an economy (e.g. Vysokiy near Earth); some
+  hubs, like the Ring, have none yet.
+- The ship's drawn attitude can wobble slightly in fast turns (known issue,
+  being worked on).
 - The world is not saved between sessions in this preview.
 - Network play (HantedServer.exe / joining another computer) is not part of
   this preview's tested scenario.

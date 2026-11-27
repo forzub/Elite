@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+#include "src/game/economy/WorldSaveStore.h"
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -305,6 +307,16 @@ public:
     bool completeSosAt(std::uint64_t playerId, const std::string& hubId, int systemId);
     void setRoutableHubs(std::set<std::string> hubs) { m_routableHubs = std::move(hubs); }
     [[nodiscard]] const std::string& stateFilePath() const { return m_stateFile; }
+    // THE WORLD SAVE (stage 8, WorldSaveStore.h): other owners' parts committed in the SAME generation as the economy.
+    // The provider runs on the server thread at the flush (the same tick as the economy's own state); cleared, the
+    // last parts it gave are written again (the shutdown flush after the owner is gone).
+    void setCompanionProvider(std::function<std::vector<WorldSavePart>()> provider) { m_companionProvider = std::move(provider); }
+    // a part loaded with the economy's generation (nullptr: none) - the owner restores from it
+    [[nodiscard]] const std::string* loadedCompanion(const std::string& name) const;
+    // mark a companion's change: saved with the next flush (urgent = the next tick)
+    void companionChanged(const char* what, bool urgent) { saveNow(what, urgent); }
+    // write now (the owner's shutdown): the provider is still alive
+    void flushFinal() { flushStateIfDue(true); }
     [[nodiscard]] std::size_t routableHubCount() const { return m_routableHubs.size(); }
     // ---- the employment service (F5, TRADE_DESIGN §11b)
     struct Vacancy
@@ -662,6 +674,9 @@ private:
     [[nodiscard]] static std::string finishState(StateParts parts);
     struct StateWriter;
     std::unique_ptr<StateWriter> m_writer;
+    std::function<std::vector<WorldSavePart>()> m_companionProvider;
+    std::vector<WorldSavePart> m_lastCompanions;     // the provider's last parts (written again once it is cleared)
+    std::vector<WorldSavePart> m_loadedCompanions;   // the companions of the loaded generation
     bool m_stateDirty = false;
     const char* m_dirtyWhat = "";
     double m_lastSaveS = -1e9;   // steady clock, s

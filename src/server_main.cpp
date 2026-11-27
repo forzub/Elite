@@ -2357,6 +2357,8 @@ int main(int argc, char** argv)
 {
     // the session log (%LOCALAPPDATA%/EliteGame/logs/server_*.log) and non-blocking stderr, as the client
     core::installAsyncStderr("server");
+    if (const int scrubbed = core::scrubDeveloperEnvironmentInPreview(); scrubbed > 0)   // stage 9: no DEV switches in the package
+        std::cerr << "[Preview] " << scrubbed << " developer environment switch(es) ignored" << std::endl;
     if (const std::string anchored = core::anchorWorkingDirectoryToExecutable(); !anchored.empty())
         std::cerr << "[Startup] working directory set to the executable's folder: " << anchored << std::endl;
     core::optOutOfPowerThrottling("server");   // a dedicated server is never "in the background"

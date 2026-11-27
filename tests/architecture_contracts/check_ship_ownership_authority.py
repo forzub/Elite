@@ -105,10 +105,16 @@ if restore and "absentOwner" not in restore:
 if save and "absentOwnerPlayer" not in save:
     failures.append("saveRuntimeShips does not write the absent owner player back")
 if save:
-    w = save.find("writeFileAtomically(")
+    # stabilization stage 8: the ships are a part of the world save's generation (WorldSaveStore) - the dirty flag is
+    # cleared only AFTER the part is handed to the economy's writer, which commits it with the economy and retries a
+    # failed generation until written (never dropped)
+    w = save.find("m_economy.companionChanged(")
     d = save.find("m_shipsDirty = false", w)
-    if w < 0 or d < 0:
-        failures.append("saveRuntimeShips: the dirty flag must be cleared only AFTER a successful write")
+    if w < 0 or d < 0 or "m_shipsJson = " not in save[:w]:
+        failures.append("saveRuntimeShips: the dirty flag must be cleared only AFTER the ships part is handed to the world save")
+    eco = (ROOT / "src" / "game" / "economy" / "EconomyServer.cpp").read_text(encoding="utf-8")
+    if "WorldSaveStore::commit(path, generation" not in eco or "unsaved = generation" not in eco:
+        failures.append("the world save writer must commit all parts together and retry a failed generation")
 
 # 5b. owner / pilot audience are independent facts
 proj = function_body(server, "void GameServer::projectShipRowsForSession(")

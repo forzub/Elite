@@ -31,6 +31,22 @@ namespace game::simulation
 // This ship's dock dispatcher status (DockTrafficController), replicated so
 // the docking terminal shows the server's queue / hold / pad decision. The
 // client never derives queue position or availability itself.
+// Stabilization stage 4 (B3): the route an AUTHORITATIVE executor flies, as it flies it (today the hub city pad
+// service). The client draws THIS - never its own reconstruction (the HUD recomputed the pad route from the ship's
+// smoothed place and guessed the leg; the two disagreed). Points in the city frame `frameModuleId` (a rigid frame: a
+// ring's spin is the frame's own motion, so the points need no epoch); `currentPoint` = the index flown to now
+// (== points.size(): at the end / landed). `revision` changes exactly when the points or the current point change.
+struct ShipExecutedRouteSnapshot
+{
+    std::uint32_t requestId = 0;          // 0 = none
+    std::uint32_t revision = 0;
+    std::uint8_t owner = 0;               // 0 none, 1 the hub city pad service
+    std::int32_t phase = -1;              // the owner's phase (pad service: 0 climb, 1 across, 2 down, 3 landed)
+    std::string frameModuleId;
+    std::vector<glm::dvec3> pointsLocal;
+    std::uint32_t currentPoint = 0;
+};
+
 struct ShipDockDispatcherSnapshot
 {
     bool active = false;
@@ -118,6 +134,7 @@ struct ShipSnapshot
     // displaced by a notice (audit #5: a notice in the same field dropped "the service flies" for 4 s)
     std::string                                          padService;
     std::string                                          padNotice;   // the service's / dispatcher's latest notice (4 s)
+    game::simulation::ShipExecutedRouteSnapshot          executedRoute;   // stage 4: the route the server executes
     // the landing legs (author 2026-11-21: «выдвижные ноги-подставки ... демпфирующие, могут сломаться»): 0 in, 1 out, 2 broken
     std::uint8_t                                         landingGear = 0;
 };

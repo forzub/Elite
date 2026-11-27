@@ -1829,6 +1829,13 @@
       "es": "CALCULANDO",
       "ja": "計算中"
     },
+    "cockpit.dock.refused.no_route": {
+      "en": "no safe route from here ({attempts} attempts) - move closer to the hub's lanes and request again",
+      "ru": "безопасный маршрут отсюда не найден ({attempts} попытки) - подойдите ближе к трассам хаба и повторите запрос",
+      "zh-Hans": "从此处找不到安全航线（尝试 {attempts} 次）- 请靠近枢纽航道后重新请求",
+      "es": "no hay ruta segura desde aquí ({attempts} intentos) - acérquese a los carriles del hub y vuelva a solicitar",
+      "ja": "ここから安全な航路が見つかりません（{attempts} 回試行）- ハブの航路に近づいて再要求してください"
+    },
     "cockpit.dock_widget.chip_en_route": {
       "en": "EN ROUTE",
       "ru": "В ПУТИ",

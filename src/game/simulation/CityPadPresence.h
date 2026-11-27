@@ -29,6 +29,23 @@ struct CityPadPresence
                variant != static_cast<std::uint8_t>(CityBuildingVariant::Destroyed);
     }
 };
+// (infrastructureStateOf below: the presence in the one state vocabulary)
+
+// THE ONE INFRASTRUCTURE STATE (stabilization stage 5, A6): what a designed piece of a city IS now, the same words on
+// the server and the client. Unknown = the asker has no current package (the client while its copy of the package is
+// assembling, failed, or was built for an EARLIER construction stage than the one in force - the server decides then).
+enum class InfrastructureState : std::uint8_t
+{
+    Unknown = 0,
+    NotBuilt,    // designed; its building not finished in the package of the stage in force
+    Existing,    // built, intact
+    Damaged,     // built, hit (missile / laser variants) - still usable
+    Destroyed    // gutted / destroyed - not usable
+};
+[[nodiscard]] inline bool infrastructureUsable(InfrastructureState s) noexcept
+{
+    return s == InfrastructureState::Existing || s == InfrastructureState::Damaged;
+}
 
 // address -> the pad's node index, from the city package's volume labels ("pad_<address>.<folder>.<k>")
 template <typename Volumes>
@@ -62,5 +79,15 @@ inline CityPadPresence cityPadPresence(const std::unordered_map<std::string, std
         if (static_cast<std::int32_t>(s.node) == out.node)
             out.variant = s.variant;
     return out;
+}
+// the presence in the one vocabulary (a package the asker HAS, for the stage in force)
+[[nodiscard]] inline InfrastructureState infrastructureStateOf(const CityPadPresence& p) noexcept
+{
+    if (!p.built)
+        return InfrastructureState::NotBuilt;
+    if (p.variant == static_cast<std::uint8_t>(CityBuildingVariant::Gutted) ||
+        p.variant == static_cast<std::uint8_t>(CityBuildingVariant::Destroyed))
+        return InfrastructureState::Destroyed;
+    return p.variant != 0 ? InfrastructureState::Damaged : InfrastructureState::Existing;
 }
 } // namespace game::simulation

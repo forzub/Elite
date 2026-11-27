@@ -225,7 +225,7 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
         // seller offers (concrete instances)
         const std::string offersTitle = tr("service.panel.shipyard.offers", "Seller offers");
         t.textDrawPx(offersTitle, cx, y, px, Title);
-        if (!core::isPreviewBuild())   // HantedPreview: no developer notes on the panels
+        if (core::capabilityAllowed(core::Capability::DevPanelNotes))   // HantedPreview: no developer notes on the panels
             t.textDrawPx(tr("service.panel.shipyard.offers_dev", "DEV: trial stock until the economy is connected"),
                          cx + t.measureTextPx(offersTitle, px) + 16, y + 2, small, Muted);
         y += static_cast<float>(px) + 8;
@@ -497,7 +497,7 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
         };
         button(rx + 6, tr("service.panel.refit.repair", "Repair"), ServicePanelActionType::RefitPreviewRepair, f.repairable);
         button(rx + 6 + bw, tr("service.panel.refit.replace", "Replace"), ServicePanelActionType::RefitPreviewReplace, true);
-        if (!core::isPreviewBuild())   // HantedPreview: the free DEV apply is not offered (nor sent, nor accepted)
+        if (core::capabilityAllowed(core::Capability::DevCommands))   // HantedPreview: the free DEV apply is not offered (nor sent, nor accepted)
         button(rx + 6 + 2 * bw, tr("service.panel.refit.apply_dev", "Apply (DEV)"),
                ServicePanelActionType::RefitApply,
                page.previewForSelection && page.preview.ok && page.preview.applicable);

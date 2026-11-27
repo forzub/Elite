@@ -241,6 +241,10 @@ ClientCityPackageState clientLayoutCityPackageState(ObjectType type, const std::
     const auto it = cityCache().find(kit.empty() ? hubId : kit);
     if (it == cityCache().end() || !it->second || !it->second->ready)
         return ClientCityPackageState::Assembling;
+    // A6 (stabilization stage 5): the package of an EARLIER construction stage, shown while the new stage's assembles,
+    // says nothing about what exists now (a pad just finished reads "not built", a building just begun reads built)
+    if (kit.empty() && it->second->stageKey != elite::model_asset::hubExpansionStageKey(hubId))
+        return ClientCityPackageState::Assembling;
     return it->second->failed ? ClientCityPackageState::Failed : ClientCityPackageState::Ready;
 }
 

@@ -9733,3 +9733,17 @@ start-up hitches (render), trade step 16 part 3 live.
 - Stage 2 (source + live): render functions no longer drive state (docking widget, jump marks, terminal notice /
   berth watch, cockpit radio moved to update). Barrier check_render_purity.py. LIVE: Preview flavor ring landing
   LANDED 102 s. Contracts 187 pass / same 17 reds.
+- Stages 3-9 (2026-11-28; evidence in ARCHITECTURE_STABILIZATION_REPORT.md):
+  - 3 FINITE PLANNER: a retryable plan failure re-planned for ever (B2-04 EN ROUTE); now <= 3 attempts per request, then
+    refused with cockpit.dock.refused.no_route (5 languages). B2-04 reproduced live from the author's side point
+    (ELITE_DEV_START_CITY_AT=0,2810,5588): first plan infeasible, replan 1/3, LANDED 101 s. Grid tool
+    tests/planner/planner_start_grid.sh (results below when done).
+  - 4 B3: ShipExecutedRouteSnapshot (wire schema 86) - the pad service publishes the route it flies; the HUD tunnel draws
+    it; the HUD's own route reconstruction (pad route recompute, held / straight frames) removed; the docking plan stays
+    published while the same request re-plans. Live ring landing tunnel from the server's route.
+  - 5 A6 one InfrastructureState (+ stale-package defect fixed), A2 one co-rotation rule (unit 0.18 mm float limit).
+  - 8 WORLD SAVE: one generation of economy + ships committed by an atomic manifest (WorldSaveStore), verified load,
+    fallback; unit EliteWorldSaveCheck; live save -> exit -> load -> continue. docs/WORLD_SAVE_CONTRACT.md.
+  - 9 one capability policy (core::Capability), DEV switch inventory docs/DEV_SWITCHES.md (197), the preview package
+    removes ELITE_* switches at start. check_ship_ownership_authority updated to the save mechanism (same guarantee).
+  - Contracts: 189 pass / the same 17 baseline reds.

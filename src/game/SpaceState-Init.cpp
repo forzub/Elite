@@ -150,7 +150,7 @@ void SpaceState::initHUD()
     uiRoot->addChild(makeTelemetryText("main_orbit_2",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 6.0f}));
     // HantedPreview (the author 2026-11-27: "make sure the texts do not overlap"): this telemetry column sits under the HUD
     // terminal and printed over it; its orbit numbers are on the orbit panel at the right anyway
-    if (core::isPreviewBuild())
+    if (!core::capabilityAllowed(core::Capability::TelemetryColumn))
         for (const char* id : {"main_coord_cell", "main_coord_x", "main_coord_y", "main_coord_z", "main_coord_v", "main_orbit_1",
                                "main_orbit_2"})
             if (auto* t = uiRoot->findById(id))
@@ -204,7 +204,7 @@ void SpaceState::initHUD()
                 {desc.radarMount.normalizedPosition.x - desc.radarMount.normalizedSize.x * 0.5f,
                  desc.radarMount.normalizedPosition.y - desc.radarMount.normalizedSize.y * 0.5f - 0.022f});
             rangeText->color = {0.2f, 0.8f, 1.0f, 0.55f};
-            rangeText->visible = !core::isPreviewBuild();   // HantedPreview: no HUD texts but the terminal (the author)
+            rangeText->visible = core::capabilityAllowed(core::Capability::RadarRangeLabel);   // HantedPreview: no HUD texts but the terminal (the author)
             uiRoot->addChild(std::move(rangeText));
         }
     }

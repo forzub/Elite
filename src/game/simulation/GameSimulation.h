@@ -838,6 +838,11 @@ private:
         bool autoLanding = true;     // the pad's service lands the ship (false: brought over the zone and handed over)
         double gearNagS = -1.0e9;
         std::vector<glm::dvec3> route;   // hubPadRoute: the climb point, the detours, over the pad (city frame)
+        // stage 4 (B3): what the service flies, published as is (ShipExecutedRouteSnapshot)
+        std::uint32_t requestId = 0;
+        std::vector<glm::dvec3> executedPoints;
+        std::uint32_t executedCurrent = 0;
+        std::uint32_t executedRevision = 0;
         std::size_t leg = 0;             // the across leg flown now (route index)
         double touchdownS = 0.0;         // the legs took the ship (phase 3): the damped sag runs from here
         double touchdownMps = 0.0;       // its touchdown speed
@@ -852,6 +857,7 @@ private:
         glm::dvec3 doorFrontLocal {0.0}, bayEntryLocal {0.0};
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
+    std::uint32_t m_nextPadRequestId = 1;   // stage 4: the pad service request ids of this world
     // Stage 1 of the stabilization program - state of THIS world that lived in namespace globals / function statics and
     // outlived its world (a second world in the same process reuses ship ids and restarts server time and generations):
     // the pilot took the controls back (server time per ship): no capture / touchdown for a while
@@ -883,6 +889,7 @@ private:
     mutable std::unordered_map<std::uint64_t, CachedPadNodes> m_cityPadNodesCache;
     mutable std::unordered_map<std::uint64_t, std::pair<std::size_t, double>> m_combatRadiusCache;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time
+    game::simulation::ShipExecutedRouteSnapshot executedRouteOf(EntityId shipId) const;   // stage 4 (B3)
     std::string padServiceStatus(EntityId shipId) const;   // ShipSnapshot::padService (the control state only)
     std::string padServiceNotice(EntityId shipId) const;   // ShipSnapshot::padNotice
     // the city's landing places reserved / taken now ("<address>#<bay>", "!" after it = reserved, on the way in) -

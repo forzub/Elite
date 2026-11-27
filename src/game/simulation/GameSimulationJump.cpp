@@ -1085,6 +1085,22 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
                 }
                 break;
             }
+    // DEV (stabilization stage 3, the planner's start grid): ELITE_DEV_START_CITY_AT=x,y,z - normal flight at that point of
+    // the hub's city frame, at rest relative to the hub (B2-04: the author's side position ~6.4 km off Vysokiy)
+    if (const char* at = std::getenv("ELITE_DEV_START_CITY_AT"); at && *at)
+    {
+        glm::dvec3 p(0.0);
+        if (std::sscanf(at, "%lf,%lf,%lf", &p.x, &p.y, &p.z) == 3)
+            for (const auto& [oid, obj] : m_staticObjects)
+                if (obj.hubId == hubId && obj.hubModuleId.size() >= 5 &&
+                    obj.hubModuleId.compare(obj.hubModuleId.size() - 5, 5, ".city") == 0)
+                {
+                    frame.originMeters = world::coordinates::fullMeters(obj.worldPosition) + glm::dmat3(glm::mat3(obj.orientation)) * p;
+                    std::cerr << "[DevStart] ship " << id.value << ": at city point " << p.x << "," << p.y << "," << p.z
+                              << " of " << hubId << std::endl;
+                    break;
+                }
+    }
     frame.linearVelocityMps = hub->velocityMetersPerSecond;
     frame.linearAccelerationMps2 = glm::dvec3(0.0);
     motion.localPositionMeters = glm::dvec3(0.0);

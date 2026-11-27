@@ -32,45 +32,8 @@ namespace game::economy
 {
 using game::localization::Message;   // server-side player text: language-neutral messages (audit #7 D7), rendered by the client
 
-// Atomic replace (audit 2026-11-19): the accounts were rewritten in place (trunc) - a crash mid-write left a file the
-// next start read as "unreadable, fresh state", silently zeroing every account. Write <file>.tmp, flush, then replace.
-thread_local unsigned long g_lastWriteError = 0;   // the last Win32 error of writeFileAtomically (diagnostics)
-
-bool writeFileAtomically(const std::string& path, const std::string& text)
-{
-    const std::string tmp = path + ".tmp";
-#ifdef _WIN32
-    // the data reaches the disk (FlushFileBuffers) before the replace: a power loss cannot leave an empty file
-    const std::wstring from = std::filesystem::path(tmp).wstring(), to = std::filesystem::path(path).wstring();
-    HANDLE h = CreateFileW(from.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (h == INVALID_HANDLE_VALUE && (g_lastWriteError = GetLastError(), true))
-        return false;
-    DWORD written = 0;
-    const bool ok = WriteFile(h, text.data(), static_cast<DWORD>(text.size()), &written, nullptr) && written == text.size() &&
-                    FlushFileBuffers(h);
-    CloseHandle(h);
-    if (!ok)
-    {
-        DeleteFileW(from.c_str());
-        return false;
-    }
-    const bool moved = MoveFileExW(from.c_str(), to.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
-    if (!moved)
-        g_lastWriteError = GetLastError();
-    return moved;
-#else
-    {
-        std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
-        if (!f)
-            return false;
-        f << text;
-        f.flush();
-        if (!f)
-            return false;
-    }
-    return std::rename(tmp.c_str(), path.c_str()) == 0;
-#endif
-}
+// writeFileAtomically / g_lastWriteError: WorldSaveStore.cpp (stage 8 - the world save's one write primitive)
+extern thread_local unsigned long g_lastWriteError;
 
 namespace
 {
@@ -233,6 +196,7 @@ struct EconomyServer::StateParts
     std::vector<Market> markets;
     std::vector<ContractPosting> postings;
     std::vector<Contract> contracts;
+    std::vector<WorldSavePart> companions;   // stage 8: the other owners' parts of the same generation
 };
 
 struct EconomyServer::StateWriter
@@ -266,13 +230,13 @@ struct EconomyServer::StateWriter
     }
     // a finished state whose write failed (audit ECO-5: it was dropped after ~3 s of retries - the confirmed deal lost
     // with the next crash, nothing re-queued it): retried every 2 s until written or superseded by a newer state
-    std::string unsaved;
+    std::vector<WorldSavePart> unsaved;   // stage 8: a failed GENERATION (all its parts), retried
     void run()
     {
         for (;;)
         {
             StateParts parts;
-            std::string retryText;
+            std::vector<WorldSavePart> retryText;
             {
                 std::unique_lock<std::mutex> lock(mutex);
                 if (unsaved.empty())
@@ -294,15 +258,30 @@ struct EconomyServer::StateWriter
                     continue;
             }
             const double t0 = steadyS();
-            const std::string text = retryText.empty() ? finishState(std::move(parts)) : std::move(retryText);
+            std::vector<WorldSavePart> generation;
+            if (retryText.empty())
+            {
+                std::vector<WorldSavePart> companions = std::move(parts.companions);
+                generation.push_back({"economy", finishState(std::move(parts))});
+                for (auto& c : companions)
+                    generation.push_back(std::move(c));
+            }
+            else
+                generation = std::move(retryText);
             const double t1 = steadyS();
+            std::size_t bytes = 0;
+            for (const auto& g : generation)
+                bytes += g.text.size();
             // the rename over the old file fails while another process holds it open (a reader, an antivirus, a backup
             // on Windows): retry briefly; still failing - keep this state queued unless a newer one arrived meanwhile
             // (TRADE step 17: found by the urgent-save check - a reader made the save silently drop the deal)
             bool ok = false;
             for (int attempt = 0; attempt < 40 && !ok; ++attempt)   // ~3 s: 10 x 20 ms, then 30 x 100 ms
             {
-                ok = writeFileAtomically(path, text);
+                std::string why;
+                ok = WorldSaveStore::commit(path, generation, &why);   // stage 8: all parts, one commit
+                if (!ok && attempt == 0)
+                    std::cerr << "[WorldSave] generation not committed: " << why << '\n';
                 if (!ok)
                 {
                     {
@@ -316,7 +295,7 @@ struct EconomyServer::StateWriter
             {
                 std::lock_guard<std::mutex> lock(mutex);
                 if (!ok && !hasPending && !stop)
-                    unsaved = text;   // kept: retried every 2 s
+                    unsaved = generation;   // kept: retried every 2 s
                 else if (ok)
                     unsaved.clear();
             }
@@ -324,7 +303,7 @@ struct EconomyServer::StateWriter
                 std::cerr << "[EconomyServer] state NOT saved to " << path << " (the previous file is kept; Win32 error " << g_lastWriteError
                           << ") - " << (stop ? "giving up at shutdown" : "kept, retried every 2 s") << '\n';
             if (saveTiming())
-                std::cerr << "[EconomySave] writer: " << text.size() << " B, markets + board + dump " << 1000.0 * (t1 - t0) << " ms, write "
+                std::cerr << "[EconomySave] writer: " << bytes << " B, markets + board + dump " << 1000.0 * (t1 - t0) << " ms, write "
                           << 1000.0 * (steadyS() - t1) << " ms (background)" << '\n';
         }
     }
@@ -343,6 +322,13 @@ EconomyServer::~EconomyServer()
 }
 
 // ---------------------------------------------------------------- load
+const std::string* EconomyServer::loadedCompanion(const std::string& name) const
+{
+    for (const auto& p : m_loadedCompanions)
+        if (p.name == name)
+            return &p.text;
+    return nullptr;
+}
 bool EconomyServer::load()
 {
     json doc, market;
@@ -770,14 +756,24 @@ void EconomyServer::start(int day)
     if (const char* path = std::getenv("ELITE_ECONOMY_STATE_FILE"); path && *path)
     {
         m_stateFile = path;
-        std::ifstream f(m_stateFile, std::ios::binary);
-        if (f)
+        const WorldSaveLoaded loaded = WorldSaveStore::load(m_stateFile);   // stage 8: one verified generation
+        if (!loaded.note.empty())
+            std::cerr << "[WorldSave] " << m_stateFile << ": " << loaded.note << '\n';
+        if (loaded.found && !loaded.legacy && !loaded.part("economy"))
         {
-            std::stringstream ss;
-            ss << f.rdbuf();
-            f.close();
-            if (restoreState(ss.str()))
-                std::cerr << "[EconomyServer] state restored from " << m_stateFile << " (day " << m_day << ")" << '\n';
+            // a manifest whose generations are all unusable: never write over them (they may be repairable)
+            std::cerr << "[WorldSave] " << m_stateFile << ": NO usable generation - saving DISABLED to protect the files" << '\n';
+            m_stateFile.clear();
+        }
+        else if (loaded.found)
+        {
+            for (const auto& p : loaded.parts)
+                if (p.name != "economy")
+                    m_loadedCompanions.push_back(p);
+            m_lastCompanions = m_loadedCompanions;   // until the owner provides its own: its loaded parts are kept
+            if (restoreState(*loaded.part("economy")))
+                std::cerr << "[EconomyServer] state restored from " << m_stateFile << " generation " << loaded.generation
+                          << (loaded.legacy ? " (legacy layout)" : "") << " (day " << m_day << ")" << '\n';
             else
             {
                 // never write over a file we could not read: set it aside (it may be repairable by hand)
@@ -4446,6 +4442,10 @@ void EconomyServer::flushStateIfDue(bool force)
     m_urgentSave = false;
     m_lastSaveS = now;
     StateParts parts = saveStateParts();
+    if (m_companionProvider)
+        if (auto given = m_companionProvider(); !given.empty())
+            m_lastCompanions = std::move(given);   // empty = nothing new (e.g. the ships not restored yet): the last kept
+    parts.companions = m_lastCompanions;
     const double serialized = steadyS();
     if (!m_writer)
         m_writer = std::make_unique<StateWriter>(m_stateFile);

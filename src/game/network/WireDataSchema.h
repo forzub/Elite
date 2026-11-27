@@ -747,6 +747,17 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ShipExecutedRouteSnapshot,
+    v.requestId,
+    v.revision,
+    v.owner,
+    v.phase,
+    v.frameModuleId,
+    v.pointsLocal,
+    v.currentPoint
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ShipDockDispatcherSnapshot,
     v.active,
     v.phase,
@@ -834,6 +845,7 @@ ELITE_WIRE_SCHEMA(
     v.combat,
     v.padService,
     v.padNotice,
+    v.executedRoute,
     v.landingGear
 );
 

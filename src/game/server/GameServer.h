@@ -55,6 +55,7 @@ class GameServer
 {
 public:
     explicit GameServer(std::size_t bootstrapPlayerSlotCount = 1);
+    ~GameServer();   // stage 8: the last world-save generation written while every owner is alive
 
     // DEV commands (spawn a combat target, inject an equipment failure, cycle the weapon type):
     // the embedded single-player server allows them; a dedicated server only with --dev /
@@ -466,6 +467,7 @@ public:
     std::uint64_t m_shipsSavedTick = 0;
     std::uint64_t m_shipsSaveRetryTick = 0;   // after a FAILED write: not before this tick
     void saveRuntimeShips();
+    std::string m_shipsJson;   // stage 8: the ships part of the next world-save generation
     void restoreRuntimeShipsIfDue();
     // the employment service: the employer's ship and the pilot's own ship to go back to
     struct Hire

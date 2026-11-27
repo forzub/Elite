@@ -28,8 +28,14 @@ inline ClientPadState clientCityPadState(const ClientObjectState& city, const st
     const auto* nodes = game::scene::clientLayoutCityPadNodes(city.type, city.hubAttachment.hubId);
     if (!nodes)
         return ClientPadState::Unknown;
-    const auto presence = game::simulation::cityPadPresence(*nodes, city.buildingStates, address);
-    return presence.usable() ? ClientPadState::Usable : presence.built ? ClientPadState::Wrecked : ClientPadState::NotBuilt;
+    switch (game::simulation::infrastructureStateOf(game::simulation::cityPadPresence(*nodes, city.buildingStates, address)))
+    {
+        case game::simulation::InfrastructureState::Existing:
+        case game::simulation::InfrastructureState::Damaged: return ClientPadState::Usable;
+        case game::simulation::InfrastructureState::Destroyed: return ClientPadState::Wrecked;
+        case game::simulation::InfrastructureState::NotBuilt: return ClientPadState::NotBuilt;
+        default: return ClientPadState::Unknown;
+    }
 }
 
 // usable or not known yet (the plan stands in while the package assembles; the server's dispatcher has the last word)

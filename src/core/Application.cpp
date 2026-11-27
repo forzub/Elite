@@ -575,7 +575,7 @@ void Application::init()
         );
         // HantedPreview (the author 2026-11-27: "render - classic Elite"): the preview starts in the Elite Classic scene
         // style unless the player picked another one in the menu (the stored default is "modern")
-        if (core::isPreviewBuild() && m_clientPreferences.celestialRenderStyleId == "modern")
+        if (!core::capabilityAllowed(core::Capability::ModernCelestialDefault) && m_clientPreferences.celestialRenderStyleId == "modern")
             m_clientPreferences.celestialRenderStyleId = "elite";
         (void)m_clientModeState.setCelestialRenderStyleId(
             m_clientPreferences.celestialRenderStyleId

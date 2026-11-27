@@ -324,12 +324,14 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
         }
         else
         {
-            const auto presence = cityPadPresenceOf(cityId, address);
-            if (!presence.usable())
+            // the one infrastructure state (stage 5, A6) - the client's map / HUD read the same words
+            const auto state = game::simulation::infrastructureStateOf(cityPadPresenceOf(cityId, address));
+            if (!game::simulation::infrastructureUsable(state))
             {
-                m_padNotices[shipId] = {std::string(presence.built ? "refused:wrecked:" : "refused:not_built:") + address, serverTime()};
+                const bool wrecked = state == game::simulation::InfrastructureState::Destroyed;
+                m_padNotices[shipId] = {std::string(wrecked ? "refused:wrecked:" : "refused:not_built:") + address, serverTime()};
                 std::cerr << "[PadLanding] ship " << shipId.value << " pad " << address << ": "
-                          << (presence.built ? "wrecked" : "not built (its building is still going up)") << " - refused" << std::endl;
+                          << (wrecked ? "wrecked" : "not built (its building is still going up)") << " - refused" << std::endl;
                 return false;
             }
         }
@@ -432,6 +434,7 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     }
     p.phase = phase;
     p.sinceS = serverTime();
+    p.requestId = m_nextPadRequestId++;
     m_padLandings[shipId] = p;
     ship->setControlState(ShipControlState {});
     std::cerr << "[PadLanding] ship " << shipId.value << " pad service, pad " << address << " of " << frameModuleId << " from phase "
@@ -589,6 +592,51 @@ void GameSimulation::updatePadLandings(double dt)
                 }
                 break;
             default: target = touchdown; cruise = 0.0; break;                                           // landed
+        }
+        // THE EXECUTED ROUTE (stage 4, B3): the points this service flies, in its order, and the one flown to now - from
+        // the same values the switch above steers by
+        {
+            std::vector<glm::dvec3> pts = p.route;
+            if (pts.empty())
+                pts.push_back(q + out * (p.transitLocal - glm::dot(q, out)));
+            const std::size_t descentAt = pts.size();
+            if (!p.autoLanding)
+                pts.push_back(p.padLocal + out * game::navigation::HubPadZoneHeight);
+            else if (p.hangar)
+            {
+                pts.push_back(p.doorFrontLocal);
+                pts.push_back(p.bayEntryLocal);
+                pts.push_back(touchdown);
+            }
+            else
+                pts.push_back(touchdown);
+            std::size_t current = 0;
+            if (p.phase == 1)
+                current = std::min(p.leg, descentAt - 1);
+            else if (p.phase == 2)
+                current = descentAt + (p.hangar && p.autoLanding ? static_cast<std::size_t>(p.hangarStep) : 0u);
+            else if (p.phase >= 3)
+                current = pts.size();
+            // the revision: a content key over the points (cm) and the current point - changes exactly with them
+            std::uint32_t key = 2166136261u;
+            const auto mix = [&key](std::int64_t v) {
+                for (int b = 0; b < 8; ++b)
+                {
+                    key ^= static_cast<std::uint32_t>((v >> (8 * b)) & 0xff);
+                    key *= 16777619u;
+                }
+            };
+            for (const auto& v : pts)
+            {
+                mix(std::llround(v.x * 100.0));
+                mix(std::llround(v.y * 100.0));
+                mix(std::llround(v.z * 100.0));
+            }
+            mix(static_cast<std::int64_t>(current));
+            mix(p.phase);
+            p.executedPoints = std::move(pts);
+            p.executedCurrent = static_cast<std::uint32_t>(current);
+            p.executedRevision = key;
         }
         const glm::dvec3 to = target - q;
         const double dist = glm::length(to);
@@ -816,6 +864,22 @@ void GameSimulation::updatePadLandings(double dt)
     }
     for (const EntityId id : drop)
         m_padLandings.erase(id);
+}
+
+game::simulation::ShipExecutedRouteSnapshot GameSimulation::executedRouteOf(EntityId shipId) const
+{
+    game::simulation::ShipExecutedRouteSnapshot out;
+    if (const auto p = m_padLandings.find(shipId); p != m_padLandings.end() && !p->second.executedPoints.empty())
+    {
+        out.requestId = p->second.requestId;
+        out.revision = p->second.executedRevision;
+        out.owner = 1;
+        out.phase = p->second.phase;
+        out.frameModuleId = p->second.frameModuleId;
+        out.pointsLocal = p->second.executedPoints;
+        out.currentPoint = p->second.executedCurrent;
+    }
+    return out;
 }
 
 std::string GameSimulation::padServiceStatus(EntityId shipId) const

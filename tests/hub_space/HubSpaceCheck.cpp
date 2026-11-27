@@ -18,6 +18,7 @@
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/simulation/CityPadPresence.h"
 #include "src/game/network/ReplicationSnapshotMerge.h"
+#include "src/game/navigation/CityCoRotationMap.h"
 
 namespace
 {
@@ -558,7 +559,42 @@ int main()
         check(!missing.built && !missing.usable(), "A6: a pad not in the package does not exist");
         damage.push_back({40, static_cast<std::uint8_t>(game::simulation::CityBuildingVariant::Missile)});
         check(game::simulation::cityPadPresence(nodes, damage, "A1-03").usable(), "A6: a missile hit leaves the deck usable");
-        std::printf("A6 pad presence rule: built / gutted / not built / hit - as specified\n");
+        // the one vocabulary (stabilization stage 5): the same answer as usable(), named
+        using IS = game::simulation::InfrastructureState;
+        const auto hit = game::simulation::cityPadPresence(nodes, damage, "A1-03");
+        check(game::simulation::infrastructureStateOf(built) == IS::Existing, "A6: built intact = Existing");
+        check(game::simulation::infrastructureStateOf(hit) == IS::Damaged, "A6: built and hit = Damaged");
+        check(game::simulation::infrastructureStateOf(gutted) == IS::Destroyed, "A6: gutted = Destroyed");
+        check(game::simulation::infrastructureStateOf(missing) == IS::NotBuilt, "A6: not in the package = NotBuilt");
+        for (const auto& pr : {built, hit, gutted, missing})
+            check(game::simulation::infrastructureUsable(game::simulation::infrastructureStateOf(pr)) == pr.usable(),
+                  "A6: the state's usability is the presence's");
+        std::printf("A6 pad presence rule: built / gutted / not built / hit - as specified; one state vocabulary\n");
+    }
+
+    // A2 (stabilization stage 5): the one co-rotation rule - the city's own motion is zero relative to the city; the map at
+    // t0 is the identity; a point turned with the city maps back onto itself
+    {
+        game::simulation::HubAttachmentSnapshot a;
+        a.localOffsetMeters = glm::dvec3(120.0, -40.0, 15.0);
+        a.localAngularVelocityDegPerSecond = glm::dvec3(0.0, 0.0, 5.159);
+        const auto m0 = game::navigation::cityCoRotationAt(a, 10.0, 10.0);
+        double worst = 0.0;
+        for (int k = 0; k < 24; ++k)
+        {
+            const glm::dvec3 p(3300.0 * std::cos(k * 0.26), 500.0 * std::sin(k * 0.7), 3300.0 * std::sin(k * 0.26));
+            worst = std::max(worst, glm::length(m0.relativeVelocity(p, m0.cityVelocityAt(p))));
+            worst = std::max(worst, glm::length(m0.pointToMap(p) - p));
+            const auto m1 = game::navigation::cityCoRotationAt(a, 10.0, 17.5);
+            // the point the city carried from t0 to t1 maps back to where it was at t0
+            const glm::dmat3 carry = glm::transpose(m1.toMap);
+            const glm::dvec3 carried = m1.pivot + carry * (p - m1.pivot);
+            worst = std::max(worst, glm::length(m1.pointToMap(carried) - p));
+        }
+        // 1 mm at 3.3 km: the attachment rotation goes through a float matrix (hubLocalEulerDegToMatrix -> glm::mat3,
+        // ~1e-7 relative); the rule itself is exact (relativeVelocity of the city's own motion is 0 to the bit)
+        check(worst < 1.0e-3, "A2: one co-rotation rule - city motion relative to itself 0, map identity at t0, carried point maps back");
+        std::printf("A2 co-rotation rule: worst residual %.3g m (m/s)\n", worst);
     }
 
     if (g_failures)

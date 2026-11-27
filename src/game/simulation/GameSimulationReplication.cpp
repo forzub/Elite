@@ -165,8 +165,11 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.controlAuthorityTelemetry =
             ship.core().controlAuthorityTelemetry();
         if (isPlayerControlled(id))
+        {
             s.padService = padServiceStatus(id);   // the hub city pad service's control state
             s.padNotice = padServiceNotice(id);     // its notices (HUD terminal lines)
+            s.executedRoute = executedRouteOf(id);  // stage 4 (B3): the route it executes
+        }
         if (const auto g = m_landingGear.find(id); g != m_landingGear.end())
             s.landingGear = g->second;
         if (const auto info = m_dockTrafficInfo.find(id); info != m_dockTrafficInfo.end())

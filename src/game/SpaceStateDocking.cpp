@@ -743,10 +743,10 @@ void SpaceState::updateDockingAdvisory()
         const auto fr = player.referenceFrame.kinematicFrame();
         m_coRotatedTransform = player.transform;
         auto& m = m_coRotatedTransform.motion;
-        const glm::dvec3 r = m.localPositionMeters - map.pivot;
-        const glm::dvec3 u = m.localVelocityMps - glm::cross(map.omega, r);
-        m.localPositionMeters = map.pivot + map.toMap * r;
-        m.localVelocityMps = map.toMap * u;
+        // the one co-rotation rule (CityCoRotationAt, stage 5 A2)
+        const glm::dvec3 u = map.relativeVelocity(m.localPositionMeters, m.localVelocityMps);
+        m.localPositionMeters = map.pointToMap(m.localPositionMeters);
+        m.localVelocityMps = map.vectorToMap(u);
         // the hull: its axes carried into the map (world <- local <- map <- local <- world)
         glm::dmat3 W;
         for (int i = 0; i < 3; ++i)
@@ -1383,6 +1383,7 @@ void SpaceState::updateDockingAdvisory()
 
         m_lastDockingPathRequestSerial = pending.serial;
         m_newtonianRouteRecoveries = 0;
+        m_dockRetryablePlanFailures = 0;
         m_newtonianLastRecoveryServerSeconds = -1.0e9;
         m_assistedRecoveryStopBeforePlanning = false;
         m_assistedAlignDone = false;
@@ -1554,10 +1555,18 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
+    // B3 (stabilization stage 4): while THIS request stabilizes, secures its course or re-plans, the route it executed
+    // stays the route of record - published from its own plan in its own frame (the HUD held world-anchored copies,
+    // which drifted off a moving / turning hub); a refused request shows none
+    const auto keepExecutedRoutePublished = [&]() {
+        if (m_dockAdvice.serial == f.pending.serial && !m_noSafeDockingGuidanceSolution)
+            publishDockingAdvisoryPresentation(f);
+    };
     if (m_clientDockingPhase ==
         ClientDockingPhase::SecuringCourse)
     {
         updateDockingSecuringCourse(f);
+        keepExecutedRoutePublished();
         return;
     }
 
@@ -1565,6 +1574,7 @@ void SpaceState::updateDockingAdvisory()
         ClientDockingPhase::Stabilizing)
     {
         updateDockingStabilizing(f);
+        keepExecutedRoutePublished();
         return;
     }
 
@@ -1573,7 +1583,10 @@ void SpaceState::updateDockingAdvisory()
         ClientDockingPhase::Planning)
     {
         if (!updateDockingPlanning(f))
+        {
+            keepExecutedRoutePublished();
             return;
+        }
         core::hitch::mark("dock_planning");
     }
 
@@ -3052,7 +3065,7 @@ void SpaceState::updateDockingStabilizing(Frame& f)
     {
         const double t0 = snapshot.epoch.universeTimeSeconds;
         const auto map = game::navigation::cityCoRotationAt(snapshot.targetObject.hubAttachment, t0, t0);
-        startVelocityMps -= glm::cross(map.omega, request.startMeters - map.pivot);
+        startVelocityMps = map.relativeVelocity(request.startMeters, startVelocityMps);   // the one rule (stage 5 A2)
         static double loggedAt = -1.0e9;
         if (t0 - loggedAt > 2.0)
         {
@@ -4221,6 +4234,17 @@ bool SpaceState::updateDockingPlanning(Frame& f)
                 ? job->plan.userMessage
                 : job->plan.failure;
 
+        // FINITE (stabilization stage 3): a retryable failure re-plans from the stabilized state at most
+        // MaxRetryablePlanFailures times per request; the next one refuses the request with the reason for the pilot
+        constexpr int MaxRetryablePlanFailures = 3;
+        if (job->plan.retryable() && ++m_dockRetryablePlanFailures >= MaxRetryablePlanFailures)
+        {
+            std::cerr << "[DockClient] request=" << pending.serial << " phase=refused attempts=" << m_dockRetryablePlanFailures
+                      << " last_reason=" << reason << std::endl;
+            fail(l10n::tr("cockpit.dock.refused.no_route", {{"attempts", std::to_string(m_dockRetryablePlanFailures)}},
+                          "no safe route from here ({attempts} attempts) - move closer to the hub's lanes and request again"));
+            return false;
+        }
         if (job->plan.retryable())
         {
             std::cerr
@@ -4243,7 +4267,7 @@ bool SpaceState::updateDockingPlanning(Frame& f)
 
             std::cerr
                 << "[DockClient] request=" << pending.serial
-                << " phase=replan"
+                << " phase=replan attempt=" << m_dockRetryablePlanFailures << "/" << MaxRetryablePlanFailures
                 << " reason=" << reason
                 << std::endl;
             m_clientDockingPhase =

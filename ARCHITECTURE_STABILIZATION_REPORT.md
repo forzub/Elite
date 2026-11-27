@@ -75,3 +75,77 @@ reasons.
 Live: the Preview flavor (`ELITE_DEV_PREVIEW_FLAVOR=1`) ring landing A1-03 `LANDED (102 s)`; the docking widget and
 terminal lines present (log `D:/tmp/lifecycle/run3.log`). Python contracts 187 pass / the same 17 baseline reds.
 Residual: renderers outside SpaceState (render/, system_map) are not under the barrier yet.
+
+## Stage 3 — planner reliability, finite processes
+
+Cause (source-audited, `SpaceStateDocking.cpp` executing-phase result handling): a RETRYABLE plan failure
+(`job->plan.retryable()`, e.g. "continuous Assisted optimizer did not reach a feasible path") sent the request back to
+Stabilizing -> Planning with NO bound. From a stabilized rest state the same request gives the same answer, so a
+deterministic infeasibility re-planned for ever: the author's EN ROUTE at Vysokiy (B2-04 from the side, 2026-11-27).
+The other recovery path (`recoverOrFail`) was already bounded (5 attempts, 5 s apart).
+
+Change: `m_dockRetryablePlanFailures` per request (reset with the request serial). Attempts 1..2 re-plan (logged
+`phase=replan attempt=n/3`); the 3rd refuses the request: `phase=refused`, the pilot gets the localized reason
+`cockpit.dock.refused.no_route` (en / ru / zh-Hans / es / ja) in the docking widget and the terminal line.
+
+Reproduction (live): `ELITE_DEV_START_CITY_AT=0,2810,5588` (new DEV: a normal-flight start at a city-frame point; the
+author's ship was at planning (-5588,-3190,0) = city (0,2810,5588)) + `padland:B2-04`: the first plan infeasible
+(the author's failure, reproduced), replan 1/3 feasible, LANDED 101 s. Grid tool: `tests/planner/planner_start_grid.sh`
+(LANDED / REFUSED / CRASH / HANG per start point).
+
+## Stage 4 — B3: one authoritative executed route
+
+Source audit (an exploration of every route representation): no single object held "the route being flown". The
+server's pad-service route (`PadLanding::route` / `leg`) was never replicated - the HUD recomputed it from the ship's
+smoothed place (`hubPadRoute` + a guessed leg, function statics) and could disagree with what the server flew; the HUD
+also kept world-anchored "held" frames and synthesized a straight row to the route's finish (my 2026-11-27 fallback),
+which drifted off a moving / turning hub and drew frames to waypoint #1 even when landed.
+
+Change:
+- `ShipExecutedRouteSnapshot` (requestId, revision = content key of points + current point, owner, phase, frame module,
+  points in the city frame, current point) - filled by the pad service from the SAME values its steering switch uses,
+  replicated on the player's ship (wire schema 85 -> 86).
+- The HUD pad tunnel draws `playerShip.executedRoute` from its current point; the client route builder is gone.
+- The docking computer's own plan stays published while the SAME request stabilizes / secures its course / re-plans
+  (`keepExecutedRoutePublished`); a refused request shows none.
+- The HUD fallback (held / straight frames) removed.
+- Barrier `check_executed_route_single_source.py`.
+Live: ring A1-03 landing - the tunnel from the server's route, 12-13 frames in phase 1, frames down to the touchdown in
+phase 2 (`D:/tmp/lifecycle/run4.log`, `[PadTunnel]`).
+Residual: between two plans of the docking computer (at the ring's sync gate, while the co-rotating leg is planned) the
+old plan is all behind the ship - no frames for those seconds (honest: no route exists yet); the map's route line still
+reads the published corridors, not the executed-route object (one owner per producer, not one object for all).
+
+## Stage 5 — A2 / A3 / A6
+
+- A6 (source + unit): ONE infrastructure state vocabulary `InfrastructureState {Unknown, NotBuilt, Existing, Damaged,
+  Destroyed}` (`CityPadPresence.h`), used by the server's pad request refusal and the client's pad state. DEFECT FIXED:
+  the client answered from the city package of an EARLIER construction stage while the new stage's package assembled
+  (`stageKey` != the stage in force) - a pad just finished read "not built"; now Unknown (the server decides).
+  HubSpaceCheck: the state mapping and its usability equal the presence's.
+- A2 (source + unit): ONE co-rotation rule on `CityCoRotationAt` (`cityVelocityAt`, `relativeVelocity`, `pointToMap`,
+  `vectorToMap`, about the attachment pivot); the two hand-written copies in SpaceStateDocking use it. HubSpaceCheck:
+  worst residual 0.18 mm at 3.3 km - the float rotation matrix of `hubLocalEulerDegToMatrix` (residual limit, noted).
+- A3: the marker / physical projection split (`applyMarker` vs `apply`) and picking by stable id were done on
+  2026-11-27 (9900afb34, live LAND); not reworked.
+
+## Stage 8 — the world save
+
+`docs/WORLD_SAVE_CONTRACT.md`. DEFECT FIXED: the economy and the runtime ships were two files written at different
+moments (a ship bought between them: the price debited, no ship on load). Now ONE generation of all parts committed by
+one atomic manifest write, verified on load (size + FNV-1a 64), the previous generation as the fallback, the legacy
+layout read once; shutdown writes the last generation while the owners exist. `writeFileAtomically` moved into
+WorldSaveStore.cpp (the one write primitive). Unit: `EliteWorldSaveCheck` OK. Live: save -> exit -> load (generation 1,
+day 10204) -> continue -> generation 2 (`D:/tmp/save1`).
+Residual: the save is enabled by `ELITE_ECONOMY_STATE_FILE` only; a default location / "Continue" is an author decision.
+
+## Stage 9 — decomposition, DEV switches, one capability policy
+
+- `core::Capability` (10 named capabilities with reasons) + `capabilityAllowed()`: every preview difference asks the
+  policy; only BuildFlavor.cpp asks the flavour. Barrier `check_capability_policy.py`.
+- DEV switches inventory `docs/DEV_SWITCHES.md` (`tools/dev_switch_inventory.py`, `check` mode): 197 switches - 133
+  `ELITE_DEV_*`, 64 others (configuration, but also cheats and dumps: `ELITE_FUEL_FREE`, `ELITE_CATALOG_SHIPS`).
+- The real preview package REMOVES every `ELITE_*` variable from its process at start except `ELITE_SESSION_LOG` and
+  `ELITE_SERVER_OWN_CLOCK` (`core::scrubDeveloperEnvironmentInPreview`, client and server mains).
+- SpaceState* split by responsibility: NOT done in this pass (the files stay large; stages 2 / 4 moved state out of the
+  render functions, which was the coupling that broke things).

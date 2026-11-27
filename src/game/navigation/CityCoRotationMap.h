@@ -35,6 +35,17 @@ struct CityCoRotationAt
     glm::dvec3 pivot {0.0};    // the module's attachment point (on its spin axis), tactical local
     glm::dmat3 toMap {1.0};    // local axes now -> the frozen map's axes (the city's turn since t0 undone)
     glm::dvec3 omega {0.0};    // the city's turn, tactical local axes, rad/s
+
+    // THE ONE CO-ROTATION RULE (stabilization stage 5, A2): the turning city's own velocity at a tactical local point,
+    // and a velocity relative to it - about the attachment PIVOT (the spin axis), never the hub origin
+    [[nodiscard]] glm::dvec3 cityVelocityAt(const glm::dvec3& localPoint) const { return glm::cross(omega, localPoint - pivot); }
+    [[nodiscard]] glm::dvec3 relativeVelocity(const glm::dvec3& localPoint, const glm::dvec3& localVelocity) const
+    {
+        return localVelocity - cityVelocityAt(localPoint);
+    }
+    // a point / a relative velocity carried into the frozen map
+    [[nodiscard]] glm::dvec3 pointToMap(const glm::dvec3& localPoint) const { return pivot + toMap * (localPoint - pivot); }
+    [[nodiscard]] glm::dvec3 vectorToMap(const glm::dvec3& v) const { return toMap * v; }
 };
 
 inline CityCoRotationAt cityCoRotationAt(const simulation::HubAttachmentSnapshot& a, double t0, double t)

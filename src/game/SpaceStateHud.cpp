@@ -180,7 +180,7 @@ m_systemMapRenderer.render(
         // HantedPreview (the author 2026-11-27: "remove every text from the HUD except the HUD terminal"): the glass
         // texts are dropped from here to the end of the HUD - the terminal and the instrument panel (uiRoot) are let
         // through below; graphics (route frames, compass, markers) are untouched
-        TextRenderer::instance().setSuppressed(core::isPreviewBuild());
+        TextRenderer::instance().setSuppressed(!core::capabilityAllowed(core::Capability::GlassTexts));
         if (pilotGlass)
         {
             renderHudWorldLabels(vp);
@@ -434,7 +434,7 @@ m_systemMapRenderer.render(
         {
             TextRenderer::instance().setSuppressed(false);   // the HUD terminal stays
             renderHudDockingTerminal(vp, playerShip, cockpit);
-            TextRenderer::instance().setSuppressed(core::isPreviewBuild());
+            TextRenderer::instance().setSuppressed(!core::capabilityAllowed(core::Capability::GlassTexts));
             core::hitch::mark("hud_terminal");
 
         // the landing legs, always in sight (author 2026-11-21: «какой-то индикатор на HUD, что шасси убраны / выпущены»):
@@ -497,7 +497,7 @@ m_systemMapRenderer.render(
         core::hitch::mark("hud_legs");
         TextRenderer::instance().setSuppressed(false);   // the instrument panel (reactor, coolant, speed...) stays
         uiRoot->render(vp);
-        TextRenderer::instance().setSuppressed(core::isPreviewBuild());
+        TextRenderer::instance().setSuppressed(!core::capabilityAllowed(core::Capability::GlassTexts));
         core::hitch::mark("hud_ui_root");
 
         TextRenderer::instance().endFrame();
@@ -544,7 +544,7 @@ m_systemMapRenderer.render(
     {
         const bool glassSuppressed = TextRenderer::instance().suppressed();
         TextRenderer::instance().setSuppressed(false);
-        if (!core::isPreviewBuild())
+        if (core::capabilityAllowed(core::Capability::UiLanguageIndicator))
             renderUiLanguageIndicator(vp);
         renderNavigationStressOverlay(vp);
         renderContainmentBeacon(vp);
@@ -821,68 +821,15 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             else
                 qSmooth += (qRaw - qSmooth) * std::min(1.0, qDt / 0.25);
             const glm::dvec3 q = qSmooth;
-            double tallest = 0.0;
-            for (const auto& b : plan->blocks())
-                tallest = std::max(tallest, pad->under ? b.underDepthMeters + 30.0 : b.topHeightMeters);
-            const double transit = std::max({std::min(380.0, tallest + 80.0), std::abs(pad->padPosition.y) + 60.0, game::navigation::traffic::laneTubeCeilingMeters(game::navigation::traffic::HubLaneCatalog::forFrameModule(object.hubAttachment.moduleId), pad->under) + 40.0});
-            // the route the SERVER flies: computed once where the service took the ship (as GameSimulationPadLanding
-            // does), then only what is left of it ahead - recomputed every frame from the moving ship it picked other
-            // tower corners and jumped about, "connecting the ship to who knows what" (author 2026-11-22)
-            static std::string routeKey;
-            static std::vector<glm::dvec3> serviceRoute;
-            static std::size_t serviceLeg = 0;
-            const std::string key = std::string(object.hubAttachment.moduleId) + "/" + address;
-            if (phase == '2')
-                routeKey.clear();
-            else if (key != routeKey)
-            {
-                routeKey = key;
-                serviceRoute = game::navigation::hubPadRoute(
-                    *plan, *pad, q,
-                    game::navigation::traffic::hubPadServiceTransit(transit, std::abs(pad->padPosition.y),
-                                                                    pad->under ? -q.y : q.y),
-                    true);
-                serviceLeg = 0;
-            }
+            // THE ROUTE THE SERVICE EXECUTES (stage 4, B3): its points as published, from the one it flies now - the HUD
+            // recomputed hubPadRoute from the ship's smoothed place and guessed the leg (it disagreed with the server)
+            const auto& executed = playerShip.executedRoute;
             std::vector<glm::dvec3> route;
-            if (phase == '0' || phase == '1')
-            {
-                // the leg the ship is on: the waypoint ahead is the first one not yet passed (never goes back)
-                while (serviceLeg + 1 < serviceRoute.size())
-                {
-                    const glm::dvec3 a = serviceRoute[serviceLeg], b = serviceRoute[serviceLeg + 1];
-                    const glm::dvec3 ab = b - a;
-                    const double len2 = glm::dot(ab, ab);
-                    if (glm::length(q - a) < 60.0 || (len2 > 1.0e-6 && glm::dot(q - a, ab) / len2 > 0.02))
-                        ++serviceLeg;
-                    else
-                        break;
-                }
-                for (std::size_t i = serviceLeg; i < serviceRoute.size(); ++i)
-                    route.push_back(serviceRoute[i]);
-            }
+            if (executed.owner == 1 && executed.frameModuleId == object.hubAttachment.moduleId)
+                for (std::size_t i = executed.currentPoint; i < executed.pointsLocal.size(); ++i)
+                    route.push_back(executed.pointsLocal[i]);
+            (void)servicePlace;
             const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
-            if (pad->padKind == game::navigation::HubPlanModule::PadKind::Hangar)
-            {
-                const int bay = servicePlace;   // the dispatcher's place for this ship (its control state); -1: queued
-                // queued (no place yet): the tunnel ends at the waiting point before the doors, between both bays
-                if (bay < 0)
-                    route.push_back(0.5 * (game::navigation::hubHangarDoorFrontOnStructure(*pad, 0, plan->ring()) +
-                                           game::navigation::hubHangarDoorFrontOnStructure(*pad, 1, plan->ring())));
-                else
-                {
-                    route.push_back(game::navigation::hubHangarDoorFrontOnStructure(*pad, bay, plan->ring()));
-                    route.push_back(game::navigation::hubHangarBayEntryOnStructure(*pad, bay, plan->ring()));
-                    route.push_back(game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring()) + out * 3.0);
-                }
-            }
-            else
-            {
-                // a multi-place berth: down to OUR place (the server's touchdown), not the apron's centre
-                const int bay = servicePlace;
-                const glm::dvec3 place = game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring());
-                route.push_back(pad->autoLanding ? place + out * 3.0 : place + out * game::navigation::HubPadZoneHeight);
-            }
             // the service flies the ship: ITS tunnel, whatever guidance was left (author 2026-11-22: «потерял тоннель на пол
             // дороги» - the route handed over 2.2 km out, a stale guidance hid the service tunnel)
             guidance.frames.clear();
@@ -960,76 +907,9 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             m_activeMainCamera->projectionMatrix(),
             vp
         );
-    // THE ROUTE STAYS IN FRAMES WHILE THE AUTOPILOT FLIES (the author 2026-11-27: "while the autopilot works the route of
-    // frames must always be visible"; the log showed gaps - before the server's corridor exists, and near the ring's
-    // sync gate where every frame is behind / too near): while an autopilot executes (the server's route execution, or
-    // the pad service) and the guidance has no frame, the last frames seen are kept (world-anchored, those still ahead),
-    // and with none seen yet a row of frames runs straight to the route's finish.
-    {
-        struct HeldFrame
-        {
-            glm::dvec3 centerW;
-            game::presentation::GuidanceHudFramePresentation frame;
-        };
-        static std::vector<HeldFrame> held;
-        const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
-        const bool autopilotFlying = guidance.hasAuthoritativeExecution ||
-                                     playerShip.padService.rfind("phase:", 0) == 0;
-        if (guidance.visible && !guidance.frames.empty())
-        {
-            held.clear();
-            for (const auto& f : guidance.frames)
-                held.push_back({shipW + f.relativeCenterMeters, f});
-        }
-        else if (autopilotFlying)
-        {
-            const glm::dvec3 velocity = playerShip.renderTransform.motion.worldVelocityMps;
-            const glm::dvec3 heading = glm::length(velocity) > 0.5 ? glm::normalize(velocity)
-                                                                    : glm::dvec3(playerShip.renderTransform.forward());
-            std::vector<game::presentation::GuidanceHudFramePresentation> frames;
-            for (const auto& h : held)
-            {
-                const glm::dvec3 rel = h.centerW - shipW;
-                if (glm::dot(rel, heading) <= 0.0 || glm::length(rel) > 20000.0)
-                    continue;   // behind or far: not a frame to fly through any more
-                auto f = h.frame;
-                f.relativeCenterMeters = rel;
-                frames.push_back(f);
-            }
-            if (frames.empty())
-            {
-                const auto ordered = m_navigationWorkspace.routePlan().orderedRouteWaypoints();
-                if (!ordered.empty())
-                {
-                    const glm::dvec3 to = world::coordinates::fullMeters(ordered.front()->worldPosition) - shipW;
-                    const double d = glm::length(to);
-                    if (d > 50.0)
-                    {
-                        const glm::dvec3 dir = to / d;
-                        const glm::dvec3 upHint = std::abs(dir.y) < 0.95 ? glm::dvec3(0.0, 1.0, 0.0) : glm::dvec3(1.0, 0.0, 0.0);
-                        const glm::dquat look = glm::quatLookAt(dir, upHint);   // -Z along the way, as the guidance frames
-                        const int n = 10;
-                        for (int k = 1; k <= n; ++k)
-                        {
-                            game::presentation::GuidanceHudFramePresentation f;
-                            f.relativeCenterMeters = dir * (d * k / (n + 1));
-                            f.orientation = look;
-                            f.widthMeters = f.heightMeters = std::clamp(d / 40.0, 20.0, 200.0);
-                            f.opacity = 0.85f;
-                            frames.push_back(f);
-                        }
-                    }
-                }
-            }
-            if (!frames.empty())
-            {
-                guidance.frames = std::move(frames);
-                guidance.visible = true;
-            }
-        }
-        else
-            held.clear();
-    }
+    // (stage 4, B3: the HUD's own route reconstruction - held world-anchored frames and a straight row to the finish -
+    // is gone; the frames are the executed route's only: the docking computer's plan, kept published while the same
+    // request stabilizes / re-plans, and the server's pad-service route)
     m_guidanceCorridorRenderer.render(
         guidance,
         m_activeMainCamera->viewMatrix(),
@@ -3214,8 +3094,8 @@ void SpaceState::layoutCockpitRadioUi(const Viewport& vp)
     const render::cockpit::EngineGroupAnchor frame {group.valid, group.left, group.right, group.top, group.scale};
     const auto panel = render::cockpit::CockpitRadioWidget::panelAboveEngineGroup(frame, m_cockpitRadioWidget.style());
     // HantedPreview (the author 2026-11-27: "hide the stereo"): the magnitola is not shown (nor clickable) in the package
-    m_cockpitRadioWidget.visible = panel.valid() && !core::isPreviewBuild();
-    if (!panel.valid() || core::isPreviewBuild())
+    m_cockpitRadioWidget.visible = panel.valid() && core::capabilityAllowed(core::Capability::CockpitRadioWidget);
+    if (!panel.valid() || !core::capabilityAllowed(core::Capability::CockpitRadioWidget))
     {
         m_cockpitUiRouter.reset();
         return;

@@ -653,6 +653,9 @@ int main(int argc, char** argv)
 {
     // the logs never stall the game loop (a console write per `<<`, a QuickEdit selection)
     core::installAsyncStderr();
+    // the preview package: the developer switches do not exist (before anything reads the environment)
+    if (const int scrubbed = core::scrubDeveloperEnvironmentInPreview(); scrubbed > 0)
+        std::cerr << "[Preview] " << scrubbed << " developer environment switch(es) ignored" << std::endl;
     core::hideOwnConsoleInPreview();
     if (const std::string anchored = core::anchorWorkingDirectoryToExecutable(); !anchored.empty())
         std::cerr << "[Startup] working directory set to the executable's folder: " << anchored << std::endl;

@@ -403,6 +403,15 @@ target_include_directories(EliteHubSpaceCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
 target_compile_features(EliteHubSpaceCheck PRIVATE cxx_std_17)
 target_link_libraries(EliteHubSpaceCheck PRIVATE nlohmann_json::nlohmann_json EliteNavigationWorldRuntime)
 
+# Stabilization stage 8: the world save contract (one generation of all parts, one commit, verified load)
+add_executable(EliteWorldSaveCheck
+    tests/world_save/WorldSaveCheck.cpp
+    src/game/economy/WorldSaveStore.cpp
+)
+target_include_directories(EliteWorldSaveCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+target_compile_features(EliteWorldSaveCheck PRIVATE cxx_std_17)
+target_link_libraries(EliteWorldSaveCheck PRIVATE nlohmann_json::nlohmann_json)
+
 # Game-level maneuver selection sits deliberately above NavigationWorld.
 # It consumes already-produced candidate annotations and active control-law
 # context; it owns no world geometry, trajectory proof or physics.
@@ -782,6 +791,7 @@ add_executable(EliteGame
     src/game/economy/TaxModel.cpp
     src/game/economy/PriceModel.cpp
     src/game/economy/EconomyServer.cpp
+    src/game/economy/WorldSaveStore.cpp
     src/game/economy/CargoRegistry.cpp
     src/game/economy/ContractBoard.cpp
     src/game/economy/TradeQuoteModel.cpp
@@ -1091,6 +1101,7 @@ if(ELITE_BUILD_SERVER)
         src/game/economy/TaxModel.cpp
         src/game/economy/PriceModel.cpp
         src/game/economy/EconomyServer.cpp
+        src/game/economy/WorldSaveStore.cpp
         src/game/economy/CargoRegistry.cpp
         src/game/economy/ContractBoard.cpp
         src/game/economy/TradeQuoteModel.cpp
@@ -1415,6 +1426,7 @@ if(ELITE_BUILD_SERVER)
         src/game/economy/TaxModel.cpp
         src/game/economy/PriceModel.cpp
         src/game/economy/EconomyServer.cpp
+        src/game/economy/WorldSaveStore.cpp
         src/game/economy/CargoRegistry.cpp
         src/game/economy/ContractBoard.cpp
         src/game/economy/TradeQuoteModel.cpp

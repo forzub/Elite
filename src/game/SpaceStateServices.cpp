@@ -320,7 +320,7 @@ void SpaceState::sendRefitCommand(bool apply, const game::ship::refit::RefitOper
 {
     if (!m_client)
         return;
-    if (apply && core::isPreviewBuild())
+    if (apply && !core::capabilityAllowed(core::Capability::DevCommands))
         return;   // HantedPreview: the DEV apply (free of charge) is unavailable
     ClientShipCommand command;
     command.type = apply ? ClientShipCommand::RefitApply : ClientShipCommand::RefitPreview;

@@ -3575,7 +3575,7 @@ m_playerView->updateCockpitStateFromSnapshot(
                     std::snprintf(text, sizeof text, forwardScope ? "RADAR FWD %.0f km  |  %zu tracks" : "RADAR %.0f km  |  %zu tracks  [R]",
                                   m_radarDisplayRangeMeters / 1000.0, views.size());
                 label->label = text;
-                label->visible = m_activeCameraMode == ShipCameraMode::Cockpit && !core::isPreviewBuild();   // the front view only; HantedPreview: hidden
+                label->visible = m_activeCameraMode == ShipCameraMode::Cockpit && core::capabilityAllowed(core::Capability::RadarRangeLabel);   // the front view only; HantedPreview: hidden
             }
         }
     }

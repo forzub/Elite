@@ -134,6 +134,16 @@ bool devCommandAccepted(const char* what, EntityId ship)
 void GameServer::setDevCommandsAllowed(bool allowed) noexcept { g_devCommandsAllowed = allowed; }
 bool GameServer::devCommandsAllowed() noexcept { return g_devCommandsAllowed.load(); }
 
+GameServer::~GameServer()
+{
+    // the world save's last generation: the ships and the economy together, while the ships' owners still exist (the
+    // members are destroyed after this body; the economy's own destructor would otherwise call a provider into them)
+    if (!m_runtimeShips.empty() && !m_economy.stateFilePath().empty())
+        saveRuntimeShips();
+    m_economy.flushFinal();
+    m_economy.setCompanionProvider({});   // its last parts stay with the economy (written again if it is dirty later)
+}
+
 GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
     : m_diagnostics{}
     , m_simulation(m_diagnostics)
@@ -553,6 +563,13 @@ m_simulation.setCelestialBodyKinematicStateAu(
         {
             m_economy.setUniverseTime(universeTime);   // a restored port call's berth time runs on this clock
             m_economy.start(game::economy::EconomyModel::dayOf(universeTime));
+            // stage 8: the runtime ships are a part of the economy's world-save generation
+            m_economy.setCompanionProvider([this] {
+                std::vector<game::economy::WorldSavePart> parts;
+                if (!m_shipsJson.empty())
+                    parts.push_back({"ships", m_shipsJson});
+                return parts;
+            });
             for (const auto& [playerValue, player] : m_players.all())
                 m_economy.ensurePlayer(playerValue, m_initialSimulationSystemId);
             game::economy::service::Bindings bindings;
@@ -1506,7 +1523,7 @@ void GameServer::update(double dt)
                     << shipCmd.type << "\n";
 
             // HantedPreview: the developer commands are refused by the server itself (not only hidden on the client)
-            if (core::isPreviewBuild() && shipCmd.type == ClientShipCommand::DevFullRestore)
+            if (!core::capabilityAllowed(core::Capability::DevCommands) && shipCmd.type == ClientShipCommand::DevFullRestore)
             {
                 std::cerr << "[Preview] DEV command refused (DevFullRestore)" << std::endl;
                 cmdQueue.pop_front();
@@ -1729,7 +1746,7 @@ void GameServer::update(double dt)
                 case ClientShipCommand::RefitPreview:
                 case ClientShipCommand::RefitApply:
                 {
-                    if (shipCmd.type == ClientShipCommand::RefitApply && core::isPreviewBuild())
+                    if (shipCmd.type == ClientShipCommand::RefitApply && !core::capabilityAllowed(core::Capability::DevCommands))
                     {
                         std::cerr << "[Refit] the DEV apply refused: not available in the preview build" << std::endl;
                         break;
@@ -2817,12 +2834,9 @@ void GameServer::saveRuntimeShips()
     }
     // the "saved" state only after the write succeeded: a failed write stays dirty and is retried on the next tick
     // that allows it (not an hour later by the periodic save)
-    if (!game::economy::writeFileAtomically(path + ".ships.json", j.dump(1)))
-    {
-        std::cerr << "[ShipSave] NOT saved: " << path << ".ships.json" << std::endl;
-        m_shipsSaveRetryTick = m_serverTick + 300;   // ~5 s: a full disk must not turn into a save per tick
-        return;
-    }
+    // stage 8: the ships are committed WITH the economy (one generation, WorldSaveStore) - not a file of their own
+    m_shipsJson = j.dump(1);
+    m_economy.companionChanged("ships", m_shipsDirty);
     m_shipsDirty = false;
     m_shipsSavedTick = m_serverTick;
 }
@@ -2835,13 +2849,14 @@ void GameServer::restoreRuntimeShipsIfDue()
     const std::string path = m_economy.stateFilePath();
     if (path.empty())
         return;
-    std::ifstream f(path + ".ships.json", std::ios::binary);
-    if (!f)
+    // stage 8: the ships of the loaded world-save generation (the economy's)
+    const std::string* saved = m_economy.loadedCompanion("ships");
+    if (!saved)
         return;
     nlohmann::json j;
     try
     {
-        f >> j;
+        j = nlohmann::json::parse(*saved);
     }
     catch (const std::exception& e)
     {
@@ -3633,7 +3648,7 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
 {
     using Op = game::network::ClientEconomyCommand::Op;
     // HantedPreview: the developer economy commands are refused by the server itself
-    if (core::isPreviewBuild() &&
+    if (!core::capabilityAllowed(core::Capability::DevCommands) &&
         (command.op == Op::DevCargoAdd || command.op == Op::DevCargoClear || command.op == Op::DevEconomyDays ||
          command.op == Op::DevSpendAll || command.op == Op::DevCustoms || command.op == Op::DevGrant))
     {

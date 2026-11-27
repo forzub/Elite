@@ -768,6 +768,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
             state.padService = s.padService;
+            state.executedRoute = s.executedRoute;
             state.padNotice = s.padNotice;
             state.landingGear = s.landingGear;
             state.traffic = s.traffic;
@@ -876,6 +877,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
             state.padService = s.padService;
+            state.executedRoute = s.executedRoute;
             state.padNotice = s.padNotice;
             state.landingGear = s.landingGear;
             state.traffic = s.traffic;

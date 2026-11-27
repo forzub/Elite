@@ -253,7 +253,7 @@ void EngineThrustIndicatorRenderer::render(
             // engines still show their executed thrust on these bars.
             // HantedPreview (the author 2026-11-27: no overlapping texts): the nozzle angles under the bars ran into each
             // other and into the status line below - not shown in the preview (a secondary readout)
-            if(!core::isPreviewBuild() &&
+            if(core::capabilityAllowed(core::Capability::NozzleAngleReadouts) &&
                 bar->hasNozzleAngle && bar->thrust01>0.005f &&
                 bar->nozzleAngleDeg>0.5f)
             {
@@ -284,7 +284,7 @@ void EngineThrustIndicatorRenderer::render(
                 std::snprintf(pct,sizeof(pct),"%.0f%%",integrity*100.0f);
                 // under the pad: on the temperature row it ran into the right limit ("1191 K")
                 text.textDrawPx(pct,padX-12*scale,
-                    centerY+((core::isPreviewBuild() && outwardRight)?9.0f:-17.0f)*scale,
+                    centerY+((!core::capabilityAllowed(core::Capability::NozzleAngleReadouts) && outwardRight)?9.0f:-17.0f)*scale,
                     std::max(9,static_cast<int>(10*scale)),
                     style.label);
             }

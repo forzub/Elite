@@ -35,7 +35,7 @@ public:
         if (viewport.width <= 0 || viewport.height <= 0)
             return;
         // the HantedPreview package hides this developer strip (its keys stay; the package README lists them)
-        if (core::isPreviewBuild())
+        if (!core::capabilityAllowed(core::Capability::DevShortcutStrip))
             return;
 
         // Modified function-key chords are the primary purpose of

@@ -8,6 +8,12 @@ option(ELITE_BUILD_SERVER "Build the headless EliteServer executable" OFF)
 option(ELITE_BUILD_ASSET_EDITOR "Build the standalone model asset editor" OFF)
 option(ELITE_REQUIRE_BUNDLED_UI_FONTS "Fail client UI pack build when declared bundled fonts are missing" OFF)
 option(ELITE_MODEL_ASSET_LIBIGL_SPIKE "Build the isolated libigl mesh-repair spike" OFF)
+# HantedPreview: the closed preview package (tools/package_preview.sh). Only src/core/BuildFlavor.cpp sees the define -
+# the rest of the code asks core::isPreviewBuild() / core::appDataFolderName(), so the flag costs one object file.
+option(ELITE_PREVIEW_BUILD "Build the HantedPreview package flavour (English default, own app data, diagnostics hidden)" OFF)
+if(ELITE_PREVIEW_BUILD)
+    set_source_files_properties(src/core/BuildFlavor.cpp PROPERTIES COMPILE_DEFINITIONS ELITE_PREVIEW_BUILD=1)
+endif()
 
 if(ELITE_BUILD_CLIENT OR ELITE_BUILD_ASSET_EDITOR)
     set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -163,6 +169,7 @@ target_include_directories(EliteNavigationGeometry PUBLIC
 # clouds): deterministic fields, cube-sphere patches, streaming. No GL.
 add_library(EliteCelestialSurface STATIC
     src/core/ThreadPriority.cpp
+    src/core/BuildFlavor.cpp
     src/world/celestial/surface/BodySurfaceFieldLoader.cpp
     src/world/celestial/surface/AppearancePassport.cpp
     src/core/DevMemoryLedger.cpp

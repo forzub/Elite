@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include <chrono>
 #include "src/core/ShutdownRequest.h"
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
@@ -652,6 +653,8 @@ int main(int argc, char** argv)
 {
     // the logs never stall the game loop (a console write per `<<`, a QuickEdit selection)
     core::installAsyncStderr();
+    if (const std::string anchored = core::anchorWorkingDirectoryToExecutable(); !anchored.empty())
+        std::cerr << "[Startup] working directory set to the executable's folder: " << anchored << std::endl;
     core::optOutOfPowerThrottling("client");   // unfocused: no EcoQoS (the embedded server must keep real time)
 #ifdef _WIN32
     SetConsoleCtrlHandler(eliteConsoleCtrlHandler, TRUE);

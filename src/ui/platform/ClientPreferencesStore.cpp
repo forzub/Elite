@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include "src/ui/platform/ClientPreferencesStore.h"
 
 #include <cstdint>
@@ -126,16 +127,16 @@ fs::path platformPreferencesRoot()
         Capacity
     );
     if (length > 0 && length < Capacity)
-        return fs::path(localAppData) / "EliteGame" / "client";
+        return fs::path(localAppData) / core::appDataFolderName() / "client";
 
     std::error_code ec;
     const fs::path temp = fs::temp_directory_path(ec);
-    return (ec ? fs::current_path() : temp) / "EliteGame" / "client";
+    return (ec ? fs::current_path() : temp) / core::appDataFolderName() / "client";
 #else
     if (const char* xdgConfigHome = std::getenv("XDG_CONFIG_HOME"))
-        return fs::path(xdgConfigHome) / "EliteGame" / "client";
+        return fs::path(xdgConfigHome) / core::appDataFolderName() / "client";
     if (const char* home = std::getenv("HOME"))
-        return fs::path(home) / ".config" / "EliteGame" / "client";
+        return fs::path(home) / ".config" / core::appDataFolderName() / "client";
     return fs::current_path() / ".elitegame" / "client";
 #endif
 }

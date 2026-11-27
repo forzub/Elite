@@ -734,6 +734,27 @@ std::string LocalizationService::text(
     return resolve(it->second, englishFallback.empty() ? key : englishFallback);
 }
 
+std::string LocalizationService::format(
+    const std::string& key,
+    const std::vector<MessageParam>& params,
+    const std::string& englishTemplateFallback
+) const
+{
+    return fillTemplate(text(key, englishTemplateFallback), params);
+}
+
+std::string LocalizationService::render(const std::string& messageOrText) const
+{
+    std::string key;
+    std::vector<MessageParam> params;
+    if (!parseMessage(messageOrText, key, params))
+        return messageOrText;
+    for (auto& p : params)
+        if (isMessage(p.value))
+            p.value = render(p.value);
+    return format(key, params);
+}
+
 std::string LocalizationService::catalogName(
     const std::string& domain,
     const std::string& stableId,

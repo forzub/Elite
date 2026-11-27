@@ -1,5 +1,6 @@
 #ifdef _WIN32
 
+#include "src/core/BuildFlavor.h"
 #include "ui/browser/GameWebView.h"
 #include "src/core/RuntimeTrace.h"
 
@@ -69,7 +70,7 @@ static std::filesystem::path configureProcessLocalWebView2UserDataFolder()
         root = std::filesystem::temp_directory_path();
 
     const std::filesystem::path udf =
-        root / "EliteGame" / "WebView2Sessions" /
+        root / core::appDataFolderNameW() / "WebView2Sessions" /
         std::to_wstring(GetCurrentProcessId());
 
     std::filesystem::create_directories(udf);

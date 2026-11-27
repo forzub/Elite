@@ -644,6 +644,7 @@ void Application::init()
                 const std::filesystem::path webRoot(webUiRoot);
                 const std::filesystem::path localizationRoot =
                     webRoot.parent_path() / "localization";
+                game::localization::setActiveService(&m_localization);   // audit #7 D7: the client's tables
                 if (!m_localization.loadDirectory(localizationRoot.string()))
                 {
                     std::cerr << "[Localization] core tables incomplete; English/key fallback remains active\n";

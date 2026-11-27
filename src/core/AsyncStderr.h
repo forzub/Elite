@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/core/BuildFlavor.h"
 #include <algorithm>
 #include <chrono>
 #include <condition_variable>
@@ -71,7 +72,7 @@ public:
         try
         {
             namespace fs = std::filesystem;
-            const fs::path dir = fs::path(base) / "EliteGame" / "logs";
+            const fs::path dir = fs::path(base) / core::appDataFolderName() / "logs";
             fs::create_directories(dir);
             // keep the 9 newest of this prefix (+ the new one)
             std::vector<fs::path> old;

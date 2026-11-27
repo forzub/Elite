@@ -7,6 +7,7 @@
 // heard) is recorded with its inhabited zone and its docks (a МЧС rescue dock from the city plan), relative to the hub's
 // parent body (an orbital hub moves with it). A failed onboard computer (motion.navComputerState 2) records nothing.
 // One journal per ship (its instance id): a cockpit-capsule keeps its ship's computer.
+#include "src/core/BuildFlavor.h"
 #include "src/game/SpaceStateInternal.h"
 
 #include "src/game/navigation/HubPlanCatalog.h"
@@ -33,7 +34,7 @@ std::filesystem::path journalDir()
     if (const char* dir = std::getenv("ELITE_JOURNAL_DIR"); dir && *dir)
         return fs::path(dir);
     if (const char* base = std::getenv("LOCALAPPDATA"); base && *base)
-        return fs::path(base) / "EliteGame" / "journal";
+        return fs::path(base) / core::appDataFolderName() / "journal";
     return fs::path("journal");
 }
 } // namespace

@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include "src/game/network/WireCompressionLz4.h"
 #include "src/core/AsyncStderr.h"
 #include <algorithm>
@@ -2356,6 +2357,8 @@ int main(int argc, char** argv)
 {
     // the session log (%LOCALAPPDATA%/EliteGame/logs/server_*.log) and non-blocking stderr, as the client
     core::installAsyncStderr("server");
+    if (const std::string anchored = core::anchorWorkingDirectoryToExecutable(); !anchored.empty())
+        std::cerr << "[Startup] working directory set to the executable's folder: " << anchored << std::endl;
     core::optOutOfPowerThrottling("server");   // a dedicated server is never "in the background"
     {
         // DEV commands only when the operator asks for them

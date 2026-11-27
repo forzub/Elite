@@ -3,6 +3,7 @@
 // Private helpers shared by the SpaceState translation units
 // (SpaceState*.cpp). Not a public interface.
 
+#include "src/core/BuildFlavor.h"
 #include "src/core/HitchProfiler.h"
 #include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
@@ -229,7 +230,7 @@ namespace space_state_detail
             if (*localAppData != '\0')
             {
                 return fs::path(localAppData) /
-                    "EliteGame" /
+                    core::appDataFolderName() /
                     "debug_control_defaults.json";
             }
         }
@@ -240,7 +241,7 @@ namespace space_state_detail
             if (*xdgConfig != '\0')
             {
                 return fs::path(xdgConfig) /
-                    "EliteGame" /
+                    core::appDataFolderName() /
                     "debug_control_defaults.json";
             }
         }
@@ -251,7 +252,7 @@ namespace space_state_detail
             {
                 return fs::path(home) /
                     ".config" /
-                    "EliteGame" /
+                    core::appDataFolderName() /
                     "debug_control_defaults.json";
             }
         }

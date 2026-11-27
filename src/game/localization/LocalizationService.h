@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "src/game/localization/LocalizedMessage.h"
+
 namespace game::localization
 {
 class LocalizationService
@@ -40,6 +42,16 @@ public:
         const std::string& key,
         const std::string& englishFallback = std::string()
     ) const;
+
+    // a template with named parameters ("{pad}") in the current language (audit #7 D7.4)
+    std::string format(
+        const std::string& key,
+        const std::vector<MessageParam>& params,
+        const std::string& englishTemplateFallback = std::string()
+    ) const;
+    // a string from a producer (the server, the simulation): a language-neutral Message (LocalizedMessage.h) is rendered
+    // in the current language, its message-valued parameters too; a plain string is returned as it is
+    std::string render(const std::string& messageOrText) const;
 
     std::string catalogName(
         const std::string& domain,
@@ -90,3 +102,39 @@ private:
     std::size_t m_skippedFileCount = 0;
 };
 }
+
+namespace game::localization
+{
+// THE CLIENT'S localization (audit #7 D7): registered by Application once its tables are loaded, for presentation
+// helpers deep in the client that have no service reference. CLIENT ONLY - server / simulation code never asks it (it
+// builds language-neutral Messages, LocalizedMessage.h). Null until registered: callers keep their English fallback.
+inline const LocalizationService*& activeServiceSlot()
+{
+    static const LocalizationService* slot = nullptr;
+    return slot;
+}
+inline const LocalizationService* activeService() { return activeServiceSlot(); }
+inline void setActiveService(const LocalizationService* service) { activeServiceSlot() = service; }
+// key + named parameters in the active language; `englishTemplate` when no service / no key
+inline std::string tr(const std::string& key, const std::vector<MessageParam>& params, const std::string& englishTemplate)
+{
+    if (const auto* s = activeService())
+        return s->format(key, params, englishTemplate);
+    return fillTemplate(englishTemplate, params);
+}
+inline std::string tr(const std::string& key, const std::string& englishText)
+{
+    if (const auto* s = activeService())
+        return s->text(key, englishText);
+    return englishText;
+}
+// a producer's string (Message or plain) in the active language
+inline std::string renderMessage(const std::string& messageOrText)
+{
+    if (const auto* s = activeService())
+        return s->render(messageOrText);
+    std::string key;
+    std::vector<MessageParam> params;
+    return parseMessage(messageOrText, key, params) ? key : messageOrText;
+}
+} // namespace game::localization

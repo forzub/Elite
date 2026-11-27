@@ -1,6 +1,7 @@
 # build artifacts
 /build/
 /build-relwithdebinfo/
+/build-release/
 /out/
 /cache/
 /bin/

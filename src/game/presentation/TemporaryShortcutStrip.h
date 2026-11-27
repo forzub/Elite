@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/core/BuildFlavor.h"
 #include <algorithm>
 #include <array>
 #include <string>
@@ -32,6 +33,9 @@ public:
     )
     {
         if (viewport.width <= 0 || viewport.height <= 0)
+            return;
+        // the HantedPreview package hides this developer strip (its keys stay; the package README lists them)
+        if (core::isPreviewBuild())
             return;
 
         // Modified function-key chords are the primary purpose of

@@ -321,6 +321,22 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
                 building = &m;
     if (!ship || !building || !building->pad)
         return false;
+    // the ship must fit a place (author 2026-11-27: a place is a square of the Cobra class's largest size + 30 %)
+    if (const auto& dims = ship->core().desc().logicalDimensions(); dims.enabled)
+    {
+        const double size = std::max({static_cast<double>(dims.length), static_cast<double>(dims.width),
+                                      static_cast<double>(dims.height)});
+        const double side = game::navigation::hubBerthPlaceSide(*building);
+        if (side > 0.0 && size > side)
+        {
+            m_padNotices[shipId] = {"refused:too_big:" + address + ":" + std::to_string(static_cast<int>(std::ceil(size))) + ":" +
+                                        std::to_string(static_cast<int>(side)),
+                                    serverTime()};
+            std::cerr << "[PadLanding] ship " << shipId.value << " pad " << address << ": the ship (" << size
+                      << " m) does not fit a place (" << side << " m) - refused" << std::endl;
+            return false;
+        }
+    }
     // THE DISPATCHER (author 2026-11-22: «если 3 места - все три могут быть заняты. если места все заняты - вход
     // запрещён»): a free place of the module for this ship; none -> refused, "taken" with the expected wait
     const int places = game::navigation::hubBerthPlaces(*building);
@@ -756,7 +772,9 @@ std::string GameSimulation::padServiceStatus(EntityId shipId) const
     if (const auto n = m_padNotices.find(shipId); n != m_padNotices.end() && serverTime() - n->second.second < 4.0)
         return n->second.first;
     if (const auto p = m_padLandings.find(shipId); p != m_padLandings.end())
-        return "phase:" + std::to_string(p->second.phase) + ":" + p->second.address;
+        // the CITY with the address (live 2026-11-27: addresses repeat across cities - the client's tunnel took
+        // "A2-03" of a city in another star system and drew its frames 1e12 m away, "frames in the sky")
+        return "phase:" + std::to_string(p->second.phase) + ":" + p->second.frameModuleId + "/" + p->second.address;
     return {};
 }
 

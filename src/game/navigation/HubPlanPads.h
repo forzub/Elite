@@ -23,6 +23,13 @@ struct HubPlanModule;
 inline constexpr double HubPadDeckSide = 36.0;          // hubl_pad_roof / hubl_pad_stilts deck
 inline constexpr double HubPadRoofDeckTop = 2.2;        // the roof pad's deck top over the roof
 inline constexpr double HubPadStiltsDeckTop = 25.0;     // the stilts pad's deck top over the plane
+// a landing PLACE is a square of this side (author 2026-11-27: «максимальный размер кораблей того же класса, что и кобра,
+// + 30 % - сторона квадрата площадки»): the Cobra's class (Cobrett-I, Cobra Mk1) is 26 m at its widest -> 33.8 -> 34 m.
+// The garage models are built to it (tools/models/units/hub_pads.py PLACE_SIDE); the roof / stilts decks are 36 m.
+inline constexpr double HubBerthPlaceSideMeters = 34.0;
+// a 1 / 2-place garage's footprint from its origin (the apron centre): the apron one place deep in front, the hangar
+// one place deep behind it (-Z) - hub_pads.py G_D = APRON = PLACE_SIDE
+inline constexpr double HubGarageFootprintBackMeters = 0.5 * HubBerthPlaceSideMeters + HubBerthPlaceSideMeters;
 inline constexpr double HubPadClearMeters = 30.0;       // a pad on a free plot: no building nearer than this
 // the repair hangar (hubl_repair_hangar: 90 x 50 x 22 m, the door 80 x 18 m on its +Z): its free plot, the bay's touchdown
 // (the wide one, author 2026-11-22: «да, делай ангар пошире» - 2 places for ships up to ~40 m: 110 x 60 x 26 m, the
@@ -157,7 +164,13 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
         if ((module.padKind != Kind::Stilts && !garage) || module.block < 0)
             continue;
         const auto& block = blocks[static_cast<std::size_t>(module.block)];
-        const double clear = hangar ? HubHangarClearMeters : HubPadClearMeters;
+        // the plot's clearance: a GARAGE is searched by its whole footprint's centre (1 / 2 places wide, an apron + a
+        // hangar = 2 places deep) - the circle round that centre; its apron is then set one half place toward the open
+        // side, the hangar behind it toward the building
+        const double garageHalfWidth = 0.5 * HubBerthPlaceSideMeters * (module.padPlaces >= 2 ? 2.0 : 1.0);
+        const double clear = hangar ? HubHangarClearMeters
+                           : module.padKind == Kind::Garage ? std::hypot(garageHalfWidth, HubBerthPlaceSideMeters)
+                                                            : HubPadClearMeters;
         const glm::dvec2 centre(0.5 * (module.rect.x + module.rect.z), 0.5 * (module.rect.y + module.rect.w));
         std::vector<const HubPlanModule*> near;   // this block, this tier: the buildings and the free-plot pads so far
         for (const auto& other : modules)
@@ -231,8 +244,15 @@ inline void assignHubPlanAddressesAndPads(std::vector<HubPlanBlock>& blocks, std
             module.padKind = Kind::None;
             continue;
         }
+        if (module.padKind == Kind::Garage)
+        {
+            // the footprint's centre found: the apron (the module origin) one half place away from the building
+            glm::dvec2 away = at - centre;
+            away = glm::length(away) > 1.0e-6 ? glm::normalize(away) : glm::dvec2(0.0, 1.0);
+            at += away * (0.5 * HubBerthPlaceSideMeters);
+        }
         const double side = module.under ? -1.0 : 1.0;
-        module.padRadiusMeters = 18.0;
+        module.padRadiusMeters = module.padKind == Kind::Garage ? std::hypot(garageHalfWidth, 0.5 * HubBerthPlaceSideMeters) : 18.0;
         module.padOrigin = glm::dvec3(at.x, 0.0, at.y);
         // the stilts deck 25 m up; the garage apron at the plane (its hangar behind it, its back to the building:
         // the module's -Z toward the building)
@@ -312,9 +332,21 @@ inline int hubDockPricePerHour(const HubPlan& plan)
     return 250;
 }
 
-// the 2-place garage (hubl_garage2, tools/models/units/hub_pads.py: G2_W 40 m apron, its two marked places at x = +-w/4,
+// the side of one landing place of a berth (its square): the dispatcher admits a ship whose largest dimension fits it
+inline double hubBerthPlaceSide(const HubPlanModule& m)
+{
+    switch (m.padKind)
+    {
+        case HubPlanModule::PadKind::Roof:
+        case HubPlanModule::PadKind::Stilts: return HubPadDeckSide;
+        case HubPlanModule::PadKind::Garage: return HubBerthPlaceSideMeters;
+        case HubPlanModule::PadKind::Hangar: return 40.0;   // the repair hangar's bay: ships up to ~40 m (hub_pads.py)
+        default: return 0.0;
+    }
+}
+// the 2-place garage (hubl_garage2, tools/models/units/hub_pads.py: G2_W = 2 places wide, its two marked places at x = +-w/4,
 // the module origin at the apron's centre): a place's centre from the apron centre along the module +X
-inline constexpr double HubGarage2PlaceX = 10.0;
+inline constexpr double HubGarage2PlaceX = 0.5 * HubBerthPlaceSideMeters;   // the two places' centres: +-w/4 of a 2-place-wide garage
 // a place's touchdown point (PLAN strip metres): a hangar's bay / a 2-place garage's place left / right of the centre
 // line; the others: the pad itself. (Audit A5 2026-11-27: the garage's two places were reserved apart by the dispatcher
 // but landed on ONE point - only the hangar used `bay`.)

@@ -669,11 +669,17 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
         playerShip.padService[6] != '3')
     {
         const char phase = playerShip.padService[6];
-        const std::string address = playerShip.padService.substr(8);
+        // "phase:<n>:<frame module>/<address>": the city by its frame AND in the ship's own system (an address alone
+        // repeats across cities - the tunnel took a city of another star system, its frames 1e12 m off)
+        const std::string where = playerShip.padService.substr(8);
+        const auto slash = where.rfind('/');
+        const std::string frameModule = slash == std::string::npos ? std::string() : where.substr(0, slash);
+        const std::string address = slash == std::string::npos ? where : where.substr(slash + 1);
         const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
         for (const auto& [oid, object] : m_client->world().objects())
         {
-            if (!object.hubAttachment.valid)
+            if (!object.hubAttachment.valid || object.systemId != playerShip.transform.motion.systemId ||
+                (!frameModule.empty() && object.hubAttachment.moduleId != frameModule))
                 continue;
             const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId);
             if (!plan)
@@ -759,8 +765,17 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                 route.push_back(game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring()) + out * 3.0);
             }
             else
-                route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0
-                                                 : pad->padPosition + out * game::navigation::HubPadZoneHeight);
+            {
+                // a multi-place berth: down to OUR place (the server's touchdown), not the apron's centre
+                int bay = 0;
+                const std::string mine = address + "#";
+                const std::string who = "@" + std::to_string(m_playerId.value);
+                for (const auto& b : object.occupiedBerths)
+                    if (b.compare(0, mine.size(), mine) == 0 && b.find(who) != std::string::npos)
+                        bay = std::atoi(b.c_str() + mine.size());
+                const glm::dvec3 place = game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring());
+                route.push_back(pad->autoLanding ? place + out * 3.0 : place + out * game::navigation::HubPadZoneHeight);
+            }
             // the service flies the ship: ITS tunnel, whatever guidance was left (author 2026-11-22: «потерял тоннель на пол
             // дороги» - the route handed over 2.2 km out, a stale guidance hid the service tunnel)
             guidance.frames.clear();
@@ -796,6 +811,25 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                     guidance.frames.push_back(f);
                 }
                 prev = wp;
+            }
+            // DEV: ELITE_DEV_PAD_TUNNEL_TRACE=1 (the "frames in the sky" bug, author's screenshots 2026-11-27): once a second
+            if (static const bool tunnelTrace = std::getenv("ELITE_DEV_PAD_TUNNEL_TRACE") != nullptr; tunnelTrace)
+            {
+                static auto tracedAt = std::chrono::steady_clock::now();
+                if (std::chrono::steady_clock::now() - tracedAt > std::chrono::seconds(1))
+                {
+                    tracedAt = std::chrono::steady_clock::now();
+                    std::cerr << "[PadTunnel] phase " << phase << " q (" << q.x << "," << q.y << "," << q.z << ") qRaw (" << qRaw.x << ","
+                              << qRaw.y << "," << qRaw.z << ") pad (" << pad->padPosition.x << "," << pad->padPosition.y << ","
+                              << pad->padPosition.z << ") route " << route.size() << " frames " << guidance.frames.size();
+                    if (!guidance.frames.empty())
+                        std::cerr << " first rel (" << guidance.frames.front().relativeCenterMeters.x << ","
+                                  << guidance.frames.front().relativeCenterMeters.y << ","
+                                  << guidance.frames.front().relativeCenterMeters.z << ") last rel ("
+                                  << guidance.frames.back().relativeCenterMeters.x << "," << guidance.frames.back().relativeCenterMeters.y
+                                  << "," << guidance.frames.back().relativeCenterMeters.z << ")";
+                    std::cerr << " city " << object.hubAttachment.moduleId << std::endl;
+                }
             }
             break;
         }

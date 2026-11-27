@@ -5635,7 +5635,11 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     // the assist must not fight it. Found live 2026-11-27 (D:/tmp/nav3c): from the station handoff to "docked" the
     // assist "dodged" the dock's own walls every 1-2 s (course margin -1000 m, inside the dock by its sphere chains):
     // "манёвр уклонения / управление у пилота" in turn, the ship jerked - the author saw it as freezes every 2-3 s
-    if (player.dockDispatcher.active && player.dockDispatcher.stationControlled)
+    // ... and while the city's PAD SERVICE flies it (phases 0-2: across, over the pad, down; live 2026-11-27, garage
+    // A2-03: the assist "dodged" the city round the descent 7 times - the author's screenshot "баг с рамками")
+    const bool padServiceFlies = player.padService.size() > 7 && player.padService.rfind("phase:", 0) == 0 &&
+                                 player.padService[6] >= '0' && player.padService[6] <= '2';
+    if ((player.dockDispatcher.active && player.dockDispatcher.stationControlled) || padServiceFlies)
     {
         reflex.reset();
         return quiet();

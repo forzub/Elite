@@ -903,6 +903,16 @@ void SpaceState::updatePilotTakeover(bool touching)
                     line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
                 else if (status == "taken:frame")
                     line = "СЛУЖБА ПЛОЩАДОК: корабль взят в кадр хаба";
+                else if (status.rfind("refused:too_big:", 0) == 0)
+                {
+                    // "refused:too_big:<address>:<ship m>:<place m>"
+                    const std::string rest = status.substr(16);
+                    const auto a = rest.find(':'), b = rest.rfind(':');
+                    line = a != std::string::npos && b != std::string::npos && b > a
+                               ? "ДИСПЕТЧЕР: площадка " + rest.substr(0, a) + " - корабль " + rest.substr(a + 1, b - a - 1) +
+                                     " м не помещается на место " + rest.substr(b + 1) + " м, выберите другую площадку"
+                               : "ДИСПЕТЧЕР: корабль не помещается на эту площадку";
+                }
                 else if (status.rfind("refused:taken:", 0) == 0)
                 {
                     // "refused:taken:<frame>/<address>:<wait min>" - the dispatcher's red line follows (SpaceStateHud)
@@ -951,7 +961,9 @@ void SpaceState::updatePilotTakeover(bool touching)
                 else if (status.rfind("phase:", 0) == 0 && status.size() > 8)
                 {
                     const char phase = status[6];
-                    const std::string address = status.substr(8);
+                    // "phase:<n>:<frame>/<address>": the address for the pilot
+                    const std::string where = status.substr(8);
+                    const std::string address = where.substr(where.rfind('/') == std::string::npos ? 0 : where.rfind('/') + 1);
                     line = phase == '0'   ? "СЛУЖБА ПЛОЩАДОК: набор высоты транзита над городом"
                          : phase == '1' ? "СЛУЖБА ПЛОЩАДОК: над городом к площадке " + address
                          : phase == '2' ? "СЛУЖБА ПЛОЩАДОК: снижение на площадку " + address

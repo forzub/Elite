@@ -230,7 +230,7 @@ void SpaceState::updateCapsuleRescue(double dt)
     if (r.phase == CapsuleRescue::Phase::Landing)
     {
         const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
-        // the pad service flying / holding the capsule (ShipSnapshot::padService "phase:<n>:<address>"; 3 = on the pad)
+        // the pad service flying / holding the capsule (ShipSnapshot::padService "phase:<n>:<frame>/<address>"; 3 = on the pad)
         if (ship.padService.rfind("phase:3:", 0) == 0)
         {
             if (!r.rescued)

@@ -33,8 +33,12 @@ PAD = 36.0            # the deck side (a Cobrett-class ship: 26 x 5 m with room 
 DECK_T = 1.2          # the deck plate
 ROOF_FRAME = 1.0      # the roof pad's low frame under the deck
 STILT_H = 25.0        # the stilts pad's deck top over the plane
-G1_W, G2_W, G_D, G_H = 22.0, 40.0, 20.0, 11.0   # the hangars: width (1 / 2 places), depth, height
-APRON = 20.0          # the garage apron depth (its centre is the module origin)
+# a landing PLACE is a square of PLACE_SIDE (author 2026-11-27: «максимальный размер кораблей того же класса, что и кобра,
+# + 30 %»): the Cobra's class - Cobrett-I and the Cobra Mk1 - is 26 m at its widest -> 33.8, rounded to 34 m
+# (HubPlanPads.h HubBerthPlaceSideMeters). A garage is 1 / 2 places wide, its apron and its hangar one place deep.
+PLACE_SIDE = 34.0
+G1_W, G2_W, G_D, G_H = PLACE_SIDE, 2.0 * PLACE_SIDE, PLACE_SIDE, 11.0   # the hangars: width (1 / 2 places), depth, height
+APRON = PLACE_SIDE    # the garage apron depth (its centre is the module origin)
 
 
 # ================================================================ shared pieces

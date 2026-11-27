@@ -95,19 +95,30 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         // each building of the plan by its own box (a block as one box hid everything from a ship flying low over it,
         // live 2026-11-21); a box the pilot is inside does not count
         const glm::dmat3 Rt = glm::transpose(R);
-        const glm::dvec3 eyeLocal = Rt * (playerMeters - origin);
+        // the eye and the samples in the PLAN (the buildings' boxes are plan rects; on a ring the module frame is bent -
+        // audit 2026-11-27), the along coordinate unwrapped next to the eye; the boxes one turn either way count too
+        const glm::dvec3 eyeLocal = ringHere.toStrip(Rt * (playerMeters - origin));
+        const double ringLength = ringHere.valid ? ringHere.length : 0.0;
         if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
             for (const auto& m : plan->modules())
             {
                 const glm::dvec3 lo(std::min(m.rect.x, m.rect.z), std::min(m.y0, m.y1), std::min(m.rect.y, m.rect.w));
                 const glm::dvec3 hi(std::max(m.rect.x, m.rect.z), std::max(m.y0, m.y1), std::max(m.rect.y, m.rect.w));
-                const bool inside = eyeLocal.x > lo.x && eyeLocal.x < hi.x && eyeLocal.y > lo.y && eyeLocal.y < hi.y &&
-                                    eyeLocal.z > lo.z && eyeLocal.z < hi.z;
-                if (!inside && hi.y - lo.y > 1.0)
-                    blockers.push_back({lo, hi});
+                for (const double shift : {0.0, -ringLength, ringLength})
+                {
+                    if (shift != 0.0 && ringLength <= 0.0)
+                        continue;
+                    const glm::dvec3 l(lo.x + shift, lo.y, lo.z), h(hi.x + shift, hi.y, hi.z);
+                    const bool inside = eyeLocal.x > l.x && eyeLocal.x < h.x && eyeLocal.y > l.y && eyeLocal.y < h.y &&
+                                        eyeLocal.z > l.z && eyeLocal.z < h.z;
+                    if (!inside && h.y - l.y > 1.0)
+                        blockers.push_back({l, h});
+                }
             }
         const auto hidden = [&](const glm::dvec3& world) {
-            const glm::dvec3 p = Rt * (world - origin);
+            glm::dvec3 p = ringHere.toStrip(Rt * (world - origin));
+            if (ringLength > 0.0)
+                p.x = eyeLocal.x + std::remainder(p.x - eyeLocal.x, ringLength);
             const glm::dvec3 d = eyeLocal - p;
             const glm::dvec3 segLo = glm::min(p, eyeLocal), segHi = glm::max(p, eyeLocal);
             for (const auto& bx : blockers)
@@ -202,7 +213,10 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
                 const double t = std::clamp(glm::dot(playerMeters - a, ab), 0.0, len);
                 if (glm::length(a + ab * t - playerMeters) > FadeMeters + lane.radiusMeters)
                     continue;
-                glm::dvec3 side = glm::cross(ab, up);
+                // the deck's up at this segment (a ring: toward its axis, not the module's +Y)
+                const glm::dvec3 upHere =
+                    ringHere.valid ? R * ringHere.upAt(ringHere.toStrip(Rt * (a - origin))) : up;
+                glm::dvec3 side = glm::cross(ab, upHere);
                 side = glm::length(side) > 1.0e-6 ? glm::normalize(side) : glm::dvec3(1.0, 0.0, 0.0);
                 const glm::dvec3 vert = glm::normalize(glm::cross(side, ab));
                 const double r = lane.radiusMeters;

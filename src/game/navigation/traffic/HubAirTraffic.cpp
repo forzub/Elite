@@ -42,8 +42,13 @@ namespace
 {
 // a lane end / start inside the city (a dead end / no way in): a block ahead of it in a corridor as wide as a block
 // and its street (a lane ends in a STREET - a plain ray along it never meets a building, live 2026-11-22: 0 dead ends)
-bool facesBuildings(const HubPlan& plan, const glm::dvec3& at, const glm::dvec3& direction)
+bool facesBuildings(const HubPlan& plan, const glm::dvec3& atModule, const glm::dvec3& directionModule)
 {
+    // the lane stations are in the MODULE frame (bent on a ring), the blocks in the PLAN: compare in the plan (audit
+    // 2026-11-27 - on a ring the exit / dead-end classification compared a bent point with flat block centres)
+    const auto& ring = plan.ring();
+    const glm::dvec3 at = ring.toStrip(atModule);
+    const glm::dvec3 direction = ring.valid ? glm::transpose(ring.basisAt(at.x)) * directionModule : directionModule;
     glm::dvec2 d(direction.x, direction.z);
     if (glm::length(d) < 1.0e-6)
         return false;
@@ -51,7 +56,9 @@ bool facesBuildings(const HubPlan& plan, const glm::dvec3& at, const glm::dvec3&
     const glm::dvec2 side(-d.y, d.x);
     for (const auto& b : plan.blocks())
     {
-        const glm::dvec2 rel = b.centre - glm::dvec2(at.x, at.z);
+        glm::dvec2 rel = b.centre - glm::dvec2(at.x, at.z);
+        if (ring.valid && ring.length > 0.0)   // periodic along the ring (the seam)
+            rel.x = std::remainder(rel.x, ring.length);
         const double along = glm::dot(rel, d), lateral = std::abs(glm::dot(rel, side));
         if (along > -b.halfMeters && along < 1200.0 && lateral < b.halfMeters + 350.0)
             return true;

@@ -724,7 +724,10 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
                 object.objectClass == world::celestial::DetailObjectClass::Hub &&
                 isHubCityModule(object.stableId))
             {
-                const glm::dvec3 half = object.sizeMeters * 0.5;
+                // the plan view fits the plan SHEET (a ring unrolled), not the physical wheel
+                const glm::dvec3 sheet = glm::length(object.planSheetSizeMeters) > 0.0 ? object.planSheetSizeMeters
+                                                                                       : object.sizeMeters;
+                const glm::dvec3 half = sheet * 0.5;
                 lo = glm::min(lo, object.positionMeters - half);
                 hi = glm::max(hi, object.positionMeters + half);
                 planCity = true;
@@ -782,7 +785,9 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             std::max(
                 maxDistance,
                 glm::length(object.positionMeters) +
-                glm::length(object.sizeMeters) * (view.planView() ? 0.5 : 1.0)
+                (view.planView() && glm::length(object.planSheetSizeMeters) > 0.0
+                     ? glm::length(object.planSheetSizeMeters) * 0.5
+                     : glm::length(object.sizeMeters) * (view.planView() ? 0.5 : 1.0))
             );
     }
 

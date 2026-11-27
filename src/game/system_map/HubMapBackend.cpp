@@ -715,9 +715,10 @@ void HubMapBackend::renderHubMapPasses(
         const glm::dvec2 modScreen =
             activeCamera().project(mod.positionMeters);
 
+        // the plan view: the plan sheet's size (a ring unrolled); the 3D view: the physical one (re-audit A8)
         const double moduleRadiusMeters =
             glm::length(
-                mod.sizeMeters
+                planCity && glm::length(mod.planSheetSizeMeters) > 0.0 ? mod.planSheetSizeMeters : mod.sizeMeters
             ) * 0.5;
 
         const double moduleRadiusPx =

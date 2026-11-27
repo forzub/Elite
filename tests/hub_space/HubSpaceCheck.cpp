@@ -269,6 +269,31 @@ int main()
         check(worstAfter < 1.0e-6, "berth places on the structure's rigid pose");
     }
 
+    // ---- A8: the ring's plan sheet vs its physical extents (the map bridge's two sizes)
+    {
+        double under = 0.0;
+        for (const auto& b : ring.blocks())
+            under = std::max(under, b.underDepthMeters);
+        for (const auto& m : ring.modules())   // the same rule as ClientHubMapBridge
+            under = std::max(under, -std::min(0.0, std::min(m.y0, m.y1)));
+        const glm::dvec4 r = ring.bounds();
+        const double sheetX = r.z - r.x, outer = ring.ring().radius + under;
+        // every plan point's physical distance from the axis stays within the wheel
+        double maxR = 0.0;
+        game::navigation::HubCitySpace space;
+        space.bend = ring.ring();
+        for (const auto& m : ring.modules())
+            for (const double y : {m.y0, m.y1})
+            {
+                const glm::dvec3 f = space.planToModule(glm::dvec3(0.5 * (m.rect.x + m.rect.z), y, 0.5 * (m.rect.y + m.rect.w)));
+                maxR = std::max(maxR, std::hypot(f.x, f.y));
+            }
+        std::printf("A8 earth_ring_hub: plan sheet %.0f m long; the wheel %.0f m across (deck R %.0f + under %.0f); the "
+                    "farthest building point %.0f m from the axis\n", sheetX, 2.0 * outer, ring.ring().radius, under, maxR);
+        check(maxR <= outer + 1.0e-6, "every building inside the physical wheel the map now uses");
+        check(sheetX > 2.5 * outer, "the sheet is NOT the physical size (the old map box)");
+    }
+
     if (g_failures)
     {
         std::printf("%d check(s) FAILED\n", g_failures);

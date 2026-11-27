@@ -354,7 +354,18 @@ inline bool rebuildHubMapFromClientState(
                 under = std::max(under, b.underDepthMeters);
             }
             const glm::dvec4 r = plan->bounds();
-            module.sizeMeters = glm::dvec3(r.z - r.x, top + under, r.w - r.y);
+            module.planSheetSizeMeters = glm::dvec3(r.z - r.x, top + under, r.w - r.y);
+            module.sizeMeters = module.planSheetSizeMeters;
+            // a RING city: physically a wheel round its module +Z - the deck at radius R, the under-deck outside it,
+            // the width across (re-audit A8: the strip size was taken for the ring's - 7300 m vs ~2419 m)
+            if (const auto& ring = plan->ring(); ring.valid)
+            {
+                double below = under;   // the deepest part under the deck: blocks' under-depth or a module's foundation
+                for (const auto& m : plan->modules())
+                    below = std::max(below, -std::min(0.0, std::min(m.y0, m.y1)));
+                const double outer = ring.radius + below;
+                module.sizeMeters = glm::dvec3(2.0 * outer, 2.0 * outer, r.w - r.y);
+            }
         }
         module.prime =
             !hub.primeModuleId.empty() &&

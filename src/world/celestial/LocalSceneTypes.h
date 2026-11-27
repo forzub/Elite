@@ -82,7 +82,11 @@ struct LocalSceneObject
     bool hasRelativeVelocity = false;
     LocalSceneAxes axes;
 
+    // the PHYSICAL extents of the object in its own axes (3D map fit, picking, scale)
     glm::dvec3 sizeMeters {1.0, 1.0, 1.0};
+    // a hub city's PLAN SHEET extents (the 2D plan view: the strip unrolled - a ring city's sheet is 7.6 km long while
+    // the ring is 2.4 km across, re-audit A8 2026-11-27); zero: the same as sizeMeters
+    glm::dvec3 planSheetSizeMeters {0.0};
     double boundingRadiusMeters = 0.0;
 
     // Hub dock traffic ship: the remaining route the traffic model executes,

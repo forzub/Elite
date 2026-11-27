@@ -50,6 +50,13 @@ deco = nav.split("void SystemMapRenderer::decorateHubPlanBlocks(", 1)[1].split("
 if "HubCitySpace" not in deco or "planToWorld(" not in deco:
     failures.append("decorateHubPlanBlocks must place block / building points through HubCitySpace")
 
+# A8: a ring city's physical size is the wheel, the plan sheet is separate (2D plan view only)
+bridge = text("src/game/client/ClientHubMapBridge.h")
+if "planSheetSizeMeters" not in bridge or "ring.radius" not in bridge:
+    failures.append("ClientHubMapBridge: a ring city's sizeMeters must be the physical wheel, the sheet in planSheetSizeMeters")
+if "planSheetSizeMeters" not in text("src/world/celestial/LocalSceneTypes.h"):
+    failures.append("LocalSceneObject lost planSheetSizeMeters")
+
 if failures:
     for f in failures:
         print("FAIL:", f)

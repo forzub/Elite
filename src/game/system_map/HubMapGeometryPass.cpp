@@ -73,8 +73,8 @@ void HubMapGeometryPass::drawHubMapBox(
     for (const auto& edge : edges)
     {
         drawLocalMapLine(
-            m_owner.activeCamera().project(points[edge[0]]),
-            m_owner.activeCamera().project(points[edge[1]]),
+            m_owner.activeCamera().projectSheet(points[edge[0]]),
+            m_owner.activeCamera().projectSheet(points[edge[1]]),
             color
         );
     }
@@ -135,23 +135,23 @@ void HubMapGeometryPass::drawHubMapAxes(
     }
 
     const glm::dvec2 origin =
-        m_owner.activeCamera().project(center);
+        m_owner.activeCamera().projectSheet(center);
 
     drawLocalMapLine(
         origin,
-        m_owner.activeCamera().project(center + axes.x * axisLenMeters),
+        m_owner.activeCamera().projectSheet(center + axes.x * axisLenMeters),
         xColor
     );
 
     drawLocalMapLine(
         origin,
-        m_owner.activeCamera().project(center + axes.y * axisLenMeters),
+        m_owner.activeCamera().projectSheet(center + axes.y * axisLenMeters),
         yColor
     );
 
     drawLocalMapLine(
         origin,
-        m_owner.activeCamera().project(center + axes.z * axisLenMeters),
+        m_owner.activeCamera().projectSheet(center + axes.z * axisLenMeters),
         zColor
     );
 }
@@ -194,8 +194,8 @@ void HubMapGeometryPass::drawHubMapVelocityArrow(
     }
 
     drawLocalMapLine(
-        m_owner.activeCamera().project(center),
-        m_owner.activeCamera().project(center + direction * lenMeters),
+        m_owner.activeCamera().projectSheet(center),
+        m_owner.activeCamera().projectSheet(center + direction * lenMeters),
         color
     );
 }
@@ -427,28 +427,28 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
             gridStep;
 
         drawLocalMapLine(
-            m_owner.activeCamera().project(glm::dvec3(-gridN * gridStep, 0.0, v)),
-            m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, v)),
+            m_owner.activeCamera().projectSheet(glm::dvec3(-gridN * gridStep, 0.0, v)),
+            m_owner.activeCamera().projectSheet(glm::dvec3( gridN * gridStep, 0.0, v)),
             m_visuals.localGridColor
         );
 
         drawLocalMapLine(
-            m_owner.activeCamera().project(glm::dvec3(v, 0.0, -gridN * gridStep)),
-            m_owner.activeCamera().project(glm::dvec3(v, 0.0,  gridN * gridStep)),
+            m_owner.activeCamera().projectSheet(glm::dvec3(v, 0.0, -gridN * gridStep)),
+            m_owner.activeCamera().projectSheet(glm::dvec3(v, 0.0,  gridN * gridStep)),
             m_visuals.localGridColor
         );
     }
 
     // Главные оси плоскости хаба.
     drawLocalMapLine(
-        m_owner.activeCamera().project(glm::dvec3(-gridN * gridStep, 0.0, 0.0)),
-        m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, 0.0)),
+        m_owner.activeCamera().projectSheet(glm::dvec3(-gridN * gridStep, 0.0, 0.0)),
+        m_owner.activeCamera().projectSheet(glm::dvec3( gridN * gridStep, 0.0, 0.0)),
         m_visuals.localGridAxisColor
     );
 
     drawLocalMapLine(
-        m_owner.activeCamera().project(glm::dvec3(0.0, 0.0, -gridN * gridStep)),
-        m_owner.activeCamera().project(glm::dvec3(0.0, 0.0,  gridN * gridStep)),
+        m_owner.activeCamera().projectSheet(glm::dvec3(0.0, 0.0, -gridN * gridStep)),
+        m_owner.activeCamera().projectSheet(glm::dvec3(0.0, 0.0,  gridN * gridStep)),
         m_visuals.localGridAxisColor
     );
 }

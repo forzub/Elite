@@ -340,6 +340,41 @@ int main()
         check(worst < 1.0e-6, "the plan map's cursor point re-projects onto the cursor");
     }
 
+    // ---- A7: the hub map's GPU line shader (hub_map_dynamic_lines.vert: origin + R(p) * scale) == the CPU fallback
+    {
+        game::system_map::LocalMapCameraSnapshot cam;
+        cam.state.pitch = 1.5707963267948966;
+        cam.state.yaw = 0.37;
+        cam.state.zoom = 1.3;
+        cam.state.pan = glm::dvec2(25.0, -40.0);
+        cam.scale = 0.12;
+        cam.centerPx = glm::dvec2(960.0, 540.0);
+        cam.planMode = true;
+        cam.planWarp.valid = true;
+        cam.planWarp.origin = glm::dvec3(1500.0, -40.0, 900.0);
+        cam.planWarp.ring = ring.ring();
+        cam.originMeters = glm::dvec3(1400.0, 0.0, 850.0);   // the plan view's centre (not 0)
+        const auto gpu = [&](const glm::dvec2& screenOrigin, const glm::dvec3& p) {
+            const double cy = std::cos(cam.state.yaw), sy = std::sin(cam.state.yaw);
+            const double cp = std::cos(cam.state.pitch), sp = std::sin(cam.state.pitch);
+            const double rx = p.x * cy - p.z * sy, rz = p.x * sy + p.z * cy, py = p.y * cp - rz * sp;
+            return screenOrigin + glm::dvec2(rx, -py) * (cam.scale * cam.state.zoom);
+        };
+        const glm::dvec2 newOrigin = cam.projectSheet(glm::dvec3(0.0));
+        const glm::dvec2 oldOrigin = cam.centerPx + cam.state.pan;
+        double worst = 0.0, worstOld = 0.0, worstOldCpu = 0.0;
+        for (const auto& b : ring.blocks())
+        {
+            const glm::dvec3 sheet = cam.planWarp.origin + glm::dvec3(b.centre.x, 0.0, b.centre.y);   // as HubMapBackend gives
+            worst = std::max(worst, glm::length(gpu(newOrigin, sheet) - cam.projectSheet(sheet)));
+            worstOld = std::max(worstOld, glm::length(gpu(oldOrigin, sheet) - cam.projectSheet(sheet)));
+            worstOldCpu = std::max(worstOldCpu, glm::length(cam.project(sheet) - cam.projectSheet(sheet)));   // warped twice
+        }
+        std::printf("A7 hub map: GPU vs CPU %.3g px (the old GPU origin %.1f px off; the old CPU path warping the sheet "
+                    "again %.1f px off)\n", worst, worstOld, worstOldCpu);
+        check(worst < 1.0e-6, "the GPU and CPU paths draw the same sheet geometry at the same pixels");
+    }
+
     // ---- A6: a pad's actual existence = the package's volumes + the damage state (CityPadPresence.h)
     {
         struct V

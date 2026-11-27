@@ -238,6 +238,23 @@ struct LocalMapCameraSnapshot
         );
     }
 
+    // SHEET -> SCREEN: a point already on the plan sheet (or a 3D-view point) projected WITHOUT the plan warp - exactly
+    // what the GPU hub geometry renderer does with the points it is given (it never warps); the CPU fallback of the
+    // geometry pass uses this, so GPU and CPU draw the same primitives at the same pixels (audit A7: the CPU path
+    // warped the pre-unrolled ring sheet a second time)
+    glm::dvec2 projectSheet(
+        const glm::dvec3& sheetPoint
+    ) const
+    {
+        const glm::dvec3 camera = vectorToCamera(sheetPoint - originMeters);
+        const double finalScale = scale * state.zoom;
+        const double perspective = perspectiveFactor(camera.z);
+        return glm::dvec2(
+            centerPx.x + state.pan.x + camera.x * finalScale * perspective,
+            centerPx.y + state.pan.y - camera.y * finalScale * perspective
+        );
+    }
+
     // SCREEN -> SCENE (hub-local metres) on the camera plane through the origin: the sheet point, unwarped
     glm::dvec3 unprojectPlane(
         const glm::dvec2& screenPoint

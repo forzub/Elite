@@ -569,15 +569,13 @@ void HubMapBackend::renderHubMapPasses(
         GpuStage::Geometry
     );
 
+    // the GPU's screen origin = where the hub-local origin projects (projectSheet(0): the camera's pan AND its
+    // originMeters - the plan view centres on the city); the shader adds R(p) * scale - exactly projectSheet(p), the
+    // CPU fallback's projection (audit A7: the GPU ignored originMeters, the CPU warped the sheet twice)
     m_geometryPass.beginFrame(
         viewport.width,
         viewport.height,
-        glm::dvec2(
-            centerPx.x +
-                activeCamera().state.pan.x,
-            centerPx.y +
-                activeCamera().state.pan.y
-        ),
+        activeCamera().projectSheet(glm::dvec3(0.0)),
         finalScale,
         activeCamera().state.yaw,
         activeCamera().state.pitch

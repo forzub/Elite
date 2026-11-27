@@ -154,6 +154,7 @@ struct CityEntry
     std::uint64_t stageKey = 0;
     std::vector<game::simulation::DebugHitVolumeSnapshot> volumes;
     std::unordered_map<std::string, std::int32_t> padNodes;   // CityPadPresence.h: the pads this package has
+    bool failed = false;   // the assembly failed (no package): NOT "an empty city"
 };
 std::mutex& cityCacheMutex()
 {
@@ -209,10 +210,13 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
                                  : ma::assembleHubCityCollision(id, "assets/compiled/hub_modules", city))
                     collisionToHitVolumes(type, city, hit.volumes);
                 else
+                {
+                    job->failed = true;
                     // audit SRV-5: a failed assembly was "ready" with 0 volumes and no word - said now; the planner
                     // treats an object without volumes as no proven geometry (it does not fly through it)
                     std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": assembly FAILED"
                               << (error.empty() ? std::string() : " (" + error + ")") << " - no obstacle geometry" << std::endl;
+                }
                 job->volumes = world::modules::HitVolumeSnapshotBuilder::build(hit);
                 job->padNodes = game::simulation::cityPadNodes(hit.volumes);   // from the labels, before they are dropped
                 std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": " << job->volumes.size()
@@ -228,6 +232,18 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
     }
     return entry->ready ? &entry->volumes : nullptr;
 }
+ClientCityPackageState clientLayoutCityPackageState(ObjectType type, const std::string& hubId)
+{
+    if (!clientLayoutCityHitVolumes(type, hubId))   // builds / refreshes the entry
+        return ClientCityPackageState::Assembling;
+    const std::string kit = hubKitPackagePath(type);
+    std::lock_guard<std::mutex> lock(cityCacheMutex());
+    const auto it = cityCache().find(kit.empty() ? hubId : kit);
+    if (it == cityCache().end() || !it->second || !it->second->ready)
+        return ClientCityPackageState::Assembling;
+    return it->second->failed ? ClientCityPackageState::Failed : ClientCityPackageState::Ready;
+}
+
 const std::unordered_map<std::string, std::int32_t>* clientLayoutCityPadNodes(ObjectType type, const std::string& hubId)
 {
     if (!clientLayoutCityHitVolumes(type, hubId))   // builds / refreshes the entry

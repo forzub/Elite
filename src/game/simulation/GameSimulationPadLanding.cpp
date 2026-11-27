@@ -329,8 +329,16 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
         for (const auto& [oid, obj] : m_staticObjects)
             if (&obj == cityObj)
                 cityId = oid;
-        // a city object with its package volumes only (a city with no package yet: the plan stands in)
-        if (!cityObj->hitComponent.volumes.empty())
+        // a city object with its package volumes only. A city WITHOUT a package (its assembly failed / not loaded): the
+        // static plan stands in - said once per city, never silently (audit #6 A6)
+        if (cityObj->hitComponent.volumes.empty())
+        {
+            static std::unordered_set<std::string> said;
+            if (said.insert(frameModuleId).second)
+                std::cerr << "[PadLanding] " << frameModuleId << ": no physical package (no hit volumes) - the pads' existence "
+                             "is NOT known, the static plan stands in" << std::endl;
+        }
+        else
         {
             const auto presence = cityPadPresenceOf(cityId, address);
             if (!presence.usable())
@@ -465,6 +473,25 @@ void GameSimulation::updatePadLandings(double dt)
         auto& tr = ship->core().transform();
         if (tr.motion.systemId != m_activeCelestialSystemId)
             continue;   // another system's pass
+        // the pad must STILL exist (audit #6 A6): destroyed / gutted after the clearance (a fight over the city), or its
+        // building's stage replaced - the service lets the ship go before the last metres (a landed ship stays: the deck
+        // under it is gone with the building, the hull is the damage model's)
+        if (p.phase < 3 && !city->hitComponent.volumes.empty())
+        {
+            EntityId cityId {};
+            for (const auto& [oid, obj] : m_staticObjects)
+                if (&obj == city)
+                    cityId = oid;
+            if (!cityPadPresenceOf(cityId, p.address).usable())
+            {
+                m_padNotices[id] = {"refused:wrecked:" + p.address, serverTime()};
+                std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address
+                          << ": the pad is gone (wrecked / not built) during the approach - the service lets go" << std::endl;
+                ship->setControlState(ShipControlState {});
+                drop.push_back(id);
+                continue;
+            }
+        }
         // the service works in the plan's STRIP metres (a ring hub: bent into the frame only here, CityStrip)
         const CityStrip strip = cityStripOf(*this, *city);
         const glm::dmat3 R(glm::mat3(city->orientation));

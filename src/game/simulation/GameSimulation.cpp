@@ -3762,6 +3762,46 @@ bool GameSimulation::setStaticObjectPackageHitVolumes(EntityId objectId, std::ve
                 if (destroyedByLabel.count(v.m_label))
                     v.destroyed = true;
     }
+    // ... and the city DAMAGE state follows its buildings by NAME, not by node index (audit #6 A6): a new stage inserts /
+    // drops nodes (a pad appears when its building is finished) and every later node index shifts - the energy taken,
+    // the variant and the thresholds stayed on the old indices and landed on the wrong building / pad
+    if (const auto dmg = m_cityDamage.find(objectId.value); dmg != m_cityDamage.end())
+    {
+        const auto nodeName = [](const std::string& label) { return label.substr(0, label.find('.')); };
+        std::unordered_map<std::int32_t, std::string> oldName;
+        for (const auto& v : it->second.hitComponent.volumes)
+            if (v.assemblyNode >= 0 && !v.m_label.empty())
+                oldName.emplace(v.assemblyNode, nodeName(v.m_label));
+        std::unordered_map<std::string, std::int32_t> newNode;
+        for (const auto& v : volumes)
+            if (v.assemblyNode >= 0 && !v.m_label.empty())
+                newNode.emplace(nodeName(v.m_label), v.assemblyNode);
+        int moved = 0, lost = 0;
+        const auto remap = [&](auto& byNode) {
+            std::remove_reference_t<decltype(byNode)> out;
+            for (auto& [node, value] : byNode)
+            {
+                const auto o = oldName.find(node);
+                const auto n = o == oldName.end() ? newNode.end() : newNode.find(o->second);
+                if (n == newNode.end())
+                {
+                    ++lost;   // the building is not in this stage's package (replaced / gone)
+                    continue;
+                }
+                moved += n->second != node ? 1 : 0;
+                out[n->second] = value;
+            }
+            byNode = std::move(out);
+        };
+        auto& state = dmg->second;
+        remap(state.energyMJ);
+        remap(state.variant);
+        remap(state.thresholdMJ);
+        remap(state.folder);
+        if (moved > 0 || lost > 0)
+            std::cerr << "[CityDamage] object " << objectId.value << ": a new package stage - damage re-keyed by node name ("
+                      << moved << " entr(ies) moved to new indices, " << lost << " for nodes not in this stage)" << std::endl;
+    }
     it->second.hitComponent.volumes = std::move(volumes);
     it->second.packageHitVolumes = true;
     it->second.hitVolumesDirty = false;

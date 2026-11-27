@@ -61,6 +61,16 @@ corridor = text("src/render/cockpit/HubCorridorHudRenderer.cpp")
 if "planPoseToModule(" not in corridor or "ringHere.toStrip(Rt * (world - origin))" in corridor:
     failures.append("HubCorridorHudRenderer: label occlusion must test the physical ray against rigid building boxes")
 
+# A6 (audit #6): the damage follows the buildings by NAME across a package stage; the service lets go of a pad gone
+sim = text("src/game/simulation/GameSimulation.cpp")
+repl = sim.split("bool GameSimulation::setStaticObjectPackageHitVolumes(", 1)[1].split("\nbool GameSimulation::", 1)[0]
+if "m_cityDamage" not in repl or "nodeName" not in repl:
+    failures.append("setStaticObjectPackageHitVolumes must re-key the city damage by node name (indices shift per stage)")
+padl = text("src/game/simulation/GameSimulationPadLanding.cpp")
+upd = padl.split("void GameSimulation::updatePadLandings(", 1)[1][:3000]
+if "cityPadPresenceOf(" not in upd:
+    failures.append("updatePadLandings must re-check the pad's existence during the approach")
+
 # A8: a ring city's physical size is the wheel, the plan sheet is separate (2D plan view only)
 bridge = text("src/game/client/ClientHubMapBridge.h")
 if "planSheetSizeMeters" not in bridge or "ring.radius" not in bridge:

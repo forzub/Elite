@@ -39,6 +39,15 @@ bool layoutCityHitVolumesOnClient(ObjectType type, const std::string& hubId);
 // the background assembly workers finished before the process exits (the application's shutdown calls it)
 void joinClientGeometryWorkers();
 
+// the client's copy of the city package: still assembling / ready / the assembly FAILED (an empty package is "ready")
+enum class ClientCityPackageState
+{
+    Assembling,
+    Ready,
+    Failed
+};
+ClientCityPackageState clientLayoutCityPackageState(ObjectType type, const std::string& hubId);
+
 // the pads the client's copy of the city package HAS (address -> node, CityPadPresence.h); nullptr while it is built
 const std::unordered_map<std::string, std::int32_t>* clientLayoutCityPadNodes(ObjectType type, const std::string& hubId);
 

@@ -12,11 +12,30 @@
 
 namespace game::client
 {
+// what the client KNOWS of a city pad now (audit #6 A6): the map / HUD show these four apart
+enum class ClientPadState
+{
+    Usable,     // built, intact or lightly hit
+    NotBuilt,   // its building is still going up (not in the package)
+    Wrecked,    // gutted / destroyed
+    Unknown     // the package is still assembling or its assembly failed: the plan stands in, the server decides
+};
+
+inline ClientPadState clientCityPadState(const ClientObjectState& city, const std::string& address)
+{
+    if (game::scene::clientLayoutCityPackageState(city.type, city.hubAttachment.hubId) != game::scene::ClientCityPackageState::Ready)
+        return ClientPadState::Unknown;
+    const auto* nodes = game::scene::clientLayoutCityPadNodes(city.type, city.hubAttachment.hubId);
+    if (!nodes)
+        return ClientPadState::Unknown;
+    const auto presence = game::simulation::cityPadPresence(*nodes, city.buildingStates, address);
+    return presence.usable() ? ClientPadState::Usable : presence.built ? ClientPadState::Wrecked : ClientPadState::NotBuilt;
+}
+
+// usable or not known yet (the plan stands in while the package assembles; the server's dispatcher has the last word)
 inline bool clientCityPadUsable(const ClientObjectState& city, const std::string& address)
 {
-    const auto* nodes = game::scene::clientLayoutCityPadNodes(city.type, city.hubAttachment.hubId);
-    if (!nodes || nodes->empty())
-        return true;   // not assembled yet (or a city without a package): the plan stands in
-    return game::simulation::cityPadPresence(*nodes, city.buildingStates, address).usable();
+    const auto s = clientCityPadState(city, address);
+    return s == ClientPadState::Usable || s == ClientPadState::Unknown;
 }
 } // namespace game::client

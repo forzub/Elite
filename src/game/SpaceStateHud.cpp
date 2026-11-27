@@ -521,14 +521,18 @@ m_systemMapRenderer.render(
     glEnable(GL_DEPTH_TEST);
 
     renderUniverseTimeSimulationOverlay(vp);
-    renderUiLanguageIndicator(vp);
-    renderNavigationStressOverlay(vp);
-    renderFreeFlightBanner(vp);
-    renderContainmentBeacon(vp);
-    renderHudJump(vp);
-    renderDockingWidget(vp);
-    renderZoneViolationBanner(vp);
-    renderPilotLostOverlay(vp);
+    // HantedPreview: the glass banners / cards (their texts suppressed) are not drawn at all - no empty plates
+    if (!core::isPreviewBuild())
+    {
+        renderUiLanguageIndicator(vp);
+        renderNavigationStressOverlay(vp);
+        renderFreeFlightBanner(vp);
+        renderContainmentBeacon(vp);
+        renderHudJump(vp);
+        renderDockingWidget(vp);
+        renderZoneViolationBanner(vp);
+        renderPilotLostOverlay(vp);
+    }
     if (context().app)
     {
         game::presentation::TemporaryShortcutStrip::render(
@@ -1300,10 +1304,16 @@ void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShi
                 textProfile
             );
 
-        m_flightVectorIndicatorRenderer.render(
-            flightInstrument,
-            vp
-        );
+        {
+            // the speed instrument is on the PANEL: its texts stay in the preview
+            const bool glassTextSuppressedHere = TextRenderer::instance().suppressed();
+            TextRenderer::instance().setSuppressed(false);
+            m_flightVectorIndicatorRenderer.render(
+                flightInstrument,
+                vp
+            );
+            TextRenderer::instance().setSuppressed(glassTextSuppressedHere);
+        }
         // DEV diagnostic (author 2026-11-07: "скорость отображена перпендикулярно корпусу"): the angle
         // between the hull and the velocity the indicator shows, with what it is measured against
         {

@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include "src/game/client/ClientCityPadPresence.h"
 #include "src/game/localization/LocalizationService.h"
 #include "src/core/HitchProfiler.h"
@@ -3566,7 +3567,7 @@ m_playerView->updateCockpitStateFromSnapshot(
                     std::snprintf(text, sizeof text, forwardScope ? "RADAR FWD %.0f km  |  %zu tracks" : "RADAR %.0f km  |  %zu tracks  [R]",
                                   m_radarDisplayRangeMeters / 1000.0, views.size());
                 label->label = text;
-                label->visible = m_activeCameraMode == ShipCameraMode::Cockpit;   // with the scope: the front view only
+                label->visible = m_activeCameraMode == ShipCameraMode::Cockpit && !core::isPreviewBuild();   // the front view only; HantedPreview: hidden
             }
         }
     }

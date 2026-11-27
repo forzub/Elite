@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include <iomanip>
 #include <cstring>
 #include "src/game/damage/HitVolumeBounds.h"
@@ -1501,6 +1502,13 @@ void GameServer::update(double dt)
             std::cout << "GameServer::update  - ClientShipCommand received: "
                     << shipCmd.type << "\n";
 
+            // HantedPreview: the developer commands are refused by the server itself (not only hidden on the client)
+            if (core::isPreviewBuild() && shipCmd.type == ClientShipCommand::DevFullRestore)
+            {
+                std::cerr << "[Preview] DEV command refused (DevFullRestore)" << std::endl;
+                cmdQueue.pop_front();
+                continue;
+            }
             switch (shipCmd.type)
             {
                 case ClientShipCommand::EjectCockpitCapsule:
@@ -1718,6 +1726,11 @@ void GameServer::update(double dt)
                 case ClientShipCommand::RefitPreview:
                 case ClientShipCommand::RefitApply:
                 {
+                    if (shipCmd.type == ClientShipCommand::RefitApply && core::isPreviewBuild())
+                    {
+                        std::cerr << "[Refit] the DEV apply refused: not available in the preview build" << std::endl;
+                        break;
+                    }
                     game::ship::refit::RefitOperation op;
                     op.kind = static_cast<game::ship::refit::RefitOperationKind>(
                         std::clamp(shipCmd.index, 0, static_cast<int>(game::ship::refit::RefitOperationKind::Install)));
@@ -3616,6 +3629,14 @@ void GameServer::arrestShip(EntityId id, std::uint64_t player, const std::string
 void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEconomyCommand& command)
 {
     using Op = game::network::ClientEconomyCommand::Op;
+    // HantedPreview: the developer economy commands are refused by the server itself
+    if (core::isPreviewBuild() &&
+        (command.op == Op::DevCargoAdd || command.op == Op::DevCargoClear || command.op == Op::DevEconomyDays ||
+         command.op == Op::DevSpendAll || command.op == Op::DevCustoms || command.op == Op::DevGrant))
+    {
+        std::cerr << "[Preview] DEV economy command refused (op " << static_cast<int>(command.op) << ")" << std::endl;
+        return;
+    }
     Ship* ship = m_simulation.getShip(id);
     if (!ship || !m_economy.loaded())
         return;

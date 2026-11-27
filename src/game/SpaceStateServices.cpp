@@ -2,6 +2,7 @@
 // come from the ship catalog / runtime descriptors (F6) and from the player's
 // replicated ship instances + the server's Repair & Refit previews (F7).
 
+#include "src/core/BuildFlavor.h"
 #include "src/game/SpaceStateInternal.h"
 #include "src/game/localization/LocalizationService.h"
 
@@ -319,6 +320,8 @@ void SpaceState::sendRefitCommand(bool apply, const game::ship::refit::RefitOper
 {
     if (!m_client)
         return;
+    if (apply && core::isPreviewBuild())
+        return;   // HantedPreview: the DEV apply (free of charge) is unavailable
     ClientShipCommand command;
     command.type = apply ? ClientShipCommand::RefitApply : ClientShipCommand::RefitPreview;
     command.index = static_cast<int>(operation.kind);

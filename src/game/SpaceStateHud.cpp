@@ -756,7 +756,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                         bay = std::atoi(b.c_str() + mine.size());
                 route.push_back(game::navigation::hubHangarDoorFront(*pad, bay));
                 route.push_back(game::navigation::hubHangarBayEntry(*pad, bay));
-                route.push_back(game::navigation::hubBerthTouchdown(*pad, bay) + out * 3.0);
+                route.push_back(game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring()) + out * 3.0);
             }
             else
                 route.push_back(pad->autoLanding ? pad->padPosition + out * 3.0

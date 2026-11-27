@@ -237,6 +237,38 @@ int main()
                     plan->hubId().c_str(), garages2, hangars, under);
     }
 
+    // ---- A5 (re-audit): a berth's places in its RIGID model (HubExpansion: the model at toFrame(padOrigin), turned by
+    // basisAt(padOrigin.x) * Rx(under 180) * Ry(yaw)) vs the place bent point by point (toFrame(touchdown in plan))
+    {
+        const auto& bend = ring.ring();
+        double worst = 0.0, worstAfter = 0.0;
+        std::string worstAt;
+        for (const auto& m : ring.modules())
+        {
+            if (!m.pad || game::navigation::hubBerthPlaces(m) < 2)
+                continue;
+            const glm::dmat3 modelPlan = game::navigation::hubRotationXYZ(glm::dvec3(m.under ? 180.0 : 0.0, m.padYawDeg, 0.0));
+            const glm::dmat3 modelFrame = bend.basisAt(m.padOrigin.x) * modelPlan;
+            for (int bay = 0; bay < game::navigation::hubBerthPlaces(m); ++bay)
+            {
+                const glm::dvec3 tPlan = game::navigation::hubBerthTouchdown(m, bay);
+                const glm::dvec3 local = glm::transpose(modelPlan) * (tPlan - m.padOrigin);   // the point IN the model
+                const glm::dvec3 rigid = bend.toFrame(m.padOrigin) + modelFrame * local;
+                const double dev = glm::length(bend.toFrame(tPlan) - rigid);
+                if (dev > worst)
+                {
+                    worst = dev;
+                    worstAt = m.address + " place " + std::to_string(bay);
+                }
+                const glm::dvec3 tRigid = game::navigation::hubBerthTouchdownOnStructure(m, bay, bend);
+                worstAfter = std::max(worstAfter, glm::length(bend.toFrame(tRigid) - rigid));
+            }
+        }
+        std::printf("A5 rigid model, earth_ring_hub: a place bent point by point is off its rigid model by up to %.3f m (%s); "
+                    "through the structure's pose %.3g m\n", worst, worstAt.c_str(), worstAfter);
+        check(worstAfter < 1.0e-6, "berth places on the structure's rigid pose");
+    }
+
     if (g_failures)
     {
         std::printf("%d check(s) FAILED\n", g_failures);

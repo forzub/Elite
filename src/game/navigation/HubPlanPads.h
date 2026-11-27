@@ -326,6 +326,25 @@ inline glm::dvec3 hubBerthTouchdown(const HubPlanModule& pad, int bay)
         return pad.padPosition + hubPadAxisRight(pad) * (bay == 0 ? -HubGarage2PlaceX : HubGarage2PlaceX);
     return pad.padPosition;
 }
+// the same place on the structure's RIGID pose (re-audit A5 2026-11-27): HubExpansion sets the berth's model as one rigid
+// body at toFrame(padOrigin), turned by basisAt(padOrigin.x) * Rx(under 180) * Ry(yaw); a place bent point by point
+// (toFrame(touchdown)) leaves the model on a ring (the deck curves under a flat model). Returned in PLAN metres
+// (toStrip of the rigid point), so every consumer that bends a plan point lands exactly on the model. Flat: unchanged.
+inline glm::dvec3 hubBerthTouchdownOnStructure(const HubPlanModule& pad, int bay, const HubRingBend& bend)
+{
+    const glm::dvec3 planPoint = hubBerthTouchdown(pad, bay);
+    if (!bend.valid)
+        return planPoint;
+    const glm::dmat3 modelPlan = hubRotationXYZ(glm::dvec3(pad.under ? 180.0 : 0.0, pad.padYawDeg, 0.0));
+    const glm::dvec3 local = glm::transpose(modelPlan) * (planPoint - pad.padOrigin);
+    const glm::dvec3 rigid = bend.toFrame(pad.padOrigin) + bend.basisAt(pad.padOrigin.x) * modelPlan * local;
+    glm::dvec3 back = bend.toStrip(rigid);
+    // the same turn as the plan point (toStrip wraps x into [x0, x0 + L))
+    const double L = bend.length;
+    if (L > 0.0)
+        back.x = planPoint.x + std::remainder(back.x - planPoint.x, L);
+    return back;
+}
 // a hangar's entry point: outside its door, 35 m off in front of the bay, at the entry height (city frame)
 inline glm::dvec3 hubHangarDoorFront(const HubPlanModule& pad, int bay = 0)
 {

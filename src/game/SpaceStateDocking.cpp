@@ -1,3 +1,4 @@
+#include "src/game/navigation/HubCitySpace.h"
 #include <iostream>
 // SpaceState: Docking / route-autopilot orchestration: route request, planning jobs, safe course, autopilot phases and the docking corridor publication.
 
@@ -837,12 +838,17 @@ void SpaceState::updateDockingAdvisory()
                 // worked out in the plan's strip metres, then bent into the city frame (a ring hub, HubRingBend.h)
                 const auto& ring = plan->ring();
                 const glm::dvec3 hoverStrip = building->padPosition + out * (transit - glm::dot(building->padPosition, out));
-                glm::dvec3 from = ring.toStrip(padRouteCityLocal(*city, shipIt->second)) - hoverStrip;
+                // the ship in the plan, unwrapped next to the hover point (A4: across the ring's seam the plain strip
+                // difference pointed the approach the long way round); the plan direction -> the PHYSICAL one at the hover
+                // point (along the ring a strip metre at height h is (R - h) / R physical metres - vectorToFrame)
+                game::navigation::HubCitySpace planSpace;
+                planSpace.bend = ring;
+                glm::dvec3 from = planSpace.planDelta(hoverStrip, ring.toStrip(padRouteCityLocal(*city, shipIt->second)));
                 from -= out * glm::dot(from, out);
                 const glm::dvec3 forwardStrip = glm::length(from) > 1.0 ? glm::normalize(from) : glm::dvec3(0.0, 0.0, 1.0);
                 const glm::dmat3 axes = ring.basisAt(hoverStrip.x);
                 const glm::dvec3 hover = ring.toFrame(hoverStrip);
-                const glm::dvec3 forward = axes * forwardStrip;
+                const glm::dvec3 forward = glm::normalize(ring.vectorToFrame(hoverStrip, forwardStrip));
                 auto& d = m_padAnchor.definition;
                 d.id = pending.target.semanticAnchorId;
                 d.hubModuleId = pending.target.stableObjectId;

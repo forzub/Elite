@@ -353,7 +353,8 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     p.frameModuleId = frameModuleId;
     p.address = address;
     p.bay = bay;   // -1: queued for a hangar bay
-    p.padLocal = game::navigation::hubBerthTouchdown(*building, std::max(bay, 0));
+    // the place on the berth's RIGID model (a ring: the model does not bend with the deck - up to 0.29 m)
+    p.padLocal = game::navigation::hubBerthTouchdownOnStructure(*building, std::max(bay, 0), plan->ring());
     p.outLocal = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
     p.autoLanding = building->autoLanding;
     p.hangar = building->padKind == game::navigation::HubPlanModule::PadKind::Hangar;
@@ -487,10 +488,14 @@ void GameSimulation::updatePadLandings(double dt)
                 if (other != id && o.frameModuleId == p.frameModuleId && o.address == p.address && o.bay < 0 && o.sinceS < p.sinceS)
                     first = false;
             const game::navigation::HubPlanModule* hangar = nullptr;
+            game::navigation::HubRingBend hangarBend;
             if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(p.frameModuleId))
+            {
+                hangarBend = plan->ring();
                 for (const auto& m : plan->modules())
                     if (m.address == p.address)
                         hangar = &m;
+            }
             if (first && hangar)
                 for (int b = 0; b < game::navigation::hubBerthPlaces(*hangar) && p.bay < 0; ++b)
                 {
@@ -500,7 +505,7 @@ void GameSimulation::updatePadLandings(double dt)
                     if (busy)
                         continue;
                     p.bay = b;
-                    p.padLocal = game::navigation::hubBerthTouchdown(*hangar, b);
+                    p.padLocal = game::navigation::hubBerthTouchdownOnStructure(*hangar, b, hangarBend);
                     p.doorFrontLocal = game::navigation::hubHangarDoorFront(*hangar, b);
                     p.bayEntryLocal = game::navigation::hubHangarBayEntry(*hangar, b);
                     m_padNotices[id] = {"pad:bay_free:" + p.address + ":" + std::to_string(b + 1), serverTime()};

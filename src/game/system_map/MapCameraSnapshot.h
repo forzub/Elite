@@ -119,7 +119,15 @@ struct LocalMapPlanWarp
         if (!valid)
             return p;
         const glm::dvec3 d = p - origin;
-        const glm::dvec3 strip = ring.toStrip(glm::dvec3(glm::dot(d, ax), glm::dot(d, ay), glm::dot(d, az)));
+        const glm::dvec3 f(glm::dot(d, ax), glm::dot(d, ay), glm::dot(d, az));
+        glm::dvec3 strip = ring.toStrip(f);
+        // OFF THE DECK (the author 2026-11-27: "green squares moving at random on the ring's plan"): the ring's axis -
+        // the axial dock, its entry, the hub centre, the ships docked there - has no strip angle (r -> 0: atan2 of the
+        // spin's millimetres), so those marks jumped across the whole plan every frame as the ring turned. Points
+        // farther than half the radius from the deck (the plan's domain, HubCitySpace::moduleOnDeck) are pinned to the
+        // middle of the sheet along the ring; their across (along the axis) and height stay their own.
+        if (ring.valid && std::hypot(f.x, f.y) < 0.5 * ring.radius)
+            strip.x = ring.x0 + 0.5 * ring.length;
         return origin + strip;
     }
     // SHEET -> SCENE: the exact inverse of apply (re-audit A3 2026-11-27: the cursor's sheet point was handed out as a

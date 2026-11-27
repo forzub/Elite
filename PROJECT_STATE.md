@@ -9609,5 +9609,25 @@ start-up hitches (render), trade step 16 part 3 live.
   - B1 (b88535376): the city's render epoch has its own linear / angular velocities (interpolated with the render pose);
     ClientHubCitySpace builds each space from ONE epoch. MEASURED: render vs authoritative city velocity 1.41 / 1.65 m/s
     (a low-orbit hub ~9 m/s2, epochs 0.16-0.3 s apart) - the earlier "mm/s" estimate was wrong.
+  - B1/B2 retained rows (b2b5c31f8): a sparse-retained ship row is advanced IN its reference frame (axes turned by the
+    frame's angular velocity, world derived). HubSpaceCheck: old rule 108.9 m world-vs-frame and 4.90 m off the deck arc
+    after 1 s on the ring; now 0 / 0. Not yet live-measured on a sparse remote ship.
+  - D2 (audit #7 correction ACCEPTED): the embedded server is NOT on the main thread - ServerWorker owns ServerRuntime on
+    its own std::thread; the client frame hands it elapsed (advance waits for the previous batch, one batch in flight).
+    The earlier PROJECT_STATE wording "runs on the main thread" was WRONG. DEV ELITE_DEV_WORKER_TIMING=1 ([WorkerTiming]
+    per 5 s, [RunnerTrace] per dropping advance). Live D:/tmp/d2 (ring hub, uncapped ~330 FPS): worker busy 18-20 % of
+    wall, client waits for the previous batch ~0.3 ms mean / 480 ms per 5 s (~10 % of the client thread at 330 FPS, ~0 at
+    60 FPS), worker idle the rest. 500 ms stall after loading: frame 520.7 ms -> accepted 250, DROPPED 270.7 ms = exactly
+    frame - ServerRunnerPolicy::maxFrameDeltaSeconds (0.25 s); the debt cap (0.5 s) and the 8-step catch-up limit lose
+    nothing (debt 90 ms drained next frame). 100 ms stall: 0 dropped. The earlier "422 ms" = the same clip on a stall that
+    overlapped the first-render GPU model load (frames 588 + 442 ms -> 338 + 192 dropped). Time limits per level: Application
+    passes the raw frame dt; SpaceState hands it to the session unclamped; ServerRunner clips 0.25 / debt 0.5 / 8 steps;
+    client prediction clamps 0.05 s; visual dt 0.02 s. Not yet measured: snapshot / command transfer cost.
+    PROPOSAL (minimal, not implemented): ServerWorker::threadMain advances by its own steady_clock (wait_until the next
+    0.02 s tick) instead of waiting for advance(elapsed); advance() becomes non-blocking (post inputs, read the last result);
+    explicit states Running / Paused (single player menu: clock frozen, accumulator reset) / Overloaded (debt over cap:
+    logged dilation, keep the 0.25 s wake clip + 0.5 s debt cap + 8-step limit so a stuck tick can never spiral) / Stopping;
+    resume resets the clock base. Fixed step 0.02 s kept. This also makes Host Game (D8) keep simulating when the host GUI
+    freezes.
   - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
     HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.

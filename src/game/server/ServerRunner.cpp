@@ -5,6 +5,7 @@
 #include <optional>
 #include <cmath>
 #include <cstdlib>
+#include <cstdio>
 #include <stdexcept>
 #include <utility>
 
@@ -128,6 +129,20 @@ ServerAdvanceResult ServerRunner::advance(double elapsedSeconds)
         static_cast<double>(result.stepsExecuted) *
         m_policy.fixedStepSeconds;
 
+    // DEV (audit #6 D2): ELITE_DEV_WORKER_TIMING=1 - every advance that dropped time or hit the catch-up limit, with the
+    // split: clipped by the frame delta cap vs by the debt cap
+    {
+        static const bool on = [] {
+            const char* v = std::getenv("ELITE_DEV_WORKER_TIMING");
+            return v && *v == '1';
+        }();
+        if (on && (result.discardedSeconds > 0.0 || m_accumulatorSeconds + stepTolerance >= m_policy.fixedStepSeconds))
+            std::fprintf(stderr, "[RunnerTrace] elapsed %.1f ms -> accepted %.1f (frame cap %.0f), dropped %.1f ms, %u steps, "
+                                 "debt left %.1f ms (cap %.0f), dropped total %.1f ms\n",
+                         elapsedSeconds * 1000.0, result.acceptedElapsedSeconds * 1000.0, m_policy.maxFrameDeltaSeconds * 1000.0,
+                         result.discardedSeconds * 1000.0, result.stepsExecuted, m_accumulatorSeconds * 1000.0,
+                         m_policy.maxAccumulatedDebtSeconds * 1000.0, m_totalDiscardedSeconds * 1000.0);
+    }
     result.remainingDebtSeconds = m_accumulatorSeconds;
     result.totalDiscardedSeconds = m_totalDiscardedSeconds;
     result.catchUpLimited =

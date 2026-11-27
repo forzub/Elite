@@ -1,3 +1,8 @@
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <cstdio>
+#include <algorithm>
 #include "src/game/server/ServerWorker.h"
 
 #include <chrono>
@@ -53,6 +58,65 @@ void ServerWorker::rethrowIfFailed() const
         std::rethrow_exception(failure);
 }
 
+namespace
+{
+// DEV (audit #6 D2): ELITE_DEV_WORKER_TIMING=1 - every 5 s the split of the client / worker threads: the client's wait
+// for the previous batch (back-pressure), the worker's busy (one batch) and idle time, the elapsed it was handed, the
+// overlap (busy / wall). Low overhead: plain samples, printed by the worker.
+struct WorkerTiming
+{
+    std::mutex m;
+    std::vector<double> clientWaitS, workerIdleS, busyS, elapsedS;
+    std::chrono::steady_clock::time_point windowStart = std::chrono::steady_clock::now();
+};
+WorkerTiming& workerTiming()
+{
+    static WorkerTiming t;
+    return t;
+}
+void reportWorkerTiming(double busyS, double elapsedS)
+{
+    static const bool on = [] {
+        const char* v = std::getenv("ELITE_DEV_WORKER_TIMING");
+        return v && *v == '1';
+    }();
+    auto& t = workerTiming();
+    t.busyS.push_back(busyS);
+    t.elapsedS.push_back(elapsedS);
+    const double window = std::chrono::duration<double>(std::chrono::steady_clock::now() - t.windowStart).count();
+    if (window < 5.0)
+        return;
+    if (on)
+    {
+        const auto stats = [](std::vector<double> v) {
+            if (v.empty())
+                return std::string("n/a");
+            std::sort(v.begin(), v.end());
+            double sum = 0.0;
+            for (double x : v)
+                sum += x;
+            char b[160];
+            std::snprintf(b, sizeof b, "sum %.0f ms, mean %.2f, p95 %.2f, max %.2f ms (n %zu)", sum * 1000.0,
+                          sum * 1000.0 / v.size(), v[static_cast<std::size_t>(0.95 * (v.size() - 1))] * 1000.0, v.back() * 1000.0,
+                          v.size());
+            return std::string(b);
+        };
+        double busy = 0.0;
+        for (double x : t.busyS)
+            busy += x;
+        std::fprintf(stderr, "[WorkerTiming] %.1f s window | client waits for the previous batch: %s | worker busy: %s | worker idle: "
+                             "%s | elapsed handed: %s | worker busy share %.0f %%\n",
+                     window, stats(t.clientWaitS).c_str(), stats(t.busyS).c_str(), stats(t.workerIdleS).c_str(),
+                     stats(t.elapsedS).c_str(), 100.0 * busy / window);
+    }
+    t.clientWaitS.clear();
+    t.workerIdleS.clear();
+    t.busyS.clear();
+    t.elapsedS.clear();
+    t.windowStart = std::chrono::steady_clock::now();
+}
+} // namespace
+
 ServerAdvanceResult ServerWorker::advance(double elapsedSeconds)
 {
     std::unique_lock<std::mutex> lock(m_mutex);
@@ -67,9 +131,11 @@ ServerAdvanceResult ServerWorker::advance(double elapsedSeconds)
     // previous batch outlived the client/render frame, back-pressure is applied
     // here before accepting more elapsed time. We never queue an unbounded list
     // of frame deltas and never skip the fixed-step input stream to catch up.
+    const auto clientWaitStart = std::chrono::steady_clock::now();
     m_condition.wait(lock, [this]() {
         return !m_advancePending || static_cast<bool>(m_failure);
     });
+    workerTiming().clientWaitS.push_back(std::chrono::duration<double>(std::chrono::steady_clock::now() - clientWaitStart).count());
 
     if (m_failure)
         std::rethrow_exception(m_failure);
@@ -114,11 +180,13 @@ void ServerWorker::threadMain(
         while (true)
         {
             double elapsedSeconds = 0.0;
+            const auto idleStart = std::chrono::steady_clock::now();
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 m_condition.wait(lock, [this]() {
                     return m_stopRequested || m_advancePending;
                 });
+                workerTiming().workerIdleS.push_back(std::chrono::duration<double>(std::chrono::steady_clock::now() - idleStart).count());
 
                 if (m_stopRequested && !m_advancePending)
                     break;
@@ -131,6 +199,7 @@ void ServerWorker::threadMain(
             result.executionWallSeconds = std::chrono::duration<double>(
                 std::chrono::steady_clock::now() - executionStart
             ).count();
+            reportWorkerTiming(result.executionWallSeconds, elapsedSeconds);
 
             {
                 std::lock_guard<std::mutex> lock(m_mutex);

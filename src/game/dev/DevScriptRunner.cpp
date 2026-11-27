@@ -1057,10 +1057,25 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
     else if (cmd == "fleet")
     {
         const auto page = s.buildRepairRefitPage();
-        std::string ids;
+        std::string ids, f7Instances, navInstances;
+        std::vector<ShipInstanceId> f7Set, navSet;
         for (const auto& ship : page.ships)
+        {
             ids += std::to_string(ship.id.value) + " ";
+            if (const auto it = s.m_client->world().ships().find(ship.id.value); it != s.m_client->world().ships().end())
+                f7Set.push_back(it->second.instanceId);
+        }
+        // the navigation workspace's owned assets (the server's ownedNavigationAssetsForSession): the SAME instances
+        for (const auto& a : s.m_client->sessionSnapshot().ownedNavigationAssets)
+            navSet.push_back(a.asset.shipInstanceId);
+        std::sort(f7Set.begin(), f7Set.end());
+        std::sort(navSet.begin(), navSet.end());
+        for (const auto v : f7Set)
+            f7Instances += std::to_string(v) + " ";
+        for (const auto v : navSet)
+            navInstances += std::to_string(v) + " ";
         std::cerr << "[Fleet] controlled " << s.m_playerId.value << ", F7 fleet " << page.ships.size() << " ship(s): [" << ids << "]"
+                  << " instances F7 [" << f7Instances << "] navigation [" << navInstances << "] " << (f7Set == navSet ? "SAME" : "DIFFERENT")
                   << '\n';
     }
     else if (cmd == "refit:report")
@@ -1379,6 +1394,36 @@ bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
                       << "'\n";
         }
         std::cerr << "[DevPeers] " << peersSeen << " other ship(s), " << peersWithPrivate << " with owner / pilot data" << '\n';
+        return true;
+    }
+    // DEV (audience matrix 2026-11-27): the concrete fields of each decoded row class - own flown, own parked,
+    // flown not owned (an employer's seat), foreign. Owner data = the refit block (owned, registration, name); pilot
+    // data = core status, engine telemetry, mass, J capacity, nav computer, fines. Foreign rows: the counts over all.
+    if (cmd == "audience")
+    {
+        const auto controlled = s.m_client->localControlledEntityId().value;
+        std::size_t foreign = 0, foreignOwner = 0, foreignPilot = 0;
+        for (const auto& [id, ship] : s.m_client->world().ships())
+        {
+            const auto& mo = ship.transform.motion;
+            const bool ownerData = ship.refit.owned || !ship.refit.registrationId.empty() || !ship.refit.shipName.empty();
+            const bool pilotData = !ship.shipCoreStatus.engineReactors.empty() || ship.shipCoreStatus.reactor.maxOutputMW != 0.0 ||
+                                   mo.engineTelemetry.count != 0 || mo.shipMassT != 0.0 || mo.jChargeCapacityT != 0.0;
+            const bool flown = id == controlled;
+            const char* cls = flown && ship.refit.owned ? "OWN-FLOWN" : ship.refit.owned ? "OWN-PARKED" : flown ? "FLOWN-NOT-OWNED" : nullptr;
+            if (!cls)
+            {
+                ++foreign;
+                foreignOwner += ownerData;
+                foreignPilot += pilotData;
+                continue;
+            }
+            std::cerr << "[Audience] " << cls << " ship " << id << ": owned " << ship.refit.owned << " registration '" << ship.refit.registrationId
+                      << "' name '" << ship.refit.shipName << "' | core reactors " << ship.shipCoreStatus.engineReactors.size() << " reactor MW "
+                      << ship.shipCoreStatus.reactor.maxOutputMW << " telemetry slots " << static_cast<int>(mo.engineTelemetry.count) << " mass "
+                      << mo.shipMassT << " t J cap " << mo.jChargeCapacityT << " t nav " << static_cast<int>(mo.navComputerState) << '\n';
+        }
+        std::cerr << "[Audience] FOREIGN " << foreign << " row(s): " << foreignOwner << " with owner data, " << foreignPilot << " with pilot data" << '\n';
         return true;
     }
     if (cmd == "jstate")

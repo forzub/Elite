@@ -80,6 +80,14 @@ else:
 buy = function_body(server, "std::string GameServer::buyShip(")
 if not buy or "assignShipOwner" not in buy:
     failures.append("buyShip does not record the buyer in ShipOwnershipRegistry")
+elif "(void)assignShipOwner" in buy:
+    failures.append("buyShip drops the result of assignShipOwner (the sale must fail and refund)")
+# 4b. the instance is registered where the ship APPEARS (F7 and navigation read the same instance before boarding)
+if not buy or "registerShipInstance(" not in buy or buy.find("registerShipInstance(") > buy.find("assignShipOwner"):
+    failures.append("buyShip must register the ShipInstanceRegistry record before the owner (not at the first boarding)")
+hire = function_body(server, "std::string GameServer::hireJob(")
+if not hire or "registerShipInstance(" not in hire:
+    failures.append("hireJob does not register the employer ship's instance")
 
 # 5. persistence: the owner rides the ship save and comes back
 save = function_body(server, "void GameServer::saveRuntimeShips()")
@@ -88,6 +96,27 @@ if not save or "owner_player" not in save:
     failures.append("saveRuntimeShips does not write owner_player")
 if not restore or "owner_player" not in restore or "owner_unresolved" not in restore:
     failures.append("restoreRuntimeShipsIfDue does not restore owner_player / keep unresolved legacy rows")
+if restore and ("owner_organization" not in restore or "ShipOwnerRef::organization" not in restore):
+    failures.append("restoreRuntimeShipsIfDue does not restore owner_organization (the save writes it)")
+if restore and "registerShipInstance(" not in restore:
+    failures.append("restoreRuntimeShipsIfDue does not register the restored instance")
+if restore and "absentOwner" not in restore:
+    failures.append("restore: a known owner player absent from the slots must be kept typed (absentOwnerPlayer)")
+if save and "absentOwnerPlayer" not in save:
+    failures.append("saveRuntimeShips does not write the absent owner player back")
+if save:
+    w = save.find("writeFileAtomically(")
+    d = save.find("m_shipsDirty = false", w)
+    if w < 0 or d < 0:
+        failures.append("saveRuntimeShips: the dirty flag must be cleared only AFTER a successful write")
+
+# 5b. owner / pilot audience are independent facts
+proj = function_body(server, "void GameServer::projectShipRowsForSession(")
+if proj:
+    b = proj.find("blankPrivateShipDomains(")
+    o = proj.find("if (!owns)")
+    if b < 0 or o < 0 or b > o:
+        failures.append("projectShipRowsForSession: the pilot domains must be blanked by 'flies' independently of ownership")
 
 # 6. every per-session copy path projects the ship rows
 for fn in ("bool GameServer::copySnapshotForSession(", "bool GameServer::copyHydratedSnapshotForSession(",

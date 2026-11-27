@@ -461,6 +461,7 @@ public:
     bool m_shipsDirty = false;
     bool m_shipsRestored = false;
     std::uint64_t m_shipsSavedTick = 0;
+    std::uint64_t m_shipsSaveRetryTick = 0;   // after a FAILED write: not before this tick
     void saveRuntimeShips();
     void restoreRuntimeShipsIfDue();
     // the employment service: the employer's ship and the pilot's own ship to go back to
@@ -484,17 +485,23 @@ public:
     // "" = the commanding player may refit `subject` (0 = its own ship): it OWNS the target; checked before any charge
     std::string refitAuthority(EntityId commander, EntityId subject) const;
     bool assignShipOwner(ShipInstanceId ship, game::server::ShipOwnerRef owner);   // + the simulation's owned set
+    // ShipInstanceRegistry record of a materialized ship (idempotent); 0 = refused. Called where a ship APPEARS
+    // (purchase, hire, restore), so F7 and navigation see the same instance before any boarding.
+    ShipInstanceId registerShipInstance(EntityId entity);
     void publishPlayerOwnedShips();
     // the audience projection of the ship rows for ONE session, before serialization, on every copy path (normal,
     // hydration, full): the refit block only for the viewer's own fleet (refit.owned = "owned by the viewer's player"),
     // the preview / apply answer only to the session that asked; productOverrides stay public (visible configuration)
     void projectShipRowsForSession(game::network::ServerSessionId sessionId, std::vector<ShipSnapshot>& ships) const;
     std::unordered_map<std::uint32_t, std::uint64_t> m_refitRequesterSession;   // target entity -> the asking session
-    // legacy-save ownership that could not be resolved unambiguously: kept as written, never handed out automatically
+    // ownership that is not in force now: a legacy record with no unambiguous owner, or a KNOWN owner player absent
+    // from this universe's slots (absentOwnerPlayer, typed, written back as owner_player; the link returns when the
+    // player identity exists again). Never handed to anyone else.
     struct UnresolvedOwnership
     {
         std::uint64_t legacyOwnerActor = 0;
         std::string reason;
+        PlayerId absentOwnerPlayer {};
     };
     std::unordered_map<ShipInstanceId, UnresolvedOwnership> m_unresolvedOwnership;
     std::unordered_map<std::uint64_t, std::uint32_t> m_controlEpochs;  // player -> epoch (0 = bootstrap ship)

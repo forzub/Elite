@@ -1843,10 +1843,17 @@ void GameServer::update(double dt)
     // ship persistence: restore once the hubs exist; save on a change and every ~minute
     restoreRuntimeShipsIfDue();
     // DEV ships the simulation spawned for the primary player (the catalog lineup): owned through the registry
-    for (const ShipInstanceId granted : m_simulation.takeDevOwnershipGrants())
-        if (m_primaryPlayerId)
-            (void)assignShipOwner(granted, game::server::ShipOwnerRef::player(m_primaryPlayerId));
-    if (!m_runtimeShips.empty() && (m_shipsDirty || m_serverTick - m_shipsSavedTick >= 3600))
+    if (auto grants = m_simulation.takeDevOwnershipGrants(); !grants.empty())
+    {
+        std::unordered_set<ShipInstanceId> pending(grants.begin(), grants.end());
+        for (const auto& [eid, sp] : m_simulation.ships())
+            if (sp && pending.count(sp->core().registry().instanceId))
+                (void)registerShipInstance(eid);   // the same instance in F7 and navigation
+        for (const ShipInstanceId granted : grants)
+            if (m_primaryPlayerId)
+                (void)assignShipOwner(granted, game::server::ShipOwnerRef::player(m_primaryPlayerId));
+    }
+    if (!m_runtimeShips.empty() && m_serverTick >= m_shipsSaveRetryTick && (m_shipsDirty || m_serverTick - m_shipsSavedTick >= 3600))
         saveRuntimeShips();
     // the world's hubs (a route can reach them) anchor the SOS calls; refreshed when their count changes
     if (m_economy.loaded() && m_serverTick % 30 == 0 && m_lastSnapshot.hubs.size() != m_economy.routableHubCount())
@@ -2447,8 +2454,14 @@ std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
         return why;
     };
     bool tender = false;
-    const std::string hub = m_simulation.serviceStationOf(from, &tender);
-    if (hub.empty() || tender)
+    std::string hub = m_simulation.serviceStationOf(from, &tender);
+    if ((hub.empty() || tender) && g_devCommandsAllowed.load() && !ship->core().transform().motion.hubId.empty())
+    {
+        // DEV (as the off-berth purchase): the audience check of an employer's seat must not depend on the dock autopilot
+        hub = ship->core().transform().motion.hubId;
+        std::cerr << "[Employment] DEV: hired off a berth at " << hub << std::endl;
+    }
+    else if (hub.empty() || tender)
         return refuse("наём — у причала хаба (служба занятости)");
     const int system = ship->core().transform().motion.systemId;
     const auto list = m_economy.vacanciesAt(hub, system);
@@ -2474,6 +2487,8 @@ std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
     const EntityId employer = m_simulation.spawnShipBeside(from, ShipRole::Player, *d, init, 5000.0);
     if (employer.value == 0)
         return refuse("работодатель не выдал корабль");
+    if (registerShipInstance(employer) == 0)
+        return refuse("реестр кораблей не принял корабль работодателя");
     m_hires[player.value] = {from, employer};
     m_runtimeShips.insert(init.registry.instanceId);
     m_shipsDirty = true;
@@ -2570,8 +2585,16 @@ std::string GameServer::buyShip(EntityId from, const std::string& passportId, co
         m_economy.credit(player, shipyardHub, system, offer->priceCr, "возврат: корабль не создан");
         return refuse("верфь не смогла выдать корабль (деньги возвращены)");
     }
+    // the sale is complete only when the ship exists, its persistent instance is registered (F7 and navigation read
+    // the same ShipInstanceId) AND the buyer is its owner
+    if (registerShipInstance(id) != init.registry.instanceId ||
+        !assignShipOwner(init.registry.instanceId, game::server::ShipOwnerRef::player(PlayerId{player})))
+    {
+        m_economy.credit(player, shipyardHub, system, offer->priceCr, "возврат: корабль не зарегистрирован");
+        std::cerr << "[Shipyard] instance " << init.registry.instanceId << " NOT registered / owned: sale refunded" << std::endl;
+        return refuse("реестр кораблей не принял корабль (деньги возвращены)");
+    }
     m_runtimeShips.insert(init.registry.instanceId);
-    (void)assignShipOwner(init.registry.instanceId, game::server::ShipOwnerRef::player(PlayerId{player}));
     m_shipsDirty = true;
     m_economy.recordOperation(player, "ship_bought", "куплен корабль " + name + " за " + std::to_string(static_cast<long long>(offer->priceCr)) +
                                                          " Cr: ждёт в 5 км от хаба (F7 -> ПЕРЕСЕСТЬ)", -offer->priceCr);
@@ -2607,23 +2630,11 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
     if (!restoring && (a.motion.systemId != b.motion.systemId || (!sameStation && glm::length(a.fullWorldMeters() - b.fullWorldMeters()) > 20000.0)))
         return "корабль далеко (нужно <= 20 км в той же системе): " + std::to_string(static_cast<long long>(glm::length(a.fullWorldMeters() - b.fullWorldMeters()))) +
                " м, системы " + std::to_string(a.motion.systemId) + " / " + std::to_string(b.motion.systemId);
-    // the persistent identity of a ship spawned after the bootstrap
-    ShipInstanceId instance = m_shipInstances.instanceForEntity(target);
+    // the persistent identity: registered where the ship appears (purchase, hire, restore); kept here only as a
+    // fallback for a ship materialized by some other path
+    const ShipInstanceId instance = registerShipInstance(target);
     if (instance == 0)
-    {
-        game::server::ShipInstanceRecord record;
-        record.instanceId = to.registry().instanceId;
-        record.materializedEntityId = target;
-        record.typeId = to.desc().typeId;
-        record.catalogShipId = to.desc().catalog.passportId;
-        record.roleType = to.registry().shipRole;
-        record.ownerActor = to.registry().ownerActor;
-        record.name = to.visualIdentity().shipName;
-        record.registrationId = to.registry().registrationId;
-        if (!m_shipInstances.registerMaterialized(std::move(record)))
-            return "реестр кораблей отказал";
-        instance = m_shipInstances.instanceForEntity(target);
-    }
+        return "реестр кораблей отказал";
     // (was: the boarding player was written the OWNER here, before the control change, and a later refusal rolled
     // back the control only - boarding changes CONTROL, ownership changes on a purchase / an explicit transfer)
     resetSessionControlState(from, "ship-change-out");
@@ -2649,11 +2660,13 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
 
 void GameServer::saveRuntimeShips()
 {
-    m_shipsDirty = false;
-    m_shipsSavedTick = m_serverTick;
     const std::string path = m_economy.stateFilePath();
     if (path.empty())
+    {
+        m_shipsDirty = false;   // nothing to persist to
+        m_shipsSavedTick = m_serverTick;
         return;
+    }
     nlohmann::json j;
     j["schema"] = "runtime_ships/2";   // 2: owner (ShipOwnershipRegistry) + unresolved legacy ownership
     j["next_instance"] = m_nextBoughtShipInstance;
@@ -2683,7 +2696,11 @@ void GameServer::saveRuntimeShips()
         else if (ownership && ownership->owner.kind == game::server::ShipOwnerKind::Organization)
             row["owner_organization"] = ownership->owner.organizationId.value;
         if (const auto u = m_unresolvedOwnership.find(core.registry().instanceId); u != m_unresolvedOwnership.end())
+        {
             row["owner_unresolved"] = {{"legacy_owner_actor", u->second.legacyOwnerActor}, {"reason", u->second.reason}};
+            if (u->second.absentOwnerPlayer && !ownership)
+                row["owner_player"] = u->second.absentOwnerPlayer.value;   // the exact owner, kept while absent
+        }
     }
     // the own ships of hired pilots (to go back to)
     j["hires"] = nlohmann::json::array();
@@ -2694,8 +2711,16 @@ void GameServer::saveRuntimeShips()
         if (own && emp)
             j["hires"].push_back({player, own->core().registry().instanceId, emp->core().registry().instanceId});
     }
+    // the "saved" state only after the write succeeded: a failed write stays dirty and is retried on the next tick
+    // that allows it (not an hour later by the periodic save)
     if (!game::economy::writeFileAtomically(path + ".ships.json", j.dump(1)))
+    {
         std::cerr << "[ShipSave] NOT saved: " << path << ".ships.json" << std::endl;
+        m_shipsSaveRetryTick = m_serverTick + 300;   // ~5 s: a full disk must not turn into a save per tick
+        return;
+    }
+    m_shipsDirty = false;
+    m_shipsSavedTick = m_serverTick;
 }
 
 void GameServer::restoreRuntimeShipsIfDue()
@@ -2775,15 +2800,21 @@ void GameServer::restoreRuntimeShipsIfDue()
                     ship->core().recordProductOverride(o.substr(0, eq), o.substr(eq + 1));
         m_runtimeShips.insert(init.registry.instanceId);
         byInstance[init.registry.instanceId] = id;
+        if (registerShipInstance(id) == 0)
+            std::cerr << "[ShipSave] restore: instance " << init.registry.instanceId << " NOT registered" << std::endl;
         {
             const ShipInstanceId instance = init.registry.instanceId;
             const bool employerShipRow = !s.value("employer_of", std::string()).empty();
             std::uint64_t ownerPlayer = 0;
+            std::uint64_t ownerOrganization = 0;
             std::string unresolved;
             if (!legacyOwnership)
             {
                 ownerPlayer = s.value("owner_player", std::uint64_t{0});
-                if (const auto u = s.find("owner_unresolved"); u != s.end() && u->is_object())
+                ownerOrganization = s.value("owner_organization", std::uint64_t{0});
+                // a KNOWN owner (owner_player) is not "unresolved" by its old reason: it is tried again below (an
+                // absent player that exists now gets its ship back); only an owner-less legacy record keeps it
+                if (const auto u = s.find("owner_unresolved"); u != s.end() && u->is_object() && ownerPlayer == 0 && ownerOrganization == 0)
                     unresolved = u->value("reason", std::string("unresolved"));
             }
             else if (const auto it = legacyOwnerOf.find(instance); it != legacyOwnerOf.end())
@@ -2793,15 +2824,26 @@ void GameServer::restoreRuntimeShipsIfDue()
             else if (!employerShipRow && init.registry.ownerActor != 0)
                 unresolved = "runtime_ships/1: shared owner_actor " + std::to_string(init.registry.ownerActor) +
                              ", no pilot / hire evidence, " + std::to_string(m_players.size()) + " players";
-            if (ownerPlayer != 0 && m_players.find(PlayerId{ownerPlayer}))
+            PlayerId absentOwner {};
+            if (ownerOrganization != 0)
+            {
+                if (!assignShipOwner(instance, game::server::ShipOwnerRef::organization(game::identity::OrganizationId{ownerOrganization})))
+                    unresolved = "owner organization " + std::to_string(ownerOrganization) + " refused by the registry";
+            }
+            else if (ownerPlayer != 0 && m_players.find(PlayerId{ownerPlayer}))
                 (void)assignShipOwner(instance, game::server::ShipOwnerRef::player(PlayerId{ownerPlayer}));
             else if (ownerPlayer != 0)
+            {
+                absentOwner = PlayerId{ownerPlayer};   // typed: written back as owner_player, restored when it exists
                 unresolved = "owner player " + std::to_string(ownerPlayer) + " does not exist in this universe";
+            }
             if (!unresolved.empty())
             {
-                m_unresolvedOwnership[instance] = {init.registry.ownerActor, unresolved};
+                m_unresolvedOwnership[instance] = {init.registry.ownerActor, unresolved, absentOwner};
                 std::cerr << "[Ownership] ship " << instance << " (" << passport << ") NOT assigned: " << unresolved << std::endl;
             }
+            else if (ownerOrganization != 0)
+                std::cerr << "[Ownership] ship " << instance << " (" << passport << ") owner organization " << ownerOrganization << std::endl;
             else if (ownerPlayer != 0)
                 std::cerr << "[Ownership] ship " << instance << " (" << passport << ") owner player " << ownerPlayer
                           << (legacyOwnership ? " (legacy evidence)" : "") << std::endl;
@@ -3347,6 +3389,28 @@ std::string GameServer::refitAuthority(EntityId commander, EntityId subject) con
     return {};
 }
 
+ShipInstanceId GameServer::registerShipInstance(EntityId entity)
+{
+    if (const ShipInstanceId known = m_shipInstances.instanceForEntity(entity); known != 0)
+        return known;
+    const Ship* ship = m_simulation.getShip(entity);
+    if (!ship)
+        return 0;
+    const auto& core = ship->core();
+    game::server::ShipInstanceRecord record;
+    record.instanceId = core.registry().instanceId;
+    record.materializedEntityId = entity;
+    record.typeId = core.desc().typeId;
+    record.catalogShipId = core.desc().catalog.passportId;
+    record.roleType = core.registry().shipRole;
+    record.ownerActor = core.registry().ownerActor;
+    record.name = core.visualIdentity().shipName;
+    record.registrationId = core.registry().registrationId;
+    if (!m_shipInstances.registerMaterialized(std::move(record)))
+        return 0;
+    return m_shipInstances.instanceForEntity(entity);
+}
+
 bool GameServer::assignShipOwner(ShipInstanceId ship, game::server::ShipOwnerRef owner)
 {
     if (!m_shipOwnership.assign(ship, owner))
@@ -3370,26 +3434,32 @@ void GameServer::projectShipRowsForSession(game::network::ServerSessionId sessio
 {
     const PlayerId viewer = m_sessions.player(sessionId);
     const EntityId viewerShip = controlledEntityForSession(sessionId);
+    // DEV A/B (the traffic measurement): ELITE_DEV_NO_AUDIENCE_PROJECTION=1 keeps the pilot domains (the leak back)
+    static const bool keepDomains = [] {
+        const char* v = std::getenv("ELITE_DEV_NO_AUDIENCE_PROJECTION");
+        return v && v[0] == '1';
+    }();
+    // three INDEPENDENT facts (author's audience matrix 2026-11-27):
+    //   owns  - the viewer owns the ship: F7 fleet, registration, the refit configuration block
+    //   flies - the viewer's session controls it now: pilot telemetry, control, navigation and service data of the seat
+    //   asked - this session asked the refit: that request's preview / result
+    // An owned ship parked elsewhere is NOT flown (its pilot domains are blanked); an employer's ship of a hire is
+    // flown, not owned (it keeps the seat's domains, gets no fleet / refit block).
     for (auto& row : ships)
     {
         const auto* record = m_shipOwnership.find(row.instanceId);
-        const bool viewersOwn = viewer && record && record->owner.kind == game::server::ShipOwnerKind::Player &&
-                                record->owner.playerId == viewer;
-        if (!viewersOwn)
+        const bool owns = viewer && record && record->owner.kind == game::server::ShipOwnerKind::Player &&
+                          record->owner.playerId == viewer;
+        const bool flies = viewerShip.value != 0 && row.id == viewerShip;
+        if (!flies && !keepDomains)
+            blankPrivateShipDomains(row);
+        if (!owns)
         {
             // not this viewer's fleet: only the visible configuration stays (the client resolves the configured
             // descriptor of every ship); ownership, registration, name, preview and apply answers are the owner's
             auto overrides = std::move(row.refit.productOverrides);
             row.refit = {};
             row.refit.productOverrides = std::move(overrides);
-            // the pilot's own seat keeps its domains (an employer's ship of a hire is flown, not owned).
-            // DEV A/B (the traffic measurement): ELITE_DEV_NO_AUDIENCE_PROJECTION=1 keeps the domains (the leak back)
-            static const bool keepDomains = [] {
-                const char* v = std::getenv("ELITE_DEV_NO_AUDIENCE_PROJECTION");
-                return v && v[0] == '1';
-            }();
-            if (row.id != viewerShip && !keepDomains)
-                blankPrivateShipDomains(row);
             continue;
         }
         row.refit.owned = true;

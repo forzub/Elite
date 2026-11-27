@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -30,12 +31,24 @@ ServerRuntime::ServerRuntime(
 {
 }
 
+namespace
+{
+// DEV: ELITE_DEV_PLAYER_SLOTS=<n> (the "2 slots -> 1 -> 2" ownership persistence check: an owner player absent from
+// the universe keeps its exact PlayerId on disk and gets its ship back when the slot exists again)
+std::size_t devPlayerSlots(std::size_t requested)
+{
+    const char* v = std::getenv("ELITE_DEV_PLAYER_SLOTS");
+    const int n = v ? std::atoi(v) : 0;
+    return n > 0 && n <= 8 ? static_cast<std::size_t>(n) : requested;
+}
+} // namespace
+
 ServerRuntime::ServerRuntime(
     const WorldParams& worldParams,
     game::debug::IServerDebugChannel& debugChannel,
     std::size_t bootstrapPlayerSlotCount
 )
-    : m_server(std::make_unique<GameServer>(bootstrapPlayerSlotCount))
+    : m_server(std::make_unique<GameServer>(devPlayerSlots(bootstrapPlayerSlotCount)))
     , m_debugChannel(debugChannel)
 {
     // Bootstrap configuration belongs to the authoritative runtime. The host

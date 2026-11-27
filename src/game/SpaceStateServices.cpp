@@ -25,7 +25,9 @@ game::presentation::RepairRefitPresentation SpaceState::buildRepairRefitPage()
     const auto add = [&](const ClientShipState& s) {
         owned.push_back({s.id, s.descriptor, &s.modules, &s.refit});
     };
-    if (const auto it = ships.find(controlled.value); it != ships.end() && it->second.descriptor)
+    // (the controlled ship was listed unconditionally: a hire's employer ship - flown, not owned - showed in F7 while
+    // the navigation fleet, the same ownership, did not list it; live 2026-11-27)
+    if (const auto it = ships.find(controlled.value); it != ships.end() && it->second.descriptor && it->second.refit.owned)
         add(it->second);
     std::vector<const ClientShipState*> others;
     for (const auto& [id, s] : ships)

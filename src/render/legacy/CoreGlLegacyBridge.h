@@ -33,6 +33,7 @@ struct State
     GLenum matrixMode = ModelViewToken;
     glm::mat4 modelView {1.0f};
     glm::mat4 projection {1.0f};
+    GLuint overrideProgram = 0;
     std::vector<glm::mat4> modelViewStack;
     std::vector<glm::mat4> projectionStack;
 
@@ -53,6 +54,12 @@ struct State
 };
 
 inline State state;
+
+// the quad / line draws until reset (0) use THIS program instead of the bridge's own (audit #7 D4)
+inline void setProgramOverride(GLuint program)
+{
+    state.overrideProgram = program;
+}
 
 inline glm::mat4& activeMatrix()
 {
@@ -335,14 +342,26 @@ inline void drawBufferedVertices()
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &previousArrayBuffer);
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
 
-    glUseProgram(state.program);
     const glm::mat4 mvp = state.projection * state.modelView;
+    if (state.overrideProgram != 0)
+    {
+        // a caller's own program (same attribute layout, uMvp) - e.g. the PPI radar's post effects; its other uniforms
+        // were set by the caller
+        glUseProgram(state.overrideProgram);
+        const GLint loc = glGetUniformLocation(state.overrideProgram, "uMvp");
+        if (loc >= 0)
+            glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mvp));
+    }
+    else
+    {
+    glUseProgram(state.program);
     if (state.mvpLocation >= 0)
         glUniformMatrix4fv(state.mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
     if (state.textureEnabledLocation >= 0)
         glUniform1i(state.textureEnabledLocation, state.texture2D ? 1 : 0);
     if (state.textureLocation >= 0)
         glUniform1i(state.textureLocation, std::max(0, activeTexture - static_cast<GLint>(GL_TEXTURE0)));
+    }
 
     glBindVertexArray(state.vao);
     glBindBuffer(GL_ARRAY_BUFFER, state.vbo);

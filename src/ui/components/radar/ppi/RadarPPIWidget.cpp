@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <cstdio>
 #include <cstdint>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "RadarPPIWidget.h"
@@ -83,7 +85,7 @@ void RadarPPIWidget::initShader(const std::string& fragPath)
     m_postShader = compileShaderFromFiles(vertexPath, fragPath);
     m_shaderEnabled = (m_postShader != 0);
 
-        printf("[PPI radar] Shader load result: program=%d, enabled=%d\n", m_postShader, m_shaderEnabled);
+        std::fprintf(stderr, "[PPI radar] Shader load result: program=%d, enabled=%d\n", m_postShader, m_shaderEnabled);
 }
 
 
@@ -154,39 +156,43 @@ void RadarPPIWidget::update(float dt)
     }
 
     // ===== ВАЖНО: ОБНОВЛЯЕМ ЭФФЕКТЫ =====
-    // Episodic interference: now and then (45-120 s) one or two of the LCD
-    // glitches (lines, noise, tearing, interference, retention) run for 3-8 s.
+    // Episodic display defects (the author, 2026-11-27: short glitches now and then, of different kinds): every 20-60 s
+    // ONE short defect, 0.15-0.9 s - a bad connector's line, digital noise (EMI), tearing (sync loss), interference, a
+    // freeze (the display processor stalls: the scope holds its last frame), retention (a ghost of the old picture)
     if (auto* lcd = dynamic_cast<LCDEffect*>(m_effect.get()))
     {
+        static const bool trace = [] {
+            const char* v = std::getenv("ELITE_DEV_RADAR_GLITCH_LOG");
+            return v && *v == '1';
+        }();
+        static const float everyS = [] {
+            const char* v = std::getenv("ELITE_DEV_RADAR_GLITCH_EVERY_S");   // DEV: a shorter gap to look at them
+            return v ? static_cast<float>(std::atof(v)) : 0.0f;
+        }();
+        const auto rnd = [] { return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); };
+        if (m_interferenceTimer > 1.0e5f)
+            m_interferenceTimer = 0.0f;
         m_interferenceTimer -= dt;
         if (m_interferenceTimer <= 0.0f)
         {
-            const auto rnd = [] { return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); };
-            lcd->enableCableLines(false);
-            lcd->enableImageRetention(false);
-            lcd->enableDigitalNoise(false);
-            lcd->enableTearing(false);
-            lcd->enableInterference(false);
-            if (m_interferenceOn)
-            {
-                m_interferenceOn = false;
-                m_interferenceTimer = 45.0f + 75.0f * rnd();
-            }
-            else
-            {
-                m_interferenceOn = true;
-                m_interferenceTimer = 3.0f + 5.0f * rnd();
-                const int kinds = 1 + static_cast<int>(rnd() * 1.999f);
-                for (int k = 0; k < kinds; ++k)
-                    switch (static_cast<int>(rnd() * 4.999f))
-                    {
-                    case 0: lcd->enableCableLines(true); break;
-                    case 1: lcd->enableDigitalNoise(true); break;
-                    case 2: lcd->enableTearing(true); break;
-                    case 3: lcd->enableInterference(true); break;
-                    default: lcd->enableImageRetention(true); break;
-                    }
-            }
+            // DEV ELITE_DEV_RADAR_GLITCH_HOLD_S=<s>: the kinds in turn (0..5), each held that long - to look at every one
+            static const float holdS = [] {
+                const char* v = std::getenv("ELITE_DEV_RADAR_GLITCH_HOLD_S");
+                return v ? static_cast<float>(std::atof(v)) : 0.0f;
+            }();
+            static int nextKind = 0;
+            static const int onlyKind = [] {
+                const char* v = std::getenv("ELITE_DEV_RADAR_GLITCH_KIND");   // DEV: one kind only
+                return v ? std::atoi(v) : -1;
+            }();
+            const int kind = onlyKind >= 0 ? onlyKind : holdS > 0.0f ? (nextKind++ % 6) : static_cast<int>(rnd() * 5.999f);
+            const float seconds = holdS > 0.0f ? holdS : kind == 4 ? 0.3f + 0.6f * rnd() : 0.15f + 0.5f * rnd();
+            const float intensity = 0.5f + 0.5f * rnd();
+            lcd->triggerGlitch(kind, seconds, intensity);
+            m_interferenceTimer = everyS > 0.0f ? everyS : 20.0f + 40.0f * rnd();
+            if (trace)
+                std::fprintf(stderr, "[RadarGlitch] kind %d for %.2f s at %.2f, next in %.1f s\n", kind, seconds, intensity,
+                             m_interferenceTimer);
         }
     }
 
@@ -314,9 +320,15 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     // most ContentHz; other frames only present the cached texture through
     // the LCD shader. Tracks change at the scan rate (2 Hz) anyway.
     constexpr float ContentHz = 30.0f;
-    const bool redrawContent =
+    bool redrawContent =
         fboW != m_contentW || fboH != m_contentH ||
         m_time < m_contentTime || m_time - m_contentTime >= 1.0f / ContentHz;
+    {
+        // a FREEZE glitch: the display processor stalls - the scope keeps presenting its last frame
+        const auto* lcd = dynamic_cast<const LCDEffect*>(m_effect.get());
+        if (lcd && lcd->freezeActive() && fboW == m_contentW && fboH == m_contentH)
+            redrawContent = false;
+    }
 
     // =========================================================================
     // 1. РЕНДЕР В FBO (текущий кадр) - ВСЕГДА РАБОТАЕТ
@@ -431,7 +443,15 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
                                 m_radius, m_radius * m_visualConfig.background.perspective);
     }
 
-    // Рисуем текстуру
+    // Рисуем текстуру (the post shader through the bridge's program override - glUseProgram alone was replaced by the
+    // bridge's own program, so the effects never reached the screen in the core profile)
+    if (m_shaderEnabled && m_postShader && m_effect)
+    {
+        glUniform1i(glGetUniformLocation(m_postShader, "uScope"), 0);
+        glUniform1i(glGetUniformLocation(m_postShader, "uScopePrevious"), 0);
+        elite::render::core_legacy::setProgramOverride(m_postShader);
+    }
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_renderTarget.texture());
     elite::render::core_legacy::color4f(1.0f, 1.0f, 1.0f, 1.0f);
     elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
@@ -441,6 +461,7 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
         elite::render::core_legacy::texCoord2f(0, 1); elite::render::core_legacy::vertex2f(px,      py + ph);
     elite::render::core_legacy::end();
 
+    elite::render::core_legacy::setProgramOverride(0);
     if (m_shaderEnabled && m_postShader)
         glUseProgram(0);
 

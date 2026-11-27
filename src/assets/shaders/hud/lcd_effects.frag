@@ -1,7 +1,12 @@
-#version 120
+#version 430 core
+// ported from GLSL 120 (audit #7 D4): the core profile rejects 120; drawn through
+// core_legacy's program override (same attribute layout, vTexCoord)
+in vec2 vTexCoord;
+in vec4 vColor;
+layout(location = 0) out vec4 fragColor;
 
-uniform sampler2D texture;
-uniform sampler2D previousFrame;  // Предыдущий кадр
+uniform sampler2D uScope;
+uniform sampler2D uScopePrevious;  // Предыдущий кадр
 uniform float time;
 uniform vec2 resolution;
 
@@ -57,7 +62,7 @@ float rand(vec2 co) {
 
 void main()
 {
-    vec2 uv = gl_TexCoord[0].xy;
+    vec2 uv = vTexCoord;
     vec2 originalUv = uv;
     
     vec2 center = vec2(radarCenterX, radarCenterY);
@@ -67,24 +72,29 @@ void main()
     
     // ===== CABLE LINES =====
     if (cableLineIntensity > 0.0 && inside) {
-        float movement = sin(time * 0.3) * 0.2;
-        float basePos = 0.5 + movement;
-        float freezeStep = floor(time * 0.5) - floor(time * 0.4);
-        float pos = mix(basePos, basePos + 0.1, freezeStep);
-        float glitch = step(0.95, rand(vec2(time, 0.0))) * 0.1;
+        // the line runs ACROSS THE SCOPE: placed in the ellipse's own height (the scope is flattened by its perspective -
+        // a 0.3..0.8 texture row was mostly outside it and the mask cut it off)
+        float cy = radarCenterY / resolution.y;
+        float ry = radarRadiusY / resolution.y;
+        float movement = sin(time * 0.3) * 0.5;
+        // it jumps between two rows (was floor(t*0.5) - floor(t*0.4): that GREW with time and left the screen)
+        float freezeStep = step(0.5, fract(time * 0.45));
+        float pos = cy + ry * (movement + 0.25 * freezeStep);
+        float glitch = step(0.95, rand(vec2(time, 0.0))) * 0.1 * ry;
         pos += glitch * sin(time * 50.0);
-        
+        float lineWidth = cableLineWidth * ry * 3.0;
+
         float dist = abs(uv.y - pos);
         
-        if (dist < cableLineWidth) {
+        if (dist < lineWidth) {
             float stepPattern = floor(uv.x * 20.0) / 20.0;
             float brightness = 0.7 + 0.3 * sin(stepPattern * 50.0 + time);
             float edgeNoise = rand(vec2(uv.x * 10.0, time));
-            if (dist > cableLineWidth * 0.8) {
+            if (dist > lineWidth * 0.8) {
                 brightness *= edgeNoise;
             }
             float gray = 0.8 + 0.2 * sin(uv.x * 30.0 + time);
-            gl_FragColor = vec4(cableLineColor, 1.0) * brightness * cableLineIntensity;
+            fragColor = vec4(cableLineColor, 1.0) * brightness * cableLineIntensity;
             return;
         }
     }
@@ -92,13 +102,19 @@ void main()
     // ===== LCD TEARING =====
     if (lcdTearingIntensity > 0.0 && inside) {
         float shift = 0.0;
-        if (abs(uv.y - tearingLine1) < 0.02) {
+        // the torn rows inside the scope's (flattened) ellipse: tearingLineN in 0..1 -> across its height
+        float tcy = radarCenterY / resolution.y;
+        float try = radarRadiusY / resolution.y;
+        float t1 = tcy + try * (tearingLine1 * 2.0 - 1.0) * 0.9;
+        float t2 = tcy + try * (tearingLine2 * 2.0 - 1.0) * 0.9;
+        float t3 = tcy + try * (tearingLine3 * 2.0 - 1.0) * 0.9;
+        if (abs(uv.y - t1) < 0.02 * try * 3.0) {
             shift = tearingShift1 / resolution.x;
         }
-        else if (abs(uv.y - tearingLine2) < 0.015) {
+        else if (abs(uv.y - t2) < 0.015 * try * 3.0) {
             shift = tearingShift2 / resolution.x;
         }
-        else if (abs(uv.y - tearingLine3) < 0.01) {
+        else if (abs(uv.y - t3) < 0.01 * try * 3.0) {
             shift = tearingShift3 / resolution.x;
         }
         uv.x += shift;
@@ -112,8 +128,8 @@ void main()
     }
     
     // ===== ПОЛУЧАЕМ ЦВЕТА =====
-    vec4 currentColor = texture2D(texture, uv);
-    vec4 prevColor = texture2D(previousFrame, originalUv);
+    vec4 currentColor = texture(uScope, uv);
+    vec4 prevColor = texture(uScopePrevious, originalUv);
     vec4 finalColor = currentColor;
     
     // ===== FREEZE =====
@@ -152,7 +168,9 @@ void main()
     
     // ===== IMAGE RETENTION =====
     if (retentionIntensity > 0.0 && inside) {
-        finalColor = mix(finalColor, prevColor, 0.1 * retentionIntensity);
+        // a burnt-in ghost of the picture, displaced (no previous frame is kept: the scope samples itself offset)
+        vec3 ghost = texture(uScopePrevious, originalUv + vec2(0.035, -0.025)).rgb;
+        finalColor.rgb = max(finalColor.rgb, ghost * 0.9 * retentionIntensity);
     }
     
     // ===== ПОСТОЯННЫЕ ЭФФЕКТЫ =====
@@ -162,8 +180,8 @@ void main()
     }
     
     if (pixelResponseIntensity > 0.0 && inside) {
-        vec4 left = texture2D(texture, uv - vec2(1.0/resolution.x, 0.0));
-        vec4 right = texture2D(texture, uv + vec2(1.0/resolution.x, 0.0));
+        vec4 left = texture(uScope, uv - vec2(1.0/resolution.x, 0.0));
+        vec4 right = texture(uScope, uv + vec2(1.0/resolution.x, 0.0));
         finalColor = mix(finalColor, (left + right) * 0.5, 0.1 * pixelResponseIntensity);
     }
     
@@ -172,5 +190,5 @@ void main()
         finalColor = vec4(0.0, 0.0, 0.0, 0.0);
     }
     
-    gl_FragColor = finalColor;
+    fragColor = finalColor;
 }

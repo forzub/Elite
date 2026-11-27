@@ -114,6 +114,11 @@ public:
     void enableTearing(bool enable) { m_data.lcdTearing.active = enable; }
     void enableInterference(bool enable) { m_data.interference.active = enable; }
     void enableFreeze(bool enable) { m_data.freeze.active = enable; }  // ← НОВЫЙ МЕТОД
+    // start one glitch NOW for `seconds` (0 cable lines, 1 digital noise, 2 tearing, 3 interference, 4 freeze, 5 image
+    // retention); every other glitch is switched off - the widget's scheduler decides when (audit #7: short, now and then)
+    void triggerGlitch(int kind, float seconds, float intensity);
+    void stopGlitches();
+    bool freezeActive() const { return m_data.freeze.active && m_data.freeze.intensity > 0.0f; }
    
     
     // Методы настройки параметров

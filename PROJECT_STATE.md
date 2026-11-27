@@ -9629,5 +9629,14 @@ start-up hitches (render), trade step 16 part 3 live.
     logged dilation, keep the 0.25 s wake clip + 0.5 s debt cap + 8-step limit so a stuck tick can never spiral) / Stopping;
     resume resets the clock base. Fixed step 0.02 s kept. This also makes Host Game (D8) keep simulating when the host GUI
     freezes.
+  - RADAR GLITCHES (author 2026-11-27: short display defects now and then, of different kinds). ROOT CAUSE they were
+    gone: the PPI scope's post shaders were GLSL 120 (rejected by the 4.3 core profile) AND the widget's glUseProgram was
+    replaced by core_legacy's own program at the quad draw - the effects never reached the screen. Fixed: lcd_effects /
+    crt_effects / passthrough ported to 430 core; core_legacy::setProgramOverride; the scheduler: every 20-60 s ONE defect
+    for 0.15-0.9 s (cable line, digital noise, tearing, interference, freeze = the scope holds its last frame, retention =
+    a displaced ghost). Shader bugs fixed: the cable row grew with time (floor(t*.5)-floor(t*.4)) and, like the tearing
+    rows, sat outside the flattened scope ellipse (now placed in the ellipse height). Live D:/tmp/radarglitch/montage.png:
+    cable / tearing / retention / interference / noise visible; freeze not visible on a still. CRT shader ported, not live-run
+    (no ship uses the CRT scope). DEV: ELITE_DEV_RADAR_GLITCH_LOG / _EVERY_S / _HOLD_S / _KIND.
   - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
     HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.

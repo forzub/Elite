@@ -1,11 +1,16 @@
-#version 120
+#version 430 core
+// ported from GLSL 120 (audit #7 D4): the core profile rejects 120; drawn through
+// core_legacy's program override (same attribute layout, vTexCoord)
+in vec2 vTexCoord;
+in vec4 vColor;
+layout(location = 0) out vec4 fragColor;
 
 // ============================================================================
 // ВХОДНЫЕ ПАРАМЕТРЫ ШЕЙДЕРА
 // ============================================================================
 
 // Основные текстуры и параметры
-uniform sampler2D texture;      // Текстура с рендером радара
+uniform sampler2D uScope;      // Текстура с рендером радара
 uniform float time;             // Время для анимации эффектов
 uniform vec2 resolution;        // Размер текстуры (width, height)
 
@@ -76,7 +81,7 @@ bool isInsideEllipse(vec2 uv, vec2 center, vec2 radius)
 void main()
 {
     // Текущие координаты текстуры (0-1)
-    vec2 uv = gl_TexCoord[0].xy;
+    vec2 uv = vTexCoord;
     // Сохраняем оригинальные координаты для эффектов, которым нужен исходный пиксель
     vec2 originalUv = uv;
     
@@ -175,7 +180,7 @@ void main()
     // ==========================================================================
     // ПОЛУЧАЕМ ЦВЕТ ИЗ ТЕКСТУРЫ
     // ==========================================================================
-    vec4 color = texture2D(texture, uv);
+    vec4 color = texture(uScope, uv);
     
     // ==========================================================================
     // 3. ДВОЙНОЕ ИЗОБРАЖЕНИЕ (GHOSTING) - ДЛЯ ВСЕГО ЭКРАНА
@@ -183,15 +188,15 @@ void main()
     if (ghostIntensity > 0.0) {
         vec2 ghostUv1 = originalUv;
         ghostUv1.x += ghostPrimaryOffset * ghostIntensity / resolution.x;
-        vec4 ghost1 = texture2D(texture, ghostUv1);
+        vec4 ghost1 = texture(uScope, ghostUv1);
         
         vec2 ghostUv2 = originalUv;
         ghostUv2.x += ghostSecondaryOffset * ghostIntensity / resolution.x;
-        vec4 ghost2 = texture2D(texture, ghostUv2);
+        vec4 ghost2 = texture(uScope, ghostUv2);
         
         vec2 ghostUv3 = originalUv;
         ghostUv3.x += ghostTertiaryOffset * ghostIntensity / resolution.x;
-        vec4 ghost3 = texture2D(texture, ghostUv3);
+        vec4 ghost3 = texture(uScope, ghostUv3);
         
         color += ghost1 * ghostPrimaryIntensity * ghostIntensity;
         color += ghost2 * ghostSecondaryIntensity * ghostIntensity;
@@ -244,5 +249,5 @@ void main()
     // ==========================================================================
     // ВЫВОД РЕЗУЛЬТАТА
     // ==========================================================================
-    gl_FragColor = color;
+    fragColor = color;
 }

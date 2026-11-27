@@ -21,6 +21,40 @@ void LCDEffect::update(float dt)
     updateGlitchState(m_data.digitalNoise, dt);
     updateGlitchState(m_data.lcdTearing, dt);
     updateGlitchState(m_data.interference, dt);
+    updateGlitchState(m_data.freeze, dt);
+}
+
+void LCDEffect::stopGlitches()
+{
+    for (auto* g : {&m_data.cableLines, &m_data.digitalNoise, &m_data.lcdTearing, &m_data.interference, &m_data.freeze,
+                    &m_data.imageRetention})
+    {
+        g->active = false;
+        g->intensity = 0.0f;
+        g->timer = 0.0f;
+        g->elapsed = 0.0f;
+    }
+}
+
+void LCDEffect::triggerGlitch(int kind, float seconds, float intensity)
+{
+    stopGlitches();
+    game::PPILCDEffectsConfig::GlitchState* g = nullptr;
+    switch (kind)
+    {
+    case 0: g = &m_data.cableLines; break;
+    case 1: g = &m_data.digitalNoise; break;
+    case 2: g = &m_data.lcdTearing; break;
+    case 3: g = &m_data.interference; break;
+    case 4: g = &m_data.freeze; break;
+    default: g = &m_data.imageRetention; break;
+    }
+    g->active = true;
+    g->duration = seconds;
+    g->intensity = intensity;
+    g->elapsed = 0.0f;
+    // after `seconds` updateGlitchState ends it and parks it on a long timer (the scheduler restarts it explicitly)
+    g->minInterval = g->maxInterval = 1.0e6f;
 }
 
 void LCDEffect::updateGlitchState(game::PPILCDEffectsConfig::GlitchState& glitch, float dt)
@@ -69,6 +103,17 @@ void LCDEffect::applyToShader(unsigned int shaderProgram, float time,
     glUniform1f(glGetUniformLocation(shaderProgram, "pixelResponseIntensity"), 
                 m_data.pixelResponse.intensity);
     
+    {
+        static const bool trace = std::getenv("ELITE_DEV_RADAR_GLITCH_LOG") != nullptr;
+        static float last = -10.0f;
+        if (trace && time - last > 1.0f)
+        {
+            last = time;
+            std::cerr << "[RadarGlitchGpu] t " << time << " cable " << m_data.cableLines.intensity << " w "
+                      << m_data.cableLines.cableLineParams.width << " loc " << glGetUniformLocation(shaderProgram, "cableLineIntensity")
+                      << " retention " << m_data.imageRetention.intensity << " freeze " << m_data.freeze.intensity << std::endl;
+        }
+    }
     // Cable Lines - используем настройки из структуры
     glUniform1f(glGetUniformLocation(shaderProgram, "cableLineIntensity"), 
                 m_data.cableLines.intensity);

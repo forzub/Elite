@@ -17,6 +17,7 @@
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/simulation/CityPadPresence.h"
+#include "src/game/network/ReplicationSnapshotMerge.h"
 
 namespace
 {
@@ -387,6 +388,40 @@ int main()
         std::printf("A4 ring plan polyline across the seam: %d break(s), the longest drawn step %.0f m (the sheet is %.0f m)\n",
                     breaks, worstStep, L);
         check(breaks == 1 && worstStep < 100.0, "A4: one break at the seam, no line across the sheet");
+    }
+
+    // ---- B1 / B2 (audit #6): a RETAINED ship row (sparse publication) advanced in its turning frame - a ship standing on
+    // the ring's deck must stay on its arc and world == origin + axes * local after the advance
+    {
+        ShipSnapshot row;
+        row.referenceFrame.valid = true;
+        row.referenceFrame.originMeters = glm::dvec3(1.0e9, 2.0e8, -3.0e8);
+        row.referenceFrame.velocityMetersPerSecond = glm::dvec3(7600.0, 0.0, 0.0);
+        const double omega = 6.283185307179586 / ring.ring().periodSeconds;
+        row.referenceFrame.angularVelocityWorldRadPerSecond = glm::dvec3(0.0, 0.0, omega);
+        row.referenceFrame.localPositionMeters = glm::dvec3(ring.ring().radius, 0.0, 0.0);   // on the deck, at rest
+        const glm::dmat3 B0(row.referenceFrame.progradeAxis, row.referenceFrame.radialAxis, row.referenceFrame.normalAxis);
+        row.transform.setWorldPositionMeters(row.referenceFrame.originMeters + B0 * row.referenceFrame.localPositionMeters);
+        row.transform.motion.worldVelocityMps =
+            row.referenceFrame.velocityMetersPerSecond +
+            glm::cross(row.referenceFrame.angularVelocityWorldRadPerSecond, B0 * row.referenceFrame.localPositionMeters);
+        const double dt = 1.0;
+        game::network::detail::advanceRetainedShipPresentation(row, dt);
+        const glm::dmat3 B(row.referenceFrame.progradeAxis, row.referenceFrame.radialAxis, row.referenceFrame.normalAxis);
+        const glm::dvec3 framed = row.referenceFrame.originMeters + B * row.referenceFrame.localPositionMeters;
+        // the truth: the frame origin moved by v dt, the deck point turned by omega dt round it
+        const glm::dvec3 origin1 = glm::dvec3(1.0e9, 2.0e8, -3.0e8) + glm::dvec3(7600.0, 0.0, 0.0) * dt;
+        const glm::dvec3 truth = origin1 + ring.ring().radius * glm::dvec3(std::cos(omega * dt), std::sin(omega * dt), 0.0);
+        const double consistency = glm::length(row.transform.fullWorldMeters() - framed);
+        const double offArc = glm::length(row.transform.fullWorldMeters() - truth);
+        // the old rule (the world point along its velocity, the axes not turned): for the record
+        const glm::dvec3 oldWorld = glm::dvec3(1.0e9, 2.0e8, -3.0e8) + B0 * glm::dvec3(ring.ring().radius, 0.0, 0.0) +
+                                    (glm::dvec3(7600.0, 0.0, 0.0) + glm::cross(glm::dvec3(0.0, 0.0, omega), B0 * glm::dvec3(ring.ring().radius, 0.0, 0.0))) * dt;
+        const glm::dvec3 oldFramed = origin1 + B0 * glm::dvec3(ring.ring().radius, 0.0, 0.0);
+        std::printf("B retained row on the turning deck, 1 s: world vs frame %.3g m, off the arc %.3g m (the old rule: %.1f m "
+                    "inconsistent, %.2f m off the arc)\n", consistency, offArc, glm::length(oldWorld - oldFramed),
+                    glm::length(oldWorld - truth));
+        check(consistency < 1.0e-6 && offArc < 1.0e-6, "B: a retained row stays on its frame and on the deck's arc");
     }
 
     // ---- A7: the hub map's GPU line shader (hub_map_dynamic_lines.vert: origin + R(p) * scale) == the CPU fallback

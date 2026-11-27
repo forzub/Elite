@@ -151,13 +151,49 @@ inline void advanceRetainedShipPresentation(
     const auto& motion = ship.transform.motion;
     const glm::dvec3 accelerationMps2 =
         motion.engineAccelerationMps2 + motion.gravityAccelerationMps2;
-    const glm::dvec3 displacementMeters =
-        motion.worldVelocityMps * deltaSeconds +
-        0.5 * accelerationMps2 * deltaSeconds * deltaSeconds;
-
-    ship.transform.addWorldMeters(displacementMeters);
-    ship.transform.motion.worldVelocityMps +=
-        accelerationMps2 * deltaSeconds;
+    // ONE formula (audit #6 B1/B2): a ship in a reference frame is advanced IN its frame - the frame's origin, velocity
+    // and AXES (its turn: a ring deck turns ~0.09 rad/s) and the ship's local position - and its world position /
+    // velocity are DERIVED from them. The old row advanced the world point along its velocity, the frame origin along
+    // its own, and never turned the axes: the world point and origin + axes * local drifted apart (~omega r per second
+    // on a ring deck) and a ship standing on a turning deck slid off its arc.
+    if (ship.referenceFrame.valid)
+    {
+        auto& frame = ship.referenceFrame;
+        frame.originMeters += frame.velocityMetersPerSecond * deltaSeconds +
+                              0.5 * frame.accelerationMetersPerSecond2 * deltaSeconds * deltaSeconds;
+        frame.velocityMetersPerSecond += frame.accelerationMetersPerSecond2 * deltaSeconds;
+        const double turn = glm::length(frame.angularVelocityWorldRadPerSecond) * deltaSeconds;
+        if (turn > 1.0e-12)
+        {
+            const glm::dvec3 axis = glm::normalize(frame.angularVelocityWorldRadPerSecond);
+            const auto rotate = [&](const glm::dvec3& v) {
+                return v * std::cos(turn) + glm::cross(axis, v) * std::sin(turn) + axis * glm::dot(axis, v) * (1.0 - std::cos(turn));
+            };
+            frame.progradeAxis = rotate(frame.progradeAxis);
+            frame.radialAxis = rotate(frame.radialAxis);
+            frame.normalAxis = rotate(frame.normalAxis);
+            // the hull turns with the frame it rides (its own rates are relative motion on top)
+            const glm::dmat3 turnM(rotate(glm::dvec3(1.0, 0.0, 0.0)), rotate(glm::dvec3(0.0, 1.0, 0.0)),
+                                   rotate(glm::dvec3(0.0, 0.0, 1.0)));
+            ship.transform.orientation = glm::mat4(glm::mat3(turnM)) * ship.transform.orientation;
+        }
+        frame.localPositionMeters += frame.localVelocityMetersPerSecond * deltaSeconds;
+        frame.universeTimeSeconds += deltaSeconds;
+        const glm::dmat3 B(frame.progradeAxis, frame.radialAxis, frame.normalAxis);
+        const glm::dvec3 worldNow = frame.originMeters + B * frame.localPositionMeters;
+        ship.transform.addWorldMeters(worldNow - ship.transform.fullWorldMeters());
+        ship.transform.motion.worldVelocityMps = frame.velocityMetersPerSecond +
+                                                 glm::cross(frame.angularVelocityWorldRadPerSecond, B * frame.localPositionMeters) +
+                                                 B * frame.localVelocityMetersPerSecond;
+    }
+    else
+    {
+        const glm::dvec3 displacementMeters =
+            motion.worldVelocityMps * deltaSeconds +
+            0.5 * accelerationMps2 * deltaSeconds * deltaSeconds;
+        ship.transform.addWorldMeters(displacementMeters);
+        ship.transform.motion.worldVelocityMps += accelerationMps2 * deltaSeconds;
+    }
 
     // Keep remote attitude smooth across the same sparse interval. Angular
     // rates are already authoritative body-control state and use radians/sec.
@@ -187,18 +223,7 @@ inline void advanceRetainedShipPresentation(
     ship.transform.motion.localPositionMeters +=
         ship.transform.motion.localVelocityMps * deltaSeconds;
 
-    if (ship.referenceFrame.valid)
-    {
-        ship.referenceFrame.originMeters +=
-            ship.referenceFrame.velocityMetersPerSecond * deltaSeconds +
-            0.5 * ship.referenceFrame.accelerationMetersPerSecond2 *
-                deltaSeconds * deltaSeconds;
-        ship.referenceFrame.velocityMetersPerSecond +=
-            ship.referenceFrame.accelerationMetersPerSecond2 * deltaSeconds;
-        ship.referenceFrame.localPositionMeters +=
-            ship.referenceFrame.localVelocityMetersPerSecond * deltaSeconds;
-        ship.referenceFrame.universeTimeSeconds += deltaSeconds;
-    }
+    // (the reference frame was advanced above, with its turn, and the world point derived from it)
 }
 } // namespace detail
 

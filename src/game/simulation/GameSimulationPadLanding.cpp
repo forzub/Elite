@@ -321,6 +321,27 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
                 building = &m;
     if (!ship || !building || !building->pad)
         return false;
+    // the pad must EXIST now (A6): built in the city's physical package (not over a building still going up), not
+    // gutted / destroyed - the static plan only says where it was designed
+    if (const StaticObject* cityObj = findCityFrame(m_staticObjects, frameModuleId))
+    {
+        EntityId cityId {};
+        for (const auto& [oid, obj] : m_staticObjects)
+            if (&obj == cityObj)
+                cityId = oid;
+        // a city object with its package volumes only (a city with no package yet: the plan stands in)
+        if (!cityObj->hitComponent.volumes.empty())
+        {
+            const auto presence = cityPadPresenceOf(cityId, address);
+            if (!presence.usable())
+            {
+                m_padNotices[shipId] = {std::string(presence.built ? "refused:wrecked:" : "refused:not_built:") + address, serverTime()};
+                std::cerr << "[PadLanding] ship " << shipId.value << " pad " << address << ": "
+                          << (presence.built ? "wrecked" : "not built (its building is still going up)") << " - refused" << std::endl;
+                return false;
+            }
+        }
+    }
     // the ship must fit a place (author 2026-11-27: a place is a square of the Cobra class's largest size + 30 %)
     if (const auto& dims = ship->core().desc().logicalDimensions(); dims.enabled)
     {
@@ -871,6 +892,9 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 const double flat = std::max(std::abs(d.x), std::abs(d.z));
                 const double h = glm::dot(d, out);
                 if (flat > game::navigation::HubPadZoneHalf || h < -2.0 || h > game::navigation::HubPadZoneHeight)
+                    continue;
+                // a pad that does not exist now (A6: not built / gutted / destroyed) captures nobody
+                if (!obj.hitComponent.volumes.empty() && !cityPadPresenceOf(oid, m.address).usable())
                     continue;
                 static std::unordered_map<std::uint64_t, double> nagAt;
                 const auto nag = [&](const std::string& what) {

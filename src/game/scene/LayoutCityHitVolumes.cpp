@@ -1,3 +1,5 @@
+#include "src/game/simulation/CityPadPresence.h"
+#include <unordered_map>
 #include "src/game/scene/LayoutCityHitVolumes.h"
 
 #include "src/model_asset/ModelAssetBinary.h"
@@ -151,16 +153,28 @@ struct CityEntry
     std::atomic<bool> ready {false};
     std::uint64_t stageKey = 0;
     std::vector<game::simulation::DebugHitVolumeSnapshot> volumes;
+    std::unordered_map<std::string, std::int32_t> padNodes;   // CityPadPresence.h: the pads this package has
 };
+std::mutex& cityCacheMutex()
+{
+    static std::mutex m;
+    return m;
+}
+std::map<std::string, std::shared_ptr<CityEntry>>& cityCache()
+{
+    static std::map<std::string, std::shared_ptr<CityEntry>> c;
+    return c;
+}
 } // namespace
 
 const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHitVolumes(ObjectType type,
                                                                                        const std::string& hubId)
 {
-    static std::mutex mutex;
+    std::mutex& mutex = cityCacheMutex();
     // per hub: the current entry and the one being built for a new construction stage (the old one stays in use
     // until the new one is ready)
-    static std::map<std::string, std::shared_ptr<CityEntry>> cache, building;
+    auto& cache = cityCache();
+    static std::map<std::string, std::shared_ptr<CityEntry>> building;
     const std::string kit = hubKitPackagePath(type);
     const std::string cacheKey = kit.empty() ? hubId : kit;
     const std::uint64_t key = kit.empty() ? elite::model_asset::hubExpansionStageKey(hubId) : 0;
@@ -200,6 +214,7 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
                     std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": assembly FAILED"
                               << (error.empty() ? std::string() : " (" + error + ")") << " - no obstacle geometry" << std::endl;
                 job->volumes = world::modules::HitVolumeSnapshotBuilder::build(hit);
+                job->padNodes = game::simulation::cityPadNodes(hit.volumes);   // from the labels, before they are dropped
                 std::cerr << "[CityHitVolumes] " << (kit.empty() ? id : kit) << ": " << job->volumes.size()
                           << " hit volumes assembled on the client" << std::endl;
                 job->ready = true;
@@ -213,6 +228,16 @@ const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHit
     }
     return entry->ready ? &entry->volumes : nullptr;
 }
+const std::unordered_map<std::string, std::int32_t>* clientLayoutCityPadNodes(ObjectType type, const std::string& hubId)
+{
+    if (!clientLayoutCityHitVolumes(type, hubId))   // builds / refreshes the entry
+        return nullptr;
+    const std::string kit = hubKitPackagePath(type);
+    std::lock_guard<std::mutex> lock(cityCacheMutex());
+    const auto it = cityCache().find(kit.empty() ? hubId : kit);
+    return it != cityCache().end() && it->second && it->second->ready ? &it->second->padNodes : nullptr;
+}
+
 void joinClientGeometryWorkers()
 {
     std::vector<std::thread> running;

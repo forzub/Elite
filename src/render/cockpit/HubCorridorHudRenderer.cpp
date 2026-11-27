@@ -1,3 +1,4 @@
+#include "src/game/client/ClientCityPadPresence.h"
 #include "src/game/navigation/HubCitySpace.h"
 #include "src/render/cockpit/HubCorridorHudRenderer.h"
 
@@ -312,7 +313,8 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         if (const auto* cityPlan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
             for (const auto& m : cityPlan->modules())
             {
-                if (!m.pad)
+                // only a pad that EXISTS now (A6: built in the package, not gutted / destroyed) shows its zone
+                if (!m.pad || !game::client::clientCityPadUsable(object, m.address))
                     continue;
                 const glm::dvec3 deck = stripWorld(m.padPosition);
                 const double d = glm::length(deck - playerMeters);

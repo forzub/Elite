@@ -16,6 +16,7 @@
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
+#include "src/game/simulation/CityPadPresence.h"
 
 namespace
 {
@@ -337,6 +338,28 @@ int main()
         std::printf("A3 ring plan map: screen -> scene -> screen worst %.3g px (the old sheet-as-scene answer: %.1f px)\n",
                     worst, worstOld);
         check(worst < 1.0e-6, "the plan map's cursor point re-projects onto the cursor");
+    }
+
+    // ---- A6: a pad's actual existence = the package's volumes + the damage state (CityPadPresence.h)
+    {
+        struct V
+        {
+            std::string m_label;
+            int assemblyNode;
+        };
+        const std::vector<V> package {{"pad_A1-03.hubl_garage2.0", 40}, {"pad_A1-03.hubl_garage2.1", 40}, {"b1.hubb_tower.0", 7},
+                                      {"pad_B2-01.hubl_pad_roof.0", 41}};
+        const auto nodes = game::simulation::cityPadNodes(package);
+        std::vector<game::simulation::CityBuildingState> damage {{41, static_cast<std::uint8_t>(game::simulation::CityBuildingVariant::Gutted)}};
+        const auto built = game::simulation::cityPadPresence(nodes, damage, "A1-03");
+        const auto gutted = game::simulation::cityPadPresence(nodes, damage, "B2-01");
+        const auto missing = game::simulation::cityPadPresence(nodes, damage, "C3-07");   // its building still going up
+        check(nodes.size() == 2 && built.usable() && built.node == 40, "A6: a built pad is usable");
+        check(gutted.built && !gutted.usable(), "A6: a gutted pad exists but is not usable");
+        check(!missing.built && !missing.usable(), "A6: a pad not in the package does not exist");
+        damage.push_back({40, static_cast<std::uint8_t>(game::simulation::CityBuildingVariant::Missile)});
+        check(game::simulation::cityPadPresence(nodes, damage, "A1-03").usable(), "A6: a missile hit leaves the deck usable");
+        std::printf("A6 pad presence rule: built / gutted / not built / hit - as specified\n");
     }
 
     if (g_failures)

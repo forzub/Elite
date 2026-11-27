@@ -1,3 +1,4 @@
+#include "src/game/client/ClientCityPadPresence.h"
 #include "src/core/HitchProfiler.h"
 #include "src/game/navigation/rules/PadLawRules.h"
 #include "src/game/navigation/rules/RingDeckRules.h"
@@ -665,6 +666,22 @@ void SpaceState::updatePilotTakeover(bool touching)
             padRequest.reset();
         }
     }
+    // the pad must EXIST now (A6: built in the city's package, not gutted / destroyed) - refused at the click, the same
+    // rule as the server's dispatcher (CityPadPresence.h), not after a 10 km route to a building still going up
+    if (padRequest && m_client)
+        for (const auto& [oid, object] : m_client->world().objects())
+            if (object.hubAttachment.valid && object.hubAttachment.moduleId == padRequest->frameModuleId &&
+                !game::client::clientCityPadUsable(object, padRequest->address))
+            {
+                const auto* nodes = game::scene::clientLayoutCityPadNodes(object.type, object.hubAttachment.hubId);
+                const bool built = nodes && game::simulation::cityPadPresence(*nodes, object.buildingStates, padRequest->address).built;
+                m_pilotNotice = (built ? "ДИСПЕТЧЕР: площадка " + padRequest->address + " разрушена - посадка невозможна"
+                                        : "ДИСПЕТЧЕР: площадки " + padRequest->address + " ещё нет - здание строится");
+                std::cerr << "[PadLanding] ui: " << padRequest->address << (built ? " wrecked" : " not built")
+                          << " - refused at the click" << std::endl;
+                padRequest.reset();
+                break;
+            }
     // THE RING'S DISPATCHER answers at the request, before any route (author 2026-11-25: «эта информация должна выдаваться
     // игроку через диспетчера»): a rim pad of a turning ring - its weight, the deck's speed, the approach; too little lift
     // - refused here, the axial dock (RingDeckRules.h; the server decides the same at the hand-over)
@@ -903,6 +920,10 @@ void SpaceState::updatePilotTakeover(bool touching)
                     line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
                 else if (status == "taken:frame")
                     line = "СЛУЖБА ПЛОЩАДОК: корабль взят в кадр хаба";
+                else if (status.rfind("refused:not_built:", 0) == 0)
+                    line = "ДИСПЕТЧЕР: площадки " + status.substr(18) + " ещё нет - здание строится";
+                else if (status.rfind("refused:wrecked:", 0) == 0)
+                    line = "ДИСПЕТЧЕР: площадка " + status.substr(16) + " разрушена - посадка невозможна";
                 else if (status.rfind("refused:too_big:", 0) == 0)
                 {
                     // "refused:too_big:<address>:<ship m>:<place m>"

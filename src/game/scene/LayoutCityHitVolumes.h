@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <unordered_map>
 
 // Hit volumes of a hub city built from its FROZEN LAYOUT (src/model_asset/HubCityAssembly.h) - assembled the same way on
 // the server and on the client, so they are NOT replicated (2026-11-23: the dedicated server's bootstrap snapshot was
@@ -36,6 +38,9 @@ bool layoutCityHitVolumesOnClient(ObjectType type, const std::string& hubId);
 
 // the background assembly workers finished before the process exits (the application's shutdown calls it)
 void joinClientGeometryWorkers();
+
+// the pads the client's copy of the city package HAS (address -> node, CityPadPresence.h); nullptr while it is built
+const std::unordered_map<std::string, std::int32_t>* clientLayoutCityPadNodes(ObjectType type, const std::string& hubId);
 
 // the client's copy (debug-hit-volume form, as the planner reads replicated ones); nullptr while it is being built
 const std::vector<game::simulation::DebugHitVolumeSnapshot>* clientLayoutCityHitVolumes(ObjectType type,

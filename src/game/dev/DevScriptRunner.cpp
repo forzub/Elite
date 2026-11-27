@@ -1,3 +1,5 @@
+#include "src/game/scene/LayoutCityHitVolumes.h"
+#include "src/game/simulation/CityPadPresence.h"
 #include <iomanip>
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/presentation/NavigationHudPresentation.h"
@@ -1438,6 +1440,30 @@ bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
         if (!city)
         {
             std::cerr << "[Spatial] no hub city with a plan here" << '\n';
+            return true;
+        }
+        // "spatial:pads": the census of the city's pads - designed (the plan) / built (the package) / usable (+ damage)
+        if (want == "pads")
+        {
+            const auto* nodes = game::scene::clientLayoutCityPadNodes(city->type, city->hubAttachment.hubId);
+            int designed = 0, built = 0, usable = 0;
+            std::string missing;
+            for (const auto& m : plan->modules())
+            {
+                if (!m.pad)
+                    continue;
+                ++designed;
+                if (!nodes)
+                    continue;
+                const auto pr = game::simulation::cityPadPresence(*nodes, city->buildingStates, m.address);
+                built += pr.built;
+                usable += pr.usable();
+                if (!pr.built && missing.size() < 120)
+                    missing += m.address + " ";
+            }
+            std::cerr << "[Spatial] pads of " << plan->hubId() << ": designed " << designed << ", built "
+                      << (nodes ? std::to_string(built) : std::string("? (package assembling)")) << ", usable " << usable
+                      << (missing.empty() ? std::string() : " | not built: " + missing) << '\n';
             return true;
         }
         std::vector<std::pair<std::string, glm::dvec3>> points;   // label, plan point

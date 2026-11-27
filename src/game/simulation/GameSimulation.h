@@ -69,6 +69,7 @@
 #include "src/game/combat/Penetration.h"
 #include "src/game/simulation/ShipCombatSnapshot.h"
 #include "src/game/simulation/ShipGraphPublicationLedger.h"
+#include "src/game/simulation/CityPadPresence.h"
 
 
 class StateContext;
@@ -1177,6 +1178,8 @@ private:
     // energy into the building of a city volume; kind: 0 laser, 1 shaped warhead, 2 kinetic slug
     void damageCity(const CityRayHit& hit, double energyMJ, int kind);
     std::vector<game::simulation::CityBuildingState> cityBuildingStates(EntityId objectId) const;
+    // the ACTUAL existence of a city pad (CityPadPresence.h): built in the physical package, not gutted / destroyed
+    game::simulation::CityPadPresence cityPadPresenceOf(EntityId cityId, const std::string& address) const;
     void devCityFireStep();          // DEV: ELITE_DEV_CITY_FIRE (the player's weapons fired on a schedule)
     std::unordered_map<std::uint64_t, CityDamageState> m_cityDamage;
     // The scheduled traffic of a hub city (game::navigation::traffic::HubTrafficSchedule, shared with the clients that

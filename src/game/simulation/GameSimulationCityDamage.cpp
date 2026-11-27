@@ -162,6 +162,27 @@ void GameSimulation::damageCity(const CityRayHit& hit, double energyMJ, int kind
               << " - " << energy << " MJ taken (first stage " << first << " MJ)" << std::endl;
 }
 
+game::simulation::CityPadPresence GameSimulation::cityPadPresenceOf(EntityId cityId, const std::string& address) const
+{
+    const auto it = m_staticObjects.find(cityId);
+    if (it == m_staticObjects.end())
+        return {};
+    // the pad nodes of this city's CURRENT package (a construction stage replaces the volumes: the generation)
+    struct Cached
+    {
+        std::uint64_t generation = ~0ull;
+        std::unordered_map<std::string, std::int32_t> nodes;
+    };
+    static std::unordered_map<std::uint64_t, Cached> cache;
+    auto& c = cache[cityId.value];
+    if (c.generation != m_staticObjectsGeneration)
+    {
+        c.generation = m_staticObjectsGeneration;
+        c.nodes = game::simulation::cityPadNodes(it->second.hitComponent.volumes);
+    }
+    return game::simulation::cityPadPresence(c.nodes, cityBuildingStates(cityId), address);
+}
+
 std::vector<game::simulation::CityBuildingState> GameSimulation::cityBuildingStates(EntityId objectId) const
 {
     std::vector<game::simulation::CityBuildingState> out;

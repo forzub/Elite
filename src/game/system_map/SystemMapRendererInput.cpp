@@ -1396,6 +1396,17 @@ bool SystemMapRenderer::driveDevPointer(
         if (c.x >= 0.0f)
             at = glm::dvec2(c.x, c.y);
     }
+    else if (arg.rfind("action:", 0) == 0)
+    {
+        // an open card's action button (pointer:click:action:land_pad) - pressed through the real input path
+        const game::system_map::MapObjectOverlayFrame* overlay =
+            m_modeState.current() == Mode::Detail ? &m_detailPresentation.frame.objectOverlay
+            : m_modeState.current() == Mode::Hub  ? &m_hubPresentation.frame.objectOverlay
+                                                  : &m_systemSceneFrame.interaction.objectOverlay;
+        glm::dvec2 centre;
+        if (m_objectOverlayState.devActionCentrePx(*overlay, arg.substr(7), centre))
+            at = centre;
+    }
     else if (arg.rfind("button:", 0) == 0)
     {
         // a map button (pointer:click:button:hubplan)
@@ -1470,6 +1481,15 @@ std::string SystemMapRenderer::devOverlayReport() const
             out << " [" << item.objectId << " | " << item.name << " | hub=" << item.navigationHubId
                 << (item.selectOnClick ? " | sel" : "") << (m_objectOverlayState.isOpen(item.objectId) ? " | CARD" : "")
                 << " @" << static_cast<int>(item.screenPx.x) << "," << static_cast<int>(item.screenPx.y) << "]";
+    // the open cards' buttons and whether they are enabled (the author: "LAND is not active")
+    for (const auto& item : overlay->items)
+        if (item.visible && m_objectOverlayState.isOpen(item.objectId))
+        {
+            out << " {card " << item.objectId << ":";
+            for (const auto& a : item.panelActions)
+                out << " " << a.key << (a.enabled ? "=on" : "=OFF") << (a.active ? "(active)" : "");
+            out << "}";
+        }
     return out.str();
 }
 

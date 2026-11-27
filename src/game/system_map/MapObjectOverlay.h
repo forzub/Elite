@@ -409,6 +409,36 @@ public:
         m_activeObjectId.clear();
     }
 
+    // DEV (pointer:click:action:<key>): the screen centre of an open card's action button, laid out exactly as hitAction
+    bool devActionCentrePx(const MapObjectOverlayFrame& frame, const std::string& key, glm::dvec2& out) const
+    {
+        for (const auto& [id, panel] : m_panels)
+        {
+            if (panel.collapsed)
+                continue;
+            for (const auto& item : frame.items)
+            {
+                if (item.objectId != id)
+                    continue;
+                constexpr double buttonHeight = 23.0;
+                constexpr double buttonGap = 5.0;
+                double buttonTop = panelHeight(panel) - 8.0 - buttonHeight;
+                for (auto it = item.panelActions.rbegin(); it != item.panelActions.rend(); ++it)
+                {
+                    if (!it->visible)
+                        continue;
+                    if (it->key == key)
+                    {
+                        out = panel.topLeftPx + glm::dvec2(PanelWidthPx * 0.5, buttonTop + buttonHeight * 0.5);
+                        return true;
+                    }
+                    buttonTop -= buttonHeight + buttonGap;
+                }
+            }
+        }
+        return false;
+    }
+
     bool isOpen(const std::string& objectId) const
     {
         return m_panels.find(objectId) != m_panels.end();

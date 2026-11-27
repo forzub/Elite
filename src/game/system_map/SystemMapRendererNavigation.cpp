@@ -406,7 +406,7 @@ void SystemMapRenderer::decorateHubDockingOverlay(
             item.factionColor = compatibility.routeAvailable
                 ? glm::vec4(0.42f, 0.96f, 0.72f, 0.94f)
                 : glm::vec4(0.96f, 0.68f, 0.30f, 0.92f);
-            item.screenPx = m_hubPresentation.camera.project(localPosition);
+            item.screenPx = m_hubPresentation.camera.project(localPosition, true);
             const glm::dvec2 hubViewportSize =
                 m_hubPresentation.centerPx * 2.0;
             item.visible =

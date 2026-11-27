@@ -538,15 +538,21 @@ m_systemMapRenderer.render(
         renderFreeFlightBanner(vp);
         TextRenderer::instance().setSuppressed(glassSuppressed);
     }
-    if (!core::isPreviewBuild())
+    // these are NOT pure drawing (the docking / landing / jump state is driven from them): always called, in the preview
+    // too, with their texts (the landing card, the jump, the zones, the pilot-lost warning are cockpit information).
+    // Skipping them in the preview broke the map's cards, the landing and the route (the author 2026-11-27).
     {
-        renderUiLanguageIndicator(vp);
+        const bool glassSuppressed = TextRenderer::instance().suppressed();
+        TextRenderer::instance().setSuppressed(false);
+        if (!core::isPreviewBuild())
+            renderUiLanguageIndicator(vp);
         renderNavigationStressOverlay(vp);
         renderContainmentBeacon(vp);
         renderHudJump(vp);
         renderDockingWidget(vp);
         renderZoneViolationBanner(vp);
         renderPilotLostOverlay(vp);
+        TextRenderer::instance().setSuppressed(glassSuppressed);
     }
     if (context().app)
     {

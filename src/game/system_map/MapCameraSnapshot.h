@@ -3,6 +3,7 @@
 #include "src/game/navigation/HubRingBend.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -119,13 +120,19 @@ struct LocalMapPlanWarp
         if (!valid)
             return p;
         const glm::dvec3 d = p - origin;
+        return origin + ring.toStrip(glm::dvec3(glm::dot(d, ax), glm::dot(d, ay), glm::dot(d, az)));
+    }
+    // the same for a MARKER's drawn position only (audit #9 A3: apply stays one-to-one for picking and the cursor's
+    // back-projection): the ring's axis - the axial dock, its entry, the hub centre, the ships docked there - has no
+    // strip angle (r -> 0), so those marks jumped across the plan as the ring turned (the author: "green squares moving
+    // at random"); points farther than half the radius from the deck are DRAWN in the middle of the sheet along the ring
+    glm::dvec3 applyMarker(const glm::dvec3& p) const
+    {
+        if (!valid)
+            return p;
+        const glm::dvec3 d = p - origin;
         const glm::dvec3 f(glm::dot(d, ax), glm::dot(d, ay), glm::dot(d, az));
         glm::dvec3 strip = ring.toStrip(f);
-        // OFF THE DECK (the author 2026-11-27: "green squares moving at random on the ring's plan"): the ring's axis -
-        // the axial dock, its entry, the hub centre, the ships docked there - has no strip angle (r -> 0: atan2 of the
-        // spin's millimetres), so those marks jumped across the whole plan every frame as the ring turned. Points
-        // farther than half the radius from the deck (the plan's domain, HubCitySpace::moduleOnDeck) are pinned to the
-        // middle of the sheet along the ring; their across (along the axis) and height stay their own.
         if (ring.valid && std::hypot(f.x, f.y) < 0.5 * ring.radius)
             strip.x = ring.x0 + 0.5 * ring.length;
         return origin + strip;
@@ -197,11 +204,12 @@ struct LocalMapCameraSnapshot
     bool planMode = false;
 
     glm::dvec3 pointToCamera(
-        const glm::dvec3& worldPoint
+        const glm::dvec3& worldPoint,
+        bool marker = false
     ) const
     {
         return vectorToCamera(
-            planWarp.apply(worldPoint) - originMeters
+            (marker ? planWarp.applyMarker(worldPoint) : planWarp.apply(worldPoint)) - originMeters
         );
     }
 
@@ -226,11 +234,12 @@ struct LocalMapCameraSnapshot
     }
 
     glm::dvec2 project(
-        const glm::dvec3& worldPoint
+        const glm::dvec3& worldPoint,
+        bool marker = false
     ) const
     {
         const glm::dvec3 camera =
-            pointToCamera(worldPoint);
+            pointToCamera(worldPoint, marker);
 
         const double finalScale =
             scale * state.zoom;

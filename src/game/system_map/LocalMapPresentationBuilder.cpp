@@ -535,7 +535,7 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
             item.factionColor = glm::vec4(1.00f, 0.78f, 0.28f, 0.98f);
             item.badge = playerBadge;
         }
-        item.screenPx = presentation.camera.project(object.positionMeters);
+        item.screenPx = presentation.camera.project(object.positionMeters, true);
         const bool occluded = occludedByDetailBodies(object.positionMeters);
         // the player (and the object whose local space this is) is never lost
         // behind a body: drawn dimmed instead
@@ -837,7 +837,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         hubItem.stellarVelocityMps = glm::dvec3(0.0);
         hubItem.factionColor = glm::vec4(0.34f, 0.88f, 1.00f, 0.96f);
         hubItem.physicalSizeMeters = std::max(1.0, maxDistance * 2.0);
-        hubItem.screenPx = presentation.camera.project(glm::dvec3(0.0));
+        hubItem.screenPx = presentation.camera.project(glm::dvec3(0.0), true);
         hubItem.visible = visibleInViewport(hubItem.screenPx, viewport);
         hubItem.drawGlyph = false;
         hubItem.wideVelocityArrow = true;
@@ -888,7 +888,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             );
         item.hasTrackingWorldPosition = true;
         item.factionColor = localObjectColor(object);
-        item.screenPx = presentation.camera.project(object.positionMeters);
+        item.screenPx = presentation.camera.project(object.positionMeters, true);
         item.visible = visibleInViewport(item.screenPx, viewport);
         item.physicalSizeMeters = localObjectPhysicalSizeMeters(object);
         item.glyphScale = mapObjectGlyphScale(
@@ -932,7 +932,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             );
         item.hasTrackingWorldPosition = true;
         item.factionColor = localObjectColor(object);
-        item.screenPx = presentation.camera.project(object.positionMeters);
+        item.screenPx = presentation.camera.project(object.positionMeters, true);
         item.visible = visibleInViewport(item.screenPx, viewport);
         item.physicalSizeMeters = localObjectPhysicalSizeMeters(object);
         item.glyphScale = mapObjectGlyphScale(

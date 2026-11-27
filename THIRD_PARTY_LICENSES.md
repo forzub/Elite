@@ -74,3 +74,14 @@ requirements.
 - Source: https://github.com/mackron/miniaudio (third_party/miniaudio/miniaudio.h)
 - License: public domain (Unlicense) or MIT No Attribution, at the user's choice
 - Use: the client audio mixer (src/audio)
+
+## Vendored sources under third_party/ (not in git - `tools/fetch_third_party.sh` restores them)
+
+Restored 2026-11-27 after an accidental deletion; the versions before the loss were not recorded, these were chosen
+to match the build (webview's default WebView2 SDK 1.0.1150.38) and websocketpp's asio API (io_service):
+- asio (standalone) 1.28.2 - https://github.com/chriskohlhoff/asio (Boost Software License 1.0), include path
+  third_party/asio/asio/include
+- websocketpp 0.8.2 - https://github.com/zaphoyd/websocketpp (BSD 3-clause; the release archive third_party/0.8.2.tar.gz)
+- webview 0.12.0 - https://github.com/webview/webview (MIT), built as webview::core_static
+- miniaudio 0.11.21 - https://github.com/mackron/miniaudio (public domain / MIT-0)
+- Microsoft.Web.WebView2 SDK 1.0.1150.38 (third_party/webview2; the build fetches its own copy into _deps)

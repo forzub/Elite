@@ -1,3 +1,7 @@
+#include <iomanip>
+#include "src/game/navigation/HubPlanPads.h"
+#include "src/game/presentation/NavigationHudPresentation.h"
+#include "src/game/client/ClientHubCitySpace.h"
 #include "src/audio/CockpitRadio.h"
 // DEV scripted acceptance driver of the client (see DevScriptRunner.h).
 // Moved verbatim out of SpaceState::update (audit 2026-11-06 rec. 8 / 10):
@@ -17,6 +21,10 @@
 #include <algorithm>
 #include <cstdlib>
 #include <string>
+
+// render/ScreenUtils.cpp (the HUD's projection)
+bool projectToScreen(const glm::vec3& worldPos, const glm::mat4& view, const glm::mat4& proj, int screenW, int screenH,
+                     glm::vec2& outScreen);
 
 namespace game::dev
 {
@@ -1399,6 +1407,125 @@ bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
     // DEV (audience matrix 2026-11-27): the concrete fields of each decoded row class - own flown, own parked,
     // flown not owned (an employer's seat), foreign. Owner data = the refit block (owned, registration, name); pilot
     // data = core status, engine telemetry, mass, J capacity, nav computer, fines. Foreign rows: the counts over all.
+    // DEV (spatial integrity stage C, 2026-11-27): "spatial:<plan id>" - one plan entity of the nearest hub city through
+    // every subsystem's path at this frame: a block id ("b2_3") / a building or pad address ("A1-03"); a pad prints each
+    // landing place. Ids, ticks, times, timeline revision; the plan point; the module point; the world point in the
+    // authoritative and the presentation epoch (HubCitySpace); the HUD's own resolver (resolveInfrastructureKinematics);
+    // the screen pixel through the main camera; the differences. Exit criterion: HUD == presentation, 0 m.
+    if (cmd.rfind("spatial:", 0) == 0)
+    {
+        const std::string want = cmd.substr(8);
+        const auto shipIt = s.m_client->world().ships().find(s.m_playerId.value);
+        if (shipIt == s.m_client->world().ships().end())
+            return true;
+        const glm::dvec3 shipW = world::coordinates::fullMeters(shipIt->second.renderTransform.worldPosition);
+        const ClientObjectState* city = nullptr;
+        const game::navigation::HubPlan* plan = nullptr;
+        double best = 1e300;
+        for (const auto& [oid, object] : s.m_client->world().objects())
+        {
+            if (!object.hubAttachment.valid)
+                continue;
+            const auto* pl = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId);
+            const double d = glm::length(world::coordinates::fullMeters(object.renderWorldPosition) - shipW);
+            if (pl && d < best)
+            {
+                best = d;
+                city = &object;
+                plan = pl;
+            }
+        }
+        if (!city)
+        {
+            std::cerr << "[Spatial] no hub city with a plan here" << '\n';
+            return true;
+        }
+        std::vector<std::pair<std::string, glm::dvec3>> points;   // label, plan point
+        std::string kind = "?";
+        // "block" / "garage2": the one nearest to the ship
+        std::string id = want;
+        {
+            const auto here = game::client::presentationCitySpace(*city);
+            const glm::dvec3 q = here.toStrip(shipW);
+            double nearestM = 1e300;
+            if (want == "block")
+                for (const auto& b : plan->blocks())
+                    if (const double d = glm::length(here.planDelta(glm::dvec3(b.centre.x, 0.0, b.centre.y), q)); d < nearestM)
+                    {
+                        nearestM = d;
+                        id = b.id;
+                    }
+            if (want == "garage2")
+                for (const auto& m : plan->modules())
+                    if (m.pad && m.padKind == game::navigation::HubPlanModule::PadKind::Garage && m.padPlaces >= 2)
+                        if (const double d = glm::length(here.planDelta(m.padPosition, q)); d < nearestM)
+                        {
+                            nearestM = d;
+                            id = m.address;
+                        }
+        }
+        for (const auto& b : plan->blocks())
+            if (b.id == id || b.address == id)
+            {
+                points.push_back({"block centre", glm::dvec3(b.centre.x, 0.0, b.centre.y)});
+                kind = "block";
+            }
+        for (const auto& m : plan->modules())
+            if (m.address == id)
+            {
+                kind = m.pad ? "pad" : "building";
+                points.push_back({"building centre", glm::dvec3(0.5 * (m.rect.x + m.rect.z), m.y1, 0.5 * (m.rect.y + m.rect.w))});
+                if (m.pad)
+                    for (int bay = 0; bay < game::navigation::hubBerthPlaces(m); ++bay)
+                        points.push_back({"place " + std::to_string(bay) + " touchdown", game::navigation::hubBerthTouchdown(m, bay)});
+            }
+        if (points.empty())
+        {
+            std::cerr << "[Spatial] '" << want << "' not in the plan of " << plan->hubId() << '\n';
+            return true;
+        }
+        const auto& meta = s.m_client->lastSimulationMetadata();
+        const auto auth = game::client::authoritativeCitySpace(*city);
+        const auto pres = game::client::presentationCitySpace(*city);
+        std::cerr << std::fixed << std::setprecision(3);
+        std::cerr << "[Spatial] " << kind << " '" << id << "' of " << plan->hubId() << " (" << (plan->ring().valid ? "ring" : "flat")
+                  << ") system " << city->systemId << " frame " << city->hubAttachment.moduleId << " entity " << city->id.value
+                  << " | server tick " << meta.serverTick << " server time " << meta.serverTimeSeconds << " s universe "
+                  << s.m_client->universeTimeSeconds() << " s timeline rev "
+                  << (s.m_client->hasSessionSnapshot() ? s.m_client->sessionSnapshot().universeTimelineRevision : 0)
+                  << " | presentation server time " << s.m_client->world().presentationServerTimeSeconds() << " s"
+                  << " | city building states " << city->buildingStates.size() << '\n';
+        const glm::dvec3 camW = shipW;   // the HUD's camera-relative origin (the player's render position)
+        for (const auto& [label, planPoint] : points)
+        {
+            const glm::dvec3 module = pres.planToModule(planPoint);
+            const glm::dvec3 wAuth = auth.planToWorld(planPoint), wPres = pres.planToWorld(planPoint);
+            const auto hud = game::presentation::detail::resolveInfrastructureKinematics(
+                s.m_client->world(), city->systemId, city->hubAttachment.moduleId, true, planPoint);
+            const glm::dvec3 wHud = world::coordinates::fullMeters(hud.worldPosition);
+            const glm::dvec3 oldModuleOffset = world::coordinates::fullMeters(city->renderWorldPosition) +
+                                               glm::dmat3(glm::mat4(city->renderOrientation)) * planPoint;   // the removed reading
+            glm::vec2 px(-1.0f), pxOld(-1.0f);
+            bool onScreen = false, onScreenOld = false;
+            if (s.m_activeMainCamera)
+            {
+                const int W = std::max(1, s.m_cockpitUiViewport.width), H = std::max(1, s.m_cockpitUiViewport.height);
+                onScreen = ::projectToScreen(glm::vec3(wHud - camW), s.m_activeMainCamera->viewMatrix(),
+                                           s.m_activeMainCamera->projectionMatrix(), W, H, px);
+                onScreenOld = ::projectToScreen(glm::vec3(oldModuleOffset - camW), s.m_activeMainCamera->viewMatrix(),
+                                              s.m_activeMainCamera->projectionMatrix(), W, H, pxOld);
+            }
+            std::cerr << "[Spatial]   " << label << ": plan (" << planPoint.x << ", " << planPoint.y << ", " << planPoint.z
+                      << ") module (" << module.x << ", " << module.y << ", " << module.z << ") | world auth-vs-presentation "
+                      << glm::length(wAuth - wPres) << " m, HUD-vs-presentation " << glm::length(wHud - wPres)
+                      << " m, old module-offset reading off " << glm::length(oldModuleOffset - wPres) << " m | "
+                      << glm::length(wPres - shipW) << " m from the ship | HUD pixel " << (onScreen ? "" : "(off screen) ")
+                      << px.x << "," << px.y << " old reading pixel " << (onScreenOld ? "" : "(off screen) ") << pxOld.x << ","
+                      << pxOld.y << '\n';
+        }
+        std::cerr << std::defaultfloat;
+        return true;
+    }
     if (cmd == "audience")
     {
         const auto controlled = s.m_client->localControlledEntityId().value;

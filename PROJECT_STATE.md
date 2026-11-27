@@ -9485,3 +9485,30 @@ start-up hitches (render), trade step 16 part 3 live.
     request (client plan) and the pad service draw a tunnel; system routes, jumps, transfers, manual targets have none.
     Verified: the execution corridor (executionGates) can never draw - every frame stamped with the render time, the HUD
     drops frames < 0.75 s ahead (DockingCorridorPresentation.cpp:115). Not fixed. (1) HUD vs geometry: not started.
+* 2026-11-27 SPATIAL INTEGRITY (author's task, external audit at 9dcb8ba0c), STAGE A in progress - SOURCE + UNIT + LIVE:
+  - ONE city space owner: src/game/navigation/HubCitySpace.h (plan <-> module <-> world through HubRingBend + the city
+    pose; surface axes; point / relative velocity with the spin; periodic alongDelta / planDelta / unwrapNear). The pad
+    service's CityStrip IS that type (math unchanged). Client builders with an explicit epoch:
+    src/game/client/ClientHubCitySpace.h presentationCitySpace (render pose) / authoritativeCitySpace.
+  - A1 CONFIRMED + FIXED (2b6bd0a91): a block / building target was stored as plan (x, 0, z) and read by the HUD as a
+    module offset; now semanticPlanPointMeters / planPointMeters resolved through presentationCitySpace().planToWorld.
+    Unit (EliteHubSpaceCheck, real earth_ring_hub): old error 1435.72 .. 3953.67 m on the 16 blocks (= the audit) -> 0.
+    LIVE (D:/tmp/spat2, DEV verb "spatial:<block|garage2|id>"): HUD vs presentation 0.000 m for blocks, a building and
+    both garage places; the old reading 3953.671 m (b0_0). Authoritative vs presentation pose of the city ~5-11 km =
+    0.16-0.31 s of epoch lag at ~36 km/s (Earth's orbit) - by design, never mixed inside one conversion.
+  - A4 FIXED (0fe1ee4b5): the seam - server pad service (phase choice, held place unwrapped next to its pad, capture
+    zone, manoeuvre zone exit), hubPadRoute (towers one turn either way), client service tunnel; unit: pad H2-09 190 m
+    from the seam, ship 150 m past it: route 340 m (the old non-periodic start 7260 m).
+  - A5 CONFIRMED + FIXED (dfe8f2bfe): hubl_garage2's two places landed on one point -> +-10 m along the model X (46 ring,
+    256 orbital garages); FOUND: pad axes ignored the under tier (139 under-deck multi-place berths on earth_orbital_hub:
+    bays mirrored, doors toward the building) -> hubPadAxisRight / Forward = HubExpansion's Rx(under 180) * Ry(yaw).
+  - Audit sweep (subagent, every plan <-> space use): FIXED also HUD altimeter + legs prompt (plan space), ring defence on
+    the deck (82b0b6a51; EliteHubSecurityCheck: 17 deck sites on the deck, city radius 1478 m not ~3.8 km), ring lane
+    exit / dead-end test, HUD label occluders + lane tube up (2aefebbb7). EliteHubSecurityCheck "promoted slot's track"
+    red since b8a19861e (routes), not this work.
+  - OPEN (stage A): A3 MapCameraSnapshot unproject vs planWarp (the subagent read it as consistent: unprojectPlane returns
+    sheet = plan space - to verify with picking tests); map seam (a rect crossing x0+L wraps one corner); 3D Hub map lane
+    occluders unbent; ClientHubMapBridge ring sizeMeters from the strip; A6 pad existence (HubExpansion vs static pad
+    flag); A7 GPU/CPU map; stages B, C (the "spatial" verb is the start of C: no independent render-node path yet).
+  - DEV start "hub:earth_ring_hub@3" puts the ship ON the ring's axis inside the zero-g axis industry -> killed at once
+    (208 g, axis_industry_8.hubb_warehouse.2); @8 is clear. Not changed (a DEV scenario point).

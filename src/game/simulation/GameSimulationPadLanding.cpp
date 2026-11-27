@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "src/game/navigation/HubCitySpace.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/navigation/TravelFrameSystem.h"
@@ -25,29 +26,9 @@
 
 namespace
 {
-// a city's frame as the pad service sees it: positions / directions / velocities in the plan's STRIP metres (a flat hub:
-// the city frame itself; a ring hub: the strip bent round the axis, HubRingBend.h). The world velocity of a point carries
-// the frame's spin (omega x r: ~108 m/s on the ring's deck - a ship let go without it flew off the ring)
-struct CityStrip
-{
-    glm::dvec3 cpos {0.0}, cvel {0.0}, omega {0.0};
-    glm::dmat3 R {1.0};
-    game::navigation::HubRingBend bend;
-    glm::dvec3 toStrip(const glm::dvec3& world) const { return bend.toStrip(glm::transpose(R) * (world - cpos)); }
-    glm::dvec3 toWorld(const glm::dvec3& s) const { return cpos + R * bend.toFrame(s); }
-    glm::dmat3 axes(const glm::dvec3& s) const { return R * bend.basisAt(s.x); }
-    glm::dvec3 velocityToWorld(const glm::dvec3& s, const glm::dvec3& v) const
-    {
-        return cvel + glm::cross(omega, toWorld(s) - cpos) + R * bend.vectorToFrame(s, v);
-    }
-    glm::dvec3 velocityToStrip(const glm::dvec3& s, const glm::dvec3& vWorld) const
-    {
-        glm::dvec3 local = glm::transpose(axes(s)) * (vWorld - cvel - glm::cross(omega, toWorld(s) - cpos));
-        if (bend.valid && bend.radius - s.y > 1.0)
-            local.x *= bend.radius / (bend.radius - s.y);
-        return local;
-    }
-};
+// a city's frame as the pad service sees it: game::navigation::HubCitySpace (the ONE plan <-> world owner, promoted from
+// here 2026-11-27, math unchanged) - positions / directions / velocities in the plan's strip metres, the spin carried
+using CityStrip = game::navigation::HubCitySpace;
 
 CityStrip cityStripOf(const GameSimulation& sim, const StaticObject& city)
 {

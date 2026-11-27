@@ -42,9 +42,10 @@ struct NavigationTrackedInfrastructure
     std::string typeName;
     std::string displayName;
     glm::vec4 color {0.70f, 0.86f, 1.00f, 0.82f};
-    // a point inside the module (its local metres; the hub plan's block centre - author 2026-11-18: «там можно
-    // выбирать кварталы - в игре появляется метка на HUD»); zero: the module's origin
-    glm::dvec3 localOffsetMeters {0.0};
+    // a point of the module's HUB PLAN (PLAN strip metres, HubCitySpace.h - a block / building centre; author 2026-11-18:
+    // «там можно выбирать кварталы - в игре появляется метка на HUD»); none: the module's origin
+    bool hasPlanPoint = false;
+    glm::dvec3 planPointMeters {0.0};
 };
 
 struct NavigationTrackedSemanticAnchor
@@ -143,14 +144,16 @@ public:
         std::string typeName,
         std::string displayName,
         const glm::vec4& color,
-        const glm::dvec3& localOffsetMeters = glm::dvec3(0.0)
+        bool hasPlanPoint = false,
+        const glm::dvec3& planPointMeters = glm::dvec3(0.0)
     )
     {
         if (trackingId.empty() || stableObjectId.empty())
             return;
 
         NavigationTrackedInfrastructure tracked;
-        tracked.localOffsetMeters = localOffsetMeters;
+        tracked.hasPlanPoint = hasPlanPoint;
+        tracked.planPointMeters = planPointMeters;
         tracked.trackingId = std::move(trackingId);
         tracked.systemId = systemId;
         tracked.stableObjectId = std::move(stableObjectId);

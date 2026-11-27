@@ -5,6 +5,7 @@
 #include "src/game/docking/model/HexDockFacility.h"
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/HubCitySpace.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
@@ -28,16 +29,18 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             continue;
         // a real point of the plan: bent round the ring for the ring hub (the 3D map shows it there, the 2D plan's warp
         // lays it back flat), the identity for a flat city
-        const auto local = [&](double x, double z) {
-            const glm::dvec3 f = plan->ring().toFrame(glm::dvec3(x, 0.0, z));
-            return module.positionMeters + module.axes.x * f.x + module.axes.y * f.y + module.axes.z * f.z;
-        };
+        game::navigation::HubCitySpace space;   // the map's hub-local pose of the module + the plan's bend
+        space.cpos = module.positionMeters;
+        space.R = glm::dmat3(module.axes.x, module.axes.y, module.axes.z);
+        space.bend = plan->ring();
+        const auto local = [&](double x, double z) { return space.planToWorld(glm::dvec3(x, 0.0, z)); };
         for (const auto& b : plan->blocks())
         {
             game::system_map::MapObjectOverlayItem item;
             item.objectId = "hub-block:" + module.stableId + "/" + b.id;
             item.semanticTargetId = module.stableId;
-            item.semanticLocalOffsetMeters = glm::dvec3(b.centre.x, 0.0, b.centre.y);
+            item.hasSemanticPlanPoint = true;
+            item.semanticPlanPointMeters = glm::dvec3(b.centre.x, 0.0, b.centre.y);
             item.trackingSystemId = hub.systemId;
             item.name = b.address + " · " + b.title;   // the block address first (deliveries by address)
             item.typeName = b.title;
@@ -96,7 +99,8 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             item.objectId = "hub-building:" + module.stableId + "/" + m.address;
             item.semanticTargetId = module.stableId;
             const glm::dvec2 c(0.5 * (m.rect.x + m.rect.z), 0.5 * (m.rect.y + m.rect.w));
-            item.semanticLocalOffsetMeters = glm::dvec3(c.x, 0.0, c.y);
+            item.hasSemanticPlanPoint = true;
+            item.semanticPlanPointMeters = glm::dvec3(c.x, 0.0, c.y);
             item.trackingSystemId = hub.systemId;
             item.name = m.address + " \xC2\xB7 " + b.title;
             item.typeName = m.module;
@@ -1023,7 +1027,8 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                 item.typeName,
                 item.name,
                 item.factionColor,
-                item.semanticLocalOffsetMeters
+                item.hasSemanticPlanPoint,
+                item.semanticPlanPointMeters
             );
         }
         else if (

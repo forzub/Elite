@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/client/ClientWorldState.h"
+#include "src/game/client/ClientHubCitySpace.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/world/coordinates/WorldPosition.h"
@@ -205,7 +206,8 @@ inline ResolvedTacticalKinematics resolveInfrastructureKinematics(
     const ClientWorldState& world,
     int systemId,
     const std::string& stableObjectId,
-    const glm::dvec3& localOffsetMeters = glm::dvec3(0.0)
+    bool hasPlanPoint = false,
+    const glm::dvec3& planPointMeters = glm::dvec3(0.0)
 )
 {
     ResolvedTacticalKinematics out;
@@ -223,11 +225,15 @@ inline ResolvedTacticalKinematics resolveInfrastructureKinematics(
         }
 
         out.worldPosition = object.renderWorldPosition;
-        if (localOffsetMeters != glm::dvec3(0.0))
-            out.worldPosition = world::coordinates::makeWorldPositionFromMeters(
-                world::coordinates::fullMeters(object.renderWorldPosition) +
-                glm::dmat3(glm::mat3(object.renderOrientation)) * localOffsetMeters);
         out.worldVelocityMps = object.linearVelocityMps;
+        if (hasPlanPoint)
+        {
+            // a plan point: through the one plan <-> world owner, in the render epoch the marker is drawn in (it was
+            // the module offset R * plan - no ring bend: 1.4-4 km off on earth_ring_hub, audit A1)
+            const auto space = game::client::presentationCitySpace(object);
+            out.worldPosition = world::coordinates::makeWorldPositionFromMeters(space.planToWorld(planPointMeters));
+            out.worldVelocityMps = space.pointVelocityWorld(planPointMeters);
+        }
         out.valid = true;
         return out;
     }
@@ -428,7 +434,8 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
             world,
             tracked.systemId,
             tracked.stableObjectId,
-            tracked.localOffsetMeters
+            tracked.hasPlanPoint,
+            tracked.planPointMeters
         );
         if (!resolved.valid)
             continue;

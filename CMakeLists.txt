@@ -386,6 +386,16 @@ target_include_directories(EliteHubSecurityCheck PRIVATE src "${CMAKE_SOURCE_DIR
 target_compile_features(EliteHubSecurityCheck PRIVATE cxx_std_17)
 target_link_libraries(EliteHubSecurityCheck PRIVATE nlohmann_json::nlohmann_json EliteNavigationWorldRuntime)
 
+# Spatial integrity stage A (2026-11-27): the city space contract (HubCitySpace) on the real hub plans - ring blocks,
+# round trips, a full revolution, the seam. Run from the repository root.
+add_executable(EliteHubSpaceCheck
+    tests/hub_space/HubSpaceCheck.cpp
+    src/game/navigation/HubPlanCatalog.cpp
+)
+target_include_directories(EliteHubSpaceCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+target_compile_features(EliteHubSpaceCheck PRIVATE cxx_std_17)
+target_link_libraries(EliteHubSpaceCheck PRIVATE nlohmann_json::nlohmann_json EliteNavigationWorldRuntime)
+
 # Game-level maneuver selection sits deliberately above NavigationWorld.
 # It consumes already-produced candidate annotations and active control-law
 # context; it owns no world geometry, trajectory proof or physics.

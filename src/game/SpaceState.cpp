@@ -870,11 +870,14 @@ void SpaceState::updatePilotTakeover(bool touching)
             }
             // the service holds the ship though this client did not ask (a capture zone, a hand-flown touchdown): the same
             // 3 s takeover gives it back; nothing at all (no notice, no service): no takeover owner
-            if (status.rfind("phase:", 0) == 0 && m_padLandingObjectId.empty())
+            // the OWNER of the controls from the control state only (audit #6 A10: a notice in `status` hid the phase and
+            // the takeover owner was dropped while the service still flew the ship)
+            if (serviceState.rfind("phase:", 0) == 0 && m_padLandingObjectId.empty())
                 m_padLandingObjectId = "pad-service";
-            else if (status.empty() && !m_padLandingObjectId.empty() && glfwGetTime() - padRequestedAt > 2.0)
+            else if (serviceState.empty() && it->second.padNotice.empty() && !m_padLandingObjectId.empty() &&
+                     glfwGetTime() - padRequestedAt > 2.0)
                 m_padLandingObjectId.clear();
-            if (status.rfind("pad:manual:", 0) == 0)
+            if (it->second.padNotice.rfind("pad:manual:", 0) == 0)
                 m_padLandingObjectId.clear();   // a hand-flown pad: the pilot flies now
             static std::string lastStatus;
             if (status != lastStatus)

@@ -797,7 +797,7 @@ std::string GameSimulation::padServiceStatus(EntityId shipId) const
         // the CITY with the address (live 2026-11-27: addresses repeat across cities - the client's tunnel took
         // "A2-03" of a city in another star system and drew its frames 1e12 m away, "frames in the sky")
         return "phase:" + std::to_string(p->second.phase) + ":" + p->second.frameModuleId + "/" + p->second.address + "#" +
-               std::to_string(std::max(0, p->second.bay));
+               std::to_string(p->second.bay);   // -1: queued (no place yet) - published as such (audit #6 A10)
     return {};
 }
 

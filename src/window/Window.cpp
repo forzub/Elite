@@ -436,6 +436,18 @@ void Window::show()
         const char* v = std::getenv("ELITE_DEV_OFFSCREEN_WINDOW");
         return v && *v && *v != '0';
     }();
+    // DEV: ELITE_DEV_WINDOW_SIZE=<w>x<h> - the client area for a resolution check (1440p / 4K captures)
+    if (const char* size = std::getenv("ELITE_DEV_WINDOW_SIZE"); size && *size)
+    {
+        int w = 0, h = 0;
+        if (std::sscanf(size, "%dx%d", &w, &h) == 2 && w > 0 && h > 0)
+        {
+            glfwSetWindowSize(m_window, w, h);
+            int fw = 0, fh = 0;
+            glfwGetFramebufferSize(m_window, &fw, &fh);
+            std::cerr << "[Window] DEV size " << w << "x" << h << " -> framebuffer " << fw << "x" << fh << std::endl;
+        }
+    }
     if (offscreen)
     {
         glfwSetWindowAttrib(m_window, GLFW_FOCUS_ON_SHOW, GLFW_FALSE);

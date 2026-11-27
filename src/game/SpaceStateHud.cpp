@@ -763,10 +763,17 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
             if (pad->padKind == game::navigation::HubPlanModule::PadKind::Hangar)
             {
-                const int bay = servicePlace;   // the dispatcher's place for this ship (its control state)
-                route.push_back(game::navigation::hubHangarDoorFrontOnStructure(*pad, bay, plan->ring()));
-                route.push_back(game::navigation::hubHangarBayEntryOnStructure(*pad, bay, plan->ring()));
-                route.push_back(game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring()) + out * 3.0);
+                const int bay = servicePlace;   // the dispatcher's place for this ship (its control state); -1: queued
+                // queued (no place yet): the tunnel ends at the waiting point before the doors, between both bays
+                if (bay < 0)
+                    route.push_back(0.5 * (game::navigation::hubHangarDoorFrontOnStructure(*pad, 0, plan->ring()) +
+                                           game::navigation::hubHangarDoorFrontOnStructure(*pad, 1, plan->ring())));
+                else
+                {
+                    route.push_back(game::navigation::hubHangarDoorFrontOnStructure(*pad, bay, plan->ring()));
+                    route.push_back(game::navigation::hubHangarBayEntryOnStructure(*pad, bay, plan->ring()));
+                    route.push_back(game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring()) + out * 3.0);
+                }
             }
             else
             {

@@ -60,6 +60,21 @@ struct HubCitySpace
     }
     // the WORLD velocity of a point fixed in the city (a pad, a building)
     glm::dvec3 pointVelocityWorld(const glm::dvec3& plan) const { return velocityToWorld(plan, glm::dvec3(0.0)); }
+    // where a service TAKES a ship (audit #8 A2): its own plan point - the world point unchanged, wherever it is (on the
+    // deck, near the axis, beyond the deck's domain); periodic `along` unwrapped near `nearPlan`. ONLY on the spin axis
+    // itself (r below 1 micron), where the angle is undefined and every along maps to the same world point, the along is
+    // taken from `nearPlan` (the pad) - no jump there by construction
+    glm::dvec3 takePlanPoint(const glm::dvec3& world, const glm::dvec3& nearPlan) const
+    {
+        glm::dvec3 plan = unwrapNear(toStrip(world), nearPlan);
+        if (bend.valid)
+        {
+            const glm::dvec3 module = glm::transpose(R) * (world - cpos);
+            if (std::hypot(module.x, module.y) < 1.0e-6)
+                plan.x = nearPlan.x;
+        }
+        return plan;
+    }
     glm::dvec3 velocityToStrip(const glm::dvec3& plan, const glm::dvec3& vWorld) const
     {
         glm::dvec3 local = glm::transpose(axes(plan)) * (vWorld - cvel - glm::cross(omega, toWorld(plan) - cpos));

@@ -507,16 +507,15 @@ void GameSimulation::updatePadLandings(double dt)
         if (heldIt == held.end() || p.sinceS > heldSince[id.value])
         {
             heldSince[id.value] = p.sinceS;
-            glm::dvec3 startPlan = strip.unwrapNear(strip.toStrip(tr.fullWorldMeters()), p.padLocal);
-            // OFF the deck's plan (audit #6 A2: a ring's sync gate / an axial dock - r ~ 0, the strip angle is undefined
-            // there): the physical way to the deck is the RADIUS toward the pad - its along coordinate is the pad's
-            // (the height over the deck, R - r, and the across coordinate stay the ship's own)
+            // taken WHERE IT IS (audit #8 A2: the earlier axial branch set the along coordinate to the pad's anywhere off
+            // the deck's domain - at r > 0 that moved the ship by r * the angle; now only on the axis itself, where it
+            // moves nothing). Its velocity relative to the city is kept and braked off (entryResidualLocal).
+            const glm::dvec3 startPlan = strip.takePlanPoint(tr.fullWorldMeters(), p.padLocal);
+            p.entryResidualLocal = strip.velocityToStrip(startPlan, tr.motion.worldVelocityMps);
+            p.speedMps = 0.0;
             if (!strip.worldOnDeck(tr.fullWorldMeters()))
-            {
-                startPlan.x = p.padLocal.x;
-                std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address << ": taken off the deck's plan (axial) - "
-                          << "the way in runs down the radius toward the pad" << std::endl;
-            }
+                std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address << ": taken off the deck's plan (near the "
+                          << "axis) at its own point, " << glm::length(p.entryResidualLocal) << " m/s to brake off" << std::endl;
             heldIt = held.insert_or_assign(id.value, startPlan).first;
         }
         glm::dvec3& q = heldIt->second;
@@ -773,6 +772,16 @@ void GameSimulation::updatePadLandings(double dt)
                 p.touchdownPitch = pitch;
             }
         }
+        // the takeover's leftover velocity (audit #8 A2): carried on, braked at the service's working acceleration
+        if (p.phase < 3 && glm::length(p.entryResidualLocal) > 1.0e-9)
+        {
+            q += p.entryResidualLocal * dt;
+            vLocal += p.entryResidualLocal;
+            const double r = glm::length(p.entryResidualLocal);
+            p.entryResidualLocal *= std::max(0.0, r - accel * dt) / r;
+        }
+        else if (p.phase >= 3)
+            p.entryResidualLocal = glm::dvec3(0.0);
         const glm::dvec3 position = strip.toWorld(q + sagLocal);
         const glm::dvec3 velocity = strip.velocityToWorld(q, vLocal);
         {

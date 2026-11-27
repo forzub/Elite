@@ -424,6 +424,45 @@ int main()
         check(consistency < 1.0e-6 && offArc < 1.0e-6, "B: a retained row stays on its frame and on the deck's arc");
     }
 
+    // ---- A2 (audit #8): the pad service TAKES a ship where it is - several radii (the exact axis, near it, the deck,
+    // beyond the deck's domain) and angles: the world point unchanged; the velocity carried: kept to the city-relative
+    // value, so the world velocity is continuous
+    {
+        game::navigation::HubCitySpace space;
+        space.bend = ring.ring();
+        space.cpos = glm::dvec3(4.0e8, -1.0e7, 2.0e6);
+        space.R = glm::dmat3(glm::rotate(glm::dmat4(1.0), 0.7, glm::dvec3(0.3, 1.0, -0.2)));
+        space.cvel = glm::dvec3(7400.0, 120.0, -30.0);
+        space.omega = space.R * glm::dvec3(0.0, 0.0, 6.283185307179586 / ring.ring().periodSeconds);
+        const glm::dvec3 pad(ring.ring().x0 + 0.37 * ring.ring().length, 0.0, 120.0);
+        double worstPos = 0.0, worstVel = 0.0;
+        int n = 0;
+        for (double r : {0.0, 0.0004, 0.5, 40.0, 0.3 * ring.ring().radius, ring.ring().radius - 30.0, ring.ring().radius,
+                         1.7 * ring.ring().radius})
+            for (int k = 0; k < 12; ++k)
+            {
+                const double a = 6.283185307179586 * k / 12.0 + 0.1;
+                const glm::dvec3 module(r * std::sin(a), -r * std::cos(a), -60.0 + 15.0 * k);
+                const glm::dvec3 world = space.cpos + space.R * module;
+                const glm::dvec3 plan = space.takePlanPoint(world, pad);
+                worstPos = std::max(worstPos, glm::length(space.toWorld(plan) - world));
+                // a ship moving 6 m/s relative to the city at that point: the service's start velocity (the residual it
+                // carries, mapped back) equals it
+                const glm::dvec3 vRel = space.R * glm::dvec3(4.0, -3.0, 2.0);
+                const glm::dvec3 vWorld = space.cvel + glm::cross(space.omega, world - space.cpos) + vRel;
+                const glm::dvec3 residual = space.velocityToStrip(plan, vWorld);
+                // the service maps its strip velocity like velocityToWorld; near the axis (r < 1 m) the along scaling is
+                // skipped on purpose (finite there) - so check where it applies
+                if (r > 1.0)
+                    worstVel = std::max(worstVel, glm::length(space.velocityToWorld(plan, residual) - vWorld));
+                ++n;
+            }
+        std::printf("A2 takeover over %d points (r 0 .. 1.7 R, 12 angles): position step %.3g m, velocity step %.3g m/s\n", n,
+                    worstPos, worstVel);
+        check(worstPos < 1.0e-5, "A2: the service takes the ship where it is (no position step, axis included)");
+        check(worstVel < 1.0e-6, "A2: the takeover keeps the ship's velocity (no velocity step)");
+    }
+
     // ---- A7: the hub map's GPU line shader (hub_map_dynamic_lines.vert: origin + R(p) * scale) == the CPU fallback
     {
         game::system_map::LocalMapCameraSnapshot cam;

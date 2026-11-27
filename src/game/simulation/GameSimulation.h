@@ -823,6 +823,9 @@ private:
         double transitLocal = 300.0;           // the transit height over the plane (along outLocal)
         int phase = 0;               // 0 to the transit height, 1 across, 2 down, 3 landed
         double speedMps = 0.0;
+        // the ship's velocity relative to the city when the service took it, in strip m/s, NOT yet along its way: carried
+        // on and braked off at the service's working acceleration (audit #8 A2: no velocity step at the takeover)
+        glm::dvec3 entryResidualLocal {0.0};
         double sinceS = 0.0;
         double logS = -1.0e9;
         bool autoLanding = true;     // the pad's service lands the ship (false: brought over the zone and handed over)

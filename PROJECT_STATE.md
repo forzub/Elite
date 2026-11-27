@@ -9685,5 +9685,39 @@ start-up hitches (render), trade step 16 part 3 live.
     17 non-system DLLs all loaded from the package, 0 modules from msys64 / mingw, the only non-Windows module the
     WebView2 runtime (EmbeddedBrowserWebView.dll, a Windows component); 0 references to D:/__elite in the log. NOT done:
     a run on a clean Windows install (VM / another PC).
+  - INCIDENT 2026-11-27 (my error): 'git worktree remove --force' on a temporary worktree whose third_party folders were
+    junctions to the main checkout EMPTIED third_party/{asio,miniaudio,websocketpp,webview,webview2} (git-ignored,
+    versions never recorded). Restored (b151f4d64): websocketpp 0.8.2 (local archive), WebView2 SDK 1.0.1150.38 (the
+    build's _deps copy), webview 0.12.0 (its default WebView2 version matches the build cache), miniaudio 0.11.21
+    (THIRD_PARTY_LICENSES), asio 1.28.2 (CHOSEN - the last with io_service for websocketpp 0.8.2; the old version is
+    unknown). Full client + server build passes. tools/fetch_third_party.sh + THIRD_PARTY_LICENSES.md record them. RULE:
+    never junction into a worktree; remove a worktree only after listing reparse points. OPEN (audit #9 P0): manifest
+    with hashes, a clean-directory build.
+  - LANDING HANG (e23d1e34c): the ring's co-rotating leg was planned from the ship's RAW frame velocity, which carries
+    omega x r (2.3 m off the axis -> 0.21 m/s, 6.2 m -> 0.56 m/s): the profile started at that phantom speed and the
+    follower stood still (Preview demo), or > 0.5 m/s replanned for ever (201 replans). omega x (r - pivot) taken off.
+    Live dev + Preview package: LANDED in 102 s.
+  - SAW-TOOTH FLY-BY (d00ab432f): a kinematic NPC inside the 100 km tactical radius was published every 0.20-0.24 s
+    (motion fidelity interval wins); its retained rows drifted ~0.2 m/s a snapshot and every fresh row yanked it back
+    (drawn speed peaks 25-35 m/s at 6-13 mean, 3-4 reversals/s; identical with the pre-B1 retained rule). Ships within
+    20 km (visualRadiusMeters) go with every snapshot: drawn 4.0 m/s, spread 0.1, 0 reversals. OPEN: the retained
+    extrapolation of farther ships still drifts (B1/B4).
+  - B4 WOBBLE (own ship in turns) - OPEN, PRE-EXISTING: A/B against 014da2f94 (this morning) 30-32 vs 23-26 drawn
+    reversals/s; the server's body rates are smooth, the client's ship transform turns unevenly snapshot to snapshot
+    (prediction / reconciliation); two render-side attempts and an error-blending attempt did not cure it (reverted).
+    DEV ELITE_DEV_ATTITUDE_TRACE=1/12, [InputQueue].
+  - D2 OWN CLOCK: opt-in again (ELITE_SERVER_OWN_CLOCK=1) - suspected for the wobble, A/B cleared it; the Preview
+    landing hang was the omega x r bug above, not the clock.
+  - HANTEDPREVIEW (702d692a6, in D:/__elite/prodaction; the previous package kept as D:/__elite/prodaction_prev_d79a60b1f):
+    the HUD shows only the terminal (TextRenderer::setSuppressed over the glass, the panel instruments let through, the
+    glass banners / cards not drawn), the stereo hidden, the radar caption hidden; route frames held / synthesized while
+    an autopilot flies; DEV actions refused by the server in the preview (RefitApply, DevFullRestore, economy DEV ops)
+    and not offered; HUD lanes / zones fade 1.5 s on station control instead of vanishing. Live from the package: flight,
+    system / hub maps, autopilot with frames, ring pad LANDED 102 s, refit without the DEV button, restart (several
+    launches), relocation (from D:/tmp and from prodaction). Trade at the ring hub: 'no economy data' (the ring has no
+    economy - not a hang). Data names still Russian there (next item).
+  - D7 DATA NAMES (063ebc987): data_terms tables (by source text) through render() / format(); 5346 distinct Cyrillic data
+    strings being translated in parallel (economy / services, ships / names, hub modules x2, world / fuel / plans,
+    galaxy, world sites).
   - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
     HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.

@@ -27,10 +27,13 @@ ServerWorker::ServerWorker(
     // the Win32/WebView thread while the authoritative world loads its static
     // data. LocalGameSession polls ready()/rethrowIfFailed() during its normal
     // loading-state update instead.
-    if (const char* v = std::getenv("ELITE_SERVER_CLIENT_DRIVEN"); v && *v == '1')
-        m_ownClock = false;
-    std::cerr << "[ServerClock] " << (m_ownClock ? "own monotonic clock (fixed step, independent of the client frame)"
-                                                 : "client-driven (ELITE_SERVER_CLIENT_DRIVEN=1)") << std::endl;
+    // the own clock is OPT-IN again (the author 2026-11-27: "the ship oscillates strongly in flight, especially in
+    // turns" right after it became the default): the client's prediction / reconciliation still assumes one server
+    // batch per client frame. ELITE_SERVER_OWN_CLOCK=1 enables it for the investigation.
+    if (const char* v = std::getenv("ELITE_SERVER_OWN_CLOCK"); v && *v == '1')
+        m_ownClock = true;
+    std::cerr << "[ServerClock] " << (m_ownClock ? "own monotonic clock (ELITE_SERVER_OWN_CLOCK=1)"
+                                                 : "client-driven (default)") << std::endl;
     m_thread = std::thread(
         &ServerWorker::threadMain,
         this,

@@ -2235,6 +2235,106 @@ void SpaceState::update(float dt)
         throw;
     }
 
+    // DEV (the author 2026-11-27: "the ship oscillates strongly in flight, especially in turns"): ELITE_DEV_ATTITUDE_TRACE=1
+    // - the player's DRAWN attitude per frame: its angular speed, the spread of it and how often the angular acceleration
+    // reverses (a wobble) - every 2 s, so the server clock modes can be compared on the same manoeuvre
+    {
+        static const bool trace = [] {
+            const char* v = std::getenv("ELITE_DEV_ATTITUDE_TRACE");
+            return v && *v == '1';
+        }();
+        static glm::quat last(1.0f, 0.0f, 0.0f, 0.0f);
+        static bool have = false;
+        static double windowS = 0.0, sumW = 0.0, sumW2 = 0.0, lastW = 0.0, lastDw = 0.0, maxW = 0.0;
+        static int frames = 0, reversals = 0;
+        const auto& ships = m_client->world().ships();
+        if (const auto it = ships.find(m_playerId.value); trace && it != ships.end() && dt > 1.0e-4f)
+        {
+            const glm::quat q = glm::normalize(glm::quat_cast(glm::mat3(it->second.renderTransform.orientation)));
+            if (have)
+            {
+                const float d = std::clamp(std::abs(glm::dot(last, q)), 0.0f, 1.0f);
+                const double w = glm::degrees(2.0 * std::acos(static_cast<double>(d))) / dt;   // deg/s
+                const double dw = w - lastW;
+                static const bool perFrame = [] {
+                    const char* v = std::getenv("ELITE_DEV_ATTITUDE_TRACE");
+                    return v && *v == '1' && v[1] == '2';
+                }();
+                if (perFrame && w > 1.0)
+                    std::cerr << "[AttitudeFrame] dt " << dt * 1000.0f << " ms drawn " << w << " deg/s | server t "
+                              << m_client->lastSimulationMetadata().serverTimeSeconds << " rates y/p/r "
+                              << glm::degrees(it->second.transform.yawRate) << "/" << glm::degrees(it->second.transform.pitchRate)
+                              << "/" << glm::degrees(it->second.transform.rollRate) << " deg/s" << std::endl;
+                if (frames > 1 && std::abs(dw) > 0.5 && std::abs(lastDw) > 0.5 && (dw > 0.0) != (lastDw > 0.0))
+                    ++reversals;
+                if (std::abs(dw) > 0.5)
+                    lastDw = dw;
+                lastW = w;
+                sumW += w;
+                sumW2 += w * w;
+                maxW = std::max(maxW, w);
+                ++frames;
+                windowS += dt;
+                if (windowS >= 2.0 && frames > 0)
+                {
+                    const double mean = sumW / frames;
+                    std::cerr << "[AttitudeTrace] " << frames << " frames: turn " << mean << " deg/s mean, spread "
+                              << std::sqrt(std::max(0.0, sumW2 / frames - mean * mean)) << ", max " << maxW << ", reversals "
+                              << reversals << " (" << reversals / windowS << " /s)" << std::endl;
+                    windowS = sumW = sumW2 = maxW = 0.0;
+                    frames = reversals = 0;
+                }
+            }
+            last = q;
+            have = true;
+            // the AUTHORITATIVE attitude, per new server snapshot: is the physics itself wobbling, or only the drawing?
+            static glm::quat lastAuth(1.0f, 0.0f, 0.0f, 0.0f);
+            static double lastAuthT = -1.0, aSum = 0.0, aSum2 = 0.0, aLastW = 0.0, aLastDw = 0.0, aMax = 0.0;
+            static int aN = 0, aRev = 0;
+            const double tNow = m_client->lastSimulationMetadata().serverTimeSeconds;
+            if (tNow != lastAuthT)
+            {
+                const glm::quat qa = glm::normalize(glm::quat_cast(glm::mat3(it->second.transform.orientation)));
+                if (lastAuthT >= 0.0 && tNow > lastAuthT)
+                {
+                    const float d = std::clamp(std::abs(glm::dot(lastAuth, qa)), 0.0f, 1.0f);
+                    const double w = glm::degrees(2.0 * std::acos(static_cast<double>(d))) / (tNow - lastAuthT);
+                    static const bool perSnap = [] {
+                        const char* v = std::getenv("ELITE_DEV_ATTITUDE_TRACE");
+                        return v && *v == '1' && v[1] == '2';
+                    }();
+                    if (perSnap && w > 1.0)
+                        std::cerr << "[AttitudeSnap] server t " << tNow << " dt " << (tNow - lastAuthT) * 1000.0
+                                  << " ms: actual turn " << w << " deg/s vs the rate fields y/p/r "
+                                  << glm::degrees(it->second.transform.yawRate) << "/"
+                                  << glm::degrees(it->second.transform.pitchRate) << "/"
+                                  << glm::degrees(it->second.transform.rollRate) << std::endl;
+                    const double dw = w - aLastW;
+                    if (aN > 1 && std::abs(dw) > 0.5 && std::abs(aLastDw) > 0.5 && (dw > 0.0) != (aLastDw > 0.0))
+                        ++aRev;
+                    if (std::abs(dw) > 0.5)
+                        aLastDw = dw;
+                    aLastW = w;
+                    aSum += w;
+                    aSum2 += w * w;
+                    aMax = std::max(aMax, w);
+                    ++aN;
+                }
+                lastAuth = qa;
+                lastAuthT = tNow;
+            }
+            if (frames == 0 && aN > 0)   // the drawn window was just printed: the authoritative one with it
+            {
+                const double mean = aSum / aN;
+                std::cerr << "[AttitudeTrace]   authoritative: " << aN << " snapshots: turn " << mean << " deg/s mean, spread "
+                          << std::sqrt(std::max(0.0, aSum2 / aN - mean * mean)) << ", max " << aMax << ", reversals " << aRev
+                          << std::endl;
+                aSum = aSum2 = aMax = 0.0;
+                aN = aRev = 0;
+            }
+        }
+    }
+
     // One local ship computer per controlled player ship. Only new
     // replicated server ticks are sampled, not every render/prediction frame.
     // This is a COPY-only server->client read, never a new server query.

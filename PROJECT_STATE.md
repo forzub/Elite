@@ -9665,5 +9665,25 @@ start-up hitches (render), trade step 16 part 3 live.
     62 files (~1440 possibly player-visible; EconomyServer.cpp 375 = the server sends finished Russian text - D7.5
     violated). D7 infrastructure (a40cbda59): LocalizedMessage (key + named params in the existing string fields),
     LocalizationService::format / render, client-only tr / renderMessage. Translation pass running in five file groups.
+  - D7 LOCALIZATION PASS (ae613a154; five parallel workers by file group + lead fixes). SOURCE: Cyrillic literals in C++
+    1489 -> 182 (left: logs, DEV verbs, asset-alias tokens in MapCelestialRenderResources, the texture baker, log-only
+    rule helpers). Server / simulation text -> language-neutral Messages in the existing string fields, rendered by the
+    client (no wire schema change); client text -> one template per sentence. localization_report.py: en / ru 100 %
+    of 3341 keys, 0 placeholder mismatches, 0 keys used in code but missing; zh-Hans / es / ja miss the 1059 new keys
+    (English fallback; no language added). LocalizedMessage escaping fixed for any nesting depth (the first form broke
+    at depth 2 - found by a worker, depth-3 test passes). OPEN: data names (goods, licences, polities, 288 hub module
+    names in initial_world_state, system "Deep space: X" names in StarAtlasDatabase) are Russian-only data - need data
+    catalogs; old glued fragment maps in service.government.* / service.trade.* (taxes, mines, jobs, SOS lines);
+    ClientTradeResult.lines has no display yet. LIVE: the preview cockpit reads English (screenshot D:/tmp/pkgsmoke).
+  - D2 OWN CLOCK (ae613a154): ServerWorker advances by steady_clock (fixed 0.02 s, ServerRunner clips kept), advance() is
+    a non-blocking report; PAUSED / RESUMED explicit (IGameSession::setLocalPaused from the ESC menu path), OVERLOADED /
+    recovered logged; ELITE_SERVER_CLIENT_DRIVEN=1 = the old pipeline. LIVE D:/tmp/ownclock: render stalls 500 / 1000 ms
+    -> 0 ms dropped (before: frame - 250 ms), client wait n/a, 5.0 s simulated per 5 s wall, worker busy ~22 %;
+    ELITE_DEV_PAUSE=90:12 -> PAUSED / RESUMED, no catch-up, no overload. OPEN: TCP / remote session under the own clock,
+    window focus loss, snapshot / command transfer cost.
+  - CLEAN-PATH CHECK of the test package (D:/tmp/hanted_pkg_test, PATH = System32 + Windows only, started from D:/tmp):
+    17 non-system DLLs all loaded from the package, 0 modules from msys64 / mingw, the only non-Windows module the
+    WebView2 runtime (EmbeddedBrowserWebView.dll, a Windows component); 0 references to D:/__elite in the log. NOT done:
+    a run on a clean Windows install (VM / another PC).
   - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
     HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.

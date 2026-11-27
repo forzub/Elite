@@ -1,3 +1,5 @@
+#include <iomanip>
+#include <cstring>
 #include "src/game/damage/HitVolumeBounds.h"
 #include <atomic>
 #include "src/model_asset/HubExpansion.h"
@@ -1257,6 +1259,63 @@ void GameServer::update(double dt)
     m_universeClock.update(dt);
     m_serverTick++;
     applyDevStartPoint(dt);
+    // DEV (audit #6 D1): ELITE_DEV_TICK_DUMP=<tick>[,<tick>...] - every ship's state at those server ticks (position,
+    // velocity, orientation, mass, J charge) and one FNV hash of them all: runs at different client FPS must match tick
+    // for tick (the physics owns time, not the frame)
+    if (static const std::vector<std::uint64_t> dumpTicks = [] {
+            std::vector<std::uint64_t> out;
+            if (const char* v = std::getenv("ELITE_DEV_TICK_DUMP"))
+                for (const char* p = v; *p;)
+                {
+                    char* end = nullptr;
+                    const unsigned long long t = std::strtoull(p, &end, 10);
+                    if (end == p)
+                        break;
+                    out.push_back(t);
+                    p = *end == ',' ? end + 1 : end;
+                }
+            return out;
+        }();
+        std::find(dumpTicks.begin(), dumpTicks.end(), m_serverTick) != dumpTicks.end())
+    {
+        std::vector<std::pair<std::uint32_t, const Ship*>> ships;
+        for (const auto& [eid, sp] : m_simulation.ships())
+            if (sp)
+                ships.push_back({eid.value, sp.get()});
+        std::sort(ships.begin(), ships.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+        std::uint64_t h = 1469598103934665603ull;
+        const auto mixD = [&](double d) {
+            std::uint64_t bits;
+            std::memcpy(&bits, &d, sizeof bits);
+            for (int k = 0; k < 8; ++k)
+                h = (h ^ ((bits >> (8 * k)) & 0xFFu)) * 1099511628211ull;
+        };
+        for (const auto& [id, sp] : ships)
+        {
+            const auto& tr = sp->core().transform();
+            const glm::dvec3 p = tr.fullWorldMeters();
+            const glm::dvec3 v = tr.motion.worldVelocityMps;
+            mixD(static_cast<double>(id));
+            mixD(p.x); mixD(p.y); mixD(p.z);
+            mixD(v.x); mixD(v.y); mixD(v.z);
+            const glm::mat3 o(tr.orientation);
+            for (int c = 0; c < 3; ++c)
+                for (int r = 0; r < 3; ++r)
+                    mixD(static_cast<double>(o[c][r]));
+            mixD(tr.motion.shipMassT);
+            mixD(tr.motion.jChargeT);
+        }
+        std::cerr << "[TickDump] tick " << m_serverTick << " server time " << m_simulation.serverTime() << " s ships "
+                  << ships.size() << " hash " << std::hex << h << std::dec;
+        if (const Ship* player = m_simulation.getShip(m_simulation.playerId()))
+        {
+            const auto& tr = player->core().transform();
+            const glm::dvec3 p = tr.fullWorldMeters();
+            std::cerr << std::setprecision(12) << " player (" << p.x << "," << p.y << "," << p.z << ") v "
+                      << glm::length(tr.motion.worldVelocityMps) << " J " << tr.motion.jChargeT << std::setprecision(6);
+        }
+        std::cerr << std::endl;
+    }
     // DEV: ELITE_DEV_DESTROY_PLAYER_AT=<server s> destroys the player's ship once (live checks of the loss path)
     if (static const double destroyAt = [] {
             const char* v = std::getenv("ELITE_DEV_DESTROY_PLAYER_AT");

@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdlib>
 
 #include <algorithm>
 #include <chrono>
@@ -26,6 +27,10 @@ namespace world::time
             m_simulationMode = false;
             m_simulationTimeScale = 1.0;
             m_timeSeconds = realSecondsSinceEpoch();
+            // DEV (audit #6 D1, deterministic runs): ELITE_DEV_UNIVERSE_START_S=<universe seconds> pins the start so two
+            // runs begin in the same orbital state (the real clock gave every run a different one)
+            if (const char* v = std::getenv("ELITE_DEV_UNIVERSE_START_S"); v && *v)
+                m_timeSeconds = std::atof(v);
         }
 
         void update(double realDtSeconds)

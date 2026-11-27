@@ -1457,6 +1457,57 @@ if ((systemMapMode || serviceMode))
             }
         m_window->swapBuffers();
         core::hitch::mark("swap_buffers");
+        // DEV (audit #6 D1, FPS independence): ELITE_DEV_FPS_CAP=<fps> holds every frame to 1 / fps (sleep, then spin);
+        // ELITE_DEV_RENDER_STALL=<app s>:<ms>[,<app s>:<ms>...] blocks the main thread once at each time (a render stall)
+        {
+            static const double capFrameS = [] {
+                const char* v = std::getenv("ELITE_DEV_FPS_CAP");
+                const double fps = v ? std::atof(v) : 0.0;
+                return fps > 0.0 ? 1.0 / fps : 0.0;
+            }();
+            static std::vector<std::pair<double, int>> stalls = [] {
+                std::vector<std::pair<double, int>> out;
+                if (const char* v = std::getenv("ELITE_DEV_RENDER_STALL"))
+                {
+                    std::string s(v);
+                    std::size_t at = 0;
+                    while (at < s.size())
+                    {
+                        const std::size_t comma = s.find(',', at);
+                        const std::string part = s.substr(at, comma == std::string::npos ? std::string::npos : comma - at);
+                        double t = 0.0;
+                        int ms = 0;
+                        if (std::sscanf(part.c_str(), "%lf:%d", &t, &ms) == 2)
+                            out.push_back({t, ms});
+                        if (comma == std::string::npos)
+                            break;
+                        at = comma + 1;
+                    }
+                }
+                return out;
+            }();
+            static auto frameStart = std::chrono::steady_clock::now();
+            static const auto appStart = std::chrono::steady_clock::now();
+            const double appS = std::chrono::duration<double>(std::chrono::steady_clock::now() - appStart).count();
+            for (auto& st : stalls)
+                if (st.second > 0 && appS >= st.first)
+                {
+                    std::cerr << "[DevStall] main thread blocked " << st.second << " ms at app " << appS << " s" << std::endl;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(st.second));
+                    st.second = 0;
+                }
+            if (capFrameS > 0.0)
+            {
+                const auto until = frameStart + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                                                     std::chrono::duration<double>(capFrameS));
+                if (until - std::chrono::steady_clock::now() > std::chrono::milliseconds(2))
+                    std::this_thread::sleep_until(until - std::chrono::milliseconds(2));
+                while (std::chrono::steady_clock::now() < until)
+                {
+                }
+            }
+            frameStart = std::chrono::steady_clock::now();
+        }
         core::hitch::endFrame();
 #ifdef _WIN32
         traceSlowMainPhase("swap-buffers", xprocPhaseBegin);

@@ -2173,6 +2173,23 @@ void SpaceState::update(float dt)
                   << ", debt left " << serverAdvance.remainingDebtSeconds * 1000.0 << " ms"
                   << (serverAdvance.catchUpLimited ? " (catch-up limited)" : "") << std::endl;
 
+    // OVERLOAD IS EXPLICIT (audit #6 D1): time the fixed-step server dropped (a frame longer than its max delta, or a
+    // debt past its cap) and the catch-up limit are logged, rate-limited, with the totals - never silent
+    {
+        static double lastLogged = -1.0;
+        static double reportedTotal = 0.0;
+        const bool dropped = serverAdvance.totalDiscardedSeconds > reportedTotal + 1.0e-9;
+        if ((dropped || serverAdvance.catchUpLimited) && glfwGetTime() - lastLogged > 1.0)
+        {
+            lastLogged = glfwGetTime();
+            std::cerr << "[ServerTiming] frame dt " << dt * 1000.0f << " ms: " << serverAdvance.stepsExecuted
+                      << " step(s), debt " << serverAdvance.remainingDebtSeconds * 1000.0 << " ms"
+                      << (serverAdvance.catchUpLimited ? ", CATCH-UP LIMITED" : "") << ", dropped now "
+                      << serverAdvance.discardedSeconds * 1000.0 << " ms, dropped total "
+                      << serverAdvance.totalDiscardedSeconds * 1000.0 << " ms" << std::endl;
+            reportedTotal = serverAdvance.totalDiscardedSeconds;
+        }
+    }
     // Debug/control commands are asynchronous requests to ServerRuntime. Flush
     // UI responses only after a newer copied diagnostic revision has crossed
     // back over that boundary. This remains correct when the server later runs

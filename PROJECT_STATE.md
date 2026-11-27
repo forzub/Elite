@@ -9600,3 +9600,14 @@ start-up hitches (render), trade step 16 part 3 live.
     package (pad nodes appear as buildings finish and shift every later index - only the destroyed flag was matched by
     label before). Not live-tested (needs a damaged city across a stage change). The map's pad drawing / landing card by
     state: open (the map has no client world access in that path).
+  - A3 LIVE (988409c10): a real-pixel click (pointer:click through the production input path) on block b5_1 of the ring's
+    2D plan picked building F2-08 inside it (buildings over blocks); HUD vs city space 0.000 m; the same target id and
+    plan point after the 2D -> 3D switch (DEV verb spatial:tracked).
+  - A2 (9df67fde9): a pad service taken off the deck's plan (the ring's axis) starts down the radius toward its pad (the
+    strip angle is undefined at r ~ 0). Live ring garage A1-03 via the sync gate: LANDED 104 s; the client's co-rotating
+    leg hands over above the pad, so the axial branch did not trigger (not live-proven).
+  - B1 (b88535376): the city's render epoch has its own linear / angular velocities (interpolated with the render pose);
+    ClientHubCitySpace builds each space from ONE epoch. MEASURED: render vs authoritative city velocity 1.41 / 1.65 m/s
+    (a low-orbit hub ~9 m/s2, epochs 0.16-0.3 s apart) - the earlier "mm/s" estimate was wrong.
+  - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
+    HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.

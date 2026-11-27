@@ -68,6 +68,23 @@ struct HubCitySpace
         return local;
     }
 
+    // THE PLAN'S DOMAIN (audit A2): a ring's strip coordinates describe the deck and what stands on it - not the spin
+    // axis (the axial docks, the zero-g industry, the sync gate): there r -> 0, the angle is undefined and "height over
+    // the deck" is ~R. A module point belongs to the plan when it is within `reach` of the deck along the radius (the
+    // tallest building + room; default half the radius); a flat city: always.
+    bool moduleOnDeck(const glm::dvec3& module, double reachMeters = -1.0) const
+    {
+        if (!bend.valid)
+            return true;
+        const double reach = reachMeters > 0.0 ? reachMeters : 0.5 * bend.radius;
+        const double r = std::hypot(module.x, module.y);
+        return r > bend.radius - reach && r < bend.radius + reach;
+    }
+    bool worldOnDeck(const glm::dvec3& world, double reachMeters = -1.0) const
+    {
+        return moduleOnDeck(glm::transpose(R) * (world - cpos), reachMeters);
+    }
+
     // the along-city difference b - a (A4: the ring is periodic - the shortest way round, never across the seam the long
     // way; a flat city: the plain difference)
     double alongDelta(double a, double b) const

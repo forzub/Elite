@@ -243,6 +243,8 @@ m_systemMapRenderer.render(
                     // the ship and its belly ray in the PLAN (HubCitySpace: a ring city bent - the surfaces below are plan
                     // heights / rects; the module frame read them as flat, audit A1 class); the ray linearised at the ship
                     const auto citySpace = game::client::presentationCitySpace(object);
+                    if (!citySpace.worldOnDeck(shipW))
+                        continue;   // on the ring's axis: no deck under the belly in the plan's sense (A2)
                     const glm::dvec3 q = citySpace.toStrip(shipW);
                     const glm::dvec3 d = glm::transpose(citySpace.axes(q)) * down;
                     surfaceUp = citySpace.surfaceUpWorld(q);
@@ -422,6 +424,8 @@ m_systemMapRenderer.render(
                     if (!plan || glm::length(shipW - origin) > 9000.0)
                         continue;
                     const auto citySpace = game::client::presentationCitySpace(object);   // the plan, not the module frame
+                    if (!citySpace.worldOnDeck(shipW))
+                        continue;   // on the ring's axis: no pad near in the plan's sense (A2)
                     const glm::dvec3 q = citySpace.toStrip(shipW);
                     for (const auto& m : plan->modules())
                         if (m.pad && glm::length(citySpace.planDelta(m.padPosition, q)) < game::navigation::HubPadZoneShowMeters)

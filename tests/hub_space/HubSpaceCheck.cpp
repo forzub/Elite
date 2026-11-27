@@ -340,6 +340,25 @@ int main()
         check(worst < 1.0e-6, "the plan map's cursor point re-projects onto the cursor");
     }
 
+    // ---- A2: the plan's domain - deck points yes, the spin axis (axial docks, the sync gate) no
+    {
+        game::navigation::HubCitySpace space;
+        space.bend = ring.ring();
+        bool allBlocks = true;
+        for (const auto& b : ring.blocks())
+            allBlocks = allBlocks && space.moduleOnDeck(space.planToModule(glm::dvec3(b.centre.x, 0.0, b.centre.y)));
+        bool tallest = true;
+        for (const auto& m : ring.modules())
+            tallest = tallest && space.moduleOnDeck(space.planToModule(glm::dvec3(0.5 * (m.rect.x + m.rect.z), m.y1, 0.5 * (m.rect.y + m.rect.w))));
+        check(allBlocks && tallest, "A2: every block and every building top is in the plan's domain");
+        check(!space.moduleOnDeck(glm::dvec3(0.0, 0.0, 0.0)) && !space.moduleOnDeck(ring.ring().syncGate) &&
+                  !space.moduleOnDeck(glm::dvec3(0.0, 0.0, 3000.0)),
+              "A2: the spin axis (the hub origin, the sync gate, an axial point 3 km out) is NOT a deck point");
+        game::navigation::HubCitySpace flatSpace;
+        check(flatSpace.moduleOnDeck(glm::dvec3(0.0, 5000.0, 0.0)), "A2: a flat city's plan covers its whole frame");
+        std::printf("A2 plan domain: deck points in, the ring's axis out\n");
+    }
+
     // ---- A7: the hub map's GPU line shader (hub_map_dynamic_lines.vert: origin + R(p) * scale) == the CPU fallback
     {
         game::system_map::LocalMapCameraSnapshot cam;

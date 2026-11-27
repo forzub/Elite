@@ -888,6 +888,8 @@ void GameSimulation::updatePadTouchdowns(double dt)
             if (glm::length(shipWorld - cpos) > 20000.0)
                 continue;
             const CityStrip cs = cityStripOf(*this, obj);
+            if (!cs.worldOnDeck(shipWorld))
+                continue;   // on the ring's axis (an axial dock, the sync gate): not a point of the deck's plan (A2)
             const glm::dvec3 q = cs.toStrip(shipWorld);
             const glm::dvec3 v = cs.velocityToStrip(q, tr.motion.worldVelocityMps);
             for (const auto& m : plan->modules())

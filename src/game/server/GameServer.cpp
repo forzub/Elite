@@ -3320,6 +3320,7 @@ void blankPrivateShipDomains(ShipSnapshot& row)
     row.navigationExecution = std::monostate {};
     row.dockDispatcher = {};
     row.padService.clear();
+    row.padNotice.clear();
     auto& m = row.transform.motion;
     m.engineTelemetry = {};
     m.manoeuvreGasPressure01 = 0.0;

@@ -1877,6 +1877,7 @@ private:
                 x.refit = {};
                 x.combat = {};
                 x.padService.clear();
+                x.padNotice.clear();
             });
             w.shipCore += without([](ShipSnapshot& x) { x.shipCoreStatus = {}; });
             {

@@ -814,10 +814,12 @@ void SpaceState::updatePilotTakeover(bool touching)
     if (m_client)
         if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
         {
-            const std::string& status = it->second.padService;
+            // the terminal shows the latest NOTICE, else the control state; the control state alone decides who flies
+            const std::string& serviceState = it->second.padService;
+            const std::string status = it->second.padNotice.empty() ? serviceState : it->second.padNotice;
             // [PadHold] probe (author 2026-11-25: «стоял ровно без дрожи»): a landed ship as DRAWN against its city as
             // drawn - the frame-to-frame step of its place and attitude in the city's frame (0 = it stands still on the pad)
-            if (status.rfind("phase:3", 0) == 0)
+            if (serviceState.rfind("phase:3", 0) == 0)
             {
                 static glm::dvec3 lastQ(0.0);
                 static glm::dmat3 lastA(1.0);
@@ -983,7 +985,8 @@ void SpaceState::updatePilotTakeover(bool touching)
                 {
                     const char phase = status[6];
                     // "phase:<n>:<frame>/<address>": the address for the pilot
-                    const std::string where = status.substr(8);
+                    std::string where = status.substr(8);
+                    where = where.substr(0, where.find('#'));   // "<frame>/<address>#<place>"
                     const std::string address = where.substr(where.rfind('/') == std::string::npos ? 0 : where.rfind('/') + 1);
                     line = phase == '0'   ? "СЛУЖБА ПЛОЩАДОК: набор высоты транзита над городом"
                          : phase == '1' ? "СЛУЖБА ПЛОЩАДОК: над городом к площадке " + address

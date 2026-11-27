@@ -792,13 +792,20 @@ void GameSimulation::updatePadLandings(double dt)
 
 std::string GameSimulation::padServiceStatus(EntityId shipId) const
 {
-    // a fresh notice first (4 s: the client prints each change once), then the phase while the service flies the ship
-    if (const auto n = m_padNotices.find(shipId); n != m_padNotices.end() && serverTime() - n->second.second < 4.0)
-        return n->second.first;
+    // the control state only (a notice rides in padNotice): the phase, the city, the address and the PLACE given
     if (const auto p = m_padLandings.find(shipId); p != m_padLandings.end())
         // the CITY with the address (live 2026-11-27: addresses repeat across cities - the client's tunnel took
         // "A2-03" of a city in another star system and drew its frames 1e12 m away, "frames in the sky")
-        return "phase:" + std::to_string(p->second.phase) + ":" + p->second.frameModuleId + "/" + p->second.address;
+        return "phase:" + std::to_string(p->second.phase) + ":" + p->second.frameModuleId + "/" + p->second.address + "#" +
+               std::to_string(std::max(0, p->second.bay));
+    return {};
+}
+
+std::string GameSimulation::padServiceNotice(EntityId shipId) const
+{
+    // a fresh notice (4 s: the client prints each change once)
+    if (const auto n = m_padNotices.find(shipId); n != m_padNotices.end() && serverTime() - n->second.second < 4.0)
+        return n->second.first;
     return {};
 }
 

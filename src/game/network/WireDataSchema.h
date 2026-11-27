@@ -833,6 +833,7 @@ ELITE_WIRE_SCHEMA(
     v.refit,
     v.combat,
     v.padService,
+    v.padNotice,
     v.landingGear
 );
 

@@ -3653,7 +3653,12 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                 ClientShipCommand command;
                 command.type = ClientShipCommand::LandOnPad;
                 command.index = 0;
-                command.detail = svc.substr(8);
+                // the control state "phase:<n>:<frame>/<address>#<place>": the city and the address
+                std::string where = svc.substr(8);
+                where = where.substr(0, where.find('#'));
+                const auto slash = where.rfind('/');
+                command.target = slash == std::string::npos ? std::string() : where.substr(0, slash);
+                command.detail = slash == std::string::npos ? where : where.substr(slash + 1);
                 msg.payload = command;
                 m_client->sendMessage(msg);
                 std::cerr << "[DockWorker] request=" << pending.serial << " the pad service (" << svc

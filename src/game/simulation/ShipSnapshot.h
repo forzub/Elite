@@ -114,7 +114,10 @@ struct ShipSnapshot
     game::simulation::ShipCombatSnapshot                  combat;
     // the hub city pad service for this ship (author 2026-11-21: its steps in the HUD terminal): "" none,
     // "taken" (normal flight off, taken into the hub frame), "phase:<0..3>:<address>", "refused:<reason>"
+    // the pad service's AUTHORITATIVE control state "phase:<n>:<frame>/<address>#<place>" (empty: not under it) - never
+    // displaced by a notice (audit #5: a notice in the same field dropped "the service flies" for 4 s)
     std::string                                          padService;
+    std::string                                          padNotice;   // the service's / dispatcher's latest notice (4 s)
     // the landing legs (author 2026-11-21: «выдвижные ноги-подставки ... демпфирующие, могут сломаться»): 0 in, 1 out, 2 broken
     std::uint8_t                                         landingGear = 0;
 };

@@ -768,6 +768,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
             state.padService = s.padService;
+            state.padNotice = s.padNotice;
             state.landingGear = s.landingGear;
             state.traffic = s.traffic;
             // per-instance configuration: a new override list (an applied refit) re-resolves the descriptor
@@ -875,6 +876,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             state.dockDispatcher = s.dockDispatcher;
             state.padService = s.padService;
+            state.padNotice = s.padNotice;
             state.landingGear = s.landingGear;
             state.traffic = s.traffic;
             // per-instance configuration: a new override list (an applied refit) re-resolves the descriptor

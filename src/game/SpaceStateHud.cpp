@@ -408,8 +408,8 @@ m_systemMapRenderer.render(
             const std::uint8_t gear = playerShip.landingGear;
             // the legs are wanted now (author 2026-11-21: «при готовности к посадке ... надо писать - выпустить опоры - и мигать
             // этим текстом, иначе не догадаются»): the service sets the ship down / asked for them, or a pad is near
-            bool legsWanted = playerShip.padService.rfind("phase:2", 0) == 0 || playerShip.padService == "pad:gear_up" ||
-                              playerShip.padService == "pad:no_gear";
+            bool legsWanted = playerShip.padService.rfind("phase:2", 0) == 0 || playerShip.padNotice == "pad:gear_up" ||
+                              playerShip.padNotice == "pad:no_gear";
             if (gear != 1 && !legsWanted && m_client)
             {
                 const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
@@ -671,7 +671,13 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
         const char phase = playerShip.padService[6];
         // "phase:<n>:<frame module>/<address>": the city by its frame AND in the ship's own system (an address alone
         // repeats across cities - the tunnel took a city of another star system, its frames 1e12 m off)
-        const std::string where = playerShip.padService.substr(8);
+        std::string where = playerShip.padService.substr(8);   // "<frame>/<address>#<place>"
+        int servicePlace = 0;   // the place the dispatcher gave THIS ship - in its own control state (audit #5)
+        if (const auto hash = where.find('#'); hash != std::string::npos)
+        {
+            servicePlace = std::atoi(where.c_str() + hash + 1);
+            where = where.substr(0, hash);
+        }
         const auto slash = where.rfind('/');
         const std::string frameModule = slash == std::string::npos ? std::string() : where.substr(0, slash);
         const std::string address = slash == std::string::npos ? where : where.substr(slash + 1);
@@ -753,13 +759,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             const glm::dvec3 out = pad->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
             if (pad->padKind == game::navigation::HubPlanModule::PadKind::Hangar)
             {
-                // the bay the dispatcher gave US (our own "addr#bay@ship" in the city's occupancy), not always bay 0
-                int bay = 0;
-                const std::string mine = address + "#";
-                const std::string who = "@" + std::to_string(m_playerId.value);
-                for (const auto& b : object.occupiedBerths)
-                    if (b.compare(0, mine.size(), mine) == 0 && b.find(who) != std::string::npos)
-                        bay = std::atoi(b.c_str() + mine.size());
+                const int bay = servicePlace;   // the dispatcher's place for this ship (its control state)
                 route.push_back(game::navigation::hubHangarDoorFrontOnStructure(*pad, bay, plan->ring()));
                 route.push_back(game::navigation::hubHangarBayEntryOnStructure(*pad, bay, plan->ring()));
                 route.push_back(game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring()) + out * 3.0);
@@ -767,12 +767,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             else
             {
                 // a multi-place berth: down to OUR place (the server's touchdown), not the apron's centre
-                int bay = 0;
-                const std::string mine = address + "#";
-                const std::string who = "@" + std::to_string(m_playerId.value);
-                for (const auto& b : object.occupiedBerths)
-                    if (b.compare(0, mine.size(), mine) == 0 && b.find(who) != std::string::npos)
-                        bay = std::atoi(b.c_str() + mine.size());
+                const int bay = servicePlace;
                 const glm::dvec3 place = game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring());
                 route.push_back(pad->autoLanding ? place + out * 3.0 : place + out * game::navigation::HubPadZoneHeight);
             }

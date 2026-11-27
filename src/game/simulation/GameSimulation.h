@@ -843,7 +843,8 @@ private:
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time
-    std::string padServiceStatus(EntityId shipId) const;   // ShipSnapshot::padService
+    std::string padServiceStatus(EntityId shipId) const;   // ShipSnapshot::padService (the control state only)
+    std::string padServiceNotice(EntityId shipId) const;   // ShipSnapshot::padNotice
     // the city's landing places reserved / taken now ("<address>#<bay>", "!" after it = reserved, on the way in) -
     // ObjectSnapshot::occupiedBerths (the cards, the capture zones' colour)
     std::vector<std::string> cityOccupiedBerths(EntityId cityId) const;

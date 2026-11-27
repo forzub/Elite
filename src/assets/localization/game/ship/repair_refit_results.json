@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "service.repair_refit.error.not_catalog_module": {
+      "en": "module not from the equipment catalog: replacement with another product impossible",
+      "ru": "модуль не из каталога оборудования: замена на другое изделие невозможна"
+    },
+    "service.repair_refit.error.unknown_product": {
+      "en": "unknown product {product}",
+      "ru": "неизвестное изделие {product}"
+    },
+    "service.repair_refit.error.incompatible_category": {
+      "en": "incompatible category: {installed} ← {offered}",
+      "ru": "несовместимая категория: {installed} ← {offered}"
+    },
+    "service.repair_refit.error.does_not_fit": {
+      "en": "does not fit: {mass} t vs {space} t of mounting space",
+      "ru": "не помещается: {mass} т против {space} т места установки"
+    },
+    "service.repair_refit.error.assisted_gimbal": {
+      "en": "Assisted needs a wide nozzle gimbal (at least 30°), the product has {gimbal}°",
+      "ru": "Assisted требует широкого подвеса сопла (не менее 30°), у изделия {gimbal}°"
+    },
+    "service.repair_refit.error.generator_underpowered": {
+      "en": "group generator {generator} MW cannot power a {engine} MW engine",
+      "ru": "генератор группы {generator} МВт не питает двигатель {engine} МВт"
+    },
+    "service.repair_refit.error.reactor_underpowered": {
+      "en": "reactor {reactor} MW cannot power a {engine} MW engine",
+      "ru": "реактор {reactor} МВт не питает двигатель {engine} МВт"
+    },
+    "service.repair_refit.error.module_not_installed": {
+      "en": "module {module} is not installed on this ship",
+      "ru": "модуль {module} не установлен на этом корабле"
+    },
+    "service.repair_refit.error.remove_install_later": {
+      "en": "removal and installation: next stage",
+      "ru": "снятие и установка — следующий этап"
+    },
+    "service.repair_refit.error.repair_impossible_level": {
+      "en": "on-site repair impossible ({level}): replacement only",
+      "ru": "ремонт на месте невозможен ({level}): только замена"
+    },
+    "service.repair_refit.error.configuration_failed": {
+      "en": "could not build a configuration with product {product}",
+      "ru": "не удалось собрать конфигурацию с изделием {product}"
+    },
+    "service.repair_refit.error.replace_needs_carrier": {
+      "en": "replacement impossible: restore the carrier module first",
+      "ru": "замена невозможна: сначала восстановите несущий модуль"
+    },
+    "service.repair_refit.error.repair_module_gone": {
+      "en": "repair impossible: module removed or carrier module destroyed",
+      "ru": "ремонт невозможен: модуль снят или несущий модуль разрушен"
+    },
+    "service.repair_refit.error.configuration_rejected": {
+      "en": "the ship did not accept the new configuration",
+      "ru": "корабль не принял новую конфигурацию"
+    },
+    "service.repair_refit.error.runtime_rejected": {
+      "en": "operation rejected by the module runtime",
+      "ru": "операция отклонена модульным runtime"
+    },
+    "service.repair_refit.error.repair_impossible": {
+      "en": "on-site repair impossible: replacement only",
+      "ru": "ремонт на месте невозможен: только замена"
+    },
+    "service.repair_refit.note.other_product": {
+      "en": "installing another product needs a per-ship configuration (next stage); the preview is exact",
+      "ru": "установка другого изделия требует экземплярной конфигурации корабля (следующий этап); предпросмотр точный"
+    },
+    "service.repair_refit.note.dev_free_apply": {
+      "en": "DEV: applied to the live ship free of charge",
+      "ru": "DEV: применяется к живому кораблю без оплаты"
+    },
+    "service.repair_refit.unit.mw": {
+      "en": "MW",
+      "ru": "МВт"
+    },
+    "service.repair_refit.unit.t": {
+      "en": "t",
+      "ru": "т"
+    },
+    "service.repair_refit.unit.km": {
+      "en": "km",
+      "ru": "км"
+    },
+    "service.repair_refit.unit.mps2": {
+      "en": "m/s²",
+      "ru": "м/с²"
+    },
+    "service.repair_refit.unit.radps2": {
+      "en": "rad/s²",
+      "ru": "рад/с²"
+    },
+    "service.repair_refit.delta.module_health": {
+      "en": "module condition",
+      "ru": "состояние модуля"
+    },
+    "service.repair_refit.delta.module_damage": {
+      "en": "functional damage",
+      "ru": "функциональные повреждения"
+    },
+    "service.repair_refit.delta.module_wear": {
+      "en": "wear",
+      "ru": "износ"
+    },
+    "service.repair_refit.delta.propulsion_power": {
+      "en": "drive generator power",
+      "ru": "мощность двигательных генераторов"
+    },
+    "service.repair_refit.delta.main_engines": {
+      "en": "main engines in service",
+      "ru": "главные двигатели в строю"
+    },
+    "service.repair_refit.delta.forward_accel": {
+      "en": "forward acceleration",
+      "ru": "ускорение вперёд"
+    },
+    "service.repair_refit.delta.reverse_accel": {
+      "en": "braking / reverse",
+      "ru": "торможение / назад"
+    },
+    "service.repair_refit.delta.burn_accel": {
+      "en": "acceleration in an 8 s burn",
+      "ru": "разгон в прогоне 8 с"
+    },
+    "service.repair_refit.delta.rcs_accel": {
+      "en": "manoeuvring thrusters (weakest axis)",
+      "ru": "маневровые (слабейшая ось)"
+    },
+    "service.repair_refit.delta.angular_accel": {
+      "en": "angular acceleration",
+      "ru": "угловое ускорение"
+    },
+    "service.repair_refit.delta.engine_margin": {
+      "en": "engine thermal margin",
+      "ru": "тепловой запас двигателей"
+    },
+    "service.repair_refit.delta.reactor_margin": {
+      "en": "reactor thermal margin",
+      "ru": "тепловой запас реакторов"
+    },
+    "service.repair_refit.delta.propulsion_coolant": {
+      "en": "propulsion coolant loop",
+      "ru": "двигательный контур"
+    },
+    "service.repair_refit.delta.service_coolant": {
+      "en": "service coolant loop",
+      "ru": "служебный контур"
+    },
+    "service.repair_refit.delta.emergency_cooling": {
+      "en": "emergency heat exchanger",
+      "ru": "аварийный теплообменник"
+    },
+    "service.repair_refit.delta.service_power": {
+      "en": "service reactor output",
+      "ru": "служебный реактор, выдача"
+    },
+    "service.repair_refit.delta.mass": {
+      "en": "ship mass",
+      "ru": "масса корабля"
+    },
+    "service.repair_refit.delta.radar_range": {
+      "en": "radar range",
+      "ru": "дальность радара"
+    },
+    "service.repair_refit.delta.docks": {
+      "en": "docking ports and hangars in service",
+      "ru": "стыковочные узлы и ангары в строю"
+    },
+    "service.repair_refit.delta.radar": {
+      "en": "radar",
+      "ru": "радар"
+    },
+    "service.repair_refit.delta.receiver": {
+      "en": "receiver",
+      "ru": "приёмник"
+    },
+    "service.repair_refit.delta.transmitter": {
+      "en": "transmitter",
+      "ru": "передатчик"
+    },
+    "service.repair_refit.delta.transponder": {
+      "en": "transponder",
+      "ru": "транспондер"
+    },
+    "service.repair_refit.delta.life_support": {
+      "en": "life support",
+      "ru": "жизнеобеспечение"
+    },
+    "service.repair_refit.delta.computer": {
+      "en": "onboard computer",
+      "ru": "бортовой компьютер"
+    },
+    "service.repair_refit.delta.jump_core": {
+      "en": "jump core",
+      "ru": "ядро прыжка"
+    },
+    "service.repair_refit.delta.jump_mass": {
+      "en": "jump with current mass",
+      "ru": "прыжок с текущей массой"
+    }
+  }
+}

@@ -1,5 +1,7 @@
 #include "src/game/economy/CargoRegistry.h"
 
+#include "src/game/localization/LocalizedMessage.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -81,17 +83,17 @@ int CargoRegistry::extraC20(const CargoManifest& m, const CargoLot& lot, double 
 
 std::string CargoRegistry::fits(const CargoManifest& m, const CargoCapacity& cap, double tonnes, int c20)
 {
-    char b[160];
+    using game::localization::Message;
     if (m.c20() + c20 > cap.c20Slots)
-    {
-        std::snprintf(b, sizeof b, "нет места C20: нужно %d, свободно %d из %d", c20, std::max(0, cap.c20Slots - m.c20()), cap.c20Slots);
-        return b;
-    }
+        return Message("economy.cargo.no_c20_space")
+            .arg("need", c20)
+            .arg("free", std::max(0, cap.c20Slots - m.c20()))
+            .arg("total", cap.c20Slots);
     if (m.netT() + tonnes > cap.netT + 1.0e-6)
-    {
-        std::snprintf(b, sizeof b, "превышена грузоподъёмность: на борту %.1f т + %.1f т > %.0f т", m.netT(), tonnes, cap.netT);
-        return b;
-    }
+        return Message("economy.cargo.over_capacity")
+            .arg("aboard", m.netT(), 1)
+            .arg("adding", tonnes, 1)
+            .arg("capacity", cap.netT, 0);
     return {};
 }
 

@@ -1,4 +1,5 @@
 #include "src/game/damage/HitVolumeBounds.h"
+#include "src/game/localization/LocalizedMessage.h"
 #include "src/game/equipment/radar/RadarSensorTypes.h"
 // GameSimulation: hub security / traffic control (docs/HUB_SECURITY.md). One component per hub that the lanes, the
 // promoted air traffic, the dock traffic, the defence ring and the fines report to:
@@ -612,7 +613,8 @@ void GameSimulation::updateHubSecurity(double dt)
                 case sec::WrongWayEvent::Fine:
                 {
                     const auto paid = game::economy::service::chargeFine(
-                        static_cast<std::uint32_t>(p.id.value), c.hubId, r.fineCr, "штраф: встречное движение в коридоре " + laneId);
+                        static_cast<std::uint32_t>(p.id.value), c.hubId, r.fineCr,
+                        game::localization::Message("security.fine.memo.wrong_way").arg("lane", laneId).str());
                     // the display mirror of the bank (the bank debt / payment is the truth); no economy: the fine assessed
                     motion.securityFinesTotalCr += paid.charged ? paid.paidCr + paid.debtCr : r.fineCr;
                     motion.securityLevel = static_cast<std::uint8_t>(std::max<int>(motion.securityLevel, 2));

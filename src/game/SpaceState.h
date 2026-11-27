@@ -117,6 +117,8 @@ class SpaceState : public GameState
     friend class game::dev::DevScriptRunner;
 
 public:
+    // the single player ESC menu: the local server's own clock is paused / resumed (audit #8 D2)
+    void setLocalSimulationPaused(bool paused);
     // DEV map script hooks (ELITE_DEV_MAP_SCRIPT).
     void devToggleTrafficLanes();
     void devSelectTrafficShip(const std::string& callsign);

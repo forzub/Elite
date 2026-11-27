@@ -653,6 +653,7 @@ int main(int argc, char** argv)
 {
     // the logs never stall the game loop (a console write per `<<`, a QuickEdit selection)
     core::installAsyncStderr();
+    core::hideOwnConsoleInPreview();
     if (const std::string anchored = core::anchorWorkingDirectoryToExecutable(); !anchored.empty())
         std::cerr << "[Startup] working directory set to the executable's folder: " << anchored << std::endl;
     core::optOutOfPowerThrottling("client");   // unfocused: no EcoQoS (the embedded server must keep real time)

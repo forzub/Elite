@@ -1,0 +1,658 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "cockpit.ring.refused": {
+      "en": "RING DISPATCHER: landing on {pad} refused - {g} g at the pad, the deck moves at {deck} m/s; the ship's vertical thrust is {lift} g, {need} g needed. Use the axial dock (Dock) - the deck stands still on the axis",
+      "ru": "ДИСПЕТЧЕР КОЛЬЦА: посадка на {pad} отклонена - у площадки тяжесть {g} g, палуба идёт {deck} м/с; вертикальная тяга корабля {lift} g, нужно {need} g. Стыкуйтесь в осевой док (Док) - на оси палуба стоит"
+    },
+    "cockpit.ring.cleared": {
+      "en": "RING DISPATCHER: {pad} - cleared to land. The ring turns at {rate} deg/s: {g} g toward the rim at the pad, the deck moves at {deck} m/s. Approach nose along the spin, hold vertical thrust (you have {lift} g)",
+      "ru": "ДИСПЕТЧЕР КОЛЬЦА: {pad} - посадка разрешена. Кольцо вращается {rate} град/с: у площадки тяжесть {g} g к ободу, палуба идёт {deck} м/с. Заход носом по вращению, держите вертикальную тягу (у вас {lift} g)"
+    },
+    "cockpit.dispatcher.pad_wrecked": {
+      "en": "DISPATCHER: pad {pad} is destroyed - landing impossible",
+      "ru": "ДИСПЕТЧЕР: площадка {pad} разрушена - посадка невозможна"
+    },
+    "cockpit.dispatcher.pad_not_built": {
+      "en": "DISPATCHER: pad {pad} does not exist yet - the building is under construction",
+      "ru": "ДИСПЕТЧЕР: площадки {pad} ещё нет - здание строится"
+    },
+    "cockpit.pad.approach_planning": {
+      "en": "PAD SERVICE: approach to pad {pad} - planning the route",
+      "ru": "СЛУЖБА ПЛОЩАДОК: заход на площадку {pad} - расчёт маршрута"
+    },
+    "cockpit.pad.cancelled_card_closed": {
+      "en": "PAD SERVICE: landing cancelled (card closed) - the pilot has control",
+      "ru": "СЛУЖБА ПЛОЩАДОК: посадка отменена (карточка закрыта) - управление у пилота"
+    },
+    "cockpit.pad.no_thrust_released": {
+      "en": "PAD SERVICE: the ship is not controllable (no thrust) - the service releases it, the ship coasts",
+      "ru": "СЛУЖБА ПЛОЩАДОК: корабль не управляем (нет тяги) - служба отпускает его, корабль идёт по инерции"
+    },
+    "cockpit.gear.out": {
+      "en": "LANDING GEAR: down - touch down at 2.5 m/s or less, the gear breaks from 4 m/s (F4 - bottom camera)",
+      "ru": "ОПОРЫ: выпущены - касание не быстрее 2.5 м/с, от 4 м/с опоры ломаются (F4 - нижняя камера)"
+    },
+    "cockpit.gear.in": {
+      "en": "LANDING GEAR: up",
+      "ru": "ОПОРЫ: убраны"
+    },
+    "cockpit.gear.broken": {
+      "en": "LANDING GEAR: broken - no landing until repaired",
+      "ru": "ОПОРЫ: сломаны - посадка невозможна до ремонта"
+    },
+    "cockpit.gear.broke_hard": {
+      "en": "LANDING GEAR: BROKEN in a hard landing",
+      "ru": "ОПОРЫ: СЛОМАНЫ при жёсткой посадке"
+    },
+    "cockpit.pad.gear_up": {
+      "en": "PAD SERVICE: lower the landing gear (G) - the landing will not start without it",
+      "ru": "СЛУЖБА ПЛОЩАДОК: выпустите опоры (G) - без них посадка не начнётся"
+    },
+    "cockpit.pad.no_gear": {
+      "en": "WARNING: landing without landing gear (G)",
+      "ru": "ВНИМАНИЕ: посадка без опор (G)"
+    },
+    "cockpit.pad.capture": {
+      "en": "PAD SERVICE: capture zone - automatic landing on {pad}",
+      "ru": "СЛУЖБА ПЛОЩАДОК: зона захвата - автоматическая посадка на {pad}"
+    },
+    "cockpit.pad.manual": {
+      "en": "PAD SERVICE: pad {pad} is manual - land yourself, is the landing gear down?",
+      "ru": "СЛУЖБА ПЛОЩАДОК: площадка {pad} ручная - садитесь сами, опоры выпущены?"
+    },
+    "cockpit.pad.landed_manual": {
+      "en": "LANDED: on pad {pad} - berth: trade F8, repair F7, refuel Ctrl+U (controls - take off)",
+      "ru": "ПОСАДКА: на площадке {pad} - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)"
+    },
+    "cockpit.pad.launched": {
+      "en": "LAUNCH from {pad}: manoeuvring thrusters only until clear of the pad zone",
+      "ru": "ЗАПУСК с {pad}: только манёвровые до выхода из зоны площадки"
+    },
+    "cockpit.hangar.queued": {
+      "en": "HANGAR {hangar}: both places taken - queue {queue}, waiting before the gate",
+      "ru": "АНГАР {hangar}: оба места заняты - очередь {queue}, ожидание перед воротами"
+    },
+    "cockpit.hangar.bay_free": {
+      "en": "HANGAR {hangar}: place {place} is free - entering the gate",
+      "ru": "АНГАР {hangar}: место {place} свободно - заход в ворота"
+    },
+    "cockpit.pad.engines_free": {
+      "en": "PAD ZONE cleared: all engines available",
+      "ru": "ЗОНА ПЛОЩАДКИ пройдена: все двигатели доступны"
+    },
+    "cockpit.pad.taken_flight": {
+      "en": "PAD SERVICE: normal flight off, the ship is taken into the hub frame",
+      "ru": "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба"
+    },
+    "cockpit.pad.taken_frame": {
+      "en": "PAD SERVICE: the ship is taken into the hub frame",
+      "ru": "СЛУЖБА ПЛОЩАДОК: корабль взят в кадр хаба"
+    },
+    "cockpit.dispatcher.too_big": {
+      "en": "DISPATCHER: pad {pad} - a {ship} m ship does not fit a {place} m place, choose another pad",
+      "ru": "ДИСПЕТЧЕР: площадка {pad} - корабль {ship} м не помещается на место {place} м, выберите другую площадку"
+    },
+    "cockpit.dispatcher.too_big_plain": {
+      "en": "DISPATCHER: the ship does not fit this pad",
+      "ru": "ДИСПЕТЧЕР: корабль не помещается на эту площадку"
+    },
+    "cockpit.pad.refused.no_thrust": {
+      "en": "PAD SERVICE: refused - the ship is not controllable (no thrust)",
+      "ru": "СЛУЖБА ПЛОЩАДОК: отказ - корабль не управляем (нет тяги)"
+    },
+    "cockpit.pad.refused.no_pad": {
+      "en": "PAD SERVICE: refused - the building has no pad",
+      "ru": "СЛУЖБА ПЛОЩАДОК: отказ - у здания нет площадки"
+    },
+    "cockpit.pad.refused.far": {
+      "en": "PAD SERVICE: refused - more than 60 km from the city",
+      "ru": "СЛУЖБА ПЛОЩАДОК: отказ - дальше 60 км от города"
+    },
+    "cockpit.pad.refused.station": {
+      "en": "PAD SERVICE: refused - the station is flying the ship",
+      "ru": "СЛУЖБА ПЛОЩАДОК: отказ - корабль ведёт станция"
+    },
+    "cockpit.pad.refused.no_city": {
+      "en": "PAD SERVICE: refused - no such city",
+      "ru": "СЛУЖБА ПЛОЩАДОК: отказ - нет такого города"
+    },
+    "cockpit.pad.refused.no_frame": {
+      "en": "PAD SERVICE: refused - the hub frame is unavailable",
+      "ru": "СЛУЖБА ПЛОЩАДОК: отказ - кадр хаба недоступен"
+    },
+    "cockpit.pad.phase.climb": {
+      "en": "PAD SERVICE: climbing to the transit height over the city",
+      "ru": "СЛУЖБА ПЛОЩАДОК: набор высоты транзита над городом"
+    },
+    "cockpit.pad.phase.transit": {
+      "en": "PAD SERVICE: over the city to pad {pad}",
+      "ru": "СЛУЖБА ПЛОЩАДОК: над городом к площадке {pad}"
+    },
+    "cockpit.pad.phase.descent": {
+      "en": "PAD SERVICE: descending onto pad {pad}",
+      "ru": "СЛУЖБА ПЛОЩАДОК: снижение на площадку {pad}"
+    },
+    "cockpit.pad.phase.landed": {
+      "en": "PAD SERVICE: landed, pad {pad} - berth: trade F8, repair F7, refuel Ctrl+U (controls - take off)",
+      "ru": "СЛУЖБА ПЛОЩАДОК: посадка выполнена, площадка {pad} - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)"
+    },
+    "cockpit.parked.engines_locked": {
+      "en": "PARKED: engines locked - Ctrl+L starts the manoeuvring thrusters",
+      "ru": "СТОЯНКА: двигатели заблокированы - Ctrl+L запуск манёвровых"
+    },
+    "cockpit.station.in_dock_controls": {
+      "en": "STATION: in the dock the station has the controls, wait for the gate",
+      "ru": "СТАНЦИЯ: в доке руль у станции, ждите ворот"
+    },
+    "cockpit.takeover.warn_station": {
+      "en": "WARNING: controls - the station releases in 3 s",
+      "ru": "ВНИМАНИЕ: руль - станция отпустит через 3 с"
+    },
+    "cockpit.takeover.warn_pad": {
+      "en": "WARNING: controls - the pad service releases in 3 s",
+      "ru": "ВНИМАНИЕ: руль - служба площадок отпустит через 3 с"
+    },
+    "cockpit.takeover.warn_autopilot": {
+      "en": "WARNING: controls - autopilot off in 3 s",
+      "ru": "ВНИМАНИЕ: руль - автопилот выкл. через 3 с"
+    },
+    "cockpit.takeover.released_station": {
+      "en": "Controls released: the station flies on",
+      "ru": "Руль отпущен: станция ведёт дальше"
+    },
+    "cockpit.takeover.released_pad": {
+      "en": "Controls released: the pad service flies on",
+      "ru": "Руль отпущен: служба площадок ведёт дальше"
+    },
+    "cockpit.takeover.released_autopilot": {
+      "en": "Controls released: the autopilot continues",
+      "ru": "Руль отпущен: автопилот продолжает"
+    },
+    "cockpit.takeover.off_docking": {
+      "en": "AUTOPILOT OFF: docking aborted",
+      "ru": "АВТОПИЛОТ ВЫКЛ.: стыковка прервана"
+    },
+    "cockpit.takeover.off_route": {
+      "en": "AUTOPILOT OFF: route aborted",
+      "ru": "АВТОПИЛОТ ВЫКЛ.: маршрут прерван"
+    },
+    "cockpit.takeover.off_pilot": {
+      "en": "AUTOPILOT OFF: the pilot has control",
+      "ru": "АВТОПИЛОТ ВЫКЛ.: управление у пилота"
+    },
+    "cockpit.takeover.station_handed": {
+      "en": "STATION: control handed to the pilot",
+      "ru": "СТАНЦИЯ: управление передано пилоту"
+    },
+    "cockpit.takeover.pad_handed": {
+      "en": "PAD SERVICE: control handed to the pilot",
+      "ru": "СЛУЖБА ПЛОЩАДОК: управление передано пилоту"
+    },
+    "cockpit.pad.launch_rcs_on": {
+      "en": "LAUNCH: manoeuvring thrusters on - main engines once clear of the pad zone",
+      "ru": "ЗАПУСК: манёвровые включены - маршевые после выхода из зоны площадки"
+    },
+    "cockpit.refuel.requested": {
+      "en": "REFUEL: station requested",
+      "ru": "ЗАПРАВКА: запрос станции"
+    },
+    "cockpit.refuel.stopped": {
+      "en": "REFUEL: stopped",
+      "ru": "ЗАПРАВКА: остановлена"
+    },
+    "cockpit.dispatcher.newtonian_refused_ring": {
+      "en": "DISPATCHER: landing on {pad} refused - city pads are closed to Newtonian ships (they cannot turn in the city). Use the axial dock (Dock) - the deck stands still on the axis",
+      "ru": "ДИСПЕТЧЕР: посадка на {pad} отклонена - городские площадки закрыты для ньютоновских кораблей (в городе им не развернуться). Стыкуйтесь в осевой док (Док) - на оси палуба стоит"
+    },
+    "cockpit.dispatcher.newtonian_refused_city": {
+      "en": "DISPATCHER: landing on {pad} refused - city pads are closed to Newtonian ships (they cannot turn in the city). Use the city dock (Dock) - it is on the outskirts",
+      "ru": "ДИСПЕТЧЕР: посадка на {pad} отклонена - городские площадки закрыты для ньютоновских кораблей (в городе им не развернуться). Стыкуйтесь в док города (Док) - он на окраине"
+    },
+    "cockpit.docking.hub_far": {
+      "en": "DOCKING: the hub is far (> 30 km) - plot a route to the hub first",
+      "ru": "СТЫКОВКА: хаб далеко (> 30 км) - сначала маршрут к хабу"
+    },
+    "cockpit.docking.lifted_planning": {
+      "en": "DOCKING: the ship is lifted above the structures - planning the route",
+      "ru": "СТЫКОВКА: корабль поднят над постройками - расчёт маршрута"
+    },
+    "cockpit.docking.lift_off": {
+      "en": "DOCKING: take-off - climbing above the structures",
+      "ru": "СТЫКОВКА: взлёт - подъём над постройками"
+    },
+    "cockpit.docking.no_safe_course": {
+      "en": "DOCKING: no safe course from here (structures / a pad nearby) - move the ship 100-200 m away and try again",
+      "ru": "СТЫКОВКА: нет безопасного курса отсюда (рядом постройки / площадка) - отведите корабль на 100-200 м и повторите"
+    },
+    "cockpit.pad.direct_over_city": {
+      "en": "PAD SERVICE: straight over the city to pad {pad}",
+      "ru": "СЛУЖБА ПЛОЩАДОК: напрямую над городом к площадке {pad}"
+    },
+    "cockpit.ring.synced_axis": {
+      "en": "RING DISPATCHER: spin matched at the axial gate",
+      "ru": "ДИСПЕТЧЕР КОЛЬЦА: синхронизация с вращением выполнена у ворот на оси"
+    },
+    "cockpit.ring.synced_route": {
+      "en": "RING DISPATCHER: spin matched - route to pad {pad} in the ring's frame",
+      "ru": "ДИСПЕТЧЕР КОЛЬЦА: вращение синхронизировано - маршрут к площадке {pad} в системе кольца"
+    },
+    "cockpit.pad.over_pad_gear": {
+      "en": "PAD SERVICE: over pad {pad} - landing on the gear",
+      "ru": "СЛУЖБА ПЛОЩАДОК: над площадкой {pad} - посадка на опорах"
+    },
+    "cockpit.collision_assist.pilot": {
+      "en": "COLLISION ASSIST: the pilot has control",
+      "ru": "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: управление у пилота"
+    },
+    "cockpit.collision_assist.warning": {
+      "en": "WARNING: COLLISION COURSE - {count} contact(s), evade",
+      "ru": "ВНИМАНИЕ: КУРС СТОЛКНОВЕНИЯ - {count} контакт(ов), уклоняйтесь"
+    },
+    "cockpit.collision_assist.evading": {
+      "en": "COLLISION ASSIST: evasive manoeuvre (a sharp stick input gives you control)",
+      "ru": "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: манёвр уклонения (резкое движение ручкой - управление вам)"
+    },
+    "cockpit.pad.altimeter_far": {
+      "en": "ALTITUDE  > 500 m        DESCENT  {descent} m/s",
+      "ru": "ВЫСОТА  > 500 м        СПУСК  {descent} м/с"
+    },
+    "cockpit.pad.altimeter": {
+      "en": "ALTITUDE  {height} m        DESCENT  {descent} m/s",
+      "ru": "ВЫСОТА  {height} м        СПУСК  {descent} м/с"
+    },
+    "cockpit.gear.label_down": {
+      "en": "GEAR: DOWN",
+      "ru": "ОПОРЫ: ВЫПУЩЕНЫ"
+    },
+    "cockpit.gear.label_broken": {
+      "en": "GEAR: BROKEN",
+      "ru": "ОПОРЫ: СЛОМАНЫ"
+    },
+    "cockpit.gear.label_lower": {
+      "en": "LOWER THE GEAR (G)",
+      "ru": "ВЫПУСТИТЕ ОПОРЫ (G)"
+    },
+    "cockpit.gear.label_up": {
+      "en": "GEAR: UP (G)",
+      "ru": "ОПОРЫ: УБРАНЫ (G)"
+    },
+    "cockpit.berth.free": {
+      "en": "FREE: {place} - a place is free, you may land",
+      "ru": "СВОБОДНО: {place} - место освободилось, можно садиться"
+    },
+    "cockpit.berth.taken": {
+      "en": "TAKEN: {place} - all places taken, wait ~{minutes} min",
+      "ru": "ЗАНЯТО: {place} - все места заняты, ожидание ~{minutes} мин"
+    },
+    "cockpit.containment.lost": {
+      "en": "CONTAINMENT LOSS: {reactor}",
+      "ru": "ПОТЕРЯ УДЕРЖАНИЯ: {reactor}"
+    },
+    "cockpit.containment.reactor.left": {
+      "en": "left reactor",
+      "ru": "левый реактор"
+    },
+    "cockpit.containment.reactor.right": {
+      "en": "right reactor",
+      "ru": "правый реактор"
+    },
+    "cockpit.containment.reactor.service": {
+      "en": "service reactor",
+      "ru": "служебный реактор"
+    },
+    "cockpit.containment.reactor.generic": {
+      "en": "reactor",
+      "ru": "реактор"
+    },
+    "cockpit.containment.advice.drone_en_route": {
+      "en": "repair drone on its way to the reactor",
+      "ru": "ремонтный дрон летит к реактору"
+    },
+    "cockpit.containment.advice.drone_working": {
+      "en": "repair drone at work - stabilisation {percent} %",
+      "ru": "ремонтный дрон работает - стабилизация {percent} %"
+    },
+    "cockpit.containment.advice.reactors_off": {
+      "en": "reactors off - lower chance, but not zero; eject L-Ctrl+Q",
+      "ru": "реакторы отключены - шанс ниже, но не ноль; катапульта L-Ctrl+Q"
+    },
+    "cockpit.containment.advice.act": {
+      "en": "switch the reactors off (Ctrl+Alt+Shift+I), eject (L-Ctrl+Q) or send a repair drone (Ctrl+R)",
+      "ru": "отключите реакторы (Ctrl+Alt+Shift+I), катапульта (L-Ctrl+Q) или ремонтный дрон (Ctrl+R)"
+    },
+    "security.fine.memo.wrong_way": {
+      "en": "fine: flying against the traffic in lane {lane}",
+      "ru": "штраф: встречное движение в коридоре {lane}"
+    },
+    "security.fine.memo.nav_zone": {
+      "en": "fine: navigation zone {zone}",
+      "ru": "штраф: навигационная зона {zone}"
+    },
+    "cockpit.capsule.nothing_in_reach": {
+      "en": "CAPSULE: no hubs or beacons in reach - drifting, SOS signal on",
+      "ru": "КАПСУЛА: ни хабов, ни маяков в досягаемости - дрейф, сигнал SOS"
+    },
+    "cockpit.capsule.rescued": {
+      "en": "CAPSULE RESCUED: pad {pad} - {hub}",
+      "ru": "КАПСУЛА СПАСЕНА: площадка {pad} - {hub}"
+    },
+    "cockpit.capsule.rescued_rescue_dock": {
+      "en": "CAPSULE RESCUED: pad {pad} - {hub} (rescue dock)",
+      "ru": "КАПСУЛА СПАСЕНА: площадка {pad} - {hub} (док МЧС)"
+    },
+    "cockpit.capsule.landing": {
+      "en": "CAPSULE: landing on pad {pad} - {hub}",
+      "ru": "КАПСУЛА: посадка на площадку {pad} - {hub}"
+    },
+    "cockpit.capsule.landing_rescue_dock": {
+      "en": "CAPSULE: landing on pad {pad} - {hub} (rescue dock)",
+      "ru": "КАПСУЛА: посадка на площадку {pad} - {hub} (док МЧС)"
+    },
+    "cockpit.capsule.at_beacon": {
+      "en": "CAPSULE: at beacon '{beacon}' - waiting for the rescuers, SOS signal on",
+      "ru": "КАПСУЛА: у маяка «{beacon}» - ожидание спасателей, сигнал SOS"
+    },
+    "cockpit.capsule.course": {
+      "en": "CAPSULE: heading for '{target}' - {km} km, closing {closing} m/s, reserve {reserve} m/s",
+      "ru": "КАПСУЛА: курс на «{target}» - {km} км, сближение {closing} м/с, запас {reserve} м/с"
+    },
+    "cockpit.capsule.course_rescue_dock": {
+      "en": "CAPSULE: heading for '{target}' (rescue dock) - {km} km, closing {closing} m/s, reserve {reserve} m/s",
+      "ru": "КАПСУЛА: курс на «{target}» (док МЧС) - {km} км, сближение {closing} м/с, запас {reserve} м/с"
+    },
+    "cockpit.rescue.autopilot_no_hub": {
+      "en": "AUTOPILOT: the target has no hub with a rescue service - an SOS may go unheard",
+      "ru": "АВТОПИЛОТ: у цели нет хаба со спасательной службой - SOS могут не услышать"
+    },
+    "cockpit.rescue.who.autopilot": {
+      "en": "AUTOPILOT",
+      "ru": "АВТОПИЛОТ"
+    },
+    "cockpit.rescue.who.route": {
+      "en": "ROUTE",
+      "ru": "МАРШРУТ"
+    },
+    "cockpit.rescue.no_service": {
+      "en": "{who}: no rescue service in this system - only passing ships will hear an SOS",
+      "ru": "{who}: в системе нет спасательной службы - SOS услышат только случайные корабли"
+    },
+    "cockpit.rescue.outside_zone_far": {
+      "en": "{who}: outside the rescue zone ({distance} ls to '{hub}', zone {zone}) - an SOS may go unheard",
+      "ru": "{who}: вне зоны спасения (до «{hub}» {distance} св. с, зона {zone}) - SOS могут не услышать"
+    },
+    "cockpit.rescue.outside_zone": {
+      "en": "{who}: outside the rescue zone - an SOS may go unheard",
+      "ru": "{who}: вне зоны спасения - SOS могут не услышать"
+    },
+    "cockpit.journal.hub_rescue_dock_pads": {
+      "en": "rescue dock; pads {pads}",
+      "ru": "док МЧС; площадок {pads}"
+    },
+    "cockpit.journal.hub_no_rescue_dock_pads": {
+      "en": "no rescue dock; pads {pads}",
+      "ru": "без дока МЧС; площадок {pads}"
+    },
+    "cockpit.journal.hub_rescue_dock": {
+      "en": "rescue dock",
+      "ru": "док МЧС"
+    },
+    "cockpit.journal.hub_no_rescue_dock": {
+      "en": "no rescue dock",
+      "ru": "без дока МЧС"
+    },
+    "cockpit.journal.beacon_rescue_service": {
+      "en": "rescue service: {service}",
+      "ru": "спасательная служба: {service}"
+    },
+    "cockpit.journal.kind.hub": {
+      "en": "hub",
+      "ru": "хаб"
+    },
+    "cockpit.journal.kind.inhabited_zone": {
+      "en": "inhabited zone",
+      "ru": "обитаемая зона"
+    },
+    "cockpit.journal.kind.safe": {
+      "en": "safe place",
+      "ru": "безопасное место"
+    },
+    "cockpit.journal.kind.danger": {
+      "en": "dangerous place",
+      "ru": "опасное место"
+    },
+    "cockpit.journal.kind.signal": {
+      "en": "signal",
+      "ru": "сигнал"
+    },
+    "cockpit.journal.kind.anomaly": {
+      "en": "anomaly",
+      "ru": "аномалия"
+    },
+    "cockpit.journal.kind.sump_exit": {
+      "en": "sump exit",
+      "ru": "выход в отстойник"
+    },
+    "cockpit.journal.kind.wreck": {
+      "en": "wreckage",
+      "ru": "обломки"
+    },
+    "cockpit.journal.kind.beacon": {
+      "en": "beacon",
+      "ru": "маяк"
+    },
+    "cockpit.pilot_lost.cause.surface_impact": {
+      "en": "surface impact",
+      "ru": "удар о поверхность"
+    },
+    "cockpit.pilot_lost.cause.structure_collision": {
+      "en": "collision with a structure",
+      "ru": "столкновение с постройкой"
+    },
+    "cockpit.pilot_lost.cause.impact_g": {
+      "en": "g-load on impact",
+      "ru": "перегрузка при ударе"
+    },
+    "cockpit.pilot_lost.cause.cockpit_destroyed": {
+      "en": "cockpit destroyed",
+      "ru": "кабина разрушена"
+    },
+    "cockpit.pilot_lost.cause.g_load": {
+      "en": "g-load",
+      "ru": "перегрузка"
+    },
+    "cockpit.pilot_lost.title": {
+      "en": "PILOT KILLED",
+      "ru": "ПИЛОТ ПОГИБ"
+    },
+    "cockpit.pilot_lost.line": {
+      "en": "Ship wrecked: {cause}. The crew died with the cockpit.",
+      "ru": "Корабль разбит: {cause}. Экипаж погиб вместе с кабиной."
+    },
+    "cockpit.pilot_lost.hint": {
+      "en": "Esc - menu",
+      "ru": "Esc - меню"
+    },
+    "cockpit.services.in_this_system": {
+      "en": "in this system",
+      "ru": "в этой системе"
+    },
+    "cockpit.navdata.tier.military": {
+      "en": "military clearance",
+      "ru": "военный допуск"
+    },
+    "cockpit.navdata.tier.secret": {
+      "en": "secret",
+      "ru": "секретно"
+    },
+    "cockpit.navdata.tier.public": {
+      "en": "public",
+      "ru": "открыто"
+    },
+    "cockpit.navdata.carrier": {
+      "en": "{label} ({count} rec.)",
+      "ru": "{label} ({count} зап.)"
+    },
+    "cockpit.jump.lane_exit": {
+      "en": "exit by lane {lane}",
+      "ru": "выход по трассе {lane}"
+    },
+    "cockpit.jump.lane_entry": {
+      "en": "entry by lane {lane}",
+      "ru": "вход по трассе {lane}"
+    },
+    "cockpit.j.medium_tag": {
+      "en": "medium",
+      "ru": "среда"
+    },
+    "cockpit.j.off_tag": {
+      "en": "off",
+      "ru": "выкл."
+    },
+    "cockpit.radio.notice.track": {
+      "en": "STEREO: {track}",
+      "ru": "МАГНИТОЛА: {track}"
+    },
+    "cockpit.radio.notice.connecting": {
+      "en": "RADIO: {station} - connecting",
+      "ru": "РАДИО: {station} - подключение"
+    },
+    "cockpit.radio.notice.playlist_empty": {
+      "en": "STEREO: the list is empty - drop music (mp3 / flac / wav, up to 24) into the game window",
+      "ru": "МАГНИТОЛА: лист пуст - перетащите музыку (mp3 / flac / wav, до 24) в окно игры"
+    },
+    "cockpit.radio.notice.no_transmitters": {
+      "en": "RADIO: no transmitters in reception range - noise only",
+      "ru": "РАДИО: нет передатчиков в зоне приёма - только шум"
+    },
+    "cockpit.radio.notice.searching": {
+      "en": "RADIO: {zone} - searching for stations...",
+      "ru": "РАДИО: {zone} - поиск станций..."
+    },
+    "cockpit.radio.notice.off": {
+      "en": "STEREO: off",
+      "ru": "МАГНИТОЛА: выкл"
+    },
+    "cockpit.radio.notice.volume": {
+      "en": "STEREO: volume {percent} %",
+      "ru": "МАГНИТОЛА: громкость {percent} %"
+    },
+    "cockpit.radio.notice.playlist_full": {
+      "en": "STEREO: the list is full (24) - remove a track with the x button",
+      "ru": "МАГНИТОЛА: лист полон (24) - уберите трек кнопкой x"
+    },
+    "cockpit.radio.notice.no_music_files": {
+      "en": "STEREO: no music among the files (mp3 / flac / wav)",
+      "ru": "МАГНИТОЛА: нет музыки среди файлов (mp3 / flac / wav)"
+    },
+    "cockpit.radio.notice.added": {
+      "en": "STEREO: {count} / {capacity} in the list (+{added})",
+      "ru": "МАГНИТОЛА: в листе {count} / {capacity} (+{added})"
+    },
+    "cockpit.radio.notice.added_full": {
+      "en": "STEREO: {count} / {capacity} in the list (+{added}), the list is full",
+      "ru": "МАГНИТОЛА: в листе {count} / {capacity} (+{added}), лист полон"
+    },
+    "cockpit.radio.notice.removed": {
+      "en": "STEREO: removed {track}, {count} in the list",
+      "ru": "МАГНИТОЛА: убран {track}, в листе {count}"
+    },
+    "cockpit.radio.notice.out_of_range": {
+      "en": "RADIO: out of transmitter range - noise",
+      "ru": "РАДИО: вне зоны передатчиков - шум"
+    },
+    "cockpit.radio.notice.on_air": {
+      "en": "RADIO: on air - {zone}",
+      "ru": "РАДИО: в эфире - {zone}"
+    },
+    "cockpit.radio.line.no_music": {
+      "en": "STEREO · no music",
+      "ru": "МАГНИТОЛА · нет музыки"
+    },
+    "cockpit.radio.line.track": {
+      "en": "STEREO {n}/{total} · {track}",
+      "ru": "МАГНИТОЛА {n}/{total} · {track}"
+    },
+    "cockpit.radio.line.no_transmitters": {
+      "en": "RADIO · noise · no transmitters",
+      "ru": "РАДИО · шум · нет передатчиков"
+    },
+    "cockpit.radio.line.no_stations": {
+      "en": "RADIO · {zone} · no stations · noise · signal {signal} %",
+      "ru": "РАДИО · {zone} · станций нет · шум · сигнал {signal} %"
+    },
+    "cockpit.radio.line.searching": {
+      "en": "RADIO · {zone} · searching for stations · signal {signal} %",
+      "ru": "РАДИО · {zone} · поиск станций · сигнал {signal} %"
+    },
+    "cockpit.radio.line.station": {
+      "en": "RADIO · {zone} · {station} · signal {signal} %",
+      "ru": "РАДИО · {zone} · {station} · сигнал {signal} %"
+    },
+    "cockpit.radio.line.station_connecting": {
+      "en": "RADIO · {zone} · {station} · signal {signal} % · connecting",
+      "ru": "РАДИО · {zone} · {station} · сигнал {signal} % · подключение"
+    },
+    "cockpit.radio.line.station_no_signal": {
+      "en": "RADIO · {zone} · {station} · signal {signal} % · no signal",
+      "ru": "РАДИО · {zone} · {station} · сигнал {signal} % · нет сигнала"
+    },
+    "cockpit.radio.display.off": {
+      "en": "off",
+      "ru": "выкл"
+    },
+    "cockpit.radio.display.own_list_empty": {
+      "en": "own list 0 / {capacity}",
+      "ru": "свой лист 0 / {capacity}"
+    },
+    "cockpit.radio.display.drop_music": {
+      "en": "drop music into the game window",
+      "ru": "перетащите музыку в окно игры"
+    },
+    "cockpit.radio.display.folder_position": {
+      "en": "folder {n} / {total}",
+      "ru": "папка {n} / {total}"
+    },
+    "cockpit.radio.display.list_position": {
+      "en": "list {n} / {total}",
+      "ru": "лист {n} / {total}"
+    },
+    "cockpit.radio.display.no_transmitters": {
+      "en": "no transmitters",
+      "ru": "нет передатчиков"
+    },
+    "cockpit.radio.display.noise": {
+      "en": "noise",
+      "ru": "шум"
+    },
+    "cockpit.radio.display.no_stations": {
+      "en": "no stations - noise",
+      "ru": "станций нет - шум"
+    },
+    "cockpit.radio.display.searching": {
+      "en": "searching for stations...",
+      "ru": "поиск станций..."
+    },
+    "cockpit.radio.caption": {
+      "en": "STEREO",
+      "ru": "МАГНИТОЛА"
+    },
+    "cockpit.radio.button.on": {
+      "en": "ON",
+      "ru": "ВКЛ"
+    },
+    "cockpit.radio.button.off": {
+      "en": "OFF",
+      "ru": "ВЫКЛ"
+    },
+    "cockpit.radio.button.radio": {
+      "en": "RADIO",
+      "ru": "РАДИО"
+    },
+    "cockpit.radio.button.list": {
+      "en": "LIST",
+      "ru": "ЛИСТ"
+    }
+  }
+}

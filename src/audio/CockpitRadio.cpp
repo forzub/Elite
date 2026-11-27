@@ -1,4 +1,5 @@
 #include "src/audio/CockpitRadio.h"
+#include "src/game/localization/LocalizationService.h"
 
 #include <algorithm>
 #include <atomic>
@@ -33,6 +34,7 @@ namespace audio
 namespace
 {
 namespace fs = std::filesystem;
+namespace l10n = game::localization;
 
 std::string toUtf8(const std::wstring& w)
 {
@@ -454,7 +456,7 @@ struct CockpitRadio::Impl
                 fileSoundReady = true;
                 ma_sound_set_volume(&fileSound, volume);
                 ma_sound_start(&fileSound);
-                notice = "МАГНИТОЛА: " + toUtf8(p.stem().wstring());
+                notice = l10n::Message("cockpit.radio.notice.track").arg("track", toUtf8(p.stem().wstring())).str();
                 return;
             }
             std::cerr << "[Radio] cannot play " << toUtf8(p.wstring()) << " (" << r << ")" << std::endl;
@@ -676,7 +678,7 @@ struct CockpitRadio::Impl
         ma_sound_start(&ringSound);
         applyMix();
         streamState = 1;
-        notice = "РАДИО: " + st.name + " - подключение";
+        notice = l10n::Message("cockpit.radio.notice.connecting").arg("station", st.name).str();
         std::cerr << "[Radio] station " << st.name << " (" << st.country << ", " << st.bitrate << " kbit/s) " << st.url << std::endl;
 #ifdef _WIN32
         const int generation = streamGeneration.load();
@@ -773,7 +775,7 @@ struct CockpitRadio::Impl
             if (!scanned)
                 scanMusic();
             if (tracks.empty())
-                notice = "МАГНИТОЛА: лист пуст - перетащите музыку (mp3 / flac / wav, до 24) в окно игры";
+                notice = l10n::Message("cockpit.radio.notice.playlist_empty").str();
             else
                 playTrack();
         }
@@ -781,11 +783,11 @@ struct CockpitRadio::Impl
         {
             applyMix();   // the noise of the ether at once; the region's station follows (update)
             if (region.empty())
-                notice = "РАДИО: нет передатчиков в зоне приёма - только шум";
+                notice = l10n::Message("cockpit.radio.notice.no_transmitters").str();
             else if (!catalogues.count(region))
             {
                 fetchCatalogue(region);
-                notice = "РАДИО: " + polities[region].name + " - поиск станций...";
+                notice = l10n::Message("cockpit.radio.notice.searching").arg("zone", polities[region].name).str();
             }
             else if (selectRegion())
                 playStation();
@@ -827,7 +829,7 @@ void CockpitRadio::togglePower()
     else
     {
         m->stop();
-        m->notice = "МАГНИТОЛА: выкл";
+        m->notice = l10n::Message("cockpit.radio.notice.off").str();
     }
 }
 
@@ -889,7 +891,7 @@ void CockpitRadio::setVolume01(float volume01)
         ma_sound_set_volume(&m->fileSound, m->volume);
     if (m->ringSoundReady)
         ma_sound_set_volume(&m->ringSound, m->volume);
-    m->notice = "МАГНИТОЛА: громкость " + std::to_string(static_cast<int>(m->volume * 100.0f + 0.5f)) + " %";
+    m->notice = l10n::Message("cockpit.radio.notice.volume").arg("percent", static_cast<int>(m->volume * 100.0f + 0.5f)).str();
     m->saveSettings();
 }
 
@@ -940,14 +942,17 @@ int CockpitRadio::addFiles(const std::vector<std::string>& utf8Paths)
     }
     if (added == 0)
     {
-        m->notice = full ? "МАГНИТОЛА: лист полон (24) - уберите трек кнопкой x" : "МАГНИТОЛА: нет музыки среди файлов (mp3 / flac / wav)";
+        m->notice = full ? l10n::Message("cockpit.radio.notice.playlist_full").str() : l10n::Message("cockpit.radio.notice.no_music_files").str();
         return 0;
     }
     m->saveSettings();
     const bool wasEmpty = m->tracks.empty() || m->playlist.size() == static_cast<std::size_t>(added);
     m->scanMusic();
-    m->notice = "МАГНИТОЛА: в листе " + std::to_string(m->playlist.size()) + " / " + std::to_string(PlaylistCapacity) +
-                " (+" + std::to_string(added) + ")" + (full ? ", лист полон" : "");
+    m->notice = l10n::Message(full ? "cockpit.radio.notice.added_full" : "cockpit.radio.notice.added")
+                    .arg("count", std::to_string(m->playlist.size()))
+                    .arg("capacity", std::to_string(PlaylistCapacity))
+                    .arg("added", std::to_string(added))
+                    .str();
     std::cerr << "[Radio] added " << added << " track(s) to the container (" << m->playlist.size() << ")" << std::endl;
     if (m->source != Source::Playlist)
         m->source = Source::Playlist, m->stop();
@@ -974,7 +979,10 @@ void CockpitRadio::removeCurrentTrack()
     m->saveSettings();
     m->stopFile();
     m->scanMusic();
-    m->notice = "МАГНИТОЛА: убран " + toUtf8(current.stem().wstring()) + ", в листе " + std::to_string(m->playlist.size());
+    m->notice = l10n::Message("cockpit.radio.notice.removed")
+                    .arg("track", toUtf8(current.stem().wstring()))
+                    .arg("count", std::to_string(m->playlist.size()))
+                    .str();
     if (m->on && !m->tracks.empty())
     {
         m->track %= m->tracks.size();
@@ -994,7 +1002,7 @@ void CockpitRadio::volumeStep(int steps)
         ma_sound_set_volume(&m->fileSound, m->volume);
     if (m->ringSoundReady)
         ma_sound_set_volume(&m->ringSound, m->volume);
-    m->notice = "МАГНИТОЛА: громкость " + std::to_string(static_cast<int>(m->volume * 100.0f + 0.5f)) + " %";
+    m->notice = l10n::Message("cockpit.radio.notice.volume").arg("percent", static_cast<int>(m->volume * 100.0f + 0.5f)).str();
     m->saveSettings();
 }
 
@@ -1046,8 +1054,8 @@ void CockpitRadio::setReception(const std::string& polity, double quality01)
             m->stations.clear();
         }
         const auto it = m->polities.find(polity);
-        m->notice = polity.empty() ? "РАДИО: вне зоны передатчиков - шум"
-                                   : "РАДИО: в эфире - " + (it != m->polities.end() ? it->second.name : polity);
+        m->notice = polity.empty() ? l10n::Message("cockpit.radio.notice.out_of_range").str()
+                                   : l10n::Message("cockpit.radio.notice.on_air").arg("zone", it != m->polities.end() ? it->second.name : polity).str();
     }
     std::cerr << "[Radio] reception: " << (was.empty() ? "-" : was) << " -> " << (polity.empty() ? "-" : polity) << " ("
               << static_cast<int>(m->quality * 100.0) << " %)" << std::endl;
@@ -1086,27 +1094,32 @@ std::string CockpitRadio::displayLine() const
     if (m->source == Source::Playlist)
     {
         if (m->tracks.empty() || !m->fileSoundReady)
-            return "МАГНИТОЛА · нет музыки";
-        return "МАГНИТОЛА " + std::to_string(m->track % m->tracks.size() + 1) + "/" + std::to_string(m->tracks.size()) + " · " +
-               toUtf8(m->tracks[m->track % m->tracks.size()].stem().wstring());
+            return l10n::tr("cockpit.radio.line.no_music", "STEREO · no music");
+        return l10n::tr("cockpit.radio.line.track",
+                        {{"n", std::to_string(m->track % m->tracks.size() + 1)}, {"total", std::to_string(m->tracks.size())},
+                         {"track", toUtf8(m->tracks[m->track % m->tracks.size()].stem().wstring())}},
+                        "STEREO {n}/{total} · {track}");
     }
     std::lock_guard<std::mutex> lock(m->mutex);
     const int signal = static_cast<int>(m->quality * 100.0 + 0.5);
     if (m->region.empty())
-        return "РАДИО · шум · нет передатчиков";
+        return l10n::tr("cockpit.radio.line.no_transmitters", "RADIO · noise · no transmitters");
     const auto pit = m->polities.find(m->region);
     const std::string zone = pit != m->polities.end() ? pit->second.name : m->region;
     if (m->stations.empty())
-        return "РАДИО · " + zone + (m->catalogues.count(m->region) ? " · станций нет · шум" : " · поиск станций") + " · сигнал " +
-               std::to_string(signal) + " %";
+        return m->catalogues.count(m->region)
+                   ? l10n::tr("cockpit.radio.line.no_stations", {{"zone", zone}, {"signal", std::to_string(signal)}},
+                              "RADIO · {zone} · no stations · noise · signal {signal} %")
+                   : l10n::tr("cockpit.radio.line.searching", {{"zone", zone}, {"signal", std::to_string(signal)}},
+                              "RADIO · {zone} · searching for stations · signal {signal} %");
     const Station& st = m->stations[m->station % m->stations.size()];
     const int s = m->streamState.load();
-    std::string line = "РАДИО · " + zone + " · " + st.name + " · сигнал " + std::to_string(signal) + " %";
+    const std::vector<l10n::MessageParam> params {{"zone", zone}, {"station", st.name}, {"signal", std::to_string(signal)}};
     if (s == 1)
-        line += " · подключение";
-    else if (s == 3)
-        line += " · нет сигнала";
-    return line;
+        return l10n::tr("cockpit.radio.line.station_connecting", params, "RADIO · {zone} · {station} · signal {signal} % · connecting");
+    if (s == 3)
+        return l10n::tr("cockpit.radio.line.station_no_signal", params, "RADIO · {zone} · {station} · signal {signal} % · no signal");
+    return l10n::tr("cockpit.radio.line.station", params, "RADIO · {zone} · {station} · signal {signal} %");
 }
 
 CockpitRadio::Display CockpitRadio::display() const
@@ -1117,19 +1130,21 @@ CockpitRadio::Display CockpitRadio::display() const
     d.volume = static_cast<int>(m->volume * 100.0f + 0.5f);
     if (!m->on)
     {
-        d.title = "выкл";
+        d.title = l10n::tr("cockpit.radio.display.off", "off");
         return d;
     }
     if (m->source == Source::Playlist)
     {
         if (m->tracks.empty())
         {
-            d.header = "свой лист 0 / " + std::to_string(PlaylistCapacity);
-            d.title = "перетащите музыку в окно игры";
+            d.header = l10n::tr("cockpit.radio.display.own_list_empty", {{"capacity", std::to_string(PlaylistCapacity)}}, "own list 0 / {capacity}");
+            d.title = l10n::tr("cockpit.radio.display.drop_music", "drop music into the game window");
             return d;
         }
-        d.header = (m->playlist.empty() ? std::string("папка ") : std::string("лист ")) +
-                   std::to_string(m->track % m->tracks.size() + 1) + " / " + std::to_string(m->tracks.size());
+        const std::vector<l10n::MessageParam> position {{"n", std::to_string(m->track % m->tracks.size() + 1)},
+                                                        {"total", std::to_string(m->tracks.size())}};
+        d.header = m->playlist.empty() ? l10n::tr("cockpit.radio.display.folder_position", position, "folder {n} / {total}")
+                                       : l10n::tr("cockpit.radio.display.list_position", position, "list {n} / {total}");
         d.title = toUtf8(m->tracks[m->track % m->tracks.size()].stem().wstring());
         return d;
     }
@@ -1137,14 +1152,15 @@ CockpitRadio::Display CockpitRadio::display() const
     d.signal = static_cast<int>(m->quality * 100.0 + 0.5);
     if (m->region.empty())
     {
-        d.header = "нет передатчиков";
-        d.title = "шум";
+        d.header = l10n::tr("cockpit.radio.display.no_transmitters", "no transmitters");
+        d.title = l10n::tr("cockpit.radio.display.noise", "noise");
         return d;
     }
     const auto pit = m->polities.find(m->region);
     d.header = pit != m->polities.end() ? pit->second.name : m->region;
     if (m->stations.empty())
-        d.title = m->catalogues.count(m->region) ? "станций нет - шум" : "поиск станций...";
+        d.title = m->catalogues.count(m->region) ? l10n::tr("cockpit.radio.display.no_stations", "no stations - noise")
+                                                 : l10n::tr("cockpit.radio.display.searching", "searching for stations...");
     else
     {
         d.title = m->stations[m->station % m->stations.size()].name;

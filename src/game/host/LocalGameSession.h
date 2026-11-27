@@ -57,6 +57,7 @@ public:
         double elapsedSeconds
     ) override;
     double fixedStepSeconds() const override;
+    void setLocalPaused(bool paused) override;
 
 
 private:

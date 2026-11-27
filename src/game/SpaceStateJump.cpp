@@ -3,6 +3,7 @@
 // the server repeats: distance, the 32 ly hop, the core, the charge, the charge-up time) -> START
 // (only for the calculated star) -> START; the charge-up, the jump and the exit report are presented
 // on the HUD terminal and the cockpit view (updateJumpPresentation below).
+#include "src/game/localization/LocalizationService.h"
 #include "src/game/SpaceStateInternal.h"
 
 #include <algorithm>
@@ -145,7 +146,7 @@ void SpaceState::handleJumpRequest(int kind, int systemId, const std::string& bo
             d = route.lengthLy;
             corrections += " · " + jumpText(context().app, "cockpit.jump.detours", {std::to_string(route.pointsLy.size() - 2)});
             for (const auto& n : route.avoidedNames)
-                corrections += " " + n;
+                corrections += " " + game::localization::renderMessage(n);   // the lane names are Messages
         }
     }
     if (kind == 1)

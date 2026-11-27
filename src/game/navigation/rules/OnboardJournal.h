@@ -13,6 +13,7 @@
 // hub), so an old record still points at the right place; otherwise system-barycentric.
 
 #include <algorithm>
+#include "src/game/localization/LocalizationService.h"
 #include <cmath>
 #include <cstdint>
 #include <sstream>
@@ -54,21 +55,29 @@ inline const char* kindTag(Kind k)
     return "?";
 }
 
-inline const char* kindRu(Kind k)
+// the kind's name in the UI language (CLIENT ONLY: the journal is the client's onboard computer - SpaceState and the
+// system map include this header, the server does not)
+inline std::string kindName(Kind k)
 {
+    namespace l10n = game::localization;
     switch (k)
     {
-    case Kind::Hub: return "хаб";
-    case Kind::InhabitedZone: return "обитаемая зона";
-    case Kind::Safe: return "безопасное место";
-    case Kind::Danger: return "опасное место";
-    case Kind::Signal: return "сигнал";
-    case Kind::Anomaly: return "аномалия";
-    case Kind::SumpExit: return "выход в отстойник";
-    case Kind::Wreck: return "обломки";
-    case Kind::Beacon: return "маяк";
+    case Kind::Hub: return l10n::tr("cockpit.journal.kind.hub", "hub");
+    case Kind::InhabitedZone: return l10n::tr("cockpit.journal.kind.inhabited_zone", "inhabited zone");
+    case Kind::Safe: return l10n::tr("cockpit.journal.kind.safe", "safe place");
+    case Kind::Danger: return l10n::tr("cockpit.journal.kind.danger", "dangerous place");
+    case Kind::Signal: return l10n::tr("cockpit.journal.kind.signal", "signal");
+    case Kind::Anomaly: return l10n::tr("cockpit.journal.kind.anomaly", "anomaly");
+    case Kind::SumpExit: return l10n::tr("cockpit.journal.kind.sump_exit", "sump exit");
+    case Kind::Wreck: return l10n::tr("cockpit.journal.kind.wreck", "wreckage");
+    case Kind::Beacon: return l10n::tr("cockpit.journal.kind.beacon", "beacon");
     }
     return "?";
+}
+// the old name, kept for its callers: now the UI language's text too
+inline std::string kindRu(Kind k)
+{
+    return kindName(k);
 }
 
 struct Entry

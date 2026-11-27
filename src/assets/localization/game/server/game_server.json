@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "server.ship.no_pilot": {
+      "en": "no pilot",
+      "ru": "нет пилота"
+    },
+    "server.ship.no_ship_or_economy": {
+      "en": "no ship or economy",
+      "ru": "нет корабля или экономики"
+    },
+    "server.ship.no_such_ship": {
+      "en": "no such ship",
+      "ru": "нет такого корабля"
+    },
+    "server.employment.at_berth_only": {
+      "en": "hiring is at a hub berth (employment office)",
+      "ru": "наём — у причала хаба (служба занятости)"
+    },
+    "server.employment.vacancy_closed": {
+      "en": "vacancy closed",
+      "ru": "вакансия закрыта"
+    },
+    "server.employment.no_employer_ship_in_catalog": {
+      "en": "employer's ship not in the catalog: {ship}",
+      "ru": "нет корабля работодателя в каталоге: {ship}"
+    },
+    "server.employment.employer_ship_not_spawned": {
+      "en": "the employer did not provide a ship",
+      "ru": "работодатель не выдал корабль"
+    },
+    "server.employment.employer_ship_not_registered": {
+      "en": "the ship registry did not accept the employer's ship",
+      "ru": "реестр кораблей не принял корабль работодателя"
+    },
+    "server.employment.board_failed": {
+      "en": "could not change ships: {reason}",
+      "ru": "не удалось пересесть: {reason}"
+    },
+    "server.employment.hired": {
+      "en": "hired: {role} — {employer}, ship {ship}",
+      "ru": "принят: {role} — {employer}, корабль {ship}"
+    },
+    "server.employment.end.no_employer_ship": {
+      "en": "without the employer's ship",
+      "ru": "без корабля работодателя"
+    },
+    "server.employment.return_failed": {
+      "en": "return to your own ship: {reason}",
+      "ru": "вернуться на свой корабль: {reason}"
+    },
+    "server.employment.end.own_will": {
+      "en": "at own request",
+      "ru": "по собственному желанию"
+    },
+    "server.employment.quit": {
+      "en": "quit: back on your own ship",
+      "ru": "уволился: снова на своём корабле"
+    },
+    "server.shipyard.at_berth_only": {
+      "en": "ships are bought at a hub berth",
+      "ru": "корабль покупают у причала хаба"
+    },
+    "server.shipyard.no_such_model": {
+      "en": "no such model: {model}",
+      "ru": "нет такой модели: {model}"
+    },
+    "server.shipyard.no_such_offer": {
+      "en": "no such offer",
+      "ru": "нет такого предложения"
+    },
+    "server.shipyard.used_later": {
+      "en": "used ships later: wear and damage are not carried over to the ship yet",
+      "ru": "подержанные корабли — позже: износ и повреждения ещё не переносятся на корабль"
+    },
+    "server.shipyard.memo.purchase": {
+      "en": "ship purchase {ship}",
+      "ru": "покупка корабля {ship}"
+    },
+    "server.no_money": {
+      "en": "not enough money: {price} Cr ({reason})",
+      "ru": "не хватает денег: {price} Cr ({reason})"
+    },
+    "server.shipyard.memo.refund_not_spawned": {
+      "en": "refund: ship not created",
+      "ru": "возврат: корабль не создан"
+    },
+    "server.shipyard.not_spawned_refunded": {
+      "en": "the shipyard could not deliver the ship (money refunded)",
+      "ru": "верфь не смогла выдать корабль (деньги возвращены)"
+    },
+    "server.shipyard.memo.refund_not_registered": {
+      "en": "refund: ship not registered",
+      "ru": "возврат: корабль не зарегистрирован"
+    },
+    "server.shipyard.not_registered_refunded": {
+      "en": "the ship registry did not accept the ship (money refunded)",
+      "ru": "реестр кораблей не принял корабль (деньги возвращены)"
+    },
+    "server.shipyard.bought": {
+      "en": "bought ship {ship} for {price} Cr: waiting 5 km from the hub (F7 -> BOARD)",
+      "ru": "куплен корабль {ship} за {price} Cr: ждёт в 5 км от хаба (F7 -> ПЕРЕСЕСТЬ)"
+    },
+    "server.board.npc_role": {
+      "en": "ship not prepared for a pilot (NPC role)",
+      "ru": "корабль не подготовлен для пилота (роль NPC)"
+    },
+    "server.board.not_own_ship": {
+      "en": "not your ship",
+      "ru": "чужой корабль"
+    },
+    "server.board.destroyed": {
+      "en": "ship destroyed",
+      "ru": "корабль разрушен"
+    },
+    "server.board.already_controlled": {
+      "en": "the ship is already being flown",
+      "ru": "кораблём уже управляют"
+    },
+    "server.board.too_far": {
+      "en": "ship too far (need <= 20 km in the same system): {distance} m, systems {system_from} / {system_to}",
+      "ru": "корабль далеко (нужно <= 20 км в той же системе): {distance} м, системы {system_from} / {system_to}"
+    },
+    "server.board.ship_registry_refused": {
+      "en": "ship registry refused",
+      "ru": "реестр кораблей отказал"
+    },
+    "server.board.control_not_transferred": {
+      "en": "control not transferred",
+      "ru": "управление не передано"
+    },
+    "server.board.pilot_registry_refused": {
+      "en": "pilot registry refused",
+      "ru": "реестр пилотов отказал"
+    },
+    "server.busy": {
+      "en": "server overloaded with requests - retry in a second",
+      "ru": "сервер перегружен запросами - повторите через секунду"
+    },
+    "server.refit.not_own_ship": {
+      "en": "not your ship: repair and replacement on your own ships only",
+      "ru": "чужой корабль: ремонт и замена — только на своих кораблях"
+    },
+    "server.refit.operation_impossible": {
+      "en": "operation impossible",
+      "ru": "операция невозможна"
+    },
+    "server.refit.at_berth_only": {
+      "en": "repair and replacement at a hub berth",
+      "ru": "ремонт и замена — у причала хаба"
+    },
+    "server.refit.memo.repair": {
+      "en": "repair {module}{product}",
+      "ru": "ремонт {module}{product}"
+    },
+    "server.refit.memo.replace": {
+      "en": "replacement {module}{product}",
+      "ru": "замена {module}{product}"
+    },
+    "server.economy.contract_at_hub": {
+      "en": "contracts are signed at a hub: fly to it",
+      "ru": "договор оформляется у хаба: подлетите к нему"
+    },
+    "server.economy.bot_needs_own_ship": {
+      "en": "needs your own ship that you are not flying now",
+      "ru": "нужен свой корабль, которым вы сейчас не управляете"
+    },
+    "server.economy.deal_at_berth_only": {
+      "en": "deals at a hub berth only",
+      "ru": "сделка только у причала хаба"
+    },
+    "server.economy.deal_at_berth_only_hub": {
+      "en": "deals at a hub berth only {hub}",
+      "ru": "сделка только у причала хаба {hub}"
+    }
+  }
+}

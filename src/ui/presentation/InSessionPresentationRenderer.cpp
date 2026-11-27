@@ -835,7 +835,7 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         if (item.selected && !item.heading)
             selectedObject = &item;
     text.textDrawPx(
-        infoMode ? localization.text("map.object_list", "Хабы и маяки")
+        infoMode ? localization.text("map.object_list", "Hubs and beacons")
                  : localization.text("map.system_list", "System list"),
         layout.dropdownButton.x,
         layout.dropdownButton.y - static_cast<float>(bodyPx + 7),
@@ -857,7 +857,8 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
     const auto objectCount = std::count_if(panel.objects.begin(), panel.objects.end(), [](const auto& o) { return !o.heading; });
     const std::string dropdownLabel = infoMode
         ? (selectedObject ? "> " + selectedObject->label
-                          : localization.text("map.select_object", "Выбрать хаб или маяк") + " (" + std::to_string(objectCount) + ")")
+                          : localization.format("map.select_object", {{"count", std::to_string(objectCount)}},
+                                                "Select a hub or beacon ({count})"))
         : selected
         ? systemRowLabel(*selected)
         : localization.text("map.select_system", "Select system");

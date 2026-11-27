@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include <string>
 #include <cstdlib>
@@ -26,6 +27,10 @@ ServerWorker::ServerWorker(
     // the Win32/WebView thread while the authoritative world loads its static
     // data. LocalGameSession polls ready()/rethrowIfFailed() during its normal
     // loading-state update instead.
+    if (const char* v = std::getenv("ELITE_SERVER_CLIENT_DRIVEN"); v && *v == '1')
+        m_ownClock = false;
+    std::cerr << "[ServerClock] " << (m_ownClock ? "own monotonic clock (fixed step, independent of the client frame)"
+                                                 : "client-driven (ELITE_SERVER_CLIENT_DRIVEN=1)") << std::endl;
     m_thread = std::thread(
         &ServerWorker::threadMain,
         this,
@@ -127,6 +132,16 @@ ServerAdvanceResult ServerWorker::advance(double elapsedSeconds)
     if (!m_started)
         return m_lastAdvanceResult;
 
+    if (m_ownClock)
+    {
+        // the worker keeps its own time: hand over what ran since the last call
+        ServerAdvanceResult report = m_sinceLastReport;
+        m_sinceLastReport = ServerAdvanceResult {};
+        m_sinceLastReport.totalDiscardedSeconds = report.totalDiscardedSeconds;
+        (void)elapsedSeconds;
+        return report;
+    }
+
     // Keep the pipeline bounded to exactly one authoritative batch. If the
     // previous batch outlived the client/render frame, back-pressure is applied
     // here before accepting more elapsed time. We never queue an unbounded list
@@ -150,6 +165,18 @@ ServerAdvanceResult ServerWorker::advance(double elapsedSeconds)
     m_condition.notify_all();
 
     return completedResult;
+}
+
+void ServerWorker::setPaused(bool paused)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (m_paused == paused)
+            return;
+        m_paused = paused;
+    }
+    std::cerr << "[ServerClock] " << (paused ? "PAUSED (single player menu)" : "RESUMED") << std::endl;
+    m_condition.notify_all();
 }
 
 double ServerWorker::fixedStepSeconds() const
@@ -176,6 +203,64 @@ void ServerWorker::threadMain(
             m_started = true;
         }
         m_condition.notify_all();
+
+        if (m_ownClock)
+        {
+            using Clock = std::chrono::steady_clock;
+            const auto step = std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(runtime.fixedStepSeconds()));
+            auto last = Clock::now();
+            bool overloaded = false;
+            while (true)
+            {
+                {
+                    std::unique_lock<std::mutex> lock(m_mutex);
+                    if (m_paused && !m_stopRequested)
+                    {
+                        m_condition.wait(lock, [this]() { return m_stopRequested || !m_paused; });
+                        last = Clock::now();   // resumed: a fresh base - the paused time is not simulated
+                    }
+                    if (m_stopRequested)
+                        break;
+                    const auto idleStart = Clock::now();
+                    m_condition.wait_until(lock, last + step, [this]() { return m_stopRequested || m_paused; });
+                    workerTiming().workerIdleS.push_back(std::chrono::duration<double>(Clock::now() - idleStart).count());
+                    if (m_stopRequested)
+                        break;
+                    if (m_paused)
+                        continue;
+                }
+                const auto now = Clock::now();
+                const double elapsedSeconds = std::chrono::duration<double>(now - last).count();
+                last = now;
+                ServerAdvanceResult result = runtime.advance(elapsedSeconds);
+                result.executionWallSeconds = std::chrono::duration<double>(Clock::now() - now).count();
+                reportWorkerTiming(result.executionWallSeconds, elapsedSeconds);
+                // OVERLOADED: explicit, logged on entry / exit (the runner's clips keep it bounded)
+                const bool over = result.catchUpLimited || result.discardedSeconds > 0.0;
+                if (over != overloaded)
+                {
+                    overloaded = over;
+                    std::cerr << "[ServerClock] " << (over ? "OVERLOADED" : "recovered") << ": wake " << elapsedSeconds * 1000.0
+                              << " ms, " << result.stepsExecuted << " step(s), debt " << result.remainingDebtSeconds * 1000.0
+                              << " ms, dropped now " << result.discardedSeconds * 1000.0 << " ms, dropped total "
+                              << result.totalDiscardedSeconds * 1000.0 << " ms" << std::endl;
+                }
+                {
+                    std::lock_guard<std::mutex> lock(m_mutex);
+                    m_lastAdvanceResult = result;
+                    auto& acc = m_sinceLastReport;
+                    acc.stepsExecuted += result.stepsExecuted;
+                    acc.acceptedElapsedSeconds += result.acceptedElapsedSeconds;
+                    acc.simulatedSeconds += result.simulatedSeconds;
+                    acc.discardedSeconds += result.discardedSeconds;
+                    acc.executionWallSeconds += result.executionWallSeconds;
+                    acc.remainingDebtSeconds = result.remainingDebtSeconds;
+                    acc.totalDiscardedSeconds = result.totalDiscardedSeconds;
+                    acc.catchUpLimited = acc.catchUpLimited || result.catchUpLimited;
+                }
+            }
+            return;
+        }
 
         while (true)
         {

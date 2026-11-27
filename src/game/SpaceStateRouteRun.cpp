@@ -6,9 +6,12 @@
 // hands the controls to the pilot until RESUME. The server only executes the commands, judges the
 // zones and keeps the charge.
 #include "src/game/SpaceStateInternal.h"
+#include "src/game/localization/LocalizationService.h"
 
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/JDrive.h"
+
+namespace l10n = game::localization;
 
 namespace
 {
@@ -27,7 +30,7 @@ void SpaceState::startClientRoute(const std::vector<route::RoutePoint>& legs)
             std::string warning;
             for (const auto& l : legs)
                 if (warning.empty())
-                    warning = rescueWarningAt(l.worldM, systemId, "МАРШРУТ");
+                    warning = rescueWarningAt(l.worldM, systemId, l10n::tr("cockpit.rescue.who.route", "ROUTE").c_str());
             if (!warning.empty())
             {
                 m_pilotNotice = warning;

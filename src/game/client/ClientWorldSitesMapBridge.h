@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/localization/LocalizationService.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -128,7 +129,7 @@ inline void appendSystemMapWorldSites(
                     if (!site.operatorName.empty())
                         object.owner = site.operatorName;
                     if (!site.typeLabel.empty())
-                        object.typeName = site.typeLabel;
+                        object.typeName = game::localization::renderMessage(site.typeLabel);
                     object.name = site.name;
                 }
             continue;
@@ -144,7 +145,7 @@ inline void appendSystemMapWorldSites(
                  : site.type == "belt_anchor" ? SystemMapObjectKind::Buoy
                  : SystemMapObjectKind::Station;
         o.systemId = map.systemId;
-        o.typeName = !site.typeLabel.empty() ? site.typeLabel : worldSiteTypeLabel(site.type);
+        o.typeName = !site.typeLabel.empty() ? game::localization::renderMessage(site.typeLabel) : worldSiteTypeLabel(site.type);
         o.sizeMeters = glm::dvec3(800.0);
         auto bodyById = [&map](const std::string& id) -> const SystemMapBody* {
             for (const auto& b : map.bodies)

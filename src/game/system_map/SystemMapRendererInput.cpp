@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 #include "src/game/system_map/SystemMapRendererInternal.h"
+#include "src/game/localization/LocalizationService.h"
 
 
 
@@ -978,7 +979,8 @@ SystemMapRenderer::handleInput(
                     else
                     {
                         std::cerr << "[PadLanding] ui: " << overlayPointer.actionObjectId << " - no pad to land on" << std::endl;
-                        m_padLandingNotice = "СЛУЖБА ПЛОЩАДОК: в этом квартале нет площадки для посадки";
+                        m_padLandingNotice = game::localization::tr(
+                            "map.pad_service.no_pad_in_block", "PAD SERVICE: no landing pad in this block");
                     }
                 }
                 else

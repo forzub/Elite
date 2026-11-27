@@ -24,7 +24,7 @@ struct ShipyardModelRow
 
 struct ShipyardSpec
 {
-    std::string labelRu;
+    std::string labelRu;   // a language-neutral Message (LocalizedMessage.h) - rendered by the panel; value too where it has words
     std::string value;
 };
 
@@ -52,7 +52,7 @@ struct ShipyardModelCard
     std::string propulsionScheme;      // e.g. "Newtonian Y: 3 x OFU U-43"
     double thrustMN = 0.0;
     double serviceAccelerationMps2 = 0.0, grossAccelerationMps2 = 0.0;
-    std::string jump;                  // core model + rating or "нет (внутрисистемный)"
+    std::string jump;                  // core model + rating or "none (in-system)": a Message (LocalizedMessage.h)
     double jumpRatingTonnes = 0.0;
     std::string radar;
     double radarRangeKm = 0.0;

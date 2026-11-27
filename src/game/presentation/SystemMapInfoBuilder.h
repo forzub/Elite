@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "src/game/localization/LocalizationService.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
@@ -54,11 +55,19 @@ struct SystemMapInfoInput
     // the composition row picked on the Hub map (its module type), highlighted in the list
     std::string highlightedModuleType;
     // relation of the player to this place: from warrants / reputation when they exist
-    std::string playerRelation = "нейтральное: записей, ордеров и претензий нет";
+    std::string playerRelation =
+        game::localization::tr("map.info.relation.neutral", "neutral: no records, warrants or claims");
 };
 
 namespace detail
 {
+// a panel string in the active language (client-only: the System Map panel)
+inline std::string txt(const char* key, const char* english) { return game::localization::tr(key, english); }
+inline std::string txt(const char* key, const std::vector<game::localization::MessageParam>& params, const char* english)
+{
+    return game::localization::tr(key, params, english);
+}
+
 inline std::string groupDigits(double v)
 {
     char buf[64];
@@ -78,16 +87,14 @@ inline std::string groupDigits(double v)
 
 inline std::string scaled(double v)
 {
-    char buf[64];
+    using game::localization::formatNumber;
     if (v >= 1.0e12)
-        std::snprintf(buf, sizeof(buf), "%.1f трлн", v / 1.0e12);
-    else if (v >= 1.0e9)
-        std::snprintf(buf, sizeof(buf), "%.2f млрд", v / 1.0e9);
-    else if (v >= 1.0e6)
-        std::snprintf(buf, sizeof(buf), "%.1f млн", v / 1.0e6);
-    else
-        return groupDigits(v);
-    return buf;
+        return txt("map.info.scale.trillion", {{"value", formatNumber(v / 1.0e12, 1)}}, "{value} trillion");
+    if (v >= 1.0e9)
+        return txt("map.info.scale.billion", {{"value", formatNumber(v / 1.0e9, 2)}}, "{value} billion");
+    if (v >= 1.0e6)
+        return txt("map.info.scale.million", {{"value", formatNumber(v / 1.0e6, 1)}}, "{value} million");
+    return groupDigits(v);
 }
 
 inline std::string join(const std::vector<std::string>& v, const char* sep = ", ")
@@ -100,18 +107,29 @@ inline std::string join(const std::vector<std::string>& v, const char* sep = ", 
 
 inline std::string stateText(const std::string& s)
 {
-    if (s == "quiet") return "спокойное: значимых чрезвычайных событий нет, тихая жизнь";
-    if (s == "shortage") return "дефицит отдельных товаров";
-    if (s == "epidemic") return "эпидемия / санитарное ограничение";
-    if (s == "ship_missing") return "пропал корабль (поиск)";
-    if (s == "war") return "война";
-    if (s == "quarantine") return "карантин";
+    if (s == "quiet") return txt("map.info.state.quiet", "quiet: no significant emergencies, life is calm");
+    if (s == "shortage") return txt("map.info.state.shortage", "shortage of some goods");
+    if (s == "epidemic") return txt("map.info.state.epidemic", "epidemic / sanitary restriction");
+    if (s == "ship_missing") return txt("map.info.state.ship_missing", "ship missing (search under way)");
+    if (s == "war") return txt("map.info.state.war", "war");
+    if (s == "quarantine") return txt("map.info.state.quarantine", "quarantine");
     return s;
 }
 
 inline void add(std::vector<SystemMapInfoLine>& out, SystemMapInfoLine::Kind k, std::string label, std::string value = {})
 {
     out.push_back({k, std::move(label), std::move(value)});
+}
+
+// the site's type in the active language: the catalog's own labels for relays and belt anchors are keyed by type
+// (WorldSitesCatalog fills them); a producer's Message is rendered; a data label (type_ru) is shown as it is
+inline std::string siteTypeLabel(const world::celestial::WorldSite& s)
+{
+    if (s.type == "nav_relay")
+        return txt("map.site_type.nav_relay", "navigation relay");
+    if (s.type == "belt_anchor")
+        return txt("map.site_type.belt_anchor", "large asteroid (belt anchor)");
+    return game::localization::renderMessage(s.typeLabel);
 }
 
 inline const world::celestial::WorldSite* siteOf(const SystemMapInfoInput& in, const std::string& objectId)
@@ -122,9 +140,11 @@ inline const world::celestial::WorldSite* siteOf(const SystemMapInfoInput& in, c
     return in.catalog->findSite(in.systemId, id);
 }
 
-inline const char* moduleStatusText(int status)
+inline std::string moduleStatusText(int status)
 {
-    return status == 1 ? "(строится)" : status == 2 ? "(в плане)" : "";
+    return status == 1   ? txt("map.info.module_status.building", "(under construction)")
+           : status == 2 ? txt("map.info.module_status.planned", "(planned)")
+                         : std::string();
 }
 
 // worst status among the composition modules of these types (-1: none listed)
@@ -149,7 +169,7 @@ inline void addComposition(const SystemMapInfoInput& in, std::vector<SystemMapIn
 {
     if (in.selectedHubModules.empty())
         return;
-    add(out, SystemMapInfoLine::Kind::Heading, "Состав");
+    add(out, SystemMapInfoLine::Kind::Heading, txt("map.info.composition", "Composition"));
     std::string block = "";
     for (const auto& m : in.selectedHubModules)
     {
@@ -184,62 +204,80 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
 {
     using K = SystemMapInfoLine::Kind;
     using namespace detail;
-    title = "КАРТА СИСТЕМЫ";
+    title = txt("map.info.title", "SYSTEM MAP");
     out.clear();
     if (!in.catalog || in.systemId < 0)
         return;
+    const std::string labelType = txt("map.info.field.type", "Type");
+    const std::string labelOwner = txt("map.info.field.owner", "Owner");
+    const std::string labelOperator = txt("map.info.field.operator", "Operator");
+    const std::string labelPopulation = txt("map.info.field.population", "Population");
+    const std::string labelPurpose = txt("map.info.field.purpose", "Purpose");
+    const std::string labelDocks = txt("map.info.field.docks", "Docks");
+    const std::string labelRelation = txt("map.info.field.relation", "Attitude to you");
 
     // ---------------------------------------------------------------- a selected world object
     if (const auto* s = siteOf(in, in.selectedObjectId))
     {
         add(out, K::Heading, s->name);
-        add(out, K::Field, "Тип", s->typeLabel.empty() ? s->type : s->typeLabel);
+        add(out, K::Field, labelType, s->typeLabel.empty() ? s->type : siteTypeLabel(*s));
         // what is really there first (pictogram rows), then the facts and target capacities
         addComposition(in, out);
         if (!s->polityName.empty())
-            add(out, K::Field, "Владелец", s->polityName);
+            add(out, K::Field, labelOwner, s->polityName);
         if (!s->operatorName.empty())
-            add(out, K::Field, "Оператор", s->operatorName);
+            add(out, K::Field, labelOperator, s->operatorName);
         if (!s->jurisdiction.empty())
-            add(out, K::Field, "Юрисдикция", s->jurisdiction + (s->enforcement.empty() ? "" : " (" + s->enforcement + ")"));
+            add(out, K::Field, txt("map.info.field.jurisdiction", "Jurisdiction"), s->jurisdiction + (s->enforcement.empty() ? "" : " (" + s->enforcement + ")"));
         if (s->population > 0)
-            add(out, K::Field, "Население", groupDigits(static_cast<double>(s->population)));
+            add(out, K::Field, labelPopulation, groupDigits(static_cast<double>(s->population)));
         if (s->founded > 0)
-            add(out, K::Field, "Основан", std::to_string(s->founded) + (s->founder.empty() ? "" : ", " + s->founder));
+            add(out, K::Field, txt("map.info.field.founded", "Founded"), std::to_string(s->founded) + (s->founder.empty() ? "" : ", " + s->founder));
         if (!s->purpose.empty())
-            add(out, K::Field, "Назначение", s->purpose);
+            add(out, K::Field, labelPurpose, s->purpose);
         if (!s->functions.empty())
-            add(out, K::Field, "Функции", s->functions);
+            add(out, K::Field, txt("map.info.field.functions", "Functions"), s->functions);
         if (!s->roles.empty())
-            add(out, K::Field, "Роли", s->roles);
+            add(out, K::Field, txt("map.info.field.roles", "Roles"), s->roles);
         if (s->docks > 0)
-            add(out, K::Field, "Доки", withStatus(in, s->dockModules > 0
-                ? std::to_string(s->dockSectors) + " сект., " + std::to_string(s->dockModules) + " модулей HexDock, " + std::to_string(s->docks) + " площадок"
-                : std::to_string(s->docks) + " площадок", {"shuttle_dock"}));
+            add(out, K::Field, labelDocks, withStatus(in, s->dockModules > 0
+                ? txt("map.info.docks.hexdock",
+                      {{"sectors", std::to_string(s->dockSectors)}, {"modules", std::to_string(s->dockModules)}, {"pads", std::to_string(s->docks)}},
+                      "{sectors} sect., {modules} HexDock modules, {pads} pads")
+                : txt("map.info.docks.pads", {{"pads", std::to_string(s->docks)}}, "{pads} pads"), {"shuttle_dock"}));
         if (s->passengerTerminals > 0 || s->cargoTerminals > 0)
-            add(out, K::Field, "Терминалы", withStatus(in, std::to_string(s->passengerTerminals) + " пасс., " + std::to_string(s->cargoTerminals) + " груз., " +
-                                             std::to_string(s->serviceBerths) + " сервисных причалов" +
-                                             (s->terminalNames.empty() ? std::string() : "; " + s->terminalNames), {"liner_platform", "cargo_terminal"}));
-        if (s->arrivalsPerDay > 0)
         {
-            char buf[96];
-            std::snprintf(buf, sizeof(buf), "%s прибытий в сутки, загрузка %.0f %%", groupDigits(s->arrivalsPerDay).c_str(), s->utilisation * 100.0);
-            add(out, K::Field, "Трафик", buf);
+            const std::vector<game::localization::MessageParam> terminals = {
+                {"passenger", std::to_string(s->passengerTerminals)},
+                {"cargo", std::to_string(s->cargoTerminals)},
+                {"service", std::to_string(s->serviceBerths)},
+                {"names", s->terminalNames}};
+            add(out, K::Field, txt("map.info.field.terminals", "Terminals"), withStatus(in, s->terminalNames.empty()
+                ? txt("map.info.terminals", terminals, "{passenger} pass., {cargo} cargo, {service} service berths")
+                : txt("map.info.terminals_named", terminals, "{passenger} pass., {cargo} cargo, {service} service berths; {names}"),
+                {"liner_platform", "cargo_terminal"}));
         }
+        if (s->arrivalsPerDay > 0)
+            add(out, K::Field, txt("map.info.field.traffic", "Traffic"),
+                txt("map.info.traffic",
+                    {{"arrivals", groupDigits(s->arrivalsPerDay)}, {"load", game::localization::formatNumber(s->utilisation * 100.0, 0)}},
+                    "{arrivals} arrivals per day, load {load} %"));
         if (!s->repair.empty())
-            add(out, K::Field, "Ремонт", withStatus(in, s->repair, {"service_dock"}));
+            add(out, K::Field, txt("map.info.field.repair", "Repair"), withStatus(in, s->repair, {"service_dock"}));
         if (s->storageTonnes > 0.0)
-            add(out, K::Field, "Склады", withStatus(in, scaled(s->storageTonnes) + " т", {"warehouse"}));
+            add(out, K::Field, txt("map.info.field.storage", "Storage"),
+                withStatus(in, txt("map.info.storage_tonnes", {{"tonnes", scaled(s->storageTonnes)}}, "{tonnes} t"), {"warehouse"}));
         if (s->security > 0.0)
         {
             char buf[32];
             std::snprintf(buf, sizeof(buf), "%.0f / 100", s->security * 100.0);
-            add(out, K::Field, "Безопасность", buf);
+            add(out, K::Field, txt("map.info.field.security", "Security"), buf);
         }
         if (!s->anchorName.empty() && s->type != "belt_anchor")
-            add(out, K::Field, "Где", "у " + s->anchorName + " (пояс)");
-        add(out, K::Field, "Состояние", "нормальное");
-        add(out, K::Field, "Отношение к вам", in.playerRelation);
+            add(out, K::Field, txt("map.info.field.location", "Location"),
+                txt("map.info.location_belt", {{"anchor", s->anchorName}}, "near {anchor} (belt)"));
+        add(out, K::Field, txt("map.info.field.condition", "Condition"), txt("map.info.condition.normal", "normal"));
+        add(out, K::Field, labelRelation, in.playerRelation);
         if (!s->character.empty())
             add(out, K::Paragraph, "", s->character);
         // principal routes through this place (aggregate network)
@@ -252,14 +290,20 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
         std::sort(routes.begin(), routes.end(), [](const auto* a, const auto* b) { return a->flightsPerDay > b->flightsPerDay; });
         if (!routes.empty())
         {
-            add(out, K::Heading, "Маршруты");
+            add(out, K::Heading, txt("map.info.routes", "Routes"));
             for (std::size_t i = 0; i < routes.size() && i < 8; ++i)
             {
                 const auto* r = routes[i];
                 const std::string other = r->origin == s->id || s->runtimeBinding.find("[" + r->origin + "]") != std::string::npos ? r->destination : r->origin;
-                char buf[160];
-                std::snprintf(buf, sizeof(buf), " — %.1f рейс./сут, %s, в пути %.1f сут", r->flightsPerDay, r->shipClass.c_str(), r->travelDays);
-                add(out, K::Bullet, "", siteName(in, other) + buf + (r->disruption != "none" && !r->disruption.empty() ? ", сбой: " + r->disruption : ""));
+                const std::vector<game::localization::MessageParam> route = {
+                    {"other", siteName(in, other)},
+                    {"flights", game::localization::formatNumber(r->flightsPerDay, 1)},
+                    {"ship_class", r->shipClass},
+                    {"days", game::localization::formatNumber(r->travelDays, 1)},
+                    {"disruption", r->disruption}};
+                add(out, K::Bullet, "", r->disruption != "none" && !r->disruption.empty()
+                    ? txt("map.info.route_disrupted", route, "{other} — {flights} flights/day, {ship_class}, {days} days in transit, disruption: {disruption}")
+                    : txt("map.info.route", route, "{other} — {flights} flights/day, {ship_class}, {days} days in transit"));
             }
         }
         return;
@@ -269,21 +313,23 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
     if (!in.selectedHubName.empty())
     {
         add(out, K::Heading, in.selectedHubName);
-        add(out, K::Field, "Тип", "орбитальный хаб");
+        add(out, K::Field, labelType, txt("map.info.orbital_hub", "orbital hub"));
         if (!in.selectedHubOwner.empty())
-            add(out, K::Field, "Владелец", in.selectedHubOwner);
+            add(out, K::Field, labelOwner, in.selectedHubOwner);
         if (!in.selectedHubOperator.empty())
-            add(out, K::Field, "Оператор", in.selectedHubOperator);
+            add(out, K::Field, labelOperator, in.selectedHubOperator);
         if (!in.selectedHubRole.empty())
-            add(out, K::Field, "Назначение", in.selectedHubRole);
+            add(out, K::Field, labelPurpose, in.selectedHubRole);
         if (in.selectedHubPopulation > 0)
-            add(out, K::Field, "Население", groupDigits(static_cast<double>(in.selectedHubPopulation)));
+            add(out, K::Field, labelPopulation, groupDigits(static_cast<double>(in.selectedHubPopulation)));
         if (in.selectedHubDocks > 0)
-            add(out, K::Field, "Доки", std::to_string(in.selectedHubDocks) + " (HexDock)");
+            add(out, K::Field, labelDocks, std::to_string(in.selectedHubDocks) + " (HexDock)");
         if (in.selectedHubPads > 0)
-            add(out, K::Field, "Места посадки", std::to_string(in.selectedHubPads) + " (крыши, гаражи, ангары - клик по кварталу на плане)");
+            add(out, K::Field, txt("map.info.field.landing_places", "Landing places"),
+                txt("map.info.landing_places", {{"count", std::to_string(in.selectedHubPads)}},
+                    "{count} (roofs, garages, hangars - click a block on the plan)"));
         addComposition(in, out);
-        add(out, K::Field, "Отношение к вам", in.playerRelation);
+        add(out, K::Field, labelRelation, in.playerRelation);
         return;
     }
 
@@ -293,11 +339,12 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
             if (b.id == in.selectedBodyId)
             {
                 add(out, K::Heading, b.name);
-                char buf[96];
-                std::snprintf(buf, sizeof(buf), "%.0f км", b.radiusKm);
-                add(out, K::Field, "Радиус", buf);
-                std::snprintf(buf, sizeof(buf), "%.3f а.е.", std::sqrt(b.positionAu.x * b.positionAu.x + b.positionAu.y * b.positionAu.y + b.positionAu.z * b.positionAu.z));
-                add(out, K::Field, "От звезды", buf);
+                add(out, K::Field, txt("map.info.field.radius", "Radius"),
+                    txt("map.info.radius_km", {{"km", game::localization::formatNumber(b.radiusKm, 0)}}, "{km} km"));
+                add(out, K::Field, txt("map.info.field.from_star", "From star"),
+                    txt("map.info.distance_au",
+                        {{"au", game::localization::formatNumber(std::sqrt(b.positionAu.x * b.positionAu.x + b.positionAu.y * b.positionAu.y + b.positionAu.z * b.positionAu.z), 3)}},
+                        "{au} AU"));
                 // major hubs first (what the map shows); settlements and local facilities only counted
                 std::vector<std::string> major;
                 int local = 0, relays = 0;
@@ -310,20 +357,22 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
                     if (s.type == "nav_relay")
                         ++relays;
                     else if (s.level == "A" && s.mapLevel == "system")
-                        major.push_back(s.name + (s.roles.empty() ? (s.typeLabel.empty() ? "" : " — " + s.typeLabel) : " — " + s.roles));
+                        major.push_back(s.name + (s.roles.empty() ? (s.typeLabel.empty() ? "" : " — " + siteTypeLabel(s)) : " — " + s.roles));
                     else
                         ++local;
                 }
                 if (!major.empty())
                 {
-                    add(out, K::Heading, "Крупные хабы (" + std::to_string(major.size()) + ")");
+                    add(out, K::Heading, txt("map.info.major_hubs", {{"count", std::to_string(major.size())}}, "Major hubs ({count})"));
                     for (const auto& m : major)
                         add(out, K::Bullet, "", m);
                 }
                 if (local > 0)
-                    add(out, K::Field, "Поселения и местные объекты", std::to_string(local) + " — на Detail Map (P)");
+                    add(out, K::Field, txt("map.info.field.local_sites", "Settlements and local sites"),
+                        txt("map.info.local_sites", {{"count", std::to_string(local)}}, "{count} — on the Detail Map (P)"));
                 if (relays > 0)
-                    add(out, K::Field, "Навигационные ретрансляторы", std::to_string(relays) + " (фильтр N)");
+                    add(out, K::Field, txt("map.info.field.nav_relays", "Navigation relays"),
+                        txt("map.info.nav_relays", {{"count", std::to_string(relays)}}, "{count} (filter N)"));
                 return;
             }
 
@@ -331,34 +380,38 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
     const auto* w = in.catalog->summary(in.systemId);
     if (!w)
     {
-        add(out, K::Paragraph, "", "Сведений о населённых местах этой системы нет.");
+        add(out, K::Paragraph, "", txt("map.info.no_system_info", "No information on inhabited places in this system."));
         return;
     }
-    add(out, K::Heading, "Система " + w->name);
-    add(out, K::Paragraph, "", w->primaryName + ". Население " + scaled(w->population) + ", выпуск " + scaled(w->gdpPerYear) + " Cr в год, "
-                               "около " + groupDigits(w->trafficArrivalsPerDay) + " межзвёздных прибытий в сутки.");
-    add(out, K::Heading, "Главные политические акторы");
-    add(out, K::Bullet, "", w->primaryName + " — основная власть");
+    add(out, K::Heading, txt("map.info.system_heading", {{"name", w->name}}, "System {name}"));
+    add(out, K::Paragraph, "", txt("map.info.system_summary",
+                                   {{"primary", w->primaryName},
+                                    {"population", scaled(w->population)},
+                                    {"gdp", scaled(w->gdpPerYear)},
+                                    {"arrivals", groupDigits(w->trafficArrivalsPerDay)}},
+                                   "{primary}. Population {population}, output {gdp} Cr per year, about {arrivals} interstellar arrivals per day."));
+    add(out, K::Heading, txt("map.info.political_actors", "Main political actors"));
+    add(out, K::Bullet, "", txt("map.info.main_authority", {{"name", w->primaryName}}, "{name} — main authority"));
     for (const auto& a : w->otherActors)
         add(out, K::Bullet, "", a);
-    add(out, K::Heading, "Экономика");
-    add(out, K::Field, "Население", scaled(w->population));
-    add(out, K::Field, "Выпуск", scaled(w->gdpPerYear) + " Cr/год");
+    add(out, K::Heading, txt("map.info.economy", "Economy"));
+    add(out, K::Field, labelPopulation, scaled(w->population));
+    add(out, K::Field, txt("map.info.field.output", "Output"), txt("map.info.output_per_year", {{"gdp", scaled(w->gdpPerYear)}}, "{gdp} Cr/year"));
     if (!w->industries.empty())
-        add(out, K::Field, "Главные отрасли", join(w->industries));
+        add(out, K::Field, txt("map.info.field.industries", "Main industries"), join(w->industries));
     if (!w->imports.empty())
-        add(out, K::Field, "Импорт", join(w->imports));
+        add(out, K::Field, txt("map.info.field.imports", "Imports"), join(w->imports));
     if (!w->exports.empty())
-        add(out, K::Field, "Экспорт", join(w->exports));
+        add(out, K::Field, txt("map.info.field.exports", "Exports"), join(w->exports));
     if (!w->shortages.empty())
-        add(out, K::Field, "Дефицит", join(w->shortages));
-    add(out, K::Heading, "Отношение к вам");
+        add(out, K::Field, txt("map.info.field.shortages", "Shortages"), join(w->shortages));
+    add(out, K::Heading, labelRelation);
     add(out, K::Paragraph, "", in.playerRelation);
-    add(out, K::Heading, "Текущее состояние");
+    add(out, K::Heading, txt("map.info.current_state", "Current state"));
     for (const auto& s : w->state)
         add(out, K::Bullet, "", stateText(s));
     for (const auto& h : w->hazards)
-        add(out, K::Bullet, "", "опасная зона: " + h);
+        add(out, K::Bullet, "", txt("map.info.hazard_zone", {{"zone", h}}, "hazard zone: {zone}"));
     // discoverability: what one can look for on this map, by name and by region (no ids, no cubes);
     // every region appears, not only the busiest one
     struct Group { std::string label; std::vector<const world::celestial::WorldSite*> hubs; double traffic = 0.0; };
@@ -366,7 +419,7 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
     auto regionLabel = [&](const world::celestial::WorldSite& s) {
         std::string id = !s.parentBodyId.empty() ? s.parentBodyId : s.lagrangeSecondaryId;
         if (s.placement == world::celestial::WorldSitePlacementKind::Heliocentric || id.find("asteroid_belt") != std::string::npos)
-            return std::string("Главный пояс");
+            return txt("map.info.main_belt", "Main belt");
         if (in.system)
             for (const auto& b : in.system->bodies)
                 if (b.id == id)
@@ -393,7 +446,7 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
     std::sort(groups.begin(), groups.end(), [](const Group& a, const Group& b) { return a.traffic > b.traffic; });
     if (total)
     {
-        add(out, K::Heading, "Хабы по районам (" + std::to_string(total) + ")");
+        add(out, K::Heading, txt("map.info.hubs_by_region", {{"count", std::to_string(total)}}, "Hubs by region ({count})"));
         for (auto& g : groups)
         {
             std::sort(g.hubs.begin(), g.hubs.end(), [](const auto* a, const auto* b) { return a->arrivalsPerDay > b->arrivalsPerDay; });
@@ -401,11 +454,13 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
             for (std::size_t i = 0; i < g.hubs.size() && i < 4; ++i)
                 names += (i ? ", " : "") + g.hubs[i]->name;
             if (g.hubs.size() > 4)
-                names += " и ещё " + std::to_string(g.hubs.size() - 4);
+                names = txt("map.info.and_more", {{"names", names}, {"count", std::to_string(g.hubs.size() - 4)}}, "{names} and {count} more");
             add(out, K::Bullet, "", g.label + ": " + names);
         }
     }
-    add(out, K::Paragraph, "", "Наведите курсор на значок — имя и владелец; щелчок — подробности здесь. Все хабы и маяки — в списке внизу. G — сетка кубов, T — маршруты, N — маяки.");
+    add(out, K::Paragraph, "", txt("map.info.hint",
+                                   "Hover an icon for its name and owner; click for details here. All hubs and beacons are in the list below. "
+                                   "G — cube grid, T — routes, N — beacons."));
 }
 
 // Marker id of a world site on the System Map: the replicated hub id for a site bound to a
@@ -457,7 +512,7 @@ inline std::vector<SystemMapPanelObjectItem> buildSystemMapObjectList(const Syst
         std::string label;
         if (s.placement == world::celestial::WorldSitePlacementKind::Heliocentric || id.find("asteroid_belt") != std::string::npos)
         {
-            label = "Главный пояс";
+            label = detail::txt("map.info.main_belt", "Main belt");
             radiusAu = in.system ? 2.7 : radiusAu;     // without bodies: catalog order
         }
         else
@@ -489,7 +544,7 @@ inline std::vector<SystemMapPanelObjectItem> buildSystemMapObjectList(const Syst
     auto push = [&](const world::celestial::WorldSite& s) {
         SystemMapPanelObjectItem item;
         item.objectId = systemMapObjectIdOf(s);
-        item.label = s.name + (s.type == "nav_relay" || s.typeLabel.empty() ? std::string() : " — " + s.typeLabel);
+        item.label = s.name + (s.type == "nav_relay" || s.typeLabel.empty() ? std::string() : " — " + detail::siteTypeLabel(s));
         item.selected = !in.selectedObjectId.empty() && item.objectId == in.selectedObjectId;
         out.push_back(std::move(item));
     };
@@ -501,7 +556,7 @@ inline std::vector<SystemMapPanelObjectItem> buildSystemMapObjectList(const Syst
     }
     if (!beacons.empty())
     {
-        out.push_back({std::string(), "Маяки (" + std::to_string(beacons.size()) + ")", true, false});
+        out.push_back({std::string(), detail::txt("map.info.beacons", {{"count", std::to_string(beacons.size())}}, "Beacons ({count})"), true, false});
         for (const auto* s : beacons)
             push(*s);
     }

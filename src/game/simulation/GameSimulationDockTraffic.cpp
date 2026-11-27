@@ -185,7 +185,8 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
         {
             config.hubDisplayName = hubIt->second.name;
             const std::string& parent = hubIt->second.parentBodyId;
-            config.surfaceName = parent.substr(parent.rfind('.') + 1) + ": наземные космопорты";
+            // an internal / log identity of the far end (the traffic's manifests and log lines), never shown in the HUD
+            config.surfaceName = parent.substr(parent.rfind('.') + 1) + ": surface spaceports";
         }
         {
             // callsign / flight namespace per hub: Vysokiy keeps VYS; others take their id's last segment

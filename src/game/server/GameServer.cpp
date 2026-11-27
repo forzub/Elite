@@ -12,6 +12,7 @@
 #include "src/game/navigation/globalflight/BodyTerrainProbe.h"
 #include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 #include "GameServer.h"
+#include "src/game/localization/LocalizedMessage.h"
 #include "src/core/RuntimeTrace.h"
 #include "src/game/network/ReplicationSnapshotMerge.h"
 #include <type_traits>
@@ -1979,7 +1980,7 @@ void GameServer::update(double dt)
         if (const Ship* fromShip = m_simulation.getShip(from))
         {
             const PlayerId player = m_players.playerForShip(fromShip->core().registry().instanceId);
-            const std::string why = player ? transferPlayerControl(player, to) : std::string("нет пилота");
+            const std::string why = player ? transferPlayerControl(player, to) : std::string(game::localization::Message("server.ship.no_pilot"));
             std::cerr << "[Board] ship " << from.value << " -> " << to.value << ": " << (why.empty() ? std::string("DONE") : "REFUSED: " + why)
                       << std::endl;
         }
@@ -2504,10 +2505,10 @@ std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
 {
     Ship* ship = m_simulation.getShip(from);
     if (!ship || !m_economy.loaded())
-        return "нет корабля или экономики";
+        return game::localization::Message("server.ship.no_ship_or_economy");
     const PlayerId player = m_players.playerForShip(ship->core().registry().instanceId);
     if (!player)
-        return "нет пилота";
+        return game::localization::Message("server.ship.no_pilot");
     auto refuse = [&](const std::string& why) {
         m_economy.recordTradeRefusal(player.value, 0, "employment", why);
         return why;
@@ -2521,7 +2522,7 @@ std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
         std::cerr << "[Employment] DEV: hired off a berth at " << hub << std::endl;
     }
     else if (hub.empty() || tender)
-        return refuse("наём — у причала хаба (служба занятости)");
+        return refuse(game::localization::Message("server.employment.at_berth_only"));
     const int system = ship->core().transform().motion.systemId;
     const auto list = m_economy.vacanciesAt(hub, system);
     const game::economy::EconomyServer::Vacancy* v = nullptr;
@@ -2529,12 +2530,12 @@ std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
         if (x.id == vacancyId)
             v = &x;
     if (!v)
-        return refuse("вакансия закрыта");
+        return refuse(game::localization::Message("server.employment.vacancy_closed"));
     if (const std::string why = m_economy.vacancyRefusal(player.value, *v, hub, system); !why.empty())
         return refuse(why);
     const ShipDescriptor* d = game::ship::descriptors::findCatalogShip(v->passportId);
     if (!d)
-        return refuse("нет корабля работодателя в каталоге: " + v->passportId);
+        return refuse(game::localization::Message("server.employment.no_employer_ship_in_catalog").arg("ship", v->passportId));
     ShipInitData init;
     init.visual.shipType = d->identity.shipType;
     init.visual.shipName = d->identity.shipName;
@@ -2545,19 +2546,20 @@ std::string GameServer::hireJob(EntityId from, const std::string& vacancyId)
     init.registry.shipRole = v->kind == "military" ? ShipRoleType::Military : ShipRoleType::Civilian;
     const EntityId employer = m_simulation.spawnShipBeside(from, ShipRole::Player, *d, init, 5000.0);
     if (employer.value == 0)
-        return refuse("работодатель не выдал корабль");
+        return refuse(game::localization::Message("server.employment.employer_ship_not_spawned"));
     if (registerShipInstance(employer) == 0)
-        return refuse("реестр кораблей не принял корабль работодателя");
+        return refuse(game::localization::Message("server.employment.employer_ship_not_registered"));
     m_hires[player.value] = {from, employer};
     m_runtimeShips.insert(init.registry.instanceId);
     m_shipsDirty = true;
     if (const std::string why = transferPlayerControl(player, employer); !why.empty())
     {
         m_hires.erase(player.value);
-        return refuse("не удалось пересесть: " + why);
+        return refuse(game::localization::Message("server.employment.board_failed").arg("reason", why));
     }
     m_economy.startEmployment(player.value, *v);
-    m_economy.recordOperation(player.value, "hired", "принят: " + v->roleRu + " — " + v->employerRu + ", корабль " + v->passportId, 0.0);
+    m_economy.recordOperation(player.value, "hired",
+                              game::localization::Message("server.employment.hired").arg("role", v->roleRu).arg("employer", v->employerRu).arg("ship", v->passportId), 0.0);
     return {};
 }
 
@@ -2566,21 +2568,21 @@ std::string GameServer::quitJob(EntityId from)
     Ship* ship = m_simulation.getShip(from);
     const PlayerId player = ship ? m_players.playerForShip(ship->core().registry().instanceId) : PlayerId{};
     if (!player)
-        return "нет пилота";
+        return game::localization::Message("server.ship.no_pilot");
     const auto it = m_hires.find(player.value);
     if (it == m_hires.end())
     {
-        m_economy.endEmployment(player.value, "без корабля работодателя");
+        m_economy.endEmployment(player.value, game::localization::Message("server.employment.end.no_employer_ship"));
         return {};
     }
     if (const std::string why = transferPlayerControl(player, it->second.ownShip); !why.empty())
     {
-        m_economy.recordTradeRefusal(player.value, 0, "employment", "вернуться на свой корабль: " + why);
+        m_economy.recordTradeRefusal(player.value, 0, "employment", game::localization::Message("server.employment.return_failed").arg("reason", why));
         return why;
     }
     m_hires.erase(it);
-    m_economy.endEmployment(player.value, "по собственному желанию");
-    m_economy.recordOperation(player.value, "quit", "уволился: снова на своём корабле", 0.0);
+    m_economy.endEmployment(player.value, game::localization::Message("server.employment.end.own_will"));
+    m_economy.recordOperation(player.value, "quit", game::localization::Message("server.employment.quit"), 0.0);
     return {};
 }
 
@@ -2588,7 +2590,7 @@ std::string GameServer::buyShip(EntityId from, const std::string& passportId, co
 {
     Ship* ship = m_simulation.getShip(from);
     if (!ship || !m_economy.loaded())
-        return "нет корабля или экономики";
+        return game::localization::Message("server.ship.no_ship_or_economy");
     const std::uint64_t player = m_players.playerForShip(ship->core().registry().instanceId).value;
     bool tender = false;
     const std::string hub = m_simulation.serviceStationOf(from, &tender);
@@ -2598,7 +2600,7 @@ std::string GameServer::buyShip(EntityId from, const std::string& passportId, co
         return why;
     };
     if (player == 0)
-        return "нет пилота";
+        return game::localization::Message("server.ship.no_pilot");
     std::string shipyardHub = hub;
     if ((hub.empty() || tender) && g_devCommandsAllowed.load() && !ship->core().transform().motion.hubId.empty())
     {
@@ -2608,25 +2610,26 @@ std::string GameServer::buyShip(EntityId from, const std::string& passportId, co
         std::cerr << "[Shipyard] DEV: bought off a berth at " << shipyardHub << std::endl;
     }
     else if (hub.empty() || tender)
-        return refuse("корабль покупают у причала хаба");
+        return refuse(game::localization::Message("server.shipyard.at_berth_only"));
     const auto* design = game::catalog::ships::ShipDesignCatalog::instance().findShip(passportId);
     const ShipDescriptor* d = game::ship::descriptors::findCatalogShip(passportId);
     if (!design || !d)
-        return refuse("нет такой модели: " + passportId);
+        return refuse(game::localization::Message("server.shipyard.no_such_model").arg("model", passportId));
     const auto offers = game::ship::refit::devShipOffers(*design);
     const game::ship::refit::ShipOffer* offer = nullptr;
     for (const auto& o : offers)
         if (o.offerId == offerId)
             offer = &o;
     if (!offer)
-        return refuse("нет такого предложения");
+        return refuse(game::localization::Message("server.shipyard.no_such_offer"));
     if (offer->condition != "new")
-        return refuse("подержанные корабли — позже: износ и повреждения ещё не переносятся на корабль");
+        return refuse(game::localization::Message("server.shipyard.used_later"));
     const int system = ship->core().transform().motion.systemId;
     const std::string name = design->name.empty() ? passportId : design->designation + " «" + design->name + "»";
-    const auto paid = m_economy.chargeService(player, shipyardHub, system, game::economy::Purpose::Other, offer->priceCr, "покупка корабля " + name);
+    const auto paid = m_economy.chargeService(player, shipyardHub, system, game::economy::Purpose::Other, offer->priceCr,
+                                             game::localization::Message("server.shipyard.memo.purchase").arg("ship", name));
     if (!paid.ok)
-        return refuse("не хватает денег: " + std::to_string(static_cast<long long>(offer->priceCr)) + " Cr (" + paid.reason + ")");
+        return refuse(game::localization::Message("server.no_money").arg("price", static_cast<long long>(offer->priceCr)).arg("reason", paid.reason));
     ShipInitData init;
     init.visual.shipType = d->identity.shipType;
     init.visual.shipName = d->identity.shipName;
@@ -2641,22 +2644,23 @@ std::string GameServer::buyShip(EntityId from, const std::string& passportId, co
     const EntityId id = m_simulation.spawnShipBeside(from, ShipRole::Player, *d, init, 5000.0);
     if (id.value == 0)
     {
-        m_economy.credit(player, shipyardHub, system, offer->priceCr, "возврат: корабль не создан");
-        return refuse("верфь не смогла выдать корабль (деньги возвращены)");
+        m_economy.credit(player, shipyardHub, system, offer->priceCr, game::localization::Message("server.shipyard.memo.refund_not_spawned"));
+        return refuse(game::localization::Message("server.shipyard.not_spawned_refunded"));
     }
     // the sale is complete only when the ship exists, its persistent instance is registered (F7 and navigation read
     // the same ShipInstanceId) AND the buyer is its owner
     if (registerShipInstance(id) != init.registry.instanceId ||
         !assignShipOwner(init.registry.instanceId, game::server::ShipOwnerRef::player(PlayerId{player})))
     {
-        m_economy.credit(player, shipyardHub, system, offer->priceCr, "возврат: корабль не зарегистрирован");
+        m_economy.credit(player, shipyardHub, system, offer->priceCr, game::localization::Message("server.shipyard.memo.refund_not_registered"));
         std::cerr << "[Shipyard] instance " << init.registry.instanceId << " NOT registered / owned: sale refunded" << std::endl;
-        return refuse("реестр кораблей не принял корабль (деньги возвращены)");
+        return refuse(game::localization::Message("server.shipyard.not_registered_refunded"));
     }
     m_runtimeShips.insert(init.registry.instanceId);
     m_shipsDirty = true;
-    m_economy.recordOperation(player, "ship_bought", "куплен корабль " + name + " за " + std::to_string(static_cast<long long>(offer->priceCr)) +
-                                                         " Cr: ждёт в 5 км от хаба (F7 -> ПЕРЕСЕСТЬ)", -offer->priceCr);
+    m_economy.recordOperation(player, "ship_bought",
+                              game::localization::Message("server.shipyard.bought").arg("ship", name).arg("price", static_cast<long long>(offer->priceCr)),
+                              -offer->priceCr);
     return {};
 }
 
@@ -2667,33 +2671,35 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
     Ship* fromShip = m_simulation.getShip(from);
     Ship* toShip = m_simulation.getShip(target);
     if (!player || !fromShip || !toShip || from == target)
-        return "нет такого корабля";
+        return game::localization::Message("server.ship.no_such_ship");
     auto& to = toShip->core();
     if (to.role() != ShipRole::Player)
-        return "корабль не подготовлен для пилота (роль NPC)";
+        return game::localization::Message("server.board.npc_role");
     const auto hireIt = m_hires.find(playerId.value);
     const bool employerShip = hireIt != m_hires.end() && hireIt->second.employerShip == target;
     // the right to take the seat: the player OWNS the ship (ShipOwnershipRegistry) or it is the employer's ship of
     // this player's hire. ownerActor decides nothing (it was one shared actor of every player).
     if (!employerShip && ownerPlayerOf(*toShip) != playerId)
-        return "чужой корабль";
+        return game::localization::Message("server.board.not_own_ship");
     if (to.transform().motion.destroyedCause != 0)
-        return "корабль разрушен";
+        return game::localization::Message("server.board.destroyed");
     if (m_simulation.isPlayerControlled(target) || m_players.playerForShip(to.registry().instanceId))
-        return "кораблём уже управляют";
+        return game::localization::Message("server.board.already_controlled");
     const auto& a = fromShip->core().transform();
     const auto& b = to.transform();
     // two ships at the same station are "here" by its frame (a demoted, uncontrolled ship keeps a stale world position while
     // the station orbits - found live: 533 km after 3 days); elsewhere the world distance
     const bool sameStation = !a.motion.hubId.empty() && a.motion.hubId == b.motion.hubId;
     if (!restoring && (a.motion.systemId != b.motion.systemId || (!sameStation && glm::length(a.fullWorldMeters() - b.fullWorldMeters()) > 20000.0)))
-        return "корабль далеко (нужно <= 20 км в той же системе): " + std::to_string(static_cast<long long>(glm::length(a.fullWorldMeters() - b.fullWorldMeters()))) +
-               " м, системы " + std::to_string(a.motion.systemId) + " / " + std::to_string(b.motion.systemId);
+        return game::localization::Message("server.board.too_far")
+            .arg("distance", static_cast<long long>(glm::length(a.fullWorldMeters() - b.fullWorldMeters())))
+            .arg("system_from", a.motion.systemId)
+            .arg("system_to", b.motion.systemId);
     // the persistent identity: registered where the ship appears (purchase, hire, restore); kept here only as a
     // fallback for a ship materialized by some other path
     const ShipInstanceId instance = registerShipInstance(target);
     if (instance == 0)
-        return "реестр кораблей отказал";
+        return game::localization::Message("server.board.ship_registry_refused");
     // (was: the boarding player was written the OWNER here, before the control change, and a later refusal rolled
     // back the control only - boarding changes CONTROL, ownership changes on a purchase / an explicit transfer)
     resetSessionControlState(from, "ship-change-out");
@@ -2701,13 +2707,13 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
     if (!m_controls.rebindHuman(playerId, target))
     {
         m_simulation.setPlayerControlled(from, true);
-        return "управление не передано";
+        return game::localization::Message("server.board.control_not_transferred");
     }
     if (!m_players.assignShip(playerId, instance))
     {
         (void)m_controls.rebindHuman(playerId, from);
         m_simulation.setPlayerControlled(from, true);
-        return "реестр пилотов отказал";
+        return game::localization::Message("server.board.pilot_registry_refused");
     }
     resetSessionControlState(target, "ship-change-in");
     m_simulation.setPlayerControlled(target, true);
@@ -3094,7 +3100,7 @@ void GameServer::receiveClientMessage(
                     if (const Ship* ship = m_simulation.getShip(controlledEntityId); ship && m_economy.loaded())
                         if (const std::uint64_t player = m_players.playerForShip(ship->core().registry().instanceId).value)
                             m_economy.recordTradeRefusal(player, payload.requestId, "busy",
-                                                         "сервер перегружен запросами - повторите через секунду");
+                                                         game::localization::Message("server.busy"));
                     return;
                 }
                 queue.push_back(payload);
@@ -3439,13 +3445,13 @@ std::string GameServer::refitAuthority(EntityId commander, EntityId subject) con
 {
     const PlayerId player = commandingPlayerOf(commander);
     if (!player)
-        return "нет пилота";
+        return game::localization::Message("server.ship.no_pilot");
     const Ship* target = m_simulation.getShip(subject.value == 0 ? commander : subject);
     if (!target)
-        return "нет такого корабля";
+        return game::localization::Message("server.ship.no_such_ship");
     // delegated rights (a fleet manager, an organization's ships) would be a separate explicit policy here
     if (ownerPlayerOf(*target) != player)
-        return "чужой корабль: ремонт и замена — только на своих кораблях";
+        return game::localization::Message("server.refit.not_own_ship");
     return {};
 }
 
@@ -3549,7 +3555,7 @@ std::string GameServer::chargeRefit(EntityId id, EntityId subject, const game::s
         return {};
     const auto preview = game::ship::refit::previewRefit(target->core(), op);
     if (!preview.ok)
-        return preview.error.empty() ? std::string("операция невозможна") : preview.error;
+        return preview.error.empty() ? std::string(game::localization::Message("server.refit.operation_impossible")) : preview.error;
     bool tender = false;
     const std::string hub = m_simulation.serviceStationOf(id, &tender);
     if (hub.empty() || tender)
@@ -3559,15 +3565,16 @@ std::string GameServer::chargeRefit(EntityId id, EntityId subject, const game::s
             std::cerr << "[Refit] DEV: free apply off a berth (" << preview.cost.totalCr << " Cr not charged)" << std::endl;
             return {};
         }
-        return "ремонт и замена — у причала хаба";
+        return game::localization::Message("server.refit.at_berth_only");
     }
     const int system = commander->core().transform().motion.systemId;
     const auto kind = op.kind == game::ship::refit::RefitOperationKind::Repair ? game::economy::Purpose::Repair : game::economy::Purpose::Fee;
-    const std::string memo = std::string(op.kind == game::ship::refit::RefitOperationKind::Repair ? "ремонт " : "замена ") + op.moduleId +
-                             (op.productId.empty() ? std::string() : " -> " + op.productId);
+    const std::string memo = game::localization::Message(op.kind == game::ship::refit::RefitOperationKind::Repair ? "server.refit.memo.repair" : "server.refit.memo.replace")
+                                 .arg("module", op.moduleId)
+                                 .arg("product", op.productId.empty() ? std::string() : " -> " + op.productId);
     const auto paid = m_economy.chargeService(player, hub, system, kind, preview.cost.totalCr, memo);
     if (!paid.ok)
-        return "не хватает денег: " + std::to_string(static_cast<long long>(preview.cost.totalCr)) + " Cr (" + paid.reason + ")";
+        return game::localization::Message("server.no_money").arg("price", static_cast<long long>(preview.cost.totalCr)).arg("reason", paid.reason);
     std::cerr << "[Refit] player " << player << " paid " << preview.cost.totalCr << " Cr at " << hub << " for " << memo << std::endl;
     return {};
 }
@@ -3663,7 +3670,7 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
     {
         if (motion.hubId.empty())
         {
-            m_economy.recordTradeRefusal(player, command.requestId, "not_at_hub", "договор оформляется у хаба: подлетите к нему");
+            m_economy.recordTradeRefusal(player, command.requestId, "not_at_hub", game::localization::Message("server.economy.contract_at_hub"));
             return;
         }
         if (command.op == Op::LeaseSite)
@@ -3686,7 +3693,7 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
         {
             if (!botShip || botShipId == id || ownerPlayerOf(*botShip) != PlayerId{player})
             {
-                m_economy.recordTradeRefusal(player, command.requestId, "bot_no_ship", "нужен свой корабль, которым вы сейчас не управляете");
+                m_economy.recordTradeRefusal(player, command.requestId, "bot_no_ship", game::localization::Message("server.economy.bot_needs_own_ship"));
                 return;
             }
             const auto& bm = botShip->core().transform().motion;
@@ -3800,7 +3807,8 @@ void GameServer::handleEconomyCommand(EntityId id, const game::network::ClientEc
     if (at.empty() || tender || (!command.hubId.empty() && command.hubId != at))
     {
         m_economy.recordTradeRefusal(player, command.requestId, "not_docked",
-                                     "сделка только у причала хаба" + (command.hubId.empty() ? std::string() : " " + command.hubId));
+                                     command.hubId.empty() ? std::string(game::localization::Message("server.economy.deal_at_berth_only"))
+                                                           : std::string(game::localization::Message("server.economy.deal_at_berth_only_hub").arg("hub", command.hubId)));
         return;
     }
     if (command.op == Op::InsureCargo)   // TRADE step 13: the own lots aboard, at this berth

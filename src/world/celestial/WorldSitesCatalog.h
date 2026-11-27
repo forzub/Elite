@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/localization/LocalizedMessage.h"
 #include <algorithm>
 #include <utility>
 #include <fstream>
@@ -317,7 +318,7 @@ public:
                     site.id = r.id;
                     site.name = r.name;
                     site.type = "nav_relay";
-                    site.typeLabel = "навигационный ретранслятор";
+                    site.typeLabel = game::localization::Message("map.site_type.nav_relay");
                     site.mapLevel = "system";
                     site.systemId = r.systemId;
                     site.parentBodyId = str(j["placement"], "parent_body_id");
@@ -342,7 +343,7 @@ public:
                 site.id = a.id;
                 site.name = a.name;
                 site.type = "belt_anchor";
-                site.typeLabel = "крупный астероид (якорь пояса)";
+                site.typeLabel = game::localization::Message("map.site_type.belt_anchor");
                 site.mapLevel = "system";
                 site.systemId = a.systemId;
                 site.parentBodyId.clear();   // heliocentric: placed by its own elements

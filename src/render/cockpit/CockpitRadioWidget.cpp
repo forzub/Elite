@@ -1,6 +1,7 @@
 // The magnitola as a composite UI component (CockpitRadioWidget.h): the children, their layout from the panel rect, the
 // actions. No drawing (CockpitRadioWidgetDraw.cpp), no input reading (ui::UIInputRouter), no audio calls (onAction).
 #include "src/render/cockpit/CockpitRadioWidget.h"
+#include "src/game/localization/LocalizationService.h"
 
 #include <algorithm>
 #include <memory>
@@ -22,7 +23,7 @@ CockpitRadioWidget::CockpitRadioWidget()
     };
     auto caption = std::make_unique<ui::UILabel>();
     caption->id = "radio.caption";
-    caption->text = "МАГНИТОЛА";
+    caption->text = game::localization::tr("cockpit.radio.caption", "STEREO");
     m_caption = add(std::move(caption));
     m_power = button("radio.power", RadioAction::Power);
     m_source = button("radio.source", RadioAction::Source);
@@ -57,9 +58,11 @@ CockpitRadioWidget::CockpitRadioWidget()
 void CockpitRadioWidget::setPresentation(const RadioPresentation& p)
 {
     m_presentation = p;
-    m_power->label = p.on ? "ВКЛ" : "ВЫКЛ";
+    m_caption->text = game::localization::tr("cockpit.radio.caption", "STEREO");   // the UI language may have changed
+    m_power->label = p.on ? game::localization::tr("cockpit.radio.button.on", "ON") : game::localization::tr("cockpit.radio.button.off", "OFF");
     m_power->lit = p.on;
-    m_source->label = p.radioSource ? "РАДИО" : "ЛИСТ";
+    m_source->label = p.radioSource ? game::localization::tr("cockpit.radio.button.radio", "RADIO")
+                                    : game::localization::tr("cockpit.radio.button.list", "LIST");
     for (auto* b : {m_source, m_prev, m_next, m_volDown, m_volUp})
         b->lit = p.on;
     m_remove->lit = true;

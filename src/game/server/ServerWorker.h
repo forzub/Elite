@@ -43,6 +43,16 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
+    // OWN CLOCK (audit #7/#8 D2): by default the worker advances the authoritative simulation by its own monotonic
+    // clock (steady_clock, woken for every 0.02 s fixed step) - the client frame no longer drives server time, a frozen
+    // or stalled client / host GUI does not stop it. advance() then only reports the steps run since the previous call
+    // (non-blocking). ELITE_SERVER_CLIENT_DRIVEN=1 restores the old client-driven one-batch pipeline (A/B checks).
+    // Explicit states: Running, Paused (single player ESC menu: the clock frozen, resumed from a fresh base - no
+    // catch-up of the paused time), Overloaded (the runner hit its catch-up limit / debt cap: logged on entry and exit,
+    // the ServerRunner clips stay - 0.25 s per wake, 0.5 s debt, 8 steps - so a slow tick can never spiral), Stopping.
+    void setPaused(bool paused);
+    bool ownClock() const noexcept { return m_ownClock; }
+
     bool ready() const;
     void rethrowIfFailed() const;
 
@@ -61,6 +71,10 @@ private:
     bool m_started = false;
     bool m_stopRequested = false;
     bool m_advancePending = false;
+    bool m_ownClock = true;
+    bool m_paused = false;
+    // own clock: what ran since the client's last advance() (summed), handed over and reset there
+    ServerAdvanceResult m_sinceLastReport;
 
     double m_pendingElapsedSeconds = 0.0;
     double m_fixedStepSeconds = 0.02;

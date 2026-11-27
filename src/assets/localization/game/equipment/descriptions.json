@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "equipment.description.cryptonexus_2": {
+      "en": "Standard general-purpose shipboard communications decryption system",
+      "ru": "Стандартная корабельная Система дешифрования связи общего назначения"
+    },
+    "equipment.description.aegis_crypt_4c_deluxe": {
+      "en": "Shipboard transmitter",
+      "ru": "Корабельный передатчик"
+    },
+    "equipment.description.mil_flapper_8": {
+      "en": "Fast Linguistic Analysis & Protocol Penetration Electronic Receiver 8-channel",
+      "ru": "Fast Linguistic Analysis & Protocol Penetration Electronic Receiver 8-channel / Быстрый электронный приёмник для лингвистического анализа и вскрытия протоколов, 8-канальный"
+    },
+    "equipment.description.cobbler_16": {
+      "en": "Custom Omnichannel Bullshit Breaker & Language Eradicator, Realtime",
+      "ru": "Custom Omnichannel Bullshit Breaker & Language Eradicator, Realtime / Заказной всеканальный брехню-ломатель и истребитель языка, реального времени"
+    },
+    "equipment.description.jam_civ_01": {
+      "en": "Civilian short-range jammer",
+      "ru": "Гражданский глушитель ближнего радиуса действия"
+    },
+    "equipment.description.jam_mil_22": {
+      "en": "Tactical military communications jammer",
+      "ru": "Тактический военный глушитель для подавления связи"
+    },
+    "equipment.description.orb_noise_9": {
+      "en": "Stationary wide-area noise suppression array",
+      "ru": "Стационарный массив широкозонного шумового подавления"
+    },
+    "equipment.description.wsdr_tx13": {
+      "en": "Standard general-purpose shipboard transmitter",
+      "ru": "Стандартный корабельный передатчик общего назначения"
+    },
+    "equipment.description.orb_tx_88": {
+      "en": "High-power stationary navigation beacon transmitter",
+      "ru": "Мощный стационарный передатчик навигационных маяков"
+    }
+  }
+}

@@ -1,0 +1,774 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "map.cluster.major_hubs": {
+      "en": "{body}: {count} major hubs",
+      "ru": "{body}: {count} крупных хабов"
+    },
+    "map.cluster.zoom_hint": {
+      "en": "zoom in: double-click the body",
+      "ru": "приблизьте: двойной щелчок по телу"
+    },
+    "map.context.finish_land": {
+      "en": "FINISH: LANDING (AUTO)",
+      "ru": "ФИНИШ: ПОСАДКА (АВТОМАТ)"
+    },
+    "map.context.finish_orbit": {
+      "en": "FINISH: ORBIT {km} KM (v₁ {v1} KM/S)",
+      "ru": "ФИНИШ: ОРБИТА {km} КМ (v₁ {v1} КМ/С)"
+    },
+    "map.context.jump_calculate": {
+      "en": "CALCULATE JUMP",
+      "ru": "РАССЧИТАТЬ ПРЫЖОК"
+    },
+    "map.context.jump_cancel": {
+      "en": "CANCEL JUMP",
+      "ru": "ОТМЕНИТЬ ПРЫЖОК"
+    },
+    "map.context.jump_start": {
+      "en": "JUMP: START",
+      "ru": "ПРЫЖОК: СТАРТ"
+    },
+    "map.context.orbital_transfer": {
+      "en": "Orbital transfer",
+      "ru": "Орбитальный перелёт"
+    },
+    "map.hub_block.admin": {
+      "en": "Administration and housing",
+      "ru": "Администрация и жильё"
+    },
+    "map.hub_block.beacon": {
+      "en": "Beacon",
+      "ru": "Маяк"
+    },
+    "map.hub_block.cargo": {
+      "en": "Cargo block",
+      "ru": "Грузовой блок"
+    },
+    "map.hub_block.industry": {
+      "en": "Industry",
+      "ru": "Производство"
+    },
+    "map.hub_block.military": {
+      "en": "Military block",
+      "ru": "Военный блок"
+    },
+    "map.hub_block.passenger": {
+      "en": "Passenger block",
+      "ru": "Пассажирский блок"
+    },
+    "map.hub_block.science": {
+      "en": "Science",
+      "ru": "Наука"
+    },
+    "map.hub_block.service": {
+      "en": "Refuelling, repair, holding",
+      "ru": "Заправка, ремонт, отстойник"
+    },
+    "map.hub_module.admin_station": {
+      "en": "administration station",
+      "ru": "станция-администрация"
+    },
+    "map.hub_module.beacon_core": {
+      "en": "beacon core",
+      "ru": "ядро маяка"
+    },
+    "map.hub_module.cargo_terminal": {
+      "en": "cargo terminal",
+      "ru": "грузовой терминал"
+    },
+    "map.hub_module.city": {
+      "en": "City",
+      "ru": "Город"
+    },
+    "map.hub_module.customs_post": {
+      "en": "customs post",
+      "ru": "таможенный пост"
+    },
+    "map.hub_module.fuel_terminal": {
+      "en": "fuel / gas terminal",
+      "ru": "топливный / газовый терминал"
+    },
+    "map.hub_module.gas_platform_link": {
+      "en": "gas platform hub",
+      "ru": "узел газовых платформ"
+    },
+    "map.hub_module.habitat": {
+      "en": "habitat module",
+      "ru": "жилой модуль"
+    },
+    "map.hub_module.holding_area": {
+      "en": "holding area",
+      "ru": "отстойник"
+    },
+    "map.hub_module.hotel": {
+      "en": "hotel",
+      "ru": "гостиница"
+    },
+    "map.hub_module.lab_module": {
+      "en": "lab module",
+      "ru": "лабораторный модуль"
+    },
+    "map.hub_module.landing_pad": {
+      "en": "landing places (roofs, garages, hangars)",
+      "ru": "посадочные места (крыши, гаражи, ангары)"
+    },
+    "map.hub_module.liner_platform": {
+      "en": "liner platforms",
+      "ru": "платформы лайнеров"
+    },
+    "map.hub_module.market_exchange": {
+      "en": "exchange",
+      "ru": "биржа"
+    },
+    "map.hub_module.medical_bay": {
+      "en": "medical bay",
+      "ru": "медблок"
+    },
+    "map.hub_module.module": {
+      "en": "module",
+      "ru": "модуль"
+    },
+    "map.hub_module.naval_berth": {
+      "en": "naval berth and arsenal",
+      "ru": "военный причал и арсенал"
+    },
+    "map.hub_module.ore_yard": {
+      "en": "ore yard",
+      "ru": "рудный двор"
+    },
+    "map.hub_module.production_plant": {
+      "en": "production module",
+      "ru": "производственный модуль"
+    },
+    "map.hub_module.quarantine_ward": {
+      "en": "quarantine ward",
+      "ru": "карантинный блок"
+    },
+    "map.hub_module.refuel_dock": {
+      "en": "refuelling dock",
+      "ru": "заправочный док"
+    },
+    "map.hub_module.salvage_yard": {
+      "en": "salvage yard",
+      "ru": "разделочный двор"
+    },
+    "map.hub_module.service_dock": {
+      "en": "service dock",
+      "ru": "сервисный док"
+    },
+    "map.hub_module.shipyard_slip": {
+      "en": "shipyard slip",
+      "ru": "стапель"
+    },
+    "map.hub_module.shuttle_dock": {
+      "en": "shuttle dock (HexDock)",
+      "ru": "челночный док (HexDock)"
+    },
+    "map.hub_module.warehouse": {
+      "en": "warehouse",
+      "ru": "склад"
+    },
+    "map.info.and_more": {
+      "en": "{names} and {count} more",
+      "ru": "{names} и ещё {count}"
+    },
+    "map.info.beacons": {
+      "en": "Beacons ({count})",
+      "ru": "Маяки ({count})"
+    },
+    "map.info.composition": {
+      "en": "Composition",
+      "ru": "Состав"
+    },
+    "map.info.condition.normal": {
+      "en": "normal",
+      "ru": "нормальное"
+    },
+    "map.info.current_state": {
+      "en": "Current state",
+      "ru": "Текущее состояние"
+    },
+    "map.info.distance_au": {
+      "en": "{au} AU",
+      "ru": "{au} а.е."
+    },
+    "map.info.docks.hexdock": {
+      "en": "{sectors} sect., {modules} HexDock modules, {pads} pads",
+      "ru": "{sectors} сект., {modules} модулей HexDock, {pads} площадок"
+    },
+    "map.info.docks.pads": {
+      "en": "{pads} pads",
+      "ru": "{pads} площадок"
+    },
+    "map.info.economy": {
+      "en": "Economy",
+      "ru": "Экономика"
+    },
+    "map.info.field.condition": {
+      "en": "Condition",
+      "ru": "Состояние"
+    },
+    "map.info.field.docks": {
+      "en": "Docks",
+      "ru": "Доки"
+    },
+    "map.info.field.exports": {
+      "en": "Exports",
+      "ru": "Экспорт"
+    },
+    "map.info.field.founded": {
+      "en": "Founded",
+      "ru": "Основан"
+    },
+    "map.info.field.from_star": {
+      "en": "From star",
+      "ru": "От звезды"
+    },
+    "map.info.field.functions": {
+      "en": "Functions",
+      "ru": "Функции"
+    },
+    "map.info.field.imports": {
+      "en": "Imports",
+      "ru": "Импорт"
+    },
+    "map.info.field.industries": {
+      "en": "Main industries",
+      "ru": "Главные отрасли"
+    },
+    "map.info.field.jurisdiction": {
+      "en": "Jurisdiction",
+      "ru": "Юрисдикция"
+    },
+    "map.info.field.landing_places": {
+      "en": "Landing places",
+      "ru": "Места посадки"
+    },
+    "map.info.field.local_sites": {
+      "en": "Settlements and local sites",
+      "ru": "Поселения и местные объекты"
+    },
+    "map.info.field.location": {
+      "en": "Location",
+      "ru": "Где"
+    },
+    "map.info.field.nav_relays": {
+      "en": "Navigation relays",
+      "ru": "Навигационные ретрансляторы"
+    },
+    "map.info.field.operator": {
+      "en": "Operator",
+      "ru": "Оператор"
+    },
+    "map.info.field.output": {
+      "en": "Output",
+      "ru": "Выпуск"
+    },
+    "map.info.field.owner": {
+      "en": "Owner",
+      "ru": "Владелец"
+    },
+    "map.info.field.population": {
+      "en": "Population",
+      "ru": "Население"
+    },
+    "map.info.field.purpose": {
+      "en": "Purpose",
+      "ru": "Назначение"
+    },
+    "map.info.field.radius": {
+      "en": "Radius",
+      "ru": "Радиус"
+    },
+    "map.info.field.relation": {
+      "en": "Attitude to you",
+      "ru": "Отношение к вам"
+    },
+    "map.info.field.repair": {
+      "en": "Repair",
+      "ru": "Ремонт"
+    },
+    "map.info.field.roles": {
+      "en": "Roles",
+      "ru": "Роли"
+    },
+    "map.info.field.security": {
+      "en": "Security",
+      "ru": "Безопасность"
+    },
+    "map.info.field.shortages": {
+      "en": "Shortages",
+      "ru": "Дефицит"
+    },
+    "map.info.field.storage": {
+      "en": "Storage",
+      "ru": "Склады"
+    },
+    "map.info.field.terminals": {
+      "en": "Terminals",
+      "ru": "Терминалы"
+    },
+    "map.info.field.traffic": {
+      "en": "Traffic",
+      "ru": "Трафик"
+    },
+    "map.info.field.type": {
+      "en": "Type",
+      "ru": "Тип"
+    },
+    "map.info.hazard_zone": {
+      "en": "hazard zone: {zone}",
+      "ru": "опасная зона: {zone}"
+    },
+    "map.info.hint": {
+      "en": "Hover an icon for its name and owner; click for details here. All hubs and beacons are in the list below. G — cube grid, T — routes, N — beacons.",
+      "ru": "Наведите курсор на значок — имя и владелец; щелчок — подробности здесь. Все хабы и маяки — в списке внизу. G — сетка кубов, T — маршруты, N — маяки."
+    },
+    "map.info.hubs_by_region": {
+      "en": "Hubs by region ({count})",
+      "ru": "Хабы по районам ({count})"
+    },
+    "map.info.landing_places": {
+      "en": "{count} (roofs, garages, hangars - click a block on the plan)",
+      "ru": "{count} (крыши, гаражи, ангары - клик по кварталу на плане)"
+    },
+    "map.info.local_sites": {
+      "en": "{count} — on the Detail Map (P)",
+      "ru": "{count} — на Detail Map (P)"
+    },
+    "map.info.location_belt": {
+      "en": "near {anchor} (belt)",
+      "ru": "у {anchor} (пояс)"
+    },
+    "map.info.main_authority": {
+      "en": "{name} — main authority",
+      "ru": "{name} — основная власть"
+    },
+    "map.info.main_belt": {
+      "en": "Main belt",
+      "ru": "Главный пояс"
+    },
+    "map.info.major_hubs": {
+      "en": "Major hubs ({count})",
+      "ru": "Крупные хабы ({count})"
+    },
+    "map.info.module_status.building": {
+      "en": "(under construction)",
+      "ru": "(строится)"
+    },
+    "map.info.module_status.planned": {
+      "en": "(planned)",
+      "ru": "(в плане)"
+    },
+    "map.info.nav_relays": {
+      "en": "{count} (filter N)",
+      "ru": "{count} (фильтр N)"
+    },
+    "map.info.no_system_info": {
+      "en": "No information on inhabited places in this system.",
+      "ru": "Сведений о населённых местах этой системы нет."
+    },
+    "map.info.orbital_hub": {
+      "en": "orbital hub",
+      "ru": "орбитальный хаб"
+    },
+    "map.info.output_per_year": {
+      "en": "{gdp} Cr/year",
+      "ru": "{gdp} Cr/год"
+    },
+    "map.info.political_actors": {
+      "en": "Main political actors",
+      "ru": "Главные политические акторы"
+    },
+    "map.info.radius_km": {
+      "en": "{km} km",
+      "ru": "{km} км"
+    },
+    "map.info.relation.neutral": {
+      "en": "neutral: no records, warrants or claims",
+      "ru": "нейтральное: записей, ордеров и претензий нет"
+    },
+    "map.info.route": {
+      "en": "{other} — {flights} flights/day, {ship_class}, {days} days in transit",
+      "ru": "{other} — {flights} рейс./сут, {ship_class}, в пути {days} сут"
+    },
+    "map.info.route_disrupted": {
+      "en": "{other} — {flights} flights/day, {ship_class}, {days} days in transit, disruption: {disruption}",
+      "ru": "{other} — {flights} рейс./сут, {ship_class}, в пути {days} сут, сбой: {disruption}"
+    },
+    "map.info.routes": {
+      "en": "Routes",
+      "ru": "Маршруты"
+    },
+    "map.info.scale.billion": {
+      "en": "{value} billion",
+      "ru": "{value} млрд"
+    },
+    "map.info.scale.million": {
+      "en": "{value} million",
+      "ru": "{value} млн"
+    },
+    "map.info.scale.trillion": {
+      "en": "{value} trillion",
+      "ru": "{value} трлн"
+    },
+    "map.info.state.epidemic": {
+      "en": "epidemic / sanitary restriction",
+      "ru": "эпидемия / санитарное ограничение"
+    },
+    "map.info.state.quarantine": {
+      "en": "quarantine",
+      "ru": "карантин"
+    },
+    "map.info.state.quiet": {
+      "en": "quiet: no significant emergencies, life is calm",
+      "ru": "спокойное: значимых чрезвычайных событий нет, тихая жизнь"
+    },
+    "map.info.state.ship_missing": {
+      "en": "ship missing (search under way)",
+      "ru": "пропал корабль (поиск)"
+    },
+    "map.info.state.shortage": {
+      "en": "shortage of some goods",
+      "ru": "дефицит отдельных товаров"
+    },
+    "map.info.state.war": {
+      "en": "war",
+      "ru": "война"
+    },
+    "map.info.storage_tonnes": {
+      "en": "{tonnes} t",
+      "ru": "{tonnes} т"
+    },
+    "map.info.system_heading": {
+      "en": "System {name}",
+      "ru": "Система {name}"
+    },
+    "map.info.system_summary": {
+      "en": "{primary}. Population {population}, output {gdp} Cr per year, about {arrivals} interstellar arrivals per day.",
+      "ru": "{primary}. Население {population}, выпуск {gdp} Cr в год, около {arrivals} межзвёздных прибытий в сутки."
+    },
+    "map.info.terminals": {
+      "en": "{passenger} pass., {cargo} cargo, {service} service berths",
+      "ru": "{passenger} пасс., {cargo} груз., {service} сервисных причалов"
+    },
+    "map.info.terminals_named": {
+      "en": "{passenger} pass., {cargo} cargo, {service} service berths; {names}",
+      "ru": "{passenger} пасс., {cargo} груз., {service} сервисных причалов; {names}"
+    },
+    "map.info.title": {
+      "en": "SYSTEM MAP",
+      "ru": "КАРТА СИСТЕМЫ"
+    },
+    "map.info.traffic": {
+      "en": "{arrivals} arrivals per day, load {load} %",
+      "ru": "{arrivals} прибытий в сутки, загрузка {load} %"
+    },
+    "map.journal.error_km": {
+      "en": "± {km} km",
+      "ru": "± {km} км"
+    },
+    "map.journal.field.error": {
+      "en": "error",
+      "ru": "погрешность"
+    },
+    "map.journal.field.record": {
+      "en": "record",
+      "ru": "запись"
+    },
+    "map.journal.field.reliability": {
+      "en": "reliability",
+      "ru": "достоверность"
+    },
+    "map.journal.kind.anomaly": {
+      "en": "anomaly",
+      "ru": "аномалия"
+    },
+    "map.journal.kind.beacon": {
+      "en": "beacon",
+      "ru": "маяк"
+    },
+    "map.journal.kind.danger": {
+      "en": "dangerous place",
+      "ru": "опасное место"
+    },
+    "map.journal.kind.hub": {
+      "en": "hub",
+      "ru": "хаб"
+    },
+    "map.journal.kind.safe": {
+      "en": "safe place",
+      "ru": "безопасное место"
+    },
+    "map.journal.kind.signal": {
+      "en": "signal",
+      "ru": "сигнал"
+    },
+    "map.journal.kind.sump": {
+      "en": "sump exit",
+      "ru": "выход в отстойник"
+    },
+    "map.journal.kind.wreck": {
+      "en": "wreck",
+      "ru": "обломки"
+    },
+    "map.journal.kind.zone": {
+      "en": "inhabited zone",
+      "ru": "обитаемая зона"
+    },
+    "map.journal.type": {
+      "en": "onboard journal: {kind}",
+      "ru": "бортовой журнал: {kind}"
+    },
+    "map.object_list": {
+      "en": "Hubs and beacons",
+      "ru": "Хабы и маяки"
+    },
+    "map.pad_button.free": {
+      "en": "free {free}/{total}",
+      "ru": "свободно {free}/{total}"
+    },
+    "map.pad_button.kind.garage": {
+      "en": "garage",
+      "ru": "гараж"
+    },
+    "map.pad_button.kind.hangar": {
+      "en": "hangar",
+      "ru": "ангар"
+    },
+    "map.pad_button.kind.roof": {
+      "en": "roof",
+      "ru": "крыша"
+    },
+    "map.pad_button.kind.stilts": {
+      "en": "stilts",
+      "ru": "опоры"
+    },
+    "map.pad_button.label": {
+      "en": "LANDING · {kind} · {mode} · {price} Cr/h · {status}",
+      "ru": "ПОСАДКА · {kind} · {mode} · {price} Cr/ч · {status}"
+    },
+    "map.pad_button.lower": {
+      "en": "{kind} (lower)",
+      "ru": "{kind} (низ)"
+    },
+    "map.pad_button.mode_auto": {
+      "en": "A",
+      "ru": "А"
+    },
+    "map.pad_button.mode_manual": {
+      "en": "M",
+      "ru": "М"
+    },
+    "map.pad_button.queue": {
+      "en": "QUEUE",
+      "ru": "ОЧЕРЕДЬ"
+    },
+    "map.pad_button.repair_hangar": {
+      "en": "repair hangar, {places} places",
+      "ru": "ремонтный ангар, {places} места"
+    },
+    "map.pad_button.taken": {
+      "en": "TAKEN",
+      "ru": "ЗАНЯТО"
+    },
+    "map.pad_service.no_pad_in_block": {
+      "en": "PAD SERVICE: no landing pad in this block",
+      "ru": "СЛУЖБА ПЛОЩАДОК: в этом квартале нет площадки для посадки"
+    },
+    "map.route_list.button.calculate": {
+      "en": "CALCULATE",
+      "ru": "РАССЧИТАТЬ"
+    },
+    "map.route_list.button.pause": {
+      "en": "PAUSE",
+      "ru": "ПАУЗА"
+    },
+    "map.route_list.button.resume": {
+      "en": "RESUME",
+      "ru": "ПРОДОЛЖИТЬ"
+    },
+    "map.route_list.button.start": {
+      "en": "START",
+      "ru": "СТАРТ"
+    },
+    "map.route_list.pause_suffix": {
+      "en": "  || pause",
+      "ru": "  || пауза"
+    },
+    "map.route_list.planner_inserted": {
+      "en": "[plan] {line}",
+      "ru": "[план] {line}"
+    },
+    "map.route_list.refuel_suffix": {
+      "en": " + refuel",
+      "ru": " + заправка"
+    },
+    "map.route_list.repair_suffix": {
+      "en": " + repair",
+      "ru": " + ремонт"
+    },
+    "map.route_list.state.flight": {
+      "en": "ROUTE: FLIGHT",
+      "ru": "МАРШРУТ: ПОЛЁТ"
+    },
+    "map.route_list.state.landing": {
+      "en": "ROUTE: LANDING",
+      "ru": "МАРШРУТ: ПОСАДКА"
+    },
+    "map.route_list.state.paused": {
+      "en": "ROUTE: PAUSED — MANUAL MODE",
+      "ru": "МАРШРУТ: ПАУЗА — РУЧНОЙ РЕЖИМ"
+    },
+    "map.route_list.state.service_stop": {
+      "en": "ROUTE: SERVICE STOP",
+      "ru": "МАРШРУТ: СТОЯНКА-СЕРВИС"
+    },
+    "map.route_plan.blue_gate": {
+      "en": "blue gate: {name}",
+      "ru": "синий створ: {name}"
+    },
+    "map.route_plan.blue_gate_uninspected": {
+      "en": "blue gate (no inspection) {name}",
+      "ru": "синий створ (без досмотра) {name}"
+    },
+    "map.route_plan.detour": {
+      "en": "detour: {obstacle}",
+      "ru": "обход: {obstacle}"
+    },
+    "map.route_plan.green_corridor": {
+      "en": "green corridor: {name}",
+      "ru": "зелёный коридор: {name}"
+    },
+    "map.route_plan.hub_radar": {
+      "en": "hub radar {hub}",
+      "ru": "радар хаба {hub}"
+    },
+    "map.route_plan.mandatory_pass": {
+      "en": "mandatory pass: {name}",
+      "ru": "обязательный пролёт: {name}"
+    },
+    "map.route_plan.network_corridor": {
+      "en": "network green corridor: {name}",
+      "ru": "зелёный коридор сети: {name}"
+    },
+    "map.route_plan.red_zone": {
+      "en": "red zone {name}",
+      "ru": "красная зона {name}"
+    },
+    "map.route_plan.via_green_corridor": {
+      "en": "via green corridor: {name}",
+      "ru": "по зелёному коридору: {name}"
+    },
+    "map.route_plan.via_network_corridor": {
+      "en": "via network corridor: {name}",
+      "ru": "по коридору сети: {name}"
+    },
+    "map.route_point.calculate": {
+      "en": "CALCULATE (NO DEPARTURE)",
+      "ru": "РАССЧИТАТЬ (БЕЗ ВЫЛЕТА)"
+    },
+    "map.route_point.official": {
+      "en": "FLY: OFFICIAL ROUTE",
+      "ru": "ЛЕТЕТЬ: ОФИЦИАЛЬНЫЙ МАРШРУТ"
+    },
+    "map.route_point.pause": {
+      "en": "PAUSE (MANUAL MODE)",
+      "ru": "ПАУЗА (РУЧНОЙ РЕЖИМ)"
+    },
+    "map.route_point.pause_off": {
+      "en": "PAUSE HERE (MANUAL MODE): NO",
+      "ru": "ПАУЗА ЗДЕСЬ (РУЧНОЙ РЕЖИМ): НЕТ"
+    },
+    "map.route_point.pause_on": {
+      "en": "PAUSE HERE (MANUAL MODE): YES",
+      "ru": "ПАУЗА ЗДЕСЬ (РУЧНОЙ РЕЖИМ): ДА"
+    },
+    "map.route_point.program.auto": {
+      "en": "AUTO",
+      "ru": "АВТО"
+    },
+    "map.route_point.program.dock": {
+      "en": "DOCKING",
+      "ru": "СТЫКОВКА"
+    },
+    "map.route_point.program.land": {
+      "en": "LANDING (AUTO)",
+      "ru": "ПОСАДКА (АВТОМАТ)"
+    },
+    "map.route_point.program.land_pad": {
+      "en": "PAD LANDING",
+      "ru": "ПОСАДКА НА ПЛОЩАДКУ"
+    },
+    "map.route_point.program.orbit": {
+      "en": "ORBIT INSERTION",
+      "ru": "ВЫХОД НА ОРБИТУ"
+    },
+    "map.route_point.program.orbit_survey": {
+      "en": "ORBITAL SURVEY",
+      "ru": "РАЗВЕДКА С ОРБИТЫ"
+    },
+    "map.route_point.program.pass_through": {
+      "en": "FLY-BY",
+      "ru": "ПРОЛЁТ"
+    },
+    "map.route_point.program.rendezvous": {
+      "en": "RENDEZVOUS",
+      "ru": "ВСТРЕЧА"
+    },
+    "map.route_point.program.stop": {
+      "en": "STOP",
+      "ru": "ОСТАНОВКА"
+    },
+    "map.route_point.program_prefix": {
+      "en": "PROGRAM: ",
+      "ru": "ПРОГРАММА: "
+    },
+    "map.route_point.refuel_off": {
+      "en": "REFUEL HERE: NO",
+      "ru": "ЗАПРАВКА ЗДЕСЬ: НЕТ"
+    },
+    "map.route_point.refuel_on": {
+      "en": "REFUEL HERE: YES",
+      "ru": "ЗАПРАВКА ЗДЕСЬ: ДА"
+    },
+    "map.route_point.repair_off": {
+      "en": "REPAIR HERE: NO",
+      "ru": "РЕМОНТ ЗДЕСЬ: НЕТ"
+    },
+    "map.route_point.repair_on": {
+      "en": "REPAIR HERE: YES",
+      "ru": "РЕМОНТ ЗДЕСЬ: ДА"
+    },
+    "map.route_point.resume": {
+      "en": "RESUME ROUTE",
+      "ru": "ПРОДОЛЖИТЬ МАРШРУТ"
+    },
+    "map.route_point.takeoff_off": {
+      "en": "TAKE OFF AFTER LANDING: NO",
+      "ru": "ПОСЛЕ ПОСАДКИ ВЗЛЁТ: НЕТ"
+    },
+    "map.route_point.takeoff_on": {
+      "en": "TAKE OFF AFTER LANDING: YES",
+      "ru": "ПОСЛЕ ПОСАДКИ ВЗЛЁТ: ДА"
+    },
+    "map.route_point.unofficial": {
+      "en": "FLY: UNOFFICIAL ROUTE",
+      "ru": "ЛЕТЕТЬ: НЕОФИЦИАЛЬНЫЙ МАРШРУТ"
+    },
+    "map.select_object": {
+      "en": "Select a hub or beacon ({count})",
+      "ru": "Выбрать хаб или маяк ({count})"
+    },
+    "map.site_type.belt_anchor": {
+      "en": "large asteroid (belt anchor)",
+      "ru": "крупный астероид (якорь пояса)"
+    },
+    "map.site_type.nav_relay": {
+      "en": "navigation relay",
+      "ru": "навигационный ретранслятор"
+    }
+  }
+}

@@ -12,7 +12,7 @@
 // Wire form (text, no schema change):   \x1F<key>\x1E<name>=<value>\x1E<name>=<value>...
 // - \x1F (unit separator) starts a message: a plain string (old producers, names) is shown as it is;
 // - a parameter VALUE that is itself a message (starts with \x1F) is rendered in its turn (nested, e.g. a reason);
-//   nested messages escape their separators: \x1D = an inner \x1E, \x1C = an inner \x1F.
+//   nested messages escape at ANY depth: \x1B1 = \x1B, \x1B2 = \x1E, \x1B3 = \x1F (each parse undoes one level).
 // - templates name their parameters: "Pad {pad}: cleared to land, place {place}" - never glued fragments.
 namespace game::localization
 {
@@ -57,8 +57,14 @@ public:
             out += ParamSeparator;
             out += p.name;
             out += '=';
-            for (char c : p.value)
-                out += c == ParamSeparator ? '\x1D' : c == MessageStart ? '\x1C' : c;
+            for (char c : p.value)   // escape (any depth): \x1B -> \x1B1, \x1E -> \x1B2, \x1F -> \x1B3
+                if (c == '\x1B' || c == ParamSeparator || c == MessageStart)
+                {
+                    out += '\x1B';
+                    out += c == '\x1B' ? '1' : c == ParamSeparator ? '2' : '3';
+                }
+                else
+                    out += c;
         }
         return out;
     }
@@ -89,9 +95,16 @@ inline bool parseMessage(const std::string& s, std::string& key, std::vector<Mes
         MessageParam p;
         p.name = item.substr(0, eq);
         std::string v = eq == std::string::npos ? std::string() : item.substr(eq + 1);
-        for (char& c : v)
-            c = c == '\x1D' ? ParamSeparator : c == '\x1C' ? MessageStart : c;
-        p.value = v;
+        std::string u;
+        for (std::size_t i = 0; i < v.size(); ++i)
+            if (v[i] == '\x1B' && i + 1 < v.size())
+            {
+                const char e = v[++i];
+                u += e == '1' ? '\x1B' : e == '2' ? ParamSeparator : MessageStart;
+            }
+            else
+                u += v[i];
+        p.value = u;
         params.push_back(std::move(p));
     }
     return true;

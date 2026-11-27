@@ -3,6 +3,7 @@
 // assets/data/navigation/route_zones.json); the server's route autopilot flies
 // the legs (GameSimulationRoute.cpp).
 #include "src/world/WorldLaws.h"
+#include "src/game/localization/LocalizationService.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/fuel/FuelStationCatalog.h"
 #include "src/game/SpaceStateInternal.h"
@@ -20,6 +21,8 @@
 #include "src/game/navigation/rules/JumpSumps.h"
 #include "src/game/system_map/PlanetBodyOrientation.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
+
+namespace l10n = game::localization;
 
 namespace
 {
@@ -552,11 +555,11 @@ bool SpaceState::playerPilotLost(std::string* cause) const
     if (!killed)
         return false;
     if (cause)
-        *cause = motion.destroyedCause == 1 ? "удар о поверхность"
-               : motion.destroyedCause == 4 ? "столкновение с постройкой"
-               : capsule == cap::State::PilotKilled ? "перегрузка при ударе"
-               : capsule == cap::State::Destroyed || motion.destroyedCause == 3 ? "кабина разрушена"
-                                            : "перегрузка";
+        *cause = motion.destroyedCause == 1 ? l10n::tr("cockpit.pilot_lost.cause.surface_impact", "surface impact")
+               : motion.destroyedCause == 4 ? l10n::tr("cockpit.pilot_lost.cause.structure_collision", "collision with a structure")
+               : capsule == cap::State::PilotKilled ? l10n::tr("cockpit.pilot_lost.cause.impact_g", "g-load on impact")
+               : capsule == cap::State::Destroyed || motion.destroyedCause == 3 ? l10n::tr("cockpit.pilot_lost.cause.cockpit_destroyed", "cockpit destroyed")
+                                            : l10n::tr("cockpit.pilot_lost.cause.g_load", "g-load");
     return true;
 }
 
@@ -605,9 +608,9 @@ void SpaceState::renderPilotLostOverlay(const Viewport& viewport)
         }
     }
     text.solidRectPx(0.0f, 0.0f, W, H, glm::vec4(0.0f, 0.0f, 0.0f, m_activeCameraMode == ShipCameraMode::Cockpit ? 0.35f : 0.72f));
-    const std::string title = "ПИЛОТ ПОГИБ";
-    const std::string line = "Корабль разбит: " + cause + ". Экипаж погиб вместе с кабиной.";
-    const std::string hint = "Esc - меню";
+    const std::string title = l10n::tr("cockpit.pilot_lost.title", "PILOT KILLED");
+    const std::string line = l10n::tr("cockpit.pilot_lost.line", {{"cause", cause}}, "Ship wrecked: {cause}. The crew died with the cockpit.");
+    const std::string hint = l10n::tr("cockpit.pilot_lost.hint", "Esc - menu");
     const float tw = text.measureTextPx(title, 40);
     text.solidRectPx(0.0f, H * 0.38f, W, 2.0f, glm::vec4(0.9f, 0.15f, 0.1f, 0.9f));
     text.textDrawPx(title, 0.5f * (W - tw), H * 0.38f + 58.0f, 40, glm::vec4(1.0f, 0.25f, 0.2f, 1.0f));

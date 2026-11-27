@@ -6,6 +6,7 @@
 // through the ordinary input stream (ShipControlState: the global-flight part, the landing pilot's
 // ordinary controls, the frame / free-rotation requests) - the server only executes it.
 #include "src/game/SpaceStateInternal.h"
+#include "src/game/localization/LocalizationService.h"
 
 #include <utility>
 
@@ -18,6 +19,8 @@
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/system_map/PlanetBodyOrientation.h"
+
+namespace l10n = game::localization;
 
 namespace
 {
@@ -199,8 +202,9 @@ void SpaceState::requestFreeFlightAutopilot(const std::string& bodyId, const std
             if (!bodyHasHub)
             {
                 const std::string warning = systemHasRescueService(systemId)
-                    ? std::string("АВТОПИЛОТ: у цели нет хаба со спасательной службой - SOS могут не услышать")
-                    : rescueWarningAt(world::coordinates::fullMeters(ship->second.transform.worldPosition), systemId, "АВТОПИЛОТ");
+                    ? l10n::tr("cockpit.rescue.autopilot_no_hub", "AUTOPILOT: the target has no hub with a rescue service - an SOS may go unheard")
+                    : rescueWarningAt(world::coordinates::fullMeters(ship->second.transform.worldPosition), systemId,
+                                      l10n::tr("cockpit.rescue.who.autopilot", "AUTOPILOT").c_str());
                 if (!warning.empty())
                 {
                     m_pilotNotice = warning;

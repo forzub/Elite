@@ -17,4 +17,7 @@ const wchar_t* appDataFolderNameW() noexcept;
 // executable's folder has, switch to it (the developer layout - cwd = the build dir - is left alone). Returns the
 // folder switched to (empty = unchanged).
 std::string anchorWorkingDirectoryToExecutable();
+// the preview package started by a double click: hide the console window Windows opened for it (the session log file
+// keeps everything). Started from a console (cmd / a script) the console stays. No-op outside the preview.
+void hideOwnConsoleInPreview();
 } // namespace core

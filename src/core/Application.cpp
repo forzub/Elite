@@ -1221,7 +1221,22 @@ void Application::mainLoop()
 #ifdef _WIN32
             xprocPhaseBegin = XprocTraceClock::now();
 #endif
-            const bool localPaused = localSessionMenuPaused();
+            bool localPaused = localSessionMenuPaused();
+            // DEV (audit #8 D2): ELITE_DEV_PAUSE=<app s>:<seconds> holds the single player pause in that window (the
+            // ESC menu's path: the local server's own clock is paused, then resumed from a fresh base)
+            {
+                static const std::pair<double, double> devPause = [] {
+                    std::pair<double, double> w {-1.0, 0.0};
+                    if (const char* v = std::getenv("ELITE_DEV_PAUSE"))
+                        std::sscanf(v, "%lf:%lf", &w.first, &w.second);
+                    return w;
+                }();
+                const double nowApp = glfwGetTime();
+                if (devPause.first >= 0.0 && nowApp >= devPause.first && nowApp < devPause.first + devPause.second)
+                    localPaused = true;
+            }
+            if (auto* activeSpaceForPause = dynamic_cast<SpaceState*>(state))
+                activeSpaceForPause->setLocalSimulationPaused(localPaused);
             state->prepareFrame(localPaused ? 0.0f : dt);
             core::hitch::mark("ev_prepare_frame");
 

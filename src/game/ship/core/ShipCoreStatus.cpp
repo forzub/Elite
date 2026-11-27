@@ -1,6 +1,7 @@
 // ShipCore: ShipCoreStatus publication (HUD / telemetry view of the authoritative state).
 
 #include "src/game/ship/core/ShipCoreInternal.h"
+#include "src/game/localization/LocalizedMessage.h"
 
 using namespace game::ship::geometry;
 
@@ -190,10 +191,13 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
         game::AlertStatus alert;
         alert.severity = 2;
         alert.system = "Containment";
-        const std::string which = a.moduleId.find("left") != std::string::npos ? "левый реактор"
-                                : a.moduleId.find("right") != std::string::npos ? "правый реактор"
-                                : a.moduleId.find("service") != std::string::npos ? "служебный реактор" : "реактор";
-        alert.message = "ПОТЕРЯ УДЕРЖАНИЯ: " + which + "|" + a.advice;   // "|" splits the beacon's two lines
+        // language-neutral Messages (LocalizedMessage.h): the client renders each line in its language
+        const char* which = a.moduleId.find("left") != std::string::npos ? "cockpit.containment.reactor.left"
+                          : a.moduleId.find("right") != std::string::npos ? "cockpit.containment.reactor.right"
+                          : a.moduleId.find("service") != std::string::npos ? "cockpit.containment.reactor.service"
+                                                                            : "cockpit.containment.reactor.generic";
+        alert.message = game::localization::Message("cockpit.containment.lost").arg("reactor", game::localization::Message(which)).str() +
+                        "|" + a.advice;   // "|" splits the beacon's two lines
         alert.value = a.coreTemperatureK;
         alert.threshold = a.elapsedS;
         status.alerts.push_back(alert);

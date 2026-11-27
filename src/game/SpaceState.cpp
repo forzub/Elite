@@ -1,4 +1,5 @@
 #include "src/game/client/ClientCityPadPresence.h"
+#include "src/game/localization/LocalizationService.h"
 #include "src/core/HitchProfiler.h"
 #include "src/game/navigation/rules/PadLawRules.h"
 #include "src/game/navigation/rules/RingDeckRules.h"
@@ -20,6 +21,8 @@
 #include <algorithm>
 #include <fstream>
 #include <cstdio>
+
+namespace l10n = game::localization;
 
 
 
@@ -64,12 +67,12 @@ std::string ringDispatcherLine(const std::string& status)
     if (f.size() < 6)
         return {};
     if (refused)
-        return "ДИСПЕТЧЕР КОЛЬЦА: посадка на " + f[0] + " отклонена - у площадки тяжесть " + f[1] + " g, палуба идёт " +
-               f[2] + " м/с; вертикальная тяга корабля " + f[3] + " g, нужно " + f[4] +
-               " g. Стыкуйтесь в осевой док (Док) - на оси палуба стоит";
-    return "ДИСПЕТЧЕР КОЛЬЦА: " + f[0] + " - посадка разрешена. Кольцо вращается " + f[5] + " град/с: у площадки тяжесть " +
-           f[1] + " g к ободу, палуба идёт " + f[2] + " м/с. Заход носом по вращению, держите вертикальную тягу (у вас " +
-           f[3] + " g)";
+        return l10n::tr("cockpit.ring.refused", {{"pad", f[0]}, {"g", f[1]}, {"deck", f[2]}, {"lift", f[3]}, {"need", f[4]}},
+                        "RING DISPATCHER: landing on {pad} refused - {g} g at the pad, the deck moves at {deck} m/s; the ship's "
+                        "vertical thrust is {lift} g, {need} g needed. Use the axial dock (Dock) - the deck stands still on the axis");
+    return l10n::tr("cockpit.ring.cleared", {{"pad", f[0]}, {"rate", f[5]}, {"g", f[1]}, {"deck", f[2]}, {"lift", f[3]}},
+                    "RING DISPATCHER: {pad} - cleared to land. The ring turns at {rate} deg/s: {g} g toward the rim at the pad, "
+                    "the deck moves at {deck} m/s. Approach nose along the spin, hold vertical thrust (you have {lift} g)");
 }
 } // namespace
 
@@ -675,8 +678,10 @@ void SpaceState::updatePilotTakeover(bool touching)
             {
                 const auto* nodes = game::scene::clientLayoutCityPadNodes(object.type, object.hubAttachment.hubId);
                 const bool built = nodes && game::simulation::cityPadPresence(*nodes, object.buildingStates, padRequest->address).built;
-                m_pilotNotice = (built ? "ДИСПЕТЧЕР: площадка " + padRequest->address + " разрушена - посадка невозможна"
-                                        : "ДИСПЕТЧЕР: площадки " + padRequest->address + " ещё нет - здание строится");
+                m_pilotNotice = built ? l10n::tr("cockpit.dispatcher.pad_wrecked", {{"pad", padRequest->address}},
+                                                 "DISPATCHER: pad {pad} is destroyed - landing impossible")
+                                      : l10n::tr("cockpit.dispatcher.pad_not_built", {{"pad", padRequest->address}},
+                                                 "DISPATCHER: pad {pad} does not exist yet - the building is under construction");
                 std::cerr << "[PadLanding] ui: " << padRequest->address << (built ? " wrecked" : " not built")
                           << " - refused at the click" << std::endl;
                 padRequest.reset();
@@ -693,8 +698,8 @@ void SpaceState::updatePilotTakeover(bool touching)
                                                         game::ship::plant::PhysicalControlFamily::Newtonian))
             {
                 const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(padRequest->frameModuleId);
-                m_pilotNotice = game::navigation::rules::newtonianPadLine(game::navigation::rules::newtonianPadNotice(
-                    padRequest->address, plan && plan->ring().valid && plan->ring().periodSeconds > 0.0));
+                m_pilotNotice = l10n::renderMessage(game::navigation::rules::newtonianPadLine(game::navigation::rules::newtonianPadNotice(
+                    padRequest->address, plan && plan->ring().valid && plan->ring().periodSeconds > 0.0)));
                 std::cerr << "[PadLanding] HUD: " << m_pilotNotice << std::endl;
                 padRequest.reset();
             }
@@ -786,7 +791,8 @@ void SpaceState::updatePilotTakeover(bool touching)
         }
         m_padLandingObjectId = request->objectId;
         m_systemMapRenderer.setPadLandingActive(request->objectId);
-        m_pilotNotice = rimNotice.empty() ? "СЛУЖБА ПЛОЩАДОК: заход на площадку " + request->address + " - расчёт маршрута"
+        m_pilotNotice = rimNotice.empty() ? l10n::tr("cockpit.pad.approach_planning", {{"pad", request->address}},
+                                                     "PAD SERVICE: approach to pad {pad} - planning the route")
                                           : ringDispatcherLine(rimNotice);
         if (!rimNotice.empty())
             std::cerr << "[PadLanding] HUD: " << m_pilotNotice << std::endl;
@@ -797,7 +803,7 @@ void SpaceState::updatePilotTakeover(bool touching)
             context().app->requestFlightView(FlightPresentationView::Front);
     }
     if (std::string notice = m_systemMapRenderer.takePadLandingNotice(); !notice.empty())
-        m_pilotNotice = notice;
+        m_pilotNotice = l10n::renderMessage(notice);
     // the landing card closed on the map: the landing is cancelled, the pilot has the ship
     if (m_systemMapRenderer.consumePadLandingCancel())
     {
@@ -807,7 +813,7 @@ void SpaceState::updatePilotTakeover(bool touching)
             m_navigationWorkspace.dockingRouteRequests().clear();
         sendPadLanding(std::string(), std::string(), false);
         m_padLandingObjectId.clear();
-        m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: посадка отменена (карточка закрыта) - управление у пилота";
+        m_pilotNotice = l10n::tr("cockpit.pad.cancelled_card_closed", "PAD SERVICE: landing cancelled (card closed) - the pilot has control");
         std::cerr << "[PadLanding] cancelled: the card was closed" << std::endl;
     }
     // the pad service's steps in the HUD terminal (author 2026-11-21: «информацию ... выводить в терминале на HUD»)
@@ -885,59 +891,68 @@ void SpaceState::updatePilotTakeover(bool touching)
                 lastStatus = status;
                 std::string line;
                 if (status == "pad:no_thrust")
-                    line = "СЛУЖБА ПЛОЩАДОК: корабль не управляем (нет тяги) - служба отпускает его, корабль идёт по инерции";
+                    line = l10n::tr("cockpit.pad.no_thrust_released",
+                                    "PAD SERVICE: the ship is not controllable (no thrust) - the service releases it, the ship coasts");
                 else if (status == "gear:out")
-                    line = "ОПОРЫ: выпущены - касание не быстрее 2.5 м/с, от 4 м/с опоры ломаются (F4 - нижняя камера)";
+                    line = l10n::tr("cockpit.gear.out",
+                                    "LANDING GEAR: down - touch down at 2.5 m/s or less, the gear breaks from 4 m/s (F4 - bottom camera)");
                 else if (status == "gear:in")
-                    line = "ОПОРЫ: убраны";
+                    line = l10n::tr("cockpit.gear.in", "LANDING GEAR: up");
                 else if (status == "gear:broken")
-                    line = "ОПОРЫ: сломаны - посадка невозможна до ремонта";
+                    line = l10n::tr("cockpit.gear.broken", "LANDING GEAR: broken - no landing until repaired");
                 else if (status == "gear:broke_hard")
-                    line = "ОПОРЫ: СЛОМАНЫ при жёсткой посадке";
+                    line = l10n::tr("cockpit.gear.broke_hard", "LANDING GEAR: BROKEN in a hard landing");
                 else if (status == "pad:gear_up")
-                    line = "СЛУЖБА ПЛОЩАДОК: выпустите опоры (G) - без них посадка не начнётся";
+                    line = l10n::tr("cockpit.pad.gear_up", "PAD SERVICE: lower the landing gear (G) - the landing will not start without it");
                 else if (status == "pad:no_gear")
-                    line = "ВНИМАНИЕ: посадка без опор (G)";
+                    line = l10n::tr("cockpit.pad.no_gear", "WARNING: landing without landing gear (G)");
                 else if (status.rfind("pad:capture:", 0) == 0)
-                    line = "СЛУЖБА ПЛОЩАДОК: зона захвата - автоматическая посадка на " + status.substr(12);
+                    line = l10n::tr("cockpit.pad.capture", {{"pad", status.substr(12)}}, "PAD SERVICE: capture zone - automatic landing on {pad}");
                 else if (status.rfind("pad:manual:", 0) == 0)
-                    line = "СЛУЖБА ПЛОЩАДОК: площадка " + status.substr(11) + " ручная - садитесь сами, опоры выпущены?";
+                    line = l10n::tr("cockpit.pad.manual", {{"pad", status.substr(11)}},
+                                    "PAD SERVICE: pad {pad} is manual - land yourself, is the landing gear down?");
                 else if (status.rfind("pad:landed_manual:", 0) == 0)
-                    line = "ПОСАДКА: на площадке " + status.substr(18) + " - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)";
+                    line = l10n::tr("cockpit.pad.landed_manual", {{"pad", status.substr(18)}},
+                                    "LANDED: on pad {pad} - berth: trade F8, repair F7, refuel Ctrl+U (controls - take off)");
                 else if (status.rfind("pad:launched:", 0) == 0)
-                    line = "ЗАПУСК с " + status.substr(13) + ": только манёвровые до выхода из зоны площадки";
+                    line = l10n::tr("cockpit.pad.launched", {{"pad", status.substr(13)}},
+                                    "LAUNCH from {pad}: manoeuvring thrusters only until clear of the pad zone");
                 else if (status.rfind("pad:queued:", 0) == 0)
                 {
                     const std::string rest = status.substr(11);
                     const auto c = rest.rfind(':');
-                    line = "АНГАР " + rest.substr(0, c) + ": оба места заняты - очередь " + rest.substr(c + 1) +
-                           ", ожидание перед воротами";
+                    line = l10n::tr("cockpit.hangar.queued", {{"hangar", rest.substr(0, c)}, {"queue", rest.substr(c + 1)}},
+                                    "HANGAR {hangar}: both places taken - queue {queue}, waiting before the gate");
                 }
                 else if (status.rfind("pad:bay_free:", 0) == 0)
                 {
                     const std::string rest = status.substr(13);
                     const auto c = rest.rfind(':');
-                    line = "АНГАР " + rest.substr(0, c) + ": место " + rest.substr(c + 1) + " свободно - заход в ворота";
+                    line = l10n::tr("cockpit.hangar.bay_free", {{"hangar", rest.substr(0, c)}, {"place", rest.substr(c + 1)}},
+                                    "HANGAR {hangar}: place {place} is free - entering the gate");
                 }
                 else if (status == "pad:engines_free")
-                    line = "ЗОНА ПЛОЩАДКИ пройдена: все двигатели доступны";
+                    line = l10n::tr("cockpit.pad.engines_free", "PAD ZONE cleared: all engines available");
                 else if (status == "taken:flight")
-                    line = "СЛУЖБА ПЛОЩАДОК: нормальный полёт выключен, корабль взят в кадр хаба";
+                    line = l10n::tr("cockpit.pad.taken_flight", "PAD SERVICE: normal flight off, the ship is taken into the hub frame");
                 else if (status == "taken:frame")
-                    line = "СЛУЖБА ПЛОЩАДОК: корабль взят в кадр хаба";
+                    line = l10n::tr("cockpit.pad.taken_frame", "PAD SERVICE: the ship is taken into the hub frame");
                 else if (status.rfind("refused:not_built:", 0) == 0)
-                    line = "ДИСПЕТЧЕР: площадки " + status.substr(18) + " ещё нет - здание строится";
+                    line = l10n::tr("cockpit.dispatcher.pad_not_built", {{"pad", status.substr(18)}},
+                                    "DISPATCHER: pad {pad} does not exist yet - the building is under construction");
                 else if (status.rfind("refused:wrecked:", 0) == 0)
-                    line = "ДИСПЕТЧЕР: площадка " + status.substr(16) + " разрушена - посадка невозможна";
+                    line = l10n::tr("cockpit.dispatcher.pad_wrecked", {{"pad", status.substr(16)}},
+                                    "DISPATCHER: pad {pad} is destroyed - landing impossible");
                 else if (status.rfind("refused:too_big:", 0) == 0)
                 {
                     // "refused:too_big:<address>:<ship m>:<place m>"
                     const std::string rest = status.substr(16);
                     const auto a = rest.find(':'), b = rest.rfind(':');
                     line = a != std::string::npos && b != std::string::npos && b > a
-                               ? "ДИСПЕТЧЕР: площадка " + rest.substr(0, a) + " - корабль " + rest.substr(a + 1, b - a - 1) +
-                                     " м не помещается на место " + rest.substr(b + 1) + " м, выберите другую площадку"
-                               : "ДИСПЕТЧЕР: корабль не помещается на эту площадку";
+                               ? l10n::tr("cockpit.dispatcher.too_big",
+                                          {{"pad", rest.substr(0, a)}, {"ship", rest.substr(a + 1, b - a - 1)}, {"place", rest.substr(b + 1)}},
+                                          "DISPATCHER: pad {pad} - a {ship} m ship does not fit a {place} m place, choose another pad")
+                               : l10n::tr("cockpit.dispatcher.too_big_plain", "DISPATCHER: the ship does not fit this pad");
                 }
                 else if (status.rfind("refused:taken:", 0) == 0)
                 {
@@ -958,7 +973,7 @@ void SpaceState::updatePilotTakeover(bool touching)
                 }
                 else if (status.rfind("refused:newtonian:", 0) == 0)
                 {
-                    line = game::navigation::rules::newtonianPadLine(status);
+                    line = l10n::renderMessage(game::navigation::rules::newtonianPadLine(status));
                     m_padLandingObjectId.clear();
                     m_systemMapRenderer.setPadLandingActive(std::string());
                 }
@@ -974,13 +989,12 @@ void SpaceState::updatePilotTakeover(bool touching)
                 else if (status.rfind("refused:", 0) == 0)
                 {
                     const std::string why = status.substr(8);
-                    line = std::string("СЛУЖБА ПЛОЩАДОК: отказ - ") +
-                           (why == "no_thrust" ? "корабль не управляем (нет тяги)"
-                            : why == "no_pad"  ? "у здания нет площадки"
-                            : why == "far"     ? "дальше 60 км от города"
-                            : why == "station" ? "корабль ведёт станция"
-                            : why == "no_city" ? "нет такого города"
-                                               : "кадр хаба недоступен");
+                    line = why == "no_thrust" ? l10n::tr("cockpit.pad.refused.no_thrust", "PAD SERVICE: refused - the ship is not controllable (no thrust)")
+                         : why == "no_pad"    ? l10n::tr("cockpit.pad.refused.no_pad", "PAD SERVICE: refused - the building has no pad")
+                         : why == "far"       ? l10n::tr("cockpit.pad.refused.far", "PAD SERVICE: refused - more than 60 km from the city")
+                         : why == "station"   ? l10n::tr("cockpit.pad.refused.station", "PAD SERVICE: refused - the station is flying the ship")
+                         : why == "no_city"   ? l10n::tr("cockpit.pad.refused.no_city", "PAD SERVICE: refused - no such city")
+                                              : l10n::tr("cockpit.pad.refused.no_frame", "PAD SERVICE: refused - the hub frame is unavailable");
                     m_padLandingObjectId.clear();
                     m_systemMapRenderer.setPadLandingActive(std::string());
                 }
@@ -991,11 +1005,11 @@ void SpaceState::updatePilotTakeover(bool touching)
                     std::string where = status.substr(8);
                     where = where.substr(0, where.find('#'));   // "<frame>/<address>#<place>"
                     const std::string address = where.substr(where.rfind('/') == std::string::npos ? 0 : where.rfind('/') + 1);
-                    line = phase == '0'   ? "СЛУЖБА ПЛОЩАДОК: набор высоты транзита над городом"
-                         : phase == '1' ? "СЛУЖБА ПЛОЩАДОК: над городом к площадке " + address
-                         : phase == '2' ? "СЛУЖБА ПЛОЩАДОК: снижение на площадку " + address
-                                        : "СЛУЖБА ПЛОЩАДОК: посадка выполнена, площадка " + address +
-                                              " - причал: торговля F8, ремонт F7, заправка Ctrl+U (руль - взлёт)";
+                    line = phase == '0'   ? l10n::tr("cockpit.pad.phase.climb", "PAD SERVICE: climbing to the transit height over the city")
+                         : phase == '1' ? l10n::tr("cockpit.pad.phase.transit", {{"pad", address}}, "PAD SERVICE: over the city to pad {pad}")
+                         : phase == '2' ? l10n::tr("cockpit.pad.phase.descent", {{"pad", address}}, "PAD SERVICE: descending onto pad {pad}")
+                                        : l10n::tr("cockpit.pad.phase.landed", {{"pad", address}},
+                                                   "PAD SERVICE: landed, pad {pad} - berth: trade F8, repair F7, refuel Ctrl+U (controls - take off)");
                 }
                 // a phase line comes back after each short notice: printed once (no repeats of the same step)
                 static std::string lastPhaseLine;
@@ -1053,7 +1067,7 @@ void SpaceState::updatePilotTakeover(bool touching)
             m_takeoverSinceSeconds = -1.0;
             m_takeoverSecondsLeft = -1.0;
             if (touching)
-                m_pilotNotice = "СТОЯНКА: двигатели заблокированы - Ctrl+L запуск манёвровых";
+                m_pilotNotice = l10n::tr("cockpit.parked.engines_locked", "PARKED: engines locked - Ctrl+L starts the manoeuvring thrusters");
             return;
         }
     const double now = glfwGetTime();
@@ -1070,7 +1084,7 @@ void SpaceState::updatePilotTakeover(bool touching)
     {
         reset();
         if (touching)
-            m_pilotNotice = "СТАНЦИЯ: в доке руль у станции, ждите ворот";
+            m_pilotNotice = l10n::tr("cockpit.station.in_dock_controls", "STATION: in the dock the station has the controls, wait for the gate");
         return;
     }
     if (touching)
@@ -1078,9 +1092,9 @@ void SpaceState::updatePilotTakeover(bool touching)
         if (m_takeoverSinceSeconds < 0.0)
         {
             m_takeoverSinceSeconds = now;
-            m_pilotNotice = owner == Owner::StationAxis ? "ВНИМАНИЕ: руль - станция отпустит через 3 с"
-                          : owner == Owner::Pad       ? "ВНИМАНИЕ: руль - служба площадок отпустит через 3 с"
-                                                      : "ВНИМАНИЕ: руль - автопилот выкл. через 3 с";
+            m_pilotNotice = owner == Owner::StationAxis ? l10n::tr("cockpit.takeover.warn_station", "WARNING: controls - the station releases in 3 s")
+                          : owner == Owner::Pad       ? l10n::tr("cockpit.takeover.warn_pad", "WARNING: controls - the pad service releases in 3 s")
+                                                      : l10n::tr("cockpit.takeover.warn_autopilot", "WARNING: controls - autopilot off in 3 s");
             std::cerr << "[Takeover] the pilot touches the controls - warning (3 s)" << std::endl;
         }
         m_takeoverLastInputSeconds = now;
@@ -1088,9 +1102,9 @@ void SpaceState::updatePilotTakeover(bool touching)
     else if (m_takeoverSinceSeconds >= 0.0 && now - m_takeoverLastInputSeconds > 1.0)
     {
         reset();
-        m_pilotNotice = owner == Owner::StationAxis ? "Руль отпущен: станция ведёт дальше"
-                      : owner == Owner::Pad       ? "Руль отпущен: служба площадок ведёт дальше"
-                                                  : "Руль отпущен: автопилот продолжает";
+        m_pilotNotice = owner == Owner::StationAxis ? l10n::tr("cockpit.takeover.released_station", "Controls released: the station flies on")
+                      : owner == Owner::Pad       ? l10n::tr("cockpit.takeover.released_pad", "Controls released: the pad service flies on")
+                                                  : l10n::tr("cockpit.takeover.released_autopilot", "Controls released: the autopilot continues");
         std::cerr << "[Takeover] controls released - the autopilot continues" << std::endl;
         return;
     }
@@ -1105,15 +1119,15 @@ void SpaceState::updatePilotTakeover(bool touching)
     {
         case Owner::Docking:
             m_navigationWorkspace.dockingRouteRequests().clear();
-            m_pilotNotice = "АВТОПИЛОТ ВЫКЛ.: стыковка прервана";
+            m_pilotNotice = l10n::tr("cockpit.takeover.off_docking", "AUTOPILOT OFF: docking aborted");
             break;
         case Owner::Route:
             cancelClientRoute();
-            m_pilotNotice = "АВТОПИЛОТ ВЫКЛ.: маршрут прерван";
+            m_pilotNotice = l10n::tr("cockpit.takeover.off_route", "AUTOPILOT OFF: route aborted");
             break;
         case Owner::Body:
             cancelClientBodyAutopilot();
-            m_pilotNotice = "АВТОПИЛОТ ВЫКЛ.: управление у пилота";
+            m_pilotNotice = l10n::tr("cockpit.takeover.off_pilot", "AUTOPILOT OFF: the pilot has control");
             break;
         case Owner::StationAxis:
             if (m_client)
@@ -1125,14 +1139,14 @@ void SpaceState::updatePilotTakeover(bool touching)
                 msg.payload = command;
                 m_client->sendMessage(msg);
             }
-            m_pilotNotice = "СТАНЦИЯ: управление передано пилоту";
+            m_pilotNotice = l10n::tr("cockpit.takeover.station_handed", "STATION: control handed to the pilot");
             m_takeoverReleaseSentSeconds = now;   // the release is on its way: no second takeover
             break;
         case Owner::Pad:
             sendPadLanding(std::string(), std::string(), false);
             m_padLandingObjectId.clear();
             m_systemMapRenderer.setPadLandingActive(std::string());
-            m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: управление передано пилоту";
+            m_pilotNotice = l10n::tr("cockpit.takeover.pad_handed", "PAD SERVICE: control handed to the pilot");
             break;
         default:
             break;
@@ -1558,7 +1572,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
             command.index = 2;
             msg.payload = command;
             m_client->sendMessage(msg);
-            m_pilotNotice = "ЗАПУСК: манёвровые включены - маршевые после выхода из зоны площадки";
+            m_pilotNotice = l10n::tr("cockpit.pad.launch_rcs_on", "LAUNCH: manoeuvring thrusters on - main engines once clear of the pad zone");
         }
         else
         if(it!=m_client->world().ships().end() && it->second.dockDispatcher.active &&
@@ -3852,6 +3866,6 @@ void SpaceState::requestClientRefuel(int mode)
     command.index = mode;
     msg.payload = command;
     m_client->sendMessage(msg);
-    m_pilotNotice = mode ? "ЗАПРАВКА: запрос станции" : "ЗАПРАВКА: остановлена";
+    m_pilotNotice = mode ? l10n::tr("cockpit.refuel.requested", "REFUEL: station requested") : l10n::tr("cockpit.refuel.stopped", "REFUEL: stopped");
     std::cerr << "[Refuel] client: " << (mode ? "refuel requested" : "refuel stop requested") << std::endl;
 }

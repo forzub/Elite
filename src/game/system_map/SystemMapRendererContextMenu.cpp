@@ -3,6 +3,7 @@
 
 #include "src/game/system_map/SystemMapRendererInternal.h"
 #include "src/render/navigation/NavigationOverlayVisualSettings.h"
+#include "src/game/localization/LocalizationService.h"
 
 namespace
 {
@@ -202,12 +203,14 @@ void SystemMapRenderer::appendBodyFinishRows(const std::string& bodyId)
     {
         const double h = std::max(facts->floorAltitudeM, 1000.0) * k;
         const double v1 = std::sqrt(facts->muM3s2 / (facts->radiusM + h));
-        char label[128];
-        std::snprintf(label, sizeof label, "ФИНИШ: ОРБИТА %.0f КМ (v₁ %.2f КМ/С)", h / 1000.0, v1 / 1000.0);
+        const std::string label = game::localization::tr(
+            "map.context.finish_orbit",
+            {{"km", game::localization::formatNumber(h / 1000.0, 0)}, {"v1", game::localization::formatNumber(v1 / 1000.0, 2)}},
+            "FINISH: ORBIT {km} KM (v₁ {v1} KM/S)");
         m_contextMenu.rows.push_back({label, "finishbody:orbit:" + std::to_string(static_cast<long long>(h)), true});
     }
     if (facts->landable)
-        m_contextMenu.rows.push_back({"ФИНИШ: ПОСАДКА (АВТОМАТ)", "finishbody:land:0", true});
+        m_contextMenu.rows.push_back({game::localization::tr("map.context.finish_land", "FINISH: LANDING (AUTO)"), "finishbody:land:0", true});
 }
 
 // The route commands of an overlay item: its own panel actions (route,
@@ -396,11 +399,11 @@ bool SystemMapRenderer::openContextMenu(
             m_contextMenu.rows.push_back({text.contextDetails, "details", true});
             // the interstellar jump (author 2026-11-08): calculate first, START only for the calculated star
             if (m_jumpChargingSystemId == star->id)
-                m_contextMenu.rows.push_back({"ОТМЕНИТЬ ПРЫЖОК", "jump:cancel", true});
+                m_contextMenu.rows.push_back({game::localization::tr("map.context.jump_cancel", "CANCEL JUMP"), "jump:cancel", true});
             else
             {
-                m_contextMenu.rows.push_back({"РАССЧИТАТЬ ПРЫЖОК", "jump:calc", true});
-                m_contextMenu.rows.push_back({"ПРЫЖОК: СТАРТ", "jump:start", m_jumpCalculatedSystemId == star->id && m_jumpChargingSystemId < 0});
+                m_contextMenu.rows.push_back({game::localization::tr("map.context.jump_calculate", "CALCULATE JUMP"), "jump:calc", true});
+                m_contextMenu.rows.push_back({game::localization::tr("map.context.jump_start", "JUMP: START"), "jump:start", m_jumpCalculatedSystemId == star->id && m_jumpChargingSystemId < 0});
             }
         }
         else if (target.kind == Kind::Medium)
@@ -507,11 +510,11 @@ bool SystemMapRenderer::openContextMenu(
             // the in-system jump to this body (author 2026-11-12): calculate first, START only for the calculated body
             m_contextMenu.systemId = system.systemId;
             if (!m_jumpChargingBodyId.empty() && m_jumpChargingBodyId == target.bodyId)
-                m_contextMenu.rows.push_back({"ОТМЕНИТЬ ПРЫЖОК", "jump:cancel", true});
+                m_contextMenu.rows.push_back({game::localization::tr("map.context.jump_cancel", "CANCEL JUMP"), "jump:cancel", true});
             else
             {
-                m_contextMenu.rows.push_back({"РАССЧИТАТЬ ПРЫЖОК", "jump:calc", true});
-                m_contextMenu.rows.push_back({"ПРЫЖОК: СТАРТ", "jump:start",
+                m_contextMenu.rows.push_back({game::localization::tr("map.context.jump_calculate", "CALCULATE JUMP"), "jump:calc", true});
+                m_contextMenu.rows.push_back({game::localization::tr("map.context.jump_start", "JUMP: START"), "jump:start",
                                               m_jumpCalculatedBodyId == target.bodyId && m_jumpChargingSystemId < 0});
             }
         }
@@ -528,7 +531,7 @@ bool SystemMapRenderer::openContextMenu(
             if (item)
                 appendContextActionRows(*item);
             // Orbital Transfer: hub -> hub (the server plans and flies it; the map shows the tunnel)
-            m_contextMenu.rows.push_back({"Орбитальный перелёт", "transfer:" + target.hubId, true});
+            m_contextMenu.rows.push_back({game::localization::tr("map.context.orbital_transfer", "Orbital transfer"), "transfer:" + target.hubId, true});
             m_contextMenu.rows.push_back({text.contextDetails, "details", true});
         }
         else

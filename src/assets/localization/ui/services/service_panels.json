@@ -1,0 +1,1178 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "service.panel.shipyard.title": {
+      "en": "SHIPYARD — buy a ship",
+      "ru": "ВЕРФЬ — покупка корабля"
+    },
+    "service.panel.shipyard.subtitle": {
+      "en": "F6  /  models, passports and seller offers from the ship catalogue",
+      "ru": "F6  /  модели, паспорта и предложения продавцов из каталога кораблей"
+    },
+    "service.panel.shipyard.price_thousands": {
+      "en": "{k} k Cr",
+      "ru": "{k} тыс. Cr"
+    },
+    "service.panel.shipyard.view_side": {
+      "en": "side  ·  nose left",
+      "ru": "сбоку  ·  нос слева"
+    },
+    "service.panel.shipyard.view_top": {
+      "en": "top",
+      "ru": "сверху"
+    },
+    "service.panel.shipyard.offers": {
+      "en": "Seller offers",
+      "ru": "Предложения продавцов"
+    },
+    "service.panel.shipyard.offers_dev": {
+      "en": "DEV: trial stock until the economy is connected",
+      "ru": "DEV: пробный склад до подключения экономики"
+    },
+    "service.panel.shipyard.col.seller": {
+      "en": "seller",
+      "ru": "продавец"
+    },
+    "service.panel.shipyard.col.condition": {
+      "en": "condition",
+      "ru": "состояние"
+    },
+    "service.panel.shipyard.col.age": {
+      "en": "age",
+      "ru": "возраст"
+    },
+    "service.panel.shipyard.col.hours": {
+      "en": "hours run",
+      "ru": "наработка"
+    },
+    "service.panel.shipyard.col.wear": {
+      "en": "wear / dmg.",
+      "ru": "износ / повр."
+    },
+    "service.panel.shipyard.col.price": {
+      "en": "price",
+      "ru": "цена"
+    },
+    "service.panel.shipyard.condition.new": {
+      "en": "new",
+      "ru": "новый"
+    },
+    "service.panel.shipyard.condition.good": {
+      "en": "good",
+      "ru": "хорошее"
+    },
+    "service.panel.shipyard.condition.worn": {
+      "en": "worn",
+      "ru": "изношен"
+    },
+    "service.panel.shipyard.condition.scrap": {
+      "en": "for scrap",
+      "ru": "на разбор"
+    },
+    "service.panel.shipyard.age_years": {
+      "en": "{years} yr",
+      "ru": "{years} лет"
+    },
+    "service.panel.shipyard.hours_run": {
+      "en": "{hours} h",
+      "ru": "{hours} ч"
+    },
+    "service.panel.shipyard.buy": {
+      "en": "BUY",
+      "ru": "КУПИТЬ"
+    },
+    "service.panel.shipyard.passport_collapse": {
+      "en": "[-] Passport (collapse)",
+      "ru": "[-] Паспорт (свернуть)"
+    },
+    "service.panel.shipyard.passport_expand": {
+      "en": "[+] Full passport and equipment",
+      "ru": "[+] Полный паспорт и оборудование"
+    },
+    "service.panel.shipyard.jump_none": {
+      "en": "none (in-system)",
+      "ru": "нет (внутрисистемный)"
+    },
+    "service.panel.shipyard.jump_core": {
+      "en": "{model}, {tonnes} t",
+      "ru": "{model}, {tonnes} т"
+    },
+    "service.panel.shipyard.radar_model": {
+      "en": "{model}, {km} km",
+      "ru": "{model}, {km} км"
+    },
+    "service.panel.shipyard.spec.dimensions": {
+      "en": "Dimensions",
+      "ru": "Габариты"
+    },
+    "service.panel.shipyard.spec.mass": {
+      "en": "Mass dry / service / gross",
+      "ru": "Масса сухая / рабочая / полная"
+    },
+    "service.panel.shipyard.spec.crew": {
+      "en": "Crew / passengers",
+      "ru": "Экипаж / пассажиры"
+    },
+    "service.panel.shipyard.spec.cargo": {
+      "en": "Cargo",
+      "ru": "Груз"
+    },
+    "service.panel.shipyard.spec.propulsion": {
+      "en": "Drive layout",
+      "ru": "Схема двигателей"
+    },
+    "service.panel.shipyard.spec.thrust": {
+      "en": "Thrust / acceleration",
+      "ru": "Тяга / ускорение"
+    },
+    "service.panel.shipyard.spec.jump": {
+      "en": "Jump",
+      "ru": "Прыжок"
+    },
+    "service.panel.shipyard.spec.radar": {
+      "en": "Radar",
+      "ru": "Радар"
+    },
+    "service.panel.shipyard.spec.reactors": {
+      "en": "Reactors",
+      "ru": "Реакторы"
+    },
+    "service.panel.shipyard.spec.price_new": {
+      "en": "Price new",
+      "ru": "Цена нового"
+    },
+    "service.panel.shipyard.spec.passport": {
+      "en": "Passport",
+      "ru": "Паспорт"
+    },
+    "service.panel.shipyard.spec.purpose": {
+      "en": "Purpose",
+      "ru": "Назначение"
+    },
+    "service.panel.shipyard.spec.service_life": {
+      "en": "Service life",
+      "ru": "Ресурс"
+    },
+    "service.panel.shipyard.spec.radiators": {
+      "en": "Radiators",
+      "ru": "Радиаторы"
+    },
+    "service.panel.shipyard.value.dimensions": {
+      "en": "{x} × {y} × {z} m",
+      "ru": "{x} × {y} × {z} м"
+    },
+    "service.panel.shipyard.value.mass": {
+      "en": "{dry} / {service} / {gross} t",
+      "ru": "{dry} / {service} / {gross} т"
+    },
+    "service.panel.shipyard.value.cargo": {
+      "en": "{tonnes} t",
+      "ru": "{tonnes} т"
+    },
+    "service.panel.shipyard.value.cargo_c20": {
+      "en": "{tonnes} t, C20 × {slots}",
+      "ru": "{tonnes} т, C20 × {slots}"
+    },
+    "service.panel.shipyard.value.thrust": {
+      "en": "{thrust} MN, {service} g service, {gross} g gross",
+      "ru": "{thrust} МН, {service} g рабочая, {gross} g полная"
+    },
+    "service.panel.shipyard.value.reactors": {
+      "en": "{drive} MW drive, {service} MW service",
+      "ru": "{drive} МВт тяга, {service} МВт служебный"
+    },
+    "service.panel.shipyard.value.service_life": {
+      "en": "{years} yr",
+      "ru": "{years} лет"
+    },
+    "service.panel.shipyard.value.radiators": {
+      "en": "{area} m², loops {mw} MW",
+      "ru": "{area} м², контуры {mw} МВт"
+    },
+    "service.panel.shipyard.category.drive": {
+      "en": "main drive",
+      "ru": "главный двигатель"
+    },
+    "service.panel.shipyard.category.reactor": {
+      "en": "drive reactor",
+      "ru": "двигательный реактор"
+    },
+    "service.panel.shipyard.category.service_reactor": {
+      "en": "service reactor",
+      "ru": "служебный реактор"
+    },
+    "service.panel.shipyard.category.radiator": {
+      "en": "radiators",
+      "ru": "радиаторы"
+    },
+    "service.panel.shipyard.category.coolant_loop": {
+      "en": "coolant loop",
+      "ru": "контур охлаждения"
+    },
+    "service.panel.shipyard.category.jump_core": {
+      "en": "jump core",
+      "ru": "ядро прыжка"
+    },
+    "service.panel.shipyard.category.tank": {
+      "en": "tanks",
+      "ru": "баки"
+    },
+    "service.panel.shipyard.category.rcs": {
+      "en": "manoeuvring system",
+      "ru": "маневровая система"
+    },
+    "service.panel.shipyard.category.computer": {
+      "en": "onboard computer",
+      "ru": "бортовой компьютер"
+    },
+    "service.panel.shipyard.category.radar": {
+      "en": "radar",
+      "ru": "радар"
+    },
+    "service.panel.shipyard.category.comm": {
+      "en": "comms",
+      "ru": "связь"
+    },
+    "service.panel.shipyard.category.transponder": {
+      "en": "transponder",
+      "ru": "транспондер"
+    },
+    "service.panel.shipyard.category.ecm": {
+      "en": "ECM",
+      "ru": "РЭБ"
+    },
+    "service.panel.shipyard.category.sensor_mast": {
+      "en": "sensor mast",
+      "ru": "сенсорная мачта"
+    },
+    "service.panel.shipyard.category.life_support": {
+      "en": "life support",
+      "ru": "жизнеобеспечение"
+    },
+    "service.panel.shipyard.category.escape_capsule": {
+      "en": "escape capsule",
+      "ru": "спасательная капсула"
+    },
+    "service.panel.shipyard.category.cockpit_capsule": {
+      "en": "cockpit capsule",
+      "ru": "кабина-капсула"
+    },
+    "service.panel.shipyard.category.lifeboat": {
+      "en": "lifeboat",
+      "ru": "спасательная шлюпка"
+    },
+    "service.panel.shipyard.category.medbay": {
+      "en": "medbay",
+      "ru": "медотсек"
+    },
+    "service.panel.shipyard.category.container_rack": {
+      "en": "C20 slots",
+      "ru": "места C20"
+    },
+    "service.panel.shipyard.category.passenger_module": {
+      "en": "passenger modules",
+      "ru": "пассажирские модули"
+    },
+    "service.panel.shipyard.category.train_module": {
+      "en": "train modules",
+      "ru": "модули поезда"
+    },
+    "service.panel.shipyard.category.cryo_tank": {
+      "en": "cryo tanks",
+      "ru": "криоцистерны"
+    },
+    "service.panel.shipyard.category.bulk_hold": {
+      "en": "bulk hold",
+      "ru": "грузовой отсек"
+    },
+    "service.panel.shipyard.category.docking_port": {
+      "en": "docking port",
+      "ru": "стыковочный узел"
+    },
+    "service.panel.shipyard.category.boat_bay": {
+      "en": "boat bay",
+      "ru": "ангар катера"
+    },
+    "service.panel.shipyard.category.drone_bay": {
+      "en": "drone bay",
+      "ru": "отсек дронов"
+    },
+    "service.panel.shipyard.category.hangar": {
+      "en": "hangar",
+      "ru": "ангар"
+    },
+    "service.panel.shipyard.category.tow_rig": {
+      "en": "tow rig",
+      "ru": "буксирная рама"
+    },
+    "service.panel.shipyard.category.workshop": {
+      "en": "workshop",
+      "ru": "мастерская"
+    },
+    "service.panel.shipyard.category.heat_shield": {
+      "en": "heat shield",
+      "ru": "теплозащита"
+    },
+    "service.panel.shipyard.category.landing_gear": {
+      "en": "landing gear",
+      "ru": "посадочные опоры"
+    },
+    "service.panel.shipyard.category.weapon": {
+      "en": "weapons",
+      "ru": "вооружение"
+    },
+    "service.panel.shipyard.category.armour": {
+      "en": "armour",
+      "ru": "броня"
+    },
+    "service.panel.shipyard.category.equipment": {
+      "en": "equipment",
+      "ru": "оборудование"
+    },
+    "service.panel.refit.state.attached": {
+      "en": "in service",
+      "ru": "в строю"
+    },
+    "service.panel.refit.state.disabled": {
+      "en": "disabled (out of action)",
+      "ru": "отключён (выведен из строя)"
+    },
+    "service.panel.refit.state.destroyed": {
+      "en": "destroyed",
+      "ru": "разрушен"
+    },
+    "service.panel.refit.state.detached": {
+      "en": "torn off / undocked",
+      "ru": "снесён / отстыкован"
+    },
+    "service.panel.refit.state.hanging": {
+      "en": "hanging on its mounts",
+      "ru": "висит на креплениях"
+    },
+    "service.panel.refit.state.unknown": {
+      "en": "no data",
+      "ru": "нет данных"
+    },
+    "service.panel.refit.level.crew": {
+      "en": "by the crew",
+      "ru": "экипажем"
+    },
+    "service.panel.refit.level.station": {
+      "en": "at a station",
+      "ru": "на станции"
+    },
+    "service.panel.refit.level.yard": {
+      "en": "at a shipyard",
+      "ru": "на верфи"
+    },
+    "service.panel.refit.level.factory": {
+      "en": "factory only",
+      "ru": "только на заводе"
+    },
+    "service.panel.refit.title": {
+      "en": "REPAIR & REFIT",
+      "ru": "РЕМОНТ И ПЕРЕОБОРУДОВАНИЕ"
+    },
+    "service.panel.refit.no_ships": {
+      "en": "no data on the player's ships",
+      "ru": "нет данных о кораблях игрока"
+    },
+    "service.panel.refit.board": {
+      "en": "BOARD THIS SHIP",
+      "ru": "ПЕРЕСЕСТЬ НА ЭТОТ КОРАБЛЬ"
+    },
+    "service.panel.refit.subtitle": {
+      "en": "F7  /  repair & refit  ·  {model}  ·  ship {n} of {total}",
+      "ru": "F7  /  ремонт и переоборудование  ·  {model}  ·  корабль {n} из {total}"
+    },
+    "service.panel.refit.no_placements": {
+      "en": "this hull has no passport module positions: pick from the list below",
+      "ru": "у этого корпуса нет паспортных позиций модулей: выбор по списку ниже"
+    },
+    "service.panel.refit.schematic": {
+      "en": "functional diagram · side view, nose left · colour = condition",
+      "ru": "функциональная схема · сбоку, нос слева · цвет = состояние"
+    },
+    "service.panel.refit.chip": {
+      "en": "{group} {n}",
+      "ru": "{group} {n}"
+    },
+    "service.panel.refit.chip_failed": {
+      "en": "{group} {n}  failed {failed}",
+      "ru": "{group} {n}  отказ {failed}"
+    },
+    "service.panel.refit.chip_damaged": {
+      "en": "{group} {n}  dmg. {damaged}",
+      "ru": "{group} {n}  повр. {damaged}"
+    },
+    "service.panel.refit.list_damaged": {
+      "en": "damaged modules of the ship",
+      "ru": "повреждённые модули корабля"
+    },
+    "service.panel.refit.list_group": {
+      "en": "modules of the group",
+      "ru": "модули группы"
+    },
+    "service.panel.refit.row_state": {
+      "en": "{state}  {health}%",
+      "ru": "{state}  {health}%"
+    },
+    "service.panel.refit.row_state_damaged": {
+      "en": "{state}  {health}%  dmg. {damage}%",
+      "ru": "{state}  {health}%  повр. {damage}%"
+    },
+    "service.panel.refit.no_damage": {
+      "en": "no damage",
+      "ru": "повреждений нет"
+    },
+    "service.panel.refit.label.state": {
+      "en": "condition",
+      "ru": "состояние"
+    },
+    "service.panel.refit.label.integrity": {
+      "en": "integrity",
+      "ru": "целостность"
+    },
+    "service.panel.refit.label.function_damage": {
+      "en": "functional damage",
+      "ru": "функц. повреждения"
+    },
+    "service.panel.refit.label.causes": {
+      "en": "causes",
+      "ru": "причины"
+    },
+    "service.panel.refit.label.wear": {
+      "en": "wear",
+      "ru": "износ"
+    },
+    "service.panel.refit.label.mass": {
+      "en": "mass",
+      "ru": "масса"
+    },
+    "service.panel.refit.label.power": {
+      "en": "power",
+      "ru": "мощность"
+    },
+    "service.panel.refit.label.position": {
+      "en": "position",
+      "ru": "положение"
+    },
+    "service.panel.refit.label.repair": {
+      "en": "repair",
+      "ru": "ремонт"
+    },
+    "service.panel.refit.label.price": {
+      "en": "unit price",
+      "ru": "цена изделия"
+    },
+    "service.panel.refit.cause_item": {
+      "en": "{cause} {pct}%",
+      "ru": "{cause} {pct}%"
+    },
+    "service.panel.refit.cause.laser": {
+      "en": "laser",
+      "ru": "лазер"
+    },
+    "service.panel.refit.cause.impact": {
+      "en": "impact",
+      "ru": "удар"
+    },
+    "service.panel.refit.cause.thermal": {
+      "en": "overheating",
+      "ru": "перегрев"
+    },
+    "service.panel.refit.cause.radiation": {
+      "en": "radiation",
+      "ru": "радиация"
+    },
+    "service.panel.refit.cause.wear": {
+      "en": "wear",
+      "ru": "износ"
+    },
+    "service.panel.refit.cause.internal_failure": {
+      "en": "internal failure",
+      "ru": "внутренний отказ"
+    },
+    "service.panel.refit.tonnes": {
+      "en": "{t} t",
+      "ru": "{t} т"
+    },
+    "service.panel.refit.megawatts": {
+      "en": "{mw} MW",
+      "ru": "{mw} МВт"
+    },
+    "service.panel.refit.position": {
+      "en": "x {x}  y {y}  z {z} m",
+      "ru": "x {x}  y {y}  z {z} м"
+    },
+    "service.panel.refit.repair_lru": {
+      "en": ", line-replaceable unit",
+      "ru": ", сменный блок"
+    },
+    "service.panel.refit.repair_swap": {
+      "en": ", swap {hours} h",
+      "ru": ", замена {hours} ч"
+    },
+    "service.panel.refit.repair": {
+      "en": "Repair",
+      "ru": "Ремонтировать"
+    },
+    "service.panel.refit.replace": {
+      "en": "Replace",
+      "ru": "Заменить"
+    },
+    "service.panel.refit.apply_dev": {
+      "en": "Apply (DEV)",
+      "ru": "Применить (DEV)"
+    },
+    "service.panel.refit.preview_repair": {
+      "en": "Repair: what changes in the ship",
+      "ru": "Ремонт: что изменится в корабле"
+    },
+    "service.panel.refit.preview_replace": {
+      "en": "Replace: what changes in the ship",
+      "ru": "Замена: что изменится в корабле"
+    },
+    "service.panel.refit.preview_repair_with": {
+      "en": "Repair with {product}: what changes in the ship",
+      "ru": "Ремонт на {product}: что изменится в корабле"
+    },
+    "service.panel.refit.preview_replace_with": {
+      "en": "Replace with {product}: what changes in the ship",
+      "ru": "Замена на {product}: что изменится в корабле"
+    },
+    "service.panel.refit.flag_yes": {
+      "en": "yes",
+      "ru": "есть"
+    },
+    "service.panel.refit.flag_no": {
+      "en": "no",
+      "ru": "нет"
+    },
+    "service.panel.refit.no_change": {
+      "en": "nothing changes for the ship",
+      "ru": "для корабля ничего не меняется"
+    },
+    "service.panel.refit.cost": {
+      "en": "cost {level}: {hours} h, labour {labour} + materials {material} = {total} Cr",
+      "ru": "стоимость {level}: {hours} ч, работа {labour} + материалы {material} = {total} Cr"
+    },
+    "service.panel.refit.choose_hint": {
+      "en": "choose “Repair” or “Replace”: the server runs the ship before and after",
+      "ru": "выберите «Ремонтировать» или «Заменить»: сервер прогонит корабль до и после"
+    },
+    "service.panel.refit.applied": {
+      "en": "applied: ShipCore changed",
+      "ru": "применено: ShipCore изменён"
+    },
+    "service.panel.refit.not_applied": {
+      "en": "not applied: {reason}",
+      "ru": "не применено: {reason}"
+    },
+    "service.panel.refit.replacements": {
+      "en": "compatible products (replacement preview)",
+      "ru": "совместимые изделия (предпросмотр замены)"
+    },
+    "service.panel.refit.replacement_same": {
+      "en": "new of the same type: {name}  ·  {price} Cr",
+      "ru": "новый того же типа: {name}  ·  {price} Cr"
+    },
+    "service.panel.refit.group.propulsion": {
+      "en": "Main propulsion",
+      "ru": "Главная тяга"
+    },
+    "service.panel.refit.group.propulsion_reactors": {
+      "en": "Drive reactors",
+      "ru": "Двигательные реакторы"
+    },
+    "service.panel.refit.group.rcs": {
+      "en": "Manoeuvring (RCS)",
+      "ru": "Маневровые (RCS)"
+    },
+    "service.panel.refit.group.service_power": {
+      "en": "Service power",
+      "ru": "Служебное питание"
+    },
+    "service.panel.refit.group.cooling": {
+      "en": "Cooling",
+      "ru": "Охлаждение"
+    },
+    "service.panel.refit.group.tanks": {
+      "en": "Tanks",
+      "ru": "Баки"
+    },
+    "service.panel.refit.group.sensors": {
+      "en": "Radar & comms",
+      "ru": "Радар и связь"
+    },
+    "service.panel.refit.group.computer": {
+      "en": "Onboard computer",
+      "ru": "Бортовой компьютер"
+    },
+    "service.panel.refit.group.life": {
+      "en": "Life support & rescue",
+      "ru": "Жизнеобеспечение и спасение"
+    },
+    "service.panel.refit.group.jump": {
+      "en": "Jump",
+      "ru": "Прыжок"
+    },
+    "service.panel.refit.group.weapons": {
+      "en": "Weapons",
+      "ru": "Вооружение"
+    },
+    "service.panel.refit.group.payload": {
+      "en": "Cargo & passengers",
+      "ru": "Груз и пассажиры"
+    },
+    "service.panel.refit.group.docks": {
+      "en": "Docking & hangars",
+      "ru": "Стыковка и ангары"
+    },
+    "service.panel.refit.group.structure": {
+      "en": "Structure",
+      "ru": "Конструкция"
+    },
+    "service.panel.refit.group.other": {
+      "en": "Other",
+      "ru": "Прочее"
+    },
+    "service.panel.trade.price_per_kg": {
+      "en": "{price} Cr/kg",
+      "ru": "{price} Cr/кг"
+    },
+    "service.panel.trade.price_per_t": {
+      "en": "{price} Cr/t",
+      "ru": "{price} Cr/т"
+    },
+    "service.panel.trade.age_now": {
+      "en": "just now",
+      "ru": "только что"
+    },
+    "service.panel.trade.age_hours": {
+      "en": "{h} h ago",
+      "ru": "{h} ч назад"
+    },
+    "service.panel.trade.age_days": {
+      "en": "{d} d ago",
+      "ru": "{d} сут назад"
+    },
+    "service.panel.trade.channel.open": {
+      "en": "open",
+      "ru": "открытый"
+    },
+    "service.panel.trade.channel.licensed": {
+      "en": "licensed",
+      "ru": "по лицензии"
+    },
+    "service.panel.trade.channel.restricted": {
+      "en": "restricted",
+      "ru": "ограниченный"
+    },
+    "service.panel.trade.channel.black": {
+      "en": "black",
+      "ru": "чёрный"
+    },
+    "service.panel.trade.channel.closed": {
+      "en": "closed",
+      "ru": "закрыт"
+    },
+    "service.panel.trade.title": {
+      "en": "TRADE",
+      "ru": "ТОРГОВЛЯ"
+    },
+    "service.panel.trade.no_data": {
+      "en": "no economy data or no hub nearby",
+      "ru": "нет данных экономики или хаба поблизости"
+    },
+    "service.panel.trade.title_hub": {
+      "en": "TRADE — {hub}",
+      "ru": "ТОРГОВЛЯ — {hub}"
+    },
+    "service.panel.trade.subtitle_at_hub": {
+      "en": "F8  /  you are at the hub  ·  day {day}  ·  market, contracts, cargo, finance, system hubs  ·  navigation data — F5",
+      "ru": "F8  /  вы в хабе  ·  день {day}  ·  рынок, контракты, груз, финансы, хабы системы  ·  навигационные данные — F5"
+    },
+    "service.panel.trade.subtitle_nearest": {
+      "en": "F8  /  nearest hub  ·  day {day}  ·  market, contracts, cargo, finance, system hubs  ·  navigation data — F5",
+      "ru": "F8  /  ближайший хаб  ·  день {day}  ·  рынок, контракты, груз, финансы, хабы системы  ·  навигационные данные — F5"
+    },
+    "service.panel.trade.events": {
+      "en": "Events: {list}",
+      "ru": "События: {list}"
+    },
+    "service.panel.trade.tab.contracts": {
+      "en": "CONTRACTS",
+      "ru": "КОНТРАКТЫ"
+    },
+    "service.panel.trade.tab.market": {
+      "en": "MARKET",
+      "ru": "РЫНОК"
+    },
+    "service.panel.trade.tab.hubs": {
+      "en": "SYSTEM HUBS",
+      "ru": "ХАБЫ СИСТЕМЫ"
+    },
+    "service.panel.trade.tab.finance": {
+      "en": "FINANCE",
+      "ru": "ФИНАНСЫ"
+    },
+    "service.panel.trade.tab.cargo": {
+      "en": "CARGO",
+      "ru": "ГРУЗ"
+    },
+    "service.panel.trade.tab.fleet": {
+      "en": "FLEET",
+      "ru": "ФЛОТ"
+    },
+    "service.panel.trade.market_stock": {
+      "en": "{group}  ·  stock {stock} t",
+      "ru": "{group}  ·  запас {stock} т"
+    },
+    "service.panel.trade.market_limits": {
+      "en": "  ·  hub takes ≤ {takes} t, gives ≤ {gives} t",
+      "ru": "  ·  хаб берёт ≤ {takes} т, отпускает ≤ {gives} т"
+    },
+    "service.panel.trade.prices": {
+      "en": "buy {buy}   sell {sell}",
+      "ru": "купить {buy}   продать {sell}"
+    },
+    "service.panel.trade.hub_here": {
+      "en": "{name}  (here)",
+      "ru": "{name}  (здесь)"
+    },
+    "service.panel.trade.card.owner": {
+      "en": "Owner",
+      "ru": "Владелец"
+    },
+    "service.panel.trade.card.operator": {
+      "en": "Operator",
+      "ru": "Оператор"
+    },
+    "service.panel.trade.card.distance": {
+      "en": "Distance",
+      "ru": "Расстояние"
+    },
+    "service.panel.trade.card.no_data": {
+      "en": "no data",
+      "ru": "нет данных"
+    },
+    "service.panel.trade.card.channel": {
+      "en": "Block channel",
+      "ru": "Канал блоков"
+    },
+    "service.panel.trade.card.prices": {
+      "en": "Prices",
+      "ru": "Цены"
+    },
+    "service.panel.trade.card.no_link": {
+      "en": "no link",
+      "ru": "нет связи"
+    },
+    "service.panel.trade.card.events": {
+      "en": "Events",
+      "ru": "События"
+    },
+    "service.panel.trade.card.show_on_map": {
+      "en": "SHOW ON MAP",
+      "ru": "ПОКАЗАТЬ НА КАРТЕ"
+    },
+    "service.panel.trade.card.known_prices": {
+      "en": "Last known prices",
+      "ru": "Последние известные цены"
+    },
+    "service.panel.trade.market_hint": {
+      "en": "the market is seen at the hub where the ship is",
+      "ru": "рынок виден у хаба, где стоит корабль"
+    },
+    "service.panel.trade.status_docked": {
+      "en": "server prices, day {day}  ·  style {style}, VAT {vat} %, handling {handling} Cr/t  ·  at a berth: deals allowed",
+      "ru": "цены сервера, день {day}  ·  стиль {style}, НДС {vat} %, погрузка {handling} Cr/т  ·  у причала: сделки разрешены"
+    },
+    "service.panel.trade.status_undocked": {
+      "en": "server prices, day {day}  ·  style {style}, VAT {vat} %, handling {handling} Cr/t  ·  deals only at a berth",
+      "ru": "цены сервера, день {day}  ·  стиль {style}, НДС {vat} %, погрузка {handling} Cr/т  ·  сделки только у причала"
+    },
+    "service.panel.trade.last_refused": {
+      "en": "#{id} REFUSED: {message}",
+      "ru": "#{id} ОТКАЗ: {message}"
+    },
+    "service.panel.trade.footer": {
+      "en": "Click a posting or hub — card; wheel — scroll the list",
+      "ru": "Клик по заявке или хабу — карточка; колесо — прокрутка списка"
+    },
+    "service.panel.finance.no_data": {
+      "en": "no bank data (server without economy)",
+      "ru": "нет данных банка (сервер без экономики)"
+    },
+    "service.panel.finance.standing": {
+      "en": "Client standing",
+      "ru": "Статус клиента"
+    },
+    "service.panel.finance.net_worth": {
+      "en": "Net worth",
+      "ru": "Чистые активы"
+    },
+    "service.panel.finance.held": {
+      "en": "  of it blocked (contract deposits)",
+      "ru": "  из них заблокировано (залоги контрактов)"
+    },
+    "service.panel.finance.cash": {
+      "en": "Cash",
+      "ru": "Наличные"
+    },
+    "service.panel.finance.accounts": {
+      "en": "Accounts",
+      "ru": "Счета"
+    },
+    "service.panel.finance.overdraft": {
+      "en": "  overdraft {limit} {currency}, rate {rate} %",
+      "ru": "  овердрафт {limit} {currency}, ставка {rate} %"
+    },
+    "service.panel.finance.loans": {
+      "en": "Debts",
+      "ru": "Долги"
+    },
+    "service.panel.finance.loan_terms": {
+      "en": "  rate {rate} %, payment {payment} / 30 d",
+      "ru": "  ставка {rate} %, платёж {payment} / 30 сут"
+    },
+    "service.panel.finance.lifeline": {
+      "en": "Lifeline credit",
+      "ru": "Спасательный кредит"
+    },
+    "service.panel.finance.lifeline_left": {
+      "en": "Limit left (fuel, repair to flying condition; tow — always)",
+      "ru": "Остаток лимита (топливо, ремонт до лётного состояния; буксир — всегда)"
+    },
+    "service.panel.finance.lifeline_value": {
+      "en": "{cr} Cr / 90 d",
+      "ru": "{cr} Cr / 90 сут"
+    },
+    "service.panel.finance.notices": {
+      "en": "Recent operations",
+      "ru": "Последние операции"
+    },
+    "service.panel.finance.paying_here": {
+      "en": "Paying here",
+      "ru": "Здесь платят"
+    },
+    "service.panel.finance.polity": {
+      "en": "Polity",
+      "ru": "Полития"
+    },
+    "service.panel.finance.no_state": {
+      "en": "no state",
+      "ru": "нет государства"
+    },
+    "service.panel.finance.bank": {
+      "en": "Bank",
+      "ru": "Банк"
+    },
+    "service.panel.finance.fx_rate": {
+      "en": "Rate",
+      "ru": "Курс"
+    },
+    "service.panel.finance.fuel": {
+      "en": "Fuel",
+      "ru": "Топливо"
+    },
+    "service.panel.finance.jump_charge": {
+      "en": "Jump charge",
+      "ru": "Заряд прыжка"
+    },
+    "service.panel.finance.not_sold": {
+      "en": "not sold here",
+      "ru": "здесь не продаётся"
+    },
+    "service.panel.finance.where": {
+      "en": "Where",
+      "ru": "Где"
+    },
+    "service.panel.finance.jump_charge_list": {
+      "en": "Jump charge, list price",
+      "ru": "Заряд прыжка, прейскурант"
+    },
+    "service.panel.finance.jump_charge_list_value": {
+      "en": "{price} {currency}/t  ({cr} Cr/t)",
+      "ru": "{price} {currency}/т  ({cr} Cr/т)"
+    },
+    "service.panel.finance.to_pay": {
+      "en": "To pay",
+      "ru": "К оплате"
+    },
+    "service.panel.finance.fuel_free": {
+      "en": "0 — fuel is free for now",
+      "ru": "0 — топливо пока бесплатно"
+    },
+    "service.panel.finance.per_tonne": {
+      "en": "{price} {currency}/t",
+      "ru": "{price} {currency}/т"
+    },
+    "service.panel.finance.station_stock": {
+      "en": "Station stock",
+      "ru": "Запас станции"
+    },
+    "service.panel.finance.tonnes": {
+      "en": "{t} t",
+      "ru": "{t} т"
+    },
+    "service.panel.finance.reactor_fuel": {
+      "en": "Reactor fuel (D/He-3)",
+      "ru": "Реакторное топливо (D/He-3)"
+    },
+    "service.panel.finance.per_kg": {
+      "en": "{price} {currency}/kg",
+      "ru": "{price} {currency}/кг"
+    },
+    "service.panel.finance.breakdown": {
+      "en": "What the charge price is made of",
+      "ru": "Из чего цена заряда"
+    },
+    "service.panel.finance.free_fuel": {
+      "en": "Received free at list price",
+      "ru": "Получено бесплатно по прейскуранту"
+    },
+    "service.panel.cargo.no_data": {
+      "en": "no cargo data (server without economy)",
+      "ru": "нет данных груза (сервер без экономики)"
+    },
+    "service.panel.cargo.manifest": {
+      "en": "Manifest",
+      "ru": "Манифест"
+    },
+    "service.panel.cargo.empty": {
+      "en": "hold empty",
+      "ru": "трюм пуст"
+    },
+    "service.panel.cargo.insured": {
+      "en": "Cargo insurance: {cr} Cr until day {day}",
+      "ru": "Страховка груза: {cr} Cr до дня {day}"
+    },
+    "service.panel.cargo.not_insured": {
+      "en": "Cargo insurance: none",
+      "ru": "Страховка груза: нет"
+    },
+    "service.panel.cargo.insure": {
+      "en": "INSURE {value} Cr  ·  premium {premium} Cr",
+      "ru": "ЗАСТРАХОВАТЬ {value} Cr  ·  премия {premium} Cr"
+    },
+    "service.panel.cargo.contract_cargo": {
+      "en": "contract cargo",
+      "ru": "груз контракта"
+    },
+    "service.panel.cargo.mass": {
+      "en": "{t} t  ·  C20 x {n}",
+      "ru": "{t} т  ·  C20 x {n}"
+    },
+    "service.panel.cargo.lot_own": {
+      "en": "lot {lot}  ·  own goods  ·  loaded day {day} ({hub})  ·  cost basis {cost} Cr/t",
+      "ru": "партия {lot}  ·  свой товар  ·  погружено день {day} ({hub})  ·  себест. {cost} Cr/т"
+    },
+    "service.panel.cargo.lot_contract": {
+      "en": "lot {lot}  ·  contract {contract}  ·  loaded day {day} ({hub})  ·  cost basis {cost} Cr/t",
+      "ru": "партия {lot}  ·  контракт {contract}  ·  погружено день {day} ({hub})  ·  себест. {cost} Cr/т"
+    },
+    "service.panel.cargo.banned": {
+      "en": "BANNED HERE: customs will seize it, fine 2 x value",
+      "ru": "ЗАПРЕЩЕНО ЗДЕСЬ: таможня изымет, штраф 2 x стоимость"
+    },
+    "service.panel.cargo.black_market": {
+      "en": "BLACK MARKET  +{cr} Cr",
+      "ru": "ЧЁРНЫЙ РЫНОК  +{cr} Cr"
+    },
+    "service.panel.cargo.restricted": {
+      "en": "restricted here: a licence will be needed (traded openly for now)",
+      "ru": "ограничен здесь: понадобится лицензия (пока торгуется открыто)"
+    },
+    "service.panel.cargo.recent_deals": {
+      "en": "Recent deals",
+      "ru": "Последние сделки"
+    },
+    "service.panel.cargo.result_refused": {
+      "en": "#{id}  REFUSED: {message}",
+      "ru": "#{id}  ОТКАЗ: {message}"
+    },
+    "service.panel.cargo.tonnes": {
+      "en": "{t} t",
+      "ru": "{t} т"
+    },
+    "service.panel.cargo.light_years": {
+      "en": "{ly} ly",
+      "ru": "{ly} св. лет"
+    },
+    "service.panel.cargo.hold": {
+      "en": "Hold",
+      "ru": "Трюм"
+    },
+    "service.panel.cargo.c20_slots": {
+      "en": "C20 slots",
+      "ru": "Места C20"
+    },
+    "service.panel.cargo.c20_used": {
+      "en": "{used} used / {slots}",
+      "ru": "{used} занято / {slots}"
+    },
+    "service.panel.cargo.net": {
+      "en": "Net cargo",
+      "ru": "Груз нетто"
+    },
+    "service.panel.cargo.tare": {
+      "en": "C20 tare (1.7 t per container)",
+      "ru": "Тара C20 (1.7 т на контейнер)"
+    },
+    "service.panel.cargo.gross": {
+      "en": "Gross cargo",
+      "ru": "Груз брутто"
+    },
+    "service.panel.cargo.ship": {
+      "en": "Ship",
+      "ru": "Корабль"
+    },
+    "service.panel.cargo.mass_now": {
+      "en": "Mass now",
+      "ru": "Масса сейчас"
+    },
+    "service.panel.cargo.jump_full": {
+      "en": "Jump range on a full charge",
+      "ru": "Дальность прыжка на полном заряде"
+    },
+    "service.panel.cargo.jump_empty": {
+      "en": "  with an empty hold",
+      "ru": "  с пустым трюмом"
+    },
+    "service.panel.cargo.jump_cut": {
+      "en": "  cargo shortens the jump by",
+      "ru": "  груз сокращает прыжок на"
+    },
+    "service.panel.cargo.money": {
+      "en": "Money",
+      "ru": "Деньги"
+    },
+    "service.panel.cargo.vat_reclaim": {
+      "en": "Input VAT to reclaim",
+      "ru": "Входной НДС к возврату"
+    },
+    "service.panel.unit.tonnes": {
+      "en": "t",
+      "ru": "т"
+    },
+    "service.panel.unit.metres": {
+      "en": "m",
+      "ru": "м"
+    },
+    "service.panel.fleet.my_pilots": {
+      "en": "My pilots",
+      "ru": "Мои пилоты"
+    },
+    "service.panel.fleet.none_yet": {
+      "en": "none yet",
+      "ru": "пока нет"
+    },
+    "service.panel.fleet.fire": {
+      "en": "FIRE",
+      "ru": "УВОЛИТЬ"
+    },
+    "service.panel.fleet.loop": {
+      "en": "LOOP",
+      "ru": "ПЕТЛЯ"
+    },
+    "service.panel.fleet.no_order": {
+      "en": "no order",
+      "ru": "приказа нет"
+    },
+    "service.panel.fleet.bot_stats": {
+      "en": "{loop}  ·  trips {trips}  ·  result {profit} Cr  ·  wage {wage} Cr / 30 d",
+      "ru": "{loop}  ·  рейсов {trips}  ·  итог {profit} Cr  ·  зарплата {wage} Cr / 30 сут"
+    },
+    "service.panel.fleet.bot_stats_unpaid": {
+      "en": "{loop}  ·  trips {trips}  ·  result {profit} Cr  ·  wage {wage} Cr / 30 d  ·  UNPAID {unpaid} d",
+      "ru": "{loop}  ·  рейсов {trips}  ·  итог {profit} Cr  ·  зарплата {wage} Cr / 30 сут  ·  НЕ ПЛАЧЕНО {unpaid} сут"
+    },
+    "service.panel.fleet.agency": {
+      "en": "Hub agency: candidates",
+      "ru": "Агентство хаба: кандидаты"
+    },
+    "service.panel.fleet.need_ship": {
+      "en": "you need an own ship you are not flying now (F6: buy)",
+      "ru": "нужен свой корабль, которым вы сейчас не управляете (F6: купить)"
+    },
+    "service.panel.fleet.candidate": {
+      "en": "{name}  ·  per CV: {years} yr experience, skill {skill} %  ·  {wage} Cr / 30 d",
+      "ru": "{name}  ·  по резюме: стаж {years} лет, мастерство {skill} %  ·  {wage} Cr / 30 сут"
+    },
+    "service.panel.fleet.hire": {
+      "en": "HIRE for {ship}",
+      "ru": "НАНЯТЬ на {ship}"
+    },
+    "service.panel.nav.no_bank": {
+      "en": "This system has no navigation data bank (no beacon operator)",
+      "ru": "В этой системе нет банка навигационных данных (нет оператора маяков)"
+    },
+    "service.panel.nav.row": {
+      "en": "lane {corridor}  ·  {place}",
+      "ru": "трасса {corridor}  ·  {place}"
+    },
+    "service.panel.nav.row_survey": {
+      "en": "survey {year} ({age} yr ago)  ·  now: {state}  ·  {tier}",
+      "ru": "съёмка {year} ({age} г. назад)  ·  сейчас: {state}  ·  {tier}"
+    },
+    "service.panel.nav.card_title": {
+      "en": "Lane {corridor}",
+      "ru": "Трасса {corridor}"
+    },
+    "service.panel.nav.price": {
+      "en": "price {price} Cr - payment comes with the market",
+      "ru": "цена {price} Cr - оплата появится вместе с рынком"
+    },
+    "service.panel.nav.closed": {
+      "en": "Closed: {tier}",
+      "ru": "Закрыто: {tier}"
+    },
+    "service.panel.nav.only_at_hub": {
+      "en": "Data is issued only at a hub",
+      "ru": "Данные выдают только в хабе"
+    },
+    "service.panel.nav.to_computer": {
+      "en": "TO ONBOARD COMPUTER",
+      "ru": "В БОРТОВОЙ КОМПЬЮТЕР"
+    },
+    "service.panel.nav.to_carrier": {
+      "en": "TO A CARRIER",
+      "ru": "НА НОСИТЕЛЬ"
+    },
+    "service.panel.nav.computer": {
+      "en": "Onboard computer",
+      "ru": "Бортовой компьютер"
+    },
+    "service.panel.nav.computer_down": {
+      "en": "not working - lane records unavailable",
+      "ru": "не работает - записи трасс недоступны"
+    },
+    "service.panel.nav.no_records": {
+      "en": "no lane records",
+      "ru": "записей трасс нет"
+    },
+    "service.panel.nav.memory_row": {
+      "en": "{corridor}  ·  {age} yr  ·  {state}  ·  {tier}",
+      "ru": "{corridor}  ·  {age} г.  ·  {state}  ·  {tier}"
+    },
+    "service.panel.nav.carriers": {
+      "en": "Data carriers aboard",
+      "ru": "Носители данных на борту"
+    },
+    "service.panel.nav.none": {
+      "en": "none",
+      "ru": "нет"
+    },
+    "service.panel.nav.insert": {
+      "en": "INSERT INTO COMPUTER",
+      "ru": "ВСТАВИТЬ В КОМПЬЮТЕР"
+    },
+    "service.panel.nav.footer": {
+      "en": "Click a record - card; open data comes from the colony bank, the rest by clearance",
+      "ru": "Клик по записи - карточка; открытые данные выдаёт банк колонии, остальное - по допуску"
+    }
+  }
+}

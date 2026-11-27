@@ -1,0 +1,1090 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "economy.arrest.event.exchanged": {
+      "en": "arrest at the port of {hub} (exchange): {list}; proceeds {proceeds} Cr, debt {before} -> {after} Cr",
+      "ru": "арест в порту {hub} (обменный): {list}; выручка {proceeds} Cr, долг {before} -> {after} Cr"
+    },
+    "economy.arrest.event.nothing": {
+      "en": "arrest at the port of {hub}: nothing to seize (the tool of the trade is protected), debt {debt} Cr",
+      "ru": "арест в порту {hub}: изымать нечего (орудие труда защищено), долг {debt} Cr"
+    },
+    "economy.arrest.list_join": {
+      "en": "{list}; {item}",
+      "ru": "{list}; {item}"
+    },
+    "economy.arrest.memo.auction": {
+      "en": "arrest at the port of {hub}, auction",
+      "ru": "арест в порту {hub}, торги"
+    },
+    "economy.arrest.memo.surplus": {
+      "en": "auction proceeds left after the debt was repaid",
+      "ru": "остаток выручки от торгов после погашения долга"
+    },
+    "economy.arrest.result.exchanged": {
+      "en": "arrest: {count} module(s) replaced, proceeds {proceeds} Cr, debt {debt} Cr",
+      "ru": "арест: заменено {count} модул., выручка {proceeds} Cr, долг {debt} Cr"
+    },
+    "economy.arrest.result.nothing": {
+      "en": "arrest: nothing to seize, debt {debt} Cr",
+      "ru": "арест: изымать нечего, долг {debt} Cr"
+    },
+    "economy.black.event.sale": {
+      "en": "under the counter: {t} t \"{good}\": +{cr} Cr",
+      "ru": "из-под полы: {t} т «{good}»: +{cr} Cr"
+    },
+    "economy.black.memo.sale": {
+      "en": "under the counter: {t} t \"{good}\"",
+      "ru": "из-под полы: {t} т «{good}»"
+    },
+    "economy.black.refuse.cap": {
+      "en": "the fence takes no more than {t} t today",
+      "ru": "скупщик сегодня берёт не больше {t} т"
+    },
+    "economy.black.refuse.legal_here": {
+      "en": "\"{good}\" is not banned here: sell it on the market",
+      "ru": "«{good}» здесь не запрещён: продавайте на рынке"
+    },
+    "economy.black.refuse.not_aboard": {
+      "en": "no \"{good}\" of your own aboard",
+      "ru": "на борту нет своего «{good}»"
+    },
+    "economy.black.result.sold": {
+      "en": "sold under the counter {t} t at {price} Cr/t",
+      "ru": "продано из-под полы {t} т по {price} Cr/т"
+    },
+    "economy.bot.first.ari": {
+      "en": "Ari",
+      "ru": "Ари"
+    },
+    "economy.bot.first.bo": {
+      "en": "Bo",
+      "ru": "Бо"
+    },
+    "economy.bot.first.dara": {
+      "en": "Dara",
+      "ru": "Дара"
+    },
+    "economy.bot.first.eno": {
+      "en": "Eno",
+      "ru": "Ено"
+    },
+    "economy.bot.first.gao": {
+      "en": "Gao",
+      "ru": "Гао"
+    },
+    "economy.bot.first.ivo": {
+      "en": "Ivo",
+      "ru": "Иво"
+    },
+    "economy.bot.first.kai": {
+      "en": "Kai",
+      "ru": "Кай"
+    },
+    "economy.bot.first.lin": {
+      "en": "Lin",
+      "ru": "Лин"
+    },
+    "economy.bot.first.mira": {
+      "en": "Mira",
+      "ru": "Мира"
+    },
+    "economy.bot.first.nur": {
+      "en": "Nur",
+      "ru": "Нур"
+    },
+    "economy.bot.first.oda": {
+      "en": "Oda",
+      "ru": "Ода"
+    },
+    "economy.bot.first.pei": {
+      "en": "Pei",
+      "ru": "Пэй"
+    },
+    "economy.bot.first.rin": {
+      "en": "Rin",
+      "ru": "Рин"
+    },
+    "economy.bot.first.vik": {
+      "en": "Vik",
+      "ru": "Вик"
+    },
+    "economy.bot.first.zhan": {
+      "en": "Jean",
+      "ru": "Жан"
+    },
+    "economy.bot.first.zoya": {
+      "en": "Zoya",
+      "ru": "Зоя"
+    },
+    "economy.bot.last.chen": {
+      "en": "Chen",
+      "ru": "Чен"
+    },
+    "economy.bot.last.dubois": {
+      "en": "Dubois",
+      "ru": "Дюбуа"
+    },
+    "economy.bot.last.farrell": {
+      "en": "Farrell",
+      "ru": "Фаррелл"
+    },
+    "economy.bot.last.holm": {
+      "en": "Holm",
+      "ru": "Хольм"
+    },
+    "economy.bot.last.ibrahim": {
+      "en": "Ibrahim",
+      "ru": "Ибрагим"
+    },
+    "economy.bot.last.kim": {
+      "en": "Kim",
+      "ru": "Ким"
+    },
+    "economy.bot.last.kovach": {
+      "en": "Kovach",
+      "ru": "Ковач"
+    },
+    "economy.bot.last.mendes": {
+      "en": "Mendes",
+      "ru": "Мендес"
+    },
+    "economy.bot.last.novak": {
+      "en": "Novak",
+      "ru": "Новак"
+    },
+    "economy.bot.last.olsen": {
+      "en": "Olsen",
+      "ru": "Олсен"
+    },
+    "economy.bot.last.rao": {
+      "en": "Rao",
+      "ru": "Рао"
+    },
+    "economy.bot.last.sato": {
+      "en": "Sato",
+      "ru": "Сато"
+    },
+    "economy.bot.memo.wage": {
+      "en": "pilot wage {name}",
+      "ru": "зарплата пилота {name}"
+    },
+    "economy.bot.name": {
+      "en": "{first} {last}",
+      "ru": "{first} {last}"
+    },
+    "economy.bot.refuse.candidate_gone": {
+      "en": "the candidate is no longer on the agency's list",
+      "ru": "кандидат уже не в списке агентства"
+    },
+    "economy.bot.refuse.no_loop": {
+      "en": "no profitable loop from this hub in the system",
+      "ru": "в системе нет выгодной петли от этого хаба"
+    },
+    "economy.bot.refuse.no_market": {
+      "en": "the hub of the bot's ship has no market",
+      "ru": "у хаба корабля бота нет рынка"
+    },
+    "economy.bot.refuse.no_ship": {
+      "en": "you need a ship of your own with a hold that you are not flying now",
+      "ru": "нужен свой корабль с трюмом, которым вы сейчас не управляете"
+    },
+    "economy.bot.refuse.no_such_pilot": {
+      "en": "no such pilot",
+      "ru": "нет такого пилота"
+    },
+    "economy.bot.refuse.ship_busy": {
+      "en": "this ship already has a bot pilot",
+      "ru": "на этом корабле уже есть пилот-бот"
+    },
+    "economy.bot.report.buy_failed": {
+      "en": "couldn't buy at {hub}: {result}",
+      "ru": "не смог купить у {hub}: {result}"
+    },
+    "economy.bot.report.fired": {
+      "en": "dismissed by the owner",
+      "ru": "уволен владельцем"
+    },
+    "economy.bot.report.hired": {
+      "en": "hired onto the ship {ship}, wage {cr} Cr / 30 d",
+      "ru": "нанят(а) на корабль {ship}, зарплата {cr} Cr / 30 сут"
+    },
+    "economy.bot.report.loaded": {
+      "en": "loading at {hub}: {result}",
+      "ru": "погрузка у {hub}: {result}"
+    },
+    "economy.bot.report.order": {
+      "en": "order: loop {a} <-> {b}, good {good} (margin {margin} %)",
+      "ru": "приказ: петля {a} <-> {b}, товар {good} (маржа {margin} %)"
+    },
+    "economy.bot.report.quit_unpaid": {
+      "en": "left: 30 days without a wage",
+      "ru": "ушёл: 30 суток без зарплаты"
+    },
+    "economy.bot.report.sell_failed": {
+      "en": "couldn't sell at {hub}",
+      "ru": "не смог продать у {hub}"
+    },
+    "economy.bot.report.sell_failed_why": {
+      "en": "couldn't sell at {hub}: {result}",
+      "ru": "не смог продать у {hub}: {result}"
+    },
+    "economy.bot.report.shortfall": {
+      "en": "cargo shortfall: {t} t",
+      "ru": "недостача груза: {t} т"
+    },
+    "economy.bot.report.sold": {
+      "en": "sale at {hub}: {result}; trip {profit} Cr",
+      "ru": "продажа у {hub}: {result}; рейс {profit} Cr"
+    },
+    "economy.bot.report.wrong_route": {
+      "en": "took a wrong route: +{days} d",
+      "ru": "ошиблся маршрутом: +{days} сут"
+    },
+    "economy.bot.result.hired": {
+      "en": "pilot {name} hired ({ship})",
+      "ru": "нанят пилот {name} ({ship})"
+    },
+    "economy.bot.result.order": {
+      "en": "{name}: loop {a} <-> {b}, {good}",
+      "ru": "{name}: петля {a} <-> {b}, {good}"
+    },
+    "economy.bot.state.at_hub": {
+      "en": "at the hub: trading",
+      "ru": "у хаба: сделка"
+    },
+    "economy.bot.state.idle": {
+      "en": "awaiting orders",
+      "ru": "ждёт приказа"
+    },
+    "economy.bot.state.quit": {
+      "en": "left",
+      "ru": "ушёл"
+    },
+    "economy.bot.state.travelling": {
+      "en": "en route, {days} d",
+      "ru": "в пути, {days} сут"
+    },
+    "economy.build.event.abandoned": {
+      "en": "the contractor left the site at {hub}: 180 d unpaid",
+      "ru": "подрядчик ушёл со стройки у {hub}: 180 сут без оплаты"
+    },
+    "economy.build.event.delay": {
+      "en": "construction at {hub}: idle {days} d (supply / accident)",
+      "ru": "стройка у {hub}: простой {days} сут (снабжение / авария)"
+    },
+    "economy.build.event.done_module": {
+      "en": "construction at {hub} complete: module handed over to the hub operator",
+      "ru": "стройка у {hub} завершена: модуль сдан оператору хаба"
+    },
+    "economy.build.event.done_rig": {
+      "en": "construction at {hub} complete: the rig is ready to mine",
+      "ru": "стройка у {hub} завершена: установка готова к добыче"
+    },
+    "economy.build.event.halted": {
+      "en": "construction at {hub} halted: milestone unpaid",
+      "ru": "стройка у {hub} остановлена: нет оплаты вехи"
+    },
+    "economy.build.event.milestone_paid": {
+      "en": "construction at {hub}: milestone s{n} paid ({cr} Cr)",
+      "ru": "стройка у {hub}: оплачена веха s{n} ({cr} Cr)"
+    },
+    "economy.build.event.signed": {
+      "en": "construction contract: {kind} at {hub}, {contractor}, {cr} Cr, {days} d",
+      "ru": "договор подряда: {kind} у {hub}, {contractor}, {cr} Cr, {days} сут"
+    },
+    "economy.build.firm.habitat_service": {
+      "en": "\"Habitat-Service\"",
+      "ru": "«Хабитат-Сервис»"
+    },
+    "economy.build.firm.heavy_mount": {
+      "en": "\"Heavy Mount\"",
+      "ru": "«Тяжмонтаж»"
+    },
+    "economy.build.firm.orbital_stroy": {
+      "en": "\"Orbital-Build\"",
+      "ru": "«Орбиталь-Строй»"
+    },
+    "economy.build.firm.ring_and_truss": {
+      "en": "\"Ring & Truss\"",
+      "ru": "«Кольцо и Ферма»"
+    },
+    "economy.build.firm.slipway": {
+      "en": "\"Slipway\"",
+      "ru": "«Стапель»"
+    },
+    "economy.build.firm.star_contract": {
+      "en": "\"Star Contracting\"",
+      "ru": "«Звёздный подряд»"
+    },
+    "economy.build.kind.dock": {
+      "en": "dock",
+      "ru": "причал"
+    },
+    "economy.build.kind.hab": {
+      "en": "habitat module",
+      "ru": "жилой модуль"
+    },
+    "economy.build.kind.hall": {
+      "en": "workshop (hall)",
+      "ru": "цех (зал)"
+    },
+    "economy.build.kind.minehead": {
+      "en": "mining rig",
+      "ru": "добычная установка"
+    },
+    "economy.build.kind.module": {
+      "en": "module",
+      "ru": "модуль"
+    },
+    "economy.build.kind.slab": {
+      "en": "residential block",
+      "ru": "жилой корпус"
+    },
+    "economy.build.kind.tower": {
+      "en": "tower",
+      "ru": "башня"
+    },
+    "economy.build.kind.yard": {
+      "en": "shipyard yard",
+      "ru": "верфь-двор"
+    },
+    "economy.build.memo.first_milestone": {
+      "en": "construction: first milestone ({kind}, {contractor})",
+      "ru": "стройка: первая веха ({kind}, {contractor})"
+    },
+    "economy.build.memo.milestone": {
+      "en": "construction: milestone s{n}",
+      "ru": "стройка: веха s{n}"
+    },
+    "economy.build.memo.module_income": {
+      "en": "module income at {hub}",
+      "ru": "доход модуля у {hub}"
+    },
+    "economy.build.memo.retention": {
+      "en": "construction: retention at acceptance",
+      "ru": "стройка: удержание при приёмке"
+    },
+    "economy.build.offer_project": {
+      "en": "{kind} ({project})",
+      "ru": "{kind} ({project})"
+    },
+    "economy.build.refuse.no_money": {
+      "en": "not enough money for the first milestone: {cr} Cr",
+      "ru": "не хватает денег на первую веху: {cr} Cr"
+    },
+    "economy.build.refuse.offer_gone": {
+      "en": "the contractor's offer is no longer valid",
+      "ru": "предложение подрядчика уже не действует"
+    },
+    "economy.build.result.signed": {
+      "en": "contract: {kind} at {hub} for {cr} Cr",
+      "ru": "договор: {kind} у {hub} за {cr} Cr"
+    },
+    "economy.build.status.abandoned": {
+      "en": "abandoned",
+      "ru": "брошена"
+    },
+    "economy.build.status.building": {
+      "en": "under construction",
+      "ru": "строится"
+    },
+    "economy.build.status.done": {
+      "en": "handed over, earning income",
+      "ru": "сдан, приносит доход"
+    },
+    "economy.build.status.halted": {
+      "en": "halted: unpaid",
+      "ru": "остановлена: нет оплаты"
+    },
+    "economy.contract.event.delivered": {
+      "en": "contract {contract} delivered on time: +{paid} Cr (reward {reward} - advance {advance}), deposit {deposit} Cr released",
+      "ru": "контракт {contract} сдан в срок: +{paid} Cr (награда {reward} - аванс {advance}), залог {deposit} Cr разблокирован"
+    },
+    "economy.contract.event.delivered_late": {
+      "en": "contract {contract} delivered late: +{paid} Cr (reward {reward} - advance {advance}), penalty -{penalty} Cr, deposit {deposit} Cr released",
+      "ru": "контракт {contract} сдан с опозданием: +{paid} Cr (награда {reward} - аванс {advance}), неустойка -{penalty} Cr, залог {deposit} Cr разблокирован"
+    },
+    "economy.contract.event.taken": {
+      "en": "contract {contract} taken: {from} -> {to}, reward {reward} Cr, advance {advance}, deposit {deposit}, deadline day {day}",
+      "ru": "контракт {contract} взят: {from} -> {to}, награда {reward} Cr, аванс {advance}, залог {deposit}, срок день {day}"
+    },
+    "economy.contract.memo.advance": {
+      "en": "advance on contract {contract}",
+      "ru": "аванс по контракту {contract}"
+    },
+    "economy.contract.memo.cancelled": {
+      "en": "cancellation of contract {contract} (fee + advance returned)",
+      "ru": "отказ от контракта {contract} (сбор + возврат аванса)"
+    },
+    "economy.contract.memo.delivered": {
+      "en": "contract {contract} delivered at {hub} on time",
+      "ru": "контракт {contract} сдан на {hub} в срок"
+    },
+    "economy.contract.memo.delivered_late": {
+      "en": "contract {contract} delivered at {hub} late",
+      "ru": "контракт {contract} сдан на {hub} с опозданием"
+    },
+    "economy.contract.memo.deposit": {
+      "en": "deposit for contract {contract} ({from} -> {to})",
+      "ru": "залог по контракту {contract} ({from} -> {to})"
+    },
+    "economy.contract.memo.failed": {
+      "en": "contract {contract} failed ({why}): penalty {penalty} + advance returned {advance}",
+      "ru": "контракт {contract} сорван ({why}): неустойка {penalty} + возврат аванса {advance}"
+    },
+    "economy.contract.memo.hold_captured": {
+      "en": "on contract {contract}",
+      "ru": "по контракту {contract}"
+    },
+    "economy.contract.memo.late_penalty": {
+      "en": "late penalty {days} d on contract {contract}",
+      "ru": "неустойка за опоздание {days} сут по контракту {contract}"
+    },
+    "economy.contract.refuse.no_active": {
+      "en": "no such active contract {contract}",
+      "ru": "нет такого действующего контракта {contract}"
+    },
+    "economy.contract.refuse.no_deposit": {
+      "en": "nothing to secure the deposit of {cr} Cr: free money on an account is needed (not an overdraft)",
+      "ru": "нечем обеспечить залог {cr} Cr: нужны свободные деньги на счёте (не овердрафт)"
+    },
+    "economy.contract.refuse.not_at_origin": {
+      "en": "a posting can only be taken at a berth of the origin hub {hub}",
+      "ru": "взять заявку можно только у причала хаба отправления {hub}"
+    },
+    "economy.contract.refuse.not_on_board": {
+      "en": "posting {contract} is not on the board",
+      "ru": "заявки {contract} нет на доске"
+    },
+    "economy.contract.refuse.taken": {
+      "en": "the posting is already taken",
+      "ru": "заявка уже взята"
+    },
+    "economy.contract.refuse.taken_npc": {
+      "en": "another carrier has already taken the posting",
+      "ru": "заявку уже забрал другой перевозчик"
+    },
+    "economy.contract.refuse.withdrawn": {
+      "en": "the posting was withdrawn from the board",
+      "ru": "заявка снята с доски"
+    },
+    "economy.contract.result.abandoned": {
+      "en": "contract abandoned: penalty and advance returned -{cr} Cr, deposit {deposit} Cr withheld",
+      "ru": "контракт брошен: неустойка и возврат аванса -{cr} Cr, залог {deposit} Cr удержан"
+    },
+    "economy.contract.result.cancelled": {
+      "en": "contract cancelled: -{cr} Cr (fee and advance returned), deposit released",
+      "ru": "отказ от контракта: -{cr} Cr (сбор и возврат аванса), залог разблокирован"
+    },
+    "economy.contract.result.taken": {
+      "en": "contract taken: advance +{advance} Cr, deposit {deposit} Cr blocked, cargo aboard",
+      "ru": "контракт взят: аванс +{advance} Cr, залог {deposit} Cr заблокирован, груз на борту"
+    },
+    "economy.contract.why.abandoned": {
+      "en": "abandoned en route",
+      "ru": "отказ в пути"
+    },
+    "economy.contract.why.expired": {
+      "en": "deadline + {days} d expired",
+      "ru": "срок + {days} сут истёк"
+    },
+    "economy.contract.why.seized": {
+      "en": "cargo seized by customs",
+      "ru": "груз изъят таможней"
+    },
+    "economy.customs.event.clean": {
+      "en": "customs inspection at {hub}: no violations (fee {cr} Cr)",
+      "ru": "досмотр на таможне {hub}: нарушений нет (сбор {cr} Cr)"
+    },
+    "economy.customs.event.not_found": {
+      "en": "customs inspection at {hub}: nothing found",
+      "ru": "досмотр на таможне {hub}: ничего не нашли"
+    },
+    "economy.customs.event.seized": {
+      "en": "customs at {hub}: {t} t of contraband seized ({value} Cr), fine {fine} Cr",
+      "ru": "таможня {hub}: изъято {t} т контрабанды ({value} Cr), штраф {fine} Cr"
+    },
+    "economy.customs.memo.fee": {
+      "en": "customs inspection at {hub}",
+      "ru": "досмотр на таможне {hub}"
+    },
+    "economy.customs.memo.fine": {
+      "en": "contraband, {hub}",
+      "ru": "контрабанда, {hub}"
+    },
+    "economy.customs.result.seized": {
+      "en": "customs: {t} t seized, fine {fine} Cr",
+      "ru": "таможня: изъято {t} т, штраф {fine} Cr"
+    },
+    "economy.debt.contract_penalty": {
+      "en": "penalty on credit",
+      "ru": "неустойка в долг"
+    },
+    "economy.debt.fee": {
+      "en": "fee on credit",
+      "ru": "сбор в долг"
+    },
+    "economy.debt.penalty": {
+      "en": "penalty on credit",
+      "ru": "пени в долг"
+    },
+    "economy.debt.tax": {
+      "en": "tax on credit",
+      "ru": "налог в долг"
+    },
+    "economy.fuel.breakdown.conversion": {
+      "en": "conversion",
+      "ru": "конверсия"
+    },
+    "economy.fuel.breakdown.fabrication": {
+      "en": "charge fabrication",
+      "ru": "изготовление заряда"
+    },
+    "economy.fuel.breakdown.feedstock": {
+      "en": "feedstock (isotope feedstock)",
+      "ru": "сырьё (изотопное сырьё)"
+    },
+    "economy.fuel.breakdown.location_discount": {
+      "en": "location discount (export, own plant)",
+      "ru": "скидка места (экспорт, свой завод)"
+    },
+    "economy.fuel.breakdown.location_premium": {
+      "en": "location premium (remoteness, risk)",
+      "ru": "надбавка места (удалённость, риск)"
+    },
+    "economy.fuel.breakdown.row": {
+      "en": "{label} {cr} Cr/t",
+      "ru": "{label} {cr} Cr/т"
+    },
+    "economy.fuel.breakdown.scarcity": {
+      "en": "stock shortage",
+      "ru": "дефицит запаса"
+    },
+    "economy.fuel.breakdown.separation": {
+      "en": "separation (energy)",
+      "ru": "разделение (энергия)"
+    },
+    "economy.fuel.breakdown.station_margin": {
+      "en": "station margin",
+      "ru": "маржа станции"
+    },
+    "economy.fuel.breakdown.surplus": {
+      "en": "stock surplus",
+      "ru": "избыток запаса"
+    },
+    "economy.fuel.breakdown.transport": {
+      "en": "delivery from the plant",
+      "ru": "доставка от завода"
+    },
+    "economy.fuel.event.free": {
+      "en": "refuelling: {fuel} {t} t free of charge (list price {cr} Cr)",
+      "ru": "заправка: {fuel} {t} т бесплатно (по прейскуранту {cr} Cr)"
+    },
+    "economy.fuel.kind.jump_charge": {
+      "en": "jump charge",
+      "ru": "заряд прыжка"
+    },
+    "economy.fuel.kind.reaction_mass": {
+      "en": "reaction mass",
+      "ru": "рабочее тело"
+    },
+    "economy.fuel.kind.reactor_fuel": {
+      "en": "reactor fuel",
+      "ru": "реакторное топливо"
+    },
+    "economy.fuel.memo.lifeline": {
+      "en": "refuelling (minimum to reach a station): {fuel} {t} t",
+      "ru": "заправка (минимум до станции): {fuel} {t} т"
+    },
+    "economy.fuel.memo.paid": {
+      "en": "refuelling: {fuel} {t} t",
+      "ru": "заправка: {fuel} {t} т"
+    },
+    "economy.fuel.memo.refund": {
+      "en": "refund for fuel not taken: {t} t",
+      "ru": "возврат за незалитое топливо: {t} т"
+    },
+    "economy.fuel.refuse.not_sold": {
+      "en": "this fuel is not sold here or in the system",
+      "ru": "здесь и в системе это топливо не продаётся"
+    },
+    "economy.fuel.refuse.zero": {
+      "en": "zero amount",
+      "ru": "нулевой объём"
+    },
+    "economy.fuel.system_price": {
+      "en": "{hub} (system price)",
+      "ru": "{hub} (цена системы)"
+    },
+    "economy.insurance.event.insured": {
+      "en": "cargo insurance for {value} Cr until day {day}: -{premium} Cr",
+      "ru": "страховка груза на {value} Cr до дня {day}: -{premium} Cr"
+    },
+    "economy.insurance.memo.payout": {
+      "en": "cargo insurance payout ({cause})",
+      "ru": "страховая выплата за груз ({cause})"
+    },
+    "economy.insurance.memo.premium": {
+      "en": "cargo insurance",
+      "ru": "страховка груза"
+    },
+    "economy.insurance.refuse.no_money": {
+      "en": "not enough money for the premium {cr} Cr",
+      "ru": "не хватает денег на премию {cr} Cr"
+    },
+    "economy.insurance.refuse.not_docked": {
+      "en": "insurance is arranged at a berth",
+      "ru": "страховку оформляют у причала"
+    },
+    "economy.insurance.result.insured": {
+      "en": "cargo insured for {value} Cr until day {day}",
+      "ru": "груз застрахован на {value} Cr до дня {day}"
+    },
+    "economy.insurance.why.hold_empty": {
+      "en": "the hold is empty",
+      "ru": "трюм пуст"
+    },
+    "economy.insurance.why.nothing": {
+      "en": "nothing to insure: contract cargo or contraband",
+      "ru": "нечего страховать: груз контракта или контрабанда"
+    },
+    "economy.job.company.courier_service": {
+      "en": "courier service",
+      "ru": "курьерская служба"
+    },
+    "economy.job.company.logistics": {
+      "en": "logistics",
+      "ru": "логистика"
+    },
+    "economy.job.company.mail_cargo_line": {
+      "en": "mail and cargo line",
+      "ru": "почтово-грузовая линия"
+    },
+    "economy.job.company.transport_company": {
+      "en": "transport company",
+      "ru": "транспортная компания"
+    },
+    "economy.job.employer.company": {
+      "en": "{company} \"{where}\"",
+      "ru": "{company} «{where}»"
+    },
+    "economy.job.employer.defence": {
+      "en": "defence forces: {polity}",
+      "ru": "силы обороны: {polity}"
+    },
+    "economy.job.event.hired": {
+      "en": "hired: {role}, {employer}, {cr} Cr / 30 d",
+      "ru": "принят: {role}, {employer}, {cr} Cr / 30 сут"
+    },
+    "economy.job.event.left": {
+      "en": "discharged: {employer} ({why})",
+      "ru": "уволен: {employer} ({why})"
+    },
+    "economy.job.memo.wage": {
+      "en": "wage: {employer}",
+      "ru": "зарплата: {employer}"
+    },
+    "economy.job.rank.private": {
+      "en": "pilot (private)",
+      "ru": "пилот (рядовой)"
+    },
+    "economy.job.refuse.citizens_only": {
+      "en": "service for citizens only: {polity}",
+      "ru": "служба только для граждан: {polity}"
+    },
+    "economy.job.refuse.employed": {
+      "en": "you already have a job — resign first",
+      "ru": "вы уже работаете — сначала увольтесь"
+    },
+    "economy.job.refuse.no_courier_category": {
+      "en": "no \"courier\" licence category",
+      "ru": "нет категории прав «курьер»"
+    },
+    "economy.job.refuse.no_record": {
+      "en": "no account record",
+      "ru": "нет учётной записи"
+    },
+    "economy.job.requirement.citizenship": {
+      "en": "citizenship: {polity}",
+      "ru": "гражданство: {polity}"
+    },
+    "economy.job.requirement.courier": {
+      "en": "licence: small / medium freighter — courier",
+      "ru": "права: малый / средний грузовик — курьер"
+    },
+    "economy.job.role.courier": {
+      "en": "salaried courier pilot",
+      "ru": "пилот-курьер на зарплате"
+    },
+    "economy.job.role.patrol": {
+      "en": "patrol ship pilot",
+      "ru": "пилот патрульного корабля"
+    },
+    "economy.job.unit.patrol_squadron": {
+      "en": "patrol squadron \"{where}\"",
+      "ru": "патрульная эскадрилья «{where}»"
+    },
+    "economy.licence.event.bought": {
+      "en": "licence \"{licence}\": -{cr} Cr, valid until day {day}",
+      "ru": "лицензия «{licence}»: -{cr} Cr, действует до дня {day}"
+    },
+    "economy.licence.memo.fee": {
+      "en": "licence \"{licence}\" ({polity})",
+      "ru": "лицензия «{licence}» ({polity})"
+    },
+    "economy.licence.refuse.no_money": {
+      "en": "not enough money for the licence: {cr} Cr ({reason})",
+      "ru": "не хватает денег на лицензию: {cr} Cr ({reason})"
+    },
+    "economy.licence.refuse.not_docked": {
+      "en": "a licence is issued at a berth of the polity's hub",
+      "ru": "лицензию оформляют у причала хаба политии"
+    },
+    "economy.licence.refuse.unknown": {
+      "en": "no such licence: {type}",
+      "ru": "нет такой лицензии: {type}"
+    },
+    "economy.licence.result.bought": {
+      "en": "licence \"{licence}\" until day {day}",
+      "ru": "лицензия «{licence}» до дня {day}"
+    },
+    "economy.loan.kind.lifeline": {
+      "en": "lifeline loan",
+      "ru": "спасательный кредит"
+    },
+    "economy.loan.kind.restructured": {
+      "en": "restructuring",
+      "ru": "реструктуризация"
+    },
+    "economy.loan.kind.term": {
+      "en": "loan",
+      "ru": "кредит"
+    },
+    "economy.market.note.at_hub_only": {
+      "en": "the market is visible at a hub (in its zone)",
+      "ru": "рынок виден у хаба (в его зоне)"
+    },
+    "economy.market.note.corridor": {
+      "en": "price within the corridor",
+      "ru": "цена в коридоре"
+    },
+    "economy.market.note.no_market": {
+      "en": "this hub has no market of its own",
+      "ru": "у этого хаба нет своего рынка"
+    },
+    "economy.market.note.not_for_sale": {
+      "en": "not for sale",
+      "ru": "нет в продаже"
+    },
+    "economy.market.note.ration": {
+      "en": "rationed: {t} t for today",
+      "ru": "по карточкам: {t} т на сегодня"
+    },
+    "economy.market.note.state_need": {
+      "en": "not for sale: state need",
+      "ru": "нет в продаже: госпотребность"
+    },
+    "economy.market.note.state_price": {
+      "en": "state price",
+      "ru": "госцена"
+    },
+    "economy.mine.event.depleted": {
+      "en": "mine {site} depleted",
+      "ru": "рудник {site} выработан"
+    },
+    "economy.mine.event.lapsed": {
+      "en": "concession {site} revoked: {days} d without rent",
+      "ru": "концессия {site} отозвана: {days} сут без арендной платы"
+    },
+    "economy.mine.event.leased": {
+      "en": "concession: {site} at {hub}, radius {radius} m, reserve {reserve} t, rent {rent} Cr/yr; next - a contract for a mining rig (Construction)",
+      "ru": "концессия: {site} у {hub}, радиус {radius} м, запас {reserve} т, аренда {rent} Cr/год; дальше - договор на добычную установку (Стройка)"
+    },
+    "economy.mine.event.started": {
+      "en": "mine {site}: rig accepted, mining started",
+      "ru": "рудник {site}: установка принята, добыча начата"
+    },
+    "economy.mine.memo.application": {
+      "en": "concession: application and survey ({site})",
+      "ru": "концессия: заявка и разведка ({site})"
+    },
+    "economy.mine.memo.rent": {
+      "en": "site rent: {site}",
+      "ru": "аренда участка: {site}"
+    },
+    "economy.mine.memo.royalty": {
+      "en": "royalty: {site}",
+      "ru": "роялти: {site}"
+    },
+    "economy.mine.memo.upkeep": {
+      "en": "mine {site}: shift and upkeep",
+      "ru": "рудник {site}: смена и обслуживание"
+    },
+    "economy.mine.refuse.empty": {
+      "en": "the mine's stockpile is empty",
+      "ru": "на складе рудника пусто"
+    },
+    "economy.mine.refuse.far": {
+      "en": "the mine's stockpile is at {hub}: fly there",
+      "ru": "склад рудника у {hub}: подлетите туда"
+    },
+    "economy.mine.refuse.no_money": {
+      "en": "not enough money for the application and survey: {cr} Cr",
+      "ru": "не хватает денег на заявку и разведку: {cr} Cr"
+    },
+    "economy.mine.refuse.not_yours": {
+      "en": "this is not your mine",
+      "ru": "это не ваш рудник"
+    },
+    "economy.mine.refuse.site_gone": {
+      "en": "the site is no longer offered",
+      "ru": "участок уже не предлагается"
+    },
+    "economy.mine.result.leased": {
+      "en": "concession: {site} at {hub}",
+      "ru": "концессия: {site} у {hub}"
+    },
+    "economy.mine.result.loaded": {
+      "en": "loaded from the mine's stockpile: {t} t",
+      "ru": "погружено со склада рудника: {t} т"
+    },
+    "economy.mine.site_name": {
+      "en": "asteroid {number}",
+      "ru": "астероид {number}"
+    },
+    "economy.mine.status.depleted": {
+      "en": "depleted",
+      "ru": "выработан"
+    },
+    "economy.mine.status.lapsed": {
+      "en": "revoked",
+      "ru": "отозван"
+    },
+    "economy.mine.status.leased": {
+      "en": "leased: a mining rig is needed",
+      "ru": "арендован: нужна добычная установка"
+    },
+    "economy.mine.status.mining": {
+      "en": "mining",
+      "ru": "добыча"
+    },
+    "economy.notice.day": {
+      "en": "day {day}: {text}",
+      "ru": "день {day}: {text}"
+    },
+    "economy.port.memo.berth": {
+      "en": "berth {hub}: {hours} h (beyond {included} h at {rate} Cr/h)",
+      "ru": "стоянка {hub}: {hours} ч (сверх {included} ч по {rate} Cr/ч)"
+    },
+    "economy.port.memo.docking": {
+      "en": "docking {hub} ({dry} t dry mass, port index {index})",
+      "ru": "стыковка {hub} ({dry} т сухой массы, индекс порта {index})"
+    },
+    "economy.refuse.hold_full": {
+      "en": "the hold is full",
+      "ru": "трюм полон"
+    },
+    "economy.refuse.no_account": {
+      "en": "no account",
+      "ru": "нет счёта"
+    },
+    "economy.refuse.off": {
+      "en": "the economy is not loaded",
+      "ru": "экономика не загружена"
+    },
+    "economy.sos.event.taken": {
+      "en": "SOS call accepted: {kind} at {hub}",
+      "ru": "принят вызов SOS: {kind} у {hub}"
+    },
+    "economy.sos.kind.capsule": {
+      "en": "escape capsule",
+      "ru": "спасательная капсула"
+    },
+    "economy.sos.kind.derelict": {
+      "en": "ship adrift, crew alive",
+      "ru": "корабль без хода, экипаж жив"
+    },
+    "economy.sos.kind.medevac": {
+      "en": "medical evacuation",
+      "ru": "медэвакуация"
+    },
+    "economy.sos.kind.rescue": {
+      "en": "rescue",
+      "ru": "спасение"
+    },
+    "economy.sos.memo.reward": {
+      "en": "SAR: {kind} at {hub}",
+      "ru": "МЧС: {kind} у {hub}"
+    },
+    "economy.sos.refuse.busy": {
+      "en": "you already have an accepted call",
+      "ru": "у вас уже есть принятый вызов"
+    },
+    "economy.sos.refuse.closed": {
+      "en": "the call is already closed",
+      "ru": "вызов уже закрыт"
+    },
+    "economy.sos.refuse.licence": {
+      "en": "you need this polity's rescue (SAR) licence (F5 -> Licences)",
+      "ru": "нужна лицензия МЧС этой политии (F5 -> Лицензии)"
+    },
+    "economy.sos.refuse.status": {
+      "en": "the call is already {status}",
+      "ru": "вызов уже {status}"
+    },
+    "economy.sos.refuse.unknown": {
+      "en": "no such call",
+      "ru": "нет такого вызова"
+    },
+    "economy.sos.result.done": {
+      "en": "rescue completed at {hub}: +{cr} Cr",
+      "ru": "спасение выполнено у {hub}: +{cr} Cr"
+    },
+    "economy.sos.result.taken": {
+      "en": "call accepted: {kind} at {hub} — fly there",
+      "ru": "вызов принят: {kind} у {hub} — летите туда"
+    },
+    "economy.tax.event.debt": {
+      "en": "income tax {cr} Cr: on credit",
+      "ru": "налог на доход {cr} Cr: в долг"
+    },
+    "economy.tax.event.debt_penalty": {
+      "en": "income tax {cr} Cr: on credit + penalty {penalty} Cr",
+      "ru": "налог на доход {cr} Cr: в долг + пени {penalty} Cr"
+    },
+    "economy.tax.event.paid": {
+      "en": "income tax {cr} Cr: paid",
+      "ru": "налог на доход {cr} Cr: уплачен"
+    },
+    "economy.tax.event.period_closed": {
+      "en": "tax period {from}-{to}: profit {profit} Cr, tax {tax} Cr due by day {day}",
+      "ru": "налоговый период {from}-{to}: прибыль {profit} Cr, налог {tax} Cr к уплате до дня {day}"
+    },
+    "economy.tax.event.withheld_credited": {
+      "en": "tax withheld at source -{cr} Cr ({polity}, credited at home)",
+      "ru": "налог у источника -{cr} Cr ({polity}, зачтётся дома)"
+    },
+    "economy.tax.event.withheld_lost": {
+      "en": "tax withheld at source -{cr} Cr ({polity}, not credited at home: no treaty)",
+      "ru": "налог у источника -{cr} Cr ({polity}, дома не зачитывается: нет соглашения)"
+    },
+    "economy.tax.memo.income": {
+      "en": "income tax for the period from day {day}",
+      "ru": "налог на доход за период с дня {day}"
+    },
+    "economy.tax.memo.income_fee": {
+      "en": "income tax for the period from day {day} (with an administration fee of {fee} Cr)",
+      "ru": "налог на доход за период с дня {day} (с платой за администрирование {fee} Cr)"
+    },
+    "economy.tax.memo.penalty": {
+      "en": "tax late penalty ({pct} % of the unpaid)",
+      "ru": "пени по налогу ({pct} % неуплаченного)"
+    },
+    "economy.trade.event.buy": {
+      "en": "purchase {t} t \"{good}\" at {hub}: {cr} Cr",
+      "ru": "покупка {t} т «{good}» на {hub}: {cr} Cr"
+    },
+    "economy.trade.event.duty": {
+      "en": "duty -{cr} Cr ({pct} % import of \"{good}\" at {hub})",
+      "ru": "пошлина -{cr} Cr ({pct} % ввоз «{good}» на {hub})"
+    },
+    "economy.trade.event.sell": {
+      "en": "sale {t} t \"{good}\" at {hub}: {cr} Cr",
+      "ru": "продажа {t} т «{good}» на {hub}: {cr} Cr"
+    },
+    "economy.trade.memo.buy": {
+      "en": "purchase {t} t \"{good}\" at {hub}",
+      "ru": "покупка {t} т «{good}» на {hub}"
+    },
+    "economy.trade.memo.sell": {
+      "en": "sale {t} t \"{good}\" at {hub}",
+      "ru": "продажа {t} т «{good}» на {hub}"
+    },
+    "economy.trade.memo.vat_refund": {
+      "en": "input VAT refund (minus a 1 % fee)",
+      "ru": "возврат входного НДС (минус 1 % сбор)"
+    },
+    "economy.trade.refuse.contraband": {
+      "en": "\"{good}\" is banned here: under the counter only (F8 CARGO -> black market)",
+      "ru": "«{good}» здесь запрещён: только из-под полы (F8 ГРУЗ -> чёрный рынок)"
+    },
+    "economy.trade.refuse.contract_cargo": {
+      "en": "the cargo of contract {contract} belongs to the client: it cannot be sold",
+      "ru": "груз контракта {contract} принадлежит заказчику: продать его нельзя"
+    },
+    "economy.trade.refuse.contract_cargo_t": {
+      "en": "the contract cargo ({t} t \"{good}\") belongs to the client: it cannot be sold",
+      "ru": "груз контракта ({t} т «{good}») принадлежит заказчику: продать его нельзя"
+    },
+    "economy.trade.refuse.fees_exceed": {
+      "en": "the fees exceed the proceeds and there is no money: {cr} Cr needed",
+      "ru": "сборы больше выручки, а денег нет: нужно {cr} Cr"
+    },
+    "economy.trade.refuse.licence": {
+      "en": "\"{good}\" only with the \"{licence}\" licence here (F5 -> Licences)",
+      "ru": "«{good}» здесь только по лицензии «{licence}» (F5 -> Лицензии)"
+    },
+    "economy.trade.refuse.no_market": {
+      "en": "this hub has no market for \"{good}\"",
+      "ru": "на этом хабе нет рынка товара «{good}»"
+    },
+    "economy.trade.refuse.no_money": {
+      "en": "insufficient funds: {cr} Cr needed ({reason})",
+      "ru": "недостаточно средств: нужно {cr} Cr ({reason})"
+    },
+    "economy.trade.refuse.not_aboard": {
+      "en": "only {t} t \"{good}\" aboard",
+      "ru": "на борту только {t} т «{good}»"
+    },
+    "economy.trade.refuse.price_moved": {
+      "en": "the price has changed: {new} Cr/t instead of {old}, repeat?",
+      "ru": "цена изменилась: {new} Cr/т вместо {old}, повторить?"
+    },
+    "economy.trade.refuse.requote": {
+      "en": "the day has changed (quote of day {quote_day}, now {day}): the price was recalculated, try again",
+      "ru": "сутки сменились (котировка дня {quote_day}, сейчас {day}): цена пересчитана, повторите"
+    },
+    "economy.trade.refuse.unknown_good": {
+      "en": "unknown good {good}",
+      "ru": "неизвестный товар {good}"
+    },
+    "economy.trade.result.bought": {
+      "en": "bought {t} t at {price} Cr/t",
+      "ru": "куплено {t} т по {price} Cr/т"
+    },
+    "economy.trade.result.sold": {
+      "en": "sold {t} t at {price} Cr/t; against cost {margin} Cr",
+      "ru": "продано {t} т по {price} Cr/т; к себестоимости {margin} Cr"
+    },
+    "economy.wallet.cash": {
+      "en": "cash",
+      "ru": "наличные"
+    },
+    "economy.wallet.loan_at_bank": {
+      "en": "{loan} ({bank})",
+      "ru": "{loan} ({bank})"
+    },
+    "economy.wallet.state.frozen": {
+      "en": "overdraft frozen",
+      "ru": "овердрафт заморожен"
+    },
+    "economy.wallet.state.hardship": {
+      "en": "no income: interest frozen",
+      "ru": "нет дохода: проценты заморожены"
+    },
+    "economy.wallet.state.interest_free": {
+      "en": "interest-free until day {day}",
+      "ru": "без процентов до дня {day}"
+    },
+    "economy.wallet.state.over_limit": {
+      "en": "over the limit {days} d",
+      "ru": "сверх лимита {days} сут"
+    },
+    "economy.wallet.state.overdue": {
+      "en": "overdue {days} d",
+      "ru": "просрочка {days} сут"
+    }
+  }
+}

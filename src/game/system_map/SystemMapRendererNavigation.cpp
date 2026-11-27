@@ -6,6 +6,7 @@
 #include "src/game/navigation/traffic/HubLaneNetwork.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubCitySpace.h"
+#include "src/game/localization/LocalizationService.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
@@ -137,7 +138,9 @@ void SystemMapRenderer::decorateHubPlanBlocks(
             pad.labelKey = "hub_pad";
             using PadKind = game::navigation::HubPlanModule::PadKind;
             pad.value = m.padKind == PadKind::Roof     ? ui.hubPadRoof
-                        : m.padKind == PadKind::Hangar ? "ремонтный ангар, " + std::to_string(game::navigation::hubBerthPlaces(m)) + " места"
+                        : m.padKind == PadKind::Hangar ? game::localization::tr("map.pad_button.repair_hangar",
+                                                              {{"places", std::to_string(game::navigation::hubBerthPlaces(m))}},
+                                                              "repair hangar, {places} places")
                         : m.padKind == PadKind::Garage ? ui.hubPadGarage + std::to_string(m.padPlaces)
                         : m.padKind == PadKind::Stilts ? ui.hubPadStilts
                                                        : ui.hubPadNone;
@@ -174,13 +177,24 @@ void SystemMapRenderer::decorateHubPlanBlocks(
                             b.find("@" + std::to_string(m_berthPlayerShipId)) == std::string::npos)
                             ++taken;
                 using PK = game::navigation::HubPlanModule::PadKind;
-                const char* kindRu = m.padKind == PK::Roof ? "крыша" : m.padKind == PK::Stilts ? "опоры"
-                                   : m.padKind == PK::Hangar ? "ангар" : "гараж";
+                using game::localization::tr;
+                std::string kind = m.padKind == PK::Roof     ? tr("map.pad_button.kind.roof", "roof")
+                                   : m.padKind == PK::Stilts ? tr("map.pad_button.kind.stilts", "stilts")
+                                   : m.padKind == PK::Hangar ? tr("map.pad_button.kind.hangar", "hangar")
+                                                             : tr("map.pad_button.kind.garage", "garage");
+                if (m.under)
+                    kind = tr("map.pad_button.lower", {{"kind", kind}}, "{kind} (lower)");
                 const bool full = places > 0 && taken >= places;
-                land.labelText = std::string("ПОСАДКА · ") + kindRu + (m.under ? " (низ)" : "") + " · " + (m.autoLanding ? "А" : "М") +
-                                 " · " + std::to_string(game::navigation::hubBerthPricePerHour(*plan, m)) + " Cr/ч · " +
-                                 (full ? std::string(m.padKind == PK::Hangar ? "ОЧЕРЕДЬ" : "ЗАНЯТО")
-                                       : "свободно " + std::to_string(places - taken) + "/" + std::to_string(places));
+                const std::string status =
+                    full ? (m.padKind == PK::Hangar ? tr("map.pad_button.queue", "QUEUE") : tr("map.pad_button.taken", "TAKEN"))
+                         : tr("map.pad_button.free", {{"free", std::to_string(places - taken)}, {"total", std::to_string(places)}},
+                              "free {free}/{total}");
+                land.labelText = tr("map.pad_button.label",
+                                    {{"kind", kind},
+                                     {"mode", m.autoLanding ? tr("map.pad_button.mode_auto", "A") : tr("map.pad_button.mode_manual", "M")},
+                                     {"price", std::to_string(game::navigation::hubBerthPricePerHour(*plan, m))},
+                                     {"status", status}},
+                                    "LANDING · {kind} · {mode} · {price} Cr/h · {status}");
                 land.enabled = !full || land.active || m.padKind == PK::Hangar;   // a hangar keeps a queue
             }
             item.panelActions.push_back(std::move(land));
@@ -2311,8 +2325,11 @@ void SystemMapRenderer::decorateSystemNetworkRoutes(
             if (!projectAbsolute(absolute, item.screenPx))
                 continue;
             item.objectId = "journal:" + e.key;
-            item.name = e.label;
-            item.typeName = std::string("бортовой журнал: ") + jr::kindRu(e.kind);
+            item.name = game::localization::renderMessage(e.label);
+            item.typeName = game::localization::tr(
+                "map.journal.type",
+                {{"kind", game::localization::tr(std::string("map.journal.kind.") + jr::kindTag(e.kind), jr::kindRu(e.kind))}},
+                "onboard journal: {kind}");
             item.kind = e.kind == jr::Kind::Danger || e.kind == jr::Kind::Anomaly ? game::system_map::MapObjectGlyphKind::Anchor
                                                                                      : game::system_map::MapObjectGlyphKind::Relay;
             item.infoKind = game::system_map::MapObjectInfoKind::Infrastructure;
@@ -2323,15 +2340,16 @@ void SystemMapRenderer::decorateSystemNetworkRoutes(
             if (e.reliability01 < 0.99f)
                 item.factionColor.a *= std::max(0.35f, e.reliability01);
             if (!e.detail.empty())
-                item.extraFields.push_back({"запись", e.detail});
+                item.extraFields.push_back({game::localization::tr("map.journal.field.record", "record"),
+                                            game::localization::renderMessage(e.detail)});
             char buf[64];
             std::snprintf(buf, sizeof buf, "%.0f %%", e.reliability01 * 100.0);
-            item.extraFields.push_back({"достоверность", buf});
+            item.extraFields.push_back({game::localization::tr("map.journal.field.reliability", "reliability"), buf});
             if (e.errorM > 1.0)
-            {
-                std::snprintf(buf, sizeof buf, "± %.0f км", e.errorM / 1000.0);
-                item.extraFields.push_back({"погрешность", buf});
-            }
+                item.extraFields.push_back(
+                    {game::localization::tr("map.journal.field.error", "error"),
+                     game::localization::tr("map.journal.error_km", {{"km", game::localization::formatNumber(e.errorM / 1000.0, 0)}},
+                                            "± {km} km")});
             item.visible = true;
             item.glyphScale = 0.8;
             item.hitRadiusPx = 10.0;

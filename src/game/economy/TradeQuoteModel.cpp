@@ -1,11 +1,15 @@
 #include "src/game/economy/TradeQuoteModel.h"
 
+#include "src/game/localization/LocalizedMessage.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 
 namespace game::economy
 {
+using game::localization::Message;
+
 double bidCr(const MarketSide& m)
 {
     return (m.fixedPriceCr > 0.0 ? m.fixedPriceCr : m.priceCr) * (1.0 - 0.5 * m.spread);
@@ -77,7 +81,7 @@ DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const Fiscal
     if (!(tonnes > 0.0))
     {
         q.code = "zero";
-        q.reason = "нулевое количество";
+        q.reason = Message("economy.quote.reason.zero");
         return q;
     }
     q.listUnitCr = buy ? askCr(m) : bidCr(m);
@@ -85,20 +89,15 @@ DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const Fiscal
     q.impactShare = q.listUnitCr > 0.0 ? q.unitCr / q.listUnitCr - 1.0 : 0.0;
     q.goodsCr = tonnes * q.unitCr;
     q.handlingCr = tonnes * r.handlingCrPerT * style.portIndex * m.handlingMult;
-    char label[96];
     if (buy)
     {
         q.vatCr = style.vatShare * (q.goodsCr + q.handlingCr);
         q.vatReclaimCr = style.vatShare * q.goodsCr;
-        q.lines.push_back({"товар", -q.goodsCr});
-        std::snprintf(label, sizeof label, "погрузка %.1f т", tonnes);
-        q.lines.push_back({label, -q.handlingCr});
+        q.lines.push_back({Message("economy.quote.line.goods"), -q.goodsCr});
+        q.lines.push_back({Message("economy.quote.line.loading").arg("tonnes", tonnes, 1), -q.handlingCr});
         if (q.vatCr > 0.0)
-        {
-            std::snprintf(label, sizeof label, "НДС %s (с товара — к возврату через %d сут)", pct(style.vatShare).c_str(),
-                          style.vatRefundDays);
-            q.lines.push_back({label, -q.vatCr});
-        }
+            q.lines.push_back({Message("economy.quote.line.vat_purchase").arg("pct", pct(style.vatShare)).arg("days", style.vatRefundDays),
+                               -q.vatCr});
     }
     else
     {
@@ -106,19 +105,17 @@ DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const Fiscal
         q.turnoverCr = style.turnoverShare * q.goodsCr;
         q.dutyShare = std::max(0.0, dutyShare);
         q.dutyCr = q.dutyShare * q.goodsCr;
-        q.lines.push_back({"выручка", q.goodsCr});
-        std::snprintf(label, sizeof label, "выгрузка %.1f т", tonnes);
-        q.lines.push_back({label, -q.handlingCr});
+        q.lines.push_back({Message("economy.quote.line.revenue"), q.goodsCr});
+        q.lines.push_back({Message("economy.quote.line.unloading").arg("tonnes", tonnes, 1), -q.handlingCr});
         if (q.vatCr > 0.0)
-            q.lines.push_back({"НДС с портовой услуги " + pct(style.vatShare), -q.vatCr});
+            q.lines.push_back({Message("economy.quote.line.vat_port").arg("pct", pct(style.vatShare)), -q.vatCr});
         if (q.dutyCr > 0.0)
-        {
-            std::snprintf(label, sizeof label, "пошлина %.1f %% (ввоз из другой политии)", q.dutyShare * 100.0);
-            q.lines.push_back({label, -q.dutyCr});
-        }
+            q.lines.push_back({Message("economy.quote.line.duty").arg("pct", q.dutyShare * 100.0, 1), -q.dutyCr});
         if (q.turnoverCr > 0.0)
-            q.lines.push_back({(style.turnoverRu.empty() ? std::string("налог с оборота") : style.turnoverRu) + " " +
-                                   pct(style.turnoverShare),
+            // the tax's name comes from the fiscal style data (turnover_ru); without one, the generic turnover tax
+            q.lines.push_back({Message("economy.quote.line.turnover")
+                                   .arg("name", style.turnoverRu.empty() ? Message("economy.quote.line.turnover_tax").str() : style.turnoverRu)
+                                   .arg("pct", pct(style.turnoverShare)),
                                -q.turnoverCr});
     }
     for (const auto& l : q.lines)
@@ -128,9 +125,7 @@ DealQuote explainDeal(bool buy, const MarketSide& m, double tonnes, const Fiscal
     if (tonnes > cap + 1.0e-9)
     {
         q.code = buy ? "hub_empty" : "hub_full";
-        char b[128];
-        std::snprintf(b, sizeof b, buy ? "хаб отпускает не больше %.1f т" : "склад хаба полон: берёт не больше %.1f т", cap);
-        q.reason = b;
+        q.reason = Message(buy ? "economy.quote.reason.hub_gives_up_to" : "economy.quote.reason.hub_full").arg("tonnes", cap, 1);
         return q;
     }
     q.ok = true;

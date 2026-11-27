@@ -4,11 +4,14 @@
 
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
 #include "src/game/ship/descriptors/CatalogShipRegistry.h"
+#include "src/game/localization/LocalizedMessage.h"
 
 namespace game::presentation
 {
 namespace
 {
+using game::localization::Message;
+
 std::string fmt(const char* format, double v)
 {
     char buf[64];
@@ -32,23 +35,18 @@ std::string grouped(double v)
     return out;
 }
 
-const char* categoryRu(const std::string& c)
+// the passport label of an installed item's category: a language-neutral Message (the renderer renders it)
+std::string categoryLabel(const std::string& c)
 {
-    static const std::pair<const char*, const char*> names[] = {
-        {"drive", "главный двигатель"}, {"reactor", "двигательный реактор"}, {"service_reactor", "служебный реактор"},
-        {"radiator", "радиаторы"}, {"coolant_loop", "контур охлаждения"}, {"jump_core", "ядро прыжка"}, {"tank", "баки"},
-        {"rcs", "маневровая система"}, {"computer", "бортовой компьютер"}, {"radar", "радар"}, {"comm", "связь"},
-        {"transponder", "транспондер"}, {"ecm", "РЭБ"}, {"sensor_mast", "сенсорная мачта"}, {"life_support", "жизнеобеспечение"},
-        {"escape_capsule", "спасательная капсула"}, {"cockpit_capsule", "кабина-капсула"}, {"lifeboat", "спасательная шлюпка"}, {"medbay", "медотсек"},
-        {"container_rack", "места C20"}, {"passenger_module", "пассажирские модули"}, {"train_module", "модули поезда"},
-        {"cryo_tank", "криоцистерны"}, {"bulk_hold", "грузовой отсек"}, {"docking_port", "стыковочный узел"},
-        {"boat_bay", "ангар катера"}, {"drone_bay", "отсек дронов"}, {"hangar", "ангар"}, {"tow_rig", "буксирная рама"},
-        {"workshop", "мастерская"}, {"heat_shield", "теплозащита"}, {"landing_gear", "посадочные опоры"},
-        {"weapon", "вооружение"}, {"armour", "броня"}};
-    for (const auto& [k, v] : names)
+    static const char* const known[] = {
+        "drive", "reactor", "service_reactor", "radiator", "coolant_loop", "jump_core", "tank", "rcs", "computer", "radar",
+        "comm", "transponder", "ecm", "sensor_mast", "life_support", "escape_capsule", "cockpit_capsule", "lifeboat", "medbay",
+        "container_rack", "passenger_module", "train_module", "cryo_tank", "bulk_hold", "docking_port", "boat_bay", "drone_bay",
+        "hangar", "tow_rig", "workshop", "heat_shield", "landing_gear", "weapon", "armour"};
+    for (const char* k : known)
         if (c == k)
-            return v;
-    return "оборудование";
+            return Message(std::string("service.panel.shipyard.category.") + k);
+    return Message("service.panel.shipyard.category.equipment");
 }
 
 ShipyardModelCard makeCard(const game::catalog::ships::ShipDesign& s, const ShipDescriptor& d, bool passportExpanded)
@@ -92,39 +90,50 @@ ShipyardModelCard makeCard(const game::catalog::ships::ShipDesign& s, const Ship
             c.propulsionPowerMW += m.engineReactor->ratedElectricalMW;
     c.servicePowerMW = d.reactor.nominalPowerMW;
     c.jumpRatingTonnes = d.catalog.jumpCoreRatingTonnes;
-    c.jump = "нет (внутрисистемный)";
+    c.jump = Message("service.panel.shipyard.jump_none");
     if (const auto* core = s.firstOf("jump_core"))
         if (const auto* p = catalog.findProduct(core->productId))
-            c.jump = p->model + ", " + grouped(c.jumpRatingTonnes) + " т";
+            c.jump = Message("service.panel.shipyard.jump_core").arg("model", p->model).arg("tonnes", grouped(c.jumpRatingTonnes));
     c.radarRangeKm = d.catalog.radarRangeMeters / 1000.0;
     for (const auto* r : s.allOf("radar"))
         if (const auto* p = catalog.findProduct(r->productId); p && p->number("range_km") * 1000.0 == d.catalog.radarRangeMeters)
-            c.radar = p->model + ", " + grouped(c.radarRangeKm) + " км";
+            c.radar = Message("service.panel.shipyard.radar_model").arg("model", p->model).arg("km", grouped(c.radarRangeKm));
     c.priceListCr = s.priceListCr;
 
+    // labels and values are language-neutral Messages (LocalizedMessage.h): the renderer shows them in the UI language
+    const auto label = [](const char* key) { return Message(std::string("service.panel.shipyard.spec.") + key).str(); };
     c.mainSpecs = {
-        {"Габариты", fmt("%.0f", s.envelopeMeters.x) + " × " + fmt("%.0f", s.envelopeMeters.y) + " × " + fmt("%.1f", s.envelopeMeters.z) + " м"},
-        {"Масса сухая / рабочая / полная", grouped(c.dryTonnes) + " / " + grouped(c.serviceTonnes) + " / " + grouped(c.grossTonnes) + " т"},
-        {"Экипаж / пассажиры", std::to_string(c.crew) + " / " + std::to_string(c.passengers)},
-        {"Груз", grouped(c.cargoTonnes) + " т" + (c.containerSlots > 0 ? ", C20 × " + std::to_string(c.containerSlots) : std::string())},
-        {"Схема двигателей", c.propulsionScheme},
-        {"Тяга / ускорение", fmt("%.1f", c.thrustMN) + " МН, " + fmt("%.2f", c.serviceAccelerationMps2 / 9.80665) + " g рабочая, " +
-                                  fmt("%.2f", c.grossAccelerationMps2 / 9.80665) + " g полная"},
-        {"Прыжок", c.jump},
-        {"Радар", c.radar},
-        {"Реакторы", grouped(c.propulsionPowerMW) + " МВт тяга, " + grouped(c.servicePowerMW) + " МВт служебный"},
-        {"Цена нового", grouped(c.priceListCr) + " Cr"},
+        {label("dimensions"), Message("service.panel.shipyard.value.dimensions")
+                                  .arg("x", fmt("%.0f", s.envelopeMeters.x)).arg("y", fmt("%.0f", s.envelopeMeters.y))
+                                  .arg("z", fmt("%.1f", s.envelopeMeters.z))},
+        {label("mass"), Message("service.panel.shipyard.value.mass")
+                            .arg("dry", grouped(c.dryTonnes)).arg("service", grouped(c.serviceTonnes)).arg("gross", grouped(c.grossTonnes))},
+        {label("crew"), std::to_string(c.crew) + " / " + std::to_string(c.passengers)},
+        {label("cargo"), c.containerSlots > 0 ? Message("service.panel.shipyard.value.cargo_c20")
+                                                    .arg("tonnes", grouped(c.cargoTonnes)).arg("slots", c.containerSlots).str()
+                                              : Message("service.panel.shipyard.value.cargo").arg("tonnes", grouped(c.cargoTonnes)).str()},
+        {label("propulsion"), c.propulsionScheme},
+        {label("thrust"), Message("service.panel.shipyard.value.thrust")
+                              .arg("thrust", fmt("%.1f", c.thrustMN))
+                              .arg("service", fmt("%.2f", c.serviceAccelerationMps2 / 9.80665))
+                              .arg("gross", fmt("%.2f", c.grossAccelerationMps2 / 9.80665))},
+        {label("jump"), c.jump},
+        {label("radar"), c.radar},
+        {label("reactors"), Message("service.panel.shipyard.value.reactors")
+                                .arg("drive", grouped(c.propulsionPowerMW)).arg("service", grouped(c.servicePowerMW))},
+        {label("price_new"), grouped(c.priceListCr) + " Cr"},
     };
     if (passportExpanded)
     {
-        c.passportSpecs.push_back({"Паспорт", s.id});
-        c.passportSpecs.push_back({"Назначение", s.purpose});
-        c.passportSpecs.push_back({"Ресурс", std::to_string(s.serviceLifeYears) + " лет"});
-        c.passportSpecs.push_back({"Радиаторы", grouped(s.radiatorAreaM2) + " м², контуры " + grouped(s.coolantCapacityMW) + " МВт"});
+        c.passportSpecs.push_back({label("passport"), s.id});
+        c.passportSpecs.push_back({label("purpose"), s.purpose});
+        c.passportSpecs.push_back({label("service_life"), Message("service.panel.shipyard.value.service_life").arg("years", s.serviceLifeYears)});
+        c.passportSpecs.push_back({label("radiators"), Message("service.panel.shipyard.value.radiators")
+                                                           .arg("area", grouped(s.radiatorAreaM2)).arg("mw", grouped(s.coolantCapacityMW))});
         for (const auto& item : s.installed)
         {
             const auto* p = catalog.findProduct(item.productId);
-            c.passportSpecs.push_back({categoryRu(item.category),
+            c.passportSpecs.push_back({categoryLabel(item.category),
                                        (p ? p->name : item.productId) + (item.quantity > 1 ? " × " + std::to_string(item.quantity) : std::string())});
         }
     }

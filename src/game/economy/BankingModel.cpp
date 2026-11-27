@@ -1,5 +1,7 @@
 #include "src/game/economy/BankingModel.h"
 
+#include "src/game/localization/LocalizedMessage.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -49,12 +51,18 @@ const char* standingName(Standing s)
 
 const char* standingRu(Standing s)
 {
+    // a language-neutral Message (the client renders it), kept in static storage for the const char* interface
+    using game::localization::Message;
+    static const std::string good = Message("economy.bank.standing.good").str();
+    static const std::string grace = Message("economy.bank.standing.grace").str();
+    static const std::string delinquent = Message("economy.bank.standing.delinquent").str();
+    static const std::string restructured = Message("economy.bank.standing.restructured").str();
     switch (s)
     {
-    case Standing::Good: return "в порядке";
-    case Standing::Grace: return "льготный период";
-    case Standing::Delinquent: return "просрочка: кредит заморожен";
-    case Standing::Restructured: return "реструктуризация: доля дохода сверх защищённого минимума";
+    case Standing::Good: return good.c_str();
+    case Standing::Grace: return grace.c_str();
+    case Standing::Delinquent: return delinquent.c_str();
+    case Standing::Restructured: return restructured.c_str();
     }
     return "";
 }
@@ -149,7 +157,7 @@ ClientLedger openLedger(const BankDirectory& dir, std::uint64_t ownerId, const s
     acc.balance = toMinor(dir.rules.startAccountCr * fx);
     acc.overdraftLimit = toMinor(dir.rules.startOverdraftCr * fx);
     l.cash[l.homeBank] = toMinor(dir.rules.startCashCr * fx);
-    logEvent(l, day, "счёт открыт в банке " + (home ? home->name : l.homeBank));
+    logEvent(l, day, game::localization::Message("economy.bank.log.account_opened").arg("bank", home ? home->name : l.homeBank));
     return l;
 }
 
@@ -278,7 +286,7 @@ PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::str
     const NationalBank* payee = dir.bank(payeeBank) ? dir.bank(payeeBank) : dir.reserve();
     if (!payee)
     {
-        r.reason = "нет банков";
+        r.reason = game::localization::Message("economy.bank.reason.no_banks");
         return r;
     }
     const std::string& pid = payee->id;
@@ -361,7 +369,7 @@ PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::str
     }
     if (remaining > 0.005)
     {
-        r.reason = "недостаточно средств";
+        r.reason = game::localization::Message("economy.bank.reason.insufficient_funds");
         return r;
     }
 
@@ -396,9 +404,20 @@ PaymentResult pay(ClientLedger& ledger, const BankDirectory& dir, const std::str
         r.lifelineCr = lifeline;
     }
     r.ok = true;
-    logEvent(ledger, day, "-" + money(amountCr * fxP, payee->code) + " " + memo +
-                              (lifeline > 0.0 ? " (спасательный кредит " + money(lifeline * fxP, payee->code) + ")" : std::string()) +
-                              (r.feesCr > 0.005 ? " (комиссии " + money(r.feesCr, "Cr") + ")" : std::string()));
+    {
+        using game::localization::Message;
+        Message ev("economy.bank.log.payment");
+        ev.arg("amount", money(amountCr * fxP, payee->code)).arg("memo", memo);
+        if (lifeline > 0.0)
+            ev.arg("lifeline", Message("economy.bank.log.payment_lifeline").arg("amount", money(lifeline * fxP, payee->code)));
+        else
+            ev.arg("lifeline", std::string());
+        if (r.feesCr > 0.005)
+            ev.arg("fees", Message("economy.bank.log.payment_fees").arg("amount", money(r.feesCr, "Cr")));
+        else
+            ev.arg("fees", std::string());
+        logEvent(ledger, day, ev);
+    }
     return r;
 }
 
@@ -486,10 +505,18 @@ void receive(ClientLedger& ledger, const BankDirectory& dir, const std::string& 
     target->balance -= toMinor(withheld * (1.0 - feeShare) * tfx);
     ledger.lastWithheldCr = withheld;
     ledger.lastWithheldDay = day;
-    std::string note = withheld > 0.005 ? " (в погашение долга " + money(withheld, "Cr") : std::string(" (удержания нет");
-    if (above < share - 0.005)   // the protected minimum set the limit (not the debt left)
-        note += ", защищено " + money(dir.rules.garnishProtectedCr, "Cr");
-    logEvent(ledger, day, "+" + money(amountCr * dir.fx(pid), codeOf(dir, pid)) + " " + memo + note + ")");
+    {
+        using game::localization::Message;
+        const bool limited = above < share - 0.005;   // the protected minimum set the limit (not the debt left)
+        Message ev(withheld > 0.005 ? (limited ? "economy.bank.log.income_withheld_protected" : "economy.bank.log.income_withheld")
+                                    : (limited ? "economy.bank.log.income_not_withheld_protected" : "economy.bank.log.income_not_withheld"));
+        ev.arg("amount", money(amountCr * dir.fx(pid), codeOf(dir, pid))).arg("memo", memo);
+        if (withheld > 0.005)
+            ev.arg("withheld", money(withheld, "Cr"));
+        if (limited)
+            ev.arg("protected", money(dir.rules.garnishProtectedCr, "Cr"));
+        logEvent(ledger, day, ev);
+    }
 }
 
 // ---------------------------------------------------------------- credit
@@ -519,7 +546,7 @@ double riskPremium(double annualNetIncomeCr, double routeRisk, double legalRisk,
 PaymentResult payFine(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, int day,
                       const std::string& memo)
 {
-    return payOrDebt(ledger, dir, authorityBank, amountCr, Purpose::Fine, day, memo, "штраф в долг");
+    return payOrDebt(ledger, dir, authorityBank, amountCr, Purpose::Fine, day, memo, game::localization::Message("economy.bank.debt_label.fine"));
 }
 
 PaymentResult payOrDebt(ClientLedger& ledger, const BankDirectory& dir, const std::string& authorityBank, double amountCr, Purpose purpose,
@@ -545,7 +572,7 @@ PaymentResult payOrDebt(ClientLedger& ledger, const BankDirectory& dir, const st
     l.nextDueDay = day + 30;
     l.installment = annuityInstallment(l.principal, 0.0, 12);
     ledger.loans.push_back(l);
-    logEvent(ledger, day, debtLabel + " " + money(toUnits(l.principal), b->code) + " " + memo);
+    logEvent(ledger, day, game::localization::Message("economy.bank.log.debt_entry").arg("label", debtLabel).arg("amount", money(toUnits(l.principal), b->code)).arg("memo", memo));
     r.ok = true;
     r.reason.clear();
     r.lifelineCr = amountCr;
@@ -586,7 +613,7 @@ double repayFromProceeds(ClientLedger& ledger, const BankDirectory& dir, const s
     ledger.loans.erase(std::remove_if(ledger.loans.begin(), ledger.loans.end(), [](const Loan& l) { return l.outstanding <= 0; }),
                        ledger.loans.end());
     if (paid > 0)
-        logEvent(ledger, day, memo + ": долг погашен на " + money(toUnits(paid), dir.bank(bankId) ? dir.bank(bankId)->code : std::string("CR")));
+        logEvent(ledger, day, game::localization::Message("economy.bank.log.debt_repaid_by").arg("memo", memo).arg("amount", money(toUnits(paid), dir.bank(bankId) ? dir.bank(bankId)->code : std::string("CR"))));
     return toUnits(rest) / fx;
 }
 
@@ -620,8 +647,10 @@ Loan* takeLoan(ClientLedger& ledger, const BankDirectory& dir, const std::string
     l.installment = annuityInstallment(l.principal, l.annualRate, l.termDays / 30);
     ensureAccount(ledger, bankId).balance += l.principal;
     ledger.loans.push_back(l);
-    logEvent(ledger, day, "кредит " + money(toUnits(l.principal), b->code) + " на " + std::to_string(l.termDays) + " сут под " +
-                              money(l.annualRate * 100.0, "%"));
+    logEvent(ledger, day, game::localization::Message("economy.bank.log.loan_taken")
+                              .arg("amount", money(toUnits(l.principal), b->code))
+                              .arg("days", l.termDays)
+                              .arg("rate", money(l.annualRate * 100.0, "%")));
     return &ledger.loans.back();
 }
 
@@ -650,7 +679,7 @@ int placeHold(ClientLedger& ledger, const BankDirectory& dir, const std::string&
     h.day = day;
     h.memo = memo;
     ledger.holds.push_back(h);
-    logEvent(ledger, day, "блокировка " + memo);
+    logEvent(ledger, day, game::localization::Message("economy.bank.log.hold_placed").arg("memo", memo));
     return h.id;
 }
 
@@ -685,7 +714,7 @@ bool captureHold(ClientLedger& ledger, const BankDirectory& dir, int holdId, int
     releaseHold(ledger, holdId);
     if (Account* a = findAccount(ledger, bank))
         a->balance -= amount;
-    logEvent(ledger, day, "залог удержан " + money(toUnits(amount), codeOf(dir, bank)) + " " + memo);
+    logEvent(ledger, day, game::localization::Message("economy.bank.log.hold_captured").arg("amount", money(toUnits(amount), codeOf(dir, bank))).arg("memo", memo));
     return true;
 }
 
@@ -814,14 +843,14 @@ LedgerDayReport stepLedgerDay(ClientLedger& ledger, const BankDirectory& dir, in
             l.arrears += fee;
             l.interestCharged += fee;
             l.lateFeeCharged = true;
-            logEvent(ledger, day, "штраф за просрочку " + money(toUnits(fee), b->code));
+            logEvent(ledger, day, game::localization::Message("economy.bank.log.late_fee").arg("amount", money(toUnits(fee), b->code)));
         }
     }
     for (auto it = ledger.loans.begin(); it != ledger.loans.end();)
     {
         if (it->outstanding <= 0)
         {
-            logEvent(ledger, day, "долг погашен (" + codeOf(dir, it->bankId) + ")");
+            logEvent(ledger, day, game::localization::Message("economy.bank.log.debt_repaid").arg("currency", codeOf(dir, it->bankId)));
             it = ledger.loans.erase(it);
         }
         else
@@ -888,8 +917,11 @@ LedgerDayReport stepLedgerDay(ClientLedger& ledger, const BankDirectory& dir, in
             r->outstanding += sum;
             r->hardship = income30 <= 0.0;
             rep.restructured = true;
-            logEvent(ledger, day, "реструктуризация в банке " + b->name + ": " + money(toUnits(sum), b->code) + " под " +
-                                      money(b->policyRate * 100.0, "%") + ", погашение " + std::to_string(static_cast<int>(std::lround(rules.garnishShare * 100.0))) + " % дохода");
+            logEvent(ledger, day, game::localization::Message("economy.bank.log.restructured")
+                                      .arg("bank", b->name)
+                                      .arg("amount", money(toUnits(sum), b->code))
+                                      .arg("rate", money(b->policyRate * 100.0, "%"))
+                                      .arg("share", static_cast<int>(std::lround(rules.garnishShare * 100.0))));
         }
         maxOverdue = 0;
         for (const auto& l : ledger.loans)
@@ -909,7 +941,7 @@ LedgerDayReport stepLedgerDay(ClientLedger& ledger, const BankDirectory& dir, in
     {
         rep.standingChanged = true;
         ledger.standing = next;
-        logEvent(ledger, day, std::string("статус: ") + standingRu(next));
+        logEvent(ledger, day, game::localization::Message("economy.bank.log.standing").arg("standing", std::string(standingRu(next))));
     }
     const bool freeze = next == Standing::Delinquent || next == Standing::Restructured;
     for (auto& a : ledger.accounts)

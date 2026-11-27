@@ -3,6 +3,7 @@
 // replicated ship instances + the server's Repair & Refit previews (F7).
 
 #include "src/game/SpaceStateInternal.h"
+#include "src/game/localization/LocalizationService.h"
 
 #include <algorithm>
 
@@ -12,6 +13,34 @@
 #include "src/game/client/GameClient.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/navigation/rules/NavDataBanks.h"
+
+namespace l10n = game::localization;
+
+namespace
+{
+// the nav-data rows' words in the UI language (the rules' own texts stay for the server's logs)
+std::string laneStateName(game::navigation::jump::LaneState s)
+{
+    namespace jr = game::navigation::jump;
+    switch (s)
+    {
+    case jr::LaneState::Known: return l10n::tr("cockpit.jump.lane_state.known", "known");
+    case jr::LaneState::Estimate: return l10n::tr("cockpit.jump.lane_state.estimate", "estimate");
+    case jr::LaneState::Outdated: return l10n::tr("cockpit.jump.lane_state.outdated", "outdated");
+    default: return l10n::tr("cockpit.jump.lane_state.unknown", "unknown");
+    }
+}
+std::string dataTierName(game::navigation::jump::DataTier t)
+{
+    namespace jr = game::navigation::jump;
+    switch (t)
+    {
+    case jr::DataTier::Military: return l10n::tr("cockpit.navdata.tier.military", "military clearance");
+    case jr::DataTier::Secret: return l10n::tr("cockpit.navdata.tier.secret", "secret");
+    default: return l10n::tr("cockpit.navdata.tier.public", "public");
+    }
+}
+} // namespace
 
 game::presentation::RepairRefitPresentation SpaceState::buildRepairRefitPage()
 {
@@ -106,24 +135,22 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
         if (const auto it = hubs.find(targetId); it != hubs.end())
         {
             const double km = glm::length(world::coordinates::fullMeters(it->second.worldPosition) - playerWorld) / 1000.0;
-            char b[48];
-            std::snprintf(b, sizeof b, km < 100000.0 ? "%.0f km" : "%.2f млн км", km < 100000.0 ? km : km / 1.0e6);
-            return b;
+            return km < 100000.0 ? l10n::tr("cockpit.unit.distance_km", {{"0", l10n::formatNumber(km, 0)}}, "{0} km")
+                                 : l10n::tr("cockpit.unit.distance_million_km", {{"0", l10n::formatNumber(km / 1.0e6, 2)}}, "{0}M km");
         }
         const auto* target = game::economy::EconomyModel::instance().hub(targetId);
         if (!target)
             return {};
         if (target->systemId == playerSystem)
-            return "в этой системе";
+            return l10n::tr("cockpit.services.in_this_system", "in this system");
         if (const auto* atlas = m_client->starAtlas())
         {
             const auto* a = atlas->findSystemSummary(playerSystem);
             const auto* b = atlas->findSystemSummary(target->systemId);
             if (a && b)
             {
-                char buf[48];
-                std::snprintf(buf, sizeof buf, "%.2f св. лет", glm::length(glm::dvec3(b->positionLy) - glm::dvec3(a->positionLy)));
-                return buf;
+                return l10n::tr("cockpit.unit.distance_ly",
+                                {{"0", l10n::formatNumber(glm::length(glm::dvec3(b->positionLy) - glm::dvec3(a->positionLy)), 2)}}, "{0} ly");
             }
         }
         return {};
@@ -252,7 +279,7 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
             row.place = shell->name;
             if (r.corridor >= 1 && r.corridor <= static_cast<int>(shell->corridors.size()))
                 row.corridor = shell->corridors[static_cast<std::size_t>(r.corridor - 1)].name;
-            row.stateText = jr::laneStateText(jr::laneState(*shell, r, universeS));
+            row.stateText = laneStateName(jr::laneState(*shell, r, universeS));
         }
     };
     if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
@@ -267,7 +294,8 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
             nav.memory.push_back(row);
         }
         for (const auto& c : jr::parseDataCarriers(motion.dataCarriers))
-            nav.carriers.push_back(c.label + " (" + std::to_string(c.records.size()) + " зап.)");
+            nav.carriers.push_back(l10n::tr("cockpit.navdata.carrier", {{"label", c.label}, {"count", std::to_string(c.records.size())}},
+                                            "{label} ({count} rec.)"));
         if (const auto* bank = jr::navDataBankInSystem(playerSystem); bank && atlas)
         {
             nav.bankName = bank->name;
@@ -276,7 +304,7 @@ game::presentation::GovernmentPresentation SpaceState::buildGovernmentPage()
                 game::presentation::NavDataRow row;
                 describe(jr::laneRecordOf(*atlas, *bank, r), row);
                 row.id = r.id;
-                row.tierText = jr::dataTierText(r.tier);
+                row.tierText = dataTierName(r.tier);
                 row.open = r.tier == jr::DataTier::Public;
                 row.surveyYear = r.surveyYear;
                 row.priceCr = r.priceCr;

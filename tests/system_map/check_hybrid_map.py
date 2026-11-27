@@ -81,9 +81,9 @@ require("glEnable(GL_SCISSOR_TEST)" in panel and "m_infoScrollPx" in panel, "pan
 require("std::max(15, bodyPx)" in panel, "panel info font must stay readable (>= 15 px)")
 
 info = text("src/game/presentation/SystemMapInfoBuilder.h")
-require('title = "КАРТА СИСТЕМЫ";' in info, "panel title must be КАРТА СИСТЕМЫ")
+require('"map.info.title"' in info, "panel title must be the localized map.info.title (КАРТА СИСТЕМЫ / SYSTEM MAP)")
 require("system_status_text" not in info and "summary(in.systemId)" in info, "system state must come from the world model summary")
-require("Хабы по районам" in info, "summary must list hubs of every region (discoverability)")
+require('"map.info.hubs_by_region"' in info, "summary must list hubs of every region (discoverability)")
 
 require("buildSystemMapObjectList" in info and "systemMapObjectIdOf" in info, "System / Detail panel must list every hub and beacon")
 require("listRowCount(panel, infoMode)" in panel and "SystemMapPanelActionType::SelectObject" in panel,

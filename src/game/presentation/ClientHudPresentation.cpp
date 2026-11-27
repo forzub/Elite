@@ -1,4 +1,5 @@
 #include "src/world/WorldLaws.h"
+#include "src/game/localization/LocalizationService.h"
 #include "src/game/presentation/HudSteadyNumber.h"
 #include "src/game/navigation/rules/JDrive.h"
 #include "src/game/presentation/ClientHudPresentation.h"
@@ -141,7 +142,8 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
             // the medium resists above 0.6 c: the net acceleration falls while the thrust (in brackets) holds
             const bool medium = game::navigation::jdrive::mediumResistanceMps2(out.speedMps) >= 0.5 * ::world::laws::StandardGravityMps2;
             out.accelText = "J " + gText(a, true, "cockpit.j.accel") + "  (" + gText(motion.jAccelCommandMps2, true, "cockpit.j.command") + ")" +
-                            (medium ? "  среда" : "") + (motion.jStopping ? "  выкл." : "");
+                            (medium ? "  " + game::localization::tr("cockpit.j.medium_tag", "medium") : std::string()) +
+                            (motion.jStopping ? "  " + game::localization::tr("cockpit.j.off_tag", "off") : std::string());
         }
         else
         {

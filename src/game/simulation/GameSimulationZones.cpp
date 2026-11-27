@@ -2,6 +2,7 @@
 // entered or a blue gate skipped between its two bodies fines the ship - authoritative, replicated
 // (motion.zoneFinesTotalCr / zoneViolation*), the client only shows the notice.
 #include "src/game/simulation/GameSimulation.h"
+#include "src/game/localization/LocalizedMessage.h"
 
 #include <algorithm>
 #include <iostream>
@@ -97,7 +98,7 @@ void GameSimulation::updateZoneViolations(double dt)
             // the fine is banked (docs/HUB_SECURITY.md, ECONOMY_BANKING.md): the account of the ship's owner at the bank of the
             // polity where it is - never refused, an unpayable fine becomes a fine debt
             const auto paid = game::economy::service::chargeFine(static_cast<std::uint32_t>(id.value), std::string(), z.fineCr,
-                                                                 "штраф: навигационная зона " + z.id);
+                                                                 game::localization::Message("security.fine.memo.nav_zone").arg("zone", z.id).str());
             // the display mirror of the bank (the payment / fine debt is the truth); no economy / AI: the fine assessed
             motion.zoneFinesTotalCr += paid.charged ? paid.paidCr + paid.debtCr : z.fineCr;
             std::cerr << "[Zones] ship " << id.value << " VIOLATION: " << (kind == 1 ? "entered red zone " : "skipped gate ") << z.id

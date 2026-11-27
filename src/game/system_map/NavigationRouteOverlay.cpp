@@ -9,6 +9,7 @@
 #include <glad/gl.h>
 
 #include "render/HUD/TextRenderer.h"
+#include "src/game/localization/LocalizationService.h"
 
 namespace game::system_map
 {
@@ -22,10 +23,11 @@ std::string programLine(const game::navigation::NavigationWaypoint& w, const gam
     std::string line = p == P::PassThrough ? t.programPassThrough : p == P::Dock ? t.programDock : p == P::Orbit ? t.programOrbit
         : p == P::OrbitSurvey ? t.programOrbitSurvey : p == P::Land ? t.programLand : p == P::LandAtSettlement ? t.programLandAtSettlement
         : p == P::Rendezvous ? t.programRendezvous : p == P::Stop ? t.programStop : t.programAuto;
-    if (w.actions.refuel || w.stopAction == "refuel") line += " + заправка";
-    if (w.actions.repair) line += " + ремонт";
-    if (w.actions.pauseHere) line += "  || пауза";
-    if (w.insertedByPlanner) line = "[план] " + line;
+    using game::localization::tr;
+    if (w.actions.refuel || w.stopAction == "refuel") line += tr("map.route_list.refuel_suffix", " + refuel");
+    if (w.actions.repair) line += tr("map.route_list.repair_suffix", " + repair");
+    if (w.actions.pauseHere) line += tr("map.route_list.pause_suffix", "  || pause");
+    if (w.insertedByPlanner) line = tr("map.route_list.planner_inserted", {{"line", line}}, "[plan] {line}");
     // the row has ~34 characters beside the role (the delete cross on the right)
     if (line.size() > 60)   // bytes: Cyrillic is 2 per character; cut on a character boundary
     {
@@ -237,9 +239,13 @@ std::vector<FooterButton> footerButtons(double footerTop, int serverRouteState)
         out.push_back({4, {170.0, y}, 96.0});
     return out;
 }
-const char* footerButtonLabel(int command)
+std::string footerButtonLabel(int command)
 {
-    return command == 1 ? "РАССЧИТАТЬ" : command == 2 ? "СТАРТ" : command == 3 ? "ПАУЗА" : "ПРОДОЛЖИТЬ";
+    using game::localization::tr;
+    return command == 1   ? tr("map.route_list.button.calculate", "CALCULATE")
+           : command == 2 ? tr("map.route_list.button.start", "START")
+           : command == 3 ? tr("map.route_list.button.pause", "PAUSE")
+                          : tr("map.route_list.button.resume", "RESUME");
 }
 
 } // namespace
@@ -885,11 +891,15 @@ void NavigationRouteOverlayRenderer::render(
     }
     // the last calculation and the server's route state
     {
-        static const char* states[] = {"", "МАРШРУТ: ПОЛЁТ", "МАРШРУТ: ПАУЗА — РУЧНОЙ РЕЖИМ", "МАРШРУТ: СТОЯНКА-СЕРВИС", "МАРШРУТ: ПОСАДКА"};
+        using game::localization::tr;
         const int st = std::clamp(routePlan.serverRouteState, 0, 4);
-        std::string line = states[st];
+        std::string line = st == 1   ? tr("map.route_list.state.flight", "ROUTE: FLIGHT")
+                           : st == 2 ? tr("map.route_list.state.paused", "ROUTE: PAUSED — MANUAL MODE")
+                           : st == 3 ? tr("map.route_list.state.service_stop", "ROUTE: SERVICE STOP")
+                           : st == 4 ? tr("map.route_list.state.landing", "ROUTE: LANDING")
+                                     : std::string();
         if (!routePlan.summary.empty())
-            line += (line.empty() ? "" : "  ·  ") + routePlan.summary;
+            line += (line.empty() ? "" : "  ·  ") + game::localization::renderMessage(routePlan.summary);
         if (!line.empty())
             text.textDrawPx(line, static_cast<float>(top.x + 10.0),
                             static_cast<float>(top.y + height - NavigationRouteOverlayState::FooterHeightPx + 14.0), 9,

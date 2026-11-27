@@ -10,6 +10,7 @@
 // One source for the client's dispatcher (at the click, before any route) and the server's (at the request).
 
 #include <string>
+#include "src/game/localization/LocalizedMessage.h"
 
 namespace game::navigation::rules
 {
@@ -26,7 +27,8 @@ inline std::string newtonianPadNotice(const std::string& address, bool ringHub)
     return "refused:newtonian:" + address + ":" + (ringHub ? "1" : "0");
 }
 
-// the pilot's line for that notice (empty: not this notice)
+// the pilot's line for that notice (empty: not this notice) - a language-neutral Message (LocalizedMessage.h): this header
+// is shared with the server, the client renders it (LocalizationService::render)
 inline std::string newtonianPadLine(const std::string& status)
 {
     const std::string head = "refused:newtonian:";
@@ -36,10 +38,9 @@ inline std::string newtonianPadLine(const std::string& status)
     const auto colon = rest.rfind(':');
     const std::string address = colon == std::string::npos ? rest : rest.substr(0, colon);
     const bool ring = colon != std::string::npos && rest.substr(colon + 1) == "1";
-    return "ДИСПЕТЧЕР: посадка на " + address +
-           " отклонена - городские площадки закрыты для ньютоновских кораблей (в городе им не развернуться). " +
-           (ring ? std::string("Стыкуйтесь в осевой док (Док) - на оси палуба стоит")
-                 : std::string("Стыкуйтесь в док города (Док) - он на окраине"));
+    return game::localization::Message(ring ? "cockpit.dispatcher.newtonian_refused_ring" : "cockpit.dispatcher.newtonian_refused_city")
+        .arg("pad", address)
+        .str();
 }
 
 } // namespace game::navigation::rules

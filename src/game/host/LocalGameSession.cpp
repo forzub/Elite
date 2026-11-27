@@ -123,6 +123,11 @@ game::session::GameSessionAdvanceResult LocalGameSession::advance(
     return sessionResult;
 }
 
+void LocalGameSession::setLocalPaused(bool paused)
+{
+    m_host->setPaused(paused);
+}
+
 double LocalGameSession::fixedStepSeconds() const
 {
     return m_host->fixedStepSeconds();

@@ -1,4 +1,5 @@
 #include "src/game/client/ClientHubCitySpace.h"
+#include "src/game/localization/LocalizationService.h"
 #include "src/core/HitchProfiler.h"
 #include "src/world/WorldLaws.h"
 #include "src/ui/input/GlfwPointerSource.h"
@@ -21,6 +22,26 @@
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/HubPlanPads.h"
 #include "src/game/SpaceStateInternal.h"
+
+namespace l10n = game::localization;
+
+namespace
+{
+// a ship alert's text (ShipCoreStatus: language-neutral Messages; the containment alert joins two of them with "|")
+std::string renderAlertMessage(const std::string& message)
+{
+    std::string out;
+    for (std::size_t at = 0;;)
+    {
+        const std::size_t bar = message.find('|', at);
+        out += l10n::renderMessage(message.substr(at, bar == std::string::npos ? std::string::npos : bar - at));
+        if (bar == std::string::npos)
+            return out;
+        out += '|';
+        at = bar + 1;
+    }
+}
+} // namespace
 
 
 
@@ -343,18 +364,19 @@ m_systemMapRenderer.render(
                     descentMps = 0.0;
                     rate = 0.0;
                 }
-                char text[160];
+                std::string text;
                 // steady figures (author 2026-11-21: «дрожит высотомер и спидометр - гистерезис или пониженная точность»): a
                 // shown value moves only out of its band; tenths below 10 m, whole metres above
                 const double shownH =
                     game::presentation::hudSteady("f4.height", std::max(0.0, heightM), 0.02, heightM < 10.0 ? 0.1 : 0.6);
                 const double shownV = game::presentation::hudSteady("f4.descent", descentMps, 0.06, 0.15);
                 if (hit > reach)
-                    std::snprintf(text, sizeof text, "ВЫСОТА  > 500 м        СПУСК  %.1f м/с", shownV);
-                else if (shownH < 10.0)
-                    std::snprintf(text, sizeof text, "ВЫСОТА  %.1f м        СПУСК  %.1f м/с", shownH, shownV);
+                    text = l10n::tr("cockpit.pad.altimeter_far", {{"descent", l10n::formatNumber(shownV, 1)}},
+                                    "ALTITUDE  > 500 m        DESCENT  {descent} m/s");
                 else
-                    std::snprintf(text, sizeof text, "ВЫСОТА  %.0f м        СПУСК  %.1f м/с", shownH, shownV);
+                    text = l10n::tr("cockpit.pad.altimeter",
+                                    {{"height", l10n::formatNumber(shownH, shownH < 10.0 ? 1 : 0)}, {"descent", l10n::formatNumber(shownV, 1)}},
+                                    "ALTITUDE  {height} m        DESCENT  {descent} m/s");
                 // too fast for the height: 2.5 m/s within 30 m of the surface, more allowed higher up (room to brake)
                 const double allowed = game::navigation::HubPadTouchdownMaxMps + std::max(0.0, std::min(heightM, 500.0) - 30.0) * 0.2;
                 const bool tooFast = descentMps > allowed;
@@ -436,10 +458,10 @@ m_systemMapRenderer.render(
                 }
             }
             const bool blinkOn = std::fmod(glfwGetTime(), 0.8) < 0.5;
-            const char* label = gear == 1 ? "ОПОРЫ: ВЫПУЩЕНЫ"
-                              : gear == 2 ? "ОПОРЫ: СЛОМАНЫ"
-                              : legsWanted ? (blinkOn ? "ВЫПУСТИТЕ ОПОРЫ (G)" : "")
-                                           : "ОПОРЫ: УБРАНЫ (G)";
+            const std::string label = gear == 1 ? l10n::tr("cockpit.gear.label_down", "GEAR: DOWN")
+                                    : gear == 2 ? l10n::tr("cockpit.gear.label_broken", "GEAR: BROKEN")
+                                    : legsWanted ? (blinkOn ? l10n::tr("cockpit.gear.label_lower", "LOWER THE GEAR (G)") : std::string())
+                                                 : l10n::tr("cockpit.gear.label_up", "GEAR: UP (G)");
             const glm::vec4 colour = gear == 1   ? glm::vec4(0.35f, 1.0f, 0.45f, 0.95f)
                                    : gear == 2 ? glm::vec4(1.0f, 0.28f, 0.22f, 1.0f)
                                    : legsWanted ? glm::vec4(1.0f, 0.62f, 0.18f, 1.0f)
@@ -878,7 +900,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
         }
         radio.update();
         if (std::string n = radio.takeNotice(); !n.empty())
-            m_pilotNotice = n;
+            m_pilotNotice = l10n::renderMessage(n);
     }
     // the hub's corridors (green lanes / red zones), faint, under the guidance corridor
     if (m_client)
@@ -1342,7 +1364,7 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
     if(cockpit.valid)
         for(const auto& alert : cockpit.systems.alerts)
             terminal.diagnostics.emplace_back(
-                alert.system + ": " + alert.message,
+                alert.system + ": " + renderAlertMessage(alert.message),
                 alert.severity>=2
                     ? game::presentation::DockingTerminalSeverity::Error
                     : game::presentation::DockingTerminalSeverity::Warning);
@@ -1461,7 +1483,7 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
     }
     if (!m_pilotNotice.empty())
     {
-        terminal.pilotNotice = m_pilotNotice;
+        terminal.pilotNotice = l10n::renderMessage(m_pilotNotice);
         terminal.visible = true;
     }
     // THE DISPATCHER'S LIGHT (author 2026-11-22: «если док занят - сообщение красным в терминале HUD и время ожидания. как
@@ -1484,7 +1506,8 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
         {
             if (m_berthWatch.freeSince < 0.0)
                 m_berthWatch.freeSince = now;
-            terminal.diagnostics.emplace_back("СВОБОДНО: " + m_berthWatch.address + " - место освободилось, можно садиться",
+            terminal.diagnostics.emplace_back(l10n::tr("cockpit.berth.free", {{"place", m_berthWatch.address}},
+                                                       "FREE: {place} - a place is free, you may land"),
                                               game::presentation::DockingTerminalSeverity::Go);
             if (now - m_berthWatch.freeSince > 15.0)
                 m_berthWatch = {};
@@ -1495,8 +1518,8 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
             // the wait in 5-minute steps: the line changes (is printed again) every 5 minutes, not every minute
             const int raw = std::max(1, m_berthWatch.waitMin - static_cast<int>((now - m_berthWatch.since) / 60.0));
             const int left = raw <= 5 ? raw : 5 * ((raw + 4) / 5);
-            terminal.diagnostics.emplace_back("ЗАНЯТО: " + m_berthWatch.address + " - все места заняты, ожидание ~" +
-                                                  std::to_string(left) + " мин",
+            terminal.diagnostics.emplace_back(l10n::tr("cockpit.berth.taken", {{"place", m_berthWatch.address}, {"minutes", std::to_string(left)}},
+                                                       "TAKEN: {place} - all places taken, wait ~{minutes} min"),
                                               game::presentation::DockingTerminalSeverity::Alert);
             if (now - m_berthWatch.since > 1800.0)
                 m_berthWatch = {};
@@ -2570,10 +2593,17 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     };
 
     std::string reference = motion.freeFlightReferenceId;
+    // the reference's name in the player's language (D7): hubs and bodies from the localized world catalogs
+    // ("hubs": by hub id, "bodies": "<system>:<body id>"), the data name as the fallback
     if (const auto hub = m_client->world().hubs().find(reference); hub != m_client->world().hubs().end() && !hub->second.name.empty())
-        reference = hub->second.name;
+        reference = context().app ? context().app->localization().catalogName("hubs", reference, hub->second.name) : hub->second.name;
     else if (const auto dot = reference.rfind('.'); dot != std::string::npos)
-        reference = reference.substr(dot + 1);   // a body id: system_0.Sol.Земля -> Земля
+    {
+        const std::string fallback = reference.substr(dot + 1);   // a body id: system_0.Sol.Земля -> Земля
+        reference = context().app ? context().app->localization().catalogName(
+                                        "bodies", std::to_string(motion.systemId) + ":" + reference, fallback)
+                                  : fallback;
+    }
     const glm::dvec3 relative = motion.travelFrame.linearVelocityMps +
         motion.travelFrame.localToWorldVector(motion.localVelocityMps) - motion.freeFlightReferenceVelocityMps;
 
@@ -2964,8 +2994,8 @@ void SpaceState::renderContainmentBeacon(const Viewport& viewport)
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);
     const auto bar = alarm->message.find('|');
-    const std::string head = alarm->message.substr(0, bar);
-    const std::string advice = bar == std::string::npos ? std::string() : alarm->message.substr(bar + 1);
+    const std::string head = l10n::renderMessage(alarm->message.substr(0, bar));
+    const std::string advice = bar == std::string::npos ? std::string() : l10n::renderMessage(alarm->message.substr(bar + 1));
     const std::string line = hudText(hudLookup(context().app), "cockpit.containment.line",
                                      {head, hudNumber("%.0f", alarm->value), hudNumber("%.0f", alarm->threshold)});
     const float tw = std::max(text.measureTextPx(line, 18), text.measureTextPx(advice, 14));

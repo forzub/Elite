@@ -9,6 +9,7 @@
 #include <mutex>
 
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
+#include "src/game/localization/LocalizedMessage.h"
 #include "src/game/navigation/DynamicMotionState.h"
 #include "src/game/ship/ShipInitData.h"
 #include "src/game/ship/core/ShipCore.h"
@@ -19,6 +20,7 @@ namespace game::ship::refit
 {
 namespace
 {
+using game::localization::Message;
 using game::catalog::ships::ShipDesign;
 using game::catalog::ships::ShipDesignCatalog;
 using game::catalog::ships::ShipDesignInstalledItem;
@@ -126,17 +128,26 @@ double fullForwardBurn(core::ShipCore& ship, double seconds)
     return glm::length(tr.motion.localVelocityMps - vHalf) / (dt * (steps - steps / 2 - 1));
 }
 
-void addDelta(std::vector<RefitDelta>& out, const char* key, const char* label, const char* unit, double before, double after,
-              double tolerance)
+// the label is a language-neutral Message "service.repair_refit.delta.<key>"; a unit word likewise
+// ("service.repair_refit.unit.<id>"), the symbols % and K stay plain
+std::string unitText(const char* unit)
 {
-    if (std::abs(after - before) > tolerance)
-        out.push_back({key, label, unit, before, after, false});
+    const std::string u = unit;
+    if (u == "mw" || u == "t" || u == "km" || u == "mps2" || u == "radps2")
+        return Message("service.repair_refit.unit." + u);
+    return u;
 }
 
-void addFlag(std::vector<RefitDelta>& out, const char* key, const char* label, bool before, bool after)
+void addDelta(std::vector<RefitDelta>& out, const char* key, const char* unit, double before, double after, double tolerance)
+{
+    if (std::abs(after - before) > tolerance)
+        out.push_back({key, Message(std::string("service.repair_refit.delta.") + key), unitText(unit), before, after, false});
+}
+
+void addFlag(std::vector<RefitDelta>& out, const char* key, bool before, bool after)
 {
     if (before != after)
-        out.push_back({key, label, "", before ? 1.0 : 0.0, after ? 1.0 : 0.0, true});
+        out.push_back({key, Message(std::string("service.repair_refit.delta.") + key), "", before ? 1.0 : 0.0, after ? 1.0 : 0.0, true});
 }
 
 // Swaps the installed product of a catalog module in a descriptor COPY
@@ -213,33 +224,35 @@ std::string replacementIncompatibility(const ShipDescriptor& d, const std::strin
 {
     const auto facts = moduleFacts(d, moduleId);
     if (facts.productId.empty())
-        return "модуль не из каталога оборудования: замена на другое изделие невозможна";
+        return Message("service.repair_refit.error.not_catalog_module");
     const auto* p = ShipDesignCatalog::instance().findProduct(productId);
     if (!p)
-        return "неизвестное изделие " + productId;
+        return Message("service.repair_refit.error.unknown_product").arg("product", productId);
     const auto* installed = ShipDesignCatalog::instance().findProduct(facts.productId);
     if (!installed || p->category != installed->category)
-        return "несовместимая категория: " + (installed ? installed->category : std::string("?")) + " ← " + p->category;
+        return Message("service.repair_refit.error.incompatible_category").arg("installed", installed ? installed->category : std::string("?")).arg("offered", p->category);
     if (p->massTonnes > installed->massTonnes * 1.5 + 3.0)   // mount / space allowance
-        return "не помещается: " + std::to_string(static_cast<int>(p->massTonnes)) + " т против " +
-               std::to_string(static_cast<int>(installed->massTonnes)) + " т места установки";
+        return Message("service.repair_refit.error.does_not_fit")
+            .arg("mass", static_cast<int>(p->massTonnes))
+            .arg("space", static_cast<int>(installed->massTonnes));
     const bool assisted = game::ship::plant::familyOf(d.physicalControlModel) == game::ship::plant::PhysicalControlFamily::Assisted;
     if (p->category == "drive")
     {
         if (assisted && p->number("gimbal_deg") < 30.0)
-            return "Assisted требует широкого подвеса сопла (не менее 30°), у изделия " +
-                   std::to_string(static_cast<int>(p->number("gimbal_deg"))) + "°";
+            return Message("service.repair_refit.error.assisted_gimbal").arg("gimbal", static_cast<int>(p->number("gimbal_deg")));
         // the generator group must power it
         for (const auto& m : d.modules)
             if (m.engineReactor && p->number("input_mw") > m.engineReactor->ratedElectricalMW * 1.02)
-                return "генератор группы " + std::to_string(static_cast<int>(m.engineReactor->ratedElectricalMW)) +
-                       " МВт не питает двигатель " + std::to_string(static_cast<int>(p->number("input_mw"))) + " МВт";
+                return Message("service.repair_refit.error.generator_underpowered")
+                    .arg("generator", static_cast<int>(m.engineReactor->ratedElectricalMW))
+                    .arg("engine", static_cast<int>(p->number("input_mw")));
     }
     if (p->category == "reactor")
         for (const auto& m : d.modules)
             if (m.engine && m.subsystemId == "drive" && m.engine->nominalElectricalPowerMW > p->number("mwe") * 1.02)
-                return "реактор " + std::to_string(static_cast<int>(p->number("mwe"))) + " МВт не питает двигатель " +
-                       std::to_string(static_cast<int>(m.engine->nominalElectricalPowerMW)) + " МВт";
+                return Message("service.repair_refit.error.reactor_underpowered")
+                    .arg("reactor", static_cast<int>(p->number("mwe")))
+                    .arg("engine", static_cast<int>(m.engine->nominalElectricalPowerMW));
     return {};
 }
 
@@ -360,7 +373,7 @@ RefitPreview previewRefit(const core::ShipCore& live, const RefitOperation& oper
     const auto& d = live.descriptor();
     if (!findModule(d, operation.moduleId))
     {
-        out.error = "модуль " + operation.moduleId + " не установлен на этом корабле";
+        out.error = Message("service.repair_refit.error.module_not_installed").arg("module", operation.moduleId);
         return out;
     }
     const auto facts = moduleFacts(d, operation.moduleId);
@@ -368,12 +381,12 @@ RefitPreview previewRefit(const core::ShipCore& live, const RefitOperation& oper
                               operation.productId != facts.productId;
     if (operation.kind == RefitOperationKind::Remove || operation.kind == RefitOperationKind::Install)
     {
-        out.error = "снятие и установка — следующий этап";
+        out.error = Message("service.repair_refit.error.remove_install_later");
         return out;
     }
     if (operation.kind == RefitOperationKind::Repair && !facts.repairable)
     {
-        out.error = "ремонт на месте невозможен (" + facts.repairLevel + "): только замена";
+        out.error = Message("service.repair_refit.error.repair_impossible_level").arg("level", facts.repairLevel);
         return out;
     }
     if (otherProduct)
@@ -398,7 +411,7 @@ RefitPreview previewRefit(const core::ShipCore& live, const RefitOperation& oper
         swapped = std::make_unique<ShipDescriptor>(d);
         if (!s || !p || !swapProduct(*swapped, operation.moduleId, *p, *s))
         {
-            out.error = "не удалось собрать конфигурацию с изделием " + operation.productId;
+            out.error = Message("service.repair_refit.error.configuration_failed").arg("product", operation.productId);
             return out;
         }
         afterDescriptor = swapped.get();
@@ -407,7 +420,7 @@ RefitPreview previewRefit(const core::ShipCore& live, const RefitOperation& oper
     const bool replace = operation.kind == RefitOperationKind::Replace;
     if (!after->serviceModule(operation.moduleId, replace))
     {
-        out.error = replace ? "замена невозможна: сначала восстановите несущий модуль" : "ремонт невозможен: модуль снят или несущий модуль разрушен";
+        out.error = Message(replace ? "service.repair_refit.error.replace_needs_carrier" : "service.repair_refit.error.repair_module_gone");
         return out;
     }
     out.after = measureShip(*after, operation.moduleId, BurnSeconds);
@@ -417,33 +430,33 @@ RefitPreview previewRefit(const core::ShipCore& live, const RefitOperation& oper
     auto& dl = out.deltas;
     const auto& b = out.before;
     const auto& a = out.after;
-    addDelta(dl, "module_health", "состояние модуля", "%", b.moduleHealth01 * 100.0, a.moduleHealth01 * 100.0, 0.05);
-    addDelta(dl, "module_damage", "функциональные повреждения", "%", b.moduleDamage01 * 100.0, a.moduleDamage01 * 100.0, 0.05);
-    addDelta(dl, "module_wear", "износ", "%", b.moduleWear01 * 100.0, a.moduleWear01 * 100.0, 0.05);
-    addDelta(dl, "propulsion_power", "мощность двигательных генераторов", "МВт", b.propulsionPowerAvailableMW, a.propulsionPowerAvailableMW, 0.5);
-    addDelta(dl, "main_engines", "главные двигатели в строю", "", b.mainEnginesOperational, a.mainEnginesOperational, 0.5);
-    addDelta(dl, "forward_accel", "ускорение вперёд", "м/с²", b.forwardAccelerationMps2, a.forwardAccelerationMps2, 0.005);
-    addDelta(dl, "reverse_accel", "торможение / назад", "м/с²", b.reverseAccelerationMps2, a.reverseAccelerationMps2, 0.005);
-    addDelta(dl, "burn_accel", "разгон в прогоне 8 с", "м/с²", b.burnAccelerationMps2, a.burnAccelerationMps2, 0.01);
-    addDelta(dl, "rcs_accel", "маневровые (слабейшая ось)", "м/с²", b.rcsAccelerationMps2, a.rcsAccelerationMps2, 0.001);
-    addDelta(dl, "angular_accel", "угловое ускорение", "рад/с²", b.angularAccelerationRadPerSec2, a.angularAccelerationRadPerSec2, 0.0005);
-    addDelta(dl, "engine_margin", "тепловой запас двигателей", "%", b.engineThermalMargin01 * 100.0, a.engineThermalMargin01 * 100.0, 0.2);
-    addDelta(dl, "reactor_margin", "тепловой запас реакторов", "%", b.reactorThermalMargin01 * 100.0, a.reactorThermalMargin01 * 100.0, 0.2);
-    addDelta(dl, "propulsion_coolant", "двигательный контур", "K", b.propulsionCoolantK, a.propulsionCoolantK, 0.5);
-    addDelta(dl, "service_coolant", "служебный контур", "K", b.serviceCoolantK, a.serviceCoolantK, 0.5);
-    addDelta(dl, "emergency_cooling", "аварийный теплообменник", "МВт", b.emergencyCoolingMW, a.emergencyCoolingMW, 0.05);
-    addDelta(dl, "service_power", "служебный реактор, выдача", "МВт", b.servicePowerOutputMW, a.servicePowerOutputMW, 0.05);
-    addDelta(dl, "mass", "масса корабля", "т", b.massTonnes, a.massTonnes, 0.005);
-    addDelta(dl, "radar_range", "дальность радара", "км", b.radarRangeKm, a.radarRangeKm, 0.5);
-    addFlag(dl, "radar", "радар", b.radar, a.radar);
-    addFlag(dl, "receiver", "приёмник", b.receiver, a.receiver);
-    addFlag(dl, "transmitter", "передатчик", b.transmitter, a.transmitter);
-    addFlag(dl, "transponder", "транспондер", b.transponder, a.transponder);
-    addFlag(dl, "life_support", "жизнеобеспечение", b.lifeSupport, a.lifeSupport);
-    addFlag(dl, "computer", "бортовой компьютер", b.computer, a.computer);
-    addFlag(dl, "jump_core", "ядро прыжка", b.jumpCore, a.jumpCore);
-    addFlag(dl, "jump_mass", "прыжок с текущей массой", b.jumpMassWithinRating, a.jumpMassWithinRating);
-    addDelta(dl, "docks", "стыковочные узлы и ангары в строю", "", b.docksOperational, a.docksOperational, 0.5);
+    addDelta(dl, "module_health", "%", b.moduleHealth01 * 100.0, a.moduleHealth01 * 100.0, 0.05);
+    addDelta(dl, "module_damage", "%", b.moduleDamage01 * 100.0, a.moduleDamage01 * 100.0, 0.05);
+    addDelta(dl, "module_wear", "%", b.moduleWear01 * 100.0, a.moduleWear01 * 100.0, 0.05);
+    addDelta(dl, "propulsion_power", "mw", b.propulsionPowerAvailableMW, a.propulsionPowerAvailableMW, 0.5);
+    addDelta(dl, "main_engines", "", b.mainEnginesOperational, a.mainEnginesOperational, 0.5);
+    addDelta(dl, "forward_accel", "mps2", b.forwardAccelerationMps2, a.forwardAccelerationMps2, 0.005);
+    addDelta(dl, "reverse_accel", "mps2", b.reverseAccelerationMps2, a.reverseAccelerationMps2, 0.005);
+    addDelta(dl, "burn_accel", "mps2", b.burnAccelerationMps2, a.burnAccelerationMps2, 0.01);
+    addDelta(dl, "rcs_accel", "mps2", b.rcsAccelerationMps2, a.rcsAccelerationMps2, 0.001);
+    addDelta(dl, "angular_accel", "radps2", b.angularAccelerationRadPerSec2, a.angularAccelerationRadPerSec2, 0.0005);
+    addDelta(dl, "engine_margin", "%", b.engineThermalMargin01 * 100.0, a.engineThermalMargin01 * 100.0, 0.2);
+    addDelta(dl, "reactor_margin", "%", b.reactorThermalMargin01 * 100.0, a.reactorThermalMargin01 * 100.0, 0.2);
+    addDelta(dl, "propulsion_coolant", "K", b.propulsionCoolantK, a.propulsionCoolantK, 0.5);
+    addDelta(dl, "service_coolant", "K", b.serviceCoolantK, a.serviceCoolantK, 0.5);
+    addDelta(dl, "emergency_cooling", "mw", b.emergencyCoolingMW, a.emergencyCoolingMW, 0.05);
+    addDelta(dl, "service_power", "mw", b.servicePowerOutputMW, a.servicePowerOutputMW, 0.05);
+    addDelta(dl, "mass", "t", b.massTonnes, a.massTonnes, 0.005);
+    addDelta(dl, "radar_range", "km", b.radarRangeKm, a.radarRangeKm, 0.5);
+    addFlag(dl, "radar", b.radar, a.radar);
+    addFlag(dl, "receiver", b.receiver, a.receiver);
+    addFlag(dl, "transmitter", b.transmitter, a.transmitter);
+    addFlag(dl, "transponder", b.transponder, a.transponder);
+    addFlag(dl, "life_support", b.lifeSupport, a.lifeSupport);
+    addFlag(dl, "computer", b.computer, a.computer);
+    addFlag(dl, "jump_core", b.jumpCore, a.jumpCore);
+    addFlag(dl, "jump_mass", b.jumpMassWithinRating, a.jumpMassWithinRating);
+    addDelta(dl, "docks", "", b.docksOperational, a.docksOperational, 0.5);
 
     // cost: passport product price + installation repair doctrine (data-driven rates)
     const auto& rules = ShipMarketRules::instance();
@@ -471,8 +484,7 @@ RefitPreview previewRefit(const core::ShipCore& live, const RefitOperation& oper
 
     out.ok = true;
     out.applicable = true;   // another product too: per-instance configuration (2026-11-20)
-    out.applyNote = otherProduct ? "установка другого изделия требует экземплярной конфигурации корабля (следующий этап); предпросмотр точный"
-                                 : "DEV: применяется к живому кораблю без оплаты";
+    out.applyNote = Message(otherProduct ? "service.repair_refit.note.other_product" : "service.repair_refit.note.dev_free_apply");
     return out;
 }
 
@@ -571,20 +583,20 @@ std::string applyRefitOperation(core::ShipCore& live, const RefitOperation& oper
             return why;
         const ShipDescriptor* configured = configuredDescriptor(live.descriptor(), operation.moduleId, operation.productId);
         if (!configured)
-            return "не удалось собрать конфигурацию с изделием " + operation.productId;
+            return Message("service.repair_refit.error.configuration_failed").arg("product", operation.productId);
         if (!live.reinstallConfiguration(*configured))
-            return "корабль не принял новую конфигурацию";
+            return Message("service.repair_refit.error.configuration_rejected");
         live.recordProductOverride(operation.moduleId, operation.productId);
         if (!live.serviceModule(operation.moduleId, true))
-            return "операция отклонена модульным runtime";
+            return Message("service.repair_refit.error.runtime_rejected");
         return {};
     }
     if (operation.kind == RefitOperationKind::Repair && !facts.repairable)
-        return "ремонт на месте невозможен: только замена";
+        return Message("service.repair_refit.error.repair_impossible");
     if (operation.kind != RefitOperationKind::Repair && operation.kind != RefitOperationKind::Replace)
-        return "снятие и установка — следующий этап";
+        return Message("service.repair_refit.error.remove_install_later");
     if (!live.serviceModule(operation.moduleId, operation.kind == RefitOperationKind::Replace))
-        return "операция отклонена модульным runtime";
+        return Message("service.repair_refit.error.runtime_rejected");
     return {};
 }
 } // namespace game::ship::refit

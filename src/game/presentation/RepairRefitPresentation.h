@@ -45,7 +45,7 @@ struct RefitModuleView
     double health01 = 0.0;
     double damage01 = 0.0;      // functional damage, all causes
     double wear01 = 0.0;
-    std::vector<std::pair<std::string, double>> causes;   // non-zero damage causes
+    std::vector<std::pair<std::string, double>> causes;   // non-zero damage causes: laser / impact / thermal / radiation / wear / internal_failure
     bool hasPlacement = false;
     glm::vec3 centerMeters {0.0f};
     glm::vec3 halfSizeMeters {0.0f};
@@ -62,7 +62,7 @@ struct RefitModuleView
 struct RefitGroupView
 {
     std::string key;
-    std::string labelRu;
+    std::string labelRu;   // the English label; the panel shows "service.panel.refit.group.<key>"
     int modules = 0;
     int damaged = 0;
     int failed = 0;

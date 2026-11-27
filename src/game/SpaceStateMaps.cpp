@@ -948,9 +948,11 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                                    : object.type == ObjectType::HubBeltDrum         ? "habitat"
                                    : object.type == ObjectType::HubBeltHotel        ? "hotel"
                                                                                     : "module";
-                std::string rowName = object.displayName.empty() ? std::string("модуль") : object.displayName;
+                std::string rowName = object.displayName.empty()
+                                          ? game::localization::tr("map.hub_module.module", "module")
+                                          : object.displayName;
                 if (object.type == ObjectType::HubBeltCity)
-                    rowName = "Город";
+                    rowName = game::localization::tr("map.hub_module.city", "City");
                 if (present[type]++ == 0)
                     runtimeRows.push_back({"", "", type, rowName, 1, 0});
                 else
@@ -983,7 +985,8 @@ SpaceState::buildNativeSystemMapPanelPresentation()
         if (const auto* economy = economyId.empty() ? nullptr : game::economy::EconomyModel::instance().hub(economyId))
             for (const auto& m : economy->modules)
                 info.selectedHubModules.push_back(
-                    {m.block, m.blockRu, m.type, m.ru, m.count,
+                    {m.block, game::localization::tr("map.hub_block." + m.block, m.blockRu), m.type,
+                     game::localization::tr("map.hub_module." + m.type, m.ru), m.count,
                      present.count(m.type) ? 0 : (m.type == "refuel_dock" || m.type == "service_dock") ? 1 : 2});
         // no economy record but a city plan (a hub added by its own generator - the ring, author 2026-11-24: «нет его
         // описания и списка объектов на которые можно сделать посадку»): the composition from the plan itself - its
@@ -995,20 +998,20 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                 {
                     const char* type;
                     const char* block;
-                    const char* blockRu;
-                    const char* name;
+                    const char* blockEn;   // English fallbacks: the names come from map.hub_block.* / map.hub_module.*
+                    const char* nameEn;
                 };
                 static const Row rows[] = {
-                    {"market_exchange", "admin", "Администрация и жильё", "биржа"},
-                    {"habitat", "admin", "Администрация и жильё", "жилой модуль"},
-                    {"shuttle_dock", "passenger", "Пассажирский блок", "челночный док (HexDock)"},
-                    {"hotel", "passenger", "Пассажирский блок", "гостиница"},
-                    {"liner_platform", "passenger", "Пассажирский блок", "платформы лайнеров"},
-                    {"landing_pad", "passenger", "Пассажирский блок", "посадочные места (крыши, гаражи, ангары)"},
-                    {"cargo_terminal", "cargo", "Грузовой блок", "грузовой терминал"},
-                    {"warehouse", "cargo", "Грузовой блок", "склад"},
-                    {"refuel_dock", "service", "Заправка, ремонт, отстойник", "заправочный док"},
-                    {"service_dock", "service", "Заправка, ремонт, отстойник", "сервисный док"},
+                    {"market_exchange", "admin", "Administration and housing", "exchange"},
+                    {"habitat", "admin", "Administration and housing", "habitat module"},
+                    {"shuttle_dock", "passenger", "Passenger block", "shuttle dock (HexDock)"},
+                    {"hotel", "passenger", "Passenger block", "hotel"},
+                    {"liner_platform", "passenger", "Passenger block", "liner platforms"},
+                    {"landing_pad", "passenger", "Passenger block", "landing places (roofs, garages, hangars)"},
+                    {"cargo_terminal", "cargo", "Cargo block", "cargo terminal"},
+                    {"warehouse", "cargo", "Cargo block", "warehouse"},
+                    {"refuel_dock", "service", "Refuelling, repair, holding", "refuelling dock"},
+                    {"service_dock", "service", "Refuelling, repair, holding", "service dock"},
                 };
                 std::map<std::string, int> count;
                 for (const auto& m : plan->modules())
@@ -1027,7 +1030,9 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                         count[type] = std::max(count[type], n);
                 for (const auto& r : rows)
                     if (const auto it = count.find(r.type); it != count.end() && it->second > 0)
-                        info.selectedHubModules.push_back({r.block, r.blockRu, r.type, r.name, it->second, 0});
+                        info.selectedHubModules.push_back(
+                            {r.block, game::localization::tr(std::string("map.hub_block.") + r.block, r.blockEn), r.type,
+                             game::localization::tr(std::string("map.hub_module.") + r.type, r.nameEn), it->second, 0});
             }
         if (hubIt != m_client->world().hubs().end())
         {
@@ -2252,6 +2257,29 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.cancelWaypoint = loc.text("map.object_info.cancel_waypoint");
     mapText.setFinish = loc.text("map.object_info.set_finish");
     mapText.cancelFinish = loc.text("map.object_info.cancel_finish");
+    mapText.routeOfficial = loc.text("map.route_point.official", "FLY: OFFICIAL ROUTE");
+    mapText.routeUnofficial = loc.text("map.route_point.unofficial", "FLY: UNOFFICIAL ROUTE");
+    mapText.routeRefuelOn = loc.text("map.route_point.refuel_on", "REFUEL HERE: YES");
+    mapText.routeRefuelOff = loc.text("map.route_point.refuel_off", "REFUEL HERE: NO");
+    mapText.routeCalculate = loc.text("map.route_point.calculate", "CALCULATE (NO DEPARTURE)");
+    mapText.routePause = loc.text("map.route_point.pause", "PAUSE (MANUAL MODE)");
+    mapText.routeResume = loc.text("map.route_point.resume", "RESUME ROUTE");
+    mapText.routeProgramPrefix = loc.text("map.route_point.program_prefix", "PROGRAM: ");
+    mapText.programAuto = loc.text("map.route_point.program.auto", "AUTO");
+    mapText.programPassThrough = loc.text("map.route_point.program.pass_through", "FLY-BY");
+    mapText.programDock = loc.text("map.route_point.program.dock", "DOCKING");
+    mapText.programOrbit = loc.text("map.route_point.program.orbit", "ORBIT INSERTION");
+    mapText.programOrbitSurvey = loc.text("map.route_point.program.orbit_survey", "ORBITAL SURVEY");
+    mapText.programLand = loc.text("map.route_point.program.land", "LANDING (AUTO)");
+    mapText.programLandAtSettlement = loc.text("map.route_point.program.land_pad", "PAD LANDING");
+    mapText.programRendezvous = loc.text("map.route_point.program.rendezvous", "RENDEZVOUS");
+    mapText.programStop = loc.text("map.route_point.program.stop", "STOP");
+    mapText.routeRepairOn = loc.text("map.route_point.repair_on", "REPAIR HERE: YES");
+    mapText.routeRepairOff = loc.text("map.route_point.repair_off", "REPAIR HERE: NO");
+    mapText.routePauseOn = loc.text("map.route_point.pause_on", "PAUSE HERE (MANUAL MODE): YES");
+    mapText.routePauseOff = loc.text("map.route_point.pause_off", "PAUSE HERE (MANUAL MODE): NO");
+    mapText.routeTakeOffOn = loc.text("map.route_point.takeoff_on", "TAKE OFF AFTER LANDING: YES");
+    mapText.routeTakeOffOff = loc.text("map.route_point.takeoff_off", "TAKE OFF AFTER LANDING: NO");
     mapText.setIntermediate = loc.text("map.object_info.set_intermediate");
     mapText.cancelIntermediate = loc.text("map.object_info.cancel_intermediate");
     mapText.spaceTarget = loc.text("map.object_info.space_target");

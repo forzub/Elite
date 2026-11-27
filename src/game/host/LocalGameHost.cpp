@@ -54,6 +54,11 @@ server::ServerAdvanceResult LocalGameHost::advance(double elapsedSeconds)
     return m_worker->advance(elapsedSeconds);
 }
 
+void LocalGameHost::setPaused(bool paused)
+{
+    m_worker->setPaused(paused);
+}
+
 double LocalGameHost::fixedStepSeconds() const
 {
     return m_worker->fixedStepSeconds();

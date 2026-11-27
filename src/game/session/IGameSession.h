@@ -52,6 +52,9 @@ public:
 
     virtual GameSessionAdvanceResult advance(double elapsedSeconds) = 0;
     virtual double fixedStepSeconds() const = 0;
+    // single player ESC menu (audit #8 D2): the local authoritative server keeps its own clock, so the pause is told to
+    // it explicitly; a remote session ignores it (the shared world never pauses for one client)
+    virtual void setLocalPaused(bool) {}
 
 };
 }

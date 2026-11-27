@@ -11,6 +11,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "src/game/localization/LocalizedMessage.h"
+
 namespace game::navigation::route
 {
 namespace
@@ -71,8 +73,10 @@ void avoid(std::vector<glm::dvec3>& path, std::vector<std::string>& labels, cons
                     out = anyPerpendicular(path[i + 1] - path[i]);
                 const glm::dvec3 detour = c + glm::normalize(out) * o.radiusM * 1.3;
                 path.insert(path.begin() + static_cast<std::ptrdiff_t>(i + 1), detour);
-                labels.insert(labels.begin() + static_cast<std::ptrdiff_t>(i + 1), "обход: " + o.label);
-                notes.push_back("обход: " + o.label);
+                // language-neutral (this file is linked by the server too): the client renders the Message
+                const std::string detourLabel = game::localization::Message("map.route_plan.detour").arg("obstacle", o.label).str();
+                labels.insert(labels.begin() + static_cast<std::ptrdiff_t>(i + 1), detourLabel);
+                notes.push_back(detourLabel);
                 changed = true;
                 break;
             }
@@ -124,9 +128,9 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
                 for (const auto& p : inner)
                 {
                     path.push_back(p);
-                    labels.push_back("зелёный коридор сети: " + c.name);
+                    labels.push_back(game::localization::Message("map.route_plan.network_corridor").arg("name", c.name).str());
                 }
-                route.notes.push_back("по коридору сети: " + c.name);
+                route.notes.push_back(game::localization::Message("map.route_plan.via_network_corridor").arg("name", c.name).str());
                 onCorridor = true;
                 break;
             }
@@ -146,10 +150,12 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
                     // fly the corridor axis: enter a little after its start, leave before its end
                     const glm::dvec3 s = forward ? g.a : g.b, e = forward ? g.b : g.a;
                     path.push_back(s + (e - s) * 0.15);
-                    labels.push_back("зелёный коридор: " + g.zone->name);
+                    const std::string corridorLabel =
+                        game::localization::Message("map.route_plan.green_corridor").arg("name", g.zone->name).str();
+                    labels.push_back(corridorLabel);
                     path.push_back(s + (e - s) * 0.85);
-                    labels.push_back("зелёный коридор: " + g.zone->name);
-                    route.notes.push_back("по зелёному коридору: " + g.zone->name);
+                    labels.push_back(corridorLabel);
+                    route.notes.push_back(game::localization::Message("map.route_plan.via_green_corridor").arg("name", g.zone->name).str());
                     break;
                 }
             }
@@ -168,8 +174,8 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
                     if (between)
                     {
                         path.push_back(g.a);
-                        labels.push_back("синий створ: " + g.zone->name);
-                        route.notes.push_back("обязательный пролёт: " + g.zone->name);
+                        labels.push_back(game::localization::Message("map.route_plan.blue_gate").arg("name", g.zone->name).str());
+                        route.notes.push_back(game::localization::Message("map.route_plan.mandatory_pass").arg("name", g.zone->name).str());
                     }
                 }
         }
@@ -181,8 +187,11 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
         for (const ZoneGeometry& g : zones)
             if (g.zone->colour == ZoneColour::Red || (!request.official && g.zone->colour == ZoneColour::Blue))
                 obstacles.push_back(Obstacle {g.a, g.b, g.radiusM,
-                                              (g.zone->colour == ZoneColour::Red ? "красная зона " : "синий створ (без досмотра) ") +
-                                                  g.zone->name});
+                                              game::localization::Message(g.zone->colour == ZoneColour::Red
+                                                                              ? "map.route_plan.red_zone"
+                                                                              : "map.route_plan.blue_gate_uninspected")
+                                                  .arg("name", g.zone->name)
+                                                  .str()});
         for (const BodyObstacle& b : request.bodies)
             obstacles.push_back(Obstacle {b.centerM, b.centerM, b.clearM, b.name});
         if (!request.official)
@@ -191,7 +200,8 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
                 // the start and the destination hubs cannot be avoided
                 if (glm::length(p - cur) < hubRadarM || glm::length(p - target.worldM) < hubRadarM)
                     continue;
-                obstacles.push_back(Obstacle {p, p, hubRadarM, "радар хаба " + hubId});
+                obstacles.push_back(
+                    Obstacle {p, p, hubRadarM, game::localization::Message("map.route_plan.hub_radar").arg("hub", hubId).str()});
             }
         avoid(path, labels, obstacles, route.notes);
 

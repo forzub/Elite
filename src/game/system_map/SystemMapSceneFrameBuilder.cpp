@@ -6,6 +6,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "src/game/localization/LocalizationService.h"
 #include "src/game/system_map/SystemMapPresentation.h"
 #include "src/game/system_map/SystemMapView.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -574,8 +575,9 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
                 continue;
             MapObjectOverlayItem cluster;
             cluster.objectId = "cluster:" + bodyId;
-            cluster.name = body->name + ": " + std::to_string(count) + " крупных хабов";
-            cluster.typeName = "приблизьте: двойной щелчок по телу";
+            cluster.name = game::localization::tr("map.cluster.major_hubs", {{"body", body->name}, {"count", std::to_string(count)}},
+                                                  "{body}: {count} major hubs");
+            cluster.typeName = game::localization::tr("map.cluster.zoom_hint", "zoom in: double-click the body");
             cluster.kind = MapObjectGlyphKind::Hub;
             cluster.infoKind = MapObjectInfoKind::Tactical;
             cluster.factionColor = glm::vec4(1.00f, 0.74f, 0.32f, 0.96f);

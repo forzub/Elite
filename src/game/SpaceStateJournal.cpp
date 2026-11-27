@@ -8,6 +8,7 @@
 // parent body (an orbital hub moves with it). A failed onboard computer (motion.navComputerState 2) records nothing.
 // One journal per ship (its instance id): a cockpit-capsule keeps its ship's computer.
 #include "src/core/BuildFlavor.h"
+#include "src/game/localization/LocalizationService.h"
 #include "src/game/SpaceStateInternal.h"
 
 #include "src/game/navigation/HubPlanCatalog.h"
@@ -22,6 +23,8 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
+namespace l10n = game::localization;
 
 namespace journal = game::navigation::journal;
 
@@ -165,8 +168,11 @@ void SpaceState::updateOnboardJournal(double dt)
         e.positionM = hubM - anchor;
         e.radiusM = game::navigation::rescue::ZoneRadiusM;   // its comms reach = its inhabited zone
         e.label = hub.name.empty() ? hubId : hub.name;
-        e.detail = std::string(rescueDock ? "док МЧС" : "без дока МЧС") +
-                   (pads > 0 ? "; площадок " + std::to_string(pads) : std::string());
+        // the record's text in the UI language (a client-local journal; a language switch re-records it on the next pass)
+        e.detail = pads > 0 ? (rescueDock ? l10n::tr("cockpit.journal.hub_rescue_dock_pads", {{"pads", std::to_string(pads)}}, "rescue dock; pads {pads}")
+                                          : l10n::tr("cockpit.journal.hub_no_rescue_dock_pads", {{"pads", std::to_string(pads)}}, "no rescue dock; pads {pads}"))
+                            : (rescueDock ? l10n::tr("cockpit.journal.hub_rescue_dock", "rescue dock")
+                                          : l10n::tr("cockpit.journal.hub_no_rescue_dock", "no rescue dock"));
         e.recordedAtS = m_client->lastSimulationMetadata().universeTimeSeconds;
         e.hasRescueDock = rescueDock;
         if (journal::store(m_onboardJournal, e))
@@ -202,7 +208,8 @@ void SpaceState::updateOnboardJournal(double dt)
             e.positionM = p - anchor;
             e.radiusM = b.hearRadiusM;
             e.label = b.name;
-            e.detail = "спасательная служба: " + (b.operatorName.empty() ? b.rescueHubId : b.operatorName);
+            e.detail = l10n::tr("cockpit.journal.beacon_rescue_service", {{"service", b.operatorName.empty() ? b.rescueHubId : b.operatorName}},
+                                "rescue service: {service}");
             e.recordedAtS = m_client->lastSimulationMetadata().universeTimeSeconds;
             if (journal::store(m_onboardJournal, e))
             {

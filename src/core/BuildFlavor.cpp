@@ -42,3 +42,19 @@ std::string anchorWorkingDirectoryToExecutable()
 #endif
 }
 } // namespace core
+
+namespace core
+{
+void hideOwnConsoleInPreview()
+{
+#ifdef _WIN32
+    if (!isPreviewBuild())
+        return;
+    DWORD processes[2] = {};
+    // only this process attached: the console was created for it (a double click), not inherited from a shell
+    if (GetConsoleProcessList(processes, 2) == 1)
+        if (HWND console = GetConsoleWindow())
+            ShowWindow(console, SW_HIDE);
+#endif
+}
+} // namespace core

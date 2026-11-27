@@ -8,12 +8,20 @@
 #include <glad/gl.h>
 
 #include "render/HUD/TextRenderer.h"
+#include "src/game/localization/LocalizationService.h"
 
 namespace ui::presentation
 {
 namespace
 {
 using game::presentation::RefitModuleView;
+using game::localization::tr;
+
+// a producer's string (a Message from the server or a presentation model, or a plain name) in the UI language
+std::string rd(const std::string& s)
+{
+    return game::localization::renderMessage(s);
+}
 
 const glm::vec4 Bg {0.008f, 0.018f, 0.035f, 1.0f};
 const glm::vec4 Panel {0.016f, 0.036f, 0.062f, 1.0f};
@@ -76,23 +84,23 @@ glm::vec4 stateColour(const RefitModuleView& m)
     return {0.30f, 0.66f, 0.86f, 0.85f};
 }
 
-const char* stateRu(const std::string& s)
+std::string stateText(const std::string& s)
 {
-    if (s == "attached") return "в строю";
-    if (s == "disabled") return "отключён (выведен из строя)";
-    if (s == "destroyed") return "разрушен";
-    if (s == "detached") return "снесён / отстыкован";
-    if (s == "hanging") return "висит на креплениях";
-    return "нет данных";
+    if (s == "attached") return tr("service.panel.refit.state.attached", "in service");
+    if (s == "disabled") return tr("service.panel.refit.state.disabled", "disabled (out of action)");
+    if (s == "destroyed") return tr("service.panel.refit.state.destroyed", "destroyed");
+    if (s == "detached") return tr("service.panel.refit.state.detached", "torn off / undocked");
+    if (s == "hanging") return tr("service.panel.refit.state.hanging", "hanging on its mounts");
+    return tr("service.panel.refit.state.unknown", "no data");
 }
 
-const char* levelRu(const std::string& s)
+std::string levelText(const std::string& s)
 {
-    if (s == "crew") return "экипажем";
-    if (s == "station") return "на станции";
-    if (s == "yard") return "на верфи";
-    if (s == "factory") return "только на заводе";
-    return s.c_str();
+    if (s == "crew") return tr("service.panel.refit.level.crew", "by the crew");
+    if (s == "station") return tr("service.panel.refit.level.station", "at a station");
+    if (s == "yard") return tr("service.panel.refit.level.yard", "at a shipyard");
+    if (s == "factory") return tr("service.panel.refit.level.factory", "factory only");
+    return s;
 }
 
 struct Ctx
@@ -138,8 +146,9 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
     const int big = std::clamp(static_cast<int>(h * 0.034f), 20, 34);
     t.solidRectPx(0, 0, w, h, Bg);
     t.solidRectPx(0, 0, w, 2, Line);
-    t.textDrawPx("ВЕРФЬ — покупка корабля", 24, 18, big, Title);
-    t.textDrawPx("F6  /  модели, паспорта и предложения продавцов из каталога кораблей", 24, 18 + big + 6, small, Muted);
+    t.textDrawPx(tr("service.panel.shipyard.title", "SHIPYARD — buy a ship"), 24, 18, big, Title);
+    t.textDrawPx(tr("service.panel.shipyard.subtitle", "F6  /  models, passports and seller offers from the ship catalogue"), 24, 18 + big + 6,
+                 small, Muted);
 
     // ---- right: every catalog model
     const float listX = w * 0.70f, listY = 18.0f + big + 40.0f, listW = w - listX - 20.0f, listH = h - listY - 56.0f;
@@ -158,7 +167,7 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
             t.solidRectPx(listX, y, listW, rowH, Selected);
         t.textDrawPx(m.name, listX + 10, y + 4, px, m.selected ? Title : Text);
         t.textDrawPx(m.manufacturer, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
-        const std::string price = grouped(m.priceListCr / 1000.0) + " тыс. Cr";
+        const std::string price = tr("service.panel.shipyard.price_thousands", {{"k", grouped(m.priceListCr / 1000.0)}}, "{k} k Cr");
         t.textDrawPx(price, listX + listW - t.measureTextPx(price, small) - 10, y + 4, small, Muted);
         t.solidRectPx(listX, y + rowH - 1, listW, 1, glm::vec4(0.2f, 0.3f, 0.4f, 0.5f));
         m_hits.push_back({listX, y, listX + listW, y + rowH, 1, {ServicePanelActionType::ShipyardSelectModel, m.passportId}});
@@ -196,8 +205,8 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
             t.solidRectPx(planV.sx(b.centerMeters.z - b.halfSizeMeters.z), planV.sy(b.centerMeters.x + b.halfSizeMeters.x),
                           std::max(1.0f, 2 * b.halfSizeMeters.z * s), std::max(1.0f, 2 * b.halfSizeMeters.x * s), col);
         }
-        t.textDrawPx("сбоку  ·  нос слева", cx + 10, y + 6, small, Muted);
-        t.textDrawPx("сверху", cx + 10, y + pvH * 0.5f + 6, small, Muted);
+        t.textDrawPx(tr("service.panel.shipyard.view_side", "side  ·  nose left"), cx + 10, y + 6, small, Muted);
+        t.textDrawPx(tr("service.panel.shipyard.view_top", "top"), cx + 10, y + pvH * 0.5f + 6, small, Muted);
         y += pvH + 12;
 
         // the main specs (two columns)
@@ -207,33 +216,40 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
         {
             const float x = cx + (i % 2 == 0 ? 0.0f : colW);
             const float yy = y + lineH * 2.0f * static_cast<float>(i / 2);
-            t.textDrawPx(c.mainSpecs[i].labelRu, x, yy, small, Muted);
-            t.textDrawPx(c.mainSpecs[i].value, x, yy + static_cast<float>(small) + 3, px, Text);
+            t.textDrawPx(rd(c.mainSpecs[i].labelRu), x, yy, small, Muted);
+            t.textDrawPx(rd(c.mainSpecs[i].value), x, yy + static_cast<float>(small) + 3, px, Text);
         }
         y += lineH * 2.0f * static_cast<float>((c.mainSpecs.size() + 1) / 2) + 6;
 
         // seller offers (concrete instances)
-        t.textDrawPx("Предложения продавцов", cx, y, px, Title);
-        t.textDrawPx("DEV: пробный склад до подключения экономики", cx + t.measureTextPx("Предложения продавцов", px) + 16, y + 2, small, Muted);
+        const std::string offersTitle = tr("service.panel.shipyard.offers", "Seller offers");
+        t.textDrawPx(offersTitle, cx, y, px, Title);
+        t.textDrawPx(tr("service.panel.shipyard.offers_dev", "DEV: trial stock until the economy is connected"),
+                     cx + t.measureTextPx(offersTitle, px) + 16, y + 2, small, Muted);
         y += static_cast<float>(px) + 8;
         const float cols[] = {0.0f, 0.30f, 0.44f, 0.56f, 0.70f, 0.80f};
-        const char* heads[] = {"продавец", "состояние", "возраст", "наработка", "износ / повр.", "цена"};
+        const std::string heads[] = {tr("service.panel.shipyard.col.seller", "seller"), tr("service.panel.shipyard.col.condition", "condition"),
+                                     tr("service.panel.shipyard.col.age", "age"), tr("service.panel.shipyard.col.hours", "hours run"),
+                                     tr("service.panel.shipyard.col.wear", "wear / dmg."), tr("service.panel.shipyard.col.price", "price")};
         for (int k = 0; k < 6; ++k)
             t.textDrawPx(heads[k], cx + cw * cols[k], y, small, Muted);
         y += static_cast<float>(small) + 6;
         for (const auto& o : c.offers)
         {
-            const char* cond = o.condition == "new" ? "новый" : o.condition == "good" ? "хорошее" : o.condition == "worn" ? "изношен" : "на разбор";
-            t.textDrawPx(o.sellerNameRu, cx, y, small, Text);
+            const std::string cond = o.condition == "new"    ? tr("service.panel.shipyard.condition.new", "new")
+                                     : o.condition == "good" ? tr("service.panel.shipyard.condition.good", "good")
+                                     : o.condition == "worn" ? tr("service.panel.shipyard.condition.worn", "worn")
+                                                             : tr("service.panel.shipyard.condition.scrap", "for scrap");
+            t.textDrawPx(rd(o.sellerNameRu), cx, y, small, Text);
             t.textDrawPx(cond, cx + cw * cols[1], y, small, o.condition == "wreck" ? Bad : o.condition == "worn" ? Warn : Good);
-            t.textDrawPx(fmt("%.0f лет", o.ageYears), cx + cw * cols[2], y, small, Text);
-            t.textDrawPx(grouped(o.operatingHours) + " ч", cx + cw * cols[3], y, small, Text);
+            t.textDrawPx(tr("service.panel.shipyard.age_years", {{"years", fmt("%.0f", o.ageYears)}}, "{years} yr"), cx + cw * cols[2], y, small, Text);
+            t.textDrawPx(tr("service.panel.shipyard.hours_run", {{"hours", grouped(o.operatingHours)}}, "{hours} h"), cx + cw * cols[3], y, small, Text);
             t.textDrawPx(fmt("%.0f%%", o.wear01 * 100.0) + " / " + fmt("%.0f%%", o.damage01 * 100.0), cx + cw * cols[4], y, small, Text);
             t.textDrawPx(grouped(o.priceCr) + " Cr", cx + cw * cols[5], y, small, Title);
             // step 14: a new ship can be bought at a berth (the server decides); used ones later (wear not carried yet)
             if (o.condition == "new")
             {
-                const std::string buy = "КУПИТЬ";
+                const std::string buy = tr("service.panel.shipyard.buy", "BUY");
                 const float bx = cx + cw - t.measureTextPx(buy, small) - 16, bw = t.measureTextPx(buy, small) + 14;
                 t.solidRectPx(bx - 4, y - 2, bw, static_cast<float>(small) + 6, Selected);
                 t.textDrawPx(buy, bx + 3, y, small, Warn);
@@ -242,7 +258,8 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
             y += static_cast<float>(small) + 7;
         }
         y += 8;
-        const std::string toggle = page.passportExpanded ? "[-] Паспорт (свернуть)" : "[+] Полный паспорт и оборудование";
+        const std::string toggle = page.passportExpanded ? tr("service.panel.shipyard.passport_collapse", "[-] Passport (collapse)")
+                                                         : tr("service.panel.shipyard.passport_expand", "[+] Full passport and equipment");
         t.textDrawPx(toggle, cx, y, px, Line);
         m_hits.push_back({cx, y - 2, cx + t.measureTextPx(toggle, px) + 8, y + static_cast<float>(px) + 4, 0,
                           {ServicePanelActionType::ShipyardTogglePassport, {}}});
@@ -259,8 +276,8 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
                 const float yy = y + rowHp * static_cast<float>(i) - m_cardScroll;
                 if (yy < y || yy + rowHp > bottom)
                     continue;
-                t.textDrawPx(c.passportSpecs[i].labelRu, cx, yy, small, Muted);
-                t.textDrawPx(c.passportSpecs[i].value, cx + cw * 0.30f, yy, small, Text);
+                t.textDrawPx(rd(c.passportSpecs[i].labelRu), cx, yy, small, Muted);
+                t.textDrawPx(rd(c.passportSpecs[i].value), cx + cw * 0.30f, yy, small, Text);
             }
         }
     }
@@ -288,8 +305,8 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
     t.solidRectPx(0, 0, w, 2, Line);
     if (!page.valid)
     {
-        t.textDrawPx("РЕМОНТ И ПЕРЕОБОРУДОВАНИЕ", 24, 18, big, Title);
-        t.textDrawPx("нет данных о кораблях игрока", 24, 24 + big, px, Muted);
+        t.textDrawPx(tr("service.panel.refit.title", "REPAIR & REFIT"), 24, 18, big, Title);
+        t.textDrawPx(tr("service.panel.refit.no_ships", "no data on the player's ships"), 24, 24 + big, px, Muted);
         t.endFrame();
         glEnable(GL_DEPTH_TEST);
         return;
@@ -308,14 +325,15 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
     // base 2: another owned ship (the controlled one is listed first) - the pilot can move to it
     if (page.currentShip > 0)
     {
-        const std::string board = "ПЕРЕСЕСТЬ НА ЭТОТ КОРАБЛЬ";
+        const std::string board = tr("service.panel.refit.board", "BOARD THIS SHIP");
         const float bx = headEnd + arrowW + 16, bw = t.measureTextPx(board, small) + 20;
         t.solidRectPx(bx, 18, bw, static_cast<float>(small) * 1.8f, Selected);
         t.textDrawPx(board, bx + 10, 18 + small * 0.4f, small, Warn);
         m_hits.push_back({bx, 18, bx + bw, 18 + small * 1.8f, 0, {ServicePanelActionType::RefitBoard, std::to_string(tab.id.value)}});
     }
-    t.textDrawPx("F7  /  ремонт и переоборудование  ·  " + page.modelName + "  ·  корабль " + std::to_string(page.currentShip + 1) + " из " +
-                     std::to_string(page.ships.size()),
+    t.textDrawPx(tr("service.panel.refit.subtitle",
+                    {{"model", page.modelName}, {"n", std::to_string(page.currentShip + 1)}, {"total", std::to_string(page.ships.size())}},
+                    "F7  /  repair & refit  ·  {model}  ·  ship {n} of {total}"),
                  24, 22 + static_cast<float>(big), small, Muted);
 
     const float leftW = w * 0.60f, top = 30.0f + static_cast<float>(big + small);
@@ -349,14 +367,21 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
         m_hits.push_back({x0, y0, std::max(x0 + 4, x1), std::max(y0 + 4, y1), 0, {ServicePanelActionType::RefitSelectModule, m->moduleId}});
     }
     if (placed.empty())
-        t.textDrawPx("у этого корпуса нет паспортных позиций модулей: выбор по списку ниже", 28, top + schH * 0.5f, small, Muted);
-    t.textDrawPx("функциональная схема · сбоку, нос слева · цвет = состояние", 24, top + 6, small, Muted);
+        t.textDrawPx(tr("service.panel.refit.no_placements", "this hull has no passport module positions: pick from the list below"), 28,
+                     top + schH * 0.5f, small, Muted);
+    t.textDrawPx(tr("service.panel.refit.schematic", "functional diagram · side view, nose left · colour = condition"), 24, top + 6, small, Muted);
 
     // ---- group chips
     float gx = 16, gy = top + schH + 10;
     for (const auto& g : page.groups)
     {
-        const std::string label = g.labelRu + " " + std::to_string(g.modules) + (g.failed ? "  отказ " + std::to_string(g.failed) : g.damaged ? "  повр. " + std::to_string(g.damaged) : "");
+        const std::string groupName = tr("service.panel.refit.group." + g.key, g.labelRu);
+        const std::string label =
+            g.failed    ? tr("service.panel.refit.chip_failed", {{"group", groupName}, {"n", std::to_string(g.modules)}, {"failed", std::to_string(g.failed)}},
+                             "{group} {n}  failed {failed}")
+            : g.damaged ? tr("service.panel.refit.chip_damaged", {{"group", groupName}, {"n", std::to_string(g.modules)}, {"damaged", std::to_string(g.damaged)}},
+                             "{group} {n}  dmg. {damaged}")
+                        : tr("service.panel.refit.chip", {{"group", groupName}, {"n", std::to_string(g.modules)}}, "{group} {n}");
         const float cw = t.measureTextPx(label, small) + 16;
         if (gx + cw > leftW - 8)
         {
@@ -380,7 +405,8 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
         if (group.empty() ? m.damaged() : m.group == group)
             rows.push_back(&m);
     const float listBottom = h - 52.0f;
-    t.textDrawPx(group.empty() ? "повреждённые модули корабля" : "модули группы", 16, gy, small, Muted);
+    t.textDrawPx(group.empty() ? tr("service.panel.refit.list_damaged", "damaged modules of the ship") : tr("service.panel.refit.list_group", "modules of the group"),
+                 16, gy, small, Muted);
     gy += static_cast<float>(small) + 6;
     m_zones.push_back({2, 16, gy, leftW - 8, listBottom});
     const float rowH = static_cast<float>(px) + 10;
@@ -395,12 +421,17 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
             t.solidRectPx(16, y, leftW - 24, rowH, Selected);
         t.solidRectPx(20, y + 4, 6, rowH - 8, stateColour(m));
         t.textDrawPx(m.label, 34, y + 4, px, Text);
-        const std::string st = std::string(stateRu(m.state)) + fmt("  %.0f%%", m.health01 * 100.0) + (m.damage01 > 0.001 ? fmt("  повр. %.0f%%", m.damage01 * 100.0) : "");
+        const std::string st = m.damage01 > 0.001
+                                   ? tr("service.panel.refit.row_state_damaged",
+                                        {{"state", stateText(m.state)}, {"health", fmt("%.0f", m.health01 * 100.0)}, {"damage", fmt("%.0f", m.damage01 * 100.0)}},
+                                        "{state}  {health}%  dmg. {damage}%")
+                                   : tr("service.panel.refit.row_state", {{"state", stateText(m.state)}, {"health", fmt("%.0f", m.health01 * 100.0)}},
+                                        "{state}  {health}%");
         t.textDrawPx(st, leftW - 24 - t.measureTextPx(st, small) - 8, y + 6, small, stateColour(m));
         m_hits.push_back({16, y, leftW - 8, y + rowH, 2, {ServicePanelActionType::RefitSelectModule, m.moduleId}});
     }
     if (rows.empty())
-        t.textDrawPx(group.empty() ? "повреждений нет" : "—", 34, gy + 4, px, Good);
+        t.textDrawPx(group.empty() ? tr("service.panel.refit.no_damage", "no damage") : std::string("—"), 34, gy + 4, px, Good);
 
     // ---- right: the selected module and the consequences of servicing it
     const float rx = leftW + 12, rw = w - rx - 20;
@@ -419,29 +450,42 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
             t.textDrawPx(v, rx + rw * 0.42f, y, small, col);
             y += static_cast<float>(small) + 5;
         };
-        line("состояние", stateRu(m.state), stateColour(m));
-        line("целостность", fmt("%.1f%%", m.health01 * 100.0), stateColour(m));
-        line("функц. повреждения", fmt("%.1f%%", m.damage01 * 100.0), m.damage01 > 0.3 ? Bad : m.damage01 > 0.01 ? Warn : Text);
+        line(tr("service.panel.refit.label.state", "condition"), stateText(m.state), stateColour(m));
+        line(tr("service.panel.refit.label.integrity", "integrity"), fmt("%.1f%%", m.health01 * 100.0), stateColour(m));
+        line(tr("service.panel.refit.label.function_damage", "functional damage"), fmt("%.1f%%", m.damage01 * 100.0),
+             m.damage01 > 0.3 ? Bad : m.damage01 > 0.01 ? Warn : Text);
         std::string causes;
         for (const auto& [name, v] : m.causes)
-            causes += (causes.empty() ? "" : ", ") + name + fmt(" %.0f%%", v * 100.0);
+            causes += (causes.empty() ? "" : ", ") +
+                      tr("service.panel.refit.cause_item", {{"cause", tr("service.panel.refit.cause." + name, name)}, {"pct", fmt("%.0f", v * 100.0)}},
+                         "{cause} {pct}%");
         if (!causes.empty())
-            line("причины", causes, Warn);
-        line("износ", fmt("%.1f%%", m.wear01 * 100.0));
-        line("масса", f.massTonnes > 0 ? fmt("%.2f т", f.massTonnes) : "—");
+            line(tr("service.panel.refit.label.causes", "causes"), causes, Warn);
+        line(tr("service.panel.refit.label.wear", "wear"), fmt("%.1f%%", m.wear01 * 100.0));
+        line(tr("service.panel.refit.label.mass", "mass"),
+             f.massTonnes > 0 ? tr("service.panel.refit.tonnes", {{"t", fmt("%.2f", f.massTonnes)}}, "{t} t") : std::string("—"));
         if (f.powerMW > 0)
-            line("мощность", fmt("%.1f МВт", f.powerMW));
+            line(tr("service.panel.refit.label.power", "power"), tr("service.panel.refit.megawatts", {{"mw", fmt("%.1f", f.powerMW)}}, "{mw} MW"));
         if (m.hasPlacement)
-            line("положение", fmt("x %.1f", m.centerMeters.x) + fmt("  y %.1f", m.centerMeters.y) + fmt("  z %.1f м", m.centerMeters.z));
-        line("ремонт", std::string(levelRu(f.repairLevel)) + (f.lineReplaceable ? ", сменный блок" : "") +
-                           (f.replaceHours > 0 ? fmt(", замена %.0f ч", f.replaceHours) : ""));
+            line(tr("service.panel.refit.label.position", "position"),
+                 tr("service.panel.refit.position",
+                    {{"x", fmt("%.1f", m.centerMeters.x)}, {"y", fmt("%.1f", m.centerMeters.y)}, {"z", fmt("%.1f", m.centerMeters.z)}},
+                    "x {x}  y {y}  z {z} m"));
+        {
+            std::string repair = levelText(f.repairLevel);
+            if (f.lineReplaceable)
+                repair += tr("service.panel.refit.repair_lru", ", line-replaceable unit");
+            if (f.replaceHours > 0)
+                repair += tr("service.panel.refit.repair_swap", {{"hours", fmt("%.0f", f.replaceHours)}}, ", swap {hours} h");
+            line(tr("service.panel.refit.label.repair", "repair"), repair);
+        }
         if (f.priceCr > 0)
-            line("цена изделия", grouped(f.priceCr) + " Cr");
+            line(tr("service.panel.refit.label.price", "unit price"), grouped(f.priceCr) + " Cr");
         y += 6;
 
         // actions
         const float bw = (rw - 24) / 3.0f, bh = static_cast<float>(px) + 14;
-        const auto button = [&](float x, const char* label, ServicePanelActionType type, bool enabled, const std::string& arg = {}) {
+        const auto button = [&](float x, const std::string& label, ServicePanelActionType type, bool enabled, const std::string& arg = {}) {
             t.solidRectPx(x, y, bw - 6, bh, enabled ? glm::vec4(0.05f, 0.14f, 0.22f, 1.0f) : glm::vec4(0.03f, 0.05f, 0.07f, 1.0f));
             t.solidRectPx(x, y, bw - 6, 1, Line);
             t.textDrawPx(label, x + std::max(4.0f, (bw - 6 - t.measureTextPx(label, small)) * 0.5f), y + (bh - static_cast<float>(small)) * 0.5f, small,
@@ -449,9 +493,9 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
             if (enabled)
                 m_hits.push_back({x, y, x + bw - 6, y + bh, 0, {type, arg}});
         };
-        button(rx + 6, "Ремонтировать", ServicePanelActionType::RefitPreviewRepair, f.repairable);
-        button(rx + 6 + bw, "Заменить", ServicePanelActionType::RefitPreviewReplace, true);
-        button(rx + 6 + 2 * bw, "Применить (DEV)", ServicePanelActionType::RefitApply,
+        button(rx + 6, tr("service.panel.refit.repair", "Repair"), ServicePanelActionType::RefitPreviewRepair, f.repairable);
+        button(rx + 6 + bw, tr("service.panel.refit.replace", "Replace"), ServicePanelActionType::RefitPreviewReplace, true);
+        button(rx + 6 + 2 * bw, tr("service.panel.refit.apply_dev", "Apply (DEV)"), ServicePanelActionType::RefitApply,
                page.previewForSelection && page.preview.ok && page.preview.applicable);
         y += bh + 10;
 
@@ -460,13 +504,18 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
         {
             const auto& p = page.preview;
             const bool repair = p.operation.kind == game::ship::refit::RefitOperationKind::Repair;
-            t.textDrawPx(std::string(repair ? "Ремонт" : "Замена") + (p.operation.productId.empty() ? "" : " на " + p.operation.productId) +
-                             ": что изменится в корабле",
-                         rx + 6, y, px, Title);
+            const std::string previewTitle =
+                p.operation.productId.empty()
+                    ? (repair ? tr("service.panel.refit.preview_repair", "Repair: what changes in the ship")
+                              : tr("service.panel.refit.preview_replace", "Replace: what changes in the ship"))
+                    : (repair ? tr("service.panel.refit.preview_repair_with", {{"product", p.operation.productId}}, "Repair with {product}: what changes in the ship")
+                              : tr("service.panel.refit.preview_replace_with", {{"product", p.operation.productId}},
+                                   "Replace with {product}: what changes in the ship"));
+            t.textDrawPx(previewTitle, rx + 6, y, px, Title);
             y += static_cast<float>(px) + 6;
             if (!p.ok)
             {
-                t.textDrawPx(p.error, rx + 6, y, small, Bad);
+                t.textDrawPx(rd(p.error), rx + 6, y, small, Bad);
                 y += static_cast<float>(small) + 6;
             }
             else
@@ -475,13 +524,14 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
                 {
                     if (y > h - 120)
                         break;
-                    t.textDrawPx(dlt.labelRu, rx + 6, y, small, Muted);
+                    t.textDrawPx(rd(dlt.labelRu), rx + 6, y, small, Muted);
                     std::string v;
+                    const std::string yes = tr("service.panel.refit.flag_yes", "yes"), no = tr("service.panel.refit.flag_no", "no");
                     if (dlt.flag)
-                        v = std::string(dlt.before > 0.5 ? "есть" : "нет") + "  ->  " + (dlt.after > 0.5 ? "есть" : "нет");
+                        v = (dlt.before > 0.5 ? yes : no) + "  ->  " + (dlt.after > 0.5 ? yes : no);
                     else
                         v = fmt(std::abs(dlt.after) >= 100 ? "%.0f" : "%.2f", dlt.before) + "  ->  " +
-                            fmt(std::abs(dlt.after) >= 100 ? "%.0f" : "%.2f", dlt.after) + " " + dlt.unit;
+                            fmt(std::abs(dlt.after) >= 100 ? "%.0f" : "%.2f", dlt.after) + " " + rd(dlt.unit);
                     const bool better = dlt.key.find("damage") != std::string::npos || dlt.key.find("wear") != std::string::npos ||
                                                 dlt.key.find("coolant") != std::string::npos || dlt.key == "emergency_cooling" ||
                                                 dlt.key == "mass"
@@ -492,40 +542,46 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
                 }
                 if (p.deltas.empty())
                 {
-                    t.textDrawPx("для корабля ничего не меняется", rx + 6, y, small, Muted);
+                    t.textDrawPx(tr("service.panel.refit.no_change", "nothing changes for the ship"), rx + 6, y, small, Muted);
                     y += static_cast<float>(small) + 5;
                 }
                 y += 4;
-                t.textDrawPx("стоимость " + std::string(levelRu(p.cost.repairLevel)) + fmt(": %.1f ч", p.cost.labourHours) + ", работа " +
-                                 grouped(p.cost.labourCr) + " + материалы " + grouped(p.cost.materialCr) + " = " + grouped(p.cost.totalCr) + " Cr",
+                t.textDrawPx(tr("service.panel.refit.cost",
+                                {{"level", levelText(p.cost.repairLevel)}, {"hours", fmt("%.1f", p.cost.labourHours)}, {"labour", grouped(p.cost.labourCr)},
+                                 {"material", grouped(p.cost.materialCr)}, {"total", grouped(p.cost.totalCr)}},
+                                "cost {level}: {hours} h, labour {labour} + materials {material} = {total} Cr"),
                              rx + 6, y, small, Title);
                 y += static_cast<float>(small) + 5;
-                t.textDrawPx(p.applyNote, rx + 6, y, small, Muted);
+                t.textDrawPx(rd(p.applyNote), rx + 6, y, small, Muted);
                 y += static_cast<float>(small) + 8;
             }
         }
         else
         {
-            t.textDrawPx("выберите «Ремонтировать» или «Заменить»: сервер прогонит корабль до и после", rx + 6, y, small, Muted);
+            t.textDrawPx(tr("service.panel.refit.choose_hint", "choose “Repair” or “Replace”: the server runs the ship before and after"), rx + 6, y,
+                         small, Muted);
             y += static_cast<float>(small) + 8;
         }
         if (page.applyResultFresh)
         {
-            t.textDrawPx(page.applyResult.empty() ? "применено: ShipCore изменён" : "не применено: " + page.applyResult, rx + 6, y, small,
-                         page.applyResult.empty() ? Good : Bad);
+            t.textDrawPx(page.applyResult.empty() ? tr("service.panel.refit.applied", "applied: ShipCore changed")
+                                                  : tr("service.panel.refit.not_applied", {{"reason", rd(page.applyResult)}}, "not applied: {reason}"),
+                         rx + 6, y, small, page.applyResult.empty() ? Good : Bad);
             y += static_cast<float>(small) + 8;
         }
 
         // compatible replacements
         if (!page.replacements.empty() && y < h - 90)
         {
-            t.textDrawPx("совместимые изделия (предпросмотр замены)", rx + 6, y, small, Muted);
+            t.textDrawPx(tr("service.panel.refit.replacements", "compatible products (replacement preview)"), rx + 6, y, small, Muted);
             y += static_cast<float>(small) + 5;
             for (const auto& r : page.replacements)
             {
                 if (y > h - 70)
                     break;
-                const std::string label = (r.sameProduct ? "новый того же типа: " : "") + r.name + "  ·  " + grouped(r.priceCr) + " Cr";
+                const std::string label = r.sameProduct ? tr("service.panel.refit.replacement_same", {{"name", r.name}, {"price", grouped(r.priceCr)}},
+                                                             "new of the same type: {name}  ·  {price} Cr")
+                                                        : r.name + "  ·  " + grouped(r.priceCr) + " Cr";
                 t.textDrawPx(label, rx + 12, y, small, r.sameProduct ? Text : Line);
                 m_hits.push_back({rx + 6, y - 2, rx + rw, y + static_cast<float>(small) + 3, 0,
                                   {ServicePanelActionType::RefitPreviewReplace, r.sameProduct ? std::string() : r.productId}});
@@ -544,27 +600,27 @@ std::string priceText(double cr)
 {
     // expensive goods per kg (trade_goods unit rule: >= 50 000 Cr/t)
     if (cr >= 50000.0)
-        return grouped(cr / 1000.0) + " Cr/кг";
-    return grouped(cr) + " Cr/т";
+        return tr("service.panel.trade.price_per_kg", {{"price", grouped(cr / 1000.0)}}, "{price} Cr/kg");
+    return tr("service.panel.trade.price_per_t", {{"price", grouped(cr)}}, "{price} Cr/t");
 }
 
 std::string ageText(double hours)
 {
     if (hours < 1.0)
-        return "только что";
+        return tr("service.panel.trade.age_now", "just now");
     if (hours < 48.0)
-        return fmt("%.0f ч назад", hours);
-    return fmt("%.1f сут назад", hours / 24.0);
+        return tr("service.panel.trade.age_hours", {{"h", fmt("%.0f", hours)}}, "{h} h ago");
+    return tr("service.panel.trade.age_days", {{"d", fmt("%.1f", hours / 24.0)}}, "{d} d ago");
 }
 
-const char* channelRu(const std::string& c)
+std::string channelText(const std::string& c)
 {
-    if (c == "open") return "открытый";
-    if (c == "licensed") return "по лицензии";
-    if (c == "restricted") return "ограниченный";
-    if (c == "black") return "чёрный";
-    if (c == "closed") return "закрыт";
-    return c.c_str();
+    if (c == "open") return tr("service.panel.trade.channel.open", "open");
+    if (c == "licensed") return tr("service.panel.trade.channel.licensed", "licensed");
+    if (c == "restricted") return tr("service.panel.trade.channel.restricted", "restricted");
+    if (c == "black") return tr("service.panel.trade.channel.black", "black");
+    if (c == "closed") return tr("service.panel.trade.channel.closed", "closed");
+    return c;
 }
 
 std::string money2(double v)
@@ -598,7 +654,7 @@ void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot
     t.solidRectPx(listX, listY, listW, listH, Panel);
     if (!f.valid)
     {
-        t.textDrawPx("нет данных банка (сервер без экономики)", listX + 12, listY + 12, px, Muted);
+        t.textDrawPx(tr("service.panel.finance.no_data", "no bank data (server without economy)"), listX + 12, listY + 12, px, Muted);
         return;
     }
     float y = listY + 10.0f;
@@ -616,45 +672,48 @@ void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot
         y += static_cast<float>(px) + 6.0f;
     };
     const bool good = f.standing == "good";
-    row("Статус клиента", f.standingRu, good ? Good : f.standing == "grace" ? Warn : Bad, px);
-    row("Чистые активы", money2(f.netWorthCr) + " Cr", f.netWorthCr >= 0.0 ? Good : Bad, px);
+    row(tr("service.panel.finance.standing", "Client standing"), rd(f.standingRu), good ? Good : f.standing == "grace" ? Warn : Bad, px);
+    row(tr("service.panel.finance.net_worth", "Net worth"), money2(f.netWorthCr) + " Cr", f.netWorthCr >= 0.0 ? Good : Bad, px);
     if (f.heldCr > 0.005)   // contract deposits (trade step 5): the client's money, blocked until hand-in / failure
-        row("  из них заблокировано (залоги контрактов)", money2(f.heldCr) + " Cr", Warn, small);
+        row(tr("service.panel.finance.held", "  of it blocked (contract deposits)"), money2(f.heldCr) + " Cr", Warn, small);
     if (f.garnishDebtCr > 0.005 || f.lastWithheldDay >= 0)   // income garnish over the protected minimum (TRADE_DESIGN §1.3)
         row(tx("garnish"),
             fill(tx("garnish_value"), {{"{debt}", grouped(f.garnishDebtCr)}, {"{withheld}", grouped(f.lastWithheldCr)},
                                        {"{protected}", grouped(f.protectedCr)}}),
             f.garnishDebtCr > 0.005 ? Warn : Good, small);
-    header("Наличные");
+    header(tr("service.panel.finance.cash", "Cash"));
     for (const auto& c : f.cash)
-        row(c.label, money2(c.amount) + " " + c.currency + (c.currency == "CR" ? "" : "  (" + grouped(c.amountCr) + " Cr)"), Text, small);
-    header("Счета");
+        row(rd(c.label), money2(c.amount) + " " + c.currency + (c.currency == "CR" ? "" : "  (" + grouped(c.amountCr) + " Cr)"), Text, small);
+    header(tr("service.panel.finance.accounts", "Accounts"));
     for (const auto& a : f.accounts)
     {
-        row(a.label, money2(a.amount) + " " + a.currency + (a.currency == "CR" ? "" : "  (" + grouped(a.amountCr) + " Cr)"),
+        row(rd(a.label), money2(a.amount) + " " + a.currency + (a.currency == "CR" ? "" : "  (" + grouped(a.amountCr) + " Cr)"),
             a.amount >= 0.0 ? Text : Warn, px);
-        row("  овердрафт " + grouped(a.limit) + " " + a.currency + ", ставка " + fmt("%.2f %%", a.annualRate * 100.0) +
-                (a.state.empty() ? "" : "  ·  " + a.state),
+        row(tr("service.panel.finance.overdraft", {{"limit", grouped(a.limit)}, {"currency", a.currency}, {"rate", fmt("%.2f", a.annualRate * 100.0)}},
+               "  overdraft {limit} {currency}, rate {rate} %") +
+                (a.state.empty() ? "" : "  ·  " + rd(a.state)),
             "", Muted, small);
     }
     if (!f.loans.empty())
     {
-        header("Долги");
+        header(tr("service.panel.finance.loans", "Debts"));
         for (const auto& l : f.loans)
         {
-            row(l.label, money2(l.amount) + " " + l.currency, Warn, px);
-            row("  ставка " + fmt("%.2f %%", l.annualRate * 100.0) + ", платёж " + grouped(l.limit) + " / 30 сут" +
-                    (l.state.empty() ? "" : "  ·  " + l.state),
+            row(rd(l.label), money2(l.amount) + " " + l.currency, Warn, px);
+            row(tr("service.panel.finance.loan_terms", {{"rate", fmt("%.2f", l.annualRate * 100.0)}, {"payment", grouped(l.limit)}},
+                   "  rate {rate} %, payment {payment} / 30 d") +
+                    (l.state.empty() ? "" : "  ·  " + rd(l.state)),
                 "", Muted, small);
         }
     }
-    header("Спасательный кредит");
-    row("Остаток лимита (топливо, ремонт до лётного состояния; буксир — всегда)", grouped(f.lifelineLeftCr) + " Cr / 90 сут", Good, small);
+    header(tr("service.panel.finance.lifeline", "Lifeline credit"));
+    row(tr("service.panel.finance.lifeline_left", "Limit left (fuel, repair to flying condition; tow — always)"),
+        tr("service.panel.finance.lifeline_value", {{"cr", grouped(f.lifelineLeftCr)}}, "{cr} Cr / 90 d"), Good, small);
     if (!f.notices.empty())
     {
-        header("Последние операции");
+        header(tr("service.panel.finance.notices", "Recent operations"));
         for (const auto& n : f.notices)
-            row(n, "", Muted, small);
+            row(rd(n), "", Muted, small);
     }
 
     // right column: where the ship is, the fuel price here
@@ -667,34 +726,43 @@ void renderFinance(TextRenderer& t, const game::simulation::ClientWalletSnapshot
         t.textDrawPx(value, cx + cw - t.measureTextPx(value, small), ry, small, col);
         ry += static_cast<float>(small) + 6.0f;
     };
-    t.textDrawPx("Здесь платят", cx, ry, big, Text);
+    t.textDrawPx(tr("service.panel.finance.paying_here", "Paying here"), cx, ry, big, Text);
     ry += static_cast<float>(big) + 6.0f;
-    line("Полития", f.localPolity.empty() ? "нет государства" : f.localPolity, Text);
-    line("Банк", f.localBank, Text);
-    line("Курс", "1 Cr = " + fmt("%.4f", f.localFxPerCr) + " " + f.localCurrency, Text);
+    line(tr("service.panel.finance.polity", "Polity"), f.localPolity.empty() ? tr("service.panel.finance.no_state", "no state") : rd(f.localPolity), Text);
+    line(tr("service.panel.finance.bank", "Bank"), rd(f.localBank), Text);
+    line(tr("service.panel.finance.fx_rate", "Rate"), "1 Cr = " + fmt("%.4f", f.localFxPerCr) + " " + f.localCurrency, Text);
     ry += 10.0f;
-    t.textDrawPx("Топливо", cx, ry, big, Text);
+    t.textDrawPx(tr("service.panel.finance.fuel", "Fuel"), cx, ry, big, Text);
     ry += static_cast<float>(big) + 6.0f;
     if (!f.fuelQuoteValid)
-        line("Заряд прыжка", "здесь не продаётся", Bad);
+        line(tr("service.panel.finance.jump_charge", "Jump charge"), tr("service.panel.finance.not_sold", "not sold here"), Bad);
     else
     {
-        line("Где", f.fuelHubName, Text);
-        line("Заряд прыжка, прейскурант", grouped(f.jumpChargeListPerT) + " " + f.localCurrency + "/т  (" + grouped(f.jumpChargeListCrPerT) +
-                                              " Cr/т)", Text);
-        line("К оплате", f.fuelFree ? "0 — топливо пока бесплатно" : grouped(f.jumpChargeChargedPerT) + " " + f.localCurrency + "/т",
+        line(tr("service.panel.finance.where", "Where"), rd(f.fuelHubName), Text);
+        line(tr("service.panel.finance.jump_charge_list", "Jump charge, list price"),
+             tr("service.panel.finance.jump_charge_list_value",
+                {{"price", grouped(f.jumpChargeListPerT)}, {"currency", f.localCurrency}, {"cr", grouped(f.jumpChargeListCrPerT)}},
+                "{price} {currency}/t  ({cr} Cr/t)"),
+             Text);
+        line(tr("service.panel.finance.to_pay", "To pay"),
+             f.fuelFree ? tr("service.panel.finance.fuel_free", "0 — fuel is free for now")
+                        : tr("service.panel.finance.per_tonne", {{"price", grouped(f.jumpChargeChargedPerT)}, {"currency", f.localCurrency}},
+                             "{price} {currency}/t"),
              f.fuelFree ? Good : Text);
-        line("Запас станции", fmt("%.1f т", f.jumpChargeStockT), Text);
+        line(tr("service.panel.finance.station_stock", "Station stock"),
+             tr("service.panel.finance.tonnes", {{"t", fmt("%.1f", f.jumpChargeStockT)}}, "{t} t"), Text);
         if (f.reactorFuelListPerKg > 0.0)
-            line("Реакторное топливо (D/He-3)", grouped(f.reactorFuelListPerKg) + " " + f.localCurrency + "/кг", Text);
+            line(tr("service.panel.finance.reactor_fuel", "Reactor fuel (D/He-3)"),
+                 tr("service.panel.finance.per_kg", {{"price", grouped(f.reactorFuelListPerKg)}, {"currency", f.localCurrency}}, "{price} {currency}/kg"),
+                 Text);
         ry += 6.0f;
-        t.textDrawPx("Из чего цена заряда", cx, ry, px, Title);
+        t.textDrawPx(tr("service.panel.finance.breakdown", "What the charge price is made of"), cx, ry, px, Title);
         ry += static_cast<float>(px) + 6.0f;
         for (const auto& b : f.fuelBreakdown)
-            line(b, "", Muted);
+            line(rd(b), "", Muted);
     }
     if (f.freeFuelListCr > 0.0)
-        line("Получено бесплатно по прейскуранту", grouped(f.freeFuelListCr) + " Cr", Muted);
+        line(tr("service.panel.finance.free_fuel", "Received free at list price"), grouped(f.freeFuelListCr) + " Cr", Muted);
 }
 
 // F8 -> ГРУЗ: the server's manifest of the ship (docs/TRADE_DESIGN.md §8.3, read-only in step 1), the hull figures and
@@ -706,7 +774,7 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
     t.solidRectPx(listX, listY, listW, listH, Panel);
     if (!s.valid)
     {
-        t.textDrawPx("нет данных груза (сервер без экономики)", listX + 12, listY + 12, px, Muted);
+        t.textDrawPx(tr("service.panel.cargo.no_data", "no cargo data (server without economy)"), listX + 12, listY + 12, px, Muted);
         return;
     }
     const auto& goods = game::economy::EconomyModel::instance().goods();
@@ -715,21 +783,24 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
     };
     float y = listY + 10.0f;
     const float x = listX + 12.0f, right = listX + listW - 12.0f;
-    t.textDrawPx("Манифест", x, y, px, Title);
+    t.textDrawPx(tr("service.panel.cargo.manifest", "Manifest"), x, y, px, Title);
     y += static_cast<float>(px) + 8.0f;
     if (s.cargo.empty())
     {
-        t.textDrawPx("трюм пуст", x, y, px, Muted);
+        t.textDrawPx(tr("service.panel.cargo.empty", "hold empty"), x, y, px, Muted);
         y += static_cast<float>(px) + 6.0f;
     }
     // cargo insurance (step 13): the active policy; the button insures what is aboard now (at a berth)
     {
-        const std::string pol = s.insuredUntilDay >= 0 ? "Страховка груза: " + grouped(s.insuredCr) + " Cr до дня " + std::to_string(s.insuredUntilDay)
-                                                       : std::string("Страховка груза: нет");
+        const std::string pol = s.insuredUntilDay >= 0
+                                    ? tr("service.panel.cargo.insured", {{"cr", grouped(s.insuredCr)}, {"day", std::to_string(s.insuredUntilDay)}},
+                                         "Cargo insurance: {cr} Cr until day {day}")
+                                    : tr("service.panel.cargo.not_insured", "Cargo insurance: none");
         t.textDrawPx(pol, x, y, small, s.insuredUntilDay >= 0 ? Good : Muted);
         if (s.docked && s.insuranceQuoteCr > 0.0)
         {
-            const std::string label = "ЗАСТРАХОВАТЬ " + grouped(s.insuranceValueCr) + " Cr  ·  премия " + grouped(s.insuranceQuoteCr) + " Cr";
+            const std::string label = tr("service.panel.cargo.insure", {{"value", grouped(s.insuranceValueCr)}, {"premium", grouped(s.insuranceQuoteCr)}},
+                                         "INSURE {value} Cr  ·  premium {premium} Cr");
             const float bw = t.measureTextPx(label, small) + 20.0f, bh = small * 1.7f;
             t.solidRectPx(right - bw, y - small * 0.3f, bw, bh, Selected);
             t.textDrawPx(label, right - bw + 10, y, small, Warn);
@@ -741,22 +812,27 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
     {
         if (y > listY + listH - 2.0f * static_cast<float>(px))
             break;
-        t.textDrawPx(c.good >= 0 ? goodRu(c.good) : (c.contractId.empty() ? std::string("?") : "груз контракта"), x, y, px, Text);
-        const std::string mass = fmt("%.2f т", c.tonnes) + "  ·  C20 x " + std::to_string(c.c20);
+        t.textDrawPx(c.good >= 0 ? goodRu(c.good) : (c.contractId.empty() ? std::string("?") : tr("service.panel.cargo.contract_cargo", "contract cargo")), x,
+                     y, px, Text);
+        const std::string mass = tr("service.panel.cargo.mass", {{"t", fmt("%.2f", c.tonnes)}, {"n", std::to_string(c.c20)}}, "{t} t  ·  C20 x {n}");
         t.textDrawPx(mass, right - t.measureTextPx(mass, px), y, px, Text);
         y += static_cast<float>(px) + 4.0f;
-        const std::string detail = "партия " + c.lotId + "  ·  " + (c.contractId.empty() ? std::string("свой товар") : "контракт " + c.contractId) +
-                                   "  ·  погружено день " + std::to_string(c.loadedDay) + " (" + c.originHub + ")  ·  себест. " +
-                                   grouped(c.costBasisCrPerT) + " Cr/т";
+        const std::vector<game::localization::MessageParam> lotParams {{"lot", c.lotId}, {"contract", c.contractId},
+                                                                        {"day", std::to_string(c.loadedDay)}, {"hub", rd(c.originHub)},
+                                                                        {"cost", grouped(c.costBasisCrPerT)}};
+        const std::string detail =
+            c.contractId.empty()
+                ? tr("service.panel.cargo.lot_own", lotParams, "lot {lot}  ·  own goods  ·  loaded day {day} ({hub})  ·  cost basis {cost} Cr/t")
+                : tr("service.panel.cargo.lot_contract", lotParams, "lot {lot}  ·  contract {contract}  ·  loaded day {day} ({hub})  ·  cost basis {cost} Cr/t");
         t.textDrawPx(detail, x + 10, y, small, Muted);
         y += static_cast<float>(small) + 8.0f;
         // TRADE step 9: contraband here - the black market; restricted - open until licences (step 11)
         if (c.legalityHere == "banned" && c.contractId.empty())
         {
-            t.textDrawPx("ЗАПРЕЩЕНО ЗДЕСЬ: таможня изымет, штраф 2 x стоимость", x + 10, y, small, Bad);
+            t.textDrawPx(tr("service.panel.cargo.banned", "BANNED HERE: customs will seize it, fine 2 x value"), x + 10, y, small, Bad);
             if (c.blackBidCrPerT > 0.0 && c.good >= 0)
             {
-                const std::string label = "ЧЁРНЫЙ РЫНОК  +" + grouped(c.tonnes * c.blackBidCrPerT) + " Cr";
+                const std::string label = tr("service.panel.cargo.black_market", {{"cr", grouped(c.tonnes * c.blackBidCrPerT)}}, "BLACK MARKET  +{cr} Cr");
                 const float bw = t.measureTextPx(label, small) + 20.0f, bh = small * 1.7f;
                 const float bx = right - bw;
                 t.solidRectPx(bx, y - small * 0.3f, bw, bh, Selected);
@@ -767,20 +843,22 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
         }
         else if (c.legalityHere == "restricted")
         {
-            t.textDrawPx("ограничен здесь: понадобится лицензия (пока торгуется открыто)", x + 10, y, small, Warn);
+            t.textDrawPx(tr("service.panel.cargo.restricted", "restricted here: a licence will be needed (traded openly for now)"), x + 10, y, small, Warn);
             y += static_cast<float>(small) + 6.0f;
         }
     }
     if (!s.results.empty())
     {
         y += 6.0f;
-        t.textDrawPx("Последние сделки", x, y, px, Title);
+        t.textDrawPx(tr("service.panel.cargo.recent_deals", "Recent deals"), x, y, px, Title);
         y += static_cast<float>(px) + 6.0f;
         for (auto it = s.results.rbegin(); it != s.results.rend(); ++it)
         {
             if (y > listY + listH - static_cast<float>(small))
                 break;
-            const std::string line = "#" + std::to_string(it->requestId) + "  " + (it->ok ? it->message : "ОТКАЗ: " + it->message);
+            const std::string line = it->ok ? "#" + std::to_string(it->requestId) + "  " + rd(it->message)
+                                            : tr("service.panel.cargo.result_refused", {{"id", std::to_string(it->requestId)}, {"message", rd(it->message)}},
+                                                 "#{id}  REFUSED: {message}");
             t.textDrawPx(line, x, y, small, it->ok ? Good : Bad);
             if (it->ok)
             {
@@ -801,28 +879,33 @@ void renderCargo(TextRenderer& t, const game::simulation::ClientTradeSnapshot& s
         t.textDrawPx(value, cx + cw - t.measureTextPx(value, small), ry, small, col);
         ry += static_cast<float>(small) + 6.0f;
     };
-    t.textDrawPx("Трюм", cx, ry, big, Text);
+    const auto tonnes = [](const std::string& v) { return tr("service.panel.cargo.tonnes", {{"t", v}}, "{t} t"); };
+    const auto lightYears = [](double ly) { return tr("service.panel.cargo.light_years", {{"ly", fmt("%.1f", ly)}}, "{ly} ly"); };
+    t.textDrawPx(tr("service.panel.cargo.hold", "Hold"), cx, ry, big, Text);
     ry += static_cast<float>(big) + 6.0f;
-    line("Места C20", std::to_string(s.c20Used) + " занято / " + std::to_string(s.c20Slots), s.c20Used >= s.c20Slots ? Warn : Text);
-    line("Груз нетто", fmt("%.2f", s.cargoNetT) + " / " + fmt("%.0f т", s.netCapacityT), Text);
-    line("Тара C20 (1.7 т на контейнер)", fmt("%.1f т", s.cargoGrossT - s.cargoNetT), Text);
-    line("Груз брутто", fmt("%.2f т", s.cargoGrossT), Text);
+    line(tr("service.panel.cargo.c20_slots", "C20 slots"),
+         tr("service.panel.cargo.c20_used", {{"used", std::to_string(s.c20Used)}, {"slots", std::to_string(s.c20Slots)}}, "{used} used / {slots}"),
+         s.c20Used >= s.c20Slots ? Warn : Text);
+    line(tr("service.panel.cargo.net", "Net cargo"), fmt("%.2f", s.cargoNetT) + " / " + tonnes(fmt("%.0f", s.netCapacityT)), Text);
+    line(tr("service.panel.cargo.tare", "C20 tare (1.7 t per container)"), tonnes(fmt("%.1f", s.cargoGrossT - s.cargoNetT)), Text);
+    line(tr("service.panel.cargo.gross", "Gross cargo"), tonnes(fmt("%.2f", s.cargoGrossT)), Text);
     ry += 10.0f;
-    t.textDrawPx("Корабль", cx, ry, big, Text);
+    t.textDrawPx(tr("service.panel.cargo.ship", "Ship"), cx, ry, big, Text);
     ry += static_cast<float>(big) + 6.0f;
-    line("Масса сейчас", fmt("%.1f т", s.shipMassT), Text);
-    line("Дальность прыжка на полном заряде", fmt("%.1f св. лет", s.jumpRangeLy), s.jumpRangeLy < s.jumpRangeEmptyLy - 0.05 ? Warn : Text);
-    line("  с пустым трюмом", fmt("%.1f св. лет", s.jumpRangeEmptyLy), Muted);
+    line(tr("service.panel.cargo.mass_now", "Mass now"), tonnes(fmt("%.1f", s.shipMassT)), Text);
+    line(tr("service.panel.cargo.jump_full", "Jump range on a full charge"), lightYears(s.jumpRangeLy),
+         s.jumpRangeLy < s.jumpRangeEmptyLy - 0.05 ? Warn : Text);
+    line(tr("service.panel.cargo.jump_empty", "  with an empty hold"), lightYears(s.jumpRangeEmptyLy), Muted);
     if (s.jumpRangeEmptyLy > 0.0 && s.jumpRangeLy < s.jumpRangeEmptyLy - 0.05)
-        line("  груз сокращает прыжок на", fmt("%.1f %%", 100.0 * (1.0 - s.jumpRangeLy / s.jumpRangeEmptyLy)), Warn);
+        line(tr("service.panel.cargo.jump_cut", "  cargo shortens the jump by"), fmt("%.1f %%", 100.0 * (1.0 - s.jumpRangeLy / s.jumpRangeEmptyLy)), Warn);
     ry += 10.0f;
-    t.textDrawPx("Деньги", cx, ry, big, Text);
+    t.textDrawPx(tr("service.panel.cargo.money", "Money"), cx, ry, big, Text);
     ry += static_cast<float>(big) + 6.0f;
     if (f.valid)
         for (const auto& a : f.accounts)
-            line(a.label, money2(a.amount) + " " + a.currency, a.amount >= 0.0 ? Text : Warn);
+            line(rd(a.label), money2(a.amount) + " " + a.currency, a.amount >= 0.0 ? Text : Warn);
     if (s.vatReclaimCr > 0.0)
-        line("Входной НДС к возврату", grouped(s.vatReclaimCr) + " Cr", Muted);
+        line(tr("service.panel.cargo.vat_reclaim", "Input VAT to reclaim"), grouped(s.vatReclaimCr) + " Cr", Muted);
 }
 // F5 state app -> НАЛОГИ (TRADE_DESIGN §5.2, step 7): the server's tax book of the residence polity as replicated
 void renderTaxes(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f, const std::map<std::string, std::string>& text,
@@ -845,9 +928,9 @@ void renderTaxes(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
         ry += static_cast<float>(small) + 7.0f;
     };
     const auto pct = [](double v) { return fmt("%.0f %%", v * 100.0); };
-    t.textDrawPx(tx("tax_residence") + ": " + f.taxResidence, x + 12, ry, px, Title);
+    t.textDrawPx(tx("tax_residence") + ": " + rd(f.taxResidence), x + 12, ry, px, Title);
     ry += static_cast<float>(px) + 6.0f;
-    line(tx("tax_style"), f.taxStyleRu, Text);
+    line(tx("tax_style"), rd(f.taxStyleRu), Text);
     line(tx("tax_rate"), pct(f.taxRate) + (f.taxAdminFeeShare > 0.0 ? "  + " + pct(f.taxAdminFeeShare) + " " + tx("tax_admin_fee") : ""), Text);
     line(tx("tax_rules"), std::to_string(f.taxPeriodDays) + " " + tx("tax_days") + ", " + tx("tax_declare") + " " + std::to_string(f.taxDeclareDays) + " " +
                               tx("tax_days"), Muted);
@@ -907,7 +990,7 @@ void renderLicences(TextRenderer& t, const game::simulation::ClientWalletSnapsho
     {
         const std::string mark = c.granted ? "+" : "−";
         t.textDrawPx(mark, x + 14, ry, px, c.granted ? Good : Muted);
-        t.textDrawPx(c.ru + "  ·  " + tx("lic_control") + ": " + c.control + (c.note.empty() ? std::string() : "  (" + c.note + ")"), x + 34, ry,
+        t.textDrawPx(rd(c.ru) + "  ·  " + tx("lic_control") + ": " + c.control + (c.note.empty() ? std::string() : "  (" + rd(c.note) + ")"), x + 34, ry,
                      small, c.granted ? Text : Muted);
         ry += static_cast<float>(small) + 7.0f;
     }
@@ -921,13 +1004,13 @@ void renderLicences(TextRenderer& t, const game::simulation::ClientWalletSnapsho
     }
     for (const auto& l : f.licences)
     {
-        t.textDrawPx(l.ru + "  ·  " + l.polity, x + 14, ry, small, l.active ? Text : Muted);
+        t.textDrawPx(rd(l.ru) + "  ·  " + rd(l.polity), x + 14, ry, small, l.active ? Text : Muted);
         const std::string until = (l.active ? tx("lic_until") : tx("lic_expired")) + " " + std::to_string(l.expiresDay);
         t.textDrawPx(until, right - t.measureTextPx(until, small), ry, small, l.active ? Good : Bad);
         ry += static_cast<float>(small) + 7.0f;
     }
     ry += 8.0f;
-    t.textDrawPx(tx("lic_offers") + ": " + f.licencePolity, x + 12, ry, px, Title);
+    t.textDrawPx(tx("lic_offers") + ": " + rd(f.licencePolity), x + 12, ry, px, Title);
     ry += static_cast<float>(px) + 6.0f;
     if (!docked)
     {
@@ -938,7 +1021,7 @@ void renderLicences(TextRenderer& t, const game::simulation::ClientWalletSnapsho
     {
         if (ry > y + h - 3.0f * static_cast<float>(small))
             break;
-        t.textDrawPx(o.ru, x + 14, ry, small, Text);
+        t.textDrawPx(rd(o.ru), x + 14, ry, small, Text);
         const std::string fee = grouped(o.feeCr) + " Cr";
         const bool covers = !o.goodsRu.empty();
         if (docked)
@@ -953,7 +1036,7 @@ void renderLicences(TextRenderer& t, const game::simulation::ClientWalletSnapsho
             t.textDrawPx(fee, right - t.measureTextPx(fee, small), ry, small, Muted);
         ry += static_cast<float>(small) + 4.0f;
         if (covers)
-            t.textDrawPx(tx("lic_covers") + ": " + o.goodsRu, x + 24, ry, small, Muted);
+            t.textDrawPx(tx("lic_covers") + ": " + rd(o.goodsRu), x + 24, ry, small, Muted);
         ry += static_cast<float>(small) + 10.0f;
     }
 }
@@ -979,14 +1062,14 @@ void renderJobs(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f
     }
     else
     {
-        t.textDrawPx(f.jobRoleRu + "  ·  " + f.jobEmployerRu, x + 14, ry, small, Text);
+        t.textDrawPx(rd(f.jobRoleRu) + "  ·  " + rd(f.jobEmployerRu), x + 14, ry, small, Text);
         const std::string quit = tx("job_quit");
         const float bw = t.measureTextPx(quit, small) + 20.0f, bh = small * 1.7f;
         t.solidRectPx(right - bw, ry - small * 0.3f, bw, bh, Selected);
         t.textDrawPx(quit, right - bw + 10, ry, small, Warn);
         addButton(right - bw, ry - small * 0.3f, right, ry - small * 0.3f + bh, std::string());
         ry += static_cast<float>(small) + 7.0f;
-        t.textDrawPx(tx("job_wage") + ": " + grouped(f.jobWageCr) + " Cr / 30 " + tx("job_days") + "  ·  " + tx("job_ship") + ": " + f.jobShipRu +
+        t.textDrawPx(tx("job_wage") + ": " + grouped(f.jobWageCr) + " Cr / 30 " + tx("job_days") + "  ·  " + tx("job_ship") + ": " + rd(f.jobShipRu) +
                          "  ·  " + tx("job_since") + " " + std::to_string(f.jobSinceDay),
                      x + 14, ry, small, Muted);
         ry += static_cast<float>(small) + 7.0f;
@@ -1008,7 +1091,7 @@ void renderJobs(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f
     {
         if (ry > y + h - 3.0f * static_cast<float>(small))
             break;
-        t.textDrawPx(v.roleRu + "  ·  " + v.employerRu, x + 14, ry, small, Text);
+        t.textDrawPx(rd(v.roleRu) + "  ·  " + rd(v.employerRu), x + 14, ry, small, Text);
         if (docked && v.eligible && !f.employed)
         {
             const std::string hire = tx("job_hire");
@@ -1018,14 +1101,14 @@ void renderJobs(TextRenderer& t, const game::simulation::ClientWalletSnapshot& f
             addButton(right - bw, ry - small * 0.3f, right, ry - small * 0.3f + bh, v.id);
         }
         ry += static_cast<float>(small) + 4.0f;
-        std::string line = grouped(v.wageCr) + " Cr / 30 " + tx("job_days") + "  ·  " + tx("job_ship") + ": " + v.shipRu + "  ·  " + v.requirementRu;
+        std::string line = grouped(v.wageCr) + " Cr / 30 " + tx("job_days") + "  ·  " + tx("job_ship") + ": " + rd(v.shipRu) + "  ·  " + rd(v.requirementRu);
         if (v.termDays > 0)
             line += "  ·  " + tx("job_term") + " " + std::to_string(v.termDays) + " " + tx("job_days");
         t.textDrawPx(line, x + 24, ry, small, Muted);
         ry += static_cast<float>(small) + 4.0f;
         if (!v.eligible)
         {
-            t.textDrawPx(v.whyNotRu, x + 24, ry, small, Bad);
+            t.textDrawPx(rd(v.whyNotRu), x + 24, ry, small, Bad);
             ry += static_cast<float>(small) + 4.0f;
         }
         ry += 6.0f;
@@ -1049,7 +1132,7 @@ void renderRescue(TextRenderer& t, const game::simulation::ClientWalletSnapshot&
     {
         for (const auto& c : f.sos)
             if (c.id == f.activeSosId)
-                t.textDrawPx(tx("sos_active") + ": " + c.kindRu + " — " + tx("sos_fly_to") + " " + c.hubName + " (+" + grouped(c.rewardCr) + " Cr)",
+                t.textDrawPx(tx("sos_active") + ": " + rd(c.kindRu) + " — " + tx("sos_fly_to") + " " + rd(c.hubName) + " (+" + grouped(c.rewardCr) + " Cr)",
                              x + 12, ry, px, Title);
         ry += static_cast<float>(px) + 10.0f;
     }
@@ -1065,7 +1148,7 @@ void renderRescue(TextRenderer& t, const game::simulation::ClientWalletSnapshot&
         if (ry > y + h - 2.0f * static_cast<float>(small))
             break;
         const bool open = c.status == "open";
-        t.textDrawPx(c.kindRu + "  ·  " + c.hubName + "  ·  +" + grouped(c.rewardCr) + " Cr  ·  " + tx("sos_until") + " " + std::to_string(c.expiresDay),
+        t.textDrawPx(rd(c.kindRu) + "  ·  " + rd(c.hubName) + "  ·  +" + grouped(c.rewardCr) + " Cr  ·  " + tx("sos_until") + " " + std::to_string(c.expiresDay),
                      x + 14, ry, small, open ? Text : Muted);
         if (open && f.sarLicence && f.activeSosId.empty())
         {
@@ -1098,6 +1181,8 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
     t.solidRectPx(x, y, w, h, Panel);
     float ry = y + 10.0f;
     const float right = x + w - 12.0f;
+    // the units glued after a number in the lines built from the service.government.* fragments
+    const std::string unitT = " " + tr("service.panel.unit.tonnes", "t"), unitM = " " + tr("service.panel.unit.metres", "m");
     // step 16 part 2: the player's mines and the sites offered here
     if (!f.mines.empty())
     {
@@ -1105,15 +1190,15 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
         ry += static_cast<float>(px) + 6.0f;
         for (const auto& m : f.mines)
         {
-            t.textDrawPx(m.nameRu + "  ·  " + m.hubName + "  ·  " + m.goodRu + "  ·  " + m.statusRu, x + 14, ry, small, Text);
+            t.textDrawPx(rd(m.nameRu) + "  ·  " + rd(m.hubName) + "  ·  " + rd(m.goodRu) + "  ·  " + rd(m.statusRu), x + 14, ry, small, Text);
             ry += static_cast<float>(small) + 5.0f;
-            t.textDrawPx(tx("mine_reserve") + " " + grouped(m.reserveLeftT) + " / " + grouped(m.reserveT) + " т  ·  " + tx("mine_today") + " " +
-                             grouped(m.lastOutputT) + " т  ·  " + tx("mine_sold") + " " + grouped(m.soldT) + " т  ·  " + tx("mine_revenue") + " " +
+            t.textDrawPx(tx("mine_reserve") + " " + grouped(m.reserveLeftT) + " / " + grouped(m.reserveT) + unitT + "  ·  " + tx("mine_today") + " " +
+                             grouped(m.lastOutputT) + unitT + "  ·  " + tx("mine_sold") + " " + grouped(m.soldT) + unitT + "  ·  " + tx("mine_revenue") + " " +
                              grouped(m.revenueCr) + " Cr  ·  " + tx("mine_rent") + " " + grouped(m.rentYearCr) + " Cr/" + tx("mine_year"),
                          x + 24, ry, small, m.lastOutputT > 0.0 ? Good : Muted);
             ry += static_cast<float>(small) + 5.0f;
             // part 3: the sale mode and the stockpile
-            t.textDrawPx(tx("mine_stock") + " " + grouped(m.stockT) + " т  ·  " + (m.sellLocal ? tx("mine_selling") : tx("mine_keeping")), x + 24, ry, small,
+            t.textDrawPx(tx("mine_stock") + " " + grouped(m.stockT) + unitT + "  ·  " + (m.sellLocal ? tx("mine_selling") : tx("mine_keeping")), x + 24, ry, small,
                          Text);
             float bx = right;
             const auto button = [&](const std::string& label, ServicePanelActionType type, const std::string& arg) {
@@ -1136,8 +1221,8 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
         ry += static_cast<float>(px) + 6.0f;
         for (const auto& s : f.siteOffers)
         {
-            t.textDrawPx(s.nameRu + "  ·  " + s.goodRu + "  ·  r " + grouped(s.radiusM) + " м  ·  " + tx("mine_grade") + " " + std::to_string(s.grade).substr(0, 4) + "  ·  " +
-                             tx("mine_reserve") + " " + grouped(s.reserveT) + " т  ·  " + tx("mine_rent") + " " + grouped(s.rentYearCr) + " Cr/" + tx("mine_year") +
+            t.textDrawPx(rd(s.nameRu) + "  ·  " + rd(s.goodRu) + "  ·  r " + grouped(s.radiusM) + unitM + "  ·  " + tx("mine_grade") + " " +
+                             std::to_string(s.grade).substr(0, 4) + "  ·  " + tx("mine_reserve") + " " + grouped(s.reserveT) + unitT + "  ·  " + tx("mine_rent") + " " + grouped(s.rentYearCr) + " Cr/" + tx("mine_year") +
                              "  ·  " + tx("mine_lease_cost") + " " + grouped(s.leaseCostCr) + " Cr",
                          x + 14, ry, small, Text);
             {
@@ -1160,10 +1245,10 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
     }
     for (const auto& p : f.buildProjects)
     {
-        t.textDrawPx(p.projectRu + "  ·  " + p.hubName + "  ·  " + p.contractorRu, x + 14, ry, small, Text);
+        t.textDrawPx(rd(p.projectRu) + "  ·  " + rd(p.hubName) + "  ·  " + rd(p.contractorRu), x + 14, ry, small, Text);
         ry += static_cast<float>(small) + 5.0f;
         std::string line = tx("build_stage") + " s" + std::to_string(p.stage) + "  ·  " + std::to_string(static_cast<int>(p.progress * 100.0 + 0.5)) +
-                           " %  ·  " + tx("build_paid") + " " + grouped(p.paidCr) + " / " + grouped(p.priceCr) + " Cr  ·  " + p.statusRu;
+                           " %  ·  " + tx("build_paid") + " " + grouped(p.paidCr) + " / " + grouped(p.priceCr) + " Cr  ·  " + rd(p.statusRu);
         if (p.incomeCrPerDay > 0.0)
             line += "  ·  +" + grouped(p.incomeCrPerDay) + " Cr/" + tx("build_day");
         t.textDrawPx(line, x + 24, ry, small, p.incomeCrPerDay > 0.0 ? Good : Muted);
@@ -1181,7 +1266,7 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
     {
         if (ry > y + h - 2.0f * static_cast<float>(small))
             break;
-        t.textDrawPx(o.projectRu + "  ·  " + o.contractorRu + "  ·  " + grouped(o.priceCr) + " Cr  ·  " + std::to_string(o.workDays) + " " +
+        t.textDrawPx(rd(o.projectRu) + "  ·  " + rd(o.contractorRu) + "  ·  " + grouped(o.priceCr) + " Cr  ·  " + std::to_string(o.workDays) + " " +
                          tx("build_days") + "  ·  " + tx("build_reliability") + " " + std::to_string(static_cast<int>(o.reliability * 100.0 + 0.5)) + " %",
                      x + 14, ry, small, Text);
         {
@@ -1196,6 +1281,16 @@ void renderBuild(TextRenderer& t, const game::simulation::ClientWalletSnapshot& 
     if (!docked)
         t.textDrawPx(tx("build_dock_hint"), x + 14, ry + 4.0f, small, Muted);   // a hint only: the server takes it in the hub's frame too
 }
+// a bot that has quit: the server's state text is "ушёл" (legacy plain string) or a Message whose key ends in "quit"
+bool botQuit(const std::string& stateRu)
+{
+    std::string key;
+    std::vector<game::localization::MessageParam> params;
+    if (game::localization::parseMessage(stateRu, key, params))
+        return key.size() >= 4 && key.compare(key.size() - 4, 4, "quit") == 0;
+    return stateRu == "ушёл";   // the legacy plain-text producer (a comparison, never shown)
+}
+
 // F8 -> ФЛОТ (TRADE_DESIGN §6.4, step 15): the agency's candidates (a CV, not the traits) and the owner's bots - state,
 // loop, trips, profit, the delivered reports; hire puts the bot on the first owned ship the player does not fly
 void renderFleet(TextRenderer& t, const game::presentation::TradePresentation& page, float x, float y, float w, float h, int px, int small,
@@ -1212,54 +1307,65 @@ void renderFleet(TextRenderer& t, const game::presentation::TradePresentation& p
         addButton(bxRight - bw, ry - small * 0.3f, bxRight, ry - small * 0.3f + bh, type, id);
         return bw;
     };
-    t.textDrawPx("Мои пилоты", x + 12, ry, px, Title);
+    t.textDrawPx(tr("service.panel.fleet.my_pilots", "My pilots"), x + 12, ry, px, Title);
     ry += static_cast<float>(px) + 6.0f;
     if (f.bots.empty())
     {
-        t.textDrawPx("пока нет", x + 14, ry, small, Muted);
+        t.textDrawPx(tr("service.panel.fleet.none_yet", "none yet"), x + 14, ry, small, Muted);
         ry += static_cast<float>(small) + 7.0f;
     }
     for (const auto& b : f.bots)
     {
         if (ry > y + h * 0.62f)
             break;
-        t.textDrawPx(b.name + "  ·  " + b.shipRu + "  ·  " + b.stateRu, x + 14, ry, small, b.stateRu == "ушёл" ? Muted : Text);
-        if (b.stateRu != "ушёл")
+        const bool gone = botQuit(b.stateRu);
+        t.textDrawPx(rd(b.name) + "  ·  " + rd(b.shipRu) + "  ·  " + rd(b.stateRu), x + 14, ry, small, gone ? Muted : Text);
+        if (!gone)
         {
-            const float w1 = button("УВОЛИТЬ", right, ServicePanelActionType::BotFire, b.id, Warn);
-            button("ПЕТЛЯ", right - w1 - 8.0f, ServicePanelActionType::BotLoop, b.id, Good);
+            const float w1 = button(tr("service.panel.fleet.fire", "FIRE"), right, ServicePanelActionType::BotFire, b.id, Warn);
+            button(tr("service.panel.fleet.loop", "LOOP"), right - w1 - 8.0f, ServicePanelActionType::BotLoop, b.id, Good);
         }
         ry += static_cast<float>(small) + 5.0f;
-        t.textDrawPx((b.loopRu.empty() ? std::string("приказа нет") : b.loopRu) + "  ·  рейсов " + std::to_string(b.trips) + "  ·  итог " +
-                         (b.profitCr >= 0.0 ? "+" : "") + grouped(b.profitCr) + " Cr  ·  зарплата " + grouped(b.wageCr) + " Cr / 30 сут" +
-                         (b.unpaidDays > 0 ? "  ·  НЕ ПЛАЧЕНО " + std::to_string(b.unpaidDays) + " сут" : std::string()),
-                     x + 24, ry, small, b.unpaidDays > 0 ? Bad : Muted);
+        {
+            const std::vector<game::localization::MessageParam> stats {
+                {"loop", b.loopRu.empty() ? tr("service.panel.fleet.no_order", "no order") : rd(b.loopRu)},
+                {"trips", std::to_string(b.trips)},
+                {"profit", (b.profitCr >= 0.0 ? "+" : "") + grouped(b.profitCr)},
+                {"wage", grouped(b.wageCr)},
+                {"unpaid", std::to_string(b.unpaidDays)}};
+            t.textDrawPx(b.unpaidDays > 0
+                             ? tr("service.panel.fleet.bot_stats_unpaid", stats,
+                                  "{loop}  ·  trips {trips}  ·  result {profit} Cr  ·  wage {wage} Cr / 30 d  ·  UNPAID {unpaid} d")
+                             : tr("service.panel.fleet.bot_stats", stats, "{loop}  ·  trips {trips}  ·  result {profit} Cr  ·  wage {wage} Cr / 30 d"),
+                         x + 24, ry, small, b.unpaidDays > 0 ? Bad : Muted);
+        }
         ry += static_cast<float>(small) + 5.0f;
         const std::size_t from = b.reports.size() > 3 ? b.reports.size() - 3 : 0;
         for (std::size_t k = from; k < b.reports.size(); ++k)
         {
-            t.textDrawPx(b.reports[k], x + 24, ry, small, Muted);
+            t.textDrawPx(rd(b.reports[k]), x + 24, ry, small, Muted);
             ry += static_cast<float>(small) + 3.0f;
         }
         ry += 6.0f;
     }
     ry += 6.0f;
-    t.textDrawPx("Агентство хаба: кандидаты", x + 12, ry, px, Title);
+    t.textDrawPx(tr("service.panel.fleet.agency", "Hub agency: candidates"), x + 12, ry, px, Title);
     ry += static_cast<float>(px) + 6.0f;
     if (page.botShipEntity == 0)
     {
-        t.textDrawPx("нужен свой корабль, которым вы сейчас не управляете (F6: купить)", x + 14, ry, small, Warn);
+        t.textDrawPx(tr("service.panel.fleet.need_ship", "you need an own ship you are not flying now (F6: buy)"), x + 14, ry, small, Warn);
         ry += static_cast<float>(small) + 7.0f;
     }
     for (const auto& c : f.botCandidates)
     {
         if (ry > y + h - 2.0f * static_cast<float>(small))
             break;
-        t.textDrawPx(c.name + "  ·  по резюме: стаж " + std::to_string(c.yearsShown) + " лет, мастерство " + fmt("%.0f %%", c.skillShown * 100.0) +
-                         "  ·  " + grouped(c.wageCr) + " Cr / 30 сут",
+        t.textDrawPx(tr("service.panel.fleet.candidate",
+                        {{"name", rd(c.name)}, {"years", std::to_string(c.yearsShown)}, {"skill", fmt("%.0f", c.skillShown * 100.0)}, {"wage", grouped(c.wageCr)}},
+                        "{name}  ·  per CV: {years} yr experience, skill {skill} %  ·  {wage} Cr / 30 d"),
                      x + 14, ry, small, Text);
         if (page.botShipEntity != 0)
-            button("НАНЯТЬ на " + page.botShipName, right, ServicePanelActionType::BotHire, c.id, Good);
+            button(tr("service.panel.fleet.hire", {{"ship", rd(page.botShipName)}}, "HIRE for {ship}"), right, ServicePanelActionType::BotHire, c.id, Good);
         ry += static_cast<float>(small) + 9.0f;
     }
 }
@@ -1284,29 +1390,37 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     t.solidRectPx(0, 0, w, 2, Line);
     if (!page.valid)
     {
-        t.textDrawPx("ТОРГОВЛЯ", 24, 18, big, Title);
-        t.textDrawPx("нет данных экономики или хаба поблизости", 24, 18 + big + 10, px, Muted);
+        t.textDrawPx(tr("service.panel.trade.title", "TRADE"), 24, 18, big, Title);
+        t.textDrawPx(tr("service.panel.trade.no_data", "no economy data or no hub nearby"), 24, 18 + big + 10, px, Muted);
         t.endFrame();
         return;
     }
-    t.textDrawPx("ТОРГОВЛЯ — " + page.hubName, 24, 18, big, Title);
-    t.textDrawPx(std::string(page.atHub ? "F8  /  вы в хабе" : "F8  /  ближайший хаб") + "  ·  день " + std::to_string(page.day) +
-                     "  ·  рынок, контракты, груз, финансы, хабы системы  ·  навигационные данные — F5", 24, 18 + big + 6, small,
-                 Muted);
+    t.textDrawPx(tr("service.panel.trade.title_hub", {{"hub", rd(page.hubName)}}, "TRADE — {hub}"), 24, 18, big, Title);
+    t.textDrawPx(page.atHub ? tr("service.panel.trade.subtitle_at_hub", {{"day", std::to_string(page.day)}},
+                                 "F8  /  you are at the hub  ·  day {day}  ·  market, contracts, cargo, finance, system hubs  ·  navigation data — F5")
+                            : tr("service.panel.trade.subtitle_nearest", {{"day", std::to_string(page.day)}},
+                                 "F8  /  nearest hub  ·  day {day}  ·  market, contracts, cargo, finance, system hubs  ·  navigation data — F5"),
+                 24, 18 + big + 6, small, Muted);
     if (!page.events.empty())
     {
-        std::string ev = "События: ";
+        std::string list;
         for (std::size_t i = 0; i < page.events.size(); ++i)
-            ev += (i ? ", " : "") + page.events[i].ru;
-        t.textDrawPx(ev, 24, 18 + big + 8 + small + 4, small, Warn);
+            list += (i ? ", " : "") + rd(page.events[i].ru);
+        t.textDrawPx(tr("service.panel.trade.events", {{"list", list}}, "Events: {list}"), 24, 18 + big + 8 + small + 4, small, Warn);
     }
 
     // ---- tabs
     const float tabY = 18.0f + big + 18.0f + 2.0f * small;
     const auto tabIt = page.contractText.find("tab");
-    const std::string contractsTab = tabIt == page.contractText.end() ? std::string("КОНТРАКТЫ") : tabIt->second;
+    const std::string contractsTab = tabIt == page.contractText.end() ? tr("service.panel.trade.tab.contracts", "CONTRACTS") : tabIt->second;
     // by id: 0 contracts, 1 market, 2 hubs, 4 finance, 5 cargo; drawn in TradeTabOrder, keys 1..5 = that order
-    const char* tabs[] = {contractsTab.c_str(), "РЫНОК", "ХАБЫ СИСТЕМЫ", "", "ФИНАНСЫ", "ГРУЗ", "ФЛОТ"};
+    const std::string tabs[] = {contractsTab,
+                                tr("service.panel.trade.tab.market", "MARKET"),
+                                tr("service.panel.trade.tab.hubs", "SYSTEM HUBS"),
+                                std::string(),
+                                tr("service.panel.trade.tab.finance", "FINANCE"),
+                                tr("service.panel.trade.tab.cargo", "CARGO"),
+                                tr("service.panel.trade.tab.fleet", "FLEET")};
     float tx = 24.0f;
     int key = 1;
     for (const int i : game::presentation::TradeTabOrder)
@@ -1377,13 +1491,14 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
                 t.solidRectPx(listX, y, listW, rowH, Selected);
             t.textDrawPx(g.ru, listX + 10, y + 4, px, sel ? Title : Text);
             m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::TradeSelectGood, std::to_string(q.good)}});
-            std::string sub = g.groupRu + "  ·  запас " + grouped(q.stockT) + " т";
+            std::string sub = tr("service.panel.trade.market_stock", {{"group", g.groupRu}, {"stock", grouped(q.stockT)}}, "{group}  ·  stock {stock} t");
             if (i < page.marketLimits.size())
-                sub += "  ·  хаб берёт ≤ " + grouped(page.marketLimits[i].hubTakesUpToT) + " т, отпускает ≤ " +
-                       grouped(page.marketLimits[i].hubGivesUpToT) + " т" +
-                       (page.marketLimits[i].regimeNote.empty() ? std::string() : "  ·  " + page.marketLimits[i].regimeNote);
+                sub += tr("service.panel.trade.market_limits",
+                          {{"takes", grouped(page.marketLimits[i].hubTakesUpToT)}, {"gives", grouped(page.marketLimits[i].hubGivesUpToT)}},
+                          "  ·  hub takes ≤ {takes} t, gives ≤ {gives} t") +
+                       (page.marketLimits[i].regimeNote.empty() ? std::string() : "  ·  " + rd(page.marketLimits[i].regimeNote));
             t.textDrawPx(sub, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
-            const std::string prices = "купить " + priceText(q.buyCr) + "   продать " + priceText(q.sellCr);
+            const std::string prices = tr("service.panel.trade.prices", {{"buy", priceText(q.buyCr)}, {"sell", priceText(q.sellCr)}}, "buy {buy}   sell {sell}");
             t.textDrawPx(prices, listX + listW - t.measureTextPx(prices, small) - 10, y + 4, small, Text);
             const std::string drift = fmt("%+.0f %%", q.drift * 100.0);
             t.textDrawPx(drift, listX + listW - t.measureTextPx(drift, small) - 10, y + 6 + static_cast<float>(px), small,
@@ -1395,7 +1510,8 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
             const bool sel = hub->id == page.selectedHub;
             if (sel)
                 t.solidRectPx(listX, y, listW, rowH, Selected);
-            t.textDrawPx(hub->name + (hub->id == page.hubId ? "  (здесь)" : ""), listX + 10, y + 4, px, sel ? Title : Text);
+            t.textDrawPx(hub->id == page.hubId ? tr("service.panel.trade.hub_here", {{"name", hub->name}}, "{name}  (here)") : hub->name, listX + 10, y + 4,
+                         px, sel ? Title : Text);
             t.textDrawPx(hub->typeRu + "  ·  " + hub->ownerName, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
             m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::TradeSelectHub, hub->id}});
         }
@@ -1419,22 +1535,24 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
             t.textDrawPx(value, cx + cw * 0.36f, y, small, col);
             y += static_cast<float>(small) + 6;
         };
-        line("Владелец", c.info.ownerName, Text);
+        line(tr("service.panel.trade.card.owner", "Owner"), c.info.ownerName, Text);
         if (!c.info.operatorName.empty())
-            line("Оператор", c.info.operatorName, Text);
-        line("Расстояние", c.distanceText.empty() ? "нет данных" : c.distanceText, Text);
-        line("Канал блоков", channelRu(c.channel), c.channel == "open" ? Good : c.channel == "licensed" ? Text : Warn);
-        line("Цены", c.connected ? ageText(c.infoAgeHours) : "нет связи", c.connected ? (c.infoAgeHours > 72.0 ? Warn : Text) : Bad);
+            line(tr("service.panel.trade.card.operator", "Operator"), c.info.operatorName, Text);
+        line(tr("service.panel.trade.card.distance", "Distance"), c.distanceText.empty() ? tr("service.panel.trade.card.no_data", "no data") : rd(c.distanceText),
+             Text);
+        line(tr("service.panel.trade.card.channel", "Block channel"), channelText(c.channel), c.channel == "open" ? Good : c.channel == "licensed" ? Text : Warn);
+        line(tr("service.panel.trade.card.prices", "Prices"), c.connected ? ageText(c.infoAgeHours) : tr("service.panel.trade.card.no_link", "no link"),
+             c.connected ? (c.infoAgeHours > 72.0 ? Warn : Text) : Bad);
         if (!c.knownEvents.empty())
         {
             std::string ev;
             for (std::size_t i = 0; i < c.knownEvents.size(); ++i)
-                ev += (i ? ", " : "") + c.knownEvents[i].ru;
-            line("События", ev, Warn);
+                ev += (i ? ", " : "") + rd(c.knownEvents[i].ru);
+            line(tr("service.panel.trade.card.events", "Events"), ev, Warn);
         }
 
         // show on the map
-        const std::string mapLabel = "ПОКАЗАТЬ НА КАРТЕ";
+        const std::string mapLabel = tr("service.panel.trade.card.show_on_map", "SHOW ON MAP");
         const float bw = t.measureTextPx(mapLabel, px) + 28.0f, bh = px * 1.9f;
         t.solidRectPx(cx, y + 4, bw, bh, Selected);
         t.textDrawPx(mapLabel, cx + 14, y + 4 + px * 0.4f, px, Title);
@@ -1443,7 +1561,7 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
 
         if (!c.knownPrices.empty())
         {
-            t.textDrawPx("Последние известные цены", cx, y, px, Title);
+            t.textDrawPx(tr("service.panel.trade.card.known_prices", "Last known prices"), cx, y, px, Title);
             y += static_cast<float>(px) + 6;
             for (const auto& q : c.knownPrices)
             {
@@ -1465,22 +1583,33 @@ void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::pr
     {
         // the server's market: an empty list says why (not at a hub with a market); the newest trade result
         if (page.market.empty())
-            t.textDrawPx(page.trade.marketNote.empty() ? std::string("рынок виден у хаба, где стоит корабль") : page.trade.marketNote,
+            t.textDrawPx(page.trade.marketNote.empty() ? tr("service.panel.trade.market_hint", "the market is seen at the hub where the ship is")
+                                                       : rd(page.trade.marketNote),
                          listX + 12, listY + 12, px, Muted);
-        std::string status = page.trade.valid ? "цены сервера, день " + std::to_string(page.trade.day) + "  ·  стиль " +
-                                                    page.trade.fiscalStyleRu + ", НДС " + fmt("%.0f %%", page.trade.vatShare * 100.0) +
-                                                    ", погрузка " + grouped(page.trade.handlingCrPerT) + " Cr/т" +
-                                                    (page.trade.docked ? "  ·  у причала: сделки разрешены" : "  ·  сделки только у причала")
-                                              : std::string();
+        std::string status;
+        if (page.trade.valid)
+        {
+            const std::vector<game::localization::MessageParam> params {{"day", std::to_string(page.trade.day)},
+                                                                       {"style", rd(page.trade.fiscalStyleRu)},
+                                                                       {"vat", fmt("%.0f", page.trade.vatShare * 100.0)},
+                                                                       {"handling", grouped(page.trade.handlingCrPerT)}};
+            status = page.trade.docked
+                         ? tr("service.panel.trade.status_docked", params,
+                              "server prices, day {day}  ·  style {style}, VAT {vat} %, handling {handling} Cr/t  ·  at a berth: deals allowed")
+                         : tr("service.panel.trade.status_undocked", params,
+                              "server prices, day {day}  ·  style {style}, VAT {vat} %, handling {handling} Cr/t  ·  deals only at a berth");
+        }
         if (!page.trade.results.empty())
         {
             const auto& r = page.trade.results.back();
-            status += "   |   #" + std::to_string(r.requestId) + " " + (r.ok ? r.message : "ОТКАЗ: " + r.message);
+            status += "   |   " + (r.ok ? "#" + std::to_string(r.requestId) + " " + rd(r.message)
+                                       : tr("service.panel.trade.last_refused", {{"id", std::to_string(r.requestId)}, {"message", rd(r.message)}},
+                                            "#{id} REFUSED: {message}"));
         }
         t.textDrawPx(status, 24, h - 26, small, Text);
     }
     if (page.tab != 1)
-        t.textDrawPx("Клик по заявке или хабу — карточка; колесо — прокрутка списка", 24, h - 26, small, Muted);
+        t.textDrawPx(tr("service.panel.trade.footer", "Click a posting or hub — card; wheel — scroll the list"), 24, h - 26, small, Muted);
     t.endFrame();
 }
 
@@ -1686,7 +1815,7 @@ void ServicePanelsRenderer::renderTradeDeal(const game::presentation::TradePrese
     // why it cannot be confirmed / the server's answer
     if (!d.canConfirm && d.blockKind != "waiting")
     {
-        const std::string why = d.blockKind == "quote" ? q.reason : tx(d.blockKind);
+        const std::string why = d.blockKind == "quote" ? rd(q.reason) : tx(d.blockKind);
         text(why, cx, y, small, Bad);
         y += static_cast<float>(small) + 8;
     }
@@ -1700,10 +1829,10 @@ void ServicePanelsRenderer::renderTradeDeal(const game::presentation::TradePrese
                          std::to_string(d.result.requestId),
                      cx, y, small, Good);
         y += static_cast<float>(small) + 6;
-        text(d.result.message, cx, y, small, Muted);
+        text(rd(d.result.message), cx, y, small, Muted);
     }
     else if (d.answer == TradeDealAnswer::Refused)
-        text(fill(tx("refused"), {{"{reason}", d.result.message}}), cx, y, small, Bad);
+        text(fill(tx("refused"), {{"{reason}", rd(d.result.message)}}), cx, y, small, Bad);
     else if (d.answer == TradeDealAnswer::PriceMoved)
     {
         // a tiny move (a big stock) looks equal at 2 decimals: then show enough digits to see it
@@ -1729,10 +1858,10 @@ void ServicePanelsRenderer::renderNavData(const game::presentation::NavDataPage&
     m_zones.push_back({4, listX, listY, listX + listW, listY + listH});
     const float rowH = static_cast<float>(px) * 2.7f;
     if (nav.bankName.empty())
-        t.textDrawPx("В этой системе нет банка навигационных данных (нет оператора маяков)", listX + 10, listY + 8, px, Muted);
+        t.textDrawPx(tr("service.panel.nav.no_bank", "This system has no navigation data bank (no beacon operator)"), listX + 10, listY + 8, px, Muted);
     else
     {
-        t.textDrawPx(nav.bankName, listX + 10, listY + 6, px, Title);
+        t.textDrawPx(rd(nav.bankName), listX + 10, listY + 6, px, Title);
         const float maxScroll = std::max(0.0f, rowH * static_cast<float>(nav.bank.size()) - (listH - px * 2.0f));
         m_tradeListScroll = std::clamp(m_tradeListScroll, 0.0f, maxScroll);
         for (std::size_t i = 0; i < nav.bank.size(); ++i)
@@ -1744,10 +1873,11 @@ void ServicePanelsRenderer::renderNavData(const game::presentation::NavDataPage&
             const bool sel = r.id == nav.selected;
             if (sel)
                 t.solidRectPx(listX, y, listW, rowH, Selected);
-            t.textDrawPx("трасса " + r.corridor + "  ·  " + r.place, listX + 10, y + 4, px, sel ? Title : r.open ? Text : Muted);
-            char when[96];
-            std::snprintf(when, sizeof when, "съёмка %.1f (%.1f г. назад)  ·  сейчас: ", r.surveyYear, r.ageYears);
-            t.textDrawPx(std::string(when) + r.stateText + "  ·  " + r.tierText,
+            t.textDrawPx(tr("service.panel.nav.row", {{"corridor", rd(r.corridor)}, {"place", rd(r.place)}}, "lane {corridor}  ·  {place}"), listX + 10, y + 4,
+                         px, sel ? Title : r.open ? Text : Muted);
+            t.textDrawPx(tr("service.panel.nav.row_survey",
+                            {{"year", fmt("%.1f", r.surveyYear)}, {"age", fmt("%.1f", r.ageYears)}, {"state", rd(r.stateText)}, {"tier", rd(r.tierText)}},
+                            "survey {year} ({age} yr ago)  ·  now: {state}  ·  {tier}"),
                          listX + 10, y + 6 + static_cast<float>(px), small, r.open ? Muted : Warn);
             const std::string price = grouped(r.priceCr) + " Cr";
             t.textDrawPx(price, listX + listW - t.measureTextPx(price, px) - 10, y + 4, px, r.open ? Good : Muted);
@@ -1773,64 +1903,69 @@ void ServicePanelsRenderer::renderNavData(const game::presentation::NavDataPage&
             sel = &r;
     if (sel)
     {
-        t.textDrawPx("Трасса " + sel->corridor, cx, y, big, Text);
+        t.textDrawPx(tr("service.panel.nav.card_title", {{"corridor", rd(sel->corridor)}}, "Lane {corridor}"), cx, y, big, Text);
         y += static_cast<float>(big) + 6;
-        t.textDrawPx(sel->place + "  ·  " + sel->tierText, cx, y, small, sel->open ? Muted : Warn);
+        t.textDrawPx(rd(sel->place) + "  ·  " + rd(sel->tierText), cx, y, small, sel->open ? Muted : Warn);
         y += static_cast<float>(small) + 6;
-        t.textDrawPx("цена " + grouped(sel->priceCr) + " Cr - оплата появится вместе с рынком", cx, y, small, Muted);
+        t.textDrawPx(tr("service.panel.nav.price", {{"price", grouped(sel->priceCr)}}, "price {price} Cr - payment comes with the market"), cx, y, small,
+                     Muted);
         y += static_cast<float>(small) + 10;
         const bool can = sel->open && nav.atHub;
         if (!sel->open)
         {
-            t.textDrawPx("Закрыто: " + sel->tierText, cx, y, px, Warn);
+            t.textDrawPx(tr("service.panel.nav.closed", {{"tier", rd(sel->tierText)}}, "Closed: {tier}"), cx, y, px, Warn);
             y += static_cast<float>(px) + 10;
         }
         else if (!nav.atHub)
         {
-            t.textDrawPx("Данные выдают только в хабе", cx, y, px, Warn);
+            t.textDrawPx(tr("service.panel.nav.only_at_hub", "Data is issued only at a hub"), cx, y, px, Warn);
             y += static_cast<float>(px) + 10;
         }
-        button("В БОРТОВОЙ КОМПЬЮТЕР", can && nav.computerState == 1, ServicePanelActionType::NavDataLoad, sel->id);
-        button("НА НОСИТЕЛЬ", can, ServicePanelActionType::NavDataCarrier, sel->id);
+        button(tr("service.panel.nav.to_computer", "TO ONBOARD COMPUTER"), can && nav.computerState == 1, ServicePanelActionType::NavDataLoad, sel->id);
+        button(tr("service.panel.nav.to_carrier", "TO A CARRIER"), can, ServicePanelActionType::NavDataCarrier, sel->id);
         y += 8;
     }
-    t.textDrawPx("Бортовой компьютер", cx, y, px, Title);
+    t.textDrawPx(tr("service.panel.nav.computer", "Onboard computer"), cx, y, px, Title);
     y += static_cast<float>(px) + 6;
     if (nav.computerState != 1)
     {
-        t.textDrawPx("не работает - записи трасс недоступны", cx, y, small, Bad);
+        t.textDrawPx(tr("service.panel.nav.computer_down", "not working - lane records unavailable"), cx, y, small, Bad);
         y += static_cast<float>(small) + 6;
     }
     else if (nav.memory.empty())
     {
-        t.textDrawPx("записей трасс нет", cx, y, small, Muted);
+        t.textDrawPx(tr("service.panel.nav.no_records", "no lane records"), cx, y, small, Muted);
         y += static_cast<float>(small) + 6;
     }
     for (const auto& m : nav.memory)
     {
         if (y > h - 120.0f)
             break;
-        t.textDrawPx(m.corridor + fmt("  ·  %.1f г.  ·  ", m.ageYears) + m.stateText + "  ·  " + m.tierText, cx, y, small, Text);
+        t.textDrawPx(tr("service.panel.nav.memory_row",
+                        {{"corridor", rd(m.corridor)}, {"age", fmt("%.1f", m.ageYears)}, {"state", rd(m.stateText)}, {"tier", rd(m.tierText)}},
+                        "{corridor}  ·  {age} yr  ·  {state}  ·  {tier}"),
+                     cx, y, small, Text);
         y += static_cast<float>(small) + 5;
     }
     y += 8;
-    t.textDrawPx("Носители данных на борту", cx, y, px, Title);
+    t.textDrawPx(tr("service.panel.nav.carriers", "Data carriers aboard"), cx, y, px, Title);
     y += static_cast<float>(px) + 6;
     if (nav.carriers.empty())
     {
-        t.textDrawPx("нет", cx, y, small, Muted);
+        t.textDrawPx(tr("service.panel.nav.none", "none"), cx, y, small, Muted);
         y += static_cast<float>(small) + 6;
     }
     for (std::size_t i = 0; i < nav.carriers.size(); ++i)
     {
         if (y > h - 60.0f)
             break;
-        t.textDrawPx(std::to_string(i + 1) + ". " + nav.carriers[i], cx, y, small, Text);
+        t.textDrawPx(std::to_string(i + 1) + ". " + rd(nav.carriers[i]), cx, y, small, Text);
         y += static_cast<float>(small) + 4;
-        button("ВСТАВИТЬ В КОМПЬЮТЕР", nav.computerState == 1, ServicePanelActionType::NavDataInsert, std::to_string(i + 1));
+        button(tr("service.panel.nav.insert", "INSERT INTO COMPUTER"), nav.computerState == 1, ServicePanelActionType::NavDataInsert, std::to_string(i + 1));
     }
     (void)cw;
-    t.textDrawPx("Клик по записи - карточка; открытые данные выдаёт банк колонии, остальное - по допуску", 24, h - 26, small, Muted);
+    t.textDrawPx(tr("service.panel.nav.footer", "Click a record - card; open data comes from the colony bank, the rest by clearance"), 24, h - 26, small,
+                 Muted);
 }
 
 namespace
@@ -1838,7 +1973,7 @@ namespace
 std::string serving_label(const game::presentation::GovernmentPresentation& page)
 {
     if (page.wallet.employed && page.wallet.jobKind == "military")
-        return page.wallet.jobEmployerRu;
+        return rd(page.wallet.jobEmployerRu);
     const auto it = page.text.find("galley_not_enlisted");
     return it == page.text.end() ? std::string("galley_not_enlisted") : it->second;
 }
@@ -1940,8 +2075,8 @@ void ServicePanelsRenderer::renderGovernment(const Viewport& viewport, const gam
     t.textDrawPx(serving_label(page), listX + 12, y, px, page.wallet.employed && page.wallet.jobKind == "military" ? Good : Muted);
     y += px * 2.2f;
     const bool serving = page.wallet.employed && page.wallet.jobKind == "military";
-    const std::string values[] = {serving ? page.wallet.jobUnitRu : std::string("—"), serving ? page.wallet.jobShipRu : std::string("—"),
-                                  serving ? page.wallet.jobRankRu : std::string("—"),
+    const std::string values[] = {serving ? rd(page.wallet.jobUnitRu) : std::string("—"), serving ? rd(page.wallet.jobShipRu) : std::string("—"),
+                                  serving ? rd(page.wallet.jobRankRu) : std::string("—"),
                                   serving ? std::to_string(page.wallet.jobSinceDay) + " - " + std::to_string(page.wallet.jobTermEndDay) : std::string("—")};
     int fieldIndex = 0;
     for (const char* key : {"galley_unit", "galley_ship", "galley_rank", "galley_term"})
@@ -2048,7 +2183,7 @@ std::string loadText(const game::presentation::TradePresentation& page, const ga
 {
     if (r.people > 0)
         return cfill(ctext(page, "people"), {{"{n}", std::to_string(r.people)}, {"{m}", std::to_string(r.c20)}});
-    return r.goodRu + ", " + cfill(ctext(page, "cargo"), {{"{t}", fmt("%.1f", r.tonnes)}, {"{c20}", std::to_string(r.c20)}});
+    return rd(r.goodRu) + ", " + cfill(ctext(page, "cargo"), {{"{t}", fmt("%.1f", r.tonnes)}, {"{c20}", std::to_string(r.c20)}});
 }
 
 glm::vec4 statusColour(const std::string& s)
@@ -2121,7 +2256,7 @@ void ServicePanelsRenderer::renderTradeContracts(const game::presentation::Trade
             t.textDrawPx(what, listX + 10, y + 4, px, closed ? Muted : sel ? Title : Text);
             const std::string reward = grouped(r.rewardCr) + " Cr";
             t.textDrawPx(reward, listX + listW - t.measureTextPx(reward, px) - 10, y + 4, px, closed ? Muted : Good);
-            std::string sub = "-> " + r.destinationName + "  ·  ";
+            std::string sub = "-> " + rd(r.destinationName) + "  ·  ";
             if (mine)
             {
                 sub += ctext(page, "status_" + r.status);
@@ -2143,7 +2278,7 @@ void ServicePanelsRenderer::renderTradeContracts(const game::presentation::Trade
         }
         y += rowH;
     };
-    header(cfill(ctext(page, "board"), {{"{hub}", s.hubName.empty() ? s.boardHubId : s.hubName}}));
+    header(cfill(ctext(page, "board"), {{"{hub}", s.hubName.empty() ? s.boardHubId : rd(s.hubName)}}));
     if (s.board.empty())
     {
         if (visible(y, rowH))
@@ -2191,11 +2326,11 @@ void ServicePanelsRenderer::renderTradeContracts(const game::presentation::Trade
         ry += static_cast<float>(big) + 6.0f;
         t.textDrawPx(sel->id, cx, ry, small, Muted);
         ry += static_cast<float>(small) + 10.0f;
-        line(ctext(page, "route"), sel->originName + " -> " + sel->destinationName, Text);
+        line(ctext(page, "route"), rd(sel->originName) + " -> " + rd(sel->destinationName), Text);
         line(ctext(page, "load"), loadText(page, *sel), Text);
-        line(ctext(page, "issuer"), sel->issuerName, Text);
+        line(ctext(page, "issuer"), rd(sel->issuerName), Text);
         if (!sel->cause.empty())
-            line(ctext(page, "cause"), sel->cause, Muted);
+            line(ctext(page, "cause"), rd(sel->cause), Muted);
         ry += 6.0f;
         line(ctext(page, "reward"), grouped(sel->rewardCr) + " Cr", Good);
         line(ctext(page, "advance"), grouped(sel->advanceCr) + " Cr", Text);
@@ -2262,7 +2397,7 @@ void ServicePanelsRenderer::renderTradeContracts(const game::presentation::Trade
     for (const auto& r : s.results)
         if (page.contractRequest != 0 && r.requestId == page.contractRequest)
         {
-            status = "#" + std::to_string(r.requestId) + "  " + (r.ok ? r.message : ctext(page, "refused") + " " + r.message);
+            status = "#" + std::to_string(r.requestId) + "  " + (r.ok ? rd(r.message) : ctext(page, "refused") + " " + rd(r.message));
             col = r.ok ? Good : Bad;
         }
     if (page.contractRequest != 0 && status == ctext(page, "keys"))

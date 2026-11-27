@@ -11,6 +11,7 @@
 //   3. near: the ordinary pad landing (the planner + the autopilot + the pad service), as the map card's button.
 // Beacons and a known settlement in another place come next (memory onboard-computer-journal).
 #include "src/game/SpaceStateInternal.h"
+#include "src/game/localization/LocalizationService.h"
 
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/rules/CapsuleRules.h"
@@ -21,6 +22,8 @@
 
 #include <iostream>
 #include <limits>
+
+namespace l10n = game::localization;
 
 namespace cap = game::navigation::capsule;
 
@@ -167,7 +170,7 @@ void SpaceState::updateCapsuleRescue(double dt)
     }
     if (r.hubId.empty() && r.beaconId.empty())
     {
-        m_pilotNotice = "КАПСУЛА: ни хабов, ни маяков в досягаемости - дрейф, сигнал SOS";
+        m_pilotNotice = l10n::tr("cockpit.capsule.nothing_in_reach", "CAPSULE: no hubs or beacons in reach - drifting, SOS signal on");
         return;
     }
     glm::dvec3 staging(0.0), hubV(0.0), hubPos(0.0);
@@ -240,7 +243,9 @@ void SpaceState::updateCapsuleRescue(double dt)
                           << (r.rescueDock ? " (МЧС rescue dock)" : "") << ", reaction mass left "
                           << motion.capsuleDeltaVLeftMps << " m/s" << std::endl;
             }
-            m_pilotNotice = "КАПСУЛА СПАСЕНА: площадка " + r.pad + " - " + r.hubName + (r.rescueDock ? " (док МЧС)" : "");
+            m_pilotNotice = r.rescueDock ? l10n::tr("cockpit.capsule.rescued_rescue_dock", {{"pad", r.pad}, {"hub", r.hubName}},
+                                                     "CAPSULE RESCUED: pad {pad} - {hub} (rescue dock)")
+                                         : l10n::tr("cockpit.capsule.rescued", {{"pad", r.pad}, {"hub", r.hubName}}, "CAPSULE RESCUED: pad {pad} - {hub}");
             return;
         }
         const bool landingAlive = pending.valid() || !m_padLandingObjectId.empty() || !ship.padService.empty();
@@ -259,7 +264,9 @@ void SpaceState::updateCapsuleRescue(double dt)
             r.phase = CapsuleRescue::Phase::None;
             r.nextChoiceAt = now;
         }
-        m_pilotNotice = "КАПСУЛА: посадка на площадку " + r.pad + " - " + r.hubName + (r.rescueDock ? " (док МЧС)" : "");
+        m_pilotNotice = r.rescueDock ? l10n::tr("cockpit.capsule.landing_rescue_dock", {{"pad", r.pad}, {"hub", r.hubName}},
+                                                 "CAPSULE: landing on pad {pad} - {hub} (rescue dock)")
+                                     : l10n::tr("cockpit.capsule.landing", {{"pad", r.pad}, {"hub", r.hubName}}, "CAPSULE: landing on pad {pad} - {hub}");
         return;
     }
     // the nearest structure (the capsule's own clearance - the global main-engine command does not go through the
@@ -301,7 +308,7 @@ void SpaceState::updateCapsuleRescue(double dt)
     if (!r.beaconId.empty() && d < StagingReachedM && glm::length(relV) < 5.0)
     {
         // at the beacon: keep station there and wait for the rescuers (the SOS is heard here)
-        m_pilotNotice = "КАПСУЛА: у маяка «" + r.hubName + "» - ожидание спасателей, сигнал SOS";
+        m_pilotNotice = l10n::tr("cockpit.capsule.at_beacon", {{"beacon", r.hubName}}, "CAPSULE: at beacon '{beacon}' - waiting for the rescuers, SOS signal on");
         if (!r.reportedAtBeacon)
         {
             r.reportedAtBeacon = true;
@@ -376,9 +383,13 @@ void SpaceState::updateCapsuleRescue(double dt)
                   << glm::dot(relV, dir) << " m/s (want " << vClose << "), reaction mass " << motion.capsuleDeltaVLeftMps
                   << " m/s" << std::endl;
     }
-    char b[256];
-    std::snprintf(b, sizeof b, "КАПСУЛА: курс на «%s»%s - %.0f км, сближение %.0f м/с, запас %.0f м/с", r.hubName.c_str(),
-                  r.rescueDock ? " (док МЧС)" : "", d / 1000.0, glm::dot(relV, dir), motion.capsuleDeltaVLeftMps);
+    const std::vector<l10n::MessageParam> course {{"target", r.hubName},
+                                                  {"km", l10n::formatNumber(d / 1000.0, 0)},
+                                                  {"closing", l10n::formatNumber(glm::dot(relV, dir), 0)},
+                                                  {"reserve", l10n::formatNumber(motion.capsuleDeltaVLeftMps, 0)}};
     if (!r.reportedAtBeacon)   // waiting at a beacon keeps its own line
-        m_pilotNotice = b;
+        m_pilotNotice = r.rescueDock
+            ? l10n::tr("cockpit.capsule.course_rescue_dock", course,
+                       "CAPSULE: heading for '{target}' (rescue dock) - {km} km, closing {closing} m/s, reserve {reserve} m/s")
+            : l10n::tr("cockpit.capsule.course", course, "CAPSULE: heading for '{target}' - {km} km, closing {closing} m/s, reserve {reserve} m/s");
 }

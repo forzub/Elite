@@ -26,9 +26,11 @@
 
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/economy/EconomyService.h"
+#include "src/game/localization/LocalizedMessage.h"
 
 namespace game::economy
 {
+using game::localization::Message;   // server-side player text: language-neutral messages (audit #7 D7), rendered by the client
 
 // Atomic replace (audit 2026-11-19): the accounts were rewritten in place (trunc) - a crash mid-write left a file the
 // next start read as "unreadable, fresh state", silently zeroing every account. Write <file>.tmp, flush, then replace.
@@ -171,13 +173,13 @@ std::string grouped(double v, int decimals = 0)
     return (v < 0.0 ? "-" : "") + out + tail;
 }
 
-const char* loanKindRu(LoanKind k)
+std::string loanKindRu(LoanKind k)
 {
     switch (k)
     {
-    case LoanKind::Term: return "кредит";
-    case LoanKind::Lifeline: return "спасательный кредит";
-    case LoanKind::Restructured: return "реструктуризация";
+    case LoanKind::Term: return Message("economy.loan.kind.term");
+    case LoanKind::Lifeline: return Message("economy.loan.kind.lifeline");
+    case LoanKind::Restructured: return Message("economy.loan.kind.restructured");
     }
     return "";
 }
@@ -1056,10 +1058,11 @@ void EconomyServer::stepNpcFlows(int day)
 // ---------------------------------------------------------------- construction (TRADE_DESIGN §6.2, step 16)
 namespace
 {
-const char* buildKindRu(const std::string& kind)
+std::string buildKindRu(const std::string& kind)
 {
-    return kind == "minehead" ? "добычная установка" : kind == "hall" ? "цех (зал)" : kind == "yard" ? "верфь-двор" : kind == "slab" ? "жилой корпус" : kind == "hab" ? "жилой модуль"
-         : kind == "tower" ? "башня" : kind == "dock" ? "причал" : "модуль";
+    const char* key = kind == "minehead" ? "minehead" : kind == "hall" ? "hall" : kind == "yard" ? "yard" : kind == "slab" ? "slab" : kind == "hab" ? "hab"
+                    : kind == "tower" ? "tower" : kind == "dock" ? "dock" : "module";
+    return Message(std::string("economy.build.kind.") + key);
 }
 } // namespace
 
@@ -1073,7 +1076,8 @@ std::vector<EconomyServer::BuildOffer> EconomyServer::buildOffersAt(const std::s
     for (const auto& c : m_concessions)
         if (playerId != 0 && c.owner == playerId && c.site.hubId == hubId && c.status == "leased")
             targets.push_back({"site:" + c.site.id, "minehead"});
-    static const char* const Firms[] = {"«Орбиталь-Строй»", "«Кольцо и Ферма»", "«Тяжмонтаж»", "«Хабитат-Сервис»", "«Звёздный подряд»", "«Стапель»"};
+    static const char* const Firms[] = {"economy.build.firm.orbital_stroy", "economy.build.firm.ring_and_truss", "economy.build.firm.heavy_mount",
+                                        "economy.build.firm.habitat_service", "economy.build.firm.star_contract", "economy.build.firm.slipway"};
     const int week = std::max(0, m_day) / 7;
     for (const auto& target : targets)
     {
@@ -1094,7 +1098,7 @@ std::vector<EconomyServer::BuildOffer> EconomyServer::buildOffersAt(const std::s
             o.hubId = hubId;
             o.projectId = target.projectId;
             o.kind = target.kind;
-            o.contractorRu = Firms[(hashOf(hubId + "#firms", static_cast<std::uint64_t>(week)) % 6 + 2 * static_cast<std::uint64_t>(k)) % 6];   // 3 different firms
+            o.contractorRu = Message(Firms[(hashOf(hubId + "#firms", static_cast<std::uint64_t>(week)) % 6 + 2 * static_cast<std::uint64_t>(k)) % 6]);   // 3 different firms
             o.priceCr = std::round(m_buildBaseCostCr * kf * (1.15 + 0.15 * unit(h ^ 1)) / 1000.0) * 1000.0;
             o.workDays = std::max(1, static_cast<int>(std::lround(m_buildBaseDays * (0.9 + 0.5 * unit(h ^ 2)))));
             o.reliability = 0.6 + 0.35 * unit(h ^ 3);
@@ -1127,20 +1131,20 @@ game::simulation::ClientTradeResult EconomyServer::signConstruction(std::uint64_
     };
     ClientLedger* l = ledger(playerId);
     if (!l)
-        return refuse("no_account", "нет счёта");
+        return refuse("no_account", Message("economy.refuse.no_account"));
     const BuildOffer* o = nullptr;
     const auto offers = buildOffersAt(hubId, playerId);
     for (const auto& x : offers)
         if (x.id == offerId)
             o = &x;
     if (!o)
-        return refuse("build_unknown", "предложение подрядчика уже не действует");
+        return refuse("build_unknown", Message("economy.build.refuse.offer_gone"));
     // the first milestone (s1, 15 %) at signing; the milestones sum to 95 %, the last 5 % (the retention) at the acceptance
     const double payNow = std::round(o->priceCr * m_buildMilestones[0] * 100.0) / 100.0;
     const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), payNow, Purpose::Other, m_day, false,
-                                "стройка: первая веха (" + std::string(buildKindRu(o->kind)) + ", " + o->contractorRu + ")");
+                                Message("economy.build.memo.first_milestone").arg("kind", buildKindRu(o->kind)).arg("contractor", o->contractorRu));
     if (!p.ok)
-        return refuse("no_money", "не хватает денег на первую веху: " + grouped(payNow) + " Cr");
+        return refuse("no_money", Message("economy.build.refuse.no_money").arg("cr", grouped(payNow)));
     BuildProject bp;
     bp.offer = *o;
     bp.owner = playerId;
@@ -1150,12 +1154,12 @@ game::simulation::ClientTradeResult EconomyServer::signConstruction(std::uint64_
     bp.retentionCr = 0.0;
     m_buildProjects.push_back(bp);
     ++m_buildRevision;
-    logEvent(*l, m_day, "договор подряда: " + std::string(buildKindRu(o->kind)) + " у " + hubDisplayName(hubId) + ", " + o->contractorRu + ", " +
-                            grouped(o->priceCr) + " Cr, " + std::to_string(o->workDays) + " сут");
+    logEvent(*l, m_day, Message("economy.build.event.signed").arg("kind", buildKindRu(o->kind)).arg("hub", hubDisplayName(hubId))
+                            .arg("contractor", o->contractorRu).arg("cr", grouped(o->priceCr)).arg("days", o->workDays));
     r.ok = true;
     r.code = "build_signed";
     r.totalCr = -payNow;
-    r.message = "договор: " + std::string(buildKindRu(o->kind)) + " у " + hubDisplayName(hubId) + " за " + grouped(o->priceCr) + " Cr";
+    r.message = Message("economy.build.result.signed").arg("kind", buildKindRu(o->kind)).arg("hub", hubDisplayName(hubId)).arg("cr", grouped(o->priceCr));
     pushResult(playerId, r);
     saveNow("construction signed");
     std::cerr << "[Build] player " << playerId << " signs " << o->id << " (" << o->projectId << ", " << o->kind << ") " << o->priceCr << " Cr, "
@@ -1179,7 +1183,7 @@ void EconomyServer::stepConstruction(int day)
         {
             // the module is let to the hub operator: income, maintenance (taxable)
             const double net = p.offer.priceCr * (m_buildIncomeYear - m_buildMaintYear) / 360.0;
-            receive(*l, m_banks, bankOf(hub, system), net, day, "доход модуля у " + hubDisplayName(hub));
+            receive(*l, m_banks, bankOf(hub, system), net, day, Message("economy.build.memo.module_income").arg("hub", hubDisplayName(hub)));
             if (TaxBook* t = taxBook(p.owner))
                 addRevenue(*t, net);
             continue;
@@ -1193,7 +1197,7 @@ void EconomyServer::stepConstruction(int day)
             const double amount = std::round(p.offer.priceCr * m_buildMilestones[static_cast<std::size_t>(p.paidMilestones)] * 100.0) / 100.0;
             const double payNow = amount;
             const PaymentResult r = pay(*l, m_banks, bankOf(hub, system), payNow, Purpose::Other, day, false,
-                                        "стройка: веха s" + std::to_string(p.paidMilestones + 1));
+                                        Message("economy.build.memo.milestone").arg("n", p.paidMilestones + 1));
             if (!r.ok)
             {
                 funding = true;
@@ -1202,7 +1206,7 @@ void EconomyServer::stepConstruction(int day)
             p.paidCr += payNow;
             ++p.paidMilestones;
             ++m_buildRevision;
-            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + ": оплачена веха s" + std::to_string(p.paidMilestones) + " (" + grouped(payNow) + " Cr)");
+            logEvent(*l, day, Message("economy.build.event.milestone_paid").arg("hub", hubDisplayName(hub)).arg("n", p.paidMilestones).arg("cr", grouped(payNow)));
         }
         const bool openHalt = !p.halts.empty() && p.halts.back().second < 0;
         if (funding && !openHalt)
@@ -1211,7 +1215,7 @@ void EconomyServer::stepConstruction(int day)
             p.unpaidSince = day;
             p.status = "halted";
             ++m_buildRevision;
-            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + " остановлена: нет оплаты вехи");
+            logEvent(*l, day, Message("economy.build.event.halted").arg("hub", hubDisplayName(hub)));
         }
         else if (!funding && openHalt && p.unpaidSince >= 0)
         {
@@ -1224,7 +1228,7 @@ void EconomyServer::stepConstruction(int day)
         {
             p.status = "abandoned";
             ++m_buildRevision;
-            logEvent(*l, day, "подрядчик ушёл со стройки у " + hubDisplayName(hub) + ": 180 сут без оплаты");
+            logEvent(*l, day, Message("economy.build.event.abandoned").arg("hub", hubDisplayName(hub)));
             continue;
         }
         // a random halt (supply, accident, politics) x (1.5 - reliability), 1..5 days
@@ -1233,7 +1237,7 @@ void EconomyServer::stepConstruction(int day)
             const int len = 1 + static_cast<int>(unit(hashOf(p.offer.id, static_cast<std::uint64_t>(day) + 7)) * 5.0);
             p.halts.push_back({day, day + len});
             ++m_buildRevision;
-            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + ": простой " + std::to_string(len) + " сут (снабжение / авария)");
+            logEvent(*l, day, Message("economy.build.event.delay").arg("hub", hubDisplayName(hub)).arg("days", len));
         }
         if (buildProgress(p, day) >= 1.0 && p.paidMilestones >= static_cast<int>(m_buildMilestones.size()))
         {
@@ -1243,15 +1247,15 @@ void EconomyServer::stepConstruction(int day)
             p.retentionCr = std::max(0.0, std::round((p.offer.priceCr - p.paidCr) * 100.0) / 100.0);
             if (!p.retentionPaid && p.retentionCr > 0.0)
             {
-                const PaymentResult r = pay(*l, m_banks, bankOf(hub, system), p.retentionCr, Purpose::Other, day, false, "стройка: удержание при приёмке");
+                const PaymentResult r = pay(*l, m_banks, bankOf(hub, system), p.retentionCr, Purpose::Other, day, false, Message("economy.build.memo.retention"));
                 p.retentionPaid = r.ok;
                 if (!r.ok)
                     std::cerr << "[Build] " << p.offer.id << " retention " << p.retentionCr << " NOT paid: " << r.reason << '\n';
                 if (r.ok)
                     p.paidCr += p.retentionCr;
             }
-            logEvent(*l, day, "стройка у " + hubDisplayName(hub) + (p.offer.projectId.rfind("site:", 0) == 0 ? " завершена: установка готова к добыче"
-                                                                                                            : " завершена: модуль сдан оператору хаба"));
+            logEvent(*l, day, Message(p.offer.projectId.rfind("site:", 0) == 0 ? "economy.build.event.done_rig" : "economy.build.event.done_module")
+                                  .arg("hub", hubDisplayName(hub)));
             std::cerr << "[Build] " << p.offer.id << " DONE, paid " << p.paidCr << " Cr, retention " << p.retentionCr << (p.retentionPaid ? " paid" : " held") << '\n';
         }
     }
@@ -1284,7 +1288,7 @@ std::vector<EconomyServer::SiteOffer> EconomyServer::siteOffersAt(const std::str
         if (leased)
             continue;
         o.hubId = hubId;
-        o.nameRu = "астероид " + std::to_string(1000 + (h >> 8) % 9000);
+        o.nameRu = Message("economy.mine.site_name").arg("number", static_cast<int>(1000 + (h >> 8) % 9000));
         o.goodId = unit(h ^ 5) < 0.2 ? "ore_rare" : "ore_common";
         const double u = unit(h ^ 6);
         o.radiusM = std::round(50.0 + 1950.0 * u * u);
@@ -1311,18 +1315,18 @@ game::simulation::ClientTradeResult EconomyServer::leaseSite(std::uint64_t playe
     };
     ClientLedger* l = ledger(playerId);
     if (!l)
-        return refuse("no_account", "нет счёта");
+        return refuse("no_account", Message("economy.refuse.no_account"));
     const auto offers = siteOffersAt(hubId);
     const SiteOffer* o = nullptr;
     for (const auto& x : offers)
         if (x.id == offerId)
             o = &x;
     if (!o)
-        return refuse("site_unknown", "участок уже не предлагается");
+        return refuse("site_unknown", Message("economy.mine.refuse.site_gone"));
     const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), o->leaseCostCr, Purpose::Fee, m_day, false,
-                                "концессия: заявка и разведка (" + o->nameRu + ")");
+                                Message("economy.mine.memo.application").arg("site", o->nameRu));
     if (!p.ok)
-        return refuse("no_money", "не хватает денег на заявку и разведку: " + grouped(o->leaseCostCr) + " Cr");
+        return refuse("no_money", Message("economy.mine.refuse.no_money").arg("cr", grouped(o->leaseCostCr)));
     if (TaxBook* t = taxBook(playerId))
         addExpense(*t, o->leaseCostCr);
     Concession c;
@@ -1332,12 +1336,12 @@ game::simulation::ClientTradeResult EconomyServer::leaseSite(std::uint64_t playe
     c.reserveLeftT = o->reserveT;
     m_concessions.push_back(c);
     ++m_buildRevision;
-    logEvent(*l, m_day, "концессия: " + o->nameRu + " у " + hubDisplayName(hubId) + ", радиус " + grouped(o->radiusM) + " м, запас " + grouped(o->reserveT) +
-                            " т, аренда " + grouped(o->rentYearCr) + " Cr/год; дальше - договор на добычную установку (Стройка)");
+    logEvent(*l, m_day, Message("economy.mine.event.leased").arg("site", o->nameRu).arg("hub", hubDisplayName(hubId)).arg("radius", grouped(o->radiusM))
+                            .arg("reserve", grouped(o->reserveT)).arg("rent", grouped(o->rentYearCr)));
     r.ok = true;
     r.code = "site_leased";
     r.totalCr = -o->leaseCostCr;
-    r.message = "концессия: " + o->nameRu + " у " + hubDisplayName(hubId);
+    r.message = Message("economy.mine.result.leased").arg("site", o->nameRu).arg("hub", hubDisplayName(hubId));
     pushResult(playerId, r);
     saveNow("concession");
     std::cerr << "[Mine] player " << playerId << " leases " << o->id << " (" << o->nameRu << ", r " << o->radiusM << " m, grade " << o->grade << ", "
@@ -1381,21 +1385,21 @@ game::simulation::ClientTradeResult EconomyServer::loadFromMine(std::uint64_t pl
         if (x.owner == playerId && x.site.id == siteId)
             c = &x;
     if (!c)
-        return refuse("mine_unknown", "это не ваш рудник");
+        return refuse("mine_unknown", Message("economy.mine.refuse.not_yours"));
     if (c->site.hubId != hubId)
-        return refuse("mine_far", "склад рудника у " + hubDisplayName(c->site.hubId) + ": подлетите туда");
+        return refuse("mine_far", Message("economy.mine.refuse.far").arg("hub", hubDisplayName(c->site.hubId)));
     const std::uint64_t key = mineStockKey(siteId);
     const double stock = mineStockT(siteId, c->site.goodId);
     const CargoManifest* aboard = m_cargo.find(shipKey);
     const double room = std::max(0.0, capacity.netT - (aboard ? aboard->netT() : 0.0));
     const double t = std::floor(std::min({tonnes > 0.0 ? tonnes : stock, stock, room}) * 100.0) / 100.0;
     if (t < 0.01)
-        return refuse(stock < 0.01 ? "mine_empty" : "no_room", stock < 0.01 ? "на складе рудника пусто" : "трюм полон");
+        return refuse(stock < 0.01 ? "mine_empty" : "no_room", Message(stock < 0.01 ? "economy.mine.refuse.empty" : "economy.refuse.hold_full"));
     const int g = goodIndex(c->site.goodId);
     const double density = g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].densityTM3 : 2.4;
     double basis = 0.0;
     if (!m_cargo.unload(key, c->site.goodId, t, density, basis))
-        return refuse("mine_empty", "на складе рудника пусто");
+        return refuse("mine_empty", Message("economy.mine.refuse.empty"));
     CargoLot lot;
     lot.lotId = siteId + "#haul@" + std::to_string(m_day);
     lot.goodId = c->site.goodId;
@@ -1407,7 +1411,7 @@ game::simulation::ClientTradeResult EconomyServer::loadFromMine(std::uint64_t pl
     (void)m_cargo.load(shipKey, playerId, lot, density);
     r.ok = true;
     r.code = "mine_loaded";
-    r.message = "погружено со склада рудника: " + grouped(t, 2) + " т";
+    r.message = Message("economy.mine.result.loaded").arg("t", grouped(t, 2));
     pushResult(playerId, r);
     saveNow("mine haul");
     std::cerr << "[Mine] player " << playerId << " loads " << t << " t of " << c->site.goodId << " from " << siteId << " into " << shipKey << '\n';
@@ -1429,7 +1433,7 @@ void EconomyServer::stepMines(int day)
         const std::string bank = bankOf(hub, system);
         // the rent (a daily share of the year); unpaid for 90 days -> the state takes the site back
         const double rent = std::round(c.site.rentYearCr / 360.0 * 100.0) / 100.0;
-        if (pay(*l, m_banks, bank, rent, Purpose::Fee, day, false, "аренда участка: " + c.site.nameRu).ok)
+        if (pay(*l, m_banks, bank, rent, Purpose::Fee, day, false, Message("economy.mine.memo.rent").arg("site", c.site.nameRu)).ok)
         {
             c.unpaidDays = 0;
             if (TaxBook* t = taxBook(c.owner))
@@ -1439,7 +1443,7 @@ void EconomyServer::stepMines(int day)
         {
             c.status = "lapsed";
             ++m_buildRevision;
-            logEvent(*l, day, "концессия " + c.site.nameRu + " отозвана: " + std::to_string(m_mineLapseDays) + " сут без арендной платы");
+            logEvent(*l, day, Message("economy.mine.event.lapsed").arg("site", c.site.nameRu).arg("days", m_mineLapseDays));
             continue;
         }
         if (c.status == "leased")
@@ -1450,7 +1454,7 @@ void EconomyServer::stepMines(int day)
                     c.status = "mining";
                     c.rigPriceCr = p.offer.priceCr;
                     ++m_buildRevision;
-                    logEvent(*l, day, "рудник " + c.site.nameRu + ": установка принята, добыча начата");
+                    logEvent(*l, day, Message("economy.mine.event.started").arg("site", c.site.nameRu));
                 }
             if (c.status != "mining")
                 continue;
@@ -1458,7 +1462,7 @@ void EconomyServer::stepMines(int day)
         // the shift's wages and the rig's upkeep; unpaid -> no output today
         const double wage = std::round(m_mineStaff * m_mineWageMonthCr / 30.0 * 100.0) / 100.0;
         const double upkeep = std::round(c.rigPriceCr * m_mineMaintYear / 360.0 * 100.0) / 100.0;
-        if (!pay(*l, m_banks, bank, wage + upkeep, Purpose::Fee, day, false, "рудник " + c.site.nameRu + ": смена и обслуживание").ok)
+        if (!pay(*l, m_banks, bank, wage + upkeep, Purpose::Fee, day, false, Message("economy.mine.memo.upkeep").arg("site", c.site.nameRu)).ok)
         {
             c.lastOutputT = 0.0;
             continue;
@@ -1475,7 +1479,7 @@ void EconomyServer::stepMines(int day)
         {
             c.status = "depleted";
             ++m_buildRevision;
-            logEvent(*l, day, "рудник " + c.site.nameRu + " выработан");
+            logEvent(*l, day, Message("economy.mine.event.depleted").arg("site", c.site.nameRu));
         }
         // the stockpile -> the hub's market (the ordinary deal; the price falls with the stock), the royalty to the state
         const std::uint64_t key = mineStockKey(c.site.id);
@@ -1508,7 +1512,7 @@ void EconomyServer::stepMines(int day)
         if (!res.ok)
             continue;   // no buyer today: the ore waits in the stockpile
         const double royalty = std::round(res.totalCr * m_mineRoyalty * 100.0) / 100.0;
-        (void)pay(*l, m_banks, bank, royalty, Purpose::Tax, day, false, "роялти: " + c.site.nameRu);
+        (void)pay(*l, m_banks, bank, royalty, Purpose::Tax, day, false, Message("economy.mine.memo.royalty").arg("site", c.site.nameRu));
         c.soldT += o.tonnes;
         c.revenueCr += res.totalCr - royalty;
     }
@@ -1531,8 +1535,8 @@ std::vector<EconomyServer::BotCandidate> EconomyServer::botCandidatesAt(const st
     if (hubId.empty() || m_marketIndex.find(hubId) == m_marketIndex.end())
         return out;
     (void)systemId;
-    static const char* const First[] = {"Ари", "Бо", "Вик", "Гао", "Дара", "Ено", "Жан", "Зоя", "Иво", "Кай", "Лин", "Мира", "Нур", "Ода", "Пэй", "Рин"};
-    static const char* const Last[] = {"Ковач", "Сато", "Мендес", "Олсен", "Рао", "Дюбуа", "Ким", "Новак", "Фаррелл", "Ибрагим", "Хольм", "Чен"};
+    static const char* const First[] = {"ari", "bo", "vik", "gao", "dara", "eno", "zhan", "zoya", "ivo", "kai", "lin", "mira", "nur", "oda", "pei", "rin"};
+    static const char* const Last[] = {"kovach", "sato", "mendes", "olsen", "rao", "dubois", "kim", "novak", "farrell", "ibrahim", "holm", "chen"};
     const int week = std::max(0, m_day) / 7;
     for (int k = 0; k < m_botCandidatesPerHub; ++k)
     {
@@ -1542,7 +1546,9 @@ std::vector<EconomyServer::BotCandidate> EconomyServer::botCandidatesAt(const st
         if (m_hiredCandidates.count(c.id))
             continue;
         c.hubId = hubId;
-        c.name = std::string(First[h % 16]) + " " + Last[(h >> 8) % 12];
+        c.name = Message("economy.bot.name")
+                     .arg("first", Message(std::string("economy.bot.first.") + First[h % 16]))
+                     .arg("last", Message(std::string("economy.bot.last.") + Last[(h >> 8) % 12]));
         c.traits.skill = traitOf(h ^ 1);
         c.traits.discipline = traitOf(h ^ 2);
         c.traits.punctuality = traitOf(h ^ 3);
@@ -1579,19 +1585,19 @@ game::simulation::ClientTradeResult EconomyServer::hireBot(std::uint64_t playerI
         return r;
     };
     if (!ledger(playerId))
-        return refuse("no_account", "нет счёта");
+        return refuse("no_account", Message("economy.refuse.no_account"));
     const BotCandidate* c = nullptr;
     const auto list = botCandidatesAt(hubId, systemId);
     for (const auto& x : list)
         if (x.id == candidateId)
             c = &x;
     if (!c)
-        return refuse("bot_unknown", "кандидат уже не в списке агентства");
+        return refuse("bot_unknown", Message("economy.bot.refuse.candidate_gone"));
     if (shipKey == 0 || !(capacity.netT > 0.0))
-        return refuse("bot_no_ship", "нужен свой корабль с трюмом, которым вы сейчас не управляете");
+        return refuse("bot_no_ship", Message("economy.bot.refuse.no_ship"));
     for (const auto& b : m_bots)
         if (b.shipKey == shipKey && b.state != "quit")
-            return refuse("bot_ship_busy", "на этом корабле уже есть пилот-бот");
+            return refuse("bot_ship_busy", Message("economy.bot.refuse.ship_busy"));
     Bot b;
     b.id = "bot:" + c->id;
     b.name = c->name;
@@ -1606,11 +1612,11 @@ game::simulation::ClientTradeResult EconomyServer::hireBot(std::uint64_t playerI
     b.systemId = systemId;
     b.hubA = hubId;
     m_hiredCandidates.insert(c->id);
-    botReport(b, m_day - m_botReportDelayDays, "нанят(а) на корабль " + shipRu + ", зарплата " + grouped(b.wageCr) + " Cr / 30 сут");
+    botReport(b, m_day - m_botReportDelayDays, Message("economy.bot.report.hired").arg("ship", shipRu).arg("cr", grouped(b.wageCr)));
     m_bots.push_back(b);
     r.ok = true;
     r.code = "bot_hired";
-    r.message = "нанят пилот " + b.name + " (" + shipRu + ")";
+    r.message = Message("economy.bot.result.hired").arg("name", b.name).arg("ship", shipRu);
     pushResult(playerId, r);
     saveNow("bot hired");
     std::cerr << "[Bots] player " << playerId << " hires " << b.id << " " << b.name << " (skill " << b.traits.skill << ", shown "
@@ -1635,11 +1641,11 @@ game::simulation::ClientTradeResult EconomyServer::orderBotLoop(std::uint64_t pl
         if (b.id == botId && b.owner == playerId && b.state != "quit")
             bot = &b;
     if (!bot)
-        return refuse("bot_unknown", "нет такого пилота");
+        return refuse("bot_unknown", Message("economy.bot.refuse.no_such_pilot"));
     const std::string from = bot->state == "idle" && !hubId.empty() ? hubId : bot->hubA;
     const auto itA = m_marketIndex.find(from);
     if (itA == m_marketIndex.end())
-        return refuse("bot_no_market", "у хаба корабля бота нет рынка");
+        return refuse("bot_no_market", Message("economy.bot.refuse.no_market"));
     // the best margin: buy at A (ask), sell at B (bid), the same system
     std::string bestHub, bestGood;
     double bestMargin = 0.0;
@@ -1675,17 +1681,17 @@ game::simulation::ClientTradeResult EconomyServer::orderBotLoop(std::uint64_t pl
         }
     }
     if (bestHub.empty())
-        return refuse("bot_no_loop", "в системе нет выгодной петли от этого хаба");
+        return refuse("bot_no_loop", Message("economy.bot.refuse.no_loop"));
     bot->hubA = from;
     bot->hubB = bestHub;
     bot->goodId = bestGood;
     bot->systemId = systemId;
     bot->state = "at_a";
-    botReport(*bot, m_day - m_botReportDelayDays, "приказ: петля " + hubDisplayName(from) + " <-> " + hubDisplayName(bestHub) + ", товар " + bestGood +
-                                                      " (маржа " + std::to_string(static_cast<int>(bestMargin * 100.0)) + " %)");
+    botReport(*bot, m_day - m_botReportDelayDays, Message("economy.bot.report.order").arg("a", hubDisplayName(from)).arg("b", hubDisplayName(bestHub))
+                                                      .arg("good", bestGood).arg("margin", static_cast<int>(bestMargin * 100.0)));
     r.ok = true;
     r.code = "bot_order";
-    r.message = bot->name + ": петля " + hubDisplayName(from) + " <-> " + hubDisplayName(bestHub) + ", " + bestGood;
+    r.message = Message("economy.bot.result.order").arg("name", bot->name).arg("a", hubDisplayName(from)).arg("b", hubDisplayName(bestHub)).arg("good", bestGood);
     pushResult(playerId, r);
     saveNow("bot order");
     std::cerr << "[Bots] " << bot->id << " loop " << from << " <-> " << bestHub << " " << bestGood << " margin " << bestMargin << '\n';
@@ -1698,7 +1704,7 @@ void EconomyServer::fireBot(std::uint64_t playerId, const std::string& botId)
         if (b.id == botId && b.owner == playerId && b.state != "quit")
         {
             b.state = "quit";
-            botReport(b, m_day - m_botReportDelayDays, "уволен владельцем");
+            botReport(b, m_day - m_botReportDelayDays, Message("economy.bot.report.fired"));
             saveNow("bot fired");
         }
 }
@@ -1714,7 +1720,7 @@ void EconomyServer::stepBots(int day)
             continue;
         // the wage: daily; 30 days unpaid -> the bot leaves
         const PaymentResult paid = pay(*l, m_banks, l->homeBank, std::round(b.wageCr / 30.0 * 100.0) / 100.0, Purpose::Fee, day, false,
-                                       "зарплата пилота " + b.name);
+                                       Message("economy.bot.memo.wage").arg("name", b.name));
         b.unpaidDays = paid.ok ? 0 : b.unpaidDays + 1;
         if (paid.ok)
             if (TaxBook* t = taxBook(b.owner))
@@ -1722,7 +1728,7 @@ void EconomyServer::stepBots(int day)
         if (b.unpaidDays >= 30)
         {
             b.state = "quit";
-            botReport(b, day, "ушёл: 30 суток без зарплаты");
+            botReport(b, day, Message("economy.bot.report.quit_unpaid"));
             continue;
         }
         const std::uint64_t h = hashOf(b.id, static_cast<std::uint64_t>(day) * 977ull);
@@ -1767,7 +1773,7 @@ void EconomyServer::stepBots(int day)
                     for (const auto& lot : after->lots)
                         if (lot.goodId == b.goodId && lot.contractId.empty())
                             b.tripCostCr += lot.costBasisCr;
-                botReport(b, day, res.ok ? "погрузка у " + hubDisplayName(hub) + ": " + res.message : "не смог купить у " + hubDisplayName(hub) + ": " + res.message);
+                botReport(b, day, Message(res.ok ? "economy.bot.report.loaded" : "economy.bot.report.buy_failed").arg("hub", hubDisplayName(hub)).arg("result", res.message));
             }
             else
             {
@@ -1781,7 +1787,7 @@ void EconomyServer::stepBots(int day)
                         if (stolen > 0.01)
                             (void)m_cargo.unload(b.shipKey, b.goodId, stolen, density, basis);
                         // the owner sees a shortfall, not a theft
-                        botReport(b, day, "недостача груза: " + grouped(stolen, 2) + " т");
+                        botReport(b, day, Message("economy.bot.report.shortfall").arg("t", grouped(stolen, 2)));
                     }
                 const CargoManifest* m = m_cargo.find(b.shipKey);
                 o.buy = false;
@@ -1792,17 +1798,19 @@ void EconomyServer::stepBots(int day)
                     const double tripProfit = res.totalCr - b.tripCostCr;
                     b.profitCr += tripProfit;
                     ++b.trips;
-                    botReport(b, day, "продажа у " + hubDisplayName(hub) + ": " + res.message + "; рейс " + (tripProfit >= 0 ? "+" : "") + grouped(tripProfit) + " Cr");
+                    botReport(b, day, Message("economy.bot.report.sold").arg("hub", hubDisplayName(hub)).arg("result", res.message)
+                                          .arg("profit", (tripProfit >= 0 ? "+" : "") + grouped(tripProfit)));
                 }
                 else
-                    botReport(b, day, "не смог продать у " + hubDisplayName(hub) + (res.message.empty() ? std::string() : ": " + res.message));
+                    botReport(b, day, res.message.empty() ? Message("economy.bot.report.sell_failed").arg("hub", hubDisplayName(hub))
+                                                          : Message("economy.bot.report.sell_failed_why").arg("hub", hubDisplayName(hub)).arg("result", res.message));
             }
             // the leg: base days + a route error (skill) + a late arrival (punctuality)
             int legs = m_botLegDays;
             if (unit(h ^ 0x11) < 0.02 + 0.25 * (1.0 - t.skill) * (1.0 - t.skill))
             {
                 legs += 1 + static_cast<int>(unit(h ^ 0x12) * 2.0);
-                botReport(b, day, "ошиблся маршрутом: +" + std::to_string(legs - m_botLegDays) + " сут");
+                botReport(b, day, Message("economy.bot.report.wrong_route").arg("days", legs - m_botLegDays));
             }
             if (unit(h ^ 0x13) < 0.5 * (1.0 - t.punctuality))
                 legs += 1;
@@ -1841,7 +1849,7 @@ std::vector<EconomyServer::SosCall> EconomyServer::sosCallsIn(int systemId) cons
             c.expiresDay = d + m_sosOpenDays;
             const double kind = unit(key ^ 0xabcdefull);
             c.kind = kind < 0.60 ? "capsule" : kind < 0.85 ? "derelict" : "medevac";
-            c.kindRu = c.kind == "capsule" ? "спасательная капсула" : c.kind == "derelict" ? "корабль без хода, экипаж жив" : "медэвакуация";
+            c.kindRu = Message(c.kind == "capsule" ? "economy.sos.kind.capsule" : c.kind == "derelict" ? "economy.sos.kind.derelict" : "economy.sos.kind.medevac");
             c.rewardCr = c.kind == "capsule" ? m_sosCapsuleCr : c.kind == "derelict" ? m_sosDerelictCr : m_sosMedevacCr;
             out.push_back(c);
         }
@@ -1869,34 +1877,34 @@ game::simulation::ClientTradeResult EconomyServer::takeSos(std::uint64_t playerI
     };
     ClientLedger* l = ledger(playerId);
     if (!l)
-        return refuse("no_account", "нет счёта");
+        return refuse("no_account", Message("economy.refuse.no_account"));
     if (m_activeSos.count(playerId))
-        return refuse("sos_busy", "у вас уже есть принятый вызов");
+        return refuse("sos_busy", Message("economy.sos.refuse.busy"));
     // the call: "sos:<hub>@<day>"
     const auto at = sosId.rfind('@');
     if (sosId.rfind("sos:", 0) != 0 || at == std::string::npos)
-        return refuse("sos_unknown", "нет такого вызова");
+        return refuse("sos_unknown", Message("economy.sos.refuse.unknown"));
     const std::string hubId = sosId.substr(4, at - 4);
     const auto* hub = EconomyModel::instance().hub(hubId);
     if (!hub)
-        return refuse("sos_unknown", "нет такого вызова");
+        return refuse("sos_unknown", Message("economy.sos.refuse.unknown"));
     const SosCall* call = nullptr;
     const auto calls = sosCallsIn(hub->systemId);
     for (const auto& c : calls)
         if (c.id == sosId)
             call = &c;
     if (!call)
-        return refuse("sos_unknown", "вызов уже закрыт");
+        return refuse("sos_unknown", Message("economy.sos.refuse.closed"));
     if (sosStatus(*call) != "open")
-        return refuse("sos_closed", "вызов уже " + sosStatus(*call));
+        return refuse("sos_closed", Message("economy.sos.refuse.status").arg("status", sosStatus(*call)));
     if (!hasLicence(playerId, polityOf(hubId, hub->systemId), "sar"))
-        return refuse("licence", "нужна лицензия МЧС этой политии (F5 -> Лицензии)");
+        return refuse("licence", Message("economy.sos.refuse.licence"));
     m_sosState[sosId] = {playerId, "taken"};
     m_activeSos[playerId] = sosId;
-    logEvent(*l, m_day, "принят вызов SOS: " + call->kindRu + " у " + hubDisplayName(hubId));
+    logEvent(*l, m_day, Message("economy.sos.event.taken").arg("kind", call->kindRu).arg("hub", hubDisplayName(hubId)));
     r.ok = true;
     r.code = "sos_taken";
-    r.message = "вызов принят: " + call->kindRu + " у " + hubDisplayName(hubId) + " — летите туда";
+    r.message = Message("economy.sos.result.taken").arg("kind", call->kindRu).arg("hub", hubDisplayName(hubId));
     pushResult(playerId, r);
     saveNow("sos taken");
     std::cerr << "[Rescue] player " << playerId << " takes " << sosId << " (" << call->kind << ", " << call->rewardCr << " Cr)" << '\n';
@@ -1925,7 +1933,8 @@ bool EconomyServer::completeSosAt(std::uint64_t playerId, const std::string& hub
     if (l)
     {
         const auto* bank = m_banks.bankForPolity(polityOf(hubId, systemId));
-        receive(*l, m_banks, bank ? bank->id : l->homeBank, reward, m_day, "МЧС: " + (kindRu.empty() ? std::string("спасение") : kindRu) + " у " + hubDisplayName(hubId));
+        receive(*l, m_banks, bank ? bank->id : l->homeBank, reward, m_day,
+                Message("economy.sos.memo.reward").arg("kind", kindRu.empty() ? std::string(Message("economy.sos.kind.rescue")) : kindRu).arg("hub", hubDisplayName(hubId)));
         if (TaxBook* t = taxBook(playerId))
             addRevenue(*t, reward);
     }
@@ -1935,7 +1944,7 @@ bool EconomyServer::completeSosAt(std::uint64_t playerId, const std::string& hub
     r.ok = true;
     r.code = "sos_done";
     r.totalCr = reward;
-    r.message = "спасение выполнено у " + hubDisplayName(hubId) + ": +" + grouped(reward) + " Cr";
+    r.message = Message("economy.sos.result.done").arg("hub", hubDisplayName(hubId)).arg("cr", grouped(reward));
     pushResult(playerId, r);
     saveNow("sos done");
     std::cerr << "[Rescue] player " << playerId << " completed " << id << ": +" << reward << " Cr" << '\n';
@@ -1953,17 +1962,18 @@ std::vector<EconomyServer::Vacancy> EconomyServer::vacanciesAt(const std::string
     const std::string where = hubDisplayName(hubId);
     const int week = std::max(0, m_day) / 7;
     const std::uint64_t seed = hashOf(hubId, static_cast<std::uint64_t>(week) + 0x10bull);
-    static const char* const Companies[] = {"курьерская служба", "транспортная компания", "почтово-грузовая линия", "логистика"};
+    static const char* const Companies[] = {"economy.job.company.courier_service", "economy.job.company.transport_company", "economy.job.company.mail_cargo_line",
+                                            "economy.job.company.logistics"};
     for (int k = 0; k < 2 && !m_courierShips.empty(); ++k)
     {
         Vacancy v;
         v.id = hubId + "#courier" + std::to_string(k) + "@" + std::to_string(week);
         v.kind = "courier";
-        v.employerRu = std::string(Companies[(seed >> (8 * k)) % 4]) + " «" + where + "»";
-        v.roleRu = "пилот-курьер на зарплате";
+        v.employerRu = Message("economy.job.employer.company").arg("company", Message(Companies[(seed >> (8 * k)) % 4])).arg("where", where);
+        v.roleRu = Message("economy.job.role.courier");
         v.bankId = bank ? bank->id : std::string();
         v.passportId = m_courierShips[(seed >> (16 + 8 * k)) % m_courierShips.size()];
-        v.requirementRu = "права: малый / средний грузовик — курьер";
+        v.requirementRu = Message("economy.job.requirement.courier");
         v.wageCr = m_courierWageCr;
         out.push_back(v);
     }
@@ -1972,13 +1982,13 @@ std::vector<EconomyServer::Vacancy> EconomyServer::vacanciesAt(const std::string
         Vacancy v;
         v.id = hubId + "#military@" + std::to_string(week);
         v.kind = "military";
-        v.employerRu = "силы обороны: " + bank->polityName;
-        v.roleRu = "пилот патрульного корабля";
+        v.employerRu = Message("economy.job.employer.defence").arg("polity", bank->polityName);
+        v.roleRu = Message("economy.job.role.patrol");
         v.bankId = bank->id;
         v.passportId = m_militaryShips[(seed >> 40) % m_militaryShips.size()];
-        v.unitRu = "патрульная эскадрилья «" + where + "»";
-        v.rankRu = "пилот (рядовой)";
-        v.requirementRu = "гражданство: " + bank->polityName;
+        v.unitRu = Message("economy.job.unit.patrol_squadron").arg("where", where);
+        v.rankRu = Message("economy.job.rank.private");
+        v.requirementRu = Message("economy.job.requirement.citizenship").arg("polity", bank->polityName);
         v.wageCr = m_militaryWageCr;
         v.termDays = m_militaryTermDays;
         out.push_back(v);
@@ -1990,23 +2000,23 @@ std::string EconomyServer::vacancyRefusal(std::uint64_t playerId, const Vacancy&
 {
     const ClientLedger* l = ledger(playerId);
     if (!l)
-        return "нет учётной записи";
+        return Message("economy.job.refuse.no_record");
     if (m_employment.count(playerId))
-        return "вы уже работаете — сначала увольтесь";
+        return Message("economy.job.refuse.employed");
     if (v.kind == "courier")
     {
         bool category = false;
         for (const auto& c : m_pilotCategories)
             category = category || (c.id == "cargo_courier" && c.start);
         if (!category)
-            return "нет категории прав «курьер»";
+            return Message("economy.job.refuse.no_courier_category");
     }
     if (v.kind == "military")
     {
         const auto* home = m_banks.bank(l->homeBank);
         const auto* here = m_banks.bankForPolity(polityOf(hubId, systemId));
         if (!home || !here || home->id != here->id)
-            return "служба только для граждан: " + (here ? here->polityName : std::string("?"));
+            return Message("economy.job.refuse.citizens_only").arg("polity", here ? here->polityName : std::string("?"));
     }
     return {};
 }
@@ -2015,7 +2025,7 @@ void EconomyServer::startEmployment(std::uint64_t playerId, const Vacancy& v)
 {
     m_employment[playerId] = {v, m_day};
     if (ClientLedger* l = ledger(playerId))
-        logEvent(*l, m_day, "принят: " + v.roleRu + ", " + v.employerRu + ", " + grouped(v.wageCr) + " Cr / 30 сут");
+        logEvent(*l, m_day, Message("economy.job.event.hired").arg("role", v.roleRu).arg("employer", v.employerRu).arg("cr", grouped(v.wageCr)));
     saveNow("employment");
 }
 
@@ -2025,7 +2035,7 @@ void EconomyServer::endEmployment(std::uint64_t playerId, const std::string& why
     if (it == m_employment.end())
         return;
     if (ClientLedger* l = ledger(playerId))
-        logEvent(*l, m_day, "уволен: " + it->second.job.employerRu + " (" + why + ")");
+        logEvent(*l, m_day, Message("economy.job.event.left").arg("employer", it->second.job.employerRu).arg("why", why));
     m_employment.erase(it);
     saveNow("employment");
 }
@@ -2042,7 +2052,7 @@ void EconomyServer::payWages(int day)
         if (ClientLedger* l = ledger(player); l && day > e.sinceDay)
         {
             const double wage = std::round(e.job.wageCr / 30.0 * 100.0) / 100.0;
-            receive(*l, m_banks, e.job.bankId.empty() ? l->homeBank : e.job.bankId, wage, day, "зарплата: " + e.job.employerRu);
+            receive(*l, m_banks, e.job.bankId.empty() ? l->homeBank : e.job.bankId, wage, day, Message("economy.job.memo.wage").arg("employer", e.job.employerRu));
             if (TaxBook* t = taxBook(player))
                 addRevenue(*t, wage);
         }
@@ -2083,23 +2093,24 @@ void EconomyServer::settleArrest(std::uint64_t playerId, const std::string& bank
     const double before = debtAtBankCr(*l, m_banks, bankId);
     double left = 0.0;
     if (proceedsCr > 0.0)
-        left = repayFromProceeds(*l, m_banks, bankId, proceedsCr, m_day, "арест в порту " + where + ", торги");
+        left = repayFromProceeds(*l, m_banks, bankId, proceedsCr, m_day, Message("economy.arrest.memo.auction").arg("hub", where));
     if (left > 0.005)
-        receive(*l, m_banks, bankId, left, m_day, "остаток выручки от торгов после погашения долга");
+        receive(*l, m_banks, bankId, left, m_day, Message("economy.arrest.memo.surplus"));
     const double after = debtAtBankCr(*l, m_banks, bankId);
+    // the seized list: one message per item joined by nesting ("{list}; {item}"), the items may be messages themselves
     std::string list;
     for (const auto& s : seized)
-        list += (list.empty() ? "" : "; ") + s;
-    logEvent(*l, m_day, seized.empty() ? "арест в порту " + where + ": изымать нечего (орудие труда защищено), долг " + grouped(after) + " Cr"
-                                       : "арест в порту " + where + " (обменный): " + list + "; выручка " + grouped(proceedsCr) +
-                                             " Cr, долг " + grouped(before) + " -> " + grouped(after) + " Cr");
+        list = list.empty() ? s : std::string(Message("economy.arrest.list_join").arg("list", list).arg("item", s));
+    logEvent(*l, m_day, seized.empty() ? Message("economy.arrest.event.nothing").arg("hub", where).arg("debt", grouped(after))
+                                       : Message("economy.arrest.event.exchanged").arg("hub", where).arg("list", list).arg("proceeds", grouped(proceedsCr))
+                                             .arg("before", grouped(before)).arg("after", grouped(after)));
     game::simulation::ClientTradeResult r;
     r.ok = false;
     r.code = "arrest";
     r.totalCr = proceedsCr;
-    r.message = seized.empty() ? "арест: изымать нечего, долг " + grouped(after) + " Cr"
-                               : "арест: заменено " + std::to_string(seized.size()) + " модул., выручка " + grouped(proceedsCr) + " Cr, долг " +
-                                     grouped(after) + " Cr";
+    r.message = seized.empty() ? Message("economy.arrest.result.nothing").arg("debt", grouped(after))
+                               : Message("economy.arrest.result.exchanged").arg("count", static_cast<int>(seized.size())).arg("proceeds", grouped(proceedsCr))
+                                     .arg("debt", grouped(after));
     pushResult(playerId, r);
     saveNow("ship arrest");
     std::cerr << "[Arrest] player " << playerId << " at " << hubId << ": " << seized.size() << " module(s) exchanged, proceeds "
@@ -2115,7 +2126,7 @@ EconomyServer::InsuranceQuote EconomyServer::quoteCargoInsurance(std::uint64_t p
     const CargoManifest* m = m_cargo.find(shipKey);
     if (!m || m->lots.empty())
     {
-        q.why = "трюм пуст";
+        q.why = Message("economy.insurance.why.hold_empty");
         return q;
     }
     for (const auto& lot : m->lots)
@@ -2133,7 +2144,7 @@ EconomyServer::InsuranceQuote EconomyServer::quoteCargoInsurance(std::uint64_t p
         q.lotIds.push_back(lot.lotId);
     }
     if (q.lotIds.empty())
-        q.why = "нечего страховать: груз контракта или контрабанда";
+        q.why = Message("economy.insurance.why.nothing");
     q.premiumCr = std::round(m_cargoPremiumShare * q.valueCr * 100.0) / 100.0;   // x (1 + 2 x risk): risk 0 for now
     return q;
 }
@@ -2152,16 +2163,16 @@ game::simulation::ClientTradeResult EconomyServer::insureCargo(std::uint64_t pla
     };
     ClientLedger* l = ledger(playerId);
     if (!l)
-        return refuse("no_account", "нет счёта");
+        return refuse("no_account", Message("economy.refuse.no_account"));
     if (hubId.empty())
-        return refuse("not_docked", "страховку оформляют у причала");
+        return refuse("not_docked", Message("economy.insurance.refuse.not_docked"));
     const InsuranceQuote q = quoteCargoInsurance(playerId, shipKey, hubId, systemId);
     if (!q.why.empty())
         return refuse("not_insurable", q.why);
     const std::string bank = bankOf(hubId, systemId);
-    const PaymentResult p = pay(*l, m_banks, bank, q.premiumCr, Purpose::Fee, m_day, false, "страховка груза");
+    const PaymentResult p = pay(*l, m_banks, bank, q.premiumCr, Purpose::Fee, m_day, false, Message("economy.insurance.memo.premium"));
     if (!p.ok)
-        return refuse("no_money", "не хватает денег на премию " + grouped(q.premiumCr) + " Cr");
+        return refuse("no_money", Message("economy.insurance.refuse.no_money").arg("cr", grouped(q.premiumCr)));
     if (TaxBook* t = taxBook(playerId))
         addExpense(*t, q.premiumCr);
     // one policy per ship: a new one replaces the old
@@ -2186,11 +2197,11 @@ game::simulation::ClientTradeResult EconomyServer::insureCargo(std::uint64_t pla
                 pol.lotValueCr[lot.lotId] = unit * lot.tonnes;
             }
     m_cargoPolicies.push_back(pol);
-    logEvent(*l, m_day, "страховка груза на " + grouped(q.valueCr) + " Cr до дня " + std::to_string(pol.endDay) + ": -" + grouped(q.premiumCr) + " Cr");
+    logEvent(*l, m_day, Message("economy.insurance.event.insured").arg("value", grouped(q.valueCr)).arg("day", pol.endDay).arg("premium", grouped(q.premiumCr)));
     r.ok = true;
     r.code = "insured";
     r.totalCr = -q.premiumCr;
-    r.message = "груз застрахован на " + grouped(q.valueCr) + " Cr до дня " + std::to_string(pol.endDay);
+    r.message = Message("economy.insurance.result.insured").arg("value", grouped(q.valueCr)).arg("day", pol.endDay);
     pushResult(playerId, r);
     saveNow("cargo insurance");
     std::cerr << "[Insurance] player " << playerId << ": cargo of ship " << shipKey << " insured for " << grouped(q.valueCr) << " Cr, premium "
@@ -2273,16 +2284,16 @@ game::simulation::ClientTradeResult EconomyServer::buyLicence(std::uint64_t play
         if (t.id == type)
             lt = &t;
     if (!l || !lt)
-        return refuse("no_licence_type", "нет такой лицензии: " + type);
+        return refuse("no_licence_type", Message("economy.licence.refuse.unknown").arg("type", type));
     if (hubId.empty())
-        return refuse("not_docked", "лицензию оформляют у причала хаба политии");
+        return refuse("not_docked", Message("economy.licence.refuse.not_docked"));
     const std::string polity = polityOf(hubId, systemId);
     const double fee = std::round(lt->feeCr * fiscalStyleOf(hubId, systemId).portIndex * 100.0) / 100.0;
     const auto* bank = m_banks.bankForPolity(polity);
     const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), fee, Purpose::Fee, m_day, false,
-                                "лицензия «" + lt->ru + "» (" + (bank ? bank->polityName : polity) + ")");
+                                Message("economy.licence.memo.fee").arg("licence", lt->ru).arg("polity", bank ? bank->polityName : polity));
     if (!p.ok)
-        return refuse("no_money", "не хватает денег на лицензию: " + grouped(fee) + " Cr (" + p.reason + ")");
+        return refuse("no_money", Message("economy.licence.refuse.no_money").arg("cr", grouped(fee)).arg("reason", p.reason));
     if (TaxBook* t = taxBook(playerId))
         addExpense(*t, fee);
     auto& held = m_licences[playerId];
@@ -2296,11 +2307,11 @@ game::simulation::ClientTradeResult EconomyServer::buyLicence(std::uint64_t play
         existing = &held.back();
     }
     existing->expiresDay = std::max(existing->expiresDay, m_day) + m_licenceDays;
-    logEvent(*l, m_day, "лицензия «" + lt->ru + "»: -" + grouped(fee) + " Cr, действует до дня " + std::to_string(existing->expiresDay));
+    logEvent(*l, m_day, Message("economy.licence.event.bought").arg("licence", lt->ru).arg("cr", grouped(fee)).arg("day", existing->expiresDay));
     r.ok = true;
     r.code = "licence";
     r.totalCr = -fee;
-    r.message = "лицензия «" + lt->ru + "» до дня " + std::to_string(existing->expiresDay);
+    r.message = Message("economy.licence.result.bought").arg("licence", lt->ru).arg("day", existing->expiresDay);
     pushResult(playerId, r);
     saveNow("licence");
     std::cerr << "[Licence] player " << playerId << ": " << type << " from " << polity << " for " << grouped(fee) << " Cr, until day "
@@ -2322,34 +2333,33 @@ game::simulation::ClientTradeResult EconomyServer::sellBlack(const TradeOrder& o
     ClientLedger* l = ledger(o.playerId);
     const int g = goodIndex(o.goodId);
     if (!l || g < 0)
-        return refuse("no_good", "неизвестный товар " + o.goodId);
+        return refuse("no_good", Message("economy.trade.refuse.unknown_good").arg("good", o.goodId));
     const auto& good = EconomyModel::instance().goods()[static_cast<std::size_t>(g)];
     const double price = blackBidCrPerT(o.playerId, g, o.hubId, o.systemId);
     if (!(price > 0.0))
-        return refuse("legal_here", "«" + good.ru + "» здесь не запрещён: продавайте на рынке");
+        return refuse("legal_here", Message("economy.black.refuse.legal_here").arg("good", good.ru));
     const CargoManifest* m = m_cargo.find(o.shipKey);
     const double aboard = m ? m->ownTonnesOf(o.goodId) : 0.0;
     const double tonnes = o.tonnes > 0.0 ? std::min(o.tonnes, aboard) : aboard;
     if (!(tonnes > 1.0e-6))
-        return refuse("not_aboard", "на борту нет своего «" + good.ru + "»");
+        return refuse("not_aboard", Message("economy.black.refuse.not_aboard").arg("good", good.ru));
     auto& sold = m_blackSold[o.hubId];
     if (sold.first != m_day)
         sold = {m_day, 0.0};
     if (sold.second + tonnes > m_smuggling.blackCapT + 1.0e-9)
-        return refuse("black_full", "скупщик сегодня берёт не больше " + grouped(std::max(0.0, m_smuggling.blackCapT - sold.second), 1) + " т");
+        return refuse("black_full", Message("economy.black.refuse.cap").arg("t", grouped(std::max(0.0, m_smuggling.blackCapT - sold.second), 1)));
     double basis = 0.0;
     (void)m_cargo.unload(o.shipKey, o.goodId, tonnes, good.densityTM3, basis);
     m_cargoChanged.insert(o.shipKey);
     sold.second += tonnes;
     const double total = std::round(tonnes * price * 100.0) / 100.0;
-    char memo[160];
-    std::snprintf(memo, sizeof memo, "из-под полы: %.2f т «%s»", tonnes, good.ru.c_str());
-    receive(*l, m_banks, bankOf(o.hubId, o.systemId), total, m_day, memo);   // not declared: no tax book line
-    logEvent(*l, m_day, std::string(memo) + ": +" + grouped(total) + " Cr");
+    receive(*l, m_banks, bankOf(o.hubId, o.systemId), total, m_day,
+            Message("economy.black.memo.sale").arg("t", tonnes, 2).arg("good", good.ru));   // not declared: no tax book line
+    logEvent(*l, m_day, Message("economy.black.event.sale").arg("t", tonnes, 2).arg("good", good.ru).arg("cr", grouped(total)));
     r.ok = true;
     r.code = "black_sold";
     r.totalCr = total;
-    r.message = std::string("продано из-под полы ") + grouped(tonnes, 2) + " т по " + grouped(price) + " Cr/т";
+    r.message = Message("economy.black.result.sold").arg("t", grouped(tonnes, 2)).arg("price", grouped(price));
     pushResult(o.playerId, r);
     saveNow("black market");
     std::cerr << "[Smuggling] player " << o.playerId << ": BLACK SALE " << tonnes << " t " << o.goodId << " at " << o.hubId << " x "
@@ -2384,7 +2394,8 @@ EconomyServer::CustomsResult EconomyServer::customsInspection(std::uint64_t play
     res.feeCr = S.inspectionFeeCr;
     if (res.feeCr > 0.0)
     {
-        (void)payOrDebt(*l, m_banks, bankOf(hubId, systemId), res.feeCr, Purpose::Fee, m_day, "досмотр на таможне " + where, "сбор в долг");
+        (void)payOrDebt(*l, m_banks, bankOf(hubId, systemId), res.feeCr, Purpose::Fee, m_day, Message("economy.customs.memo.fee").arg("hub", where),
+                        Message("economy.debt.fee"));
         if (TaxBook* t = taxBook(playerId))
             addExpense(*t, res.feeCr);
     }
@@ -2402,7 +2413,7 @@ EconomyServer::CustomsResult EconomyServer::customsInspection(std::uint64_t play
         }
     if (contraband.empty())
     {
-        logEvent(*l, m_day, "досмотр на таможне " + where + ": нарушений нет (сбор " + grouped(res.feeCr) + " Cr)");
+        logEvent(*l, m_day, Message("economy.customs.event.clean").arg("hub", where).arg("cr", grouped(res.feeCr)));
         std::cerr << "[Smuggling] player " << playerId << ": customs at " << hubId << " (p " << res.probability << "): clean" << '\n';
         return res;
     }
@@ -2416,7 +2427,7 @@ EconomyServer::CustomsResult EconomyServer::customsInspection(std::uint64_t play
         pFind = 1.0;   // DEV: a forced inspection always finds
     if (unit(seed ^ 0x5eedfeedull) >= pFind)
     {
-        logEvent(*l, m_day, "досмотр на таможне " + where + ": ничего не нашли");
+        logEvent(*l, m_day, Message("economy.customs.event.not_found").arg("hub", where));
         std::cerr << "[Smuggling] player " << playerId << ": customs at " << hubId << " (p " << res.probability << "): contraband NOT found (p_find "
                   << pFind << ")" << '\n';
         return res;
@@ -2452,18 +2463,18 @@ EconomyServer::CustomsResult EconomyServer::customsInspection(std::uint64_t play
     }
     for (const auto& id : failed)
         if (Contract* c = m_board.contract(id); c && c->status == "active")
-            failContract(*c, "failed", "груз изъят таможней");
+            failContract(*c, "failed", Message("economy.contract.why.seized"));
     m_cargoChanged.insert(shipKey);
     res.fineCr = std::round(S.fineMult * res.valueCr * 100.0) / 100.0;
-    (void)payFine(*l, m_banks, bankOf(hubId, systemId), res.fineCr, m_day, "контрабанда, " + where);
+    (void)payFine(*l, m_banks, bankOf(hubId, systemId), res.fineCr, m_day, Message("economy.customs.memo.fine").arg("hub", where));
     m_seizures[playerId].push_back({polity, m_day});
-    logEvent(*l, m_day, "таможня " + where + ": изъято " + grouped(res.seizedT, 2) + " т контрабанды (" + grouped(res.valueCr) + " Cr), штраф " +
-                            grouped(res.fineCr) + " Cr");
+    logEvent(*l, m_day, Message("economy.customs.event.seized").arg("hub", where).arg("t", grouped(res.seizedT, 2)).arg("value", grouped(res.valueCr))
+                            .arg("fine", grouped(res.fineCr)));
     game::simulation::ClientTradeResult r;
     r.ok = false;
     r.code = "customs_seized";
     r.totalCr = -res.fineCr;
-    r.message = "таможня: изъято " + grouped(res.seizedT, 2) + " т, штраф " + grouped(res.fineCr) + " Cr";
+    r.message = Message("economy.customs.result.seized").arg("t", grouped(res.seizedT, 2)).arg("fine", grouped(res.fineCr));
     pushResult(playerId, r);
     saveNow("customs");
     std::cerr << "[Smuggling] player " << playerId << ": customs at " << hubId << " (p " << res.probability << ", attention " << attention
@@ -2500,7 +2511,7 @@ MarketSide EconomyServer::regimeSide(const HubMarket& m, int good, std::uint64_t
         side.fixedPriceCr = c.anchorCr * (R.stateMin + (R.stateMax - R.stateMin) * h);
         side.giveCapT = std::max(0.0, c.stockT - R.stateNeedShare * c.targetT);
         if (note)
-            *note = side.giveCapT > 0.0 ? std::string("госцена") : std::string("нет в продаже: госпотребность");
+            *note = Message(side.giveCapT > 0.0 ? "economy.market.note.state_price" : "economy.market.note.state_need");
         return side;
     }
     if (regime == "corridor" && in(R.corridorGroups) && c.anchorCr > 0.0)   // the corridor holds from the first day, not only after a daily step
@@ -2516,15 +2527,11 @@ MarketSide EconomyServer::regimeSide(const HubMarket& m, int good, std::uint64_t
                 used = it->second.second;
         side.giveCapT = std::max(0.0, ration - used);
         if (note)
-        {
-            char b[96];
-            std::snprintf(b, sizeof b, "по карточкам: %.1f т на сегодня", side.giveCapT);
-            *note = b;
-        }
+            *note = Message("economy.market.note.ration").arg("t", side.giveCapT, 1);
         return side;
     }
     if (regime == "corridor" && in(R.corridorGroups) && note)
-        *note = "цена в коридоре";
+        *note = Message("economy.market.note.corridor");
     return side;
 }
 
@@ -2575,8 +2582,8 @@ void EconomyServer::receiveContractMoney(std::uint64_t playerId, ClientLedger& l
     if (withheld > 0.0)
     {
         const auto* b = m_banks.bank(issuerBank);
-        logEvent(l, m_day, "налог у источника -" + grouped(withheld) + " Cr (" + (b ? b->polityName : issuerBank) + ", " +
-                               (credited ? "зачтётся дома" : "дома не зачитывается: нет соглашения") + ")");
+        logEvent(l, m_day, Message(credited ? "economy.tax.event.withheld_credited" : "economy.tax.event.withheld_lost")
+                               .arg("cr", grouped(withheld)).arg("polity", b ? b->polityName : issuerBank));
     }
     if (TaxBook* t = taxBook(playerId))
     {
@@ -2597,9 +2604,8 @@ void EconomyServer::stepTaxes(int day)
         if (a.closed)
         {
             const int from = a.period * m_taxRules.periodDays;
-            logEvent(l, day, "налоговый период " + std::to_string(from) + "-" + std::to_string(from + m_taxRules.periodDays - 1) +
-                                 ": прибыль " + grouped(a.profitCr) + " Cr, налог " + grouped(a.taxCr + a.feeCr) + " Cr к уплате до дня " +
-                                 std::to_string(a.dueDay));
+            logEvent(l, day, Message("economy.tax.event.period_closed").arg("from", from).arg("to", from + m_taxRules.periodDays - 1)
+                                 .arg("profit", grouped(a.profitCr)).arg("tax", grouped(a.taxCr + a.feeCr)).arg("day", a.dueDay));
             std::cerr << "[Tax] player " << id << ": period " << from << ".." << (from + m_taxRules.periodDays - 1) << " closed: profit "
                       << grouped(a.profitCr) << " Cr x " << rs.incomeTaxShare << " (" << rs.ru << ") -> tax " << grouped(a.taxCr)
                       << " + fee " << grouped(a.feeCr) << " Cr, due day " << a.dueDay << '\n';
@@ -2608,16 +2614,19 @@ void EconomyServer::stepTaxes(int day)
         if (!taxDue(*t, day))
             continue;
         const double amount = t->assessedTaxCr + t->assessedFeeCr;
-        const std::string memo = "налог на доход за период с дня " + std::to_string(t->assessedPeriod * m_taxRules.periodDays) +
-                                 (t->assessedFeeCr > 0.0 ? " (с платой за администрирование " + grouped(t->assessedFeeCr) + " Cr)" : std::string());
-        const PaymentResult p = payOrDebt(l, m_banks, l.homeBank, amount, Purpose::Tax, day, memo, "налог в долг");
+        const std::string memo = t->assessedFeeCr > 0.0 ? Message("economy.tax.memo.income_fee").arg("day", t->assessedPeriod * m_taxRules.periodDays)
+                                                              .arg("fee", grouped(t->assessedFeeCr))
+                                                        : Message("economy.tax.memo.income").arg("day", t->assessedPeriod * m_taxRules.periodDays);
+        const PaymentResult p = payOrDebt(l, m_banks, l.homeBank, amount, Purpose::Tax, day, memo, Message("economy.debt.tax"));
         const double debt = p.ok ? p.lifelineCr : amount;
         const double penalty = settleTax(*t, amount - debt, debt, m_taxRules);
         if (penalty > 0.0)
             (void)payOrDebt(l, m_banks, l.homeBank, penalty, Purpose::Fine, day,
-                            "пени по налогу (" + std::to_string(static_cast<int>(std::lround(m_taxRules.latePenaltyShare * 100.0))) +
-                                " % неуплаченного)", "пени в долг");
-        logEvent(l, day, "налог на доход " + grouped(amount) + " Cr: " + (debt > 0.0 ? "в долг" + std::string(penalty > 0.0 ? " + пени " + grouped(penalty) + " Cr" : "") : "уплачен"));
+                            Message("economy.tax.memo.penalty").arg("pct", static_cast<int>(std::lround(m_taxRules.latePenaltyShare * 100.0))),
+                            Message("economy.debt.penalty"));
+        logEvent(l, day, debt <= 0.0      ? Message("economy.tax.event.paid").arg("cr", grouped(amount))
+                         : penalty > 0.0 ? Message("economy.tax.event.debt_penalty").arg("cr", grouped(amount)).arg("penalty", grouped(penalty))
+                                         : Message("economy.tax.event.debt").arg("cr", grouped(amount)));
         std::cerr << "[Tax] player " << id << ": day " << day << " DUE " << grouped(amount) << " Cr -> paid " << grouped(amount - debt)
                   << ", debt " << grouped(debt) << ", penalty " << grouped(penalty) << "; net worth " << grouped(netWorthCr(l, m_banks))
                   << " Cr" << '\n';
@@ -2692,7 +2701,7 @@ FuelQuote EconomyServer::quoteFuel(const std::string& hubId, int systemId, FuelK
     q.freeOfCharge = m_fuelFree;
     if (!m_loaded)
     {
-        q.reason = "экономика не загружена";
+        q.reason = Message("economy.refuse.off");
         return q;
     }
     const int g = goodIndex(fuelGoodId(kind));
@@ -2700,7 +2709,7 @@ FuelQuote EconomyServer::quoteFuel(const std::string& hubId, int systemId, FuelK
     const HubMarket* m = marketFor(hubId, systemId, g, sysRef);
     if (!m)
     {
-        q.reason = "здесь и в системе это топливо не продаётся";
+        q.reason = Message("economy.fuel.refuse.not_sold");
         return q;
     }
     const auto& good = EconomyModel::instance().goods()[static_cast<std::size_t>(g)];
@@ -2735,12 +2744,13 @@ FuelCharge EconomyServer::chargeFuel(std::uint64_t playerId, const std::string& 
     r.quote = quoteFuel(hubId, systemId, kind);
     if (!r.quote.available || !(tonnes > 0.0))
     {
-        r.reason = r.quote.available ? "нулевой объём" : r.quote.reason;
+        r.reason = r.quote.available ? std::string(Message("economy.fuel.refuse.zero")) : r.quote.reason;
         return r;
     }
     ClientLedger* l = ledger(playerId);
-    const char* what = kind == FuelKind::JumpCharge ? "заряд прыжка" : kind == FuelKind::ReactorFuel ? "реакторное топливо" : "рабочее тело";
-    char memo[160];
+    const std::string what = Message(kind == FuelKind::JumpCharge    ? "economy.fuel.kind.jump_charge"
+                                      : kind == FuelKind::ReactorFuel ? "economy.fuel.kind.reactor_fuel"
+                                                                      : "economy.fuel.kind.reaction_mass");
     double granted = tonnes;
     if (m_fuelFree || !l)
     {
@@ -2749,22 +2759,21 @@ FuelCharge EconomyServer::chargeFuel(std::uint64_t playerId, const std::string& 
         if (l)
         {
             l->freeFuelListCr += r.listCr;
-            std::snprintf(memo, sizeof memo, "заправка: %s %.2f т бесплатно (по прейскуранту %s Cr)", what, granted, grouped(r.listCr).c_str());
-            logEvent(*l, m_day, memo);
+            logEvent(*l, m_day, Message("economy.fuel.event.free").arg("fuel", what).arg("t", granted, 2).arg("cr", grouped(r.listCr)));
         }
         else
             m_aiFreeFuelListCr += r.listCr;
     }
     else
     {
-        std::snprintf(memo, sizeof memo, "заправка: %s %.2f т", what, granted);
-        PaymentResult p = pay(*l, m_banks, r.quote.bankId, granted * r.quote.listCrPerT, Purpose::Fuel, m_day, false, memo);
+        PaymentResult p = pay(*l, m_banks, r.quote.bankId, granted * r.quote.listCrPerT, Purpose::Fuel, m_day, false,
+                              Message("economy.fuel.memo.paid").arg("fuel", what).arg("t", granted, 2));
         if (!p.ok)
         {
             // cannot pay it all: at least the lifeline amount, on credit if needed
             granted = std::min(tonnes, m_banks.rules.lifelineFuelMaxT);
-            std::snprintf(memo, sizeof memo, "заправка (минимум до станции): %s %.2f т", what, granted);
-            p = pay(*l, m_banks, r.quote.bankId, granted * r.quote.listCrPerT, Purpose::Fuel, m_day, true, memo);
+            p = pay(*l, m_banks, r.quote.bankId, granted * r.quote.listCrPerT, Purpose::Fuel, m_day, true,
+                    Message("economy.fuel.memo.lifeline").arg("fuel", what).arg("t", granted, 2));
         }
         if (!p.ok)
         {
@@ -2804,10 +2813,7 @@ void EconomyServer::recordFuelDelivery(std::uint64_t playerId, const std::string
         if (ClientLedger* l = ledger(playerId))
         {
             l->freeFuelListCr += list;
-            char memo[160];
-            std::snprintf(memo, sizeof memo, "заправка: %s %.2f т бесплатно (по прейскуранту %s Cr)", fuelGoodId(kind), tonnes,
-                          grouped(list).c_str());
-            logEvent(*l, m_day, memo);
+            logEvent(*l, m_day, Message("economy.fuel.event.free").arg("fuel", fuelGoodId(kind)).arg("t", tonnes, 2).arg("cr", grouped(list)));
         }
         else
             m_aiFreeFuelListCr += list;
@@ -2830,9 +2836,7 @@ void EconomyServer::refundFuel(std::uint64_t playerId, const std::string& hubId,
             m_markets[it->second].cells[static_cast<std::size_t>(goodIndex(fuelGoodId(kind)))].stockT += tonnes;
     if (crPerT > 0.0 && playerId != 0)
     {
-        char memo[160];
-        std::snprintf(memo, sizeof memo, "возврат за незалитое топливо: %.2f т", tonnes);
-        credit(playerId, hubId, systemId, tonnes * crPerT, memo);
+        credit(playerId, hubId, systemId, tonnes * crPerT, Message("economy.fuel.memo.refund").arg("t", tonnes, 2));
     }
 }
 
@@ -2844,7 +2848,7 @@ PaymentResult EconomyServer::chargeService(std::uint64_t playerId, const std::st
     {
         PaymentResult r;
         r.ok = playerId == 0;   // AI: no wallets yet
-        r.reason = r.ok ? "" : "нет счёта";
+        r.reason = r.ok ? std::string() : std::string(Message("economy.refuse.no_account"));
         return r;
     }
     const PaymentResult p = pay(*l, m_banks, bankOf(hubId, systemId), amountCr, purpose, m_day, true, memo);
@@ -2861,7 +2865,7 @@ PaymentResult EconomyServer::chargeFine(std::uint64_t playerId, const std::strin
     {
         PaymentResult r;
         r.ok = playerId == 0;
-        r.reason = r.ok ? "" : "нет счёта";
+        r.reason = r.ok ? std::string() : std::string(Message("economy.refuse.no_account"));
         return r;
     }
     return payFine(*l, m_banks, bankOf(hubId, systemId), amountCr, m_day, memo);
@@ -2922,10 +2926,9 @@ EconomyServer::PortCharge EconomyServer::chargeDocking(std::uint64_t playerId, c
         c.duplicate = true;
         return c;
     }
-    char memo[200];
-    std::snprintf(memo, sizeof memo, "стыковка %s (%.0f т сухой массы, индекс порта %.1f)", (hubName.empty() ? hubDisplayName(hubId) : hubName).c_str(),
-                  dryMassT, style.portIndex);
-    const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Docking, m_day, memo, "сбор в долг");
+    const std::string memo = Message("economy.port.memo.docking").arg("hub", hubName.empty() ? hubDisplayName(hubId) : hubName).arg("dry", dryMassT, 0)
+                                 .arg("index", style.portIndex, 1);
+    const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Docking, m_day, memo, Message("economy.debt.fee"));
     if (TaxBook* t = taxBook(playerId); t && p.ok)
         addExpense(*t, c.feeCr);
     c.booked = p.ok;
@@ -2962,10 +2965,9 @@ EconomyServer::PortCharge EconomyServer::chargeBerth(std::uint64_t playerId, con
                   << " h (within the " << m_dealRules.berthIncludedHours << " h the docking fee covers): 0 Cr" << '\n';
         return c;
     }
-    char memo[200];
-    std::snprintf(memo, sizeof memo, "стоянка %s: %.1f ч (сверх %.0f ч по %.0f Cr/ч)", (hubName.empty() ? hubDisplayName(hubId) : hubName).c_str(),
-                  c.hours, m_dealRules.berthIncludedHours, m_dealRules.berthCrPerHour * style.portIndex);
-    const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Parking, m_day, memo, "сбор в долг");
+    const std::string memo = Message("economy.port.memo.berth").arg("hub", hubName.empty() ? hubDisplayName(hubId) : hubName).arg("hours", c.hours, 1)
+                                 .arg("included", m_dealRules.berthIncludedHours, 0).arg("rate", m_dealRules.berthCrPerHour * style.portIndex, 0);
+    const PaymentResult p = payOrDebt(*l, m_banks, bankOf(hubId, systemId), c.feeCr, Purpose::Parking, m_day, memo, Message("economy.debt.fee"));
     if (TaxBook* t = taxBook(playerId); t && p.ok)
         addExpense(*t, c.feeCr);
     c.booked = p.ok;
@@ -3120,10 +3122,10 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         return r;
     };
     if (!m_loaded)
-        return refuse("off", "экономика не загружена");
+        return refuse("off", Message("economy.refuse.off"));
     ClientLedger* l = ledger(o.playerId);
     if (!l)
-        return refuse("no_account", "нет счёта");
+        return refuse("no_account", Message("economy.refuse.no_account"));
     if (o.black)
         return sellBlack(o);
     const int g = goodIndex(o.goodId);
@@ -3132,23 +3134,23 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         const std::string legal = legalityFor(o.playerId, g, o.hubId, o.systemId);
         const std::string& ru = EconomyModel::instance().goods()[static_cast<std::size_t>(g)].ru;
         if (legal == "banned")
-            return refuse("contraband", "«" + ru + "» здесь запрещён: только из-под полы (F8 ГРУЗ -> чёрный рынок)");
+            return refuse("contraband", Message("economy.trade.refuse.contraband").arg("good", ru));
         if (legal == "restricted")
         {
             std::string licRu = licenceForGood(o.goodId);
             for (const auto& t : m_licenceTypes)
                 if (t.id == licRu)
                     licRu = t.ru;
-            return refuse("licence", "«" + ru + "» здесь только по лицензии «" + licRu + "» (F5 -> Лицензии)");
+            return refuse("licence", Message("economy.trade.refuse.licence").arg("good", ru).arg("licence", licRu));
         }
     }
     if (g < 0 && !o.buy)
         if (const CargoManifest* held = m_cargo.find(o.shipKey))
             for (const auto& lot : held->lots)
                 if (lot.goodId == o.goodId && !lot.contractId.empty())
-                    return refuse("contract_cargo", "груз контракта " + lot.contractId + " принадлежит заказчику: продать его нельзя");
+                    return refuse("contract_cargo", Message("economy.trade.refuse.contract_cargo").arg("contract", lot.contractId));
     if (g < 0)
-        return refuse("no_good", "неизвестный товар " + o.goodId);
+        return refuse("no_good", Message("economy.trade.refuse.unknown_good").arg("good", o.goodId));
     const auto& good = EconomyModel::instance().goods()[static_cast<std::size_t>(g)];
     // the issuer's goods are never the player's to sell (TRADE_DESIGN §3.4: that would be appropriation)
     if (!o.buy)
@@ -3159,21 +3161,19 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
                 if (lot.goodId == o.goodId && !lot.contractId.empty())
                     contractT += lot.tonnes;
             if (contractT > 0.0 && held->ownTonnesOf(o.goodId) + 1.0e-6 < o.tonnes)
-                return refuse("contract_cargo", "груз контракта (" + grouped(contractT, 2) + " т «" + good.ru +
-                                                    "») принадлежит заказчику: продать его нельзя");
+                return refuse("contract_cargo", Message("economy.trade.refuse.contract_cargo_t").arg("t", grouped(contractT, 2)).arg("good", good.ru));
         }
     const auto mit = m_marketIndex.find(o.hubId);
     if (mit == m_marketIndex.end() || !m_markets[mit->second].cells[static_cast<std::size_t>(g)].traded)
-        return refuse("no_market", "на этом хабе нет рынка товара «" + good.ru + "»");
+        return refuse("no_market", Message("economy.trade.refuse.no_market").arg("good", good.ru));
     if (o.quoteDay >= 0 && o.quoteDay != m_day)
-        return refuse("requote", "сутки сменились (котировка дня " + std::to_string(o.quoteDay) + ", сейчас " + std::to_string(m_day) +
-                                     "): цена пересчитана, повторите");
+        return refuse("requote", Message("economy.trade.refuse.requote").arg("quote_day", o.quoteDay).arg("day", m_day));
     auto& market = m_markets[mit->second];
     auto& cell = market.cells[static_cast<std::size_t>(g)];
     std::string regimeNote;
     const MarketSide side = regimeSide(market, g, o.playerId, &regimeNote);
     if (o.buy && side.giveCapT >= 0.0 && side.giveCapT + 1.0e-6 < o.tonnes)
-        return refuse("regime", regimeNote.empty() ? "нет в продаже" : regimeNote);
+        return refuse("regime", regimeNote.empty() ? std::string(Message("economy.market.note.not_for_sale")) : regimeNote);
     const FiscalStyle style = fiscalStyleOf(o.hubId, o.systemId);
     // a sale pays the import duty on the tonnes bought in another polity (the lots unload() takes, oldest first)
     double dutyShare = 0.0;
@@ -3185,9 +3185,9 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
     if (!q.ok)
         return refuse(q.code, q.reason);
     if (o.limitUnitCr > 0.0 && (o.buy ? q.unitCr > o.limitUnitCr * (1.0 + 1.0e-9) : q.unitCr < o.limitUnitCr * (1.0 - 1.0e-9)))
-        return refuse("price_moved", "цена изменилась: " + grouped(q.unitCr) + " Cr/т вместо " + grouped(o.limitUnitCr) + ", повторить?");
+        return refuse("price_moved", Message("economy.trade.refuse.price_moved").arg("new", grouped(q.unitCr)).arg("old", grouped(o.limitUnitCr)));
     const std::string bank = bankOf(o.hubId, o.systemId);
-    char memo[200];
+    std::string memo;
     double basisOut = 0.0;
     if (o.buy)
     {
@@ -3201,10 +3201,10 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         const std::string fit = CargoRegistry::fits(m, o.capacity, o.tonnes, CargoRegistry::extraC20(m, lot, good.densityTM3));
         if (!fit.empty())
             return refuse("no_space", fit);
-        std::snprintf(memo, sizeof memo, "покупка %.2f т «%s» на %s", o.tonnes, good.ru.c_str(), market.name.c_str());
+        memo = Message("economy.trade.memo.buy").arg("t", o.tonnes, 2).arg("good", good.ru).arg("hub", market.name);
         const PaymentResult p = pay(*l, m_banks, bank, -q.totalCr, Purpose::Trade, m_day, false, memo);
         if (!p.ok)
-            return refuse("no_money", "недостаточно средств: нужно " + grouped(-q.totalCr) + " Cr (" + p.reason + ")");
+            return refuse("no_money", Message("economy.trade.refuse.no_money").arg("cr", grouped(-q.totalCr)).arg("reason", p.reason));
         cell.stockT = std::max(0.0, cell.stockT - o.tonnes);
         recordRation(market, g, o.playerId, o.tonnes);
         if (q.vatReclaimCr > 0.0 && style.vatRefundDays > 0)
@@ -3213,20 +3213,20 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         if (TaxBook* t = taxBook(o.playerId))
             addExpense(*t, lot.costBasisCr);   // net of the input VAT that comes back
         m_cargo.load(o.shipKey, o.playerId, lot, good.densityTM3);
-        r.message = std::string("куплено ") + grouped(o.tonnes, 2) + " т по " + grouped(q.unitCr) + " Cr/т";
+        r.message = Message("economy.trade.result.bought").arg("t", grouped(o.tonnes, 2)).arg("price", grouped(q.unitCr));
     }
     else
     {
         const CargoManifest* m = m_cargo.find(o.shipKey);
         const double aboard = m ? m->ownTonnesOf(o.goodId) : 0.0;
         if (aboard + 1.0e-6 < o.tonnes)
-            return refuse("not_aboard", "на борту только " + grouped(aboard, 2) + " т «" + good.ru + "»");
-        std::snprintf(memo, sizeof memo, "продажа %.2f т «%s» на %s", o.tonnes, good.ru.c_str(), market.name.c_str());
+            return refuse("not_aboard", Message("economy.trade.refuse.not_aboard").arg("t", grouped(aboard, 2)).arg("good", good.ru));
+        memo = Message("economy.trade.memo.sell").arg("t", o.tonnes, 2).arg("good", good.ru).arg("hub", market.name);
         if (q.totalCr < 0.0)   // the fees exceed the revenue (cheap bulk): the difference is paid first, all or nothing
         {
             const PaymentResult p = pay(*l, m_banks, bank, -q.totalCr, Purpose::Trade, m_day, false, memo);
             if (!p.ok)
-                return refuse("no_money", "сборы больше выручки, а денег нет: нужно " + grouped(-q.totalCr) + " Cr");
+                return refuse("no_money", Message("economy.trade.refuse.fees_exceed").arg("cr", grouped(-q.totalCr)));
         }
         (void)m_cargo.unload(o.shipKey, o.goodId, o.tonnes, good.densityTM3, basisOut);
         if (q.totalCr > 0.0)
@@ -3234,21 +3234,19 @@ game::simulation::ClientTradeResult EconomyServer::trade(const TradeOrder& o)
         if (TaxBook* t = taxBook(o.playerId))
             q.totalCr > 0.0 ? addRevenue(*t, q.totalCr) : addExpense(*t, -q.totalCr);   // the proceeds after the deal's fees
         cell.stockT += o.tonnes;
-        r.message = std::string("продано ") + grouped(o.tonnes, 2) + " т по " + grouped(q.unitCr) + " Cr/т; к себестоимости " +
-                    (q.totalCr - basisOut >= 0.0 ? "+" : "") + grouped(q.totalCr - basisOut) + " Cr";
+        r.message = Message("economy.trade.result.sold").arg("t", grouped(o.tonnes, 2)).arg("price", grouped(q.unitCr))
+                        .arg("margin", (q.totalCr - basisOut >= 0.0 ? "+" : "") + grouped(q.totalCr - basisOut));
     }
     r.ok = true;
     r.totalCr = q.totalCr;
     for (const auto& line : q.lines)
         r.lines.push_back(line.label + "|" + (line.cr >= 0.0 ? "+" : "") + grouped(line.cr));
-    std::snprintf(memo, sizeof memo, "%s %.2f т «%s» на %s: %s%s Cr", o.buy ? "покупка" : "продажа", o.tonnes, good.ru.c_str(),
-                  market.name.c_str(), q.totalCr >= 0.0 ? "+" : "", grouped(q.totalCr).c_str());
-    logEvent(*l, m_day, memo);
+    logEvent(*l, m_day, Message(o.buy ? "economy.trade.event.buy" : "economy.trade.event.sell").arg("t", o.tonnes, 2).arg("good", good.ru)
+                            .arg("hub", market.name).arg("cr", (q.totalCr >= 0.0 ? "+" : "") + grouped(q.totalCr)));
     if (q.dutyCr > 0.0)   // the duty is inside the deal's total; its own ledger line names it (F8 ФИНАНСЫ)
     {
-        std::snprintf(memo, sizeof memo, "пошлина -%s Cr (%.1f %% ввоз «%s» на %s)", grouped(q.dutyCr).c_str(), q.dutyShare * 100.0,
-                      good.ru.c_str(), market.name.c_str());
-        logEvent(*l, m_day, memo);
+        logEvent(*l, m_day, Message("economy.trade.event.duty").arg("cr", grouped(q.dutyCr)).arg("pct", q.dutyShare * 100.0, 1).arg("good", good.ru)
+                                .arg("hub", market.name));
     }
     std::cerr << "[Trade] player " << o.playerId << " request " << o.requestId << ": " << (o.buy ? "BUY " : "SELL ") << o.tonnes << " t "
               << o.goodId << " at " << o.hubId << " (" << style.id << "): list " << q.listUnitCr << " -> deal " << q.unitCr
@@ -3318,7 +3316,7 @@ void EconomyServer::payDueVatRefunds(int day)
         if (ClientLedger* l = ledger(it->playerId))
         {
             const double back = it->amountCr * (1.0 - m_dealRules.vatRefundFeeShare);
-            receive(*l, m_banks, it->bankId, back, day, "возврат входного НДС (минус 1 % сбор)");
+            receive(*l, m_banks, it->bankId, back, day, Message("economy.trade.memo.vat_refund"));
             std::cerr << "[Trade] player " << it->playerId << ": input VAT refund +" << grouped(back, 2) << " Cr" << '\n';
         }
         it = m_vatRefunds.erase(it);
@@ -3368,7 +3366,7 @@ game::simulation::ClientTradeSnapshot EconomyServer::tradeSnapshot(std::uint64_t
         }
     }
     else
-        s.marketNote = hubId.empty() ? "рынок виден у хаба (в его зоне)" : "у этого хаба нет своего рынка";
+        s.marketNote = Message(hubId.empty() ? "economy.market.note.at_hub_only" : "economy.market.note.no_market");
     if (const CargoManifest* m = m_cargo.find(shipKey))
     {
         for (const auto& lot : m->lots)
@@ -3470,7 +3468,7 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
     {
         game::simulation::ClientMoneyLine c;
         c.bankId = bank;
-        c.label = "наличные";
+        c.label = Message("economy.wallet.cash");
         c.currency = codeOf(bank);
         c.amount = toUnits(minor);
         c.amountCr = c.amount / m_banks.fx(bank);
@@ -3487,7 +3485,9 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         c.amountCr = c.amount / m_banks.fx(a.bankId);
         c.limit = toUnits(a.overdraftLimit);
         c.annualRate = b ? (a.balance >= 0 ? b->depositRate : b->overdraftRate) : 0.0;
-        c.state = a.overdueDays > 0 ? "сверх лимита " + std::to_string(a.overdueDays) + " сут" : a.frozen ? "овердрафт заморожен" : "";
+        c.state = a.overdueDays > 0 ? std::string(Message("economy.wallet.state.over_limit").arg("days", a.overdueDays))
+                  : a.frozen        ? std::string(Message("economy.wallet.state.frozen"))
+                                    : std::string();
         w.accounts.push_back(c);
     }
     for (const auto& loan : l->loans)
@@ -3495,18 +3495,18 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         const auto* b = m_banks.bank(loan.bankId);
         game::simulation::ClientMoneyLine c;
         c.bankId = loan.bankId;
-        c.label = std::string(loanKindRu(loan.kind)) + (b ? " (" + b->name + ")" : "");
+        c.label = b ? std::string(Message("economy.wallet.loan_at_bank").arg("loan", loanKindRu(loan.kind)).arg("bank", b->name)) : loanKindRu(loan.kind);
         c.currency = codeOf(loan.bankId);
         c.amount = toUnits(loan.outstanding);
         c.amountCr = c.amount / m_banks.fx(loan.bankId);
         c.limit = toUnits(loan.installment);
         c.annualRate = loan.annualRate;
         if (loan.hardship)
-            c.state = "нет дохода: проценты заморожены";
+            c.state = Message("economy.wallet.state.hardship");
         else if (loan.kind == LoanKind::Lifeline && m_day < loan.startDay + m_banks.rules.lifelineFreeDays)
-            c.state = "без процентов до дня " + std::to_string(loan.startDay + m_banks.rules.lifelineFreeDays);
+            c.state = Message("economy.wallet.state.interest_free").arg("day", loan.startDay + m_banks.rules.lifelineFreeDays);
         else if (loan.overdueDays > 0)
-            c.state = "просрочка " + std::to_string(loan.overdueDays) + " сут";
+            c.state = Message("economy.wallet.state.overdue").arg("days", loan.overdueDays);
         w.loans.push_back(c);
     }
     w.netWorthCr = netWorthCr(*l, m_banks);
@@ -3565,7 +3565,8 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
             cm.nameRu = c.site.nameRu;
             cm.hubName = hubDisplayName(c.site.hubId);
             cm.goodRu = g >= 0 ? EconomyModel::instance().goods()[static_cast<std::size_t>(g)].ru : c.site.goodId;
-            cm.statusRu = c.status == "leased" ? "арендован: нужна добычная установка" : c.status == "mining" ? "добыча" : c.status == "depleted" ? "выработан" : "отозван";
+            cm.statusRu = Message(c.status == "leased" ? "economy.mine.status.leased" : c.status == "mining" ? "economy.mine.status.mining"
+                                  : c.status == "depleted" ? "economy.mine.status.depleted" : "economy.mine.status.lapsed");
             cm.reserveT = c.site.reserveT;
             cm.reserveLeftT = c.reserveLeftT;
             cm.lastOutputT = c.lastOutputT;
@@ -3580,7 +3581,8 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
         }
     // construction (step 16)
     for (const auto& o : buildOffersAt(hubId, playerId))
-        w.buildOffers.push_back({o.id, std::string(buildKindRu(o.kind)) + " (" + o.projectId + ")", o.contractorRu, o.priceCr, o.workDays, o.reliability});
+        w.buildOffers.push_back({o.id, Message("economy.build.offer_project").arg("kind", buildKindRu(o.kind)).arg("project", o.projectId), o.contractorRu,
+                                 o.priceCr, o.workDays, o.reliability});
     for (const auto& p : m_buildProjects)
         if (p.owner == playerId)
         {
@@ -3590,7 +3592,8 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
             cp.hubName = hubDisplayName(p.offer.hubId);
             cp.projectRu = buildKindRu(p.offer.kind);
             cp.contractorRu = p.offer.contractorRu;
-            cp.statusRu = p.status == "building" ? "строится" : p.status == "halted" ? "остановлена: нет оплаты" : p.status == "done" ? "сдан, приносит доход" : "брошена";
+            cp.statusRu = Message(p.status == "building" ? "economy.build.status.building" : p.status == "halted" ? "economy.build.status.halted"
+                                  : p.status == "done"   ? "economy.build.status.done" : "economy.build.status.abandoned");
             cp.progress = prog;
             cp.stage = std::min(4, 1 + static_cast<int>(prog * 4.0));
             cp.priceCr = p.offer.priceCr;
@@ -3611,15 +3614,17 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
             cb.wageCr = b.wageCr;
             cb.shipKey = b.shipKey;
             cb.shipRu = b.shipRu;
-            cb.stateRu = b.state == "idle" ? "ждёт приказа" : b.state == "at_a" || b.state == "at_b" ? "у хаба: сделка"
-                         : b.state == "quit" ? "ушёл" : "в пути, " + std::to_string(b.legDaysLeft) + " сут";
+            cb.stateRu = b.state == "idle"                        ? Message("economy.bot.state.idle")
+                         : b.state == "at_a" || b.state == "at_b" ? Message("economy.bot.state.at_hub")
+                         : b.state == "quit"                      ? Message("economy.bot.state.quit")
+                                                                  : Message("economy.bot.state.travelling").arg("days", b.legDaysLeft);
             cb.loopRu = b.hubB.empty() ? std::string() : hubDisplayName(b.hubA) + " <-> " + hubDisplayName(b.hubB) + ", " + b.goodId;
             cb.trips = b.trips;
             cb.profitCr = b.profitCr;
             cb.unpaidDays = b.unpaidDays;
             for (const auto& [visible, text] : b.reports)
                 if (visible <= m_day)
-                    cb.reports.push_back("день " + std::to_string(visible) + ": " + text);
+                    cb.reports.push_back(Message("economy.notice.day").arg("day", visible).arg("text", text));
             w.bots.push_back(cb);
         }
     // rescue (F5 МЧС)
@@ -3709,22 +3714,24 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
     if (q.available)
     {
         w.fuelQuoteValid = true;
-        w.fuelHubName = q.hubName + (q.systemReference ? " (цена системы)" : "");
+        w.fuelHubName = q.systemReference ? std::string(Message("economy.fuel.system_price").arg("hub", q.hubName)) : q.hubName;
         w.jumpChargeListPerT = q.listLocalPerT;
         w.jumpChargeChargedPerT = q.chargedLocalPerT;
         w.jumpChargeListCrPerT = q.listCrPerT;
         w.jumpChargeStockT = q.stockT;
         const auto& b = q.breakdown;
-        const auto row = [&](const char* label, double v) { w.fuelBreakdown.push_back(std::string(label) + " " + grouped(v) + " Cr/т"); };
-        row("сырьё (изотопное сырьё)", b.feedstockCr);
+        const auto row = [&](const char* label, double v) {
+            w.fuelBreakdown.push_back(Message("economy.fuel.breakdown.row").arg("label", Message(std::string("economy.fuel.breakdown.") + label)).arg("cr", grouped(v)));
+        };
+        row("feedstock", b.feedstockCr);
         if (b.conversionCr > 0.5)
-            row("конверсия", b.conversionCr);
-        row("разделение (энергия)", b.separationEnergyCr);
-        row("изготовление заряда", b.fabricationCr);
-        row("доставка от завода", b.transportCr);
-        row(b.locationCr >= 0.0 ? "надбавка места (удалённость, риск)" : "скидка места (экспорт, свой завод)", b.locationCr);
-        row(b.scarcityCr >= 0.0 ? "дефицит запаса" : "избыток запаса", b.scarcityCr);
-        row("маржа станции", b.stationMarginCr);
+            row("conversion", b.conversionCr);
+        row("separation", b.separationEnergyCr);
+        row("fabrication", b.fabricationCr);
+        row("transport", b.transportCr);
+        row(b.locationCr >= 0.0 ? "location_premium" : "location_discount", b.locationCr);
+        row(b.scarcityCr >= 0.0 ? "scarcity" : "surplus", b.scarcityCr);
+        row("station_margin", b.stationMarginCr);
     }
     const FuelQuote rf = quoteFuel(hubId, systemId, FuelKind::ReactorFuel);
     if (rf.available)
@@ -3732,7 +3739,7 @@ game::simulation::ClientWalletSnapshot EconomyServer::walletSnapshot(std::uint64
 
     const std::size_t from = l->events.size() > 6 ? l->events.size() - 6 : 0;
     for (std::size_t i = from; i < l->events.size(); ++i)
-        w.notices.push_back("день " + std::to_string(l->events[i].day) + ": " + l->events[i].text);
+        w.notices.push_back(Message("economy.notice.day").arg("day", l->events[i].day).arg("text", l->events[i].text));
     return w;
 }
 
@@ -4069,7 +4076,7 @@ bool EconomyServer::recordShipLoss(const ShipLoss& loss)
         payout = std::round(payout * (1.0 - m_deductibleShare) * 100.0) / 100.0;
         if (ClientLedger* pl = ledger(it->playerId); pl && payout > 0.0)
         {
-            receive(*pl, m_banks, it->bankId, payout, m_day, "страховая выплата за груз (" + loss.cause + ")");
+            receive(*pl, m_banks, it->bankId, payout, m_day, Message("economy.insurance.memo.payout").arg("cause", loss.cause));
             std::cerr << "[Insurance] player " << it->playerId << ": cargo payout " << grouped(payout) << " Cr (" << loss.cause << ")" << '\n';
         }
         it = m_cargoPolicies.erase(it);
@@ -4466,18 +4473,18 @@ game::simulation::ClientTradeResult EconomyServer::takeContract(const ContractOr
         return r;
     };
     if (!m_loaded)
-        return refuse("off", "экономика не загружена");
+        return refuse("off", Message("economy.refuse.off"));
     ClientLedger* l = ledger(o.playerId);
     if (!l)
-        return refuse("no_account", "нет счёта");
+        return refuse("no_account", Message("economy.refuse.no_account"));
     ContractPosting* p = m_board.posting(o.contractId);
     if (!p)
-        return refuse("no_contract", "заявки " + o.contractId + " нет на доске");
+        return refuse("no_contract", Message("economy.contract.refuse.not_on_board").arg("contract", o.contractId));
     if (p->status != "open")
-        return refuse("taken", p->status == "npc" ? "заявку уже забрал другой перевозчик" : p->status == "expired" ? "заявка снята с доски"
-                                                                                                              : "заявка уже взята");
+        return refuse("taken", Message(p->status == "npc" ? "economy.contract.refuse.taken_npc" : p->status == "expired" ? "economy.contract.refuse.withdrawn"
+                                                                                                                      : "economy.contract.refuse.taken"));
     if (o.hubId.empty() || o.hubId != p->originHub)
-        return refuse("not_docked", "взять заявку можно только у причала хаба отправления " + hubDisplayName(p->originHub));
+        return refuse("not_docked", Message("economy.contract.refuse.not_at_origin").arg("hub", hubDisplayName(p->originHub)));
     // the hold: the cargo (a P20 crew lot takes one C20 place per module)
     CargoLot lot;
     lot.goodId = p->goodId;
@@ -4505,23 +4512,23 @@ game::simulation::ClientTradeResult EconomyServer::takeContract(const ContractOr
         const std::string local = bankOf(o.hubId, o.systemId);
         c.holdBank = findAccount(*l, local) ? local : l->homeBank;
         // (std::string, not a fixed buffer: a cut in the middle of a UTF-8 letter made the state file unwritable)
-        const std::string memo = "залог по контракту " + p->id + " (" + hubDisplayName(p->originHub) + " -> " +
-                                 hubDisplayName(p->destinationHub) + ")";
+        const std::string memo = Message("economy.contract.memo.deposit").arg("contract", p->id).arg("from", hubDisplayName(p->originHub))
+                                     .arg("to", hubDisplayName(p->destinationHub));
         c.holdId = placeHold(*l, m_banks, c.holdBank, p->depositCr, m_day, memo);
         if (c.holdId == 0)
-            return refuse("no_deposit", "нечем обеспечить залог " + grouped(p->depositCr) + " Cr: нужны свободные деньги на счёте (не овердрафт)");
+            return refuse("no_deposit", Message("economy.contract.refuse.no_deposit").arg("cr", grouped(p->depositCr)));
     }
     if (p->advanceCr > 0.0)
-        receiveContractMoney(o.playerId, *l, c.issuerBank, p->advanceCr, "аванс по контракту " + p->id);
+        receiveContractMoney(o.playerId, *l, c.issuerBank, p->advanceCr, Message("economy.contract.memo.advance").arg("contract", p->id));
     m_cargo.load(o.shipKey, o.playerId, lot, p->densityTM3);
     p->status = "taken";
     p->takenBy = o.playerId;
     p->closedDay = m_day;
     m_board.contracts().push_back(c);
     m_board.touch();
-    logEvent(*l, m_day, "контракт " + p->id + " взят: " + hubDisplayName(p->originHub) + " -> " + hubDisplayName(p->destinationHub) +
-                            ", награда " + grouped(p->rewardCr) + " Cr, аванс " + grouped(p->advanceCr) + ", залог " + grouped(p->depositCr) +
-                            ", срок день " + std::to_string(p->deadlineDay));
+    logEvent(*l, m_day, Message("economy.contract.event.taken").arg("contract", p->id).arg("from", hubDisplayName(p->originHub))
+                            .arg("to", hubDisplayName(p->destinationHub)).arg("reward", grouped(p->rewardCr)).arg("advance", grouped(p->advanceCr))
+                            .arg("deposit", grouped(p->depositCr)).arg("day", p->deadlineDay));
     std::cerr << "[Contract] player " << o.playerId << " TAKE " << p->id << " (" << p->kind << ", " << p->tonnes << " t " << p->goodId
               << (p->people > 0 ? ", " + std::to_string(p->people) + " people" : std::string()) << ") " << p->originHub << " -> "
               << p->destinationHub << ": reward " << p->rewardCr << ", advance " << p->advanceCr << " paid, deposit " << p->depositCr
@@ -4530,7 +4537,7 @@ game::simulation::ClientTradeResult EconomyServer::takeContract(const ContractOr
     r.ok = true;
     r.code = "contract_taken";
     r.totalCr = p->advanceCr;
-    r.message = "контракт взят: аванс +" + grouped(p->advanceCr) + " Cr, залог " + grouped(p->depositCr) + " Cr заблокирован, груз на борту";
+    r.message = Message("economy.contract.result.taken").arg("advance", grouped(p->advanceCr)).arg("deposit", grouped(p->depositCr));
     pushResult(o.playerId, r);
     saveNow("the contract was taken");
     r.day = m_day;
@@ -4560,7 +4567,8 @@ int EconomyServer::deliverContracts(std::uint64_t playerId, std::uint64_t shipKe
         c.paidCr = std::max(0.0, c.p.rewardCr - c.p.advanceCr);
         if (c.paidCr > 0.0)
             receiveContractMoney(playerId, *l, c.issuerBank, c.paidCr,
-                    "контракт " + c.p.id + " сдан на " + hubDisplayName(hubId) + (c.lateDays > 0 ? " с опозданием" : " в срок"));
+                    Message(c.lateDays > 0 ? "economy.contract.memo.delivered_late" : "economy.contract.memo.delivered").arg("contract", c.p.id)
+                        .arg("hub", hubDisplayName(hubId)));
         if (c.holdId != 0)
             releaseHold(*l, c.holdId);
         double debt = 0.0;
@@ -4569,18 +4577,17 @@ int EconomyServer::deliverContracts(std::uint64_t playerId, std::uint64_t shipKe
             // late: reward x (1 - share x d) - the cut is a penalty to the issuer, never refused (a debt when unpaid)
             c.status = "late";
             c.penaltyCr = std::round(c.p.rewardCr * std::min(1.0, c.p.lateSharePerDay * c.lateDays));
-            const std::string memo = "неустойка за опоздание " + std::to_string(c.lateDays) + " сут по контракту " + c.p.id;
-            const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, "неустойка в долг");
+            const std::string memo = Message("economy.contract.memo.late_penalty").arg("days", c.lateDays).arg("contract", c.p.id);
+            const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, Message("economy.debt.contract_penalty"));
             debt = p.ok ? p.lifelineCr : 0.0;
             if (TaxBook* t = taxBook(playerId))
                 addExpense(*t, c.penaltyCr);
         }
         else
             c.status = "delivered";
-        logEvent(*l, m_day, "контракт " + c.p.id + " сдан" + (c.lateDays > 0 ? " с опозданием" : " в срок") + ": +" + grouped(c.paidCr) +
-                                " Cr (награда " + grouped(c.p.rewardCr) + " - аванс " + grouped(c.p.advanceCr) + ")" +
-                                (c.lateDays > 0 ? ", неустойка -" + grouped(c.penaltyCr) + " Cr" : std::string()) + ", залог " +
-                                grouped(c.p.depositCr) + " Cr разблокирован");
+        logEvent(*l, m_day, Message(c.lateDays > 0 ? "economy.contract.event.delivered_late" : "economy.contract.event.delivered")
+                                .arg("contract", c.p.id).arg("paid", grouped(c.paidCr)).arg("reward", grouped(c.p.rewardCr)).arg("advance", grouped(c.p.advanceCr))
+                                .arg("penalty", grouped(c.penaltyCr)).arg("deposit", grouped(c.p.depositCr)));
         std::cerr << "[Contract] player " << playerId << " HAND-IN " << c.p.id << " at " << hubId << " (" << hubDisplayName(hubId) << "), day "
                   << m_day << " deadline " << c.p.deadlineDay << ": " << c.status << ", payout +" << c.paidCr << " Cr (reward " << c.p.rewardCr
                   << " - advance " << c.p.advanceCr << "), late penalty " << c.penaltyCr << " (debt " << debt << "), deposit "
@@ -4613,14 +4620,14 @@ void EconomyServer::failContract(Contract& c, const std::string& status, const s
     double debt = 0.0;
     if (l)
     {
-        const std::string memo = "контракт " + c.p.id + " сорван (" + why + "): неустойка " + grouped(c.p.penaltyCr) + " + возврат аванса " +
-                                 grouped(c.p.advanceCr);
-        const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, "неустойка в долг");
+        const std::string memo = Message("economy.contract.memo.failed").arg("contract", c.p.id).arg("why", why).arg("penalty", grouped(c.p.penaltyCr))
+                                     .arg("advance", grouped(c.p.advanceCr));
+        const PaymentResult p = payOrDebt(*l, m_banks, c.issuerBank, c.penaltyCr, Purpose::ContractPenalty, m_day, memo, Message("economy.debt.contract_penalty"));
         debt = p.ok ? p.lifelineCr : 0.0;
         if (TaxBook* t = taxBook(c.playerId))
             addExpense(*t, c.penaltyCr + (c.holdId != 0 ? c.p.depositCr : 0.0));   // the penalty + the forfeited deposit
         if (c.holdId != 0)
-            captureHold(*l, m_banks, c.holdId, m_day, "по контракту " + c.p.id);
+            captureHold(*l, m_banks, c.holdId, m_day, Message("economy.contract.memo.hold_captured").arg("contract", c.p.id));
     }
     std::cerr << "[Contract] player " << c.playerId << " " << (status == "abandoned" ? "ABANDONED" : "FAILED") << " " << c.p.id << " ("
               << why << "), day " << m_day << " deadline " << c.p.deadlineDay << ": penalty " << c.p.penaltyCr << " + advance back "
@@ -4639,7 +4646,7 @@ game::simulation::ClientTradeResult EconomyServer::abandonContract(const Contrac
     Contract* c = m_board.contract(o.contractId);
     if (!c || c->playerId != o.playerId || c->status != "active")
     {
-        recordTradeRefusal(o.playerId, o.requestId, "no_contract", "нет такого действующего контракта " + o.contractId);
+        recordTradeRefusal(o.playerId, o.requestId, "no_contract", Message("economy.contract.refuse.no_active").arg("contract", o.contractId));
         r.code = "no_contract";
         return r;
     }
@@ -4653,7 +4660,7 @@ game::simulation::ClientTradeResult EconomyServer::abandonContract(const Contrac
         c->closedDay = m_day;
         c->penaltyCr = std::round(c->p.rewardCr * m_board.rules().abandonFeeShare) + c->p.advanceCr;
         const PaymentResult p = payOrDebt(*l, m_banks, c->issuerBank, c->penaltyCr, Purpose::ContractPenalty, m_day,
-                                          "отказ от контракта " + c->p.id + " (сбор + возврат аванса)", "неустойка в долг");
+                                          Message("economy.contract.memo.cancelled").arg("contract", c->p.id), Message("economy.debt.contract_penalty"));
         if (TaxBook* t = taxBook(o.playerId))
             addExpense(*t, c->penaltyCr);
         if (c->holdId != 0)
@@ -4670,15 +4677,15 @@ game::simulation::ClientTradeResult EconomyServer::abandonContract(const Contrac
         r.ok = true;
         r.code = "contract_cancelled";
         r.totalCr = -c->penaltyCr;
-        r.message = "отказ от контракта: -" + grouped(c->penaltyCr) + " Cr (сбор и возврат аванса), залог разблокирован";
+        r.message = Message("economy.contract.result.cancelled").arg("cr", grouped(c->penaltyCr));
     }
     else
     {
-        failContract(*c, "abandoned", "отказ в пути");
+        failContract(*c, "abandoned", Message("economy.contract.why.abandoned"));
         r.ok = true;
         r.code = "contract_abandoned";
         r.totalCr = -c->penaltyCr;
-        r.message = "контракт брошен: неустойка и возврат аванса -" + grouped(c->penaltyCr) + " Cr, залог " + grouped(c->p.depositCr) + " Cr удержан";
+        r.message = Message("economy.contract.result.abandoned").arg("cr", grouped(c->penaltyCr)).arg("deposit", grouped(c->p.depositCr));
     }
     m_board.touch();
     pushResult(o.playerId, r);
@@ -4694,7 +4701,7 @@ void EconomyServer::stepContracts(int day)
     for (auto& c : m_board.contracts())
         if (c.status == "active" && day > c.p.deadlineDay + lateMax)
         {
-            failContract(c, "failed", "срок + " + std::to_string(lateMax) + " сут истёк");
+            failContract(c, "failed", Message("economy.contract.why.expired").arg("days", lateMax));
             changed = true;
         }
     if (changed)

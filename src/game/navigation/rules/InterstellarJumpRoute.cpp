@@ -1,4 +1,5 @@
 #include "src/game/navigation/rules/InterstellarJumpRoute.h"
+#include "src/game/localization/LocalizedMessage.h"
 
 #include <algorithm>
 #include <cmath>
@@ -672,7 +673,11 @@ std::vector<LaneUse> applyLaneRecords(const world::celestial::StarAtlasDatabase&
     {
         start.arrival = false;
         route.pointsLy.insert(route.pointsLy.begin() + 1, start.shell->centreLy + start.record.dir * start.shell->outerLy * LaneEntryFactor);
-        route.avoidedNames.insert(route.avoidedNames.begin(), "выход по трассе " + start.shell->corridors[start.record.corridor - 1].name);
+        // a language-neutral Message (LocalizedMessage.h; shared with the server): the client renders it
+        route.avoidedNames.insert(route.avoidedNames.begin(),
+                                  game::localization::Message("cockpit.jump.lane_exit")
+                                      .arg("lane", start.shell->corridors[start.record.corridor - 1].name)
+                                      .str());
         used.push_back(start);
     }
     LaneUse arrive;
@@ -681,7 +686,8 @@ std::vector<LaneUse> applyLaneRecords(const world::celestial::StarAtlasDatabase&
         // the entry point; from inside the shell (its approaches) only when the ship is not already deeper than it
         const glm::dvec3 entry = arrive.shell->centreLy + arrive.record.dir * arrive.shell->outerLy * LaneEntryFactor;
         route.pointsLy.insert(route.pointsLy.end() - 1, entry);
-        route.avoidedNames.push_back("вход по трассе " + arrive.shell->corridors[arrive.record.corridor - 1].name);
+        route.avoidedNames.push_back(
+            game::localization::Message("cockpit.jump.lane_entry").arg("lane", arrive.shell->corridors[arrive.record.corridor - 1].name).str());
         used.push_back(arrive);
     }
     if (!used.empty())

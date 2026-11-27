@@ -376,3 +376,9 @@ void SpaceState::testDamageSystem()
 {
     
 }
+
+void SpaceState::setLocalSimulationPaused(bool paused)
+{
+    if (m_session)
+        m_session->setLocalPaused(paused);
+}

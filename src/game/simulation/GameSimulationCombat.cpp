@@ -1,4 +1,5 @@
 #include <cstring>
+#include "src/game/localization/LocalizedMessage.h"
 #include <random>
 #include "src/world/WorldLaws.h"
 #include "src/game/navigation/rules/JumpRules.h"
@@ -1504,10 +1505,13 @@ void GameSimulation::updateContainmentEmergencies(double dt)
         a.moduleId = c.moduleId;
         a.elapsedS = t;
         a.coreTemperatureK = coreK;
-        a.advice = droneEnRoute ? "ремонтный дрон летит к реактору"
-                 : repairing ? "ремонтный дрон работает - стабилизация " + std::to_string(static_cast<int>(100.0 * std::min(1.0, c.stabilise01))) + " %"
-                 : reactorsOff ? "реакторы отключены - шанс ниже, но не ноль; катапульта L-Ctrl+Q"
-                               : "отключите реакторы (Ctrl+Alt+Shift+I), катапульта (L-Ctrl+Q) или ремонтный дрон (Ctrl+R)";
+        // a language-neutral Message (LocalizedMessage.h): the client renders it
+        a.advice = droneEnRoute ? game::localization::Message("cockpit.containment.advice.drone_en_route").str()
+                 : repairing ? game::localization::Message("cockpit.containment.advice.drone_working")
+                                   .arg("percent", static_cast<int>(100.0 * std::min(1.0, c.stabilise01)))
+                                   .str()
+                 : reactorsOff ? game::localization::Message("cockpit.containment.advice.reactors_off").str()
+                               : game::localization::Message("cockpit.containment.advice.act").str();
         alarms[c.shipId].push_back(a);
         if (m_combatClockS - c.lastLogS >= 5.0)
         {

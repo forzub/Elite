@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "economy.bank.standing.good": {
+      "en": "in good standing",
+      "ru": "в порядке"
+    },
+    "economy.bank.standing.grace": {
+      "en": "grace period",
+      "ru": "льготный период"
+    },
+    "economy.bank.standing.delinquent": {
+      "en": "overdue: credit frozen",
+      "ru": "просрочка: кредит заморожен"
+    },
+    "economy.bank.standing.restructured": {
+      "en": "restructured: a share of income above the protected minimum",
+      "ru": "реструктуризация: доля дохода сверх защищённого минимума"
+    },
+    "economy.bank.log.account_opened": {
+      "en": "account opened at {bank}",
+      "ru": "счёт открыт в банке {bank}"
+    },
+    "economy.bank.reason.no_banks": {
+      "en": "no banks",
+      "ru": "нет банков"
+    },
+    "economy.bank.reason.insufficient_funds": {
+      "en": "insufficient funds",
+      "ru": "недостаточно средств"
+    },
+    "economy.bank.log.payment": {
+      "en": "-{amount} {memo}{lifeline}{fees}",
+      "ru": "-{amount} {memo}{lifeline}{fees}"
+    },
+    "economy.bank.log.payment_lifeline": {
+      "en": " (lifeline credit {amount})",
+      "ru": " (спасательный кредит {amount})"
+    },
+    "economy.bank.log.payment_fees": {
+      "en": " (fees {amount})",
+      "ru": " (комиссии {amount})"
+    },
+    "economy.bank.log.income_withheld": {
+      "en": "+{amount} {memo} ({withheld} withheld against debt)",
+      "ru": "+{amount} {memo} (в погашение долга {withheld})"
+    },
+    "economy.bank.log.income_withheld_protected": {
+      "en": "+{amount} {memo} ({withheld} withheld against debt, {protected} protected)",
+      "ru": "+{amount} {memo} (в погашение долга {withheld}, защищено {protected})"
+    },
+    "economy.bank.log.income_not_withheld": {
+      "en": "+{amount} {memo} (nothing withheld)",
+      "ru": "+{amount} {memo} (удержания нет)"
+    },
+    "economy.bank.log.income_not_withheld_protected": {
+      "en": "+{amount} {memo} (nothing withheld, {protected} protected)",
+      "ru": "+{amount} {memo} (удержания нет, защищено {protected})"
+    },
+    "economy.bank.debt_label.fine": {
+      "en": "fine as debt",
+      "ru": "штраф в долг"
+    },
+    "economy.bank.log.debt_entry": {
+      "en": "{label} {amount} {memo}",
+      "ru": "{label} {amount} {memo}"
+    },
+    "economy.bank.log.debt_repaid_by": {
+      "en": "{memo}: debt reduced by {amount}",
+      "ru": "{memo}: долг погашен на {amount}"
+    },
+    "economy.bank.log.loan_taken": {
+      "en": "loan {amount} for {days} d at {rate}",
+      "ru": "кредит {amount} на {days} сут под {rate}"
+    },
+    "economy.bank.log.hold_placed": {
+      "en": "hold: {memo}",
+      "ru": "блокировка {memo}"
+    },
+    "economy.bank.log.hold_captured": {
+      "en": "collateral kept {amount} {memo}",
+      "ru": "залог удержан {amount} {memo}"
+    },
+    "economy.bank.log.late_fee": {
+      "en": "late fee {amount}",
+      "ru": "штраф за просрочку {amount}"
+    },
+    "economy.bank.log.debt_repaid": {
+      "en": "debt repaid ({currency})",
+      "ru": "долг погашен ({currency})"
+    },
+    "economy.bank.log.restructured": {
+      "en": "restructured at {bank}: {amount} at {rate}, repaying {share} % of income",
+      "ru": "реструктуризация в банке {bank}: {amount} под {rate}, погашение {share} % дохода"
+    },
+    "economy.bank.log.standing": {
+      "en": "status: {standing}",
+      "ru": "статус: {standing}"
+    },
+    "economy.quote.reason.zero": {
+      "en": "zero quantity",
+      "ru": "нулевое количество"
+    },
+    "economy.quote.line.goods": {
+      "en": "goods",
+      "ru": "товар"
+    },
+    "economy.quote.line.loading": {
+      "en": "loading {tonnes} t",
+      "ru": "погрузка {tonnes} т"
+    },
+    "economy.quote.line.vat_purchase": {
+      "en": "VAT {pct} (on the goods: refundable after {days} d)",
+      "ru": "НДС {pct} (с товара — к возврату через {days} сут)"
+    },
+    "economy.quote.line.revenue": {
+      "en": "revenue",
+      "ru": "выручка"
+    },
+    "economy.quote.line.unloading": {
+      "en": "unloading {tonnes} t",
+      "ru": "выгрузка {tonnes} т"
+    },
+    "economy.quote.line.vat_port": {
+      "en": "VAT on the port service {pct}",
+      "ru": "НДС с портовой услуги {pct}"
+    },
+    "economy.quote.line.duty": {
+      "en": "duty {pct} % (import from another polity)",
+      "ru": "пошлина {pct} % (ввоз из другой политии)"
+    },
+    "economy.quote.line.turnover": {
+      "en": "{name} {pct}",
+      "ru": "{name} {pct}"
+    },
+    "economy.quote.line.turnover_tax": {
+      "en": "turnover tax",
+      "ru": "налог с оборота"
+    },
+    "economy.quote.reason.hub_gives_up_to": {
+      "en": "the hub sells no more than {tonnes} t",
+      "ru": "хаб отпускает не больше {tonnes} т"
+    },
+    "economy.quote.reason.hub_full": {
+      "en": "hub warehouse full: takes no more than {tonnes} t",
+      "ru": "склад хаба полон: берёт не больше {tonnes} т"
+    },
+    "economy.cargo.no_c20_space": {
+      "en": "no C20 space: need {need}, free {free} of {total}",
+      "ru": "нет места C20: нужно {need}, свободно {free} из {total}"
+    },
+    "economy.cargo.over_capacity": {
+      "en": "payload exceeded: {aboard} t aboard + {adding} t > {capacity} t",
+      "ru": "превышена грузоподъёмность: на борту {aboard} т + {adding} т > {capacity} т"
+    }
+  }
+}

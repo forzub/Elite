@@ -67,6 +67,7 @@ mkdir -p "${DEST}/assets"
     --exclude='*.blend' --exclude='*.blend1' --exclude='*.psd' --exclude='*.kra' --exclude='*.xcf' \
     --exclude='./generated/celestial/*/*/lod/tiles' \
     --exclude='*.log' \
+    --exclude='./webui/model_asset_editor' --exclude='./webui/model_asset_editor.html' \
     . ) | ( cd "${DEST}/assets" && tar xf - )
 
 echo "[preview] docs"
@@ -94,10 +95,11 @@ for f in "${DEST}"/*.exe "${DEST}"/*.dll; do
         echo "  UNRESOLVED: $(basename "${f}") -> ${dll}"; fail=1
     done < <(objdump -p "${f}" | sed -n 's/^\s*DLL Name: //p' | tr -d '\r')
 done
-# 2. no developer paths in the text resources
-if grep -rIl --include='*.json' --include='*.html' --include='*.js' --include='*.txt' -e '__elite' -e 'msys64' "${DEST}/assets" 2>/dev/null | head -5 | grep -q .; then
-    echo "  WARNING: developer paths in:"; grep -rIl --include='*.json' --include='*.html' --include='*.js' --include='*.txt' -e '__elite' -e 'msys64' "${DEST}/assets" | head -5
-fi
+# 2. no developer paths in the text resources. The celestial meta.json files keep the bake's absolute texture paths,
+#    but the loader rebases them onto the meta file's own folder (rebaseGeneratedAssetPathToMetaBodyRoot): listed apart
+devpaths="$(grep -rIl --include='*.json' --include='*.html' --include='*.js' --include='*.txt' -e 'D:/__elite' -e 'msys64' "${DEST}/assets" 2>/dev/null | grep -v '/generated/celestial/.*/meta.json' || true)"
+if [ -n "${devpaths}" ]; then echo "  WARNING: developer paths in:"; echo "${devpaths}" | head -10; fi
+echo "  celestial meta.json with rebased bake paths: $(grep -rIl -e 'D:/__elite' "${DEST}/assets/generated" 2>/dev/null | wc -l) (relocatable by design)"
 [ ${fail} -eq 0 ] && echo "  imports: all resolved"
 echo "[preview] package: $(du -sh "${DEST}" | cut -f1), $(find "${DEST}" -type f | wc -l) files -> ${DEST}"
 exit ${fail}

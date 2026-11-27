@@ -1,4 +1,5 @@
 #include "src/game/navigation/HubCitySpace.h"
+#include "src/game/localization/LocalizationService.h"
 #include <iostream>
 // SpaceState: Docking / route-autopilot orchestration: route request, planning jobs, safe course, autopilot phases and the docking corridor publication.
 
@@ -13,6 +14,8 @@
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/NavigationObstacleGrid.h"
 #include <memory>
+
+namespace l10n = game::localization;
 
 
 
@@ -797,7 +800,7 @@ void SpaceState::updateDockingAdvisory()
         }
         if (m_hubFrameRequestSerial == pending.serial && glfwGetTime() - m_hubFrameRequestS < 3.0)
             return;   // the server's answer is on its way
-        m_pilotNotice = "СТЫКОВКА: хаб далеко (> 30 км) - сначала маршрут к хабу";
+        m_pilotNotice = l10n::tr("cockpit.docking.hub_far", "DOCKING: the hub is far (> 30 km) - plot a route to the hub first");
         fail("ship is not matched to target Hub frame");
         return;
     }
@@ -1513,7 +1516,7 @@ void SpaceState::updateDockingAdvisory()
         if (risen >= m_dockLiftClear.meters)
         {
             std::cerr << "[DockLiftClear] request=" << pending.serial << " clear after " << risen << " m - planning" << std::endl;
-            m_pilotNotice = "СТЫКОВКА: корабль поднят над постройками - расчёт маршрута";
+            m_pilotNotice = l10n::tr("cockpit.docking.lifted_planning", "DOCKING: the ship is lifted above the structures - planning the route");
             m_dockLiftClear = {};
             m_clientDockingPhase = ClientDockingPhase::Stabilizing;
             m_clientDockingSettledSinceServerSeconds = -1.0;
@@ -2323,7 +2326,7 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
             m_dockLiftClear.forward = agent.forwardMap;
             m_dockLiftClear.up = agent.upMap;
             m_dockLiftClear.meters = safety.hullRadiusMeters + safety.additionalClearanceMeters + 20.0;
-            m_pilotNotice = "СТЫКОВКА: взлёт - подъём над постройками";
+            m_pilotNotice = l10n::tr("cockpit.docking.lift_off", "DOCKING: take-off - climbing above the structures");
             std::cerr << "[DockLiftClear] request=" << pending.serial << " " << safetyResult.message << ": rise "
                       << m_dockLiftClear.meters << " m along (" << safetyResult.safeCourse.x << "," << safetyResult.safeCourse.y
                       << "," << safetyResult.safeCourse.z << ")" << std::endl;
@@ -2360,7 +2363,7 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
                     << " request=" << pending.serial
                     << " phase=emergency-stop"
                     << std::endl;
-                m_pilotNotice = "СТЫКОВКА: нет безопасного курса отсюда (рядом постройки / площадка) - отведите корабль на 100-200 м и повторите";   // the reason in the terminal (author 2026-11-21: «нет ни расчёта маршрута, ни причин»)
+                m_pilotNotice = l10n::tr("cockpit.docking.no_safe_course", "DOCKING: no safe course from here (structures / a pad nearby) - move the ship 100-200 m away and try again");   // the reason in the terminal (author 2026-11-21: «нет ни расчёта маршрута, ни причин»)
                 submitAutopilotControl(manualStopControl());
                 return false;
             }
@@ -2524,7 +2527,7 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
                             : 0
                     )
                     << std::endl;
-                m_pilotNotice = "СТЫКОВКА: нет безопасного курса отсюда (рядом постройки / площадка) - отведите корабль на 100-200 м и повторите";
+                m_pilotNotice = l10n::tr("cockpit.docking.no_safe_course", "DOCKING: no safe course from here (structures / a pad nearby) - move the ship 100-200 m away and try again");
                 submitAutopilotControl(
                     manualStopControl()
                 );
@@ -3416,7 +3419,7 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                             std::cerr << "[PadRoute] request=" << pending.serial << " the straight way to "
                                       << m_padAnchor.address << " beats the lanes (" << glm::length(flat)
                                       << " m over the city): the pad service flies it" << std::endl;
-                            m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: напрямую над городом к площадке " + m_padAnchor.address;
+                            m_pilotNotice = l10n::tr("cockpit.pad.direct_over_city", {{"pad", m_padAnchor.address}}, "PAD SERVICE: straight over the city to pad {pad}");
                             m_padAnchor = {};
                             f.requests.clear();
                             f.releaseClientAutopilot();
@@ -4497,7 +4500,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                     std::cerr << "[RingSync] request=" << pending.serial << " synchronized with the ring at the gate (" << d
                               << " m, " << fromAxis << " m off the axis, " << speed << " m/s, roll drift "
                               << glm::degrees(rollDrift) << " deg in 3 s)" << std::endl;
-                    m_pilotNotice = "ДИСПЕТЧЕР КОЛЬЦА: синхронизация с вращением выполнена у ворот на оси";
+                    m_pilotNotice = l10n::tr("cockpit.ring.synced_axis", "RING DISPATCHER: spin matched at the axial gate");
                 }
             }
             // STEP 2: synchronized at the gate - the way on to the pad is a NEW route planned in the city's own frame (the
@@ -4527,8 +4530,8 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                 std::cerr << "[RingSync] request=" << pending.serial << " the co-rotating leg: a route to over "
                           << m_padAnchor.address << " (" << m_padAnchor.padHoverCity.x << "," << m_padAnchor.padHoverCity.y
                           << "," << m_padAnchor.padHoverCity.z << ") in the city's own frame" << std::endl;
-                m_pilotNotice = "ДИСПЕТЧЕР КОЛЬЦА: вращение синхронизировано - маршрут к площадке " + m_padAnchor.address +
-                                " в системе кольца";
+                m_pilotNotice = l10n::tr("cockpit.ring.synced_route", {{"pad", m_padAnchor.address}},
+                                         "RING DISPATCHER: spin matched - route to pad {pad} in the ring's frame");
                 return false;
             }
             // (the co-rotating leg: the planner and the autopilot bring the ship to its route's end over the pad - the
@@ -4545,7 +4548,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                 command.detail = m_padAnchor.address;
                 msg.payload = command;
                 m_client->sendMessage(msg);
-                m_pilotNotice = "СЛУЖБА ПЛОЩАДОК: над площадкой " + m_padAnchor.address + " - посадка на опорах";
+                m_pilotNotice = l10n::tr("cockpit.pad.over_pad_gear", {{"pad", m_padAnchor.address}}, "PAD SERVICE: over pad {pad} - landing on the gear");
                 releaseClientAutopilot();
                 f.requests.clear();
                 m_padAnchor = {};
@@ -5293,7 +5296,7 @@ void SpaceState::updateDockingSecuringCourse(Frame& f)
                     << " reason=\"" << check.message << "\""
                     << std::endl;
 
-                m_pilotNotice = "СТЫКОВКА: нет безопасного курса отсюда (рядом постройки / площадка) - отведите корабль на 100-200 м и повторите";   // the reason in the terminal (author 2026-11-21: «нет ни расчёта маршрута, ни причин»)
+                m_pilotNotice = l10n::tr("cockpit.docking.no_safe_course", "DOCKING: no safe course from here (structures / a pad nearby) - move the ship 100-200 m away and try again");   // the reason in the terminal (author 2026-11-21: «нет ни расчёта маршрута, ни причин»)
                 submitAutopilotControl(manualStopControl());
                 return;
             }
@@ -5616,7 +5619,7 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
         if (!autopilotPhase && m_manualAssistActive)
         {
             m_manualAssistActive = false;
-            m_pilotNotice = "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: управление у пилота";
+            m_pilotNotice = l10n::tr("cockpit.collision_assist.pilot", "COLLISION ASSIST: the pilot has control");
         }
         return sampled;
     };
@@ -5821,7 +5824,7 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
         if (universeTimeSeconds - m_manualAssistWarnedAt > 3.0)
         {
             m_manualAssistWarnedAt = universeTimeSeconds;
-            m_pilotNotice = "ВНИМАНИЕ: КУРС СТОЛКНОВЕНИЯ - " + std::to_string(cmd.threats) + " контакт(ов), уклоняйтесь";
+            m_pilotNotice = l10n::tr("cockpit.collision_assist.warning", {{"count", std::to_string(cmd.threats)}}, "WARNING: COLLISION COURSE - {count} contact(s), evade");
             std::cerr << "[CollisionAssist] warn: " << cmd.threats << " contacts, course margin " << cmd.courseMarginMeters
                       << " m (window " << cmd.urgencySeconds << " s)" << std::endl;
         }
@@ -5854,7 +5857,7 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
         control.targetSpeedRate = cmd.speedRate;
     }
     if (!autopilotPhase && !m_manualAssistActive)
-        m_pilotNotice = "ПОМОЩЬ ОТ СТОЛКНОВЕНИЙ: манёвр уклонения (резкое движение ручкой - управление вам)";
+        m_pilotNotice = l10n::tr("cockpit.collision_assist.evading", "COLLISION ASSIST: evasive manoeuvre (a sharp stick input gives you control)");
     if (!autopilotPhase)
         m_manualAssistActive = true;
     if (universeTimeSeconds - m_manualAssistLogAt > 1.0)

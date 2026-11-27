@@ -50,6 +50,7 @@ public:
 
     server::ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
+    void setPaused(bool paused);
     bool ready() const;
     void rethrowIfFailed() const;
 

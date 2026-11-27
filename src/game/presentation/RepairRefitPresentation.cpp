@@ -24,22 +24,24 @@ const char* stateName(std::uint8_t s)
     return "unknown";
 }
 
+// the group keys in display order with their English labels; the player's language comes from
+// "service.panel.refit.group.<key>" (ServicePanelsRenderer)
 constexpr std::array<std::pair<const char*, const char*>, 15> Groups {{
-    {"propulsion", "Главная тяга"},
-    {"propulsion_reactors", "Двигательные реакторы"},
-    {"rcs", "Маневровые (RCS)"},
-    {"service_power", "Служебное питание"},
-    {"cooling", "Охлаждение"},
-    {"tanks", "Баки"},
-    {"sensors", "Радар и связь"},
-    {"computer", "Бортовой компьютер"},
-    {"life", "Жизнеобеспечение и спасение"},
-    {"jump", "Прыжок"},
-    {"weapons", "Вооружение"},
-    {"payload", "Груз и пассажиры"},
-    {"docks", "Стыковка и ангары"},
-    {"structure", "Конструкция"},
-    {"other", "Прочее"},
+    {"propulsion", "Main propulsion"},
+    {"propulsion_reactors", "Drive reactors"},
+    {"rcs", "Manoeuvring (RCS)"},
+    {"service_power", "Service power"},
+    {"cooling", "Cooling"},
+    {"tanks", "Tanks"},
+    {"sensors", "Radar & comms"},
+    {"computer", "Onboard computer"},
+    {"life", "Life support & rescue"},
+    {"jump", "Jump"},
+    {"weapons", "Weapons"},
+    {"payload", "Cargo & passengers"},
+    {"docks", "Docking & hangars"},
+    {"structure", "Structure"},
+    {"other", "Other"},
 }};
 } // namespace
 
@@ -84,7 +86,7 @@ const char* refitGroupLabelRu(const std::string& key)
     for (const auto& [k, label] : Groups)
         if (key == k)
             return label;
-    return "Прочее";
+    return "Other";
 }
 
 RepairRefitPresentation buildRepairRefitPresentation(
@@ -154,8 +156,8 @@ RepairRefitPresentation buildRepairRefitPresentation(
             v.state = stateName(st->state);
             v.health01 = m.maxHealth > 0.0f ? std::clamp(st->health / m.maxHealth, 0.0f, 1.0f) : 0.0;
             const std::array<std::pair<const char*, float>, 6> causes {{
-                {"лазер", st->laserDamage01}, {"удар", st->impactDamage01}, {"перегрев", st->thermalDamage01},
-                {"радиация", st->radiationDamage01}, {"износ", st->wearDamage01}, {"внутренний отказ", st->internalFailureDamage01}}};
+                {"laser", st->laserDamage01}, {"impact", st->impactDamage01}, {"thermal", st->thermalDamage01},
+                {"radiation", st->radiationDamage01}, {"wear", st->wearDamage01}, {"internal_failure", st->internalFailureDamage01}}};
             for (const auto& [name, value] : causes)
             {
                 v.damage01 += value;

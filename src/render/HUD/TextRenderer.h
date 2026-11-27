@@ -13,6 +13,12 @@ class TextRenderer
 public:
     static TextRenderer& instance();
 
+    // HantedPreview (the author 2026-11-27: "remove every text from the HUD except the HUD terminal"): while
+    // suppressed every draw call is dropped - the HUD sets it around the glass texts it hides; the data and the
+    // layout code still run, nothing else changes
+    void setSuppressed(bool suppressed) noexcept { m_suppressed = suppressed; }
+    bool suppressed() const noexcept { return m_suppressed; }
+
     void init();
 
     void beginFrame();
@@ -176,4 +182,5 @@ private:
     int m_locTextSampler = -1;
 
     std::vector<TextBatch> m_batches;
+    bool m_suppressed = false;
 };

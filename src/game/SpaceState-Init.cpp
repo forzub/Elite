@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include <glad/gl.h>
 #include <iostream>
 #include <chrono>
@@ -196,6 +197,7 @@ void SpaceState::initHUD()
                 {desc.radarMount.normalizedPosition.x - desc.radarMount.normalizedSize.x * 0.5f,
                  desc.radarMount.normalizedPosition.y - desc.radarMount.normalizedSize.y * 0.5f - 0.022f});
             rangeText->color = {0.2f, 0.8f, 1.0f, 0.55f};
+            rangeText->visible = !core::isPreviewBuild();   // HantedPreview: no HUD texts but the terminal (the author)
             uiRoot->addChild(std::move(rangeText));
         }
     }

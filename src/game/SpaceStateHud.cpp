@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include "src/game/client/ClientHubCitySpace.h"
 #include "src/game/localization/LocalizationService.h"
 #include "src/core/HitchProfiler.h"
@@ -176,6 +177,10 @@ m_systemMapRenderer.render(
         // 3. Подготовка матриц для меток
         // -------------------------------------------------
 
+        // HantedPreview (the author 2026-11-27: "remove every text from the HUD except the HUD terminal"): the glass
+        // texts are dropped from here to the end of the HUD - the terminal and the instrument panel (uiRoot) are let
+        // through below; graphics (route frames, compass, markers) are untouched
+        TextRenderer::instance().setSuppressed(core::isPreviewBuild());
         if (pilotGlass)
         {
             renderHudWorldLabels(vp);
@@ -422,7 +427,9 @@ m_systemMapRenderer.render(
         }
 
         {
+            TextRenderer::instance().setSuppressed(false);   // the HUD terminal stays
             renderHudDockingTerminal(vp, playerShip, cockpit);
+            TextRenderer::instance().setSuppressed(core::isPreviewBuild());
             core::hitch::mark("hud_terminal");
 
         // the landing legs, always in sight (author 2026-11-21: «какой-то индикатор на HUD, что шасси убраны / выпущены»):
@@ -479,7 +486,9 @@ m_systemMapRenderer.render(
         }
 
         core::hitch::mark("hud_legs");
+        TextRenderer::instance().setSuppressed(false);   // the instrument panel (reactor, coolant, speed...) stays
         uiRoot->render(vp);
+        TextRenderer::instance().setSuppressed(core::isPreviewBuild());
         core::hitch::mark("hud_ui_root");
 
         TextRenderer::instance().endFrame();
@@ -528,6 +537,7 @@ m_systemMapRenderer.render(
         );
     }
 
+    TextRenderer::instance().setSuppressed(false);
     m_perfHudMs = nowMs() - hudStartMs;
     core::hitch::mark("hud");
 }
@@ -911,6 +921,76 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
             m_activeMainCamera->projectionMatrix(),
             vp
         );
+    // THE ROUTE STAYS IN FRAMES WHILE THE AUTOPILOT FLIES (the author 2026-11-27: "while the autopilot works the route of
+    // frames must always be visible"; the log showed gaps - before the server's corridor exists, and near the ring's
+    // sync gate where every frame is behind / too near): while an autopilot executes (the server's route execution, or
+    // the pad service) and the guidance has no frame, the last frames seen are kept (world-anchored, those still ahead),
+    // and with none seen yet a row of frames runs straight to the route's finish.
+    {
+        struct HeldFrame
+        {
+            glm::dvec3 centerW;
+            game::presentation::GuidanceHudFramePresentation frame;
+        };
+        static std::vector<HeldFrame> held;
+        const glm::dvec3 shipW = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
+        const bool autopilotFlying = guidance.hasAuthoritativeExecution ||
+                                     playerShip.padService.rfind("phase:", 0) == 0;
+        if (guidance.visible && !guidance.frames.empty())
+        {
+            held.clear();
+            for (const auto& f : guidance.frames)
+                held.push_back({shipW + f.relativeCenterMeters, f});
+        }
+        else if (autopilotFlying)
+        {
+            const glm::dvec3 velocity = playerShip.renderTransform.motion.worldVelocityMps;
+            const glm::dvec3 heading = glm::length(velocity) > 0.5 ? glm::normalize(velocity)
+                                                                    : glm::dvec3(playerShip.renderTransform.forward());
+            std::vector<game::presentation::GuidanceHudFramePresentation> frames;
+            for (const auto& h : held)
+            {
+                const glm::dvec3 rel = h.centerW - shipW;
+                if (glm::dot(rel, heading) <= 0.0 || glm::length(rel) > 20000.0)
+                    continue;   // behind or far: not a frame to fly through any more
+                auto f = h.frame;
+                f.relativeCenterMeters = rel;
+                frames.push_back(f);
+            }
+            if (frames.empty())
+            {
+                const auto ordered = m_navigationWorkspace.routePlan().orderedRouteWaypoints();
+                if (!ordered.empty())
+                {
+                    const glm::dvec3 to = world::coordinates::fullMeters(ordered.front()->worldPosition) - shipW;
+                    const double d = glm::length(to);
+                    if (d > 50.0)
+                    {
+                        const glm::dvec3 dir = to / d;
+                        const glm::dvec3 upHint = std::abs(dir.y) < 0.95 ? glm::dvec3(0.0, 1.0, 0.0) : glm::dvec3(1.0, 0.0, 0.0);
+                        const glm::dquat look = glm::quatLookAt(dir, upHint);   // -Z along the way, as the guidance frames
+                        const int n = 10;
+                        for (int k = 1; k <= n; ++k)
+                        {
+                            game::presentation::GuidanceHudFramePresentation f;
+                            f.relativeCenterMeters = dir * (d * k / (n + 1));
+                            f.orientation = look;
+                            f.widthMeters = f.heightMeters = std::clamp(d / 40.0, 20.0, 200.0);
+                            f.opacity = 0.85f;
+                            frames.push_back(f);
+                        }
+                    }
+                }
+            }
+            if (!frames.empty())
+            {
+                guidance.frames = std::move(frames);
+                guidance.visible = true;
+            }
+        }
+        else
+            held.clear();
+    }
     m_guidanceCorridorRenderer.render(
         guidance,
         m_activeMainCamera->viewMatrix(),
@@ -1103,6 +1183,14 @@ void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShi
         game::presentation::buildEngineThrustHudPresentation(
             cockpit
         );
+    // the instrument PANEL (engine thrust, reactor, coolant) keeps its texts in the preview - only the glass loses them
+    const bool glassTextSuppressed = TextRenderer::instance().suppressed();
+    TextRenderer::instance().setSuppressed(false);
+    struct RestoreGlassText
+    {
+        bool suppressed;
+        ~RestoreGlassText() { TextRenderer::instance().setSuppressed(suppressed); }
+    };
     m_engineThrustIndicatorRenderer.render(
         engineThrustInstrument,
         vp
@@ -1114,6 +1202,8 @@ void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShi
         m_engineThrustIndicatorRenderer.renderThermalSystems(
             cockpit.systems, engineThrustInstrument, vp
         );
+    TextRenderer::instance().setSuppressed(glassTextSuppressed);   // back to the glass rule
+    RestoreGlassText restoreGlassText {glassTextSuppressed};
     // the magnitola right above the engine group (src/render/cockpit/CockpitRadioWidget.h): its layout here (the
     // pointer and the actions are the update's - routeCockpitRadioUi), then the pure drawing of that laid-out state
     m_cockpitUiLaidOut = false;
@@ -1122,8 +1212,9 @@ void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShi
         layoutCockpitRadioUi(vp);
         auto& text = TextRenderer::instance();
         ui::UIDrawContext ctx {text, m_engineThrustIndicatorRenderer.groupFrame().scale};
-        m_cockpitRadioWidget.draw(ctx);
-        if (ui::debugBoundsEnabled())
+        if (m_cockpitRadioWidget.visible)
+            m_cockpitRadioWidget.draw(ctx);
+        if (m_cockpitRadioWidget.visible && ui::debugBoundsEnabled())
             ui::drawDebugBounds(ctx, m_cockpitRadioWidget, m_cockpitUiRouter.hovered(), m_cockpitUiRouter.captured());
     }
 
@@ -3052,8 +3143,9 @@ void SpaceState::layoutCockpitRadioUi(const Viewport& vp)
     const auto& group = m_engineThrustIndicatorRenderer.groupFrame();
     const render::cockpit::EngineGroupAnchor frame {group.valid, group.left, group.right, group.top, group.scale};
     const auto panel = render::cockpit::CockpitRadioWidget::panelAboveEngineGroup(frame, m_cockpitRadioWidget.style());
-    m_cockpitRadioWidget.visible = panel.valid();
-    if (!panel.valid())
+    // HantedPreview (the author 2026-11-27: "hide the stereo"): the magnitola is not shown (nor clickable) in the package
+    m_cockpitRadioWidget.visible = panel.valid() && !core::isPreviewBuild();
+    if (!panel.valid() || core::isPreviewBuild())
     {
         m_cockpitUiRouter.reset();
         return;

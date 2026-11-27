@@ -323,6 +323,8 @@ void TextRenderer::textDrawBatched(
     const glm::vec4& color
 )
 {
+    if (m_suppressed)
+        return;
     if (!m_batchActive)
     {
         beginFrame();
@@ -409,6 +411,8 @@ void TextRenderer::textDraw(
     const glm::vec4& color
 )
 {
+    if (m_suppressed)
+        return;
     textDraw(font, text, x, y, color, 1.0f);
 }
 
@@ -421,6 +425,8 @@ void TextRenderer::textDraw(
     float scale
 )
 {
+    if (m_suppressed)
+        return;
     if (!m_batchActive)
         beginFrame();
 
@@ -525,6 +531,8 @@ void TextRenderer::textDrawRotated(
     float angleRad
 )
 {
+    if (m_suppressed)
+        return;
     if (!m_batchActive)
         beginFrame();
 
@@ -627,6 +635,8 @@ void TextRenderer::textDraw(
     const glm::vec3& color
 )
 {
+    if (m_suppressed)
+        return;
     textDraw(text, x, y, scale, glm::vec4(color, 1.0f));
 }
 
@@ -638,6 +648,8 @@ void TextRenderer::textDraw(
     const glm::vec4& color
 )
 {
+    if (m_suppressed)
+        return;
     static Font* fallbackFont = nullptr;
 
     if (!fallbackFont)
@@ -716,6 +728,8 @@ void TextRenderer::textDrawPx(
     const glm::vec4& color
 )
 {
+    if (m_suppressed)
+        return;
     Font& font = fontForPixelSize(pixelSize);
     textDraw(font, text, x, y, color);
 }

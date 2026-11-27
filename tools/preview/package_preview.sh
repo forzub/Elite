@@ -13,14 +13,22 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+UPDATE=0
+if [ "${1:-}" = "--update" ]; then UPDATE=1; shift; fi
 DEST="${1:-D:/__elite/prodaction}"
 BUILD="${ROOT}/build-release"
 MINGW_BIN="/c/msys64/mingw64/bin"
 export PATH="${MINGW_BIN}:${PATH}"
 
 if [ -d "${DEST}" ] && [ -n "$(ls -A "${DEST}" 2>/dev/null)" ]; then
-    echo "[preview] ${DEST} is not empty - remove the old package first (this script never deletes)" >&2
-    exit 1
+    # --update: overwrite an existing PACKAGE in place (it has our BUILD_INFO.txt); files the new build no longer has
+    # stay (nothing is deleted)
+    if [ "${UPDATE}" = "1" ] && [ -f "${DEST}/BUILD_INFO.txt" ]; then
+        echo "[preview] updating the package in ${DEST}"
+    else
+        echo "[preview] ${DEST} is not empty - pass --update to overwrite a package there (this script never deletes)" >&2
+        exit 1
+    fi
 fi
 
 echo "[preview] configure ${BUILD}"

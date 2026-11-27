@@ -507,7 +507,17 @@ void GameSimulation::updatePadLandings(double dt)
         if (heldIt == held.end() || p.sinceS > heldSince[id.value])
         {
             heldSince[id.value] = p.sinceS;
-            heldIt = held.insert_or_assign(id.value, strip.unwrapNear(strip.toStrip(tr.fullWorldMeters()), p.padLocal)).first;
+            glm::dvec3 startPlan = strip.unwrapNear(strip.toStrip(tr.fullWorldMeters()), p.padLocal);
+            // OFF the deck's plan (audit #6 A2: a ring's sync gate / an axial dock - r ~ 0, the strip angle is undefined
+            // there): the physical way to the deck is the RADIUS toward the pad - its along coordinate is the pad's
+            // (the height over the deck, R - r, and the across coordinate stay the ship's own)
+            if (!strip.worldOnDeck(tr.fullWorldMeters()))
+            {
+                startPlan.x = p.padLocal.x;
+                std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address << ": taken off the deck's plan (axial) - "
+                          << "the way in runs down the radius toward the pad" << std::endl;
+            }
+            heldIt = held.insert_or_assign(id.value, startPlan).first;
         }
         glm::dvec3& q = heldIt->second;
         const glm::dvec3& out = p.outLocal;

@@ -2335,6 +2335,92 @@ void SpaceState::update(float dt)
         }
     }
 
+    // DEV (the author 2026-11-27: "a ship flew past during docking in steps, like a saw"): ELITE_DEV_REMOTE_TRACE=1 - the
+    // nearest REMOTE ship within 5 km: its drawn speed per frame (mean, spread, max) and how often its drawn acceleration
+    // reverses, every 2 s, with how many of the frames brought a new snapshot of it
+    {
+        static const bool trace = [] {
+            const char* v = std::getenv("ELITE_DEV_REMOTE_TRACE");
+            return v && *v == '1';
+        }();
+        static std::uint64_t followed = 0;
+        static glm::dvec3 lastPos(0.0);
+        static double windowS = 0.0, sumV = 0.0, sumV2 = 0.0, maxV = 0.0, lastV = 0.0, lastDv = 0.0;
+        static int frames = 0, reversals = 0;
+        if (trace && dt > 1.0e-4f)
+        {
+            const auto& ships = m_client->world().ships();
+            const auto me = ships.find(m_playerId.value);
+            if (me != ships.end())
+            {
+                const glm::dvec3 myPos = world::coordinates::fullMeters(me->second.renderTransform.worldPosition);
+                std::uint64_t best = 0;
+                double bestD = 5000.0;
+                for (const auto& [sid, s] : ships)
+                    if (sid != m_playerId.value)
+                    {
+                        const double d = glm::length(world::coordinates::fullMeters(s.renderTransform.worldPosition) - myPos);
+                        if (d < bestD)
+                        {
+                            bestD = d;
+                            best = sid;
+                        }
+                    }
+                if (best != followed)
+                {
+                    followed = best;
+                    windowS = sumV = sumV2 = maxV = lastV = lastDv = 0.0;
+                    frames = reversals = 0;
+                    if (best)
+                        lastPos = world::coordinates::fullMeters(ships.at(best).renderTransform.worldPosition) - myPos;
+                }
+                else if (best)
+                {
+                    const auto& s = ships.at(best);
+                    // relative to the player (the orbit's 7.6 km/s would swamp it): what the pilot sees
+                    const glm::dvec3 p = world::coordinates::fullMeters(s.renderTransform.worldPosition) - myPos;
+                    const double v = glm::length(p - lastPos) / dt;
+                    lastPos = p;
+                    static const bool perFrame = [] {
+                        const char* e = std::getenv("ELITE_DEV_REMOTE_TRACE");
+                        return e && e[1] == '2';
+                    }();
+                    static int perFrameLeft = 240;
+                    if (perFrame && perFrameLeft > 0)
+                    {
+                        --perFrameLeft;
+                        std::cerr << "[RemoteFrame] dt " << dt * 1000.0f << " ms drawn rel speed " << v << " m/s | server t "
+                                  << m_client->lastSimulationMetadata().serverTimeSeconds << " | auth row speed "
+                                  << glm::length(s.transform.motion.worldVelocityMps -
+                                                 me->second.transform.motion.worldVelocityMps)
+                                  << " m/s" << std::endl;
+                    }
+                    const double dv = v - lastV;
+                    if (frames > 1 && std::abs(dv) > 0.5 && std::abs(lastDv) > 0.5 && (dv > 0.0) != (lastDv > 0.0))
+                        ++reversals;
+                    if (std::abs(dv) > 0.5)
+                        lastDv = dv;
+                    lastV = v;
+                    sumV += v;
+                    sumV2 += v * v;
+                    maxV = std::max(maxV, v);
+                    ++frames;
+                    windowS += dt;
+                    if (windowS >= 2.0)
+                    {
+                        const double mean = sumV / frames;
+                        std::cerr << "[RemoteTrace] ship " << best << " at " << bestD << " m: drawn speed " << mean
+                                  << " m/s mean, spread " << std::sqrt(std::max(0.0, sumV2 / frames - mean * mean)) << ", max "
+                                  << maxV << ", reversals " << reversals << " (" << reversals / windowS << " /s), "
+                                  << frames << " frames" << std::endl;
+                        windowS = sumV = sumV2 = maxV = 0.0;
+                        frames = reversals = 0;
+                    }
+                }
+            }
+        }
+    }
+
     // One local ship computer per controlled player ship. Only new
     // replicated server ticks are sampled, not every render/prediction frame.
     // This is a COPY-only server->client read, never a new server query.

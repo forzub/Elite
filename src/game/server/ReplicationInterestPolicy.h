@@ -37,6 +37,10 @@ struct ReplicationInterestPolicy
     // Provisional transport radii, intentionally centralized/tunable and not
     // treated as gameplay sensor ranges.
     double tacticalRadiusMeters = 100000.0;   // 100 km
+    // a ship the pilot can SEE goes out with every snapshot whatever its motion fidelity (the author 2026-11-27: "a ship
+    // flew past during docking in steps, like a saw" - measured: a kinematic NPC published every 0.20-0.24 s, its retained
+    // rows extrapolated in between drifted ~0.2 m/s a snapshot from the truth and every fresh row yanked it back)
+    double visualRadiusMeters = 20000.0;      // 20 km
     double nearbyRadiusMeters = 5000000.0;    // 5,000 km
 
     // Target publication intervals. Zero means every normal server snapshot.
@@ -194,6 +198,12 @@ inline ShipReplicationInterestDecision evaluateShipReplicationInterest(
     const double nearbyRadius =
         std::max(tacticalRadius, policy.nearbyRadiusMeters);
 
+    if (result.distanceMeters <= std::max(0.0, policy.visualRadiusMeters))
+    {
+        result.tier = ShipReplicationInterestTier::Tactical;
+        result.targetIntervalSeconds = replicationIntervalSeconds(result.tier, policy);   // every snapshot
+        return result;
+    }
     if (result.distanceMeters <= tacticalRadius)
         result.tier = ShipReplicationInterestTier::Tactical;
     else if (result.distanceMeters <= nearbyRadius)

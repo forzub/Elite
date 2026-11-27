@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 #include <string>
 #include <utility>
@@ -163,7 +164,12 @@ inline void advanceRetainedShipPresentation(
     // velocity are DERIVED from them. The old row advanced the world point along its velocity, the frame origin along
     // its own, and never turned the axes: the world point and origin + axes * local drifted apart (~omega r per second
     // on a ring deck) and a ship standing on a turning deck slid off its arc.
-    if (ship.referenceFrame.valid)
+    // DEV A/B (the saw-tooth report): ELITE_DEV_RETAINED_LEGACY=1 - the pre-B1 rule (world point along its velocity)
+    static const bool legacyRetained = [] {
+        const char* v = std::getenv("ELITE_DEV_RETAINED_LEGACY");
+        return v && *v == '1';
+    }();
+    if (ship.referenceFrame.valid && !legacyRetained)
     {
         auto& frame = ship.referenceFrame;
         // the ship's OWN acceleration (its engines; gravity rides the frame's acceleration) in the frame's axes at the
@@ -236,7 +242,7 @@ inline void advanceRetainedShipPresentation(
     // the motion fields that ride as the referenceFrame (travel frame, local position / velocity, reference velocity)
     // are rebuilt from the advanced frame - the SAME rule as after decoding (audit #8 B1: one representation, no
     // second integration of motion.local* that could drift from the frame)
-    if (ship.referenceFrame.valid)
+    if (ship.referenceFrame.valid && !legacyRetained)
         game::simulation::restoreMotionFromReferenceFrame(ship.transform.motion, ship.referenceFrame);
     else
         ship.transform.motion.localPositionMeters += ship.transform.motion.localVelocityMps * deltaSeconds;

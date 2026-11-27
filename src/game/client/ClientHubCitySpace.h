@@ -15,13 +15,16 @@ namespace game::client
 {
 inline game::navigation::HubCitySpace citySpaceFromPose(const ClientObjectState& object,
                                                          const world::coordinates::WorldPosition& position,
-                                                         const glm::mat4& orientation)
+                                                         const glm::mat4& orientation,
+                                                         const glm::dvec3& linearVelocityMps,
+                                                         const glm::dvec3& angularVelocityWorldRadPerSecond)
 {
+    // ONE epoch per space (audit #6 B1): the position, the orientation AND the velocities of the same epoch
     game::navigation::HubCitySpace space;
     space.cpos = world::coordinates::fullMeters(position);
     space.R = glm::dmat3(glm::mat3(orientation));
-    space.cvel = object.linearVelocityMps;
-    space.omega = object.angularVelocityWorldRadPerSecond;
+    space.cvel = linearVelocityMps;
+    space.omega = angularVelocityWorldRadPerSecond;
     if (object.hubAttachment.valid)
         if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
             space.bend = plan->ring();
@@ -30,11 +33,13 @@ inline game::navigation::HubCitySpace citySpaceFromPose(const ClientObjectState&
 
 inline game::navigation::HubCitySpace presentationCitySpace(const ClientObjectState& object)
 {
-    return citySpaceFromPose(object, object.renderWorldPosition, object.renderOrientation);
+    return citySpaceFromPose(object, object.renderWorldPosition, object.renderOrientation, object.renderLinearVelocityMps,
+                             object.renderAngularVelocityWorldRadPerSecond);
 }
 
 inline game::navigation::HubCitySpace authoritativeCitySpace(const ClientObjectState& object)
 {
-    return citySpaceFromPose(object, object.worldPosition, object.orientation);
+    return citySpaceFromPose(object, object.worldPosition, object.orientation, object.linearVelocityMps,
+                             object.angularVelocityWorldRadPerSecond);
 }
 } // namespace game::client

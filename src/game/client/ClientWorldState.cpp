@@ -972,6 +972,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.angularVelocityWorldRadPerSecond =
                 o.angularVelocityWorldRadPerSecond;
             state.renderOrientation = o.orientation;
+            state.renderLinearVelocityMps = o.linearVelocityMps;
+            state.renderAngularVelocityWorldRadPerSecond = o.angularVelocityWorldRadPerSecond;
             state.hubAttachment = o.hubAttachment;
             state.displayName = o.displayName;
             state.ownerName = o.ownerName;
@@ -1254,6 +1256,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             (void)id;
             object.renderWorldPosition = object.worldPosition;
             object.renderOrientation = object.orientation;
+            object.renderLinearVelocityMps = object.linearVelocityMps;
+            object.renderAngularVelocityWorldRadPerSecond = object.angularVelocityWorldRadPerSecond;
             object.renderAssemblyModules = object.assemblyModules;
         }
     }
@@ -1961,6 +1965,8 @@ void ClientWorldState::update(
                         // is a hard snap, not a short numerical interpolation.
                         obj.renderWorldPosition = obj.worldPosition;
                         obj.renderOrientation = obj.orientation;
+                        obj.renderLinearVelocityMps = obj.linearVelocityMps;
+                        obj.renderAngularVelocityWorldRadPerSecond = obj.angularVelocityWorldRadPerSecond;
                         obj.renderAssemblyModules = obj.assemblyModules;
                         usedFallback = true;
                     }
@@ -1995,6 +2001,11 @@ void ClientWorldState::update(
                                 itNew->orientation,
                                 t
                             );
+                        obj.renderLinearVelocityMps =
+                            itOld->linearVelocityMps + (itNew->linearVelocityMps - itOld->linearVelocityMps) * static_cast<double>(t);
+                        obj.renderAngularVelocityWorldRadPerSecond =
+                            itOld->angularVelocityWorldRadPerSecond +
+                            (itNew->angularVelocityWorldRadPerSecond - itOld->angularVelocityWorldRadPerSecond) * static_cast<double>(t);
 
                         if (itOld->graph.hasAssemblyModules &&
                             itNew->graph.hasAssemblyModules)
@@ -2020,6 +2031,8 @@ void ClientWorldState::update(
                 {
                     obj.renderWorldPosition = obj.worldPosition;
                     obj.renderOrientation = obj.orientation;
+                    obj.renderLinearVelocityMps = obj.linearVelocityMps;
+                    obj.renderAngularVelocityWorldRadPerSecond = obj.angularVelocityWorldRadPerSecond;
                     obj.renderAssemblyModules = obj.assemblyModules;
                     usedFallback = true;
                 }
@@ -2028,6 +2041,8 @@ void ClientWorldState::update(
             {
                 obj.renderWorldPosition = obj.worldPosition;
                 obj.renderOrientation = obj.orientation;
+                obj.renderLinearVelocityMps = obj.linearVelocityMps;
+                obj.renderAngularVelocityWorldRadPerSecond = obj.angularVelocityWorldRadPerSecond;
                 obj.renderAssemblyModules = obj.assemblyModules;
                 usedFallback = true;
             }
@@ -2036,6 +2051,8 @@ void ClientWorldState::update(
         {
             obj.renderWorldPosition = obj.worldPosition;
             obj.renderOrientation = obj.orientation;
+            obj.renderLinearVelocityMps = obj.linearVelocityMps;
+            obj.renderAngularVelocityWorldRadPerSecond = obj.angularVelocityWorldRadPerSecond;
             obj.renderAssemblyModules = obj.assemblyModules;
             usedFallback = true;
         }

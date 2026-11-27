@@ -143,6 +143,11 @@ struct ClientObjectState
 
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;
+    // the render epoch's velocities (audit #6 B1): interpolated between the SAME two snapshots with the SAME alpha as the
+    // render pose - a pose and its velocities from one epoch (the latest linearVelocityMps / angularVelocity... are the
+    // authoritative epoch's)
+    glm::dvec3 renderLinearVelocityMps {0.0};
+    glm::dvec3 renderAngularVelocityWorldRadPerSecond {0.0};
 
 
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;

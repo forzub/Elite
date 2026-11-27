@@ -1548,7 +1548,10 @@ bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
                   << s.m_client->universeTimeSeconds() << " s timeline rev "
                   << (s.m_client->hasSessionSnapshot() ? s.m_client->sessionSnapshot().universeTimelineRevision : 0)
                   << " | presentation server time " << s.m_client->world().presentationServerTimeSeconds() << " s"
-                  << " | city building states " << city->buildingStates.size() << '\n';
+                  << " | city building states " << city->buildingStates.size() << " | epochs: velocity render-vs-auth "
+                  << glm::length(city->renderLinearVelocityMps - city->linearVelocityMps) << " m/s, spin "
+                  << glm::length(city->renderAngularVelocityWorldRadPerSecond - city->angularVelocityWorldRadPerSecond)
+                  << " rad/s" << '\n';
         const glm::dvec3 camW = shipW;   // the HUD's camera-relative origin (the player's render position)
         for (const auto& [label, planPoint] : points)
         {

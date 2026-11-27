@@ -3,6 +3,10 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
+#include <string>
+#include <vector>
+
+#include <nlohmann/json.hpp>
 
 #include "src/game/server/ServerRunner.h"
 #include "src/game/server/AccountRegistry.h"
@@ -79,6 +83,13 @@ public:
     // while gameplay sessions are connected. M8E.3 will route this through
     // the durable account repository so the CLI reset keeps the same contract.
     bool resetAuthenticationStateForDevelopment();
+    // DURABLE accounts (author 2026-11-27: the same character gets the same PlayerId after a reconnect AND a server
+    // restart): account handle + credential DIGEST + AccountId + PlayerId saved next to the server state
+    // ("<ELITE_ECONOMY_STATE_FILE>.accounts.json"; no state file = in memory only, as before). The dedicated server
+    // enables it after an optional --reset-auth-state (startEmpty: the reset also empties the file). PlayerIds are the
+    // bootstrap identities (1..slots in order): a binding to a player this universe does not have is kept in the file
+    // and refused, never rebound to someone else.
+    void enableAccountPersistence(bool startEmpty);
 
     // Load test (EliteServer --load-test): a dedicated runtime with N player slots; the sessions'
     // ships are sent to their systems; the tick's simulation wall time / system passes.
@@ -116,6 +127,9 @@ private:
     std::unique_ptr<ServerRunner> m_runner;
     game::server::AccountRegistry m_accounts;
     std::uint64_t m_nextAccountId = 1;
+    std::string m_accountsFile;   // empty = not persisted
+    std::vector<nlohmann::json> m_unboundAccounts;   // file rows naming a player this universe lacks (kept)
+    void saveAccounts() const;
     game::network::ServerSessionId m_primarySessionId {};
     game::debug::IServerDebugChannel& m_debugChannel;
 

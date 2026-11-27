@@ -20,10 +20,8 @@ game::presentation::RepairRefitPresentation SpaceState::buildRepairRefitPage()
         return {};
     const auto& ships = m_client->world().ships();
     const auto controlled = m_client->localControlledEntityId();
-    std::uint32_t owner = 0;
-    if (const auto it = ships.find(controlled.value); it != ships.end() && it->second.refit.owned)
-        owner = it->second.refit.ownerActor;
-    // the controlled ship first, then every other ship of the same owner
+    // the controlled ship first, then every other ship of THIS player's fleet: refit.owned is the server's "owned by
+    // the receiving player" (ShipOwnershipRegistry) - the client compares no owner ids
     const auto add = [&](const ClientShipState& s) {
         owned.push_back({s.id, s.descriptor, &s.modules, &s.refit});
     };
@@ -31,7 +29,7 @@ game::presentation::RepairRefitPresentation SpaceState::buildRepairRefitPage()
         add(it->second);
     std::vector<const ClientShipState*> others;
     for (const auto& [id, s] : ships)
-        if (id != controlled.value && s.descriptor && s.refit.owned && owner != 0 && s.refit.ownerActor == owner)
+        if (id != controlled.value && s.descriptor && s.refit.owned)
             others.push_back(&s);
     std::sort(others.begin(), others.end(), [](const auto* a, const auto* b) { return a->id.value < b->id.value; });
     for (const auto* s : others)
@@ -136,12 +134,9 @@ game::presentation::TradePresentation SpaceState::buildTradePage()
     if (m_client)
     {
         const auto& ships = m_client->world().ships();
-        std::uint32_t owner = 0;
-        if (const auto it = ships.find(m_playerId.value); it != ships.end())
-            owner = it->second.refit.ownerActor;
         std::vector<std::uint32_t> ids;
         for (const auto& [sid, sh] : ships)
-            if (sid != m_playerId.value && owner != 0 && sh.refit.owned && sh.refit.ownerActor == owner)
+            if (sid != m_playerId.value && sh.refit.owned)   // the server's "owned by this player"
                 ids.push_back(sid);
         std::sort(ids.begin(), ids.end());
         if (!ids.empty())

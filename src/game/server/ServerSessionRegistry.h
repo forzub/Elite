@@ -108,6 +108,17 @@ public:
         return false;
     }
 
+    // the one connected session of a player (create() admits one at a time); {} when offline
+    game::network::ServerSessionId connectedSessionOf(PlayerId playerId) const noexcept
+    {
+        if (!playerId)
+            return {};
+        for (const auto& [id, state] : m_sessions)
+            if (state.connected && state.playerId == playerId)
+                return state.id;
+        return {};
+    }
+
     std::size_t connectedCount() const noexcept
     {
         std::size_t count = 0;

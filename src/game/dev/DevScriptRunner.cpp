@@ -976,6 +976,93 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         s.sendRefitCommand(true, {game::ship::refit::RefitOperationKind::Replace, module, product});
         std::cerr << "[RefitReport] apply ship " << s.m_refitShip.value << " module " << module << " <- " << product << '\n';
     }
+    // ownership live check (2026-11-27): "refit:foreign:<preview|apply>" asks a refit of the nearest OTHER
+    // player-role ship this player does not own (the server must refuse it before any charge and leave the ship as it
+    // was); "fleet" logs the F7 fleet this client is given (refit.owned = owned by THIS player, from the server)
+    else if (cmd == "refit:foreign:report")
+    {
+        const auto it = s.m_client->world().ships().find(s.m_devForeignRefitShip);
+        std::string overrides;
+        if (it != s.m_client->world().ships().end())
+            for (const auto& o : it->second.refit.productOverrides)
+                overrides += o + " ";
+        std::cerr << "[RefitReport] foreign ship " << s.m_devForeignRefitShip << " overrides now [" << overrides << "]" << '\n';
+    }
+    else if (cmd.rfind("refit:foreign:", 0) == 0)
+    {
+        const bool apply = cmd.substr(14) == "apply";
+        const auto& ships = s.m_client->world().ships();
+        const auto own = ships.find(s.m_playerId.value);
+        // the nearest other player-role ship this player does not own, preferring one with a real catalog swap (its
+        // descriptor's modules: an observer is not sent a foreign ship's module graph)
+        const ClientShipState* foreign = nullptr;
+        std::string module, product;
+        double best = 1.0e300;
+        bool bestHasSwap = false;
+        for (const auto& [id, ship] : ships)
+        {
+            if (id == s.m_playerId.value || ship.role != ShipRole::Player || ship.refit.owned || !ship.descriptor)
+                continue;
+            std::string m, pr;
+            for (const auto& slot : ship.descriptor->modules)
+            {
+                for (const auto& r : game::ship::refit::compatibleReplacements(*ship.descriptor, slot.moduleId))
+                    if (!r.sameProduct)
+                    {
+                        m = slot.moduleId;
+                        pr = r.productId;
+                        break;
+                    }
+                if (!m.empty())
+                    break;
+            }
+            const double d = own == ships.end() ? 0.0
+                                                : glm::length(ship.transform.fullWorldMeters() - own->second.transform.fullWorldMeters());
+            const bool hasSwap = !m.empty();
+            if ((hasSwap && !bestHasSwap) || (hasSwap == bestHasSwap && d < best))
+            {
+                best = d;
+                bestHasSwap = hasSwap;
+                foreign = &ship;
+                module = m;
+                product = pr;
+            }
+        }
+        if (!foreign)
+            std::cerr << "[RefitReport] foreign: no other player-role ship in view" << '\n';
+        else
+        {
+            std::string overrides;
+            for (const auto& o : foreign->refit.productOverrides)
+                overrides += o + " ";
+            s.m_devForeignRefitShip = foreign->id.value;
+            const EntityId keep = s.m_refitShip;
+            s.m_refitShip = foreign->id;
+            s.sendRefitCommand(apply, {game::ship::refit::RefitOperationKind::Replace, module, product});
+            s.m_refitShip = keep;
+            std::cerr << "[RefitReport] foreign " << (apply ? "apply" : "preview") << " ship " << foreign->id.value << " ("
+                      << static_cast<long long>(best) << " m) module '" << module << "' <- '" << product << "', its overrides now ["
+                      << overrides << "]" << '\n';
+        }
+    }
+    else if (cmd.rfind("refit:overrides:", 0) == 0)
+    {
+        const auto it = s.m_client->world().ships().find(static_cast<std::uint32_t>(std::atoi(cmd.c_str() + 16)));
+        std::string overrides;
+        if (it != s.m_client->world().ships().end())
+            for (const auto& o : it->second.refit.productOverrides)
+                overrides += o + " ";
+        std::cerr << "[RefitReport] ship " << cmd.substr(16) << " overrides [" << overrides << "]" << '\n';
+    }
+    else if (cmd == "fleet")
+    {
+        const auto page = s.buildRepairRefitPage();
+        std::string ids;
+        for (const auto& ship : page.ships)
+            ids += std::to_string(ship.id.value) + " ";
+        std::cerr << "[Fleet] controlled " << s.m_playerId.value << ", F7 fleet " << page.ships.size() << " ship(s): [" << ids << "]"
+                  << '\n';
+    }
     else if (cmd == "refit:report")
     {
         const auto it = s.m_client->world().ships().find(s.m_refitShip.value);
@@ -1264,21 +1351,34 @@ bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
     // private fields another session's ship brings along today
     if (cmd == "peers")
     {
+        std::size_t peersSeen = 0, peersWithPrivate = 0;
         for (const auto& [id, ship] : s.m_client->world().ships())
         {
             if (id == s.m_playerId.value)
                 continue;
-            const bool privateData = ship.refit.owned || !ship.refit.registrationId.empty() ||
-                                     !ship.shipCoreStatus.engineReactors.empty();
+            const auto& mo = ship.transform.motion;
+            // every owner / pilot domain the server's audience projection blanks for a foreign row
+            const bool privateData = ship.refit.owned || !ship.refit.registrationId.empty() || !ship.refit.shipName.empty() ||
+                                     ship.refit.previewSerial != 0 || ship.refit.applySerial != 0 ||
+                                     !ship.shipCoreStatus.engineReactors.empty() || ship.shipCoreStatus.reactor.maxOutputMW != 0.0 ||
+                                     !ship.shipCoreStatus.powerBus.consumers.empty() || !ship.shipCoreStatus.alerts.empty() ||
+                                     mo.engineTelemetry.count != 0 || mo.shipMassT != 0.0 || mo.jChargeCapacityT != 0.0 ||
+                                     !mo.laneRecords.empty() || !mo.dataCarriers.empty() || !mo.jumpTargetName.empty() ||
+                                     mo.securityFinesTotalCr != 0.0 || mo.zoneFinesTotalCr != 0.0 || mo.refuelSerial != 0 ||
+                                     !ship.padService.empty() || ship.dockDispatcher.active;
+            ++peersSeen;
             if (!privateData)
                 continue;
-            std::cerr << "[DevPeers] ship " << id << ": refit owned " << ship.refit.owned << " ownerActor "
-                      << ship.refit.ownerActor << " registration '" << ship.refit.registrationId << "' name '"
+            ++peersWithPrivate;
+            std::cerr << "[DevPeers] ship " << id << ": refit owned " << ship.refit.owned << " registration '" << ship.refit.registrationId << "' name '"
                       << ship.refit.shipName << "' overrides " << ship.refit.productOverrides.size()
                       << ", core status reactors " << ship.shipCoreStatus.engineReactors.size()
                       << ", engine telemetry slots " << static_cast<int>(ship.transform.motion.engineTelemetry.count)
-                      << ", jump target '" << ship.transform.motion.jumpTargetName << "'\n";
+                      << ", jump target '" << ship.transform.motion.jumpTargetName << "' mass " << mo.shipMassT << " t lanes '"
+                      << mo.laneRecords.size() << "' fines " << mo.securityFinesTotalCr + mo.zoneFinesTotalCr << " pad '" << ship.padService
+                      << "'\n";
         }
+        std::cerr << "[DevPeers] " << peersSeen << " other ship(s), " << peersWithPrivate << " with owner / pilot data" << '\n';
         return true;
     }
     if (cmd == "jstate")

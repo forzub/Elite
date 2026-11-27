@@ -2,8 +2,15 @@
 #include "src/game/server/ServerRuntime.h"
 #include "src/core/RuntimeTrace.h"
 
+#include <algorithm>
 #include <chrono>
+#include <cstdio>
+#include <fstream>
 #include <iostream>
+
+#include <nlohmann/json.hpp>
+
+#include "src/game/economy/EconomyServer.h"
 #include <stdexcept>
 #include <thread>
 
@@ -325,6 +332,7 @@ PlayerId ServerRuntime::resolveOrRegisterAccount(
                 accountId,
                 candidate))
         {
+            saveAccounts();
             if (core::runtimeTraceEnabled())
                 std::cerr << "[M8E-AUTH][server] registration accepted handle="
                           << hello.accountHandle
@@ -457,7 +465,89 @@ bool ServerRuntime::resetAuthenticationStateForDevelopment()
 
     m_accounts.reset();
     m_nextAccountId = 1;
+    saveAccounts();
     return true;
+}
+
+void ServerRuntime::enableAccountPersistence(bool startEmpty)
+{
+    const std::string state = m_server->persistentStatePath();
+    if (state.empty())
+    {
+        std::cerr << "[Accounts] no server state file (ELITE_ECONOMY_STATE_FILE): accounts live in memory only" << std::endl;
+        return;
+    }
+    m_accountsFile = state + ".accounts.json";
+    if (startEmpty)
+    {
+        saveAccounts();
+        return;
+    }
+    std::ifstream f(m_accountsFile, std::ios::binary);
+    if (!f)
+        return;
+    nlohmann::json j;
+    try
+    {
+        f >> j;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[Accounts] " << m_accountsFile << " unreadable: " << e.what() << std::endl;
+        m_accountsFile.clear();   // never overwrite a file we could not read
+        return;
+    }
+    if (j.value("schema", std::string()) != "accounts/1")
+        return;
+    m_nextAccountId = std::max(m_nextAccountId, j.value("next_account", std::uint64_t{1}));
+    const auto identities = m_server->playerIdentities();
+    std::size_t restored = 0;
+    for (const auto& a : j.value("accounts", nlohmann::json::array()))
+    {
+        game::identity::AuthTokenDigest digest;
+        const std::string hex = a.value("digest", std::string());
+        if (hex.size() != digest.bytes.size() * 2)
+            continue;
+        for (std::size_t i = 0; i < digest.bytes.size(); ++i)
+            digest.bytes[i] = static_cast<std::uint8_t>(std::stoul(hex.substr(i * 2, 2), nullptr, 16));
+        const PlayerId player {a.value("player", std::uint64_t{0})};
+        if (std::find(identities.begin(), identities.end(), player) == identities.end())
+        {
+            std::cerr << "[Accounts] account '" << a.value("handle", std::string()) << "' -> player " << player.value
+                      << ": no such player identity in this universe - not bound (kept in the file)" << std::endl;
+            m_unboundAccounts.push_back(a);
+            continue;
+        }
+        if (m_accounts.bind(a.value("handle", std::string()), digest, AccountId{a.value("account", std::uint64_t{0})}, player))
+            ++restored;
+    }
+    std::cerr << "[Accounts] restored " << restored << " account(s) from " << m_accountsFile << std::endl;
+}
+
+void ServerRuntime::saveAccounts() const
+{
+    if (m_accountsFile.empty())
+        return;
+    nlohmann::json j;
+    j["schema"] = "accounts/1";
+    j["next_account"] = m_nextAccountId;
+    j["accounts"] = nlohmann::json::array();
+    for (const auto& [digest, record] : m_accounts.all())
+    {
+        std::string hex;
+        char b[3];
+        for (const auto byte : digest.bytes)
+        {
+            std::snprintf(b, sizeof(b), "%02x", static_cast<unsigned>(byte));
+            hex += b;
+        }
+        j["accounts"].push_back({{"handle", record.accountHandle}, {"digest", hex}, {"account", record.accountId.value},
+                                 {"player", record.playerId.value}});
+    }
+    for (const auto& a : m_unboundAccounts)
+        j["accounts"].push_back(a);
+    if (!game::economy::writeFileAtomically(m_accountsFile, j.dump(1)))
+        std::cerr << "[Accounts] NOT saved: " << m_accountsFile << std::endl;
 }
 
 void ServerRuntime::receiveDebugCommands()

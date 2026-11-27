@@ -1004,6 +1004,7 @@ private:
     std::string m_shipyardModel;
     bool m_shipyardPassport = false;
     EntityId m_refitShip {0};
+    std::uint32_t m_devForeignRefitShip = 0;   // DEV refit:foreign: the last foreign target (ownership live check)
     std::string m_refitGroup;
     std::string m_refitModule;
     std::uint32_t m_refitSeenApplySerial = 0;

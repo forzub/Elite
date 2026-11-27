@@ -9359,3 +9359,64 @@ start-up hitches (render), trade step 16 part 3 live.
   - LIVE: with "gear" the pad landing proceeds (B4-11 phase 2 descending at 6 m/s, 137 m to go at the 300 s cut) - the
     earlier "hang" was the missing legs; J over TCP: client restored frame speed 8388 km/s. Condition table live: 237
     ships (153 corporate integrity 0.999 parts 0.91, 84 private integrity 0.977 parts 0.35), 138 KiB.
+* 2026-11-27 SHIP OWNERSHIP / AUTHORITY / AUDIENCE (author's decision: ShipOwnershipRegistry is the ONLY owner truth,
+  ShipInstanceId -> ShipOwnerRef::player(PlayerId) / organization, saved and restored; PlayerId from the authenticated
+  session, the same after a reconnect AND a restart; ControlRegistry = who flies; ownerActor in NO check) - SOURCE + LIVE:
+  - SOURCE findings fixed (all confirmed by the author's own read): refit authority compared ownerActor of two ships (one
+    shared Player actor -> any player could refit another's ship) and chargeRefit ran BEFORE the check (a refused apply could
+    charge); transferPlayerControl allowed boarding by ownerActor and wrote the pilot the OWNER (assign overwrote, before the
+    control change, a refusal rolled back control only); buyShip copied ownerActor from the flown ship (an employer's on a
+    hire) and registered no owner; the ship save had no owner record; F7 / the bot list matched ownerActor; every session got
+    every ship row whole (normal, hydration, full copy) and the refit answer was per TARGET, not per asker; accounts lived in
+    memory only (a restart lost every handle -> PlayerId binding).
+  - NOW: GameServer::refitAuthority (the commanding player OWNS the target, ownerPlayerOf = m_shipOwnership) runs before the
+    preview and before chargeRefit; a refused foreign request leaves the target's publication untouched and answers the asker
+    through its trade refusal log; GameSimulation executes only (sameOwner gone). Boarding checks the owner (or the hire's
+    employer ship) and never writes it. buyShip: assignShipOwner(buyer); the social ownerActor is the buyer's. Bot hire: the
+    bot ship must be the player's own. The simulation's owned set (refit block + module graph publication) is pushed from the
+    registry (setPlayerOwnedShipInstances); DEV catalog lineup ships are granted through it. Wire 59 / schema 84: refit
+    ownerActor left the wire; refit.owned = "owned by the RECEIVING player" (GameServer::projectShipRowsForSession, applied
+    in copySnapshotForSession, copyHydratedSnapshotForSession - the full graphs too - and copySparseSnapshotForSession);
+    the preview / apply answer (and its serials) only to the session that asked; a foreign row keeps only the visible
+    configuration (productOverrides). For a ship neither owned nor flown by the viewer the owner / pilot domains are blanked
+    before serialization (blankPrivateShipDomains: core status, control authority, receptions, damage events, navigation
+    execution, dock dispatcher, pad service, engine telemetry, gas, J charge, mass / core rating, jump target / exit details,
+    lanes, data carriers, nav computer, refuel, zone / security fines and debt). PUBLIC by the client reader audit (subagent,
+    every reader file:line checked for a controlled / owned guard): the module graph (visible damage, assembly poses,
+    fragments, repair drones), combat beams / missiles / impacts, productOverrides, traffic, kinematics + frame,
+    securityLevel (hub turrets), jumpState / jumpSerial / jumpExitSerial, capsuleState, landingGear. DEV A/B:
+    ELITE_DEV_NO_AUDIENCE_PROJECTION=1.
+  - SAVE: runtime_ships/2 writes owner_player (or owner_organization) and keeps owner_unresolved rows. LEGACY runtime_ships/1
+    (owner_actor = the shared actor, names nobody): only unambiguous evidence assigns - a hire's own ship (hires), the ship a
+    player flew that is not an employer's (the old boarding wrote the pilot the owner), or a universe with ONE player
+    identity; anything else stays unowned, logged "[Ownership] ... NOT assigned" and kept as owner_unresolved
+    {legacy_owner_actor, reason} - never handed out automatically.
+  - ACCOUNTS durable: "<ELITE_ECONOMY_STATE_FILE>.accounts.json" (handle, SHA-256 credential digest, AccountId, PlayerId;
+    never a raw token), enabled by the dedicated server after an optional --reset-auth-state (which empties it); a binding
+    to a player the universe lacks is kept and refused, never rebound. No state file = in memory, as before. PlayerIds are
+    the bootstrap identities in order: stable while the slot count does not shrink.
+  - One connected session per player (ServerSessionRegistry::create refuses a second): "two sessions of one player" cannot
+    happen today; the per-asker binding still covers a reconnect (a new session does not inherit the old answer).
+  - LIVE (scratchpad run_own.sh, D:/tmp/ownlive; first attempt D:/tmp/ownlive_try1): phase 1 fresh server, A (player 1)
+    buys a C-120 (DEV: bought off a berth - the dock autopilot did NOT dock: DockClientTrack at remaining 0 m, cross-track
+    65 m, the docking regression of the author's list), F7 A = [204 1587], B = [1383]; A's refit of its OWN non-flown
+    C-120 "APPLIED" (C-120-A1A1.1 = ofu.drive.u33); B's preview and apply of that ship "REFUSED: чужой корабль" before any
+    charge (no "paid" line; the refusal reached B's trade log), its overrides unchanged; B decoded: 207 other ships, 0 with
+    owner / pilot data (A: 1 = its own C-120). Phase 2 the server restarted WITHOUT the reset, B connected FIRST: "[Accounts]
+    restored 2 account(s)", B = [1383], A = [204 1558] (the C-120 restored "owner player 1"). Legacy file (D:/tmp/ownlegacy,
+    2 player identities): the hire's own ship -> "owner player 2 (legacy evidence)", the other "NOT assigned ... no pilot /
+    hire evidence, 2 players", re-saved as runtime_ships/2 with owner_unresolved.
+  - LIVE pad landing to the END (D:/tmp/netown1, gear first): B4-11 phase 2 descent at 6 -> 2 m/s, "LANDED (122 s)", the
+    client holds it against the city (~1 mm / frame). The earlier 137 m was the 300 s cut, not a hang.
+  - NETWORK A/B of the projection (MEASURED, same start / script / 150 s, D:/tmp/netab_on vs netab_off with
+    ELITE_DEV_NO_AUDIENCE_PROJECTION=1, 11 windows each, 16.9 / 16.8 ships per snapshot): a foreign row 3838 vs 4451 B raw
+    (-14 %), but the stream only raw 2151 vs 2181 KiB/s, wire 538 vs 545 KiB/s (-1.3 %): the fixed-layout codec keeps
+    engine telemetry 1162 B / row zeroed, and a snapshot is dominated by session ~35.7 KB + objects 16.5 KB + hubs 13.4 KB
+    (the sparse ship part is the smaller share). The projection closes the LEAK; the bandwidth lever stays the session
+    block's cadence / deltas. (The longer D:/tmp/netown1 run: 644 KiB/s wire at 32.5 ships - not comparable to netnight1's
+    windows at 24 ships, so no before/after from it.)
+  - check_ship_ownership_authority.py (new): no ownerActor in refit / F7, authority before preview + charge, boarding never
+    writes the owner, the purchase records the buyer, the save carries owner_player / owner_unresolved, every session copy
+    path projects, accounts persisted. Python checks: the same 17 reds as before, no new.
+  - Evidence for backlog item (10) mojibake: the bought ship's name is saved as "C-120 В«Р’Р°С…Р°РєВ»" - UTF-8 read as
+    cp1251 and encoded again (buyShip's designation + « name »).

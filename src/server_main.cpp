@@ -1607,6 +1607,7 @@ int runNetworkServer(
         }
         std::cerr << "[EliteServer] development auth registrations reset\n";
     }
+    host.enableAccountPersistence(resetAuthState);   // durable accounts: the same PlayerId after a restart
 
     if (!host.listen(endpoint.host, endpoint.port))
     {

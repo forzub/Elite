@@ -15,6 +15,7 @@
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <memory>
 #include <string>
 #include <glm/glm.hpp>
@@ -435,9 +436,9 @@ public:
     CombatLoadout& combatLoadout(EntityId shipId);
     game::simulation::ShipCombatSnapshot combatSnapshotFor(EntityId shipId) const;
 
-    // Repair & Refit (F7): a preview / DEV apply of one module operation on
-    // a ship owned by the commanding ship's owner (subject 0 = that ship).
-    // Results are published in the subject's ShipSnapshot::refit.
+    // Repair & Refit (F7): a preview / apply of one module operation on `subject` (0 = the commanding ship).
+    // AUTHORITY is the server's (GameServer::refitAuthority: the commanding player OWNS the target, checked before any
+    // charge); the simulation only executes. Results are published in the subject's ShipSnapshot::refit.
     void requestRefitPreview(EntityId commandingShip, EntityId subject, const game::ship::refit::RefitOperation& operation);
     void applyRefit(EntityId commandingShip, EntityId subject, const game::ship::refit::RefitOperation& operation);
     // a refused apply (no money, not at a berth): published like an apply result, the ship untouched
@@ -1312,6 +1313,15 @@ private:
     // State/physics proving actor. It changes construction and degradation
     // continuously without resetting kinematics.
     std::unordered_map<std::uint32_t, game::simulation::ShipRefitSnapshot> m_refitPublications;
+    // the ship instances a PLAYER owns (GameServer pushes them from ShipOwnershipRegistry, the only owner truth):
+    // they publish the refit block and their module graph (F7); ownerActor decides nothing
+    std::unordered_set<ShipInstanceId> m_playerOwnedShipInstances;
+    std::vector<ShipInstanceId> m_devOwnershipGrants;   // DEV ships spawned for the primary player (catalog lineup)
+public:
+    std::vector<ShipInstanceId> takeDevOwnershipGrants() { return std::exchange(m_devOwnershipGrants, {}); }
+    void setPlayerOwnedShipInstances(std::unordered_set<ShipInstanceId> ids) { m_playerOwnedShipInstances = std::move(ids); }
+    bool isPlayerOwnedShip(const Ship& ship) const noexcept;
+private:
     std::vector<std::string> m_catalogLineupRequest;
     bool m_catalogLineupSpawned = false;
     bool m_shipStateFlightTestRequested = false;

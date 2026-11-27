@@ -791,7 +791,7 @@ ELITE_WIRE_SCHEMA(
 
 ELITE_WIRE_SCHEMA(
     game::simulation::ShipRefitSnapshot,
-    v.owned, v.ownerActor, v.registrationId, v.shipName, v.previewSerial, v.previewValid, v.preview,
+    v.owned, v.registrationId, v.shipName, v.previewSerial, v.previewValid, v.preview,
     v.applySerial, v.applyResult, v.productOverrides);
 
 ELITE_WIRE_SCHEMA(

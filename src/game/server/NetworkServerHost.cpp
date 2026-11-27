@@ -229,6 +229,12 @@ bool NetworkServerHost::resetAuthenticationStateForDevelopment()
     return m_runtime && m_runtime->resetAuthenticationStateForDevelopment();
 }
 
+void NetworkServerHost::enableAccountPersistence(bool startEmpty)
+{
+    if (m_runtime)
+        m_runtime->enableAccountPersistence(startEmpty);
+}
+
 void NetworkServerHost::close()
 {
     for (auto& connection : m_connections)

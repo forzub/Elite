@@ -57,6 +57,7 @@ public:
     const std::string& lastError() const noexcept;
 
     bool resetAuthenticationStateForDevelopment();
+    void enableAccountPersistence(bool startEmpty);
     void close();
 
 private:

@@ -14,8 +14,10 @@ namespace game::simulation
 // Module states themselves travel in the ordinary ObjectGraphSnapshot.
 struct ShipRefitSnapshot
 {
-    bool owned = false;                 // the ship has a real owner (player / organisation)
-    std::uint32_t ownerActor = 0;
+    // ON THE WIRE: owned by the RECEIVING session's player (GameServer::projectShipRowsForSession, from
+    // ShipOwnershipRegistry); in the server's canonical snapshot: the ship has a player owner. No owner id rides:
+    // ownerActor was a shared actor of every player (F7 merged their fleets) - author 2026-11-27
+    bool owned = false;
     std::string registrationId;
     std::string shipName;
     std::uint32_t previewSerial = 0;    // bumps on every new preview

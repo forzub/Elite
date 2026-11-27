@@ -174,6 +174,8 @@ public:
     ) const noexcept;
     std::size_t connectedPlayerSessionCount() const noexcept;
     std::vector<PlayerId> playerIdentities() const;
+    // the server state file (ELITE_ECONOMY_STATE_FILE) the durable records sit next to; empty = no persistence
+    std::string persistentStatePath() const;
     PlayerId primaryPlayerIdentity() const noexcept
     {
         return m_primaryPlayerId;
@@ -473,6 +475,28 @@ public:
     std::string quitJob(EntityId from);
     // F6 (step 14): buy a NEW ship (the manufacturer's offer) at a berth; "" = bought (it appears 5 km off)
     std::string buyShip(EntityId from, const std::string& passportId, const std::string& offerId);
+    // SHIP OWNERSHIP (author 2026-11-27): m_shipOwnership is the ONLY owner truth (ShipInstanceId ->
+    // ShipOwnerRef::player(PlayerId) / organization), saved and restored; ownerActor takes part in NO authority
+    // check. Control (who flies) is m_controls; boarding changes control only, ownership changes on a purchase or an
+    // explicit transfer.
+    PlayerId ownerPlayerOf(const Ship& ship) const noexcept;
+    PlayerId commandingPlayerOf(EntityId ship) const noexcept;   // the player whose controlled ship this is
+    // "" = the commanding player may refit `subject` (0 = its own ship): it OWNS the target; checked before any charge
+    std::string refitAuthority(EntityId commander, EntityId subject) const;
+    bool assignShipOwner(ShipInstanceId ship, game::server::ShipOwnerRef owner);   // + the simulation's owned set
+    void publishPlayerOwnedShips();
+    // the audience projection of the ship rows for ONE session, before serialization, on every copy path (normal,
+    // hydration, full): the refit block only for the viewer's own fleet (refit.owned = "owned by the viewer's player"),
+    // the preview / apply answer only to the session that asked; productOverrides stay public (visible configuration)
+    void projectShipRowsForSession(game::network::ServerSessionId sessionId, std::vector<ShipSnapshot>& ships) const;
+    std::unordered_map<std::uint32_t, std::uint64_t> m_refitRequesterSession;   // target entity -> the asking session
+    // legacy-save ownership that could not be resolved unambiguously: kept as written, never handed out automatically
+    struct UnresolvedOwnership
+    {
+        std::uint64_t legacyOwnerActor = 0;
+        std::string reason;
+    };
+    std::unordered_map<ShipInstanceId, UnresolvedOwnership> m_unresolvedOwnership;
     std::unordered_map<std::uint64_t, std::uint32_t> m_controlEpochs;  // player -> epoch (0 = bootstrap ship)
     void arrestShip(EntityId id, std::uint64_t player, const std::string& hubId,
                     const game::economy::EconomyServer::ArrestClaim& claim);

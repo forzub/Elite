@@ -190,7 +190,7 @@ void GameSimulation::updateCatalogShipLineup()
         init.visual.shipName = d->identity.shipName;
         init.registry.instanceId = 960000 + serial++;
         init.registry.ownerName = "catalog lineup";
-        init.registry.ownerActor = ActorIds::Player();   // the player fleet: F7 lists them
+        init.registry.ownerActor = ActorIds::Player();   // social actor only; ownership: the grant below
         init.registry.registrationId = d->catalog.passportId;
         init.registry.shipRole = ShipRoleType::Civilian;
         // ELITE_CATALOG_SHIPS_BOARDABLE=1: Player-role (a pilot can board them - base 2 ship change)
@@ -200,6 +200,8 @@ void GameSimulation::updateCatalogShipLineup()
         Ship* ship = id.value ? getShip(id) : nullptr;
         if (!ship)
             continue;
+        // the player fleet (F7 lists them): the SERVER makes them the primary player's in ShipOwnershipRegistry
+        m_devOwnershipGrants.push_back(init.registry.instanceId);
         auto& tr = ship->core().transform();
         // Each ship owns its travel frame matched to the player's hub (the
         // same placement as any hub-relative spawn), so the row orbits with

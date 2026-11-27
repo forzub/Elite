@@ -359,6 +359,36 @@ int main()
         std::printf("A2 plan domain: deck points in, the ring's axis out\n");
     }
 
+    // ---- A4 (audit #6): a line across the seam on the ring's 2D plan breaks exactly once (the map's split rule)
+    {
+        game::system_map::LocalMapPlanWarp warp;
+        warp.valid = true;
+        warp.ring = ring.ring();
+        const double L = ring.ring().length, x0 = ring.ring().x0;
+        game::navigation::HubCitySpace space;
+        space.bend = ring.ring();
+        // a deck route from 300 m before the seam to 300 m past it, in the scene (the module frame = the scene here)
+        const glm::dvec3 a = space.planToModule(glm::dvec3(x0 + L - 300.0, 0.0, 100.0));
+        const glm::dvec3 b = space.planToModule(glm::dvec3(x0 + 300.0, 0.0, 100.0));
+        int breaks = 0;
+        double last = 0.0, worstStep = 0.0;
+        for (int s = 0; s <= 30; ++s)
+        {
+            const double sx = warp.apply(a + (b - a) * (s / 30.0)).x;
+            if (s > 0)
+            {
+                if (std::abs(sx - last) > 0.5 * L)
+                    ++breaks;
+                else
+                    worstStep = std::max(worstStep, std::abs(sx - last));
+            }
+            last = sx;
+        }
+        std::printf("A4 ring plan polyline across the seam: %d break(s), the longest drawn step %.0f m (the sheet is %.0f m)\n",
+                    breaks, worstStep, L);
+        check(breaks == 1 && worstStep < 100.0, "A4: one break at the seam, no line across the sheet");
+    }
+
     // ---- A7: the hub map's GPU line shader (hub_map_dynamic_lines.vert: origin + R(p) * scale) == the CPU fallback
     {
         game::system_map::LocalMapCameraSnapshot cam;

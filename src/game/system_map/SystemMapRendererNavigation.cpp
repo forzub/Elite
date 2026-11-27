@@ -1990,7 +1990,21 @@ void SystemMapRenderer::decorateTrafficRoutes(
                 overlay->trajectories.push_back(trajectory);
             trajectory.points.clear();
         };
+        // the RING's 2D plan (audit #6 A4): the sheet is the strip unrolled - a line crossing the seam must break there,
+        // not run across the whole sheet from x0 + L back to x0
+        const auto& warp = m_hubPresentation.camera.planWarp;
+        const bool seamSplit = hubMode && m_hubView.planView() && warp.valid && warp.ring.valid && warp.ring.length > 0.0;
+        bool haveSheet = false;
+        double lastSheetX = 0.0;
         const auto addPoint = [&](const glm::dvec3& p) {
+            if (seamSplit)
+            {
+                const double sx = warp.apply(p).x;
+                if (haveSheet && std::abs(sx - lastSheetX) > 0.5 * warp.ring.length)
+                    flush();   // across the seam: the line breaks (its two ends sit at both edges of the sheet)
+                haveSheet = true;
+                lastSheetX = sx;
+            }
             if (!occluders.empty() && hidden(p))
             {
                 flush();   // a hidden run: the line breaks here
@@ -2004,9 +2018,10 @@ void SystemMapRenderer::decorateTrafficRoutes(
         };
         for (std::size_t i = 0; i < scenePoints.size(); ++i)
         {
-            if (i > 0 && !occluders.empty())
+            if (i > 0 && (!occluders.empty() || seamSplit))
             {
-                // samples every ~40 m between the stations, so a line enters / leaves a block at its edge
+                // samples every ~40 m between the stations, so a line enters / leaves a block at its edge (and breaks
+                // where it crosses the ring's seam)
                 const glm::dvec3 a = scenePoints[i - 1], b = scenePoints[i];
                 const int n = std::min(200, static_cast<int>(glm::length(b - a) / 40.0));
                 for (int s = 1; s < n; ++s)

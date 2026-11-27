@@ -1,0 +1,4066 @@
+{
+ "schema_version": 1,
+ "kind": "data_terms",
+ "terms": {
+  "0..1, опасность маршрута (пираты, зоны, блокада)": {
+   "en": "0..1, route danger (pirates, zones, blockade)",
+   "ru": "0..1, опасность маршрута (пираты, зоны, блокада)"
+  },
+  "0.02 + 0.25 x security(системы, среднее по хабам) x border_factor x alert_factor": {
+   "en": "0.02 + 0.25 x security(system, mean over hubs) x border_factor x alert_factor",
+   "ru": "0.02 + 0.25 x security(системы, среднее по хабам) x border_factor x alert_factor"
+  },
+  "1 + standing / 200 (репутация у политии хаба, -100..100)": {
+   "en": "1 + standing / 200 (reputation with the hub's polity, -100..100)",
+   "ru": "1 + standing / 200 (репутация у политии хаба, -100..100)"
+  },
+  "1. события: истечь / начать (events), применить множители": {
+   "en": "1. events: expire / start (events), apply multipliers",
+   "ru": "1. события: истечь / начать (events), применить множители"
+  },
+  "1.0 x стоимость груза (0 для снабжения своего оператора и вахт)": {
+   "en": "1.0 x cargo value (0 for supplying your own operator and crew shifts)",
+   "ru": "1.0 x стоимость груза (0 для снабжения своего оператора и вахт)"
+  },
+  "1.5 x стоимость груза по цене назначения": {
+   "en": "1.5 x cargo value at the destination price",
+   "ru": "1.5 x стоимость груза по цене назначения"
+  },
+  "2. производство prod_t_day x mult -> stock": {
+   "en": "2. production prod_t_day x mult -> stock",
+   "ru": "2. производство prod_t_day x mult -> stock"
+  },
+  "3. потребление cons_t_day x mult <- stock (дефицит копится в unmet, не уходит в минус)": {
+   "en": "3. consumption cons_t_day x mult <- stock (shortage accumulates in unmet, never goes negative)",
+   "ru": "3. потребление cons_t_day x mult <- stock (дефицит копится в unmet, не уходит в минус)"
+  },
+  "4. прибытия виртуальных поставок (virtual_shipments) и доставок игрока/NPC": {
+   "en": "4. arrivals of virtual shipments (virtual_shipments) and player/NPC deliveries",
+   "ru": "4. прибытия виртуальных поставок (virtual_shipments) и доставок игрока/NPC"
+  },
+  "5. автозакупка: stock < reorder_share x target и цена выше паритета импорта -> виртуальная поставка из ближайшего источника по маршрутам, прибытие через travel_days": {
+   "en": "5. auto-restock: stock < reorder_share x target and price above import parity -> virtual shipment from the nearest source along routes, arriving after travel_days",
+   "ru": "5. автозакупка: stock < reorder_share x target и цена выше паритета импорта -> виртуальная поставка из ближайшего источника по маршрутам, прибытие через travel_days"
+  },
+  "6. цена: target_price, затем сглаживание": {
+   "en": "6. price: target_price, then smoothing",
+   "ru": "6. цена: target_price, затем сглаживание"
+  },
+  "7. порча: товары с shelf_days теряют stock / shelf_days в сутки сверх оборота": {
+   "en": "7. spoilage: goods with shelf_days lose stock / shelf_days per day beyond turnover",
+   "ru": "7. порча: товары с shelf_days теряют stock / shelf_days в сутки сверх оборота"
+  },
+  "8. бюллетень цен публикуется в сеть маяков (snapshot) — см. price_info": {
+   "en": "8. the price bulletin is published to the beacon network (snapshot) - see price_info",
+   "ru": "8. бюллетень цен публикуется в сеть маяков (snapshot) — см. price_info"
+  },
+  "9. доска: истёкшие заявки снять, новые сгенерировать (board.generation)": {
+   "en": "9. board: remove expired contracts, generate new ones (board.generation)",
+   "ru": "9. доска: истёкшие заявки снять, новые сгенерировать (board.generation)"
+  },
+  "BITE кричит о тяге, а корабль разгоняется нормально": {
+   "en": "BITE reports a thrust fault, yet the ship accelerates normally",
+   "ru": "BITE кричит о тяге, а корабль разгоняется нормально"
+  },
+  "BITE: вибрация корпуса реактора на мощности": {
+   "en": "BITE: reactor casing vibration under power",
+   "ru": "BITE: вибрация корпуса реактора на мощности"
+  },
+  "BITE: время заряда накопителя выше нормы?": {
+   "en": "BITE: accumulator charge time above normal?",
+   "ru": "BITE: время заряда накопителя выше нормы?"
+  },
+  "BITE: выпуск / уборка опор": {
+   "en": "BITE: gear extension / retraction",
+   "ru": "BITE: выпуск / уборка опор"
+  },
+  "BITE: выход O2": {
+   "en": "BITE: O2 output",
+   "ru": "BITE: выход O2"
+  },
+  "BITE: выход ВСУ на номинале": {
+   "en": "BITE: APU output at rated power",
+   "ru": "BITE: выход ВСУ на номинале"
+  },
+  "BITE: замки модуля": {
+   "en": "BITE: module locks",
+   "ru": "BITE: замки модуля"
+  },
+  "BITE: импеданс сегментов кольца": {
+   "en": "BITE: ring segment impedance",
+   "ru": "BITE: импеданс сегментов кольца"
+  },
+  "BITE: импульсы по осям, есть ли дрейф без команды?": {
+   "en": "BITE: per-axis pulses, any drift without a command?",
+   "ru": "BITE: импульсы по осям, есть ли дрейф без команды?"
+  },
+  "BITE: калибровочный тест поля (без прыжка)": {
+   "en": "BITE: field calibration test (no jump)",
+   "ru": "BITE: калибровочный тест поля (без прыжка)"
+  },
+  "BITE: климат секции": {
+   "en": "BITE: section climate",
+   "ru": "BITE: климат секции"
+  },
+  "BITE: мощность на нагрузке": {
+   "en": "BITE: output under load",
+   "ru": "BITE: мощность на нагрузке"
+  },
+  "BITE: напряжение на силовой шине": {
+   "en": "BITE: power bus voltage",
+   "ru": "BITE: напряжение на силовой шине"
+  },
+  "BITE: осциллограмма служебной шины": {
+   "en": "BITE: service bus waveform",
+   "ru": "BITE: осциллограмма служебной шины"
+  },
+  "BITE: падение напряжения на вводе": {
+   "en": "BITE: input voltage drop",
+   "ru": "BITE: падение напряжения на вводе"
+  },
+  "BITE: перезапуски по сторожевому таймеру?": {
+   "en": "BITE: watchdog timer restarts?",
+   "ru": "BITE: перезапуски по сторожевому таймеру?"
+  },
+  "BITE: прогон вектора по всему сектору": {
+   "en": "BITE: vector sweep across the whole sector",
+   "ru": "BITE: прогон вектора по всему сектору"
+  },
+  "BITE: прогон ворот": {
+   "en": "BITE: gate cycle test",
+   "ru": "BITE: прогон ворот"
+  },
+  "BITE: прогон выдвижения": {
+   "en": "BITE: extension cycle test",
+   "ru": "BITE: прогон выдвижения"
+  },
+  "BITE: прогон дробилки": {
+   "en": "BITE: crusher cycle test",
+   "ru": "BITE: прогон дробилки"
+  },
+  "BITE: прогон захватов": {
+   "en": "BITE: clamp cycle test",
+   "ru": "BITE: прогон захватов"
+  },
+  "BITE: прогон крышек ячеек": {
+   "en": "BITE: cell lid cycle test",
+   "ru": "BITE: прогон крышек ячеек"
+  },
+  "BITE: прогон наведения": {
+   "en": "BITE: aiming cycle test",
+   "ru": "BITE: прогон наведения"
+  },
+  "BITE: прогон подачи": {
+   "en": "BITE: feed cycle test",
+   "ru": "BITE: прогон подачи"
+  },
+  "BITE: прогон подачи вхолостую": {
+   "en": "BITE: dry feed cycle test",
+   "ru": "BITE: прогон подачи вхолостую"
+  },
+  "BITE: прогон привода": {
+   "en": "BITE: drive cycle test",
+   "ru": "BITE: прогон привода"
+  },
+  "BITE: прогон приводов раскрытия": {
+   "en": "BITE: deployment drive cycle test",
+   "ru": "BITE: прогон приводов раскрытия"
+  },
+  "BITE: прогон створок": {
+   "en": "BITE: door cycle test",
+   "ru": "BITE: прогон створок"
+  },
+  "BITE: прогон узла подачи": {
+   "en": "BITE: feed unit cycle test",
+   "ru": "BITE: прогон узла подачи"
+  },
+  "BITE: прогон шнека": {
+   "en": "BITE: auger cycle test",
+   "ru": "BITE: прогон шнека"
+  },
+  "BITE: прогон штанги": {
+   "en": "BITE: boom cycle test",
+   "ru": "BITE: прогон штанги"
+  },
+  "BITE: прозвонка цепей пуска": {
+   "en": "BITE: ignition circuit continuity check",
+   "ru": "BITE: прозвонка цепей пуска"
+  },
+  "BITE: самотест решётки": {
+   "en": "BITE: array self-test",
+   "ru": "BITE: самотест решётки"
+  },
+  "BITE: сопло греется быстрее соседних при той же работе?": {
+   "en": "BITE: nozzle heats faster than its neighbours at the same duty?",
+   "ru": "BITE: сопло греется быстрее соседних при той же работе?"
+  },
+  "BITE: состояние замков": {
+   "en": "BITE: lock status",
+   "ru": "BITE: состояние замков"
+  },
+  "BITE: спектр вибрации ядра при зарядке": {
+   "en": "BITE: core vibration spectrum while charging",
+   "ru": "BITE: спектр вибрации ядра при зарядке"
+  },
+  "BITE: стабильность плазмы на ступенчатой нагрузке": {
+   "en": "BITE: plasma stability under step load",
+   "ru": "BITE: стабильность плазмы на ступенчатой нагрузке"
+  },
+  "BITE: температура пятака двигателя выше нормы при той же тяге?": {
+   "en": "BITE: engine cooling plate temperature above normal at the same thrust?",
+   "ru": "BITE: температура пятака двигателя выше нормы при той же тяге?"
+  },
+  "BITE: тест памяти": {
+   "en": "BITE: memory test",
+   "ru": "BITE: тест памяти"
+  },
+  "BITE: тест тяги на 10 %": {
+   "en": "BITE: 10 % thrust test",
+   "ru": "BITE: тест тяги на 10 %"
+  },
+  "BITE: тестовый импульс": {
+   "en": "BITE: test pulse",
+   "ru": "BITE: тестовый импульс"
+  },
+  "BITE: ток зарядки": {
+   "en": "BITE: charging current",
+   "ru": "BITE: ток зарядки"
+  },
+  "BITE: ток катушек сопел": {
+   "en": "BITE: nozzle coil current",
+   "ru": "BITE: ток катушек сопел"
+  },
+  "BITE: ток по сегментам кольца": {
+   "en": "BITE: ring segment current",
+   "ru": "BITE: ток по сегментам кольца"
+  },
+  "BITE: холодопроизводительность": {
+   "en": "BITE: cooling capacity",
+   "ru": "BITE: холодопроизводительность"
+  },
+  "BITE: ёмкость батареи": {
+   "en": "BITE: battery capacity",
+   "ru": "BITE: ёмкость батареи"
+  },
+  "BITE: ёмкость батареи под нагрузкой": {
+   "en": "BITE: battery capacity under load",
+   "ru": "BITE: ёмкость батареи под нагрузкой"
+  },
+  "CO2 в атмосфере": {
+   "en": "CO2 in the atmosphere",
+   "ru": "CO2 в атмосфере"
+  },
+  "CO2 медленно растёт": {
+   "en": "CO2 slowly rising",
+   "ru": "CO2 медленно растёт"
+  },
+  "CO2 опасен - часы до потери сознания": {
+   "en": "CO2 dangerous - hours until loss of consciousness",
+   "ru": "CO2 опасен - часы до потери сознания"
+  },
+  "CO2 растёт при номинальном питании ЖО?": {
+   "en": "CO2 rising with life support at rated power?",
+   "ru": "CO2 растёт при номинальном питании ЖО?"
+  },
+  "CR-1 Vector: полевое отклонение вектора ±75° - DRV-05 критичнее, чем у осевых двигателей": {
+   "en": "CR-1 Vector: field vector deflection ±75° - DRV-05 is more critical than on axial engines",
+   "ru": "CR-1 Vector: полевое отклонение вектора ±75° - DRV-05 критичнее, чем у осевых двигателей"
+  },
+  "Cobrett 0->60: 6 C20, 1 прыжок + 2 плеча, расходы 28 191 Cr (logistics.trip_examples) -> 4 700 Cr за C20 на прыжок с маржой": {
+   "en": "Cobrett 0->60: 6 C20, 1 jump + 2 legs, costs 28 191 Cr (logistics.trip_examples) -> 4 700 Cr per C20 per jump with margin",
+   "ru": "Cobrett 0->60: 6 C20, 1 прыжок + 2 плеча, расходы 28 191 Cr (logistics.trip_examples) -> 4 700 Cr за C20 на прыжок с маржой"
+  },
+  "D(H -> O) = light_lag(H -> маяк своей системы) + relay_hop_processing_h + путь по рёбрам comms_3126.links с весом routine_hop_h x priority_factor[bulk] + light_lag(маяк -> O)": {
+   "en": "D(H -> O) = light_lag(H -> own system beacon) + relay_hop_processing_h + path over comms_3126.links edges weighted routine_hop_h x priority_factor[bulk] + light_lag(beacon -> O)",
+   "ru": "D(H -> O) = light_lag(H -> маяк своей системы) + relay_hop_processing_h + путь по рёбрам comms_3126.links с весом routine_hop_h x priority_factor[bulk] + light_lag(маяк -> O)"
+  },
+  "KT-1 (буксир): долгие режимы малой тяги - главный износ у блока управления полем (DRV-01)": {
+   "en": "KT-1 (tug): long low-thrust modes - the main wear falls on the field control unit (DRV-01)",
+   "ru": "KT-1 (буксир): долгие режимы малой тяги - главный износ у блока управления полем (DRV-01)"
+  },
+  "N1 Axial: узкий сектор вектора - отказ канала вектора почти не мешает полёту": {
+   "en": "N1 Axial: narrow vector sector - a vector channel failure barely affects flight",
+   "ru": "N1 Axial: узкий сектор вектора - отказ канала вектора почти не мешает полёту"
+  },
+  "O2 в атмосфере": {
+   "en": "O2 in the atmosphere",
+   "ru": "O2 в атмосфере"
+  },
+  "O2 падает": {
+   "en": "O2 falling",
+   "ru": "O2 падает"
+  },
+  "PMCS: тест замков (без отстрела)": {
+   "en": "PMCS: lock test (no jettison)",
+   "ru": "PMCS: тест замков (без отстрела)"
+  },
+  "PMCS: тест цепи отстрела (без подрыва)": {
+   "en": "PMCS: jettison circuit test (no firing)",
+   "ru": "PMCS: тест цепи отстрела (без подрыва)"
+  },
+  "SOS молчит - спасатели не узнают": {
+   "en": "SOS silent - rescuers will not know",
+   "ru": "SOS молчит - спасатели не узнают"
+  },
+  "SRU блок управления полем": {
+   "en": "SRU field control unit",
+   "ru": "SRU блок управления полем"
+  },
+  "SRU датчик": {
+   "en": "SRU sensor",
+   "ru": "SRU датчик"
+  },
+  "SRU замок": {
+   "en": "SRU lock",
+   "ru": "SRU замок"
+  },
+  "SRU излучатель сопла": {
+   "en": "SRU nozzle radiator",
+   "ru": "SRU излучатель сопла"
+  },
+  "SRU катушка": {
+   "en": "SRU coil",
+   "ru": "SRU катушка"
+  },
+  "SRU клапан": {
+   "en": "SRU valve",
+   "ru": "SRU клапан"
+  },
+  "SRU контакты": {
+   "en": "SRU contacts",
+   "ru": "SRU контакты"
+  },
+  "SRU модули": {
+   "en": "SRU modules",
+   "ru": "SRU модули"
+  },
+  "SRU накладки": {
+   "en": "SRU pads",
+   "ru": "SRU накладки"
+  },
+  "SRU насос": {
+   "en": "SRU pump",
+   "ru": "SRU насос"
+  },
+  "SRU панель 10 м²": {
+   "en": "SRU panel 10 m²",
+   "ru": "SRU панель 10 м²"
+  },
+  "SRU плата вектора": {
+   "en": "SRU vector board",
+   "ru": "SRU плата вектора"
+  },
+  "SRU подача": {
+   "en": "SRU feed",
+   "ru": "SRU подача"
+  },
+  "SRU привод": {
+   "en": "SRU drive",
+   "ru": "SRU привод"
+  },
+  "SRU привод крышки": {
+   "en": "SRU lid drive",
+   "ru": "SRU привод крышки"
+  },
+  "SRU распределитель": {
+   "en": "SRU distributor",
+   "ru": "SRU распределитель"
+  },
+  "SRU сегмент катушки": {
+   "en": "SRU coil segment",
+   "ru": "SRU сегмент катушки"
+  },
+  "SRU секция катушек": {
+   "en": "SRU coil section",
+   "ru": "SRU секция катушек"
+  },
+  "SRU секция пятака": {
+   "en": "SRU cooling plate section",
+   "ru": "SRU секция пятака"
+  },
+  "SRU секция пятака двигателя": {
+   "en": "SRU engine cooling plate section",
+   "ru": "SRU секция пятака двигателя"
+  },
+  "SRU силовой ключ": {
+   "en": "SRU power switch",
+   "ru": "SRU силовой ключ"
+  },
+  "SRU стартёр": {
+   "en": "SRU starter",
+   "ru": "SRU стартёр"
+  },
+  "SRU сцепка": {
+   "en": "SRU coupler",
+   "ru": "SRU сцепка"
+  },
+  "SRU теплообменник": {
+   "en": "SRU heat exchanger",
+   "ru": "SRU теплообменник"
+  },
+  "SRU узел подачи": {
+   "en": "SRU feed unit",
+   "ru": "SRU узел подачи"
+  },
+  "SRU участок магистрали": {
+   "en": "SRU line section",
+   "ru": "SRU участок магистрали"
+  },
+  "SRU фидер": {
+   "en": "SRU feeder",
+   "ru": "SRU фидер"
+  },
+  "SRU шарнир": {
+   "en": "SRU hinge",
+   "ru": "SRU шарнир"
+  },
+  "SRU шнек": {
+   "en": "SRU auger",
+   "ru": "SRU шнек"
+  },
+  "Sol Reactor Works: серия на Луне, опытные образцы - Канаверал": {
+   "en": "Sol Reactor Works: series production on the Moon, prototypes - Canaveral",
+   "ru": "Sol Reactor Works: серия на Луне, опытные образцы - Канаверал"
+  },
+  "[bloc id] | null (все)": {
+   "en": "[bloc id] | null (all)",
+   "ru": "[bloc id] | null (все)"
+  },
+  "[ids товаров, которые хаб производит]": {
+   "en": "[ids of goods the hub produces]",
+   "ru": "[ids товаров, которые хаб производит]"
+  },
+  "[т, запас на cover_days]": {
+   "en": "[t, stock for cover_days]",
+   "ru": "[т, запас на cover_days]"
+  },
+  "[т/сут оборота: prod и cons по профилю хаба]": {
+   "en": "[t/day turnover: prod and cons by hub profile]",
+   "ru": "[т/сут оборота: prod и cons по профилю хаба]"
+  },
+  "[т]": {
+   "en": "[t]",
+   "ru": "[т]"
+  },
+  "[цена за т | null — не торгуется]": {
+   "en": "[price per t | null - not traded]",
+   "ru": "[цена за т | null — не торгуется]"
+  },
+  "age = now - t_k*, где t_k* = последний момент публикации с t_k + D <= now; в среднем age ~ D + market_period_h / 2": {
+   "en": "age = now - t_k*, where t_k* = the last publication time with t_k + D <= now; on average age ~ D + market_period_h / 2",
+   "ru": "age = now - t_k*, где t_k* = последний момент публикации с t_k + D <= now; в среднем age ~ D + market_period_h / 2"
+  },
+  "beacon_outage замораживает публикацию: возраст растёт без новых снимков": {
+   "en": "beacon_outage freezes publication: age grows with no new snapshots",
+   "ru": "beacon_outage замораживает публикацию: возраст растёт без новых снимков"
+  },
+  "economy/price_info_delay_3126.json: матрица D_bulk_h между узлами сети и light_lag каждого хаба": {
+   "en": "economy/price_info_delay_3126.json: matrix D_bulk_h between network nodes and each hub's light_lag",
+   "ru": "economy/price_info_delay_3126.json: матрица D_bulk_h между узлами сети и light_lag каждого хаба"
+  },
+  "examples[0]: 4 C20, 6 прыжков (0 -> 19 по сети маяков), 2 плеча: (4700x6 + 1300x2) x 4 x 1.5 (risk 0.25) x 1.15 (licensed) = 212 520; examples[1]: 40 вахтовиков, 2 прыжка: (600x2 + 150x2) x 1.3 x 40 x 1.2 = 93 600; examples[2]: 1 C20, 1 прыжок: 7 300 x 2.4 x 1.5 + 1.5 x 13 500 (стоимость 50 кг лотосита) = 46 530": {
+   "en": "examples[0]: 4 C20, 6 jumps (0 -> 19 over the beacon network), 2 legs: (4700x6 + 1300x2) x 4 x 1.5 (risk 0.25) x 1.15 (licensed) = 212 520; examples[1]: 40 shift workers, 2 jumps: (600x2 + 150x2) x 1.3 x 40 x 1.2 = 93 600; examples[2]: 1 C20, 1 jump: 7 300 x 2.4 x 1.5 + 1.5 x 13 500 (value of 50 kg of lotosite) = 46 530",
+   "ru": "examples[0]: 4 C20, 6 прыжков (0 -> 19 по сети маяков), 2 плеча: (4700x6 + 1300x2) x 4 x 1.5 (risk 0.25) x 1.15 (licensed) = 212 520; examples[1]: 40 вахтовиков, 2 прыжка: (600x2 + 150x2) x 1.3 x 40 x 1.2 = 93 600; examples[2]: 1 C20, 1 прыжок: 7 300 x 2.4 x 1.5 + 1.5 x 13 500 (стоимость 50 кг лотосита) = 46 530"
+  },
+  "int, аванс при взятии": {
+   "en": "int, advance on acceptance",
+   "ru": "int, аванс при взятии"
+  },
+  "int, залог за стоимость груза (возвращается при доставке)": {
+   "en": "int, deposit against cargo value (returned on delivery)",
+   "ru": "int, залог за стоимость груза (возвращается при доставке)"
+  },
+  "int, места C20 (для людей — модули P20: 12 эконом / 8 бизнес)": {
+   "en": "int, C20 slots (for people - P20 modules: 12 economy / 8 business)",
+   "ru": "int, места C20 (для людей — модули P20: 12 эконом / 8 бизнес)"
+  },
+  "int, штраф за срыв": {
+   "en": "int, penalty for failure",
+   "ru": "int, штраф за срыв"
+  },
+  "number (т, C20, чел. или шт. — по kind.unit)": {
+   "en": "number (t, C20, pers. or pcs - per kind.unit)",
+   "ru": "number (т, C20, чел. или шт. — по kind.unit)"
+  },
+  "number, игровое время публикации": {
+   "en": "number, game time of publication",
+   "ru": "number, игровое время публикации"
+  },
+  "number, крайний срок доставки": {
+   "en": "number, delivery deadline",
+   "ru": "number, крайний срок доставки"
+  },
+  "number, снять с доски, если никто не взял": {
+   "en": "number, remove from the board if nobody takes it",
+   "ru": "number, снять с доски, если никто не взял"
+  },
+  "reward = (per_jump x jumps + per_leg x legs) x class_mult x persons x (crew_shift_mult для вахты) x (1 + 2 x risk) x bloc_mult": {
+   "en": "reward = (per_jump x jumps + per_leg x legs) x class_mult x persons x (crew_shift_mult for crew shifts) x (1 + 2 x risk) x bloc_mult",
+   "ru": "reward = (per_jump x jumps + per_leg x legs) x class_mult x persons x (crew_shift_mult для вахты) x (1 + 2 x risk) x bloc_mult"
+  },
+  "round(arrivals_day x 0.02 + 2), не меньше 3 и не больше 40 видимых; для хабов без arrivals_day: docks x 0.5": {
+   "en": "round(arrivals_day x 0.02 + 2), no fewer than 3 and no more than 40 visible; for hubs without arrivals_day: docks x 0.5",
+   "ru": "round(arrivals_day x 0.02 + 2), не меньше 3 и не больше 40 видимых; для хабов без arrivals_day: docks x 0.5"
+  },
+  "site id (где взять)": {
+   "en": "site id (pickup)",
+   "ru": "site id (где взять)"
+  },
+  "site id (куда доставить; кликабельно в UI)": {
+   "en": "site id (delivery; clickable in the UI)",
+   "ru": "site id (куда доставить; кликабельно в UI)"
+  },
+  "«Цены: 4 сут назад (через 3 маяка)»; цвет: < 1 сут — белый, 1-3 — жёлтый, > 3 — серый, нет связи — красный": {
+   "en": "\"Prices: 4 days ago (via 3 beacons)\"; colour: < 1 day - white, 1-3 - yellow, > 3 - grey, no link - red",
+   "ru": "«Цены: 4 сут назад (через 3 маяка)»; цвет: < 1 сут — белый, 1-3 — жёлтый, > 3 — серый, нет связи — красный"
+  },
+  "Автокалибровка фазировки с пульта: тяга выровнялась?": {
+   "en": "Phasing auto-calibration from the console: did thrust even out?",
+   "ru": "Автокалибровка фазировки с пульта: тяга выровнялась?"
+  },
+  "Агора": {
+   "en": "Agora",
+   "ru": "Агора"
+  },
+  "Агрегаты жизнеобеспечения": {
+   "en": "Life support units",
+   "ru": "Агрегаты жизнеобеспечения"
+  },
+  "Алкоголь и табак": {
+   "en": "Alcohol and tobacco",
+   "ru": "Алкоголь и табак"
+  },
+  "Анализ пробы теплоносителя": {
+   "en": "Coolant sample analysis",
+   "ru": "Анализ пробы теплоносителя"
+  },
+  "Банк Агоры": {
+   "en": "Bank of Agora",
+   "ru": "Банк Агоры"
+  },
+  "Банк Короны и Церкви Сельва-Верде": {
+   "en": "Bank of the Crown and Church of Selva Verde",
+   "ru": "Банк Короны и Церкви Сельва-Верде"
+  },
+  "Банк Свободной Кармы": {
+   "en": "Bank of Free Karma",
+   "ru": "Банк Свободной Кармы"
+  },
+  "Боеприпасы и ракеты": {
+   "en": "Ammunition and missiles",
+   "ru": "Боеприпасы и ракеты"
+  },
+  "Бытовая электроника": {
+   "en": "Consumer electronics",
+   "ru": "Бытовая электроника"
+  },
+  "Бытовые товары": {
+   "en": "Household goods",
+   "ru": "Бытовые товары"
+  },
+  "ВСУ не запускается после глушения": {
+   "en": "APU will not start after shutdown",
+   "ru": "ВСУ не запускается после глушения"
+  },
+  "Вакцины и биокультуры": {
+   "en": "Vaccines and biocultures",
+   "ru": "Вакцины и биокультуры"
+  },
+  "Варпстанис": {
+   "en": "Varpstanis",
+   "ru": "Варпстанис"
+  },
+  "Вода (лёд, очищенная)": {
+   "en": "Water (ice, purified)",
+   "ru": "Вода (лёд, очищенная)"
+  },
+  "Вода и газы": {
+   "en": "Water and gases",
+   "ru": "Вода и газы"
+  },
+  "Вольные кланы": {
+   "en": "Free Clans",
+   "ru": "Вольные кланы"
+  },
+  "Вычислители и электроника": {
+   "en": "Computers and electronics",
+   "ru": "Вычислители и электроника"
+  },
+  "Горное оборудование": {
+   "en": "Mining equipment",
+   "ru": "Горное оборудование"
+  },
+  "Государственный банк Цитадели": {
+   "en": "State Bank of the Citadel",
+   "ru": "Государственный банк Цитадели"
+  },
+  "Давление в кабине падает при закрытом люке?": {
+   "en": "Cabin pressure dropping with the hatch closed?",
+   "ru": "Давление в кабине падает при закрытом люке?"
+  },
+  "Давление в контуре падает со временем?": {
+   "en": "Loop pressure dropping over time?",
+   "ru": "Давление в контуре падает со временем?"
+  },
+  "Давление в секции падает при закрытых люках?": {
+   "en": "Section pressure dropping with hatches closed?",
+   "ru": "Давление в секции падает при закрытых люках?"
+  },
+  "Дрон: дефектоскопия рамы": {
+   "en": "Drone: frame flaw detection",
+   "ru": "Дрон: дефектоскопия рамы"
+  },
+  "Дрон: осмотр амортизаторов": {
+   "en": "Drone: shock absorber inspection",
+   "ru": "Дрон: осмотр амортизаторов"
+  },
+  "Дрон: осмотр апертур": {
+   "en": "Drone: aperture inspection",
+   "ru": "Дрон: осмотр апертур"
+  },
+  "Дрон: осмотр ввода во фланце (шина обесточена)": {
+   "en": "Drone: flange feedthrough inspection (bus de-energized)",
+   "ru": "Дрон: осмотр ввода во фланце (шина обесточена)"
+  },
+  "Дрон: осмотр замка": {
+   "en": "Drone: lock inspection",
+   "ru": "Дрон: осмотр замка"
+  },
+  "Дрон: осмотр захватов": {
+   "en": "Drone: clamp inspection",
+   "ru": "Дрон: осмотр захватов"
+  },
+  "Дрон: осмотр и термограмма пятака": {
+   "en": "Drone: cooling plate inspection and thermogram",
+   "ru": "Дрон: осмотр и термограмма пятака"
+  },
+  "Дрон: осмотр излучателя": {
+   "en": "Drone: radiator inspection",
+   "ru": "Дрон: осмотр излучателя"
+  },
+  "Дрон: осмотр кольца через сервисный люк": {
+   "en": "Drone: ring inspection through the service hatch",
+   "ru": "Дрон: осмотр кольца через сервисный люк"
+  },
+  "Дрон: осмотр креплений демпферов через люк": {
+   "en": "Drone: damper mount inspection through the hatch",
+   "ru": "Дрон: осмотр креплений демпферов через люк"
+  },
+  "Дрон: осмотр люлек": {
+   "en": "Drone: cradle inspection",
+   "ru": "Дрон: осмотр люлек"
+  },
+  "Дрон: осмотр панели": {
+   "en": "Drone: panel inspection",
+   "ru": "Дрон: осмотр панели"
+  },
+  "Дрон: осмотр плит после попадания": {
+   "en": "Drone: plate inspection after a hit",
+   "ru": "Дрон: осмотр плит после попадания"
+  },
+  "Дрон: осмотр плиток": {
+   "en": "Drone: tile inspection",
+   "ru": "Дрон: осмотр плиток"
+  },
+  "Дрон: осмотр сцепки": {
+   "en": "Drone: coupler inspection",
+   "ru": "Дрон: осмотр сцепки"
+  },
+  "Дрон: осмотр фидера по обшивке": {
+   "en": "Drone: feeder inspection along the hull",
+   "ru": "Дрон: осмотр фидера по обшивке"
+  },
+  "Дрон: осмотр шарнира": {
+   "en": "Drone: hinge inspection",
+   "ru": "Дрон: осмотр шарнира"
+  },
+  "Дрон: поиск утечки по магистрали": {
+   "en": "Drone: leak search along the line",
+   "ru": "Дрон: поиск утечки по магистрали"
+  },
+  "Дрон: проверка креплений": {
+   "en": "Drone: mount check",
+   "ru": "Дрон: проверка креплений"
+  },
+  "Дрон: термограмма и осмотр пятака": {
+   "en": "Drone: cooling plate thermogram and inspection",
+   "ru": "Дрон: термограмма и осмотр пятака"
+  },
+  "Дрон: термограмма кольца катушек (двигатель только что работал)": {
+   "en": "Drone: coil ring thermogram (engine just ran)",
+   "ru": "Дрон: термограмма кольца катушек (двигатель только что работал)"
+  },
+  "Дрон: термограмма оболочки": {
+   "en": "Drone: shell thermogram",
+   "ru": "Дрон: термограмма оболочки"
+  },
+  "Дрон: толщинометрия экрана": {
+   "en": "Drone: shield thickness gauging",
+   "ru": "Дрон: толщинометрия экрана"
+  },
+  "Дхарма-Мандала": {
+   "en": "Dharma Mandala",
+   "ru": "Дхарма-Мандала"
+  },
+  "Европейский центральный банк Новой Европы": {
+   "en": "European Central Bank of New Europe",
+   "ru": "Европейский центральный банк Новой Европы"
+  },
+  "Жилые и шлюзовые модули": {
+   "en": "Habitat and airlock modules",
+   "ru": "Жилые и шлюзовые модули"
+  },
+  "Заменить блок управления полем из запаса и повторить тест": {
+   "en": "Replace the field control unit from stores and repeat the test",
+   "ru": "Заменить блок управления полем из запаса и повторить тест"
+  },
+  "Заменить плату канала вектора и повторить прогон": {
+   "en": "Replace the vector channel board and repeat the sweep",
+   "ru": "Заменить плату канала вектора и повторить прогон"
+  },
+  "Запрос ответа от станции / самотест": {
+   "en": "Station response request / self-test",
+   "ru": "Запрос ответа от станции / самотест"
+  },
+  "Запчасти и расходники": {
+   "en": "Spare parts and consumables",
+   "ru": "Запчасти и расходники"
+  },
+  "Заряд прыжка": {
+   "en": "Jump charge",
+   "ru": "Заряд прыжка"
+  },
+  "Застава Проксимы": {
+   "en": "Proxima Outpost",
+   "ru": "Застава Проксимы"
+  },
+  "Земля (Сол)": {
+   "en": "Earth (Sol)",
+   "ru": "Земля (Сол)"
+  },
+  "Зерно и концентраты": {
+   "en": "Grain and concentrates",
+   "ru": "Зерно и концентраты"
+  },
+  "Зона «Филоморфоз»": {
+   "en": "Zone \"Philomorphosis\"",
+   "ru": "Зона «Филоморфоз»"
+  },
+  "Казна навигаторов Тауранги": {
+   "en": "Tauranga Navigators' Treasury",
+   "ru": "Казна навигаторов Тауранги"
+  },
+  "Казначейство Лал-Кота": {
+   "en": "Lal Kot Treasury",
+   "ru": "Казначейство Лал-Кота"
+  },
+  "Казначейство Солнечной Администрации": {
+   "en": "Sol Authority Treasury",
+   "ru": "Казначейство Солнечной Администрации"
+  },
+  "Какое сопло: поочерёдное отключение пар": {
+   "en": "Which nozzle: switching pairs off one by one",
+   "ru": "Какое сопло: поочерёдное отключение пар"
+  },
+  "Капеху": {
+   "en": "Kapehu",
+   "ru": "Капеху"
+  },
+  "Карма": {
+   "en": "Karma",
+   "ru": "Карма"
+  },
+  "Кислород и дыхательные смеси": {
+   "en": "Oxygen and breathing mixtures",
+   "ru": "Кислород и дыхательные смеси"
+  },
+  "Клановая расчётная палата": {
+   "en": "Clan Clearing House",
+   "ru": "Клановая расчётная палата"
+  },
+  "Когниум": {
+   "en": "Cognium",
+   "ru": "Когниум"
+  },
+  "Контроль цикла стерилизации": {
+   "en": "Sterilization cycle check",
+   "ru": "Контроль цикла стерилизации"
+  },
+  "Лал-Кот": {
+   "en": "Lal Kot",
+   "ru": "Лал-Кот"
+  },
+  "Лекарства": {
+   "en": "Pharmaceuticals",
+   "ru": "Лекарства"
+  },
+  "Лотосит (необработанный)": {
+   "en": "Lotosite (raw)",
+   "ru": "Лотосит (необработанный)"
+  },
+  "Лёгкие сплавы (Al, Ti, Mg)": {
+   "en": "Light alloys (Al, Ti, Mg)",
+   "ru": "Лёгкие сплавы (Al, Ti, Mg)"
+  },
+  "МЧС: спасательные работы (вариант А, за плату)": {
+   "en": "Emergency Service: rescue operations (option A, paid)",
+   "ru": "МЧС: спасательные работы (вариант А, за плату)"
+  },
+  "Машины и запчасти": {
+   "en": "Machinery and parts",
+   "ru": "Машины и запчасти"
+  },
+  "Медицина": {
+   "en": "Medicine",
+   "ru": "Медицина"
+  },
+  "Медицинское оборудование": {
+   "en": "Medical equipment",
+   "ru": "Медицинское оборудование"
+  },
+  "Металлолом и утиль": {
+   "en": "Scrap metal and salvage",
+   "ru": "Металлолом и утиль"
+  },
+  "Металлы": {
+   "en": "Metals",
+   "ru": "Металлы"
+  },
+  "Монетный двор Третьей Эллады": {
+   "en": "Mint of Third Hellas",
+   "ru": "Монетный двор Третьей Эллады"
+  },
+  "Напряжение на вводе секции": {
+   "en": "Section input voltage",
+   "ru": "Напряжение на вводе секции"
+  },
+  "Наркотики и стимуляторы": {
+   "en": "Narcotics and stimulants",
+   "ru": "Наркотики и стимуляторы"
+  },
+  "Народный банк Небесной Твердыни": {
+   "en": "People's Bank of the Celestial Stronghold",
+   "ru": "Народный банк Небесной Твердыни"
+  },
+  "Народный банк Синь-Шанхая": {
+   "en": "People's Bank of Xin Shanghai",
+   "ru": "Народный банк Синь-Шанхая"
+  },
+  "Небесная Твердыня": {
+   "en": "Celestial Stronghold",
+   "ru": "Небесная Твердыня"
+  },
+  "Небесный Свод": {
+   "en": "Celestial Vault",
+   "ru": "Небесный Свод"
+  },
+  "Некст": {
+   "en": "Next",
+   "ru": "Некст"
+  },
+  "Новая Европа": {
+   "en": "New Europe",
+   "ru": "Новая Европа"
+  },
+  "Новая Индия": {
+   "en": "New India",
+   "ru": "Новая Индия"
+  },
+  "Новая Карма": {
+   "en": "New Karma",
+   "ru": "Новая Карма"
+  },
+  "Новая Маланд": {
+   "en": "New Maland",
+   "ru": "Новая Маланд"
+  },
+  "Новая Эллада": {
+   "en": "New Hellas",
+   "ru": "Новая Эллада"
+  },
+  "Ново-Фиваида": {
+   "en": "New Thebaid",
+   "ru": "Ново-Фиваида"
+  },
+  "Одежда и текстиль": {
+   "en": "Clothing and textiles",
+   "ru": "Одежда и текстиль"
+  },
+  "Один канал пары для рантайма (economy_rules.json blocs.matrix, доска заявок): по худшему из двух направлений; civilian 4 -> closed, civilian 3 -> black, industrial >= 2 -> restricted, industrial 1 или dual_use >= 2 -> licensed, иначе open. Точная картина — по категориям (out/world_3126/political_order_3126.json).": {
+   "en": "One channel per pair for the runtime (economy_rules.json blocs.matrix, contract board): by the worse of the two directions; civilian 4 -> closed, civilian 3 -> black, industrial >= 2 -> restricted, industrial 1 or dual_use >= 2 -> licensed, otherwise open. The exact picture is per category (out/world_3126/political_order_3126.json).",
+   "ru": "Один канал пары для рантайма (economy_rules.json blocs.matrix, доска заявок): по худшему из двух направлений; civilian 4 -> closed, civilian 3 -> black, industrial >= 2 -> restricted, industrial 1 или dual_use >= 2 -> licensed, иначе open. Точная картина — по категориям (out/world_3126/political_order_3126.json)."
+  },
+  "Оружие": {
+   "en": "Weapons",
+   "ru": "Оружие"
+  },
+  "Охлаждение турели в норме?": {
+   "en": "Turret cooling normal?",
+   "ru": "Охлаждение турели в норме?"
+  },
+  "Ошибки по шине данных от компьютера?": {
+   "en": "Data bus errors from the computer?",
+   "ru": "Ошибки по шине данных от компьютера?"
+  },
+  "Пайки и консервы": {
+   "en": "Rations and canned food",
+   "ru": "Пайки и консервы"
+  },
+  "Палата Казны Цветущей Гармонии": {
+   "en": "Treasury Chamber of Blooming Harmony",
+   "ru": "Палата Казны Цветущей Гармонии"
+  },
+  "Перезапуск трансивера": {
+   "en": "Transceiver restart",
+   "ru": "Перезапуск трансивера"
+  },
+  "Перезапуск трансивера помог?": {
+   "en": "Did the transceiver restart help?",
+   "ru": "Перезапуск трансивера помог?"
+  },
+  "Переключить потребителей на второй канал преобразователя": {
+   "en": "Switch loads to the second converter channel",
+   "ru": "Переключить потребителей на второй канал преобразователя"
+  },
+  "Перепад температуры теплоносителя вход/выход двигателя мал?": {
+   "en": "Engine coolant inlet/outlet temperature difference too small?",
+   "ru": "Перепад температуры теплоносителя вход/выход двигателя мал?"
+  },
+  "Питание маяка в норме?": {
+   "en": "Beacon power normal?",
+   "ru": "Питание маяка в норме?"
+  },
+  "Платиноиды и драгоценные металлы": {
+   "en": "Platinoids and precious metals",
+   "ru": "Платиноиды и драгоценные металлы"
+  },
+  "Поглотителю хватает питания?": {
+   "en": "Is the scrubber getting enough power?",
+   "ru": "Поглотителю хватает питания?"
+  },
+  "Подконтрольное": {
+   "en": "Controlled",
+   "ru": "Подконтрольное"
+  },
+  "Полимеры и пластики": {
+   "en": "Polymers and plastics",
+   "ru": "Полимеры и пластики"
+  },
+  "Потребительские товары": {
+   "en": "Consumer goods",
+   "ru": "Потребительские товары"
+  },
+  "Пояс Раздора": {
+   "en": "Belt of Discord",
+   "ru": "Пояс Раздора"
+  },
+  "Предметы роскоши и деликатесы": {
+   "en": "Luxury goods and delicacies",
+   "ru": "Предметы роскоши и деликатесы"
+  },
+  "Провидение": {
+   "en": "Providence",
+   "ru": "Провидение"
+  },
+  "Прогон крана": {
+   "en": "Crane cycle test",
+   "ru": "Прогон крана"
+  },
+  "Продовольствие": {
+   "en": "Food",
+   "ru": "Продовольствие"
+  },
+  "Промывка теплообменника (с пульта, контур на байпас)": {
+   "en": "Heat exchanger flush (from the console, loop on bypass)",
+   "ru": "Промывка теплообменника (с пульта, контур на байпас)"
+  },
+  "Промышленная химия (кислоты, растворители)": {
+   "en": "Industrial chemicals (acids, solvents)",
+   "ru": "Промышленная химия (кислоты, растворители)"
+  },
+  "Промышленное оборудование": {
+   "en": "Industrial equipment",
+   "ru": "Промышленное оборудование"
+  },
+  "Проспекторат Керн": {
+   "en": "Kern Prospectorate",
+   "ru": "Проспекторат Керн"
+  },
+  "Пятак двигателя цел, а двигатель всё равно греется?": {
+   "en": "Engine cooling plate intact, yet the engine still overheats?",
+   "ru": "Пятак двигателя цел, а двигатель всё равно греется?"
+  },
+  "Распределитель Провидения": {
+   "en": "Providence Distributor",
+   "ru": "Распределитель Провидения"
+  },
+  "Расход теплоносителя ниже нормы?": {
+   "en": "Coolant flow below normal?",
+   "ru": "Расход теплоносителя ниже нормы?"
+  },
+  "Расход теплоносителя через пятак в норме?": {
+   "en": "Coolant flow through the cooling plate normal?",
+   "ru": "Расход теплоносителя через пятак в норме?"
+  },
+  "Расход через панели неравномерный?": {
+   "en": "Uneven flow through the panels?",
+   "ru": "Расход через панели неравномерный?"
+  },
+  "Расчётная артель Пояса": {
+   "en": "Belt Settlement Artel",
+   "ru": "Расчётная артель Пояса"
+  },
+  "Расчётный дом Проспектората Керн": {
+   "en": "Settlement House of the Kern Prospectorate",
+   "ru": "Расчётный дом Проспектората Керн"
+  },
+  "Реакторное топливо (D, He-3)": {
+   "en": "Reactor fuel (D, He-3)",
+   "ru": "Реакторное топливо (D, He-3)"
+  },
+  "Редкие и платиноидные руды": {
+   "en": "Rare and platinoid ores",
+   "ru": "Редкие и платиноидные руды"
+  },
+  "Резервный банк Новой Индии": {
+   "en": "Reserve Bank of New India",
+   "ru": "Резервный банк Новой Индии"
+  },
+  "Резервный банк Новой Маланд": {
+   "en": "Reserve Bank of New Maland",
+   "ru": "Резервный банк Новой Маланд"
+  },
+  "Роскошь": {
+   "en": "Luxury",
+   "ru": "Роскошь"
+  },
+  "Руда": {
+   "en": "Ore",
+   "ru": "Руда"
+  },
+  "Руда (железо, никель, алюминий)": {
+   "en": "Ore (iron, nickel, aluminium)",
+   "ru": "Руда (железо, никель, алюминий)"
+  },
+  "Самотест автодока": {
+   "en": "Autodoc self-test",
+   "ru": "Самотест автодока"
+  },
+  "Самотест маяка": {
+   "en": "Beacon self-test",
+   "ru": "Самотест маяка"
+  },
+  "Самотест решётки": {
+   "en": "Array self-test",
+   "ru": "Самотест решётки"
+  },
+  "Самотест станков": {
+   "en": "Machine tool self-test",
+   "ru": "Самотест станков"
+  },
+  "Свежие продукты": {
+   "en": "Fresh produce",
+   "ru": "Свежие продукты"
+  },
+  "Сверить датчики капсулы с ручным осмотром": {
+   "en": "Cross-check capsule sensors against a manual inspection",
+   "ru": "Сверить датчики капсулы с ручным осмотром"
+  },
+  "Сверить уровень с расходом по журналу": {
+   "en": "Compare the level with consumption from the log",
+   "ru": "Сверить уровень с расходом по журналу"
+  },
+  "Свободная Карма": {
+   "en": "Free Karma",
+   "ru": "Свободная Карма"
+  },
+  "Свободные поселения": {
+   "en": "Free Settlements",
+   "ru": "Свободные поселения"
+  },
+  "Сельва-Верде": {
+   "en": "Selva Verde",
+   "ru": "Сельва-Верде"
+  },
+  "Сенсоры и навигационные приборы": {
+   "en": "Sensors and navigation instruments",
+   "ru": "Сенсоры и навигационные приборы"
+  },
+  "Синодальная казна Ново-Фиваиды": {
+   "en": "Synodal Treasury of New Thebaid",
+   "ru": "Синодальная казна Ново-Фиваиды"
+  },
+  "Синь-Шанхай": {
+   "en": "Xin Shanghai",
+   "ru": "Синь-Шанхай"
+  },
+  "Синьхэ": {
+   "en": "Xinhe",
+   "ru": "Синьхэ"
+  },
+  "Скьольдборг": {
+   "en": "Skjoldborg",
+   "ru": "Скьольдборг"
+  },
+  "Служебная шина стабильна?": {
+   "en": "Service bus stable?",
+   "ru": "Служебная шина стабильна?"
+  },
+  "Солнечная Администрация (Sol Authority)": {
+   "en": "Sol Authority",
+   "ru": "Солнечная Администрация (Sol Authority)"
+  },
+  "Союз Новой Европы": {
+   "en": "New Europe Union",
+   "ru": "Союз Новой Европы"
+  },
+  "Сравнить с резервным датчиком": {
+   "en": "Compare with the backup sensor",
+   "ru": "Сравнить с резервным датчиком"
+  },
+  "Сравнить с соседним датчиком и термограммой": {
+   "en": "Compare with the neighbouring sensor and the thermogram",
+   "ru": "Сравнить с соседним датчиком и термограммой"
+  },
+  "Сравнить тягу по датчику с ускорением корабля": {
+   "en": "Compare sensor thrust with ship acceleration",
+   "ru": "Сравнить тягу по датчику с ускорением корабля"
+  },
+  "Сталь и конструкционные сплавы": {
+   "en": "Steel and structural alloys",
+   "ru": "Сталь и конструкционные сплавы"
+  },
+  "Стрелковое оружие": {
+   "en": "Small arms",
+   "ru": "Стрелковое оружие"
+  },
+  "Стройматериалы": {
+   "en": "Construction materials",
+   "ru": "Стройматериалы"
+  },
+  "Стройматериалы (панели, реголит-бетон)": {
+   "en": "Construction materials (panels, regolith concrete)",
+   "ru": "Стройматериалы (панели, реголит-бетон)"
+  },
+  "ТР-2.6В - военная поставка": {
+   "en": "TR-2.6V - military supply",
+   "ru": "ТР-2.6В - военная поставка"
+  },
+  "ТЦ-1.6В - военная поставка: бронированный пятак, ресурс между осмотрами меньше": {
+   "en": "TC-1.6V - military supply: armoured cooling plate, shorter interval between inspections",
+   "ru": "ТЦ-1.6В - военная поставка: бронированный пятак, ресурс между осмотрами меньше"
+  },
+  "ТЦ-28В (тягач поезда): большой пятак, замена секций только на верфи Пакта": {
+   "en": "TC-28V (train tractor): large cooling plate, sections replaced only at the Pact shipyard",
+   "ru": "ТЦ-28В (тягач поезда): большой пятак, замена секций только на верфи Пакта"
+  },
+  "Тауранга": {
+   "en": "Tauranga",
+   "ru": "Тауранга"
+  },
+  "Температура ВСУ в норме?": {
+   "en": "APU temperature normal?",
+   "ru": "Температура ВСУ в норме?"
+  },
+  "Температура в капсулах растёт?": {
+   "en": "Temperature rising in the capsules?",
+   "ru": "Температура в капсулах растёт?"
+  },
+  "Температура пятака выше нормы при той же мощности?": {
+   "en": "Cooling plate temperature above normal at the same power?",
+   "ru": "Температура пятака выше нормы при той же мощности?"
+  },
+  "Температура пятака двигателя в норме?": {
+   "en": "Engine cooling plate temperature normal?",
+   "ru": "Температура пятака двигателя в норме?"
+  },
+  "Температура ячеек выше допуска?": {
+   "en": "Cell temperature above tolerance?",
+   "ru": "Температура ячеек выше допуска?"
+  },
+  "Теплоноситель контура в норме?": {
+   "en": "Loop coolant normal?",
+   "ru": "Теплоноситель контура в норме?"
+  },
+  "Термограмма панелей с пульта: холодное пятно?": {
+   "en": "Panel thermogram from the console: a cold spot?",
+   "ru": "Термограмма панелей с пульта: холодное пятно?"
+  },
+  "Тест давлением": {
+   "en": "Pressure test",
+   "ru": "Тест давлением"
+  },
+  "Тест давлением после стыковки": {
+   "en": "Pressure test after docking",
+   "ru": "Тест давлением после стыковки"
+  },
+  "Тестовый выстрел: скорость снаряда ниже нормы?": {
+   "en": "Test shot: projectile velocity below normal?",
+   "ru": "Тестовый выстрел: скорость снаряда ниже нормы?"
+  },
+  "Тестовый пуск: скорость ударника ниже нормы?": {
+   "en": "Test launch: impactor velocity below normal?",
+   "ru": "Тестовый пуск: скорость ударника ниже нормы?"
+  },
+  "Технические газы (N2, CO2, NH3)": {
+   "en": "Industrial gases (N2, CO2, NH3)",
+   "ru": "Технические газы (N2, CO2, NH3)"
+  },
+  "Ток насоса выше нормы при низком расходе?": {
+   "en": "Pump current above normal at low flow?",
+   "ru": "Ток насоса выше нормы при низком расходе?"
+  },
+  "Ток привода фрезы растёт при той же подаче?": {
+   "en": "Cutter drive current rising at the same feed?",
+   "ru": "Ток привода фрезы растёт при той же подаче?"
+  },
+  "Топливо": {
+   "en": "Fuel",
+   "ru": "Топливо"
+  },
+  "Третья Эллада": {
+   "en": "Third Hellas",
+   "ru": "Третья Эллада"
+  },
+  "Тяньхэ": {
+   "en": "Tianhe",
+   "ru": "Тяньхэ"
+  },
+  "Убыль груза цистерны?": {
+   "en": "Tank cargo loss?",
+   "ru": "Убыль груза цистерны?"
+  },
+  "Убыль заряда при стоянке?": {
+   "en": "Charge loss while parked?",
+   "ru": "Убыль заряда при стоянке?"
+  },
+  "Уджамаа": {
+   "en": "Ujamaa",
+   "ru": "Уджамаа"
+  },
+  "Удобрения и агрохимия": {
+   "en": "Fertilizers and agrochemicals",
+   "ru": "Удобрения и агрохимия"
+  },
+  "Управление маяков Керна": {
+   "en": "Kern Beacon Authority",
+   "ru": "Управление маяков Керна"
+  },
+  "Урал-73Л (подъёмный): работает в атмосфере - пятак изнашивается быстрее": {
+   "en": "Ural-73L (lifter): works in atmosphere - the cooling plate wears faster",
+   "ru": "Урал-73Л (подъёмный): работает в атмосфере - пятак изнашивается быстрее"
+  },
+  "Уровень в бункере в норме?": {
+   "en": "Hopper level normal?",
+   "ru": "Уровень в бункере в норме?"
+  },
+  "Федеральный резерв Хомстеда": {
+   "en": "Federal Reserve of Homestead",
+   "ru": "Федеральный резерв Хомстеда"
+  },
+  "Химия": {
+   "en": "Chemicals",
+   "ru": "Химия"
+  },
+  "Холодный пуск ВСУ с пульта": {
+   "en": "APU cold start from the console",
+   "ru": "Холодный пуск ВСУ с пульта"
+  },
+  "Хомстед": {
+   "en": "Homestead",
+   "ru": "Хомстед"
+  },
+  "Храмовая казна Новой Кармы": {
+   "en": "Temple Treasury of New Karma",
+   "ru": "Храмовая казна Новой Кармы"
+  },
+  "Цветущая Гармония": {
+   "en": "Blooming Harmony",
+   "ru": "Цветущая Гармония"
+  },
+  "Цена — Cr за тонну нетто; в UI для дорогих позиций (price >= 50 000 Cr/т) показывать Cr/кг. Объём считать по density_t_m3; место — контейнер C20 (20 т нетто, 23.3 м3, тара 1.7 т).": {
+   "en": "Price - Cr per tonne net; in the UI show Cr/kg for expensive items (price >= 50 000 Cr/t). Compute volume from density_t_m3; slot - C20 container (20 t net, 23.3 m3, tare 1.7 t).",
+   "ru": "Цена — Cr за тонну нетто; в UI для дорогих позиций (price >= 50 000 Cr/т) показывать Cr/кг. Объём считать по density_t_m3; место — контейнер C20 (20 т нетто, 23.3 м3, тара 1.7 т)."
+  },
+  "Центральный банк Тяньхэ": {
+   "en": "Central Bank of Tianhe",
+   "ru": "Центральный банк Тяньхэ"
+  },
+  "Цитадель": {
+   "en": "Citadel",
+   "ru": "Цитадель"
+  },
+  "Шахта Альфа": {
+   "en": "Mine Alpha",
+   "ru": "Шахта Альфа"
+  },
+  "Шум / ток вентилятора": {
+   "en": "Fan noise / current",
+   "ru": "Шум / ток вентилятора"
+  },
+  "Электроника": {
+   "en": "Electronics",
+   "ru": "Электроника"
+  },
+  "Эллада-2": {
+   "en": "Hellas-2",
+   "ru": "Эллада-2"
+  },
+  "Эллада-3": {
+   "en": "Hellas-3",
+   "ru": "Эллада-3"
+  },
+  "Эхо-тест с маяком": {
+   "en": "Echo test with the beacon",
+   "ru": "Эхо-тест с маяком"
+  },
+  "абляционный слой": {
+   "en": "ablative layer",
+   "ru": "абляционный слой"
+  },
+  "аварийное пробуждение людей (корабль к этому не готов)": {
+   "en": "emergency revival of sleepers (the ship is not ready for it)",
+   "ru": "аварийное пробуждение людей (корабль к этому не готов)"
+  },
+  "аварийное снижение мощности": {
+   "en": "emergency power reduction",
+   "ru": "аварийное снижение мощности"
+  },
+  "авария на производстве": {
+   "en": "industrial accident",
+   "ru": "авария на производстве"
+  },
+  "автодок": {
+   "en": "autodoc",
+   "ru": "автодок"
+  },
+  "автокалибровка поля перед вылетом": {
+   "en": "field auto-calibration before departure",
+   "ru": "автокалибровка поля перед вылетом"
+  },
+  "автокалибровка фазировки": {
+   "en": "phasing auto-calibration",
+   "ru": "автокалибровка фазировки"
+  },
+  "автомат ограничивает тягу по температуре": {
+   "en": "the controller limits thrust by temperature",
+   "ru": "автомат ограничивает тягу по температуре"
+  },
+  "автомат режет тягу по ложному перегреву": {
+   "en": "the controller cuts thrust on a false overheat",
+   "ru": "автомат режет тягу по ложному перегреву"
+  },
+  "автопилот дёргает тягу": {
+   "en": "the autopilot jerks the thrust",
+   "ru": "автопилот дёргает тягу"
+  },
+  "аграрные хабы и системы с экспортом продовольствия": {
+   "en": "agrarian hubs and food-exporting systems",
+   "ru": "аграрные хабы и системы с экспортом продовольствия"
+  },
+  "акцизная (алкоголь, табак, роскошь, контролируемые вещества)": {
+   "en": "excise (alcohol, tobacco, luxury, controlled substances)",
+   "ru": "акцизная (алкоголь, табак, роскошь, контролируемые вещества)"
+  },
+  "амортизатор": {
+   "en": "shock absorber",
+   "ru": "амортизатор"
+  },
+  "ангар / отсек катера / отсек дронов": {
+   "en": "hangar / launch bay / drone bay",
+   "ru": "ангар / отсек катера / отсек дронов"
+  },
+  "аппараты не выйти и не принять": {
+   "en": "craft cannot launch or be recovered",
+   "ru": "аппараты не выйти и не принять"
+  },
+  "бак / бункер": {
+   "en": "tank / hopper",
+   "ru": "бак / бункер"
+  },
+  "бак заряда прыжка": {
+   "en": "jump charge tank",
+   "ru": "бак заряда прыжка"
+  },
+  "батарея": {
+   "en": "battery",
+   "ru": "батарея"
+  },
+  "батарея капсулы": {
+   "en": "capsule battery",
+   "ru": "батарея капсулы"
+  },
+  "без манёвров": {
+   "en": "no manoeuvres",
+   "ru": "без манёвров"
+  },
+  "без тяги": {
+   "en": "no thrust",
+   "ru": "без тяги"
+  },
+  "биорегенерация Uhuru: поглотитель - живая культура, восстанавливается сама, но гибнет от перегрева": {
+   "en": "Uhuru bioregeneration: the scrubber is a living culture, regenerates on its own but dies from overheating",
+   "ru": "биорегенерация Uhuru: поглотитель - живая культура, восстанавливается сама, но гибнет от перегрева"
+  },
+  "блок анабиоза": {
+   "en": "cryosleep unit",
+   "ru": "блок анабиоза"
+  },
+  "блок корабля = блок политии регистрации (порт приписки) + лицензии на борту; у игрока — регистрация + репутация": {
+   "en": "ship bloc = bloc of the registry polity (home port) + licences on board; for the player - registration + reputation",
+   "ru": "блок корабля = блок политии регистрации (порт приписки) + лицензии на борту; у игрока — регистрация + репутация"
+  },
+  "блок питания": {
+   "en": "power supply unit",
+   "ru": "блок питания"
+  },
+  "блок управления полем (фазировка поля, вектор тяги)": {
+   "en": "field control unit (field phasing, thrust vector)",
+   "ru": "блок управления полем (фазировка поля, вектор тяги)"
+  },
+  "блокада": {
+   "en": "blockade",
+   "ru": "блокада"
+  },
+  "бортовая мастерская": {
+   "en": "onboard workshop",
+   "ru": "бортовая мастерская"
+  },
+  "бортовой компьютер": {
+   "en": "onboard computer",
+   "ru": "бортовой компьютер"
+  },
+  "броневая плита": {
+   "en": "armour plate",
+   "ru": "броневая плита"
+  },
+  "броня корпуса": {
+   "en": "hull armour",
+   "ru": "броня корпуса"
+  },
+  "буксирное устройство": {
+   "en": "towing gear",
+   "ru": "буксирное устройство"
+  },
+  "бункер топливных таблеток": {
+   "en": "fuel pellet hopper",
+   "ru": "бункер топливных таблеток"
+  },
+  "бюллетени системы не уходят: возраст цен растёт; доска показывает только местные заявки; навигация без эфемерид маяка": {
+   "en": "system bulletins do not go out: price age grows; the board shows only local contracts; navigation without beacon ephemerides",
+   "ru": "бюллетени системы не уходят: возраст цен растёт; доска показывает только местные заявки; навигация без эфемерид маяка"
+  },
+  "бюрократический": {
+   "en": "bureaucratic",
+   "ru": "бюрократический"
+  },
+  "в кабине душно, CO2 в углах выше - BITE путает с поглотителем": {
+   "en": "the cabin is stuffy, CO2 higher in the corners - BITE confuses it with the scrubber",
+   "ru": "в кабине душно, CO2 в углах выше - BITE путает с поглотителем"
+  },
+  "в рантайме добавляются: tick, published_at_h, unmet_t[], trend[] (+1/0/-1), active_events[]": {
+   "en": "added at runtime: tick, published_at_h, unmet_t[], trend[] (+1/0/-1), active_events[]",
+   "ru": "в рантайме добавляются: tick, published_at_h, unmet_t[], trend[] (+1/0/-1), active_events[]"
+  },
+  "в секции жарко и душно - жалобы пассажиров": {
+   "en": "the section is hot and stuffy - passenger complaints",
+   "ru": "в секции жарко и душно - жалобы пассажиров"
+  },
+  "вахта / смена экипажа": {
+   "en": "crew shift / crew rotation",
+   "ru": "вахта / смена экипажа"
+  },
+  "ввод греется": {
+   "en": "feedthrough overheating",
+   "ru": "ввод греется"
+  },
+  "вектор доходит с задержкой": {
+   "en": "vector responds with a delay",
+   "ru": "вектор доходит с задержкой"
+  },
+  "вектор тяги уводит, тяга -15 %": {
+   "en": "thrust vector drifts, thrust -15 %",
+   "ru": "вектор тяги уводит, тяга -15 %"
+  },
+  "вентилятор": {
+   "en": "fan",
+   "ru": "вентилятор"
+  },
+  "вентиляция": {
+   "en": "ventilation",
+   "ru": "вентиляция"
+  },
+  "верде-реал": {
+   "en": "verde real",
+   "ru": "верде-реал"
+  },
+  "вертикальная пусковая установка ракет": {
+   "en": "vertical missile launcher",
+   "ru": "вертикальная пусковая установка ракет"
+  },
+  "верфь": {
+   "en": "shipyard",
+   "ru": "верфь"
+  },
+  "взнос артели": {
+   "en": "artel dues",
+   "ru": "взнос артели"
+  },
+  "вибрация": {
+   "en": "vibration",
+   "ru": "вибрация"
+  },
+  "военное ядро Бастиона: обслуживание только на верфи Mjølner, не экспортируется": {
+   "en": "Bastion military core: serviced only at the Mjølner shipyard, not exported",
+   "ru": "военное ядро Бастиона: обслуживание только на верфи Mjølner, не экспортируется"
+  },
+  "вооружение": {
+   "en": "armament",
+   "ru": "вооружение"
+  },
+  "восстановление демпферов": {
+   "en": "damper restoration",
+   "ru": "восстановление демпферов"
+  },
+  "восстановление излучателя": {
+   "en": "radiator restoration",
+   "ru": "восстановление излучателя"
+  },
+  "восстановление конденсаторов": {
+   "en": "capacitor restoration",
+   "ru": "восстановление конденсаторов"
+  },
+  "восстановление криокулера": {
+   "en": "cryocooler restoration",
+   "ru": "восстановление криокулера"
+  },
+  "восстановление крыльчатки и подшипников": {
+   "en": "impeller and bearing restoration",
+   "ru": "восстановление крыльчатки и подшипников"
+  },
+  "восстановление механизма подачи": {
+   "en": "feed mechanism restoration",
+   "ru": "восстановление механизма подачи"
+  },
+  "восстановление модулей": {
+   "en": "module restoration",
+   "ru": "восстановление модулей"
+  },
+  "восстановление панели": {
+   "en": "panel restoration",
+   "ru": "восстановление панели"
+  },
+  "восстановление плат блока": {
+   "en": "unit board restoration",
+   "ru": "восстановление плат блока"
+  },
+  "восстановление платы": {
+   "en": "board restoration",
+   "ru": "восстановление платы"
+  },
+  "восстановление покрытия пятака": {
+   "en": "cooling plate coating restoration",
+   "ru": "восстановление покрытия пятака"
+  },
+  "восстановление электролизёра": {
+   "en": "electrolyser restoration",
+   "ru": "восстановление электролизёра"
+  },
+  "восстановление ячеек": {
+   "en": "cell restoration",
+   "ru": "восстановление ячеек"
+  },
+  "восстановление ячеек по одной": {
+   "en": "cell-by-cell restoration",
+   "ru": "восстановление ячеек по одной"
+  },
+  "все потребители контура греются - BITE покажет их, а не насос": {
+   "en": "all loop consumers heat up - BITE will show them, not the pump",
+   "ru": "все потребители контура греются - BITE покажет их, а не насос"
+  },
+  "всё легальное по режиму хаба": {
+   "en": "everything legal under the hub's regime",
+   "ru": "всё легальное по режиму хаба"
+  },
+  "вход в атмосферу опаснее": {
+   "en": "atmospheric entry is more dangerous",
+   "ru": "вход в атмосферу опаснее"
+  },
+  "выгорание абляционного слоя": {
+   "en": "ablative layer burn-off",
+   "ru": "выгорание абляционного слоя"
+  },
+  "выключатель": {
+   "en": "switch",
+   "ru": "выключатель"
+  },
+  "выпуск опор перед каждым спуском": {
+   "en": "gear extension before every descent",
+   "ru": "выпуск опор перед каждым спуском"
+  },
+  "выходная мощность": {
+   "en": "power output",
+   "ru": "выходная мощность"
+  },
+  "вычислительная плата": {
+   "en": "computing board",
+   "ru": "вычислительная плата"
+  },
+  "генератор (IEEE 315)": {
+   "en": "generator (IEEE 315)",
+   "ru": "генератор (IEEE 315)"
+  },
+  "генератор O2": {
+   "en": "O2 generator",
+   "ru": "генератор O2"
+  },
+  "герметик": {
+   "en": "sealant",
+   "ru": "герметик"
+  },
+  "герметичность": {
+   "en": "seal integrity",
+   "ru": "герметичность"
+  },
+  "гермоуплотнения люков": {
+   "en": "hatch seals",
+   "ru": "гермоуплотнения люков"
+  },
+  "главный двигатель": {
+   "en": "main engine",
+   "ru": "главный двигатель"
+  },
+  "головная боль, CO2 выше нормы": {
+   "en": "headache, CO2 above normal",
+   "ru": "головная боль, CO2 выше нормы"
+  },
+  "горное оборудование": {
+   "en": "mining equipment",
+   "ru": "горное оборудование"
+  },
+  "груз": {
+   "en": "cargo",
+   "ru": "груз"
+  },
+  "груз выкипает, давление растёт": {
+   "en": "cargo boiling off, pressure rising",
+   "ru": "груз выкипает, давление растёт"
+  },
+  "груз — хаб с наибольшей разницей цен (target_price) в радиусе 3 прыжков; пассажиры — по гравитационной модели passengers_3126; вахта/снабжение — строго по расписанию удалённого хаба": {
+   "en": "cargo - the hub with the largest price difference (target_price) within 3 jumps; passengers - per the passengers_3126 gravity model; crew shift / supply - strictly per the remote hub's schedule",
+   "ru": "груз — хаб с наибольшей разницей цен (target_price) в радиусе 3 прыжков; пассажиры — по гравитационной модели passengers_3126; вахта/снабжение — строго по расписанию удалённого хаба"
+  },
+  "грузовой трюм": {
+   "en": "cargo hold",
+   "ru": "грузовой трюм"
+  },
+  "грузовые ворота": {
+   "en": "cargo gate",
+   "ru": "грузовые ворота"
+  },
+  "гул на высокой мощности": {
+   "en": "hum at high power",
+   "ru": "гул на высокой мощности"
+  },
+  "гуманитарный рейс": {
+   "en": "humanitarian flight",
+   "ru": "гуманитарный рейс"
+  },
+  "давление в баке": {
+   "en": "tank pressure",
+   "ru": "давление в баке"
+  },
+  "давление в кабине": {
+   "en": "cabin pressure",
+   "ru": "давление в кабине"
+  },
+  "давление падает, насос работает на износ": {
+   "en": "pressure dropping, the pump is wearing itself out",
+   "ru": "давление падает, насос работает на износ"
+  },
+  "давление теплоносителя": {
+   "en": "coolant pressure",
+   "ru": "давление теплоносителя"
+  },
+  "дальность обнаружения": {
+   "en": "detection range",
+   "ru": "дальность обнаружения"
+  },
+  "дальность обнаружения упала, ложные цели": {
+   "en": "detection range dropped, false targets",
+   "ru": "дальность обнаружения упала, ложные цели"
+  },
+  "дальность пассивного обнаружения падает": {
+   "en": "passive detection range dropping",
+   "ru": "дальность пассивного обнаружения падает"
+  },
+  "датчик": {
+   "en": "sensor",
+   "ru": "датчик"
+  },
+  "датчик уровня": {
+   "en": "level sensor",
+   "ru": "датчик уровня"
+  },
+  "датчики": {
+   "en": "sensors",
+   "ru": "датчики"
+  },
+  "датчики плазмы": {
+   "en": "plasma sensors",
+   "ru": "датчики плазмы"
+  },
+  "датчики температуры, поля и тяги": {
+   "en": "temperature, field and thrust sensors",
+   "ru": "датчики температуры, поля и тяги"
+  },
+  "двигатель греется": {
+   "en": "engine overheating",
+   "ru": "двигатель греется"
+  },
+  "двигатель заглушён": {
+   "en": "engine shut down",
+   "ru": "двигатель заглушён"
+  },
+  "двигатель и реактор заглушены": {
+   "en": "engine and reactor shut down",
+   "ru": "двигатель и реактор заглушены"
+  },
+  "двигатель ограничен по тяге перегревом": {
+   "en": "engine thrust limited by overheating",
+   "ru": "двигатель ограничен по тяге перегревом"
+  },
+  "двигатель холодный 2 ч": {
+   "en": "engine cold for 2 h",
+   "ru": "двигатель холодный 2 ч"
+  },
+  "двигательный реактор": {
+   "en": "propulsion reactor",
+   "ru": "двигательный реактор"
+  },
+  "двигательный термоядерный реактор": {
+   "en": "propulsion fusion reactor",
+   "ru": "двигательный термоядерный реактор"
+  },
+  "двигателям не хватает мощности": {
+   "en": "engines short of power",
+   "ru": "двигателям не хватает мощности"
+  },
+  "деградация излучателя": {
+   "en": "radiator degradation",
+   "ru": "деградация излучателя"
+  },
+  "деградация криокулера блока": {
+   "en": "unit cryocooler degradation",
+   "ru": "деградация криокулера блока"
+  },
+  "деградация накопителя": {
+   "en": "accumulator degradation",
+   "ru": "деградация накопителя"
+  },
+  "деградация охлаждающего пятака": {
+   "en": "cooling plate degradation",
+   "ru": "деградация охлаждающего пятака"
+  },
+  "деградация памяти (радиация)": {
+   "en": "memory degradation (radiation)",
+   "ru": "деградация памяти (радиация)"
+  },
+  "деградация сегмента кольца полевых катушек": {
+   "en": "field coil ring segment degradation",
+   "ru": "деградация сегмента кольца полевых катушек"
+  },
+  "деградация энергоячеек": {
+   "en": "power cell degradation",
+   "ru": "деградация энергоячеек"
+  },
+  "декларация здоровья, медосмотр экипажа": {
+   "en": "health declaration, crew medical check",
+   "ru": "декларация здоровья, медосмотр экипажа"
+  },
+  "демпферы и магниты удержания": {
+   "en": "dampers and retention magnets",
+   "ru": "демпферы и магниты удержания"
+  },
+  "демпферы лотосита": {
+   "en": "lotosite dampers",
+   "ru": "демпферы лотосита"
+  },
+  "десятина": {
+   "en": "tithe",
+   "ru": "десятина"
+  },
+  "дефицит": {
+   "en": "shortage",
+   "ru": "дефицит"
+  },
+  "деформация люльки": {
+   "en": "cradle deformation",
+   "ru": "деформация люльки"
+  },
+  "динар Тауранги": {
+   "en": "Tauranga dinar",
+   "ru": "динар Тауранги"
+  },
+  "диспетчер не видит корабль - отказ в стыковке": {
+   "en": "the dispatcher cannot see the ship - docking refused",
+   "ru": "диспетчер не видит корабль - отказ в стыковке"
+  },
+  "долгие манёвры": {
+   "en": "long manoeuvres",
+   "ru": "долгие манёвры"
+  },
+  "долить теплоноситель из запаса": {
+   "en": "top up coolant from stores",
+   "ru": "долить теплоноситель из запаса"
+  },
+  "доля": {
+   "en": "share",
+   "ru": "доля"
+  },
+  "досмотр как customs.by_channel[канал владельца патруля к кораблю]; корабль чужого блока без лицензии — эскорт в отстойник ближайшего хаба или приказ покинуть систему": {
+   "en": "inspection as customs.by_channel[channel from the patrol owner to the ship]; a ship of another bloc without a licence - escorted to the nearest hub's holding area or ordered to leave the system",
+   "ru": "досмотр как customs.by_channel[канал владельца патруля к кораблю]; корабль чужого блока без лицензии — эскорт в отстойник ближайшего хаба или приказ покинуть систему"
+  },
+  "драхма Агоры": {
+   "en": "Agora drachma",
+   "ru": "драхма Агоры"
+  },
+  "дрейф датчика тяги (ложная тревога)": {
+   "en": "thrust sensor drift (false alarm)",
+   "ru": "дрейф датчика тяги (ложная тревога)"
+  },
+  "дрейф датчика уровня (ложные показания)": {
+   "en": "level sensor drift (false readings)",
+   "ru": "дрейф датчика уровня (ложные показания)"
+  },
+  "дрейф калибровки поля": {
+   "en": "field calibration drift",
+   "ru": "дрейф калибровки поля"
+  },
+  "дрейф управления плазмой": {
+   "en": "plasma control drift",
+   "ru": "дрейф управления плазмой"
+  },
+  "дрейф фазировки поля": {
+   "en": "field phasing drift",
+   "ru": "дрейф фазировки поля"
+  },
+  "дробилка": {
+   "en": "crusher",
+   "ru": "дробилка"
+  },
+  "жизнеобеспечение": {
+   "en": "life support",
+   "ru": "жизнеобеспечение"
+  },
+  "жёсткая посадка - удар по корпусу": {
+   "en": "hard landing - hull impact",
+   "ru": "жёсткая посадка - удар по корпусу"
+  },
+  "за 14 сут до конца вахты: crew_shift (shift_size = staff x share) туда и обратно, supply на 30 сут; не взяли за 5 сут — награда x1.3, ещё 5 сут — оператор шлёт свой корабль (заявка снимается)": {
+   "en": "14 days before the shift ends: crew_shift (shift_size = staff x share) there and back, supply for 30 days; not taken within 5 days - reward x1.3, another 5 days - the operator sends its own ship (contract withdrawn)",
+   "ru": "за 14 сут до конца вахты: crew_shift (shift_size = staff x share) туда и обратно, supply на 30 сут; не взяли за 5 сут — награда x1.3, ещё 5 сут — оператор шлёт свой корабль (заявка снимается)"
+  },
+  "забастовка доков": {
+   "en": "dock strike",
+   "ru": "забастовка доков"
+  },
+  "заболевшие > quarantine_beds -> следующий уровень; переполнение -> корабли ждут в holding_area; нет мест в отстойнике -> отказ в стыковке": {
+   "en": "sick > quarantine_beds -> next level; overflow -> ships wait in holding_area; no room in the holding area -> docking refused",
+   "ru": "заболевшие > quarantine_beds -> следующий уровень; переполнение -> корабли ждут в holding_area; нет мест в отстойнике -> отказ в стыковке"
+  },
+  "заварка / замена участка": {
+   "en": "weld / replace the section",
+   "ru": "заварка / замена участка"
+  },
+  "загрязнение / износ шнека (крошка таблеток в подаче)": {
+   "en": "auger fouling / wear (pellet crumbs in the feed)",
+   "ru": "загрязнение / износ шнека (крошка таблеток в подаче)"
+  },
+  "загрязнение коллектора": {
+   "en": "manifold fouling",
+   "ru": "загрязнение коллектора"
+  },
+  "загрязнение оптики": {
+   "en": "optics contamination",
+   "ru": "загрязнение оптики"
+  },
+  "загрязнение теплоносителя": {
+   "en": "coolant contamination",
+   "ru": "загрязнение теплоносителя"
+  },
+  "заклинивание выдвижения мачты": {
+   "en": "mast extension jam",
+   "ru": "заклинивание выдвижения мачты"
+  },
+  "заклинивание грузовых ворот": {
+   "en": "cargo gate jam",
+   "ru": "заклинивание грузовых ворот"
+  },
+  "заклинивание дробилки": {
+   "en": "crusher jam",
+   "ru": "заклинивание дробилки"
+  },
+  "заклинивание замков отстрела": {
+   "en": "jettison lock jam",
+   "ru": "заклинивание замков отстрела"
+  },
+  "заклинивание крышки ячейки": {
+   "en": "cell lid jam",
+   "ru": "заклинивание крышки ячейки"
+  },
+  "заклинивание подачи": {
+   "en": "feed jam",
+   "ru": "заклинивание подачи"
+  },
+  "заклинивание подачи ударников": {
+   "en": "impactor feed jam",
+   "ru": "заклинивание подачи ударников"
+  },
+  "заклинивание привода раскрытия": {
+   "en": "deployment drive jam",
+   "ru": "заклинивание привода раскрытия"
+  },
+  "закрыть секцию, перевести людей": {
+   "en": "close the section, move the people",
+   "ru": "закрыть секцию, перевести людей"
+  },
+  "залипание силового ключа (сопло «тянет»)": {
+   "en": "power switch stuck closed (nozzle \"pulls\")",
+   "ru": "залипание силового ключа (сопло «тянет»)"
+  },
+  "замена амортизатора": {
+   "en": "shock absorber replacement",
+   "ru": "замена амортизатора"
+  },
+  "замена блока питания": {
+   "en": "power supply unit replacement",
+   "ru": "замена блока питания"
+  },
+  "замена блока управления полем из запаса": {
+   "en": "field control unit replacement from stores",
+   "ru": "замена блока управления полем из запаса"
+  },
+  "замена вентилятора": {
+   "en": "fan replacement",
+   "ru": "замена вентилятора"
+  },
+  "замена датчика": {
+   "en": "sensor replacement",
+   "ru": "замена датчика"
+  },
+  "замена замка": {
+   "en": "lock replacement",
+   "ru": "замена замка"
+  },
+  "замена замков": {
+   "en": "locks replacement",
+   "ru": "замена замков"
+  },
+  "замена излучателя сопла": {
+   "en": "nozzle radiator replacement",
+   "ru": "замена излучателя сопла"
+  },
+  "замена картриджа из запаса": {
+   "en": "cartridge replacement from stores",
+   "ru": "замена картриджа из запаса"
+  },
+  "замена катушки": {
+   "en": "coil replacement",
+   "ru": "замена катушки"
+  },
+  "замена клапана": {
+   "en": "valve replacement",
+   "ru": "замена клапана"
+  },
+  "замена кодера": {
+   "en": "encoder replacement",
+   "ru": "замена кодера"
+  },
+  "замена кольца катушек": {
+   "en": "coil ring replacement",
+   "ru": "замена кольца катушек"
+  },
+  "замена криокулера": {
+   "en": "cryocooler replacement",
+   "ru": "замена криокулера"
+  },
+  "замена маяка": {
+   "en": "beacon replacement",
+   "ru": "замена маяка"
+  },
+  "замена модулей решётки": {
+   "en": "array module replacement",
+   "ru": "замена модулей решётки"
+  },
+  "замена модуля зарядки": {
+   "en": "charging module replacement",
+   "ru": "замена модуля зарядки"
+  },
+  "замена модуля памяти": {
+   "en": "memory module replacement",
+   "ru": "замена модуля памяти"
+  },
+  "замена модуля цепи": {
+   "en": "circuit module replacement",
+   "ru": "замена модуля цепи"
+  },
+  "замена накладок захватов": {
+   "en": "clamp pad replacement",
+   "ru": "замена накладок захватов"
+  },
+  "замена накопителя": {
+   "en": "accumulator replacement",
+   "ru": "замена накопителя"
+  },
+  "замена насоса": {
+   "en": "pump replacement",
+   "ru": "замена насоса"
+  },
+  "замена пальцев сцепки": {
+   "en": "coupler pin replacement",
+   "ru": "замена пальцев сцепки"
+  },
+  "замена пиропатронов": {
+   "en": "squib replacement",
+   "ru": "замена пиропатронов"
+  },
+  "замена платы": {
+   "en": "board replacement",
+   "ru": "замена платы"
+  },
+  "замена платы автодока": {
+   "en": "autodoc board replacement",
+   "ru": "замена платы автодока"
+  },
+  "замена платы канала вектора": {
+   "en": "vector channel board replacement",
+   "ru": "замена платы канала вектора"
+  },
+  "замена платы управления": {
+   "en": "control board replacement",
+   "ru": "замена платы управления"
+  },
+  "замена плитки": {
+   "en": "tile replacement",
+   "ru": "замена плитки"
+  },
+  "замена плиты из запаса": {
+   "en": "plate replacement from stores",
+   "ru": "замена плиты из запаса"
+  },
+  "замена привода": {
+   "en": "drive replacement",
+   "ru": "замена привода"
+  },
+  "замена привода захвата": {
+   "en": "clamp drive replacement",
+   "ru": "замена привода захвата"
+  },
+  "замена привода створок": {
+   "en": "door drive replacement",
+   "ru": "замена привода створок"
+  },
+  "замена пятака целиком": {
+   "en": "full cooling plate replacement",
+   "ru": "замена пятака целиком"
+  },
+  "замена рамы": {
+   "en": "frame replacement",
+   "ru": "замена рамы"
+  },
+  "замена распределителя": {
+   "en": "distributor replacement",
+   "ru": "замена распределителя"
+  },
+  "замена регулятора": {
+   "en": "regulator replacement",
+   "ru": "замена регулятора"
+  },
+  "замена резцов": {
+   "en": "cutter bit replacement",
+   "ru": "замена резцов"
+  },
+  "замена сегмента кольца": {
+   "en": "ring segment replacement",
+   "ru": "замена сегмента кольца"
+  },
+  "замена секции пятака": {
+   "en": "cooling plate section replacement",
+   "ru": "замена секции пятака"
+  },
+  "замена секции ствола": {
+   "en": "barrel section replacement",
+   "ru": "замена секции ствола"
+  },
+  "замена силового ключа": {
+   "en": "power switch replacement",
+   "ru": "замена силового ключа"
+  },
+  "замена силового модуля": {
+   "en": "power module replacement",
+   "ru": "замена силового модуля"
+  },
+  "замена стартёра": {
+   "en": "starter replacement",
+   "ru": "замена стартёра"
+  },
+  "замена теплообменника": {
+   "en": "heat exchanger replacement",
+   "ru": "замена теплообменника"
+  },
+  "замена узла подачи": {
+   "en": "feed unit replacement",
+   "ru": "замена узла подачи"
+  },
+  "замена уплотнения": {
+   "en": "seal replacement",
+   "ru": "замена уплотнения"
+  },
+  "замена уплотнения / заплатка": {
+   "en": "seal replacement / patch",
+   "ru": "замена уплотнения / заплатка"
+  },
+  "замена усилителя": {
+   "en": "amplifier replacement",
+   "ru": "замена усилителя"
+  },
+  "замена участка фидера": {
+   "en": "feeder section replacement",
+   "ru": "замена участка фидера"
+  },
+  "замена экрана": {
+   "en": "shield replacement",
+   "ru": "замена экрана"
+  },
+  "замки": {
+   "en": "locks",
+   "ru": "замки"
+  },
+  "замки груза": {
+   "en": "cargo locks",
+   "ru": "замки груза"
+  },
+  "замки отстрела": {
+   "en": "jettison locks",
+   "ru": "замки отстрела"
+  },
+  "запас картриджей перед вылетом": {
+   "en": "cartridge reserve before departure",
+   "ru": "запас картриджей перед вылетом"
+  },
+  "запечатан «Нулевой точкой» (Когниум): обслуживание только у изготовителя / лицензиата": {
+   "en": "sealed by \"Zero Point\" (Cognium): serviced only by the manufacturer / licensee",
+   "ru": "запечатан «Нулевой точкой» (Когниум): обслуживание только у изготовителя / лицензиата"
+  },
+  "заплатка / замена панели": {
+   "en": "patch / panel replacement",
+   "ru": "заплатка / замена панели"
+  },
+  "заплатка изоляции": {
+   "en": "insulation patch",
+   "ru": "заплатка изоляции"
+  },
+  "заправка / зарядка аппаратов": {
+   "en": "craft refuelling / recharging",
+   "ru": "заправка / зарядка аппаратов"
+  },
+  "запчасти, оборудование, медицина": {
+   "en": "spare parts, equipment, medicine",
+   "ru": "запчасти, оборудование, медицина"
+  },
+  "заряд батареи": {
+   "en": "battery charge",
+   "ru": "заряд батареи"
+  },
+  "заряд прыжка медленно уходит": {
+   "en": "jump charge slowly leaking",
+   "ru": "заряд прыжка медленно уходит"
+  },
+  "заряд прыжка расходуется больше, точность выхода хуже": {
+   "en": "jump charge consumption higher, exit accuracy worse",
+   "ru": "заряд прыжка расходуется больше, точность выхода хуже"
+  },
+  "засорение резервного теплообменника двигателя": {
+   "en": "engine backup heat exchanger clogging",
+   "ru": "засорение резервного теплообменника двигателя"
+  },
+  "затоваривание": {
+   "en": "overstock",
+   "ru": "затоваривание"
+  },
+  "захваты": {
+   "en": "clamps",
+   "ru": "захваты"
+  },
+  "зачистка и замена контактов ввода": {
+   "en": "cleaning and replacing feedthrough contacts",
+   "ru": "зачистка и замена контактов ввода"
+  },
+  "защита в этом секторе ослаблена": {
+   "en": "protection in this sector is weakened",
+   "ru": "защита в этом секторе ослаблена"
+  },
+  "заявки на вывоз": {
+   "en": "export contracts",
+   "ru": "заявки на вывоз"
+  },
+  "игрок продаёт хабу по price x (1 - spread/2), покупает по price x (1 + spread/2)": {
+   "en": "the player sells to the hub at price x (1 - spread/2), buys at price x (1 + spread/2)",
+   "ru": "игрок продаёт хабу по price x (1 - spread/2), покупает по price x (1 + spread/2)"
+  },
+  "излучатель": {
+   "en": "radiator",
+   "ru": "излучатель"
+  },
+  "излучатель тепла сопла": {
+   "en": "nozzle heat radiator",
+   "ru": "излучатель тепла сопла"
+  },
+  "излучающая панель": {
+   "en": "radiating panel",
+   "ru": "излучающая панель"
+  },
+  "излучающая решётка": {
+   "en": "emitter array",
+   "ru": "излучающая решётка"
+  },
+  "износ амортизатора": {
+   "en": "shock absorber wear",
+   "ru": "износ амортизатора"
+  },
+  "износ демпферов и магнитов удержания": {
+   "en": "damper and retention magnet wear",
+   "ru": "износ демпферов и магнитов удержания"
+  },
+  "износ демпферов лотосита": {
+   "en": "lotosite damper wear",
+   "ru": "износ демпферов лотосита"
+  },
+  "износ захватов": {
+   "en": "clamp wear",
+   "ru": "износ захватов"
+  },
+  "износ криокулера": {
+   "en": "cryocooler wear",
+   "ru": "износ криокулера"
+  },
+  "износ насоса контура": {
+   "en": "loop pump wear",
+   "ru": "износ насоса контура"
+  },
+  "износ разгонных катушек": {
+   "en": "accelerator coil wear",
+   "ru": "износ разгонных катушек"
+  },
+  "износ сцепки": {
+   "en": "coupler wear",
+   "ru": "износ сцепки"
+  },
+  "износ уплотнения люка": {
+   "en": "hatch seal wear",
+   "ru": "износ уплотнения люка"
+  },
+  "износ уплотнения стыковочного узла": {
+   "en": "docking port seal wear",
+   "ru": "износ уплотнения стыковочного узла"
+  },
+  "износ уплотнения трюма": {
+   "en": "hold seal wear",
+   "ru": "износ уплотнения трюма"
+  },
+  "износ фрезерной головки": {
+   "en": "cutter head wear",
+   "ru": "износ фрезерной головки"
+  },
+  "изоляция": {
+   "en": "insulation",
+   "ru": "изоляция"
+  },
+  "импорт x1.2, экспорт x0.9": {
+   "en": "import x1.2, export x0.9",
+   "ru": "импорт x1.2, экспорт x0.9"
+  },
+  "источник / преобразователь питания (IEEE 315)": {
+   "en": "power source / converter (IEEE 315)",
+   "ru": "источник / преобразователь питания (IEEE 315)"
+  },
+  "истощение поглотителя CO2": {
+   "en": "CO2 scrubber depletion",
+   "ru": "истощение поглотителя CO2"
+  },
+  "кабель / жгут": {
+   "en": "cable / harness",
+   "ru": "кабель / жгут"
+  },
+  "калибровка поля ядра": {
+   "en": "core field calibration",
+   "ru": "калибровка поля ядра"
+  },
+  "канал между сторонами -> closed; импорт стратегических товаров x2; патрули x2": {
+   "en": "channel between the sides -> closed; strategic goods imports x2; patrols x2",
+   "ru": "канал между сторонами -> closed; импорт стратегических товаров x2; патрули x2"
+  },
+  "капремонт реактора": {
+   "en": "reactor overhaul",
+   "ru": "капремонт реактора"
+  },
+  "капсула без питания": {
+   "en": "capsule without power",
+   "ru": "капсула без питания"
+  },
+  "капсула не отстрелится": {
+   "en": "capsule will not jettison",
+   "ru": "капсула не отстрелится"
+  },
+  "капсула отделена": {
+   "en": "capsule separated",
+   "ru": "капсула отделена"
+  },
+  "капсулы теплеют - обратный отсчёт до пробуждения": {
+   "en": "capsules warming - countdown to revival",
+   "ru": "капсулы теплеют - обратный отсчёт до пробуждения"
+  },
+  "карантин": {
+   "en": "quarantine",
+   "ru": "карантин"
+  },
+  "кармическая рупия": {
+   "en": "karmic rupee",
+   "ru": "кармическая рупия"
+  },
+  "картридж поглотителя": {
+   "en": "scrubber cartridge",
+   "ru": "картридж поглотителя"
+  },
+  "катушка (IEEE 315)": {
+   "en": "coil (IEEE 315)",
+   "ru": "катушка (IEEE 315)"
+  },
+  "катушка поля сопла": {
+   "en": "nozzle field coil",
+   "ru": "катушка поля сопла"
+  },
+  "квота Провидения": {
+   "en": "Providence quota",
+   "ru": "квота Провидения"
+  },
+  "клановый": {
+   "en": "clan",
+   "ru": "клановый"
+  },
+  "клановый талер": {
+   "en": "clan thaler",
+   "ru": "клановый талер"
+  },
+  "клапан": {
+   "en": "valve",
+   "ru": "клапан"
+  },
+  "клапаны налива (цистерна)": {
+   "en": "filling valves (tanker)",
+   "ru": "клапаны налива (цистерна)"
+  },
+  "клапаны распределения": {
+   "en": "distribution valves",
+   "ru": "клапаны распределения"
+  },
+  "климат-установка секции": {
+   "en": "section climate unit",
+   "ru": "климат-установка секции"
+  },
+  "кодер": {
+   "en": "encoder",
+   "ru": "кодер"
+  },
+  "колебания мощности": {
+   "en": "power fluctuations",
+   "ru": "колебания мощности"
+  },
+  "коллектор теплоносителя": {
+   "en": "coolant manifold",
+   "ru": "коллектор теплоносителя"
+  },
+  "кольцо катушек греется на 5-8 % сильнее": {
+   "en": "coil ring runs 5-8 % hotter",
+   "ru": "кольцо катушек греется на 5-8 % сильнее"
+  },
+  "команды с ошибками": {
+   "en": "commands with errors",
+   "ru": "команды с ошибками"
+  },
+  "комплекс РЭБ": {
+   "en": "EW suite",
+   "ru": "комплекс РЭБ"
+  },
+  "компьютер не загружается": {
+   "en": "computer will not boot",
+   "ru": "компьютер не загружается"
+  },
+  "контейнер не закреплён - ограничение манёвров": {
+   "en": "container not secured - manoeuvres restricted",
+   "ru": "контейнер не закреплён - ограничение манёвров"
+  },
+  "контейнерная стойка": {
+   "en": "container rack",
+   "ru": "контейнерная стойка"
+  },
+  "контрактная марка": {
+   "en": "contract mark",
+   "ru": "контрактная марка"
+  },
+  "контур охлаждения": {
+   "en": "cooling loop",
+   "ru": "контур охлаждения"
+  },
+  "контур охлаждения с насосом": {
+   "en": "pumped cooling loop",
+   "ru": "контур охлаждения с насосом"
+  },
+  "корабль медленно закручивает без команды": {
+   "en": "the ship slowly spins up without a command",
+   "ru": "корабль медленно закручивает без команды"
+  },
+  "корпоративный": {
+   "en": "corporate",
+   "ru": "корпоративный"
+  },
+  "кран-балка": {
+   "en": "overhead crane",
+   "ru": "кран-балка"
+  },
+  "крепление плиты": {
+   "en": "plate mount",
+   "ru": "крепление плиты"
+  },
+  "криокулер": {
+   "en": "cryocooler",
+   "ru": "криокулер"
+  },
+  "криокулер блока": {
+   "en": "unit cryocooler",
+   "ru": "криокулер блока"
+  },
+  "криоцистерна": {
+   "en": "cryotank",
+   "ru": "криоцистерна"
+  },
+  "крышки ячеек": {
+   "en": "cell lids",
+   "ru": "крышки ячеек"
+  },
+  "кто владеет грузом (обычно issuer)": {
+   "en": "who owns the cargo (usually the issuer)",
+   "ru": "кто владеет грузом (обычно issuer)"
+  },
+  "кулер работает без остановки": {
+   "en": "the cooler runs non-stop",
+   "ru": "кулер работает без остановки"
+  },
+  "курьерская посылка": {
+   "en": "courier parcel",
+   "ru": "курьерская посылка"
+  },
+  "лазерная турель ПРО": {
+   "en": "point-defence laser turret",
+   "ru": "лазерная турель ПРО"
+  },
+  "лебёдка / привод": {
+   "en": "winch / drive",
+   "ru": "лебёдка / привод"
+  },
+  "лишний расход мощности": {
+   "en": "excess power draw",
+   "ru": "лишний расход мощности"
+  },
+  "люльки и направляющие": {
+   "en": "cradles and guides",
+   "ru": "люльки и направляющие"
+  },
+  "люфт привода наведения": {
+   "en": "aiming drive backlash",
+   "ru": "люфт привода наведения"
+  },
+  "лян Гармонии": {
+   "en": "Harmony liang",
+   "ru": "лян Гармонии"
+  },
+  "магистрали": {
+   "en": "lines",
+   "ru": "магистрали"
+  },
+  "магнитная (coil) пушка": {
+   "en": "magnetic (coil) gun",
+   "ru": "магнитная (coil) пушка"
+  },
+  "маландский ранд": {
+   "en": "Maland rand",
+   "ru": "маландский ранд"
+  },
+  "малый / средний грузовик — курьер": {
+   "en": "small / medium freighter - courier",
+   "ru": "малый / средний грузовик — курьер"
+  },
+  "маневровое сопло": {
+   "en": "manoeuvring nozzle",
+   "ru": "маневровое сопло"
+  },
+  "масс-драйвер ударников": {
+   "en": "impactor mass driver",
+   "ru": "масс-драйвер ударников"
+  },
+  "массивы выровнены по trade_goods.goods (id в goods_order файла)": {
+   "en": "arrays aligned with trade_goods.goods (ids in the file's goods_order)",
+   "ru": "массивы выровнены по trade_goods.goods (id в goods_order файла)"
+  },
+  "маяк SOS": {
+   "en": "SOS beacon",
+   "ru": "маяк SOS"
+  },
+  "медицина x2-x5, свежие продукты не вывозятся": {
+   "en": "medicine x2-x5, fresh produce not exported",
+   "ru": "медицина x2-x5, свежие продукты не вывозятся"
+  },
+  "медленный рост температуры всех потребителей": {
+   "en": "slow temperature rise across all consumers",
+   "ru": "медленный рост температуры всех потребителей"
+  },
+  "медотсек": {
+   "en": "medical bay",
+   "ru": "медотсек"
+  },
+  "межвитковый пробой в кольце полевых катушек": {
+   "en": "inter-turn breakdown in the field coil ring",
+   "ru": "межвитковый пробой в кольце полевых катушек"
+  },
+  "мерцание приборов": {
+   "en": "instrument flicker",
+   "ru": "мерцание приборов"
+  },
+  "механизм подачи снарядов": {
+   "en": "shell feed mechanism",
+   "ru": "механизм подачи снарядов"
+  },
+  "механическая деталь": {
+   "en": "mechanical part",
+   "ru": "механическая деталь"
+  },
+  "многослойная изоляция": {
+   "en": "multilayer insulation",
+   "ru": "многослойная изоляция"
+  },
+  "модуль нельзя брать в прыжок": {
+   "en": "the module cannot be taken into a jump",
+   "ru": "модуль нельзя брать в прыжок"
+  },
+  "модуль прыжкового поезда": {
+   "en": "jump train module",
+   "ru": "модуль прыжкового поезда"
+  },
+  "мониторинг капсул": {
+   "en": "capsule monitoring",
+   "ru": "мониторинг капсул"
+  },
+  "мощность > 60 %": {
+   "en": "power > 60 %",
+   "ru": "мощность > 60 %"
+  },
+  "мощность «плавает»": {
+   "en": "power \"wanders\"",
+   "ru": "мощность «плавает»"
+  },
+  "мощность импульса ниже": {
+   "en": "lower pulse power",
+   "ru": "мощность импульса ниже"
+  },
+  "мощность передачи": {
+   "en": "transmit power",
+   "ru": "мощность передачи"
+  },
+  "мощность проседает рывками": {
+   "en": "power sags in jerks",
+   "ru": "мощность проседает рывками"
+  },
+  "на бирже можно купить срочный запрос (priority): задержка x0.25/3 от bulk, цена 250 Cr за хаб в своей системе, 900 Cr — чужой системы": {
+   "en": "at the exchange you can buy an urgent request (priority): delay x0.25/3 of bulk, price 250 Cr per hub in your own system, 900 Cr - in another system",
+   "ru": "на бирже можно купить срочный запрос (priority): задержка x0.25/3 от bulk, цена 250 Cr за хаб в своей системе, 900 Cr — чужой системы"
+  },
+  "на долгом манёвре сопло раньше уходит в ограничение": {
+   "en": "on a long manoeuvre the nozzle hits its limit sooner",
+   "ru": "на долгом манёвре сопло раньше уходит в ограничение"
+  },
+  "на хабе, где игрок стоит, цены точные (age = 0); после отлёта хранится последний увиденный снимок": {
+   "en": "on the hub where the player is docked, prices are exact (age = 0); after departure the last seen snapshot is kept",
+   "ru": "на хабе, где игрок стоит, цены точные (age = 0); после отлёта хранится последний увиденный снимок"
+  },
+  "наблюдение": {
+   "en": "watch",
+   "ru": "наблюдение"
+  },
+  "найдено при досмотре: изъятие + штраф 2 x стоимость + репутация -20; у free_port досмотра нет": {
+   "en": "found during inspection: confiscation + fine 2 x value + reputation -20; free_port has no inspection",
+   "ru": "найдено при досмотре: изъятие + штраф 2 x стоимость + репутация -20; у free_port досмотра нет"
+  },
+  "накопитель (конденсаторная батарея)": {
+   "en": "accumulator (capacitor bank)",
+   "ru": "накопитель (конденсаторная батарея)"
+  },
+  "налог с оборота": {
+   "en": "turnover tax",
+   "ru": "налог с оборота"
+  },
+  "нанобокс": {
+   "en": "nanobox",
+   "ru": "нанобокс"
+  },
+  "наплавка абляционного слоя": {
+   "en": "ablative layer build-up",
+   "ru": "наплавка абляционного слоя"
+  },
+  "наплавка головки": {
+   "en": "head hardfacing",
+   "ru": "наплавка головки"
+  },
+  "наплавка плиты": {
+   "en": "plate hardfacing",
+   "ru": "наплавка плиты"
+  },
+  "наплавка рамы": {
+   "en": "frame hardfacing",
+   "ru": "наплавка рамы"
+  },
+  "напряжение шины": {
+   "en": "bus voltage",
+   "ru": "напряжение шины"
+  },
+  "населённые хабы; x3 у карантинной зоны и фронтира": {
+   "en": "inhabited hubs; x3 near the quarantine zone and the frontier",
+   "ru": "населённые хабы; x3 у карантинной зоны и фронтира"
+  },
+  "насос": {
+   "en": "pump",
+   "ru": "насос"
+  },
+  "негерметичность клапана": {
+   "en": "valve leak",
+   "ru": "негерметичность клапана"
+  },
+  "негерметичность клапана налива": {
+   "en": "filling valve leak",
+   "ru": "негерметичность клапана налива"
+  },
+  "необязательный stock_scale < 1 уменьшает стартовый запас редкой позиции на рынке хаба (вес оборота), не меняя цену.": {
+   "en": "An optional stock_scale < 1 reduces the starting stock of a rare item on the hub market (turnover weight) without changing the price.",
+   "ru": "необязательный stock_scale < 1 уменьшает стартовый запас редкой позиции на рынке хаба (вес оборота), не меняя цену."
+  },
+  "неразборный узел": {
+   "en": "non-serviceable unit",
+   "ru": "неразборный узел"
+  },
+  "неровная подача": {
+   "en": "uneven feed",
+   "ru": "неровная подача"
+  },
+  "нестабильное питание компьютера": {
+   "en": "unstable computer power",
+   "ru": "нестабильное питание компьютера"
+  },
+  "нестабильность регулятора шины": {
+   "en": "bus regulator instability",
+   "ru": "нестабильность регулятора шины"
+  },
+  "нет связи: SOS не уходит": {
+   "en": "no link: SOS not going out",
+   "ru": "нет связи: SOS не уходит"
+  },
+  "неурожай": {
+   "en": "crop failure",
+   "ru": "неурожай"
+  },
+  "нехватка топлива": {
+   "en": "fuel shortage",
+   "ru": "нехватка топлива"
+  },
+  "новая рупия": {
+   "en": "new rupee",
+   "ru": "новая рупия"
+  },
+  "новое евро": {
+   "en": "new euro",
+   "ru": "новое евро"
+  },
+  "оболочка": {
+   "en": "shell",
+   "ru": "оболочка"
+  },
+  "обрыв питания двигателя": {
+   "en": "engine power loss",
+   "ru": "обрыв питания двигателя"
+  },
+  "обрыв фидера на обшивке": {
+   "en": "feeder break on the hull",
+   "ru": "обрыв фидера на обшивке"
+  },
+  "обрыв цепи пуска": {
+   "en": "ignition circuit break",
+   "ru": "обрыв цепи пуска"
+  },
+  "одна группа товаров хаба": {
+   "en": "one goods group of the hub",
+   "ru": "одна группа товаров хаба"
+  },
+  "одна ось манёвра слабее": {
+   "en": "one manoeuvre axis weaker",
+   "ru": "одна ось манёвра слабее"
+  },
+  "опасные грузы, класс C": {
+   "en": "hazardous cargo, class C",
+   "ru": "опасные грузы, класс C"
+  },
+  "оптика и апертуры": {
+   "en": "optics and apertures",
+   "ru": "оптика и апертуры"
+  },
+  "освобождение / замена привода": {
+   "en": "freeing / replacing the drive",
+   "ru": "освобождение / замена привода"
+  },
+  "освобождение / замена привода крышки": {
+   "en": "freeing / replacing the lid drive",
+   "ru": "освобождение / замена привода крышки"
+  },
+  "освобождение / замена шарнира": {
+   "en": "freeing / replacing the hinge",
+   "ru": "освобождение / замена шарнира"
+  },
+  "ослабление крепления плиты": {
+   "en": "plate mount loosening",
+   "ru": "ослабление крепления плиты"
+  },
+  "осмотр пятаков дроном после боя или прохода через обломки; замена пятака по ресурсу - около 8 000 ч эквивалентной полной тяги, к 12 000 ч выработан": {
+   "en": "drone inspection of the cooling plates after combat or passing through debris; cooling plate replaced by service life - about 8 000 h of equivalent full thrust, worn out by 12 000 h",
+   "ru": "осмотр пятаков дроном после боя или прохода через обломки; замена пятака по ресурсу - около 8 000 ч эквивалентной полной тяги, к 12 000 ч выработан"
+  },
+  "осмотр сцепок на каждой станции": {
+   "en": "coupler inspection at every station",
+   "ru": "осмотр сцепок на каждой станции"
+  },
+  "ось манёвра слабая даже на коротких импульсах": {
+   "en": "manoeuvre axis weak even on short pulses",
+   "ru": "ось манёвра слабая даже на коротких импульсах"
+  },
+  "ответ транспондера": {
+   "en": "transponder response",
+   "ru": "ответ транспондера"
+  },
+  "отвод тепла радиаторами": {
+   "en": "heat rejection by radiators",
+   "ru": "отвод тепла радиаторами"
+  },
+  "отказ": {
+   "en": "failure",
+   "ru": "отказ"
+  },
+  "отказ -> корабль уходит в отстойник (если holding) до решения или разворачивается; заявка доски с forbidden_blocs не может быть взята": {
+   "en": "refusal -> the ship goes to the holding area (if holding) pending a decision or turns back; a board contract with forbidden_blocs cannot be taken",
+   "ru": "отказ -> корабль уходит в отстойник (если holding) до решения или разворачивается; заявка доски с forbidden_blocs не может быть взята"
+  },
+  "отказ вентиляции": {
+   "en": "ventilation failure",
+   "ru": "отказ вентиляции"
+  },
+  "отказ выпуска опор": {
+   "en": "gear extension failure",
+   "ru": "отказ выпуска опор"
+  },
+  "отказ генератора кислорода": {
+   "en": "oxygen generator failure",
+   "ru": "отказ генератора кислорода"
+  },
+  "отказ датчика плазмы (ложная тревога)": {
+   "en": "plasma sensor failure (false alarm)",
+   "ru": "отказ датчика плазмы (ложная тревога)"
+  },
+  "отказ датчика температуры кольца катушек (ложная тревога)": {
+   "en": "coil ring temperature sensor failure (false alarm)",
+   "ru": "отказ датчика температуры кольца катушек (ложная тревога)"
+  },
+  "отказ замков груза модуля": {
+   "en": "module cargo lock failure",
+   "ru": "отказ замков груза модуля"
+  },
+  "отказ замков контейнера": {
+   "en": "container lock failure",
+   "ru": "отказ замков контейнера"
+  },
+  "отказ зарядки аппаратов": {
+   "en": "craft charging failure",
+   "ru": "отказ зарядки аппаратов"
+  },
+  "отказ захватов": {
+   "en": "clamp failure",
+   "ru": "отказ захватов"
+  },
+  "отказ канала управления вектором тяги": {
+   "en": "thrust vector control channel failure",
+   "ru": "отказ канала управления вектором тяги"
+  },
+  "отказ катушки поля сопла": {
+   "en": "nozzle field coil failure",
+   "ru": "отказ катушки поля сопла"
+  },
+  "отказ климат-установки секции": {
+   "en": "section climate unit failure",
+   "ru": "отказ климат-установки секции"
+  },
+  "отказ кран-балки": {
+   "en": "overhead crane failure",
+   "ru": "отказ кран-балки"
+  },
+  "отказ маяка": {
+   "en": "beacon failure",
+   "ru": "отказ маяка"
+  },
+  "отказ маяка SOS": {
+   "en": "SOS beacon failure",
+   "ru": "отказ маяка SOS"
+  },
+  "отказ маяка SOS шлюпки": {
+   "en": "lifeboat SOS beacon failure",
+   "ru": "отказ маяка SOS шлюпки"
+  },
+  "отказ модулей решётки": {
+   "en": "array module failure",
+   "ru": "отказ модулей решётки"
+  },
+  "отказ привода лебёдки": {
+   "en": "winch drive failure",
+   "ru": "отказ привода лебёдки"
+  },
+  "отказ привода створок": {
+   "en": "door drive failure",
+   "ru": "отказ привода створок"
+  },
+  "отказ привода штанги": {
+   "en": "boom drive failure",
+   "ru": "отказ привода штанги"
+  },
+  "отказ распределения питания секции": {
+   "en": "section power distribution failure",
+   "ru": "отказ распределения питания секции"
+  },
+  "отказ силового преобразователя": {
+   "en": "power converter failure",
+   "ru": "отказ силового преобразователя"
+  },
+  "отказ станков": {
+   "en": "machine tool failure",
+   "ru": "отказ станков"
+  },
+  "отказ стартёра": {
+   "en": "starter failure",
+   "ru": "отказ стартёра"
+  },
+  "отказ стерилизации": {
+   "en": "sterilization failure",
+   "ru": "отказ стерилизации"
+  },
+  "отказ цепи пиропатронов": {
+   "en": "squib circuit failure",
+   "ru": "отказ цепи пиропатронов"
+  },
+  "отказ; исключения — polity_overrides": {
+   "en": "refusal; exceptions - polity_overrides",
+   "ru": "отказ; исключения — polity_overrides"
+  },
+  "отклонение вектора тяги": {
+   "en": "thrust vector deflection",
+   "ru": "отклонение вектора тяги"
+  },
+  "отключить пару (ось слабее)": {
+   "en": "switch off a pair (axis weaker)",
+   "ru": "отключить пару (ось слабее)"
+  },
+  "охлаждающий пятак": {
+   "en": "cooling plate",
+   "ru": "охлаждающий пятак"
+  },
+  "охлаждающий пятак двигателя (сменные секции)": {
+   "en": "engine cooling plate (replaceable sections)",
+   "ru": "охлаждающий пятак двигателя (сменные секции)"
+  },
+  "охлаждение потеряно": {
+   "en": "cooling lost",
+   "ru": "охлаждение потеряно"
+  },
+  "очистка апертур": {
+   "en": "aperture cleaning",
+   "ru": "очистка апертур"
+  },
+  "очистка теплоносителя": {
+   "en": "coolant purification",
+   "ru": "очистка теплоносителя"
+  },
+  "ошибки данных": {
+   "en": "data errors",
+   "ru": "ошибки данных"
+  },
+  "память": {
+   "en": "memory",
+   "ru": "память"
+  },
+  "панели радиатора": {
+   "en": "radiator panels",
+   "ru": "панели радиатора"
+  },
+  "панель радиатора": {
+   "en": "radiator panel",
+   "ru": "панель радиатора"
+  },
+  "пары с grievance >= 45 или каналом black": {
+   "en": "pairs with grievance >= 45 or a black channel",
+   "ru": "пары с grievance >= 45 или каналом black"
+  },
+  "пассажирская / жилая секция": {
+   "en": "passenger / habitat section",
+   "ru": "пассажирская / жилая секция"
+  },
+  "пассажиры": {
+   "en": "passengers",
+   "ru": "пассажиры"
+  },
+  "пассажиры x3": {
+   "en": "passengers x3",
+   "ru": "пассажиры x3"
+  },
+  "первые признаки (к сведению)": {
+   "en": "first signs (for information)",
+   "ru": "первые признаки (к сведению)"
+  },
+  "перебронирование": {
+   "en": "overbooking",
+   "ru": "перебронирование"
+  },
+  "перевод на резервный регулятор": {
+   "en": "switch to the backup regulator",
+   "ru": "перевод на резервный регулятор"
+  },
+  "перегрев - двигатель глушится": {
+   "en": "overheat - engine shuts down",
+   "ru": "перегрев - двигатель глушится"
+  },
+  "перегрев усилителя": {
+   "en": "amplifier overheating",
+   "ru": "перегрев усилителя"
+  },
+  "перегрев ячеек": {
+   "en": "cell overheating",
+   "ru": "перегрев ячеек"
+  },
+  "передающие модули решётки": {
+   "en": "array transmit modules",
+   "ru": "передающие модули решётки"
+  },
+  "перезапуск": {
+   "en": "restart",
+   "ru": "перезапуск"
+  },
+  "перезапуск мониторинга": {
+   "en": "monitoring restart",
+   "ru": "перезапуск мониторинга"
+  },
+  "перезарядка с пульта": {
+   "en": "recharge from the console",
+   "ru": "перезарядка с пульта"
+  },
+  "перекалибровка контура управления": {
+   "en": "control loop recalibration",
+   "ru": "перекалибровка контура управления"
+  },
+  "перекалибровка на верфи изготовителя / лицензиата": {
+   "en": "recalibration at the manufacturer's / licensee's shipyard",
+   "ru": "перекалибровка на верфи изготовителя / лицензиата"
+  },
+  "перекалибровка по ускорению": {
+   "en": "recalibration by acceleration",
+   "ru": "перекалибровка по ускорению"
+  },
+  "переключить SOS на основной связной комплекс": {
+   "en": "switch SOS to the main comms suite",
+   "ru": "переключить SOS на основной связной комплекс"
+  },
+  "перекупщик": {
+   "en": "middleman",
+   "ru": "перекупщик"
+  },
+  "перемотка": {
+   "en": "rewinding",
+   "ru": "перемотка"
+  },
+  "перемотка катушек": {
+   "en": "coil rewinding",
+   "ru": "перемотка катушек"
+  },
+  "перемотка сегмента": {
+   "en": "segment rewinding",
+   "ru": "перемотка сегмента"
+  },
+  "перемотка сегмента с пробоем": {
+   "en": "rewinding the broken-down segment",
+   "ru": "перемотка сегмента с пробоем"
+  },
+  "перенос на резервный банк": {
+   "en": "transfer to the backup bank",
+   "ru": "перенос на резервный банк"
+  },
+  "переотжиг демпферов": {
+   "en": "damper re-annealing",
+   "ru": "переотжиг демпферов"
+  },
+  "перепрошивка кода": {
+   "en": "code reflash",
+   "ru": "перепрошивка кода"
+  },
+  "переход на баллоны O2": {
+   "en": "switch to O2 bottles",
+   "ru": "переход на баллоны O2"
+  },
+  "пилот (с пульта)": {
+   "en": "pilot (from the console)",
+   "ru": "пилот (с пульта)"
+  },
+  "пиратская волна": {
+   "en": "pirate wave",
+   "ru": "пиратская волна"
+  },
+  "пиро- и прочие электрические элементы (IEEE 315)": {
+   "en": "pyro and other electrical elements (IEEE 315)",
+   "ru": "пиро- и прочие электрические элементы (IEEE 315)"
+  },
+  "пиропатроны": {
+   "en": "squibs",
+   "ru": "пиропатроны"
+  },
+  "пиропатроны отстрела": {
+   "en": "jettison squibs",
+   "ru": "пиропатроны отстрела"
+  },
+  "плановый": {
+   "en": "planned",
+   "ru": "плановый"
+  },
+  "плита 1 т": {
+   "en": "1 t plate",
+   "ru": "плита 1 т"
+  },
+  "плита дребезжит на манёврах": {
+   "en": "plate rattles during manoeuvres",
+   "ru": "плита дребезжит на манёврах"
+  },
+  "плитки": {
+   "en": "tiles",
+   "ru": "плитки"
+  },
+  "пломбы и контроль вскрытия": {
+   "en": "seals and tamper control",
+   "ru": "пломбы и контроль вскрытия"
+  },
+  "плот проскальзывает в захватах": {
+   "en": "raft slipping in the clamps",
+   "ru": "плот проскальзывает в захватах"
+  },
+  "по quarantine.levels": {
+   "en": "per quarantine.levels",
+   "ru": "по quarantine.levels"
+  },
+  "по формуле (до x0.35)": {
+   "en": "by formula (up to x0.35)",
+   "ru": "по формуле (до x0.35)"
+  },
+  "по формуле (до x4)": {
+   "en": "by formula (up to x4)",
+   "ru": "по формуле (до x4)"
+  },
+  "повреждение излучателя сопла": {
+   "en": "nozzle radiator damage",
+   "ru": "повреждение излучателя сопла"
+  },
+  "повреждение излучающей решётки": {
+   "en": "emitter array damage",
+   "ru": "повреждение излучающей решётки"
+  },
+  "повреждение изоляции": {
+   "en": "insulation damage",
+   "ru": "повреждение изоляции"
+  },
+  "повреждение или выработка охлаждающего пятака двигателя": {
+   "en": "engine cooling plate damage or wear-out",
+   "ru": "повреждение или выработка охлаждающего пятака двигателя"
+  },
+  "поглотитель CO2": {
+   "en": "CO2 scrubber",
+   "ru": "поглотитель CO2"
+  },
+  "подача заряда прыжка": {
+   "en": "jump charge feed",
+   "ru": "подача заряда прыжка"
+  },
+  "подача топлива": {
+   "en": "fuel feed",
+   "ru": "подача топлива"
+  },
+  "подача топливных таблеток": {
+   "en": "fuel pellet feed",
+   "ru": "подача топливных таблеток"
+  },
+  "подача ударников": {
+   "en": "impactor feed",
+   "ru": "подача ударников"
+  },
+  "подгар силового ввода": {
+   "en": "power feedthrough scorching",
+   "ru": "подгар силового ввода"
+  },
+  "подзарядка от шины": {
+   "en": "recharging from the bus",
+   "ru": "подзарядка от шины"
+  },
+  "подзарядка от шины корабля": {
+   "en": "recharging from the ship bus",
+   "ru": "подзарядка от шины корабля"
+  },
+  "подтяжка / замена крепежа": {
+   "en": "tightening / replacing fasteners",
+   "ru": "подтяжка / замена крепежа"
+  },
+  "показания тяги расходятся с ускорением": {
+   "en": "thrust readings disagree with acceleration",
+   "ru": "показания тяги расходятся с ускорением"
+  },
+  "поле не держится - тяга рывками": {
+   "en": "the field will not hold - thrust in jerks",
+   "ru": "поле не держится - тяга рывками"
+  },
+  "поле сцепления не формируется": {
+   "en": "traction field not forming",
+   "ru": "поле сцепления не формируется"
+  },
+  "полевое маневровое сопло / кластер RCS": {
+   "en": "field manoeuvring nozzle / RCS cluster",
+   "ru": "полевое маневровое сопло / кластер RCS"
+  },
+  "полевой главный двигатель": {
+   "en": "field main engine",
+   "ru": "полевой главный двигатель"
+  },
+  "положение привода": {
+   "en": "drive position",
+   "ru": "положение привода"
+  },
+  "посадка невозможна": {
+   "en": "landing impossible",
+   "ru": "посадка невозможна"
+  },
+  "посадочные опоры": {
+   "en": "landing gear",
+   "ru": "посадочные опоры"
+  },
+  "после радиационной вспышки": {
+   "en": "after a radiation flare",
+   "ru": "после радиационной вспышки"
+  },
+  "после ударов и перегрузок": {
+   "en": "after impacts and overloads",
+   "ru": "после ударов и перегрузок"
+  },
+  "постоянные карантины канона (зона «Гайя», кордон «Лотос») — уровень lockdown навсегда; проход только по лицензии (world_sites.hazard_zones)": {
+   "en": "permanent canon quarantines (zone \"Gaia\", cordon \"Lotus\") - lockdown level forever; passage only with a licence (world_sites.hazard_zones)",
+   "ru": "постоянные карантины канона (зона «Гайя», кордон «Лотос») — уровень lockdown навсегда; проход только по лицензии (world_sites.hazard_zones)"
+  },
+  "почта / носители": {
+   "en": "mail / media",
+   "ru": "почта / носители"
+  },
+  "пошлина = customs_share_of_cargo_value (ship_economics.fees, 0.04) x fee_mult": {
+   "en": "duty = customs_share_of_cargo_value (ship_economics.fees, 0.04) x fee_mult",
+   "ru": "пошлина = customs_share_of_cargo_value (ship_economics.fees, 0.04) x fee_mult"
+  },
+  "правка / замена люльки": {
+   "en": "straightening / replacing the cradle",
+   "ru": "правка / замена люльки"
+  },
+  "праздник / паломничество": {
+   "en": "holiday / pilgrimage",
+   "ru": "праздник / паломничество"
+  },
+  "предел тяги буксира снижен": {
+   "en": "tug thrust limit reduced",
+   "ru": "предел тяги буксира снижен"
+  },
+  "при скачках служебной шины": {
+   "en": "during service bus surges",
+   "ru": "при скачках служебной шины"
+  },
+  "прибывающие пассажиры — выдержка 7-21 сут (quarantine_ward хаба или ближайший quarantine_hub); корабли ждут в отстойнике; вывоз food_fresh / vaccines_biotech / пассажиров запрещён; исходящие пассажирские рейсы отменены": {
+   "en": "arriving passengers - held for 7-21 days (the hub's quarantine_ward or the nearest quarantine_hub); ships wait in the holding area; export of food_fresh / vaccines_biotech / passengers is banned; outgoing passenger flights are cancelled",
+   "ru": "прибывающие пассажиры — выдержка 7-21 сут (quarantine_ward хаба или ближайший quarantine_hub); корабли ждут в отстойнике; вывоз food_fresh / vaccines_biotech / пассажиров запрещён; исходящие пассажирские рейсы отменены"
+  },
+  "привод выдвижения": {
+   "en": "extension drive",
+   "ru": "привод выдвижения"
+  },
+  "привод выпуска": {
+   "en": "gear drive",
+   "ru": "привод выпуска"
+  },
+  "привод наведения": {
+   "en": "aiming drive",
+   "ru": "привод наведения"
+  },
+  "привод раскрытия": {
+   "en": "deployment drive",
+   "ru": "привод раскрытия"
+  },
+  "привод штанги": {
+   "en": "boom drive",
+   "ru": "привод штанги"
+  },
+  "приёмник": {
+   "en": "receiver",
+   "ru": "приёмник"
+  },
+  "пробоина / растрескивание плиты": {
+   "en": "plate puncture / cracking",
+   "ru": "пробоина / растрескивание плиты"
+  },
+  "пробой - двигатель заглушён": {
+   "en": "breakdown - engine shut down",
+   "ru": "пробой - двигатель заглушён"
+  },
+  "пробой панели (микрометеорит / осколок)": {
+   "en": "panel puncture (micrometeorite / fragment)",
+   "ru": "пробой панели (микрометеорит / осколок)"
+  },
+  "провалы тяги и сброс поля": {
+   "en": "thrust dropouts and field resets",
+   "ru": "провалы тяги и сброс поля"
+  },
+  "прогон вектора по всему сектору перед вылетом (CR-1)": {
+   "en": "vector sweep across the whole sector before departure (CR-1)",
+   "ru": "прогон вектора по всему сектору перед вылетом (CR-1)"
+  },
+  "продажа игрока добавляет к stock; цена реагирует на следующем тике (без мгновенного обвала внутри одной сделки, кроме лимита: хаб покупает не больше 1.5 x target - stock)": {
+   "en": "a player sale adds to stock; the price reacts on the next tick (no instant collapse within one deal, except the limit: the hub buys no more than 1.5 x target - stock)",
+   "ru": "продажа игрока добавляет к stock; цена реагирует на следующем тике (без мгновенного обвала внутри одной сделки, кроме лимита: хаб покупает не больше 1.5 x target - stock)"
+  },
+  "продувка шнека каждые 200 ч": {
+   "en": "auger purge every 200 h",
+   "ru": "продувка шнека каждые 200 ч"
+  },
+  "промывка коллектора": {
+   "en": "manifold flush",
+   "ru": "промывка коллектора"
+  },
+  "промывка теплообменника": {
+   "en": "heat exchanger flush",
+   "ru": "промывка теплообменника"
+  },
+  "просадки шины": {
+   "en": "bus sags",
+   "ru": "просадки шины"
+  },
+  "проявляется при резкой смене нагрузки (включение РЭБ, оружия, стыковка)": {
+   "en": "shows up on sudden load changes (EW, weapons switching on, docking)",
+   "ru": "проявляется при резкой смене нагрузки (включение РЭБ, оружия, стыковка)"
+  },
+  "пуск невозможен": {
+   "en": "launch impossible",
+   "ru": "пуск невозможен"
+  },
+  "пушка молчит": {
+   "en": "the gun is silent",
+   "ru": "пушка молчит"
+  },
+  "пятак горячее обычного": {
+   "en": "cooling plate hotter than usual",
+   "ru": "пятак горячее обычного"
+  },
+  "пятак двигателя горячее обычного": {
+   "en": "engine cooling plate hotter than usual",
+   "ru": "пятак двигателя горячее обычного"
+  },
+  "работа на одном канале (половина мощности)": {
+   "en": "running on one channel (half power)",
+   "ru": "работа на одном канале (половина мощности)"
+  },
+  "работа на полной мощности": {
+   "en": "running at full power",
+   "ru": "работа на полной мощности"
+  },
+  "работа на сегменте с отказом": {
+   "en": "running on a failed segment",
+   "ru": "работа на сегменте с отказом"
+  },
+  "работает хуже (предупреждение)": {
+   "en": "degraded (warning)",
+   "ru": "работает хуже (предупреждение)"
+  },
+  "радар / антенная решётка": {
+   "en": "radar / antenna array",
+   "ru": "радар / антенная решётка"
+  },
+  "раз в strategic_period_days target_t и prod/cons пересчитываются из баланса world_economy (production, consumption, imports, unmet) — цена стремится к price_index той модели ((спрос/поставка)^2)": {
+   "en": "every strategic_period_days, target_t and prod/cons are recalculated from the world_economy balance (production, consumption, imports, unmet) - the price tends to that model's price_index ((demand/supply)^2)",
+   "ru": "раз в strategic_period_days target_t и prod/cons пересчитываются из баланса world_economy (production, consumption, imports, unmet) — цена стремится к price_index той модели ((спрос/поставка)^2)"
+  },
+  "разгонные катушки": {
+   "en": "accelerator coils",
+   "ru": "разгонные катушки"
+  },
+  "разряд / деградация батареи капсулы": {
+   "en": "capsule battery discharge / degradation",
+   "ru": "разряд / деградация батареи капсулы"
+  },
+  "разряд батареи шлюпки": {
+   "en": "lifeboat battery discharge",
+   "ru": "разряд батареи шлюпки"
+  },
+  "разъём (вилка)": {
+   "en": "connector (plug)",
+   "ru": "разъём (вилка)"
+  },
+  "разъём (гнездо)": {
+   "en": "connector (socket)",
+   "ru": "разъём (гнездо)"
+  },
+  "ракеты на запрете по температуре": {
+   "en": "missiles locked out by temperature",
+   "ru": "ракеты на запрете по температуре"
+  },
+  "распределение питания секции": {
+   "en": "section power distribution",
+   "ru": "распределение питания секции"
+  },
+  "растёт выкипание груза": {
+   "en": "cargo boil-off increasing",
+   "ru": "растёт выкипание груза"
+  },
+  "расход теплоносителя": {
+   "en": "coolant flow",
+   "ru": "расход теплоносителя"
+  },
+  "реактор > 50 %": {
+   "en": "reactor > 50 %",
+   "ru": "реактор > 50 %"
+  },
+  "реактор гаснет без топлива": {
+   "en": "reactor goes out without fuel",
+   "ru": "реактор гаснет без топлива"
+  },
+  "реактор держит не больше 70 %": {
+   "en": "reactor holds no more than 70 %",
+   "ru": "реактор держит не больше 70 %"
+  },
+  "реактор заглушён": {
+   "en": "reactor shut down",
+   "ru": "реактор заглушён"
+  },
+  "реактор и двигатель «чихают»": {
+   "en": "reactor and engine \"sputter\"",
+   "ru": "реактор и двигатель «чихают»"
+  },
+  "реактор на холостом ходу": {
+   "en": "reactor idling",
+   "ru": "реактор на холостом ходу"
+  },
+  "реактор не запускается": {
+   "en": "reactor will not start",
+   "ru": "реактор не запускается"
+  },
+  "реактор ограничен по мощности": {
+   "en": "reactor power limited",
+   "ru": "реактор ограничен по мощности"
+  },
+  "реактор сам ограничивает мощность по ложной нестабильности": {
+   "en": "the reactor limits its own power on a false instability",
+   "ru": "реактор сам ограничивает мощность по ложной нестабильности"
+  },
+  "регенерация воды": {
+   "en": "water recovery",
+   "ru": "регенерация воды"
+  },
+  "регенерация сорбента": {
+   "en": "sorbent regeneration",
+   "ru": "регенерация сорбента"
+  },
+  "регимы faith — паломничество (world_sites.passengers.pilgrimage_regimes)": {
+   "en": "faith regimes - pilgrimage (world_sites.passengers.pilgrimage_regimes)",
+   "ru": "регимы faith — паломничество (world_sites.passengers.pilgrimage_regimes)"
+  },
+  "регимы open/strict, уровень A/B": {
+   "en": "open/strict regimes, level A/B",
+   "ru": "регимы open/strict, уровень A/B"
+  },
+  "регулятор шины": {
+   "en": "bus regulator",
+   "ru": "регулятор шины"
+  },
+  "редкие ошибки данных": {
+   "en": "rare data errors",
+   "ru": "редкие ошибки данных"
+  },
+  "редкие перезагрузки": {
+   "en": "rare reboots",
+   "ru": "редкие перезагрузки"
+  },
+  "редкие провалы тяги": {
+   "en": "rare thrust dropouts",
+   "ru": "редкие провалы тяги"
+  },
+  "резервный теплообменник (включается при повреждённом пятаке)": {
+   "en": "backup heat exchanger (engaged when the cooling plate is damaged)",
+   "ru": "резервный теплообменник (включается при повреждённом пятаке)"
+  },
+  "резцы": {
+   "en": "cutter bits",
+   "ru": "резцы"
+  },
+  "рельсы": {
+   "en": "rails",
+   "ru": "рельсы"
+  },
+  "ремонт климат-установки": {
+   "en": "climate unit repair",
+   "ru": "ремонт климат-установки"
+  },
+  "ремонт силами бригады": {
+   "en": "repair by a crew team",
+   "ru": "ремонт силами бригады"
+  },
+  "ремонт станков": {
+   "en": "machine tool repair",
+   "ru": "ремонт станков"
+  },
+  "ремонтный дрон": {
+   "en": "repair drone",
+   "ru": "ремонтный дрон"
+  },
+  "ресурс капсулы меньше расчётного": {
+   "en": "capsule service life shorter than rated",
+   "ru": "ресурс капсулы меньше расчётного"
+  },
+  "риск маршрута x3, страховка x2, доставленные цены на конце маршрута x1.1-1.3, награды доски x1.5": {
+   "en": "route risk x3, insurance x2, delivered prices at the route end x1.1-1.3, board rewards x1.5",
+   "ru": "риск маршрута x3, страховка x2, доставленные цены на конце маршрута x1.1-1.3, награды доски x1.5"
+  },
+  "рупия Лал-Кота": {
+   "en": "Lal Kot rupee",
+   "ru": "рупия Лал-Кота"
+  },
+  "ручная обработка": {
+   "en": "manual processing",
+   "ru": "ручная обработка"
+  },
+  "ручное ньютоновское управление": {
+   "en": "manual Newtonian control",
+   "ru": "ручное ньютоновское управление"
+  },
+  "сбои автопилота": {
+   "en": "autopilot glitches",
+   "ru": "сбои автопилота"
+  },
+  "сбои автопилота и навигации": {
+   "en": "autopilot and navigation glitches",
+   "ru": "сбои автопилота и навигации"
+  },
+  "сбои компьютера и сенсоров": {
+   "en": "computer and sensor glitches",
+   "ru": "сбои компьютера и сенсоров"
+  },
+  "сбой автодока": {
+   "en": "autodoc malfunction",
+   "ru": "сбой автодока"
+  },
+  "сбой кодировки ответа": {
+   "en": "response encoding error",
+   "ru": "сбой кодировки ответа"
+  },
+  "сбой мониторинга капсул (ложная тревога)": {
+   "en": "capsule monitoring glitch (false alarm)",
+   "ru": "сбой мониторинга капсул (ложная тревога)"
+  },
+  "сбой подачи таблеток": {
+   "en": "pellet feed malfunction",
+   "ru": "сбой подачи таблеток"
+  },
+  "сбой трансивера": {
+   "en": "transceiver malfunction",
+   "ru": "сбой трансивера"
+  },
+  "сборочная единица / узел (разборный)": {
+   "en": "assembly / unit (serviceable)",
+   "ru": "сборочная единица / узел (разборный)"
+  },
+  "свободная рупия": {
+   "en": "free rupee",
+   "ru": "свободная рупия"
+  },
+  "своя математика Капеху (вне стандарта Когниума): обслуживание только Kāpehu Systems": {
+   "en": "Kapehu's own mathematics (outside the Cognium standard): serviced only by Kāpehu Systems",
+   "ru": "своя математика Капеху (вне стандарта Когниума): обслуживание только Kāpehu Systems"
+  },
+  "связной комплекс": {
+   "en": "comms suite",
+   "ru": "связной комплекс"
+  },
+  "связь пропадает": {
+   "en": "link drops out",
+   "ru": "связь пропадает"
+  },
+  "связь слабее - SOS слышен хуже": {
+   "en": "weaker link - SOS heard worse",
+   "ru": "связь слабее - SOS слышен хуже"
+  },
+  "сегменты кольца полевых катушек": {
+   "en": "field coil ring segments",
+   "ru": "сегменты кольца полевых катушек"
+  },
+  "сектор отклонения урезан": {
+   "en": "deflection sector reduced",
+   "ru": "сектор отклонения урезан"
+  },
+  "секцию приходится закрывать": {
+   "en": "the section has to be closed",
+   "ru": "секцию приходится закрывать"
+  },
+  "сенсорная мачта": {
+   "en": "sensor mast",
+   "ru": "сенсорная мачта"
+  },
+  "силовая рама": {
+   "en": "structural frame",
+   "ru": "силовая рама"
+  },
+  "силовая шина двигателей": {
+   "en": "engine power bus",
+   "ru": "силовая шина двигателей"
+  },
+  "силовая шина обесточена": {
+   "en": "power bus de-energized",
+   "ru": "силовая шина обесточена"
+  },
+  "силовой": {
+   "en": "security",
+   "ru": "силовой"
+  },
+  "силовой ввод с шины реактора (во фланце)": {
+   "en": "power feedthrough from the reactor bus (in the flange)",
+   "ru": "силовой ввод с шины реактора (во фланце)"
+  },
+  "силовой ключ импульсов": {
+   "en": "pulse power switch",
+   "ru": "силовой ключ импульсов"
+  },
+  "силовой преобразователь на шину": {
+   "en": "power converter to the bus",
+   "ru": "силовой преобразователь на шину"
+  },
+  "синь-юань": {
+   "en": "xin yuan",
+   "ru": "синь-юань"
+  },
+  "система без связи (refuses_network, сейчас 22 — Новая Карма) и хабы с coverage=none: только со слов прибывших кораблей, age = время с последнего прибытия оттуда (типично 7-30 сут); метка «нет связи»": {
+   "en": "systems without a link (refuses_network, currently 22 - New Karma) and hubs with coverage=none: only from the word of arriving ships, age = time since the last arrival from there (typically 7-30 days); label \"no link\"",
+   "ru": "система без связи (refuses_network, сейчас 22 — Новая Карма) и хабы с coverage=none: только со слов прибывших кораблей, age = время с последнего прибытия оттуда (типично 7-30 сут); метка «нет связи»"
+  },
+  "система жизнеобеспечения": {
+   "en": "life support system",
+   "ru": "система жизнеобеспечения"
+  },
+  "система управления плазмой": {
+   "en": "plasma control system",
+   "ru": "система управления плазмой"
+  },
+  "системы с пиратским индексом > enclave_threshold (world_sites.piracy)": {
+   "en": "systems with a piracy index > enclave_threshold (world_sites.piracy)",
+   "ru": "системы с пиратским индексом > enclave_threshold (world_sites.piracy)"
+  },
+  "системы, где хабы разных блоков: Эпсилон Эридана (Гармония / Пояс Раздора), GJ 581, HD 20794, HD 40307, Дельта Павлина, GJ 832, Лаланд (одна лига, но Тауранга — другой блок)": {
+   "en": "systems with hubs of different blocs: Epsilon Eridani (Harmony / Belt of Discord), GJ 581, HD 20794, HD 40307, Delta Pavonis, GJ 832, Lalande (one league, but Tauranga is a different bloc)",
+   "ru": "системы, где хабы разных блоков: Эпсилон Эридана (Гармония / Пояс Раздора), GJ 581, HD 20794, HD 40307, Дельта Павлина, GJ 832, Лаланд (одна лига, но Тауранга — другой блок)"
+  },
+  "скачки шины": {
+   "en": "bus surges",
+   "ru": "скачки шины"
+  },
+  "скол / трещина плитки": {
+   "en": "tile chip / crack",
+   "ru": "скол / трещина плитки"
+  },
+  "скрип Керна": {
+   "en": "Kern scrip",
+   "ru": "скрип Керна"
+  },
+  "служебная шина обесточена": {
+   "en": "service bus de-energized",
+   "ru": "служебная шина обесточена"
+  },
+  "служебная шина питания": {
+   "en": "service power bus",
+   "ru": "служебная шина питания"
+  },
+  "служебной мощности не хватает: сенсоры и ЖО переходят в экономный режим": {
+   "en": "not enough service power: sensors and life support switch to economy mode",
+   "ru": "служебной мощности не хватает: сенсоры и ЖО переходят в экономный режим"
+  },
+  "служебный реактор (ВСУ)": {
+   "en": "service reactor (APU)",
+   "ru": "служебный реактор (ВСУ)"
+  },
+  "снабжение": {
+   "en": "supply",
+   "ru": "снабжение"
+  },
+  "снаряд медленнее, разброс больше": {
+   "en": "slower projectile, wider spread",
+   "ru": "снаряд медленнее, разброс больше"
+  },
+  "снизить темп пуска": {
+   "en": "reduce the launch rate",
+   "ru": "снизить темп пуска"
+  },
+  "собран Гармонией из запечатанных блоков Когниума: блоки - только «Нулевая точка», сборка - верфь Гармонии": {
+   "en": "assembled by Harmony from sealed Cognium blocks: blocks - only \"Zero Point\", assembly - Harmony Shipyards",
+   "ru": "собран Гармонией из запечатанных блоков Когниума: блоки - только «Нулевая точка», сборка - верфь Гармонии"
+  },
+  "солнечный кредит": {
+   "en": "solar credit",
+   "ru": "солнечный кредит"
+  },
+  "сопло дольше остывает после манёвров": {
+   "en": "the nozzle takes longer to cool after manoeuvres",
+   "ru": "сопло дольше остывает после манёвров"
+  },
+  "состояние замков": {
+   "en": "lock status",
+   "ru": "состояние замков"
+  },
+  "спасательная капсула": {
+   "en": "escape pod",
+   "ru": "спасательная капсула"
+  },
+  "спасательная капсула (катапультируемая кабина)": {
+   "en": "escape pod (ejectable cabin)",
+   "ru": "спасательная капсула (катапультируемая кабина)"
+  },
+  "спасательная шлюпка / убежище": {
+   "en": "lifeboat / shelter",
+   "ru": "спасательная шлюпка / убежище"
+  },
+  "срочные заявки на поставку, награда x1.5": {
+   "en": "urgent supply contracts, reward x1.5",
+   "ru": "срочные заявки на поставку, награда x1.5"
+  },
+  "срыв плазмы - реактор заглушён": {
+   "en": "plasma disruption - reactor shut down",
+   "ru": "срыв плазмы - реактор заглушён"
+  },
+  "стабильность плазмы": {
+   "en": "plasma stability",
+   "ru": "стабильность плазмы"
+  },
+  "стабильность поля сцепления двигателя": {
+   "en": "engine traction field stability",
+   "ru": "стабильность поля сцепления двигателя"
+  },
+  "станки и печать": {
+   "en": "machine tools and printing",
+   "ru": "станки и печать"
+  },
+  "стартёр": {
+   "en": "starter",
+   "ru": "стартёр"
+  },
+  "створки": {
+   "en": "doors",
+   "ru": "створки"
+  },
+  "стерилизация": {
+   "en": "sterilization",
+   "ru": "стерилизация"
+  },
+  "стойка C20": {
+   "en": "C20 rack",
+   "ru": "стойка C20"
+  },
+  "сторожевой таймер": {
+   "en": "watchdog timer",
+   "ru": "сторожевой таймер"
+  },
+  "стратегические (jump_charge, weapons, nav_sensors, computing) — только с экспортной лицензией": {
+   "en": "strategic (jump_charge, weapons, nav_sensors, computing) - only with an export licence",
+   "ru": "стратегические (jump_charge, weapons, nav_sensors, computing) — только с экспортной лицензией"
+  },
+  "стрельба очередями": {
+   "en": "burst fire",
+   "ru": "стрельба очередями"
+  },
+  "стройка / новый контракт": {
+   "en": "construction / new contract",
+   "ru": "стройка / новый контракт"
+  },
+  "стыковка невозможна": {
+   "en": "docking impossible",
+   "ru": "стыковка невозможна"
+  },
+  "стыковочный узел": {
+   "en": "docking port",
+   "ru": "стыковочный узел"
+  },
+  "стыкуются только медицинские и гуманитарные рейсы (relief) с разрешением; соседние хабы публикуют заявки relief с наградой x2": {
+   "en": "only medical and humanitarian flights (relief) with a permit may dock; neighbouring hubs post relief contracts with reward x2",
+   "ru": "стыкуются только медицинские и гуманитарные рейсы (relief) с разрешением; соседние хабы публикуют заявки relief с наградой x2"
+  },
+  "сцепка": {
+   "en": "coupler",
+   "ru": "сцепка"
+  },
+  "т": {
+   "en": "t",
+   "ru": "т"
+  },
+  "твердынский юань": {
+   "en": "Stronghold yuan",
+   "ru": "твердынский юань"
+  },
+  "темп стрельбы падает": {
+   "en": "rate of fire drops",
+   "ru": "темп стрельбы падает"
+  },
+  "температура охлаждающего пятака": {
+   "en": "cooling plate temperature",
+   "ru": "температура охлаждающего пятака"
+  },
+  "температура теплоносителя на выходе": {
+   "en": "coolant outlet temperature",
+   "ru": "температура теплоносителя на выходе"
+  },
+  "температура узла": {
+   "en": "unit temperature",
+   "ru": "температура узла"
+  },
+  "теократический": {
+   "en": "theocratic",
+   "ru": "теократический"
+  },
+  "тепло двигателя пошло в общий контур охлаждения: греются реактор и соседи": {
+   "en": "engine heat has gone into the common cooling loop: the reactor and neighbours are heating up",
+   "ru": "тепло двигателя пошло в общий контур охлаждения: греются реактор и соседи"
+  },
+  "тепло двигателя ушло в контур": {
+   "en": "engine heat went into the loop",
+   "ru": "тепло двигателя ушло в контур"
+  },
+  "теплозащитный экран": {
+   "en": "heat shield",
+   "ru": "теплозащитный экран"
+  },
+  "теплоноситель": {
+   "en": "coolant",
+   "ru": "теплоноситель"
+  },
+  "теплоноситель горячее, давление падает": {
+   "en": "coolant hotter, pressure dropping",
+   "ru": "теплоноситель горячее, давление падает"
+  },
+  "теплоноситель на 5 % горячее": {
+   "en": "coolant 5 % hotter",
+   "ru": "теплоноситель на 5 % горячее"
+  },
+  "теплообменник": {
+   "en": "heat exchanger",
+   "ru": "теплообменник"
+  },
+  "теплообменник работает постоянно": {
+   "en": "heat exchanger runs constantly",
+   "ru": "теплообменник работает постоянно"
+  },
+  "термостатирование ячеек": {
+   "en": "cell thermal control",
+   "ru": "термостатирование ячеек"
+  },
+  "тест батарей шлюпок перед рейсом": {
+   "en": "lifeboat battery test before the voyage",
+   "ru": "тест батарей шлюпок перед рейсом"
+  },
+  "тест замков перед рейсом": {
+   "en": "lock test before the voyage",
+   "ru": "тест замков перед рейсом"
+  },
+  "тест холодного пуска раз в 100 ч": {
+   "en": "cold start test every 100 h",
+   "ru": "тест холодного пуска раз в 100 ч"
+  },
+  "тест цепи перед каждым вылетом": {
+   "en": "circuit test before every departure",
+   "ru": "тест цепи перед каждым вылетом"
+  },
+  "ток потребления": {
+   "en": "current draw",
+   "ru": "ток потребления"
+  },
+  "толщинометрия после каждого входа в атмосферу": {
+   "en": "thickness gauging after every atmospheric entry",
+   "ru": "толщинометрия после каждого входа в атмосферу"
+  },
+  "только relief; остальное — изъятие restricted-товаров с вероятностью 0.3": {
+   "en": "relief only; otherwise - confiscation of restricted goods with probability 0.3",
+   "ru": "только relief; остальное — изъятие restricted-товаров с вероятностью 0.3"
+  },
+  "только гражданские группы: food, water_gas, medical, consumer, construction, machinery (кроме mining_equipment)": {
+   "en": "civilian groups only: food, water_gas, medical, consumer, construction, machinery (except mining_equipment)",
+   "ru": "только гражданские группы: food, water_gas, medical, consumer, construction, machinery (кроме mining_equipment)"
+  },
+  "только запас в баллонах": {
+   "en": "bottled reserve only",
+   "ru": "только запас в баллонах"
+  },
+  "топлива «меньше», чем должно быть": {
+   "en": "\"less\" fuel than there should be",
+   "ru": "топлива «меньше», чем должно быть"
+  },
+  "трансивер": {
+   "en": "transceiver",
+   "ru": "трансивер"
+  },
+  "транспондер": {
+   "en": "transponder",
+   "ru": "транспондер"
+  },
+  "транспондер Управления Маяков Т-1": {
+   "en": "Beacon Authority transponder T-1",
+   "ru": "транспондер Управления Маяков Т-1"
+  },
+  "трещина силовой рамы": {
+   "en": "structural frame crack",
+   "ru": "трещина силовой рамы"
+  },
+  "трубопровод / магистраль": {
+   "en": "pipeline / line",
+   "ru": "трубопровод / магистраль"
+  },
+  "турель мажет по быстрым целям": {
+   "en": "the turret misses fast targets",
+   "ru": "турель мажет по быстрым целям"
+  },
+  "тяга": {
+   "en": "thrust",
+   "ru": "тяга"
+  },
+  "тяга -15 %, рывки": {
+   "en": "thrust -15 %, jerks",
+   "ru": "тяга -15 %, рывки"
+  },
+  "тяга > 50 %": {
+   "en": "thrust > 50 %",
+   "ru": "тяга > 50 %"
+  },
+  "тяга > 50 % и повреждён пятак двигателя": {
+   "en": "thrust > 50 % and engine cooling plate damaged",
+   "ru": "тяга > 50 % и повреждён пятак двигателя"
+  },
+  "тяга > 70 % при повреждённом пятаке": {
+   "en": "thrust > 70 % with a damaged cooling plate",
+   "ru": "тяга > 70 % при повреждённом пятаке"
+  },
+  "тяга слегка пульсирует": {
+   "en": "thrust pulses slightly",
+   "ru": "тяга слегка пульсирует"
+  },
+  "тяга только по оси двигателя (вектор не управляется)": {
+   "en": "thrust along the engine axis only (vector not controllable)",
+   "ru": "тяга только по оси двигателя (вектор не управляется)"
+  },
+  "тяньхэ-юань": {
+   "en": "Tianhe yuan",
+   "ru": "тяньхэ-юань"
+  },
+  "узел подачи таблеток": {
+   "en": "pellet feed unit",
+   "ru": "узел подачи таблеток"
+  },
+  "уплотнение": {
+   "en": "seal",
+   "ru": "уплотнение"
+  },
+  "уплотнение люка": {
+   "en": "hatch seal",
+   "ru": "уплотнение люка"
+  },
+  "уплотнения": {
+   "en": "seals",
+   "ru": "уплотнения"
+  },
+  "уровень в баке": {
+   "en": "tank level",
+   "ru": "уровень в баке"
+  },
+  "уровень приёма": {
+   "en": "reception level",
+   "ru": "уровень приёма"
+  },
+  "усилитель передатчика": {
+   "en": "transmitter amplifier",
+   "ru": "усилитель передатчика"
+  },
+  "ускоряющие катушки ствола": {
+   "en": "barrel accelerator coils",
+   "ru": "ускоряющие катушки ствола"
+  },
+  "утечка в магистрали": {
+   "en": "line leak",
+   "ru": "утечка в магистрали"
+  },
+  "утечка воздуха из капсулы": {
+   "en": "air leak from the capsule",
+   "ru": "утечка воздуха из капсулы"
+  },
+  "утечка воздуха из секции": {
+   "en": "air leak from the section",
+   "ru": "утечка воздуха из секции"
+  },
+  "утечка при стыковке": {
+   "en": "leak on docking",
+   "ru": "утечка при стыковке"
+  },
+  "утечка теплоносителя": {
+   "en": "coolant leak",
+   "ru": "утечка теплоносителя"
+  },
+  "фиваидский статир": {
+   "en": "Thebaid stater",
+   "ru": "фиваидский статир"
+  },
+  "фидер антенны": {
+   "en": "antenna feeder",
+   "ru": "фидер антенны"
+  },
+  "фильтр / поглотитель (IEEE 315)": {
+   "en": "filter / scrubber (IEEE 315)",
+   "ru": "фильтр / поглотитель (IEEE 315)"
+  },
+  "фрезерная головка": {
+   "en": "cutter head",
+   "ru": "фрезерная головка"
+  },
+  "хабы без своего fuel_terminal или с задержкой танкера": {
+   "en": "hubs without their own fuel_terminal or with a tanker delay",
+   "ru": "хабы без своего fuel_terminal или с задержкой танкера"
+  },
+  "хомстед-доллар": {
+   "en": "Homestead dollar",
+   "ru": "хомстед-доллар"
+  },
+  "цепь пуска": {
+   "en": "ignition circuit",
+   "ru": "цепь пуска"
+  },
+  "цитадельный рубль": {
+   "en": "Citadel ruble",
+   "ru": "цитадельный рубль"
+  },
+  "часть панелей не раскрылась - тепло отводится хуже": {
+   "en": "some panels did not deploy - heat rejection is worse",
+   "ru": "часть панелей не раскрылась - тепло отводится хуже"
+  },
+  "часть панелей холоднее остальных": {
+   "en": "some panels are colder than the rest",
+   "ru": "часть панелей холоднее остальных"
+  },
+  "часть ячеек не может пускать": {
+   "en": "some cells cannot launch",
+   "ru": "часть ячеек не может пускать"
+  },
+  "часы игрового времени (как у orbital motion); шаг детерминирован: RNG = seed * 1000003 + crc32(hub_id + tick)": {
+   "en": "hours of game time (as for orbital motion); the step is deterministic: RNG = seed * 1000003 + crc32(hub_id + tick)",
+   "ru": "часы игрового времени (как у orbital motion); шаг детерминирован: RNG = seed * 1000003 + crc32(hub_id + tick)"
+  },
+  "чел.": {
+   "en": "pers.",
+   "ru": "чел."
+  },
+  "через days из события при заболевших < 0.2 x quarantine_beds; уровень снижается на один шаг за тик-неделю": {
+   "en": "after days from the event when sick < 0.2 x quarantine_beds; the level drops one step per tick-week",
+   "ru": "через days из события при заболевших < 0.2 x quarantine_beds; уровень снижается на один шаг за тик-неделю"
+  },
+  "чистка / замена механизма подачи": {
+   "en": "cleaning / replacing the feed mechanism",
+   "ru": "чистка / замена механизма подачи"
+  },
+  "чистка / замена шнека": {
+   "en": "cleaning / replacing the auger",
+   "ru": "чистка / замена шнека"
+  },
+  "чистка дробилки": {
+   "en": "crusher cleaning",
+   "ru": "чистка дробилки"
+  },
+  "чистка подачи": {
+   "en": "feed cleaning",
+   "ru": "чистка подачи"
+  },
+  "шина данных": {
+   "en": "data bus",
+   "ru": "шина данных"
+  },
+  "шнек подачи": {
+   "en": "feed auger",
+   "ru": "шнек подачи"
+  },
+  "шт.": {
+   "en": "pcs",
+   "ru": "шт."
+  },
+  "экспортный контроль (стратегические товары)": {
+   "en": "export control (strategic goods)",
+   "ru": "экспортный контроль (стратегические товары)"
+  },
+  "эллинский обол": {
+   "en": "Hellenic obol",
+   "ru": "эллинский обол"
+  },
+  "эмиттер поля": {
+   "en": "field emitter",
+   "ru": "эмиттер поля"
+  },
+  "энергоячейки": {
+   "en": "power cells",
+   "ru": "энергоячейки"
+  },
+  "эпидемия": {
+   "en": "epidemic",
+   "ru": "эпидемия"
+  },
+  "эрозия ускоряющих катушек": {
+   "en": "accelerator coil erosion",
+   "ru": "эрозия ускоряющих катушек"
+  },
+  "ядро отказывается заряжаться": {
+   "en": "the core refuses to charge",
+   "ru": "ядро отказывается заряжаться"
+  },
+  "ядро прыжка": {
+   "en": "jump core",
+   "ru": "ядро прыжка"
+  },
+  "ядро прыжка (неразборный узел)": {
+   "en": "jump core (non-serviceable unit)",
+   "ru": "ядро прыжка (неразборный узел)"
+  },
+  "ядро тягача поезда; собран Гармонией из запечатанных блоков Когниума": {
+   "en": "train tractor core; assembled by Harmony from sealed Cognium blocks",
+   "ru": "ядро тягача поезда; собран Гармонией из запечатанных блоков Когниума"
+  }
+ }
+}

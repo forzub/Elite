@@ -1,0 +1,706 @@
+{
+ "schema_version": 1,
+ "kind": "data_terms",
+ "terms": {
+  "shell.19.Жопа мира-1": {
+   "en": "shell.19.World's Ass-1",
+   "ru": "shell.19.Жопа мира-1"
+  },
+  "shell.19.Жопа мира-2": {
+   "en": "shell.19.World's Ass-2",
+   "ru": "shell.19.Жопа мира-2"
+  },
+  "shell.19.Жопа мира-3": {
+   "en": "shell.19.World's Ass-3",
+   "ru": "shell.19.Жопа мира-3"
+  },
+  "shell.37.Керн-2": {
+   "en": "shell.37.Kern-2",
+   "ru": "shell.37.Керн-2"
+  },
+  "shell.41.Ворота-2": {
+   "en": "shell.41.Gate-2",
+   "ru": "shell.41.Ворота-2"
+  },
+  "shell.61.Фортуна-1": {
+   "en": "shell.61.Fortuna-1",
+   "ru": "shell.61.Фортуна-1"
+  },
+  "Артель «Чечётка»": {
+   "en": "Chechetka Artel",
+   "ru": "Артель «Чечётка»"
+  },
+  "Внешняя стоянка «Ворота-1»": {
+   "en": "Outer anchorage \"Gate-1\"",
+   "ru": "Внешняя стоянка «Ворота-1»"
+  },
+  "Внешняя стоянка «Керн-1»": {
+   "en": "Outer anchorage \"Kern-1\"",
+   "ru": "Внешняя стоянка «Керн-1»"
+  },
+  "Военно-космические силы": {
+   "en": "Space Force",
+   "ru": "Военно-космические силы"
+  },
+  "Ворота-2": {
+   "en": "Gate-2",
+   "ru": "Ворота-2"
+  },
+  "Вторичный рынок": {
+   "en": "Secondary market",
+   "ru": "Вторичный рынок"
+  },
+  "Гостиничные доки": {
+   "en": "Hotel docks",
+   "ru": "Гостиничные доки"
+  },
+  "Дешёвый подержанный": {
+   "en": "Cheap used",
+   "ru": "Дешёвый подержанный"
+  },
+  "Диск": {
+   "en": "Disc",
+   "ru": "Диск"
+  },
+  "Диспетчерская Высокого": {
+   "en": "Vysokiy Traffic Control",
+   "ru": "Диспетчерская Высокого"
+  },
+  "Док": {
+   "en": "Dock",
+   "ru": "Док"
+  },
+  "Док: сервисный блок": {
+   "en": "Dock: service block",
+   "ru": "Док: сервисный блок"
+  },
+  "Док: служебный блок": {
+   "en": "Dock: utility block",
+   "ru": "Док: служебный блок"
+  },
+  "Жилой район": {
+   "en": "Residential district",
+   "ru": "Жилой район"
+  },
+  "Жилые барабаны": {
+   "en": "Habitat drums",
+   "ru": "Жилые барабаны"
+  },
+  "Жопа мира-1": {
+   "en": "World's Ass-1",
+   "ru": "Жопа мира-1"
+  },
+  "Жопа мира-2": {
+   "en": "World's Ass-2",
+   "ru": "Жопа мира-2"
+  },
+  "Жопа мира-3": {
+   "en": "World's Ass-3",
+   "ru": "Жопа мира-3"
+  },
+  "Закрытая зона: полигон ВКС за Луной": {
+   "en": "Restricted zone: Space Force range beyond the Moon",
+   "ru": "Закрытая зона: полигон ВКС за Луной"
+  },
+  "Заправка": {
+   "en": "Fuel station",
+   "ru": "Заправка"
+  },
+  "Заправка у точки прыжка Gliese 357": {
+   "en": "Fuel station at the Gliese 357 jump point",
+   "ru": "Заправка у точки прыжка Gliese 357"
+  },
+  "Заправка у точки прыжка HD 20794 (82 G. Eridani)": {
+   "en": "Fuel station at the HD 20794 (82 G. Eridani) jump point",
+   "ru": "Заправка у точки прыжка HD 20794 (82 G. Eridani)"
+  },
+  "Заправка у точки прыжка HD 85512": {
+   "en": "Fuel station at the HD 85512 jump point",
+   "ru": "Заправка у точки прыжка HD 85512"
+  },
+  "Карликовая планета Чечётка (13 а.е.) — самое тёмное и далёкое малое тело периметра, вне орбит патрулей «Ворот». Отсюда до изолированной якорной стоянки «Ворота-К» (400 тыс. км от b) — сутки на тяге; там корабли ждут досмотра до 21 сут.": {
+   "en": "Dwarf planet Chechetka (13 AU) - the darkest and most distant minor body of the perimeter, outside the \"Gate\" patrol orbits. From here to the isolated \"Gate-Q\" anchorage (400 thousand km from b) is a day under thrust; ships wait there up to 21 days for inspection.",
+   "ru": "Карликовая планета Чечётка (13 а.е.) — самое тёмное и далёкое малое тело периметра, вне орбит патрулей «Ворот». Отсюда до изолированной якорной стоянки «Ворота-К» (400 тыс. км от b) — сутки на тяге; там корабли ждут досмотра до 21 сут."
+  },
+  "Керн-2": {
+   "en": "Kern-2",
+   "ru": "Керн-2"
+  },
+  "Кольцо": {
+   "en": "Ring",
+   "ru": "Кольцо"
+  },
+  "Коридор Высокий – Тихий": {
+   "en": "Vysokiy – Tikhiy corridor",
+   "ru": "Коридор Высокий – Тихий"
+  },
+  "Логистика": {
+   "en": "Logistics",
+   "ru": "Логистика"
+  },
+  "Логово «Фонарщиков»": {
+   "en": "\"Lamplighters\" lair",
+   "ru": "Логово «Фонарщиков»"
+  },
+  "Маяк выхода с орбиты Земли": {
+   "en": "Earth orbit departure beacon",
+   "ru": "Маяк выхода с орбиты Земли"
+  },
+  "Маяк окололунный": {
+   "en": "Lunar orbit beacon",
+   "ru": "Маяк окололунный"
+  },
+  "Маяк створа Земля–Луна": {
+   "en": "Earth–Moon gateway beacon",
+   "ru": "Маяк створа Земля–Луна"
+  },
+  "Мегаструктура-прототип (пояс)": {
+   "en": "Prototype megastructure (belt)",
+   "ru": "Мегаструктура-прототип (пояс)"
+  },
+  "Официальный производитель": {
+   "en": "Official manufacturer",
+   "ru": "Официальный производитель"
+  },
+  "Парящий город «Плоскость» (генератор)": {
+   "en": "Floating city \"Plane\" (generator)",
+   "ru": "Парящий город «Плоскость» (генератор)"
+  },
+  "Пиратское поселение Epsilon Eridani-1": {
+   "en": "Pirate settlement Epsilon Eridani-1",
+   "ru": "Пиратское поселение Epsilon Eridani-1"
+  },
+  "Пиратское поселение Gliese 357-1": {
+   "en": "Pirate settlement Gliese 357-1",
+   "ru": "Пиратское поселение Gliese 357-1"
+  },
+  "Пиратское поселение Gliese 357-2": {
+   "en": "Pirate settlement Gliese 357-2",
+   "ru": "Пиратское поселение Gliese 357-2"
+  },
+  "Пиратское поселение Gliese 436-1": {
+   "en": "Pirate settlement Gliese 436-1",
+   "ru": "Пиратское поселение Gliese 436-1"
+  },
+  "Пиратское поселение Gliese 581-1": {
+   "en": "Pirate settlement Gliese 581-1",
+   "ru": "Пиратское поселение Gliese 581-1"
+  },
+  "Пиратское поселение Gliese 832-1": {
+   "en": "Pirate settlement Gliese 832-1",
+   "ru": "Пиратское поселение Gliese 832-1"
+  },
+  "Пиратское поселение Gliese 832-2": {
+   "en": "Pirate settlement Gliese 832-2",
+   "ru": "Пиратское поселение Gliese 832-2"
+  },
+  "Пиратское поселение HD 102195-1": {
+   "en": "Pirate settlement HD 102195-1",
+   "ru": "Пиратское поселение HD 102195-1"
+  },
+  "Пиратское поселение HD 102195-2": {
+   "en": "Pirate settlement HD 102195-2",
+   "ru": "Пиратское поселение HD 102195-2"
+  },
+  "Пиратское поселение HD 85512-1": {
+   "en": "Pirate settlement HD 85512-1",
+   "ru": "Пиратское поселение HD 85512-1"
+  },
+  "Платформы": {
+   "en": "Platforms",
+   "ru": "Платформы"
+  },
+  "Порт": {
+   "en": "Port",
+   "ru": "Порт"
+  },
+  "Поселение «Пояс» (генератор)": {
+   "en": "Settlement \"Belt\" (generator)",
+   "ru": "Поселение «Пояс» (генератор)"
+  },
+  "Промзона": {
+   "en": "Industrial zone",
+   "ru": "Промзона"
+  },
+  "Просвет": {
+   "en": "Prosvet",
+   "ru": "Просвет"
+  },
+  "Пульсар 2,5 МВт (импульсный, средний)": {
+   "en": "Pulsar 2.5 MW (pulsed, medium)",
+   "ru": "Пульсар 2,5 МВт (импульсный, средний)"
+  },
+  "Разрушенный город «Плоскость» (генератор)": {
+   "en": "Ruined city \"Plane\" (generator)",
+   "ru": "Разрушенный город «Плоскость» (генератор)"
+  },
+  "Разрядник 60 МДж (конденсаторный: редкий мощный выстрел)": {
+   "en": "Discharger 60 MJ (capacitor: rare powerful shot)",
+   "ru": "Разрядник 60 МДж (конденсаторный: редкий мощный выстрел)"
+  },
+  "Район-прототип (пояс)": {
+   "en": "Prototype district (belt)",
+   "ru": "Район-прототип (пояс)"
+  },
+  "Ракета «Игла» (прожигающая)": {
+   "en": "Missile \"Needle\" (penetrating)",
+   "ru": "Ракета «Игла» (прожигающая)"
+  },
+  "Ракета «Лом» (кинетическая болванка)": {
+   "en": "Missile \"Crowbar\" (kinetic slug)",
+   "ru": "Ракета «Лом» (кинетическая болванка)"
+  },
+  "Ракета «Термит» (прожигающая, тяжёлая)": {
+   "en": "Missile \"Thermite\" (penetrating, heavy)",
+   "ru": "Ракета «Термит» (прожигающая, тяжёлая)"
+  },
+  "Резак 15 МВт (ближний широкий: обшивка, швы, разделка)": {
+   "en": "Cutter 15 MW (short-range wide: plating, seams, salvage cutting)",
+   "ru": "Резак 15 МВт (ближний широкий: обшивка, швы, разделка)"
+  },
+  "Ремонтные доки": {
+   "en": "Repair docks",
+   "ru": "Ремонтные доки"
+  },
+  "Свалка / salvage": {
+   "en": "Salvage",
+   "ru": "Свалка / salvage"
+  },
+  "Склады": {
+   "en": "Warehouses",
+   "ru": "Склады"
+  },
+  "Служба кольца «Кольцо» (Sol Authority)": {
+   "en": "Ring Service (Sol Authority)",
+   "ru": "Служба кольца «Кольцо» (Sol Authority)"
+  },
+  "Службы: полиция и МЧС · Восток": {
+   "en": "Services: police and emergency · East",
+   "ru": "Службы: полиция и МЧС · Восток"
+  },
+  "Службы: полиция и МЧС · Запад": {
+   "en": "Services: police and emergency · West",
+   "ru": "Службы: полиция и МЧС · Запад"
+  },
+  "Службы: полиция и МЧС · Север": {
+   "en": "Services: police and emergency · North",
+   "ru": "Службы: полиция и МЧС · Север"
+  },
+  "Службы: полиция и МЧС · Северо-восток": {
+   "en": "Services: police and emergency · Northeast",
+   "ru": "Службы: полиция и МЧС · Северо-восток"
+  },
+  "Службы: полиция и МЧС · Северо-запад": {
+   "en": "Services: police and emergency · Northwest",
+   "ru": "Службы: полиция и МЧС · Северо-запад"
+  },
+  "Службы: полиция и МЧС · Юг": {
+   "en": "Services: police and emergency · South",
+   "ru": "Службы: полиция и МЧС · Юг"
+  },
+  "Службы: полиция и МЧС · Юго-восток": {
+   "en": "Services: police and emergency · Southeast",
+   "ru": "Службы: полиция и МЧС · Юго-восток"
+  },
+  "Службы: полиция и МЧС · Юго-запад": {
+   "en": "Services: police and emergency · Southwest",
+   "ru": "Службы: полиция и МЧС · Юго-запад"
+  },
+  "Солнечная Администрация, таможня": {
+   "en": "Sol Authority, customs",
+   "ru": "Солнечная Администрация, таможня"
+  },
+  "Спасательная служба Высокого": {
+   "en": "Vysokiy Rescue Service",
+   "ru": "Спасательная служба Высокого"
+  },
+  "Стилет 1,2 МВт (дальний узкий луч)": {
+   "en": "Stiletto 1.2 MW (long-range narrow beam)",
+   "ru": "Стилет 1,2 МВт (дальний узкий луч)"
+  },
+  "Стоянка «Жопа мира-1»": {
+   "en": "Anchorage \"World's Ass-1\"",
+   "ru": "Стоянка «Жопа мира-1»"
+  },
+  "Стоянка отряда «Хоу И»": {
+   "en": "\"Hou Yi\" squad anchorage",
+   "ru": "Стоянка отряда «Хоу И»"
+  },
+  "Тайная стоянка Epsilon Eridani": {
+   "en": "Secret anchorage Epsilon Eridani",
+   "ru": "Тайная стоянка Epsilon Eridani"
+  },
+  "Тайная стоянка Gliese 832": {
+   "en": "Secret anchorage Gliese 832",
+   "ru": "Тайная стоянка Gliese 832"
+  },
+  "Тайная стоянка HD 20794 (82 G. Eridani)": {
+   "en": "Secret anchorage HD 20794 (82 G. Eridani)",
+   "ru": "Тайная стоянка HD 20794 (82 G. Eridani)"
+  },
+  "Тайная стоянка HD 40307": {
+   "en": "Secret anchorage HD 40307",
+   "ru": "Тайная стоянка HD 40307"
+  },
+  "Тайная стоянка Proxima Centauri": {
+   "en": "Secret anchorage Proxima Centauri",
+   "ru": "Тайная стоянка Proxima Centauri"
+  },
+  "Тайная стоянка Wolf 359": {
+   "en": "Secret anchorage Wolf 359",
+   "ru": "Тайная стоянка Wolf 359"
+  },
+  "Тайный танкер Delta Pavonis": {
+   "en": "Secret tanker Delta Pavonis",
+   "ru": "Тайный танкер Delta Pavonis"
+  },
+  "Таможенный створ Земля–Луна": {
+   "en": "Earth–Moon customs gateway",
+   "ru": "Таможенный створ Земля–Луна"
+  },
+  "Устье коридора «Жопа мира-1» в оболочке HD 102195: у оболочки нет законного хозяина. Здесь продают свежие и ложные записи коридоров, заряд втридорога, ждут проводников; сюда же выходят корабли, обходящие кордон «Ворот».": {
+   "en": "Mouth of the \"World's Ass-1\" corridor in the HD 102195 shell: the shell has no lawful owner. Fresh and fake corridor records are sold here, charge at triple price, guides are waited for; ships bypassing the \"Gate\" cordon also come out here.",
+   "ru": "Устье коридора «Жопа мира-1» в оболочке HD 102195: у оболочки нет законного хозяина. Здесь продают свежие и ложные записи коридоров, заряд втридорога, ждут проводников; сюда же выходят корабли, обходящие кордон «Ворот»."
+  },
+  "Устье коридора «Жопа мира-3» в оболочке HD 102195 (10 000 а.е.): корабль, прошедший коридор, сразу берёт захват на ближайший маяк. Подложный маяк у устья с кодом, смещённым на тысячи км, — дешёвая и физически честная засада: ошибка выхода растёт с ошибкой захвата.": {
+   "en": "Mouth of the \"World's Ass-3\" corridor in the HD 102195 shell (10 000 AU): a ship that has passed the corridor immediately locks onto the nearest beacon. A fake beacon at the mouth with a code offset by thousands of km is a cheap and physically honest ambush: the exit error grows with the lock error.",
+   "ru": "Устье коридора «Жопа мира-3» в оболочке HD 102195 (10 000 а.е.): корабль, прошедший коридор, сразу берёт захват на ближайший маяк. Подложный маяк у устья с кодом, смещённым на тысячи км, — дешёвая и физически честная засада: ошибка выхода растёт с ошибкой захвата."
+  },
+  "Фортуна-1": {
+   "en": "Fortuna-1",
+   "ru": "Фортуна-1"
+  },
+  "Холодная Юйту (5 а.е., 88 К), высокая наклонная орбита: далеко от «Порога» (0.74 а.е.) и от плоскости патрулей; на фоне холодной планеты и в её тени тепловую подпись корабля почти не видно. Отсюда до лицензий Керна у c — 5 а.е., несколько суток на тяге.": {
+   "en": "Cold Yutu (5 AU, 88 K), high inclined orbit: far from \"Threshold\" (0.74 AU) and from the patrol plane; against the cold planet and in its shadow a ship's heat signature is almost invisible. From here to the Kern licences at c is 5 AU, several days under thrust.",
+   "ru": "Холодная Юйту (5 а.е., 88 К), высокая наклонная орбита: далеко от «Порога» (0.74 а.е.) и от плоскости патрулей; на фоне холодной планеты и в её тени тепловую подпись корабля почти не видно. Отсюда до лицензий Керна у c — 5 а.е., несколько суток на тяге."
+  },
+  "Центр": {
+   "en": "Center",
+   "ru": "Центр"
+  },
+  "Центральное кольцо": {
+   "en": "Central ring",
+   "ru": "Центральное кольцо"
+  },
+  "Чёрный танкер на краю «Кладбище Раздора»": {
+   "en": "Black tanker at the edge of \"Discord Graveyard\"",
+   "ru": "Чёрный танкер на краю «Кладбище Раздора»"
+  },
+  "Чёрный танкер на краю «Саргассы «Лотоса»»": {
+   "en": "Black tanker at the edge of \"Lotus Sargasso\"",
+   "ru": "Чёрный танкер на краю «Саргассы «Лотоса»»"
+  },
+  "Чёрный танкер у отстойника 61 Cygni": {
+   "en": "Black tanker at the 61 Cygni sump",
+   "ru": "Чёрный танкер у отстойника 61 Cygni"
+  },
+  "Чёрный танкер у отстойника HD 69830": {
+   "en": "Black tanker at the HD 69830 sump",
+   "ru": "Чёрный танкер у отстойника HD 69830"
+  },
+  "Чёрный танкер у отстойника Lalande 21185": {
+   "en": "Black tanker at the Lalande 21185 sump",
+   "ru": "Чёрный танкер у отстойника Lalande 21185"
+  },
+  "Чёрный танкер у отстойника Tau Ceti": {
+   "en": "Black tanker at the Tau Ceti sump",
+   "ru": "Чёрный танкер у отстойника Tau Ceti"
+  },
+  "Чёрный танкер у устья «Ворота-2»": {
+   "en": "Black tanker at the \"Gate-2\" mouth",
+   "ru": "Чёрный танкер у устья «Ворота-2»"
+  },
+  "Чёрный танкер у устья «Жопа мира-2»": {
+   "en": "Black tanker at the \"World's Ass-2\" mouth",
+   "ru": "Чёрный танкер у устья «Жопа мира-2»"
+  },
+  "Чёрный танкер у устья «Керн-2»": {
+   "en": "Black tanker at the \"Kern-2\" mouth",
+   "ru": "Чёрный танкер у устья «Керн-2»"
+  },
+  "Чёрный танкер у устья «Фортуна-1»": {
+   "en": "Black tanker at the \"Fortuna-1\" mouth",
+   "ru": "Чёрный танкер у устья «Фортуна-1»"
+  },
+  "Шквал 8 МВт (непрерывный, сильно греет)": {
+   "en": "Squall 8 MW (continuous, runs very hot)",
+   "ru": "Шквал 8 МВт (непрерывный, сильно греет)"
+  },
+  "Энергоблок · Восток": {
+   "en": "Power block · East",
+   "ru": "Энергоблок · Восток"
+  },
+  "Энергоблок · Запад": {
+   "en": "Power block · West",
+   "ru": "Энергоблок · Запад"
+  },
+  "Энергоблок · Север": {
+   "en": "Power block · North",
+   "ru": "Энергоблок · Север"
+  },
+  "Энергоблок · Северо-восток": {
+   "en": "Power block · Northeast",
+   "ru": "Энергоблок · Северо-восток"
+  },
+  "Энергоблок · Северо-запад": {
+   "en": "Power block · Northwest",
+   "ru": "Энергоблок · Северо-запад"
+  },
+  "Энергоблок · Юг": {
+   "en": "Power block · South",
+   "ru": "Энергоблок · Юг"
+  },
+  "Энергоблок · Юго-восток": {
+   "en": "Power block · Southeast",
+   "ru": "Энергоблок · Юго-восток"
+  },
+  "Энергоблок · Юго-запад": {
+   "en": "Power block · Southwest",
+   "ru": "Энергоблок · Юго-запад"
+  },
+  "агора": {
+   "en": "Agora",
+   "ru": "агора"
+  },
+  "вахта (модули P20)": {
+   "en": "crew quarters (P20 modules)",
+   "ru": "вахта (модули P20)"
+  },
+  "вращающееся кольцо (1 g, R 1210 м), один этаж на внутренней стороне; испытательный хаб у Высокого": {
+   "en": "rotating ring (1 g, R 1210 m), one floor on the inner side; test hub near Vysokiy",
+   "ru": "вращающееся кольцо (1 g, R 1210 м), один этаж на внутренней стороне; испытательный хаб у Высокого"
+  },
+  "глубокий космос": {
+   "en": "deep space",
+   "ru": "глубокий космос"
+  },
+  "заправочный док хаба (hub_modules.refuel_dock): ~630 л/мин, муфта класса D с проверкой утечки и продувкой": {
+   "en": "hub refuel dock (hub_modules.refuel_dock): ~630 L/min, class D coupling with leak check and purge",
+   "ru": "заправочный док хаба (hub_modules.refuel_dock): ~630 л/мин, муфта класса D с проверкой утечки и продувкой"
+  },
+  "зона «Кладбище Раздора» (sargasso, радиус 30000000 км у system_9): там копятся застрявшие корабли и обломки": {
+   "en": "zone \"Discord Graveyard\" (sargasso, radius 30000000 km at system_9): stranded ships and debris pile up there",
+   "ru": "зона «Кладбище Раздора» (sargasso, радиус 30000000 км у system_9): там копятся застрявшие корабли и обломки"
+  },
+  "зона «Саргассы «Лотоса»» (sargasso, радиус 150000000 км у dso.lotus): там копятся застрявшие корабли и обломки": {
+   "en": "zone \"Lotus Sargasso\" (sargasso, radius 150000000 km at dso.lotus): stranded ships and debris pile up there",
+   "ru": "зона «Саргассы «Лотоса»» (sargasso, радиус 150000000 км у dso.lotus): там копятся застрявшие корабли и обломки"
+  },
+  "зона_«филоморфоз»": {
+   "en": "Philomorphosis zone",
+   "ru": "зона_«филоморфоз»"
+  },
+  "индекс пиратства 0.455 (слабый надзор 0.552, трафик 0.947, коррупция 0.15); пояс kuiper_belt (kuiper_belt, 0.0041 M⊕) - отстойник прыжков, своего тайного объекта в системе нет": {
+   "en": "piracy index 0.455 (weak oversight 0.552, traffic 0.947, corruption 0.15); belt kuiper_belt (kuiper_belt, 0.0041 M⊕) - jump sump, no secret site of its own in the system",
+   "ru": "индекс пиратства 0.455 (слабый надзор 0.552, трафик 0.947, коррупция 0.15); пояс kuiper_belt (kuiper_belt, 0.0041 M⊕) - отстойник прыжков, своего тайного объекта в системе нет"
+  },
+  "индекс пиратства 0.503 (слабый надзор 0.53, трафик 0.769, коррупция 0.2); пояс kuiper_belt (kuiper_belt, 0.1129 M⊕) - отстойник прыжков, своего тайного объекта в системе нет": {
+   "en": "piracy index 0.503 (weak oversight 0.53, traffic 0.769, corruption 0.2); belt kuiper_belt (kuiper_belt, 0.1129 M⊕) - jump sump, no secret site of its own in the system",
+   "ru": "индекс пиратства 0.503 (слабый надзор 0.53, трафик 0.769, коррупция 0.2); пояс kuiper_belt (kuiper_belt, 0.1129 M⊕) - отстойник прыжков, своего тайного объекта в системе нет"
+  },
+  "индекс пиратства 0.506 (слабый надзор 0.531, трафик 0.758, коррупция 0.35); пояс kuiper_belt (kuiper_belt, 0.0027 M⊕) - отстойник прыжков, своего тайного объекта в системе нет": {
+   "en": "piracy index 0.506 (weak oversight 0.531, traffic 0.758, corruption 0.35); belt kuiper_belt (kuiper_belt, 0.0027 M⊕) - jump sump, no secret site of its own in the system",
+   "ru": "индекс пиратства 0.506 (слабый надзор 0.531, трафик 0.758, коррупция 0.35); пояс kuiper_belt (kuiper_belt, 0.0027 M⊕) - отстойник прыжков, своего тайного объекта в системе нет"
+  },
+  "индекс пиратства 0.577 (слабый надзор 0.528, трафик 0.919, коррупция 0.3); пояс kuiper_belt (kuiper_belt, 0.0201 M⊕) - отстойник прыжков, своего тайного объекта в системе нет": {
+   "en": "piracy index 0.577 (weak oversight 0.528, traffic 0.919, corruption 0.3); belt kuiper_belt (kuiper_belt, 0.0201 M⊕) - jump sump, no secret site of its own in the system",
+   "ru": "индекс пиратства 0.577 (слабый надзор 0.528, трафик 0.919, коррупция 0.3); пояс kuiper_belt (kuiper_belt, 0.0201 M⊕) - отстойник прыжков, своего тайного объекта в системе нет"
+  },
+  "индекс пиратства 0.658 (трафик 0.256, слабый надзор 1.0, укрытие 0.574, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело Gliese_436_h_I)": {
+   "en": "piracy index 0.658 (traffic 0.256, weak oversight 1.0, cover 0.574, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (distant minor body Gliese_436_h_I)",
+   "ru": "индекс пиратства 0.658 (трафик 0.256, слабый надзор 1.0, укрытие 0.574, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело Gliese_436_h_I)"
+  },
+  "индекс пиратства 0.669 (трафик 0.194, слабый надзор 1.0, укрытие 0.637, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело HD_85512_K1)": {
+   "en": "piracy index 0.669 (traffic 0.194, weak oversight 1.0, cover 0.637, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (distant minor body HD_85512_K1)",
+   "ru": "индекс пиратства 0.669 (трафик 0.194, слабый надзор 1.0, укрытие 0.637, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело HD_85512_K1)"
+  },
+  "индекс пиратства 0.692 (трафик 0.837, слабый надзор 0.497, укрытие 0.565, тихая гавань 0.825, коррупция 0.45): одного анклава мало — второе логово (далёкое малое тело Gliese_581_K2)": {
+   "en": "piracy index 0.692 (traffic 0.837, weak oversight 0.497, cover 0.565, safe haven 0.825, corruption 0.45): one enclave is not enough - a second lair (distant minor body Gliese_581_K2)",
+   "ru": "индекс пиратства 0.692 (трафик 0.837, слабый надзор 0.497, укрытие 0.565, тихая гавань 0.825, коррупция 0.45): одного анклава мало — второе логово (далёкое малое тело Gliese_581_K2)"
+  },
+  "индекс пиратства 0.762 (трафик 0.958, слабый надзор 0.527, укрытие 0.886, тихая гавань 0.825, коррупция 0.45): одного анклава мало — второе логово (debris_disk debris_disk)": {
+   "en": "piracy index 0.762 (traffic 0.958, weak oversight 0.527, cover 0.886, safe haven 0.825, corruption 0.45): one enclave is not enough - a second lair (debris_disk debris_disk)",
+   "ru": "индекс пиратства 0.762 (трафик 0.958, слабый надзор 0.527, укрытие 0.886, тихая гавань 0.825, коррупция 0.45): одного анклава мало — второе логово (debris_disk debris_disk)"
+  },
+  "индекс пиратства 0.798 (трафик 0.915, слабый надзор 0.529, укрытие 0.928, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (kuiper_belt kuiper_belt)": {
+   "en": "piracy index 0.798 (traffic 0.915, weak oversight 0.529, cover 0.928, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (kuiper_belt kuiper_belt)",
+   "ru": "индекс пиратства 0.798 (трафик 0.915, слабый надзор 0.529, укрытие 0.928, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (kuiper_belt kuiper_belt)"
+  },
+  "индекс пиратства 0.798 (трафик 0.915, слабый надзор 0.529, укрытие 0.928, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (trojans trojans)": {
+   "en": "piracy index 0.798 (traffic 0.915, weak oversight 0.529, cover 0.928, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (trojans trojans)",
+   "ru": "индекс пиратства 0.798 (трафик 0.915, слабый надзор 0.529, укрытие 0.928, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (trojans trojans)"
+  },
+  "индекс пиратства 0.802 (трафик 0.769, слабый надзор 1.0, укрытие 0.629, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело Gliese_357_m_I)": {
+   "en": "piracy index 0.802 (traffic 0.769, weak oversight 1.0, cover 0.629, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (distant minor body Gliese_357_m_I)",
+   "ru": "индекс пиратства 0.802 (трафик 0.769, слабый надзор 1.0, укрытие 0.629, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело Gliese_357_m_I)"
+  },
+  "индекс пиратства 0.802 (трафик 0.769, слабый надзор 1.0, укрытие 0.629, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (другой сектор того же пояса)": {
+   "en": "piracy index 0.802 (traffic 0.769, weak oversight 1.0, cover 0.629, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (another sector of the same belt)",
+   "ru": "индекс пиратства 0.802 (трафик 0.769, слабый надзор 1.0, укрытие 0.629, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (другой сектор того же пояса)"
+  },
+  "индекс пиратства 0.92 (трафик 0.5, слабый надзор 0.9, укрытие 0.962, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело HD_102195_K1)": {
+   "en": "piracy index 0.92 (traffic 0.5, weak oversight 0.9, cover 0.962, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (distant minor body HD_102195_K1)",
+   "ru": "индекс пиратства 0.92 (трафик 0.5, слабый надзор 0.9, укрытие 0.962, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело HD_102195_K1)"
+  },
+  "индекс пиратства 0.92 (трафик 0.5, слабый надзор 0.9, укрытие 0.962, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело HD_102195_K3)": {
+   "en": "piracy index 0.92 (traffic 0.5, weak oversight 0.9, cover 0.962, safe haven 1.0, corruption 0.85): one enclave is not enough - a second lair (distant minor body HD_102195_K3)",
+   "ru": "индекс пиратства 0.92 (трафик 0.5, слабый надзор 0.9, укрытие 0.962, тихая гавань 1.0, коррупция 0.85): одного анклава мало — второе логово (далёкое малое тело HD_102195_K3)"
+  },
+  "контрабанда Delta Pavonis отсеяна только лимитом (score 0.243); дальнее малое тело Delta_Pavonis_K3": {
+   "en": "Delta Pavonis smuggling filtered out only by the limit (score 0.243); distant minor body Delta_Pavonis_K3",
+   "ru": "контрабанда Delta Pavonis отсеяна только лимитом (score 0.243); дальнее малое тело Delta_Pavonis_K3"
+  },
+  "лал-кот": {
+   "en": "Lal Kot",
+   "ru": "лал-кот"
+  },
+  "маяк-мост / склад снабжения: один малый заправочный док или только танкерный причал": {
+   "en": "bridge beacon / supply depot: one small refuel dock or only a tanker berth",
+   "ru": "маяк-мост / склад снабжения: один малый заправочный док или только танкерный причал"
+  },
+  "набор снабжения": {
+   "en": "supply kit",
+   "ru": "набор снабжения"
+  },
+  "небесная_твердыня": {
+   "en": "Celestial Stronghold",
+   "ru": "небесная_твердыня"
+  },
+  "новая_европа": {
+   "en": "New Europe",
+   "ru": "новая_европа"
+  },
+  "новая_индия": {
+   "en": "New India",
+   "ru": "новая_индия"
+  },
+  "новая_карма": {
+   "en": "New Karma",
+   "ru": "новая_карма"
+  },
+  "новая_маланд": {
+   "en": "New Maland",
+   "ru": "новая_маланд"
+  },
+  "ново-фиваида": {
+   "en": "New Thebaid",
+   "ru": "ново-фиваида"
+  },
+  "оболочка Fortuna: устье «Фортуна-1» без поста; у оболочки нет законного хозяина": {
+   "en": "Fortuna shell: \"Fortuna-1\" mouth without a post; the shell has no lawful owner",
+   "ru": "оболочка Fortuna: устье «Фортуна-1» без поста; у оболочки нет законного хозяина"
+  },
+  "оболочка HD 104067 (Gate): устье «Ворота-2» без поста; рядом лицензионный кордон на другом коридоре - заправка для тех, кто его обходит": {
+   "en": "HD 104067 shell (Gate): \"Gate-2\" mouth without a post; a licence cordon on another corridor nearby - fuel for those who bypass it",
+   "ru": "оболочка HD 104067 (Gate): устье «Ворота-2» без поста; рядом лицензионный кордон на другом коридоре - заправка для тех, кто его обходит"
+  },
+  "оболочка Kern pocket (HD 114783): устье «Керн-2» без поста; рядом лицензионный кордон на другом коридоре - заправка для тех, кто его обходит": {
+   "en": "Kern pocket shell (HD 114783): \"Kern-2\" mouth without a post; a licence cordon on another corridor nearby - fuel for those who bypass it",
+   "ru": "оболочка Kern pocket (HD 114783): устье «Керн-2» без поста; рядом лицензионный кордон на другом коридоре - заправка для тех, кто его обходит"
+  },
+  "оболочка World's Ass (HD 102195): устье «Жопа мира-2» без поста; у оболочки нет законного хозяина": {
+   "en": "World's Ass shell (HD 102195): \"World's Ass-2\" mouth without a post; the shell has no lawful owner",
+   "ru": "оболочка World's Ass (HD 102195): устье «Жопа мира-2» без поста; у оболочки нет законного хозяина"
+  },
+  "отдельное транзитное депо (deep_space_refuel_point): строится под поток, насосы крупнее": {
+   "en": "standalone transit depot (deep_space_refuel_point): built for the traffic flow, larger pumps",
+   "ru": "отдельное транзитное депо (deep_space_refuel_point): строится под поток, насосы крупнее"
+  },
+  "поселение в поясе астероидов, сгенерировано по id (tools/models/units/hub_belt.py)": {
+   "en": "asteroid belt settlement, generated by id (tools/models/units/hub_belt.py)",
+   "ru": "поселение в поясе астероидов, сгенерировано по id (tools/models/units/hub_belt.py)"
+  },
+  "пояс_раздора": {
+   "en": "Belt of Discord",
+   "ru": "пояс_раздора"
+  },
+  "провидение": {
+   "en": "Providence",
+   "ru": "провидение"
+  },
+  "прототип района хаба: город на астероиде, сотни модулей (tools/models/units/hub_district.py)": {
+   "en": "hub district prototype: a city on an asteroid, hundreds of modules (tools/models/units/hub_district.py)",
+   "ru": "прототип района хаба: город на астероиде, сотни модулей (tools/models/units/hub_district.py)"
+  },
+  "режим товаров «military» у Лал-Кот: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.42, трафик 0.879 — score 0.377; на далёком малом теле Proxima_Centauri_l_I: туда не заходят патрули и плановые рейсы": {
+   "en": "goods regime \"military\" at Lal Kot: 47 % of items banned/restricted (ban weight x2); corruption 0.42, traffic 0.879 - score 0.377; on distant minor body Proxima_Centauri_l_I: no patrols or scheduled flights go there",
+   "ru": "режим товаров «military» у Лал-Кот: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.42, трафик 0.879 — score 0.377; на далёком малом теле Proxima_Centauri_l_I: туда не заходят патрули и плановые рейсы"
+  },
+  "режим товаров «military» у Цитадель: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.42, трафик 0.857 — score 0.368; на далёком малом теле Wolf_359_e_I: туда не заходят патрули и плановые рейсы": {
+   "en": "goods regime \"military\" at Citadel: 47 % of items banned/restricted (ban weight x2); corruption 0.42, traffic 0.857 - score 0.368; on distant minor body Wolf_359_e_I: no patrols or scheduled flights go there",
+   "ru": "режим товаров «military» у Цитадель: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.42, трафик 0.857 — score 0.368; на далёком малом теле Wolf_359_e_I: туда не заходят патрули и плановые рейсы"
+  },
+  "режим товаров «strict» у Новая Индия: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.2, трафик 0.959 — score 0.313; на далёком малом теле HD_20794_f_I: туда не заходят патрули и плановые рейсы": {
+   "en": "goods regime \"strict\" at New India: 47 % of items banned/restricted (ban weight x2); corruption 0.2, traffic 0.959 - score 0.313; on distant minor body HD_20794_f_I: no patrols or scheduled flights go there",
+   "ru": "режим товаров «strict» у Новая Индия: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.2, трафик 0.959 — score 0.313; на далёком малом теле HD_20794_f_I: туда не заходят патрули и плановые рейсы"
+  },
+  "режим товаров «strict» у Новая Маланд: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.32, трафик 0.872 — score 0.334; на далёком малом теле HD_40307_K1: туда не заходят патрули и плановые рейсы": {
+   "en": "goods regime \"strict\" at New Maland: 47 % of items banned/restricted (ban weight x2); corruption 0.32, traffic 0.872 - score 0.334; on distant minor body HD_40307_K1: no patrols or scheduled flights go there",
+   "ru": "режим товаров «strict» у Новая Маланд: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.32, трафик 0.872 — score 0.334; на далёком малом теле HD_40307_K1: туда не заходят патрули и плановые рейсы"
+  },
+  "режим товаров «strict» у Тяньхэ: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.85, трафик 0.915 — score 0.576; на далёком малом теле Gliese_832_K2: туда не заходят патрули и плановые рейсы": {
+   "en": "goods regime \"strict\" at Tianhe: 47 % of items banned/restricted (ban weight x2); corruption 0.85, traffic 0.915 - score 0.576; on distant minor body Gliese_832_K2: no patrols or scheduled flights go there",
+   "ru": "режим товаров «strict» у Тяньхэ: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.85, трафик 0.915 — score 0.576; на далёком малом теле Gliese_832_K2: туда не заходят патрули и плановые рейсы"
+  },
+  "режим товаров «strict» у Цветущая Гармония: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.45, трафик 0.958 — score 0.425; на далёком малом теле eps_Eri_b_IV: туда не заходят патрули и плановые рейсы": {
+   "en": "goods regime \"strict\" at Blooming Harmony: 47 % of items banned/restricted (ban weight x2); corruption 0.45, traffic 0.958 - score 0.425; on distant minor body eps_Eri_b_IV: no patrols or scheduled flights go there",
+   "ru": "режим товаров «strict» у Цветущая Гармония: запрещено/ограничено 47 % позиций (вес запрета x2); коррупция 0.45, трафик 0.958 — score 0.425; на далёком малом теле eps_Eri_b_IV: туда не заходят патрули и плановые рейсы"
+  },
+  "свободная_карма": {
+   "en": "Free Karma",
+   "ru": "свободная_карма"
+  },
+  "свободные_поселения": {
+   "en": "Free Settlements",
+   "ru": "свободные_поселения"
+  },
+  "сельва-верде": {
+   "en": "Selva Verde",
+   "ru": "сельва-верде"
+  },
+  "синь-шанхай": {
+   "en": "Xin Shanghai",
+   "ru": "синь-шанхай"
+  },
+  "тауранга": {
+   "en": "Tauranga",
+   "ru": "тауранга"
+  },
+  "третья_эллада": {
+   "en": "Third Hellas",
+   "ru": "третья_эллада"
+  },
+  "тяньхэ": {
+   "en": "Tianhe",
+   "ru": "тяньхэ"
+  },
+  "устье коридора «Жопа мира-1»": {
+   "en": "mouth of the \"World's Ass-1\" corridor",
+   "ru": "устье коридора «Жопа мира-1»"
+  },
+  "устье коридора «Жопа мира-3»": {
+   "en": "mouth of the \"World's Ass-3\" corridor",
+   "ru": "устье коридора «Жопа мира-3»"
+  },
+  "хомстед": {
+   "en": "Homestead",
+   "ru": "хомстед"
+  },
+  "цветущая_гармония": {
+   "en": "Blooming Harmony",
+   "ru": "цветущая_гармония"
+  },
+  "цитадель": {
+   "en": "Citadel",
+   "ru": "цитадель"
+  },
+  "шахта_альфа": {
+   "en": "Mine Alpha",
+   "ru": "шахта_альфа"
+  },
+  "шланг из трюма танкера (~210 л/мин) без штатной муфты: медленно и осторожно": {
+   "en": "hose from a tanker hold (~210 L/min) without a standard coupling: slow and careful",
+   "ru": "шланг из трюма танкера (~210 л/мин) без штатной муфты: медленно и осторожно"
+  }
+ }
+}

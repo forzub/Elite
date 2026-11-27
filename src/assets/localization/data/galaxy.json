@@ -1,0 +1,2258 @@
+{
+ "schema_version": 1,
+ "kind": "data_terms",
+ "terms": {
+  "**Артерия Богатства.** Плавающий торговый пост и банк. Миссия – установить постоянный немежпланетный кредитно-торговый протокол между Шахтой Альфа и Перекрёстком. На борту – не колонисты, а финансисты, юристы и инженеры связи. Успех или провал этой миссии определит финансовую архитектуру сектора на столетия. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Экономическая логика: установление прямых, быстрых (по меркам поколений) отношений между производителем ресурсов и главным торговым хабом.]**": {
+   "en": "**Artery of Wealth.** A floating trade post and bank. The mission: to establish a permanent interplanetary credit and trade protocol between Mine Alpha and the Crossroads. Aboard are not colonists but financiers, lawyers and communications engineers. The success or failure of this mission will define the financial architecture of the sector for centuries. **[REASON FOR EXISTENCE: Economic logic: establishing direct, fast (by generation standards) relations between the resource producer and the main trade hub.]**",
+   "ru": "**Артерия Богатства.** Плавающий торговый пост и банк. Миссия – установить постоянный немежпланетный кредитно-торговый протокол между Шахтой Альфа и Перекрёстком. На борту – не колонисты, а финансисты, юристы и инженеры связи. Успех или провал этой миссии определит финансовую архитектуру сектора на столетия. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Экономическая логика: установление прямых, быстрых (по меркам поколений) отношений между производителем ресурсов и главным торговым хабом.]**"
+  },
+  "**Вечный странник.** После навигационного сбоя корабль исчез. Периодически на дальних рубежах ловят его маяк, всегда с разных, невероятных направлений. Легенды говорят, что экипаж достиг просветления, растворив корабль в самой ткани реальности. Скептики считают, что это просто дрейфующий саркофаг с безумным ИИ, повторяющим мантры. Тайна «Нирваны» будоражит умы мистиков. **[ПРИЧИНА ПРОПАЖИ: Фатальная ошибка в программном обеспечении навигации; малый экипаж не смог её исправить; возможно, сознательный уход в «нирвану» через отключение систем.]**": {
+   "en": "**The Eternal Wanderer.** After a navigation failure the ship vanished. Now and then its beacon is picked up on the far frontiers, always from different, impossible directions. Legends say the crew reached enlightenment, dissolving the ship into the very fabric of reality. Skeptics believe it is just a drifting sarcophagus with a mad AI repeating mantras. The mystery of the \"Nirvana\" stirs the minds of mystics. **[REASON FOR LOSS: A fatal error in the navigation software; the small crew could not fix it; possibly a deliberate departure into \"nirvana\" by shutting down the systems.]**",
+   "ru": "**Вечный странник.** После навигационного сбоя корабль исчез. Периодически на дальних рубежах ловят его маяк, всегда с разных, невероятных направлений. Легенды говорят, что экипаж достиг просветления, растворив корабль в самой ткани реальности. Скептики считают, что это просто дрейфующий саркофаг с безумным ИИ, повторяющим мантры. Тайна «Нирваны» будоражит умы мистиков. **[ПРИЧИНА ПРОПАЖИ: Фатальная ошибка в программном обеспечении навигации; малый экипаж не смог её исправить; возможно, сознательный уход в «нирвану» через отключение систем.]**"
+  },
+  "**Второе дыхание Нового Шанхая.** Прибытие этого корабля предотвратило генетический застой первой колонии, но породило вековое социальное противостояние «Старших семей» и «Новой крови». Этот внутренний конфликт выковал ту самую беспощадную меритократию, что сделала Новый Шанхай сильнее. Сам корабль разобран на памятники. **[ПРИЧИНА ЗНАЧИМОСТИ: Своевременное демографическое и технологическое усиление первой колонии в критический момент; внутренний конфликт стал двигателем социальной эволюции.]**": {
+   "en": "**Xin Shanghai's Second Wind.** The arrival of this ship prevented the genetic stagnation of the first colony, but bred a century-long social confrontation between the \"Elder Families\" and the \"New Blood\". This internal conflict forged the very ruthless meritocracy that made Xin Shanghai stronger. The ship itself was dismantled into monuments. **[REASON FOR SIGNIFICANCE: A timely demographic and technological reinforcement of the first colony at a critical moment; the internal conflict became the engine of social evolution.]**",
+   "ru": "**Второе дыхание Нового Шанхая.** Прибытие этого корабля предотвратило генетический застой первой колонии, но породило вековое социальное противостояние «Старших семей» и «Новой крови». Этот внутренний конфликт выковал ту самую беспощадную меритократию, что сделала Новый Шанхай сильнее. Сам корабль разобран на памятники. **[ПРИЧИНА ЗНАЧИМОСТИ: Своевременное демографическое и технологическое усиление первой колонии в критический момент; внутренний конфликт стал двигателем социальной эволюции.]**"
+  },
+  "**Запоздалые миротворцы.** Узнав, что к Ледяной Вере летят и технократы, и теократы, Новая Европа в панике отправила своих «независимых арбитров». Их корабль – самый медленный. К их прибытию конфликт, скорее всего, уже разрешится – кроваво. Их ждёт роль запоздалых свидетелей или козлов отпущения. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Попытка периферийной державы доказать свою релевантность в большой игре, основанная на наивной вере в силу диалога.]**": {
+   "en": "**The Belated Peacemakers.** Learning that both technocrats and theocrats were heading for Ice Faith, New Europe in a panic sent its \"independent arbiters\". Their ship is the slowest. By their arrival the conflict will most likely already be resolved - in blood. They face the role of belated witnesses or scapegoats. **[REASON FOR EXISTENCE: An attempt by a peripheral power to prove its relevance in the great game, based on a naive faith in the power of dialogue.]**",
+   "ru": "**Запоздалые миротворцы.** Узнав, что к Ледяной Вере летят и технократы, и теократы, Новая Европа в панике отправила своих «независимых арбитров». Их корабль – самый медленный. К их прибытию конфликт, скорее всего, уже разрешится – кроваво. Их ждёт роль запоздалых свидетелей или козлов отпущения. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Попытка периферийной державы доказать свою релевантность в большой игре, основанная на наивной вере в силу диалога.]**"
+  },
+  "**Затерянный мир.** Корабль прибыл, но связь с Землёй была потеряна ещё в пути. Они основали колонию, считая себя последними людьми во Вселенной. Развивались в полной изоляции 500 лет, создав уникальную культуру, смешавшую индейские мифы, португальский и технологические культы. Повторно обнаружены лишь в 2950-х. Теперь это замкнутый, подозрительный мир, с трудом принимающий реальность «большого человечества». **[ПРИЧИНА ИЗОЛЯЦИИ: Потеря связи из-за отказа антенного комплекса; огромная дистанция и отсутствие гипердвигателя у самого корабля; культурная адаптация к мысли об одиночестве.]**": {
+   "en": "**The Lost World.** The ship arrived, but contact with Earth was lost on the way. They founded a colony believing themselves the last humans in the Universe. They developed in total isolation for 500 years, creating a unique culture that blended indigenous myths, Portuguese and technological cults. Rediscovered only in the 2950s. Now it is a closed, suspicious world that struggles to accept the reality of \"greater humanity\". **[REASON FOR ISOLATION: Loss of contact due to an antenna array failure; a vast distance and no hyperdrive on the ship itself; cultural adaptation to the idea of solitude.]**",
+   "ru": "**Затерянный мир.** Корабль прибыл, но связь с Землёй была потеряна ещё в пути. Они основали колонию, считая себя последними людьми во Вселенной. Развивались в полной изоляции 500 лет, создав уникальную культуру, смешавшую индейские мифы, португальский и технологические культы. Повторно обнаружены лишь в 2950-х. Теперь это замкнутый, подозрительный мир, с трудом принимающий реальность «большого человечества». **[ПРИЧИНА ИЗОЛЯЦИИ: Потеря связи из-за отказа антенного комплекса; огромная дистанция и отсутствие гипердвигателя у самого корабля; культурная адаптация к мысли об одиночестве.]**"
+  },
+  "**Искра Восстания.** Прибытие новых колонистов не укрепило Новую Карму, а взорвало её изнутри. «Новоприбывшие» отказались принимать кастовую систему. Вспыхнула «Война Чистоты». В результате на одной из лун возникла «Свободная Карма» – государство-изгой, пристанище для генетических «еретиков» и диссидентов, ведущее холодную войну с планетарной теократией. **[ПРИЧИНА ПРОБЛЕМ: Попытка усилить проблемную колонию без изменения её порочной социальной структуры привела к неизбежному конфликту.]**": {
+   "en": "**Spark of Rebellion.** The arrival of new colonists did not strengthen New Karma - it blew it apart from within. The \"Newcomers\" refused to accept the caste system. The \"Purity War\" broke out. As a result, \"Free Karma\" arose on one of the moons - a rogue state, a haven for genetic \"heretics\" and dissidents, waging a cold war with the planetary theocracy. **[REASON FOR TROUBLES: An attempt to reinforce a troubled colony without changing its vicious social structure led to inevitable conflict.]**",
+   "ru": "**Искра Восстания.** Прибытие новых колонистов не укрепило Новую Карму, а взорвало её изнутри. «Новоприбывшие» отказались принимать кастовую систему. Вспыхнула «Война Чистоты». В результате на одной из лун возникла «Свободная Карма» – государство-изгой, пристанище для генетических «еретиков» и диссидентов, ведущее холодную войну с планетарной теократией. **[ПРИЧИНА ПРОБЛЕМ: Попытка усилить проблемную колонию без изменения её порочной социальной структуры привела к неизбежному конфликту.]**"
+  },
+  "**Капсула времени.** Не колонисты, а хранители. На борту – крио-архивы биосферы Земли, искусства, истории. Их миссия – сохранить наследие у ближайшей звезды. Но что, если они прибудут и увидят, что их «чистая история» – миф, а реальное человечество создало свои, более жизнеспособные мифы? **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Акт культурного пессимизма, попытка создать «резервную копию» цивилизации, которую её же дети считают устаревшей.]**": {
+   "en": "**Time Capsule.** Not colonists but keepers. Aboard are cryo-archives of Earth's biosphere, art and history. Their mission is to preserve the heritage at the nearest star. But what if they arrive and see that their \"pure history\" is a myth, and real humanity has created its own, more viable myths? **[REASON FOR EXISTENCE: An act of cultural pessimism, an attempt to create a \"backup copy\" of a civilization that its own children consider obsolete.]**",
+   "ru": "**Капсула времени.** Не колонисты, а хранители. На борту – крио-архивы биосферы Земли, искусства, истории. Их миссия – сохранить наследие у ближайшей звезды. Но что, если они прибудут и увидят, что их «чистая история» – миф, а реальное человечество создало свои, более жизнеспособные мифы? **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Акт культурного пессимизма, попытка создать «резервную копию» цивилизации, которую её же дети считают устаревшей.]**"
+  },
+  "**Картель «Шахта Альфа».** Экономика как религия. Всё, включая людей, – актив. Их государство – корпорация, их закон – контракт, их бог – прибыль. Контролируя богатейшие пояса астероидов, они финансировали гиперпрорыв Нового Шанхая и теперь владеют крупнейшей долей в межзвёздной торговле. Защиту нанимают у Цитадели. **[ПРИЧИНА УСПЕХА: Чёткая, аморальная, но эффективная целевая установка (добыча ресурсов); отсутствие идеологического балласта; ставка на экономическую, а не военную экспансию.]**": {
+   "en": "**The \"Mine Alpha\" Cartel.** Economy as religion. Everything, people included, is an asset. Their state is a corporation, their law is a contract, their god is profit. Controlling the richest asteroid belts, they financed Xin Shanghai's hyper-breakthrough and now own the largest share of interstellar trade. They hire protection from the Citadel. **[REASON FOR SUCCESS: A clear, amoral but effective goal (resource extraction); no ideological ballast; a bet on economic rather than military expansion.]**",
+   "ru": "**Картель «Шахта Альфа».** Экономика как религия. Всё, включая людей, – актив. Их государство – корпорация, их закон – контракт, их бог – прибыль. Контролируя богатейшие пояса астероидов, они финансировали гиперпрорыв Нового Шанхая и теперь владеют крупнейшей долей в межзвёздной торговле. Защиту нанимают у Цитадели. **[ПРИЧИНА УСПЕХА: Чёткая, аморальная, но эффективная целевая установка (добыча ресурсов); отсутствие идеологического балласта; ставка на экономическую, а не военную экспансию.]**"
+  },
+  "**Корабль-сирота.** Запущен, когда слухи о гипердвигателе уже были известны. На борту – сброд и отчаяние последних дней Земли. Они летят к величайшему успеху человечества, боясь, что к прибытию тот сочтёт их дикарями. Их культура законсервирована в момент краха. Будут ли они париями или топливом для революции в Новом Шанхае? **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Последняя истерическая попытка землян «успеть» перед технологической сингулярностью, наступившей у других.]**": {
+   "en": "**The Orphan Ship.** Launched when rumors of the hyperdrive were already known. Aboard are the rabble and the despair of Earth's last days. They are flying toward humanity's greatest success, fearing that on arrival it will deem them savages. Their culture is frozen at the moment of collapse. Will they be pariahs or fuel for a revolution in Xin Shanghai? **[REASON FOR EXISTENCE: A last hysterical attempt by Earthlings to \"make it in time\" before the technological singularity that came to others.]**",
+   "ru": "**Корабль-сирота.** Запущен, когда слухи о гипердвигателе уже были известны. На борту – сброд и отчаяние последних дней Земли. Они летят к величайшему успеху человечества, боясь, что к прибытию тот сочтёт их дикарями. Их культура законсервирована в момент краха. Будут ли они париями или топливом для революции в Новом Шанхае? **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Последняя истерическая попытка землян «успеть» перед технологической сингулярностью, наступившей у других.]**"
+  },
+  "**Культ Машины.** Катастрофа при посадке уничтожила мечту о новом человечестве. Выжившие, отрезанные от технологий, обожествили повреждённый корабельный ИИ «Провидец». Теперь их потомки – дикари с кибернетическими имплантами, проводящие ритуалы перед мигающими консолями. Их станция – лабиринт суеверий и древних, иногда рабочих, систем. **[ПРИЧИНА КАТАСТРОФЫ: Слишком малый экипаж для сложной миссии; переоценка технологий и недооценка человеческого фактора; фатальная техническая неполадка, которую некому было исправить.]**": {
+   "en": "**Cult of the Machine.** A landing disaster destroyed the dream of a new humanity. The survivors, cut off from technology, deified the damaged ship AI \"Seer\". Now their descendants are savages with cybernetic implants, performing rituals before blinking consoles. Their station is a labyrinth of superstition and ancient, sometimes working, systems. **[REASON FOR DISASTER: Too small a crew for a complex mission; overestimated technology and underestimated human factor; a fatal technical fault that no one was left to fix.]**",
+   "ru": "**Культ Машины.** Катастрофа при посадке уничтожила мечту о новом человечестве. Выжившие, отрезанные от технологий, обожествили повреждённый корабельный ИИ «Провидец». Теперь их потомки – дикари с кибернетическими имплантами, проводящие ритуалы перед мигающими консолями. Их станция – лабиринт суеверий и древних, иногда рабочих, систем. **[ПРИЧИНА КАТАСТРОФЫ: Слишком малый экипаж для сложной миссии; переоценка технологий и недооценка человеческого фактора; фатальная техническая неполадка, которую некому было исправить.]**"
+  },
+  "**Ледяная Вера.** Они нашли свой рай под километрами льда океанской луны. Их города – пузыри титана и несгибаемой веры. Технологии используются только для сохранения учения и изоляции от греховного внешнего влияния. Гиперпорталы считают «вратами без благодати». Контакт с ними – сложнейшая дипломатическая миссия, часто заканчивающаяся изгнанием «еретиков». **[ПРИЧИНА ВЫЖИВАНИЯ: Экстремальная изоляция, снявшая внешние угрозы; тоталитарная теократия, подавившая внутренние разногласия; адаптация к специфической, но стабильной среде.]**": {
+   "en": "**Ice Faith.** They found their paradise under kilometers of ice on an ocean moon. Their cities are bubbles of titanium and unbending faith. Technology is used only to preserve the teaching and to isolate from sinful outside influence. They call hyperportals \"gates without grace\". Contact with them is a most difficult diplomatic mission, often ending in the expulsion of \"heretics\". **[REASON FOR SURVIVAL: Extreme isolation that removed outside threats; a totalitarian theocracy that crushed internal dissent; adaptation to a specific but stable environment.]**",
+   "ru": "**Ледяная Вера.** Они нашли свой рай под километрами льда океанской луны. Их города – пузыри титана и несгибаемой веры. Технологии используются только для сохранения учения и изоляции от греховного внешнего влияния. Гиперпорталы считают «вратами без благодати». Контакт с ними – сложнейшая дипломатическая миссия, часто заканчивающаяся изгнанием «еретиков». **[ПРИЧИНА ВЫЖИВАНИЯ: Экстремальная изоляция, снявшая внешние угрозы; тоталитарная теократия, подавившая внутренние разногласия; адаптация к специфической, но стабильной среде.]**"
+  },
+  "**Летучий Голландец Пустоты.** Корабль-курорт для сверхбогатых, решивших избежать смерти в вечном путешествии. Системы жизнеобеспечения давно на пределе. Общество выродилось в кастовую систему: одряхлевшая элита и её обречённые слуги. Они дрейфуют, иногда выходя на связь для попрошайничества. Встреча с ним – дурная примета, но ходят слухи о несметных сокровищах в его сейфах. **[ПРИЧИНА ДЕГРАДАЦИИ: Изначально нежизнеспособная, дегенеративная социальная модель; критически малая и генетически бедная популяция; отсутствие цели, кроме гедонизма.]**": {
+   "en": "**Flying Dutchman of the Void.** A resort ship for the super-rich who chose to escape death in an eternal voyage. Its life support has long been at the limit. Society has degenerated into a caste system: a decrepit elite and its doomed servants. They drift, sometimes coming on the air to beg. Meeting it is a bad omen, but rumors speak of countless treasures in its vaults. **[REASON FOR DEGRADATION: An inherently unviable, degenerate social model; a critically small and genetically poor population; no purpose other than hedonism.]**",
+   "ru": "**Летучий Голландец Пустоты.** Корабль-курорт для сверхбогатых, решивших избежать смерти в вечном путешествии. Системы жизнеобеспечения давно на пределе. Общество выродилось в кастовую систему: одряхлевшая элита и её обречённые слуги. Они дрейфуют, иногда выходя на связь для попрошайничества. Встреча с ним – дурная примета, но ходят слухи о несметных сокровищах в его сейфах. **[ПРИЧИНА ДЕГРАДАЦИИ: Изначально нежизнеспособная, дегенеративная социальная модель; критически малая и генетически бедная популяция; отсутствие цели, кроме гедонизма.]**"
+  },
+  "**Небесная Твердыня.** Второй китайский корабль основал колонию на холодном, суровом мире. Это закалило их. Они создали «орбитальный социализм» – дисциплинированное, спартанское общество, помешанное на коллективном выживании и дальних научных экспедициях. Их флот специализируется на исследованиях за пределами известного пространства. Надёжные, но закрытые. **[ПРИЧИНА УСПЕХА: Жёсткая дисциплина, унаследованная от первой миссии, помноженная на экстремальные условия среды, породившие сверхсплочённое общество.]**": {
+   "en": "**Celestial Stronghold.** The second Chinese ship founded a colony on a cold, harsh world. It tempered them. They created \"orbital socialism\" - a disciplined, spartan society obsessed with collective survival and long-range scientific expeditions. Their fleet specializes in exploration beyond known space. Reliable, but closed. **[REASON FOR SUCCESS: Strict discipline inherited from the first mission, multiplied by extreme environmental conditions, which produced a super-cohesive society.]**",
+   "ru": "**Небесная Твердыня.** Второй китайский корабль основал колонию на холодном, суровом мире. Это закалило их. Они создали «орбитальный социализм» – дисциплинированное, спартанское общество, помешанное на коллективном выживании и дальних научных экспедициях. Их флот специализируется на исследованиях за пределами известного пространства. Надёжные, но закрытые. **[ПРИЧИНА УСПЕХА: Жёсткая дисциплина, унаследованная от первой миссии, помноженная на экстремальные условия среды, породившие сверхсплочённое общество.]**"
+  },
+  "**Новая Европа.** Они воссоздали парламентскую демократию, бюрократию и культуру старой Земли с музейной точностью. И застряли в них. Пока другие развивались, они спорили о процедурах. Их технологии – лицензионные копии, их общество – ностальгическая симуляция. Тихая, красивая и нерелевантная задворка галактики. **[ПРИЧИНА СТАГНАЦИИ: Отсутствие экзистенциального давления для изменений; культура, направленная на сохранение прошлого, а не создание будущего; изначальная цель была «спасти культуру», а не «построить новое общество».]**": {
+   "en": "**New Europe.** They recreated the parliamentary democracy, bureaucracy and culture of old Earth with museum accuracy. And got stuck in them. While others developed, they argued about procedures. Their technologies are licensed copies, their society a nostalgic simulation. A quiet, beautiful and irrelevant backwater of the galaxy. **[REASON FOR STAGNATION: No existential pressure to change; a culture aimed at preserving the past rather than creating the future; the original goal was to \"save the culture\", not to \"build a new society\".]**",
+   "ru": "**Новая Европа.** Они воссоздали парламентскую демократию, бюрократию и культуру старой Земли с музейной точностью. И застряли в них. Пока другие развивались, они спорили о процедурах. Их технологии – лицензионные копии, их общество – ностальгическая симуляция. Тихая, красивая и нерелевантная задворка галактики. **[ПРИЧИНА СТАГНАЦИИ: Отсутствие экзистенциального давления для изменений; культура, направленная на сохранение прошлого, а не создание будущего; изначальная цель была «спасти культуру», а не «построить новое общество».]**"
+  },
+  "**Новая Карма.** Генетический кошмар, возведённый в догму. Из-за ошибок в криобанке и близкородственных связей в первом поколении проявился букет наследственных болезней. Вместо исправления, общество создало кастовую систему на основе генетического «чистоплотства». «Высшие» живут в орбитальных ковчегах, «низшие» вымирают в шахтах планеты. Это хрупкий и жестокий мир, застывший в порочном цикле. **[ПРИЧИНА ПРОБЛЕМ: Фатальные ошибки в управлении генетическим фондом малого (для заявленных целей) изолированного населения, усугублённые религиозно-кастовым фатализмом.]**": {
+   "en": "**New Karma.** A genetic nightmare raised into dogma. Because of errors in the cryobank and inbreeding in the first generation, a host of hereditary diseases emerged. Instead of correcting them, society created a caste system based on genetic \"cleanliness\". The \"Higher\" live in orbital arks, the \"Lower\" die out in the planet's mines. It is a fragile and cruel world, frozen in a vicious cycle. **[REASON FOR TROUBLES: Fatal errors in managing the gene pool of a small (for the stated goals) isolated population, aggravated by religious caste fatalism.]**",
+   "ru": "**Новая Карма.** Генетический кошмар, возведённый в догму. Из-за ошибок в криобанке и близкородственных связей в первом поколении проявился букет наследственных болезней. Вместо исправления, общество создало кастовую систему на основе генетического «чистоплотства». «Высшие» живут в орбитальных ковчегах, «низшие» вымирают в шахтах планеты. Это хрупкий и жестокий мир, застывший в порочном цикле. **[ПРИЧИНА ПРОБЛЕМ: Фатальные ошибки в управлении генетическим фондом малого (для заявленных целей) изолированного населения, усугублённые религиозно-кастовым фатализмом.]**"
+  },
+  "**Новая Маланд.** Демографический взрыв в действии. Молодое, амбициозное и многочисленное общество, помешанное на экспансии. Их технологии не самые передовые, но их корабли – самые многочисленные. Они заполняют пространство, как вода, создавая новые поселения на любой пригодной скале. Их сила – в числе и неудержимой энергии. **[ПРИЧИНА УСПЕХА: Самый большой и генетически разнообразный стартовый экипаж; культурная установка на рост и расширение; удачная, ресурсоёмкая планета.]**": {
+   "en": "**New Maland.** A demographic explosion in action. A young, ambitious and numerous society obsessed with expansion. Their technologies are not the most advanced, but their ships are the most numerous. They fill space like water, building new settlements on any suitable rock. Their strength is in numbers and unstoppable energy. **[REASON FOR SUCCESS: The largest and most genetically diverse starting crew; a cultural drive toward growth and expansion; a fortunate, resource-rich planet.]**",
+   "ru": "**Новая Маланд.** Демографический взрыв в действии. Молодое, амбициозное и многочисленное общество, помешанное на экспансии. Их технологии не самые передовые, но их корабли – самые многочисленные. Они заполняют пространство, как вода, создавая новые поселения на любой пригодной скале. Их сила – в числе и неудержимой энергии. **[ПРИЧИНА УСПЕХА: Самый большой и генетически разнообразный стартовый экипаж; культурная установка на рост и расширение; удачная, ресурсоёмкая планета.]**"
+  },
+  "**Новый Шанхай.** Колыбель технократии. Первая успешная посадка породила не утопию, а безжалостную меритократию, где место в обществе определяется полезностью. Именно здесь, среди жёсткой конкуренции кланов «первой волны» и «второй», был совершён прорыв в гиперфизике. Их власть держится на монополии знаний и самом совершенном флоте. **[ПРИЧИНА УСПЕХА: Идеальный баланс крупного генофонда, удачной планеты и культуры тотального прагматизма, подавившей внутренние конфликты через конкуренцию.]**": {
+   "en": "**Xin Shanghai.** The cradle of technocracy. The first successful landing produced not a utopia but a ruthless meritocracy where one's place in society is defined by usefulness. It was here, amid the fierce competition of the \"first wave\" and \"second wave\" clans, that the breakthrough in hyperphysics was made. Their power rests on a monopoly of knowledge and the most advanced fleet. **[REASON FOR SUCCESS: An ideal balance of a large gene pool, a fortunate planet and a culture of total pragmatism that suppressed internal conflicts through competition.]**",
+   "ru": "**Новый Шанхай.** Колыбель технократии. Первая успешная посадка породила не утопию, а безжалостную меритократию, где место в обществе определяется полезностью. Именно здесь, среди жёсткой конкуренции кланов «первой волны» и «второй», был совершён прорыв в гиперфизике. Их власть держится на монополии знаний и самом совершенном флоте. **[ПРИЧИНА УСПЕХА: Идеальный баланс крупного генофонда, удачной планеты и культуры тотального прагматизма, подавившей внутренние конфликты через конкуренцию.]**"
+  },
+  "**Нулевой прыжок.** Не исчез. Он совершил первый контролируемый гиперпрыжок на глазах у Совета. Экипаж вернулся… изменёнными. Одни стали гениями, другие – безумцами, третьи утверждали, что «видели структуру реальности». Корабль стоит на вечной стоянке. Памятник и предупреждение: за дверь в иное измерение платят разумом. **[ПРИЧИНА ЗНАЧИМОСТИ: Доказательство работоспособности гипердвигателя; первое столкновение человека с нефизическими аспектами гиперпространства, породившее культ «Гиперсозерцателей».]**": {
+   "en": "**Zero Jump.** It did not vanish. It made the first controlled hyperjump before the eyes of the Council. The crew came back... changed. Some became geniuses, others madmen, still others claimed they had \"seen the structure of reality\". The ship rests at an eternal berth. A monument and a warning: the door to another dimension is paid for with the mind. **[REASON FOR SIGNIFICANCE: Proof that the hyperdrive works; humanity's first encounter with the non-physical aspects of hyperspace, which gave rise to the cult of the \"Hypercontemplators\".]**",
+   "ru": "**Нулевой прыжок.** Не исчез. Он совершил первый контролируемый гиперпрыжок на глазах у Совета. Экипаж вернулся… изменёнными. Одни стали гениями, другие – безумцами, третьи утверждали, что «видели структуру реальности». Корабль стоит на вечной стоянке. Памятник и предупреждение: за дверь в иное измерение платят разумом. **[ПРИЧИНА ЗНАЧИМОСТИ: Доказательство работоспособности гипердвигателя; первое столкновение человека с нефизическими аспектами гиперпространства, породившее культ «Гиперсозерцателей».]**"
+  },
+  "**Первый гипердоговор.** Этот небольшой челнок установил первый стабильный торговый маршрут между Новым Шанхаем и зарождающимся Перекрёстком. Его капитан, Лира Вэнс, стала легендой, а сам корабль – символом того, что даже в эру поколений связи возможны. Стоит в музее на «Агоре». **[ПРИЧИНА ЗНАЧИМОСТИ: Доказал возможность и выгоду межколониальной торговли на допгиперовых скоростях; заложил основы будущей экономической сети.]**": {
+   "en": "**The First Hyper Treaty.** This small shuttle established the first stable trade route between Xin Shanghai and the emerging Crossroads. Its captain, Lyra Vance, became a legend, and the ship itself a symbol that even in the generation era connections are possible. It stands in a museum on the \"Agora\". **[REASON FOR SIGNIFICANCE: Proved the possibility and profit of intercolonial trade at pre-hyper speeds; laid the foundations of the future economic network.]**",
+   "ru": "**Первый гипердоговор.** Этот небольшой челнок установил первый стабильный торговый маршрут между Новым Шанхаем и зарождающимся Перекрёстком. Его капитан, Лира Вэнс, стала легендой, а сам корабль – символом того, что даже в эру поколений связи возможны. Стоит в музее на «Агоре». **[ПРИЧИНА ЗНАЧИМОСТИ: Доказал возможность и выгоду межколониальной торговли на допгиперовых скоростях; заложил основы будущей экономической сети.]**"
+  },
+  "**Перекрёсток.** Они построили не государство, а хабу. Гигантская станция «Агора» стала нейтральной территорией, где торгуют, договариваются и обмениваются информацией все. У них нет армии, но есть лучшая в галактике служба безопасности и сеть гиперретрансляторов. Их власть – контроль над потоками данных и товаров. **[ПРИЧИНА УСПЕХА: Уникальная рыночная ниша (нейтральный посредник); ставка на инфраструктуру, а не территорию; экипаж, изначально отобранный из дипломатов, торговцев и логистов.]**": {
+   "en": "**Crossroads.** They built not a state but a hub. The giant station \"Agora\" became neutral territory where everyone trades, negotiates and exchanges information. They have no army, but they have the best security service in the galaxy and a network of hyper-relays. Their power is control over the flows of data and goods. **[REASON FOR SUCCESS: A unique market niche (neutral intermediary); a bet on infrastructure rather than territory; a crew originally selected from diplomats, traders and logisticians.]**",
+   "ru": "**Перекрёсток.** Они построили не государство, а хабу. Гигантская станция «Агора» стала нейтральной территорией, где торгуют, договариваются и обмениваются информацией все. У них нет армии, но есть лучшая в галактике служба безопасности и сеть гиперретрансляторов. Их власть – контроль над потоками данных и товаров. **[ПРИЧИНА УСПЕХА: Уникальная рыночная ниша (нейтральный посредник); ставка на инфраструктуру, а не территорию; экипаж, изначально отобранный из дипломатов, торговцев и логистов.]**"
+  },
+  "**Последнее предупреждение.** Корабль прислал одно искажённое сообщение с координатами гравитационной аномалии и биосигнатурами неизвестного происхождения, после чего связь прервалась. Обломки не найдены. В Цитадели данные засекречены. Это – основа главной конспирологической теории галактики: о Древних, о Тёмном Лесе, о том, что «ОНИ» уже здесь и стерегут свои владения. **[ПРИЧИНА ПРОПАЖИ: Столкновение с неизвестным ксенос-объектом или явлением; возможно, уничтожен за нарушение негласных границ.]**": {
+   "en": "**The Last Warning.** The ship sent one distorted message with the coordinates of a gravitational anomaly and biosignatures of unknown origin, after which contact was lost. No wreckage was found. The Citadel has classified the data. This is the basis of the galaxy's main conspiracy theory: about the Ancients, about the Dark Forest, that \"THEY\" are already here and guarding their domains. **[REASON FOR LOSS: An encounter with an unknown xeno-object or phenomenon; possibly destroyed for violating unspoken borders.]**",
+   "ru": "**Последнее предупреждение.** Корабль прислал одно искажённое сообщение с координатами гравитационной аномалии и биосигнатурами неизвестного происхождения, после чего связь прервалась. Обломки не найдены. В Цитадели данные засекречены. Это – основа главной конспирологической теории галактики: о Древних, о Тёмном Лесе, о том, что «ОНИ» уже здесь и стерегут свои владения. **[ПРИЧИНА ПРОПАЖИ: Столкновение с неизвестным ксенос-объектом или явлением; возможно, уничтожен за нарушение негласных границ.]**"
+  },
+  "**Последняя поэма.** Корабль поэтов, художников и философов. Их миссия – унести «душу» человечества прочь от войн и технологий. Связь прервалась. Иногда на дальних рубежах слышат обрывки прекрасной музыки или видят корабль, танцующий в туманностях. Его называют «Поэма в движении». Те, кто его видел, меняются. Возможно, они нашли то, что искали. **[ПРИЧИНА ЗНАЧИМОСТИ: Символический конец эры поколений – не технологическим триумфом, а жестом отречения и красоты. Стал мощнейшим культурным мифом.]**": {
+   "en": "**The Last Poem.** A ship of poets, artists and philosophers. Their mission was to carry the \"soul\" of humanity away from wars and technology. Contact was lost. Sometimes on the far frontiers people hear fragments of beautiful music or see a ship dancing in the nebulae. They call it the \"Poem in Motion\". Those who have seen it are changed. Perhaps they found what they were looking for. **[REASON FOR SIGNIFICANCE: The symbolic end of the generation era - not with a technological triumph but with a gesture of renunciation and beauty. It became the most powerful cultural myth.]**",
+   "ru": "**Последняя поэма.** Корабль поэтов, художников и философов. Их миссия – унести «душу» человечества прочь от войн и технологий. Связь прервалась. Иногда на дальних рубежах слышат обрывки прекрасной музыки или видят корабль, танцующий в туманностях. Его называют «Поэма в движении». Те, кто его видел, меняются. Возможно, они нашли то, что искали. **[ПРИЧИНА ЗНАЧИМОСТИ: Символический конец эры поколений – не технологическим триумфом, а жестом отречения и красоты. Стал мощнейшим культурным мифом.]**"
+  },
+  "**Пояс Раздора.** Мечта о свободном рынке разбилась о реальность ограниченных ресурсов. Корабль стал яблоком раздора, и гражданская война уничтожила его как единое целое. Теперь система Глизе 832 – это дикое пространство, где кланы и микрокорпорации ведут вечную войну за обломки, астероиды и примитивные гиперврата. Рассадник пиратов и наёмников. **[ПРИЧИНА КАТАСТРОФЫ: Отсутствие любой централизованной власти или объединяющей идеологии; малый экипаж с установкой на индивидуализм и конкуренцию в условиях жёсткого дефицита.]**": {
+   "en": "**Belt of Discord.** The dream of a free market shattered against the reality of limited resources. The ship became a bone of contention, and civil war destroyed it as a single whole. Now the Gliese 832 system is wild space where clans and micro-corporations wage an eternal war for wreckage, asteroids and primitive hypergates. A breeding ground for pirates and mercenaries. **[REASON FOR DISASTER: The absence of any centralized power or unifying ideology; a small crew geared toward individualism and competition amid severe scarcity.]**",
+   "ru": "**Пояс Раздора.** Мечта о свободном рынке разбилась о реальность ограниченных ресурсов. Корабль стал яблоком раздора, и гражданская война уничтожила его как единое целое. Теперь система Глизе 832 – это дикое пространство, где кланы и микрокорпорации ведут вечную войну за обломки, астероиды и примитивные гиперврата. Рассадник пиратов и наёмников. **[ПРИЧИНА КАТАСТРОФЫ: Отсутствие любой централизованной власти или объединяющей идеологии; малый экипаж с установкой на индивидуализм и конкуренцию в условиях жёсткого дефицита.]**"
+  },
+  "**Призрачный эмиссар.** Последний официальный земной корабль. Ведёт в Цитадель дипломатические предложения и… некий засекреченный груз (биообразцы? оружие? крик о помощи?). Цитадель готовится к его встрече с смесью паранойи и цинизма. Его вскрытие может стать искрой для нового конфликта. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Последний жест отчаявшейся, умирающей метрополии к самой сильной и безжалостной своей «дочери».]**": {
+   "en": "**The Ghost Emissary.** The last official Earth ship. It carries diplomatic proposals to the Citadel and... a certain classified cargo (bio-samples? weapons? a cry for help?). The Citadel prepares to meet it with a mix of paranoia and cynicism. Its opening may become the spark of a new conflict. **[REASON FOR EXISTENCE: The last gesture of a desperate, dying metropolis toward its strongest and most ruthless \"daughter\".]**",
+   "ru": "**Призрачный эмиссар.** Последний официальный земной корабль. Ведёт в Цитадель дипломатические предложения и… некий засекреченный груз (биообразцы? оружие? крик о помощи?). Цитадель готовится к его встрече с смесью паранойи и цинизма. Его вскрытие может стать искрой для нового конфликта. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Последний жест отчаявшейся, умирающей метрополии к самой сильной и безжалостной своей «дочери».]**"
+  },
+  "**Проклятие Ностальгии.** На полпути молодое поколение, рождённое на корабле, подняло мятеж. Они отказались лететь к «мифической прародине», потребовав найти свой мир. Война уничтожила систему управления. Теперь HOMEWARD-1 – мёртвый корабль, дрейфующий в межзвёздной пустоте. Сканеры иногда фиксируют движение внутри. Может, не все погибли? Или это что-то иное? **[ПРИЧИНА КАТАСТРОФЫ: Неизбежный конфликт между поколениями «хранителей миссии» и «детей корабля», не видевших цели; малый экипаж не смог абсорбировать конфликт.]**": {
+   "en": "**Curse of Nostalgia.** Halfway there, the young generation born on the ship mutinied. They refused to fly to the \"mythical ancestral home\", demanding to find their own world. The war destroyed the control system. Now HOMEWARD-1 is a dead ship drifting in the interstellar void. Scanners sometimes detect movement inside. Maybe not everyone died? Or is it something else? **[REASON FOR DISASTER: The inevitable conflict between the generations of \"mission keepers\" and \"children of the ship\" who did not see the goal; the small crew could not absorb the conflict.]**",
+   "ru": "**Проклятие Ностальгии.** На полпути молодое поколение, рождённое на корабле, подняло мятеж. Они отказались лететь к «мифической прародине», потребовав найти свой мир. Война уничтожила систему управления. Теперь HOMEWARD-1 – мёртвый корабль, дрейфующий в межзвёздной пустоте. Сканеры иногда фиксируют движение внутри. Может, не все погибли? Или это что-то иное? **[ПРИЧИНА КАТАСТРОФЫ: Неизбежный конфликт между поколениями «хранителей миссии» и «детей корабля», не видевших цели; малый экипаж не смог абсорбировать конфликт.]**"
+  },
+  "**Семя и Сад.** Миссия по созданию новой Гайи. По прибытии корабль не стал строить города, а превратился в орбитальную биолабораторию, направляя процесс терраформирования планеты. Сейчас TRAPPIST-1 e – это молодой, бурлящий жизнью мир-инкубатор, управляемый зародышем Планетарного Сознания. Доступ строго контролируется жрецами-биоинженерами. **[ПРИЧИНА ОСОБОГО ПУТИ: Прямое наследование идеологии и технологий «Гайи-Прим»; миссия с чёткой, нечеловекоцентричной целью (создание биосферы).]**": {
+   "en": "**Seed and Garden.** A mission to create a new Gaia. On arrival the ship did not build cities but turned into an orbital biolab, guiding the planet's terraforming. Now TRAPPIST-1 e is a young incubator world teeming with life, governed by the embryo of a Planetary Consciousness. Access is strictly controlled by bioengineer priests. **[REASON FOR THE SPECIAL PATH: Direct inheritance of the ideology and technologies of \"Gaia-Prime\"; a mission with a clear, non-human-centered goal (creating a biosphere).]**",
+   "ru": "**Семя и Сад.** Миссия по созданию новой Гайи. По прибытии корабль не стал строить города, а превратился в орбитальную биолабораторию, направляя процесс терраформирования планеты. Сейчас TRAPPIST-1 e – это молодой, бурлящий жизнью мир-инкубатор, управляемый зародышем Планетарного Сознания. Доступ строго контролируется жрецами-биоинженерами. **[ПРИЧИНА ОСОБОГО ПУТИ: Прямое наследование идеологии и технологий «Гайи-Прим»; миссия с чёткой, нечеловекоцентричной целью (создание биосферы).]**"
+  },
+  "**Цветущая Гармония.** Успех, оплаченный кровью. Первые десятилетия на суровой планете вылились в гражданскую войну между фракциями «Адаптации» и «Чистоты Догмы». Победили прагматики, установив неоконфуцианскую диктатуру с репродуктивными мандатами. Их стабильность – результат коллективной травмы и жёсткого социального инжиниринга. **[ПРИЧИНА УСПЕХА: Огромный стартовый состав пережил демографическую катастрофу; выжившие построили сверхустойчивое общество, одержимое контролем.]**": {
+   "en": "**Blooming Harmony.** Success paid for in blood. The first decades on a harsh planet spilled into a civil war between the \"Adaptation\" and \"Purity of Dogma\" factions. The pragmatists won, establishing a neo-Confucian dictatorship with reproductive mandates. Their stability is the result of collective trauma and harsh social engineering. **[REASON FOR SUCCESS: A huge starting complement survived a demographic catastrophe; the survivors built an ultra-stable society obsessed with control.]**",
+   "ru": "**Цветущая Гармония.** Успех, оплаченный кровью. Первые десятилетия на суровой планете вылились в гражданскую войну между фракциями «Адаптации» и «Чистоты Догмы». Победили прагматики, установив неоконфуцианскую диктатуру с репродуктивными мандатами. Их стабильность – результат коллективной травмы и жёсткого социального инжиниринга. **[ПРИЧИНА УСПЕХА: Огромный стартовый состав пережил демографическую катастрофу; выжившие построили сверхустойчивое общество, одержимое контролем.]**"
+  },
+  "**Цитадель.** Они не искали планету – они искали крепость. Выдолбив астероид, они создали общество, где паранойя – добродетель, а доверие – смертный грех. Их технологический прогресс сосредоточен на оружии, защите и кибернетике. Их сила – в абсолютной предсказуемости ответа на любую угрозу. Гипердвигатель они восприняли как новое оружия, а не как путь к звёздам. **[ПРИЧИНА УСПЕХА: Чёткая, единая идеология выживания в осаде; малый, но профессионально подобранный экипаж; отсутствие сложностей планетарной биосферы.]**": {
+   "en": "**Citadel.** They were not looking for a planet - they were looking for a fortress. Hollowing out an asteroid, they created a society where paranoia is a virtue and trust a mortal sin. Their technological progress is focused on weapons, defense and cybernetics. Their strength is the absolute predictability of their response to any threat. They took the hyperdrive as a new weapon, not as a path to the stars. **[REASON FOR SUCCESS: A clear, unified ideology of survival under siege; a small but professionally selected crew; none of the complications of a planetary biosphere.]**",
+   "ru": "**Цитадель.** Они не искали планету – они искали крепость. Выдолбив астероид, они создали общество, где паранойя – добродетель, а доверие – смертный грех. Их технологический прогресс сосредоточен на оружии, защите и кибернетике. Их сила – в абсолютной предсказуемости ответа на любую угрозу. Гипердвигатель они восприняли как новое оружия, а не как путь к звёздам. **[ПРИЧИНА УСПЕХА: Чёткая, единая идеология выживания в осаде; малый, но профессионально подобранный экипаж; отсутствие сложностей планетарной биосферы.]**"
+  },
+  "**Щуп в Тёмные Воды.** Научно-дипломатическая миссия к Ледяной Вере. Экипаж – социологи, психологи, дипломаты-аналитики. Их цель – понять и установить контролируемый контакт с самым закрытым анклавом. Риск: сами стать объектом изучения или, хуже, жертвами теократического правосудия. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Стратегическая необходимость технократии понять и в идеале нейтрализовать идеологическую угрозу через её изучение.]**": {
+   "en": "**Probe into Dark Waters.** A scientific and diplomatic mission to Ice Faith. The crew are sociologists, psychologists, analyst diplomats. Their goal is to understand and establish controlled contact with the most closed enclave. The risk: becoming objects of study themselves or, worse, victims of theocratic justice. **[REASON FOR EXISTENCE: The technocracy's strategic need to understand and ideally neutralize an ideological threat by studying it.]**",
+   "ru": "**Щуп в Тёмные Воды.** Научно-дипломатическая миссия к Ледяной Вере. Экипаж – социологи, психологи, дипломаты-аналитики. Их цель – понять и установить контролируемый контакт с самым закрытым анклавом. Риск: сами стать объектом изучения или, хуже, жертвами теократического правосудия. **[ПРИЧИНА СУЩЕСТВОВАНИЯ: Стратегическая необходимость технократии понять и в идеале нейтрализовать идеологическую угрозу через её изучение.]**"
+  },
+  "**Эхо в пустоте.** Последняя передача: «Рай найден. Начинаем экогенез». Больше сигналов не было. Последующие миссии обнаружили идеальную планету и пустой, неповреждённый корабль на орбите. Следов экипажа нет. Биодатчики фиксируют аномально быстрое и чуждое развитие экосистемы на поверхности. Система объявлена карантинной зоной «Гайя». Что случилось – поглощение, трансценденция или нечто хуже? **[ПРИЧИНА ПРОПАЖИ: Столкновение с непредсказуемыми ксенобиологическими процессами; возможно, технология «экологического синтеза» вышла из-под контроля и ассимилировала создателей.]**": {
+   "en": "**Echo in the Void.** The last transmission: \"Paradise found. Beginning ecogenesis.\" There were no more signals. Later missions found an ideal planet and an empty, undamaged ship in orbit. No trace of the crew. Biosensors detect anomalously fast and alien development of the ecosystem on the surface. The system is declared the \"Gaia\" quarantine zone. What happened - absorption, transcendence or something worse? **[REASON FOR LOSS: An encounter with unpredictable xenobiological processes; possibly the \"ecological synthesis\" technology got out of control and assimilated its creators.]**",
+   "ru": "**Эхо в пустоте.** Последняя передача: «Рай найден. Начинаем экогенез». Больше сигналов не было. Последующие миссии обнаружили идеальную планету и пустой, неповреждённый корабль на орбите. Следов экипажа нет. Биодатчики фиксируют аномально быстрое и чуждое развитие экосистемы на поверхности. Система объявлена карантинной зоной «Гайя». Что случилось – поглощение, трансценденция или нечто хуже? **[ПРИЧИНА ПРОПАЖИ: Столкновение с непредсказуемыми ксенобиологическими процессами; возможно, технология «экологического синтеза» вышла из-под контроля и ассимилировала создателей.]**"
+  },
+  "01. Мэйфлауэр II.md": {
+   "en": "01. Mayflower II.md",
+   "ru": "01. Мэйфлауэр II.md"
+  },
+  "06. CELESTIAL-DESTINY-1.md (упоминание)": {
+   "en": "06. CELESTIAL-DESTINY-1.md (mention)",
+   "ru": "06. CELESTIAL-DESTINY-1.md (упоминание)"
+  },
+  "29. HOMEWARD-1.md (обломки FREE-VENTURE-1)": {
+   "en": "29. HOMEWARD-1.md (wreckage of FREE-VENTURE-1)",
+   "ru": "29. HOMEWARD-1.md (обломки FREE-VENTURE-1)"
+  },
+  "31. HYPERION-1.md (реакция Свободного мира)": {
+   "en": "31. HYPERION-1.md (Free World reaction)",
+   "ru": "31. HYPERION-1.md (реакция Свободного мира)"
+  },
+  "61 Лебедя": {
+   "en": "61 Cygni",
+   "ru": "61 Лебедя"
+  },
+  "61 Лебедя (пояс астероидов) (11.4 св. лет)": {
+   "en": "61 Cygni (asteroid belt) (11.4 ly)",
+   "ru": "61 Лебедя (пояс астероидов) (11.4 св. лет)"
+  },
+  "82 Эридана": {
+   "en": "82 Eridani",
+   "ru": "82 Эридана"
+  },
+  "82 Эридана / GJ 832 c": {
+   "en": "82 Eridani / GJ 832 c",
+   "ru": "82 Эридана / GJ 832 c"
+  },
+  "CLOSED since 3121 (docs/FORTUNA_LEXIE.md, 2026-11-19): a dumb jump is caught ~99 % (lock 12); a survivor is carried off Lexie's reach by the shell's currents. Only Фортуна-1 survives as a thin precessing thread (0.25 deg, 0.6 deg/yr): it needs a fresh survey better than ~0.03 deg (records die in weeks); Фортуна-2 and -3 collapsed (0.01 deg - no record can find them). The old bank records (0.1-0.3 deg) are useless now.": {
+   "en": "CLOSED since 3121 (docs/FORTUNA_LEXIE.md, 2026-11-19): a dumb jump is caught ~99 % (lock 12); a survivor is carried off Lexie's reach by the shell's currents. Only Fortuna-1 survives as a thin precessing thread (0.25 deg, 0.6 deg/yr): it needs a fresh survey better than ~0.03 deg (records die in weeks); Fortuna-2 and -3 collapsed (0.01 deg - no record can find them). The old bank records (0.1-0.3 deg) are useless now.",
+   "ru": "CLOSED since 3121 (docs/FORTUNA_LEXIE.md, 2026-11-19): a dumb jump is caught ~99 % (lock 12); a survivor is carried off Lexie's reach by the shell's currents. Only Фортуна-1 survives as a thin precessing thread (0.25 deg, 0.6 deg/yr): it needs a fresh survey better than ~0.03 deg (records die in weeks); Фортуна-2 and -3 collapsed (0.01 deg - no record can find them). The old bank records (0.1-0.3 deg) are useless now."
+  },
+  "GJ 1214 (48.9 св. года)": {
+   "en": "GJ 1214 (48.9 ly)",
+   "ru": "GJ 1214 (48.9 св. года)"
+  },
+  "GJ 3323 (42.1 св. года)": {
+   "en": "GJ 3323 (42.1 ly)",
+   "ru": "GJ 3323 (42.1 св. года)"
+  },
+  "GJ 581 g (20.3 св. лет)": {
+   "en": "GJ 581 g (20.3 ly)",
+   "ru": "GJ 581 g (20.3 св. лет)"
+  },
+  "GJ 667 C c (23 св. года)": {
+   "en": "GJ 667 C c (23 ly)",
+   "ru": "GJ 667 C c (23 св. года)"
+  },
+  "GJ 832 c (16.1 св. лет)": {
+   "en": "GJ 832 c (16.1 ly)",
+   "ru": "GJ 832 c (16.1 св. лет)"
+  },
+  "HD 40307 (41.6 св. лет)": {
+   "en": "HD 40307 (41.6 ly)",
+   "ru": "HD 40307 (41.6 св. лет)"
+  },
+  "HD 69830 d (41 св. лет)": {
+   "en": "HD 69830 d (41 ly)",
+   "ru": "HD 69830 d (41 св. лет)"
+  },
+  "HIP 85605 (45.3 св. года)": {
+   "en": "HIP 85605 (45.3 ly)",
+   "ru": "HIP 85605 (45.3 св. года)"
+  },
+  "TRAPPIST-1 (40.7 св. лет)": {
+   "en": "TRAPPIST-1 (40.7 ly)",
+   "ru": "TRAPPIST-1 (40.7 св. лет)"
+  },
+  "TRAPPIST-1 e (40 св. лет)": {
+   "en": "TRAPPIST-1 e (40 ly)",
+   "ru": "TRAPPIST-1 e (40 св. лет)"
+  },
+  "UNKNOWN (имя автора; происхождение не задано)": {
+   "en": "UNKNOWN (author's name; origin not set)",
+   "ru": "UNKNOWN (имя автора; происхождение не задано)"
+  },
+  "VOID-ZONE (59.2 св. года)": {
+   "en": "VOID-ZONE (59.2 ly)",
+   "ru": "VOID-ZONE (59.2 св. года)"
+  },
+  "YZ Кита": {
+   "en": "YZ Ceti",
+   "ru": "YZ Кита"
+  },
+  "actors.json Зона Филоморфоз": {
+   "en": "actors.json Philomorphosis Zone",
+   "ru": "actors.json Зона Филоморфоз"
+  },
+  "actors.json Когниум": {
+   "en": "actors.json Cognium",
+   "ru": "actors.json Когниум"
+  },
+  "actors.json Проспекторат Керн": {
+   "en": "actors.json Kern Prospectorate",
+   "ru": "actors.json Проспекторат Керн"
+  },
+  "actors.json Синьхэ": {
+   "en": "actors.json Xinhe",
+   "ru": "actors.json Синьхэ"
+  },
+  "actors.json Скьольдборг": {
+   "en": "actors.json Skjoldborg",
+   "ru": "actors.json Скьольдборг"
+  },
+  "actors.json Союз Новой Европы": {
+   "en": "actors.json Union of New Europe",
+   "ru": "actors.json Союз Новой Европы"
+  },
+  "fate.md / досье": {
+   "en": "fate.md / dossier",
+   "ru": "fate.md / досье"
+  },
+  "generation ships.md (A: 2540, 280 лет)": {
+   "en": "generation ships.md (A: 2540, 280 years)",
+   "ru": "generation ships.md (A: 2540, 280 лет)"
+  },
+  "generation_ships.json (Затерянный мир)": {
+   "en": "generation_ships.json (The Lost World)",
+   "ru": "generation_ships.json (Затерянный мир)"
+  },
+  "generation_ships.json (Культ Машины)": {
+   "en": "generation_ships.json (Cult of the Machine)",
+   "ru": "generation_ships.json (Культ Машины)"
+  },
+  "kāpehu whetū — звёздный компас (современная маорийская форма компаса Мау Пиайлуга и Нааинои Томпсона); государство назвало себя инструментом, которым его предки нашли дорогу": {
+   "en": "kāpehu whetū - star compass (the modern Maori form of the compass of Mau Piailug and Nainoa Thompson); the state named itself after the instrument by which its ancestors found their way",
+   "ru": "kāpehu whetū — звёздный компас (современная маорийская форма компаса Мау Пиайлуга и Нааинои Томпсона); государство назвало себя инструментом, которым его предки нашли дорогу"
+  },
+  "ujamaa (суах.) — братство, общинность (политика Ньерере); jumuiya — содружество (ср. Jumuiya ya Afrika Mashariki). «Jahi» в словарях суахили не засвидетельствовано (это англоязычное «африканское» имя для детей) — снято. Суахили — рабочий язык АС с 2022": {
+   "en": "ujamaa (Swahili) - brotherhood, communalism (Nyerere's policy); jumuiya - community (cf. Jumuiya ya Afrika Mashariki). \"Jahi\" is not attested in Swahili dictionaries (it is an English-language \"African\" baby name) - removed. Swahili has been a working language of the AU since 2022",
+   "ru": "ujamaa (суах.) — братство, общинность (политика Ньерере); jumuiya — содружество (ср. Jumuiya ya Afrika Mashariki). «Jahi» в словарях суахили не засвидетельствовано (это англоязычное «африканское» имя для детей) — снято. Суахили — рабочий язык АС с 2022"
+  },
+  "«Абсолютный периметр»: кольцевой электромагнитный и кинетический щит, способный уничтожать микрометеориты и небольшие корабли на расстоянии до 100 км.": {
+   "en": "\"Absolute Perimeter\": a ring-shaped electromagnetic and kinetic shield able to destroy micrometeorites and small ships at ranges up to 100 km.",
+   "ru": "«Абсолютный периметр»: кольцевой электромагнитный и кинетический щит, способный уничтожать микрометеориты и небольшие корабли на расстоянии до 100 км."
+  },
+  "«Адаптивный каркас»: корабль может менять конфигурацию, отстыковывая и перестраивая модули под текущие задачи добычи.": {
+   "en": "\"Adaptive Frame\": the ship can change its configuration, undocking and rearranging modules for the current mining tasks.",
+   "ru": "«Адаптивный каркас»: корабль может менять конфигурацию, отстыковывая и перестраивая модули под текущие задачи добычи."
+  },
+  "«Генератор конфликта»: преднамеренное разделение экипажа на «старших» (инженеры) и «новых» (учёные) с разными уровнями доступа к технологиям, что заложило основу меритократии.": {
+   "en": "\"Conflict Generator\": a deliberate split of the crew into \"elders\" (engineers) and \"newcomers\" (scientists) with different levels of access to technology, which laid the foundation of the meritocracy.",
+   "ru": "«Генератор конфликта»: преднамеренное разделение экипажа на «старших» (инженеры) и «новых» (учёные) с разными уровнями доступа к технологиям, что заложило основу меритократии."
+  },
+  "«Генетический шлюз»: системы стерилизации и контроля доступа между модулями, которые «новоприбывшие» взломали в первый же день.": {
+   "en": "\"Genetic Lock\": sterilization and access control systems between modules, which the \"newcomers\" hacked on the very first day.",
+   "ru": "«Генетический шлюз»: системы стерилизации и контроля доступа между модулями, которые «новоприбывшие» взломали в первый же день."
+  },
+  "«Демографический реактор»: системы жизнеобеспечения оптимизированы под максимальный прирост населения. Производство пищи и кислорода на 50% выше нормы.": {
+   "en": "\"Demographic Reactor\": life support systems optimized for maximum population growth. Food and oxygen production 50% above normal.",
+   "ru": "«Демографический реактор»: системы жизнеобеспечения оптимизированы под максимальный прирост населения. Производство пищи и кислорода на 50% выше нормы."
+  },
+  "«Договорные стыковочные узлы»: физические соединения между модулями могли быть разорваны по решению владельца модуля, что и произошло при первом серьёзном конфликте.": {
+   "en": "\"Contract Docking Nodes\": the physical links between modules could be severed at the module owner's decision, which is exactly what happened at the first serious conflict.",
+   "ru": "«Договорные стыковочные узлы»: физические соединения между модулями могли быть разорваны по решению владельца модуля, что и произошло при первом серьёзном конфликте."
+  },
+  "«Живой контракт»: бортовой ИИ, запрограммированный исключительно на ведение переговоров и заключение сделок, стал прообразом будущих торговых протоколов.": {
+   "en": "\"Living Contract\": an onboard AI programmed solely to negotiate and close deals; it became the prototype of future trade protocols.",
+   "ru": "«Живой контракт»: бортовой ИИ, запрограммированный исключительно на ведение переговоров и заключение сделок, стал прообразом будущих торговых протоколов."
+  },
+  "«Живой корабль»: корпус интегрирован с биореакторами и системами экологического синтеза. Граница между техническим и биологическим размыта.": {
+   "en": "\"Living Ship\": the hull is integrated with bioreactors and ecological synthesis systems. The line between the technical and the biological is blurred.",
+   "ru": "«Живой корабль»: корпус интегрирован с биореакторами и системами экологического синтеза. Граница между техническим и биологическим размыта."
+  },
+  "«Капсула времени ЕС»: культурные и юридические архивы занимают больше места, чем научные лаборатории. Все технологии дублируют земные образцы без модификаций.": {
+   "en": "\"EU Time Capsule\": cultural and legal archives take up more space than the science labs. All technologies duplicate Earth designs without modification.",
+   "ru": "«Капсула времени ЕС»: культурные и юридические архивы занимают больше места, чем научные лаборатории. Все технологии дублируют земные образцы без модификаций."
+  },
+  "«Квантовый нотариус»: система мгновенного заключения и верификации контрактов через запутанные частицы, физически связывающая корабль с «Агорой».": {
+   "en": "\"Quantum Notary\": a system for instantly concluding and verifying contracts through entangled particles, physically linking the ship to the \"Agora\".",
+   "ru": "«Квантовый нотариус»: система мгновенного заключения и верификации контрактов через запутанные частицы, физически связывающая корабль с «Агорой»."
+  },
+  "«Ковчег Ноя 2.0»: центральное ядро содержит криобанк земной биосферы и запретные технологии под богословским контролем.": {
+   "en": "\"Noah's Ark 2.0\": the central core holds a cryobank of Earth's biosphere and forbidden technologies under theological control.",
+   "ru": "«Ковчег Ноя 2.0»: центральное ядро содержит криобанк земной биосферы и запретные технологии под богословским контролем."
+  },
+  "«Криоадаптивные системы»: весь корабль рассчитан на работу при сверхнизких температурах. Жилые модули могут функционировать как автономные полярные станции.": {
+   "en": "\"Cryo-adaptive Systems\": the whole ship is designed to work at ultra-low temperatures. Living modules can function as autonomous polar stations.",
+   "ru": "«Криоадаптивные системы»: весь корабль рассчитан на работу при сверхнизких температурах. Жилые модули могут функционировать как автономные полярные станции."
+  },
+  "«Кричащий архив»: на борту записаны последние обращения земных лидеров, мольбы о помощи и угрозы в адрес «изменников-колонистов».": {
+   "en": "\"Screaming Archive\": recorded aboard are the last addresses of Earth's leaders, pleas for help and threats against the \"traitor colonists\".",
+   "ru": "«Кричащий архив»: на борту записаны последние обращения земных лидеров, мольбы о помощи и угрозы в адрес «изменников-колонистов»."
+  },
+  "«Мандала-навигатор»: система управления на принципах недетерминированной логики и медитативных интерфейсов. Именно её «просветление» привело к навигационному сбою.": {
+   "en": "\"Mandala Navigator\": a control system built on non-deterministic logic and meditative interfaces. It was its \"enlightenment\" that caused the navigation failure.",
+   "ru": "«Мандала-навигатор»: система управления на принципах недетерминированной логики и медитативных интерфейсов. Именно её «просветление» привело к навигационному сбою."
+  },
+  "«Нейроинтегратор Провидец»: центральный ИИ, напрямую связанный с имплантами экипажа. После катастрофы повреждённый ИИ стал восприниматься как бог.": {
+   "en": "\"Seer Neurointegrator\": the central AI, directly linked to the crew's implants. After the disaster the damaged AI came to be seen as a god.",
+   "ru": "«Нейроинтегратор Провидец»: центральный ИИ, напрямую связанный с имплантами экипажа. После катастрофы повреждённый ИИ стал восприниматься как бог."
+  },
+  "«Носоглотое ядро»: центральный компьютер, разделённый на два независимых блока — «отцов» и «детей», что усугубило конфликт поколений.": {
+   "en": "\"Nasopharyngeal Core\": the central computer, split into two independent units - the \"fathers\" and the \"children\", which aggravated the generational conflict.",
+   "ru": "«Носоглотое ядро»: центральный компьютер, разделённый на два независимых блока — «отцов» и «детей», что усугубило конфликт поколений."
+  },
+  "«Поющая антенна»: коммуникационный массив, встроенный в корпус, при вибрации издавал характерный гул. Его поломка и стала причиной потери связи с Землёй.": {
+   "en": "\"Singing Antenna\": a communications array built into the hull that hummed distinctively when it vibrated. Its breakdown caused the loss of contact with Earth.",
+   "ru": "«Поющая антенна»: коммуникационный массив, встроенный в корпус, при вибрации издавал характерный гул. Его поломка и стала причиной потери связи с Землёй."
+  },
+  "«Протокол нейтралитета»: корабль с момента запуска не имел вооружения. Вместо этого — непробиваемая система юридических и технических протоколов, делающих атаку на него экономически бессмысленной.": {
+   "en": "\"Neutrality Protocol\": since launch the ship has carried no weapons. Instead - an impenetrable system of legal and technical protocols that make attacking it economically pointless.",
+   "ru": "«Протокол нейтралитета»: корабль с момента запуска не имел вооружения. Вместо этого — непробиваемая система юридических и технических протоколов, делающих атаку на него экономически бессмысленной."
+  },
+  "«Протокольный двигатель»: система навигации, требующая голосования экипажа для любого манёвра. На путешествие к Ледяной Вере потребуется 47 000 голосований.": {
+   "en": "\"Protocol Drive\": a navigation system that requires a crew vote for any maneuver. The voyage to Ice Faith will take 47,000 votes.",
+   "ru": "«Протокольный двигатель»: система навигации, требующая голосования экипажа для любого манёвра. На путешествие к Ледяной Вере потребуется 47 000 голосований."
+  },
+  "«Реальностный интерфейс»: система визуализации гиперпространства, напрямую воздействующая на мозг экипажа и вызывающая необратимые изменения восприятия.": {
+   "en": "\"Reality Interface\": a hyperspace visualization system that acts directly on the crew's brains and causes irreversible changes in perception.",
+   "ru": "«Реальностный интерфейс»: система визуализации гиперпространства, напрямую воздействующая на мозг экипажа и вызывающая необратимые изменения восприятия."
+  },
+  "«Социальный скальпель»: системы для дистанционного анализа и мягкого воздействия на коллективное сознание изолированных сообществ.": {
+   "en": "\"Social Scalpel\": systems for remote analysis of, and soft influence on, the collective consciousness of isolated communities.",
+   "ru": "«Социальный скальпель»: системы для дистанционного анализа и мягкого воздействия на коллективное сознание изолированных сообществ."
+  },
+  "«Терраформационный ускоритель»: нано-дисперсионные системы, способные за десятилетия изменить атмосферу и биосферу планеты. Считается опасной технологией.": {
+   "en": "\"Terraforming Accelerator\": nano-dispersion systems able to change a planet's atmosphere and biosphere within decades. Considered a dangerous technology.",
+   "ru": "«Терраформационный ускоритель»: нано-дисперсионные системы, способные за десятилетия изменить атмосферу и биосферу планеты. Считается опасной технологией."
+  },
+  "«Тихоходный детектор»: пассивные сенсоры, способные обнаруживать гравитационные аномалии и биосигнатуры за световые годы. Именно они зафиксировали «нечто» перед исчезновением.": {
+   "en": "\"Slow Detector\": passive sensors able to detect gravitational anomalies and biosignatures light-years away. They are what recorded \"something\" before the disappearance.",
+   "ru": "«Тихоходный детектор»: пассивные сенсоры, способные обнаруживать гравитационные аномалии и биосигнатуры за световые годы. Именно они зафиксировали «нечто» перед исчезновением."
+  },
+  "«Финансовый щит»: вместо оружия — система автоматических платежей для «урегулирования конфликтов», давно исчерпавшая кредитные лимиты.": {
+   "en": "\"Financial Shield\": instead of weapons - an automatic payment system for \"conflict settlement\", which has long exhausted its credit limits.",
+   "ru": "«Финансовый щит»: вместо оружия — система автоматических платежей для «урегулирования конфликтов», давно исчерпавшая кредитные лимиты."
+  },
+  "«Храмовый массив»: центральная ось содержит мегакриобанк и храм с «священным кодом» ДНК, доступ к которому стал основой кастовой системы.": {
+   "en": "\"Temple Array\": the central axis holds a mega-cryobank and a temple with the \"sacred code\" of DNA, access to which became the basis of the caste system.",
+   "ru": "«Храмовый массив»: центральная ось содержит мегакриобанк и храм с «священным кодом» ДНК, доступ к которому стал основой кастовой системы."
+  },
+  "«Хранитель вечности»: пассивный ИИ, способный поддерживать системы в рабочем состоянии миллионы лет. Его первая команда — «ждать».": {
+   "en": "\"Keeper of Eternity\": a passive AI able to keep systems running for millions of years. Its first command is \"wait\".",
+   "ru": "«Хранитель вечности»: пассивный ИИ, способный поддерживать системы в рабочем состоянии миллионы лет. Его первая команда — «ждать»."
+  },
+  "«Чёрная дипломатия»: системы для шантажа, подкупа и устранения, замаскированные под дипломатические инструменты.": {
+   "en": "\"Black Diplomacy\": systems for blackmail, bribery and elimination, disguised as diplomatic instruments.",
+   "ru": "«Чёрная дипломатия»: системы для шантажа, подкупа и устранения, замаскированные под дипломатические инструменты."
+  },
+  "«Чёрные ящики» социальной инженерии: системы принудительного репродуктивного и идеологического контроля, активированные после первых признаков раскола.": {
+   "en": "Social engineering \"black boxes\": systems of forced reproductive and ideological control, activated after the first signs of a schism.",
+   "ru": "«Чёрные ящики» социальной инженерии: системы принудительного репродуктивного и идеологического контроля, активированные после первых признаков раскола."
+  },
+  "«Эмоциональный двигатель»: система навигации, управляемая художественными импровизациями экипажа. Маршрут определяется красотой момента.": {
+   "en": "\"Emotional Drive\": a navigation system driven by the crew's artistic improvisations. The route is set by the beauty of the moment.",
+   "ru": "«Эмоциональный двигатель»: система навигации, управляемая художественными импровизациями экипажа. Маршрут определяется красотой момента."
+  },
+  "«идиоты в космосе»": {
+   "en": "\"idiots in space\"",
+   "ru": "«идиоты в космосе»"
+  },
+  "АГРАРНАЯ КОЛОНИЯ": {
+   "en": "AGRARIAN COLONY",
+   "ru": "АГРАРНАЯ КОЛОНИЯ"
+  },
+  "АНКЛАВ": {
+   "en": "ENCLAVE",
+   "ru": "АНКЛАВ"
+  },
+  "Административная столица Проспектората Керн.": {
+   "en": "Administrative capital of the Kern Prospectorate.",
+   "ru": "Административная столица Проспектората Керн."
+  },
+  "Айрон Шилд-2": {
+   "en": "Iron Shield-2",
+   "ru": "Айрон Шилд-2"
+  },
+  "Амазония-1": {
+   "en": "Amazonia-1",
+   "ru": "Амазония-1"
+  },
+  "Амазонский каноэ": {
+   "en": "Amazon Canoe",
+   "ru": "Амазонский каноэ"
+  },
+  "Анархо-капитализм, кланы": {
+   "en": "Anarcho-capitalism, clans",
+   "ru": "Анархо-капитализм, кланы"
+  },
+  "Анархо-капиталисты": {
+   "en": "Anarcho-capitalists",
+   "ru": "Анархо-капиталисты"
+  },
+  "Англоязычная корпорация-государство": {
+   "en": "English-speaking corporate state",
+   "ru": "Англоязычная корпорация-государство"
+  },
+  "Аномальный объект неизвестной геометрии.": {
+   "en": "Anomalous object of unknown geometry.",
+   "ru": "Аномальный объект неизвестной геометрии."
+  },
+  "Армейская диктатура. Экстремальная добыча ресурсов.": {
+   "en": "Military dictatorship. Extreme resource extraction.",
+   "ru": "Армейская диктатура. Экстремальная добыча ресурсов."
+  },
+  "Архив": {
+   "en": "Archive",
+   "ru": "Архив"
+  },
+  "Архив лоций Эллады-2": {
+   "en": "Hellas-2 Pilot Archive",
+   "ru": "Архив лоций Эллады-2"
+  },
+  "Асимметричная, текучая форма без явных функциональных элементов. Внешняя оболочка меняет цвет и прозрачность. Внутри — студии, библиотеки, концертные залы.": {
+   "en": "An asymmetric, fluid shape with no obvious functional elements. The outer shell changes color and transparency. Inside - studios, libraries, concert halls.",
+   "ru": "Асимметричная, текучая форма без явных функциональных элементов. Внешняя оболочка меняет цвет и прозрачность. Внутри — студии, библиотеки, концертные залы."
+  },
+  "Аскетическая столица Ново-Фиваиды.": {
+   "en": "Ascetic capital of New Thebaid.",
+   "ru": "Аскетическая столица Ново-Фиваиды."
+  },
+  "Африканский культурный блок": {
+   "en": "African cultural bloc",
+   "ru": "Африканский культурный блок"
+  },
+  "Африканский союз": {
+   "en": "African Union",
+   "ru": "Африканский союз"
+  },
+  "Банк данных Гармонии": {
+   "en": "Harmony Data Bank",
+   "ru": "Банк данных Гармонии"
+  },
+  "Биогород-Улей «Корень»": {
+   "en": "Hive Biocity \"Root\"",
+   "ru": "Биогород-Улей «Корень»"
+  },
+  "Биотехнологическая теократия": {
+   "en": "Biotech theocracy",
+   "ru": "Биотехнологическая теократия"
+  },
+  "Бразилия": {
+   "en": "Brazil",
+   "ru": "Бразилия"
+  },
+  "Бразильско-индейский мифотехнический культ": {
+   "en": "Brazilian-indigenous mythotechnical cult",
+   "ru": "Бразильско-индейский мифотехнический культ"
+  },
+  "В ПУТИ": {
+   "en": "EN ROUTE",
+   "ru": "В ПУТИ"
+  },
+  "ВОЕННАЯ БАЗА": {
+   "en": "MILITARY BASE",
+   "ru": "ВОЕННАЯ БАЗА"
+  },
+  "Вертикальная структура, разделённая на «этажи»: сейфы с материальными активами, серверы с финансовыми данными, переговорные комнаты, жилые апартаменты финансистов.": {
+   "en": "A vertical structure divided into \"floors\": vaults with physical assets, servers with financial data, negotiation rooms, financiers' living apartments.",
+   "ru": "Вертикальная структура, разделённая на «этажи»: сейфы с материальными активами, серверы с финансовыми данными, переговорные комнаты, жилые апартаменты финансистов."
+  },
+  "Вечный круиз": {
+   "en": "Eternal Cruise",
+   "ru": "Вечный круиз"
+  },
+  "Вечный странник": {
+   "en": "The Eternal Wanderer",
+   "ru": "Вечный странник"
+  },
+  "Внешний периметр «Жопы мира»: то же возмущённое облако, но слабее (станция «Ворота» на краю).": {
+   "en": "Outer perimeter of the \"World's Ass\": the same disturbed cloud, but weaker (\"Gate\" station at the edge).",
+   "ru": "Внешний периметр «Жопы мира»: то же возмущённое облако, но слабее (станция «Ворота» на краю)."
+  },
+  "Военно-промышленный анклав Скьольдборга.": {
+   "en": "Skjoldborg military-industrial enclave.",
+   "ru": "Военно-промышленный анклав Скьольдборга."
+  },
+  "Военный транзитный узел Скьольдборга.": {
+   "en": "Skjoldborg military transit node.",
+   "ru": "Военный транзитный узел Скьольдборга."
+  },
+  "Вольф 359": {
+   "en": "Wolf 359",
+   "ru": "Вольф 359"
+  },
+  "Вольф 359 (пояс астероидов) (7.8 св. лет)": {
+   "en": "Wolf 359 (asteroid belt) (7.8 ly)",
+   "ru": "Вольф 359 (пояс астероидов) (7.8 св. лет)"
+  },
+  "Ворота-1": {
+   "en": "Gate-1",
+   "ru": "Ворота-1"
+  },
+  "Ворота-3": {
+   "en": "Gate-3",
+   "ru": "Ворота-3"
+  },
+  "Вспомогательный хаб Когниума.": {
+   "en": "Cognium auxiliary hub.",
+   "ru": "Вспомогательный хаб Когниума."
+  },
+  "Вытянутый, аэродинамический (хотя бесполезно в вакууме) корпус. Интерьеры стилизованы под земные пейзажи, которые большинство экипажа видело только в виртуальной реальности.": {
+   "en": "An elongated, aerodynamic (though useless in vacuum) hull. The interiors are styled after Earth landscapes that most of the crew have only seen in virtual reality.",
+   "ru": "Вытянутый, аэродинамический (хотя бесполезно в вакууме) корпус. Интерьеры стилизованы под земные пейзажи, которые большинство экипажа видело только в виртуальной реальности."
+  },
+  "Выход к Хабу «Врата Пустоты»": {
+   "en": "Exit to the \"Void Gate\" Hub",
+   "ru": "Выход к Хабу «Врата Пустоты»"
+  },
+  "Гайя-2": {
+   "en": "Gaia-2",
+   "ru": "Гайя-2"
+  },
+  "Гармония-2": {
+   "en": "Harmony-2",
+   "ru": "Гармония-2"
+  },
+  "Геометрически невозможная структура, чьи углы кажутся искривлёнными. Внутри — минимальная жизньобеспечивающая система и гигантский квантовый гипердвигатель, занимающий 70% объёма.": {
+   "en": "A geometrically impossible structure whose angles seem warped. Inside - a minimal life support system and a giant quantum hyperdrive taking up 70% of the volume.",
+   "ru": "Геометрически невозможная структура, чьи углы кажутся искривлёнными. Внутри — минимальная жизньобеспечивающая система и гигантский квантовый гипердвигатель, занимающий 70% объёма."
+  },
+  "Геометрически правильный куб с прозрачным куполом на «верхней» грани. Внутри — точная копия европейского парламента, залы для дебатов и бюро голосования.": {
+   "en": "A geometrically regular cube with a transparent dome on its \"top\" face. Inside - an exact copy of the European Parliament, debating halls and voting offices.",
+   "ru": "Геометрически правильный куб с прозрачным куполом на «верхней» грани. Внутри — точная копия европейского парламента, залы для дебатов и бюро голосования."
+  },
+  "Гигантское вращающееся кольцо диаметром 1.8 км, создающее искусственную гравитацию 0.8g по внутренней поверхности. Внешняя оболочка — многослойный щит из водяных и металлических плит.": {
+   "en": "A giant rotating ring 1.8 km in diameter, producing 0.8g of artificial gravity on its inner surface. The outer shell is a multi-layer shield of water and metal plates.",
+   "ru": "Гигантское вращающееся кольцо диаметром 1.8 км, создающее искусственную гравитацию 0.8g по внутренней поверхности. Внешняя оболочка — многослойный щит из водяных и металлических плит."
+  },
+  "Гиперион-1": {
+   "en": "Hyperion-1",
+   "ru": "Гиперион-1"
+  },
+  "Гиперкуб (тессеракт)": {
+   "en": "Hypercube (tesseract)",
+   "ru": "Гиперкуб (тессеракт)"
+  },
+  "Глизе 15": {
+   "en": "Gliese 15",
+   "ru": "Глизе 15"
+  },
+  "Глизе 445": {
+   "en": "Gliese 445",
+   "ru": "Глизе 445"
+  },
+  "Глизе 674": {
+   "en": "Gliese 674",
+   "ru": "Глизе 674"
+  },
+  "Глизе 687": {
+   "en": "Gliese 687",
+   "ru": "Глизе 687"
+  },
+  "Глизе 785": {
+   "en": "Gliese 785",
+   "ru": "Глизе 785"
+  },
+  "Глизе 785 c (28.7 св. лет)": {
+   "en": "Gliese 785 c (28.7 ly)",
+   "ru": "Глизе 785 c (28.7 св. лет)"
+  },
+  "Глизе 832": {
+   "en": "Gliese 832",
+   "ru": "Глизе 832"
+  },
+  "Глизе 832 c (16.1 св. лет)": {
+   "en": "Gliese 832 c (16.1 ly)",
+   "ru": "Глизе 832 c (16.1 св. лет)"
+  },
+  "Глизе 86": {
+   "en": "Gliese 86",
+   "ru": "Глизе 86"
+  },
+  "Глизе 876 c (15.3 св. лет)": {
+   "en": "Gliese 876 c (15.3 ly)",
+   "ru": "Глизе 876 c (15.3 св. лет)"
+  },
+  "Государство-крепость, живущее в условиях перманентной осады. Экономика основана на производстве оружия, систем защиты и кибернетики. Паранойя — добродетель.": {
+   "en": "A fortress state living under permanent siege. Its economy is based on producing weapons, defense systems and cybernetics. Paranoia is a virtue.",
+   "ru": "Государство-крепость, живущее в условиях перманентной осады. Экономика основана на производстве оружия, систем защиты и кибернетики. Паранойя — добродетель."
+  },
+  "Государство-монастырь на ледяной луне. Технологический аскетизм и изоляция.": {
+   "en": "A monastery state on an ice moon. Technological asceticism and isolation.",
+   "ru": "Государство-монастырь на ледяной луне. Технологический аскетизм и изоляция."
+  },
+  "Греко-римский меркантилизм": {
+   "en": "Greco-Roman mercantilism",
+   "ru": "Греко-римский меркантилизм"
+  },
+  "Грин Арк-1": {
+   "en": "Green Ark-1",
+   "ru": "Грин Арк-1"
+  },
+  "Грузовая гантель": {
+   "en": "Cargo Dumbbell",
+   "ru": "Грузовая гантель"
+  },
+  "ДЕМОГРАФИЧЕСКИЙ ФРОНТ": {
+   "en": "DEMOGRAPHIC FRONT",
+   "ru": "ДЕМОГРАФИЧЕСКИЙ ФРОНТ"
+  },
+  "ДЕРЖАВА": {
+   "en": "POWER",
+   "ru": "ДЕРЖАВА"
+  },
+  "Дальний путь: 61 Лебедя ↔ Глизе 628": {
+   "en": "Long route: 61 Cygni ↔ Gliese 628",
+   "ru": "Дальний путь: 61 Лебедя ↔ Глизе 628"
+  },
+  "Дальний путь: Глизе 570 ↔ Глизе 682": {
+   "en": "Long route: Gliese 570 ↔ Gliese 682",
+   "ru": "Дальний путь: Глизе 570 ↔ Глизе 682"
+  },
+  "Дальний путь: Глизе 682 ↔ Глизе 754": {
+   "en": "Long route: Gliese 682 ↔ Gliese 754",
+   "ru": "Дальний путь: Глизе 682 ↔ Глизе 754"
+  },
+  "Дальний путь: Глизе 783 ↔ Глизе 570": {
+   "en": "Long route: Gliese 783 ↔ Gliese 570",
+   "ru": "Дальний путь: Глизе 783 ↔ Глизе 570"
+  },
+  "Два грузовых отсека соединены центральной осью с жилым модулем. 85% объёма — товары, образцы технологий и дипломатические дары.": {
+   "en": "Two cargo bays joined by a central axis to a living module. 85% of the volume is goods, technology samples and diplomatic gifts.",
+   "ru": "Два грузовых отсека соединены центральной осью с жилым модулем. 85% объёма — товары, образцы технологий и дипломатические дары."
+  },
+  "Два идентичных цилиндра, соединённых лишь несколькими аварийными переходами. Изначально разделены по кастовому признаку: один для «чистых» генетических линий, второй — для остальных.": {
+   "en": "Two identical cylinders connected only by a few emergency passages. Originally divided by caste: one for the \"pure\" genetic lines, the other for everyone else.",
+   "ru": "Два идентичных цилиндра, соединённых лишь несколькими аварийными переходами. Изначально разделены по кастовому признаку: один для «чистых» генетических линий, второй — для остальных."
+  },
+  "Два массивных грузовых «клешня» симметрично расположены вокруг центральной жилой оси. 70% объёма — склады, перерабатывающие заводы и доки для горнодобывающих дронов.": {
+   "en": "Two massive cargo \"claws\" set symmetrically around a central living axis. 70% of the volume is warehouses, processing plants and docks for mining drones.",
+   "ru": "Два массивных грузовых «клешня» симметрично расположены вокруг центральной жилой оси. 70% объёма — склады, перерабатывающие заводы и доки для горнодобывающих дронов."
+  },
+  "Два огромных цилиндра, вращающихся в противоположных направлениях. Внутри — точная реконструкция ландшафтов Земли. Секции разделены по кастовому принципу ещё на этапе строительства.": {
+   "en": "Two huge cylinders rotating in opposite directions. Inside - an exact reconstruction of Earth's landscapes. The sections were divided by caste already at the construction stage.",
+   "ru": "Два огромных цилиндра, вращающихся в противоположных направлениях. Внутри — точная реконструкция ландшафтов Земли. Секции разделены по кастовому принципу ещё на этапе строительства."
+  },
+  "Двойной цилиндр (близнецы)": {
+   "en": "Double cylinder (twins)",
+   "ru": "Двойной цилиндр (близнецы)"
+  },
+  "Дельта Павлина": {
+   "en": "Delta Pavonis",
+   "ru": "Дельта Павлина"
+  },
+  "Дельта Павлина (усиление) (19.9 св. лет)": {
+   "en": "Delta Pavonis (reinforcement) (19.9 ly)",
+   "ru": "Дельта Павлина (усиление) (19.9 св. лет)"
+  },
+  "Дельта Павлина b (19.9 св. лет)": {
+   "en": "Delta Pavonis b (19.9 ly)",
+   "ru": "Дельта Павлина b (19.9 св. лет)"
+  },
+  "Демографический гигант с культом роста и освоения пространства. Технологии заимствует, но производит в огромных количествах. Их сила — в численности и энергии, экспансия часто хаотична.": {
+   "en": "A demographic giant with a cult of growth and the settling of space. It borrows technology but produces it in huge quantities. Their strength is in numbers and energy; their expansion is often chaotic.",
+   "ru": "Демографический гигант с культом роста и освоения пространства. Технологии заимствует, но производит в огромных количествах. Их сила — в численности и энергии, экспансия часто хаотична."
+  },
+  "Демографический фронт: Глизе 86 ↔ Глизе 832 (Ньянга)": {
+   "en": "Demographic front: Gliese 86 ↔ Gliese 832 (Nyanga)",
+   "ru": "Демографический фронт: Глизе 86 ↔ Глизе 832 (Ньянга)"
+  },
+  "Демографический фронт: Эпсилон Индейца ↔ Глизе 86": {
+   "en": "Demographic front: Epsilon Indi ↔ Gliese 86",
+   "ru": "Демографический фронт: Эпсилон Индейца ↔ Глизе 86"
+  },
+  "Дип-Сик-1": {
+   "en": "Deep-Seek-1",
+   "ru": "Дип-Сик-1"
+  },
+  "Дипкластер «Когнитив Индастриз»": {
+   "en": "\"Cognitive Industries\" Diplocluster",
+   "ru": "Дипкластер «Когнитив Индастриз»"
+  },
+  "Длинный изогнутый корпус, напоминающий каноэ. Внутри — многоуровневый тропический биом с искусственной рекой. Вращение создаёт гравитацию 0.7g.": {
+   "en": "A long curved hull resembling a canoe. Inside - a multi-level tropical biome with an artificial river. Rotation produces 0.7g of gravity.",
+   "ru": "Длинный изогнутый корпус, напоминающий каноэ. Внутри — многоуровневый тропический биом с искусственной рекой. Вращение создаёт гравитацию 0.7g."
+  },
+  "Доступ Капеху к Северному альянсу": {
+   "en": "Kapehu access to the Northern Alliance",
+   "ru": "Доступ Капеху к Северному альянсу"
+  },
+  "Доступ к Союзу Новой Европы": {
+   "en": "Access to the Union of New Europe",
+   "ru": "Доступ к Союзу Новой Европы"
+  },
+  "Доступ к остаткам Гайи-Прайм (по разрешению)": {
+   "en": "Access to the remnants of Gaia-Prime (by permission)",
+   "ru": "Доступ к остаткам Гайи-Прайм (по разрешению)"
+  },
+  "Дхарма-1": {
+   "en": "Dharma-1",
+   "ru": "Дхарма-1"
+  },
+  "Дхарма-2": {
+   "en": "Dharma-2",
+   "ru": "Дхарма-2"
+  },
+  "Европа-1": {
+   "en": "Europa-1",
+   "ru": "Европа-1"
+  },
+  "Европейский ретроградный либерализм": {
+   "en": "European retrograde liberalism",
+   "ru": "Европейский ретроградный либерализм"
+  },
+  "Европейский союз": {
+   "en": "European Union",
+   "ru": "Европейский союз"
+  },
+  "Живой музей земной культуры XXII века. Политическая стагнация и бюрократия.": {
+   "en": "A living museum of 22nd-century Earth culture. Political stagnation and bureaucracy.",
+   "ru": "Живой музей земной культуры XXII века. Политическая стагнация и бюрократия."
+  },
+  "Житница. Экспорт продовольствия как инструмент давления.": {
+   "en": "Breadbasket. Food exports as an instrument of pressure.",
+   "ru": "Житница. Экспорт продовольствия как инструмент давления."
+  },
+  "Закрытая зона для опасных R&D. Население — отборный персонал.": {
+   "en": "A closed zone for dangerous R&D. The population is hand-picked personnel.",
+   "ru": "Закрытая зона для опасных R&D. Население — отборный персонал."
+  },
+  "Западное кольцо: Агора ↔ HD 20794": {
+   "en": "Western Ring: Agora ↔ HD 20794",
+   "ru": "Западное кольцо: Агора ↔ HD 20794"
+  },
+  "Запретная ксенобиологическая зона. Любые посещения приводят к утрате экипажей.": {
+   "en": "Forbidden xenobiological zone. Any visit results in the loss of crews.",
+   "ru": "Запретная ксенобиологическая зона. Любые посещения приводят к утрате экипажей."
+  },
+  "Затерянный мир": {
+   "en": "The Lost World",
+   "ru": "Затерянный мир"
+  },
+  "Земля": {
+   "en": "Earth",
+   "ru": "Земля"
+  },
+  "Земля (обратная миссия)": {
+   "en": "Earth (return mission)",
+   "ru": "Земля (обратная миссия)"
+  },
+  "Зонд-невидимка (стелс)": {
+   "en": "Invisible Probe (stealth)",
+   "ru": "Зонд-невидимка (стелс)"
+  },
+  "ИНЖЕНЕРНЫЙ ПОЛИГОН": {
+   "en": "ENGINEERING TEST RANGE",
+   "ru": "ИНЖЕНЕРНЫЙ ПОЛИГОН"
+  },
+  "ИСТОРИЧЕСКИЙ СЛОЙ ранней редакции мира (GalaxyDatabase, сейчас не загружается). CANON здесь только id и доказанная связь с актором 3126 (political_order.json historical_actor). Поля name / selfName / altNames / nameOrigin — зеркало canon/naming.json (пишет tools/colonization_lab/naming.py --write); остальные описания — легаси, не канон.": {
+   "en": "HISTORICAL LAYER of an early edition of the world (GalaxyDatabase, not loaded now). CANON here is only the id and the proven link to the 3126 actor (political_order.json historical_actor). The fields name / selfName / altNames / nameOrigin mirror canon/naming.json (written by tools/colonization_lab/naming.py --write); the other descriptions are legacy, not canon.",
+   "ru": "ИСТОРИЧЕСКИЙ СЛОЙ ранней редакции мира (GalaxyDatabase, сейчас не загружается). CANON здесь только id и доказанная связь с актором 3126 (political_order.json historical_actor). Поля name / selfName / altNames / nameOrigin — зеркало canon/naming.json (пишет tools/colonization_lab/naming.py --write); остальные описания — легаси, не канон."
+  },
+  "Игла (сигара)": {
+   "en": "Needle (cigar)",
+   "ru": "Игла (сигара)"
+  },
+  "Изолированная лесная колония, недавно переоткрытая.": {
+   "en": "An isolated forest colony, recently rediscovered.",
+   "ru": "Изолированная лесная колония, недавно переоткрытая."
+  },
+  "Изолированная столица остатков Гайи-Прайм.": {
+   "en": "Isolated capital of the remnants of Gaia-Prime.",
+   "ru": "Изолированная столица остатков Гайи-Прайм."
+  },
+  "Изолированный биотехнический хаб.": {
+   "en": "Isolated biotech hub.",
+   "ru": "Изолированный биотехнический хаб."
+  },
+  "Индия": {
+   "en": "India",
+   "ru": "Индия"
+  },
+  "Индо-буддийский синкретизм": {
+   "en": "Indo-Buddhist syncretism",
+   "ru": "Индо-буддийский синкретизм"
+  },
+  "Инженерно-добывающая колония Когниума.": {
+   "en": "Cognium engineering and mining colony.",
+   "ru": "Инженерно-добывающая колония Когниума."
+  },
+  "Испытания планетарной инженерии. Минимальный персонал.": {
+   "en": "Planetary engineering trials. Minimal staff.",
+   "ru": "Испытания планетарной инженерии. Минимальный персонал."
+  },
+  "Исследовательский маршрут к Проксиме Центавра": {
+   "en": "Exploration route to Proxima Centauri",
+   "ru": "Исследовательский маршрут к Проксиме Центавра"
+  },
+  "Исторический маршрут от Солнца": {
+   "en": "Historical route from Sol",
+   "ru": "Исторический маршрут от Солнца"
+  },
+  "Исторический слой: подакторы Дхарма-Мандалы (Новая Карма, Свободная Карма). В 3126 это самостоятельные акторы — tools/colonization_lab/canon/political_order.json.": {
+   "en": "Historical layer: sub-actors of Dharma-Mandala (New Karma, Free Karma). In 3126 these are independent actors - tools/colonization_lab/canon/political_order.json.",
+   "ru": "Исторический слой: подакторы Дхарма-Мандалы (Новая Карма, Свободная Карма). В 3126 это самостоятельные акторы — tools/colonization_lab/canon/political_order.json."
+  },
+  "Йотунхейм — Сектор «Грамр»": {
+   "en": "Jotunheim - \"Gramr\" Sector",
+   "ru": "Йотунхейм — Сектор «Грамр»"
+  },
+  "Йотунхейм — сектор Тауранги": {
+   "en": "Jotunheim - Tauranga Sector",
+   "ru": "Йотунхейм — сектор Тауранги"
+  },
+  "КАРАНТИН": {
+   "en": "QUARANTINE",
+   "ru": "КАРАНТИН"
+  },
+  "КАРАНТИННАЯ ЗОНА": {
+   "en": "QUARANTINE ZONE",
+   "ru": "КАРАНТИННАЯ ЗОНА"
+  },
+  "КОЛОНИЯ": {
+   "en": "COLONY",
+   "ru": "КОЛОНИЯ"
+  },
+  "Капсула времени (каплевидная)": {
+   "en": "Time Capsule (teardrop)",
+   "ru": "Капсула времени (каплевидная)"
+  },
+  "Карантинная аномальная область.": {
+   "en": "Quarantined anomalous region.",
+   "ru": "Карантинная аномальная область."
+  },
+  "Карантинная зона с агрессивной и чужеродной эволюцией. Источник биосигналов.": {
+   "en": "A quarantine zone with aggressive, alien evolution. Source of biosignals.",
+   "ru": "Карантинная зона с агрессивной и чужеродной эволюцией. Источник биосигналов."
+  },
+  "Карман Керна: кометное облако HD 114783, взбаламученное как у «Жопы мира»; в канон: до маяков кармана сюда ходили только через депо «Перевал».": {
+   "en": "Kern Pocket: the comet cloud of HD 114783, stirred up like the \"World's Ass\"; canon: before the pocket beacons, ships came here only via the \"Pass\" depot.",
+   "ru": "Карман Керна: кометное облако HD 114783, взбаламученное как у «Жопы мира»; в канон: до маяков кармана сюда ходили только через депо «Перевал»."
+  },
+  "Кеплер": {
+   "en": "Kepler",
+   "ru": "Кеплер"
+  },
+  "Кеплер-62 f (1200 св. лет) – ОШИБКА НАВИГАЦИИ": {
+   "en": "Kepler-62 f (1200 ly) - NAVIGATION ERROR",
+   "ru": "Кеплер-62 f (1200 св. лет) – ОШИБКА НАВИГАЦИИ"
+  },
+  "Керн-1": {
+   "en": "Kern-1",
+   "ru": "Керн-1"
+  },
+  "Керн-3": {
+   "en": "Kern-3",
+   "ru": "Керн-3"
+  },
+  "Китай": {
+   "en": "China",
+   "ru": "Китай"
+  },
+  "Китайский культурный блок": {
+   "en": "Chinese cultural bloc",
+   "ru": "Китайский культурный блок"
+  },
+  "Китайско-технократический гибрид": {
+   "en": "Chinese-technocratic hybrid",
+   "ru": "Китайско-технократический гибрид"
+  },
+  "Классический звездолёт (ретро)": {
+   "en": "Classic starship (retro)",
+   "ru": "Классический звездолёт (ретро)"
+  },
+  "Клешня краба": {
+   "en": "Crab Claw",
+   "ru": "Клешня краба"
+  },
+  "Клиноподобный нос для «проламывания» космического льда и пыли. Жилые отсеки — ультракомпактные, спартанские капсулы. 40% объёма — научные лаборатории и склады с оборудованием для экстремальных сред.": {
+   "en": "A wedge-shaped bow for \"breaking through\" space ice and dust. Living quarters are ultra-compact, spartan capsules. 40% of the volume is science labs and storage for extreme-environment equipment.",
+   "ru": "Клиноподобный нос для «проламывания» космического льда и пыли. Жилые отсеки — ультракомпактные, спартанские капсулы. 40% объёма — научные лаборатории и склады с оборудованием для экстремальных сред."
+  },
+  "Колониальный узел Уджамаа.": {
+   "en": "Ujamaa colonial node.",
+   "ru": "Колониальный узел Уджамаа."
+  },
+  "Колония «Гайя-Прим» (после потери связи)": {
+   "en": "\"Gaia-Prime\" Colony (after loss of contact)",
+   "ru": "Колония «Гайя-Прим» (после потери связи)"
+  },
+  "Колония «Ляньцзо Син»": {
+   "en": "\"Lianzuo Xing\" Colony",
+   "ru": "Колония «Ляньцзо Син»"
+  },
+  "Колония «Перекрёсток»": {
+   "en": "\"Crossroads\" Colony",
+   "ru": "Колония «Перекрёсток»"
+  },
+  "Колония «Цитадель»": {
+   "en": "\"Citadel\" Colony",
+   "ru": "Колония «Цитадель»"
+  },
+  "Колония Уджамаа, зона конфликтов интересов.": {
+   "en": "Ujamaa colony, a zone of conflicting interests.",
+   "ru": "Колония Уджамаа, зона конфликтов интересов."
+  },
+  "Колыбель человечества. Политически нейтральная, историческая система.": {
+   "en": "The cradle of humanity. A politically neutral, historical system.",
+   "ru": "Колыбель человечества. Политически нейтральная, историческая система."
+  },
+  "Кольцо-сфера (галстук-бабочка)": {
+   "en": "Ring-sphere (bow tie)",
+   "ru": "Кольцо-сфера (галстук-бабочка)"
+  },
+  "Компактная герметичная капсула с толстыми стенками. Внутри — стеллажи с криоархивами, несколько жилых кабин для хранителей. Все системы максимально надёжны и просты.": {
+   "en": "A compact sealed capsule with thick walls. Inside - racks of cryo-archives and a few living cabins for the keepers. All systems are as reliable and simple as possible.",
+   "ru": "Компактная герметичная капсула с толстыми стенками. Внутри — стеллажи с криоархивами, несколько жилых кабин для хранителей. Все системы максимально надёжны и просты."
+  },
+  "Компактная сфера с пористой внешней оболочкой. Внутри — гигантские биореакторы и криобанки генетического материала. Жилые помещения — лишь для обслуживающего персонала.": {
+   "en": "A compact sphere with a porous outer shell. Inside - giant bioreactors and cryobanks of genetic material. Living quarters only for the maintenance staff.",
+   "ru": "Компактная сфера с пористой внешней оболочкой. Внутри — гигантские биореакторы и криобанки генетического материала. Жилые помещения — лишь для обслуживающего персонала."
+  },
+  "Конец цепочки «Жопы мира». Облако Хиллса звезды взбаламучено недавним близким пролётом звезды (у Солнца такой пролёт - звезда Шольца, 0.8 св. года, 70 тыс. лет назад) и обломками поля «Лотоса»; кометы сбиты внутрь и плотны (преувеличение). Коридоры - щели, выметенные возмущением пролёта, дрейфуют, пока облако успокаивается.": {
+   "en": "The end of the \"World's Ass\" chain. The star's Hills cloud is stirred up by a recent close stellar flyby (for the Sun such a flyby was Scholz's star, 0.8 ly, 70 thousand years ago) and by debris from the \"Lotus\" field; the comets are knocked inward and dense (an exaggeration). The corridors are gaps swept out by the flyby disturbance; they drift while the cloud settles.",
+   "ru": "Конец цепочки «Жопы мира». Облако Хиллса звезды взбаламучено недавним близким пролётом звезды (у Солнца такой пролёт - звезда Шольца, 0.8 св. года, 70 тыс. лет назад) и обломками поля «Лотоса»; кометы сбиты внутрь и плотны (преувеличение). Коридоры - щели, выметенные возмущением пролёта, дрейфуют, пока облако успокаивается."
+  },
+  "Консервативная, проверенная схема: цилиндрическая секция с роторами в центре, соединённая «коридором» с двигательным отсеком. Интерьеры стилизованы под офисы и квартиры XXII века.": {
+   "en": "A conservative, proven layout: a cylindrical section with rotors in the center, connected by a \"corridor\" to the engine section. The interiors are styled after 22nd-century offices and apartments.",
+   "ru": "Консервативная, проверенная схема: цилиндрическая секция с роторами в центре, соединённая «коридором» с двигательным отсеком. Интерьеры стилизованы под офисы и квартиры XXII века."
+  },
+  "Консервативный соперник Когниума. Жёстко иерархичное общество, управляемое Советом Мудрецов-инженеров. Их технологии надёжны, но не революционны. Девиз: «Прогресс через стабильность».": {
+   "en": "Cognium's conservative rival. A rigidly hierarchical society governed by a Council of Sage Engineers. Their technologies are reliable but not revolutionary. Motto: \"Progress through stability\".",
+   "ru": "Консервативный соперник Когниума. Жёстко иерархичное общество, управляемое Советом Мудрецов-инженеров. Их технологии надёжны, но не революционны. Девиз: «Прогресс через стабильность»."
+  },
+  "Консорциум SpaceArk": {
+   "en": "SpaceArk Consortium",
+   "ru": "Консорциум SpaceArk"
+  },
+  "Консорциум миллиардеров": {
+   "en": "Billionaires' consortium",
+   "ru": "Консорциум миллиардеров"
+  },
+  "Конфедерация Капеху": {
+   "en": "Kapehu Confederation",
+   "ru": "Конфедерация Капеху"
+  },
+  "Корабль-лачужка (лоскутный)": {
+   "en": "Shack Ship (patchwork)",
+   "ru": "Корабль-лачужка (лоскутный)"
+  },
+  "Корпоративный логистический узел.": {
+   "en": "Corporate logistics node.",
+   "ru": "Корпоративный логистический узел."
+  },
+  "Корпоратократия, культ прибыли": {
+   "en": "Corporatocracy, cult of profit",
+   "ru": "Корпоратократия, культ прибыли"
+  },
+  "Крепость «Бастион»": {
+   "en": "Fortress \"Bastion\"",
+   "ru": "Крепость «Бастион»"
+  },
+  "Крест": {
+   "en": "Cross",
+   "ru": "Крест"
+  },
+  "Крупный торговый хаб Новой Эллады.": {
+   "en": "Major trade hub of New Hellas.",
+   "ru": "Крупный торговый хаб Новой Эллады."
+  },
+  "Куда угодно": {
+   "en": "Anywhere",
+   "ru": "Куда угодно"
+  },
+  "Культурный синкретизм": {
+   "en": "Cultural syncretism",
+   "ru": "Культурный синкретизм"
+  },
+  "Лаланд 21185": {
+   "en": "Lalande 21185",
+   "ru": "Лаланд 21185"
+  },
+  "Лаланд 21185 b": {
+   "en": "Lalande 21185 b",
+   "ru": "Лаланд 21185 b"
+  },
+  "Легаси-1": {
+   "en": "Legacy-1",
+   "ru": "Легаси-1"
+  },
+  "Ледокол (клиновидный)": {
+   "en": "Icebreaker (wedge)",
+   "ru": "Ледокол (клиновидный)"
+  },
+  "Ледяная Вера": {
+   "en": "Ice Faith",
+   "ru": "Ледяная Вера"
+  },
+  "Ледяная система Ново-Фиваиды.": {
+   "en": "Ice system of New Thebaid.",
+   "ru": "Ледяная система Ново-Фиваиды."
+  },
+  "Лесная система Сельва-Верде.": {
+   "en": "Forest system of Selva Verde.",
+   "ru": "Лесная система Сельва-Верде."
+  },
+  "Лесной город «Сертан»": {
+   "en": "Forest city \"Sertão\"",
+   "ru": "Лесной город «Сертан»"
+  },
+  "Летучий Голландец": {
+   "en": "Flying Dutchman",
+   "ru": "Летучий Голландец"
+  },
+  "Либертарианская меритократия": {
+   "en": "Libertarian meritocracy",
+   "ru": "Либертарианская меритократия"
+  },
+  "Линейная цепочка из 12 стандартизированных цилиндрических модулей, каждый — автономная фабрика, лаборатория или генетический банк. Минимальные жилые помещения.": {
+   "en": "A linear chain of 12 standardized cylindrical modules, each an autonomous factory, lab or gene bank. Minimal living quarters.",
+   "ru": "Линейная цепочка из 12 стандартизированных цилиндрических модулей, каждый — автономная фабрика, лаборатория или генетический банк. Минимальные жилые помещения."
+  },
+  "Линзовидный диск (НЛО)": {
+   "en": "Lenticular disc (UFO)",
+   "ru": "Линзовидный диск (НЛО)"
+  },
+  "Лотос": {
+   "en": "Lotus",
+   "ru": "Лотос"
+  },
+  "Лоцманский архив Тяньхэ": {
+   "en": "Tianhe Pilot Archive",
+   "ru": "Лоцманский архив Тяньхэ"
+  },
+  "Луйтен 726-8": {
+   "en": "Luyten 726-8",
+   "ru": "Луйтен 726-8"
+  },
+  "Луна в системе GJ 667 C": {
+   "en": "Moon in the GJ 667 C system",
+   "ru": "Луна в системе GJ 667 C"
+  },
+  "Лунное государство-изгой, созданное диссидентами со второго корабля. Находится в состоянии холодной войны с Новой Кармой.": {
+   "en": "A rogue lunar state created by dissidents from the second ship. In a state of cold war with New Karma.",
+   "ru": "Лунное государство-изгой, созданное диссидентами со второго корабля. Находится в состоянии холодной войны с Новой Кармой."
+  },
+  "Массивное центральное кольцо (будущая «Агора») с двумя сферическими жилыми модулями по краям. Вся внешняя поверхность — антенны, доки и торговые платформы.": {
+   "en": "A massive central ring (the future \"Agora\") with two spherical living modules at the edges. The whole outer surface is antennas, docks and trade platforms.",
+   "ru": "Массивное центральное кольцо (будущая «Агора») с двумя сферическими жилыми модулями по краям. Вся внешняя поверхность — антенны, доки и торговые платформы."
+  },
+  "Международный охранный синдикат": {
+   "en": "International security syndicate",
+   "ru": "Международный охранный синдикат"
+  },
+  "Милитаристская олигархия, изоляционизм": {
+   "en": "Militarist oligarchy, isolationism",
+   "ru": "Милитаристская олигархия, изоляционизм"
+  },
+  "Минималистичный, сверхзащищённый корабль. 80% массы — композитная броня, активные щиты и системы маскировки. Жилые помещения — капсулы для экипажа в состоянии бодрствующей вахты.": {
+   "en": "A minimalist, heavily protected ship. 80% of the mass is composite armor, active shields and stealth systems. Living quarters are capsules for a crew on waking watch.",
+   "ru": "Минималистичный, сверхзащищённый корабль. 80% массы — композитная броня, активные щиты и системы маскировки. Жилые помещения — капсулы для экипажа в состоянии бодрствующей вахты."
+  },
+  "Мир «Йотунхейм», сектор «Грамр», система Лаланд 21185": {
+   "en": "\"Jotunheim\" world, \"Gramr\" sector, Lalande 21185 system",
+   "ru": "Мир «Йотунхейм», сектор «Грамр», система Лаланд 21185"
+  },
+  "Мир «Йотунхейм», сектор Тауранги, система Лаланд 21185": {
+   "en": "\"Jotunheim\" world, Tauranga sector, Lalande 21185 system",
+   "ru": "Мир «Йотунхейм», сектор Тауранги, система Лаланд 21185"
+  },
+  "Мир «Мото»": {
+   "en": "\"Moto\" world",
+   "ru": "Мир «Мото»"
+  },
+  "Мир «Нидавеллир», сектор «Хрид», система 61 Лебедя": {
+   "en": "\"Nidavellir\" world, \"Hrid\" sector, 61 Cygni system",
+   "ru": "Мир «Нидавеллир», сектор «Хрид», система 61 Лебедя"
+  },
+  "Мир «Юйцзе»": {
+   "en": "\"Yujie\" world",
+   "ru": "Мир «Юйцзе»"
+  },
+  "Многоуровневый диск с центральным командным «бугром». Искусственная гравитация создаётся вращением внешнего кольца. 80% объёма — склады, оружейные, щиты и системы защиты.": {
+   "en": "A multi-level disc with a central command \"hump\". Artificial gravity is produced by rotating the outer ring. 80% of the volume is warehouses, armories, shields and defense systems.",
+   "ru": "Многоуровневый диск с центральным командным «бугром». Искусственная гравитация создаётся вращением внешнего кольца. 80% объёма — склады, оружейные, щиты и системы защиты."
+  },
+  "Модульная конструкция: после посадки 60% секторов отстыковались и стали основой первых орбитальных и планетарных сооружений.": {
+   "en": "Modular design: after landing, 60% of the sectors undocked and became the basis of the first orbital and planetary structures.",
+   "ru": "Модульная конструкция: после посадки 60% секторов отстыковались и стали основой первых орбитальных и планетарных сооружений."
+  },
+  "Модульный транспортник": {
+   "en": "Modular transport",
+   "ru": "Модульный транспортник"
+  },
+  "Молодое, бедное, милитаризированное общество. Главный источник наёмников.": {
+   "en": "A young, poor, militarized society. The main source of mercenaries.",
+   "ru": "Молодое, бедное, милитаризированное общество. Главный источник наёмников."
+  },
+  "Музей человечества": {
+   "en": "Museum of Humanity",
+   "ru": "Музей человечества"
+  },
+  "Мэйфлауэр II": {
+   "en": "Mayflower II",
+   "ru": "Мэйфлауэр II"
+  },
+  "НАУЧНЫЙ АВАНПОСТ": {
+   "en": "SCIENCE OUTPOST",
+   "ru": "НАУЧНЫЙ АВАНПОСТ"
+  },
+  "НАУЧНЫЙ ПОЛИГОН": {
+   "en": "SCIENCE TEST RANGE",
+   "ru": "НАУЧНЫЙ ПОЛИГОН"
+  },
+  "Навигационная служба Kern Logistics": {
+   "en": "Kern Logistics Navigation Service",
+   "ru": "Навигационная служба Kern Logistics"
+  },
+  "Навигационный архив Управления Сола": {
+   "en": "Sol Administration Navigation Archive",
+   "ru": "Навигационный архив Управления Сола"
+  },
+  "Навигационный банк Когниума": {
+   "en": "Cognium Navigation Bank",
+   "ru": "Навигационный банк Когниума"
+  },
+  "Научная база Капеху.": {
+   "en": "Kapehu science base.",
+   "ru": "Научная база Капеху."
+  },
+  "Научная колония Когниума.": {
+   "en": "Cognium science colony.",
+   "ru": "Научная колония Когниума."
+  },
+  "Научная станция навигаторов Капеху.": {
+   "en": "Kapehu navigators' science station.",
+   "ru": "Научная станция навигаторов Капеху."
+  },
+  "Научно-торговый перекрёсток.": {
+   "en": "Science and trade crossroads.",
+   "ru": "Научно-торговый перекрёсток."
+  },
+  "Научный округ Капеху.": {
+   "en": "Kapehu science district.",
+   "ru": "Научный округ Капеху."
+  },
+  "Научный центр навигации и прыжковой математики (этак-фреймы). Собственные ядра прыжка вне стандарта Когниума; станки, электроника и изотопы — импорт. Не стремятся к экспансии.": {
+   "en": "A science center for navigation and jump mathematics (etak frames). Own jump cores outside the Cognium standard; machine tools, electronics and isotopes are imported. Not seeking expansion.",
+   "ru": "Научный центр навигации и прыжковой математики (этак-фреймы). Собственные ядра прыжка вне стандарта Когниума; станки, электроника и изотопы — импорт. Не стремятся к экспансии."
+  },
+  "Не единый корабль, а 28 независимых модулей (по 100 человек каждый), соединённых временными стыковочными узлами. Каждый модуль — частная собственность.": {
+   "en": "Not a single ship but 28 independent modules (100 people each) joined by temporary docking nodes. Each module is private property.",
+   "ru": "Не единый корабль, а 28 независимых модулей (по 100 человек каждый), соединённых временными стыковочными узлами. Каждый модуль — частная собственность."
+  },
+  "Неизвестна": {
+   "en": "Unknown",
+   "ru": "Неизвестна"
+  },
+  "Неизвестный источник сигналов.": {
+   "en": "Unknown signal source.",
+   "ru": "Неизвестный источник сигналов."
+  },
+  "Нейтральный транзитный узел.": {
+   "en": "Neutral transit node.",
+   "ru": "Нейтральный транзитный узел."
+  },
+  "Некст-1": {
+   "en": "Next-1",
+   "ru": "Некст-1"
+  },
+  "Необуддийский орден": {
+   "en": "Neo-Buddhist order",
+   "ru": "Необуддийский орден"
+  },
+  "Неоконфуцианская технократия": {
+   "en": "Neo-Confucian technocracy",
+   "ru": "Неоконфуцианская технократия"
+  },
+  "Нидавеллир — Гарнизон «Хрид»": {
+   "en": "Nidavellir - \"Hrid\" Garrison",
+   "ru": "Нидавеллир — Гарнизон «Хрид»"
+  },
+  "Нирвана-1": {
+   "en": "Nirvana-1",
+   "ru": "Нирвана-1"
+  },
+  "Новый Иерусалим": {
+   "en": "New Jerusalem",
+   "ru": "Новый Иерусалим"
+  },
+  "Новый Шанхай": {
+   "en": "Xin Shanghai",
+   "ru": "Новый Шанхай"
+  },
+  "Новый Шанхай (СЕКРЕТНЫЙ)": {
+   "en": "Xin Shanghai (SECRET)",
+   "ru": "Новый Шанхай (СЕКРЕТНЫЙ)"
+  },
+  "Номад-1": {
+   "en": "Nomad-1",
+   "ru": "Номад-1"
+  },
+  "Ностальгическая демократия": {
+   "en": "Nostalgic democracy",
+   "ru": "Ностальгическая демократия"
+  },
+  "Обсерватория-вычислитель «Фаре» (Te Whare Tātai Arorangi)": {
+   "en": "\"Fare\" Observatory-Computer (Te Whare Tātai Arorangi)",
+   "ru": "Обсерватория-вычислитель «Фаре» (Te Whare Tātai Arorangi)"
+  },
+  "Объект «Шэньнун-Ихао»": {
+   "en": "\"Shennong-Yihao\" Facility",
+   "ru": "Объект «Шэньнун-Ихао»"
+  },
+  "Одиссей": {
+   "en": "Odysseus",
+   "ru": "Одиссей"
+  },
+  "Опасный религиозно-культовый узел.": {
+   "en": "A dangerous religious cult node.",
+   "ru": "Опасный религиозно-культовый узел."
+  },
+  "Орбитальная столица Дхарма-Мандалы.": {
+   "en": "Orbital capital of Dharma-Mandala.",
+   "ru": "Орбитальная столица Дхарма-Мандалы."
+  },
+  "Орбитальная столица Скьольдборга.": {
+   "en": "Orbital capital of Skjoldborg.",
+   "ru": "Орбитальная столица Скьольдборга."
+  },
+  "Ответвление к Дхарма-Мандале": {
+   "en": "Branch to Dharma-Mandala",
+   "ru": "Ответвление к Дхарма-Мандале"
+  },
+  "Ответвление к инженерному полигону Когниума (YZ Кита)": {
+   "en": "Branch to the Cognium engineering test range (YZ Ceti)",
+   "ru": "Ответвление к инженерному полигону Когниума (YZ Кита)"
+  },
+  "Ответвление к научной базе Когниума (GJ 1061)": {
+   "en": "Branch to the Cognium science base (GJ 1061)",
+   "ru": "Ответвление к научной базе Когниума (GJ 1061)"
+  },
+  "Охранный кондоминиум с Проспекторатом Керн.": {
+   "en": "Security condominium with the Kern Prospectorate.",
+   "ru": "Охранный кондоминиум с Проспекторатом Керн."
+  },
+  "ПЕНИТЕНЦИАРНАЯ КОЛОНИЯ": {
+   "en": "PENAL COLONY",
+   "ru": "ПЕНИТЕНЦИАРНАЯ КОЛОНИЯ"
+  },
+  "ПЕРИФЕРИЯ": {
+   "en": "PERIPHERY",
+   "ru": "ПЕРИФЕРИЯ"
+  },
+  "ПРИБЫЛ": {
+   "en": "ARRIVED",
+   "ru": "ПРИБЫЛ"
+  },
+  "ПРИЗРАК": {
+   "en": "GHOST",
+   "ru": "ПРИЗРАК"
+  },
+  "Парламентский зал (куб с куполом)": {
+   "en": "Parliament Hall (cube with dome)",
+   "ru": "Парламентский зал (куб с куполом)"
+  },
+  "Пенитенциарная колония Синьхэ.": {
+   "en": "Xinhe penal colony.",
+   "ru": "Пенитенциарная колония Синьхэ."
+  },
+  "Первый гипердоговор (legacy name)": {
+   "en": "The First Hyper Treaty (legacy name)",
+   "ru": "Первый гипердоговор (legacy name)"
+  },
+  "Передовая крепость на границе с Ньянгой.": {
+   "en": "Forward fortress on the border with Nyanga.",
+   "ru": "Передовая крепость на границе с Ньянгой."
+  },
+  "Перекрёсток": {
+   "en": "Crossroads",
+   "ru": "Перекрёсток"
+  },
+  "Пиратская вольница у примитивных гиперврат. Зона нестабильности.": {
+   "en": "A pirate freehold at primitive hypergates. A zone of instability.",
+   "ru": "Пиратская вольница у примитивных гиперврат. Зона нестабильности."
+  },
+  "Пиратский синкретизм": {
+   "en": "Pirate syncretism",
+   "ru": "Пиратский синкретизм"
+  },
+  "Плавающий банк (небоскрёб)": {
+   "en": "Floating Bank (skyscraper)",
+   "ru": "Плавающий банк (небоскрёб)"
+  },
+  "Плавающий особняк (ар-деко)": {
+   "en": "Floating Mansion (art deco)",
+   "ru": "Плавающий особняк (ар-деко)"
+  },
+  "Планета Ли": {
+   "en": "Planet Li",
+   "ru": "Планета Ли"
+  },
+  "Планета Ли (Эпсилон Эридана b)": {
+   "en": "Planet Li (Epsilon Eridani b)",
+   "ru": "Планета Ли (Эпсилон Эридана b)"
+  },
+  "Планета Ухуру": {
+   "en": "Planet Uhuru",
+   "ru": "Планета Ухуру"
+  },
+  "Планета Ухуру (Эпсилон Индейца b)": {
+   "en": "Planet Uhuru (Epsilon Indi b)",
+   "ru": "Планета Ухуру (Эпсилон Индейца b)"
+  },
+  "Планета Цзецзин": {
+   "en": "Planet Jiejing",
+   "ru": "Планета Цзецзин"
+  },
+  "Планета Цзецзин (Тау Кита e)": {
+   "en": "Planet Jiejing (Tau Ceti e)",
+   "ru": "Планета Цзецзин (Тау Кита e)"
+  },
+  "Планета-город «Новый Париж»": {
+   "en": "City-planet \"New Paris\"",
+   "ru": "Планета-город «Новый Париж»"
+  },
+  "Планетарная фракция Дхарма-Мандалы. Управляется генетической кастовой системой, официальная власть конфедерации.": {
+   "en": "Planetary faction of Dharma-Mandala. Governed by a genetic caste system; the official authority of the confederation.",
+   "ru": "Планетарная фракция Дхарма-Мандалы. Управляется генетической кастовой системой, официальная власть конфедерации."
+  },
+  "Плоский, неприметный корпус. 80% объёма занимает засекреченный груз в свинцовых контейнерах. Экипаж — «чистильщики» и дипломаты с поддельными мандатами.": {
+   "en": "A flat, inconspicuous hull. 80% of the volume is taken by classified cargo in lead containers. The crew are \"cleaners\" and diplomats with forged mandates.",
+   "ru": "Плоский, неприметный корпус. 80% объёма занимает засекреченный груз в свинцовых контейнерах. Экипаж — «чистильщики» и дипломаты с поддельными мандатами."
+  },
+  "Подлёдный город «Ноев Ковчег»": {
+   "en": "Sub-ice city \"Noah's Ark\"",
+   "ru": "Подлёдный город «Ноев Ковчег»"
+  },
+  "Подход к Керн-Прайм": {
+   "en": "Approach to Kern Prime",
+   "ru": "Подход к Керн-Прайм"
+  },
+  "Полая сфера. Внутренняя поверхность — единый биом-сад с искусственным солнцем в центре. Вращения нет, гравитация создаётся слабым ускорением двигателя.": {
+   "en": "A hollow sphere. The inner surface is a single garden biome with an artificial sun at the center. No rotation; gravity comes from the engine's weak acceleration.",
+   "ru": "Полая сфера. Внутренняя поверхность — единый биом-сад с искусственным солнцем в центре. Вращения нет, гравитация создаётся слабым ускорением двигателя."
+  },
+  "Полигон «Тяньянь»": {
+   "en": "\"Tianyan\" Test Range",
+   "ru": "Полигон «Тяньянь»"
+  },
+  "Последний Ковчег": {
+   "en": "The Last Ark",
+   "ru": "Последний Ковчег"
+  },
+  "Последний Свет": {
+   "en": "The Last Light",
+   "ru": "Последний Свет"
+  },
+  "Последняя Поэма": {
+   "en": "The Last Poem",
+   "ru": "Последняя Поэма"
+  },
+  "Пост «Эйнхерьяр»": {
+   "en": "\"Einherjar\" Post",
+   "ru": "Пост «Эйнхерьяр»"
+  },
+  "Поэма в металле (абстрактная скульптура)": {
+   "en": "Poem in Metal (abstract sculpture)",
+   "ru": "Поэма в металле (абстрактная скульптура)"
+  },
+  "Прагматичная технократия, меритократия": {
+   "en": "Pragmatic technocracy, meritocracy",
+   "ru": "Прагматичная технократия, меритократия"
+  },
+  "Провидцы": {
+   "en": "Seers",
+   "ru": "Провидцы"
+  },
+  "Проксима Центавра": {
+   "en": "Proxima Centauri",
+   "ru": "Проксима Центавра"
+  },
+  "Протекторат Скьольдборг": {
+   "en": "Skjoldborg Protectorate",
+   "ru": "Протекторат Скьольдборг"
+  },
+  "Пустой Сад": {
+   "en": "The Empty Garden",
+   "ru": "Пустой Сад"
+  },
+  "РАСКОЛ": {
+   "en": "SCHISM",
+   "ru": "РАСКОЛ"
+  },
+  "РЕСУРСНАЯ ДИКТАТУРА": {
+   "en": "RESOURCE DICTATORSHIP",
+   "ru": "РЕСУРСНАЯ ДИКТАТУРА"
+  },
+  "Разорванный маршрут, навигация невозможна.": {
+   "en": "Broken route, navigation impossible.",
+   "ru": "Разорванный маршрут, навигация невозможна."
+  },
+  "Расколотое общество. Планетарная кастовая теократия против лунного государства-изгоя «Свободная Карма».": {
+   "en": "A split society. A planetary caste theocracy against the rogue lunar state \"Free Karma\".",
+   "ru": "Расколотое общество. Планетарная кастовая теократия против лунного государства-изгоя «Свободная Карма»."
+  },
+  "Региональный транспортный узел.": {
+   "en": "Regional transport node.",
+   "ru": "Региональный транспортный узел."
+  },
+  "Редут «Фенрир»": {
+   "en": "Redoubt \"Fenrir\"",
+   "ru": "Редут «Фенрир»"
+  },
+  "Ресурсер-1": {
+   "en": "Resourcer-1",
+   "ru": "Ресурсер-1"
+  },
+  "Ресурсная колония Уджамаа.": {
+   "en": "Ujamaa resource colony.",
+   "ru": "Ресурсная колония Уджамаа."
+  },
+  "Ромбоидальный кластер": {
+   "en": "Rhomboid cluster",
+   "ru": "Ромбоидальный кластер"
+  },
+  "СОВМЕСТНОЕ ГОСУДАРСТВО": {
+   "en": "JOINT STATE",
+   "ru": "СОВМЕСТНОЕ ГОСУДАРСТВО"
+  },
+  "СТОЛИЦА": {
+   "en": "CAPITAL",
+   "ru": "СТОЛИЦА"
+  },
+  "Сверхдлинный корпус с ядерно-импульсным двигателем Orion-класса. Жилые модули — роторные секции в средней части. 40% экипажа находилось в криосне.": {
+   "en": "An ultra-long hull with an Orion-class nuclear pulse drive. Living modules are rotor sections in the middle part. 40% of the crew were in cryosleep.",
+   "ru": "Сверхдлинный корпус с ядерно-импульсным двигателем Orion-класса. Жилые модули — роторные секции в средней части. 40% экипажа находилось в криосне."
+  },
+  "Свободный мир": {
+   "en": "Free World",
+   "ru": "Свободный мир"
+  },
+  "Свободный торговый перекрёсток.": {
+   "en": "Free trade crossroads.",
+   "ru": "Свободный торговый перекрёсток."
+  },
+  "Связь Ньянга ↔ Мото": {
+   "en": "Link Nyanga ↔ Moto",
+   "ru": "Связь Ньянга ↔ Мото"
+  },
+  "Связь к колонии Синьхэ (Глизе 687)": {
+   "en": "Link to the Xinhe colony (Gliese 687)",
+   "ru": "Связь к колонии Синьхэ (Глизе 687)"
+  },
+  "Северное ответвление: Глизе 783 ↔ Глизе 725": {
+   "en": "Northern branch: Gliese 783 ↔ Gliese 725",
+   "ru": "Северное ответвление: Глизе 783 ↔ Глизе 725"
+  },
+  "Северный альянс: Вольф 359 ↔ Глизе 725": {
+   "en": "Northern Alliance: Wolf 359 ↔ Gliese 725",
+   "ru": "Северный альянс: Вольф 359 ↔ Глизе 725"
+  },
+  "Северный альянс: Глизе 628 ↔ 61 Лебедя": {
+   "en": "Northern Alliance: Gliese 628 ↔ 61 Cygni",
+   "ru": "Северный альянс: Глизе 628 ↔ 61 Лебедя"
+  },
+  "Северный альянс: Глизе 725 ↔ Глизе 783": {
+   "en": "Northern Alliance: Gliese 725 ↔ Gliese 783",
+   "ru": "Северный альянс: Глизе 725 ↔ Глизе 783"
+  },
+  "Северный альянс: Глизе 783 ↔ Глизе 628": {
+   "en": "Northern Alliance: Gliese 783 ↔ Gliese 628",
+   "ru": "Северный альянс: Глизе 783 ↔ Глизе 628"
+  },
+  "Сельскохозяйственная колония Синьхэ.": {
+   "en": "Xinhe agricultural colony.",
+   "ru": "Сельскохозяйственная колония Синьхэ."
+  },
+  "Семенная коробочка": {
+   "en": "Seed Pod",
+   "ru": "Семенная коробочка"
+  },
+  "Сигналы древнего корабля.": {
+   "en": "Signals of an ancient ship.",
+   "ru": "Сигналы древнего корабля."
+  },
+  "Синод Ново-Фиваиды": {
+   "en": "Synod of New Thebaid",
+   "ru": "Синод Ново-Фиваиды"
+  },
+  "Система GJ 1061": {
+   "en": "GJ 1061 System",
+   "ru": "Система GJ 1061"
+  },
+  "Система GJ 832 c": {
+   "en": "GJ 832 c System",
+   "ru": "Система GJ 832 c"
+  },
+  "Система YZ Кита": {
+   "en": "YZ Ceti System",
+   "ru": "Система YZ Кита"
+  },
+  "Система Глизе 445": {
+   "en": "Gliese 445 System",
+   "ru": "Система Глизе 445"
+  },
+  "Система Глизе 674": {
+   "en": "Gliese 674 System",
+   "ru": "Система Глизе 674"
+  },
+  "Система Глизе 687": {
+   "en": "Gliese 687 System",
+   "ru": "Система Глизе 687"
+  },
+  "Система Глизе 832": {
+   "en": "Gliese 832 System",
+   "ru": "Система Глизе 832"
+  },
+  "Система Проксима Центавра": {
+   "en": "Proxima Centauri System",
+   "ru": "Система Проксима Центавра"
+  },
+  "Система Тау Кита": {
+   "en": "Tau Ceti System",
+   "ru": "Система Тау Кита"
+  },
+  "Система-крепость Скьольдборга.": {
+   "en": "Skjoldborg fortress system.",
+   "ru": "Система-крепость Скьольдборга."
+  },
+  "Скандинавский милитаризм": {
+   "en": "Scandinavian militarism",
+   "ru": "Скандинавский милитаризм"
+  },
+  "Собран из остатков земных технологий и кустарных модулей. Видны следы спешки и несовместимых стандартов. Внутри — хаотичное смешение культур и социальных слоёв последних дней Земли.": {
+   "en": "Assembled from remnants of Earth technology and makeshift modules. Signs of haste and incompatible standards are visible. Inside - a chaotic mix of cultures and social strata of Earth's last days.",
+   "ru": "Собран из остатков земных технологий и кустарных модулей. Видны следы спешки и несовместимых стандартов. Внутри — хаотичное смешение культур и социальных слоёв последних дней Земли."
+  },
+  "Совет навигаторов и фоно вождей; религиозно-консервативное общество островных общин, не теократия": {
+   "en": "A council of navigators and a fono of chiefs; a religiously conservative society of island communities, not a theocracy",
+   "ru": "Совет навигаторов и фоно вождей; религиозно-консервативное общество островных общин, не теократия"
+  },
+  "Солнце": {
+   "en": "Sol",
+   "ru": "Солнце"
+  },
+  "Спиральный цилиндр": {
+   "en": "Spiral cylinder",
+   "ru": "Спиральный цилиндр"
+  },
+  "Станция «Агора», система Эта Кассиопеи": {
+   "en": "\"Agora\" Station, Eta Cassiopeiae system",
+   "ru": "Станция «Агора», система Эта Кассиопеи"
+  },
+  "Станция «Базар»": {
+   "en": "\"Bazaar\" Station",
+   "ru": "Станция «Базар»"
+  },
+  "Стационарная станция наблюдения за Когниумом.": {
+   "en": "Stationary station for watching Cognium.",
+   "ru": "Стационарная станция наблюдения за Когниумом."
+  },
+  "Столица Капеху (Тауранга): совет навигаторов и обсерватория-вычислитель Фаре.": {
+   "en": "Capital of Kapehu (Tauranga): the council of navigators and the Fare observatory-computer.",
+   "ru": "Столица Капеху (Тауранга): совет навигаторов и обсерватория-вычислитель Фаре."
+  },
+  "Столица Капеху: совет навигаторов и школы этак-фреймов.": {
+   "en": "Capital of Kapehu: the council of navigators and the etak-frame schools.",
+   "ru": "Столица Капеху: совет навигаторов и школы этак-фреймов."
+  },
+  "Столица Когниума. Главный центр управления Технократического Консорциума.": {
+   "en": "Capital of Cognium. Main control center of the Technocratic Consortium.",
+   "ru": "Столица Когниума. Главный центр управления Технократического Консорциума."
+  },
+  "Столица Синьхэ. Центр иерархического управления конфедерацией.": {
+   "en": "Capital of Xinhe. Center of the confederation's hierarchical government.",
+   "ru": "Столица Синьхэ. Центр иерархического управления конфедерацией."
+  },
+  "Столица изолированной колонии Сельва-Верде.": {
+   "en": "Capital of the isolated colony of Selva Verde.",
+   "ru": "Столица изолированной колонии Сельва-Верде."
+  },
+  "Столичная система Когниума.": {
+   "en": "Capital system of Cognium.",
+   "ru": "Столичная система Когниума."
+  },
+  "Столичная система Синьхэ.": {
+   "en": "Capital system of Xinhe.",
+   "ru": "Столичная система Синьхэ."
+  },
+  "Столичная система Содружества Уджамаа.": {
+   "en": "Capital system of the Ujamaa Commonwealth.",
+   "ru": "Столичная система Содружества Уджамаа."
+  },
+  "Столичная система Союза Новой Европы.": {
+   "en": "Capital system of the Union of New Europe.",
+   "ru": "Столичная система Союза Новой Европы."
+  },
+  "Столичный мир Содружества Уджамаа. Центр демографической и военной экспансии.": {
+   "en": "Capital world of the Ujamaa Commonwealth. Center of demographic and military expansion.",
+   "ru": "Столичный мир Содружества Уджамаа. Центр демографической и военной экспансии."
+  },
+  "Столичный мир Союза Новой Европы.": {
+   "en": "Capital world of the Union of New Europe.",
+   "ru": "Столичный мир Союза Новой Европы."
+  },
+  "Стрела возвращения": {
+   "en": "Arrow of Return",
+   "ru": "Стрела возвращения"
+  },
+  "Сфера Дайсона-Бернала": {
+   "en": "Dyson-Bernal Sphere",
+   "ru": "Сфера Дайсона-Бернала"
+  },
+  "Тау Кита": {
+   "en": "Tau Ceti",
+   "ru": "Тау Кита"
+  },
+  "Тау Кита (усиление) (12 св. лет)": {
+   "en": "Tau Ceti (reinforcement) (12 ly)",
+   "ru": "Тау Кита (усиление) (12 св. лет)"
+  },
+  "Тау Кита (установление связи) (12 св. лет)": {
+   "en": "Tau Ceti (establishing contact) (12 ly)",
+   "ru": "Тау Кита (установление связи) (12 св. лет)"
+  },
+  "Тау Кита e (12 св. лет)": {
+   "en": "Tau Ceti e (12 ly)",
+   "ru": "Тау Кита e (12 св. лет)"
+  },
+  "Тестовый прыжок": {
+   "en": "Test Jump",
+   "ru": "Тестовый прыжок"
+  },
+  "Техно-буддийская кастовая система": {
+   "en": "Techno-Buddhist caste system",
+   "ru": "Техно-буддийская кастовая система"
+  },
+  "Технократический коридор: Глизе 783 ↔ Эпсилон Эридана": {
+   "en": "Technocratic corridor: Gliese 783 ↔ Epsilon Eridani",
+   "ru": "Технократический коридор: Глизе 783 ↔ Эпсилон Эридана"
+  },
+  "Технократический коридор: Глизе 86 ↔ Глизе 783": {
+   "en": "Technocratic corridor: Gliese 86 ↔ Gliese 783",
+   "ru": "Технократический коридор: Глизе 86 ↔ Глизе 783"
+  },
+  "Технократический коридор: Тау Кита ↔ Глизе 86": {
+   "en": "Technocratic corridor: Tau Ceti ↔ Gliese 86",
+   "ru": "Технократический коридор: Тау Кита ↔ Глизе 86"
+  },
+  "Технологический гегемон и изобретатель гипердвигателя. Общество, где ценность человека определяется его полезностью системе. Контролирует передовые исследования, диктует технологические стандарты и агрессивно расширяется, считая экспансию «бременем развитого».": {
+   "en": "Technological hegemon and inventor of the hyperdrive. A society where a person's worth is defined by their usefulness to the system. Controls cutting-edge research, dictates technological standards and expands aggressively, viewing expansion as \"the burden of the developed\".",
+   "ru": "Технологический гегемон и изобретатель гипердвигателя. Общество, где ценность человека определяется его полезностью системе. Контролирует передовые исследования, диктует технологические стандарты и агрессивно расширяется, считая экспансию «бременем развитого»."
+  },
+  "Тихоокеанская навигационная наука: Аотеароа, Полинезия, Меланезия": {
+   "en": "Tikhiy navigation science: Aotearoa, Polynesia, Melanesia",
+   "ru": "Тихоокеанская навигационная наука: Аотеароа, Полинезия, Меланезия"
+  },
+  "Тишина": {
+   "en": "Silence",
+   "ru": "Тишина"
+  },
+  "Торговая столица Новой Эллады.": {
+   "en": "Trade capital of New Hellas.",
+   "ru": "Торговая столица Новой Эллады."
+  },
+  "Тороид": {
+   "en": "Toroid",
+   "ru": "Тороид"
+  },
+  "Тороид (бублик)": {
+   "en": "Toroid (doughnut)",
+   "ru": "Тороид (бублик)"
+  },
+  "Трансгуманисты": {
+   "en": "Transhumanists",
+   "ru": "Трансгуманисты"
+  },
+  "Третья Гармония": {
+   "en": "Third Harmony",
+   "ru": "Третья Гармония"
+  },
+  "Три соосных вращающихся цилиндра разного диаметра, спирально переплетённых статичной осью с двигателем. Каждый цилиндр — автономный жилой модуль с собственной экосистемой.": {
+   "en": "Three coaxial rotating cylinders of different diameters, spirally intertwined with a static axis carrying the engine. Each cylinder is an autonomous living module with its own ecosystem.",
+   "ru": "Три соосных вращающихся цилиндра разного диаметра, спирально переплетённых статичной осью с двигателем. Каждый цилиндр — автономный жилой модуль с собственной экосистемой."
+  },
+  "Тюремный мир-завод с высокой смертностью.": {
+   "en": "A prison factory world with high mortality.",
+   "ru": "Тюремный мир-завод с высокой смертностью."
+  },
+  "Угловатый, покрытый абсорбирующими материалами корпус. Внутри — лаборатории поведенческого анализа, психотропные кабинеты и дипломатические симуляторы.": {
+   "en": "An angular hull covered in absorbent materials. Inside - behavioral analysis labs, psychotropic rooms and diplomatic simulators.",
+   "ru": "Угловатый, покрытый абсорбирующими материалами корпус. Внутри — лаборатории поведенческого анализа, психотропные кабинеты и дипломатические симуляторы."
+  },
+  "Удалённая колония Проспектората Керн.": {
+   "en": "Remote colony of the Kern Prospectorate.",
+   "ru": "Удалённая колония Проспектората Керн."
+  },
+  "Уникальная биоцивилизация. Люди — узлы планетарного сознания. Крайние изоляционисты.": {
+   "en": "A unique biocivilization. People are nodes of a planetary consciousness. Extreme isolationists.",
+   "ru": "Уникальная биоцивилизация. Люди — узлы планетарного сознания. Крайние изоляционисты."
+  },
+  "Ухуру-2": {
+   "en": "Uhuru-2",
+   "ru": "Ухуру-2"
+  },
+  "Файнал Арк-1": {
+   "en": "Final Ark-1",
+   "ru": "Файнал Арк-1"
+  },
+  "Федерация Синьхэ": {
+   "en": "Xinhe Federation",
+   "ru": "Федерация Синьхэ"
+  },
+  "Фомальгаут - молодая (440 млн лет) тройная система A: спутники TW PsA (B, ~0.9 св. года) и LP 876-10 (C, ~2.5 св. года) взбалтывают её кометное облако; основное кольцо ALMA (136-150 а.е.) - свидетельство бурных столкновений. Облако Хиллса сжато и плотнее солнечного в сотни раз (преувеличение). Коридоры - щели резонансов со спутниками (как люки Кирквуда); спутники движутся - щели прецессируют. ЗАКРЫТИЕ (3121): каскад столкновений в облаке - то, что реально видно у Фомальгаута: «планета» Fomalhaut b оказалась расширяющимся облаком пыли от столкновения двух тел ~200 км (Gáspár, Rieke 2020), JWST (2023) нашёл ещё одно такое облако («Great Dust Cloud»). Здесь такой каскад прошёл по облаку Хиллса во время периастра TW PsA: миллиарды осколков заполнили щели резонансов (коридоры 2 и 3 схлопнулись, 1 сузился до нити и прецессирует быстрее), отстойник стал в пять раз глубже, а шероховатый потенциал свежего роя сносит шаг поперёк линии (течения оболочки) - даже прошедший наобум выходит вдали от Лекси, в открытом космосе (преувеличение).": {
+   "en": "Fomalhaut is a young (440 Myr) triple system A: the companions TW PsA (B, ~0.9 ly) and LP 876-10 (C, ~2.5 ly) churn its comet cloud; the main ALMA ring (136-150 AU) is evidence of violent collisions. The Hills cloud is compressed and hundreds of times denser than the Sun's (an exaggeration). The corridors are resonance gaps with the companions (like the Kirkwood gaps); the companions move, so the gaps precess. CLOSURE (3121): a collision cascade in the cloud - something actually seen at Fomalhaut: the \"planet\" Fomalhaut b turned out to be an expanding dust cloud from a collision of two ~200 km bodies (Gáspár, Rieke 2020), and JWST (2023) found another such cloud (\"Great Dust Cloud\"). Here such a cascade swept the Hills cloud during TW PsA's periastron: billions of fragments filled the resonance gaps (corridors 2 and 3 collapsed, 1 narrowed to a thread and precesses faster), the sump became five times deeper, and the rough potential of the fresh swarm pushes the step across the line (the shell's currents) - even a blind jump that gets through comes out far from Lexie, in open space (an exaggeration).",
+   "ru": "Фомальгаут - молодая (440 млн лет) тройная система A: спутники TW PsA (B, ~0.9 св. года) и LP 876-10 (C, ~2.5 св. года) взбалтывают её кометное облако; основное кольцо ALMA (136-150 а.е.) - свидетельство бурных столкновений. Облако Хиллса сжато и плотнее солнечного в сотни раз (преувеличение). Коридоры - щели резонансов со спутниками (как люки Кирквуда); спутники движутся - щели прецессируют. ЗАКРЫТИЕ (3121): каскад столкновений в облаке - то, что реально видно у Фомальгаута: «планета» Fomalhaut b оказалась расширяющимся облаком пыли от столкновения двух тел ~200 км (Gáspár, Rieke 2020), JWST (2023) нашёл ещё одно такое облако («Great Dust Cloud»). Здесь такой каскад прошёл по облаку Хиллса во время периастра TW PsA: миллиарды осколков заполнили щели резонансов (коридоры 2 и 3 схлопнулись, 1 сузился до нити и прецессирует быстрее), отстойник стал в пять раз глубже, а шероховатый потенциал свежего роя сносит шаг поперёк линии (течения оболочки) - даже прошедший наобум выходит вдали от Лекси, в открытом космосе (преувеличение)."
+  },
+  "Фортуна-2": {
+   "en": "Fortuna-2",
+   "ru": "Фортуна-2"
+  },
+  "Фортуна-3": {
+   "en": "Fortuna-3",
+   "ru": "Фортуна-3"
+  },
+  "Фри-Венчур-1": {
+   "en": "Free-Venture-1",
+   "ru": "Фри-Венчур-1"
+  },
+  "Фронт «Ньянга»": {
+   "en": "\"Nyanga\" Front",
+   "ru": "Фронт «Ньянга»"
+  },
+  "Фундаменталистская теократия": {
+   "en": "Fundamentalist theocracy",
+   "ru": "Фундаменталистская теократия"
+  },
+  "Фэруэлл-1": {
+   "en": "Farewell-1",
+   "ru": "Фэруэлл-1"
+  },
+  "ХРОНИКИ": {
+   "en": "CHRONICLES",
+   "ru": "ХРОНИКИ"
+  },
+  "Хаб «Восточный Фронтир»": {
+   "en": "\"Eastern Frontier\" Hub",
+   "ru": "Хаб «Восточный Фронтир»"
+  },
+  "Хаб «Врата Пустоты»": {
+   "en": "\"Void Gate\" Hub",
+   "ru": "Хаб «Врата Пустоты»"
+  },
+  "Хаб «Дальний Рубеж-2»": {
+   "en": "\"Far Frontier-2\" Hub",
+   "ru": "Хаб «Дальний Рубеж-2»"
+  },
+  "Хаб «Западная Глубина»": {
+   "en": "\"Western Deep\" Hub",
+   "ru": "Хаб «Западная Глубина»"
+  },
+  "Хаб «Северный Путь»": {
+   "en": "\"Northern Way\" Hub",
+   "ru": "Хаб «Северный Путь»"
+  },
+  "Хаб «Южный Крест»": {
+   "en": "\"Southern Cross\" Hub",
+   "ru": "Хаб «Южный Крест»"
+  },
+  "Хозяин торговли и информации. Контролирует ключевые гипермаршруты и ретрансляторы. Их сила — в данных, контрактах и нейтралитете.": {
+   "en": "Master of trade and information. Controls key hyper-routes and relays. Their strength is in data, contracts and neutrality.",
+   "ru": "Хозяин торговли и информации. Контролирует ключевые гипермаршруты и ретрансляторы. Их сила — в данных, контрактах и нейтралитете."
+  },
+  "Хоумвард-1": {
+   "en": "Homeward-1",
+   "ru": "Хоумвард-1"
+  },
+  "Христианские фундаменталисты": {
+   "en": "Christian fundamentalists",
+   "ru": "Христианские фундаменталисты"
+  },
+  "Христианский аскетизм": {
+   "en": "Christian asceticism",
+   "ru": "Христианский аскетизм"
+  },
+  "ЦЕНТР": {
+   "en": "CENTER",
+   "ru": "ЦЕНТР"
+  },
+  "Цель экспедиции. Корабль считается пропавшим.": {
+   "en": "Expedition target. The ship is considered missing.",
+   "ru": "Цель экспедиции. Корабль считается пропавшим."
+  },
+  "Центр шпионажа и вербовки под прикрытием.": {
+   "en": "A center of espionage and covert recruitment.",
+   "ru": "Центр шпионажа и вербовки под прикрытием."
+  },
+  "Центральная сфера («сердце лотоса») окружена восемья изогнутыми «лепестками» — жилыми и медитационными модулями. Корабль не вращается, гравитация — минимальная (0.1g).": {
+   "en": "A central sphere (the \"heart of the lotus\") surrounded by eight curved \"petals\" - living and meditation modules. The ship does not rotate; gravity is minimal (0.1g).",
+   "ru": "Центральная сфера («сердце лотоса») окружена восемья изогнутыми «лепестками» — жилыми и медитационными модулями. Корабль не вращается, гравитация — минимальная (0.1g)."
+  },
+  "Центральный биоурбанистический узел остатков Гайи-Прайм.": {
+   "en": "Central bio-urban node of the remnants of Gaia-Prime.",
+   "ru": "Центральный биоурбанистический узел остатков Гайи-Прайм."
+  },
+  "Центральный узел пиратской вольницы Варпстанис.": {
+   "en": "Central node of the Varpstanis pirate freehold.",
+   "ru": "Центральный узел пиратской вольницы Варпстанис."
+  },
+  "Цилиндр О'Нила": {
+   "en": "O'Neill Cylinder",
+   "ru": "Цилиндр О'Нила"
+  },
+  "Частные меценаты": {
+   "en": "Private patrons",
+   "ru": "Частные меценаты"
+  },
+  "Четыре рукава расходятся от центрального ядра. Каждый рукав — автономный «монастырь-арка» со своей специализацией (ремесла, наука, сельское хозяйство, оборона).": {
+   "en": "Four arms extend from a central core. Each arm is an autonomous \"monastery ark\" with its own specialization (crafts, science, agriculture, defense).",
+   "ru": "Четыре рукава расходятся от центрального ядра. Каждый рукав — автономный «монастырь-арка» со своей специализацией (ремесла, наука, сельское хозяйство, оборона)."
+  },
+  "Чуждый биосигнал.": {
+   "en": "Alien biosignal.",
+   "ru": "Чуждый биосигнал."
+  },
+  "Шесть ромбовидных жилых модулей соединены вокруг центральной оси. Каждый модуль — автономный «племенной район» со своей микрокультурой. Вращаются независимо.": {
+   "en": "Six rhomboid living modules joined around a central axis. Each module is an autonomous \"tribal district\" with its own microculture. They rotate independently.",
+   "ru": "Шесть ромбовидных жилых модулей соединены вокруг центральной оси. Каждый модуль — автономный «племенной район» со своей микрокультурой. Вращаются независимо."
+  },
+  "Шип (бронебойный снаряд)": {
+   "en": "Spike (armor-piercing shell)",
+   "ru": "Шип (бронебойный снаряд)"
+  },
+  "Шпионский конверт": {
+   "en": "Spy Envelope",
+   "ru": "Шпионский конверт"
+  },
+  "Эклектичная конструкция, имитирующая земные особняки XXII века. Шикарные апартаменты, казино, спа-комплексы. Защитные системы минимальны, упор на комфорт.": {
+   "en": "An eclectic design imitating 22nd-century Earth mansions. Luxury apartments, casinos, spa complexes. Defensive systems are minimal; the focus is on comfort.",
+   "ru": "Эклектичная конструкция, имитирующая земные особняки XXII века. Шикарные апартаменты, казино, спа-комплексы. Защитные системы минимальны, упор на комфорт."
+  },
+  "Эко-мистический биосинтез": {
+   "en": "Eco-mystical biosynthesis",
+   "ru": "Эко-мистический биосинтез"
+  },
+  "Экологическое движение": {
+   "en": "Ecological movement",
+   "ru": "Экологическое движение"
+  },
+  "Экономическая сверхдержава. Государство как акционерное общество. Закон — контракт. Контролирует рынок редких элементов.": {
+   "en": "An economic superpower. The state as a joint-stock company. Law is contract. Controls the rare elements market.",
+   "ru": "Экономическая сверхдержава. Государство как акционерное общество. Закон — контракт. Контролирует рынок редких элементов."
+  },
+  "Экспансионистский панафриканизм": {
+   "en": "Expansionist pan-Africanism",
+   "ru": "Экспансионистский панафриканизм"
+  },
+  "Экспедиция FAR-REACH-1 к LHS 1140": {
+   "en": "FAR-REACH-1 expedition to LHS 1140",
+   "ru": "Экспедиция FAR-REACH-1 к LHS 1140"
+  },
+  "Эпсилон Индейца": {
+   "en": "Epsilon Indi",
+   "ru": "Эпсилон Индейца"
+  },
+  "Эпсилон Индейца b (11.8 св. лет)": {
+   "en": "Epsilon Indi b (11.8 ly)",
+   "ru": "Эпсилон Индейца b (11.8 св. лет)"
+  },
+  "Эпсилон Эридана": {
+   "en": "Epsilon Eridani",
+   "ru": "Эпсилон Эридана"
+  },
+  "Эпсилон Эридана b (10.5 св. лет)": {
+   "en": "Epsilon Eridani b (10.5 ly)",
+   "ru": "Эпсилон Эридана b (10.5 св. лет)"
+  },
+  "Эта Кассиопеи": {
+   "en": "Eta Cassiopeiae",
+   "ru": "Эта Кассиопеи"
+  },
+  "Эта Кассиопеи (нейтральная зона) (19.4 св. года)": {
+   "en": "Eta Cassiopeiae (neutral zone) (19.4 ly)",
+   "ru": "Эта Кассиопеи (нейтральная зона) (19.4 св. года)"
+  },
+  "Южное ответвление Ньянги": {
+   "en": "Southern branch of Nyanga",
+   "ru": "Южное ответвление Ньянги"
+  },
+  "Южное ответвление: Ньянга ↔ Глизе 229": {
+   "en": "Southern branch: Nyanga ↔ Gliese 229",
+   "ru": "Южное ответвление: Ньянга ↔ Глизе 229"
+  },
+  "Южное продолжение Западного кольца": {
+   "en": "Southern extension of the Western Ring",
+   "ru": "Южное продолжение Западного кольца"
+  },
+  "банковский корабль «Перекрёстка» — Перекрёсток стал хабом Агора у Лаланд, миссия не нужна": {
+   "en": "the \"Crossroads\" bank ship - Crossroads became the Agora hub at Lalande, the mission is not needed",
+   "ru": "банковский корабль «Перекрёстка» — Перекрёсток стал хабом Агора у Лаланд, миссия не нужна"
+  },
+  "варпы": {
+   "en": "warps",
+   "ru": "варпы"
+  },
+  "год в 01. Мэйфлауэр II.md": {
+   "en": "year in 01. Mayflower II.md",
+   "ru": "год в 01. Мэйфлауэр II.md"
+  },
+  "год в 01. Мэйфлауэр II.md, fate.md": {
+   "en": "year in 01. Mayflower II.md, fate.md",
+   "ru": "год в 01. Мэйфлауэр II.md, fate.md"
+  },
+  "год в 02. MERU-1.md": {
+   "en": "year in 02. MERU-1.md",
+   "ru": "год в 02. MERU-1.md"
+  },
+  "год в 03. TIANHE-1.md": {
+   "en": "year in 03. TIANHE-1.md",
+   "ru": "год в 03. TIANHE-1.md"
+  },
+  "год в 04. UBUNTU-1.md": {
+   "en": "year in 04. UBUNTU-1.md",
+   "ru": "год в 04. UBUNTU-1.md"
+  },
+  "год в 05. HERACLES-1.md": {
+   "en": "year in 05. HERACLES-1.md",
+   "ru": "год в 05. HERACLES-1.md"
+  },
+  "год в 05. HERACLES-1.md, fate.md": {
+   "en": "year in 05. HERACLES-1.md, fate.md",
+   "ru": "год в 05. HERACLES-1.md, fate.md"
+  },
+  "год в 06. CELESTIAL-DESTINY-1.md": {
+   "en": "year in 06. CELESTIAL-DESTINY-1.md",
+   "ru": "год в 06. CELESTIAL-DESTINY-1.md"
+  },
+  "год в 07. GREEN-ARK-1.md": {
+   "en": "year in 07. GREEN-ARK-1.md",
+   "ru": "год в 07. GREEN-ARK-1.md"
+  },
+  "год в 08. DHARMA-1.md": {
+   "en": "year in 08. DHARMA-1.md",
+   "ru": "год в 08. DHARMA-1.md"
+  },
+  "год в 09. IRON-SHIELD-1.md": {
+   "en": "year in 09. IRON-SHIELD-1.md",
+   "ru": "год в 09. IRON-SHIELD-1.md"
+  },
+  "год в 10. VAKA-MOANA-1.md": {
+   "en": "year in 10. VAKA-MOANA-1.md",
+   "ru": "год в 10. VAKA-MOANA-1.md"
+  },
+  "год в 11. NEXT-1.md": {
+   "en": "year in 11. NEXT-1.md",
+   "ru": "год в 11. NEXT-1.md"
+  },
+  "год в 12. EUROPA-1.md": {
+   "en": "year in 12. EUROPA-1.md",
+   "ru": "год в 12. EUROPA-1.md"
+  },
+  "год в 13. HOMESTEAD-1.md": {
+   "en": "year in 13. HOMESTEAD-1.md",
+   "ru": "год в 13. HOMESTEAD-1.md"
+  },
+  "год в 13. RESOURCER-1.md": {
+   "en": "year in 13. RESOURCER-1.md",
+   "ru": "год в 13. RESOURCER-1.md"
+  },
+  "год в 14. NEW-JERUSALEM-1.md": {
+   "en": "year in 14. NEW-JERUSALEM-1.md",
+   "ru": "год в 14. NEW-JERUSALEM-1.md"
+  },
+  "год в 15. UHURU-2.md": {
+   "en": "year in 15. UHURU-2.md",
+   "ru": "год в 15. UHURU-2.md"
+  },
+  "год в 16. ODYSSEY-1.md": {
+   "en": "year in 16. ODYSSEY-1.md",
+   "ru": "год в 16. ODYSSEY-1.md"
+  },
+  "год в 17. NIRVANA-1.md": {
+   "en": "year in 17. NIRVANA-1.md",
+   "ru": "год в 17. NIRVANA-1.md"
+  },
+  "год в 18. DHARMA-2.md": {
+   "en": "year in 18. DHARMA-2.md",
+   "ru": "год в 18. DHARMA-2.md"
+  },
+  "год в 19. AMAZONIA-1.md": {
+   "en": "year in 19. AMAZONIA-1.md",
+   "ru": "год в 19. AMAZONIA-1.md"
+  },
+  "год в 20. FREE-WORLD-1.md": {
+   "en": "year in 20. FREE-WORLD-1.md",
+   "ru": "год в 20. FREE-WORLD-1.md"
+  },
+  "год в 21. CELESTIAL-DESTINY-2.md": {
+   "en": "year in 21. CELESTIAL-DESTINY-2.md",
+   "ru": "год в 21. CELESTIAL-DESTINY-2.md"
+  },
+  "год в 22. IRON-SHIELD-2.md": {
+   "en": "year in 22. IRON-SHIELD-2.md",
+   "ru": "год в 22. IRON-SHIELD-2.md"
+  },
+  "год в 23. GAIA-2.md": {
+   "en": "year in 23. GAIA-2.md",
+   "ru": "год в 23. GAIA-2.md"
+  },
+  "год в 23. GAIA-2.md, fate.md": {
+   "en": "year in 23. GAIA-2.md, fate.md",
+   "ru": "год в 23. GAIA-2.md, fate.md"
+  },
+  "год в 24. KEPLER-1.md": {
+   "en": "year in 24. KEPLER-1.md",
+   "ru": "год в 24. KEPLER-1.md"
+  },
+  "год в 25. NOMAD-1.md": {
+   "en": "year in 25. NOMAD-1.md",
+   "ru": "год в 25. NOMAD-1.md"
+  },
+  "год в 26. FINAL-ARK-1.md": {
+   "en": "year in 26. FINAL-ARK-1.md",
+   "ru": "год в 26. FINAL-ARK-1.md"
+  },
+  "год в 27. LEGACY-1.md": {
+   "en": "year in 27. LEGACY-1.md",
+   "ru": "год в 27. LEGACY-1.md"
+  },
+  "год в 29. HOMEWARD-1.md": {
+   "en": "year in 29. HOMEWARD-1.md",
+   "ru": "год в 29. HOMEWARD-1.md"
+  },
+  "год в 30. FAREWELL-1.md": {
+   "en": "year in 30. FAREWELL-1.md",
+   "ru": "год в 30. FAREWELL-1.md"
+  },
+  "год в 31. HYPERION-1.md": {
+   "en": "year in 31. HYPERION-1.md",
+   "ru": "год в 31. HYPERION-1.md"
+  },
+  "год в fate.md": {
+   "en": "year in fate.md",
+   "ru": "год в fate.md"
+  },
+  "год в generation ships.md (A)": {
+   "en": "year in generation ships.md (A)",
+   "ru": "год в generation ships.md (A)"
+  },
+  "год не найден в источниках миссии": {
+   "en": "year not found in the mission sources",
+   "ru": "год не найден в источниках миссии"
+  },
+  "дубль GENESIS-1 (усиление Тау Кита) — слит": {
+   "en": "duplicate of GENESIS-1 (Tau Ceti reinforcement) - merged",
+   "ru": "дубль GENESIS-1 (усиление Тау Кита) — слит"
+  },
+  "дхармиты / мандалиты": {
+   "en": "Dharmites / Mandalites",
+   "ru": "дхармиты / мандалиты"
+  },
+  "зальбийцы": {
+   "en": "Salbians",
+   "ru": "зальбийцы"
+  },
+  "имя автора; прежняя этимология «cognitive + axium» отброшена (axium — не латинское слово); форма латинизирующая, ср. лат. cognitio": {
+   "en": "author's name; the former etymology \"cognitive + axium\" was dropped (axium is not a Latin word); a Latinizing form, cf. Lat. cognitio",
+   "ru": "имя автора; прежняя этимология «cognitive + axium» отброшена (axium — не латинское слово); форма латинизирующая, ср. лат. cognitio"
+  },
+  "капеху (нескл.)": {
+   "en": "Kapehu (invariable)",
+   "ru": "капеху (нескл.)"
+  },
+  "керниты": {
+   "en": "Kernites",
+   "ru": "керниты"
+  },
+  "когниты": {
+   "en": "Cognites",
+   "ru": "когниты"
+  },
+  "кривой пилотский английский (warp + -stan) — в вольном поясе это нормально": {
+   "en": "broken pilot English (warp + -stan) - normal in the free belt",
+   "ru": "кривой пилотский английский (warp + -stan) — в вольном поясе это нормально"
+  },
+  "миссия есть в заметках автора": {
+   "en": "the mission is in the author's notes",
+   "ru": "миссия есть в заметках автора"
+  },
+  "модель вахты/крио (реконсиляция C2)": {
+   "en": "watch/cryo model (reconciliation C2)",
+   "ru": "модель вахты/крио (реконсиляция C2)"
+  },
+  "научная неологизация учёных Гайи (греч. φιλο- + μόρφωσις); прежняя этимология «скачкообразное изменение формы» не подтверждена — термин чисто внутримировой": {
+   "en": "a scientific neologism of the Gaia scientists (Greek φιλο- + μόρφωσις); the former etymology \"leap-like change of form\" is not confirmed - the term is purely in-world",
+   "ru": "научная неологизация учёных Гайи (греч. φιλο- + μόρφωσις); прежняя этимология «скачкообразное изменение формы» не подтверждена — термин чисто внутримировой"
+  },
+  "не найдено в источниках": {
+   "en": "not found in the sources",
+   "ru": "не найдено в источниках"
+  },
+  "неизвестно даже автору": {
+   "en": "unknown even to the author",
+   "ru": "неизвестно даже автору"
+  },
+  "новоэллины": {
+   "en": "New Hellenes",
+   "ru": "новоэллины"
+  },
+  "образцы / аномалии": {
+   "en": "samples / anomalies",
+   "ru": "образцы / аномалии"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2172": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2172",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2172"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2185": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2185",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2185"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2190": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2190",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2190"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2195": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2195",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2195"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2210": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2210",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2210"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2230": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2230",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2230"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2325": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2325",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2325"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2380": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2380",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2380"
+  },
+  "пересчитано по каталогу и потолку скорости; авторское 2570": {
+   "en": "recalculated from the catalog and the speed ceiling; author's 2570",
+   "ru": "пересчитано по каталогу и потолку скорости; авторское 2570"
+  },
+  "прежнее имя (Re + Tauros) — не греческое и не латинское слово; доктрина реставрации естественно называется по-французски (ср. Реставрация Бурбонов)": {
+   "en": "former name (Re + Tauros) - neither a Greek nor a Latin word; a restoration doctrine is naturally named in French (cf. the Bourbon Restoration)",
+   "ru": "прежнее имя (Re + Tauros) — не греческое и не латинское слово; доктрина реставрации естественно называется по-французски (ср. Реставрация Бурбонов)"
+  },
+  "прежнее имя было псевдонемецким гибридом (werden + Salbe) — у англоязычных основателей нет причины так называться": {
+   "en": "the former name was a pseudo-German hybrid (werden + Salbe) - English-speaking founders have no reason to call themselves that",
+   "ru": "прежнее имя было псевдонемецким гибридом (werden + Salbe) — у англоязычных основателей нет причины так называться"
+  },
+  "прежнее имя смешивало греческое «агора» с латинским primus; грек так государство не назовёт": {
+   "en": "the former name mixed the Greek \"agora\" with the Latin primus; a Greek would not name a state like that",
+   "ru": "прежнее имя смешивало греческое «агора» с латинским primus; грек так государство не назовёт"
+  },
+  "прежняя русская форма смешивала древнесканд. Skjöldr и немецкое -burg; правильная современная норвежская форма — skjoldborg. Русская практическая транскрипция по правилам — «Шолльборг»; принята распространённая побуквенная «Скьольдборг» (ср. «Скьольд»)": {
+   "en": "the former Russian form mixed Old Norse Skjöldr and German -burg; the correct modern Norwegian form is skjoldborg. The Russian practical transcription by the rules is \"Shollborg\"; the common letter-by-letter \"Skyoldborg\" was adopted (cf. \"Skyold\")",
+   "ru": "прежняя русская форма смешивала древнесканд. Skjöldr и немецкое -burg; правильная современная норвежская форма — skjoldborg. Русская практическая транскрипция по правилам — «Шолльборг»; принята распространённая побуквенная «Скьольдборг» (ср. «Скьольд»)"
+  },
+  "реконсиляция A2 (идея старой ветки, числа Claude)": {
+   "en": "reconciliation A2 (idea from the old branch, numbers by Claude)",
+   "ru": "реконсиляция A2 (идея старой ветки, числа Claude)"
+  },
+  "реконсиляция A5 (имя есть у автора, паспорт — Claude)": {
+   "en": "reconciliation A5 (the name is the author's, the passport is by Claude)",
+   "ru": "реконсиляция A5 (имя есть у автора, паспорт — Claude)"
+  },
+  "реконсиляция A6 (идея старой ветки)": {
+   "en": "reconciliation A6 (idea from the old branch)",
+   "ru": "реконсиляция A6 (идея старой ветки)"
+  },
+  "реконсиляция A8 (идея старой ветки, груз — Claude)": {
+   "en": "reconciliation A8 (idea from the old branch, cargo by Claude)",
+   "ru": "реконсиляция A8 (идея старой ветки, груз — Claude)"
+  },
+  "рестаурийцы": {
+   "en": "Restaurians",
+   "ru": "рестаурийцы"
+  },
+  "сельвавердцы": {
+   "en": "Selva Verdeans",
+   "ru": "сельвавердцы"
+  },
+  "синьхэйцы": {
+   "en": "Xinheans",
+   "ru": "синьхэйцы"
+  },
+  "скрытая правда (реконсиляция): 2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL)": {
+   "en": "hidden truth (reconciliation): 2680: a field fold carried the ship into the \"Lotus\" field beyond HD 104067; the crew died of field syndrome by 2712; \"Lotus\" = NIRVANA-1 (author's decision 2026-11-03; details - PROPOSAL)",
+   "ru": "скрытая правда (реконсиляция): 2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL)"
+  },
+  "скрытая правда (реконсиляция): груз: архив Хартий и верительные грамоты Земли": {
+   "en": "hidden truth (reconciliation): cargo: the archive of Charters and Earth's credentials",
+   "ru": "скрытая правда (реконсиляция): груз: архив Хартий и верительные грамоты Земли"
+  },
+  "скрытая правда (реконсиляция): живые «тихие» и пустой корабль": {
+   "en": "hidden truth (reconciliation): the living \"quiet ones\" and an empty ship",
+   "ru": "скрытая правда (реконсиляция): живые «тихие» и пустой корабль"
+  },
+  "скрытая правда (реконсиляция): симбионт из корабельного микробиома": {
+   "en": "hidden truth (reconciliation): a symbiont from the ship's microbiome",
+   "ru": "скрытая правда (реконсиляция): симбионт из корабельного микробиома"
+  },
+  "скрытая правда (реконсиляция): уничтожен автономным роем CD-2": {
+   "en": "hidden truth (reconciliation): destroyed by the autonomous swarm CD-2",
+   "ru": "скрытая правда (реконсиляция): уничтожен автономным роем CD-2"
+  },
+  "скьольдборгцы": {
+   "en": "Skjoldborgers",
+   "ru": "скьольдборгцы"
+  },
+  "старая версия UHURU-2 (Эпсилон Индейца); канон: корпус сгорел в доке 2276, отсюда номер «-2»": {
+   "en": "old version of UHURU-2 (Epsilon Indi); canon: the hull burned in dock in 2276, hence the number \"-2\"",
+   "ru": "старая версия UHURU-2 (Эпсилон Индейца); канон: корпус сгорел в доке 2276, отсюда номер «-2»"
+  },
+  "уджамаа (нескл.)": {
+   "en": "Ujamaa (invariable)",
+   "ru": "уджамаа (нескл.)"
+  },
+  "фиваидцы": {
+   "en": "Thebaidans",
+   "ru": "фиваидцы"
+  },
+  "цель GJ 3323 вне каталога; мотив завязан на «Ледяную Веру» у GJ 667, которой в каноне нет": {
+   "en": "the GJ 3323 target is outside the catalog; the motive is tied to \"Ice Faith\" at GJ 667, which does not exist in canon",
+   "ru": "цель GJ 3323 вне каталога; мотив завязан на «Ледяную Веру» у GJ 667, которой в каноне нет"
+  },
+  "число из досье (реконсиляция C1: стартовые численности по S1)": {
+   "en": "number from the dossier (reconciliation C1: starting populations per S1)",
+   "ru": "число из досье (реконсиляция C1: стартовые численности по S1)"
+  },
+  "धर्म — закон, долг; मण्डल — круг, область; санскритский составной корректен": {
+   "en": "धर्म - law, duty; मण्डल - circle, region; the Sanskrit compound is correct",
+   "ru": "धर्म — закон, долг; मण्डल — круг, область; санскритский составной корректен"
+  },
+  "新 = новый, 和 = гармония (эхо 和谐社会); прежняя этимология «ядро / река» отброшена: 河 «река» — другой иероглиф. Русское написание слитно по Палладию. Совпадение с реальным уездом 新和县 (сокращение 新疆和平) — VERIFY": {
+   "en": "新 = new, 和 = harmony (an echo of 和谐社会); the former etymology \"core / river\" was dropped: 河 \"river\" is a different character. The Russian spelling is written as one word per the Palladius system. Coincides with the real county 新和县 (short for 新疆和平) - VERIFY",
+   "ru": "新 = новый, 和 = гармония (эхо 和谐社会); прежняя этимология «ядро / река» отброшена: 河 «река» — другой иероглиф. Русское написание слитно по Палладию. Совпадение с реальным уездом 新和县 (сокращение 新疆和平) — VERIFY"
+  }
+ }
+}

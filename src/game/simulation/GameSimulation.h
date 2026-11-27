@@ -817,6 +817,7 @@ private:
         std::string frameModuleId;   // the city frame module (HubPlan)
         std::string address;         // the building ("B4-07")
         glm::dvec3 padLocal {0.0};   // the pad in the city frame
+        double structureOriginX = 0.0;   // the berth model's origin along the plan (its rigid floor is the deck's there)
         glm::dvec3 outLocal {0.0, 1.0, 0.0};   // its outward normal (up; down for the lower tier)
         double transitLocal = 300.0;           // the transit height over the plane (along outLocal)
         int phase = 0;               // 0 to the transit height, 1 across, 2 down, 3 landed

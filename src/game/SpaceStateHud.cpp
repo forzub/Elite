@@ -760,8 +760,8 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
                 for (const auto& b : object.occupiedBerths)
                     if (b.compare(0, mine.size(), mine) == 0 && b.find(who) != std::string::npos)
                         bay = std::atoi(b.c_str() + mine.size());
-                route.push_back(game::navigation::hubHangarDoorFront(*pad, bay));
-                route.push_back(game::navigation::hubHangarBayEntry(*pad, bay));
+                route.push_back(game::navigation::hubHangarDoorFrontOnStructure(*pad, bay, plan->ring()));
+                route.push_back(game::navigation::hubHangarBayEntryOnStructure(*pad, bay, plan->ring()));
                 route.push_back(game::navigation::hubBerthTouchdownOnStructure(*pad, bay, plan->ring()) + out * 3.0);
             }
             else

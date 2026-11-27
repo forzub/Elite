@@ -265,6 +265,22 @@ int main()
                 worstAfter = std::max(worstAfter, glm::length(bend.toFrame(tRigid) - rigid));
             }
         }
+        // the landed hull's up: the deck normal under the touchdown (the old rule) vs the rigid model's floor
+        double tiltOld = 0.0, tiltNew = 0.0;
+        for (const auto& m : ring.modules())
+            if (m.pad && game::navigation::hubBerthPlaces(m) >= 2)
+                for (int bay = 0; bay < 2; ++bay)
+                {
+                    const glm::dvec3 t = game::navigation::hubBerthTouchdownOnStructure(m, bay, bend);
+                    const glm::dvec3 floorUp = game::navigation::hubBerthFloorUpFrame(m, bend);
+                    const glm::dvec3 deckUp = bend.basisAt(t.x)[1] * (m.under ? -1.0 : 1.0);
+                    const glm::dvec3 structureUp = bend.basisAt(m.padOrigin.x)[1] * (m.under ? -1.0 : 1.0);   // the new rule
+                    tiltOld = std::max(tiltOld, glm::degrees(std::acos(std::clamp(glm::dot(deckUp, floorUp), -1.0, 1.0))));
+                    tiltNew = std::max(tiltNew, glm::degrees(std::acos(std::clamp(glm::dot(structureUp, floorUp), -1.0, 1.0))));
+                }
+        std::printf("A5 landed attitude on the ring: the deck normal under the place is off the berth's floor by up to %.3f deg; "
+                    "the structure's axes %.3g deg\n", tiltOld, tiltNew);
+        check(tiltNew < 1.0e-6, "a landed hull stands on the berth's floor");
         std::printf("A5 rigid model, earth_ring_hub: a place bent point by point is off its rigid model by up to %.3f m (%s); "
                     "through the structure's pose %.3g m\n", worst, worstAt.c_str(), worstAfter);
         check(worstAfter < 1.0e-6, "berth places on the structure's rigid pose");

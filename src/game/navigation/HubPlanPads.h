@@ -362,9 +362,10 @@ inline glm::dvec3 hubBerthTouchdown(const HubPlanModule& pad, int bay)
 // body at toFrame(padOrigin), turned by basisAt(padOrigin.x) * Rx(under 180) * Ry(yaw); a place bent point by point
 // (toFrame(touchdown)) leaves the model on a ring (the deck curves under a flat model). Returned in PLAN metres
 // (toStrip of the rigid point), so every consumer that bends a plan point lands exactly on the model. Flat: unchanged.
-inline glm::dvec3 hubBerthTouchdownOnStructure(const HubPlanModule& pad, int bay, const HubRingBend& bend)
+inline glm::dvec3 hubPointOnStructure(const HubPlanModule& pad, const glm::dvec3& planPoint, const HubRingBend& bend)
 {
-    const glm::dvec3 planPoint = hubBerthTouchdown(pad, bay);
+    // any point of the berth given in the plan as if the plan were flat (the old per-point formulas) -> the same point
+    // of the RIGID model on the ring, back in plan metres (one berth geometry for the server, the autopilot and the HUD)
     if (!bend.valid)
         return planPoint;
     const glm::dmat3 modelPlan = hubRotationXYZ(glm::dvec3(pad.under ? 180.0 : 0.0, pad.padYawDeg, 0.0));
@@ -376,6 +377,17 @@ inline glm::dvec3 hubBerthTouchdownOnStructure(const HubPlanModule& pad, int bay
     if (L > 0.0)
         back.x = planPoint.x + std::remainder(back.x - planPoint.x, L);
     return back;
+}
+inline glm::dvec3 hubBerthTouchdownOnStructure(const HubPlanModule& pad, int bay, const HubRingBend& bend)
+{
+    return hubPointOnStructure(pad, hubBerthTouchdown(pad, bay), bend);
+}
+// the berth's floor normal (its "up", the landed hull's up) in the MODULE frame: the rigid model's own +Y (an under-tier
+// berth: -Y), not the deck's normal at the touchdown point (on a ring they differ by (touchdown - origin) / R)
+inline glm::dvec3 hubBerthFloorUpFrame(const HubPlanModule& pad, const HubRingBend& bend)
+{
+    const glm::dmat3 modelPlan = hubRotationXYZ(glm::dvec3(pad.under ? 180.0 : 0.0, pad.padYawDeg, 0.0));
+    return bend.basisAt(pad.padOrigin.x) * (modelPlan * glm::dvec3(0.0, 1.0, 0.0));
 }
 // a hangar's entry point: outside its door, 35 m off in front of the bay, at the entry height (city frame)
 inline glm::dvec3 hubHangarDoorFront(const HubPlanModule& pad, int bay = 0)
@@ -392,6 +404,16 @@ inline glm::dvec3 hubHangarBayEntry(const HubPlanModule& pad, int bay = 0)
     const double side = pad.under ? -1.0 : 1.0;
     const glm::dvec3 t = hubBerthTouchdown(pad, bay);
     return glm::dvec3(t.x, side * HubHangarEntryHeight, t.z);
+}
+
+// the hangar's door front / bay entry on the structure's rigid pose (re-audit #4 A5)
+inline glm::dvec3 hubHangarDoorFrontOnStructure(const HubPlanModule& pad, int bay, const HubRingBend& bend)
+{
+    return hubPointOnStructure(pad, hubHangarDoorFront(pad, bay), bend);
+}
+inline glm::dvec3 hubHangarBayEntryOnStructure(const HubPlanModule& pad, int bay, const HubRingBend& bend)
+{
+    return hubPointOnStructure(pad, hubHangarBayEntry(pad, bay), bend);
 }
 
 inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanModule& pad, const glm::dvec3& from, double transit,
@@ -472,7 +494,8 @@ inline std::vector<glm::dvec3> hubPadRoute(const HubPlan& plan, const HubPlanMod
     if (includeClimb)
         route.push_back(start);
     // a repair hangar is flown INTO: the route ends in front of its door (the service goes down there and in)
-    const glm::dvec3 goal = atTransit(pad.padKind == HubPlanModule::PadKind::Hangar ? hubHangarDoorFront(pad) : pad.padPosition);
+    const glm::dvec3 goal = atTransit(pad.padKind == HubPlanModule::PadKind::Hangar ? hubHangarDoorFrontOnStructure(pad, 0, plan.ring())
+                                                                                     : pad.padPosition);
     glm::dvec2 at(start.x, start.z);
     const glm::dvec2 end(goal.x, goal.z);
     for (int guard = 0; guard < 12; ++guard)

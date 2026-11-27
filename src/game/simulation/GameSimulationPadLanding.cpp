@@ -371,19 +371,20 @@ bool GameSimulation::startPadService(EntityId shipId, const std::string& frameMo
     p.bay = bay;   // -1: queued for a hangar bay
     // the place on the berth's RIGID model (a ring: the model does not bend with the deck - up to 0.29 m)
     p.padLocal = game::navigation::hubBerthTouchdownOnStructure(*building, std::max(bay, 0), plan->ring());
+    p.structureOriginX = building->padOrigin.x;
     p.outLocal = building->under ? glm::dvec3(0.0, -1.0, 0.0) : glm::dvec3(0.0, 1.0, 0.0);
     p.autoLanding = building->autoLanding;
     p.hangar = building->padKind == game::navigation::HubPlanModule::PadKind::Hangar;
     if (p.hangar)
     {
         p.autoLanding = true;   // the hangar's crew brings the ship in
-        p.doorFrontLocal = game::navigation::hubHangarDoorFront(*building, std::max(bay, 0));
-        p.bayEntryLocal = game::navigation::hubHangarBayEntry(*building, std::max(bay, 0));
+        p.doorFrontLocal = game::navigation::hubHangarDoorFrontOnStructure(*building, std::max(bay, 0), plan->ring());
+        p.bayEntryLocal = game::navigation::hubHangarBayEntryOnStructure(*building, std::max(bay, 0), plan->ring());
         if (bay < 0)
         {
             // the waiting point: 90 m out from the doors and 30 m up (clear of the ship coming out)
-            const glm::dvec3 centreDoor = 0.5 * (game::navigation::hubHangarDoorFront(*building, 0) +
-                                                 game::navigation::hubHangarDoorFront(*building, 1));
+            const glm::dvec3 centreDoor = 0.5 * (game::navigation::hubHangarDoorFrontOnStructure(*building, 0, plan->ring()) +
+                                                 game::navigation::hubHangarDoorFrontOnStructure(*building, 1, plan->ring()));
             glm::dvec3 outward = centreDoor - building->padPosition;
             outward -= p.outLocal * glm::dot(outward, p.outLocal);
             outward = glm::length(outward) > 1.0e-6 ? glm::normalize(outward) : glm::dvec3(1.0, 0.0, 0.0);
@@ -522,8 +523,8 @@ void GameSimulation::updatePadLandings(double dt)
                         continue;
                     p.bay = b;
                     p.padLocal = game::navigation::hubBerthTouchdownOnStructure(*hangar, b, hangarBend);
-                    p.doorFrontLocal = game::navigation::hubHangarDoorFront(*hangar, b);
-                    p.bayEntryLocal = game::navigation::hubHangarBayEntry(*hangar, b);
+                    p.doorFrontLocal = game::navigation::hubHangarDoorFrontOnStructure(*hangar, b, hangarBend);
+                    p.bayEntryLocal = game::navigation::hubHangarBayEntryOnStructure(*hangar, b, hangarBend);
                     m_padNotices[id] = {"pad:bay_free:" + p.address + ":" + std::to_string(b + 1), serverTime()};
                     std::cerr << "[PadLanding] ship " << id.value << " hangar " << p.address << ": bay " << b
                               << " free - out of the queue, to the doors" << std::endl;
@@ -666,14 +667,16 @@ void GameSimulation::updatePadLandings(double dt)
             // landed with (level, its nose where it came down)
             if (!p.landedAttitudeKnown)
             {
-                const glm::dmat3 Rp = strip.axes(touchdown);
+                // the berth's RIGID floor (its model's axes at its origin), not the deck tangent under the touchdown point -
+                // on a ring a place 17 m off the model's origin tilted the hull by ~0.8 deg (re-audit #4 A5)
+                const glm::dmat3 Rp = strip.axes(glm::dvec3(p.structureOriginX, 0.0, 0.0));
                 const glm::dvec3 nose = glm::transpose(Rp) * glm::dvec3(-glm::dvec3(glm::mat3(tr.orientation)[2]));
                 glm::dvec3 f = nose - out * glm::dot(nose, out);
                 f = glm::length(f) > 1.0e-6 ? glm::normalize(f) : glm::dvec3(0.0, 0.0, -1.0);
                 p.landedAttitude = glm::dmat3(glm::normalize(glm::cross(f, out)), out, -f);
                 p.landedAttitudeKnown = true;
             }
-            tr.orientation = glm::mat4(glm::mat3(strip.axes(touchdown) * p.landedAttitude));
+            tr.orientation = glm::mat4(glm::mat3(strip.axes(glm::dvec3(p.structureOriginX, 0.0, 0.0)) * p.landedAttitude));
             p.touchdownPitch = 0.0;   // the rock below is applied whole on this fresh attitude
         }
         else

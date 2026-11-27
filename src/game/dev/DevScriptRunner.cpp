@@ -1477,7 +1477,7 @@ bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
                 points.push_back({"building centre", glm::dvec3(0.5 * (m.rect.x + m.rect.z), m.y1, 0.5 * (m.rect.y + m.rect.w))});
                 if (m.pad)
                     for (int bay = 0; bay < game::navigation::hubBerthPlaces(m); ++bay)
-                        points.push_back({"place " + std::to_string(bay) + " touchdown", game::navigation::hubBerthTouchdown(m, bay)});
+                        points.push_back({"place " + std::to_string(bay) + " touchdown", game::navigation::hubBerthTouchdownOnStructure(m, bay, plan->ring())});
             }
         if (points.empty())
         {

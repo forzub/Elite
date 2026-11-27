@@ -9548,3 +9548,25 @@ start-up hitches (render), trade step 16 part 3 live.
   disappearance; cost); then B (one epoch: positions, orientations AND velocities per epoch - ClientHubCitySpace still
   shares velocities), then C (independent data: asset node, contact surface, server target, autopilot target, 2D / 3D
   picks, HUD, epochs).
+* 2026-11-27 SPATIAL A5 rest / A6 / A7 / A2 domain + AUDIT #5 P1 - SOURCE + UNIT + LIVE:
+  - A5 (ad132a1d2): hubPointOnStructure - touchdown, hangar door front, bay entry, hubPadRoute's hangar goal on the berth's
+    RIGID model; the landed hull on the berth's floor (was the deck tangent under the touchdown: up to 1.257 deg off).
+  - A6 (b9d67790f): CityPadPresence.h - a pad EXISTS when the city's physical package has its "pad_<address>" volumes
+    (HubExpansion builds it only on a finished building) and is USABLE unless its node is Gutted / Destroyed; server
+    (cityPadPresenceOf: the dispatcher refuses not built / wrecked, the manual capture ignores it) and client (the pad
+    nodes kept at the client's package assembly + the replicated buildingStates: HUD zones, a refusal at the click).
+    LIVE with a 50 % test build of earth_orbital_hub: designed 342, built 193; A2-03 refused at the click.
+  - AUDIT #5 P1 (62eb3e268): ShipSnapshot padService = the control state only "phase:<n>:<frame>/<address>#<place>",
+    padNotice = the notices (a notice replaced the phase for 4 s: the tunnel / the collision-assist gate dropped);
+    the HUD takes its place from the state (was a substring search, bay 0 when missing). Wire 60 / schema 85. LIVE
+    gar7: the tunnel through phases 0 / 1 / 2 without a gap; one assist dodge before the first state arrived.
+  - A7 (a0c9e7ae1): projectSheet (no warp) for the geometry pass's CPU fallback (it warped the pre-unrolled sheet again:
+    819 px); the GPU's screen origin = projectSheet(0) (it ignored originMeters: 255 px). Unit 1.6e-13 px; live plan OK.
+  - A2 domain (9b7e28882): HubCitySpace::moduleOnDeck / worldOnDeck - the ring's axis is not a deck point; the manual
+    capture, the altimeter and the legs prompt skip it.
+  - FOUND (backlog item 10, mojibake): src/render/cockpit/HubCorridorHudRenderer.cpp holds double-encoded UTF-8 literals
+    in its snprintf labels (the dock / pad price labels) - a real source of the in-game mojibake. Not fixed yet.
+  - OPEN: A3 / A4 live (real mouse picking, beyond the sheet, seam polylines split, 2D <-> 3D keeps the target), A8 / A9
+    extras (ring extents by rigid volumes / assets, occlusion by existing structures, corridor disappearance, cost), the
+    map's pad drawing / landing card by presence, the one-snapshot gap at the service start, audit #5 items 2 (one owner
+    of the service route) and 4 (geometry acceptance), then B, then C.

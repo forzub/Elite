@@ -1414,6 +1414,34 @@ bool DevScriptRunner::runReportVerb(SpaceState& s, const std::string& cmd)
     // landing place. Ids, ticks, times, timeline revision; the plan point; the module point; the world point in the
     // authoritative and the presentation epoch (HubCitySpace); the HUD's own resolver (resolveInfrastructureKinematics);
     // the screen pixel through the main camera; the differences. Exit criterion: HUD == presentation, 0 m.
+    // "spatial:tracked" (audit #6 A3): every infrastructure target the HUD tracks (a click on the 2D / 3D map): its id,
+    // its plan point, the HUD resolver's world point and the same point through the city space - kept across a 2D <-> 3D
+    // switch and equal to the clicked block
+    if (cmd == "spatial:tracked")
+    {
+        const auto shipIt = s.m_client->world().ships().find(s.m_playerId.value);
+        const glm::dvec3 shipW = shipIt != s.m_client->world().ships().end()
+                                     ? world::coordinates::fullMeters(shipIt->second.renderTransform.worldPosition)
+                                     : glm::dvec3(0.0);
+        int n = 0;
+        for (const auto& [id, t] : s.m_navigationWorkspace.targets().infrastructure())
+        {
+            ++n;
+            const auto hud = game::presentation::detail::resolveInfrastructureKinematics(
+                s.m_client->world(), t.systemId, t.stableObjectId, t.hasPlanPoint, t.planPointMeters);
+            glm::dvec3 viaSpace(0.0);
+            for (const auto& [oid, object] : s.m_client->world().objects())
+                if (object.hubAttachment.valid && object.hubAttachment.moduleId == t.stableObjectId)
+                    viaSpace = game::client::presentationCitySpace(object).planToWorld(t.planPointMeters);
+            const glm::dvec3 hudW = world::coordinates::fullMeters(hud.worldPosition);
+            std::cerr << std::fixed << std::setprecision(3) << "[Spatial] tracked '" << id << "' module " << t.stableObjectId
+                      << " plan (" << t.planPointMeters.x << ", " << t.planPointMeters.z << ") valid " << hud.valid
+                      << " | HUD vs city space " << glm::length(hudW - viaSpace) << " m | " << glm::length(hudW - shipW)
+                      << " m from the ship" << std::defaultfloat << '\n';
+        }
+        std::cerr << "[Spatial] tracked infrastructure: " << n << '\n';
+        return true;
+    }
     if (cmd.rfind("spatial:", 0) == 0)
     {
         const std::string want = cmd.substr(8);

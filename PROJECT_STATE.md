@@ -9570,3 +9570,27 @@ start-up hitches (render), trade step 16 part 3 live.
     extras (ring extents by rigid volumes / assets, occlusion by existing structures, corridor disappearance, cost), the
     map's pad drawing / landing card by presence, the one-snapshot gap at the service start, audit #5 items 2 (one owner
     of the service route) and 4 (geometry acceptance), then B, then C.
+* 2026-11-27 AUDIT #6 (657465b43; target >= 8/10 per direction) - progress. Author: D3 (UI layout) POSTPONED; no
+  cockpit / windshield redesign until A, B, C, D1 / D2 are done (memory cockpit-ui-frozen).
+  - A10 (3a868af8c): the takeover owner from padService (control state), not the displayed notice; a queued ship's
+    place published as -1 (was 0), its tunnel ends before the doors.
+  - A4 (6e0a77585): the ring's 2D plan breaks polylines at the seam; unit: one break, longest drawn step 20 m.
+  - D1 (b8e1d4e31) LIVE: with ELITE_DEV_UNIVERSE_START_S pinned, the state hash (all ships: pos / vel / orientation /
+    mass / J) at ticks 300 / 600 / 900 is bit-identical at 15, 30, 60, 120, 240 FPS and uncapped, and with render stalls
+    of 100 / 200 / 500 / 1000 ms. Limits: 3 ships, no player input, embedded session (TCP / input / autopilot / combat
+    not yet in the sweep). Real time vs simulation: a frame > 0.25 s drops the excess (500 ms stall -> 422 ms dropped),
+    debt cap 0.5 s, 8 steps per frame (below ~6 FPS the simulation runs slower than real time) - now logged
+    ([ServerTiming]).
+  - D2 (source): the embedded server is advanced from the client frame on the MAIN thread (LocalGameSession ->
+    ServerRunner::advance, accumulator); the ~9 ms "fixed_sim_ms" in [FramePerf] is the per-frame server advance (a
+    tick: simulation ~1.4 ms + snapshot ~2.4 ms + sessions ~0.3 ms, [SimPerf]); ticks per real second = 50 while
+    frames keep up, the tick count per frame depends on the frame time; a heavy client frame delays the simulation
+    (catch-up up to 8 steps, then dropped time). No worker thread yet.
+  - D4 (source + live): OpenGL 4.3 core baseline on NVIDIA Quadro RTX 3000 / 582.16; 62 shaders #version 330 core; the
+    PPI radar's 3 shaders are GLSL 120 fixed-function (gl_MultiTexCoord0, ftransform) - dead path today (the PPI widget
+    is not created), would fail on a strict core driver; no GL debug output. Discrete GPU exports present.
+  - 1440p (live, ELITE_DEV_WINDOW_SIZE): cockpit HUD texts in fixed pixels overlap (left console, the legs label over the
+    speed block) - a D3 symptom, NOT patched (author). 4K: the visible window is clamped to the 1920x1080 screen.
+  - OPEN: A2 axial-dock entry route split, A3 live picking / 2D <-> 3D target, A6 map display states + package states +
+    pad destroyed after clearance + generation / node index, B1-B3, C, D1 with input / TCP / autopilot / combat, D2
+    measurements per thread, D4 GL debug callback + other vendors, D5, D6 (clean Windows deps).

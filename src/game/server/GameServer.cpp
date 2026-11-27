@@ -138,6 +138,9 @@ GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
     : m_diagnostics{}
     , m_simulation(m_diagnostics)
 {
+        // a NEW world: the process-wide construction overrides of a previous world are dropped (stabilization stage 1)
+        if (const std::size_t dropped = elite::model_asset::resetHubExpansionOverrides(); dropped > 0)
+            std::cerr << "[World] new world: " << dropped << " construction override(s) of a previous world dropped" << std::endl;
         m_simulation.setTerrainHeightProvider(
             [this](const std::string& bodyId, const glm::dvec3& worldDirection, GameSimulation::TerrainSample& ground) {
                 return terrainHeight(bodyId, worldDirection, ground);
@@ -840,8 +843,8 @@ void GameServer::applyDevStartPoint(double dt)
         const char* v = std::getenv("ELITE_DEV_START");
         return std::string(v ? v : "");
     }();
-    static bool done = false;
-    static double waited = 0.0;
+    bool& done = m_devStartDone;       // world-owned (stabilization stage 1: a second world got no DEV start)
+    double& waited = m_devStartWaited;
     if (done || spec.empty())
         return;
     waited += std::max(0.0, dt);

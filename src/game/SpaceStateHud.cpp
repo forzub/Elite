@@ -658,6 +658,50 @@ void SpaceState::renderHudWorldLabels(const Viewport& vp)
 
 }
 
+// Stabilization stage 2: the cockpit radio's reception, its update and its notices run every frame in the update step
+// (they ran inside renderHudGuidanceAndCompass: with the HUD not drawn the radio stopped and its notices were lost)
+void SpaceState::updateCockpitRadioState()
+{
+    if (!m_client)
+        return;
+    const auto shipIt = m_client->world().ships().find(m_playerId.value);
+    if (shipIt == m_client->world().ships().end())
+        return;
+    const auto& playerShip = shipIt->second;
+    auto& radio = audio::CockpitRadio::instance();
+    // the reception, twice a second: the best transmitter among the hubs / beacons of this system (radio_regions.json)
+    // - full signal within its reach, then fading (log of the distance) into noise at noiseFactor x the reach
+    // (author 2026-11-23: «чем дальше от маяка - тем сильнее шум. как в реальности»)
+    static double receptionAt = -1.0;
+    if (m_client && radio.on() && radio.source() == audio::CockpitRadio::Source::Radio && glfwGetTime() - receptionAt > 0.5)
+    {
+        receptionAt = glfwGetTime();
+        const glm::dvec3 me = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
+        std::string best;
+        double bestQ = 0.0;
+        for (const auto& [oid, object] : m_client->world().objects())
+        {
+            if (!object.hubAttachment.valid || object.systemId != playerShip.transform.motion.systemId)
+                continue;
+            const auto* tx = radio.transmitter(object.hubAttachment.hubId);
+            if (!tx || tx->polity.empty())
+                continue;
+            const double reach = radio.rangeMeters(tx->beacon);
+            const double d = glm::length(world::coordinates::fullMeters(object.renderWorldPosition) - me);
+            const double q = d <= reach ? 1.0 : std::max(0.0, 1.0 - std::log10(d / reach) / std::log10(radio.noiseFactor()));
+            if (q > bestQ + 1.0e-9)
+            {
+                bestQ = q;
+                best = tx->polity;
+            }
+        }
+        radio.setReception(bestQ > 0.0 ? best : std::string(), bestQ);
+    }
+    radio.update();
+    if (std::string n = radio.takeNotice(); !n.empty())
+        m_pilotNotice = l10n::renderMessage(n);
+}
+
 // renderHUD / ship UI: the guidance corridor and the galactic compass on the
 // glass, drawn before the cockpit frame occludes them.
 void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShipState& playerShip)
@@ -905,37 +949,7 @@ void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShi
     // the cockpit radio: its notices to the pilot, its display line (bottom left, over the panels)
     {
         auto& radio = audio::CockpitRadio::instance();
-        // the reception, twice a second: the best transmitter among the hubs / beacons of this system (radio_regions.json)
-        // - full signal within its reach, then fading (log of the distance) into noise at noiseFactor x the reach
-        // (author 2026-11-23: «чем дальше от маяка - тем сильнее шум. как в реальности»)
-        static double receptionAt = -1.0;
-        if (m_client && radio.on() && radio.source() == audio::CockpitRadio::Source::Radio && glfwGetTime() - receptionAt > 0.5)
-        {
-            receptionAt = glfwGetTime();
-            const glm::dvec3 me = world::coordinates::fullMeters(playerShip.renderTransform.worldPosition);
-            std::string best;
-            double bestQ = 0.0;
-            for (const auto& [oid, object] : m_client->world().objects())
-            {
-                if (!object.hubAttachment.valid || object.systemId != playerShip.transform.motion.systemId)
-                    continue;
-                const auto* tx = radio.transmitter(object.hubAttachment.hubId);
-                if (!tx || tx->polity.empty())
-                    continue;
-                const double reach = radio.rangeMeters(tx->beacon);
-                const double d = glm::length(world::coordinates::fullMeters(object.renderWorldPosition) - me);
-                const double q = d <= reach ? 1.0 : std::max(0.0, 1.0 - std::log10(d / reach) / std::log10(radio.noiseFactor()));
-                if (q > bestQ + 1.0e-9)
-                {
-                    bestQ = q;
-                    best = tx->polity;
-                }
-            }
-            radio.setReception(bestQ > 0.0 ? best : std::string(), bestQ);
-        }
-        radio.update();
-        if (std::string n = radio.takeNotice(); !n.empty())
-            m_pilotNotice = l10n::renderMessage(n);
+        // (the reception, radio.update() and its notices run in the update step: updateCockpitRadioState - stage 2)
     }
     // the hub's corridors (green lanes / red zones), faint, under the guidance corridor
     if (m_client)
@@ -1591,18 +1605,7 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
             terminal.diagnostics.emplace_back(terminalText("cockpit.terminal.sos.no_service"),
                                               game::presentation::DockingTerminalSeverity::Warning);
     }
-    {
-        // a notice lives a few seconds, so the same warning can be printed again later
-        static std::string shown;
-        static double shownAt = 0.0;
-        if (m_pilotNotice != shown)
-        {
-            shown = m_pilotNotice;
-            shownAt = glfwGetTime();
-        }
-        else if (!shown.empty() && glfwGetTime() - shownAt > 6.0)
-            m_pilotNotice.clear();
-    }
+    // (the notice's lifetime and the berth watch are advanced in the update step: updateTerminalNoticeState)
     if (!m_pilotNotice.empty())
     {
         terminal.pilotNotice = l10n::renderMessage(m_pilotNotice);
@@ -1611,41 +1614,16 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
     // THE DISPATCHER'S LIGHT (author 2026-11-22: «если док занят - сообщение красным в терминале HUD и время ожидания. как
     // только док свободен - зелёный свет»): a refused place is watched - red with the wait counting down while all its
     // places are taken, green (15 s) the moment one is free
-    if (m_berthWatch.active && m_client)
+    if (m_berthWatch.active && m_berthWatch.evaluated)
     {
-        int places = 0, taken = 0;
-        if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(m_berthWatch.frameModuleId))
-            for (const auto& m : plan->modules())
-                if (m.address == m_berthWatch.address)
-                    places = game::navigation::hubBerthPlaces(m);
-        for (const auto& [oid, object] : m_client->world().objects())
-            if (object.hubAttachment.valid && object.hubAttachment.moduleId == m_berthWatch.frameModuleId)
-                for (const auto& b : object.occupiedBerths)
-                    if (b.compare(0, m_berthWatch.address.size() + 1, m_berthWatch.address + "#") == 0)
-                        ++taken;
-        const double now = glfwGetTime();
-        if (places > 0 && taken < places)
-        {
-            if (m_berthWatch.freeSince < 0.0)
-                m_berthWatch.freeSince = now;
+        if (m_berthWatch.placeFree)
             terminal.diagnostics.emplace_back(l10n::tr("cockpit.berth.free", {{"place", m_berthWatch.address}},
                                                        "FREE: {place} - a place is free, you may land"),
                                               game::presentation::DockingTerminalSeverity::Go);
-            if (now - m_berthWatch.freeSince > 15.0)
-                m_berthWatch = {};
-        }
         else
-        {
-            m_berthWatch.freeSince = -1.0;
-            // the wait in 5-minute steps: the line changes (is printed again) every 5 minutes, not every minute
-            const int raw = std::max(1, m_berthWatch.waitMin - static_cast<int>((now - m_berthWatch.since) / 60.0));
-            const int left = raw <= 5 ? raw : 5 * ((raw + 4) / 5);
-            terminal.diagnostics.emplace_back(l10n::tr("cockpit.berth.taken", {{"place", m_berthWatch.address}, {"minutes", std::to_string(left)}},
+            terminal.diagnostics.emplace_back(l10n::tr("cockpit.berth.taken", {{"place", m_berthWatch.address}, {"minutes", std::to_string(m_berthWatch.leftMin)}},
                                                        "TAKEN: {place} - all places taken, wait ~{minutes} min"),
                                               game::presentation::DockingTerminalSeverity::Alert);
-            if (now - m_berthWatch.since > 1800.0)
-                m_berthWatch = {};
-        }
         terminal.visible = true;
     }
     terminal.jumpLines = m_jumpTerminalLines;
@@ -2600,9 +2578,63 @@ const char* capsuleStateKey(game::navigation::capsule::State s)
 }
 }
 
-void SpaceState::renderDockingWidget(const Viewport& viewport)
+// Stabilization stage 2: the HUD terminal's timed state, advanced every frame in the update step (it was advanced
+// inside renderHudDockingTerminal - with the HUD hidden a notice never expired and a refused place was never re-checked)
+void SpaceState::updateTerminalNoticeState()
 {
-    if (!m_client || viewport.width <= 0 || viewport.height <= 0)
+    // a notice lives a few seconds, so the same warning can be printed again later
+    if (m_pilotNotice != m_pilotNoticeShown)
+    {
+        m_pilotNoticeShown = m_pilotNotice;
+        m_pilotNoticeShownAt = glfwGetTime();
+    }
+    else if (!m_pilotNoticeShown.empty() && glfwGetTime() - m_pilotNoticeShownAt > 6.0)
+        m_pilotNotice.clear();
+    // THE DISPATCHER'S LIGHT (author 2026-11-22: «если док занят - сообщение красным в терминале HUD и время ожидания. как
+    // только док свободен - зелёный свет»): a refused place is watched - red with the wait counting down while all its
+    // places are taken, green (15 s) the moment one is free
+    m_berthWatch.evaluated = false;
+    if (!m_berthWatch.active || !m_client)
+        return;
+    int places = 0, taken = 0;
+    if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(m_berthWatch.frameModuleId))
+        for (const auto& m : plan->modules())
+            if (m.address == m_berthWatch.address)
+                places = game::navigation::hubBerthPlaces(m);
+    for (const auto& [oid, object] : m_client->world().objects())
+        if (object.hubAttachment.valid && object.hubAttachment.moduleId == m_berthWatch.frameModuleId)
+            for (const auto& b : object.occupiedBerths)
+                if (b.compare(0, m_berthWatch.address.size() + 1, m_berthWatch.address + "#") == 0)
+                    ++taken;
+    const double now = glfwGetTime();
+    m_berthWatch.evaluated = true;
+    if (places > 0 && taken < places)
+    {
+        if (m_berthWatch.freeSince < 0.0)
+            m_berthWatch.freeSince = now;
+        m_berthWatch.placeFree = true;
+        if (now - m_berthWatch.freeSince > 15.0)
+            m_berthWatch = {};
+    }
+    else
+    {
+        m_berthWatch.freeSince = -1.0;
+        m_berthWatch.placeFree = false;
+        // the wait in 5-minute steps: the line changes (is printed again) every 5 minutes, not every minute
+        const int raw = std::max(1, m_berthWatch.waitMin - static_cast<int>((now - m_berthWatch.since) / 60.0));
+        m_berthWatch.leftMin = raw <= 5 ? raw : 5 * ((raw + 4) / 5);
+        if (now - m_berthWatch.since > 1800.0)
+            m_berthWatch = {};
+    }
+}
+
+// Stabilization stage 2: the widget's STATE (the release notice / timer, the console line) is computed in the update
+// step, every frame, whatever the HUD draws (HUD off, the preview, a minimized window); the render only draws it.
+void SpaceState::updateDockingWidgetState()
+{
+    m_dockingWidget = {};
+    m_dockingWidgetConsoleLine.clear();
+    if (!m_client)
         return;
     const auto it = m_client->world().ships().find(m_playerId.value);
     if (it == m_client->world().ships().end())
@@ -2650,8 +2682,15 @@ void SpaceState::renderDockingWidget(const Viewport& viewport)
     m_lastStationControlled = in.stationControlled;
     in.justReleased = m_stationReleasedAtSeconds >= 0.0 && nowGlfw - m_stationReleasedAtSeconds < 8.0;
     in.takeoverSecondsLeft = m_takeoverSecondsLeft;
-    const auto widget = game::presentation::dockingWidgetText(in, hudLookup(context().app));
-    m_dockingWidgetConsoleLine = widget.visible ? widget.consoleLine : std::string();
+    m_dockingWidget = game::presentation::dockingWidgetText(in, hudLookup(context().app));
+    m_dockingWidgetConsoleLine = m_dockingWidget.visible ? m_dockingWidget.consoleLine : std::string();
+}
+
+void SpaceState::renderDockingWidget(const Viewport& viewport)
+{
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+    const auto& widget = m_dockingWidget;
     if (!widget.visible)
         return;
     // A compact panel: title + status chip, then label / value pairs in two columns.

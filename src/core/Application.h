@@ -75,6 +75,7 @@ public:
     void prepareRequestedPresentation(SpaceState& space);
     void commitPreparedPresentationAfterSwap(SpaceState& space);
     double m_loadingVisualsWaitStart = -1.0;   // the loading screen holding for the flight's planets
+    double m_worldReadyAtSeconds = -1.0;       // the last world became playable (glfw s; DEV new-world test)
     int m_loadingVisualsFrames = 0;
 
     // Committed presentation visible to the user. Never exposes a staged scene.

@@ -32,6 +32,8 @@ class DevScriptRunner
 {
 public:
     static DevScriptRunner& instance();
+    // a new world (SpaceState created): the progress of every scripted step starts over, the config is re-read
+    void beginWorld() { *this = DevScriptRunner(); }
 
     // Runs every DEV step that is due. Called once per client frame before
     // the session advances.

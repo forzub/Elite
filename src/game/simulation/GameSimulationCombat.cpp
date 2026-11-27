@@ -1759,8 +1759,7 @@ void GameSimulation::collideShips(double dt)
         b.I = 1.0e20;
         // the bounding radius, cached per object (a generated settlement has thousands of volumes; destroyed ones only
         // make the cached radius conservative)
-        static std::unordered_map<std::uint64_t, std::pair<std::size_t, double>> radiusCache;
-        auto& rc = radiusCache[oid.value];
+        auto& rc = m_combatRadiusCache[oid.value];   // world-owned (stabilization stage 1)
         if (rc.first != o.hitComponent.volumes.size())
         {
             rc = {o.hitComponent.volumes.size(), 1.0};

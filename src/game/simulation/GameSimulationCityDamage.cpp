@@ -66,13 +66,7 @@ bool GameSimulation::castCitySegment(const glm::dvec3& startW, const glm::dvec3&
             continue;
         // the bounding sphere (cached per object and per static-object generation: a construction stage replaces the
         // volumes - SRV-4, the beams missed the new buildings with the first stage's sphere)
-        struct CachedRadius
-        {
-            std::uint64_t generation = 0;
-            double radius = 0.0;
-        };
-        static std::unordered_map<std::uint64_t, CachedRadius> radius;
-        auto& rit = radius[oid.value];
+        auto& rit = m_cityStrikeRadiusCache[oid.value];   // world-owned (stabilization stage 1)
         if (rit.generation != m_staticObjectsGeneration)
         {
             rit.generation = m_staticObjectsGeneration;
@@ -168,13 +162,7 @@ game::simulation::CityPadPresence GameSimulation::cityPadPresenceOf(EntityId cit
     if (it == m_staticObjects.end())
         return {};
     // the pad nodes of this city's CURRENT package (a construction stage replaces the volumes: the generation)
-    struct Cached
-    {
-        std::uint64_t generation = ~0ull;
-        std::unordered_map<std::string, std::int32_t> nodes;
-    };
-    static std::unordered_map<std::uint64_t, Cached> cache;
-    auto& c = cache[cityId.value];
+    auto& c = m_cityPadNodesCache[cityId.value];   // world-owned (stabilization stage 1)
     if (c.generation != m_staticObjectsGeneration)
     {
         c.generation = m_staticObjectsGeneration;

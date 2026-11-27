@@ -734,6 +734,21 @@ void SpaceState::applyJumpScreenEffect()
     m_jumpScreenEffect.apply(m_jumpScreen);
 }
 
+// Stabilization stage 2: the system map's jump marks follow the jump state every frame, drawn HUD or not
+void SpaceState::updateJumpMapState()
+{
+    if (!m_client)
+        return;
+    const auto it = m_client->world().ships().find(m_playerId.value);
+    if (it == m_client->world().ships().end())
+        return;
+    const auto& motion = it->second.transform.motion;
+    const bool charging = motion.jumpState == 1 || motion.jumpState == 2 || motion.jumpState == 4 || motion.jumpState == 5;
+    const bool inSystem = charging && motion.jumpTargetSystemId == motion.systemId;
+    m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, charging && !inSystem ? motion.jumpTargetSystemId : -1,
+                                     m_jumpCalculatedBodyId, inSystem ? m_jumpRequestedBodyId : std::string());
+}
+
 void SpaceState::renderHudJump(const Viewport& viewport)
 {
     if (!m_client || viewport.width <= 0 || viewport.height <= 0)
@@ -743,12 +758,7 @@ void SpaceState::renderHudJump(const Viewport& viewport)
     if (it == ships.end())
         return;
     const auto& motion = it->second.transform.motion;
-    {
-        const bool charging = motion.jumpState == 1 || motion.jumpState == 2 || motion.jumpState == 4 || motion.jumpState == 5;
-        const bool inSystem = charging && motion.jumpTargetSystemId == motion.systemId;
-        m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, charging && !inSystem ? motion.jumpTargetSystemId : -1,
-                                         m_jumpCalculatedBodyId, inSystem ? m_jumpRequestedBodyId : std::string());
-    }
+    // (the system map's jump state is set in the update step: updateJumpMapState - stabilization stage 2)
 
     // DEV diagnosis for 5 s after a jump: what the client draws against (celestial snapshot, the
     // player's position against its bodies)

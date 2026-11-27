@@ -9721,3 +9721,15 @@ start-up hitches (render), trade step 16 part 3 live.
     galaxy, world sites).
   - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
     HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.
+
+### Architecture Stabilization Program 2026-11-27/28 - stages 0-2 (evidence: ARCHITECTURE_STABILIZATION_REPORT.md)
+- Stage 0 baseline: tag `stabilization-baseline-2026-11-27` (39fd7f5b7); protocol 60 / schema 85; third_party manifest
+  with hashes (`tools/third_party_manifest.py check`); Python contracts 185 pass / 17 baseline reds (listed in the report).
+- Stage 1 (source + live): world state moved out of function statics / namespace globals into its owners (pad service
+  place, pad release / zone-exit / take-off, strike / pad-node / combat radius caches -> GameSimulation; DEV start ->
+  GameServer; construction overrides reset per world; DEV script runner per world). Barrier
+  check_world_state_ownership.py. LIVE: two worlds in one process, world 1 destroyed mid-landing, world 2 (ship 204
+  reused) LANDED A1-03 102 s. NOT covered: concurrent worlds (economy service binding is one-world).
+- Stage 2 (source + live): render functions no longer drive state (docking widget, jump marks, terminal notice /
+  berth watch, cockpit radio moved to update). Barrier check_render_purity.py. LIVE: Preview flavor ring landing
+  LANDED 102 s. Contracts 187 pass / same 17 reds.

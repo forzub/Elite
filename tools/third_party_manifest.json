@@ -1,0 +1,35 @@
+{
+ "asio": {
+  "version": "1.28.2",
+  "source": "https://github.com/chriskohlhoff/asio/archive/refs/tags/asio-1-28-2.tar.gz",
+  "note": "chosen 2026-11-27 (the pre-loss version unknown): the last release with io_service for websocketpp 0.8.2",
+  "sha256_tree": "4c450071a505b07ab7b2928ed4ce2945babf769a3427ff0adae289206e2661f1",
+  "files": 1658
+ },
+ "websocketpp": {
+  "version": "0.8.2",
+  "source": "https://github.com/zaphoyd/websocketpp/archive/refs/tags/0.8.2.tar.gz",
+  "sha256_tree": "c9a5842ba86c26aee1b0caa8ee4c907c8d2251b4940de34a7a5e1f3d0aad6ab0",
+  "files": 271
+ },
+ "webview": {
+  "version": "0.12.0",
+  "source": "https://github.com/webview/webview/archive/refs/tags/0.12.0.tar.gz",
+  "note": "its default WebView2 SDK (1.0.1150.38) matches the old build cache",
+  "sha256_tree": "dfef59a05afdbe5545ad009911cfdcebc454fe2a90d0b14b711c1faa18b8652c",
+  "files": 69
+ },
+ "miniaudio": {
+  "version": "0.11.21",
+  "source": "https://github.com/mackron/miniaudio/archive/refs/tags/0.11.21.tar.gz",
+  "sha256_tree": "79ced23ba952bb4d60e0ea9294d0cda944a4c499ba268349bb5cdf0a7a28f128",
+  "files": 137
+ },
+ "webview2": {
+  "version": "1.0.1150.38",
+  "source": "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.1150.38",
+  "note": "not referenced by CMake (the build fetches its own copy into _deps)",
+  "sha256_tree": "724bbde717fd05e9e842bb04cd0dab0627805c822da2be1ddca8b59cc70fd792",
+  "files": 45
+ }
+}

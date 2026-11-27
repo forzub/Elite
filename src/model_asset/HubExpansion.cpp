@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <unordered_set>
 #include <cstdio>
 #include <unordered_map>
@@ -219,6 +220,28 @@ bool setHubExpansionProjectOverride(const std::string& hubId, const std::string&
     overridesInForce()[{hubId, projectId}] = HubExpansionOverride {hubId, projectId, startDay, work, halts};
     ++g_overrideGeneration;
     return true;
+}
+
+std::size_t resetHubExpansionOverrides()
+{
+    std::lock_guard<std::mutex> lock(planMutex());
+    auto& overrides = overridesInForce();
+    const std::size_t dropped = overrides.size();
+    if (dropped == 0)
+        return 0;
+    std::set<std::string> hubs;
+    for (const auto& [key, o] : overrides)
+        hubs.insert(key.first);
+    auto& cache = planCache();
+    for (const auto& hubId : hubs)
+        if (const auto it = cache.find(hubId); it != cache.end())
+        {
+            retiredPlans().push_back(std::move(it->second));
+            it->second = loadPlan(hubId);
+        }
+    overrides.clear();
+    ++g_overrideGeneration;
+    return dropped;
 }
 
 std::vector<HubExpansionOverride> hubExpansionOverrides()

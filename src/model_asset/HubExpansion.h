@@ -83,6 +83,11 @@ struct HubExpansionOverride
     std::vector<ExpansionProject::Halt> halts;
 };
 std::vector<HubExpansionOverride> hubExpansionOverrides();
+// a NEW WORLD (stabilization stage 1): the overrides are world state kept in this process-wide store - a world
+// created after another in the same process must not inherit its construction schedule. Every overridden hub's plan is
+// reloaded from its file (the old plan retired, never freed: readers may hold it), the override list cleared, the
+// generation bumped. Returns how many overrides were dropped.
+std::size_t resetHubExpansionOverrides();
 std::uint64_t hubExpansionOverrideGeneration();
 
 // THE HUB CONTENT FINGERPRINT (audit SRV-1): the hub city layouts and construction plans (their bytes) and the hub

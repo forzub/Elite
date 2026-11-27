@@ -826,6 +826,13 @@ private:
         // the ship's velocity relative to the city when the service took it, in strip m/s, NOT yet along its way: carried
         // on and braked off at the service's working acceleration (audit #8 A2: no velocity step at the takeover)
         glm::dvec3 entryResidualLocal {0.0};
+        // the ship's place in the city frame the service holds (taken once per request, then only integrated - never
+        // read back). Stage 1 of the stabilization program: it lived in a function static keyed by EntityId and
+        // outlived its world - a second world in the same process (server time from 0, ship ids reused) took the
+        // first world's place. Now it lives and dies with this request.
+        glm::dvec3 heldPlan {0.0};
+        bool heldValid = false;
+        double heldForSinceS = -1.0;
         double sinceS = 0.0;
         double logS = -1.0e9;
         bool autoLanding = true;     // the pad's service lands the ship (false: brought over the zone and handed over)
@@ -845,6 +852,36 @@ private:
         glm::dvec3 doorFrontLocal {0.0}, bayEntryLocal {0.0};
     };
     std::unordered_map<EntityId, PadLanding> m_padLandings;
+    // Stage 1 of the stabilization program - state of THIS world that lived in namespace globals / function statics and
+    // outlived its world (a second world in the same process reuses ship ids and restarts server time and generations):
+    // the pilot took the controls back (server time per ship): no capture / touchdown for a while
+    std::unordered_map<std::uint64_t, double> m_padReleasedAt;
+    // released from a pad: no capture again until the ship has been out of every pad zone once
+    std::unordered_set<std::uint64_t> m_padAwaitZoneExit;
+    // a ship taken back while standing on a pad: its legs on the deck, the landed attitude held until it rises
+    struct PadTakeoff
+    {
+        std::string frameModuleId;
+        glm::dvec3 pad {0.0};
+        glm::dvec3 out {0.0, 1.0, 0.0};
+        glm::dmat3 attitude {1.0};   // in the city frame
+        double since = 0.0;
+    };
+    std::unordered_map<std::uint64_t, PadTakeoff> m_padTakeoffs;
+    // per-object caches keyed by the static-object generation (a construction stage replaces the volumes)
+    struct CachedObjectRadius
+    {
+        std::uint64_t generation = ~0ull;
+        double radius = 0.0;
+    };
+    mutable std::unordered_map<std::uint64_t, CachedObjectRadius> m_cityStrikeRadiusCache;
+    struct CachedPadNodes
+    {
+        std::uint64_t generation = ~0ull;
+        std::unordered_map<std::string, std::int32_t> nodes;
+    };
+    mutable std::unordered_map<std::uint64_t, CachedPadNodes> m_cityPadNodesCache;
+    mutable std::unordered_map<std::uint64_t, std::pair<std::size_t, double>> m_combatRadiusCache;
     std::unordered_map<EntityId, std::pair<std::string, double>> m_padNotices;   // "taken" / "refused:<key>", server time
     std::string padServiceStatus(EntityId shipId) const;   // ShipSnapshot::padService (the control state only)
     std::string padServiceNotice(EntityId shipId) const;   // ShipSnapshot::padNotice

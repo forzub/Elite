@@ -1249,6 +1249,33 @@ void Application::mainLoop()
 #ifdef _WIN32
             xprocPhaseBegin = XprocTraceClock::now();
 #endif
+            // DEV (stabilization stage 1, the world lifecycle): ELITE_DEV_NEW_WORLD_AT_S=<app s> - at that time the session
+            // goes back to the main menu (the world destroyed) and a NEW local game starts in the same process: no state
+            // of the first world may leak into the second
+            {
+                static const double newWorldAt = [] {
+                    const char* v = std::getenv("ELITE_DEV_NEW_WORLD_AT_S");
+                    return v ? std::atof(v) : -1.0;
+                }();
+                static int newWorldStage = 0;
+                if (newWorldAt > 0.0)
+                {
+                    if (newWorldStage == 0 && m_worldReadyAtSeconds > 0.0 && glfwGetTime() - m_worldReadyAtSeconds >= newWorldAt &&
+                        m_activeSessionKind == GameSessionLaunchKind::LocalNewGame)
+                    {
+                        std::cerr << "[World] DEV: leaving the world to the main menu" << std::endl;
+                        returnSessionToMainMenu();
+                        newWorldStage = 1;
+                    }
+                    else if (newWorldStage == 1 && m_activeSessionKind == GameSessionLaunchKind::None &&
+                             m_pendingSessionLaunch == GameSessionLaunchKind::None && !m_gameSession)
+                    {
+                        std::cerr << "[World] DEV: starting a NEW local world in the same process" << std::endl;
+                        requestSessionStart(GameSessionLaunchKind::LocalNewGame);
+                        newWorldStage = 2;
+                    }
+                }
+            }
             bool localPaused = localSessionMenuPaused();
             // DEV (audit #8 D2): ELITE_DEV_PAUSE=<app s>:<seconds> holds the single player pause in that window (the
             // ESC menu's path: the local server's own clock is paused, then resumed from a fresh base)
@@ -1976,6 +2003,7 @@ void Application::commitPreparedPresentationAfterSwap(SpaceState& space)
         std::cerr << "[App] flight visuals " << (settled ? "ready" : "NOT ready (timeout)") << " after "
                   << static_cast<int>((now - m_loadingVisualsWaitStart) * 1000.0) << " ms under the loading screen"
                   << std::endl;
+        m_worldReadyAtSeconds = now;   // DEV ELITE_DEV_NEW_WORLD_AT_S counts from here
         m_loadingVisualsWaitStart = -1.0;
         m_loadingVisualsFrames = 0;
     }

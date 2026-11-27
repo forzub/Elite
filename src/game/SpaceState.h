@@ -1,4 +1,5 @@
 #pragma once
+#include "src/game/presentation/DockingWidgetText.h"
 #include "src/game/navigation/rules/OnboardJournal.h"
 #include "src/game/navigation/rules/RescueRules.h"
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
@@ -260,7 +261,14 @@ public:
         std::string frameModuleId, address;
         int waitMin = 0;
         double since = 0.0, freeSince = -1.0;
+        // evaluated each frame in the update step (stage 2): the render only prints it
+        bool evaluated = false, placeFree = false;
+        int leftMin = 0;
     } m_berthWatch;
+    std::string m_pilotNoticeShown;   // the notice whose lifetime runs (updateTerminalNoticeState)
+    double m_pilotNoticeShownAt = 0.0;
+    void updateTerminalNoticeState();
+    void updateCockpitRadioState();   // stage 2: the radio's reception / update / notices, every frame
     struct FlightTaskSlot
     {
         std::uint64_t dockSerial = 0;
@@ -451,6 +459,9 @@ private:
         const ClientShipState& playerShip,
         const game::ship::computer::MotherComputerCockpitView& cockpit);
     void renderDockingWidget(const Viewport& viewport);
+    void updateDockingWidgetState();   // stage 2: the widget's state, every frame (the render only draws)
+    void updateJumpMapState();         // stage 2: the system map's jump marks, every frame
+    game::presentation::DockingWidgetText m_dockingWidget;
     std::string m_dockingWidgetConsoleLine;   // the widget's phrase for the HUD console
     void renderHudDockingTerminal(
         const Viewport& vp,
@@ -847,6 +858,9 @@ private:
     // Newtonian: failed planning/handoff attempts of the current request
     // that were turned into a coast-and-replan instead of a final failure.
     int m_newtonianRouteRecoveries = 0;
+    // stabilization stage 3: the retryable plan failures of THIS request (the planner from the same rest state gives the
+    // same answer: B2-04 replanned for ever). Bounded: after MaxRetryablePlanFailures the request is refused, told.
+    int m_dockRetryablePlanFailures = 0;
     double m_newtonianLastRecoveryServerSeconds = -1.0e9;
     // Assisted: after a capability loss the request is planned again only
     // after braking to rest along the current (already cleared) course.

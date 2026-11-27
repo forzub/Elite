@@ -48,23 +48,7 @@ CityStrip cityStripOf(const GameSimulation& sim, const StaticObject& city)
     return c;
 }
 
-// the pilot took the controls back (server time per ship): no capture / touchdown for a while - he is taking off
-std::unordered_map<std::uint64_t, double> g_padReleasedAt;
-// released from a pad: no capture again until the ship has been out of every pad zone once (live 2026-11-21: the docking
-// lift-off was re-captured and set back down)
-std::unordered_set<std::uint64_t> g_padAwaitZoneExit;
-// a ship taken back while standing on a pad (author 2026-11-21: «начинаю вращать корабль на платформе - он пробивает кормой
-// платформу; если он на опорах - так не должно быть»): its legs stand on the deck - the attitude it landed with is held and
-// it may only rise; free once 3 m over the deck (or after a minute)
-struct PadTakeoff
-{
-    std::string frameModuleId;
-    glm::dvec3 pad {0.0};
-    glm::dvec3 out {0.0, 1.0, 0.0};
-    glm::dmat3 attitude {1.0};   // in the city frame
-    double since = 0.0;
-};
-std::unordered_map<std::uint64_t, PadTakeoff> g_padTakeoffs;
+// (the pad release / zone-exit / take-off state is world-owned: GameSimulation::m_padReleasedAt, m_padAwaitZoneExit, m_padTakeoffs)
 } // namespace
 
 namespace
@@ -158,7 +142,7 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
                 if (obj.hubModuleId == held->second.frameModuleId)
                 {
                     const CityStrip cs = cityStripOf(*this, obj);
-                    g_padTakeoffs[shipId.value] = {held->second.frameModuleId, held->second.padLocal, held->second.outLocal,
+                    m_padTakeoffs[shipId.value] = {held->second.frameModuleId, held->second.padLocal, held->second.outLocal,
                                                    glm::transpose(cs.axes(held->second.padLocal)) *
                                                        glm::dmat3(glm::mat3(ship->core().transform().orientation)),
                                                    serverTime()};
@@ -166,8 +150,8 @@ bool GameSimulation::requestPadLanding(EntityId shipId, const std::string& frame
                 }
         if (m_padLandings.erase(shipId) != 0)
         {
-            g_padReleasedAt[shipId.value] = serverTime();
-            g_padAwaitZoneExit.insert(shipId.value);
+            m_padReleasedAt[shipId.value] = serverTime();
+            m_padAwaitZoneExit.insert(shipId.value);
             ship->setControlState(ShipControlState {});
             std::cerr << "[PadLanding] ship " << shipId.value << ": the pilot takes the controls" << std::endl;
         }
@@ -501,12 +485,9 @@ void GameSimulation::updatePadLandings(double dt)
         // the service keeps the ship's place in the city frame itself: taken once, on its first tick here (this stage has
         // the free ships re-materialized at the hub objects' epoch), then only integrated - never read back (read back
         // it fed the epoch step into itself and blew up / stood still, live 2026-11-21)
-        static std::unordered_map<std::uint64_t, glm::dvec3> held;
-        static std::unordered_map<std::uint64_t, double> heldSince;   // a new request re-takes the place
-        auto heldIt = held.find(id.value);
-        if (heldIt == held.end() || p.sinceS > heldSince[id.value])
+        if (!p.heldValid || p.heldForSinceS != p.sinceS)   // a new request re-takes the place
         {
-            heldSince[id.value] = p.sinceS;
+            p.heldForSinceS = p.sinceS;
             // taken WHERE IT IS (audit #8 A2: the earlier axial branch set the along coordinate to the pad's anywhere off
             // the deck's domain - at r > 0 that moved the ship by r * the angle; now only on the axis itself, where it
             // moves nothing). Its velocity relative to the city is kept and braked off (entryResidualLocal).
@@ -516,9 +497,10 @@ void GameSimulation::updatePadLandings(double dt)
             if (!strip.worldOnDeck(tr.fullWorldMeters()))
                 std::cerr << "[PadLanding] ship " << id.value << " pad " << p.address << ": taken off the deck's plan (near the "
                           << "axis) at its own point, " << glm::length(p.entryResidualLocal) << " m/s to brake off" << std::endl;
-            heldIt = held.insert_or_assign(id.value, startPlan).first;
+            p.heldPlan = startPlan;
+            p.heldValid = true;
         }
-        glm::dvec3& q = heldIt->second;
+        glm::dvec3& q = p.heldPlan;
         const glm::dvec3& out = p.outLocal;
         // what the ship can still do (author 2026-11-21: «будет ли отказ двигателя влиять на полёт к посадке?»): the service flies
         // it within its working thrust (damage included) - no faster than it could brake, no quicker turns than its RCS
@@ -882,7 +864,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
             isDockStationControlledShip(id))
             continue;
         // taking off from a pad: the legs stand on the deck - the landing attitude held, no turning, until 3 m up
-        if (const auto t = g_padTakeoffs.find(id.value); t != g_padTakeoffs.end())
+        if (const auto t = m_padTakeoffs.find(id.value); t != m_padTakeoffs.end())
         {
             auto& tr = shipPtr->core().transform();
             const StaticObject* city = nullptr;
@@ -892,7 +874,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
             const auto& dims = shipPtr->core().desc().logicalDimensions();
             const double clearance = (dims.enabled && dims.height > 0.0 ? 0.5 * dims.height : 3.0) + 0.5;
             if (!city || tr.motion.systemId != m_activeCelestialSystemId)
-                g_padTakeoffs.erase(t);
+                m_padTakeoffs.erase(t);
             else
             {
                 const CityStrip cs = cityStripOf(*this, *city);
@@ -901,7 +883,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 if (h > 3.0 || now - t->second.since > 60.0)
                 {
                     std::cerr << "[PadLanding] ship " << id.value << " off the pad (" << h << " m up): free to turn" << std::endl;
-                    g_padTakeoffs.erase(t);
+                    m_padTakeoffs.erase(t);
                 }
                 else
                 {
@@ -912,7 +894,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
                 }
             }
         }
-        if (const auto r = g_padReleasedAt.find(id.value); r != g_padReleasedAt.end() && now - r->second < 15.0)
+        if (const auto r = m_padReleasedAt.find(id.value); r != m_padReleasedAt.end() && now - r->second < 15.0)
             continue;   // just taken back: taking off
         auto& tr = shipPtr->core().transform();
         if (tr.motion.systemId != m_activeCelestialSystemId)
@@ -960,7 +942,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
                     }
                 };
                 inZone = true;
-                if (m.autoLanding && g_padAwaitZoneExit.count(id.value) != 0)
+                if (m.autoLanding && m_padAwaitZoneExit.count(id.value) != 0)
                     break;   // just released from a pad: not taken again before it has left the zone
                 if (m.autoLanding)
                 {
@@ -1007,7 +989,7 @@ void GameSimulation::updatePadTouchdowns(double dt)
             }
         }
         if (!inZone)
-            g_padAwaitZoneExit.erase(id.value);
+            m_padAwaitZoneExit.erase(id.value);
     }
 }
 

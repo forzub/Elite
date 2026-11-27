@@ -278,6 +278,9 @@ void setDiagnosticsSettings(
     double debugUniverseTimeConfiguredScale() const;
 
 private:
+    bool m_devStartDone = false;      // ELITE_DEV_START applied in THIS world
+    double m_devStartWaited = 0.0;
+
     void resetSessionControlState(
         EntityId controlledEntityId,
         const char* reason

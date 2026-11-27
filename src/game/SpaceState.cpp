@@ -84,6 +84,9 @@ SpaceState::SpaceState(
     : GameState(states),
       m_systemMapRenderer(m_navigationWorkspace)
 {
+    // a NEW world's flight state: the DEV script runner's progress belongs to the world (stabilization stage 1 - a second
+    // world in the same process got none of its steps)
+    game::dev::DevScriptRunner::instance().beginWorld();
     game::navigation::configureRoutePlannerFromEnvironment();   // the route planner's options (RoutePlannerSetup.h)
     m_runtimeScenarioSelection =
         game::debug::RuntimeScenarioSelection::fromProcessEnvironment();
@@ -2109,6 +2112,11 @@ void SpaceState::update(float dt)
     updateOnboardJournal(dt);
     devCheckHubAttachedPoses(dt);
     updateCapsuleRescue(dt);
+    // presentation STATE derived from the world, every frame - never from a render function (stabilization stage 2)
+    updateJumpMapState();
+    updateDockingWidgetState();
+    updateCockpitRadioState();
+    updateTerminalNoticeState();
     // the hub map follows the hub the ship is in (a new hub entered -> its map; author: the hub map did not switch)
     if (m_client)
         if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end())

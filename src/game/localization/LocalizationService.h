@@ -52,6 +52,10 @@ public:
     // a string from a producer (the server, the simulation): a language-neutral Message (LocalizedMessage.h) is rendered
     // in the current language, its message-valued parameters too; a plain string is returned as it is
     std::string render(const std::string& messageOrText) const;
+    // a name / description AS IT COMES FROM THE GAME DATA (a polity, a good, a ship, a seller, a fiscal style ...): the
+    // "data_terms" tables translate it by its source text (audit #9 D7: the data names); unknown -> unchanged. render()
+    // applies it to plain strings and to every plain parameter of a Message.
+    std::string dataText(const std::string& sourceText) const;
 
     std::string catalogName(
         const std::string& domain,
@@ -89,6 +93,7 @@ private:
     std::vector<std::string> m_localeOrder {"en"};
 
     TranslationTable m_uiStrings;
+    TranslationTable m_dataTerms;   // source text -> {locale: text}
     TranslationTable m_languages;
     std::unordered_map<std::string, LocaleMetadata> m_localeMetadata;
     std::unordered_map<std::string, TranslationTable> m_catalogNames;

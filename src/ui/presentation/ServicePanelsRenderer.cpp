@@ -166,8 +166,8 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
             continue;
         if (m.selected)
             t.solidRectPx(listX, y, listW, rowH, Selected);
-        t.textDrawPx(m.name, listX + 10, y + 4, px, m.selected ? Title : Text);
-        t.textDrawPx(m.manufacturer, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
+        t.textDrawPx(rd(m.name), listX + 10, y + 4, px, m.selected ? Title : Text);
+        t.textDrawPx(rd(m.manufacturer), listX + 10, y + 6 + static_cast<float>(px), small, Muted);
         const std::string price = tr("service.panel.shipyard.price_thousands", {{"k", grouped(m.priceListCr / 1000.0)}}, "{k} k Cr");
         t.textDrawPx(price, listX + listW - t.measureTextPx(price, small) - 10, y + 4, small, Muted);
         t.solidRectPx(listX, y + rowH - 1, listW, 1, glm::vec4(0.2f, 0.3f, 0.4f, 0.5f));
@@ -180,11 +180,11 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
     float y = listY;
     if (c.valid)
     {
-        t.textDrawPx(c.name, cx, y, big, Text);
+        t.textDrawPx(rd(c.name), cx, y, big, Text);
         y += static_cast<float>(big) + 8;
-        t.textDrawPx(c.manufacturer + "  ·  " + c.shipClass, cx, y, px, Muted);
+        t.textDrawPx(rd(c.manufacturer) + "  ·  " + rd(c.shipClass), cx, y, px, Muted);
         y += static_cast<float>(px) + 4;
-        t.textDrawPx(c.purpose, cx, y, small, Muted);
+        t.textDrawPx(rd(c.purpose), cx, y, small, Muted);
         y += static_cast<float>(small) + 10;
 
         // preview: side view (top) and plan view (bottom) of the runtime primitive blocks

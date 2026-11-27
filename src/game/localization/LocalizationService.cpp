@@ -482,6 +482,21 @@ bool LocalizationService::loadDirectory(const std::string& rootPath)
             continue;
         }
 
+        if (kind == "data_terms")
+        {
+            // {"kind": "data_terms", "terms": {"<the data's source text>": {"en": "...", "ru": "..."}}}
+            TranslationTable table;
+            if (!fileRoot.contains("terms") || !readTranslationTable(fileRoot["terms"], table, false))
+            {
+                reject(path, "invalid data_terms table");
+                continue;
+            }
+            for (auto& [term, translations] : table)
+                m_dataTerms[term] = std::move(translations);
+            ++m_loadedFileCount;
+            continue;
+        }
+
         if (kind == "star_system")
         {
             std::string systemId;
@@ -740,7 +755,13 @@ std::string LocalizationService::format(
     const std::string& englishTemplateFallback
 ) const
 {
-    return fillTemplate(text(key, englishTemplateFallback), params);
+    if (m_dataTerms.empty())
+        return fillTemplate(text(key, englishTemplateFallback), params);
+    // a parameter that is a name from the game data (a polity, a good, a hub...) is shown in the player's language too
+    std::vector<MessageParam> translated = params;
+    for (auto& p : translated)
+        p.value = dataText(p.value);
+    return fillTemplate(text(key, englishTemplateFallback), translated);
 }
 
 std::string LocalizationService::render(const std::string& messageOrText) const
@@ -748,11 +769,23 @@ std::string LocalizationService::render(const std::string& messageOrText) const
     std::string key;
     std::vector<MessageParam> params;
     if (!parseMessage(messageOrText, key, params))
-        return messageOrText;
+        return dataText(messageOrText);
     for (auto& p : params)
-        if (isMessage(p.value))
-            p.value = render(p.value);
+        p.value = isMessage(p.value) ? render(p.value) : dataText(p.value);
     return format(key, params);
+}
+
+std::string LocalizationService::dataText(const std::string& sourceText) const
+{
+    if (sourceText.empty() || m_dataTerms.empty())
+        return sourceText;
+    const auto it = m_dataTerms.find(sourceText);
+    if (it == m_dataTerms.end())
+        return sourceText;
+    const auto loc = it->second.find(m_locale);
+    if (loc != it->second.end() && !loc->second.empty())
+        return loc->second;
+    return sourceText;   // no translation for this language: the data's own text
 }
 
 std::string LocalizationService::catalogName(

@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include "src/render/HUD/TextRenderer.h"
 #include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/audio/CockpitRadio.h"
@@ -572,6 +573,10 @@ void Application::init()
         (void)m_clientModeState.setConstellationsEnabled(
             m_clientPreferences.constellationsEnabled
         );
+        // HantedPreview (the author 2026-11-27: "render - classic Elite"): the preview starts in the Elite Classic scene
+        // style unless the player picked another one in the menu (the stored default is "modern")
+        if (core::isPreviewBuild() && m_clientPreferences.celestialRenderStyleId == "modern")
+            m_clientPreferences.celestialRenderStyleId = "elite";
         (void)m_clientModeState.setCelestialRenderStyleId(
             m_clientPreferences.celestialRenderStyleId
         );

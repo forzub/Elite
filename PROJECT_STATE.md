@@ -9594,3 +9594,9 @@ start-up hitches (render), trade step 16 part 3 live.
   - OPEN: A2 axial-dock entry route split, A3 live picking / 2D <-> 3D target, A6 map display states + package states +
     pad destroyed after clearance + generation / node index, B1-B3, C, D1 with input / TCP / autopilot / combat, D2
     measurements per thread, D4 GL debug callback + other vendors, D5, D6 (clean Windows deps).
+  - A6 (014da2f94, source + contract): the pad service lets go when its pad is wrecked / gone during the approach;
+    client package states (assembling / ready / failed) and pad states (usable / not built / wrecked / unknown); the
+    server's no-package fallback said once; the city DAMAGE re-keyed by node NAME when a construction stage replaces the
+    package (pad nodes appear as buildings finish and shift every later index - only the destroyed flag was matched by
+    label before). Not live-tested (needs a damaged city across a stage change). The map's pad drawing / landing card by
+    state: open (the map has no client world access in that path).

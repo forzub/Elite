@@ -50,6 +50,17 @@ deco = nav.split("void SystemMapRenderer::decorateHubPlanBlocks(", 1)[1].split("
 if "HubCitySpace" not in deco or "planToWorld(" not in deco:
     failures.append("decorateHubPlanBlocks must place block / building points through HubCitySpace")
 
+# A9: the occluders are the displayed volumes, tested in physical space
+backend = text("src/game/system_map/HubMapBackend.cpp")
+if "planPoseToModule(" not in backend:
+    failures.append("HubMapBackend: the 3D map's block boxes must be placed through HubCitySpace::planPoseToModule")
+occl = nav.split("struct Occluder", 1)[1].split("const auto addPolyline", 1)[0] if "struct Occluder" in nav else ""
+if "planPoseToModule(" not in occl:
+    failures.append("SystemMapRendererNavigation: the lane occluders must be the map's drawn block boxes (planPoseToModule)")
+corridor = text("src/render/cockpit/HubCorridorHudRenderer.cpp")
+if "planPoseToModule(" not in corridor or "ringHere.toStrip(Rt * (world - origin))" in corridor:
+    failures.append("HubCorridorHudRenderer: label occlusion must test the physical ray against rigid building boxes")
+
 # A8: a ring city's physical size is the wheel, the plan sheet is separate (2D plan view only)
 bridge = text("src/game/client/ClientHubMapBridge.h")
 if "planSheetSizeMeters" not in bridge or "ring.radius" not in bridge:

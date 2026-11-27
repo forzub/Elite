@@ -1,3 +1,4 @@
+#include "src/game/navigation/HubCitySpace.h"
 #include "src/render/cockpit/HubCorridorHudRenderer.h"
 
 #include <algorithm>
@@ -87,55 +88,56 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         // what hides the lanes / zones (author 2026-11-21: «если между зоной и игроком находится помеха, за помехой зону не
         // должно быть видно»): the planar city's blocks as boxes in this frame; a sample is hidden when the segment from it
         // to the pilot meets one (a ring by its centre, a connector / zone edge by its middle)
+        // each building as a RIGID box placed on the city (HubCitySpace::planPoseToModule - the same placement the 3D map
+        // draws its blocks with) and the eye -> sample ray tested in the PHYSICAL module frame (re-audit A9: a straight
+        // segment in the unrolled strip is not the physical ray on a ring); a box the pilot is inside does not count
         struct Box
         {
-            glm::dvec3 lo, hi;
+            glm::dvec3 centre;
+            glm::dmat3 axes;   // columns: the box's along / up / across in the module frame
+            glm::dvec3 half;
         };
         std::vector<Box> blockers;
-        // each building of the plan by its own box (a block as one box hid everything from a ship flying low over it,
-        // live 2026-11-21); a box the pilot is inside does not count
         const glm::dmat3 Rt = glm::transpose(R);
-        // the eye and the samples in the PLAN (the buildings' boxes are plan rects; on a ring the module frame is bent -
-        // audit 2026-11-27), the along coordinate unwrapped next to the eye; the boxes one turn either way count too
-        const glm::dvec3 eyeLocal = ringHere.toStrip(Rt * (playerMeters - origin));
-        const double ringLength = ringHere.valid ? ringHere.length : 0.0;
+        const glm::dvec3 eyeLocal = Rt * (playerMeters - origin);   // the module frame (physical)
+        game::navigation::HubCitySpace planSpace;
+        planSpace.bend = ringHere;
+        const auto inBox = [](const Box& b, const glm::dvec3& p) {
+            const glm::dvec3 q = glm::transpose(b.axes) * (p - b.centre);
+            return std::abs(q.x) < b.half.x && std::abs(q.y) < b.half.y && std::abs(q.z) < b.half.z;
+        };
         if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.hubAttachment.moduleId))
             for (const auto& m : plan->modules())
             {
                 const glm::dvec3 lo(std::min(m.rect.x, m.rect.z), std::min(m.y0, m.y1), std::min(m.rect.y, m.rect.w));
                 const glm::dvec3 hi(std::max(m.rect.x, m.rect.z), std::max(m.y0, m.y1), std::max(m.rect.y, m.rect.w));
-                for (const double shift : {0.0, -ringLength, ringLength})
-                {
-                    if (shift != 0.0 && ringLength <= 0.0)
-                        continue;
-                    const glm::dvec3 l(lo.x + shift, lo.y, lo.z), h(hi.x + shift, hi.y, hi.z);
-                    const bool inside = eyeLocal.x > l.x && eyeLocal.x < h.x && eyeLocal.y > l.y && eyeLocal.y < h.y &&
-                                        eyeLocal.z > l.z && eyeLocal.z < h.z;
-                    if (!inside && h.y - l.y > 1.0)
-                        blockers.push_back({l, h});
-                }
+                if (hi.y - lo.y <= 1.0)
+                    continue;
+                const auto pose = planSpace.planPoseToModule(0.5 * (lo + hi));
+                const Box box {pose.position, pose.axes, 0.5 * (hi - lo)};
+                // near enough to matter: within 6 km of the eye (the labels fade long before)
+                if (glm::length(box.centre - eyeLocal) - glm::length(box.half) > 6000.0 || inBox(box, eyeLocal))
+                    continue;
+                blockers.push_back(box);
             }
         const auto hidden = [&](const glm::dvec3& world) {
-            glm::dvec3 p = ringHere.toStrip(Rt * (world - origin));
-            if (ringLength > 0.0)
-                p.x = eyeLocal.x + std::remainder(p.x - eyeLocal.x, ringLength);
-            const glm::dvec3 d = eyeLocal - p;
-            const glm::dvec3 segLo = glm::min(p, eyeLocal), segHi = glm::max(p, eyeLocal);
+            const glm::dvec3 pModule = Rt * (world - origin);
             for (const auto& bx : blockers)
             {
-                if (bx.hi.x < segLo.x || bx.lo.x > segHi.x || bx.hi.y < segLo.y || bx.lo.y > segHi.y || bx.hi.z < segLo.z ||
-                    bx.lo.z > segHi.z)
-                    continue;   // not on the way
+                // the segment sample -> eye in the box's own axes (a slab test)
+                const glm::dvec3 p = glm::transpose(bx.axes) * (pModule - bx.centre);
+                const glm::dvec3 e = glm::transpose(bx.axes) * (eyeLocal - bx.centre);
+                const glm::dvec3 d = e - p;
                 double t0 = 1.0e-3, t1 = 1.0;   // strictly between the sample and the eye
                 bool miss = false;
                 for (int k = 0; k < 3 && !miss; ++k)
                 {
                     if (std::abs(d[k]) < 1.0e-9)
                     {
-                        miss = p[k] < bx.lo[k] || p[k] > bx.hi[k];
+                        miss = std::abs(p[k]) > bx.half[k];
                         continue;
                     }
-                    double a = (bx.lo[k] - p[k]) / d[k], b = (bx.hi[k] - p[k]) / d[k];
+                    double a = (-bx.half[k] - p[k]) / d[k], b = (bx.half[k] - p[k]) / d[k];
                     if (a > b)
                         std::swap(a, b);
                     t0 = std::max(t0, a);

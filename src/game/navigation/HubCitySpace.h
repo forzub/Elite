@@ -35,6 +35,14 @@ struct HubCitySpace
     // PLAN <-> MODULE
     glm::dvec3 planToModule(const glm::dvec3& plan) const { return bend.toFrame(plan); }
     glm::dvec3 moduleToPlan(const glm::dvec3& module) const { return bend.toStrip(module); }
+    // a RIGID piece of the plan (a block's box, a building, a pad model) placed at a plan point: its MODULE position and
+    // axes (columns: along, up, across) - the map's block boxes, their occluders and the HUD's use this one placement
+    struct ModulePose
+    {
+        glm::dvec3 position {0.0};
+        glm::dmat3 axes {1.0};
+    };
+    ModulePose planPoseToModule(const glm::dvec3& plan) const { return {bend.toFrame(plan), bend.basisAt(plan.x)}; }
     // PLAN <-> WORLD (the pad service's historical names)
     glm::dvec3 toWorld(const glm::dvec3& plan) const { return cpos + R * bend.toFrame(plan); }
     glm::dvec3 toStrip(const glm::dvec3& world) const { return bend.toStrip(glm::transpose(R) * (world - cpos)); }

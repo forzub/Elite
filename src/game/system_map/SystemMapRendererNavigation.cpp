@@ -1924,15 +1924,29 @@ void SystemMapRenderer::decorateTrafficRoutes(
             const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(object.stableId);
             if (!plan)
                 continue;
+            // the SAME boxes the 3D Hub map draws (HubMapBackend: a rigid box per block at its bent centre, re-audit A9:
+            // the occluders were the flat plan's boxes - on a ring they hid lanes behind phantom blocks)
+            game::navigation::HubCitySpace space;
+            space.bend = plan->ring();
+            const auto placed = [&](double x, double y, double z, const glm::dvec3& half) {
+                const auto pose = space.planPoseToModule(glm::dvec3(x, y, z));
+                const auto toMap = [&](const glm::dvec3& v) { return object.axes.x * v.x + object.axes.y * v.y + object.axes.z * v.z; };
+                Occluder o;
+                o.origin = object.positionMeters + toMap(pose.position);
+                o.axes.x = toMap(pose.axes[0]);
+                o.axes.y = toMap(pose.axes[1]);
+                o.axes.z = toMap(pose.axes[2]);
+                o.lo = -half;
+                o.hi = half;
+                return o;
+            };
             for (const auto& b : plan->blocks())
             {
                 const double h = b.halfMeters, top = std::max(15.0, b.topHeightMeters);
-                occluders.push_back({object.positionMeters, object.axes, glm::dvec3(b.centre.x - h, 0.0, b.centre.y - h),
-                                     glm::dvec3(b.centre.x + h, top, b.centre.y + h)});
+                occluders.push_back(placed(b.centre.x, top * 0.5, b.centre.y, glm::dvec3(h, top * 0.5, h)));
                 if (b.underDepthMeters > 1.0)
-                    occluders.push_back({object.positionMeters, object.axes,
-                                         glm::dvec3(b.centre.x - h, -30.0 - b.underDepthMeters, b.centre.y - h),
-                                         glm::dvec3(b.centre.x + h, -30.0, b.centre.y + h)});
+                    occluders.push_back(placed(b.centre.x, -30.0 - b.underDepthMeters * 0.5, b.centre.y,
+                                               glm::dvec3(h, b.underDepthMeters * 0.5, h)));
             }
         }
     }

@@ -15,6 +15,7 @@
 #include "render/HUD/TextRenderer.h"
 #include <vector>
 #include "src/game/navigation/HubPlanCatalog.h"
+#include "src/game/navigation/HubCitySpace.h"
 #include "src/game/navigation/HubBerthOccupancy.h"
 #include "src/game/navigation/HubPlanPads.h"
 
@@ -635,9 +636,11 @@ void HubMapBackend::renderHubMapPasses(
     };
     const auto bentPlace = [](const world::celestial::LocalSceneObject& mod, const game::navigation::HubPlan& plan,
                               double x, double y, double z) {
-        const auto& ring = plan.ring();
-        const glm::dvec3 f = ring.toFrame(glm::dvec3(x, y, z));
-        const glm::dmat3 B = ring.basisAt(x);
+        game::navigation::HubCitySpace space;   // the one rigid-piece placement (the occluders use it too)
+        space.bend = plan.ring();
+        const auto pose = space.planPoseToModule(glm::dvec3(x, y, z));
+        const glm::dvec3 f = pose.position;
+        const glm::dmat3 B = pose.axes;
         BentPlace out;
         out.position = mod.positionMeters + mod.axes.x * f.x + mod.axes.y * f.y + mod.axes.z * f.z;
         const auto toWorld = [&](const glm::dvec3& v) { return mod.axes.x * v.x + mod.axes.y * v.y + mod.axes.z * v.z; };

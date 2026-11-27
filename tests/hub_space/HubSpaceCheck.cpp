@@ -15,6 +15,7 @@
 #include "src/game/navigation/HubCitySpace.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/HubPlanPads.h"
+#include "src/game/system_map/MapCameraSnapshot.h"
 
 namespace
 {
@@ -292,6 +293,34 @@ int main()
                     "farthest building point %.0f m from the axis\n", sheetX, 2.0 * outer, ring.ring().radius, under, maxR);
         check(maxR <= outer + 1.0e-6, "every building inside the physical wheel the map now uses");
         check(sheetX > 2.5 * outer, "the sheet is NOT the physical size (the old map box)");
+    }
+
+    // ---- A3: the map's inverse - screen -> scene -> screen round trip on the ring's plan sheet (top-down plan camera)
+    {
+        game::system_map::LocalMapCameraSnapshot cam;
+        cam.state.pitch = 1.5707963267948966;   // the plan view looks straight down
+        cam.state.yaw = 0.0;
+        cam.state.zoom = 1.0;
+        cam.scale = 0.12;
+        cam.centerPx = glm::dvec2(960.0, 540.0);
+        cam.planMode = true;
+        cam.planWarp.valid = true;
+        cam.planWarp.origin = glm::dvec3(150.0, -40.0, 75.0);
+        cam.planWarp.ring = ring.ring();
+        cam.originMeters = cam.planWarp.origin;
+        double worst = 0.0, worstOld = 0.0;
+        for (int i = 0; i <= 20; ++i)
+            for (int j = 0; j <= 20; ++j)
+            {
+                const glm::dvec2 px(960.0 + (i - 10) * 40.0, 540.0 + (j - 10) * 10.0);
+                const glm::dvec3 scene = cam.unprojectPlane(px);   // a scene point (the city on the ring)
+                worst = std::max(worst, glm::length(cam.project(scene) - px));
+                const glm::dvec3 sheetAsScene = cam.unprojectSheet(px);   // the old answer: the sheet point as a scene point
+                worstOld = std::max(worstOld, glm::length(cam.project(sheetAsScene) - px));
+            }
+        std::printf("A3 ring plan map: screen -> scene -> screen worst %.3g px (the old sheet-as-scene answer: %.1f px)\n",
+                    worst, worstOld);
+        check(worst < 1.0e-6, "the plan map's cursor point re-projects onto the cursor");
     }
 
     if (g_failures)

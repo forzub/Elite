@@ -128,6 +128,7 @@ public:
         snapshot.originMeters = m_planView ? m_planCentre : glm::dvec3(0.0);   // the plan centres on the city
         if (m_planView)
             snapshot.planWarp = m_planWarp;
+        snapshot.planMode = m_planView;   // explicit, not the camera's pitch
         snapshot.perspectiveEnabled = false;
         snapshot.perspectiveCameraDistanceMeters = 1.0;
         return snapshot;

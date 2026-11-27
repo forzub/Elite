@@ -113,6 +113,7 @@ struct LocalMapPlanWarp
     glm::dvec3 ax {1.0, 0.0, 0.0}, ay {0.0, 1.0, 0.0}, az {0.0, 0.0, 1.0};
     game::navigation::HubRingBend ring;
 
+    // SCENE (hub-local metres) -> SHEET (the flat plan sheet)
     glm::dvec3 apply(const glm::dvec3& p) const
     {
         if (!valid)
@@ -120,6 +121,15 @@ struct LocalMapPlanWarp
         const glm::dvec3 d = p - origin;
         const glm::dvec3 strip = ring.toStrip(glm::dvec3(glm::dot(d, ax), glm::dot(d, ay), glm::dot(d, az)));
         return origin + strip;
+    }
+    // SHEET -> SCENE: the exact inverse of apply (re-audit A3 2026-11-27: the cursor's sheet point was handed out as a
+    // scene point and warped again by project())
+    glm::dvec3 unapply(const glm::dvec3& sheet) const
+    {
+        if (!valid)
+            return sheet;
+        const glm::dvec3 f = ring.toFrame(sheet - origin);
+        return origin + ax * f.x + ay * f.y + az * f.z;
     }
 };
 
@@ -175,6 +185,8 @@ struct LocalMapCameraSnapshot
     }
 
     LocalMapPlanWarp planWarp;   // the 2D plan of a bent city (the ring): see LocalMapPlanWarp
+    // the map MODE, explicit (re-audit A3: it was read from the camera's pitch > 1.5): the 2D plan sheet vs the 3D view
+    bool planMode = false;
 
     glm::dvec3 pointToCamera(
         const glm::dvec3& worldPoint
@@ -226,7 +238,16 @@ struct LocalMapCameraSnapshot
         );
     }
 
+    // SCREEN -> SCENE (hub-local metres) on the camera plane through the origin: the sheet point, unwarped
     glm::dvec3 unprojectPlane(
+        const glm::dvec2& screenPoint
+    ) const
+    {
+        return planWarp.unapply(unprojectSheet(screenPoint));
+    }
+
+    // SCREEN -> SHEET (the flat plan sheet's metres; = the scene for a flat city / the 3D view)
+    glm::dvec3 unprojectSheet(
         const glm::dvec2& screenPoint
     ) const
     {

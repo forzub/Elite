@@ -474,7 +474,7 @@ void HubMapBackend::renderHubMapPasses(
 
     // the 2D plan is a flat schematic on an even sheet (author 2026-11-24: «реально плоский план. на монотонном фоне»):
     // no stars, no planet - a dark slate; the 3D view keeps the space background
-    const bool planSheet = activeCamera().state.pitch > 1.5;
+    const bool planSheet = activeCamera().planMode;   // explicit (re-audit A3), not pitch > 1.5
     if (planSheet)
         elite::render::core_legacy::color4f(0.045f, 0.060f, 0.080f, 1.0f);
     else
@@ -545,7 +545,7 @@ void HubMapBackend::renderHubMapPasses(
         hubPerfNowMs();
 
     // the 2D plan reads like the mesh editor's hub mode: a dark sheet, no planet under the city (author 2026-11-21)
-    if (activeCamera().state.pitch <= 1.5)
+    if (!activeCamera().planMode)
         m_planetPass.drawHubMapPlanetSurfaceHint(
             hub,
             scale,
@@ -659,7 +659,7 @@ void HubMapBackend::renderHubMapPasses(
         world::celestial::LocalSceneAxes axes;
     };
     std::vector<PlanCity> planCities;
-    const bool planView = activeCamera().state.pitch > 1.5;   // HubMapView::setPlanView (V)
+    const bool planView = activeCamera().planMode;   // HubMapView::setPlanView (V), explicit
     bool planCity = false;   // the plan of a hub with a city shows the city only (isHubCityModule)
     if (planView)
         for (const auto& o : hub.scene.objects)

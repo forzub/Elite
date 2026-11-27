@@ -2349,10 +2349,13 @@ int runHeadlessServer(bool resetAuthState)
 }
 }
 
+#include "src/core/ThreadPriority.h"
+
 int main(int argc, char** argv)
 {
     // the session log (%LOCALAPPDATA%/EliteGame/logs/server_*.log) and non-blocking stderr, as the client
     core::installAsyncStderr("server");
+    core::optOutOfPowerThrottling("server");   // a dedicated server is never "in the background"
     {
         // DEV commands only when the operator asks for them
         bool dev = false;

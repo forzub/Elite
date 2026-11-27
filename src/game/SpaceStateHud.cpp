@@ -1,3 +1,4 @@
+#include "src/core/HitchProfiler.h"
 #include "src/world/WorldLaws.h"
 #include "src/ui/input/GlfwPointerSource.h"
 #include "src/ui/components/UIWidgets.h"
@@ -130,6 +131,7 @@ m_systemMapRenderer.render(
         static_cast<std::uint64_t>(playerShip.instanceId),
         mother.input.serverTick
     );
+    core::hitch::mark("hud_mother");
 
 
 
@@ -156,6 +158,7 @@ m_systemMapRenderer.render(
         {
             renderHudWorldLabels(vp);
         }
+        core::hitch::mark("hud_labels");
 
         // World-anchored navigation presentation is projected onto the glass
         // before the cockpit overlay.  The cockpit frame therefore occludes
@@ -167,6 +170,7 @@ m_systemMapRenderer.render(
         {
             renderHudGuidanceAndCompass(vp, playerShip);
         }
+        core::hitch::mark("hud_guidance");
 
         // the jump's star rays: on the glass, under the cockpit frame (like the guidance)
         if (pilotGlass && m_activeMainCamera)
@@ -178,6 +182,7 @@ m_systemMapRenderer.render(
         {
             m_playerView->renderCockpit();
         }
+        core::hitch::mark("hud_cockpit");
 
         TextRenderer::instance().beginFrameForViewport(
             vp.width,
@@ -189,6 +194,7 @@ m_systemMapRenderer.render(
         {
             renderHudCockpitInstruments(vp, playerShip, cockpit);
         }
+        core::hitch::mark("hud_instruments");
 
         // ------------------------------------------------------------
         // Isolated docking status terminal.
@@ -388,6 +394,7 @@ m_systemMapRenderer.render(
 
         {
             renderHudDockingTerminal(vp, playerShip, cockpit);
+            core::hitch::mark("hud_terminal");
 
         // the landing legs, always in sight (author 2026-11-21: «какой-то индикатор на HUD, что шасси убраны / выпущены»):
         // the front view at the glass's lower right, the bottom camera over its readout band; green out, grey in, red broken
@@ -439,9 +446,12 @@ m_systemMapRenderer.render(
         }
         }
 
+        core::hitch::mark("hud_legs");
         uiRoot->render(vp);
+        core::hitch::mark("hud_ui_root");
 
         TextRenderer::instance().endFrame();
+        core::hitch::mark("hud_text_flush");
 
         // the jump: the cockpit and its instruments shake / swell / are flung forward
         applyJumpScreenEffect();

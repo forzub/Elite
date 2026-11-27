@@ -68,6 +68,13 @@ public:
         double crossTrackErrorMeters = 0.0;
         double remainingDistanceMeters = 0.0;
         double targetSpeedMps = 0.0;
+        // which rule set targetSpeedMps this frame (diagnostic: "profile", "curve-now", "turn-curve",
+        // "recovery", "traffic", "terminal") + the reference profile speed before any rule
+        const char* targetSpeedLimiter = "profile";
+        double profileSpeedMps = 0.0;
+        double turnFeedbackResponseSeconds = 0.0;
+        double turnBrakingMarginMeters = 0.0;
+        double turnBrakingAllowedMps = 0.0;
         double targetLongitudinalAccelerationMps2 = 0.0;
         double crossTrackClosingSpeedMps = 0.0;
         double crossTrackCaptureSpeedMps = 0.0;
@@ -362,6 +369,48 @@ public:
                 *failureReason = "curve-sample-progress-map-failed";
             state = {};
             return false;
+        }
+        // The route curve's speed limit holds over the WHOLE curve. The plan's samples carried it only at discrete
+        // points (~every 250 m on a 40 m/s dock lane): between them the nominal profile ramped +8 m/s^2 to 55-58 m/s
+        // and braked back, while the follower clamped the target to the curve's 40 m/s ("curve-max") and still fed the
+        // reference's +-8 m/s^2 forward - the craft hunted 36 <-> 52 m/s on a straight (live 2026-11-27, D:/tmp/nav3a,
+        // nav3b profile dump). Cap the nominal profile by the curve at every sample, then rebuild the runtime one.
+        {
+            std::size_t cappedSamples = 0;
+            for (std::size_t i = 0; i < state.nominalSpeedProfileMps.size() &&
+                                    i < state.continuousProgressMeters.size(); ++i)
+            {
+                const double routeS = mapSampleProgressToRouteProgress(
+                    state.routeCurves, state.curveSampleStartProgressMeters,
+                    state.curveSampleEndProgressMeters, state.continuousProgressMeters[i]);
+                const auto curve = sampleRouteCurveAtProgress(state.routeCurves, routeS);
+                if (curve.valid && curve.maxSpeedMps > 0.0 &&
+                    state.nominalSpeedProfileMps[i] > curve.maxSpeedMps + 1.0e-6)
+                {
+                    state.nominalSpeedProfileMps[i] = curve.maxSpeedMps;
+                    ++cappedSamples;
+                }
+            }
+            if (cappedSamples > 0)
+            {
+                const auto authority = makeManeuverExecutionAuthority(params, law);
+                const double fraction =
+                    world::navigation::TrajectoryGenerationPolicy::DefaultPlanningAuthorityFraction;
+                const double startSpeed = glm::length(initialAgent.velocityMapMetersPerSecond);
+                recomputeRuntimeSpeedSuffix(
+                    state.nominalSpeedProfileMps,
+                    state.continuousProgressMeters,
+                    0,
+                    startSpeed,
+                    authority.forwardAccelerationMps2 * fraction,
+                    authority.brakingAccelerationMps2 * fraction,
+                    state.runtimeSpeedProfileMps,
+                    state.runtimeLongitudinalAccelerationMps2,
+                    reversalLeadSeconds,
+                    toleratedPlateauEnd(state, 0, startSpeed));
+                std::cerr << "[RouteProfile] " << cappedSamples << " of " << state.nominalSpeedProfileMps.size()
+                          << " samples capped to their route curve's speed limit" << '\n';
+            }
         }
         if constexpr (Law == LocalFlightControlLaw::Newtonian)
             dumpAcceptedRoute(state, plan);
@@ -729,6 +778,16 @@ public:
             glm::length(
                 continuous.reference.velocityMapMetersPerSecond
             );
+        const double profileSpeed = targetSpeed;
+        const char* targetLimiter = "profile";
+        double turnFeedbackResponseDiag = 0.0, turnMarginDiag = 0.0, turnAllowedDiag = 0.0;
+        const auto limitTarget = [&](double ceiling, const char* why) {
+            if (ceiling < targetSpeed)
+            {
+                targetSpeed = ceiling;
+                targetLimiter = why;
+            }
+        };
 
         const double continuousTotalProgress =
             state.continuousProgressMeters.back();
@@ -760,8 +819,7 @@ public:
                 ? curveNow.tangentMap
                 : sampledFallbackForward;
         if (curveNow.valid && curveNow.maxSpeedMps > 0.0)
-            targetSpeed =
-                std::min(targetSpeed, curveNow.maxSpeedMps);
+            limitTarget(curveNow.maxSpeedMps, "curve-max");
 
         const double actualSpeed =
             glm::length(agent.velocityMapMetersPerSecond);
@@ -1000,8 +1058,7 @@ public:
             if (curveNow.valid &&
                 curveNow.curvaturePerMeter > 1.0e-12)
             {
-                targetSpeed =
-                    std::min(targetSpeed, turnSpeedCeilingMps);
+                limitTarget(turnSpeedCeilingMps, "curve-now");
             }
             else if (distanceToTurnMeters > 0.0 &&
                 brakingAuthority > 1.0e-9)
@@ -1075,7 +1132,10 @@ public:
                         const double allowed = std::sqrt(
                             turnSpeedCeilingMps * turnSpeedCeilingMps +
                             2.0 * slowdownRequest.effectiveBrakingMps2 * room);
-                        targetSpeed = std::min(targetSpeed, std::max(turnSpeedCeilingMps, allowed));
+                        turnFeedbackResponseDiag = feedbackResponseSeconds;
+                        turnMarginDiag = margin;
+                        turnAllowedDiag = allowed;
+                        limitTarget(std::max(turnSpeedCeilingMps, allowed), "turn-curve");
                     }
                 }
             }
@@ -1146,12 +1206,11 @@ public:
             const double recoveryCeiling =
                 targetSpeed * (1.0 - smoothOccupancy) +
                 turnSpeedCeilingMps * smoothOccupancy;
-            targetSpeed =
-                std::min(targetSpeed, recoveryCeiling);
+            limitTarget(recoveryCeiling, "recovery");
         }
         // keep the gap to the ship ahead (the traffic rule; the client fills it from the ships around)
         if (agent.trafficSpeedCeilingMps > 0.0)
-            targetSpeed = std::min(targetSpeed, agent.trafficSpeedCeilingMps);
+            limitTarget(agent.trafficSpeedCeilingMps, "traffic");
 
         // VELOCITY-COURSE CONTRACT.
         //
@@ -1482,7 +1541,7 @@ public:
                             remainingRouteMeters
                     )
                 );
-            targetSpeed = std::min(targetSpeed, terminalSafeSpeed);
+            limitTarget(terminalSafeSpeed, "terminal");
         }
 
         // Navigation owns velocity, not hull attitude. The desired velocity
@@ -1819,6 +1878,11 @@ public:
                     continuous.spatialProgressMeters
             );
         out.targetSpeedMps = targetSpeed;
+        out.targetSpeedLimiter = targetLimiter;
+        out.profileSpeedMps = profileSpeed;
+        out.turnFeedbackResponseSeconds = turnFeedbackResponseDiag;
+        out.turnBrakingMarginMeters = turnMarginDiag;
+        out.turnBrakingAllowedMps = turnAllowedDiag;
         out.targetLongitudinalAccelerationMps2 =
             glm::dot(
                 continuous.reference.linearAccelerationFeedForwardMapMps2,

@@ -4717,6 +4717,11 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                     << output.remainingDistanceMeters
                     << " target_speed_mps="
                     << output.targetSpeedMps
+                    << " limiter=" << output.targetSpeedLimiter
+                    << " profile_mps=" << output.profileSpeedMps
+                    << " turn_fb_s=" << output.turnFeedbackResponseSeconds
+                    << " turn_margin_m=" << output.turnBrakingMarginMeters
+                    << " turn_allowed_mps=" << output.turnBrakingAllowedMps
                     << " actual_speed_mps="
                     << glm::length(motion.localVelocityMps)
                     << " checkpoint="
@@ -5620,6 +5625,15 @@ ShipControlState SpaceState::applyManualCollisionAssist(const ShipControlState& 
     if (shipIt == m_client->world().ships().end() || !shipIt->second.descriptor)
         return quiet();
     const auto& player = shipIt->second;
+    // the STATION flies the ship (the dock dispatcher captured it: its own corridor through the dock to the pad) -
+    // the assist must not fight it. Found live 2026-11-27 (D:/tmp/nav3c): from the station handoff to "docked" the
+    // assist "dodged" the dock's own walls every 1-2 s (course margin -1000 m, inside the dock by its sphere chains):
+    // "манёвр уклонения / управление у пилота" in turn, the ship jerked - the author saw it as freezes every 2-3 s
+    if (player.dockDispatcher.active && player.dockDispatcher.stationControlled)
+    {
+        reflex.reset();
+        return quiet();
+    }
     const auto& transform = player.transform;
     const auto& motion = transform.motion;
     // the pilot's sharp input takes the stick back

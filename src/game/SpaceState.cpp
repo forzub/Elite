@@ -1,3 +1,4 @@
+#include "src/core/HitchProfiler.h"
 #include "src/game/navigation/rules/PadLawRules.h"
 #include "src/game/navigation/rules/RingDeckRules.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
@@ -524,6 +525,7 @@ void SpaceState::prepareFrame(float dt)
             m_client->prepareGameplayFrame(
                 static_cast<double>(std::max(0.0f, dt))
             );
+            core::hitch::mark("prep_client_gameplay");
         }
         catch (const std::bad_alloc&)
         {
@@ -585,9 +587,12 @@ void SpaceState::prepareFrame(float dt)
     */
     updateSystemMapLiveFlags();
     updateLiveMapSnapshots(std::max(0.0f, dt));
+    core::hitch::mark("prep_live_maps");
     updateLocalMapPresentationSnapshots(std::max(0.0f, dt));
+    core::hitch::mark("prep_local_maps");
 
     applyClientCatalogLocalization();
+    core::hitch::mark("prep_localization");
 }
 
 

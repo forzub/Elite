@@ -646,10 +646,13 @@ static void bindChildProcessesToThisProcessLifetime()
 }
 #endif
 
+#include "src/core/ThreadPriority.h"
+
 int main(int argc, char** argv)
 {
     // the logs never stall the game loop (a console write per `<<`, a QuickEdit selection)
     core::installAsyncStderr();
+    core::optOutOfPowerThrottling("client");   // unfocused: no EcoQoS (the embedded server must keep real time)
 #ifdef _WIN32
     SetConsoleCtrlHandler(eliteConsoleCtrlHandler, TRUE);
     bindChildProcessesToThisProcessLifetime();

@@ -257,6 +257,33 @@ int main()
         testWrongWay(lanes);
         testAirSlotsAndDefence(lanes, plan);
     }
+    // a RING city's defence stands on its deck (audit 2026-11-27: the strip layout floated in the ring's plane)
+    {
+        game::navigation::HubPlan ringPlan;
+        if (ringPlan.load("src/assets/data/navigation/hub_plans/earth_ring_hub.json") && ringPlan.ring().valid)
+        {
+            const auto R = sec::buildDefenceLayout(ringPlan, nullptr);
+            const auto& ring = ringPlan.ring();
+            double worstDeck = 0.0, worstUp = 0.0;
+            int deckSites = 0;
+            for (const auto& s : R.sites)
+            {
+                if (s.kind == sec::DefenceKind::Picket)
+                    continue;
+                ++deckSites;
+                // on the deck: at radius R from the axis (+Z), the up toward the axis
+                worstDeck = std::max(worstDeck, std::abs(std::hypot(s.position.x, s.position.y) - ring.radius));
+                const glm::dvec3 toAxis = glm::normalize(glm::dvec3(-s.position.x, -s.position.y, 0.0));
+                worstUp = std::max(worstUp, glm::length(glm::normalize(s.up) - toAxis));
+            }
+            check(deckSites > 0 && worstDeck < 1.0e-6 && worstUp < 1.0e-9,
+                  "ring defence: " + std::to_string(deckSites) + " deck sites on the deck (off " + num(worstDeck) +
+                      " m), up to the axis; city radius " + num(R.cityRadiusMeters) + " m (ring R " + num(ring.radius) + ")");
+            check(R.cityRadiusMeters < ring.radius + 1000.0, "ring city radius from the ring, not the strip length");
+        }
+        else
+            check(false, "earth_ring_hub plan loaded");
+    }
     testFineBanking();
     testEvasion();
     std::printf("HUB SECURITY CHECK: %d passed, %d failed\n", g_pass, g_fail);

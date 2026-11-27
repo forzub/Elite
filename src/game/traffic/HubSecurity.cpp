@@ -407,6 +407,39 @@ DefenceLayout buildDefenceLayout(const game::navigation::HubPlan& plan, const ga
         s.idlePhase = hash01(seed, s.id) * 6.2831853;
         L.sites.push_back(s);
     }
+    // a RING city (audit 2026-11-27, A1 class): everything above was laid out in the plan's STRIP metres, the consumers
+    // (GameSimulationHubSecurity, HubDefencePresentation) take the sites in the MODULE frame - on a ring the turrets and
+    // the radar floated in the ring's plane. The deck sites bend onto the deck (HubRingBend); the city's size, the
+    // perimeter, the pickets and the debris field come from the ring itself (radius R round the module +Z, its width).
+    if (const auto& ring = plan.ring(); ring.valid)
+    {
+        const double halfWidth = 0.5 * std::abs(b.w - b.y);
+        L.cityRadiusMeters = std::hypot(ring.radius, halfWidth);
+        L.perimeterMeters = std::max(L.cityRadiusMeters + 1500.0, zone > 0.0 ? zone : 1.4 * L.cityRadiusMeters);
+        L.engageMeters = std::max(L.cityRadiusMeters + 800.0, 0.75 * L.perimeterMeters);
+        const double reach = L.cityRadiusMeters + 1500.0;
+        const double debrisAng = 0.7853981 + 1.5707963 * static_cast<double>(L.debrisSeed % 4u);
+        L.debrisCentre = glm::dvec3(reach * std::cos(debrisAng), reach * std::sin(debrisAng), 0.0);
+        int picket = 0;
+        const int pickets = L.military ? 12 : 8;
+        for (auto& site : L.sites)
+        {
+            if (site.kind == DefenceKind::Picket)
+            {
+                // round the axis outside the rim, alternately on either side of the ring's plane (its +-Z)
+                const int i = picket++;
+                const double ang = 6.2831853 * (i + 0.5 * hash01(seed + 5u, static_cast<std::uint32_t>(i)) * 0.2) / pickets;
+                const double r = L.perimeterMeters * 0.92;
+                const double side = i % 2 == 0 ? 1.0 : -1.0;
+                site.position = glm::dvec3(r * std::cos(ang), r * std::sin(ang), side * (halfWidth + 350.0));
+                site.up = glm::dvec3(0.0, 0.0, side);
+                continue;
+            }
+            const glm::dvec3 planPoint = site.position;
+            site.position = ring.toFrame(planPoint);
+            site.up = ring.upAt(planPoint);
+        }
+    }
     return L;
 }
 

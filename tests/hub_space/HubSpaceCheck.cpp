@@ -424,6 +424,47 @@ int main()
         check(consistency < 1.0e-6 && offArc < 1.0e-6, "B: a retained row stays on its frame and on the deck's arc");
     }
 
+    // ---- B1 (audit #8): a retained row of a ship MOVING in its turning frame - local velocity, its own engine
+    // acceleration and its own turn rates: world / velocity derived from the frame, motion.local* == the frame's, the
+    // frame's universe time = the epoch's (not extrapolated by the server delta)
+    {
+        ShipSnapshot row;
+        auto& f = row.referenceFrame;
+        f.valid = true;
+        f.originMeters = glm::dvec3(-2.0e8, 5.0e7, 9.0e6);
+        f.velocityMetersPerSecond = glm::dvec3(0.0, 7300.0, 100.0);
+        f.accelerationMetersPerSecond2 = glm::dvec3(-8.9, 0.0, 0.0);
+        const double omega = 6.283185307179586 / ring.ring().periodSeconds;
+        f.angularVelocityWorldRadPerSecond = glm::dvec3(0.0, 0.0, omega);
+        f.localPositionMeters = glm::dvec3(ring.ring().radius - 200.0, 40.0, -15.0);
+        f.localVelocityMetersPerSecond = glm::dvec3(3.0, -12.0, 1.5);
+        f.universeTimeSeconds = 1000.0;
+        const glm::dmat3 B0(f.progradeAxis, f.radialAxis, f.normalAxis);
+        row.transform.setWorldPositionMeters(f.originMeters + B0 * f.localPositionMeters);
+        row.transform.motion.engineAccelerationMps2 = B0 * glm::dvec3(0.0, 2.0, 0.5);   // thrusting
+        row.transform.yawRate = 0.05f;
+        row.transform.pitchRate = -0.02f;
+        const glm::dvec3 a = glm::dvec3(0.0, 2.0, 0.5);
+        const glm::dvec3 l0 = f.localPositionMeters, v0 = f.localVelocityMetersPerSecond;
+        const double dt = 0.6;
+        game::network::detail::advanceRetainedShipPresentation(row, dt, 1000.0 + 0.6);
+        const glm::dmat3 B(f.progradeAxis, f.radialAxis, f.normalAxis);
+        const glm::dvec3 lWant = l0 + v0 * dt + 0.5 * a * dt * dt;
+        const glm::dvec3 world = row.transform.fullWorldMeters();
+        const double localErr = glm::length(f.localPositionMeters - lWant);
+        const double worldErr = glm::length(world - (f.originMeters + B * f.localPositionMeters));
+        const double velErr = glm::length(row.transform.motion.worldVelocityMps -
+                                          (f.velocityMetersPerSecond + glm::cross(f.angularVelocityWorldRadPerSecond, B * f.localPositionMeters) +
+                                           B * f.localVelocityMetersPerSecond));
+        const double motionErr = glm::length(row.transform.motion.localPositionMeters - f.localPositionMeters) +
+                                 glm::length(row.transform.motion.localVelocityMps - f.localVelocityMetersPerSecond);
+        std::printf("B1 moving retained row 0.6 s: local %.3g m, world vs frame %.3g m, velocity %.3g m/s, motion.local vs frame "
+                    "%.3g, frame universe time %.3f\n", localErr, worldErr, velErr, motionErr, f.universeTimeSeconds);
+        check(localErr < 1.0e-9 && worldErr < 1.0e-6 && velErr < 1.0e-9 && motionErr < 1.0e-12,
+              "B1: a moving / thrusting retained row stays consistent with its frame");
+        check(std::abs(f.universeTimeSeconds - 1000.6) < 1.0e-9, "B1: the frame's universe time is the epoch's");
+    }
+
     // ---- A2 (audit #8): the pad service TAKES a ship where it is - several radii (the exact axis, near it, the deck,
     // beyond the deck's domain) and angles: the world point unchanged; the velocity carried: kept to the city-relative
     // value, so the world velocity is continuous

@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <utility>
 #include <unordered_map>
 
 #include "src/game/simulation/SimulationSnapshot.h"
+#include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 #include "src/game/navigation/HubAttachedPose.h"
 
 namespace game::network
@@ -134,9 +136,14 @@ inline ObjectSnapshot materializeObjectSnapshot(
     return canonical;
 }
 
+// deltaSeconds: the SERVER time between the two epochs (the simulation's own clock - the kinematics); frameUniverseTime:
+// the incoming epoch's UNIVERSE time when it continues the same timeline, NaN otherwise (audit #8 B1: universe time may
+// branch on a debug rewind and need not advance with server time - the frame's universe time is set to the epoch's,
+// never extrapolated by the server delta)
 inline void advanceRetainedShipPresentation(
     ShipSnapshot& ship,
-    double deltaSeconds
+    double deltaSeconds,
+    double frameUniverseTime = std::numeric_limits<double>::quiet_NaN()
 )
 {
     if (!std::isfinite(deltaSeconds) || deltaSeconds <= 0.0)
@@ -159,6 +166,10 @@ inline void advanceRetainedShipPresentation(
     if (ship.referenceFrame.valid)
     {
         auto& frame = ship.referenceFrame;
+        // the ship's OWN acceleration (its engines; gravity rides the frame's acceleration) in the frame's axes at the
+        // start of the interval (audit #8 B1: a thrusting ship in a frame was extrapolated at constant local velocity)
+        const glm::dmat3 B0(frame.progradeAxis, frame.radialAxis, frame.normalAxis);
+        const glm::dvec3 ownLocalAcceleration = glm::transpose(B0) * motion.engineAccelerationMps2;
         frame.originMeters += frame.velocityMetersPerSecond * deltaSeconds +
                               0.5 * frame.accelerationMetersPerSecond2 * deltaSeconds * deltaSeconds;
         frame.velocityMetersPerSecond += frame.accelerationMetersPerSecond2 * deltaSeconds;
@@ -177,8 +188,11 @@ inline void advanceRetainedShipPresentation(
                                    rotate(glm::dvec3(0.0, 0.0, 1.0)));
             ship.transform.orientation = glm::mat4(glm::mat3(turnM)) * ship.transform.orientation;
         }
-        frame.localPositionMeters += frame.localVelocityMetersPerSecond * deltaSeconds;
-        frame.universeTimeSeconds += deltaSeconds;
+        frame.localPositionMeters += frame.localVelocityMetersPerSecond * deltaSeconds +
+                                     0.5 * ownLocalAcceleration * deltaSeconds * deltaSeconds;
+        frame.localVelocityMetersPerSecond += ownLocalAcceleration * deltaSeconds;
+        if (std::isfinite(frameUniverseTime))
+            frame.universeTimeSeconds = frameUniverseTime;
         const glm::dmat3 B(frame.progradeAxis, frame.radialAxis, frame.normalAxis);
         const glm::dvec3 worldNow = frame.originMeters + B * frame.localPositionMeters;
         ship.transform.addWorldMeters(worldNow - ship.transform.fullWorldMeters());
@@ -219,9 +233,13 @@ inline void advanceRetainedShipPresentation(
     ship.transform.orientation =
         yawRot * pitchRot * rollRot * ship.transform.orientation;
 
-    // Preserve a useful local-frame estimate for Detail/Hub presentation.
-    ship.transform.motion.localPositionMeters +=
-        ship.transform.motion.localVelocityMps * deltaSeconds;
+    // the motion fields that ride as the referenceFrame (travel frame, local position / velocity, reference velocity)
+    // are rebuilt from the advanced frame - the SAME rule as after decoding (audit #8 B1: one representation, no
+    // second integration of motion.local* that could drift from the frame)
+    if (ship.referenceFrame.valid)
+        game::simulation::restoreMotionFromReferenceFrame(ship.transform.motion, ship.referenceFrame);
+    else
+        ship.transform.motion.localPositionMeters += ship.transform.motion.localVelocityMps * deltaSeconds;
 
     // (the reference frame was advanced above, with its turn, and the world point derived from it)
 }
@@ -330,7 +348,11 @@ inline SimulationSnapshot materializeCanonicalReplicationSnapshot(
         {
             detail::advanceRetainedShipPresentation(
                 retainedShip,
-                retainedDeltaSeconds
+                retainedDeltaSeconds,
+                incoming.metadata.universeTimelineRevision ==
+                        previousCanonical->metadata.universeTimelineRevision
+                    ? incoming.metadata.universeTimeSeconds
+                    : std::numeric_limits<double>::quiet_NaN()
             );
         }
     }

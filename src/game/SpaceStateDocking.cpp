@@ -3037,12 +3037,31 @@ void SpaceState::updateDockingStabilizing(Frame& f)
             ? game::navigation::planner::AssistedRoutePreset::Extreme
             : game::navigation::planner::AssistedRoutePreset::Standard;
 
-    const glm::dvec3 startVelocityMps =
+    glm::dvec3 startVelocityMps =
         automatic
             ? snapshot.controlledShip.localVelocityMps
             : glm::dvec3(0.0);
     request.startMeters =
         snapshot.controlledShip.localPositionMeters;
+    // the CO-ROTATING leg of a ring pad is planned in the city's frozen map: its start velocity is the ship's velocity
+    // RELATIVE TO THE TURNING CITY (omega x r taken off), like m_coRotatedTransform above. Taken raw it carried the
+    // deck's turn at the ship's distance from the axis (2.3 m -> 0.21 m/s, 6.2 m -> 0.56 m/s): the profile started at
+    // that 'speed' and the follower stood at segment 0 for minutes (live HantedPreview demo, 2026-11-27), or above 0.5 m/s
+    // the leg replanned for ever ("stopping relative to the city first", live land2: 201 replans, no landing)
+    if (automatic && pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid && m_padAnchor.coRotate)
+    {
+        const double t0 = snapshot.epoch.universeTimeSeconds;
+        const auto map = game::navigation::cityCoRotationAt(snapshot.targetObject.hubAttachment, t0, t0);
+        startVelocityMps -= glm::cross(map.omega, request.startMeters - map.pivot);
+        static double loggedAt = -1.0e9;
+        if (t0 - loggedAt > 2.0)
+        {
+            loggedAt = t0;
+            std::cerr << "[RingCoRotation] request=" << pending.serial << " the leg's start velocity relative to the city "
+                      << glm::length(startVelocityMps) << " m/s (raw in the frame "
+                      << glm::length(snapshot.controlledShip.localVelocityMps) << ")" << std::endl;
+        }
+    }
 
     if (lateEntryRebind)
     {

@@ -1,3 +1,4 @@
+#include <GLFW/glfw3.h>
 #include "src/game/client/ClientCityPadPresence.h"
 #include "src/game/navigation/HubCitySpace.h"
 #include "src/render/cockpit/HubCorridorHudRenderer.h"
@@ -51,7 +52,19 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         return;
     // in a dock / flown by the station: no lanes - the dock walls hide them anyway and the pilot does
     // not fly them now (author 2026-11-21: «трассы видны даже когда я нахожусь в доке»)
-    if (player.dockDispatcher.active && player.dockDispatcher.stationControlled)
+    // ... but faded out, not cut (the author 2026-11-27: "you drew the green zones all the time and then removed them
+    // at once - it reads as a glitch"): 1.5 s down when the station takes the ship, 1.5 s up when it lets go
+    const bool stationControlled = player.dockDispatcher.active && player.dockDispatcher.stationControlled;
+    static double fade = 1.0;
+    static double lastT = -1.0;
+    {
+        const double now = glfwGetTime();
+        const double dt = lastT < 0.0 ? 0.0 : std::clamp(now - lastT, 0.0, 0.25);
+        lastT = now;
+        constexpr double FadeSeconds = 1.5;
+        fade = std::clamp(fade + (stationControlled ? -dt : dt) / FadeSeconds, 0.0, 1.0);
+    }
+    if (fade <= 0.0)
         return;
     const glm::dvec3 playerMeters = world::coordinates::fullMeters(player.renderTransform.worldPosition);
     // the player's direction of travel (velocity relative to the frame; the nose when nearly at rest): a lane running
@@ -161,7 +174,8 @@ void HubCorridorHudRenderer::render(const ClientWorldState& world, const ClientS
         // a segment CLIPPED at a near plane in view space, not dropped when one end is behind / beside the camera: flying
         // inside a tube the rings' pieces went on and off as their ends crossed the camera - the rings seemed to be
         // redrawn in new places (author 2026-11-22: «при пролёте внутри ведут себя нестабильно»)
-        const auto seg = [&](const glm::dvec3& a, const glm::dvec3& b, const glm::vec4& c, float w) {
+        const auto seg = [&](const glm::dvec3& a, const glm::dvec3& b, const glm::vec4& cIn, float w) {
+            const glm::vec4 c(cIn.r, cIn.g, cIn.b, cIn.a * static_cast<float>(fade));
             constexpr float Near = 0.5f;
             glm::vec4 va = viewMatrix * glm::vec4(glm::vec3(a - playerMeters), 0.0f);
             glm::vec4 vb = viewMatrix * glm::vec4(glm::vec3(b - playerMeters), 0.0f);

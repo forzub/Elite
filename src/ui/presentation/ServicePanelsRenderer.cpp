@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include "src/ui/presentation/ServicePanelsRenderer.h"
 
 #include <algorithm>
@@ -224,8 +225,9 @@ void ServicePanelsRenderer::renderShipyard(const Viewport& viewport, const game:
         // seller offers (concrete instances)
         const std::string offersTitle = tr("service.panel.shipyard.offers", "Seller offers");
         t.textDrawPx(offersTitle, cx, y, px, Title);
-        t.textDrawPx(tr("service.panel.shipyard.offers_dev", "DEV: trial stock until the economy is connected"),
-                     cx + t.measureTextPx(offersTitle, px) + 16, y + 2, small, Muted);
+        if (!core::isPreviewBuild())   // HantedPreview: no developer notes on the panels
+            t.textDrawPx(tr("service.panel.shipyard.offers_dev", "DEV: trial stock until the economy is connected"),
+                         cx + t.measureTextPx(offersTitle, px) + 16, y + 2, small, Muted);
         y += static_cast<float>(px) + 8;
         const float cols[] = {0.0f, 0.30f, 0.44f, 0.56f, 0.70f, 0.80f};
         const std::string heads[] = {tr("service.panel.shipyard.col.seller", "seller"), tr("service.panel.shipyard.col.condition", "condition"),
@@ -495,7 +497,9 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
         };
         button(rx + 6, tr("service.panel.refit.repair", "Repair"), ServicePanelActionType::RefitPreviewRepair, f.repairable);
         button(rx + 6 + bw, tr("service.panel.refit.replace", "Replace"), ServicePanelActionType::RefitPreviewReplace, true);
-        button(rx + 6 + 2 * bw, tr("service.panel.refit.apply_dev", "Apply (DEV)"), ServicePanelActionType::RefitApply,
+        button(rx + 6 + 2 * bw,
+               core::isPreviewBuild() ? tr("service.panel.refit.apply", "Apply") : tr("service.panel.refit.apply_dev", "Apply (DEV)"),
+               ServicePanelActionType::RefitApply,
                page.previewForSelection && page.preview.ok && page.preview.applicable);
         y += bh + 10;
 

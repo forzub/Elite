@@ -1173,6 +1173,10 @@
     "service.panel.nav.footer": {
       "en": "Click a record - card; open data comes from the colony bank, the rest by clearance",
       "ru": "Клик по записи - карточка; открытые данные выдаёт банк колонии, остальное - по допуску"
+    },
+    "service.panel.refit.apply": {
+      "en": "Apply",
+      "ru": "Применить"
     }
   }
 }

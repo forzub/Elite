@@ -1,3 +1,4 @@
+#include "src/game/navigation/HubPlanCatalog.h"
 // The interstellar jump, server side (author 2026-11-08; rules: navigation/rules/JumpRules.h).
 // requestJump: the checks, then a silent charge-up of 5-10 min in normal flight; at its end the
 // jump waits until the ship is clear of objects and above every J floor, then is instant: the
@@ -1065,6 +1066,25 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
     }
     auto& frame = motion.travelFrame;
     frame.originMeters = hub->originMeters + up * distanceKm * 1000.0;
+    // a RING hub: "above" runs along the wheel's spin axis - through the zero-g axis industry (a DEV start 3 km out was
+    // put inside axis_industry_8 and killed at once, 208 g, 2026-11-27): off the axis, past the rim in the ring's plane,
+    // at the same distance along the axis
+    for (const auto& [oid, obj] : m_staticObjects)
+        if (obj.hubId == hubId)
+            if (const auto* plan = game::navigation::HubPlanCatalog::forFrameModule(obj.hubModuleId); plan && plan->ring().valid)
+            {
+                const glm::dmat3 R(glm::mat3(obj.orientation));
+                const glm::dvec3 cityOrigin = world::coordinates::fullMeters(obj.worldPosition);
+                const glm::dvec3 local = glm::transpose(R) * (frame.originMeters - cityOrigin);
+                if (std::hypot(local.x, local.y) < plan->ring().radius + 1500.0)
+                {
+                    const glm::dvec3 moved(plan->ring().radius + 1500.0, 0.0, local.z);
+                    frame.originMeters = cityOrigin + R * moved;
+                    std::cerr << "[DevStart] ring hub " << hubId << ": the start moved off the spin axis, "
+                              << static_cast<long long>(moved.x) << " m from it" << std::endl;
+                }
+                break;
+            }
     frame.linearVelocityMps = hub->velocityMetersPerSecond;
     frame.linearAccelerationMps2 = glm::dvec3(0.0);
     motion.localPositionMeters = glm::dvec3(0.0);

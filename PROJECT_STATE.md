@@ -9511,4 +9511,19 @@ start-up hitches (render), trade step 16 part 3 live.
     occluders unbent; ClientHubMapBridge ring sizeMeters from the strip; A6 pad existence (HubExpansion vs static pad
     flag); A7 GPU/CPU map; stages B, C (the "spatial" verb is the start of C: no independent render-node path yet).
   - DEV start "hub:earth_ring_hub@3" puts the ship ON the ring's axis inside the zero-g axis industry -> killed at once
-    (208 g, axis_industry_8.hubb_warehouse.2); @8 is clear. Not changed (a DEV scenario point).
+    (208 g, axis_industry_8.hubb_warehouse.2); @8 is clear. FIXED separately (the start moves off the spin axis, R + 1.5 km).
+* 2026-11-27 SPATIAL RE-AUDIT at 8187f1c36 (A1/A2/A4/A5 accepted by the author) - continued, SOURCE + UNIT:
+  - A4 (f93245a51): SpaceStateDocking pad approach direction = periodic plan difference + ring.vectorToFrame at the
+    hover point (was the plain strip difference, unscaled).
+  - A5 (f93245a51): hubBerthTouchdownOnStructure - a place on the berth's RIGID model (HubExpansion's pose), in plan
+    metres; measured before: up to 0.293 m off the model (hangar G1-01), after 1e-12 m; server + client tunnel use it.
+    FOUND, NOT CHANGED (needs the author's rule): no berth checks a ship's size against its place (a 2-place garage
+    place is 20 m wide; hangar bays 53 m apart).
+  - A8 (78672712f): LocalSceneObject::planSheetSizeMeters; a ring city's sizeMeters = the wheel 2439 m across (was the
+    strip 7300 m); the plan view fits / picks the sheet, the 3D map the physical size.
+  - A9 (60523cc9b): HubCitySpace::planPoseToModule = the one rigid-piece placement; the 3D map's block boxes and its
+    lane occluders both use it; the HUD label occlusion = physical ray vs rigid building boxes in the module frame.
+  - DEV start on a ring hub moved off the spin axis (separate commit).
+  - OPEN: A3 (map inverse / explicit map mode), A6 (pad existence), A7 (GPU/CPU), A2 rest (HubMapBackend /
+    LocalMapPlanWarp / SpaceStateDocking direct bends; worldToPlan near the axis - axial docks must not be read as deck
+    points), map seam polylines, B (one epoch per kinematic pose: the client builders still share velocities), C.

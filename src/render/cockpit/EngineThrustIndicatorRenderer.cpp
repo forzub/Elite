@@ -1,3 +1,4 @@
+#include "src/core/BuildFlavor.h"
 #include "src/render/cockpit/EngineThrustIndicatorRenderer.h"
 
 #include <algorithm>
@@ -250,7 +251,10 @@ void EngineThrustIndicatorRenderer::render(
                     std::max(1.0f,bh-2*scale),style.thrust);
             // Real vectoring angle complements thrust: manoeuvring Assisted
             // engines still show their executed thrust on these bars.
-            if(bar->hasNozzleAngle && bar->thrust01>0.005f &&
+            // HantedPreview (the author 2026-11-27: no overlapping texts): the nozzle angles under the bars ran into each
+            // other and into the status line below - not shown in the preview (a secondary readout)
+            if(!core::isPreviewBuild() &&
+                bar->hasNozzleAngle && bar->thrust01>0.005f &&
                 bar->nozzleAngleDeg>0.5f)
             {
                 char angle[20];
@@ -278,8 +282,10 @@ void EngineThrustIndicatorRenderer::render(
                     integrity<0.70f?yellow:green;
                 char pct[16];
                 std::snprintf(pct,sizeof(pct),"%.0f%%",integrity*100.0f);
+                // under the pad: on the temperature row it ran into the right limit ("1191 K")
                 text.textDrawPx(pct,padX-12*scale,
-                    centerY-17*scale,std::max(9,static_cast<int>(10*scale)),
+                    centerY+((core::isPreviewBuild() && outwardRight)?9.0f:-17.0f)*scale,
+                    std::max(9,static_cast<int>(10*scale)),
                     style.label);
             }
             roundedOutlinePx(text,padX-4*scale,centerY-4*scale,

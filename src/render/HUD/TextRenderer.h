@@ -17,6 +17,33 @@ public:
     // suppressed every draw call is dropped - the HUD sets it around the glass texts it hides; the data and the
     // layout code still run, nothing else changes
     void setSuppressed(bool suppressed) noexcept { m_suppressed = suppressed; }
+    // the last-chance translation of a name AS IT COMES FROM THE GAME DATA (audit #9 D7): a text with Cyrillic in it is
+    // looked up by Application's filter (LocalizationService::dataText, whole string, then ", "-separated parts); set
+    // once by Application - the render layer knows nothing of localization. Applied to drawing AND measuring alike.
+    using TextFilter = std::string (*)(const std::string&);
+    static void setTextFilter(TextFilter filter) noexcept { textFilterSlot() = filter; }
+    static const std::string& filterText(const std::string& in, std::string& storage)
+    {
+        const TextFilter f = textFilterSlot();
+        if (!f)
+            return in;
+        bool cyrillic = false;
+        for (unsigned char c : in)
+            if (c == 0xD0 || c == 0xD1)
+            {
+                cyrillic = true;
+                break;
+            }
+        if (!cyrillic)
+            return in;
+        storage = f(in);
+        return storage;
+    }
+    static TextFilter& textFilterSlot() noexcept
+    {
+        static TextFilter slot = nullptr;
+        return slot;
+    }
     bool suppressed() const noexcept { return m_suppressed; }
 
     void init();

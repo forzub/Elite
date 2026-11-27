@@ -101,7 +101,7 @@ inline std::string join(const std::vector<std::string>& v, const char* sep = ", 
 {
     std::string out;
     for (const auto& x : v)
-        out += (out.empty() ? "" : sep) + x;
+        out += (out.empty() ? "" : sep) + game::localization::renderMessage(x);   // each item in the player's language (D7)
     return out;
 }
 

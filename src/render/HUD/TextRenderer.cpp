@@ -317,12 +317,14 @@ TextRenderer::TextBatch& TextRenderer::batchForTexture(
 
 void TextRenderer::textDrawBatched(
     Font& font,
-    const std::string& text,
+    const std::string& textIn,
     float x,
     float baselineY,
     const glm::vec4& color
 )
 {
+    std::string filteredTextStorage;
+    const std::string& text = filterText(textIn, filteredTextStorage);
     if (m_suppressed)
         return;
     if (!m_batchActive)
@@ -418,13 +420,15 @@ void TextRenderer::textDraw(
 
 void TextRenderer::textDraw(
     Font& font,
-    const std::string& text,
+    const std::string& textIn,
     float x,
     float y,
     const glm::vec4& color,
     float scale
 )
 {
+    std::string filteredTextStorage;
+    const std::string& text = filterText(textIn, filteredTextStorage);
     if (m_suppressed)
         return;
     if (!m_batchActive)
@@ -523,7 +527,7 @@ void TextRenderer::textDraw(
 
 void TextRenderer::textDrawRotated(
     Font& font,
-    const std::string& text,
+    const std::string& textIn,
     float x,
     float baselineY,
     const glm::vec4& color,
@@ -531,6 +535,8 @@ void TextRenderer::textDrawRotated(
     float angleRad
 )
 {
+    std::string filteredTextStorage;
+    const std::string& text = filterText(textIn, filteredTextStorage);
     if (m_suppressed)
         return;
     if (!m_batchActive)
@@ -721,13 +727,15 @@ void TextRenderer::textDraw(
 
 
 void TextRenderer::textDrawPx(
-    const std::string& text,
+    const std::string& textIn,
     float x,
     float y,
     int pixelSize,
     const glm::vec4& color
 )
 {
+    std::string filteredTextStorage;
+    const std::string& text = filterText(textIn, filteredTextStorage);
     if (m_suppressed)
         return;
     Font& font = fontForPixelSize(pixelSize);
@@ -735,10 +743,12 @@ void TextRenderer::textDrawPx(
 }
 
 float TextRenderer::measureTextPx(
-    const std::string& text,
+    const std::string& textIn,
     int pixelSize
 )
 {
+    std::string filteredTextStorage;
+    const std::string& text = filterText(textIn, filteredTextStorage);
     return fontForPixelSize(pixelSize).measureText(text);
 }
 

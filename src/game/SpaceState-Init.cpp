@@ -148,6 +148,13 @@ void SpaceState::initHUD()
     // J (free flight): the orbit around the dominant body
     uiRoot->addChild(makeTelemetryText("main_orbit_1",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 5.0f}));
     uiRoot->addChild(makeTelemetryText("main_orbit_2",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 6.0f}));
+    // HantedPreview (the author 2026-11-27: "make sure the texts do not overlap"): this telemetry column sits under the HUD
+    // terminal and printed over it; its orbit numbers are on the orbit panel at the right anyway
+    if (core::isPreviewBuild())
+        for (const char* id : {"main_coord_cell", "main_coord_x", "main_coord_y", "main_coord_z", "main_coord_v", "main_orbit_1",
+                               "main_orbit_2"})
+            if (auto* t = uiRoot->findById(id))
+                t->visible = false;
 
 
     // ================== Radar HUD creation =========================

@@ -219,7 +219,12 @@ m_systemMapRenderer.render(
         if (debug::get().render.shouldRenderCockpit() &&
             pilotGlass)
         {
+            // HantedPreview (the author 2026-11-27: "bring back the text of the cockpit HUD and the ship's control
+            // type"): the cockpit instruments draw their glass texts again
+            const bool glassSuppressed = TextRenderer::instance().suppressed();
+            TextRenderer::instance().setSuppressed(false);
             renderHudCockpitInstruments(vp, playerShip, cockpit);
+            TextRenderer::instance().setSuppressed(glassSuppressed);
         }
         core::hitch::mark("hud_instruments");
 
@@ -436,6 +441,7 @@ m_systemMapRenderer.render(
         // the front view at the glass's lower right, the bottom camera over its readout band; green out, grey in, red broken
         if (m_activeCameraMode == ShipCameraMode::Cockpit || m_activeCameraMode == ShipCameraMode::Bottom)
         {
+            TextRenderer::instance().setSuppressed(false);   // HantedPreview: the gear state is cockpit HUD - shown
             const std::uint8_t gear = playerShip.landingGear;
             // the legs are wanted now (author 2026-11-21: «при готовности к посадке ... надо писать - выпустить опоры - и мигать
             // этим текстом, иначе не догадаются»): the service sets the ship down / asked for them, or a pad is near
@@ -480,7 +486,10 @@ m_systemMapRenderer.render(
             const float x = m_activeCameraMode == ShipCameraMode::Bottom ? 0.5f * (static_cast<float>(vp.width) - w)
                                                                          : static_cast<float>(vp.width) * 0.70f;
             const float y = m_activeCameraMode == ShipCameraMode::Bottom ? static_cast<float>(vp.height) - band - 12.0f
-                                                                         : static_cast<float>(vp.height) * 0.70f;
+                                                                         // above the orbit panel (it starts at
+                                                                         // 0.64 h, its third line fell under the
+                                                                         // label at 0.70 h - the author: no overlaps)
+                                                                         : static_cast<float>(vp.height) * 0.64f - 26.0f;
             text.textDrawPx(label, x, y, px, colour);
         }
         }
@@ -522,11 +531,17 @@ m_systemMapRenderer.render(
 
     renderUniverseTimeSimulationOverlay(vp);
     // HantedPreview: the glass banners / cards (their texts suppressed) are not drawn at all - no empty plates
+    {
+        // HantedPreview: the flight-mode banner (the ship's control type, engines, speed) is shown
+        const bool glassSuppressed = TextRenderer::instance().suppressed();
+        TextRenderer::instance().setSuppressed(false);
+        renderFreeFlightBanner(vp);
+        TextRenderer::instance().setSuppressed(glassSuppressed);
+    }
     if (!core::isPreviewBuild())
     {
         renderUiLanguageIndicator(vp);
         renderNavigationStressOverlay(vp);
-        renderFreeFlightBanner(vp);
         renderContainmentBeacon(vp);
         renderHudJump(vp);
         renderDockingWidget(vp);

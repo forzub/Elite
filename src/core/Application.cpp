@@ -1,3 +1,4 @@
+#include "src/render/HUD/TextRenderer.h"
 #include "src/game/scene/LayoutCityHitVolumes.h"
 #include "src/audio/CockpitRadio.h"
 #include "src/core/ShutdownRequest.h"
@@ -645,6 +646,28 @@ void Application::init()
                 const std::filesystem::path localizationRoot =
                     webRoot.parent_path() / "localization";
                 game::localization::setActiveService(&m_localization);   // audit #7 D7: the client's tables
+                // the last-chance data-name translation for every drawn / measured text (audit #9 D7): a name straight from
+                // the game data (a hub, a polity, a good ...) drawn by a path that never rendered it
+                TextRenderer::setTextFilter([](const std::string& text) -> std::string {
+                    const auto* service = game::localization::activeService();
+                    if (!service)
+                        return text;
+                    std::string whole = service->dataText(text);
+                    if (whole != text || text.find(", ") == std::string::npos)
+                        return whole;
+                    std::string out;   // a list "A, B, C": each part on its own
+                    std::size_t at = 0;
+                    while (at <= text.size())
+                    {
+                        const std::size_t comma = text.find(", ", at);
+                        const std::string part = text.substr(at, comma == std::string::npos ? std::string::npos : comma - at);
+                        out += (out.empty() && at == 0 ? "" : ", ") + service->dataText(part);
+                        if (comma == std::string::npos)
+                            break;
+                        at = comma + 2;
+                    }
+                    return out;
+                });
                 if (!m_localization.loadDirectory(localizationRoot.string()))
                 {
                     std::cerr << "[Localization] core tables incomplete; English/key fallback remains active\n";

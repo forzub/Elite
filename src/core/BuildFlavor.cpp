@@ -1,5 +1,6 @@
 #include "src/core/BuildFlavor.h"
 
+#include <cstdlib>
 #include <filesystem>
 #include <system_error>
 #ifdef _WIN32
@@ -13,7 +14,15 @@ bool isPreviewBuild() noexcept { return true; }
 const char* appDataFolderName() noexcept { return "HantedPreview"; }
 const wchar_t* appDataFolderNameW() noexcept { return L"HantedPreview"; }
 #else
-bool isPreviewBuild() noexcept { return false; }
+// DEV: ELITE_DEV_PREVIEW_FLAVOR=1 - the preview's presentation rules in a developer build (to look at them without a package)
+bool isPreviewBuild() noexcept
+{
+    static const bool forced = [] {
+        const char* v = std::getenv("ELITE_DEV_PREVIEW_FLAVOR");
+        return v && *v == '1';
+    }();
+    return forced;
+}
 const char* appDataFolderName() noexcept { return "EliteGame"; }
 const wchar_t* appDataFolderNameW() noexcept { return L"EliteGame"; }
 #endif

@@ -9420,3 +9420,41 @@ start-up hitches (render), trade step 16 part 3 live.
     path projects, accounts persisted. Python checks: the same 17 reds as before, no new.
   - Evidence for backlog item (10) mojibake: the bought ship's name is saved as "C-120 В«Р’Р°С…Р°РєВ»" - UTF-8 read as
     cp1251 and encoded again (buyShip's designation + « name »).
+    CORRECTED 2026-11-27 (same day): WRONG - a reading artifact of the shell, not of the file. The bytes on disk are
+    valid UTF-8 ("C-120 " C2 AB D0 92 D0 B0 ... = «Вахак»), the client shows «Вахак». No evidence for item (10) here.
+* 2026-11-27 OWNERSHIP REVIEW FOLLOW-UP (author's 4 points: instance registration, symmetric owner save, independent
+  owner / pilot / asker rights, publication history out of the simulation) - SOURCE + LIVE:
+  - (1) A bought ship had no ShipInstanceRegistry record until its first boarding, and ownedNavigationAssetsForSession
+    skips an owned ship without one: F7 listed it, navigation did not. NOW GameServer::registerShipInstance (idempotent)
+    runs where a ship APPEARS: purchase, hire (employer ship), restore, DEV lineup grants; boarding only reuses it. A sale
+    completes only after spawn + registration + owner record (assignShipOwner's result is checked; else refund).
+    FOUND LIVE on the way: after a hire F7 listed the employer ship (the client added the controlled ship
+    unconditionally) while navigation did not -> F7 lists owned ships only (SpaceStateServices).
+  - (2) restore had no owner_organization branch (the save writes it) -> ShipOwnerRef::organization restored; a KNOWN
+    owner_player absent from the loaded slots was degraded to a reason string -> kept typed (absentOwnerPlayer), written
+    back as owner_player + owner_unresolved, assigned again when the identity exists; a known owner is not "unresolved" by
+    an old reason. saveRuntimeShips cleared m_shipsDirty / stamped the save tick BEFORE the write -> only after a
+    successful write; a failed one retries after ~5 s (m_shipsSaveRetryTick), not at the hourly save.
+  - (3) projectShipRowsForSession blanked the pilot domains only inside !owns: every OWNED ship (a parked one too) kept
+    them. NOW three independent facts: owns (F7 / registration / refit block), flies (the session's controlled entity:
+    pilot domains), asked (the refit answer). DEV verb "audience" prints the concrete fields per row class.
+  - (4) the publication history (graph published, owed full-graph resends, last published module revision, fragment /
+    repair-job payload flags) moved from GameSimulation to ShipGraphPublicationLedger, owned by GameServer and passed to
+    buildReplicationSnapshot; the simulation keeps the facts only (module revision; a structural graph revision bumped by
+    markShipGraphDirty). The ledger prunes entities with neither a ship nor a shell (retainOnly) - not the simulation's
+    forgetShip. Kept: a demotion publishes one explicit empty graph; 2 full-graph publications per structural change
+    (also for a ship dirtied before its first publication); late joiners are served by the hydration path.
+    check_replication_snapshot_boundary.py updated to this boundary (normative change asked by the author).
+  - DEV: ELITE_DEV_PLAYER_SLOTS=<n> (ServerRuntime) for the slot-count check; hireJob off a berth with DEV commands (as the
+    purchase; the hex dock autopilot still stalls - see the docking item).
+  - LIVE (scratchpad run_aud.sh, D:/tmp/aud): phase 1 fresh, 2 slots: A buys a C-120 and STAYS in its seat ->
+    "instances F7 [1 970001] navigation [1 970001] SAME"; B buys -> [900001 970002] SAME. Rows: OWN-FLOWN 204 owned 1,
+    reg PL-0001, 2 reactors 70 MW, telemetry 4 slots, mass 260 t, J 3 t, nav 1; OWN-PARKED 1587 owned 1, reg + name, all
+    pilot fields 0; after "job:hire:0" FLOWN-NOT-OWNED 1589 (employer) owned 0, no reg, pilot fields present (265.5 t);
+    FOREIGN 207-226 rows: 0 with owner data, 0 with pilot data. Phase 2 same files, ONE slot: "ship 970002 NOT assigned:
+    owner player 2 does not exist", B's account kept unbound, the re-save keeps owner_player 2 + the reason. Phase 3 two
+    slots: "[Accounts] restored 2", "ship 970002 owner player 2"; B [900001 970002] SAME, A (back in the employer seat)
+    [1 970001] SAME. Regression with the ledger (D:/tmp/ownlive2, run_own phase 1): A's own refit APPLIED and the client
+    module row shows ofu.drive.u33 (graph republished), B's preview / apply REFUSED, overrides unchanged.
+  - Python checks: the same 17 reds (check_ship_ownership_authority.py extended: registration before the owner, hire
+    registers, organization / absent owner restore, dirty cleared after the write, pilot blanking independent of owns).

@@ -2528,7 +2528,7 @@ void GameSimulation::markShipGraphDirty(EntityId id)
     // Structural graph redundancy is counted in snapshots that are actually
     // published, not in simulation ticks. Two publications preserve the old
     // delivery redundancy without coupling GameSimulation to server cadence.
-    m_shipGraphPayloadPublicationsRemaining[id] = 2;
+    ++m_shipGraphStructureRevision[id];   // the publisher owes the redundancy (ShipGraphPublicationLedger)
 }
 
 
@@ -3516,7 +3516,6 @@ void GameSimulation::forgetShip(EntityId id)
     // leaked before (shell / lifetime audit 2026-11-26)
     m_capsuleTakeoverPending.erase(id);
     m_capsuleWake.erase(id);
-    m_lastPublishedShipModuleRevision.erase(id);
     for (auto& [hubId, security] : m_hubSecurity)
         security.violators.erase(id.value);
     m_combatHostility.erase(id);
@@ -3544,10 +3543,7 @@ void GameSimulation::forgetShip(EntityId id)
     m_liveTraffic.erase(id);
     m_padLandings.erase(id);
     m_trafficSlots.erase(id);
-    m_initializedShipGraphIds.erase(id);
-    m_shipGraphPayloadPublicationsRemaining.erase(id);
-    m_shipsWithDetachedFragmentPayload.erase(id);
-    m_shipsWithRepairJobPayload.erase(id);
+    m_shipGraphStructureRevision.erase(id);   // (the publication history is pruned by the replication itself)
     m_shipReferenceBindings.erase(id);
     m_activationPlanStates.erase(id);
     m_activationPlannerDecisions.erase(id);

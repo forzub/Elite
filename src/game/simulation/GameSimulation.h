@@ -68,6 +68,7 @@
 #include "src/game/traffic/DockServiceTraffic.h"
 #include "src/game/combat/Penetration.h"
 #include "src/game/simulation/ShipCombatSnapshot.h"
+#include "src/game/simulation/ShipGraphPublicationLedger.h"
 
 
 class StateContext;
@@ -503,7 +504,8 @@ public:
 
     void setPlayerControl(const ShipControlState& control);
     void applyControl(EntityId id, const ShipControlState& control);
-    SimulationSnapshot buildReplicationSnapshot(std::uint64_t serverTick);
+    // `published`: the replication's history of what it already sent (owned by the publisher, pruned there)
+    SimulationSnapshot buildReplicationSnapshot(std::uint64_t serverTick, game::simulation::ShipGraphPublicationLedger& published);
     void debugForceFullShipGraphPayload();
     EntityId playerId() const { return m_playerId; }
 
@@ -1376,16 +1378,10 @@ private:
         game::navigation::autopilot::AutopilotLawController
     > m_npcAutopilotLawControllers;
 
-    // Snapshot graph payload control.
-    // Heavy structural data is sent only on first sight / explicit dirty events.
-    std::unordered_set<EntityId>        m_initializedShipGraphIds;
-    std::unordered_map<EntityId, int>   m_shipGraphPayloadPublicationsRemaining;
-    // Independently publish small module-state deltas when propulsion/lifetime
-    // revision changes, without resending structural links and hit geometry.
-    std::unordered_map<EntityId, std::uint64_t>
-        m_lastPublishedShipModuleRevision;
-    std::unordered_set<EntityId>        m_shipsWithDetachedFragmentPayload;
-    std::unordered_set<EntityId>        m_shipsWithRepairJobPayload;
+    // The structural graph revision of each ship (a ship fact: bumped by markShipGraphDirty on a structural
+    // change). What was already PUBLISHED lives in the replication's ShipGraphPublicationLedger (GameServer), not
+    // here (author's review 2026-11-27).
+    std::unordered_map<EntityId, std::uint64_t> m_shipGraphStructureRevision;
 
     game::server::ServerTimelineClock  m_serverTimelineClock;
     game::simulation::UniverseDiagnosticTrajectorySession

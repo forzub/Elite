@@ -614,7 +614,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
         m_lastSnapshot =
-            m_simulation.buildReplicationSnapshot(0);
+            m_simulation.buildReplicationSnapshot(0, m_graphPublication);
         populateClientSessionSnapshot(m_lastSnapshot);
         m_canonicalReplicationSnapshot =
             game::network::materializeCanonicalReplicationSnapshot(
@@ -2110,7 +2110,7 @@ m_simulation.setOrbitalUniverseTimeSeconds(
         {
             game::server::ScopedTickTimer t1(game::server::serverTickProfile().snapshotParts[0]);
             m_lastSnapshot =
-                m_simulation.buildReplicationSnapshot(m_serverTick);
+                m_simulation.buildReplicationSnapshot(m_serverTick, m_graphPublication);
         }
         {
             game::server::ScopedTickTimer t2(game::server::serverTickProfile().snapshotParts[1]);

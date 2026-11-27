@@ -6,7 +6,8 @@
 
 
 SimulationSnapshot GameSimulation::buildReplicationSnapshot(
-    std::uint64_t serverTick
+    std::uint64_t serverTick,
+    game::simulation::ShipGraphPublicationLedger& published
 )
 {
     // Replication is a publication concern, not part of the 50 Hz simulation
@@ -202,9 +203,11 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         auto& graph = s.graph;
 
         const bool motionLabProbe = isHubMotionLabShip(id);
-        const bool hadDetailedGraph =
-            m_initializedShipGraphIds.find(id) !=
-            m_initializedShipGraphIds.end();
+        const bool hadDetailedGraph = published.detailedGraphPublished(id);
+        {
+            const auto rev = m_shipGraphStructureRevision.find(id);
+            published.observeStructureRevision(id, rev == m_shipGraphStructureRevision.end() ? 0 : rev->second);
+        }
 
         // This MUST be a const read: mutable modules() invalidates the
         // revision even when merely reading, causing continuous replication.
@@ -213,22 +216,15 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 ship.core().moduleRuntime()
             );
         const std::uint64_t moduleRevision = readOnlyModules.revision();
-        const auto lastModulePublication =
-            m_lastPublishedShipModuleRevision.find(id);
         const bool moduleStateChanged =
-            lastModulePublication ==
-                m_lastPublishedShipModuleRevision.end() ||
-            lastModulePublication->second != moduleRevision;
+            !published.moduleRevisionPublished(id, moduleRevision);
 
         if (!detailedReplication)
         {
             // If this client-visible entity was detailed before, publish one
             // explicit empty graph so canonical snapshot merging cannot retain
             // stale heavy state forever after demotion.
-            m_shipGraphPayloadPublicationsRemaining.erase(id);
-            m_lastPublishedShipModuleRevision.erase(id);
-
-            if (hadDetailedGraph)
+            if (published.demote(id))
             {
                 graph.hasModules = true;
                 graph.hasStructuralLinks = true;
@@ -238,8 +234,6 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 graph.structuralLinks.clear();
                 graph.assemblyModules.clear();
                 graph.debugHitVolumes.clear();
-
-                m_initializedShipGraphIds.erase(id);
             }
 
             // Response rendering uses static descriptor assembly. Runtime
@@ -249,13 +243,9 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         }
         else
         {
-            auto resendIt =
-                m_shipGraphPayloadPublicationsRemaining.find(id);
             const bool sendStructuralGraph =
                 !motionLabProbe &&
-                (!hadDetailedGraph ||
-                 resendIt !=
-                    m_shipGraphPayloadPublicationsRemaining.end());
+                (!hadDetailedGraph || published.fullGraphOwed(id));
 
             if (sendStructuralGraph)
             {
@@ -308,20 +298,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                         ship.core().hitComponent()
                     );
 
-                m_initializedShipGraphIds.insert(id);
-                m_lastPublishedShipModuleRevision[id] = moduleRevision;
-
-                if (resendIt !=
-                    m_shipGraphPayloadPublicationsRemaining.end())
-                {
-                    --resendIt->second;
-                    if (resendIt->second <= 0)
-                    {
-                        m_shipGraphPayloadPublicationsRemaining.erase(
-                            resendIt
-                        );
-                    }
-                }
+                published.fullGraphPublished(id, moduleRevision);
 
                 ship.core().clearHitVolumesDirty();
             }
@@ -356,7 +333,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                             it != runtimeById.end() ? it->second : nullptr
                         ));
                     }
-                    m_lastPublishedShipModuleRevision[id] = moduleRevision;
+                    published.moduleRowsPublished(id, moduleRevision);
                 }
 
                 // Independent debug geometry may change without module state.
@@ -383,19 +360,14 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                     tr.worldPosition
                 );
 
-            const bool hadDetachedFragments =
-                m_shipsWithDetachedFragmentPayload.find(id) !=
-                    m_shipsWithDetachedFragmentPayload.end();
+            const bool hadDetachedFragments = published.fragmentsPublished(id);
 
             if (!detachedFragments.empty() || hadDetachedFragments)
             {
                 graph.hasDetachedFragments = true;
                 graph.detachedFragments = std::move(detachedFragments);
 
-                if (graph.detachedFragments.empty())
-                    m_shipsWithDetachedFragmentPayload.erase(id);
-                else
-                    m_shipsWithDetachedFragmentPayload.insert(id);
+                published.setFragmentsPublished(id, !graph.detachedFragments.empty());
             }
 
             auto repairJobs = ship.core().buildRepairJobSnapshots();
@@ -425,24 +397,22 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 }
             }
 
-            const bool hadRepairJobs =
-                m_shipsWithRepairJobPayload.find(id) !=
-                    m_shipsWithRepairJobPayload.end();
+            const bool hadRepairJobs = published.repairJobsPublished(id);
 
             if (!repairJobs.empty() || hadRepairJobs)
             {
                 graph.hasRepairJobs = true;
                 graph.repairJobs = std::move(repairJobs);
 
-                if (graph.repairJobs.empty())
-                    m_shipsWithRepairJobPayload.erase(id);
-                else
-                    m_shipsWithRepairJobPayload.insert(id);
+                published.setRepairJobsPublished(id, !graph.repairJobs.empty());
             }
         }
 
         snapshot.ships.push_back(s);
     }
+    // the publication history of entities with no ship any more (left the simulation); a shell keeps it, as the
+    // old per-ship maps did until forgetShip
+    published.retainOnly([this](EntityId e) { return m_ships.count(e) != 0 || m_shipShells.count(e) != 0; });
 
     // Lightweight shells publish only identity + transform. Client hydration
     // resolves descriptor/assembly by catalog id (catalog ships) or typeId

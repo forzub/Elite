@@ -22,7 +22,7 @@ simulation_h = read("src/game/simulation/GameSimulation.h")
 simulation_cpp = read("src/game/simulation/GameSimulation.cpp")
 server_cpp = read("src/game/server/GameServer.cpp")
 
-if "SimulationSnapshot buildReplicationSnapshot(std::uint64_t serverTick);" not in simulation_h:
+if "SimulationSnapshot buildReplicationSnapshot(std::uint64_t serverTick, game::simulation::ShipGraphPublicationLedger& published);" not in simulation_h:
     fail("GameSimulation lost the explicit replication publication seam")
 
 if "SimulationSnapshot                  m_snapshot" in simulation_h:
@@ -62,11 +62,25 @@ for forbidden in (
     if forbidden in server_cpp:
         fail(f"legacy simulation-owned snapshot lifecycle returned: {forbidden}")
 
-if "m_shipGraphPayloadPublicationsRemaining" not in simulation_cpp:
-    fail("ship graph resend lifetime is no longer publication-based")
-
-if "m_shipGraphPayloadPublicationsRemaining[id] = 2" not in simulation_cpp:
-    fail("ship graph publication redundancy contract changed unexpectedly")
+# The publication HISTORY (what was already sent) belongs to the publisher, not to the simulation (author's review
+# 2026-11-27): GameServer owns the ShipGraphPublicationLedger; the simulation keeps only the ship facts and revisions
+# (module revision, structural graph revision bumped by markShipGraphDirty).
+ledger_h = read("src/game/simulation/ShipGraphPublicationLedger.h")
+server_h = read("src/game/server/GameServer.h")
+if "ShipGraphPublicationLedger m_graphPublication" not in server_h:
+    fail("the ship graph publication history is not owned by the publisher (GameServer)")
+if "kStructuralGraphPublications = 2" not in ledger_h or "--it->second <= 0" not in ledger_h:
+    fail("ship graph publication redundancy contract changed unexpectedly (2 publications, counted when published)")
+if "++m_shipGraphStructureRevision[id]" not in simulation_cpp:
+    fail("markShipGraphDirty must bump the structural graph revision (a ship fact), not count publications")
+for gone in ("m_shipGraphPayloadPublicationsRemaining", "m_initializedShipGraphIds", "m_lastPublishedShipModuleRevision",
+             "m_shipsWithDetachedFragmentPayload", "m_shipsWithRepairJobPayload"):
+    if gone in simulation_h or gone in simulation_cpp:
+        fail(f"publication history is back in GameSimulation: {gone}")
+if "published.retainOnly(" not in simulation_cpp:
+    fail("the publication history must be pruned by the replication pass (not by the simulation's ship removal)")
+if "published.demote(id)" not in simulation_cpp:
+    fail("a demotion must still publish one explicit empty graph")
 
 # Engine temperature and replace-only annulus changes must reach remote
 # physical controllers WITHOUT resending the expensive structural hit graph.
@@ -75,16 +89,16 @@ simulation_snapshot = read("src/game/simulation/ObjectModuleSnapshot.h")
 capability_builder = read("src/game/ship/capability/ShipCapabilityBuilder.h")
 wire_schema = read("src/game/network/WireDataSchema.h")
 for token in (
-    "m_lastPublishedShipModuleRevision",
+    "published.moduleRevisionPublished(id, moduleRevision)",
     "moduleStateChanged",
     "readOnlyModules.revision()",
-    "m_lastPublishedShipModuleRevision[id] = moduleRevision",
+    "published.moduleRowsPublished(id, moduleRevision)",
     "graph.hasModules = true",
     "buildModuleSnapshot(",
 ):
     if token not in simulation_cpp:
         fail(f"engine/module revision replication seam missing: {token}")
-if "m_lastPublishedShipModuleRevision" not in simulation_h:
+if "m_moduleRevision" not in ledger_h:
     fail("ship module revision publication cache was removed")
 if "game::simulation::makeObjectModuleSnapshot" not in simulation_cpp:
     fail("authoritative snapshot no longer uses canonical module builder")

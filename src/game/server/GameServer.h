@@ -494,6 +494,9 @@ public:
     // the preview / apply answer only to the session that asked; productOverrides stay public (visible configuration)
     void projectShipRowsForSession(game::network::ServerSessionId sessionId, std::vector<ShipSnapshot>& ships) const;
     std::unordered_map<std::uint32_t, std::uint64_t> m_refitRequesterSession;   // target entity -> the asking session
+    // what the canonical replication snapshot already published of each ship's module graph (the publisher's
+    // history, not ship state: moved out of GameSimulation 2026-11-27)
+    game::simulation::ShipGraphPublicationLedger m_graphPublication;
     // ownership that is not in force now: a legacy record with no unambiguous owner, or a KNOWN owner player absent
     // from this universe's slots (absentOwnerPlayer, typed, written back as owner_player; the link returns when the
     // player identity exists again). Never handed to anyone else.

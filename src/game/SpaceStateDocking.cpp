@@ -11,6 +11,7 @@
 #include "src/game/navigation/traffic/HubLaneRouting.h"
 #include "src/game/navigation/HubPlanCatalog.h"
 #include "src/game/navigation/CityCoRotationMap.h"
+#include <optional>
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/NavigationObstacleGrid.h"
 #include <memory>
@@ -734,13 +735,18 @@ void SpaceState::updateDockingAdvisory()
     // rates and velocity matter while it settles)
     const bool coRotating = pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid &&
                             m_padAnchor.serial == pending.serial && m_padAnchor.coRotate;
+    std::optional<game::navigation::CityCoRotationAt> coMap;   // the city's map at the own epoch (the traffic rule uses it too)
     if (coRotating)
     {
-        const double tNow = m_client->lastSimulationMetadata().universeTimeSeconds;
+        // the map at the OWN ship's epoch (core stabilization D-5): its state is predicted ownPredictedAheadSeconds() past
+        // the snapshot - the city's map at the snapshot epoch put it ~omega r t off on a turning ring
+        const double tNow = m_client->lastSimulationMetadata().universeTimeSeconds +
+                            m_client->world().ownPredictedAheadSeconds() * m_client->sessionSnapshot().universeTimeScale;
         const auto* city = padRouteCityObject(pending.target.stableObjectId);
         const auto& a = m_padAnchor.coPlanned ? m_padAnchor.coAttachment
                                               : (city ? city->hubAttachment : m_padAnchor.coAttachment);
         const auto map = game::navigation::cityCoRotationAt(a, m_padAnchor.coPlanned ? m_padAnchor.coT0 : tNow, tNow);
+        coMap = map;
         const auto fr = player.referenceFrame.kinematicFrame();
         m_coRotatedTransform = player.transform;
         auto& m = m_coRotatedTransform.motion;
@@ -1104,8 +1110,21 @@ void SpaceState::updateDockingAdvisory()
         {
             // everything in the route's map frame: the WORLD velocities carry the hub's orbit (30 km/s - "we fly
             // 35027 m/s", the ceiling went to 0 and a lane ship was rear-ended at 63 m/s, suite v2)
-            const glm::dvec3 myW = world::coordinates::fullMeters(player.renderTransform.worldPosition);
-            const glm::dvec3 myWorldV = player.transform.motion.worldVelocityMps;
+            // core stabilization D-5: the SIMULATION state at the own epoch (ClientControlState.h) - the other ships
+            // advanced to it in the own frame; everything in the agent's map: the hub frame, or the city's co-rotating
+            // map (it mixed the drawn positions - own predicted, others interpolated in the past - with snapshot
+            // velocities, and on the co-rotating leg the agent's map with the hub frame's axes)
+            namespace control = game::client::control;
+            const control::View view = control::viewOf(m_client->world(), player);
+            const auto toAgentPoint = [&](const glm::dvec3& worldPoint) {
+                const glm::dvec3 local = frame.worldToLocalPosition(worldPoint);
+                return coMap ? coMap->pointToMap(local) : local;
+            };
+            const auto toAgentVelocity = [&](const glm::dvec3& worldPoint, const glm::dvec3& worldVelocity) {
+                const glm::dvec3 local = frame.worldToLocalPosition(worldPoint);
+                const glm::dvec3 v = frame.worldToLocalVelocity(worldPoint, worldVelocity);
+                return coMap ? coMap->vectorToMap(coMap->relativeVelocity(local, v)) : v;
+            };
             const glm::dvec3 myV = motion.localVelocityMps;
             const double mySpeed = glm::length(myV);
             if (mySpeed > 5.0)
@@ -1117,15 +1136,15 @@ void SpaceState::updateDockingAdvisory()
                 {
                     if (sid == m_playerId.value)
                         continue;
-                    const glm::dvec3 rel =
-                        frame.worldToLocalVector(world::coordinates::fullMeters(other.renderTransform.worldPosition) - myW);
+                    const control::BodyState o = control::otherShip(view, other);
+                    const glm::dvec3 rel = toAgentPoint(o.positionMeters) - motion.localPositionMeters;
                     const double along = glm::dot(rel, fwd);
                     if (along <= 0.0 || along > 2000.0)
                         continue;
                     const double lateral = glm::length(rel - fwd * along);
                     if (lateral > myRadius + 40.0)
                         continue;
-                    const glm::dvec3 ov = myV + frame.worldToLocalVector(other.transform.motion.worldVelocityMps - myWorldV);
+                    const glm::dvec3 ov = toAgentVelocity(o.positionMeters, o.velocityMps);
                     const double lead = glm::dot(ov, fwd);
                     if (glm::length(ov) < 1.0 || lead < 0.5 * glm::length(ov))
                     {
@@ -3073,12 +3092,13 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         {
             // the co-rotating leg (step 2): the city's SIMULATION pose - the one its obstacles are posed by in this
             // snapshot (the attachment law at the snapshot's epoch) - and the ship's; the map is frozen at that epoch
+            // core stabilization D-5: the city and the ship from the PLANNING snapshot itself - one epoch, the one the
+            // port is planned at (it took the drawn city and the drawn ship, or the snapshot city and the predicted ship)
             const bool co = m_padAnchor.coRotate;
-            const glm::dmat3 R(glm::mat3(co ? city->orientation : city->renderOrientation));
-            const glm::dvec3 shipWorld =
-                world::coordinates::fullMeters(co ? shipIt->second.transform.worldPosition : shipIt->second.renderTransform.worldPosition);
+            const glm::dmat3 R(glm::mat3(snapshot.targetObject.orientation));
+            const glm::dvec3 shipWorld = world::coordinates::fullMeters(snapshot.controlledShip.worldPosition);
             const glm::dvec3 hoverWorld =
-                world::coordinates::fullMeters(co ? city->worldPosition : city->renderWorldPosition) + R * m_padAnchor.hoverCity;
+                world::coordinates::fullMeters(snapshot.targetObject.worldPosition) + R * m_padAnchor.hoverCity;
             if (co)
             {
                 m_padAnchor.coT0 = snapshot.epoch.universeTimeSeconds;
@@ -4639,13 +4659,15 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                 const glm::dvec3 wCity = city->angularVelocityWorldRadPerSecond;
                 const double rateErr = glm::length(wShip - wCity);
                 const double speed = glm::length(st.relativeVelocityMps());
-                const glm::dmat3 Rc(glm::mat3(city->renderOrientation));
+                // the city's axes at the own epoch (simulation state, core stabilization D-5; it was the drawn city)
+                const glm::dmat3 Rc = game::client::control::object(
+                    game::client::control::viewOf(m_client->world(), shipIt->second), *city).orientation;
                 const glm::dvec3 axisWorld = glm::normalize(Rc * glm::dvec3(0.0, 0.0, 1.0));
                 const double alongAxisDeg = glm::degrees(std::acos(std::clamp(std::abs(glm::dot(glm::dvec3(st.forward()), axisWorld)), 0.0, 1.0)));
                 const double fromAxis = std::hypot(qShip.x, qShip.y);
                 const double alongFromGate = std::abs(qShip.z - m_padAnchor.hoverCity.z);
                 // the hull's roll in the city's own frame (its up projected across the axis)
-                const glm::dvec3 upCity = glm::transpose(Rc) * glm::dvec3(shipIt->second.renderTransform.up());
+                const glm::dvec3 upCity = glm::transpose(Rc) * glm::dvec3(st.up());
                 const double rollInCity = std::atan2(upCity.y, upCity.x);
                 const bool holding = fromAxis < 15.0 && alongFromGate < 150.0 && speed < 1.5 && rateErr < glm::radians(2.0);
                 // RECOVERY (live 2026-11-28: the evasion reflex dodged a ship near the gate - the route ended 36 m off the

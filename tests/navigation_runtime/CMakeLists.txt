@@ -2909,3 +2909,31 @@ add_test(
     NAME ship_frame_transition
     COMMAND ship_frame_transition_tests
 )
+
+# Core stabilization D-5: the control state reads the simulation layer at the own epoch (PROJECT_STATE E-10).
+add_executable(
+    client_control_state_tests
+    ClientControlStateTests.cpp
+)
+
+target_include_directories(
+    client_control_state_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    client_control_state_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    client_control_state_tests
+    PRIVATE nlohmann_json::nlohmann_json
+)
+
+add_test(
+    NAME client_control_state
+    COMMAND client_control_state_tests
+)

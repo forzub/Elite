@@ -34,8 +34,8 @@ void SpaceState::devJoinFormation(const std::string& spec)
             for (const auto& [sid, sh] : m_client->world().ships())
                 if (sid != m_playerId.value && sh.descriptor)
                 {
-                    const double d = glm::length(world::coordinates::fullMeters(sh.renderTransform.worldPosition) -
-                                                 world::coordinates::fullMeters(meIt->second.renderTransform.worldPosition));
+                    const double d = glm::length(world::coordinates::fullMeters(sh.transform.worldPosition) -
+                                                 world::coordinates::fullMeters(meIt->second.transform.worldPosition));
                     if (d < best)
                     {
                         best = d;
@@ -87,16 +87,21 @@ void SpaceState::updateFormationTask(double dt)
     // velocities carry the hub's orbit - they cancel in the difference)
     const glm::dmat3 B(fr.progradeAxis, fr.radialAxis, fr.normalAxis);
     const glm::dmat3 Bt = glm::transpose(B);
-    const glm::dvec3 myW = world::coordinates::fullMeters(me.renderTransform.worldPosition);
+    // core stabilization D-5: the SIMULATION state at the own epoch (ClientControlState.h) - it took the drawn positions and
+    // attitudes (own smoothed, the leader interpolated in the past) with the snapshot velocities
+    namespace cs = game::client::control;
+    const cs::View view = cs::viewOf(m_client->world(), me);
+    const auto K = fr.kinematicFrame();
+    const cs::BodyState leader = cs::otherShip(view, lead);
     const glm::dvec3 myV = me.transform.motion.localVelocityMps;
-    const glm::dvec3 myP = me.renderTransform.motion.localPositionMeters;
+    const glm::dvec3 myP = me.transform.motion.localPositionMeters;
     ap::FormationInput in;
     in.position = myP;
     in.velocity = myV;
-    in.leaderPosition = myP + Bt * (world::coordinates::fullMeters(lead.renderTransform.worldPosition) - myW);
-    in.leaderVelocity = myV + Bt * (lead.transform.motion.worldVelocityMps - me.transform.motion.worldVelocityMps);
-    in.leaderForward = Bt * glm::dvec3(lead.renderTransform.forward());
-    in.leaderUp = Bt * glm::dvec3(lead.renderTransform.up());
+    in.leaderPosition = K.worldToLocalPosition(leader.positionMeters);
+    in.leaderVelocity = K.worldToLocalVelocity(leader.positionMeters, leader.velocityMps);
+    in.leaderForward = Bt * glm::dvec3(lead.transform.forward());
+    in.leaderUp = Bt * glm::dvec3(lead.transform.up());
     in.leaderLengthMeters = lead.descriptor ? std::max(10.0, static_cast<double>(lead.descriptor->logicalDimensions().length)) : 30.0;
     in.lengthMeters = std::max(10.0, static_cast<double>(me.descriptor->logicalDimensions().length));
     in.kind = static_cast<ap::FormationKind>(m_formationTask.kind);
@@ -124,9 +129,9 @@ void SpaceState::updateFormationTask(double dt)
     rq.positionReferenceValid = false;
     rq.actualVelocityMapMps = myV;
     rq.assistedTargetSpeedMps = std::max(0.0, static_cast<double>(me.transform.motion.targetForwardSpeedMps));
-    rq.forwardMap = glm::normalize(Bt * glm::dvec3(me.renderTransform.forward()));
-    rq.rightMap = glm::normalize(Bt * glm::dvec3(me.renderTransform.right()));
-    rq.upMap = glm::normalize(Bt * glm::dvec3(me.renderTransform.up()));
+    rq.forwardMap = glm::normalize(Bt * glm::dvec3(me.transform.forward()));
+    rq.rightMap = glm::normalize(Bt * glm::dvec3(me.transform.right()));
+    rq.upMap = glm::normalize(Bt * glm::dvec3(me.transform.up()));
     rq.pitchRateRadPerSec = me.transform.pitchRate;
     rq.yawRateRadPerSec = me.transform.yawRate;
     rq.rollRateRadPerSec = me.transform.rollRate;

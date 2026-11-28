@@ -637,6 +637,8 @@ static float findAssemblyAngleRad(
 
 void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 {
+    // the own ship's state is the snapshot's again: nothing predicted past it yet (replay adds the pending steps)
+    m_ownPredictedAheadSeconds = 0.0;
     using HydrateClock = std::chrono::steady_clock;
     const auto hydrateBegin = HydrateClock::now();
 
@@ -2376,10 +2378,11 @@ void ClientWorldState::predict(
     // Prediction advances only the last replicated motion state. It never
     // replays commands through a divergent slot-only engine approximation.
     // This is also the replay law for unacknowledged numbered inputs.
-    (void)game::client::advanceReplicatedHubKinematics(
-        it->second.transform,
-        it->second.referenceFrame,
-        dt);
+    if (game::client::advanceReplicatedHubKinematics(
+            it->second.transform,
+            it->second.referenceFrame,
+            dt))
+        m_ownPredictedAheadSeconds += static_cast<double>(dt);
 }
 
 

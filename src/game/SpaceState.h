@@ -1,5 +1,6 @@
 #pragma once
 #include "src/game/presentation/DockingWidgetText.h"
+#include "src/game/client/ClientControlState.h"
 #include "src/game/navigation/rules/OnboardJournal.h"
 #include "src/game/navigation/rules/RescueRules.h"
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
@@ -649,11 +650,14 @@ private:
                     return &object;
         return nullptr;
     }
-    static glm::dvec3 padRouteCityLocal(const ClientObjectState& city, const ClientShipState& ship)
+    // the own ship in the city's axes, from the SIMULATION state at the own epoch (core stabilization D-5,
+    // ClientControlState.h): it read the drawn ship and the drawn city - two presentation epochs ~0.2 s apart (~20 m on
+    // a turning ring), and every pad decision (the hand-over to the pad service, the ring gate) was taken on it
+    glm::dvec3 padRouteCityLocal(const ClientObjectState& city, const ClientShipState& ship) const
     {
-        const glm::dmat3 R(glm::mat3(city.renderOrientation));
-        return glm::transpose(R) * (world::coordinates::fullMeters(ship.renderTransform.worldPosition) -
-                                    world::coordinates::fullMeters(city.renderWorldPosition));
+        namespace control = game::client::control;
+        const control::View view = m_client ? control::viewOf(m_client->world(), ship) : control::View {};
+        return control::inBodyAxes(control::object(view, city), control::ownShip(ship).positionMeters);
     }
     std::uint64_t m_lastDockingPathRequestSerial = 0;
     std::uint64_t m_lastDockingRequestTraceSerial = 0;

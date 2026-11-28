@@ -213,6 +213,15 @@ public:
         return m_presentationServerTimeSeconds;
     }
 
+    // How far the controlled ship's simulation state (`transform`) is predicted past the latest applied snapshot:
+    // the fixed prediction steps actually applied since it (core stabilization D-5). Control logic that combines the
+    // own ship with other bodies advances THEIR snapshot state by this much (ClientControlState.h) - the epochs then
+    // agree and the difference is known, not hidden.
+    double ownPredictedAheadSeconds() const noexcept
+    {
+        return m_ownPredictedAheadSeconds;
+    }
+
     const game::diagnostics::HubMotionLabPresentationSample&
     hubMotionLabPresentationSample() const noexcept
     {
@@ -402,6 +411,7 @@ private:
     int                                             m_snapshotActiveSystemId = -1;
     ShipSignalPresentation                          signalPresentation;
     double                                          m_presentationServerTimeSeconds = 0.0;
+    double                                          m_ownPredictedAheadSeconds = 0.0;
     std::uint64_t                                   m_hubMotionLabFrameIndex = 0;
     game::diagnostics::HubMotionLabPresentationSample m_hubMotionLabPresentationSample;
 

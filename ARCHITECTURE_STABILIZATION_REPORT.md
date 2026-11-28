@@ -306,3 +306,23 @@ presentation target was reset to each snapshot (16.7 Hz) - no extrapolation outs
 exponential filter: a rate pulse per snapshot. Live A/B on the B2-04 approach (`tools/attitude_report.py`): reversals
 26.9 -> 22.3 /s, drawn max 81 vs auth 88 -> 20.3 vs 20.0; the drawn spread did NOT improve (2.29 -> 2.35, auth ~1.6).
 NOT solved: the remaining jitter is the next measurement (suspected: the presentation clock vs the frame clock).
+
+### B4 / B1 — the own ship's attitude (2026-11-28, continued; supersedes the "26.9 -> 22.3" note above)
+Investigated by measurement, step by step (`[AttitudeAuth]`, `[AttitudeLayers]`, `[AttitudeLayerFrame]` under
+ELITE_DEV_ATTITUDE_TRACE=1/12):
+1. The AUTHORITATIVE stream is smooth: consecutive snapshots 60 ms apart, the replicated rates match the actual turn within
+   ~5 % (e.g. 17.6 vs 18.7 deg/s). The wobble is entirely client presentation.
+2. The first layered version was WRONG (my defects, all found by the traces): (a) slerp from identity to a w<0 error
+   quaternion took the 360 - angle way; (b) the correction was taken against the previous FRAME's presentation - with
+   frames about as often as snapshots that froze the drawn turn at every snapshot, the lag grew to the 25 deg snap limit
+   (13-23 deg corrections); (c) the horizon on the server-time estimate ran to the 0.3 s cap.
+3. B1 FINDING: the server-time estimate and the snapshots' stamps are DIFFERENT time bases - with the (default)
+   client-driven server the stamps lose time at frame clips while the estimate runs on wall time. The snapshot's
+   processing time is frame-quantized (+-30 ms). The consistent base is the presentation clock (built from the stamps,
+   slewed): horizon = render time + its mean delay behind the newest snapshot - the snapshot's stamp.
+Result (live, B2-04 approach, turning at ~15-17 deg/s): the per-snapshot correction (the visible jolt) **13 deg -> 1.3-1.7
+-> 0.35-0.57 deg mean** (max ~2 deg), horizon ~20 ms; the presented attitude follows the authoritative continuously
+(median 0.1 deg from the snapshot). The legacy path (ELITE_DEV_ATTITUDE_LEGACY=1) keeps the staircase + 22/s chase.
+Measurement caveat: `tools/attitude_report.py` reversals use the clamped frame dt (50 ms) - biased at 16-20 FPS in the
+city; the per-snapshot correction is the reliable measure. OPEN: position layers (same staircase for the position outside
+HubTactical), the cockpit/HUD/map single epoch (maps use the snapshot epoch, the cockpit "now"), remote ships.

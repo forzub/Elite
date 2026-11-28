@@ -863,9 +863,48 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             if (isLocalControlledEntity(EntityId {s.id}))
             {
                 // B4: the authoritative attitude layer, raw (before any replay / prediction rewrites state.transform)
-                m_ownAttitude.valid = true;
-                m_ownAttitude.snapshot = s.transform;
-                m_ownAttitude.snapshotServerTimeSeconds = snapshot.metadata.serverTimeSeconds;
+                auto& L = m_ownAttitude;
+                const double t = snapshot.metadata.serverTimeSeconds;
+                const glm::quat q = glm::normalize(glm::quat_cast(glm::mat3(s.transform.orientation)));
+                if (L.valid && t > L.snapshotServerTimeSeconds && L.snapshot.motion.systemId == s.transform.motion.systemId)
+                {
+                    // the rotation that really happened between the two authoritative states (world axes)
+                    const glm::quat prev = glm::normalize(glm::quat_cast(glm::mat3(L.snapshot.orientation)));
+                    glm::quat d = glm::normalize(q * glm::inverse(prev));
+                    if (d.w < 0.0f)
+                        d = -d;
+                    const double angle = 2.0 * std::acos(std::clamp(static_cast<double>(d.w), -1.0, 1.0));
+                    const glm::dvec3 axis = glm::length(glm::dvec3(d.x, d.y, d.z)) > 1.0e-9
+                                                ? glm::normalize(glm::dvec3(d.x, d.y, d.z)) : glm::dvec3(0.0);
+                    const double span = t - L.snapshotServerTimeSeconds;
+                    L.omegaWorld = span > 1.0e-4 && span < 0.5 ? axis * (angle / span) : glm::dvec3(0.0);
+                    L.omegaValid = span > 1.0e-4 && span < 0.5;
+                    static const bool snapTrace = [] {
+                        const char* v = std::getenv("ELITE_DEV_ATTITUDE_TRACE");
+                        return v && std::string(v) == "12";
+                    }();
+                    if (snapTrace)
+                    {
+                        const double rates = glm::degrees(std::sqrt(double(s.transform.pitchRate) * s.transform.pitchRate +
+                                                                    double(s.transform.yawRate) * s.transform.yawRate +
+                                                                    double(s.transform.rollRate) * s.transform.rollRate));
+                        std::cerr << "[AttitudeAuth] t " << t << " span_ms " << span * 1000.0 << " turn_deg " << glm::degrees(angle)
+                                  << " turn_dps " << glm::degrees(angle) / std::max(1.0e-6, span) << " rates_dps " << rates << std::endl;
+                    }
+                }
+                else
+                    L.omegaValid = false;
+                if (L.valid)
+                {
+                    L.previousLayerValid = true;
+                    L.previousSnapshot = L.snapshot;
+                    L.previousReceivedLocalSeconds = L.receivedLocalSeconds;
+                    L.previousSnapshotServerTimeSeconds = L.snapshotServerTimeSeconds;
+                }
+                L.valid = true;
+                L.snapshot = s.transform;
+                L.snapshotServerTimeSeconds = t;
+                L.receivedLocalSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
             }
             if (const auto* execution =
                     std::get_if<
@@ -1539,27 +1578,118 @@ void ClientWorldState::update(
                 const double now = std::max(estimatedServerTimeNowSeconds, L.lastNowSeconds);   // never backwards
                 L.lastNowSeconds = now;
                 ShipTransform predicted = L.snapshot;
-                const double horizon = std::clamp(now - L.snapshotServerTimeSeconds, 0.0, MaxHorizonSeconds);
-                if (horizon > 0.0)
-                    SharedShipPhysics::propagateOrientation(predicted, static_cast<float>(horizon));
-                const glm::quat qPred = glm::normalize(glm::quat_cast(glm::mat3(predicted.orientation)));
+                // the horizon: the time since THIS snapshot arrived (local monotonic) - the server-time estimate is another
+                // time base (it ran > 0.3 s ahead of the snapshots' stamps: every prediction hit the cap)
+                const double localNow = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+                // THE TIME BASE (B1): the presentation clock - built from the snapshots' own stamps, slewed smoothly
+                // (ClientPresentationClock) - plus its mean delay behind the newest snapshot. The server-time estimate is
+                // another base: with the client-driven server its stamps lose time at frame clips while the estimate runs
+                // on wall time (the horizon ran to the cap); the processing time of a snapshot is frame-quantized (+-30 ms).
+                const double renderNow = renderServerTimeSeconds;
+                if (L.consumedSnapshotTime != L.snapshotServerTimeSeconds && renderNow > 0.0)
+                {
+                    const double delay = L.snapshotServerTimeSeconds - renderNow;   // >= 0: render runs behind the newest
+                    L.leadSeconds = L.leadValid ? L.leadSeconds + (delay - L.leadSeconds) * 0.05 : delay;
+                    L.leadValid = true;
+                }
+                const double horizon = std::clamp(renderNow + L.leadSeconds - L.snapshotServerTimeSeconds, 0.0, MaxHorizonSeconds);
+                // the predicted turn: by the replicated rate fields, or (ELITE_DEV_ATTITUDE_OMEGA=diff) by the turn the
+                // hull made between the last two snapshots
+                static const bool omegaDiff = [] {
+                    const char* v = std::getenv("ELITE_DEV_ATTITUDE_OMEGA");
+                    return v && std::string(v) == "diff";
+                }();
+                glm::quat qPred;
+                if (omegaDiff && L.omegaValid)
+                {
+                    const glm::quat q0 = glm::normalize(glm::quat_cast(glm::mat3(L.snapshot.orientation)));
+                    const double a = glm::length(L.omegaWorld) * horizon;
+                    const glm::quat turn = a > 1.0e-12 ? glm::angleAxis(static_cast<float>(a), glm::vec3(glm::normalize(L.omegaWorld)))
+                                                       : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+                    qPred = glm::normalize(turn * q0);
+                }
+                else
+                {
+                    if (horizon > 0.0)
+                        SharedShipPhysics::propagateOrientation(predicted, static_cast<float>(horizon));
+                    qPred = glm::normalize(glm::quat_cast(glm::mat3(predicted.orientation)));
+                }
                 if (L.consumedSnapshotTime != L.snapshotServerTimeSeconds)
                 {
                     // a new authoritative state: what was presented, expressed against the new prediction
                     L.consumedSnapshotTime = L.snapshotServerTimeSeconds;
+                    // CONTINUITY AT THIS INSTANT: the old layer continued to NOW (the old snapshot predicted to now, its
+                    // correction decayed to now) against the new prediction now - not the previous FRAME's presentation
+                    // (frames ~ as often as snapshots: that froze the drawn turn at every snapshot and the lag grew to the
+                    // snap limit, live 2026-11-28)
+                    glm::quat oldNow = L.presented;
+                    if (L.presentedValid && L.previousLayerValid)
+                    {
+                        ShipTransform old = L.previousSnapshot;
+                        const double hOld = std::clamp(renderNow + L.leadSeconds - L.previousSnapshotServerTimeSeconds, 0.0, MaxHorizonSeconds);
+                        if (hOld > 0.0)
+                            SharedShipPhysics::propagateOrientation(old, static_cast<float>(hOld));
+                        const glm::quat qOld = glm::normalize(glm::quat_cast(glm::mat3(old.orientation)));
+                        const float keepOld = static_cast<float>(std::exp(-(localNow - L.correctionAtSeconds) / CorrectionTauSeconds));
+                        oldNow = glm::normalize(glm::slerp(glm::quat(1.0f, 0.0f, 0.0f, 0.0f), L.correction, keepOld) * qOld);
+                    }
                     L.correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
                     if (L.presentedValid)
                     {
-                        const glm::quat err = glm::normalize(L.presented * glm::inverse(qPred));
+                        glm::quat err = glm::normalize(oldNow * glm::inverse(qPred));
+                        if (err.w < 0.0f)
+                            err = -err;   // the short way (q and -q are one rotation; slerp from identity to -q went 360 - angle)
                         const float angle = 2.0f * std::acos(std::clamp(std::abs(err.w), 0.0f, 1.0f));
                         if (glm::degrees(angle) < SnapDeg)
                             L.correction = err;
+                        L.correctionSumDeg += glm::degrees(angle);
+                        L.horizonSum += horizon;
+                        L.horizonMax = std::max(L.horizonMax, horizon);
+                        L.omegaSumDeg += glm::degrees(glm::length(L.omegaWorld));
+                        L.correctionMaxDeg = std::max(L.correctionMaxDeg, static_cast<double>(glm::degrees(angle)));
+                        ++L.corrections;
+                        static const bool trace = std::getenv("ELITE_DEV_ATTITUDE_TRACE") != nullptr;
+                        if (trace && L.corrections >= 100)
+                        {
+                            std::cerr << "[AttitudeLayers] " << L.corrections << " snapshots: correction mean "
+                                      << L.correctionSumDeg / L.corrections << " deg, max " << L.correctionMaxDeg
+                                      << " deg (omega " << (omegaDiff ? "diff" : "rates") << "), horizon mean " << L.horizonSum / L.corrections
+                                      << " s max " << L.horizonMax << ", snapshot turn mean " << L.omegaSumDeg / L.corrections << " deg/s" << std::endl;
+                            L.horizonSum = L.horizonMax = L.omegaSumDeg = 0.0;
+                            L.correctionSumDeg = L.correctionMaxDeg = 0.0;
+                            L.corrections = 0;
+                        }
                     }
-                    L.correctionAtSeconds = now;
+                    L.correctionAtSeconds = localNow;
                 }
-                const float keep = static_cast<float>(std::exp(-(now - L.correctionAtSeconds) / CorrectionTauSeconds));
+                const float keep = static_cast<float>(std::exp(-(localNow - L.correctionAtSeconds) / CorrectionTauSeconds));
                 const glm::quat corr = glm::slerp(glm::quat(1.0f, 0.0f, 0.0f, 0.0f), L.correction, keep);
                 const glm::quat presented = glm::normalize(corr * qPred);
+                {
+                    static const bool frameTrace = [] {
+                        const char* v = std::getenv("ELITE_DEV_ATTITUDE_TRACE");
+                        return v && std::string(v) == "12";
+                    }();
+                    static int frameLines = 0;
+                    if (frameTrace && frameLines < 400 && glm::length(glm::vec3(L.snapshot.pitchRate, L.snapshot.yawRate, L.snapshot.rollRate)) > 0.05f)
+                    {
+                        ++frameLines;
+                        const glm::quat qs = glm::normalize(glm::quat_cast(glm::mat3(L.snapshot.orientation)));
+                        const auto ang = [](glm::quat a, glm::quat b) {
+                            glm::quat d = glm::normalize(a * glm::inverse(b));
+                            return glm::degrees(2.0f * std::acos(std::clamp(std::abs(d.w), 0.0f, 1.0f)));
+                        };
+                        const auto angM = [](const glm::mat4& a, const glm::mat4& b) {
+                            const glm::mat3 d = glm::mat3(a) * glm::transpose(glm::mat3(b));
+                            return glm::degrees(std::acos(std::clamp((d[0][0] + d[1][1] + d[2][2] - 1.0f) * 0.5f, -1.0f, 1.0f)));
+                        };
+                        std::cerr << "[AttitudeLayerFrame] snap " << L.snapshotServerTimeSeconds << " h " << horizon * 1000.0
+                                  << " ms pred-snap " << ang(qPred, qs) << " pres-snap " << ang(presented, qs) << " keep " << keep
+                                  << " corr " << ang(L.correction, glm::quat(1.0f, 0.0f, 0.0f, 0.0f)) << " | matrix check: render-target "
+                                  << angM(ship.renderTransform.orientation, L.snapshot.orientation) << " quat roundtrip "
+                                  << angM(glm::mat4(glm::mat3_cast(qs)), L.snapshot.orientation) << std::endl;
+                    }
+                }
                 L.presented = presented;
                 L.presentedValid = true;
                 const glm::mat3 R = glm::mat3_cast(presented);

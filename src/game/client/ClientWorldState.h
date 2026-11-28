@@ -247,6 +247,25 @@ public:
         bool valid = false;
         double snapshotServerTimeSeconds = -1.0;
         ShipTransform snapshot;                 // orientation + rates as received
+        // the previous authoritative orientation (the turn between two snapshots = the rate the hull really turned at)
+        bool previousValid = false;
+        glm::quat previousOrientation {1.0f, 0.0f, 0.0f, 0.0f};
+        double previousServerTimeSeconds = -1.0;
+        glm::dvec3 omegaWorld {0.0};            // rad/s, from the last two snapshots
+        bool omegaValid = false;
+        double receivedLocalSeconds = 0.0;      // when it arrived (the local monotonic clock): the prediction horizon base
+        // the snapshot before (the OLD layer, to be continued to 'now' when a new snapshot is consumed)
+        bool previousLayerValid = false;
+        // the server-time estimate's offset from the snapshots' own stamps (a slowly rising minimum of their lead)
+        double leadSeconds = 0.0;
+        bool leadValid = false;
+        double leadAtLocalSeconds = 0.0;
+        ShipTransform previousSnapshot;
+        double previousReceivedLocalSeconds = 0.0;
+        double previousSnapshotServerTimeSeconds = 0.0;
+        // diagnostics: the corrections taken (deg), per snapshot
+        double correctionSumDeg = 0.0, correctionMaxDeg = 0.0, horizonSum = 0.0, horizonMax = 0.0, omegaSumDeg = 0.0;
+        int corrections = 0;
         double consumedSnapshotTime = -1.0;     // the snapshot the correction was taken for
         glm::quat correction {1.0f, 0.0f, 0.0f, 0.0f};
         double correctionAtSeconds = 0.0;

@@ -9757,3 +9757,9 @@ start-up hitches (render), trade step 16 part 3 live.
   progress watchdog before every early return; save 4.1-4.5 (immutable ships snapshot at the flush, load statuses, the
   known-good generation kept, failure tests incl. a locked manifest - a real defect fixed); D2 chunks from the runner
   policy; B4 attitude layers (partial: reversals 26.9 -> 22.3 /s, spread unchanged - OPEN).
+- 2026-11-28 B4 own-ship attitude (656731e65): per-snapshot correction 13 -> 0.35-0.57 deg (live); B1 finding - the
+  server-time estimate and the snapshot stamps are different time bases with the client-driven server (the presentation
+  clock is the consistent one). Full acceptance suite: unit x2, ring landing, Preview landing, save/continue, B2-04 side
+  PASS; two_worlds FAILED on its 700 s budget (world 2 was descending, 319 m to go) - budget raised to 900 s: re-run PASS.
+  OPEN B1/B2/B4: position layers outside HubTactical, one epoch for cockpit / HUD / maps, remote ships, the own clock as
+  the default (would make the server stamps wall-clock time).

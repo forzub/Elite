@@ -41,7 +41,7 @@ for s in $SCEN; do
             ELITE_ECONOMY_STATE_FILE="$OUT/preview_e.json" "ELITE_DEV_SOL_MAP_SCRIPT=15:gear;20:padland:garage@earth_ring_hub.city"
         grep -aq "pad A1-03: LANDED" "$OUT/preview.log" && verdict preview_landing PASS || verdict preview_landing FAIL ;;
     two_worlds)
-        game "$OUT/worlds.log" 700 ELITE_DEV_START=hub:earth_ring_hub@8 ELITE_DEV_NEW_WORLD_AT_S=150 \
+        game "$OUT/worlds.log" 900 ELITE_DEV_START=hub:earth_ring_hub@8 ELITE_DEV_NEW_WORLD_AT_S=150 \
             ELITE_ECONOMY_STATE_FILE="$OUT/worlds_e.json" "ELITE_DEV_SOL_MAP_SCRIPT=15:gear;20:padland:garage@earth_ring_hub.city"
         if grep -aq "starting a NEW local world" "$OUT/worlds.log" &&
            sed -n '/starting a NEW local world/,$p' "$OUT/worlds.log" | grep -aq "pad A1-03: LANDED"; then

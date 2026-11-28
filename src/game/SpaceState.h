@@ -1,5 +1,4 @@
 #pragma once
-#include "src/game/navigation/planner/VoxelRoutePlanner.h"
 #include "src/game/presentation/DockingWidgetText.h"
 #include "src/game/navigation/rules/OnboardJournal.h"
 #include "src/game/navigation/rules/RescueRules.h"
@@ -863,19 +862,6 @@ private:
     // same answer: B2-04 replanned for ever). Bounded: after MaxRetryablePlanFailures the request is refused, told.
     int m_dockRetryablePlanFailures = 0;
     int m_dockLiftClearAttempts = 0;   // stage 3: the lift-clears of THIS request (bounded)
-    // THE GUARANTEED ROUTE's course (author 2026-11-28): the voxel polyline flown leg by leg - stop at a vertex, turn to
-    // the next leg, go; the escape legs (off a pad / out of a hangar) without turning first, slowly
-    struct DockFallbackCourse
-    {
-        bool active = false;
-        std::uint64_t serial = 0;
-        std::vector<glm::dvec3> points;   // the planning (map) frame
-        std::size_t index = 1;            // the point flown to now
-        std::size_t escapePoints = 0;
-        double logS = -1.0e9;
-    } m_dockFallback;
-    bool m_dockForceVoxel = false;     // the request's next plan runs the voxel planner too (the lifts did not clear it)
-    int m_dockFallbackRuns = 0;        // fallback courses flown for this request (bounded)
     std::uint64_t m_dockWatchdogSerial = 0;   // stage 3: the request watchdog (no route executed for too long)
     double m_dockPreExecutionSinceS = 0.0;
     double m_dockNoProgressSinceS = 0.0;   // audit #11: the executed motion's progress watchdog
@@ -987,10 +973,6 @@ private:
         game::navigation::planner::RoutePlanRequest planningRequest;
         game::navigation::planner::LateBoundRouteBackbone entryBackbone;
         bool entryRebind = false;
-        // stabilization 2026-11-28 - THE GUARANTEED ROUTE: the last attempt of a request also runs the voxel planner
-        // when the optimizer fails (VoxelRoutePlanner.h); its polyline is flown by the fallback course
-        bool wantVoxelFallback = false;
-        game::navigation::planner::VoxelRouteResult voxel;
         bool hasPreferredEntryAnchor = false;
         glm::dvec3 preferredEntryAnchor {0.0};
         glm::dvec3 preferredEntryForward {0.0, 0.0, -1.0};

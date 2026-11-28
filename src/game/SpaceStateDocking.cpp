@@ -189,23 +189,6 @@ void runDockAdviceWorker(
                              static_cast<unsigned long long>(job->context.serial), request.obstacles.size(), gates.size()); std::cerr << diagLine << std::flush; }
         }
 
-        // THE GUARANTEED ROUTE (author 2026-11-28): the optimizer failed on the request's last attempt - the voxel
-        // planner (resolution-complete) gives a polyline; only an enclosure without an exit for the hull refuses
-        if (job->wantVoxelFallback && !job->plan.valid() && !job->cancelled.load(std::memory_order_acquire))
-        {
-            game::navigation::planner::VoxelRouteRequest vr;
-            vr.startMeters = request.startMeters;
-            vr.goalMeters = request.goalMeters;
-            vr.obstacles = &request.obstacles;
-            vr.agentRadiusMeters = std::max(1.0, request.agentRadiusMeters);
-            vr.clearanceMeters = std::max(5.0, request.obstacleExecutionClearanceMeters);
-            const auto voxelStarted = std::chrono::steady_clock::now();
-            job->voxel = game::navigation::planner::planVoxelRoute(vr);
-            { char diagLine[512]; std::snprintf(diagLine, sizeof diagLine, "[VoxelRoute] request=%llu outcome=%d %s (%.0f ms)\n",
-                         static_cast<unsigned long long>(job->context.serial), static_cast<int>(job->voxel.outcome), job->voxel.note.c_str(),
-                         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - voxelStarted).count()); std::cerr << diagLine << std::flush; }
-        }
-
         if (job->cancelled.load(std::memory_order_acquire))
         {
             finishWorker();
@@ -705,8 +688,6 @@ void SpaceState::updateDockingAdvisory()
         m_dockAssistedSafeRecovery = {};
         m_dockLiftClear = {};
         m_dockSafeCourse = {};
-        m_dockFallback = {};   // audit #11: every executor's state cleared
-        m_dockForceVoxel = false;
     };
 
     if (!pending.valid())
@@ -1404,9 +1385,6 @@ void SpaceState::updateDockingAdvisory()
         m_newtonianRouteRecoveries = 0;
         m_dockRetryablePlanFailures = 0;
         m_dockLiftClearAttempts = 0;
-        m_dockFallback = {};
-        m_dockForceVoxel = false;
-        m_dockFallbackRuns = 0;
         m_newtonianLastRecoveryServerSeconds = -1.0e9;
         m_assistedRecoveryStopBeforePlanning = false;
         m_assistedAlignDone = false;
@@ -1558,12 +1536,6 @@ void SpaceState::updateDockingAdvisory()
             kind = 1;
             progress = glm::dot(makeAgent().positionMapMeters - m_dockLiftClear.startMap, m_dockLiftClear.direction);
         }
-        else if (m_dockFallback.active && m_dockFallback.serial == pending.serial && m_dockFallback.index < m_dockFallback.points.size())
-        {
-            kind = 2;   // points reached (1 km each) minus the distance left to the next
-            progress = 1000.0 * static_cast<double>(m_dockFallback.index) -
-                       glm::length(m_dockFallback.points[m_dockFallback.index] - makeAgent().positionMapMeters);
-        }
         else if (m_clientDockingPhase == ClientDockingPhase::Executing)
         {
             kind = 3;
@@ -1590,8 +1562,7 @@ void SpaceState::updateDockingAdvisory()
         }
         else if (!m_noSafeDockingGuidanceSolution && kind != 0 && nowS - m_dockNoProgressSinceS > MaxNoProgressSeconds)
         {
-            stall = kind == 1 ? "the lift makes no progress" : kind == 2 ? "the fallback course makes no progress"
-                                                                         : "the route makes no progress";
+            stall = kind == 1 ? "the lift makes no progress" : "the route makes no progress";
             stalledS = nowS - m_dockNoProgressSinceS;
         }
         if (stall)
@@ -1605,98 +1576,6 @@ void SpaceState::updateDockingAdvisory()
             submitAutopilotControl(manualStopControl());
             return;
         }
-    }
-
-    // THE GUARANTEED ROUTE's course: the voxel polyline, leg by leg - escape legs (off a pad, out of a hangar) at <= 5 m/s
-    // with the hull attitude held; the others: stop at the vertex, turn to the leg, then go (<= 60 m/s, braking to the
-    // next vertex). At the end: a pad within the service's reach is handed to it; else the normal planner from here.
-    if (m_dockFallback.active && m_dockFallback.serial == pending.serial)
-    {
-        const auto agent = makeAgent();
-        auto& c = m_dockFallback;
-        // a pad request: the service takes the ship once it is near the approach point (the normal route's handover)
-        if (pending.target.semanticAnchorId.rfind("pad:", 0) == 0 && m_padAnchor.valid && m_padAnchor.serial == pending.serial &&
-            !m_padAnchor.ringGate && !m_padAnchor.coRotate)
-            if (const auto* city = padRouteCityObject(pending.target.stableObjectId))
-                if (const auto shipIt = m_client->world().ships().find(m_playerId.value); shipIt != m_client->world().ships().end())
-                {
-                    const double d = glm::length(padRouteCityLocal(*city, shipIt->second) - m_padAnchor.hoverCity);
-                    if (d < 250.0)
-                    {
-                        std::cerr << "[PadRoute] request=" << pending.serial << " fallback course " << d
-                                  << " m from the approach point of " << m_padAnchor.address << ": the pad service takes the ship" << std::endl;
-                        game::network::ClientMessage msg;
-                        ClientShipCommand command;
-                        command.type = ClientShipCommand::LandOnPad;
-                        command.index = 1;
-                        command.target = pending.target.stableObjectId;
-                        command.detail = m_padAnchor.address;
-                        msg.payload = command;
-                        m_client->sendMessage(msg);
-                        m_pilotNotice = l10n::tr("cockpit.pad.over_pad_gear", {{"pad", m_padAnchor.address}}, "PAD SERVICE: over pad {pad} - landing on the gear");
-                        releaseClientAutopilot();
-                        m_dockFallback = {};
-                        f.requests.clear();
-                        m_padAnchor = {};
-                        return;
-                    }
-                }
-        if (c.index >= c.points.size())
-        {
-            std::cerr << "[DockFallback] request=" << pending.serial << " the course is flown - planning from here" << std::endl;
-            m_dockFallback = {};
-            m_clientDockingPhase = ClientDockingPhase::Stabilizing;
-            m_clientDockingSettledSinceServerSeconds = -1.0;
-            submitAutopilotControl(manualStopControl());
-            return;
-        }
-        const glm::dvec3 target = c.points[c.index];
-        const glm::dvec3 to = target - agent.positionMapMeters;
-        const double dist = glm::length(to);
-        const bool escape = c.index < c.escapePoints;
-        const double arrive = escape ? 2.0 : 10.0;
-        const double speedNow = glm::length(agent.velocityMapMetersPerSecond);
-        if (dist < arrive && speedNow < (escape ? 1.5 : 4.0))
-        {
-            ++c.index;
-            return;
-        }
-        const glm::dvec3 dir = dist > 1.0e-6 ? to / dist : agent.forwardMap;
-        const double cosErr = glm::dot(glm::normalize(agent.forwardMap), dir);
-        constexpr double BrakeMps2 = 2.0;
-        double speed = std::min(escape ? 5.0 : 60.0, std::sqrt(2.0 * BrakeMps2 * std::max(0.0, dist - 0.5 * arrive)));
-        if (!escape && cosErr < std::cos(glm::radians(15.0)))
-            speed = 0.0;   // stop and turn to the leg first
-        game::navigation::autopilot::AutopilotControlRequest go;
-        go.desiredVelocityMapMps = dir * speed;
-        go.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
-        go.desiredForwardMap = escape ? agent.forwardMap : dir;
-        {
-            glm::dvec3 up = agent.upMap - go.desiredForwardMap * glm::dot(agent.upMap, go.desiredForwardMap);
-            go.desiredUpMap = glm::length(up) > 1.0e-6 ? glm::normalize(up) : agent.upMap;
-        }
-        go.actualVelocityMapMps = agent.velocityMapMetersPerSecond;
-        go.forwardMap = agent.forwardMap;
-        go.rightMap = agent.rightMap;
-        go.upMap = agent.upMap;
-        go.pitchRateRadPerSec = agent.pitchRateRadPerSec;
-        go.yawRateRadPerSec = agent.yawRateRadPerSec;
-        go.rollRateRadPerSec = agent.rollRateRadPerSec;
-        go.stopRequested = false;
-        go.deltaSeconds = std::max(1.0e-4, m_client->serverFixedStepSeconds());
-        submitAutopilotControl(
-            controlLaw == game::navigation::LocalFlightControlLaw::Assisted
-                ? m_clientDockingAssistedStabilizePilotController.update(go, effectivePhysics)
-                : m_clientDockingNewtonianStabilizePilotController.update(go, effectivePhysics));
-        if (authoritativeServerSeconds - c.logS >= 3.0)
-        {
-            c.logS = authoritativeServerSeconds;
-            std::cerr << "[DockFallback] request=" << pending.serial << " point " << c.index << "/" << c.points.size() - 1 << " "
-                      << dist << " m, " << speedNow << " m/s" << (escape ? " (escape)" : "") << std::endl;
-        }
-        if (m_dockAdvice.serial == pending.serial && m_dockAdvice.plan.valid())
-            publishDockingAdvisoryPresentation(f);
-        return;
     }
 
     // LIFT CLEAR (live 2026-11-21): the ship touches boxes (stands on a pad, at a wall) - before any route it rises
@@ -2528,12 +2407,13 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
             constexpr int MaxLiftClears = 3;
             if (++m_dockLiftClearAttempts > MaxLiftClears)
             {
-                // the straight lifts do not clear it: the guaranteed route leads it out (or proves there is no exit)
-                if (!m_dockForceVoxel)
-                    std::cerr << "[DockClient] request=" << pending.serial << " still in contact after " << MaxLiftClears
-                              << " lifts - the voxel route leads the ship out" << std::endl;
-                m_dockForceVoxel = true;
-                return true;   // plan now (the worker's voxel planner takes over when the optimizer fails here)
+                // the straight lifts do not clear it (navigation stage 12: no voxel route in the normal ladder - a ship
+                // that stays in contact after the lifts is in a confined / invalid state): refused, told
+                std::cerr << "[DockClient] request=" << pending.serial << " phase=refused still in contact after "
+                          << MaxLiftClears << " lifts" << std::endl;
+                f.fail(l10n::tr("cockpit.dock.refused.enclosed", {{"attempts", std::to_string(MaxLiftClears)}},
+                                "the ship is inside a structure ({attempts} climbs did not clear it) - fly out by hand and request again"));
+                return false;
             }
             const auto agent = makeAgent();
             m_dockLiftClear = {};
@@ -3757,7 +3637,6 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         (lateEntryRebind ? m_dockLateEntry.leadSeconds : 0.0);
     job->planningRequest = request;
     job->entryRebind = lateEntryRebind;
-    job->wantVoxelFallback = !lateEntryRebind && (m_dockForceVoxel || m_dockRetryablePlanFailures >= 2);
     if (lateEntryRebind)
         job->entryBackbone = m_dockLateEntry.backbone;
     job->hasPreferredEntryAnchor = hasPreferredEntryAnchor;
@@ -4452,65 +4331,6 @@ bool SpaceState::updateDockingPlanning(Frame& f)
         // FINITE (stabilization stage 3): a retryable failure re-plans from the stabilized state at most
         // MaxRetryablePlanFailures times per request; the next one refuses the request with the reason for the pilot
         constexpr int MaxRetryablePlanFailures = 3;
-        // THE GUARANTEED ROUTE (author 2026-11-28): the voxel planner ran on this attempt - its polyline is flown; only a
-        // proven enclosure (no exit wide enough for the hull) refuses
-        if (job->voxel.outcome == game::navigation::planner::VoxelRouteOutcome::Enclosed)
-        {
-            std::cerr << "[DockClient] request=" << pending.serial << " phase=refused enclosed: " << job->voxel.note << std::endl;
-            fail(l10n::tr("cockpit.dock.refused.enclosed", {{"attempts", std::string("-")}},
-                          "the ship is enclosed: no exit wide enough for its hull - the route cannot be built"));
-            return false;
-        }
-        if (job->voxel.found() && m_dockFallbackRuns < 3)
-        {
-            ++m_dockFallbackRuns;
-            m_dockForceVoxel = false;
-            m_dockFallback = {};
-            m_dockFallback.active = true;
-            m_dockFallback.serial = pending.serial;
-            m_dockFallback.points = job->voxel.points;
-            m_dockFallback.escapePoints = job->voxel.escapePoints;
-            m_dockFallback.index = 1;
-            // its route of record: the polyline as the plan's gates (published as frames like any plan of this request)
-            m_dockAdvice = std::move(job->context);
-            m_dockAdvice.plan = {};
-            m_dockAdvice.plan.disposition = game::navigation::planner::RoutePlanDisposition::Ready;
-            const auto& pts = m_dockFallback.points;
-            for (std::size_t i = 0; i + 1 < pts.size(); ++i)
-            {
-                const glm::dvec3 seg = pts[i + 1] - pts[i];
-                const double len = glm::length(seg);
-                if (len < 1.0e-3)
-                    continue;
-                for (double s = 0.0; s < len; s += 50.0)
-                {
-                    game::navigation::planner::RouteGate g;
-                    g.positionMeters = pts[i] + seg * (s / len);
-                    g.forward = seg / len;
-                    g.speedMps = 40.0;
-                    m_dockAdvice.plan.gates.push_back(g);
-                }
-            }
-            if (!pts.empty())
-            {
-                game::navigation::planner::RouteGate g;
-                g.positionMeters = pts.back();
-                g.forward = m_dockAdvice.plan.gates.empty() ? glm::dvec3(0.0, 0.0, -1.0) : m_dockAdvice.plan.gates.back().forward;
-                m_dockAdvice.plan.gates.push_back(g);
-            }
-            m_dockAdvice.plan.executionGates = m_dockAdvice.plan.gates;
-            m_dockAdvice.visualGateUp.assign(m_dockAdvice.plan.gates.size(), glm::dvec3(0.0, 1.0, 0.0));
-            m_dockAdvice.visualExecutionGateUp = m_dockAdvice.visualGateUp;
-            m_dockAdvice.visualGateDockPhaseWeight.assign(m_dockAdvice.plan.gates.size(), 0.0);
-            m_dockAdvice.visualExecutionGateDockPhaseWeight = m_dockAdvice.visualGateDockPhaseWeight;
-            m_dockRetryablePlanFailures = 0;
-            m_dockLiftClearAttempts = 0;
-            m_clientDockingPhase = ClientDockingPhase::Stabilizing;
-            std::cerr << "[DockClient] request=" << pending.serial << " phase=fallback-course " << job->voxel.note << " run "
-                      << m_dockFallbackRuns << std::endl;
-            m_pilotNotice = l10n::tr("cockpit.dock.fallback_route", "DOCKING: no smooth route - flying a safe step-by-step route");
-            return false;
-        }
         if (job->plan.retryable() && ++m_dockRetryablePlanFailures >= MaxRetryablePlanFailures)
         {
             std::cerr << "[DockClient] request=" << pending.serial << " phase=refused attempts=" << m_dockRetryablePlanFailures

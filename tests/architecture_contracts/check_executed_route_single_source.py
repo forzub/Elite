@@ -30,6 +30,10 @@ if "executedPoints = std::move(pts)" not in pad or "GameSimulation::executedRout
 if "v.executedRoute" not in src("game/network/WireDataSchema.h"):
     problems.append("WireDataSchema.h: ShipSnapshot::executedRoute not on the wire")
 dock = src("game/SpaceStateDocking.cpp")
+# navigation stage 12: no second route executor (the 2026-11-28 voxel fallback course) in the client
+for f in ("game/SpaceStateDocking.cpp", "game/SpaceState.h"):
+    if re.search(r"m_dockFallback|planVoxelRoute|wantVoxelFallback", code(src(f))):
+        problems.append(f"{f}: a second route executor / the voxel fallback in the normal ladder")
 if "keepExecutedRoutePublished" not in dock:
     problems.append("SpaceStateDocking.cpp: the docking computer's route is not kept published while it re-plans")
 if problems:

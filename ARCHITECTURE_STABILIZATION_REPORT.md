@@ -198,3 +198,62 @@ cap (0.75 s); the rest in one last call that the runner clips and counts (an exp
 D1 (determinism across frame rates) was accepted on 2026-11-27 (fc1cf6377) and not reworked.
 Default: the own clock stays OPT-IN (`ELITE_SERVER_OWN_CLOCK=1`) - not yet run: a TCP / remote session and the window
 losing focus under it. These two runs are the remaining acceptance before it becomes the default.
+
+## Stages 6, 10, 11 — status of this pass
+
+- Stage 6 (B1 / B2 / B4): NOT DONE in this pass. B1 retained rows (aa85da7ee) and the 20 km visual radius
+  (d00ab432f, a POLICY, not the root cause of remote extrapolation drift) stand as before. The B4 flight wobble is
+  pre-existing (the morning build 014da2f94: 30-32 attitude reversals / s; now 23-26): the server's rates are smooth,
+  the client's drawn transform jitters per snapshot - the authoritative / predicted / correction / presentation layering
+  is the open work. Two attempts on 2026-11-27 (error blending, dead reckoning) made it worse and were reverted.
+- Stage 10 (D8 Host Game): NOT DONE. The analysis stands (NetworkServerHost owns one ServerRuntime; ServerWorker would
+  own it when a host port is set). Its precondition - the own clock as the default (stage 7) - is not met yet.
+- Stage 11:
+  - D6: the third_party manifest with hashes (stage 0); a clean build from an empty directory (below); packages are
+    built into a clean staging directory by `tools/preview/package_preview.sh`; D:/__elite/prodaction NOT replaced in
+    this pass (no new package was requested).
+  - D4: the context is already GL 4.3 core (GLFW 4.3 CORE_PROFILE); 63 shaders `#version 330 core` are valid in it,
+    6 use 430 - nothing to port.
+  - D5: low-overhead metrics exist as DEV switches (`ELITE_DEV_WORKER_TIMING`, the perf HUD, `[ServerClock] account`);
+    no always-on metrics channel - partial.
+  - D7: NOT DONE (data_terms are still keyed by the Russian source text; `TextRenderer::setTextFilter` remains the
+    temporary bridge).
+- Stage 12 (C): `tests/scenarios/run_acceptance.sh` gathers the accepted scenarios (ring landing, Preview landing, two
+  worlds, save / continue, B2-04 side) + the unit checks; each scenario was run live in its stage (evidence above); the
+  suite as one run: below if done.
+
+## Scores (before -> after this pass; "before" = audit #8/#9 where scored)
+
+| item | before | after | basis |
+|---|---|---|---|
+| A1, A3, A4, A5, A7, A8, A9, A10 | 9 / 8 / 8 / 8.5 / 8 / 8 / 8 / 8 | unchanged | accepted, not reworked (A3 marker split 9900afb34) |
+| A2 transforms / co-rotation | 7.5 | 8 | one co-rotation rule + unit; axial-dock entry split still open |
+| A6 infrastructure state | 7.5 | 8 | one vocabulary server + client; stale-package defect fixed |
+| World lifecycle / state owners (stage 1) | - | 8 | 9 states moved to owners, barrier, live two worlds; concurrent worlds not covered |
+| Simulation / render split (stage 2) | - | 7.5 | SpaceState render functions pure, barrier; renderers outside SpaceState not under it |
+| Planner finiteness (stage 3) | - | 8 | 2 unbounded loops bounded + watchdog; grid 6 / 4 / 0 hang; 3 optimizer-limited refusals remain |
+| B1 epochs / provenance | 6.5 | 6.5 | not reworked |
+| B2 one presentation sampler | 5.5 | 5.5 | not done |
+| B3 one executed route | 5 | 7 | pad service publishes its route, HUD reconstruction removed; the docking computer still via corridors, the map not on the object |
+| B4 layers | (wobble open) | unchanged | not done |
+| C behavioural suite | 7 | 7.5 | grid + matrix + suite script |
+| D1 determinism | accepted | accepted | - |
+| D2 server time | own clock opt-in | 7.5 | matrix passes incl. debt fix; TCP + focus loss runs open; not the default |
+| D4 GL | - | 8 | already 4.3 core |
+| D6 build / manifest | (P0 open) | 8 | manifest + hashes; clean-directory build PASSED (D:/tmp/cleanbuild2, 15641 steps, client + server + unit checks green) |
+| D7 localization ids | - | unchanged | not done |
+| D8 Host Game | - | unchanged | not done |
+| Save (stage 8) | - | 7.5 | contract, one-generation atomic commit, verified load, live; no default location / Continue (author) |
+| Preview policy (stage 9) | - | 8 | one capability policy + env scrub + inventory; SpaceState* split not done |
+
+The program's target (>= 8 for every direction) is NOT met for: B1, B2, B4, D7, D8, the SpaceState* decomposition, and
+(narrowly) B3, D2, the save and the render split. Those are the next work, in this order: B4 / B2 (one presentation
+sampler with the correction layer), the own clock's TCP / focus runs -> default -> D8, B3's docking side, D7 ids.
+
+## Commits of this pass
+
+f65fa81f8 (stages 0-2), 90afb39c4 (stages 3-9), 42d59707a (stage 3 loops + stage 7).
+
+Clean build (stage 0 / D6): from an empty directory `D:/tmp/cleanbuild2` (`-DELITE_BUILD_CLIENT=ON -DELITE_BUILD_SERVER=ON`,
+RelWithDebInfo) at 42d59707a: exit 0, 15641 steps; EliteHubSpaceCheck and EliteWorldSaveCheck from it pass. (The first
+attempt on 2026-11-27 failed because I edited sources during it - not a baseline defect; recorded.)

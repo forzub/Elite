@@ -9747,3 +9747,8 @@ start-up hitches (render), trade step 16 part 3 live.
   - 9 one capability policy (core::Capability), DEV switch inventory docs/DEV_SWITCHES.md (197), the preview package
     removes ELITE_* switches at start. check_ship_ownership_authority updated to the save mechanism (same guarantee).
   - Contracts: 189 pass / the same 17 baseline reds.
+  - Stage 3 grid (10 starts, B2-04): 6 LANDED / 4 REFUSED / 0 HANG after bounding a second loop (lift-clear) + a request
+    watchdog (240 s); the first grid had 1 HANG (recorded). Stage 7 matrix: pause / render stall / debt (fixed: 63 ms
+    dropped -> 0) / overload / client-driven comparison - own clock still OPT-IN (TCP + focus-loss runs open).
+    Clean build from an empty dir PASSED. Final scores + open items: ARCHITECTURE_STABILIZATION_REPORT.md (target >= 8
+    NOT met for B1, B2, B4, D7, D8, SpaceState decomposition).

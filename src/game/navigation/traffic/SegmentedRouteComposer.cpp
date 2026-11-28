@@ -740,15 +740,11 @@ static planner::RoutePlan composeOnce(
                 terminalRequest.terminalReferenceDistanceMeters,
                 200.0
             );
-        legRequest.terminalApproachLengthMeters =
-            game::navigation::OrdinaryRoutePolicy::
-                requiredTerminalApproachMeters(
-                    terminalRequest.geometrySpeed(),
-                    handoffSpeed,
-                    terminalRequest.brakingMps2,
-                    legRequest.terminalReferenceDistanceMeters,
-                    terminalRequest.vehicleLengthMeters
-                );
+        // NAVIGATION STAGE 4 (mandatory straights): a lane join's mandatory straight is the LANE'S OWN (the join straight
+        // of the lane geometry, a mandatory stage after this leg); the braking to the lane's speed is the speed
+        // profile's (it brakes on curves too, the goal speed is the hand-off speed) - not a derived straight. It was
+        // max(the docking-axis minimum 700 m, 1.25 x the braking distance) - a docking policy on a lane join.
+        legRequest.terminalApproachLengthMeters = 0.0;
 
         const double inboundStarted = diagnosticNowMs();
         const auto inbound =

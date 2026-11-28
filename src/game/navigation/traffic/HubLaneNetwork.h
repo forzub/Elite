@@ -88,6 +88,7 @@ public:
     struct FreeLegModel
     {
         double joinApproachMeters = 700.0;     // the hard terminal approach before a lane's join straight
+        double goalApproachMeters = 700.0;     // the goal's own approach straight when the task has an arrival axis (a dock)
         double turnRadiusMeters = 1500.0;      // the free legs' turn radius at the route speed
         double exitMinimumMeters = 0.0;        // the shortest final leg (its start straight + turn budget + goal axis)
         bool serviceDirect = false;            // the service can fly the straight way from the ship (over the city)

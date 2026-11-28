@@ -9790,3 +9790,7 @@ start-up hitches (render), trade step 16 part 3 live.
   from the FINAL request (after the hub lanes' caps) - B2-04 grid 8 / 9 valid starts LANDED on the FIRST plan (was 6 / 10
   with replans + 3 refusals). Open: a one-off 606 s client main-thread stall with no foreground window (not reproduced).
   Concept audit + zone inventory + moving-target baseline: docs/NAVIGATION_CONCEPT_AUDIT.md sections 11-15.
+- 2026-11-28 navigation stages 2/8, 4, 7: the open pad as its own task (the service's takeover point, no arrival
+  direction, no terminal straight; `RoutePlanRequest::terminalDirectionFree`); lane joins without the derived 700 m /
+  braking straight (the lane's own join straight + the speed profile); the real hull + mass to the dock dispatcher.
+  B2-04 grid 9 / 9 LANDED on the first plan (0 replans); ring landing PASS; plane_demo dock DOCKED.

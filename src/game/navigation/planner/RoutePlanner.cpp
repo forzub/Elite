@@ -445,13 +445,16 @@ RoutePlan planContinuousAssisted(
 
     request.goal.positionMeters = input.goalMeters;
     request.goal.tangent =
-        normalizedOr(
-            -input.terminalOutward,
-            normalizedOr(
-                input.goalMeters - input.startMeters,
-                request.start.tangent
-            )
-        );
+        input.terminalDirectionFree
+            // no arrival direction in the task: the shape arrives along its course (not a constraint the task did not state)
+            ? normalizedOr(input.goalMeters - input.startMeters, request.start.tangent)
+            : normalizedOr(
+                  -input.terminalOutward,
+                  normalizedOr(
+                      input.goalMeters - input.startMeters,
+                      request.start.tangent
+                  )
+              );
     request.goal.speedMps =
         std::clamp(
             input.terminalSpeedMps,

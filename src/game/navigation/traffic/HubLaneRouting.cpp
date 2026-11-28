@@ -31,9 +31,15 @@ HubLaneNetwork::FreeLegModel freeLegModelFor(const planner::RoutePlanRequest& re
     HubLaneNetwork::FreeLegModel model;
     // the inbound leg's hard terminal approach (SegmentedRouteComposer: reference distance capped at 200 m)
     const double geometrySpeed = request.geometrySpeed();
-    model.joinApproachMeters = Policy::requiredTerminalApproachMeters(
-        geometrySpeed, laneHandoffSpeedMps, request.brakingMps2,
-        std::min(request.terminalReferenceDistanceMeters, 200.0), request.vehicleLengthMeters);
+    // the inbound leg ends ON the lane's join straight (the lane geometry's own); the braking to the lane's speed is the
+    // speed profile's - no derived terminal straight (navigation stage 4; the composer poses the leg the same way)
+    model.joinApproachMeters = 0.0;
+    // the GOAL's approach (a task with an arrival axis - a dock): unchanged, the infrastructure's terminal approach
+    model.goalApproachMeters = request.terminalDirectionFree
+                                   ? 0.0
+                                   : Policy::requiredTerminalApproachMeters(
+                                         geometrySpeed, laneHandoffSpeedMps, request.brakingMps2,
+                                         std::min(request.terminalReferenceDistanceMeters, 200.0), request.vehicleLengthMeters);
     // the free legs' turn radius at the route speed
     model.turnRadiusMeters = geometrySpeed * geometrySpeed / std::max(request.lateralMps2, 1.0e-3);
     // the final leg after a lane: the release straight + the start lead kept as turn budget + the docking axis
@@ -127,7 +133,8 @@ CompiledTrafficRoute applyHubLanes(
     auto route = network.chooseRoute(
         frame, request.startMeters, request.goalMeters, request.vehicleLengthMeters,
         request.hasInitialForward ? request.initialForward : glm::dvec3(0.0), request.initialForwardLeadMeters,
-        -request.terminalOutward, freeLegs, &summary, &request.obstacles, request.agentRadiusMeters);
+        request.terminalDirectionFree ? glm::dvec3(0.0) : -request.terminalOutward,   // no goal axis when the task has none
+        freeLegs, &summary, &request.obstacles, request.agentRadiusMeters);
     text << summary;
     if (route.valid)
     {

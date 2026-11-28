@@ -309,8 +309,8 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     // the goal is reached along goalArriveForward after a hard straight: a free leg into it ends that far out
     const bool goalHasDirection = glm::length(goalArriveForward) > 1.0e-9;
     const glm::dvec3 goalDirection = goalHasDirection ? glm::normalize(goalArriveForward) : glm::dvec3(0.0);
-    const glm::dvec3 goalApproach = goalWorld - goalDirection * (goalHasDirection ? freeLegs.joinApproachMeters : 0.0);
-    const double goalApproachLength = goalHasDirection ? freeLegs.joinApproachMeters : 0.0;
+    const glm::dvec3 goalApproach = goalWorld - goalDirection * (goalHasDirection ? freeLegs.goalApproachMeters : 0.0);
+    const double goalApproachLength = goalHasDirection ? freeLegs.goalApproachMeters : 0.0;
     const double direct = freeTime(leadLength) + freeLeg(leadEnd, heading, goalApproach, goalDirection) +
                           approachTime(goalApproachLength, 30.0);
     // a goal reached by a service (a city pad): the lanes only - in the hub the green lanes come before open space

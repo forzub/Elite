@@ -32,6 +32,28 @@
 
 namespace
 {
+// the pilot ship's docking envelope from its OWN authoritative description (navigation stage 7: it was the Cobrett
+// traffic class for every pilot ship): the logical hull dimensions and the current mass; the Cobrett figures only when
+// the descriptor has no logical dimensions
+game::docking::DockingEnvelope pilotDockingEnvelope(const Ship& ship)
+{
+    auto e = game::traffic::dock::dockingEnvelope(
+        game::traffic::dock::trafficShipClass(game::traffic::dock::TrafficShipKind::Cobrett));
+    if (const auto& d = ship.core().desc().logicalDimensions(); d.enabled)
+    {
+        e.widthMeters = static_cast<double>(d.width);
+        e.heightMeters = static_cast<double>(d.height);
+        e.lengthMeters = static_cast<double>(d.length);
+        e.sweptWidthMeters = e.widthMeters + 4.0;
+        e.sweptHeightMeters = e.heightMeters + 4.0;
+        e.landingFootprintWidthMeters = e.widthMeters * 0.9;
+        e.landingFootprintLengthMeters = e.lengthMeters * 0.9;
+    }
+    if (const double m = ship.core().currentMassKg(); m > 0.0)
+        e.massKg = m;
+    return e;
+}
+
 
 int envInt(const char* name, int fallback)
 {
@@ -598,9 +620,8 @@ bool GameSimulation::requestDockArrival(EntityId shipId, bool engage, const std:
     const glm::dvec3 p = toFixed * (ship->core().transform().fullWorldMeters() - origin);
     game::docking::traffic::DockingTrafficRequest r;
     r.shipId = shipId.value;
-    r.shipClass = game::docking::DockSizeClass::Medium;
-    r.envelope = game::traffic::dock::dockingEnvelope(
-        game::traffic::dock::trafficShipClass(game::traffic::dock::TrafficShipKind::Cobrett));
+    r.shipClass = game::docking::DockSizeClass::Medium;   // the class POLICY (no hull-size class rule in the data yet)
+    r.envelope = pilotDockingEnvelope(*ship);              // the REAL hull: the dispatcher's physical fit checks it
     r.insideControlledApproachHorizon = true;
     // The pilot's planner / autopilot fly their own route to the dock: a direct-entry request - first in the queue;
     // the station captures it on the approach axis once its entry is cleared.
@@ -775,8 +796,6 @@ void GameSimulation::updateDockSitePilots(DockSite& site, const StaticObject* do
     const glm::dvec3 dockVelocity(dock->linearVelocity);
     auto& traffic = *site.traffic;
     auto& dispatcher = traffic.dispatcher();
-    const auto envelope = game::traffic::dock::dockingEnvelope(
-        game::traffic::dock::trafficShipClass(game::traffic::dock::TrafficShipKind::Cobrett));
 
     for (auto& [id, shipPtr] : m_ships)
     {
@@ -818,7 +837,7 @@ void GameSimulation::updateDockSitePilots(DockSite& site, const StaticObject* do
                         game::docking::traffic::DockingTrafficRequest r;
                         r.shipId = id.value;
                         r.shipClass = game::docking::DockSizeClass::Medium;
-                        r.envelope = envelope;
+                        r.envelope = pilotDockingEnvelope(*shipPtr);
                         r.insideControlledApproachHorizon = true;
                         const bool ok = dispatcher.requestDocking(r, now, -1.0, true).committed;
                         if (ok)

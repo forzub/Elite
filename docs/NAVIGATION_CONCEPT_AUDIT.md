@@ -273,3 +273,25 @@ stalled 606 s in one state update (`phase=state-update duration_ms=606515 ... fo
 likely the desktop locked at night). Its re-run: LANDED on the first plan (`D:/tmp/grid_p10`). The stall is an open
 intermittent defect (E2 / D2: the client-driven clock under a lost foreground), not a navigation one.
 Before the fix: 6 / 10 landed, 3 of them only after replans; 3 refused.
+
+## 16. Stages 2 / 8 (open pad as its own task), 4 (mandatory straights), 7 (real hull) — 2026-11-28
+
+- Contract (`RoutePlanRequest::terminalDirectionFree`): an absent arrival direction is NO constraint. With it the
+  optimizer's goal tangent is the start -> goal course (the shape's own, not a task constraint) and the lane model gets no
+  goal axis. Docks / gates / corridors keep their axis (false by default).
+- The open pad task (SpaceStateDocking): the goal = the pad service's takeover point (the hover point), no +80 m
+  docking reference offset, no arrival direction, no terminal straight (the profile brakes on the way, curves too). The
+  ring's first leg to its sync gate keeps the gate's axis (infrastructure). Grid (9 valid starts): 9 / 9 LANDED, 8 on the
+  first plan; the start 6 km under the city (0,-6000,0) took 2 replans - its inbound lane-join leg had a 700 m derived
+  straight (next item). Ring A1-03 landing PASS.
+- Mandatory straights (stage 4): a lane join's straight is the lane's own join straight (a mandatory stage of the lane
+  geometry); the inbound leg's derived terminal straight `max(docking-axis 700 m, 1.25 x braking)` is gone (the composer
+  and the lane model alike) - the speed profile brakes to the lane's hand-off speed. The goal's own approach (a dock with an
+  axis) is a separate field (`goalApproachMeters`), unchanged. Regression: below.
+- Real hull to the dispatcher (stage 7): `pilotDockingEnvelope` - the ship's logical dimensions and current mass (the
+  Cobrett traffic class only when the descriptor has none) in both pilot request paths; the dispatcher's physical fit now
+  checks the real hull. Live: plane_demo dock - accepted, entry cleared, station handoff, DOCKED. The size CLASS stays the
+  policy value Medium: there is no hull-size class rule in the data - defining one is the author's decision.
+- Regression after the lane-join change (`D:/tmp/grid_stage4`): **9 / 9 LANDED, all on the FIRST plan (0 replans)** -
+  the start under the city included; ring A1-03 PASS; plane_demo dock DOCKED. Python contracts 189 pass / the same 17
+  baseline reds.

@@ -3329,10 +3329,17 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                   hull.lengthMeters * 10.0 +
                       definition->requiredClearanceMeters * 4.0
               );
+    // AN OPEN PAD is not a docking port (navigation stage 8): the task is the pad service's takeover point (the hover
+    // point over the pad), arrived at from any direction, with no mandatory terminal straight - the service climbs /
+    // crosses / descends itself. A dock keeps its port axis and its reference distance.
+    // (the ring's first leg to its SYNC GATE is a pad request too - the gate's axis is infrastructure: kept)
+    const bool openPadTask = pending.target.semanticAnchorId.rfind("pad:", 0) == 0 &&
+                             !(m_padAnchor.valid && m_padAnchor.serial == pending.serial && m_padAnchor.ringGate);
     request.goalMeters =
-        localPort.positionMeters +
-        localPort.forward *
-            request.terminalReferenceDistanceMeters;
+        openPadTask
+            ? localPort.positionMeters
+            : localPort.positionMeters + localPort.forward * request.terminalReferenceDistanceMeters;
+    request.terminalDirectionFree = openPadTask;
     // a city pad: the route ends on the lane nearest it; the pad service takes over there (author 2026-11-22)
     request.endAtLaneExit = pending.target.semanticAnchorId.rfind("pad:", 0) == 0;
     // the recovery strategy of a retried request: through the green lanes (stabilization stage 3, author 2026-11-28)
@@ -3423,9 +3430,12 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                       request.initialSpeedMps, request.maxSpeedMps, request.brakingMps2, request.lateralMps2,
                       request.maxAngularVelocityRadPerSecond, hull.lengthMeters);
         if (assisted)
-            request.terminalApproachLengthMeters = game::navigation::OrdinaryRoutePolicy::requiredTerminalApproachMeters(
-                request.geometrySpeed(), maxEntrySpeedForTerminal, request.brakingMps2, request.terminalReferenceDistanceMeters,
-                hull.lengthMeters);
+            request.terminalApproachLengthMeters =
+                request.terminalDirectionFree
+                    ? 0.0   // no infrastructure straight in the task: the speed profile brakes on the way (curves too)
+                    : game::navigation::OrdinaryRoutePolicy::requiredTerminalApproachMeters(
+                          request.geometrySpeed(), maxEntrySpeedForTerminal, request.brakingMps2,
+                          request.terminalReferenceDistanceMeters, hull.lengthMeters);
         std::cerr << "[DockDerived] request=" << pending.serial << " " << why << ": route max " << request.maxSpeedMps
                   << " m/s, geometry " << request.geometrySpeed() << " m/s -> start lead " << request.initialForwardLeadMeters
                   << " m, terminal approach " << request.terminalApproachLengthMeters << " m" << std::endl;

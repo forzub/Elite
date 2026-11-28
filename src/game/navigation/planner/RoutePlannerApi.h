@@ -85,6 +85,11 @@ struct RoutePlanRequest
     // to size the protected terminal approach.
     glm::dvec3 goalMeters {0.0};
     glm::dvec3 terminalOutward {0.0, 0.0, 1.0};
+    // THE ARRIVAL DIRECTION IS OPTIONAL (navigation stage 2, the task contract): true = the task states no arrival
+    // direction (an open pad's takeover area, a point) - terminalOutward is then not a constraint: the planner arrives
+    // along its own course (the start -> goal direction for the shape), the lane model gets no goal axis. A docking port /
+    // a gate / a corridor keeps false: its direction belongs to the infrastructure.
+    bool terminalDirectionFree = false;
     double terminalReferenceDistanceMeters = 300.0;
 
     double agentRadiusMeters = 0.0;

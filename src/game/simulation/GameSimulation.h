@@ -655,7 +655,9 @@ public:
     // an impact beyond survival: the whole ship destroyed (every module), a wreck under physics only
     void destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG,
                              const game::navigation::capsule::Outcome& capsule);
-    void handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride);
+    // THE frame change of an existing ship into a hub's frame (ShipFrameTransition.h): the physical state is kept, a
+    // failure changes nothing. Spawning a new ship into a frame is placeShipInReferenceFrame.
+    bool handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride);
 
     const game::navigation::HubNavigationFrame* hubNavigationFrame(
         const std::string& hubId

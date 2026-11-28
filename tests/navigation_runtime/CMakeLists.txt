@@ -2874,3 +2874,38 @@ add_test(
     NAME ui_radio_widget
     COMMAND ui_radio_widget_tests
 )
+
+# Core stabilization D-1: a frame change of an existing ship keeps its physical state (PROJECT_STATE E-8).
+add_executable(
+    ship_frame_transition_tests
+    ShipFrameTransitionTests.cpp
+)
+
+target_include_directories(
+    ship_frame_transition_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    ship_frame_transition_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        ship_frame_transition_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ship_frame_transition_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME ship_frame_transition
+    COMMAND ship_frame_transition_tests
+)

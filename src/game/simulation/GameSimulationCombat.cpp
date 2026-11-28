@@ -2112,11 +2112,16 @@ void GameSimulation::releaseLiveTraffic(EntityId id, const char* why)
         return;
     if (Ship* ship = getShip(id))
     {
-        auto& m = ship->core().transform().motion;
+        auto& tr = ship->core().transform();
+        auto& m = tr.motion;
+        // back to the script: the world state the live pilot reached is kept, its local description re-projected into
+        // the restored frame (core stabilization D-1: the restored frame's epoch is the promotion's, not now)
+        const game::navigation::WorldKinematicState world = game::simulation::currentWorldKinematics(tr);
         m.mode = it->second.savedMode;
         m.travelFrame = it->second.savedTravelFrame;
         m.matchedToReferenceFrame = it->second.savedMatched;
         m.matchedReferenceFrameId = it->second.savedMatchedId;
+        game::simulation::setWorldKinematics(tr, world.positionMeters, world.velocityMps);
         ship->setControlState(ShipControlState {});
     }
     m_npcNavigationControlBridges.erase(id);
@@ -2200,18 +2205,12 @@ void GameSimulation::updateLiveTraffic(double dt)
             lt.savedTravelFrame = tr.motion.travelFrame;
             lt.savedMatched = tr.motion.matchedToReferenceFrame;
             lt.savedMatchedId = tr.motion.matchedReferenceFrameId;
+            // the scripted traffic ship's world pose is authoritative (the script writes it); the one frame change
+            // carries it into the hub's frame unchanged (core stabilization D-1)
             const glm::dvec3 worldP = p;
             const glm::dvec3 worldV = tr.motion.worldVelocityMps;
-            const glm::mat4 orientation = tr.orientation;
-            game::navigation::ReferenceFrame frame;
-            frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
-            frame.systemId = tr.motion.systemId;
-            frame.hubId = slot.hubId;
-            frame.localOffsetMeters = hf->worldToLocalPosition(worldP);
-            if (!placeShipInReferenceFrame(id, frame))
+            if (!handOverToHub(id, *ship, slot.hubId, &worldP, &worldV))
                 continue;
-            tr.orientation = orientation;
-            tr.motion.localVelocityMps = hf->worldToLocalVelocity(worldP, worldV);
             (void)promoteShipToDetailedSimulation(id);
             m_npcNavigationControlBridges.erase(id);
             m_npcNavigationExecutionSnapshots.erase(id);

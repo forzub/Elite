@@ -5,6 +5,7 @@
 
 #include "src/game/simulation/ObjectModuleSnapshotBuilder.h"
 #include "GameSimulation.h"
+#include "src/game/simulation/ShipFrameTransition.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/simulation/RuntimeSystemPolicy.h"
 #include "src/game/simulation/activation/ActivationSpatialIndex.h"

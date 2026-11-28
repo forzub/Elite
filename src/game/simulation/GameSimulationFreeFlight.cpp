@@ -70,6 +70,7 @@
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
+#include "src/game/simulation/ShipFrameTransition.h"
 #include "src/game/navigation/rules/JDrive.h"
 #include "src/game/simulation/JFieldIntegrity.h"
 #include "src/game/navigation/rules/JumpRules.h"
@@ -537,6 +538,9 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
         }
         std::cerr << "[FreeFlight] ship " << shipId.value << " OFF after " << active->second.elapsedSeconds << " s, peak "
                   << active->second.peakSpeedMps / 1000.0 << " km/s; nearest hub " << nearest << " at " << best / 1000.0 << " km\n";
+        // the frame change first: a refused one leaves the ship in free flight, untouched
+        if (!handOverToHub(shipId, *ship, nearest, nullptr, nullptr))
+            return false;
         motion.freeFlight = false;
         motion.freeFlightThrust = 0;
         motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
@@ -548,7 +552,6 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
         if (motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity)
             motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
         m_freeFlights.erase(active);
-        handOverToHub(shipId, *ship, nearest, nullptr, nullptr);
         return true;
     }
 
@@ -1512,25 +1515,37 @@ void GameSimulation::destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8
         (void)markShipDerelict(shipId);
 }
 
-void GameSimulation::handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride)
+bool GameSimulation::handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride)
 {
     auto& tr = ship.core().transform();
-    auto& motion = tr.motion;
     const auto* hubFrame = hubNavigationFrame(hubId);
     if (!hubFrame || !hubFrame->valid)
-        return;
-    const game::navigation::KinematicFrame dest = hubFrame->kinematicFrame();
-    game::navigation::WorldKinematicState world;
-    world.positionMeters = worldOverride ? *worldOverride : motion.travelFrame.localToWorldPosition(motion.localPositionMeters);
-    world.velocityMps = velOverride ? *velOverride : motion.travelFrame.localToWorldVelocity(motion.localPositionMeters, motion.localVelocityMps);
-    const game::navigation::LocalKinematicState local = game::navigation::worldToLocalKinematics(dest, world);
-    game::navigation::TravelFrameSystem::matchToReference(motion, dest, "ship_travel_" + std::to_string(shipId.value), hubId);
-    motion.hubId = hubId;
-    motion.mode = game::navigation::MotionMode::HubTactical;
-    motion.localPositionMeters = local.positionMeters;
-    motion.localVelocityMps = local.velocityMps;
-    tr.setWorldPositionMeters(world.positionMeters);
-    motion.worldVelocityMps = world.velocityMps;
+        return false;
+    game::navigation::WorldKinematicState world = game::simulation::currentWorldKinematics(tr);
+    if (worldOverride)
+        world.positionMeters = *worldOverride;
+    if (velOverride)
+        world.velocityMps = *velOverride;
+    game::simulation::FrameTransitionRequest request;
+    request.destination = hubFrame->kinematicFrame();
+    request.ownedFrameId = "ship_travel_" + std::to_string(shipId.value);
+    request.referenceFrameId = hubId;
+    request.hubId = hubId;
+    request.worldOverride = &world;
+    if (!game::simulation::transferShipIntoFrame(tr, request))
+    {
+        std::cerr << "[Flight] ship " << shipId.value << ": the frame change into " << hubId << " was refused (state kept)" << std::endl;
+        return false;
+    }
+    // the hub's frame follows the hub every tick (updateShipReferenceFrames walks the bindings)
+    game::navigation::ReferenceFrame binding;
+    binding.type = game::navigation::ReferenceFrameType::OrbitalHub;
+    binding.systemId = tr.motion.systemId;
+    binding.hubId = hubId;
+    binding.localOffsetMeters = tr.motion.localPositionMeters;
+    m_shipReferenceBindings[shipId] = {binding, false};
     std::cerr << "[Flight] ship " << shipId.value << " handed over to " << hubId << ": local offset "
-              << glm::length(local.positionMeters) / 1000.0 << " km, relative speed " << glm::length(local.velocityMps) << " m/s\n";
+              << glm::length(tr.motion.localPositionMeters) / 1000.0 << " km, relative speed "
+              << glm::length(tr.motion.localVelocityMps) << " m/s" << std::endl;
+    return true;
 }

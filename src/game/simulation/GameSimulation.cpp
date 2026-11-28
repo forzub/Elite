@@ -400,26 +400,12 @@ void GameSimulation::updateShipShells(double dt)
                     herdElapsed
                 );
 
-            shell.transform.setWorldPositionMeters(sample.positionMeters);
             shell.transform.orientation =
                 orientationFromVelocity(sample.velocityMps);
-            shell.transform.motion.worldVelocityMps = sample.velocityMps;
-
-            if (shell.transform.motion.travelFrame.valid)
-            {
-                shell.transform.motion.localPositionMeters =
-                    shell.transform.motion.travelFrame.worldToLocalPosition(
-                        sample.positionMeters
-                    );
-                shell.transform.motion.localVelocityMps =
-                    shell.transform.motion.travelFrame.worldToLocalVector(
-                        sample.velocityMps
-                    );
-            }
-            else
-            {
-                shell.transform.motion.localVelocityMps = sample.velocityMps;
-            }
+            // the route's world pose; inside a frame the local velocity is relative to the frame's motion at the point
+            // (it was the bare world vector turned into the frame's axes - core stabilization D-1, CORE_AUDIT F-11)
+            game::simulation::setWorldKinematics(
+                shell.transform, sample.positionMeters, sample.velocityMps);
             continue;
         }
 

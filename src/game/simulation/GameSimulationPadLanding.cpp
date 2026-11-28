@@ -73,18 +73,15 @@ bool GameSimulation::takeShipIntoHubFrame(EntityId shipId, const std::string& hu
     auto& tr = ship->core().transform();
     if (!m_freeFlights.count(shipId) && tr.motion.mode == game::navigation::MotionMode::HubTactical && tr.motion.hubId == hubId)
         return true;
-    const auto* hubFrame = hubNavigationFrame(hubId);
-    if (!hubFrame || !hubFrame->valid)
+    // Entering the hub's frame changes only the frame the motion is DESCRIBED in (core stabilization D-1): the one frame
+    // change (handOverToHub -> ShipFrameTransition) keeps world position, velocity, attitude, angular rates and the
+    // regulator modes; a refused change leaves the ship as it was. (The spawn API used here before zeroed the relative
+    // velocity - a ship at 100-300 m/s stopped dead with no thrust, live 2026-11-28.)
+    if (!handOverToHub(shipId, *ship, hubId, nullptr, nullptr))
+    {
+        std::cerr << "[HubFrame] ship " << shipId.value << ": placing it in hub " << hubId << "'s frame failed" << std::endl;
         return false;
-    // THE SHIP KEEPS ITS VELOCITY (navigation stage 3, 2026-11-28): entering the hub's frame is a change of the frame the
-    // motion is DESCRIBED in, not a kinematic reset - placeShipInReferenceFrame (the spawn API) zeroes the relative
-    // velocity, which here stopped a ship flying 100-300 m/s against the hub instantly, with no thrust (and every
-    // docking request then planned from a fictitious rest). The world velocity before the change is restored after it.
-    const glm::dvec3 worldPositionBefore = tr.fullWorldMeters();
-    const glm::dvec3 worldVelocityBefore =
-        tr.motion.travelFrame.valid
-            ? tr.motion.travelFrame.localToWorldVelocity(tr.motion.localPositionMeters, tr.motion.localVelocityMps)
-            : tr.motion.worldVelocityMps;
+    }
     if (m_freeFlights.count(shipId))
     {
         // left running, the global step flew a held ship into the Earth (live 2026-11-21)
@@ -97,23 +94,6 @@ bool GameSimulation::takeShipIntoHubFrame(EntityId shipId, const std::string& hu
         motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
         motion.freeFlightOrbitBodyId.clear();
         m_freeFlights.erase(shipId);
-    }
-    game::navigation::ReferenceFrame frame;
-    frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
-    frame.systemId = tr.motion.systemId;
-    frame.hubId = hubId;
-    frame.localOffsetMeters = hubFrame->worldToLocalPosition(tr.fullWorldMeters());
-    const glm::mat4 orientation = tr.orientation;
-    if (!placeShipInReferenceFrame(shipId, frame))
-    {
-        std::cerr << "[HubFrame] ship " << shipId.value << ": placing it in hub " << hubId << "'s frame failed" << std::endl;
-        return false;
-    }
-    tr.orientation = orientation;
-    if (tr.motion.travelFrame.valid)
-    {
-        tr.motion.localVelocityMps = tr.motion.travelFrame.worldToLocalVelocity(worldPositionBefore, worldVelocityBefore);
-        tr.motion.worldVelocityMps = worldVelocityBefore;
     }
     std::cerr << "[HubFrame] ship " << shipId.value << " taken into hub " << hubId << "'s frame, keeping "
               << glm::length(tr.motion.localVelocityMps) << " m/s against it" << std::endl;

@@ -420,10 +420,9 @@ void GameSimulation::updateDockSiteTraffic(DockSite& site, const StaticObject* d
             noteTrafficSlot(shellIt->second, dock->hubId, position, velocity, orientation,
                             glm::length(pose.position) > 300.0))
         {
-            tr.setWorldPositionMeters(flownPosition);
             tr.orientation = orientation;
-            tr.motion.worldVelocityMps = flownVelocity;
-            tr.motion.localVelocityMps = flownVelocity;
+            // the script's world pose; the local description kept consistent with it (core stabilization D-1)
+            game::simulation::setWorldKinematics(tr, flownPosition, flownVelocity);
             // Map ownership: inside the dock's controlled zone the ship belongs to
             // this hub (Hub Map); outside it, to the wider maps.
             tr.motion.hubId =

@@ -110,22 +110,19 @@ EntityId GameSimulation::materializeScheduledVisit(const ScheduledVisitHit& hit)
     done.push_back(static_cast<std::uint32_t>(hit.visit));
     // into its hub's frame at the visit's world place: the hub navigation frame has its own axes (not the city's) -
     // the world point goes through that frame (a first try used the city axes: the ship appeared 6.7 km off)
-    game::navigation::ReferenceFrame frame;
-    frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
-    frame.systemId = city.systemId;
-    frame.hubId = city.hubId;
+    // the world velocity = the hub frame's velocity at the point + the visit's own motion (its 1 s schedule step, turned
+    // into world axes); the one frame change carries that world state into the hub's frame (core stabilization D-1).
+    // OPEN (CORE_AUDIT F-10, step 7): a city turning against the hub frame (the ring) adds omega x r - not included.
     const auto* hubFrame = city.hubId.empty() ? nullptr : hubNavigationFrame(city.hubId);
     bool placed = false;
     if (hubFrame && hubFrame->valid)
     {
         const game::navigation::KinematicFrame K = hubFrame->kinematicFrame();
-        frame.localOffsetMeters = K.worldToLocalPosition(position);
-        placed = placeShipInReferenceFrame(id, frame);
-        if (placed)
-            ship->core().transform().motion.localVelocityMps = K.worldToLocalVector(R * localVel);
+        const glm::dvec3 worldVelocity = K.localToWorldVelocity(K.worldToLocalPosition(position), K.worldToLocalVector(R * localVel));
+        ship->core().transform().orientation = orientation;   // before the change: the relative body speeds use it
+        placed = handOverToHub(id, *ship, city.hubId, &position, &worldVelocity);
     }
-    auto& t = ship->core().transform();
-    t.orientation = orientation;
+    ship->core().transform().orientation = orientation;
     (void)promoteShipToDetailedSimulation(id);
     std::cerr << "[ScheduledTraffic] visit " << visit.id << " (" << visit.name << ", " << visit.kind << ") attacked -> real ship "
               << id.value << (placed ? " in hub " + city.hubId : std::string(" (no hub frame)")) << " at city point "

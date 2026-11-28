@@ -447,10 +447,9 @@ void GameSimulation::updateHubSecurity(double dt)
             !noteTrafficSlot(sid, c->hubId, cpos + R * pose.position, cvel + R * pose.velocity, orientation, true);
         if (live)
             continue;   // no hand-back while it flies itself (it goes back to the script first)
-        target->setWorldPositionMeters(position);
         target->orientation = orientation;
-        target->motion.worldVelocityMps = velocity;
-        target->motion.localVelocityMps = velocity;
+        // the lane's world pose; the local description kept consistent with it (core stabilization D-1)
+        game::simulation::setWorldKinematics(*target, position, velocity);
         target->motion.hubId = c->hubId;
         double nearest = 1.0e30;
         for (const auto& p : players)

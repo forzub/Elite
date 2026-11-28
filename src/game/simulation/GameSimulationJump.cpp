@@ -1105,6 +1105,22 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
     frame.linearAccelerationMps2 = glm::dvec3(0.0);
     motion.localPositionMeters = glm::dvec3(0.0);
     motion.localVelocityMps = glm::dvec3(0.0);
+    // DEV (navigation stage 3, the start-state matrix): ELITE_DEV_START_VELOCITY=vx,vy,vz - the ship's velocity
+    // RELATIVE to the hub in the city's axes (m/s); ELITE_DEV_START_SPIN=y,p,r - its body rates (deg/s). The planner must
+    // start from that real state, not a fictitious rest.
+    glm::dvec3 startVelocityWorld(0.0);
+    if (const char* v = std::getenv("ELITE_DEV_START_VELOCITY"); v && *v)
+    {
+        glm::dvec3 vc(0.0);
+        if (std::sscanf(v, "%lf,%lf,%lf", &vc.x, &vc.y, &vc.z) == 3)
+            for (const auto& [oid, obj] : m_staticObjects)
+                if (obj.hubId == hubId && obj.hubModuleId.size() >= 5 &&
+                    obj.hubModuleId.compare(obj.hubModuleId.size() - 5, 5, ".city") == 0)
+                {
+                    startVelocityWorld = glm::dmat3(glm::mat3(obj.orientation)) * vc;
+                    break;
+                }
+    }
     tr.setWorldPositionMeters(frame.originMeters);
     // DEV: ELITE_DEV_START_FACE=1 turns the nose to the hub (scripted captures of a hub, e.g. the district prototype)
     // ELITE_DEV_START_FACE=along: the nose along the hub's local +X (its normalAxis), the hub's radial up - looking
@@ -1164,6 +1180,23 @@ bool GameSimulation::devPlaceShipNearHub(EntityId id, const std::string& hubId, 
                 }
             }
             break;
+        }
+    }
+    if (glm::length(startVelocityWorld) > 0.0)
+    {
+        frame.linearVelocityMps += startVelocityWorld;
+        std::cerr << "[DevStart] ship " << id.value << ": start velocity " << glm::length(startVelocityWorld)
+                  << " m/s against the hub" << std::endl;
+    }
+    if (const char* sp = std::getenv("ELITE_DEV_START_SPIN"); sp && *sp)
+    {
+        glm::vec3 r(0.0f);   // yaw, pitch, roll deg/s
+        if (std::sscanf(sp, "%f,%f,%f", &r.x, &r.y, &r.z) == 3)
+        {
+            tr.yawRate = glm::radians(r.x);
+            tr.pitchRate = glm::radians(r.y);
+            tr.rollRate = glm::radians(r.z);
+            std::cerr << "[DevStart] ship " << id.value << ": start spin y/p/r " << r.x << "/" << r.y << "/" << r.z << " deg/s" << std::endl;
         }
     }
     motion.freeFlightReferenceId = hubId;

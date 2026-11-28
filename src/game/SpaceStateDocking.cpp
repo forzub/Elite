@@ -1543,7 +1543,10 @@ void SpaceState::updateDockingAdvisory()
             progress = m_clientDockingRouteProgressMeters;
         }
         const auto& dock = player.dockDispatcher;
-        const bool legitimateWait = (dock.active && (dock.stationControlled || dock.queuePosition > 0)) ||
+        const auto dockPhase = static_cast<game::docking::traffic::DockTrafficPhase>(dock.phase);
+        const bool legitimateWait = (dock.active && (dock.stationControlled || dock.queuePosition > 0 ||
+                                                     dockPhase == game::docking::traffic::DockTrafficPhase::Queued ||
+                                                     dockPhase == game::docking::traffic::DockTrafficPhase::AtHold)) ||
                                     (m_padAnchor.valid && m_padAnchor.serial == pending.serial && m_padAnchor.ringGate &&
                                      m_padAnchor.gateSyncedSinceS >= 0.0);
         if (kind != 0)
@@ -1627,6 +1630,20 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
+    // TWO-STAGE DOCKING: the entry cleared while the current task was the waiting place -> the second task (to the dock's
+    // handover point) from the ship's real state
+    if (m_dockHoldStage.towardHold && m_dockHoldStage.serial == pending.serial &&
+        static_cast<game::docking::traffic::DockTrafficPhase>(player.dockDispatcher.phase) ==
+            game::docking::traffic::DockTrafficPhase::EntryCleared)
+    {
+        std::cerr << "[DockHold] request=" << pending.serial << " entry cleared - the entry route from the waiting place" << std::endl;
+        m_dockHoldStage.towardHold = false;
+        releaseClientAutopilot();
+        m_dockAdviceJob.reset();
+        m_clientDockingPhase = ClientDockingPhase::Stabilizing;
+        m_clientDockingSettledSinceServerSeconds = -1.0;
+        return;
+    }
     // B3 (stabilization stage 4): while THIS request stabilizes, secures its course or re-plans, the route it executed
     // stays the route of record - published from its own plan in its own frame (the HUD held world-anchored copies,
     // which drifted off a moving / turning hub); a refused request shows none
@@ -3221,6 +3238,37 @@ void SpaceState::updateDockingStabilizing(Frame& f)
             ? localPort.positionMeters
             : localPort.positionMeters + localPort.forward * request.terminalReferenceDistanceMeters;
     request.terminalDirectionFree = openPadTask;
+    // TWO-STAGE DOCKING (navigation stage 5): while the dispatcher holds the ship (queued / a waiting place assigned /
+    // at it), the task is the ASSIGNED WAITING PLACE - an area of the dock's configuration, arrived at from any direction,
+    // at rest; the entry route is planned only once the entry is cleared (then from the ship's real state at the place)
+    {
+        using DTP = game::docking::traffic::DockTrafficPhase;
+        const auto& dd = f.player.dockDispatcher;
+        const auto ph = static_cast<DTP>(dd.phase);
+        const bool held = !openPadTask && dd.active && (ph == DTP::Queued || ph == DTP::HoldAssigned || ph == DTP::AtHold);
+        m_dockHoldStage.serial = pending.serial;
+        m_dockHoldStage.towardHold = false;
+        if (held && !dd.holdValid)
+        {
+            // queued without a place yet: no route (nothing assigned to fly to) - the craft stays stabilized
+            if (f.authoritativeServerSeconds - m_dockHoldStage.logS > 5.0)
+            {
+                m_dockHoldStage.logS = f.authoritativeServerSeconds;
+                std::cerr << "[DockHold] request=" << pending.serial << " queued - waiting for the dispatcher's place" << std::endl;
+            }
+            return;
+        }
+        if (held)
+        {
+            request.goalMeters = dd.holdLocalMeters;
+            request.terminalDirectionFree = true;
+            request.terminalSpeedMps = 0.0;
+            m_dockHoldStage.towardHold = true;
+            m_dockHoldStage.holdLocal = dd.holdLocalMeters;
+            std::cerr << "[DockHold] request=" << pending.serial << " the task: the waiting place " << dd.holdPointId << " ("
+                      << dd.holdLocalMeters.x << "," << dd.holdLocalMeters.y << "," << dd.holdLocalMeters.z << ")" << std::endl;
+        }
+    }
     // a city pad: the route ends on the lane nearest it; the pad service takes over there (author 2026-11-22)
     request.endAtLaneExit = pending.target.semanticAnchorId.rfind("pad:", 0) == 0;
     // the recovery strategy of a retried request: through the green lanes (stabilization stage 3, author 2026-11-28)

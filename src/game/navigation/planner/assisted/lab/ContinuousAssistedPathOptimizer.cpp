@@ -279,13 +279,28 @@ struct Evaluation
     std::vector<SamplePoint> samples;
 };
 
+double speedLimitForCurvatureCapped(
+    const Request& request,
+    double curvaturePerMeter,
+    double cap
+) noexcept;
+
 double speedLimitForCurvature(
     const Request& request,
     double curvaturePerMeter
 ) noexcept
 {
+    return speedLimitForCurvatureCapped(request, curvaturePerMeter, request.designSpeedMps);
+}
+
+double speedLimitForCurvatureCapped(
+    const Request& request,
+    double curvaturePerMeter,
+    double cap
+) noexcept
+{
     double limit =
-        std::max(0.0, request.designSpeedMps);
+        std::max(0.0, cap);
 
     if (curvaturePerMeter > 1.0e-12 &&
         request.maxLateralAccelerationMps2 > Epsilon)
@@ -701,6 +716,27 @@ Evaluation evaluate(
                 request,
                 out.samples[i].curvaturePerMeter
             );
+    }
+    // THE ENTRY CURVE (navigation stage 3/4, 2026-11-28): a ship that starts FASTER than the design speed (300 m/s into a
+    // 150 m/s hub zone) is not an infeasible start - it brakes down along the route: the speed allowed at arc length s is
+    // max(the zone's design speed, sqrt(v0^2 - 2 b s)), the curvature limits (lateral, angular rate) still applying. It was
+    // a start-speed violation: the first plan always failed and the re-plan worked only after the ship had slowed.
+    {
+        const double v0 = std::max(0.0, request.start.speedMps);
+        if (v0 > request.designSpeedMps + 0.25 && braking > Epsilon)
+        {
+            double arc = 0.0;
+            for (std::size_t i = 0; i < count; ++i)
+            {
+                if (i > 0)
+                    arc += glm::length(out.samples[i].position - out.samples[i - 1].position);
+                const double entry = std::sqrt(std::max(0.0, v0 * v0 - 2.0 * braking * arc));
+                if (entry <= speedLimit[i])
+                    break;   // the braking curve is under the zone's limit from here on
+                speedLimit[i] = std::max(speedLimit[i],
+                                         speedLimitForCurvatureCapped(request, out.samples[i].curvaturePerMeter, entry));
+            }
+        }
     }
 
     backwardCap.back() =

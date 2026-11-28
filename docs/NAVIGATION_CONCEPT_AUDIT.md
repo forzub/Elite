@@ -316,3 +316,29 @@ Before the fix: 6 / 10 landed, 3 of them only after replans; 3 refused.
   arbitration with the emergency rule (while it owns the control, an automatic task is ended). Live: ring x2, three grid
   starts, the dock - 0 conflicts (the one seen at a refusal frame was the release handover, now classified). Barrier
   `check_control_owner.py`; five contracts updated to the gate token (the same guarantee: the autopilot input path).
+
+## 18. Stage 3 (planning from the real start state) and stage 5 (two-stage docking) — 2026-11-28
+
+- FOUND (physics defect): entering the hub frame for a docking / pad request (`takeShipIntoHubFrame` ->
+  `placeShipInReferenceFrame`, the SPAWN API) zeroed the ship's velocity against the hub - a ship at 100-300 m/s stopped
+  instantly with no thrust, and every request was planned from a fictitious rest. The first start-state matrix was
+  therefore invalid (all nine planned at 0 m/s - discarded). Fix: the frame change keeps the world velocity (restored in
+  the hub frame, `[HubFrame] ... keeping N m/s`).
+- DEV: `ELITE_DEV_START_VELOCITY` (city axes, m/s) and `ELITE_DEV_START_SPIN` (deg/s); the grid takes "point|velocity|spin".
+- Moving-start matrix (the author's side point, the request ~3 s after the start; speed AT PLANNING 39-300 m/s,
+  `D:/tmp/grid_moving2`): 7 / 7 LANDED, 6 on the first plan; route times now follow the physics (toward the goal 42 s,
+  away 104 s, 90 deg 75 s, 135 deg 100 s, lateral + spin 77 s, vertical drift 62 s).
+- 300 m/s into the 150 m/s hub zone: the first plan was infeasible - the optimizer capped the WHOLE route at the design
+  speed and counted a faster start as a violation. Fix (the optimizer's speed profile): the ENTRY CURVE - the allowed speed
+  at arc length s is max(the zone's design speed, sqrt(v0^2 - 2 b s)), the curvature limits still applying: the ship brakes
+  down along the route. Regression: below.
+- Stage 5 (two-stage docking, the author's model): the pilot ship no longer bypasses the dock's traffic (`direct=false`):
+  the dispatcher assigns and reserves a waiting place (a hold of the dock's configuration); the client's first task is
+  that place (an area, any arrival direction, at rest); queued without a place -> no route (it waits stabilized); the
+  server confirms `AtHold`; on `EntryCleared` the second task - the entry route from the ship's real state at the place
+  - to the station's capture; the station confirms the handoff; Docked. Waiting in the queue / at the place is a
+  legitimate wait for the watchdog. Live (plane_demo, `D:/tmp/dock5.log`): hold H4 assigned -> flown -> at hold (server)
+  -> entry cleared -> entry route -> station handoff -> DOCKED.
+- Regression after the entry curve (`D:/tmp/grid_fast`, `D:/tmp/grid_s3reg`): 300 m/s -> the FIRST plan (47 s route, was
+  infeasible + a re-plan); away 103 s, lateral + spin 77 s; the static grid 9 / 9 on the first plan; ring PASS. Contracts
+  190 / the same 17 reds.

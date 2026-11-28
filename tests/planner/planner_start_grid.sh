@@ -33,12 +33,17 @@ outcome() {   # the log's verdict so far (empty: still running)
     fi
 }
 i=0
-for p in $POINTS; do
+for spec in $POINTS; do
+    # a line: "x,y,z" | "x,y,z|vx,vy,vz" | "x,y,z|vx,vy,vz|yaw,pitch,roll" (navigation stage 3: the real start state)
+    IFS='|' read -r p vel spin <<< "$spec"
+    extra=()
+    [ -n "${vel:-}" ] && extra+=("ELITE_DEV_START_VELOCITY=$vel")
+    [ -n "${spin:-}" ] && extra+=("ELITE_DEV_START_SPIN=$spin")
     i=$((i + 1))
     log="$OUT/run_$i.log"
     start=$(date +%s)
-    (cd "$BIN" && exec env ELITE_SESSION_LOG=0 ELITE_DEV_OFFSCREEN_WINDOW=0 ELITE_DEV_START="hub:$HUB@10" ELITE_DEV_START_CITY_AT="$p" \
-        ELITE_ECONOMY_STATE_FILE="$OUT/e_$i.json" "ELITE_DEV_SOL_MAP_SCRIPT=15:gear;20:padland:$PAD@$HUB.city" \
+    (cd "$BIN" && exec env ELITE_SESSION_LOG=0 ELITE_DEV_OFFSCREEN_WINDOW=0 ELITE_DEV_START="hub:$HUB@10" ELITE_DEV_START_CITY_AT="$p" "${extra[@]}" \
+        ELITE_ECONOMY_STATE_FILE="$OUT/e_$i.json" "ELITE_DEV_SOL_MAP_SCRIPT=${GRID_SCRIPT:-15:gear;20:padland:$PAD@$HUB.city}" \
         ELITE_DEV_QUIT_AFTER_S="$((BUDGET + 30))" ./EliteGame.exe --dev-direct-flight > "$log" 2>&1) &
     runner=$!
     r=""
@@ -56,6 +61,6 @@ for p in $POINTS; do
     [ -z "$r" ] && r=$(outcome "$log")
     [ -z "$r" ] && r=HANG
     replans=$(grep -ac "phase=replan" "$log")
-    echo "$i $p $r replans=$replans t=$(( $(date +%s) - start ))s $(grep -a "phase=refused\|pad $PAD: LANDED\|phase=failed\|PilotLost\]" "$log" | head -1 | cut -c1-140)" | tee -a "$summary"
+    echo "$i $spec $r replans=$replans t=$(( $(date +%s) - start ))s $(grep -a "phase=refused\|pad $PAD: LANDED\|phase=failed\|PilotLost\]" "$log" | head -1 | cut -c1-140)" | tee -a "$summary"
 done
 echo "LANDED $(grep -c " LANDED " "$summary")  REFUSED $(grep -c " REFUSED " "$summary")  CRASH $(grep -c " CRASH " "$summary")  HANG $(grep -c " HANG " "$summary")" | tee -a "$summary"

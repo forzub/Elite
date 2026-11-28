@@ -9798,3 +9798,7 @@ start-up hitches (render), trade step 16 part 3 live.
   geometric (not visual) radius floor (routes up to 17 % shorter, grid 9 / 9 first plan); ring gate off-axis re-plan
   recovery (traffic at the gate); one client control gate with conflict counting + the capsule in the arbitration (0
   conflicts live). Contracts 190 / the same 17 reds.
+- 2026-11-28 navigation stages 3 + 5: the hub-frame entry keeps the ship's velocity (it zeroed it - a no-thrust stop and
+  every plan from a fictitious rest); the optimizer's entry curve (a start faster than the zone brakes down along the
+  route); moving starts 39-300 m/s all LANDED, all on the first plan after the fix. Two-stage docking: pilots take the
+  dock's waiting place (dispatcher-assigned), then the entry route on EntryCleared - live plane_demo DOCKED via hold H4.

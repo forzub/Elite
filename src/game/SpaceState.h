@@ -870,6 +870,13 @@ private:
     // same answer: B2-04 replanned for ever). Bounded: after MaxRetryablePlanFailures the request is refused, told.
     int m_dockRetryablePlanFailures = 0;
     int m_dockLiftClearAttempts = 0;   // stage 3: the lift-clears of THIS request (bounded)
+    struct DockHoldStage   // navigation stage 5: the first docking task is the dispatcher's waiting place
+    {
+        std::uint64_t serial = 0;
+        bool towardHold = false;
+        glm::dvec3 holdLocal {0.0};
+        double logS = -1.0e9;
+    } m_dockHoldStage;
     std::uint64_t m_dockWatchdogSerial = 0;   // stage 3: the request watchdog (no route executed for too long)
     double m_dockPreExecutionSinceS = 0.0;
     double m_dockNoProgressSinceS = 0.0;   // audit #11: the executed motion's progress watchdog

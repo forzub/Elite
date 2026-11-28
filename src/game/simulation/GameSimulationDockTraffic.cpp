@@ -623,9 +623,10 @@ bool GameSimulation::requestDockArrival(EntityId shipId, bool engage, const std:
     r.shipClass = game::docking::DockSizeClass::Medium;   // the class POLICY (no hull-size class rule in the data yet)
     r.envelope = pilotDockingEnvelope(*ship);              // the REAL hull: the dispatcher's physical fit checks it
     r.insideControlledApproachHorizon = true;
-    // The pilot's planner / autopilot fly their own route to the dock: a direct-entry request - first in the queue;
-    // the station captures it on the approach axis once its entry is cleared.
-    const bool direct = true;
+    // NAVIGATION STAGE 5 (two-stage docking): the pilot ship goes through the dock's own traffic like every ship - the
+    // dispatcher assigns and reserves a waiting place (a hold of the dock's configuration), the ship flies there and
+    // waits; the entry is cleared in queue order (it was a direct entry: first in the queue, the holds bypassed).
+    const bool direct = false;
     const bool freeNow = dispatcher.entryFreeNow(r);
     constexpr double TwoPi = 2.0 * 3.14159265358979323846;
     const double azimuth = std::fmod(std::atan2(p.y, p.x) + TwoPi, TwoPi);

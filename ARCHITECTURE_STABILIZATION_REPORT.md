@@ -149,3 +149,52 @@ Residual: the save is enabled by `ELITE_ECONOMY_STATE_FILE` only; a default loca
   `ELITE_SERVER_OWN_CLOCK` (`core::scrubDeveloperEnvironmentInPreview`, client and server mains).
 - SpaceState* split by responsibility: NOT done in this pass (the files stay large; stages 2 / 4 moved state out of the
   render functions, which was the coupling that broke things).
+
+### Stage 3 — the start grid (live, 10 points around Vysokiy, pad B2-04, `D:/tmp/grid_full2/summary.txt`)
+
+| point (city frame) | outcome | replans | t |
+|---|---|---|---|
+| 0,2810,5588 (the author's) | LANDED 101 s | 1 | 309 s |
+| 0,2810,-5588 | LANDED 102 s | 0 | 282 s |
+| 5588,2810,0 | REFUSED (3 infeasible plans) | 2 | 74 s |
+| -5588,2810,0 | LANDED 101 s | 0 | 302 s |
+| 0,6000,0 | **HANG** | 0 | 482 s |
+| 0,-6000,0 | LANDED 92 s | 0 | 266 s |
+| 0,1500,3000 | LANDED 102 s | 0 | 339 s |
+| 3000,1500,3000 | REFUSED (3 infeasible plans) | 2 | 78 s |
+| 0,4000,10000 | LANDED 102 s | 0 | 260 s |
+| -8000,500,-8000 | REFUSED (3 infeasible plans) | 2 | 74 s |
+
+Shares: success 60 %, refusal 30 %, hang 10 % -> the gate (zero hangs) FAILED on the first grid. Cause of the hang
+(point 0,6000,0 = the hub's centre, inside `station_core_front`): a SECOND unbounded loop - lift-clear 62 m -> "clear,
+planning" -> the safe-course check still "in contact (865 boxes)" -> lift again (215 lift traces). Fix: at most 3
+lift-clears per request, then `cockpit.dock.refused.enclosed`; plus a REQUEST WATCHDOG - no route executed for 240 s of
+server time (any loop between the bounded paths) -> `cockpit.dock.refused.timeout`. Re-run of the failed / refused points:
+below.
+The three REFUSED points are deterministic planner limits (the continuous Assisted optimizer infeasible from those
+starts three times): finite and told to the pilot, NOT solved - a planner capability residual.
+
+Re-run after the fix (`D:/tmp/grid_retry/summary.txt`): 0,6000,0 -> REFUSED "still in contact after 3 lifts" (182 s);
+the three optimizer-limited points REFUSED again in 77-83 s (deterministic). FINAL GRID: 6 LANDED / 4 REFUSED / 0
+CRASH / **0 HANG** (gate passed on the re-run; the first-run failure stays recorded above).
+
+## Stage 7 — D1 / D2: the server owns time
+
+Matrix (`tests/server_clock/clock_matrix.sh`, live, ~100 s each, `D:/tmp/clock_matrix`), the clock's own account line
+every 10 s (`[ServerClock] account`):
+
+| case | before the fix | after |
+|---|---|---|
+| own clock baseline | simulated 70.16 / wall 70.10 s, dropped 0 | 70.12 / 70.07, dropped 0 |
+| menu pause 10 s (`ELITE_DEV_PAUSE=40:10`) | PAUSED / RESUMED, simulated = wall - 9.95 s, no catch-up | (unchanged path) |
+| render stalls 1000 + 500 ms | dropped 0 | (unchanged path) |
+| worker blocked 300 ms (`ELITE_DEV_WORKER_STALL`, new DEV) | **dropped 63 ms** (FAIL) | dropped 0, caught up |
+| worker blocked 3000 ms | OVERLOADED, dropped 2762 ms, recovered | OVERLOADED, 0.97 s carried (the cap), dropped 2036 ms, recovered |
+| the old client-driven clock, render stall 1000 ms | dropped 601 ms | - |
+
+Cause of the FAIL: the runner's per-call frame clip (250 ms, made for the client-driven frame) cut a worker stall the
+debt cap (500 ms) could carry. Fix: the own clock hands its elapsed time in <= 250 ms pieces up to frame cap + debt
+cap (0.75 s); the rest in one last call that the runner clips and counts (an explicit, bounded drop).
+D1 (determinism across frame rates) was accepted on 2026-11-27 (fc1cf6377) and not reworked.
+Default: the own clock stays OPT-IN (`ELITE_SERVER_OWN_CLOCK=1`) - not yet run: a TCP / remote session and the window
+losing focus under it. These two runs are the remaining acceptance before it becomes the default.

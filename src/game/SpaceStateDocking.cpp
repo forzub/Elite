@@ -1384,6 +1384,7 @@ void SpaceState::updateDockingAdvisory()
         m_lastDockingPathRequestSerial = pending.serial;
         m_newtonianRouteRecoveries = 0;
         m_dockRetryablePlanFailures = 0;
+        m_dockLiftClearAttempts = 0;
         m_newtonianLastRecoveryServerSeconds = -1.0e9;
         m_assistedRecoveryStopBeforePlanning = false;
         m_assistedAlignDone = false;
@@ -1558,6 +1559,26 @@ void SpaceState::updateDockingAdvisory()
     // B3 (stabilization stage 4): while THIS request stabilizes, secures its course or re-plans, the route it executed
     // stays the route of record - published from its own plan in its own frame (the HUD held world-anchored copies,
     // which drifted off a moving / turning hub); a refused request shows none
+    // THE REQUEST'S WATCHDOG (stabilization stage 3): every recovery path above is bounded on its own; this is the net
+    // for any loop between them - a request that has not EXECUTED a route for MaxPreExecutionSeconds of server time
+    // (stabilizing, lifting, securing a course, planning, re-planning) is refused, told. Executing resets it.
+    {
+        constexpr double MaxPreExecutionSeconds = 240.0;
+        const double nowS = m_client->lastSimulationMetadata().serverTimeSeconds;
+        if (m_clientDockingPhase == ClientDockingPhase::Executing || m_dockWatchdogSerial != f.pending.serial)
+        {
+            m_dockWatchdogSerial = f.pending.serial;
+            m_dockPreExecutionSinceS = nowS;
+        }
+        else if (!m_noSafeDockingGuidanceSolution && nowS - m_dockPreExecutionSinceS > MaxPreExecutionSeconds)
+        {
+            std::cerr << "[DockClient] request=" << f.pending.serial << " phase=refused watchdog: no route executed for "
+                      << static_cast<int>(nowS - m_dockPreExecutionSinceS) << " s" << std::endl;
+            f.fail(l10n::tr("cockpit.dock.refused.timeout", {{"minutes", std::to_string(static_cast<int>(MaxPreExecutionSeconds / 60.0))}},
+                            "no route could be started in {minutes} min - request again from another position"));
+            return;
+        }
+    }
     const auto keepExecutedRoutePublished = [&]() {
         if (m_dockAdvice.serial == f.pending.serial && !m_noSafeDockingGuidanceSolution)
             publishDockingAdvisoryPresentation(f);
@@ -2330,6 +2351,18 @@ bool SpaceState::secureDockingCourseWhilePlanning(Frame& f, Locals& l)
 
         if (safetyResult.message.rfind("in contact", 0) == 0)
         {
+            // FINITE (stabilization stage 3, the start grid's HANG): a lift that never leaves the contact (a ship deep
+            // inside a structure: 62 m up, still 865 boxes touching) lifted again for ever - at most MaxLiftClears per
+            // request, then refused with the reason
+            constexpr int MaxLiftClears = 3;
+            if (++m_dockLiftClearAttempts > MaxLiftClears)
+            {
+                std::cerr << "[DockClient] request=" << pending.serial << " phase=refused attempts=" << MaxLiftClears
+                          << " last_reason=still in contact after " << MaxLiftClears << " lifts" << std::endl;
+                f.fail(l10n::tr("cockpit.dock.refused.enclosed", {{"attempts", std::to_string(MaxLiftClears)}},
+                                "the ship is inside a structure ({attempts} climbs did not clear it) - fly out by hand and request again"));
+                return false;
+            }
             const auto agent = makeAgent();
             m_dockLiftClear = {};
             m_dockLiftClear.active = true;

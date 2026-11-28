@@ -1829,6 +1829,20 @@
       "es": "CALCULANDO",
       "ja": "計算中"
     },
+    "cockpit.dock.refused.enclosed": {
+      "en": "the ship is inside a structure ({attempts} climbs did not clear it) - fly out by hand and request again",
+      "ru": "корабль внутри конструкции ({attempts} подъёма не вывели его) - выведите корабль вручную и повторите запрос",
+      "zh-Hans": "飞船位于结构内部（{attempts} 次爬升未能脱离）- 请手动飞出后重新请求",
+      "es": "la nave está dentro de una estructura ({attempts} ascensos no la liberaron) - salga a mano y vuelva a solicitar",
+      "ja": "船は構造物の内部にあります（{attempts} 回の上昇で脱出できず）- 手動で脱出して再要求してください"
+    },
+    "cockpit.dock.refused.timeout": {
+      "en": "no route could be started in {minutes} min - request again from another position",
+      "ru": "маршрут не удалось начать за {minutes} мин - повторите запрос из другой точки",
+      "zh-Hans": "{minutes} 分钟内无法开始航线 - 请从其他位置重新请求",
+      "es": "no se pudo iniciar una ruta en {minutes} min - vuelva a solicitar desde otra posición",
+      "ja": "{minutes} 分以内に航路を開始できませんでした - 別の位置から再要求してください"
+    },
     "cockpit.dock.refused.no_route": {
       "en": "no safe route from here ({attempts} attempts) - move closer to the hub's lanes and request again",
       "ru": "безопасный маршрут отсюда не найден ({attempts} попытки) - подойдите ближе к трассам хаба и повторите запрос",

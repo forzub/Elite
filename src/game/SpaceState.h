@@ -861,6 +861,9 @@ private:
     // stabilization stage 3: the retryable plan failures of THIS request (the planner from the same rest state gives the
     // same answer: B2-04 replanned for ever). Bounded: after MaxRetryablePlanFailures the request is refused, told.
     int m_dockRetryablePlanFailures = 0;
+    int m_dockLiftClearAttempts = 0;
+    std::uint64_t m_dockWatchdogSerial = 0;   // stage 3: the request watchdog (no route executed for too long)
+    double m_dockPreExecutionSinceS = 0.0;   // stage 3: the lift-clears of THIS request (bounded)
     double m_newtonianLastRecoveryServerSeconds = -1.0e9;
     // Assisted: after a capability loss the request is planned again only
     // after braking to rest along the current (already cleared) course.

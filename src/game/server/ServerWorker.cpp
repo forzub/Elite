@@ -235,9 +235,90 @@ void ServerWorker::threadMain(
                 const auto now = Clock::now();
                 const double elapsedSeconds = std::chrono::duration<double>(now - last).count();
                 last = now;
-                ServerAdvanceResult result = runtime.advance(elapsedSeconds);
+                // stage 7 (the D2 matrix, own_worker_debt: a 300 ms worker stall dropped 63 ms): the runner's per-call
+                // frame clip (250 ms, made for the client-driven frame) cut a stall the debt cap (500 ms) can carry. The
+                // own clock hands its elapsed time in <= FrameChunk pieces while the debt can absorb them; the rest
+                // goes in one last call, which the runner clips - dropped explicitly and counted, as before.
+                constexpr double FrameChunk = 0.25, CarryLimit = 0.75;   // the frame cap + the debt cap
+                ServerAdvanceResult result;
+                {
+                    double left = elapsedSeconds, carried = 0.0;
+                    ServerAdvanceResult total;
+                    bool first = true;
+                    while (true)
+                    {
+                        const bool last = left <= FrameChunk || carried + FrameChunk > CarryLimit;
+                        const double piece = last ? left : FrameChunk;
+                        ServerAdvanceResult r = runtime.advance(piece);
+                        if (first)
+                            total = r;
+                        else
+                        {
+                            total.stepsExecuted += r.stepsExecuted;
+                            total.acceptedElapsedSeconds += r.acceptedElapsedSeconds;
+                            total.simulatedSeconds += r.simulatedSeconds;
+                            total.discardedSeconds += r.discardedSeconds;
+                            total.remainingDebtSeconds = r.remainingDebtSeconds;
+                            total.totalDiscardedSeconds = r.totalDiscardedSeconds;
+                            total.catchUpLimited = total.catchUpLimited || r.catchUpLimited;
+                        }
+                        first = false;
+                        carried += piece;
+                        left -= piece;
+                        if (last || left <= 0.0)
+                            break;
+                    }
+                    result = total;
+                }
                 result.executionWallSeconds = std::chrono::duration<double>(Clock::now() - now).count();
                 reportWorkerTiming(result.executionWallSeconds, elapsedSeconds);
+                // the clock's account (stabilization stage 7, the D2 matrix): every 10 s of wall time - wall vs simulated,
+                // dropped, debt - so pause / overload / debt runs are judged from the log, not inferred
+                {
+                    static const auto clockStart = Clock::now();
+                    static auto reportAt = clockStart + std::chrono::seconds(10);
+                    static double simulatedTotal = 0.0;
+                    simulatedTotal += result.simulatedSeconds;
+                    if (now >= reportAt)
+                    {
+                        reportAt = now + std::chrono::seconds(10);
+                        std::cerr << "[ServerClock] account: wall " << std::chrono::duration<double>(now - clockStart).count()
+                                  << " s, simulated " << simulatedTotal << " s, dropped total " << result.totalDiscardedSeconds * 1000.0
+                                  << " ms, debt " << result.remainingDebtSeconds * 1000.0 << " ms" << std::endl;
+                    }
+                }
+                // DEV (stage 7): ELITE_DEV_WORKER_STALL=<worker s>:<ms>[,...] - the WORKER blocks once at each time (an
+                // overloaded server tick), to see the debt, the catch-up clip and the drop
+                {
+                    static std::vector<std::pair<double, double>> stalls = [] {
+                        std::vector<std::pair<double, double>> out;
+                        if (const char* v = std::getenv("ELITE_DEV_WORKER_STALL"))
+                        {
+                            std::string s(v);
+                            std::size_t p = 0;
+                            while (p < s.size())
+                            {
+                                const std::size_t e = s.find(',', p);
+                                const std::string item = s.substr(p, e == std::string::npos ? std::string::npos : e - p);
+                                if (const auto c = item.find(':'); c != std::string::npos)
+                                    out.push_back({std::atof(item.c_str()), std::atof(item.c_str() + c + 1)});
+                                if (e == std::string::npos)
+                                    break;
+                                p = e + 1;
+                            }
+                        }
+                        return out;
+                    }();
+                    static const auto workerStart = Clock::now();
+                    const double t = std::chrono::duration<double>(now - workerStart).count();
+                    for (auto& st : stalls)
+                        if (st.second > 0.0 && t >= st.first)
+                        {
+                            std::cerr << "[ServerClock] DEV worker stall " << st.second << " ms at " << t << " s" << std::endl;
+                            std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(st.second));
+                            st.second = 0.0;
+                        }
+                }
                 // OVERLOADED: explicit, logged on entry / exit (the runner's clips keep it bounded)
                 const bool over = result.catchUpLimited || result.discardedSeconds > 0.0;
                 if (over != overloaded)

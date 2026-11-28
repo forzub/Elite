@@ -1741,7 +1741,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         // permitted here; the purpose of this probe is to test the real
         // game runtime control -> server physics -> snapshot chain.
         m_playerControl = m_shipRuntimeControlOracle.control();
-        m_client->submitInput(m_playerControl);
+        submitShipControl("pilot", m_playerControl);
     }
     else
     {
@@ -1775,7 +1775,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
             // the pilot's own flight: over a turning ring deck the law holds the deck's velocity (DeckFrame.h) - unless
             // the reflex took the stick this sample
             m_playerControl.deckRelative = !m_playerControl.cancelVelocityAlignment;
-            m_client->submitInput(m_playerControl);
+            submitShipControl("pilot", m_playerControl);
         }
         else
         {

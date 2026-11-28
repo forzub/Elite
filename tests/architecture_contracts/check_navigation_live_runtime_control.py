@@ -63,7 +63,7 @@ for marker in (
     "NewtonianClientRouteAutopilot::start(",
     "AssistedClientAutopilot::update(",
     "NewtonianClientAutopilot::update(",
-    "m_client->submitInput(m_clientAutopilotControl)",
+    'submitShipControl("docking-autopilot", m_clientAutopilotControl)',
     "control_path=ShipControlState",
 ):
     require(marker in SPACE, f"SpaceState client execution path missing: {marker}")

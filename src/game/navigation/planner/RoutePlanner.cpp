@@ -313,8 +313,18 @@ std::vector<RouteGate> buildPresentationGates(
             terminalDense
                 ? request.terminalGateSpacingMeters
                 : request.gateSpacingMeters;
-        const double spacing =
-            std::max(1.0, requestedSpacing);
+        // ADAPTIVE FRAMES (navigation stage 11): the readability rule - one frame per 30 deg of turn at most - placed by
+        // the route's own curvature (denser in a turn, the requested spacing on a straight), not imposed on the route as
+        // a minimum radius (it was gate spacing / (pi/6) = 955 m: a kilometre loop for 500 m frames)
+        double spacing = std::max(1.0, requestedSpacing);
+        {
+            double kMax = 0.0;
+            for (int k = 0; k <= 8; ++k)
+                kMax = std::max(kMax, std::abs(sampleCurves(curves, std::min(total, progress + spacing * k / 8.0)).curvaturePerMeter));
+            if (kMax > 1.0e-9)
+                spacing = std::clamp((3.14159265358979323846 / 6.0) / kMax,
+                                     std::max(10.0, request.vehicleLengthMeters), spacing);
+        }
 
         progress = std::min(total, progress + spacing);
         appendGateAtProgress(
@@ -493,14 +503,13 @@ RoutePlan planContinuousAssisted(
     // HUD/manual corridor by crawling through a tiny-radius turn.
     const bool extreme =
         input.assistedRoutePreset == AssistedRoutePreset::Extreme;
+    // the minimum curve radius is a GEOMETRIC non-degeneracy floor (two hull lengths, >= 20 m), not the HUD frames' spacing
+    // (navigation stage 11: the visual 955 m floor made routes loop; the frames now adapt to the curvature). The dynamics
+    // stay the speed profile's: lateral acceleration, angular rate / acceleration.
     request.minimumComfortRadiusMeters =
         extreme
             ? 0.0
-            : game::navigation::OrdinaryRoutePolicy::
-                  requiredGuidanceTunnelRadiusMeters(
-                      input.gateSpacingMeters,
-                      input.vehicleLengthMeters
-                  );
+            : std::max(20.0, 2.0 * std::max(0.0, input.vehicleLengthMeters));
 
     if (extreme)
     {

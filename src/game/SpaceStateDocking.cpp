@@ -602,7 +602,7 @@ void SpaceState::updateDockingAdvisory()
                     ShipControlState c = m_clientAutopilotControlActive ? m_clientAutopilotControl : ShipControlState {};
                     c.localControlLawCommandValid = true;
                     c.requestedLocalControlLaw = want;
-                    m_client->submitInput(c);
+                    submitShipControl("law-switch", c);
                 };
                 if (routeActive && !m_routeLawSwitched && law == game::navigation::LocalFlightControlLaw::Assisted)
                 {
@@ -656,6 +656,7 @@ void SpaceState::updateDockingAdvisory()
     const auto releaseClientAutopilot = [&]()
     {
         m_clientAutopilotControlActive = false;
+        m_controlWriterThisFrame = nullptr;   // an EXPLICIT release: the next writer this frame takes over (a handover)
         m_lastPilotUniverseSeconds = -1.0;
         m_clientAutopilotControl = {};
         m_clientDockingSettledSinceServerSeconds = -1.0;
@@ -1198,7 +1199,7 @@ void SpaceState::updateDockingAdvisory()
             // This is deliberately the same input path used by the keyboard.
             // Server physics does not know whether the sample came from a
             // human or from the client virtual pilot.
-            m_client->submitInput(m_clientAutopilotControl);
+            submitShipControl("docking-autopilot", m_clientAutopilotControl);
         };
 
     const auto coastForPlanningControl = [&]()
@@ -4599,6 +4600,29 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                 const glm::dvec3 upCity = glm::transpose(Rc) * glm::dvec3(shipIt->second.renderTransform.up());
                 const double rollInCity = std::atan2(upCity.y, upCity.x);
                 const bool holding = fromAxis < 15.0 && alongFromGate < 150.0 && speed < 1.5 && rateErr < glm::radians(2.0);
+                // RECOVERY (live 2026-11-28: the evasion reflex dodged a ship near the gate - the route ended 36 m off the
+                // axis, the sync could never start and the request stalled): at the route's end, at rest, off the axis
+                // for 8 s -> the gate leg is re-planned from where the ship is (at most 3 times; then the watchdog decides)
+                if (atRouteEnd && speed < 1.5 && fromAxis >= 15.0 && m_padAnchor.gateReplans < 3)
+                {
+                    const double nowOff = f.universeTimeSeconds;
+                    if (m_padAnchor.offAxisSinceS < 0.0 || m_padAnchor.offAxisSinceS > nowOff)
+                        m_padAnchor.offAxisSinceS = nowOff;
+                    else if (nowOff - m_padAnchor.offAxisSinceS > 8.0)
+                    {
+                        ++m_padAnchor.gateReplans;
+                        m_padAnchor.offAxisSinceS = -1.0;
+                        std::cerr << "[RingSync] request=" << pending.serial << " the route ended " << fromAxis
+                                  << " m off the axis - re-planning the gate leg (" << m_padAnchor.gateReplans << "/3)" << std::endl;
+                        releaseClientAutopilot();
+                        m_dockAdviceJob.reset();
+                        m_clientDockingPhase = ClientDockingPhase::Stabilizing;
+                        m_clientDockingSettledSinceServerSeconds = -1.0;
+                        return false;
+                    }
+                }
+                else
+                    m_padAnchor.offAxisSinceS = -1.0;
                 // simulation time (the server's universe clock), not the client's wall clock: a stalled or paused client must not
                 // count the hold window while the authoritative state is not advancing
                 const double now = f.universeTimeSeconds;
@@ -5646,6 +5670,26 @@ ShipControlState SpaceState::applyEvasionReflex(ShipControlState control, double
     return control;
 }
 
+void SpaceState::submitShipControl(const char* writer, const ShipControlState& control)
+{
+    if (!m_client)
+        return;
+    if (m_controlWriterFrame != m_perfFrameIndex)
+    {
+        m_controlWriterFrame = m_perfFrameIndex;
+        m_controlWriterThisFrame = writer;
+    }
+    else if (m_controlWriterThisFrame && std::string(m_controlWriterThisFrame) != writer)
+    {
+        ++m_controlWriterConflicts;
+        if (m_controlWriterConflicts <= 20 || m_controlWriterConflicts % 500 == 0)
+            std::cerr << "[ControlOwner] conflict #" << m_controlWriterConflicts << ": '" << m_controlWriterThisFrame
+                      << "' and '" << writer << "' wrote the ship's control in one frame" << std::endl;
+        m_controlWriterThisFrame = writer;   // the last write is what the server gets
+    }
+    m_client->submitInput(control);
+}
+
 void SpaceState::submitVirtualPilotControl(const ShipControlState& control, std::uint64_t pilotTag)
 {
     if (!m_client)
@@ -5656,7 +5700,7 @@ void SpaceState::submitVirtualPilotControl(const ShipControlState& control, std:
             : applyManualCollisionAssist(control, m_client->lastSimulationMetadata().universeTimeSeconds, true, pilotTag);
     m_clientAutopilotControl.deckCoRotating = m_padAnchor.valid && m_padAnchor.coRotate;
     m_clientAutopilotControlActive = true;
-    m_client->submitInput(m_clientAutopilotControl);
+    submitShipControl("virtual-pilot", m_clientAutopilotControl);
 }
 
 void SpaceState::updateUnsampledCollisionAssist()
@@ -5681,13 +5725,13 @@ void SpaceState::updateUnsampledCollisionAssist()
     if (m_manualAssistActive)
     {
         m_playerControl = control;
-        m_client->submitInput(m_playerControl);
+        submitShipControl("pilot-release", m_playerControl);
         m_unsampledAssistSubmitted = true;
     }
     else if (m_unsampledAssistSubmitted)
     {
         m_playerControl = m_lastPilotSample;   // the dodge ended: the pilot's own last control again
-        m_client->submitInput(m_playerControl);
+        submitShipControl("pilot-release", m_playerControl);
         m_unsampledAssistSubmitted = false;
     }
 }

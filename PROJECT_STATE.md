@@ -9794,3 +9794,7 @@ start-up hitches (render), trade step 16 part 3 live.
   direction, no terminal straight; `RoutePlanRequest::terminalDirectionFree`); lane joins without the derived 700 m /
   braking straight (the lane's own join straight + the speed profile); the real hull + mass to the dock dispatcher.
   B2-04 grid 9 / 9 LANDED on the first plan (0 replans); ring landing PASS; plane_demo dock DOCKED.
+- 2026-11-28 navigation stages 12 / 11 / 10: voxel fallback out of the ladder (one executor); adaptive HUD frames + a
+  geometric (not visual) radius floor (routes up to 17 % shorter, grid 9 / 9 first plan); ring gate off-axis re-plan
+  recovery (traffic at the gate); one client control gate with conflict counting + the capsule in the arbitration (0
+  conflicts live). Contracts 190 / the same 17 reds.

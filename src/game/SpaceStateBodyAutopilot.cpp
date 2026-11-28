@@ -271,7 +271,7 @@ void SpaceState::updateClientBodyAutopilot()
         if (m_bodyAutopilotOwnsControl)
         {
             m_clientAutopilotControlActive = true;
-            m_client->submitInput(m_clientAutopilotControl);
+            submitShipControl("body-autopilot", m_clientAutopilotControl);
         }
         return;
     }
@@ -304,7 +304,7 @@ void SpaceState::updateClientBodyAutopilot()
         m_clientAutopilotControl = restore;
         m_clientAutopilotControlActive = true;
         m_bodyAutopilotOwnsControl = true;
-        m_client->submitInput(m_clientAutopilotControl);
+        submitShipControl("body-autopilot", m_clientAutopilotControl);
         return;
     }
 

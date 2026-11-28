@@ -56,7 +56,7 @@ try:
         "ClientDockingPhase::Planning",
         "ClientDockingPhase::RouteReady",
         "stabilizeAngularForPlanningControl",
-        "m_client->submitInput(m_clientAutopilotControl)",
+        'submitShipControl("docking-autopilot", m_clientAutopilotControl)',
         "buildAuthoritativeHubSnapshot",
         "relativeSpeedMps",
         "angularSpeedRadPerSec",

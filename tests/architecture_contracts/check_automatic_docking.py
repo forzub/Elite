@@ -153,7 +153,7 @@ try:
         "request.terminalGateSpacingMeters = 250.0",
         "request.deriveTerminalTurnRadiusFromVehicle = true",
         "ClientAutopilot::update(",
-        "m_client->submitInput(m_clientAutopilotControl)",
+        'submitShipControl("docking-autopilot", m_clientAutopilotControl)',
         "execution=client-input",
         "route_source=client",
         "control_path=ShipControlState",

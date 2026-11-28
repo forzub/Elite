@@ -137,7 +137,7 @@ def main() -> None:
     require(
         "src/game/SpaceState.cpp",
         "ClientAutopilot::update(",
-        "m_client->submitInput(m_clientAutopilotControl)",
+        'submitShipControl("docking-autopilot", m_clientAutopilotControl)',
     )
     require(
         "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h",

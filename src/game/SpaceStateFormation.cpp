@@ -154,6 +154,37 @@ void SpaceState::arbitrateFlightTask()
 {
     if (!m_client)
         return;
+    // THE EMERGENCY RULE (navigation stage 10): the cockpit-capsule rescue, while it OWNS the control (its cruise), is not
+    // pre-empted by an automatic task - one that appears is ended (the capsule hands its own landing to the ordinary pad
+    // request only after releasing the control, so its landing phase is not affected)
+    if (m_capsuleRescue.ownsControl)
+    {
+        std::string ended;
+        if (m_navigationWorkspace.dockingRouteRequests().pending().valid())
+        {
+            m_navigationWorkspace.dockingRouteRequests().clear();
+            ended += " the docking route;";
+        }
+        if (m_formationTask.active)
+        {
+            devJoinFormation("off");
+            ended += " the formation;";
+        }
+        if (m_clientRoute.state != ClientRouteRun::State::Idle)
+        {
+            cancelClientRoute();
+            ended += " the map route;";
+        }
+        if (m_bodyAutopilot.active() || m_bodyAutopilotEngagePending)
+        {
+            cancelClientBodyAutopilot();
+            ended += " the body autopilot;";
+        }
+        if (!ended.empty())
+            std::cerr << "[FlightTask] the capsule rescue owns the control - ended:" << ended << std::endl;
+        m_flightSlot = {};
+        return;
+    }
     const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
     FlightTaskSlot now;
     now.dock = pending.valid();

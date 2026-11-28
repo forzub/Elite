@@ -295,3 +295,24 @@ Before the fix: 6 / 10 landed, 3 of them only after replans; 3 refused.
 - Regression after the lane-join change (`D:/tmp/grid_stage4`): **9 / 9 LANDED, all on the FIRST plan (0 replans)** -
   the start under the city included; ring A1-03 PASS; plane_demo dock DOCKED. Python contracts 189 pass / the same 17
   baseline reds.
+
+## 17. Stages 12, 11, 10 — 2026-11-28
+
+- Stage 12 (449f9a35d): the voxel fallback is out of the normal ladder (plan -> lanes-only recovery -> told refusal); the
+  fallback-course executor removed (one route executor, B3); a ship still in contact after three lifts is refused (no
+  route through a solid). VoxelRoutePlanner + its unit test kept for a proven confined case.
+- Stage 11 (frames / radius): the optimizer's minimum radius is a geometric non-degeneracy floor (two hull lengths, >= 20
+  m) - not the HUD frames' spacing (955 m); the frames adapt (one per 30 deg of turn, the requested spacing on straights,
+  never closer than a hull length). Grid 9 / 9 on the first plan; route times equal or shorter (point 2: 55.3 -> 46.0 s,
+  point 9: 78.1 -> 69.3 s, the rest within 1 %); dock DOCKED.
+- Ring sync recovery: at the ring the follower's traffic limiter (axial dock traffic crossing the gate) plus the evasion
+  displaced the ship 27-36 m off the axis at the gate route's end - the sync could never start (the progress watchdog
+  refused after 90 s, correctly). Now: at the route's end, at rest, off the axis for 8 s -> the gate leg is re-planned from
+  where the ship is (<= 3 times). Live: ring landing PASS twice, one gate re-plan each. Residual: the sync gate sits on the
+  axial dock's traffic axis - a space-access question for stage 6 (a gate reservation).
+- Stage 10 (one control owner): ONE control gate `submitShipControl(writer, control)` for all 10 client write sites (no
+  direct `submitInput` left); two different writers in one frame are counted and logged (`[ControlOwner] conflict`); an
+  explicit release (releaseClientAutopilot) is a handover, not a conflict. The capsule rescue joins the flight-task
+  arbitration with the emergency rule (while it owns the control, an automatic task is ended). Live: ring x2, three grid
+  starts, the dock - 0 conflicts (the one seen at a refusal frame was the release handover, now classified). Barrier
+  `check_control_owner.py`; five contracts updated to the gate token (the same guarantee: the autopilot input path).

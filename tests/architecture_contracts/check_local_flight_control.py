@@ -219,7 +219,7 @@ server = read("src/game/server/GameServer.cpp")
 
 for token in (
     "ClientAutopilot::update(",
-    "m_client->submitInput(m_clientAutopilotControl)",
+    'submitShipControl("docking-autopilot", m_clientAutopilotControl)',
 ):
     if token not in space:
         fail(f"SpaceState client autopilot input path lost: {token}")

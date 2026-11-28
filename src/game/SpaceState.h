@@ -633,6 +633,8 @@ private:
         // frame (ShipControlState::deckCoRotating)
         bool coRotate = false;
         bool coPlanned = false;
+        double offAxisSinceS = -1.0;   // the gate route ended off the axis since (the re-plan recovery)
+        int gateReplans = 0;
         double coT0 = 0.0;
         game::simulation::HubAttachmentSnapshot coAttachment;
         game::navigation::HubSemanticAnchorDefinition definition;   // the same in the module attachment's terms
@@ -736,6 +738,12 @@ private:
     // the docking coasts submitted without the reflex): the phase reflex over it in hub-local flight (a global / J
     // command is not what the control programs model - left as is), then the ordinary input path. pilotTag names the
     // pilot (the reflex episode).
+    // THE ONE CONTROL GATE (navigation stage 10): every control write of the client goes through here - it records the
+    // writer of this frame; two different writers in one frame is a defect ([ControlOwner] conflict, counted)
+    void submitShipControl(const char* writer, const ShipControlState& control);
+    const char* m_controlWriterThisFrame = nullptr;
+    std::uint64_t m_controlWriterFrame = 0;
+    std::uint64_t m_controlWriterConflicts = 0;
     void submitVirtualPilotControl(const ShipControlState& control, std::uint64_t pilotTag);
     // NAV-8: a frame whose input returned before the controls were sampled (a map / panel / service page open) - the
     // server keeps the pilot's last control, so the manual collision assist still watches it: a dodge is submitted over

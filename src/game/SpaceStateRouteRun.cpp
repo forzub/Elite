@@ -134,7 +134,7 @@ void SpaceState::updateClientRoute()
         if (owns && m_clientRouteOwnsControl)
         {
             m_clientAutopilotControlActive = true;
-            m_client->submitInput(m_clientAutopilotControl);
+            submitShipControl("map-route", m_clientAutopilotControl);
         }
         return;
     }
